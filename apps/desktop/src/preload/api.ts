@@ -17,6 +17,7 @@ import type {
   DeclickMode,
   DockIconFrames,
   KeyResult,
+  LibraryTagUpdate,
   LifetimeStats,
   LoudnessResult,
   MetaRead,
@@ -26,10 +27,10 @@ import type {
   MusicReviewField,
   ProcessJob,
   ProcessProgress,
-  RemoveCopyResult,
   ProcessResult,
   RekordboxSyncIssue,
   Release,
+  RemoveCopyResult,
   ScanVerdict,
   SearchHints,
   SearchPriority,
@@ -118,6 +119,7 @@ export interface Api {
   // no snapshot exists yet (first run, or the file was unreadable).
   loadMusicReview: () => Promise<MusicReviewEntry[]>
   applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
+  syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<void>
   cancelMusicFixes: () => Promise<void>
   setMusicField: (
     persistentId: string,

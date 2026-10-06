@@ -38,6 +38,7 @@ import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
 import type {
   CoverExportJob,
+  LibraryTagUpdate,
   ProcessJob,
   RekordboxSyncIssue,
   SessionEdit,
@@ -68,13 +69,16 @@ import { parseDockFrames } from './dockFrames'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { repointEngineTracks } from './engineRepoint'
-import { flushEngineSync } from './engineSyncFlush'
+import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
+import { updateEngineTags } from './engineTags'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio } from './ffmpeg'
+import { convertAudio, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
+import { flushLibraryRepoints } from './libraryRepointFlush'
+import { nmlTagPatches } from './libraryTagPatches'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -86,11 +90,12 @@ import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
-import { type FlushResult, flushRekordboxSync } from './rekordboxFlush'
+import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { updateRekordboxTags } from './rekordboxTags'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -964,6 +969,47 @@ function registerIpc(): void {
         ),
     })
     logLibraryFlush('Engine DJ repoint', engineResult)
+  })
+
+  // The names a metadata review fixed (or undid) follow the file into each library the way
+  // an Update's do: same toggles, same prompt to close the app, same dialogs and Activity
+  // rows as the end of a conversion run. Each library only hears about the fields that
+  // reached the file, which the renderer already narrowed.
+  ipcMain.handle('library:syncTags', async (e, updates: LibraryTagUpdate[]) => {
+    if (updates.length === 0) return
+    const win = BrowserWindow.fromWebContents(e.sender)
+    await flushTraktorSync({
+      ...traktorFlushDeps(win),
+      endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
+    })
+    const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
+    const rekordboxResult = await flushLibraryRepoints(
+      {
+        ...rekordboxFlushDeps(win, e.sender),
+        endBatch: () => updates,
+        labelOf: (u) => u.path,
+        repointTracks: (collectionPath, list) =>
+          updateRekordboxTags(collectionPath, list, {
+            realPath: (p: string) => realpathSync(p),
+            sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
+          }),
+      },
+      { ...REKORDBOX_KEYS, written: 'activity.rekordboxTagsWritten' },
+    )
+    logLibraryFlush('rekordbox tags', rekordboxResult)
+    const engineResult = await flushLibraryRepoints(
+      {
+        ...engineFlushDeps(win, e.sender),
+        endBatch: () => withRealPath,
+        labelOf: (u) => u.path,
+        repointTracks: (libraryDir, list) =>
+          updateEngineTags(libraryDir, list, {
+            sessionBackup: (path) => engineSessionBackup.ensure(path),
+          }),
+      },
+      { ...ENGINE_KEYS, written: 'activity.engineTagsWritten' },
+    )
+    logLibraryFlush('Engine DJ tags', engineResult)
   })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream

@@ -6,7 +6,7 @@ import {
 
 // Engine DJ's wording for the shared repoint flush (see libraryRepointFlush.ts). The reason
 // for Engine being open is the one engineRepoint.ts returns.
-const ENGINE_KEYS = {
+export const ENGINE_KEYS = {
   step: 'activity.engineSync',
   written: 'activity.engineSyncWritten',
   skipped: 'activity.engineSyncSkipped',

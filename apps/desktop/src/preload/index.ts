@@ -116,6 +116,7 @@ const api: Api = {
   loadMusicReview: (): Promise<MusicReviewEntry[]> => ipcRenderer.invoke('applemusic:reviewDump'),
   applyMusicFixes: (fixes: MusicFieldFix[]) => ipcRenderer.invoke('applemusic:applyFixes', fixes),
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
+  syncLibraryTags: (updates) => ipcRenderer.invoke('library:syncTags', updates),
   setMusicField: (pid: string, field: MusicReviewField, from: string, to: string) =>
     ipcRenderer.invoke('applemusic:setField', pid, field, from, to),
   removeMusicDuplicate: (req) => ipcRenderer.invoke('applemusic:removeDuplicate', req),

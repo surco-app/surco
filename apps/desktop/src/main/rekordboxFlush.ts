@@ -9,7 +9,7 @@ export type { FlushResult, SkippedRepoint } from './libraryRepointFlush'
 export type FlushRekordboxDeps = FlushLibraryDeps
 
 // rekordbox's wording for the shared repoint flush (see libraryRepointFlush.ts).
-const REKORDBOX_KEYS = {
+export const REKORDBOX_KEYS = {
   step: 'activity.rekordboxSync',
   written: 'activity.rekordboxSyncWritten',
   skipped: 'activity.rekordboxSyncSkipped',
