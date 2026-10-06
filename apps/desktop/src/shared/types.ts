@@ -728,6 +728,20 @@ export interface MusicFieldFix {
   to: string
 }
 
+export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
+
+export interface MusicFixOutcome {
+  persistentId: string
+  path?: string
+  fixes: MusicFieldFix[]
+  music: MusicFieldOutcome[]
+  file: 'written' | 'unchanged' | 'missing' | 'failed' | 'skipped'
+  // The fields that reached the file; what the libraries follow.
+  written: MusicReviewField[]
+  backupId?: string
+  error?: string
+}
+
 // One artist/title pair to probe for in the Apple Music library. The lookup takes
 // several — the live tags plus the Discogs-suggested track — so a song whose tags
 // still hold the filename's rough spelling is found under its canonical name too.

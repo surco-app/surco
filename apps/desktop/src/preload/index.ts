@@ -10,7 +10,9 @@ import type {
   DockIconFrames,
   KeyResult,
   LoudnessResult,
+  MusicFieldFix,
   MusicReviewEntry,
+  MusicReviewField,
   ProcessProgress,
   RekordboxSyncIssue,
   ScanVerdict,
@@ -112,6 +114,15 @@ const api: Api = {
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('applemusic:library'),
   loadMusicReview: (): Promise<MusicReviewEntry[]> => ipcRenderer.invoke('applemusic:reviewDump'),
+  applyMusicFixes: (fixes: MusicFieldFix[]) => ipcRenderer.invoke('applemusic:applyFixes', fixes),
+  cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
+  setMusicField: (pid: string, field: MusicReviewField, from: string, to: string) =>
+    ipcRenderer.invoke('applemusic:setField', pid, field, from, to),
+  onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => {
+    const listener = (_e: unknown, p: { done: number; total: number }): void => cb(p)
+    ipcRenderer.on('applemusic:fixProgress', listener)
+    return () => ipcRenderer.removeListener('applemusic:fixProgress', listener)
+  },
   loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
     ipcRenderer.invoke('applemusic:libraryCached'),
   loadAppleMusicPlaylists: (): Promise<AppleMusicPlaylist[]> =>

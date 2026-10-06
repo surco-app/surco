@@ -820,7 +820,7 @@ function registerIpc(): void {
     getProvider(provider).getRelease(ref, priority),
   )
 
-  registerAppleMusicIpc()
+  registerAppleMusicIpc({ trackTmp: tmpManifest.track, untrackTmp: tmpManifest.untrack })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
   // not yet started, so a stalled network mount would otherwise keep a batch (and

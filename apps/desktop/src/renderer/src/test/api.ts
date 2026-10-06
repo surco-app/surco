@@ -152,6 +152,10 @@ export function stubApi(over: Partial<Api> = {}): Api {
     },
     loadAppleMusicLibrary: async () => [],
     loadMusicReview: async () => [],
+    applyMusicFixes: async () => [],
+    cancelMusicFixes: async () => {},
+    setMusicField: async () => 'missing',
+    onMusicFixProgress: unsubscribe,
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
     loadAppleMusicPlaylistTracks: async () => ({

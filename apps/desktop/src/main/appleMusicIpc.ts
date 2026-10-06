@@ -1,6 +1,13 @@
+import { access } from 'node:fs/promises'
 import { app, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
-import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../shared/types'
+import type {
+  AppleMusicAddJob,
+  AppleMusicUpdateJob,
+  MusicFieldFix,
+  MusicReviewField,
+  TrackMetadata,
+} from '../shared/types'
 import { activity } from './activity'
 import { artworkDir, fetchAppleMusicArtwork } from './appleMusicArtwork'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
@@ -18,11 +25,14 @@ import {
   dumpAppleMusicLibrary,
   dumpMusicReview,
   revealInAppleMusic,
+  setAppleMusicField,
   updateInAppleMusic,
 } from './applemusic'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT } from './i18n'
+import { rewriteTagFields } from './musicFieldWrite'
+import { applyMusicFixes } from './musicReviewApply'
 import { getSettings } from './settings'
 
 // "Artist - Title" for the activity row, falling back to whichever field exists so a
@@ -36,7 +46,9 @@ function trackLabel(meta: TrackMetadata): string {
 // gets from the editor, palette or menu. The AppleScript bridge is macOS-only, so every
 // handler short-circuits off macOS rather than spawning a missing osascript. Self-contained
 // — no window or session state — so it lives apart from the stateful handlers in index.ts.
-export function registerAppleMusicIpc(): void {
+export function registerAppleMusicIpc(
+  deps: { trackTmp?: (path: string) => void; untrackTmp?: (path: string) => void } = {},
+): void {
   // The whole-library snapshot the renderer matches the crate against to flag which
   // tracks are already owned; empty off macOS, where there is no library to read.
   // Each successful dump is persisted so the next session can seed its index from
@@ -63,6 +75,46 @@ export function registerAppleMusicIpc(): void {
 
   ipcMain.handle('applemusic:reviewDump', () =>
     process.platform === 'darwin' ? appleMusicLimiter.run(() => dumpMusicReview()) : [],
+  )
+
+  let fixesCancelled = false
+  ipcMain.handle('applemusic:applyFixes', async (e, fixes: MusicFieldFix[]) => {
+    if (process.platform !== 'darwin') return []
+    fixesCancelled = false
+    const { trackTmp, untrackTmp } = deps
+    return applyMusicFixes(
+      fixes,
+      {
+        setField: (pid, field, from, to) =>
+          appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to)),
+        locate: (pid) => appleMusicLimiter.run(() => appleMusicEntryLocation(pid)),
+        exists: (path) =>
+          access(path).then(
+            () => true,
+            () => false,
+          ),
+        rewrite: (file, changes) =>
+          rewriteTagFields(
+            file,
+            changes,
+            trackTmp && untrackTmp ? { track: trackTmp, untrack: untrackTmp } : undefined,
+          ),
+      },
+      {
+        isCancelled: () => fixesCancelled,
+        onProgress: (done, total) => e.sender.send('applemusic:fixProgress', { done, total }),
+      },
+    )
+  })
+  ipcMain.handle('applemusic:cancelFixes', () => {
+    fixesCancelled = true
+  })
+  ipcMain.handle(
+    'applemusic:setField',
+    (_e, pid: string, field: MusicReviewField, from: string, to: string) =>
+      process.platform === 'darwin'
+        ? appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to))
+        : 'missing',
   )
 
   // The previous session's persisted snapshot — a plain file read, no osascript, no

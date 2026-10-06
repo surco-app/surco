@@ -20,7 +20,10 @@ import type {
   LifetimeStats,
   LoudnessResult,
   MetaRead,
+  MusicFieldFix,
+  MusicFixOutcome,
   MusicReviewEntry,
+  MusicReviewField,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
@@ -113,6 +116,15 @@ export interface Api {
   // osascript — to seed the membership index while the fresh dump runs. Null when
   // no snapshot exists yet (first run, or the file was unreadable).
   loadMusicReview: () => Promise<MusicReviewEntry[]>
+  applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
+  cancelMusicFixes: () => Promise<void>
+  setMusicField: (
+    persistentId: string,
+    field: MusicReviewField,
+    from: string,
+    to: string,
+  ) => Promise<'set' | 'missing' | 'mismatch'>
+  onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => () => void
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
   // macOS, where the renderer never offers the import.
