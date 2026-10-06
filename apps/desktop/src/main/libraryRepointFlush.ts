@@ -39,17 +39,17 @@ export interface RepointKeys {
   runningReason: string
 }
 
-export interface FlushLibraryDeps {
+export interface FlushLibraryDeps<T = RekordboxRepoint> {
   // Empty when the user does not use this library, or pointed the setting at nothing.
   collectionPath: string
   // Closes this run's begin/end pair and returns what it accumulated — empty when this
   // end was nested inside a still-open outer batch, which flushes later.
-  endBatch: () => RekordboxRepoint[]
+  endBatch: () => T[]
   // The whole run in one pass over the library, with an outcome per track in the order
   // given.
   repointTracks: (
     collectionPath: string,
-    repoints: RekordboxRepoint[],
+    repoints: T[],
   ) => Promise<LibraryRepointResult[]>
   // Puts the repoint in the Activity panel as its own step. Reported 15/09: the panel
   // showed the conversion and the Apple Music add and said nothing about rekordbox, so a
@@ -70,6 +70,9 @@ export interface FlushLibraryDeps {
   // fixable mid-convert, which is why it is a notice and not a dialog, but left to the log
   // the library stayed on the old file while the run looked like it had worked.
   reportIssue?: (issue: RekordboxSyncIssue) => void
+  // How a skipped item is named in the notice. Absent means a repoint, named by the file
+  // it moves to; any other kind of change has to say what names it.
+  labelOf?: (item: T) => string
 }
 
 // Reasons that describe the library rather than one track: retrying them for each
@@ -112,8 +115,8 @@ function summaryOf(
   return { detailKey: keys.nothing }
 }
 
-export async function flushLibraryRepoints(
-  deps: FlushLibraryDeps,
+export async function flushLibraryRepoints<T = RekordboxRepoint>(
+  deps: FlushLibraryDeps<T>,
   keys: RepointKeys,
 ): Promise<FlushResult> {
   const repoints = deps.endBatch()
@@ -126,10 +129,10 @@ export async function flushLibraryRepoints(
   })
 }
 
-async function runRepoints(
-  deps: FlushLibraryDeps,
+async function runRepoints<T>(
+  deps: FlushLibraryDeps<T>,
   keys: RepointKeys,
-  repoints: RekordboxRepoint[],
+  repoints: T[],
 ): Promise<FlushResult> {
   // Asked once, before anything is written, and only when there is actually something to
   // repoint. Warning afterwards is too late: the conversion has finished by then and the
@@ -162,7 +165,10 @@ async function runRepoints(
     // A track the library never had is the common case for a partly-imported library,
     // not something to put in front of the user.
     if (result.reason === 'no-match') continue
-    skipped.push({ track: repoint.to, reason: result.reason })
+    skipped.push({
+      track: deps.labelOf ? deps.labelOf(repoint) : (repoint as unknown as RekordboxRepoint).to,
+      reason: result.reason,
+    })
   }
 
   const ambiguous = ambiguousOf(skipped)
