@@ -71,7 +71,10 @@ export async function applyMusicFixes(
   for (const [persistentId, trackFixes] of byTrack) {
     if (isCancelled()) break
     outcomes.push(await applyTrack(persistentId, trackFixes, deps))
-    onProgress?.(outcomes.length, byTrack.size)
+    // Progress is a courtesy: a dead window must not lose the outcomes of tracks already written.
+    try {
+      onProgress?.(outcomes.length, byTrack.size)
+    } catch {}
   }
   return outcomes
 }

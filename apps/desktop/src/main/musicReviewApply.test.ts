@@ -87,4 +87,42 @@ describe('applyMusicFixes', () => {
       [2, 2],
     ])
   })
+
+  it('keeps every outcome when the progress hook throws', async () => {
+    const onProgress = vi.fn().mockImplementation(() => {
+      throw new Error('Object has been destroyed')
+    })
+    const outs = await applyMusicFixes([fix('A'), fix('B')], deps(), { onProgress })
+    expect(outs.map((o) => o.file)).toEqual(['written', 'written'])
+  })
+
+  it('marks a rejected Music write as failed and skips the file', async () => {
+    const d = deps({ setField: vi.fn().mockRejectedValue(new Error('osascript')) })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(out).toMatchObject({ music: ['failed'], file: 'skipped' })
+    expect(d.rewrite).not.toHaveBeenCalled()
+  })
+
+  it('writes only the fields Music accepted and reports only those written', async () => {
+    const setField = vi.fn().mockResolvedValueOnce('mismatch').mockResolvedValueOnce('set')
+    const rewrite = vi.fn().mockResolvedValue({ outcomes: ['written'] })
+    const [out] = await applyMusicFixes([fix('A'), fix('A', 'genre')], deps({ setField, rewrite }))
+    expect(rewrite).toHaveBeenCalledWith('/m/a.mp3', [
+      { field: 'genre', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+    expect(out).toMatchObject({ music: ['mismatch', 'set'], written: ['genre'] })
+  })
+
+  it('lists as written only the fields the file reported written', async () => {
+    const rewrite = vi.fn().mockResolvedValue({ outcomes: ['written', 'unchanged'] })
+    const [out] = await applyMusicFixes([fix('A'), fix('A', 'genre')], deps({ rewrite }))
+    expect(out.written).toEqual(['artist'])
+  })
+
+  it('reports a missing file with no path when the location cannot be read', async () => {
+    const d = deps({ locate: vi.fn().mockRejectedValue(new Error('gone')) })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(out).toMatchObject({ file: 'missing' })
+    expect(out.path).toBeUndefined()
+  })
 })
