@@ -143,6 +143,7 @@ export const defaults: Settings = {
     musicbrainzMatches: 0,
   },
   commandUsage: {},
+  musicReviewIgnored: [],
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
   lastSeenChangelogVersion: '',
@@ -166,6 +167,8 @@ const LOCAL_KEYS = [
   'conversionCount',
   'stats',
   'commandUsage',
+  // Group keys of this Mac's Music library; another Mac's library has other entries.
+  'musicReviewIgnored',
   // Each machine updates on its own schedule, so "which changelog did I already
   // see" only means something locally.
   'lastSeenChangelogVersion',

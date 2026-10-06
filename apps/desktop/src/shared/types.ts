@@ -334,6 +334,8 @@ export interface Settings {
   // How many times each command palette entry has been run (command id → count), so the
   // palette can float a user's most-used commands to the top of a filtered list.
   commandUsage: Record<string, number>
+  // Keys of the Music review groups (spelling and duplicates) the user chose to ignore.
+  musicReviewIgnored: string[]
   // The occasional stats + donate modal: "don't show again" and the last time it
   // appeared (ISO date, '' = never), which lib/donateNudge gates on.
   donateNudgeDismissed: boolean

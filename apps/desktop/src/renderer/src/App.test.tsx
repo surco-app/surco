@@ -141,6 +141,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     declick: 'off',
     shortcutOverrides: {},
     commandUsage: {},
+    musicReviewIgnored: [],
     hasSeenOnboarding: true,
     deezerProviderMigrated: true,
     musicbrainzProviderMigrated: true,

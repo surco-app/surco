@@ -485,6 +485,16 @@ describe('configurable settings folder', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  // The ignored groups name this Mac's Music library; on another Mac they mean nothing.
+  it('keeps the ignored review groups on this machine', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ musicReviewIgnored: ['artist||case|djlara'] })
+    expect(read(syncedFile(dir))).not.toHaveProperty('musicReviewIgnored')
+    expect(getSettings().musicReviewIgnored).toEqual(['artist||case|djlara'])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('keeps per-machine values out of the synced file but allows the token through', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
     setConfigDir(dir)

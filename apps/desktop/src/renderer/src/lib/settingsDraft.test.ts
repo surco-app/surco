@@ -71,6 +71,7 @@ const settings: Settings = {
   shortcutOverrides: {},
   editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
+  musicReviewIgnored: [],
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
