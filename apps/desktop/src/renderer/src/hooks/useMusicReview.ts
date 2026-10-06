@@ -17,7 +17,10 @@ export interface ReviewRun {
   outcomes: MusicFixOutcome[]
   removed: RemoveCopyResult[]
   before: number
-  after: number
+  after: number | null
+  librarySync: 'ok' | 'failed' | 'none'
+  applyError?: string
+  undoFailures?: number
 }
 
 export interface MusicReview {
@@ -43,7 +46,11 @@ export interface MusicReview {
   lastRun: ReviewRun | null
 }
 
-const LOSSLESS = ['AIFF', 'AIF', 'WAV', 'FLAC', 'M4A']
+const RANK = ['AIFF', 'AIF', 'WAV', 'FLAC', 'M4A']
+const rankOf = (format: string) => {
+  const i = RANK.indexOf(format)
+  return i < 0 ? 2 : i < 4 ? 0 : 1
+}
 const FAILED_REMOVAL: RemoveCopyResult = { outcome: 'failed', playlists: 0, fileTrashed: false }
 
 const extOf = (path: string) => (path.match(/\.([^./]+)$/)?.[1] ?? '').toUpperCase()
@@ -55,15 +62,12 @@ const toItem = (e: MusicReviewEntry) => ({
 })
 const labelOf = (e: MusicReviewEntry) => `${e.artist} - ${e.title}`
 
-// Two clusters of one recording share a key; staging and choices are keyed by it, so the
-// later ones get the first member's id appended.
+// Keyed by the smallest member so an ignore survives a reload and removing one cluster
+// never renames its sibling that shares the recording key.
 function uniqueKeys(groups: DuplicateGroup[]): DuplicateGroup[] {
-  const seen = new Set<string>()
-  return groups.map((g) => {
-    const key = seen.has(g.key) ? `${g.key}#${g.ids[0]}` : g.key
-    seen.add(g.key)
-    return key === g.key ? g : { ...g, key }
-  })
+  return groups.map((g) =>
+    g.kind === 'duplicate' ? { ...g, key: `${g.key}#${[...g.ids].sort()[0]}` } : g,
+  )
 }
 
 function pendingCount(entries: MusicReviewEntry[], ignored: ReadonlySet<string>): number {
@@ -155,7 +159,9 @@ export function useMusicReview({
       if (s) return s.suggested
       const d = dupGroups.find((g) => g.key === key)
       if (!d) return null
-      return d.ids.find((id) => LOSSLESS.includes(formats[id] ?? '')) ?? d.ids[0]
+      return d.ids.reduce((best, id) =>
+        rankOf(formats[id] ?? '') < rankOf(formats[best] ?? '') ? id : best,
+      )
     },
     [choices, spelling, dupGroups, formats],
   )
@@ -182,11 +188,17 @@ export function useMusicReview({
             )
               next.delete(other.key)
         }
+        const dup = dupGroups.find((g) => g.key === key)
+        if (dup) {
+          for (const other of dupGroups)
+            if (other.key !== key && other.ids.some((id) => dup.ids.includes(id)))
+              next.delete(other.key)
+        }
         next.add(key)
         return next
       })
     },
-    [choice, spelling],
+    [choice, spelling, dupGroups],
   )
 
   const ignore = useCallback(
@@ -221,6 +233,7 @@ export function useMusicReview({
         .flatMap((g) => {
           const keepPid = choice(g.key) as string
           const keep = byPid.get(keepPid)
+          if (!g.ids.includes(keepPid)) return []
           return g.ids.flatMap((removePid) => {
             const removed = byPid.get(removePid)
             if (removePid === keepPid || !removed || !keep) return []
@@ -242,18 +255,37 @@ export function useMusicReview({
     const before = pendingCount(entries, hidden)
     const off = window.api.onMusicFixProgress(setProgress)
     try {
-      const outcomes = fixes.length ? await window.api.applyMusicFixes(fixes) : []
+      let outcomes: MusicFixOutcome[] = []
+      let applyError: string | undefined
+      if (fixes.length)
+        try {
+          outcomes = await window.api.applyMusicFixes(fixes)
+        } catch (error) {
+          applyError = error instanceof Error ? error.message : String(error)
+        }
       const removed: RemoveCopyResult[] = []
       for (const r of removals)
         removed.push(await window.api.removeMusicDuplicate(r).catch(() => FAILED_REMOVAL))
-      const written = outcomes.flatMap((o) => (o.file === 'written' && o.path ? [o.path] : []))
       const updates = tagUpdatesOf(outcomes, 'apply')
-      if (updates.length) await window.api.syncLibraryTags(updates).catch(() => undefined)
-      const next = await load()
+      let librarySync: ReviewRun['librarySync'] = 'none'
+      if (updates.length)
+        librarySync = await window.api.syncLibraryTags(updates).then(
+          () => 'ok' as const,
+          () => 'failed' as const,
+        )
+      const written = outcomes.flatMap((o) => (o.file === 'written' && o.path ? [o.path] : []))
+      if (written.length) onFilesChanged(written)
+      const next = await load().catch(() => null)
       setStaged(new Set())
       setChoices({})
-      setLastRun({ outcomes, removed, before, after: pendingCount(next, hidden) })
-      if (written.length) onFilesChanged(written)
+      setLastRun({
+        outcomes,
+        removed,
+        before,
+        after: next ? pendingCount(next, hidden) : null,
+        librarySync,
+        ...(applyError === undefined ? {} : { applyError }),
+      })
     } finally {
       off()
       setProgress(null)
@@ -272,20 +304,41 @@ export function useMusicReview({
     setStatus('applying')
     try {
       const paths: string[] = []
+      const reverted: MusicFixOutcome[] = []
+      const failed: MusicFixOutcome[] = []
       for (const o of lastRun.outcomes) {
+        let ok = true
         if (o.backupId) {
-          await window.api.trashRestore(o.backupId)
-          if (o.path) paths.push(o.path)
+          try {
+            await window.api.trashRestore(o.backupId)
+            if (o.path) paths.push(o.path)
+          } catch {
+            failed.push(o)
+            continue
+          }
         }
         for (const [i, f] of o.fixes.entries())
           if (o.music[i] === 'set')
-            await window.api.setMusicField(f.persistentId, f.field, f.to, f.from)
+            await window.api.setMusicField(f.persistentId, f.field, f.to, f.from).catch(() => {
+              ok = false
+            })
+        if (ok) reverted.push(o)
+        else failed.push({ ...o, backupId: undefined })
       }
-      const updates = tagUpdatesOf(lastRun.outcomes, 'undo')
-      if (updates.length) await window.api.syncLibraryTags(updates).catch(() => undefined)
-      await load()
-      setLastRun(null)
+      const updates = tagUpdatesOf(reverted, 'undo')
+      let librarySync: ReviewRun['librarySync'] = 'none'
+      if (updates.length)
+        librarySync = await window.api.syncLibraryTags(updates).then(
+          () => 'ok' as const,
+          () => 'failed' as const,
+        )
       if (paths.length) onFilesChanged(paths)
+      await load().catch(() => null)
+      setLastRun(
+        failed.length === 0 && librarySync !== 'failed'
+          ? null
+          : { ...lastRun, outcomes: failed, librarySync, undoFailures: failed.length },
+      )
     } finally {
       running.current = false
       setStatus('ready')

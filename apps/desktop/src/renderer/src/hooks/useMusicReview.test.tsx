@@ -266,4 +266,149 @@ describe('useMusicReview', () => {
       { outcome: 'failed', playlists: 0, fileTrashed: false },
     ])
   })
+
+  const twoOutcomes = [
+    {
+      persistentId: 'C',
+      path: '/m/c.mp3',
+      fixes: [{ persistentId: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }],
+      music: ['set' as const],
+      file: 'written' as const,
+      written: ['artist' as const],
+      backupId: 'b1',
+    },
+    {
+      persistentId: 'D',
+      path: '/m/d.mp3',
+      fixes: [{ persistentId: 'D', field: 'artist' as const, from: 'dj lara', to: 'DJ Lara' }],
+      music: ['set' as const],
+      file: 'written' as const,
+      written: ['artist' as const],
+      backupId: 'b2',
+    },
+  ]
+  const runTwo = async (over = {}) => {
+    const api = setApi({ applyMusicFixes: vi.fn().mockResolvedValue(twoOutcomes), ...over })
+    const hook = await ready()
+    act(() => hook.result.current.toggleStaged(hook.result.current.spelling[0].key))
+    await act(() => hook.result.current.apply())
+    return { api, ...hook }
+  }
+
+  // A restore is not idempotent, so one failure must not strand the rest of the undo.
+  it('keeps undoing after one restore fails and syncs only what was restored', async () => {
+    const trashRestore = vi
+      .fn<Api['trashRestore']>()
+      .mockRejectedValueOnce(new Error('no such trash entry'))
+      .mockResolvedValue({ restoredTo: '/m/d.mp3' })
+    const { api, result } = await runTwo({ trashRestore })
+    await act(() => result.current.undo())
+    expect(api.setMusicField).toHaveBeenCalledTimes(1)
+    expect(api.setMusicField).toHaveBeenCalledWith('D', 'artist', 'DJ Lara', 'dj lara')
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/d.mp3', fields: { artist: { from: 'DJ Lara', to: 'dj lara' } } },
+    ])
+    expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
+    expect(result.current.lastRun?.outcomes.map((o) => o.persistentId)).toEqual(['C'])
+    expect(result.current.status).toBe('ready')
+  })
+
+  it('keeps the run and reports the files when the reread fails', async () => {
+    const loadMusicReview = vi
+      .fn<Api['loadMusicReview']>()
+      .mockResolvedValueOnce(LIB)
+      .mockRejectedValue(new Error('x'))
+    const onFilesChanged = vi.fn()
+    const api = setApi({ loadMusicReview })
+    const { result } = await ready({ onFilesChanged })
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.applyMusicFixes).toHaveBeenCalled()
+    expect(onFilesChanged).toHaveBeenCalledWith(['/m/c.mp3'])
+    expect(result.current.lastRun).toMatchObject({ after: null, librarySync: 'ok' })
+    expect(result.current.status).toBe('done')
+  })
+
+  it('records a failed library sync', async () => {
+    const { result } = await runTwo({ syncLibraryTags: vi.fn().mockRejectedValue(new Error('x')) })
+    expect(result.current.lastRun?.librarySync).toBe('failed')
+  })
+
+  it('says none when no field reached a file', async () => {
+    setApi({ applyMusicFixes: vi.fn().mockResolvedValue([]) })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(result.current.lastRun?.librarySync).toBe('none')
+  })
+
+  it('ends done and keeps the error when applyMusicFixes rejects', async () => {
+    setApi({ applyMusicFixes: vi.fn().mockRejectedValue(new Error('boom')) })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(result.current.status).toBe('done')
+    expect(result.current.lastRun).toMatchObject({ outcomes: [], applyError: 'boom' })
+  })
+
+  it('keeps a FLAC over an M4A and an MP3', async () => {
+    const lib = [...DUPS, e('R', 'Ann', { title: 'Song', durationSec: 200 })]
+    setApi({
+      loadMusicReview: vi.fn().mockResolvedValue(lib),
+      appleMusicEntryLocation: vi
+        .fn<Api['appleMusicEntryLocation']>()
+        .mockImplementation(async (pid) => ({ P: '/a.m4a', Q: '/b.mp3', R: '/c.flac' })[pid] ?? ''),
+    })
+    const { result } = await ready()
+    await waitFor(() => expect(Object.keys(result.current.duplicates[0].formats)).toHaveLength(3))
+    expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('R')
+  })
+
+  it('keys each duplicate cluster by its smallest member so removing one leaves the other', async () => {
+    const lib = [
+      e('P', 'Ann', { title: 'Song', durationSec: 100 }),
+      e('Q', 'Ann', { title: 'Song', durationSec: 101 }),
+      e('R', 'Ann', { title: 'Song', durationSec: 300 }),
+      e('S', 'Ann', { title: 'Song', durationSec: 301 }),
+    ]
+    const loadMusicReview = vi.fn<Api['loadMusicReview']>().mockResolvedValue(lib)
+    setApi({ loadMusicReview })
+    const { result } = await ready()
+    const keys = result.current.duplicates
+      .filter((d) => d.group.kind === 'duplicate')
+      .map((d) => d.group.key)
+    expect(new Set(keys).size).toBe(2)
+    const second = keys.find((k) => k.endsWith('#R')) as string
+    loadMusicReview.mockResolvedValue(lib.filter((x) => x.persistentId !== 'P'))
+    await act(() => result.current.apply())
+    expect(result.current.duplicates.map((d) => d.group.key)).toContain(second)
+  })
+
+  it('skips a duplicate group whose chosen copy is not a member', async () => {
+    const api = setApi({ loadMusicReview: vi.fn().mockResolvedValue(DUPS) })
+    const { result } = await ready()
+    const key = result.current.duplicates[0].group.key
+    act(() => result.current.choose(key, 'ZZZ'))
+    act(() => result.current.toggleStaged(key))
+    expect(result.current.summary.duplicates).toBe(0)
+    await act(() => result.current.apply())
+    expect(api.removeMusicDuplicate).not.toHaveBeenCalled()
+  })
+
+  it('unstages a duplicate or version group that shares a track with the one staged', async () => {
+    const lib = [
+      e('P', 'Ann', { title: 'Song', durationSec: 100 }),
+      e('Q', 'Ann', { title: 'Song', durationSec: 101 }),
+      e('R', 'Ann', { title: 'Song', durationSec: 300 }),
+    ]
+    setApi({ loadMusicReview: vi.fn().mockResolvedValue(lib) })
+    const { result } = await ready()
+    const dup = result.current.duplicates.find((d) => d.group.kind === 'duplicate')?.group
+      .key as string
+    const ver = result.current.duplicates.find((d) => d.group.kind === 'version')?.group
+      .key as string
+    act(() => result.current.toggleStaged(dup))
+    act(() => result.current.toggleStaged(ver))
+    expect([...result.current.staged]).toEqual([ver])
+  })
 })
