@@ -1493,7 +1493,7 @@
     "unify": "Unify",
     "remove_one": "Remove {{count}}",
     "remove_other": "Remove {{count}}",
-    "staged": "Undo",
+    "staged": "Unstage",
     "ignore": "Ignore",
     "notSame": "Not the same",
     "different": "They differ",

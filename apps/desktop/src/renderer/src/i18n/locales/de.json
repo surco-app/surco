@@ -1493,7 +1493,7 @@
     "unify": "Vereinheitlichen",
     "remove_one": "{{count}} entfernen",
     "remove_other": "{{count}} entfernen",
-    "staged": "Rückgängig",
+    "staged": "Vormerkung aufheben",
     "ignore": "Ignorieren",
     "notSame": "Nicht derselbe",
     "different": "Sind verschieden",

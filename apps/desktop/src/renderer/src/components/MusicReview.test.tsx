@@ -77,6 +77,13 @@ describe('MusicReview', () => {
     expect(r.toggleStaged).toHaveBeenCalledWith(group.key)
   })
 
+  // "Undo" already names the button that reverts a whole run; a staged group's button
+  // only takes it back out of the tray.
+  it('labels a staged group so it does not read as undoing the run', () => {
+    render(<MusicReview review={review({ staged: new Set([group.key]) })} onClose={vi.fn()} />)
+    expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
+  })
+
   it('marks a safe kind and a risky one with a different dot', () => {
     const typo = { ...group, key: 'typo', kind: 'typo' as const }
     render(<MusicReview review={review({ spelling: [group, typo] })} onClose={vi.fn()} />)
