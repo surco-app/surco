@@ -365,6 +365,7 @@ function buildAppMenu(win: BrowserWindow): void {
     accel,
     run,
     checkForUpdates: () => checkForUpdates(win),
+    mac: process.platform === 'darwin',
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

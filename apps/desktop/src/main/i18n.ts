@@ -16,6 +16,8 @@ interface MenuStrings {
   rename: string
   findReplace: string
   addAppleMusic: string
+  reviewMusic: string
+  musicDuplicates: string
   remove: string
   removeAll: string
   processCurrent: string
@@ -101,6 +103,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Generar nombre del archivo…',
     findReplace: 'Buscar y reemplazar…',
     addAppleMusic: 'Añadir a Apple Music',
+    reviewMusic: 'Revisar metadatos en Apple Music…',
+    musicDuplicates: 'Mostrar duplicados en Apple Music…',
     remove: 'Quitar de la lista',
     removeAll: 'Vaciar la lista',
     processCurrent: 'Convertir pista',
@@ -190,6 +194,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Build file name…',
     findReplace: 'Find & Replace…',
     addAppleMusic: 'Add to Apple Music',
+    reviewMusic: 'Review metadata in Apple Music…',
+    musicDuplicates: 'Show duplicates in Apple Music…',
     remove: 'Remove from list',
     removeAll: 'Remove all',
     processCurrent: 'Convert track',
@@ -279,6 +285,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Dateinamen erstellen…',
     findReplace: 'Suchen & Ersetzen…',
     addAppleMusic: 'Zu Apple Music hinzufügen',
+    reviewMusic: 'Metadaten in Apple Music prüfen…',
+    musicDuplicates: 'Duplikate in Apple Music anzeigen…',
     remove: 'Aus der Liste entfernen',
     removeAll: 'Liste leeren',
     processCurrent: 'Track konvertieren',
@@ -368,6 +376,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Composer le nom du fichier…',
     findReplace: 'Rechercher et remplacer…',
     addAppleMusic: 'Ajouter à Apple Music',
+    reviewMusic: 'Vérifier les métadonnées dans Apple Music…',
+    musicDuplicates: 'Afficher les doublons dans Apple Music…',
     remove: 'Retirer de la liste',
     removeAll: 'Vider la liste',
     processCurrent: 'Convertir le morceau',
@@ -458,6 +468,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Gerar nome do arquivo…',
     findReplace: 'Localizar e substituir…',
     addAppleMusic: 'Adicionar ao Apple Music',
+    reviewMusic: 'Revisar metadados no Apple Music…',
+    musicDuplicates: 'Mostrar duplicados no Apple Music…',
     remove: 'Remover da lista',
     removeAll: 'Limpar a lista',
     processCurrent: 'Converter faixa',

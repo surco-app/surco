@@ -343,7 +343,9 @@
     "trimStartZoomOut": "Afastar o corte inicial",
     "trimEndZoomIn": "Aproximar o corte final",
     "trimEndZoomOut": "Afastar o corte final",
-    "importApplePlaylist": "Importar do Apple Music…"
+    "importApplePlaylist": "Importar do Apple Music…",
+    "musicReview": "Revisar metadados no Apple Music…",
+    "musicDuplicates": "Mostrar duplicados no Apple Music…"
   },
   "trackList": {
     "backup": "Voltar ao original… (cópia de {{when}})",

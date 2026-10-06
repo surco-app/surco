@@ -343,7 +343,9 @@
     "trimStartZoomOut": "Zoom out from the head cut",
     "trimEndZoomIn": "Zoom in on the tail cut",
     "trimEndZoomOut": "Zoom out from the tail cut",
-    "importApplePlaylist": "Import from Apple Music…"
+    "importApplePlaylist": "Import from Apple Music…",
+    "musicReview": "Review metadata in Apple Music…",
+    "musicDuplicates": "Show duplicates in Apple Music…"
   },
   "trackList": {
     "backup": "Back to the original… (backup from {{when}})",

@@ -7,6 +7,7 @@ interface Params {
   accel: (id: string) => string | undefined
   run: (id: string) => void
   checkForUpdates: () => void
+  mac: boolean
 }
 
 export function appMenuTemplate({
@@ -15,6 +16,7 @@ export function appMenuTemplate({
   accel,
   run,
   checkForUpdates,
+  mac,
 }: Params): Electron.MenuItemConstructorOptions[] {
   const keymapItem = (label: string, id: string): Electron.MenuItemConstructorOptions => ({
     label,
@@ -51,6 +53,12 @@ export function appMenuTemplate({
         keymapItem(t('rename'), 'rename'),
         keymapItem(t('findReplace'), 'find-replace'),
         keymapItem(t('addAppleMusic'), 'add-apple-music'),
+        ...(mac
+          ? [
+              keymapItem(t('reviewMusic'), 'music-review'),
+              keymapItem(t('musicDuplicates'), 'music-duplicates'),
+            ]
+          : []),
         { type: 'separator' },
         keymapItem(t('processCurrent'), 'process-current'),
         keymapItem(t('processAll'), 'process-all'),

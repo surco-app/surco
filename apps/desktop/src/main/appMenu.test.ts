@@ -4,7 +4,7 @@ import { createMenuT } from './i18n'
 
 type Item = Electron.MenuItemConstructorOptions
 
-function build(locale = 'en') {
+function build(locale = 'en', mac = true) {
   const run = vi.fn()
   const template = appMenuTemplate({
     appName: 'Surco',
@@ -12,6 +12,7 @@ function build(locale = 'en') {
     accel: (id) => `accel:${id}`,
     run,
     checkForUpdates: vi.fn(),
+    mac,
   })
   return { template, run }
 }
@@ -37,6 +38,19 @@ function itemFor(items: Item[], label: string): Item {
 }
 
 describe('appMenuTemplate', () => {
+  it('reviews the Music library from the File menu on a Mac', () => {
+    const { template, run } = build()
+    const file = menu(template, 'File')
+    click(itemFor(file, 'Review metadata in Apple Music…'))
+    click(itemFor(file, 'Show duplicates in Apple Music…'))
+    expect(run.mock.calls.map((c) => c[0])).toEqual(['music-review', 'music-duplicates'])
+  })
+
+  it('has no Music review where there is no Music to script', () => {
+    const file = menu(build('en', false).template, 'File')
+    expect(file.find((i) => i.label === 'Review metadata in Apple Music…')).toBeUndefined()
+  })
+
   // The toolbar gave up its Stats and Activity buttons and the palette button: the View
   // menu is where they are now, each with the shortcut the keymap owns.
   it('opens the palette, stats and activity from the View menu', () => {

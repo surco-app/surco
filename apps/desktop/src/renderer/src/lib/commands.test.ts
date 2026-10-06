@@ -124,6 +124,20 @@ const commands = [
   cmd('all', 'Procesar todo'),
 ]
 
+describe('Music review commands', () => {
+  it('registers the Music review only where it can run', () => {
+    const open = vi.fn()
+    const mac = buildCommands(makeDeps({ openMusicReview: open }))
+    runCommand(mac, 'music-duplicates')
+    expect(open).toHaveBeenCalledWith('duplicates')
+    runCommand(mac, 'music-review')
+    expect(open).toHaveBeenCalledWith('all')
+    expect(
+      buildCommands(makeDeps({ openMusicReview: undefined })).some((c) => c.id === 'music-review'),
+    ).toBe(false)
+  })
+})
+
 describe('guideUrl', () => {
   // The web guide ships per-language at distinct paths, so a Spanish user must
   // not be dropped on the English page (and vice versa) when they open it.

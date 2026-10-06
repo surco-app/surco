@@ -190,9 +190,15 @@ function Sheet({
     primaryRef.current?.focus()
   }, [primaryRef])
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      // Captured and prevented: the app's own Escape handler is registered first and
+      // skips a handled press, so only the sheet closes.
+      e.preventDefault()
+      onClose()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   }, [onClose])
   return (
     <ModalShell

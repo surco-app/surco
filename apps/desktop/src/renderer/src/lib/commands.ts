@@ -154,6 +154,8 @@ export interface CommandDeps {
   // not registered at all rather than shown disabled: nothing the user could configure
   // would make it work there.
   openApplePlaylist?: () => void
+  // Undefined off macOS, like openApplePlaylist: the review reads the Music library.
+  openMusicReview?: (filter: 'all' | 'duplicates') => void
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
@@ -297,6 +299,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     trackSearchRef,
     pickFiles,
     openApplePlaylist,
+    openMusicReview,
     selectAll,
     askFillAll,
     moveSelection,
@@ -366,6 +369,26 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('import-apple-playlist'),
             enabled: true,
             run: openApplePlaylist,
+          },
+        ]
+      : []),
+    ...(openMusicReview
+      ? [
+          {
+            id: 'music-review',
+            group: 'library' as const,
+            title: tr('commands.musicReview'),
+            hint: hintFor('music-review'),
+            enabled: true,
+            run: () => openMusicReview('all'),
+          },
+          {
+            id: 'music-duplicates',
+            group: 'library' as const,
+            title: tr('commands.musicDuplicates'),
+            hint: hintFor('music-duplicates'),
+            enabled: true,
+            run: () => openMusicReview('duplicates'),
           },
         ]
       : []),

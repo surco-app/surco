@@ -3397,6 +3397,125 @@ describe('drop target', () => {
   })
 })
 
+const reviewEntry = (persistentId: string, artist: string) => ({
+  persistentId,
+  title: `T${persistentId}`,
+  artist,
+  albumArtist: '',
+  album: '',
+  genre: '',
+})
+
+function reviewApi(over: Record<string, unknown> = {}): void {
+  setApi({
+    platform: 'darwin',
+    pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+    readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    loadMusicReview: vi.fn().mockResolvedValue([]),
+    ...over,
+  })
+}
+
+const spellingFixture = () => ({
+  loadMusicReview: vi
+    .fn()
+    .mockResolvedValue([
+      reviewEntry('0000000000000001', 'DJ Lara'),
+      reviewEntry('0000000000000002', 'DJ Lara'),
+      reviewEntry('0000000000000003', 'Dj Lara'),
+    ]),
+  applyMusicFixes: vi.fn().mockResolvedValue([
+    {
+      persistentId: '0000000000000003',
+      path: '/music/a.wav',
+      fixes: [
+        { persistentId: '0000000000000003', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+      ],
+      music: ['set'],
+      file: 'written',
+      written: ['artist'],
+      backupId: 'b1',
+    },
+  ]),
+  syncLibraryTags: vi.fn().mockResolvedValue(undefined),
+  onMusicFixProgress: () => () => {},
+  appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
+})
+
+describe('App Music review', () => {
+  // The review takes the list column while open and gives it back as it was.
+  it('swaps the list for the Music review and back', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    await addOneTrack()
+    runMenu('music-review')
+    expect(await screen.findByTestId('music-review-empty')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-row')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
+  })
+
+  // Reviewing a library is the point of the view; it must not need a track in the list.
+  it('opens over an empty list', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    runMenu('music-review')
+    expect(await screen.findByTestId('music-review-empty')).toBeInTheDocument()
+  })
+
+  it('opens on the duplicates filter from its own command', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    runMenu('music-duplicates')
+    await screen.findByTestId('music-review-empty')
+    expect(screen.getByTestId('music-review-filter-duplicates')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  // A file the review rewrote may be open in the list; rereading it keeps a later
+  // Update from writing the old artist back over the fix.
+  it('rereads a listed track whose file the review changed', async () => {
+    vi.resetModules()
+    const readTags = vi.fn().mockResolvedValue({ title: 'T', artist: 'Dj Lara' })
+    reviewApi({ readTags, ...spellingFixture() })
+    await renderApp()
+    await addOneTrack()
+    const readsBefore = readTags.mock.calls.length
+    runMenu('music-review')
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
+    await waitFor(() => expect(readTags.mock.calls.length).toBeGreaterThan(readsBefore))
+    expect(readTags.mock.calls.at(-1)?.[0]).toBe('/music/a.wav')
+  })
+
+  // The sheet and the app both listen for Escape; closing the sheet must not also
+  // close the review the user is in the middle of.
+  it('closes only the confirmation sheet on Escape', async () => {
+    vi.resetModules()
+    reviewApi(spellingFixture())
+    await renderApp()
+    const [row] = await addOneTrack()
+    fireEvent.click(row)
+    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    runMenu('music-review')
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    expect(await screen.findByTestId('music-review-confirm-apply')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('music-review-confirm-apply')).not.toBeInTheDocument(),
+    )
+    expect(screen.getByTestId('music-review')).toBeInTheDocument()
+    expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+  })
+})
+
 // Reported while testing the Apple Music import: the entry point lived only in the empty
 // state, so once a playlist was loaded there was no visible way to load another. The
 // command palette still had it, but a shortcut nobody can see is not a door.

@@ -40,6 +40,7 @@ import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
+import { MusicReviewColumn } from './components/MusicReviewColumn'
 import { TrackContextMenu } from './components/TrackContextMenu'
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
@@ -259,6 +260,7 @@ export default function App(): React.JSX.Element {
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
+  const [musicReview, setMusicReview] = useState<'all' | 'duplicates' | null>(null)
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     // Fired async after the first read lands, so closing over the hook defined right
@@ -1314,6 +1316,15 @@ export default function App(): React.JSX.Element {
     }
     await refreshTrash()
   })
+  // Rows the review rewrote on disk are reread, so a later Update does not write the
+  // old spelling back over the fix. Rows it did not touch are left alone.
+  const onReviewFilesChanged = useStableCallback(async (paths: string[]): Promise<void> => {
+    const changed = new Set(paths)
+    for (const row of tracksRef.current.filter((r) => changed.has(r.inputPath))) {
+      await rereadTrackMeta(row.id)
+      await refreshTrackFromDisk(row.id, row.inputPath)
+    }
+  })
   const onRemoveFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
     await window.api.trashRemove(entry.id).catch(() => undefined)
     await refreshTrash()
@@ -1752,6 +1763,7 @@ export default function App(): React.JSX.Element {
       trackSearchRef,
       pickFiles: () => void pickFiles(),
       openApplePlaylist: isMac ? overlays.openApplePlaylist : undefined,
+      openMusicReview: isMac ? setMusicReview : undefined,
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
@@ -1931,7 +1943,15 @@ export default function App(): React.JSX.Element {
                 className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
               >
                 <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
-                  {tracks.length === 0 ? (
+                  {musicReview !== null ? (
+                    <MusicReviewColumn
+                      filter={musicReview}
+                      ignored={settings?.musicReviewIgnored ?? []}
+                      saveIgnored={(keys) => void saveSettings({ musicReviewIgnored: keys })}
+                      onFilesChanged={onReviewFilesChanged}
+                      onClose={() => setMusicReview(null)}
+                    />
+                  ) : tracks.length === 0 ? (
                     // Deliberately empty. The way in lives in the centre panel now: a button here
                     // as well meant two doors on one screen, and the smaller of the two sat in the
                     // column that has nothing in it yet.
