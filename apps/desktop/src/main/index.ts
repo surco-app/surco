@@ -79,7 +79,7 @@ import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { nmlTagPatches } from './libraryTagPatches'
-import { syncLibraryTags } from './libraryTagSync'
+import { serialLibraryFlush, syncLibraryTags } from './libraryTagSync'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -934,7 +934,7 @@ function registerIpc(): void {
   // batch recorded into collection.nml in one write. A failure here must never surface as
   // a conversion failure — the audio is already correct on disk by this point — so every
   // branch below only logs and returns, never throws back at the renderer.
-  ipcMain.on('process:batch-end', async (e) => {
+  const flushBatchEnd = async (e: Electron.IpcMainEvent): Promise<void> => {
     const win = BrowserWindow.fromWebContents(e.sender)
     await flushTraktorSync({ ...traktorFlushDeps(win), endNmlBatch })
     // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
@@ -966,7 +966,9 @@ function registerIpc(): void {
         ),
     })
     logLibraryFlush('Engine DJ repoint', engineResult)
-  })
+  }
+  // Queued behind any review sync still writing, and the other way round.
+  ipcMain.on('process:batch-end', (e) => serialLibraryFlush(() => flushBatchEnd(e)))
 
   // The names a metadata review fixed (or undid) follow the file into each library the way
   // an Update's do: same toggles, same prompt to close the app, same dialogs and Activity
