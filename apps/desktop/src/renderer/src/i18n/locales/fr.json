@@ -1498,6 +1498,7 @@
     "notSame": "Pas le même",
     "different": "Sont différentes",
     "keeps": "Gardée",
+    "removedNoUndo": "Les copies retirées ne reviennent pas avec Annuler. Leurs fichiers restent dans la Corbeille.",
     "tracks_one": "{{count}} morceau",
     "tracks_other": "{{count}} morceaux",
     "tray": {

@@ -1498,6 +1498,7 @@
     "notSame": "Not the same",
     "different": "They differ",
     "keeps": "Kept",
+    "removedNoUndo": "Removed copies don't come back with Undo. Their files stay in the Trash.",
     "tracks_one": "{{count}} track",
     "tracks_other": "{{count}} tracks",
     "tray": {

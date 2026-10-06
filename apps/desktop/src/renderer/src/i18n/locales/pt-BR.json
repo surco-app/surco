@@ -1498,6 +1498,7 @@
     "notSame": "Não é o mesmo",
     "different": "São diferentes",
     "keeps": "Fica",
+    "removedNoUndo": "As cópias removidas não voltam com Desfazer. Os arquivos ficam na Lixeira.",
     "tracks_one": "{{count}} faixa",
     "tracks_other": "{{count}} faixas",
     "tray": {

@@ -1498,6 +1498,7 @@
     "notSame": "No es el mismo",
     "different": "Son distintas",
     "keeps": "Se queda",
+    "removedNoUndo": "Las copias quitadas no vuelven con Deshacer. Sus ficheros quedan en la Papelera.",
     "tracks_one": "{{count}} pista",
     "tracks_other": "{{count}} pistas",
     "tray": {

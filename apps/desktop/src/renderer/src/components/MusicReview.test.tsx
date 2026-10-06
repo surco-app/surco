@@ -56,6 +56,16 @@ const removal = (outcome: ReviewRun['removed'][number]['outcome']) => ({
   fileTrashed: false,
 })
 
+const written = {
+  persistentId: 'C',
+  path: '/m/c.mp3',
+  fixes: [{ persistentId: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }],
+  music: ['set' as const],
+  file: 'written' as const,
+  written: ['artist' as const],
+  backupId: 'b1',
+}
+
 const done = (lastRun: ReviewRun) => review({ status: 'done', lastRun })
 
 describe('MusicReview', () => {
@@ -100,7 +110,7 @@ describe('MusicReview', () => {
     const { unmount } = render(<MusicReview review={staged} onClose={vi.fn()} busy />)
     expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
     unmount()
-    render(<MusicReview review={done(run())} onClose={vi.fn()} busy />)
+    render(<MusicReview review={done(run({ outcomes: [written] }))} onClose={vi.fn()} busy />)
     expect(screen.getByTestId('music-review-undo')).toBeDisabled()
   })
 
@@ -110,10 +120,47 @@ describe('MusicReview', () => {
   })
 
   it('offers undo after a run', () => {
-    const r = done(run())
+    const r = done(run({ outcomes: [written] }))
     render(<MusicReview review={r} onClose={vi.fn()} />)
     fireEvent.click(screen.getByTestId('music-review-undo'))
     expect(r.undo).toHaveBeenCalled()
+  })
+
+  // A run that only removed copies has nothing Undo can bring back; the button would
+  // report success and change nothing.
+  it('hides undo and says removed copies stay removed when nothing can be undone', () => {
+    render(
+      <MusicReview
+        review={done(run({ removed: [{ outcome: 'removed', playlists: 0, fileTrashed: true }] }))}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('music-review-undo')).toBeNull()
+    expect(screen.getByTestId('music-review-done')).toHaveTextContent(
+      "Removed copies don't come back with Undo. Their files stay in the Trash.",
+    )
+  })
+
+  it('hides undo for a file written without a backup', () => {
+    render(
+      <MusicReview
+        review={done(run({ outcomes: [{ ...written, backupId: undefined }] }))}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('music-review-undo')).toBeNull()
+  })
+
+  it('warns before applying that removed copies do not come back with Undo', () => {
+    const r = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 0, byField: {}, duplicates: 1 },
+    })
+    render(<MusicReview review={r} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    expect(screen.getByTestId('music-review-confirm')).toHaveTextContent(
+      "Removed copies don't come back with Undo.",
+    )
   })
 
   it('says the library is empty', () => {

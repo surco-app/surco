@@ -257,6 +257,7 @@ function Confirm({
           {t('musicReview.confirm.playlists')}. {t('musicReview.confirm.trash')}.
         </p>
       )}
+      {duplicates > 0 && <p className="text-xs text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
       <p className="text-xs text-fg-dim">{t('musicReview.confirm.untouched')}</p>
       <p className="text-xs text-fg-dim">{t('musicReview.confirm.libraries')}</p>
       <label className="flex items-center gap-2 text-xs text-fg-dim">
@@ -311,6 +312,11 @@ function Done({
   const musicOnly = run.outcomes.filter(
     (o) => o.music.includes('set') && (o.file === 'unchanged' || o.file === 'missing'),
   ).length
+  // Only a backup brings a file back; without one, setting Music back alone would leave
+  // it saying one thing and the file another.
+  const undoable = run.outcomes.some(
+    (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
+  )
   const failed =
     run.outcomes.filter(
       (o) => o.file === 'failed' || o.music.some((m) => m === 'failed' || m === 'mismatch'),
@@ -348,21 +354,24 @@ function Done({
       {run.librarySync === 'failed' && (
         <p className="text-[var(--color-danger)]">{t('musicReview.done.libraryFailed')}</p>
       )}
+      {removed > 0 && <p className="text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
       {!undone && run.after !== null && (
         <p className="text-fg-dim tabular-nums">
           {t('musicReview.done.left', { count: run.after })}
         </p>
       )}
       <div className="flex justify-end gap-1.5">
-        <button
-          type="button"
-          data-testid="music-review-undo"
-          className={GHOST}
-          disabled={busy}
-          onClick={() => void review.undo()}
-        >
-          {t('musicReview.done.undo')}
-        </button>
+        {undoable && (
+          <button
+            type="button"
+            data-testid="music-review-undo"
+            className={GHOST}
+            disabled={busy}
+            onClick={() => void review.undo()}
+          >
+            {t('musicReview.done.undo')}
+          </button>
+        )}
         <button
           type="button"
           data-testid="music-review-continue"

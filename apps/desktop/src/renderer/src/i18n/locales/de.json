@@ -1498,6 +1498,7 @@
     "notSame": "Nicht derselbe",
     "different": "Sind verschieden",
     "keeps": "Bleibt",
+    "removedNoUndo": "Entfernte Kopien kommen mit Rückgängig nicht zurück. Ihre Dateien bleiben im Papierkorb.",
     "tracks_one": "{{count}} Titel",
     "tracks_other": "{{count}} Titel",
     "tray": {
