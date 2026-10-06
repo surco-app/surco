@@ -857,7 +857,7 @@
           "Surco tells you when a track is already in your library, checking whichever one matches your destination. It's a well-tuned hint, not a guarantee.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
           "You can replace a track you already own: load another copy of something in your library, in any format including the same one (an MP3 to an AIFF, or a 128 MP3 to a 320), and the button turns into “Replace”. The Apple Music entry and the rekordbox row both follow the new file, keeping their playlists and cue points. rekordbox may recalculate the beatgrid when it sees a different file, so check the grid. When it finishes, Surco offers to send the old file to the Trash.",
-          "With “Update the rekordbox collection when converting” on (Settings › Output), the rekordbox entry also takes the title, artist, album, genre, label, remixer, comment, year and track and disc numbers, whether you convert or only update the tags. BPM, key, cue points and artwork stay as rekordbox has them, and a field you leave empty in Surco never clears rekordbox's. rekordbox has to be closed, and Surco offers to close it.",
+          "With “Update the rekordbox collection when converting” on (Settings › Output), the rekordbox entry also takes the title, artist, album, genre, label, remixer, comment, year, track and disc numbers and artwork, whether you convert or only update the tags. BPM, key and cue points stay as rekordbox has them, and a field you leave empty in Surco never clears rekordbox's. rekordbox has to be closed, and Surco offers to close it.",
           "Key, label, catalog number and remixer don't reach Apple Music (they only live in the file's tags) and FLAC is never sent, because Music can't handle it."
         ],
         "shot": "exportar-en.webp",
@@ -1448,8 +1448,8 @@
         ],
         "points": [
           "In rekordbox the track stays in its playlists, with its cue points, BPM and key.",
-          "rekordbox takes the title, artist, album, genre, label, remixer, comment, year and track and disc numbers. The artwork doesn't change in rekordbox.",
-          "A field you leave empty in Surco never clears what you have in rekordbox."
+          "rekordbox takes the title, artist, album, genre, label, remixer, comment, year, track and disc numbers and artwork.",
+          "A field you leave empty in Surco never clears what you have in rekordbox. If the track has no artwork, rekordbox keeps its own."
         ],
         "related": [
           {

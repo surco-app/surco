@@ -857,7 +857,7 @@
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
           "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
-          "Con «Actualizar la colección de rekordbox al convertir» activado (Ajustes › Destino), la ficha de rekordbox recibe también el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año y los números de pista y disco, tanto al convertir como al actualizar solo las etiquetas. El BPM, la tonalidad, los cue points y la carátula se quedan como los tenga rekordbox, y un campo que dejas vacío en Surco no borra el suyo. rekordbox tiene que estar cerrado, y Surco se ofrece a cerrarlo.",
+          "Con «Actualizar la colección de rekordbox al convertir» activado (Ajustes › Destino), la ficha de rekordbox recibe también el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula, tanto al convertir como al actualizar solo las etiquetas. El BPM, la tonalidad y los cue points se quedan como los tenga rekordbox, y un campo que dejas vacío en Surco no borra el suyo. rekordbox tiene que estar cerrado, y Surco se ofrece a cerrarlo.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer (solo viven en el tag del archivo) y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
         "shot": "exportar-es.webp",
@@ -1448,8 +1448,8 @@
         ],
         "points": [
           "En rekordbox la pista sigue en sus playlists, con sus cue points, su BPM y su tonalidad.",
-          "rekordbox recibe el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año y los números de pista y disco. La carátula no cambia en rekordbox.",
-          "Un campo que dejas vacío en Surco no borra lo que tengas en rekordbox."
+          "rekordbox recibe el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula.",
+          "Un campo que dejas vacío en Surco no borra lo que tengas en rekordbox. Si la pista no lleva carátula, rekordbox se queda con la suya."
         ],
         "related": [
           {
