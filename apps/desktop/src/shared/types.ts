@@ -728,6 +728,12 @@ export interface MusicFieldFix {
   to: string
 }
 
+export interface RemoveCopyResult {
+  outcome: 'removed' | 'missing' | 'mismatch'
+  playlists: number
+  fileTrashed: boolean
+}
+
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
 
 export interface MusicFixOutcome {

@@ -118,6 +118,7 @@ const api: Api = {
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
   setMusicField: (pid: string, field: MusicReviewField, from: string, to: string) =>
     ipcRenderer.invoke('applemusic:setField', pid, field, from, to),
+  removeMusicDuplicate: (req) => ipcRenderer.invoke('applemusic:removeDuplicate', req),
   onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => {
     const listener = (_e: unknown, p: { done: number; total: number }): void => cb(p)
     ipcRenderer.on('applemusic:fixProgress', listener)

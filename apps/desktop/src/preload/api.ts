@@ -26,6 +26,7 @@ import type {
   MusicReviewField,
   ProcessJob,
   ProcessProgress,
+  RemoveCopyResult,
   ProcessResult,
   RekordboxSyncIssue,
   Release,
@@ -124,6 +125,11 @@ export interface Api {
     from: string,
     to: string,
   ) => Promise<'set' | 'missing' | 'mismatch'>
+  removeMusicDuplicate: (req: {
+    removePid: string
+    keepPid: string
+    label: string
+  }) => Promise<RemoveCopyResult>
   onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => () => void
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off

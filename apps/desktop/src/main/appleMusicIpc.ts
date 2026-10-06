@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises'
+import { access, realpath } from 'node:fs/promises'
 import { app, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import type {
@@ -26,11 +26,13 @@ import {
   dumpMusicReview,
   revealInAppleMusic,
   setAppleMusicField,
+  transferPlaylists,
   updateInAppleMusic,
 } from './applemusic'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT } from './i18n'
+import { removeDuplicateCopy } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { getSettings } from './settings'
@@ -117,6 +119,22 @@ export function registerAppleMusicIpc(
       process.platform === 'darwin'
         ? appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to))
         : 'missing',
+  )
+
+  ipcMain.handle(
+    'applemusic:removeDuplicate',
+    (_e, req: { removePid: string; keepPid: string; label: string }) =>
+      process.platform === 'darwin'
+        ? appleMusicLimiter.run(() =>
+            removeDuplicateCopy(req, {
+              locate: appleMusicEntryLocation,
+              realpath: (p) => realpath(p).catch(() => null),
+              transferPlaylists,
+              deleteEntry: deleteFromAppleMusic,
+              trash: (p) => shell.trashItem(p),
+            }),
+          )
+        : { outcome: 'missing', playlists: 0, fileTrashed: false },
   )
 
   // The previous session's persisted snapshot — a plain file read, no osascript, no

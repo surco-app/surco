@@ -295,6 +295,44 @@ export function buildDeleteScript(persistentId: string, expectedLabel: string): 
   ].join('\n')
 }
 
+// Smart playlists recompute from their rules and refuse a manual add (-54), and folders
+// hold no tracks, so only plain playlists are touched. The kept copy lands at the end of
+// each one: Music offers no way to insert at a position, and the sheet says so.
+export function buildPlaylistTransferScript(
+  fromPid: string,
+  toPid: string,
+  expectedLabel: string,
+): string {
+  return [
+    'tell application "Music"',
+    `  set srcs to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(fromPid)})`,
+    `  set dsts to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(toPid)})`,
+    '  if (count of srcs) is 0 or (count of dsts) is 0 then return "missing"',
+    '  set src to item 1 of srcs',
+    '  set dst to item 1 of dsts',
+    `  if (artist of src) & " - " & (name of src) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
+    '  set moved to 0',
+    '  repeat with p in (every user playlist whose smart is false and special kind is none)',
+    '    try',
+    `      if (exists (some track of p whose persistent ID is ${JSON.stringify(fromPid)})) and not (exists (some track of p whose persistent ID is ${JSON.stringify(toPid)})) then`,
+    '        duplicate dst to p',
+    '        set moved to moved + 1',
+    '      end if',
+    '    end try',
+    '  end repeat',
+    '  return moved as text',
+    'end tell',
+  ].join('\n')
+}
+
+export async function transferPlaylists(
+  fromPid: string,
+  toPid: string,
+  expectedLabel: string,
+): Promise<string> {
+  return (await runOsascript(buildPlaylistTransferScript(fromPid, toPid, expectedLabel))).trim()
+}
+
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates
 // the whole feature on the platform. Apple Music for Windows exposes no
 // automation, so a track simply finishes in the output folder there. FLAC is
