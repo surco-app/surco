@@ -8,6 +8,7 @@ function deps(over: Partial<RemoveCopyDeps> = {}): RemoveCopyDeps {
     transferPlaylists: vi.fn().mockResolvedValue('2\t0'),
     deleteEntry: vi.fn().mockResolvedValue('/m/old.mp3'),
     trash: vi.fn().mockResolvedValue(undefined),
+    usedByLibrary: vi.fn().mockResolvedValue(false),
     ...over,
   }
 }
@@ -150,5 +151,29 @@ describe('removeDuplicateCopy', () => {
       playlists: 2,
       fileTrashed: false,
     })
+  })
+
+  // rekordbox, Engine DJ or Traktor still pointing at the file would show it missing.
+  it('keeps the file a synced DJ library still uses and says so', async () => {
+    const d = deps({ usedByLibrary: vi.fn().mockResolvedValue(true) })
+    expect(await removeDuplicateCopy(req, d)).toEqual({
+      outcome: 'removed',
+      playlists: 2,
+      fileTrashed: false,
+      keptForLibrary: true,
+    })
+    expect(d.usedByLibrary).toHaveBeenCalledWith('/m/old.mp3')
+    expect(d.deleteEntry).toHaveBeenCalled()
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  it('keeps the file when a library cannot be read', async () => {
+    const d = deps({ usedByLibrary: vi.fn().mockRejectedValue(new Error('locked')) })
+    expect(await removeDuplicateCopy(req, d)).toMatchObject({
+      outcome: 'removed',
+      fileTrashed: false,
+      keptForLibrary: true,
+    })
+    expect(d.trash).not.toHaveBeenCalled()
   })
 })

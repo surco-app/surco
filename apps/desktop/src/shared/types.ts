@@ -744,6 +744,8 @@ export interface RemoveCopyResult {
   outcome: 'removed' | 'missing' | 'mismatch' | 'playlist-failed' | 'failed'
   playlists: number
   fileTrashed: boolean
+  // The file stayed on disk because rekordbox, Engine DJ or Traktor still uses it.
+  keptForLibrary?: boolean
 }
 
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'

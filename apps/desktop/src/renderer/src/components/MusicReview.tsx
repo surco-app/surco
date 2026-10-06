@@ -305,6 +305,7 @@ function Done({
   if (!run) return null
   const undone = run.undoFailures !== undefined
   const removed = run.removed.filter((r) => r.outcome === 'removed').length
+  const keptForLibrary = run.removed.filter((r) => r.keptForLibrary).length
   const failedRemovals = run.removed.filter(
     (r) => r.outcome === 'playlist-failed' || r.outcome === 'failed' || r.outcome === 'mismatch',
   ).length
@@ -353,6 +354,11 @@ function Done({
       )}
       {run.librarySync === 'failed' && (
         <p className="text-[var(--color-danger)]">{t('musicReview.done.libraryFailed')}</p>
+      )}
+      {keptForLibrary > 0 && (
+        <p className="text-fg-dim">
+          {t('musicReview.done.keptForLibrary', { count: keptForLibrary })}
+        </p>
       )}
       {removed > 0 && <p className="text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
       {!undone && run.after !== null && (

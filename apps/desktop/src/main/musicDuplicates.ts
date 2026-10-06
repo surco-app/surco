@@ -12,6 +12,8 @@ export interface RemoveCopyDeps {
   ) => Promise<string>
   deleteEntry: (persistentId: string, label: string) => Promise<string | null>
   trash: (path: string) => Promise<void>
+  // Whether a DJ library with its sync on still points at this file.
+  usedByLibrary: (path: string) => Promise<boolean>
 }
 
 // Fails closed: when either side can't be resolved, the file might be shared, and
@@ -58,6 +60,10 @@ export async function removeDuplicateCopy(
   }
   if (location === null) return none('missing', playlists)
   if (!location || maybeShared) return { outcome: 'removed', playlists, fileTrashed: false }
+  // Fails closed like mayShareFile: a library that cannot be read may still use the file,
+  // and a trashed file shows there as a missing track with its cues out of reach.
+  if (await deps.usedByLibrary(location).catch(() => true))
+    return { outcome: 'removed', playlists, fileTrashed: false, keptForLibrary: true }
   try {
     await deps.trash(location)
   } catch (e) {

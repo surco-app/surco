@@ -1529,6 +1529,8 @@
       "musicOnly_other": "{{count}} nur in Apple Music, die Dateien sagen etwas anderes",
       "failed_one": "{{count}} konnte nicht geändert werden",
       "failed_other": "{{count}} konnten nicht geändert werden",
+      "keptForLibrary_one": "{{count}} Datei bleibt auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen.",
+      "keptForLibrary_other": "{{count}} Dateien bleiben auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen.",
       "left_one": "{{count}} Gruppe noch zu prüfen",
       "left_other": "{{count}} Gruppen noch zu prüfen",
       "libraryFailed": "rekordbox, Engine DJ oder Traktor wurden nicht aktualisiert. Sieh in Aktivität nach.",

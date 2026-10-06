@@ -191,6 +191,27 @@ describe('MusicReview', () => {
     expect(sheet).toHaveTextContent('3 could not be changed')
   })
 
+  // The copy left Music but its file did not go to the Trash; the user should know why.
+  it('says how many files stayed on disk for the DJ libraries', () => {
+    render(
+      <MusicReview
+        review={done(
+          run({
+            removed: [
+              { outcome: 'removed', playlists: 0, fileTrashed: false, keptForLibrary: true },
+              { outcome: 'removed', playlists: 0, fileTrashed: false, keptForLibrary: true },
+              { outcome: 'removed', playlists: 0, fileTrashed: true },
+            ],
+          }),
+        )}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('music-review-done')).toHaveTextContent(
+      '2 files stay on disk because rekordbox, Engine DJ or Traktor use them.',
+    )
+  })
+
   it('warns when the other libraries did not follow and when Music refused the batch', () => {
     render(
       <MusicReview
