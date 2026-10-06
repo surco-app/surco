@@ -129,6 +129,7 @@ export interface Api {
     removePid: string
     keepPid: string
     label: string
+    keepLabel: string
   }) => Promise<RemoveCopyResult>
   onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => () => void
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>

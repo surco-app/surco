@@ -523,11 +523,15 @@ describe('buildSetFieldScript', () => {
 
 describe('buildPlaylistTransferScript', () => {
   it('adds the kept copy to plain playlists only and checks the label first', () => {
-    const s = buildPlaylistTransferScript('OLD0000000000000', 'KEEP000000000000', 'A - B')
+    const s = buildPlaylistTransferScript('OLD0000000000000', 'KEEP000000000000', 'A - B', 'A - B (X)')
     expect(s).toContain(
       'if (artist of src) & " - " & (name of src) is not "A - B" then return "mismatch"',
     )
     expect(s).toContain('every user playlist whose smart is false and special kind is none')
-    expect(s).toContain('duplicate dst to p')
+    expect(s).toContain(
+      'if (artist of dst) & " - " & (name of dst) is not "A - B (X)" then return "mismatch"',
+    )
+    expect(s).toContain('duplicate dst to (contents of p)')
+    expect(s).toContain('return (moved as text) & tab & (failed as text)')
   })
 })

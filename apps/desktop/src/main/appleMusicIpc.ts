@@ -123,7 +123,7 @@ export function registerAppleMusicIpc(
 
   ipcMain.handle(
     'applemusic:removeDuplicate',
-    (_e, req: { removePid: string; keepPid: string; label: string }) =>
+    (_e, req: { removePid: string; keepPid: string; label: string; keepLabel: string }) =>
       process.platform === 'darwin'
         ? appleMusicLimiter.run(() =>
             removeDuplicateCopy(req, {

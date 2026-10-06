@@ -302,6 +302,7 @@ export function buildPlaylistTransferScript(
   fromPid: string,
   toPid: string,
   expectedLabel: string,
+  keepLabel: string,
 ): string {
   return [
     'tell application "Music"',
@@ -311,16 +312,20 @@ export function buildPlaylistTransferScript(
     '  set src to item 1 of srcs',
     '  set dst to item 1 of dsts',
     `  if (artist of src) & " - " & (name of src) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
+    `  if (artist of dst) & " - " & (name of dst) is not ${JSON.stringify(keepLabel)} then return "mismatch"`,
     '  set moved to 0',
+    '  set failed to 0',
     '  repeat with p in (every user playlist whose smart is false and special kind is none)',
     '    try',
     `      if (exists (some track of p whose persistent ID is ${JSON.stringify(fromPid)})) and not (exists (some track of p whose persistent ID is ${JSON.stringify(toPid)})) then`,
-    '        duplicate dst to p',
+    '        duplicate dst to (contents of p)',
     '        set moved to moved + 1',
     '      end if',
+    '    on error',
+    '      set failed to failed + 1',
     '    end try',
     '  end repeat',
-    '  return moved as text',
+    '  return (moved as text) & tab & (failed as text)',
     'end tell',
   ].join('\n')
 }
@@ -329,8 +334,11 @@ export async function transferPlaylists(
   fromPid: string,
   toPid: string,
   expectedLabel: string,
+  keepLabel: string,
 ): Promise<string> {
-  return (await runOsascript(buildPlaylistTransferScript(fromPid, toPid, expectedLabel))).trim()
+  return (
+    await runOsascript(buildPlaylistTransferScript(fromPid, toPid, expectedLabel, keepLabel))
+  ).trim()
 }
 
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates

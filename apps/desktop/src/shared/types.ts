@@ -729,7 +729,7 @@ export interface MusicFieldFix {
 }
 
 export interface RemoveCopyResult {
-  outcome: 'removed' | 'missing' | 'mismatch'
+  outcome: 'removed' | 'missing' | 'mismatch' | 'playlist-failed' | 'failed'
   playlists: number
   fileTrashed: boolean
 }
