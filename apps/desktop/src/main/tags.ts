@@ -799,6 +799,25 @@ function setRating(tag: Id3v2Tag, stars: string, clear: boolean): void {
   setPopm(tag, WMP_RATING_USER, starsToWmpRating(n))
 }
 
+// A malformed UFID kills the ENTIRE tag write, not just its own frame: TagLib's
+// parseFields splits the payload on the null delimiter and demands exactly two
+// fields, returning early — and leaving owner/identifier unset — when it gets
+// anything else. renderFields then feeds that undefined to ByteVector.fromString
+// and throws "Argument null: text was not provided", so every MP3→MP3 convert and
+// every in-place update of the file failed outright, while the same file converted
+// fine to FLAC/WAV/AIFF/ALAC (those never re-render the ID3). Measured on a user's
+// files (21/09/2026): 8 of 9, and 12 of the 14 UFID-carrying MP3s in an 847-file
+// library — Beatport leaves the identifier empty, jhutveckling.se puts nulls inside
+// it. Only the broken ones go: a UFID that renders is a store's identifier doing no
+// harm, and dropping it would be deleting someone else's data for no gain.
+export function dropBrokenUfids(id3: Id3v2Tag): void {
+  for (const frame of id3.frames.slice()) {
+    if (frame.frameId.toString() !== 'UFID') continue
+    const ufid = frame as unknown as { owner?: string; identifier?: unknown }
+    if (ufid.owner == null || ufid.identifier == null) id3.removeFrame(frame)
+  }
+}
+
 // Overwrites the metadata fields we manage and leaves every other frame — most
 // importantly Traktor's GEOB cue/beatgrid blob — untouched. An empty field is
 // written as empty so clearing a value in the editor clears it on disk too,
@@ -932,22 +951,7 @@ export function writeTags(
       frame.text = [text]
       id3.addFrame(frame)
     }
-    // A malformed UFID kills the ENTIRE tag write, not just its own frame: TagLib's
-    // parseFields splits the payload on the null delimiter and demands exactly two
-    // fields, returning early — and leaving owner/identifier unset — when it gets
-    // anything else. renderFields then feeds that undefined to ByteVector.fromString
-    // and throws "Argument null: text was not provided", so every MP3→MP3 convert and
-    // every in-place update of the file failed outright, while the same file converted
-    // fine to FLAC/WAV/AIFF/ALAC (those never re-render the ID3). Measured on a user's
-    // files (21/09/2026): 8 of 9, and 12 of the 14 UFID-carrying MP3s in an 847-file
-    // library — Beatport leaves the identifier empty, jhutveckling.se puts nulls inside
-    // it. Only the broken ones go: a UFID that renders is a store's identifier doing no
-    // harm, and dropping it would be deleting someone else's data for no gain.
-    for (const frame of id3.frames.slice()) {
-      if (frame.frameId.toString() !== 'UFID') continue
-      const ufid = frame as unknown as { owner?: string; identifier?: unknown }
-      if (ufid.owner == null || ufid.identifier == null) id3.removeFrame(frame)
-    }
+    dropBrokenUfids(id3)
     // "Empty every metadata field" must reach frames the app never wrote — a foreign
     // NOTES/COMM/TXXX another tool left behind survived the managed-field overwrite and
     // read as junk the user couldn't clear. On clearExtras, drop every frame up front,
