@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import { copyFile } from 'node:fs/promises'
 import log from 'electron-log/main'
-import type { LibraryTagUpdate, MusicReviewField } from '../shared/types'
+import type { LibraryTagUpdate, MusicReviewField, TagChange } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -74,9 +74,9 @@ function artistId(db: Db, name: string): string {
 }
 
 function genreId(db: Db, name: string): string {
-  const row = db
-    .prepare(`SELECT ID FROM djmdGenre WHERE Name = ? AND ${LIVE} LIMIT 1`)
-    .get(name) as { ID: string } | undefined
+  const row = db.prepare(`SELECT ID FROM djmdGenre WHERE Name = ? AND ${LIVE} LIMIT 1`).get(name) as
+    | { ID: string }
+    | undefined
   return row?.ID ?? insertRow(db, 'djmdGenre', { Name: name })
 }
 
@@ -111,6 +111,18 @@ function currentOf(db: Db, id: string): Current {
     .get(id) as Current
 }
 
+type Fields = LibraryTagUpdate['fields']
+
+// An album artist lives on the album row, so a track with no album has nowhere to keep it;
+// creating a nameless album just to hold it would add junk to the collection.
+function effectiveFields(fields: Fields, current: Current): Fields {
+  if (fields.albumArtist && !current.album) {
+    const { albumArtist: _skipped, ...rest } = fields
+    return rest
+  }
+  return fields
+}
+
 const CURRENT_OF: Record<MusicReviewField, (c: Current) => string | null> = {
   title: (c) => c.Title,
   artist: (c) => c.artist,
@@ -121,8 +133,8 @@ const CURRENT_OF: Record<MusicReviewField, (c: Current) => string | null> = {
 
 // The track is pointed at the right row instead of the row being renamed: a shared row
 // also serves tracks the review never looked at.
-function applyUpdate(db: Db, id: string, update: LibraryTagUpdate, current: Current): void {
-  const { title, artist, album, albumArtist, genre } = update.fields
+function applyUpdate(db: Db, id: string, fields: Fields, current: Current): void {
+  const { title, artist, album, albumArtist, genre } = fields
   const set: Record<string, unknown> = {}
   if (title) set.Title = title.to
   if (artist) set.ArtistID = artistId(db, artist.to)
@@ -150,7 +162,7 @@ export async function updateRekordboxTags(
   if (await isRekordboxRunning()) return settle({ written: false, reason: 'rekordbox-running' })
   const db = openRekordboxDb(collectionPath)
   if (!db) return settle({ written: false, reason: 'unreadable' })
-  const writes: { index: number; id: string; current: Current }[] = []
+  const writes: { index: number; id: string; current: Current; fields: Fields }[] = []
   try {
     for (const [index, update] of updates.entries()) {
       const match = findTrackByPath(db, update.path, options)
@@ -158,10 +170,11 @@ export async function updateRekordboxTags(
       else if (isAmbiguous(match)) results[index] = { written: false, reason: 'ambiguous' }
       else {
         const current = currentOf(db, match.id)
-        const fresh = Object.entries(update.fields).every(([field, change]) =>
-          same(CURRENT_OF[field as MusicReviewField](current), change.from),
-        )
-        if (fresh) writes.push({ index, id: match.id, current })
+        const fields = effectiveFields(update.fields, current)
+        const entries = Object.entries(fields) as [MusicReviewField, TagChange][]
+        if (entries.length === 0) results[index] = { written: false, reason: 'no-match' }
+        else if (entries.every(([field, change]) => same(CURRENT_OF[field](current), change.from)))
+          writes.push({ index, id: match.id, current, fields })
         else results[index] = { written: false, reason: 'changed' }
       }
     }
@@ -180,11 +193,15 @@ export async function updateRekordboxTags(
   if (!write) return settle({ written: false, reason: 'unreadable' })
   try {
     write.transaction(() => {
-      for (const w of writes) applyUpdate(write, w.id, updates[w.index], w.current)
+      for (const w of writes) applyUpdate(write, w.id, w.fields, w.current)
     })()
     for (const w of writes) results[w.index] = { written: true }
     return settle({ written: false, reason: 'no-match' })
   } catch (e) {
+    if (String((e as { code?: unknown })?.code).startsWith('SQLITE_READONLY')) {
+      for (const w of writes) results[w.index] = { written: false, reason: 'read-only' }
+      return settle({ written: false, reason: 'read-only' })
+    }
     log.warn(`rekordbox tags: write failed: ${(e as Error).message}`)
     for (const w of writes) results[w.index] = { written: false, reason: 'write-failed' }
     return settle({ written: false, reason: 'write-failed' })
