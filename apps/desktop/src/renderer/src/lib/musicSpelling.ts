@@ -17,7 +17,7 @@ export interface SpellingGroup {
 
 export const SAFE_KINDS: ReadonlySet<SpellingKind> = new Set(['invisible', 'case', 'punctuation'])
 
-const INVISIBLE = /[​-‏⁠﻿­]/g
+const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF\u00AD]/g
 const ACT_SEPARATOR = /(\s*,\s*|\s+&\s+|\s+(?:feat\.?|ft\.?|featuring|vs\.?|pres\.?)\s+|\s+x\s+)/i
 const MULTI_VALUE = /[,;/]/
 const KIND_ORDER: SpellingKind[] = ['invisible', 'case', 'punctuation', 'typo']
@@ -33,7 +33,7 @@ export function splitActs(value: string): string[] {
 export function replaceAct(value: string, from: string, to: string): string {
   return value
     .split(ACT_SEPARATOR)
-    .map((part, i) => (i % 2 === 0 && part.trim() === from ? part.replace(from, to) : part))
+    .map((part, i) => (i % 2 === 0 && part.trim() === from ? part.replace(from, () => to) : part))
     .join('')
 }
 
