@@ -22,7 +22,7 @@ Dos clases de hallazgo:
   `punctuation` (espacios y signos) y `typo` (una o dos letras). Los tres
   primeros son seguros; `typo` siempre se revisa.
 - **Duplicados**: misma grabación (artistas como conjunto, título sin
-  `(Original Mix)` ni `feat.`) y duración a 3 s o menos. Con más diferencia es
+  `(Original Mix)` ni `feat.`) y duración a 5 s o menos (medido: la misma grabación con y sin `(Original Mix)` difiere 4 s por el silencio del rip). Con más diferencia es
   "otra versión", se muestra aparte y su botón no se destaca.
 
 Queda fuera de esta entrega: campos vacíos, búsqueda en proveedores desde la

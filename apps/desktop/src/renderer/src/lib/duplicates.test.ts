@@ -72,6 +72,10 @@ describe('recordingKey', () => {
     expect(recordingKey('A & B', 'Song (feat. C)')).toBe(recordingKey('B, A', 'Song'))
   })
 
+  it('splits acts on a spelled-out and like on an ampersand', () => {
+    expect(recordingKey('Hall and Oates', 'Song')).toBe(recordingKey('Oates & Hall', 'Song'))
+  })
+
   it('keeps a named mix apart from the original', () => {
     expect(recordingKey('A', 'Song (Extended Mix)')).not.toBe(recordingKey('A', 'Song'))
   })
@@ -89,6 +93,31 @@ describe('duplicateGroups', () => {
   it('calls the same title with a different length another version, not a duplicate', () => {
     expect(duplicateGroups([item('a', 'Make My Body Move', 417), item('b', 'Make My Body Move', 307)])).toEqual([
       expect.objectContaining({ kind: 'version', ids: ['a', 'b'] }),
+    ])
+  })
+
+  it('treats copies 5 s apart as one recording and 6 s apart as another version', () => {
+    expect(duplicateGroups([item('a', 'X', 300), item('b', 'X', 305)])).toEqual([
+      expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b'] }),
+    ])
+    expect(duplicateGroups([item('a', 'X', 300), item('b', 'X', 306)])).toEqual([
+      expect.objectContaining({ kind: 'version', ids: ['a', 'b'] }),
+    ])
+  })
+
+  it('chains copies each within the limit of the next into one duplicate group', () => {
+    expect(duplicateGroups([item('a', 'X', 320), item('b', 'X', 324), item('c', 'X', 328)])).toEqual([
+      expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b', 'c'] }),
+    ])
+  })
+
+  it('never lets a copy of unknown length join a known one as a duplicate', () => {
+    expect(duplicateGroups([item('a', 'X', 417), item('b', 'X', 307), item('c', 'X')])).toEqual([
+      expect.objectContaining({ kind: 'version', ids: ['a', 'b', 'c'] }),
+    ])
+    expect(duplicateGroups([item('a', 'X', 300), item('b', 'X', 301), item('c', 'X')])).toEqual([
+      expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b'] }),
+      expect.objectContaining({ kind: 'version', ids: ['a', 'b', 'c'] }),
     ])
   })
 

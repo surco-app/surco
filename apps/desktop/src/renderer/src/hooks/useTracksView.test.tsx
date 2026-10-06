@@ -143,6 +143,19 @@ describe('useTracksView', () => {
     rerender({ tracks: [{ ...a, meta: { ...a.meta, title: 'Ghosts' } }, { ...b }] })
     expect(dupSpy.mock.calls.length).toBeGreaterThan(afterFirst)
   })
+
+  // The scan now reads the length too, so a refresh that changes only the duration must
+  // not leave the previous flags in place.
+  it('re-scans duplicates when only a duration changes', () => {
+    const a = track('a', { title: 'Move', artist: 'ADC' }, { duration: 300 })
+    const b = track('b', { title: 'Move', artist: 'ADC' }, { duration: 300 })
+    const { result, rerender } = setup([a, b])
+    expect(result.current.tracksView.map((t) => t.duplicate)).toEqual([true, true])
+
+    rerender({ tracks: [a, { ...b, duration: 400 }] })
+    expect(result.current.tracksView.map((t) => t.duplicate)).toEqual([undefined, undefined])
+  })
+
   // The attention filters' facts, derived from whatever wave any consumer decoded:
   // silence flags a suggested cut the track hasn't staged (a staged trim clears it —
   // that's the "already retouched" signal), clipping follows the decoder's flags.

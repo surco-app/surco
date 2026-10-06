@@ -15,7 +15,7 @@ export interface DuplicateGroup {
   ids: string[]
 }
 
-export const SAME_RECORDING_SEC = 3
+export const SAME_RECORDING_SEC = 5
 
 const FEATURING = /[([]\s*(?:feat|ft|featuring)\.?\s[^)\]]*[)\]]/gi
 const ORIGINAL = /[([]\s*original(?:\s+(?:mix|version))?\s*[)\]]/gi
@@ -54,13 +54,15 @@ export function duplicateGroups(items: RecordingItem[]): DuplicateGroup[] {
   const groups: DuplicateGroup[] = []
   for (const [key, members] of byKey) {
     if (members.length < 2) continue
-    if (members.some((m) => m.durationSec === undefined)) {
+    const known = members.filter((m) => m.durationSec !== undefined)
+    if (known.length === 0) {
       groups.push({ key, kind: 'duplicate', ids: members.map((m) => m.id) })
       continue
     }
-    const clusters = byLength(members)
+    const clusters = byLength(known)
     for (const c of clusters) if (c.length > 1) groups.push({ key, kind: 'duplicate', ids: c.map((m) => m.id) })
-    if (clusters.length > 1) groups.push({ key: `${key}|version`, kind: 'version', ids: members.map((m) => m.id) })
+    if (clusters.length > 1 || known.length < members.length)
+      groups.push({ key: `${key}|version`, kind: 'version', ids: members.map((m) => m.id) })
   }
   return groups
 }
