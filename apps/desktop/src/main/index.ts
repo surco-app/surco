@@ -918,7 +918,7 @@ function registerIpc(): void {
         getSettings().syncEngineDj && existsSync(join(engineDir, 'Database2', 'm.db'))
           ? engineDir
           : '',
-      endBatch: () => repoints,
+      endBatch: () => repoints.filter((repoint) => repoint.from !== repoint.to),
       ensureClosed: () => ensureEngineDjClosed(win),
       track: activity.track.bind(activity),
       repointTracks: (libraryDir, list) =>

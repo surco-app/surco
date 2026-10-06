@@ -1,4 +1,5 @@
 import type { RekordboxRepoint } from './rekordboxBatch'
+import type { RekordboxMeta } from './rekordboxMetadata'
 
 // What a finished conversion has to tell rekordbox, or null when it has nothing to say.
 //
@@ -14,9 +15,10 @@ export function rekordboxRepointFor(
   // library. That file — not the one being converted — is what the collection has indexed:
   // a FLAC downloaded into some folder has never been in rekordbox, so repointing from it
   // matched nothing and left the entry on the old MP3.
-  options: { replaces?: string } = {},
+  options: { replaces?: string; meta?: RekordboxMeta } = {},
 ): RekordboxRepoint | null {
   const from = options.replaces ?? input
+  if (options.meta) return { from, to: output, meta: options.meta }
   if (from === output) return null
   return { from, to: output }
 }

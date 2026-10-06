@@ -6,7 +6,10 @@
 export interface RekordboxRepoint {
   from: string
   to: string
+  meta?: RekordboxMeta
 }
+
+import type { RekordboxMeta } from './rekordboxMetadata'
 
 let repoints: RekordboxRepoint[] = []
 
@@ -20,7 +23,7 @@ let depth = 0
 export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
   // A conversion that lands on the path it started from tells rekordbox nothing new, and
   // recording it would make the flush open and back up the collection for nothing.
-  if (repoint.from === repoint.to) return
+  if (repoint.from === repoint.to && !repoint.meta) return
   // Converting one track twice in a run — a retry, an edit followed by a convert — must
   // leave the collection on the last file produced, so the later repoint replaces the
   // earlier one rather than queueing behind it.
@@ -45,7 +48,7 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
 export function redirectRekordboxRepoint(currentTo: string, landedAt: string): void {
   const index = repoints.findIndex((r) => r.to === currentTo)
   if (index === -1) return
-  if (repoints[index].from === landedAt) {
+  if (repoints[index].from === landedAt && !repoints[index].meta) {
     repoints.splice(index, 1)
     return
   }

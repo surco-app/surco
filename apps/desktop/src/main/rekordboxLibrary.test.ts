@@ -3,9 +3,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
 import * as rekordboxDb from './rekordboxDb'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
 import { repointTrack, repointTracks } from './rekordboxLibrary'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 
 // The probe shells out to pgrep/tasklist; pinned so the suite never depends on whether
 // rekordbox happens to be open on the machine running it.
@@ -77,6 +79,39 @@ function readRow(path: string, id = '900001') {
   return { ...row, playlists: playlists.c, cues: cues.c }
 }
 
+function addMetadataTables(path: string): void {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  for (const column of ['Title', 'ArtistID', 'AlbumID', 'GenreID', 'LabelID', 'RemixerID'])
+    db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column} VARCHAR(255)`)
+  for (const column of ['Commnt TEXT', 'ReleaseYear INTEGER', 'TrackNo INTEGER', 'DiscNo INTEGER'])
+    db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column}`)
+  db.exec('ALTER TABLE djmdContent ADD COLUMN rb_local_usn BIGINT')
+  db.exec('ALTER TABLE djmdContent ADD COLUMN updated_at DATETIME')
+  db.exec(`CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
+    UUID VARCHAR(255), rb_data_status INTEGER, rb_local_data_status INTEGER,
+    rb_local_deleted TINYINT(1), rb_local_synced TINYINT(1), usn BIGINT, rb_local_usn BIGINT,
+    created_at DATETIME, updated_at DATETIME)`)
+  db.exec(
+    `CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`,
+  )
+  db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
+  db.close()
+}
+
+function readDetails(path: string): { Title: string; Artist: string | null } {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  const details = db
+    .prepare(
+      `SELECT c.Title, a.Name AS Artist FROM djmdContent c
+         LEFT JOIN djmdArtist a ON a.ID = c.ArtistID WHERE c.ID = '900001'`,
+    )
+    .get() as { Title: string; Artist: string | null }
+  db.close()
+  return details
+}
+
 beforeEach(async () => {
   vi.mocked(isRekordboxRunning).mockResolvedValue(false)
   dbPath = await makeDb()
@@ -97,6 +132,39 @@ describe('repointTrack', () => {
     // wav is 11; leaving the mp3 code behind would describe the row as a file it is not.
     expect(row.FileType).toBe(11)
     expect(row.FileSize).toBe(5000)
+  })
+
+  // rekordbox shows its collection, not the file's tags, so a corrected title has to be
+  // written onto the entry in the same write that moves it.
+  it('writes the track details onto the entry along with the new path', async () => {
+    addMetadataTables(dbPath)
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Everybody', artist: 'B.F.I.' })
+    const result = await repointTrack(dbPath, { from: MP3, to: output, meta })
+
+    expect(result.written).toBe(true)
+    expect(readDetails(dbPath)).toEqual({ Title: 'Everybody', Artist: 'B.F.I.' })
+  })
+
+  it('updates the details of a file whose path did not change', async () => {
+    addMetadataTables(dbPath)
+    const file = join(audioDir, 'kept.wav')
+    await writeFile(file, Buffer.alloc(4000))
+    const db = openRekordboxDb(dbPath)
+    db?.prepare(`UPDATE djmdContent SET FolderPath = ?, FileNameL = ? WHERE ID = '900001'`).run(
+      file,
+      'kept.wav',
+    )
+    db?.close()
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Kept' })
+    const result = await repointTrack(dbPath, { from: file, to: file, meta })
+
+    expect(result.written).toBe(true)
+    expect(readDetails(dbPath).Title).toBe('Kept')
+    expect(readRow(dbPath).FileSize).toBe(4000)
   })
 
   // The entire reason to repoint rather than re-import: the row keeps its ID, so every

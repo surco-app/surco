@@ -89,6 +89,7 @@ import {
 } from './normalize'
 import { discardBackup, keepOriginal } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
@@ -2220,7 +2221,10 @@ export async function convertAudio(
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here
     // for the same reason as the patch above: the file now exists at `output`.
-    const repoint = rekordboxRepointFor(input, output, { replaces: replacesPath })
+    const repoint = rekordboxRepointFor(input, output, {
+      replaces: replacesPath,
+      meta: rekordboxMetaFrom(meta),
+    })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {
     // The original was copied for a rename that never landed, so it is still on its own

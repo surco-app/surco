@@ -8,6 +8,7 @@ import {
   isAmbiguous,
   openRekordboxDb,
 } from './rekordboxDb'
+import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 // Moves an existing collection entry onto the file a conversion just produced, so the
@@ -38,6 +39,7 @@ export interface RepointOptions extends FindOptions, RepointBatchOptions {
   // The file the collection points at now, and the one it should point at instead.
   from: string
   to: string
+  meta?: RekordboxMeta
   // Seam for the tests to force the failure that must never be simulated by damaging a
   // real collection: a write that dies halfway. Runs right after this track's row changed.
   onWrite?: () => void
@@ -165,8 +167,9 @@ export async function repointTracks(
     )
     write.transaction(() => {
       for (const w of writes) {
-        const { to, onWrite } = repoints[w.index]
+        const { to, meta, onWrite } = repoints[w.index]
         update.run(to, basename(to), w.fileType, w.size, w.id)
+        if (meta) applyRekordboxMeta(write, w.id, meta)
         // Placed after the statement so a test can fail the write once the row has
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()
