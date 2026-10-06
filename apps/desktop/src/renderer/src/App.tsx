@@ -21,6 +21,7 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickMode,
   FormatSetting,
+  LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
   OutputFormat,
@@ -34,13 +35,13 @@ import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { MusicReviewColumn } from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
-import { MusicReviewColumn } from './components/MusicReviewColumn'
 import { TrackContextMenu } from './components/TrackContextMenu'
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
@@ -476,6 +477,7 @@ export default function App(): React.JSX.Element {
     startOverTrack,
     rereadTrackMeta,
     refreshTrackFromDisk,
+    patchReviewedFields,
     removeTrack,
     removeTracks,
     clearTracks,
@@ -1316,19 +1318,18 @@ export default function App(): React.JSX.Element {
     }
     await refreshTrash()
   })
-  // Rows the review rewrote on disk are reread, so a later Update does not write the
-  // old spelling back over the fix. Rows it did not touch are left alone.
-  const onReviewFilesChanged = useStableCallback(async (paths: string[]): Promise<void> => {
-    const changed = new Set(paths)
-    for (const row of tracksRef.current.filter((r) => changed.has(r.inputPath))) {
-      try {
-        await rereadTrackMeta(row.id)
-        await refreshTrackFromDisk(row.id, row.inputPath)
-      } catch (e) {
-        window.api.logError(`music review: reread of ${row.inputPath} failed (${String(e)})`)
+  // Rows the review rewrote on disk take the fixed values straight from the outcome, so a
+  // later Update does not write the old spelling back over the fix. Rows it did not touch
+  // are left alone; the disk read only refreshes the label and the art.
+  const onReviewFilesChanged = useStableCallback(
+    async (updates: LibraryTagUpdate[]): Promise<void> => {
+      for (const { path, fields } of updates) {
+        patchReviewedFields(path, fields)
+        for (const row of tracksRef.current.filter((r) => r.inputPath === path))
+          await refreshTrackFromDisk(row.id, path)
       }
-    }
-  })
+    },
+  )
   const onRemoveFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
     await window.api.trashRemove(entry.id).catch(() => undefined)
     await refreshTrash()

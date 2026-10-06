@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { MusicFixOutcome, MusicReviewEntry, RemoveCopyResult } from '../../../shared/types'
+import type {
+  LibraryTagUpdate,
+  MusicFixOutcome,
+  MusicReviewEntry,
+  RemoveCopyResult,
+} from '../../../shared/types'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
 import { tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { planFixes, summarizeFixes } from '../lib/musicFixPlan'
@@ -87,7 +92,7 @@ export function useMusicReview({
   initialFilter: ReviewFilter
   ignored: string[]
   saveIgnored: (keys: string[]) => void
-  onFilesChanged: (paths: string[]) => void
+  onFilesChanged: (updates: LibraryTagUpdate[]) => void
 }): MusicReview {
   const [status, setStatus] = useState<MusicReview['status']>('loading')
   const [entries, setEntries] = useState<MusicReviewEntry[]>([])
@@ -276,8 +281,7 @@ export function useMusicReview({
           () => 'ok' as const,
           () => 'failed' as const,
         )
-      const written = outcomes.flatMap((o) => (o.file === 'written' && o.path ? [o.path] : []))
-      if (written.length) onFilesChanged(written)
+      if (updates.length) onFilesChanged(updates)
       const next = await load().catch(() => null)
       setStaged(new Set())
       setChoices({})
@@ -307,7 +311,7 @@ export function useMusicReview({
     running.current = true
     setStatus('applying')
     try {
-      const paths: string[] = []
+      const restored: MusicFixOutcome[] = []
       const reverted: MusicFixOutcome[] = []
       const failed: MusicFixOutcome[] = []
       for (const o of lastRun.outcomes) {
@@ -315,7 +319,7 @@ export function useMusicReview({
         if (o.backupId) {
           try {
             await window.api.trashRestore(o.backupId)
-            if (o.path) paths.push(o.path)
+            restored.push(o)
           } catch {
             failed.push(o)
             continue
@@ -336,7 +340,8 @@ export function useMusicReview({
           () => 'ok' as const,
           () => 'failed' as const,
         )
-      if (paths.length) onFilesChanged(paths)
+      const back = tagUpdatesOf(restored, 'undo')
+      if (back.length) onFilesChanged(back)
       await load().catch(() => null)
       setLastRun(
         failed.length === 0 && librarySync !== 'failed'

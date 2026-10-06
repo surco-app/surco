@@ -1,12 +1,18 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AppleMusicTrackMeta, SessionEdit, TrackMetadata } from '../../../shared/types'
+import type {
+  AppleMusicTrackMeta,
+  LibraryTagUpdate,
+  SessionEdit,
+  TrackMetadata,
+} from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { trackSignature } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
+import { withReviewedFields } from '../lib/reviewedFields'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
 import type { TrackItem } from '../types'
@@ -148,6 +154,9 @@ interface TrackLibrary {
   // bytes that no longer exist. Only the fields the row renders — everything the user
   // staged in the editor is left alone.
   refreshTrackFromDisk: (id: string, path: string) => Promise<void>
+  // The review rewrote these fields on the file: rows of that file take the new values
+  // and their disk snapshot moves with them, so the fix is not left looking like an edit.
+  patchReviewedFields: (path: string, fields: LibraryTagUpdate['fields']) => void
   removeTrack: (id: string) => void
   removeTracks: (ids: string[]) => void
   clearTracks: () => void
@@ -575,6 +584,14 @@ export function useTrackLibrary({
     }
   })
 
+  const patchReviewedFields = useCallback(
+    (path: string, fields: LibraryTagUpdate['fields']): void =>
+      setTracks((prev) =>
+        prev.map((t) => (t.inputPath === path ? withReviewedFields(t, fields) : t)),
+      ),
+    [],
+  )
+
   // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
   // reach us through the OS, not the renderer: the main process buffers any handed over
   // before this window existed and pushes later ones live. Drain the buffer on mount and
@@ -838,6 +855,7 @@ export function useTrackLibrary({
     startOverTrack,
     rereadTrackMeta,
     refreshTrackFromDisk,
+    patchReviewedFields,
     removeTrack,
     removeTracks,
     clearTracks,

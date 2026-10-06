@@ -120,7 +120,9 @@ describe('useMusicReview', () => {
       { persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
     ])
     expect(api.loadMusicReview).toHaveBeenCalledTimes(2)
-    expect(onFilesChanged).toHaveBeenCalledWith(['/m/c.mp3'])
+    expect(onFilesChanged).toHaveBeenCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
+    ])
     expect(api.syncLibraryTags).toHaveBeenCalledWith([
       { path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
     ])
@@ -129,13 +131,17 @@ describe('useMusicReview', () => {
 
   it('undoes a run by restoring the backups and setting Music back', async () => {
     const api = setApi()
-    const { result } = await ready()
+    const onFilesChanged = vi.fn()
+    const { result } = await ready({ onFilesChanged })
     act(() => result.current.toggleStaged(result.current.spelling[0].key))
     await act(() => result.current.apply())
     await act(() => result.current.undo())
     expect(api.trashRestore).toHaveBeenCalledWith('b1')
     expect(api.setMusicField).toHaveBeenCalledWith('C', 'artist', 'DJ Lara', 'Dj Lara')
     expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
+    expect(onFilesChanged).toHaveBeenLastCalledWith([
       { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
     ])
   })
@@ -420,7 +426,9 @@ describe('useMusicReview', () => {
     act(() => result.current.toggleStaged(result.current.spelling[0].key))
     await act(() => result.current.apply())
     expect(api.applyMusicFixes).toHaveBeenCalled()
-    expect(onFilesChanged).toHaveBeenCalledWith(['/m/c.mp3'])
+    expect(onFilesChanged).toHaveBeenCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
+    ])
     expect(result.current.lastRun).toMatchObject({ after: null, librarySync: 'ok' })
     expect(result.current.status).toBe('done')
   })

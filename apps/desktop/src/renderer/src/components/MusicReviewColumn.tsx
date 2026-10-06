@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { LibraryTagUpdate } from '../../../shared/types'
 import { type ReviewFilter, useMusicReview } from '../hooks/useMusicReview'
 import { MusicReview } from './MusicReview'
 
@@ -12,7 +13,7 @@ export function MusicReviewColumn({
   filter: ReviewFilter
   ignored: string[]
   saveIgnored: (keys: string[]) => void
-  onFilesChanged: (paths: string[]) => void
+  onFilesChanged: (updates: LibraryTagUpdate[]) => void
   onClose: () => void
 }) {
   const review = useMusicReview({ initialFilter: filter, ignored, saveIgnored, onFilesChanged })

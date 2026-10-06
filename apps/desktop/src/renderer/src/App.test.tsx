@@ -3477,21 +3477,37 @@ describe('App Music review', () => {
     )
   })
 
-  // A file the review rewrote may be open in the list; rereading it keeps a later
-  // Update from writing the old artist back over the fix.
-  it('rereads a listed track whose file the review changed', async () => {
+  // A file the review rewrote may be open in the list. The row has to say what the file
+  // now says and count as clean, or a later Update writes the old artist back over the fix.
+  it('shows the fixed artist on a listed track and leaves it with nothing pending', async () => {
     vi.resetModules()
     const readTags = vi.fn().mockResolvedValue({ title: 'T', artist: 'Dj Lara' })
-    reviewApi({ readTags, ...spellingFixture() })
+    const fixture = spellingFixture()
+    const applied = await fixture.applyMusicFixes()
+    const applyMusicFixes = vi.fn(async () => {
+      readTags.mockResolvedValue({ title: 'T', artist: 'DJ Lara' })
+      return applied
+    })
+    reviewApi({ readTags, ...fixture, applyMusicFixes })
     await renderApp()
-    await addOneTrack()
-    const readsBefore = readTags.mock.calls.length
+    const [row] = await addOneTrack()
+    fireEvent.click(row)
+    await waitFor(() =>
+      expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Dj Lara'),
+    )
     runMenu('music-review')
     fireEvent.click(await screen.findByTestId('music-review-stage'))
     fireEvent.click(screen.getByTestId('music-review-tray-apply'))
     fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
-    await waitFor(() => expect(readTags.mock.calls.length).toBeGreaterThan(readsBefore))
-    expect(readTags.mock.calls.at(-1)?.[0]).toBe('/music/a.wav')
+    await screen.findByTestId('music-review-done')
+    await waitFor(() =>
+      expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('DJ Lara'),
+    )
+    fireEvent.click(screen.getByTestId('music-review-continue'))
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    fireEvent.keyDown((await screen.findAllByTestId('track-row'))[0], { key: 'Backspace' })
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
   })
 
   // The list is hidden while the review is open; a track shortcut acting on it would
