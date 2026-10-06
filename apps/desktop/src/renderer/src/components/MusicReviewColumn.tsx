@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { type ReviewFilter, useMusicReview } from '../hooks/useMusicReview'
 import { MusicReview } from './MusicReview'
 
@@ -15,5 +16,7 @@ export function MusicReviewColumn({
   onClose: () => void
 }) {
   const review = useMusicReview({ initialFilter: filter, ignored, saveIgnored, onFilesChanged })
+  const { setFilter } = review
+  useEffect(() => setFilter(filter), [filter, setFilter])
   return <MusicReview review={review} onClose={onClose} />
 }

@@ -3494,6 +3494,40 @@ describe('App Music review', () => {
     expect(readTags.mock.calls.at(-1)?.[0]).toBe('/music/a.wav')
   })
 
+  // The list is hidden while the review is open; a track shortcut acting on it would
+  // remove or convert files the user cannot see.
+  it('does not let list shortcuts reach the hidden tracks', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    const [row] = await addOneTrack()
+    fireEvent.click(row)
+    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    runMenu('music-review')
+    await screen.findByTestId('music-review-empty')
+    fireEvent.keyDown(window, { key: 'Backspace', metaKey: true })
+    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
+    expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+  })
+
+  it('switches the filter when a Music command runs while the review is open', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    runMenu('music-review')
+    await screen.findByTestId('music-review-empty')
+    expect(screen.getByTestId('music-review-filter-all')).toHaveAttribute('aria-pressed', 'true')
+    runMenu('music-duplicates')
+    await waitFor(() =>
+      expect(screen.getByTestId('music-review-filter-duplicates')).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    )
+  })
+
   // The sheet and the app both listen for Escape; closing the sheet must not also
   // close the review the user is in the middle of.
   it('closes only the confirmation sheet on Escape', async () => {

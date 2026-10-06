@@ -1321,8 +1321,12 @@ export default function App(): React.JSX.Element {
   const onReviewFilesChanged = useStableCallback(async (paths: string[]): Promise<void> => {
     const changed = new Set(paths)
     for (const row of tracksRef.current.filter((r) => changed.has(r.inputPath))) {
-      await rereadTrackMeta(row.id)
-      await refreshTrackFromDisk(row.id, row.inputPath)
+      try {
+        await rereadTrackMeta(row.id)
+        await refreshTrackFromDisk(row.id, row.inputPath)
+      } catch (e) {
+        window.api.logError(`music review: reread of ${row.inputPath} failed (${String(e)})`)
+      }
     }
   })
   const onRemoveFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
@@ -1834,6 +1838,7 @@ export default function App(): React.JSX.Element {
       setTrashOpen(false)
       return
     }
+    if (musicReview !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
     // clear the selection, unmounting the editor mid-review.
@@ -1844,7 +1849,7 @@ export default function App(): React.JSX.Element {
 
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
-  const overlayOpen = activeModal !== null || trashOpen
+  const overlayOpen = activeModal !== null || trashOpen || musicReview !== null
 
   useKeyboardShortcuts({
     isMac,
