@@ -37,7 +37,7 @@ export function recordingKey(artist: string, title: string): string | null {
   return `${acts.join('+')}|${core}`
 }
 
-// Single-link clusters by length: a third copy 2 s off the second still joins the first.
+// Single-link clusters by length: a third copy within 5 s of the second still joins the first.
 function byLength(items: RecordingItem[]): RecordingItem[][] {
   const sorted = [...items].sort((a, b) => (a.durationSec ?? 0) - (b.durationSec ?? 0))
   const clusters: RecordingItem[][] = []
