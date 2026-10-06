@@ -101,6 +101,7 @@ export function useMusicReview({
   const [progress, setProgress] = useState<MusicReview['progress']>(null)
   const [lastRun, setLastRun] = useState<ReviewRun | null>(null)
   const running = useRef(false)
+  const cancelled = useRef(false)
 
   const load = useCallback(async () => {
     const next = await window.api.loadMusicReview()
@@ -251,6 +252,7 @@ export function useMusicReview({
   const apply = useCallback(async () => {
     if (running.current) return
     running.current = true
+    cancelled.current = false
     setStatus('applying')
     const before = pendingCount(entries, hidden)
     const off = window.api.onMusicFixProgress(setProgress)
@@ -264,8 +266,10 @@ export function useMusicReview({
           applyError = error instanceof Error ? error.message : String(error)
         }
       const removed: RemoveCopyResult[] = []
-      for (const r of removals)
+      for (const r of removals) {
+        if (cancelled.current || applyError !== undefined) break
         removed.push(await window.api.removeMusicDuplicate(r).catch(() => FAILED_REMOVAL))
+      }
       const updates = tagUpdatesOf(outcomes, 'apply')
       let librarySync: ReviewRun['librarySync'] = 'none'
       if (updates.length)
@@ -295,6 +299,7 @@ export function useMusicReview({
   }, [entries, hidden, fixes, removals, load, onFilesChanged])
 
   const cancel = useCallback(() => {
+    cancelled.current = true
     void window.api.cancelMusicFixes()
   }, [])
 

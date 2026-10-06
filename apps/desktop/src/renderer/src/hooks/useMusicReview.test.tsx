@@ -267,6 +267,78 @@ describe('useMusicReview', () => {
     ])
   })
 
+  // Stop has to stop the whole run: a removal is not undoable, and the user pressed it
+  // precisely so nothing more would change.
+  it('removes no duplicate once the user stops the run', async () => {
+    let finish: (v: never[]) => void = () => {}
+    const api = setApi({
+      loadMusicReview: vi.fn().mockResolvedValue([...LIB, ...DUPS]),
+      applyMusicFixes: vi.fn().mockReturnValue(new Promise<never[]>((r) => (finish = r))),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.apply()
+    })
+    await waitFor(() => expect(result.current.status).toBe('applying'))
+    act(() => result.current.cancel())
+    await act(async () => {
+      finish([])
+      await run
+    })
+    expect(api.cancelMusicFixes).toHaveBeenCalled()
+    expect(api.removeMusicDuplicate).not.toHaveBeenCalled()
+  })
+
+  it('stops between removals when the user stops the run', async () => {
+    const lib = [
+      e('P', 'Ann', { title: 'Song', durationSec: 200 }),
+      e('Q', 'Ann', { title: 'Song', durationSec: 201 }),
+      e('R', 'Ann', { title: 'Song', durationSec: 202 }),
+    ]
+    let release: () => void = () => {}
+    const removeMusicDuplicate = vi
+      .fn<Api['removeMusicDuplicate']>()
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            release = () => r({ outcome: 'removed', playlists: 0, fileTrashed: true })
+          }),
+      )
+      .mockResolvedValue({ outcome: 'removed', playlists: 0, fileTrashed: true })
+    setApi({ loadMusicReview: vi.fn().mockResolvedValue(lib), removeMusicDuplicate })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.apply()
+    })
+    await waitFor(() => expect(removeMusicDuplicate).toHaveBeenCalledTimes(1))
+    act(() => result.current.cancel())
+    await act(async () => {
+      release()
+      await run
+    })
+    expect(removeMusicDuplicate).toHaveBeenCalledTimes(1)
+  })
+
+  // A failed apply leaves Music in an unknown state; removing copies on top of it would
+  // pile an irreversible change onto one the user cannot see.
+  it('removes no duplicate when the fixes fail to apply', async () => {
+    const api = setApi({
+      loadMusicReview: vi.fn().mockResolvedValue([...LIB, ...DUPS]),
+      applyMusicFixes: vi.fn().mockRejectedValue(new Error('boom')),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    await act(() => result.current.apply())
+    expect(api.removeMusicDuplicate).not.toHaveBeenCalled()
+    expect(result.current.lastRun).toMatchObject({ removed: [], applyError: 'boom' })
+  })
+
   const twoOutcomes = [
     {
       persistentId: 'C',
