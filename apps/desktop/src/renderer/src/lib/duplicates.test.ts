@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { duplicateIds } from './duplicates'
+import { duplicateGroups, duplicateIds, recordingKey } from './duplicates'
 
-function track(id: string, meta: Partial<TrackMetadata> = {}): TrackItem {
+function track(id: string, meta: Partial<TrackMetadata> = {}, duration?: number): TrackItem {
   return {
     id,
     inputPath: `/music/${id}.wav`,
@@ -13,6 +13,7 @@ function track(id: string, meta: Partial<TrackMetadata> = {}): TrackItem {
     query: '',
     status: 'idle',
     meta: { ...emptyMetadata(), ...meta },
+    duration,
   }
 }
 
@@ -49,5 +50,51 @@ describe('duplicateIds', () => {
       track('d', { title: '', artist: 'X' }),
     ])
     expect(ids.size).toBe(0)
+  })
+
+  // Measured: "Make My Body Move [ADC075]" at 6:57 and 5:07 is another edit, which the
+  // old artist+title rule marked as a duplicate to remove.
+  it('stops flagging two edits of different length as duplicates', () => {
+    const ids = duplicateIds([
+      track('a', { artist: 'ADC', title: 'Move' }, 417),
+      track('b', { artist: 'ADC', title: 'Move' }, 307),
+    ])
+    expect(ids.size).toBe(0)
+  })
+})
+
+describe('recordingKey', () => {
+  it('reads "(Original Mix)" as the plain title', () => {
+    expect(recordingKey('DJ Ter', 'This Rap (Original Mix)')).toBe(recordingKey('Dj Ter', 'This Rap'))
+  })
+
+  it('ignores a featuring credit in the title and the order of the acts', () => {
+    expect(recordingKey('A & B', 'Song (feat. C)')).toBe(recordingKey('B, A', 'Song'))
+  })
+
+  it('keeps a named mix apart from the original', () => {
+    expect(recordingKey('A', 'Song (Extended Mix)')).not.toBe(recordingKey('A', 'Song'))
+  })
+})
+
+describe('duplicateGroups', () => {
+  const item = (id: string, title: string, durationSec?: number) => ({ id, artist: 'Transfer', title, durationSec })
+
+  it('groups copies that last the same', () => {
+    expect(
+      duplicateGroups([item('a', 'Possession', 323), item('b', 'Possession', 323), item('c', 'Possession', 325)]),
+    ).toEqual([expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b', 'c'] })])
+  })
+
+  it('calls the same title with a different length another version, not a duplicate', () => {
+    expect(duplicateGroups([item('a', 'Make My Body Move', 417), item('b', 'Make My Body Move', 307)])).toEqual([
+      expect.objectContaining({ kind: 'version', ids: ['a', 'b'] }),
+    ])
+  })
+
+  it('keeps grouping copies whose length is unknown, as before', () => {
+    expect(duplicateGroups([item('a', 'X'), item('b', 'X')])).toEqual([
+      expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b'] }),
+    ])
   })
 })
