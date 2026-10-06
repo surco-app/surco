@@ -16,6 +16,7 @@
 - **Nada se escribe sin la hoja de confirmación.** Ni en Music ni en disco.
 - **Escritura mínima.** Solo cambian los campos de la tanda. Un fichero solo se toca si su valor actual es exactamente (NFC) el que leyó la revisión en Music. El audio decodificado queda idéntico.
 - **Music primero, como guarda.** Cada campo se escribe en Music solo si la entrada sigue diciendo lo que se leyó (comparación exacta con `considering case, diacriticals…`). Si Music dice otra cosa, ese fichero no se toca.
+- **Las bibliotecas siguen al fichero, como en un Actualizar.** Solo los campos escritos en el fichero van a rekordbox, Engine DJ y Traktor, cada una solo con su interruptor de sincronización encendido, con la app cerrada (se ofrece cerrarla, como al convertir) y con copia de su base antes de escribir. Si la biblioteca ya dice otra cosa, esa pista no se toca (`changed`). Deshacer las devuelve.
 - **Copia de seguridad siempre** vía `keepOriginal` (Copias de seguridad de Surco). Ojo: `policyKeeper` no está cableado en producción (`main/index.ts:184`), así que hoy se guarda siempre; si alguien arregla eso, esta escritura debe seguir guardando copia. Lo fija el test de la Task 5 al pasar `reencodes: false` y comprobar que el keeper se llama.
 - **Tests desde `apps/desktop`**: `cd apps/desktop && npm test -- <ruta>`. Desde la raíz se salta el setup y da fallos falsos.
 - **Typecheck explícito**: `cd apps/desktop && npx tsc --noEmit -p tsconfig.node.json && npx tsc --noEmit -p tsconfig.web.json`. `tsc --noEmit` pelado no comprueba nada.
@@ -30,7 +31,8 @@
 - **Dos entradas de Music apuntando al mismo fichero real** (enlace simbólico, las 34 ambiguas de la biblioteca real): quitar una como duplicado NO puede mandar a la Papelera el fichero que usa la otra. Test en la Task 8.
 - **WAV cuyo fichero dice otra cosa que Music** (o nada): se corrige Music y el fichero queda intacto, nunca se escribe un valor que no se ha visto en el fichero. Tests en las Tasks 5 y 7.
 - **Entrada cambiada en Music entre la lectura y Aplicar**: Music responde `mismatch`, no se escribe nada en esa pista. Test en la Task 7.
-- **Una pista de la tanda abierta también en la lista de Surco**: tras aplicar, la fila se relee del disco para que un Actualizar posterior no devuelva el valor viejo. Test en la Task 12.
+- **Una pista de la tanda abierta también en la lista de Surco**: tras aplicar, la fila se relee del disco para que un Actualizar posterior no devuelva el valor viejo. Test en la Task 17.
+- **rekordbox con el artista cambiado a mano dentro de rekordbox**: la pista queda `changed` y no se toca; renombrar la fila compartida en vez de reapuntar cambiaría pistas que la revisión no vio. Tests en la Task 10.
 - **Cancelar a mitad**: lo terminado queda hecho y es deshacible, lo pendiente no se toca. Test en la Task 7.
 
 ---
@@ -596,7 +598,7 @@ Una a una, viendo rojo y deshaciendo: quitar el filtro de dígitos en `isTypoPai
 
 - [ ] **Step 6: Contraste con la biblioteca real (solo lectura)**
 
-Con la app de la Task 12 aún no hecha, comprobarlo desde un test temporal no commiteado o un script con el volcado de la Task 1. Esperado aproximado (medido el 06/10 con 2044 pistas): 2 `invisible` de actos o títulos, ~22 grupos de mayúsculas de actos, 16 de album artist, 5 de álbum, 3 de género, ~30 `typo`. Una desviación grande es un fallo de la regla, no del recuento.
+Con la app de la Task 17 aún no hecha, comprobarlo desde un test temporal no commiteado o un script con el volcado de la Task 1. Esperado aproximado (medido el 06/10 con 2044 pistas): 2 `invisible` de actos o títulos, ~22 grupos de mayúsculas de actos, 16 de album artist, 5 de álbum, 3 de género, ~30 `typo`. Una desviación grande es un fallo de la regla, no del recuento.
 
 - [ ] **Step 7: Commit**
 
@@ -1344,7 +1346,7 @@ git commit -m "Set one Music field only when the entry still holds the value the
 - Consumes: `MusicFieldFix` (Task 4), `rewriteTagFields` (Task 5), `setAppleMusicField`, `MusicSetResult` (Task 6), `appleMusicEntryLocation`.
 - Produces (tipos en `shared/types.ts`):
   - `type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'`
-  - `interface MusicFixOutcome { persistentId: string; path?: string; fixes: MusicFieldFix[]; music: MusicFieldOutcome[]; file: 'written' | 'unchanged' | 'missing' | 'failed' | 'skipped'; backupId?: string; error?: string }`
+  - `interface MusicFixOutcome { persistentId: string; path?: string; fixes: MusicFieldFix[]; music: MusicFieldOutcome[]; file: 'written' | 'unchanged' | 'missing' | 'failed' | 'skipped'; written: MusicReviewField[]; backupId?: string; error?: string }` (`written`: los campos que llegaron al fichero; es lo que sigue a las bibliotecas en la Task 13)
   - `applyMusicFixes(fixes, deps, hooks?): Promise<MusicFixOutcome[]>`
   - IPC `applemusic:applyFixes(fixes)`, `applemusic:cancelFixes`, `applemusic:setField(pid, field, from, to)`, evento `applemusic:fixProgress {done,total}`
   - Preload `applyMusicFixes`, `cancelMusicFixes`, `setMusicField`, `onMusicFixProgress(cb): () => void`
@@ -1379,7 +1381,7 @@ describe('applyMusicFixes', () => {
   it('sets Music, then the file, and keeps the backup id for undo', async () => {
     const d = deps()
     const [out] = await applyMusicFixes([fix('A')], d)
-    expect(out).toMatchObject({ persistentId: 'A', path: '/m/a.mp3', music: ['set'], file: 'written', backupId: 'b1' })
+    expect(out).toMatchObject({ persistentId: 'A', path: '/m/a.mp3', music: ['set'], file: 'written', written: ['artist'], backupId: 'b1' })
     expect(d.rewrite).toHaveBeenCalledWith('/m/a.mp3', [{ field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }])
   })
 
@@ -1449,6 +1451,7 @@ export interface MusicFixOutcome {
   fixes: MusicFieldFix[]
   music: MusicFieldOutcome[]
   file: 'written' | 'unchanged' | 'missing' | 'failed' | 'skipped'
+  written: MusicReviewField[]
   backupId?: string
   error?: string
 }
@@ -1479,18 +1482,20 @@ async function applyTrack(persistentId: string, fixes: MusicFieldFix[], deps: Ap
   const music: MusicFieldOutcome[] = []
   for (const f of fixes) music.push(await deps.setField(persistentId, f.field, f.from, f.to).catch(() => 'failed' as const))
   const accepted = fixes.filter((_, i) => music[i] === 'set')
-  if (accepted.length === 0) return { persistentId, fixes, music, file: 'skipped' }
+  if (accepted.length === 0) return { persistentId, fixes, music, file: 'skipped', written: [] }
   const path = await deps.locate(persistentId).catch(() => '')
-  if (!path || !(await deps.exists(path))) return { persistentId, fixes, music, file: 'missing', path: path || undefined }
+  if (!path || !(await deps.exists(path)))
+    return { persistentId, fixes, music, file: 'missing', path: path || undefined, written: [] }
   try {
     const { outcomes, backup } = await deps.rewrite(
       path,
       accepted.map(({ field, from, to }) => ({ field, from, to })),
     )
     const file = outcomes.includes('written') ? 'written' : 'unchanged'
-    return { persistentId, path, fixes, music, file, backupId: backup?.id }
+    const written = accepted.filter((_, i) => outcomes[i] === 'written').map((f) => f.field)
+    return { persistentId, path, fixes, music, file, written, backupId: backup?.id }
   } catch (e) {
-    return { persistentId, path, fixes, music, file: 'failed', error: message(e) }
+    return { persistentId, path, fixes, music, file: 'failed', written: [], error: message(e) }
   }
 }
 
@@ -1784,7 +1789,698 @@ git commit -m "Remove a duplicate Music copy after moving its playlists, keeping
 
 ---
 
-### Task 9: Grupos ignorados, guardados por máquina
+### Task 9: El volcado a bibliotecas acepta cualquier cambio, no solo reapuntados
+
+Refactor sin cambio de comportamiento: `flushLibraryRepoints` hoy solo conoce `RekordboxRepoint`. Las Tasks 10-13 necesitan pasarle cambios de nombres con las mismas garantías (preguntar si la app está abierta, diálogo, aviso, fila en Actividad).
+
+**Files:**
+- Modify: `apps/desktop/src/main/libraryRepointFlush.ts`
+- Test: `apps/desktop/src/main/libraryRepointFlush.test.ts` (los existentes deben seguir verdes sin tocarlos)
+
+**Interfaces:**
+- Produces: `FlushLibraryDeps<T = RekordboxRepoint>` con `endBatch: () => T[]`, `repointTracks: (collectionPath: string, items: T[]) => Promise<LibraryRepointResult[]>` y `labelOf?: (item: T) => string`; `flushLibraryRepoints<T = RekordboxRepoint>(deps: FlushLibraryDeps<T>, keys): Promise<FlushResult>`. Sin `labelOf`, la etiqueta de un omitido sigue siendo `item.to`.
+
+- [ ] **Step 1: Test que fija la etiqueta configurable** (añadir al test existente)
+
+```ts
+  it('names a skipped item with the label the caller gives', async () => {
+    const result = await flushLibraryRepoints(
+      {
+        collectionPath: '/c',
+        endBatch: () => [{ path: '/m/a.mp3' }],
+        repointTracks: async () => [{ written: false, reason: 'ambiguous' }],
+        labelOf: (item: { path: string }) => item.path,
+      },
+      KEYS,
+    )
+    expect(result.skipped).toEqual([{ track: '/m/a.mp3', reason: 'ambiguous' }])
+  })
+```
+
+(`KEYS`: el objeto de claves que ya use el fichero de test; si no hay, el de `rekordboxFlush.ts`.)
+
+- [ ] **Step 2: Ver que falla** — `cd apps/desktop && npm test -- src/main/libraryRepointFlush.test.ts` → FAIL de tipos o de etiqueta.
+
+- [ ] **Step 3: Implementar**
+
+Añadir el parámetro de tipo a `FlushLibraryDeps`, `flushLibraryRepoints` y `runRepoints`, y sustituir `skipped.push({ track: repoint.to, reason: result.reason })` por:
+
+```ts
+    skipped.push({ track: deps.labelOf ? deps.labelOf(item) : (item as unknown as RekordboxRepoint).to, reason: result.reason })
+```
+
+`flushRekordboxSync` y `flushEngineSync` no cambian: usan el tipo por defecto.
+
+- [ ] **Step 4: Ver que pasa toda la suite de volcados** — `cd apps/desktop && npm test -- src/main/libraryRepointFlush.test.ts src/main/rekordboxFlush.test.ts src/main/engineSyncFlush.test.ts` (los que existan) + typecheck. PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/desktop/src/main/libraryRepointFlush.ts apps/desktop/src/main/libraryRepointFlush.test.ts
+git commit -m "Let the library flush carry any per-track change, not only repoints"
+```
+
+---
+
+### Task 10: Cambiar nombres en rekordbox
+
+**Files:**
+- Create: `apps/desktop/src/main/rekordboxTags.ts`
+- Modify: `apps/desktop/src/shared/types.ts` (`TagChange`, `LibraryTagUpdate`)
+- Test: `apps/desktop/src/main/rekordboxTags.test.ts`
+
+**Interfaces:**
+- Consumes: `openRekordboxDb`, `findTrackByPath`, `isAmbiguous`, `FindOptions` (`rekordboxDb.ts`), `isRekordboxRunning` (`rekordboxProcess.ts`), `LibraryRepointResult` (Task 9).
+- Produces (en `shared/types.ts`):
+  - `interface TagChange { from: string; to: string }`
+  - `interface LibraryTagUpdate { path: string; fields: Partial<Record<MusicReviewField, TagChange>> }`
+  - `updateRekordboxTags(collectionPath: string, updates: LibraryTagUpdate[], options?: { sessionBackup?: (path: string) => Promise<void>; realPath?: (p: string) => string }): Promise<LibraryRepointResult[]>`
+  - Motivos: `no-match`, `ambiguous`, `changed` (rekordbox ya dice otra cosa), y los de colección entera `rekordbox-running`, `backup-failed`, `unreadable`, `write-failed`.
+
+Cómo guarda rekordbox estos campos (medido el 06/10 sobre una copia de la colección real, 2072 pistas, 1548 artistas): `djmdContent.Title` es texto; `ArtistID`, `AlbumID`, `GenreID` apuntan a `djmdArtist(ID, Name, …)`, `djmdAlbum(ID, Name, AlbumArtistID, …)` y `djmdGenre(ID, Name, …)`. Cada fila lleva `UUID`, `rb_local_usn` y `created_at`/`updated_at` con formato `2024-06-25 12:16:14.804 +00:00`. El contador de cambios local vive en `agentRegistry` (`registry_id = 'localUpdateCount'`, `int_1`).
+
+Reglas:
+- Se cambia la referencia de la pista, nunca el nombre de una fila compartida: renombrar la fila `Dj Lara` cambiaría también pistas que la revisión no ha visto.
+- La fila destino es la que ya tiene ese `Name` exacto (comparación binaria de SQLite, distingue mayúsculas); si no existe, se crea con `ID` aleatorio libre de 32 bits, `UUID` nuevo y `rb_local_usn` del contador.
+- La pista toca `updated_at` y `rb_local_usn` (Ruling: rekordbox usa el usn para saber qué cambió; el reapuntado actual no lo toca porque no crea filas).
+- Si rekordbox ya dice otra cosa en cualquiera de los campos (NFC), la pista entera queda `changed` y no se toca.
+- Mismas guardas que `repointTracks`: rekordbox cerrado antes de leer y antes de escribir, copia de sesión y copia `.surco-backup` antes de escribir, todo en una transacción.
+
+- [ ] **Step 1: Escribir los tests que fallan**
+
+Reutilizar el `makeDb()` de `rekordboxLibrary.test.ts` (moverlo a un helper compartido de test si hace falta) y ampliar el esquema del fixture con:
+
+```ts
+db.exec(`CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255), SearchStr VARCHAR(255), UUID VARCHAR(255), rb_data_status INTEGER, rb_local_data_status INTEGER, rb_local_deleted TINYINT(1), rb_local_synced TINYINT(1), usn BIGINT, rb_local_usn BIGINT, created_at DATETIME, updated_at DATETIME)`)
+db.exec(`CREATE TABLE djmdAlbum (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255), AlbumArtistID VARCHAR(255), ImagePath VARCHAR(255), Compilation INTEGER, SearchStr VARCHAR(255), UUID VARCHAR(255), rb_data_status INTEGER, rb_local_data_status INTEGER, rb_local_deleted TINYINT(1), rb_local_synced TINYINT(1), usn BIGINT, rb_local_usn BIGINT, created_at DATETIME, updated_at DATETIME)`)
+db.exec(`CREATE TABLE djmdGenre (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255), UUID VARCHAR(255), rb_data_status INTEGER, rb_local_data_status INTEGER, rb_local_deleted TINYINT(1), rb_local_synced TINYINT(1), usn BIGINT, rb_local_usn BIGINT, created_at DATETIME, updated_at DATETIME)`)
+db.exec(`CREATE TABLE agentRegistry (registry_id VARCHAR(255) PRIMARY KEY, id_1 VARCHAR(255), id_2 VARCHAR(255), int_1 BIGINT, int_2 BIGINT, str_1 VARCHAR(255), str_2 VARCHAR(255), date_1 DATETIME, date_2 DATETIME, text_1 TEXT, text_2 TEXT, created_at DATETIME, updated_at DATETIME)`)
+db.exec(`INSERT INTO agentRegistry (registry_id, int_1) VALUES ('localUpdateCount', 100)`)
+```
+
+y a `djmdContent` las columnas `Title, ArtistID, AlbumID, GenreID, rb_local_usn, updated_at`. Mockear `isRekordboxRunning` a `false` como hagan los tests de reapuntado.
+
+```ts
+describe('updateRekordboxTags', () => {
+  it('points the track at the artist spelled right, creating it when the collection has none', async () => {
+    // fila: pista /m/c.mp3 con ArtistID → artista 'Dj Lara'
+    const [r] = await updateRekordboxTags(path, [{ path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } }])
+    expect(r).toEqual({ written: true })
+    // leer: el ArtistID de la pista apunta a una fila 'DJ Lara' nueva con UUID y rb_local_usn 101;
+    // la fila 'Dj Lara' sigue existiendo con su nombre; agentRegistry.int_1 = 101 o más
+  })
+
+  it('reuses the artist row that already has the right name', async () => {
+    // existe también 'DJ Lara' con ID 'L2' → la pista acaba en 'L2' y no se crea ninguna fila
+  })
+
+  // A DJ who renamed the artist inside rekordbox made a choice the review never saw.
+  it('leaves a track alone when rekordbox already says something else', async () => {
+    // el artista de la pista en rekordbox es 'DJ LARA' → { written: false, reason: 'changed' }, nada escrito
+  })
+
+  it('moves the track to the album of the new album artist and keeps the album name', async () => {
+    // albumArtist { from: 'Dj Lara', to: 'DJ Lara' } con álbum 'X' de 'Dj Lara' → AlbumID de una fila 'X' cuyo AlbumArtistID es 'DJ Lara'
+  })
+
+  it('renames the title in place and points the genre at the right row', async () => {
+    // title y genre a la vez → Title cambiado, GenreID → fila 'Electronic'
+  })
+
+  it('reports a track the collection does not have as no-match and writes no backup', async () => {
+    // no existe .surco-backup tras la llamada
+  })
+
+  it('refuses the whole run while rekordbox is open', async () => {
+    // isRekordboxRunning → true: todos 'rekordbox-running', nada escrito
+  })
+})
+```
+
+Cada comentario `//` de arriba se escribe como código con el `better-sqlite3-multiple-ciphers` del fixture (insertar las filas, llamar, `SELECT` y `expect`), siguiendo los tests de `rekordboxLibrary.test.ts`.
+
+- [ ] **Step 2: Ver que fallan** — `cd apps/desktop && npm test -- src/main/rekordboxTags.test.ts` → FAIL.
+
+- [ ] **Step 3: Implementar `rekordboxTags.ts`**
+
+```ts
+import { randomInt, randomUUID } from 'node:crypto'
+import { copyFile } from 'node:fs/promises'
+import log from 'electron-log/main'
+import type { LibraryTagUpdate, MusicReviewField } from '../shared/types'
+import type { LibraryRepointResult } from './libraryRepointFlush'
+import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
+import { isRekordboxRunning } from './rekordboxProcess'
+
+type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
+
+const BACKUP_SUFFIX = '.surco-backup'
+const LIVE = '(rb_local_deleted IS NULL OR rb_local_deleted = 0)'
+
+interface Current {
+  Title: string | null
+  artist: string | null
+  album: string | null
+  AlbumArtistID: string | null
+  albumArtist: string | null
+  genre: string | null
+}
+
+const same = (a: string | null, b: string) => (a ?? '').normalize('NFC') === b.normalize('NFC')
+
+function stamp(): string {
+  return new Date().toISOString().replace('T', ' ').replace('Z', ' +00:00')
+}
+
+function nextUsn(db: Db): number {
+  const row = db.prepare(`SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`).get() as
+    | { int_1: number | null }
+    | undefined
+  const next = (row?.int_1 ?? 0) + 1
+  db.prepare(`UPDATE agentRegistry SET int_1 = ? WHERE registry_id = 'localUpdateCount'`).run(next)
+  return next
+}
+
+function freeId(db: Db, table: string): string {
+  for (;;) {
+    const id = String(randomInt(1, 2 ** 32 - 1))
+    if (!db.prepare(`SELECT 1 FROM ${table} WHERE ID = ?`).get(id)) return id
+  }
+}
+
+function insertRow(db: Db, table: string, columns: Record<string, unknown>): string {
+  const id = freeId(db, table)
+  const now = stamp()
+  const row = {
+    ID: id,
+    ...columns,
+    UUID: randomUUID(),
+    rb_data_status: 0,
+    rb_local_data_status: 0,
+    rb_local_deleted: 0,
+    rb_local_synced: 0,
+    usn: null,
+    rb_local_usn: nextUsn(db),
+    created_at: now,
+    updated_at: now,
+  }
+  const names = Object.keys(row)
+  db.prepare(`INSERT INTO ${table} (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`).run(
+    ...Object.values(row),
+  )
+  return id
+}
+
+function artistId(db: Db, name: string): string {
+  const row = db.prepare(`SELECT ID FROM djmdArtist WHERE Name = ? AND ${LIVE} LIMIT 1`).get(name) as { ID: string } | undefined
+  return row?.ID ?? insertRow(db, 'djmdArtist', { Name: name, SearchStr: null })
+}
+
+function genreId(db: Db, name: string): string {
+  const row = db.prepare(`SELECT ID FROM djmdGenre WHERE Name = ? AND ${LIVE} LIMIT 1`).get(name) as { ID: string } | undefined
+  return row?.ID ?? insertRow(db, 'djmdGenre', { Name: name })
+}
+
+function albumId(db: Db, name: string, albumArtistId: string | null): string {
+  const row = db
+    .prepare(`SELECT ID FROM djmdAlbum WHERE Name = ? AND AlbumArtistID IS ? AND ${LIVE} LIMIT 1`)
+    .get(name, albumArtistId) as { ID: string } | undefined
+  return (
+    row?.ID ??
+    insertRow(db, 'djmdAlbum', { Name: name, AlbumArtistID: albumArtistId, ImagePath: null, Compilation: 0, SearchStr: null })
+  )
+}
+
+function currentOf(db: Db, id: string): Current {
+  return db
+    .prepare(
+      `SELECT c.Title, a.Name AS artist, al.Name AS album, al.AlbumArtistID, aa.Name AS albumArtist, g.Name AS genre
+         FROM djmdContent c
+         LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
+         LEFT JOIN djmdAlbum al ON al.ID = c.AlbumID
+         LEFT JOIN djmdArtist aa ON aa.ID = al.AlbumArtistID
+         LEFT JOIN djmdGenre g ON g.ID = c.GenreID
+        WHERE c.ID = ?`,
+    )
+    .get(id) as Current
+}
+
+const CURRENT_OF: Record<MusicReviewField, (c: Current) => string | null> = {
+  title: (c) => c.Title,
+  artist: (c) => c.artist,
+  album: (c) => c.album,
+  albumArtist: (c) => c.albumArtist,
+  genre: (c) => c.genre,
+}
+
+function applyUpdate(db: Db, id: string, update: LibraryTagUpdate, current: Current): void {
+  const { title, artist, album, albumArtist, genre } = update.fields
+  const set: Record<string, unknown> = {}
+  if (title) set.Title = title.to
+  if (artist) set.ArtistID = artistId(db, artist.to)
+  if (genre) set.GenreID = genreId(db, genre.to)
+  if (album || albumArtist) {
+    const owner = albumArtist ? artistId(db, albumArtist.to) : current.AlbumArtistID
+    set.AlbumID = albumId(db, album ? album.to : (current.album ?? ''), owner)
+  }
+  set.rb_local_usn = nextUsn(db)
+  set.updated_at = stamp()
+  const names = Object.keys(set)
+  db.prepare(`UPDATE djmdContent SET ${names.map((n) => `${n} = ?`).join(', ')} WHERE ID = ?`).run(
+    ...Object.values(set),
+    id,
+  )
+}
+
+export async function updateRekordboxTags(
+  collectionPath: string,
+  updates: LibraryTagUpdate[],
+  options: FindOptions & { sessionBackup?: (path: string) => Promise<void> } = {},
+): Promise<LibraryRepointResult[]> {
+  const results: (LibraryRepointResult | undefined)[] = updates.map(() => undefined)
+  const settle = (r: LibraryRepointResult) => results.map((x) => x ?? r)
+  if (await isRekordboxRunning()) return settle({ written: false, reason: 'rekordbox-running' })
+  const db = openRekordboxDb(collectionPath)
+  if (!db) return settle({ written: false, reason: 'unreadable' })
+  const writes: { index: number; id: string; current: Current }[] = []
+  try {
+    for (const [index, update] of updates.entries()) {
+      const match = findTrackByPath(db, update.path, options)
+      if (match === null) results[index] = { written: false, reason: 'no-match' }
+      else if (isAmbiguous(match)) results[index] = { written: false, reason: 'ambiguous' }
+      else {
+        const current = currentOf(db, match.id)
+        const fresh = Object.entries(update.fields).every(([field, change]) =>
+          same(CURRENT_OF[field as MusicReviewField](current), change.from),
+        )
+        if (fresh) writes.push({ index, id: match.id, current })
+        else results[index] = { written: false, reason: 'changed' }
+      }
+    }
+  } finally {
+    db.close()
+  }
+  if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
+  try {
+    await options.sessionBackup?.(collectionPath)
+    await copyFile(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
+  } catch {
+    return settle({ written: false, reason: 'backup-failed' })
+  }
+  if (await isRekordboxRunning()) return settle({ written: false, reason: 'rekordbox-running' })
+  const write = openRekordboxDb(collectionPath)
+  if (!write) return settle({ written: false, reason: 'unreadable' })
+  try {
+    write.transaction(() => {
+      for (const w of writes) applyUpdate(write, w.id, updates[w.index], w.current)
+    })()
+    for (const w of writes) results[w.index] = { written: true }
+    return settle({ written: false, reason: 'no-match' })
+  } catch (e) {
+    log.warn(`rekordbox tags: write failed: ${(e as Error).message}`)
+    return settle({ written: false, reason: 'write-failed' })
+  } finally {
+    write.close()
+  }
+}
+```
+
+Si `findTrackByPath` necesita `realPath` en sus opciones (como en el reapuntado), pasarlo desde el IPC de la Task 13 igual que `index.ts` hace con `repointTracks`.
+
+- [ ] **Step 4: Ver que pasan** — `cd apps/desktop && npm test -- src/main/rekordboxTags.test.ts` + typecheck. PASS.
+
+- [ ] **Step 5: Mutaciones** — quitar la guarda `fresh` (rojo `changed`); renombrar la fila (`UPDATE djmdArtist SET Name`) en lugar de reapuntar (rojo "la fila 'Dj Lara' sigue existiendo"). Deshacer.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/desktop/src/main/rekordboxTags.ts apps/desktop/src/main/rekordboxTags.test.ts apps/desktop/src/shared/types.ts
+git commit -m "Point a rekordbox track at the artist, album and genre spelled right"
+```
+
+---
+
+### Task 11: Cambiar nombres en Engine DJ
+
+**Files:**
+- Create: `apps/desktop/src/main/engineTags.ts`
+- Test: `apps/desktop/src/main/engineTags.test.ts`
+
+**Interfaces:**
+- Consumes: `LibraryTagUpdate` (Task 10); de `engineRepoint.ts` las funciones `absolute` y el emparejado por `pathKey` (exportar `absolute` si no lo está; sin cambiar su comportamiento); `loadSqlJs` (`engine.ts`), `assertEngineClosed` (`engineLibrary.ts`), `renameWithRetry`.
+- Produces: `updateEngineTags(libraryDir: string, updates: (LibraryTagUpdate & PathMatchOptions)[], options?: { sessionBackup?: (dbPath: string) => Promise<void> }): Promise<LibraryRepointResult[]>`.
+
+Engine guarda `title`, `artist`, `album` y `genre` como texto en `Track` (ver `engine3Fixture.ts`); no tiene album artist, así que ese campo se ignora y una actualización que solo traiga `albumArtist` no escribe nada en Engine. Guarda `changed` igual que rekordbox. Mismo ciclo que `repointEngineTracks`: Engine cerrado, leer con sql.js, copia de sesión y `.surco-backup`, escribir a temporal y `renameWithRetry`.
+
+- [ ] **Step 1: Escribir los tests que fallan** con el fixture de `engine3Fixture.ts` (como `engineRepoint.test.ts`):
+
+```ts
+describe('updateEngineTags', () => {
+  it('rewrites the artist of the row that names this file', async () => {
+    // fila con path relativo a /m/c.mp3, artist 'Dj Lara' → { written: true } y artist 'DJ Lara' al releer m.db
+  })
+  it('leaves a row whose artist Engine already spells otherwise', async () => {
+    // artist 'DJ LARA' → { written: false, reason: 'changed' }
+  })
+  it('writes nothing for an album artist, which Engine does not store', async () => {
+    // solo albumArtist → { written: false, reason: 'no-match' } y m.db sin cambios (mtime igual)
+  })
+  it('refuses while Engine DJ is open', async () => {
+    // assertEngineClosed lanza → 'engine-running'
+  })
+})
+```
+
+Cada comentario se escribe como código siguiendo `engineRepoint.test.ts` (crear el `m.db` del fixture, insertar la fila, llamar, releer con sql.js).
+
+- [ ] **Step 2: Ver que fallan** — `cd apps/desktop && npm test -- src/main/engineTags.test.ts`.
+
+- [ ] **Step 3: Implementar `engineTags.ts`**
+
+```ts
+import { copyFile, readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import log from 'electron-log/main'
+import type { LibraryTagUpdate } from '../shared/types'
+import { loadSqlJs } from './engine'
+import { assertEngineClosed } from './engineLibrary'
+import { absolute } from './engineRepoint'
+import { type PathMatchOptions, pathKey } from './libraryPathKey'
+import type { LibraryRepointResult } from './libraryRepointFlush'
+import { renameWithRetry } from './renameRetry'
+
+const COLUMN = { title: 'title', artist: 'artist', album: 'album', genre: 'genre' } as const
+type EngineField = keyof typeof COLUMN
+const same = (a: unknown, b: string) => String(a ?? '').normalize('NFC') === b.normalize('NFC')
+
+export async function updateEngineTags(
+  libraryDir: string,
+  updates: (LibraryTagUpdate & PathMatchOptions)[],
+  options: { sessionBackup?: (dbPath: string) => Promise<void> } = {},
+): Promise<LibraryRepointResult[]> {
+  const dbPath = join(libraryDir, 'Database2', 'm.db')
+  const results: (LibraryRepointResult | undefined)[] = updates.map(() => undefined)
+  const settle = (r: LibraryRepointResult) => results.map((x) => x ?? r)
+  try {
+    await assertEngineClosed(dbPath)
+  } catch {
+    return settle({ written: false, reason: 'engine-running' })
+  }
+  const SQL = await loadSqlJs()
+  let db: InstanceType<typeof SQL.Database>
+  try {
+    db = new SQL.Database(await readFile(dbPath))
+  } catch {
+    return settle({ written: false, reason: 'unreadable' })
+  }
+  try {
+    const rows = (db.exec('SELECT id, path, title, artist, album, genre FROM Track')[0]?.values ?? []).map(
+      ([id, path, title, artist, album, genre]) => ({ id: Number(id), path: String(path), title, artist, album, genre }),
+    )
+    const writes: { index: number; id: number; set: [EngineField, string][] }[] = []
+    for (const [index, update] of updates.entries()) {
+      const set = (Object.entries(update.fields) as [string, { from: string; to: string }][]).filter(
+        (e): e is [EngineField, { from: string; to: string }] => e[0] in COLUMN,
+      )
+      if (set.length === 0) {
+        results[index] = { written: false, reason: 'no-match' }
+        continue
+      }
+      const key = pathKey(update)
+      const target = key(update.path.normalize('NFC'))
+      const matches = rows.filter((r) => key(absolute(libraryDir, r.path)) === target)
+      if (matches.length === 0) results[index] = { written: false, reason: 'no-match' }
+      else if (matches.length > 1) results[index] = { written: false, reason: 'ambiguous' }
+      else if (!set.every(([field, change]) => same(matches[0][field], change.from)))
+        results[index] = { written: false, reason: 'changed' }
+      else writes.push({ index, id: matches[0].id, set: set.map(([f, c]) => [f, c.to]) })
+    }
+    if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
+    try {
+      await options.sessionBackup?.(dbPath)
+      await copyFile(dbPath, `${dbPath}.surco-backup`)
+    } catch {
+      return settle({ written: false, reason: 'backup-failed' })
+    }
+    for (const w of writes)
+      db.run(`UPDATE Track SET ${w.set.map(([f]) => `${COLUMN[f]} = ?`).join(', ')} WHERE id = ?`, [
+        ...w.set.map(([, v]) => v),
+        w.id,
+      ])
+    const tmp = `${dbPath}.surco-tmp`
+    try {
+      await writeFile(tmp, db.export())
+      await renameWithRetry(tmp, dbPath)
+    } catch (e) {
+      log.warn(`Engine DJ tags: write failed: ${(e as Error).message}`)
+      return settle({ written: false, reason: 'write-failed' })
+    }
+    for (const w of writes) results[w.index] = { written: true }
+    return settle({ written: false, reason: 'no-match' })
+  } finally {
+    db.close()
+  }
+}
+```
+
+Antes de escribirlo, comprobar cómo nombra `repointEngineTracks` su temporal y reutilizar el mismo nombre (y su limpieza si el rename falla).
+
+- [ ] **Step 4: Ver que pasan** + typecheck.
+
+- [ ] **Step 5: Mutación** — quitar la guarda `same(...)` (rojo `changed`); deshacer.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/desktop/src/main/engineTags.ts apps/desktop/src/main/engineTags.test.ts apps/desktop/src/main/engineRepoint.ts
+git commit -m "Rewrite the names of an Engine DJ track whose file the review fixed"
+```
+
+---
+
+### Task 12: Cambiar nombres en Traktor
+
+**Files:**
+- Modify: `apps/desktop/src/main/traktorNml.ts`
+- Test: `apps/desktop/src/main/traktorNml.test.ts`
+
+**Interfaces:**
+- Consumes: `TagChange` (Task 10), `escapeAttr`/`unescapeAttr` del propio fichero.
+- Produces: `NmlPatch.tags?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>`, aplicado por `patchEntry`.
+
+En el NML: `TITLE` y `ARTIST` son atributos de `<ENTRY>`; el álbum es `<ALBUM TITLE="…"/>` y el género `GENRE` dentro de `<INFO …/>`. Traktor no guarda album artist. Cada campo se cambia solo si su valor actual (desescapado, NFC) es `from`; si no, ese campo queda como está.
+
+- [ ] **Step 1: Escribir los tests que fallan**
+
+```ts
+describe('applyPatches with tags', () => {
+  const entry = (artist: string) =>
+    `<ENTRY TITLE="Bleeding Love" ARTIST="${artist}"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM TITLE="Need You"></ALBUM><INFO GENRE="electronic"></INFO></ENTRY>`
+  const nml = (artist: string) => `<NML><COLLECTION ENTRIES="1">${entry(artist)}</COLLECTION></NML>`
+  const patch = (tags: NmlPatch['tags']): NmlPatch => ({ volume: 'Mac', dir: '/:m/:', file: 'c.mp3', tags })
+
+  it('rewrites the artist, album and genre of the entry', () => {
+    const out = applyPatches(nml('Dj Lara'), [
+      patch({
+        artist: { from: 'Dj Lara', to: 'DJ Lara' },
+        album: { from: 'Need You', to: 'NEED YOU' },
+        genre: { from: 'electronic', to: 'Electronic' },
+      }),
+    ])
+    expect(out).toContain('ARTIST="DJ Lara"')
+    expect(out).toContain('<ALBUM TITLE="NEED YOU">')
+    expect(out).toContain('GENRE="Electronic"')
+  })
+
+  it('escapes what it writes', () => {
+    const out = applyPatches(nml('Dj Lara'), [patch({ artist: { from: 'Dj Lara', to: 'A & "B"' } })])
+    expect(out).toContain('ARTIST="A &amp; &quot;B&quot;"')
+  })
+
+  it('leaves a field Traktor already spells otherwise', () => {
+    const out = applyPatches(nml('DJ LARA'), [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
+    expect(out).toContain('ARTIST="DJ LARA"')
+  })
+})
+```
+
+(Ajustar el formato de `LOCATION` al que usen los tests existentes de `traktorNml.test.ts` para que `findEntries` reconozca la entrada.)
+
+- [ ] **Step 2: Ver que fallan.**
+
+- [ ] **Step 3: Implementar** en `traktorNml.ts`: añadir `tags` a `NmlPatch` y al final de `patchEntry`, antes del `return`:
+
+```ts
+  if (patch.tags) out = replaceTags(out, patch.tags)
+```
+
+con:
+
+```ts
+const TAG_SPOTS: Record<'title' | 'artist' | 'album' | 'genre', RegExp> = {
+  title: /(<ENTRY\b[^>]*\bTITLE=")([^"]*)(")/,
+  artist: /(<ENTRY\b[^>]*\bARTIST=")([^"]*)(")/,
+  album: /(<ALBUM\b[^>]*\bTITLE=")([^"]*)(")/,
+  genre: /(<INFO\b[^>]*\bGENRE=")([^"]*)(")/,
+}
+
+function replaceTags(block: string, tags: NonNullable<NmlPatch['tags']>): string {
+  let out = block
+  for (const [field, change] of Object.entries(tags) as [keyof typeof TAG_SPOTS, TagChange][]) {
+    out = out.replace(TAG_SPOTS[field], (whole, open, value, close) =>
+      unescapeAttr(value).normalize('NFC') === change.from.normalize('NFC')
+        ? `${open}${escapeAttr(change.to)}${close}`
+        : whole,
+    )
+  }
+  return out
+}
+```
+
+Ojo: la regex de `title` sobre `<ENTRY` no debe casar con el `TITLE` del `<ALBUM>`, que está en otra etiqueta; el test de álbum lo cubre.
+
+- [ ] **Step 4: Ver que pasan** (incluida la suite entera de `traktorNml.test.ts`) + typecheck.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/desktop/src/main/traktorNml.ts apps/desktop/src/main/traktorNml.test.ts
+git commit -m "Rewrite a Traktor entry's title, artist, album and genre when its file's names were fixed"
+```
+
+---
+
+### Task 13: Llevar los nombres a las bibliotecas tras aplicar y tras deshacer
+
+**Files:**
+- Modify: `apps/desktop/src/main/index.ts` (IPC `library:syncTags`), `apps/desktop/src/preload/api.ts`, `apps/desktop/src/preload/index.ts`, locales del renderer (`activity.rekordboxTagsWritten`, `activity.engineTagsWritten`)
+- Create: `apps/desktop/src/renderer/src/lib/libraryTagUpdates.ts`
+- Test: `apps/desktop/src/renderer/src/lib/libraryTagUpdates.test.ts`
+
+**Interfaces:**
+- Consumes: `MusicFixOutcome.written` (Task 7), `updateRekordboxTags` (10), `updateEngineTags` (11), `NmlPatch.tags` (12), `flushLibraryRepoints` genérico (9), `flushTraktorSync`, `toNmlLocation`.
+- Produces:
+  - `tagUpdatesOf(outcomes: MusicFixOutcome[], direction: 'apply' | 'undo'): LibraryTagUpdate[]`
+  - IPC `library:syncTags(updates)`; preload `syncLibraryTags(updates: LibraryTagUpdate[]): Promise<void>`
+
+Regla, la de un Actualizar: solo van a las bibliotecas los campos que se escribieron en el fichero (`MusicFixOutcome.written`), y cada biblioteca solo si su interruptor está encendido (`syncRekordbox`, `syncEngineDj` con `m.db` existente, `syncTraktor` con ruta), con el mismo "¿cerrar la app?" y los mismos diálogos que el final de una tanda de conversión (`index.ts`, `process:batch-end`).
+
+- [ ] **Step 1: Escribir los tests que fallan** (`libraryTagUpdates.test.ts`)
+
+```ts
+import { describe, expect, it } from 'vitest'
+import type { MusicFixOutcome } from '../../../shared/types'
+import { tagUpdatesOf } from './libraryTagUpdates'
+
+const outcome = (over: Partial<MusicFixOutcome>): MusicFixOutcome => ({
+  persistentId: 'C',
+  path: '/m/c.mp3',
+  fixes: [
+    { persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    { persistentId: 'C', field: 'genre', from: 'electronic', to: 'Electronic' },
+  ],
+  music: ['set', 'set'],
+  file: 'written',
+  written: ['artist'],
+  ...over,
+})
+
+describe('tagUpdatesOf', () => {
+  // The libraries read the file, so only what reached the file follows, like an Update.
+  it('carries only the fields written to the file', () => {
+    expect(tagUpdatesOf([outcome({})], 'apply')).toEqual([
+      { path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
+    ])
+  })
+
+  it('swaps the direction to undo', () => {
+    expect(tagUpdatesOf([outcome({})], 'undo')).toEqual([
+      { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
+  })
+
+  it('sends nothing for a track whose file was not written', () => {
+    expect(tagUpdatesOf([outcome({ file: 'unchanged', written: [] })], 'apply')).toEqual([])
+  })
+})
+```
+
+- [ ] **Step 2: Ver que fallan.**
+
+- [ ] **Step 3: Implementar**
+
+`libraryTagUpdates.ts`:
+
+```ts
+import type { LibraryTagUpdate, MusicFixOutcome } from '../../../shared/types'
+
+export function tagUpdatesOf(outcomes: MusicFixOutcome[], direction: 'apply' | 'undo'): LibraryTagUpdate[] {
+  const updates: LibraryTagUpdate[] = []
+  for (const o of outcomes) {
+    if (!o.path || o.written.length === 0) continue
+    const fields: LibraryTagUpdate['fields'] = {}
+    for (const f of o.fixes) {
+      if (!o.written.includes(f.field)) continue
+      fields[f.field] = direction === 'apply' ? { from: f.from, to: f.to } : { from: f.to, to: f.from }
+    }
+    updates.push({ path: o.path, fields })
+  }
+  return updates
+}
+```
+
+En `index.ts`, junto a `process:batch-end`, un handler que repite sus tres bloques con otra entrada:
+
+```ts
+  ipcMain.handle('library:syncTags', async (e, updates: LibraryTagUpdate[]) => {
+    if (updates.length === 0) return
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const nmlFields = ['title', 'artist', 'album', 'genre'] as const
+    await flushTraktorSync({
+      traktorNmlPath: getSettings().syncTraktor ? getSettings().traktorNmlPath : '',
+      endNmlBatch: () =>
+        updates.map((u) => ({
+          ...toNmlLocation(u.path),
+          tags: Object.fromEntries(nmlFields.filter((f) => u.fields[f]).map((f) => [f, u.fields[f]])),
+        })),
+      // ensureTraktorClosed, showBlockedDialog, syncCollection, track: los mismos que en process:batch-end
+    })
+    await flushLibraryRepoints(
+      {
+        collectionPath: getSettings().syncRekordbox ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath }) : '',
+        endBatch: () => updates,
+        labelOf: (u) => u.path,
+        repointTracks: (path, list) =>
+          updateRekordboxTags(path, list, {
+            realPath: (p: string) => realpathSync(p),
+            sessionBackup: (p) => rekordboxSessionBackup.ensure(p),
+          }),
+        // ensureClosed, track, showBlockedDialog, reportIssue: los de process:batch-end
+      },
+      { ...REKORDBOX_KEYS, written: 'activity.rekordboxTagsWritten' },
+    )
+    // Engine DJ igual, con updateEngineTags, engineSessionBackup y ENGINE_KEYS con written: 'activity.engineTagsWritten'
+  })
+```
+
+Para no copiar los colaboradores (cerrar app, diálogos, avisos), extraerlos primero a funciones locales de `index.ts` (`traktorFlushDeps(win)`, `rekordboxFlushDeps(win, sender)`, `engineFlushDeps(win)`) usadas por `process:batch-end` y por este handler: es un movimiento sin cambio de comportamiento, en su propio commit antes del de esta tarea. Exportar `REKORDBOX_KEYS` y `ENGINE_KEYS` desde `rekordboxFlush.ts` y `engineSyncFlush.ts`.
+
+Textos nuevos (cinco idiomas): `activity.rekordboxTagsWritten_one/_other` = "{{count}} pista con los nombres corregidos" / "{{count}} pistas con los nombres corregidos" (en: "{{count}} track with its names fixed" / "{{count}} tracks with their names fixed"); `activity.engineTagsWritten_one/_other` iguales.
+
+Preload: `syncLibraryTags: (updates) => ipcRenderer.invoke('library:syncTags', updates)`.
+
+- [ ] **Step 4: Ver que pasan** + suite de `main` + typecheck.
+
+- [ ] **Step 5: Commits** (primero el movimiento, luego la función)
+
+```bash
+git commit -m "Share the library flush collaborators between a conversion run and other callers"
+git commit -m "Carry the names a review fixed to rekordbox, Engine DJ and Traktor like an update does"
+```
+
+---
+
+### Task 14: Grupos ignorados, guardados por máquina
 
 **Files:**
 - Modify: `apps/desktop/src/shared/types.ts` (`Settings`), `apps/desktop/src/main/settings.ts` (defaults y `LOCAL_KEYS`), `apps/desktop/src/renderer/src/test/api.ts` (settings de test)
@@ -1838,14 +2534,14 @@ git commit -m "Remember the review groups the user ignores, on this Mac only"
 
 ---
 
-### Task 10: Hook `useMusicReview`
+### Task 15: Hook `useMusicReview`
 
 **Files:**
 - Create: `apps/desktop/src/renderer/src/hooks/useMusicReview.ts`
 - Test: `apps/desktop/src/renderer/src/hooks/useMusicReview.test.tsx`
 
 **Interfaces:**
-- Consumes: `loadMusicReview`, `applyMusicFixes`, `cancelMusicFixes`, `onMusicFixProgress`, `setMusicField`, `removeMusicDuplicate`, `appleMusicEntryLocation`, `trashRestore` (preload); `spellingGroups`, `SAFE_KINDS` (Task 2); `duplicateGroups` (Task 3); `planFixes`, `summarizeFixes` (Task 4).
+- Consumes: `loadMusicReview`, `applyMusicFixes`, `cancelMusicFixes`, `onMusicFixProgress`, `setMusicField`, `removeMusicDuplicate`, `appleMusicEntryLocation`, `trashRestore`, `syncLibraryTags` (preload); `tagUpdatesOf` (Task 13); `spellingGroups`, `SAFE_KINDS` (Task 2); `duplicateGroups` (Task 3); `planFixes`, `summarizeFixes` (Task 4).
 - Produces:
 
 ```ts
@@ -1889,7 +2585,8 @@ Comportamiento:
 - `choice(key)`: lo elegido o `group.suggested`; para duplicados, el `persistentId` que se queda (por defecto el primer miembro sin pérdida: `.aiff`, `.aif`, `.wav`, `.flac`, `.m4a`; si no, el primero).
 - Solo se puede escenificar (`toggleStaged`) un grupo con elección no nula; los `version` nunca se escenifican por defecto, el usuario sí puede.
 - `apply()`: `planFixes` de los grupos escenificados → `applyMusicFixes`; luego `removeMusicDuplicate` por cada copia a quitar (label `artist - title` de la entrada); luego vuelve a leer la biblioteca y calcula `after` (grupos pendientes) frente a `before`; llama a `onFilesChanged` con los `path` de los `file: 'written'`; `status: 'done'`.
-- `undo()`: `trashRestore` de cada `backupId`, `setMusicField(pid, field, to, from)` de cada campo `set`, vuelve a leer, `onFilesChanged` con esos `path`.
+- `undo()`: `trashRestore` de cada `backupId`, `setMusicField(pid, field, to, from)` de cada campo `set`, `syncLibraryTags(tagUpdatesOf(outcomes, 'undo'))`, vuelve a leer, `onFilesChanged` con esos `path`.
+- Tras `apply()`, `syncLibraryTags(tagUpdatesOf(outcomes, 'apply'))`: rekordbox, Engine DJ y Traktor siguen al fichero como en un Actualizar (Task 13).
 
 - [ ] **Step 1: Escribir los tests que fallan**
 
@@ -1922,9 +2619,11 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
         fixes: [{ persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
         music: ['set'],
         file: 'written',
+        written: ['artist'],
         backupId: 'b1',
       },
     ]),
+    syncLibraryTags: vi.fn<Api['syncLibraryTags']>().mockResolvedValue(undefined),
     cancelMusicFixes: vi.fn<Api['cancelMusicFixes']>().mockResolvedValue(undefined),
     onMusicFixProgress: vi.fn<Api['onMusicFixProgress']>().mockReturnValue(() => {}),
     setMusicField: vi.fn<Api['setMusicField']>().mockResolvedValue('set'),
@@ -1986,6 +2685,9 @@ describe('useMusicReview', () => {
     expect(api.applyMusicFixes).toHaveBeenCalledWith([{ persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }])
     expect(api.loadMusicReview).toHaveBeenCalledTimes(2)
     expect(onFilesChanged).toHaveBeenCalledWith(['/m/c.mp3'])
+    expect(api.syncLibraryTags).toHaveBeenCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
+    ])
     expect(result.current.status).toBe('done')
   })
 
@@ -1998,6 +2700,9 @@ describe('useMusicReview', () => {
     await act(() => result.current.undo())
     expect(api.trashRestore).toHaveBeenCalledWith('b1')
     expect(api.setMusicField).toHaveBeenCalledWith('C', 'artist', 'DJ Lara', 'Dj Lara')
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
   })
 
   it('never stages a tie until the user picks a spelling', async () => {
@@ -2030,6 +2735,7 @@ import type {
   RemoveCopyResult,
 } from '../../../shared/types'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
+import { tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { planFixes, summarizeFixes } from '../lib/musicFixPlan'
 import { type SpellingGroup, spellingGroups } from '../lib/musicSpelling'
 
@@ -2210,6 +2916,8 @@ export function useMusicReview({
       setLastRun({ outcomes, removed, before, after: pendingCount(next, hidden) })
       const written = outcomes.filter((o) => o.file === 'written' && o.path).map((o) => o.path as string)
       if (written.length) onFilesChanged(written)
+      const updates = tagUpdatesOf(outcomes, 'apply')
+      if (updates.length) await window.api.syncLibraryTags(updates)
     } finally {
       off()
       setProgress(null)
@@ -2233,6 +2941,8 @@ export function useMusicReview({
       for (const [i, f] of o.fixes.entries())
         if (o.music[i] === 'set') await window.api.setMusicField(f.persistentId, f.field, f.to, f.from).catch(() => undefined)
     }
+    const updates = tagUpdatesOf(lastRun.outcomes, 'undo')
+    if (updates.length) await window.api.syncLibraryTags(updates)
     await load()
     setLastRun(null)
     if (paths.length) onFilesChanged(paths)
@@ -2283,7 +2993,7 @@ git commit -m "Hold the Music review state: groups, choices, the tray, apply, un
 
 ---
 
-### Task 11: La vista de revisión
+### Task 16: La vista de revisión
 
 **Files:**
 - Create: `apps/desktop/src/renderer/src/components/MusicReview.tsx`
@@ -2291,7 +3001,7 @@ git commit -m "Hold the Music review state: groups, choices, the tray, apply, un
 - Test: `apps/desktop/src/renderer/src/components/MusicReview.test.tsx`
 
 **Interfaces:**
-- Consumes: `MusicReview`, `ReviewFilter` (Task 10), `SAFE_KINDS` (Task 2).
+- Consumes: `MusicReview`, `ReviewFilter` (Task 15), `SAFE_KINDS` (Task 2).
 - Produces: `<MusicReview review={MusicReview} onClose={() => void} />`
 
 Diseño: el boceto B aprobado (https://claude.ai/artifact/54YEuiNBhTo6nPPRNNjKuD), sin la parte de búsqueda (segunda entrega). Cabecera con título, chips `Todo`, `Grafías`, `Duplicados` y `Cerrar`; lista de grupos; bandeja fija abajo; hoja de confirmación; hoja final con `Deshacer`. Punto de color `good` para seguro, `warn` para revisar, con `aria-label`. Sin texto redundante ([[ui-minimalista-apple]]).
@@ -2326,6 +3036,7 @@ Claves i18n (bloque `musicReview`), texto en `es`:
     "playlists": "La copia que se queda entra al final de las playlists de la otra",
     "trash": "Los ficheros de las copias quitadas van a la Papelera",
     "untouched": "BPM, key, cues y rating no se tocan",
+    "libraries": "rekordbox, Engine DJ y Traktor se actualizan como en un Actualizar, si su sincronización está activa",
     "backup": "Copia de seguridad de cada fichero",
     "cancel": "Cancelar",
     "apply": "Aplicar"
@@ -2381,6 +3092,7 @@ Y su traducción en `en` (y equivalentes en `de`, `fr`, `pt-BR` con las mismas c
     "playlists": "The kept copy joins the end of the other copy's playlists",
     "trash": "Removed copies' files go to the Trash",
     "untouched": "BPM, key, cues and rating stay as they are",
+    "libraries": "rekordbox, Engine DJ and Traktor follow like on an Update, when their sync is on",
     "backup": "Backup of every file",
     "cancel": "Cancel",
     "apply": "Apply"
@@ -2664,6 +3376,7 @@ function Confirm({ review, onCancel }: { review: Review; onCancel: () => void })
           </p>
         )}
         <p className="text-xs text-fg-dim">{t('musicReview.confirm.untouched')}</p>
+        <p className="text-xs text-fg-dim">{t('musicReview.confirm.libraries')}</p>
         <label className="flex items-center gap-2 text-xs text-fg-dim">
           <input type="checkbox" checked disabled readOnly /> {t('musicReview.confirm.backup')}
         </label>
@@ -2813,7 +3526,7 @@ git commit -m "Show the Music review as groups to resolve, a tray of pending cha
 
 ---
 
-### Task 12: Entradas por menú y ⌘K, y la vista en la columna de la lista
+### Task 17: Entradas por menú y ⌘K, y la vista en la columna de la lista
 
 **Files:**
 - Modify: `apps/desktop/src/main/appMenu.ts`, `apps/desktop/src/main/i18n.ts`, `apps/desktop/src/main/index.ts` (pasar `mac`)
@@ -2821,7 +3534,7 @@ git commit -m "Show the Music review as groups to resolve, a tray of pending cha
 - Test: `apps/desktop/src/main/appMenu.test.ts`, `apps/desktop/src/renderer/src/lib/commands.test.ts`, `apps/desktop/src/renderer/src/App.test.tsx`
 
 **Interfaces:**
-- Consumes: `useMusicReview` (Task 10), `MusicReview` (Task 11), `rereadTrackMeta`, `refreshTrackFromDisk` (`useTrackLibrary`), `saveSettings`.
+- Consumes: `useMusicReview` (Task 15), `MusicReview` (Task 16), `rereadTrackMeta`, `refreshTrackFromDisk` (`useTrackLibrary`), `saveSettings`.
 - Produces: comandos `music-review` y `music-duplicates`; `CommandDeps.openMusicReview?: (filter: 'all' | 'duplicates') => void`; `appMenuTemplate({ …, mac })`.
 
 - [ ] **Step 1: Escribir los tests que fallan**
@@ -2903,9 +3616,11 @@ git commit -m "Show the Music review as groups to resolve, a tray of pending cha
           fixes: [{ persistentId: '0000000000000003', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
           music: ['set'],
           file: 'written',
+          written: ['artist'],
           backupId: 'b1',
         },
       ]),
+      syncLibraryTags: vi.fn().mockResolvedValue(undefined),
       onMusicFixProgress: () => () => {},
       appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
     })
@@ -2992,7 +3707,7 @@ git commit -m "Open the Music metadata review from the File menu and the palette
 
 ---
 
-### Task 13: Verificación en la app real
+### Task 18: Verificación en la app real
 
 **Files:** ninguno (si aparece un fallo, vuelve a la tarea dueña con un test rojo primero).
 
@@ -3007,6 +3722,10 @@ Pedir al usuario permiso y dos o tres pistas desechables (un MP3 con cues de Tra
 - en el fichero, con `snapshotTags` o mp3tag, solo ese campo cambiado y los cues intactos;
 - en Copias de seguridad, una entrada por fichero;
 - "Deshacer" devuelve fichero y Music a su estado.
+
+- [ ] **Step 2b: rekordbox, Engine DJ y Traktor**
+
+Con las pistas de prueba importadas también en rekordbox (y Engine/Traktor si los usa) y su sincronización encendida: aplicar, abrir rekordbox y comprobar el artista nuevo, sus playlists y cues intactos; Deshacer y comprobar que vuelve. Antes, ejecutar `updateRekordboxTags` sobre una COPIA de `~/Library/Pioneer/rekordbox/master.db` y abrir esa copia… no se puede abrir una copia en rekordbox, así que la prueba real es sobre la colección del usuario con su permiso explícito y con la copia de sesión que hace Surco como red.
 
 - [ ] **Step 3: Duplicado de prueba**
 

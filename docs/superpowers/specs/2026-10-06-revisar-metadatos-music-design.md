@@ -63,8 +63,14 @@ revisión, carátulas y géneros con varios valores.
   Papelera, como ya hace el flujo de copia antigua, salvo que la copia que se
   queda apunte al mismo fichero real. Antes, la copia que se queda entra en
   las playlists normales donde solo estaba la quitada (al final de la lista).
+- **Bibliotecas DJ, como un Actualizar**: lo que se escribe en el fichero se
+  lleva a rekordbox, Engine DJ y Traktor si su sincronización está activa, con la
+  app cerrada y copia de su base. En rekordbox artista, álbum y género son
+  referencias a otras tablas: la pista se reapunta a la fila bien escrita (o a una
+  nueva), nunca se renombra la fila compartida. Engine no guarda album artist ni
+  Traktor tampoco. Si la biblioteca ya dice otra cosa, no se toca.
 - **Deshacer** restaura las copias de seguridad de la tanda y devuelve los
-  valores antiguos a Music. Las copias de duplicados quitadas no se deshacen
+  valores antiguos a Music y a las bibliotecas DJ. Las copias de duplicados quitadas no se deshacen
   desde aquí: están en la Papelera de macOS.
 - **Verificar**: al terminar se vuelve a leer la biblioteca y se recuentan
   los grupos.
