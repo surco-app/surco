@@ -711,6 +711,16 @@ export interface AppleMusicUpdateJob {
 
 export type MusicReviewField = 'title' | 'artist' | 'albumArtist' | 'album' | 'genre'
 
+export interface TagChange {
+  from: string
+  to: string
+}
+
+export interface LibraryTagUpdate {
+  path: string
+  fields: Partial<Record<MusicReviewField, TagChange>>
+}
+
 export interface MusicReviewEntry {
   persistentId: string
   title: string
