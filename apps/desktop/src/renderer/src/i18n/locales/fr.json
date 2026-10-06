@@ -1154,7 +1154,7 @@
     "syncTraktorHint": "Les cue points et la grille des morceaux convertis sont écrits dans ta collection Traktor. Avant d'écrire, Surco enregistre une sauvegarde à côté de ta collection, et n'écrit jamais quand Traktor est ouvert.",
     "syncTraktorIdle": "Indique ci-dessous où se trouve ta collection Traktor pour pouvoir l'activer.",
     "syncRekordbox": "Mettre à jour la collection rekordbox à la conversion",
-    "syncRekordboxHint": "Quand tu convertis ou mets à jour un morceau présent dans rekordbox, son entrée suit le nouveau fichier et reprend le titre, l'artiste, l'album, le genre, le label, le remixeur, le commentaire, l'année et les numéros de piste et de disque. Elle conserve ses playlists, ses cue points, son BPM, sa tonalité et sa pochette, et un champ vide dans Surco n'efface jamais celui de rekordbox. Avant d'écrire, Surco enregistre à côté de ta collection une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand rekordbox est ouvert.",
+    "syncRekordboxHint": "Quand tu convertis ou mets à jour un morceau présent dans rekordbox, son entrée suit le nouveau fichier et reprend le titre, l'artiste, l'album, le genre, le label, le remixeur, le commentaire, l'année, les numéros de piste et de disque et la pochette. Elle conserve ses playlists, ses cue points, son BPM et sa tonalité, et un champ vide dans Surco n'efface jamais celui de rekordbox. Avant d'écrire, Surco enregistre à côté de ta collection une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand rekordbox est ouvert.",
     "syncRekordboxIdle": "Aucune collection rekordbox n'a été trouvée sur cette machine.",
     "rekordboxSync": "Collection rekordbox",
     "rekordboxDbPath": "Collection rekordbox",

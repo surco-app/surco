@@ -21,6 +21,7 @@ export interface RekordboxMeta {
 export interface ApplyOptions {
   now?: Date
   newId?: () => string
+  imagePath?: string
 }
 
 type LookupTable = 'djmdArtist' | 'djmdGenre' | 'djmdLabel'
@@ -160,6 +161,8 @@ export function applyRekordboxMeta(
   if (track !== null) set.TrackNo = track
   const disc = leadingNumber(meta.discNumber)
   if (disc !== null) set.DiscNo = disc
+
+  if (options.imagePath) set.ImagePath = options.imagePath
 
   if (Object.keys(set).length === 0) return
   set.rb_local_usn = nextUsn()

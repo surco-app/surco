@@ -166,6 +166,17 @@ describe('applyRekordboxMeta', () => {
     })
   })
 
+  it('points the entry at new artwork when it is given one', () => {
+    applyRekordboxMeta(db, ROW, rekordboxMetaFrom(emptyMetadata()), {
+      now: NOW,
+      imagePath: '/PIONEER/Artwork/992/bdc59/artwork.jpg',
+    })
+    expect(row()).toMatchObject({
+      ImagePath: '/PIONEER/Artwork/992/bdc59/artwork.jpg',
+      updated_at: '2026-10-06 18:00:00.123 +00:00',
+    })
+  })
+
   it('reads the year out of a full release date', () => {
     apply({ year: '2020-12-01' })
     expect(row().ReleaseYear).toBe(2020)

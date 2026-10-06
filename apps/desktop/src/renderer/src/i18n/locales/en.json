@@ -1154,7 +1154,7 @@
     "syncTraktorHint": "Converted tracks' cue points and beatgrid are written into your Traktor collection. Before writing, Surco saves a backup next to your collection, and it never writes while Traktor is open.",
     "syncTraktorIdle": "Point Surco at your Traktor collection below to enable this.",
     "syncRekordbox": "Update the rekordbox collection when converting",
-    "syncRekordboxHint": "When you convert or update a track that is in rekordbox, its entry follows the new file and takes the title, artist, album, genre, label, remixer, comment, year and track and disc numbers. It keeps its playlists, cue points, BPM, key and artwork, and a field left empty in Surco never clears rekordbox's. Before writing, Surco saves a backup of the whole run next to your collection, plus one of each write, and it never writes while rekordbox is open.",
+    "syncRekordboxHint": "When you convert or update a track that is in rekordbox, its entry follows the new file and takes the title, artist, album, genre, label, remixer, comment, year, track and disc numbers and artwork. It keeps its playlists, cue points, BPM and key, and a field left empty in Surco never clears rekordbox's. Before writing, Surco saves a backup of the whole run next to your collection, plus one of each write, and it never writes while rekordbox is open.",
     "syncRekordboxIdle": "No rekordbox collection was found on this machine.",
     "rekordboxSync": "rekordbox collection",
     "rekordboxDbPath": "rekordbox collection",

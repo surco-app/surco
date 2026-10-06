@@ -104,6 +104,7 @@ import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
+import { readEmbeddedCover } from './tags'
 import { createTmpManifest } from './tmpManifest'
 import { syncCollection } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
@@ -886,7 +887,10 @@ function registerIpc(): void {
         repointTracks(
           collectionPath,
           repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-          { sessionBackup: (path) => rekordboxSessionBackup.ensure(path) },
+          {
+            sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
+            readCover: readEmbeddedCover,
+          },
         ),
       showBlockedDialog: () => {
         const t = createMenuT(menuLocale())
