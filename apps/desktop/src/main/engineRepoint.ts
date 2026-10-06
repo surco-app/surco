@@ -40,7 +40,7 @@ export interface EngineRepointOptions {
 // Engine stores each path relative to the library folder, forward-slashed. Matching
 // compares the absolute, resolved form; NFC first, because APFS treats NFC and NFD names as
 // one file while a byte compare would not.
-function absolute(libraryDir: string, stored: string): string {
+export function absolute(libraryDir: string, stored: string): string {
   return resolve(libraryDir, stored).normalize('NFC')
 }
 
