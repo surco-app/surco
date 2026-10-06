@@ -7,6 +7,7 @@ export type DownloadLocation =
   | 'home-closing'
   | 'features'
   | 'guide'
+  | 'use-cases'
   | 'changelog'
   | 'install'
   | 'convert-hero'

@@ -21,6 +21,7 @@
     "instalar": "Install",
     "faq": "FAQ",
     "guia": "Guide",
+    "casos": "Use cases",
     "skipToContent": "Skip to content",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -1228,5 +1229,96 @@
       "title": "Convert your FLACs to AIFF",
       "lede": "Surco also tags from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz and files everything into your library."
     }
+  },
+  "useCases": {
+    "metaTitle": "Surco use cases: how to set it up for each job",
+    "metaDescription": "Step by step recipes for Surco. Which settings to change once and what to click after, like adding tags and artwork to a whole folder without making copies.",
+    "kicker": "Use cases",
+    "title": "Surco for the job you came to do",
+    "lede": "Recipes for the everyday jobs. First, the settings you change once. Then, the steps you repeat each time.",
+    "tocLabel": "On this page",
+    "settingsLabel": "Settings, just once",
+    "settingsHint": "Open Surco's Settings (⌘ , on Mac) and find each option by its name.",
+    "settingsRoot": "Settings",
+    "on": "On",
+    "optional": "Optional",
+    "stepsLabel": "Then, each time",
+    "relatedLabel": "More in the guide",
+    "outroTitle": "Missing a use case?",
+    "outroLede": "Tell us what you want to do with your tracks and we'll add it here.",
+    "cases": [
+      {
+        "id": "in-place",
+        "title": "Add tags and artwork to a whole folder, without making copies",
+        "body": [
+          "You have a folder of music with missing tags or no artwork. You want Surco to fill them in on its own, in the same files, with no copies and no format change.",
+          "Set it up once. After that, every folder takes four steps."
+        ],
+        "settings": [
+          {
+            "tab": "Search",
+            "setting": "Auto-match on import",
+            "note": "When you drop your tracks, Surco looks each one up and adds its details and artwork when it is sure."
+          },
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "Same as source",
+            "note": "Every file keeps its format. An MP3 stays an MP3."
+          },
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Overwrite original",
+            "note": "Surco saves the changes into the same file instead of making a new one."
+          },
+          {
+            "tab": "Output",
+            "section": "Backups",
+            "setting": "What gets kept",
+            "value": "Always",
+            "optional": true,
+            "note": "So you can go back to the old file if you don't like something."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag the folder into Surco",
+            "text": "Tracks in its subfolders come in too. Surco starts looking them up on its own."
+          },
+          {
+            "title": "Wait for the lookup to finish",
+            "text": "At the top you'll see “Auto-matching…” with a counter. Wait for it to finish."
+          },
+          {
+            "title": "Check the ones left to confirm",
+            "text": "In the list filter, pick “To confirm”. These are the ones Surco wasn't sure about. Review them or leave them as they are."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "It's the button in the top bar. Surco asks before touching your files. Click “Overwrite and convert”."
+          }
+        ],
+        "points": [
+          "The sound doesn't change. Only the tags and artwork are written, which is why it's so fast.",
+          "Tracks you leave unconfirmed keep the tags they already had.",
+          "Traktor cue points stay where they were."
+        ],
+        "related": [
+          {
+            "label": "Auto-match",
+            "anchor": "automatch"
+          },
+          {
+            "label": "Tag without re-encoding",
+            "anchor": "igual-origen"
+          },
+          {
+            "label": "Convert every track",
+            "anchor": "lote"
+          }
+        ]
+      }
+    ]
   }
 }

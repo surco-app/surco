@@ -13,6 +13,8 @@ export const INDEXABLE_PATHS = [
   '/en/features',
   '/guia',
   '/en/guide',
+  '/casos-de-uso',
+  '/en/use-cases',
   '/cambios',
   '/en/changelog',
   '/convertir/flac-a-aiff',

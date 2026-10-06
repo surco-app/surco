@@ -21,6 +21,7 @@
     "instalar": "Instalar",
     "faq": "Preguntas",
     "guia": "Guía",
+    "casos": "Casos de uso",
     "skipToContent": "Saltar al contenido",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
@@ -1228,5 +1229,96 @@
       "title": "Pasa tus FLAC a AIFF",
       "lede": "Surco además etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz y lo archiva todo en tu biblioteca."
     }
+  },
+  "useCases": {
+    "metaTitle": "Casos de uso de Surco: cómo configurarlo para cada trabajo",
+    "metaDescription": "Recetas paso a paso para Surco. Qué ajustes tocar una vez y qué pulsar después, como poner etiquetas y carátula a una carpeta entera sin crear copias.",
+    "kicker": "Casos de uso",
+    "title": "Surco para lo que vienes a hacer",
+    "lede": "Recetas para los trabajos de siempre. Primero, los ajustes que se tocan una sola vez. Después, los pasos que repites cada vez.",
+    "tocLabel": "En esta página",
+    "settingsLabel": "Ajustes, una sola vez",
+    "settingsHint": "Abre los Ajustes de Surco (⌘ , en Mac) y busca cada opción por su nombre.",
+    "settingsRoot": "Ajustes",
+    "on": "Activado",
+    "optional": "Opcional",
+    "stepsLabel": "Después, cada vez",
+    "relatedLabel": "Más a fondo en la guía",
+    "outroTitle": "¿Echas en falta un caso?",
+    "outroLede": "Cuéntanos qué quieres hacer con tus pistas y lo añadimos aquí.",
+    "cases": [
+      {
+        "id": "in-place",
+        "title": "Pon etiquetas y carátula a una carpeta entera, sin crear copias",
+        "body": [
+          "Tienes una carpeta de música con etiquetas incompletas o sin carátula. Quieres que Surco las rellene solas, en los mismos archivos, sin copias y sin cambiar el formato.",
+          "Haz los ajustes una sola vez. Después, con cada carpeta, son cuatro pasos."
+        ],
+        "settings": [
+          {
+            "tab": "Búsqueda",
+            "setting": "Auto-emparejar al importar",
+            "note": "Al soltar las pistas, Surco busca cada una y le pone sus datos y su carátula cuando está seguro."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "Igual que el origen",
+            "note": "Cada archivo se queda en su formato. Un MP3 sigue siendo MP3."
+          },
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Sobrescribir el original",
+            "note": "Surco guarda los cambios en el mismo archivo, sin crear otro."
+          },
+          {
+            "tab": "Destino",
+            "section": "Copias de seguridad",
+            "setting": "Qué se guarda",
+            "value": "Siempre",
+            "optional": true,
+            "note": "Así puedes volver al archivo de antes si algo no te gusta."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra la carpeta a Surco",
+            "text": "También entran las pistas de sus subcarpetas. Surco empieza a buscar solo."
+          },
+          {
+            "title": "Espera a que acabe la búsqueda",
+            "text": "Arriba verás «Auto-emparejando…» con un contador. Espera a que termine."
+          },
+          {
+            "title": "Mira las que quedan por confirmar",
+            "text": "En el filtro de la lista, elige «Por confirmar». Son las que Surco no ha visto claras. Revísalas o déjalas como están."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Es el botón de la barra de arriba. Surco te pregunta antes de tocar los archivos. Pulsa «Sobrescribir y convertir»."
+          }
+        ],
+        "points": [
+          "El sonido no cambia. Solo se escriben las etiquetas y la carátula, por eso va tan rápido.",
+          "Las pistas que dejas sin confirmar se quedan con las etiquetas que ya tenían.",
+          "Los cue points de Traktor siguen en su sitio."
+        ],
+        "related": [
+          {
+            "label": "Auto-match",
+            "anchor": "automatch"
+          },
+          {
+            "label": "Etiqueta sin reconvertir",
+            "anchor": "igual-origen"
+          },
+          {
+            "label": "Convierte todas las pistas",
+            "anchor": "lote"
+          }
+        ]
+      }
+    ]
   }
 }

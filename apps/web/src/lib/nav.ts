@@ -6,6 +6,7 @@ export const HEADER_SECTIONS = ['como'] as const
 export const PAGES = {
   features: { es: '/funciones', en: '/en/features' },
   guide: { es: '/guia', en: '/en/guide' },
+  useCases: { es: '/casos-de-uso', en: '/en/use-cases' },
   changelog: { es: '/cambios', en: '/en/changelog' },
   flacToAiff: { es: '/convertir/flac-a-aiff', en: '/en/convert/flac-to-aiff' },
 } as const
