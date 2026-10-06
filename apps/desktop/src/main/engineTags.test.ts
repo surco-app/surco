@@ -1,5 +1,5 @@
 import { realpathSync } from 'node:fs'
-import { mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -8,8 +8,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { isEngineDjRunning } from './engineProcess'
 import { updateEngineTags } from './engineTags'
+import { renameWithRetry } from './renameRetry'
 
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
+vi.mock('./renameRetry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./renameRetry')>()
+  return { ...actual, renameWithRetry: vi.fn(actual.renameWithRetry) }
+})
 
 let SQL: SqlJsStatic
 beforeAll(async () => {
@@ -164,6 +169,28 @@ describe('updateEngineTags', () => {
     const [result] = await updateEngineTags(lib.dir, [artist(lib.file)])
     expect(result).toEqual({ written: false, reason: 'engine-running' })
     expect(await readFile(lib.dbPath)).toEqual(bytes)
+  })
+
+  // Engine may launch while the rows are being read; it would write its old copy back over
+  // ours on quit, so the check repeats right before the swap.
+  it('refuses when Engine DJ opens after the rows were read', async () => {
+    const lib = await library()
+    vi.mocked(isEngineDjRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const bytes = await readFile(lib.dbPath)
+    const [result] = await updateEngineTags(lib.dir, [artist(lib.file)])
+    expect(result).toEqual({ written: false, reason: 'engine-running' })
+    expect(await readFile(lib.dbPath)).toEqual(bytes)
+    expect(await readdir(join(lib.dir, 'Database2'))).not.toContain('m.db.surco-tmp')
+  })
+
+  it('reports a failed swap, keeps the library and leaves no temporary file', async () => {
+    const lib = await library()
+    vi.mocked(renameWithRetry).mockRejectedValueOnce(new Error('EPERM'))
+    const bytes = await readFile(lib.dbPath)
+    const [result] = await updateEngineTags(lib.dir, [artist(lib.file)])
+    expect(result).toEqual({ written: false, reason: 'write-failed' })
+    expect(await readFile(lib.dbPath)).toEqual(bytes)
+    expect(await readdir(join(lib.dir, 'Database2'))).not.toContain('m.db.surco-tmp')
   })
 
   it('keeps the library as it was in a backup, and takes the session copy first', async () => {
