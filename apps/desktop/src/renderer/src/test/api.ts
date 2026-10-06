@@ -151,6 +151,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
       throw new Error('stubApi: this test needs its own getRelease')
     },
     loadAppleMusicLibrary: async () => [],
+    loadMusicReview: async () => [],
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
     loadAppleMusicPlaylistTracks: async () => ({

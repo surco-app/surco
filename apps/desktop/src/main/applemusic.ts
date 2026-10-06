@@ -1,7 +1,12 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
-import type { AppleMusicLookupCandidate, OutputFormat, TrackMetadata } from '../shared/types'
+import type {
+  AppleMusicLookupCandidate,
+  MusicReviewEntry,
+  OutputFormat,
+  TrackMetadata,
+} from '../shared/types'
 import { createConcurrencyLimiter } from './analysisLimiter'
 
 const run = promisify(execFile)
@@ -414,6 +419,58 @@ export async function dumpAppleMusicLibrary(): Promise<AppleMusicLookupCandidate
     maxBuffer: 64 * 1024 * 1024,
   })
   return parseLibraryDump(stdout)
+}
+
+const REVIEW_RS = '\u001e'
+const REVIEW_FS = '\u001f'
+
+// The review reads the values to correct, so it uses control separators instead of the
+// tabs and newlines the membership dump uses: a title can hold either, and losing or
+// trimming a character here would hide exactly what the review exists to find.
+export function buildReviewDumpScript(): string {
+  const of = (prop: string) => `${prop} of every file track of library playlist 1`
+  return [
+    'tell application "Music"',
+    '  if (count of file tracks of library playlist 1) is 0 then return ""',
+    `  set thePids to ${of('persistent ID')}`,
+    `  set theNames to ${of('name')}`,
+    `  set theArtists to ${of('artist')}`,
+    `  set theAlbumArtists to ${of('album artist')}`,
+    `  set theAlbums to ${of('album')}`,
+    `  set theGenres to ${of('genre')}`,
+    `  set theDurations to ${of('duration')}`,
+    'end tell',
+    'set RS to ASCII character 30',
+    'set FS to ASCII character 31',
+    'set out to {}',
+    'repeat with i from 1 to count of thePids',
+    '  set end of out to (item i of thePids) & FS & (item i of theNames) & FS & (item i of theArtists) & FS & (item i of theAlbumArtists) & FS & (item i of theAlbums) & FS & (item i of theGenres) & FS & (item i of theDurations)',
+    'end repeat',
+    "set AppleScript's text item delimiters to RS",
+    'return out as text',
+  ].join('\n')
+}
+
+export function parseReviewDump(stdout: string): MusicReviewEntry[] {
+  const entries: MusicReviewEntry[] = []
+  const body = stdout.replace(/\n$/, '')
+  if (!body) return entries
+  for (const row of body.split(REVIEW_RS)) {
+    const fields = row.split(REVIEW_FS)
+    if (fields.length !== 7) continue
+    const [persistentId, title, artist, albumArtist, album, genre, duration] = fields
+    if (!/^[0-9A-F]{16}$/.test(persistentId)) continue
+    const entry: MusicReviewEntry = { persistentId, title, artist, albumArtist, album, genre }
+    const sec = Math.round(Number(duration.replace(',', '.')))
+    if (Number.isFinite(sec) && sec > 0) entry.durationSec = sec
+    entries.push(entry)
+  }
+  return entries
+}
+
+export async function dumpMusicReview(): Promise<MusicReviewEntry[]> {
+  const stdout = await runOsascript(buildReviewDumpScript(), { maxBuffer: 64 * 1024 * 1024 })
+  return parseReviewDump(stdout)
 }
 
 export async function addToAppleMusic(

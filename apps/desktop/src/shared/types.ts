@@ -709,6 +709,18 @@ export interface AppleMusicUpdateJob {
   coverFromFile?: string
 }
 
+export type MusicReviewField = 'title' | 'artist' | 'albumArtist' | 'album' | 'genre'
+
+export interface MusicReviewEntry {
+  persistentId: string
+  title: string
+  artist: string
+  albumArtist: string
+  album: string
+  genre: string
+  durationSec?: number
+}
+
 // One artist/title pair to probe for in the Apple Music library. The lookup takes
 // several — the live tags plus the Discogs-suggested track — so a song whose tags
 // still hold the filename's rough spelling is found under its canonical name too.

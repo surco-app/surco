@@ -6,9 +6,11 @@ import {
   buildLibraryDumpScript,
   buildLocationScript,
   buildRevealScript,
+  buildReviewDumpScript,
   buildUpdateScript,
   isAppleMusicOnly,
   parseLibraryDump,
+  parseReviewDump,
   shouldAddToAppleMusic,
 } from './applemusic'
 
@@ -428,5 +430,69 @@ describe('buildAddScript with a full release date', () => {
   it('sets only the year', () => {
     const script = buildAddScript('/x.aiff', { ...base, year: '2020-12-01' })
     expect(script).toContain('set year of theTrack to 2020\n')
+  })
+})
+
+describe('parseReviewDump', () => {
+  const RS = '\u001e'
+  const FS = '\u001f'
+  const row = (...f: string[]) => f.join(FS)
+
+  it('reads every field of a file track, with the duration Music prints in a comma locale', () => {
+    const out = parseReviewDump(
+      `${row('6E592CFE07A6246A', 'Bleeding Love', 'DJ Lara, DJ Sergi Val', 'DJ Lara', 'Bleeding Love', 'Electronic', '384,26')}\n`,
+    )
+    expect(out).toEqual([
+      {
+        persistentId: '6E592CFE07A6246A',
+        title: 'Bleeding Love',
+        artist: 'DJ Lara, DJ Sergi Val',
+        albumArtist: 'DJ Lara',
+        album: 'Bleeding Love',
+        genre: 'Electronic',
+        durationSec: 384,
+      },
+    ])
+  })
+
+  // The whole point of the review is the value exactly as Music holds it: a trailing
+  // space or an invisible character is a finding, so nothing may be trimmed away.
+  it('keeps invisible characters, tabs and spaces inside a value', () => {
+    const [e] = parseReviewDump(
+      row('5FA52DD35E307CBB', 'Funk\tFreak ', 'Aar\u200b\u00f3\u200bn Alfonso', '', '', '', '419'),
+    )
+    expect(e.title).toBe('Funk\tFreak ')
+    expect(e.artist).toBe('Aar\u200b\u00f3\u200bn Alfonso')
+  })
+
+  it('splits rows on the record separator, not on line breaks a title may hold', () => {
+    const out = parseReviewDump(
+      [
+        row('0000000000000001', 'A\nB', 'X', '', '', '', '1'),
+        row('0000000000000002', 'C', 'Y', '', '', '', '2'),
+      ].join(RS),
+    )
+    expect(out.map((e) => e.title)).toEqual(['A\nB', 'C'])
+  })
+
+  it('drops a row that is not seven fields or has no persistent ID', () => {
+    expect(parseReviewDump(row('nope', 'A', 'B', '', '', '', '1'))).toEqual([])
+    expect(parseReviewDump(row('0000000000000001', 'A'))).toEqual([])
+  })
+
+  it('reads an empty library as no entries', () => {
+    expect(parseReviewDump('')).toEqual([])
+    expect(parseReviewDump('\n')).toEqual([])
+  })
+})
+
+describe('buildReviewDumpScript', () => {
+  // Only file tracks can be fixed on disk, and asking an empty library for a property of
+  // every track raises -1728 (see buildLibraryDumpScript), so the count guards first.
+  it('reads file tracks only and returns nothing for an empty library', () => {
+    const script = buildReviewDumpScript()
+    expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
+    expect(script).toContain('album artist of every file track of library playlist 1')
+    expect(script).not.toMatch(/of every track of/)
   })
 })

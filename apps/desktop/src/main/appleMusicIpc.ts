@@ -16,6 +16,7 @@ import {
   appleMusicLimiter,
   deleteFromAppleMusic,
   dumpAppleMusicLibrary,
+  dumpMusicReview,
   revealInAppleMusic,
   updateInAppleMusic,
 } from './applemusic'
@@ -58,6 +59,10 @@ export function registerAppleMusicIpc(): void {
           },
         )
       : [],
+  )
+
+  ipcMain.handle('applemusic:reviewDump', () =>
+    process.platform === 'darwin' ? appleMusicLimiter.run(() => dumpMusicReview()) : [],
   )
 
   // The previous session's persisted snapshot — a plain file read, no osascript, no

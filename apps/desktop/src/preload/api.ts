@@ -20,6 +20,7 @@ import type {
   LifetimeStats,
   LoudnessResult,
   MetaRead,
+  MusicReviewEntry,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
@@ -111,6 +112,7 @@ export interface Api {
   // The previous session's Apple Music snapshot read straight from disk — no
   // osascript — to seed the membership index while the fresh dump runs. Null when
   // no snapshot exists yet (first run, or the file was unreadable).
+  loadMusicReview: () => Promise<MusicReviewEntry[]>
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
   // macOS, where the renderer never offers the import.

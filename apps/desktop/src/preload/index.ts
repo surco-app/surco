@@ -10,6 +10,7 @@ import type {
   DockIconFrames,
   KeyResult,
   LoudnessResult,
+  MusicReviewEntry,
   ProcessProgress,
   RekordboxSyncIssue,
   ScanVerdict,
@@ -110,6 +111,7 @@ const api: Api = {
     ipcRenderer.invoke('search:release', ref, provider, priority),
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('applemusic:library'),
+  loadMusicReview: (): Promise<MusicReviewEntry[]> => ipcRenderer.invoke('applemusic:reviewDump'),
   loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
     ipcRenderer.invoke('applemusic:libraryCached'),
   loadAppleMusicPlaylists: (): Promise<AppleMusicPlaylist[]> =>
