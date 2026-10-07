@@ -3803,3 +3803,27 @@ Measured on a copy of the user's rekordbox collection (same-file pairs excluded)
 - Hook: called once per run with the right pairs, skipped on cancel; done sheet counts.
 - View: "Se quita" label, "Mismo fichero", library info line, cues note.
 - Real-copy check (temporary, uncommitted): run the rekordbox replace on a fresh copy of .superpowers/sdd/2026-10-06-revisar-metadatos-music/rb/master-copy.db for This Rap (from = …/Hard House Legacy Vol. 2/05 This Rap (Original Mix).aiff, to = …/DJ Ter/This Rap/05 This Rap.aiff under /Volumes/Public/Music/Media.localized/Music/) and report: playlists of `to` before/after, no playlist has both, `from` content soft-deleted, PRAGMA integrity_check ok. NEVER open ~/Library/Pioneer or ~/Music/Engine Library.
+
+---
+
+### Task 21: Las erratas no se tragan los arreglos seguros ni confunden DJs distintos
+
+User report (07/10, screenshot): the "posible errata" group "DJ Napo" lists DJ Napo (4), DJ Nano (2), Dj Napo (1). DJ Nano and DJ Napo are two different DJs. The safe case fix Dj Napo → DJ Napo got swallowed into the typo group.
+
+## A. Typo groups never absorb safe groups (lib/musicSpelling.ts)
+- A typo group compares clusters (punctuation-key clusters), so it must list ONE variant per cluster: the cluster's own suggested/most-used spelling, with the persistentIds of that exact value only. The other spellings inside a cluster stay in that cluster's own safe group (case/punctuation/invisible), which keeps existing independently.
+- Typo linking stays pairwise-transitive (union-find) but its variants are cluster representatives, so "DJ Napo/Dj Napo" is a safe case group and only "DJ Napo vs DJ Nano" could form a typo group.
+- Check downstream: planFixes for a typo group replaces only the representative values; the hook's artist/albumArtist merge and conflict-unstaging still work (a staged case group and a staged typo group over the same cluster must still not apply opposite targets — existing rule).
+
+## B. Short names after a DJ/MC prefix are not typos
+- Before comparing for a typo, drop a leading "dj" or "mc" word from the act (only when it's a separate word in the original value, case-insensitive: "DJ Napo", "Dj Napo", "MC Kim"; not "Djago"), then apply the existing rules (min length 5, digits must match, distance limits) to the remainder. So DJ Napo/DJ Nano, DJ Kim/DJ Tim, DJ Jan/DJ Jean, DJ Ben/DJ Nen, DJ Miho/DJ Miko are never typos; "Álex Cervera/Álex Cevera", "Rachel/Rahcel Auburn" still are.
+- If both values have the prefix, compare remainders; if only one has it, compare the full keys as today.
+
+## C. Show what changes inside a credit (renderer detail)
+- In the affected-tracks table, when "Ahora" and "Queda" differ only in part of the string (e.g. "Cultura Arcade & Dj Napo feat. Galaxiah" → "… DJ Napo …"), highlight the differing segment in both cells (amber in Ahora, the good color in Queda), keeping invisible/space marks. Compute a simple common-prefix/common-suffix diff; no library.
+
+## Tests (TDD, RED first)
+- spellingGroups: DJ Napo ×4, Dj Napo ×1, DJ Nano ×2 → one safe case group {DJ Napo, Dj Napo}, and NO typo group; Álex Cervera ×6, Alex Cervera ×2, Álex Cevera ×1 → a safe accent group {Álex Cervera, Alex Cervera} and a typo group {Álex Cervera, Álex Cevera} whose variants are one per cluster; Rachel/Rahcel still typo; "Djago" vs "Djang0"… (no prefix stripping inside a word).
+- planFixes on the new typo group changes only the representative's tracks.
+- View: the differing segment is highlighted in both cells.
+- Real library (temporary uncommitted test over .superpowers/sdd/2026-10-06-revisar-metadatos-music/review-dump.json, delete after): report counts per kind before/after and list every remaining typo group, so the controller can show the user.
