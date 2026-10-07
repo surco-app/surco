@@ -208,6 +208,14 @@ describe('spellingGroups', () => {
     expect(byField(groups, 'artist').map((g) => g.kind)).toEqual(['typo'])
   })
 
+  it('treats two long names that differ only by a swapped adjacent pair as one typo group', () => {
+    const groups = spellingGroups([
+      entry({ album: 'Greatest Hits' }),
+      entry({ album: 'Greatest Hist' }),
+    ])
+    expect(byField(groups, 'album').map((g) => g.kind)).toEqual(['typo'])
+  })
+
   it('catches a dropped letter and a split title in long names', () => {
     expect(
       byField(

@@ -202,7 +202,7 @@ function typoGroups(field: MusicReviewField, scope: string, clusters: Bucket): S
     byLength.set(k.length, same)
   }
   for (const a of keys) {
-    for (let len = a.length; len <= a.length + 2; len++) {
+    for (let len = a.length; len <= a.length + 1; len++) {
       for (const b of byLength.get(len) ?? []) {
         if (b <= a && len === a.length) continue
         if (isClusterTypo(info.get(a) as Cluster, info.get(b) as Cluster))

@@ -699,6 +699,26 @@ describe('MusicReview', () => {
         'Cultura Arcade & Dj Napo feat. Galaxiah',
       )
     })
+
+    it('keeps a decomposed accent with its letter when highlighting what changes', () => {
+      const affected = () => [
+        {
+          persistentId: 'A',
+          title: 'Song A',
+          field: 'artist' as const,
+          from: 'Cafe\u0301 Del Mar',
+          to: 'Cafe\u0300 Del Mar',
+        },
+      ]
+      render(
+        <Panes
+          review={review({ affected })}
+          sync={{ rekordbox: false, engineDj: false, traktor: false }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^e\u0301$/)
+      expect(screen.getByTestId('music-review-diff-to')).toHaveTextContent(/^e\u0300$/)
+    })
   })
 
   describe('duplicate detail', () => {

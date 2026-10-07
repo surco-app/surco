@@ -91,7 +91,17 @@ function Marked({
   )
 }
 
+const GRAPHEMES = new Intl.Segmenter('und', { granularity: 'grapheme' })
+
+function clusterBounds(chars: string[]): number[] {
+  const bounds = [0]
+  for (const { segment } of GRAPHEMES.segment(chars.join('')))
+    bounds.push(bounds[bounds.length - 1] + [...segment].length)
+  return bounds
+}
+
 // Credits often differ in one word out of many, so the shared start and end stay plain.
+// The range snaps to whole letters so a combining accent is never split from its base.
 function changedRanges(from: string, to: string): { from: [number, number]; to: [number, number] } {
   const a = [...from]
   const b = [...to]
@@ -100,7 +110,13 @@ function changedRanges(from: string, to: string): { from: [number, number]; to: 
   while (start < max && a[start] === b[start]) start++
   let end = 0
   while (end < max - start && a[a.length - 1 - end] === b[b.length - 1 - end]) end++
-  return { from: [start, a.length - end], to: [start, b.length - end] }
+  const snap = (chars: string[], range: [number, number]): [number, number] => {
+    const bounds = clusterBounds(chars)
+    const before = bounds.filter((x) => x <= range[0]).pop() ?? 0
+    const after = bounds.find((x) => x >= range[1]) ?? chars.length
+    return [before, after]
+  }
+  return { from: snap(a, [start, a.length - end]), to: snap(b, [start, b.length - end]) }
 }
 
 function Where({ sync }: { sync: ReviewSync }) {
@@ -235,35 +251,35 @@ function SpellingDetail({
                 {affected.map((f) => {
                   const ranges = changedRanges(f.from, f.to)
                   return (
-                  <tr
-                    key={`${f.persistentId}|${f.field}`}
-                    data-testid="music-review-affected"
-                    className="border-b border-[var(--color-line)] align-top"
-                  >
-                    <td className="max-w-48 truncate py-1.5 pr-3">{f.title}</td>
-                    <td className="py-1.5 pr-3 whitespace-nowrap text-fg-dim">
-                      {t(`musicReview.field.${f.field}`)}
-                    </td>
-                    <td className="py-1.5 pr-3 whitespace-pre-wrap">
-                      <Marked
-                        value={f.from}
-                        changed={ranges.from}
-                        testId="music-review-diff-from"
-                        tone="text-[var(--color-warn)]"
-                      />
-                    </td>
-                    <td className="py-1.5 pr-3 whitespace-pre-wrap">
-                      <Marked
-                        value={f.to}
-                        changed={ranges.to}
-                        testId="music-review-diff-to"
-                        tone="text-[var(--color-good)]"
-                      />
-                    </td>
-                    <td className="py-1.5">
-                      <Where sync={sync} />
-                    </td>
-                  </tr>
+                    <tr
+                      key={`${f.persistentId}|${f.field}`}
+                      data-testid="music-review-affected"
+                      className="border-b border-[var(--color-line)] align-top"
+                    >
+                      <td className="max-w-48 truncate py-1.5 pr-3">{f.title}</td>
+                      <td className="py-1.5 pr-3 whitespace-nowrap text-fg-dim">
+                        {t(`musicReview.field.${f.field}`)}
+                      </td>
+                      <td className="py-1.5 pr-3 whitespace-pre-wrap">
+                        <Marked
+                          value={f.from}
+                          changed={ranges.from}
+                          testId="music-review-diff-from"
+                          tone="text-[var(--color-warn)]"
+                        />
+                      </td>
+                      <td className="py-1.5 pr-3 whitespace-pre-wrap">
+                        <Marked
+                          value={f.to}
+                          changed={ranges.to}
+                          testId="music-review-diff-to"
+                          tone="text-[var(--color-good)]"
+                        />
+                      </td>
+                      <td className="py-1.5">
+                        <Where sync={sync} />
+                      </td>
+                    </tr>
                   )
                 })}
               </tbody>
