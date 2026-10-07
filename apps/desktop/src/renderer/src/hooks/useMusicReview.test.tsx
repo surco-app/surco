@@ -338,6 +338,7 @@ describe('useMusicReview', () => {
     })
     expect(removeMusicDuplicate).toHaveBeenCalledTimes(1)
     expect(api.replaceDuplicatesInLibraries).not.toHaveBeenCalled()
+    expect(result.current.lastRun?.librariesUntouched).toBe(true)
   })
 
   describe('the DJ libraries after removing copies', () => {
@@ -400,6 +401,7 @@ describe('useMusicReview', () => {
       await act(() => result.current.apply())
       expect(api.replaceDuplicatesInLibraries).not.toHaveBeenCalled()
       expect(result.current.lastRun?.replaced).toEqual([])
+      expect(result.current.lastRun?.librariesUntouched).toBeUndefined()
     })
 
     it('records a failed library step when the call rejects', async () => {

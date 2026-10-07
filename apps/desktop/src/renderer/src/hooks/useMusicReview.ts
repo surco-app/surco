@@ -41,6 +41,8 @@ export interface ReviewRun {
   outcomes: MusicFixOutcome[]
   removed: RemoveCopyResult[]
   replaced: DuplicateReplaceOutcome[]
+  // The run was stopped with removed copies the libraries never heard about.
+  librariesUntouched?: boolean
   before: number
   after: number | null
   librarySync: 'ok' | 'failed' | 'none'
@@ -419,6 +421,7 @@ export function useMusicReview({
         outcomes,
         removed,
         replaced,
+        ...(pairs.length && cancelled.current ? { librariesUntouched: true } : {}),
         before,
         after: next ? pendingCount(next, hidden) : null,
         librarySync,

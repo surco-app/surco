@@ -296,8 +296,91 @@ describe('MusicReview', () => {
     )
     expect(screen.queryByTestId('music-review-undo')).toBeNull()
     expect(screen.getByTestId('music-review-done')).toHaveTextContent(
-      "Removed copies don't come back with Undo. Their files stay in the Trash.",
+      "Removed copies don't come back with Undo.",
     )
+    expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('Trash')
+  })
+
+  describe('removed copies in the DJ libraries', () => {
+    const lines = () => screen.getAllByTestId('music-review-done-library').map((p) => p.textContent)
+
+    // The Trash line counts what really went there.
+    it('says how many files went to the Trash only when some did', () => {
+      const { unmount } = render(
+        <Panes
+          review={done(
+            run({
+              replaced: [
+                { from: '/a', fileTrashed: true, keptForLibrary: false },
+                { from: '/b', fileTrashed: true, keptForLibrary: false },
+                { from: '/c', fileTrashed: false, keptForLibrary: false },
+              ],
+            }),
+          )}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done')).toHaveTextContent('2 files went to the Trash')
+      unmount()
+      render(<Panes review={done(run({ replaced: [] }))} />)
+      expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('Trash')
+    })
+
+    it('says which collections still hold a removed copy out of the playlists', () => {
+      render(
+        <Panes
+          review={done(
+            run({
+              replaced: [
+                {
+                  from: '/a',
+                  rekordbox: 'replaced',
+                  engine: 'replaced',
+                  fileTrashed: false,
+                  keptForLibrary: true,
+                },
+                { from: '/b', rekordbox: 'replaced', fileTrashed: false, keptForLibrary: true },
+              ],
+            }),
+          )}
+        />,
+      )
+      expect(lines()).toEqual([
+        "2 copies are still in rekordbox's collection, out of the playlists",
+        "1 copy is still in Engine DJ's collection, out of the playlists",
+      ])
+    })
+
+    // The Music entries are gone already; the user has to know which library lags behind.
+    it('names each library that was skipped or failed and says Music is already done', () => {
+      render(
+        <Panes
+          review={done(
+            run({
+              replaced: [
+                {
+                  from: '/a',
+                  rekordbox: 'skipped',
+                  traktor: 'failed',
+                  fileTrashed: false,
+                  keptForLibrary: true,
+                },
+              ],
+            }),
+          )}
+        />,
+      )
+      expect(lines()).toEqual([
+        "rekordbox wasn't updated because it was open or couldn't be read. The copies are already out of Music.",
+        "Traktor couldn't be updated. The copies are already out of Music.",
+      ])
+    })
+
+    it('says the libraries were not touched when the run was stopped', () => {
+      render(<Panes review={done(run({ librariesUntouched: true }))} />)
+      expect(screen.getByTestId('music-review-done')).toHaveTextContent(
+        "You stopped the run, so rekordbox, Engine DJ and Traktor weren't touched.",
+      )
+    })
   })
 
   it('hides undo for a file written without a backup', () => {
@@ -674,6 +757,18 @@ describe('MusicReview', () => {
       })
       render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
       await screen.findByText('Not in rekordbox')
+      expect(screen.queryByTestId('music-review-cues-note')).toBeNull()
+    })
+
+    // Two Music entries on one file are one track in the library: no cues are lost.
+    it('leaves out the cues note when both copies are the same file', async () => {
+      setApi({
+        libraryCopyInfo: vi.fn<Api['libraryCopyInfo']>().mockResolvedValue({
+          '/a/same.aiff': { rekordbox: { cues: 3, playlists: 1 } },
+        }),
+      })
+      render(<Panes review={dupReview({ '1': '/a/same.aiff', '2': '/a/same.aiff' })} />)
+      await screen.findAllByText('rekordbox · 3 cues · 1 playlist')
       expect(screen.queryByTestId('music-review-cues-note')).toBeNull()
     })
 

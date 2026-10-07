@@ -236,8 +236,8 @@ const LIBRARIES = [
   ['traktor', 'Traktor'],
 ] as const
 
-const samePath = (a: string, b: string) =>
-  a.normalize('NFC').toLowerCase() === b.normalize('NFC').toLowerCase()
+const pathKey = (path: string) => path.normalize('NFC').toLowerCase()
+const samePath = (a: string, b: string) => pathKey(a) === pathKey(b)
 
 function CopyLibraries({ info }: { info: LibraryCopyInfo | undefined }) {
   const { t } = useTranslation()
@@ -290,10 +290,13 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
   const { t } = useTranslation()
   const { group, entries, formats, locations } = card
   const info = useCopyInfo(entries.flatMap((e) => locations[e.persistentId] || []))
-  const cuesStay = LIBRARIES.some(
-    ([library]) =>
-      entries.filter((e) => info[locations[e.persistentId] ?? '']?.[library]).length > 1,
-  )
+  const cuesStay = LIBRARIES.some(([library]) => {
+    const held = entries.flatMap((e) => {
+      const path = locations[e.persistentId]
+      return path && info[path]?.[library] ? [pathKey(path)] : []
+    })
+    return new Set(held).size > 1
+  })
   const busy = review.status === 'applying'
   const keep = review.choice(group.key)
   const anyFile = entries.some((e) => locations[e.persistentId] !== '')

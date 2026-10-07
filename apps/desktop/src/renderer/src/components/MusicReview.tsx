@@ -170,6 +170,16 @@ function Done({
   const undone = run.undoFailures !== undefined
   const removed = run.removed.filter((r) => r.outcome === 'removed').length
   const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
+  const trashed = run.replaced.filter((r) => r.fileTrashed).length
+  const libraryLines = LIBRARIES.flatMap(([library, name]) => {
+    const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
+    const held = library === 'traktor' ? 0 : count('replaced')
+    return [
+      ...(held ? [t('musicReview.done.stillInCollection', { count: held, library: name })] : []),
+      ...(count('skipped') ? [t('musicReview.done.librarySkipped', { library: name })] : []),
+      ...(count('failed') ? [t('musicReview.done.libraryReplaceFailed', { library: name })] : []),
+    ]
+  })
   const replacedIn = LIBRARIES.map(([library, name]) => ({
     name,
     count: run.replaced.filter((r) => r[library] === 'replaced' || r[library] === 'repointed')
@@ -229,6 +239,17 @@ function Done({
           {t('musicReview.done.replacedIn', { count: l.count, library: l.name })}
         </p>
       ))}
+      {libraryLines.map((line) => (
+        <p key={line} data-testid="music-review-done-library" className="text-fg-dim">
+          {line}
+        </p>
+      ))}
+      {run.librariesUntouched && (
+        <p className="text-[var(--color-danger)]">{t('musicReview.done.librariesUntouched')}</p>
+      )}
+      {trashed > 0 && (
+        <p className="text-fg-dim">{t('musicReview.done.trashed', { count: trashed })}</p>
+      )}
       {keptForLibrary > 0 && (
         <p className="text-fg-dim">
           {t('musicReview.done.keptForLibrary', { count: keptForLibrary })}
