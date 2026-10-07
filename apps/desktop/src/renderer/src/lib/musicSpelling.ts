@@ -53,18 +53,27 @@ function punctuationKey(value: string): string {
   return caseKey(value).replace(/[^\p{L}\p{N}]+/gu, '')
 }
 
-function distance(a: string, b: string, limit: number): number {
-  if (Math.abs(a.length - b.length) > limit) return limit + 1
-  let prev = Array.from({ length: b.length + 1 }, (_, j) => j)
-  for (let i = 1; i <= a.length; i++) {
-    const row = [i]
-    for (let j = 1; j <= b.length; j++)
-      row.push(Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)))
-    prev = row
+function distance(a: string, b: string): number {
+  const rows: number[][] = []
+  for (let i = 0; i <= a.length; i++) {
+    rows.push([i])
+    for (let j = 1; j <= b.length; j++) {
+      if (i === 0) {
+        rows[0].push(j)
+        continue
+      }
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      let best = Math.min(rows[i - 1][j] + 1, rows[i][j - 1] + 1, rows[i - 1][j - 1] + cost)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+        best = Math.min(best, rows[i - 2][j - 2] + 1)
+      rows[i].push(best)
+    }
   }
-  return prev[b.length]
+  return rows[a.length][b.length]
 }
 
+// Measured on a real library: below 8 letters or at distance 2, almost every pair was two different artists.
+const MIN_TYPO_LENGTH = 8
 const ACT_TITLE = /^(?:dj|mc)\s+(?=\S)/i
 
 interface Cluster {
@@ -83,10 +92,9 @@ function isClusterTypo(a: Cluster, b: Cluster): boolean {
 
 function isTypoPair(a: string, b: string): boolean {
   const shorter = Math.min(a.length, b.length)
-  if (shorter < 5) return false
+  if (shorter < MIN_TYPO_LENGTH) return false
   if (a.replace(/\D/g, '') !== b.replace(/\D/g, '')) return false
-  const limit = shorter < 9 ? 1 : 2
-  return distance(a, b, limit) <= limit
+  return distance(a, b) <= 1
 }
 
 function mixedCase(value: string): boolean {
@@ -246,7 +254,7 @@ export function spellingGroups(entries: MusicReviewEntry[]): SpellingGroup[] {
           suggested: suggest(variants),
         })
       }
-      if (field !== 'title') groups.push(...typoGroups(field, scope, clusters))
+      if (field !== 'title' && field !== 'genre') groups.push(...typoGroups(field, scope, clusters))
     }
   }
   const tracks = (g: SpellingGroup) => g.variants.reduce((n, v) => n + v.persistentIds.length, 0)

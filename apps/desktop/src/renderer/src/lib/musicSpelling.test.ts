@@ -178,7 +178,10 @@ describe('spellingGroups', () => {
 
   it('still compares the full name when only one side has the prefix, or the prefix is inside a word', () => {
     expect(
-      byField(spellingGroups([entry({ artist: 'Djago' }), entry({ artist: 'Djaga' })]), 'artist'),
+      byField(
+        spellingGroups([entry({ artist: 'Djagoo Mix' }), entry({ artist: 'Djagao Mix' })]),
+        'artist',
+      ),
     ).toHaveLength(1)
     expect(
       byField(
@@ -195,6 +198,53 @@ describe('spellingGroups', () => {
         'artist',
       ),
     ).toHaveLength(1)
+  })
+
+  it('counts an adjacent swap as a single slip, so Rachel and Rahcel Auburn are one name', () => {
+    const groups = spellingGroups([
+      entry({ artist: 'Rachel Auburn' }),
+      entry({ artist: 'Rahcel Auburn' }),
+    ])
+    expect(byField(groups, 'artist').map((g) => g.kind)).toEqual(['typo'])
+  })
+
+  it('catches a dropped letter and a split title in long names', () => {
+    expect(
+      byField(
+        spellingGroups([entry({ artist: 'Álex Cervera' }), entry({ artist: 'Álex Cevera' })]),
+        'artist',
+      ),
+    ).toHaveLength(1)
+    expect(
+      byField(
+        spellingGroups([
+          entry({ artist: 'Chumi DJ Present' }),
+          entry({ artist: 'Chumi DJ Presenta' }),
+        ]),
+        'artist',
+      ),
+    ).toHaveLength(1)
+  })
+
+  it('keeps distinct real artists and genres apart, because a wrong merge rewrites the wrong person', () => {
+    const pairs = [
+      ['Katana', 'Kavana'],
+      ['Cascada', 'Cascade'],
+      ['Zentral', 'Central'],
+      ['Solid', 'Sound Solution'],
+      ['Black House', 'Black Rose'],
+    ]
+    for (const [a, b] of pairs)
+      expect(spellingGroups([entry({ artist: a }), entry({ artist: b })]), `${a}/${b}`).toEqual([])
+  })
+
+  it('never offers a typo group for genres', () => {
+    expect(
+      spellingGroups([entry({ genre: 'Euro House' }), entry({ genre: 'Afro House' })]),
+    ).toEqual([])
+    expect(
+      spellingGroups([entry({ genre: 'Hard Trance' }), entry({ genre: 'Hard Dance' })]),
+    ).toEqual([])
   })
 
   it('does not call two names a typo when their numbers differ', () => {
