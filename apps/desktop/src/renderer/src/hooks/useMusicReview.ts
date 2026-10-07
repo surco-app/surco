@@ -438,22 +438,43 @@ export function useMusicReview({
     }
   }, [lastRun, load, onFilesChanged])
 
-  return {
-    status,
-    filter,
-    setFilter,
-    spelling,
-    duplicates,
-    choice,
-    choose,
-    staged,
-    toggleStaged,
-    ignore,
-    summary,
-    progress,
-    apply,
-    cancel,
-    undo,
-    lastRun,
-  }
+  // Stable between renders because the provider keeps it in state: a fresh object each
+  // render would set that state again and never settle.
+  return useMemo(
+    () => ({
+      status,
+      filter,
+      setFilter,
+      spelling,
+      duplicates,
+      choice,
+      choose,
+      staged,
+      toggleStaged,
+      ignore,
+      summary,
+      progress,
+      apply,
+      cancel,
+      undo,
+      lastRun,
+    }),
+    [
+      status,
+      filter,
+      spelling,
+      duplicates,
+      choice,
+      choose,
+      staged,
+      toggleStaged,
+      ignore,
+      summary,
+      progress,
+      apply,
+      cancel,
+      undo,
+      lastRun,
+    ],
+  )
 }

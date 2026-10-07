@@ -35,7 +35,11 @@ import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { MusicReviewColumn } from './components/MusicReviewColumn'
+import {
+  MusicReviewColumn,
+  MusicReviewDetailPane,
+  MusicReviewProvider,
+} from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
@@ -1934,283 +1938,297 @@ export default function App(): React.JSX.Element {
               />
             </div>
 
-            <div className="flex min-h-0 flex-1">
-              <aside
-                data-testid="sidebar"
-                aria-label={tr('common.trackList')}
-                // The drag answers here because this is the column the tracks land in. The
-                // styling hangs off a data attribute rather than a class so the drop state
-                // is readable in the DOM (and in tests) as state, not as styling.
-                data-drop-over={dragging || undefined}
-                style={{ width: sidebar.width }}
-                // Clips its own children: the player enters on translateY(100%), so without
-                // this it is briefly drawn a card's height below the column and the page
-                // grows a scrollbar that flashes and disappears.
-                className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
-              >
-                <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
-                  {musicReview !== null ? (
-                    <MusicReviewColumn
-                      filter={musicReview}
-                      ignored={settings?.musicReviewIgnored ?? []}
-                      saveIgnored={(keys) => void saveSettings({ musicReviewIgnored: keys })}
-                      onFilesChanged={onReviewFilesChanged}
-                      onClose={() => setMusicReview(null)}
-                      busy={batching || tracks.some((t) => t.status === 'processing')}
-                    />
-                  ) : tracks.length === 0 ? (
-                    // Deliberately empty. The way in lives in the centre panel now: a button here
-                    // as well meant two doors on one screen, and the smaller of the two sat in the
-                    // column that has nothing in it yet.
-                    <p className="p-6 text-center text-xs text-fg-faint">
-                      {tr('sidebar.dropHint')}
-                    </p>
-                  ) : (
-                    <>
-                      <TrackListHeader
-                        tr={tr}
-                        hintFor={hintFor}
-                        search={search}
-                        setSearch={setSearch}
-                        trackSearchRef={trackSearchRef}
-                        qualityFilterRef={qualityFilterRef}
-                        filterSelection={filterSelection}
-                        setFilterSelection={setFilterSelection}
-                        librarySource={librarySource}
-                        qualityTally={qualityTally}
-                        formatTally={formatTally}
-                        sortBy={sortBy}
-                        setSortBy={setSortBy}
-                        sortDir={sortDir}
-                        toggleSortDir={toggleSortDir}
-                        tracks={tracks}
-                        visibleTracks={visibleTracks}
-                        selectedId={selectedId}
-                        selectedIds={selectedIds}
-                        selectedPosition={selectedPosition}
-                        onAdd={onAdd}
-                        onImportApplePlaylist={isMac ? overlays.openApplePlaylist : undefined}
-                        onSelectAllTracks={onSelectAllTracks}
-                        scrollToSelected={scrollToSelected}
-                        onFillAll={onFillAll}
-                        onFindReplace={onFindReplace}
-                        onClearAll={onClearAll}
-                        onTrashSelected={onTrashSelected}
-                        onTrashSuspects={onTrashSuspects}
+            <MusicReviewProvider
+              open={musicReview !== null}
+              filter={musicReview ?? 'all'}
+              ignored={settings?.musicReviewIgnored ?? []}
+              saveIgnored={(keys) => void saveSettings({ musicReviewIgnored: keys })}
+              onFilesChanged={onReviewFilesChanged}
+            >
+              <div className="flex min-h-0 flex-1">
+                <aside
+                  data-testid="sidebar"
+                  aria-label={tr('common.trackList')}
+                  // The drag answers here because this is the column the tracks land in. The
+                  // styling hangs off a data attribute rather than a class so the drop state
+                  // is readable in the DOM (and in tests) as state, not as styling.
+                  data-drop-over={dragging || undefined}
+                  style={{ width: sidebar.width }}
+                  // Clips its own children: the player enters on translateY(100%), so without
+                  // this it is briefly drawn a card's height below the column and the page
+                  // grows a scrollbar that flashes and disappears.
+                  className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
+                >
+                  <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
+                    {musicReview !== null ? (
+                      <MusicReviewColumn
+                        onClose={() => setMusicReview(null)}
+                        busy={batching || tracks.some((t) => t.status === 'processing')}
                       />
-                      {visibleTracks.length === 0 ? (
-                        <div className="flex flex-col items-center gap-3 p-6 text-center">
-                          <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
-                          {(search || filterActive) && (
-                            <button
-                              type="button"
-                              data-testid="reset-view"
-                              onClick={() => {
-                                setSearch('')
-                                setFilterSelection(EMPTY_FILTER)
-                              }}
-                              className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
-                            >
-                              {tr('sidebar.search.reset')}
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <TrackList
-                          tracks={visibleTracks}
+                    ) : tracks.length === 0 ? (
+                      // Deliberately empty. The way in lives in the centre panel now: a button here
+                      // as well meant two doors on one screen, and the smaller of the two sat in the
+                      // column that has nothing in it yet.
+                      <p className="p-6 text-center text-xs text-fg-faint">
+                        {tr('sidebar.dropHint')}
+                      </p>
+                    ) : (
+                      <>
+                        <TrackListHeader
+                          tr={tr}
+                          hintFor={hintFor}
+                          search={search}
+                          setSearch={setSearch}
+                          trackSearchRef={trackSearchRef}
+                          qualityFilterRef={qualityFilterRef}
+                          filterSelection={filterSelection}
+                          setFilterSelection={setFilterSelection}
+                          librarySource={librarySource}
+                          qualityTally={qualityTally}
+                          formatTally={formatTally}
+                          sortBy={sortBy}
+                          setSortBy={setSortBy}
+                          sortDir={sortDir}
+                          toggleSortDir={toggleSortDir}
+                          tracks={tracks}
+                          visibleTracks={visibleTracks}
                           selectedId={selectedId}
-                          selectedIds={selectedIdSet}
-                          outputFormat={
-                            settings?.outputFormat === 'source'
-                              ? 'aiff'
-                              : (settings?.outputFormat ?? 'aiff')
-                          }
-                          bindings={bindings}
-                          onSelect={onSelectTrack}
-                          onActivate={toggleTrack}
-                          onRemove={removeFromList}
-                          onSwipeRemove={removeTrack}
-                          onAcceptReview={acceptReviewRow}
-                          onPrefetch={handlePrefetch}
-                          renderMenu={renderTrackMenu}
-                          scrollRootRef={listScrollRef}
-                          onVisible={onTrackVisible}
-                          rowRegistry={rowEls}
-                          backupAtByPath={backupAtByPath}
-                          onOpenBackup={onOpenBackup}
+                          selectedIds={selectedIds}
+                          selectedPosition={selectedPosition}
+                          onAdd={onAdd}
+                          onImportApplePlaylist={isMac ? overlays.openApplePlaylist : undefined}
+                          onSelectAllTracks={onSelectAllTracks}
+                          scrollToSelected={scrollToSelected}
+                          onFillAll={onFillAll}
+                          onFindReplace={onFindReplace}
+                          onClearAll={onClearAll}
+                          onTrashSelected={onTrashSelected}
+                          onTrashSuspects={onTrashSuspects}
                         />
-                      )}
-                    </>
-                  )}
-                </div>
-                {player.mounted && livePlayerTrack && (
-                  <LivePlayer
-                    track={livePlayerTrack}
-                    audioRef={audioRef}
-                    continuous={settings?.continuousPlayback ?? false}
-                    onToggleContinuous={() =>
-                      saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
-                    }
-                    showWaveform={settings?.showWaveform ?? true}
-                    onToggleWaveform={() =>
-                      saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
-                    }
-                    onReveal={() => revealSelection(livePlayerTrack.id)}
-                    onClose={closePlayer}
-                    leaving={player.leaving}
-                  />
-                )}
-
-                {tracks.length === 0 && dragging && (
-                  // The shape of the list that is about to exist, drawn in the space it will
-                  // fill. A fixed pattern on purpose: the real count isn't known until the
-                  // dropped folders are expanded, so a number here would be a guess the user
-                  // then watches turn out wrong.
-                  <div
-                    data-testid="drop-ghosts"
-                    aria-hidden="true"
-                    className="drop-ghosts pointer-events-none absolute inset-x-3 top-40 flex flex-col gap-2"
-                  >
-                    {GHOST_ROWS.map((width, i) => (
-                      <div
-                        key={width}
-                        style={{ width: `${width}%`, animationDelay: `${i * 0.06}s` }}
-                        className="h-6 rounded-md border border-dashed border-[var(--color-accent)]/45 bg-[var(--color-accent)]/5"
-                      />
-                    ))}
+                        {visibleTracks.length === 0 ? (
+                          <div className="flex flex-col items-center gap-3 p-6 text-center">
+                            <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
+                            {(search || filterActive) && (
+                              <button
+                                type="button"
+                                data-testid="reset-view"
+                                onClick={() => {
+                                  setSearch('')
+                                  setFilterSelection(EMPTY_FILTER)
+                                }}
+                                className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                              >
+                                {tr('sidebar.search.reset')}
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <TrackList
+                            tracks={visibleTracks}
+                            selectedId={selectedId}
+                            selectedIds={selectedIdSet}
+                            outputFormat={
+                              settings?.outputFormat === 'source'
+                                ? 'aiff'
+                                : (settings?.outputFormat ?? 'aiff')
+                            }
+                            bindings={bindings}
+                            onSelect={onSelectTrack}
+                            onActivate={toggleTrack}
+                            onRemove={removeFromList}
+                            onSwipeRemove={removeTrack}
+                            onAcceptReview={acceptReviewRow}
+                            onPrefetch={handlePrefetch}
+                            renderMenu={renderTrackMenu}
+                            scrollRootRef={listScrollRef}
+                            onVisible={onTrackVisible}
+                            rowRegistry={rowEls}
+                            backupAtByPath={backupAtByPath}
+                            onOpenBackup={onOpenBackup}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
-              </aside>
+                  {player.mounted && livePlayerTrack && (
+                    <LivePlayer
+                      track={livePlayerTrack}
+                      audioRef={audioRef}
+                      continuous={settings?.continuousPlayback ?? false}
+                      onToggleContinuous={() =>
+                        saveSettings({
+                          continuousPlayback: !(settings?.continuousPlayback ?? false),
+                        })
+                      }
+                      showWaveform={settings?.showWaveform ?? true}
+                      onToggleWaveform={() =>
+                        saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
+                      }
+                      onReveal={() => revealSelection(livePlayerTrack.id)}
+                      onClose={closePlayer}
+                      leaving={player.leaving}
+                    />
+                  )}
 
-              <ResizeHandle
-                onPointerDown={sidebar.onPointerDown}
-                // Fitting to content only means something once there are track names to
-                // measure; on an empty list the gesture is a no-op, so drop it and its hint.
-                onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
-                title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
-              />
+                  {tracks.length === 0 && dragging && (
+                    // The shape of the list that is about to exist, drawn in the space it will
+                    // fill. A fixed pattern on purpose: the real count isn't known until the
+                    // dropped folders are expanded, so a number here would be a guess the user
+                    // then watches turn out wrong.
+                    <div
+                      data-testid="drop-ghosts"
+                      aria-hidden="true"
+                      className="drop-ghosts pointer-events-none absolute inset-x-3 top-40 flex flex-col gap-2"
+                    >
+                      {GHOST_ROWS.map((width, i) => (
+                        <div
+                          key={width}
+                          style={{ width: `${width}%`, animationDelay: `${i * 0.06}s` }}
+                          className="h-6 rounded-md border border-dashed border-[var(--color-accent)]/45 bg-[var(--color-accent)]/5"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </aside>
 
-              <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
-                {selected ? (
-                  // Its own boundary so a render bug in the editor degrades to "this panel
-                  // crashed" — the imported crate and the list stay alive. Keyed by track,
-                  // which both remounts the editor per track (its state-seeding contract)
-                  // and clears a tripped fallback on the next track switch.
-                  <ErrorBoundary
-                    key={selected.id}
-                    className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
-                  >
-                    {/* fallback={null}: the empty-state pane lives in the sibling branch below,
+                <ResizeHandle
+                  onPointerDown={sidebar.onPointerDown}
+                  // Fitting to content only means something once there are track names to
+                  // measure; on an empty list the gesture is a no-op, so drop it and its hint.
+                  onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
+                  title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
+                />
+
+                <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
+                  {musicReview !== null ? (
+                    <MusicReviewDetailPane
+                      sync={{
+                        rekordbox: settings?.syncRekordbox ?? false,
+                        engineDj: settings?.syncEngineDj ?? false,
+                        traktor: settings?.syncTraktor ?? false,
+                      }}
+                    />
+                  ) : selected ? (
+                    // Its own boundary so a render bug in the editor degrades to "this panel
+                    // crashed" — the imported crate and the list stay alive. Keyed by track,
+                    // which both remounts the editor per track (its state-seeding contract)
+                    // and clears a tripped fallback on the next track switch.
+                    <ErrorBoundary
+                      key={selected.id}
+                      className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
+                    >
+                      {/* fallback={null}: the empty-state pane lives in the sibling branch below,
                     not here, so there's no "today's visual" to hold onto while the chunk loads
                     the first time — a blank beat, not a spinner flash, and only once. */}
-                    <Suspense fallback={null}>
-                      <Editor
-                        item={selected}
-                        libraryIndex={libraryIndex}
-                        searchInputRef={searchInputRef}
-                        selectedTracks={selectedTracks}
-                        onApplyMatches={onApplyMatches}
-                        onProcessAll={onProcessAllSelected}
-                        onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-                        onChangeAllMeta={onChangeAllMeta}
-                        onApplyCoverAll={onApplyCoverAll}
-                        onDeriveTags={deriveTracksUndoable}
-                        onChangeTracksMeta={deriveTracksUndoable}
-                        onApplyTitleFormat={applyTitleFormat}
-                        onRecordUndo={recordMetaUndo}
-                        onClearExtras={onClearExtras}
-                        onFieldFocusChange={onFieldFocusChange}
-                        onChange={onEditorChange}
-                        onProcess={onProcessSelected}
-                        onCancel={onCancelSelected}
-                        onFormatChange={onFormatChange}
-                        onDestinationChange={onDestinationChange}
-                        onNormalizeChange={onNormalizeChange}
-                        onDeclickChange={onDeclickChange}
-                        onAddToAppleMusic={onAddSelectedToAppleMusic}
-                        onCleanUp={onCleanUp}
-                        onResultsWidthChange={onResultsWidthChange}
-                        onShowLoudnessHelp={onShowLoudnessHelp}
-                        onHideEditorHints={onHideEditorHints}
-                        onOpenRename={onOpenRename}
-                        onRegenerateName={onRegenerateName}
-                        onTrimDetectedAll={onTrimDetectedAll}
-                        onCopyFilename={onCopyFilename}
-                        onSearchWeb={onSearchWeb}
-                        onExportCollection={onOpenExport}
-                      />
-                    </Suspense>
-                  </ErrorBoundary>
-                ) : (
-                  <div className="flex h-full items-center justify-center p-8 text-center">
-                    {/* The drag answers here as well as in the sidebar. The column stays the
+                      <Suspense fallback={null}>
+                        <Editor
+                          item={selected}
+                          libraryIndex={libraryIndex}
+                          searchInputRef={searchInputRef}
+                          selectedTracks={selectedTracks}
+                          onApplyMatches={onApplyMatches}
+                          onProcessAll={onProcessAllSelected}
+                          onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                          onChangeAllMeta={onChangeAllMeta}
+                          onApplyCoverAll={onApplyCoverAll}
+                          onDeriveTags={deriveTracksUndoable}
+                          onChangeTracksMeta={deriveTracksUndoable}
+                          onApplyTitleFormat={applyTitleFormat}
+                          onRecordUndo={recordMetaUndo}
+                          onClearExtras={onClearExtras}
+                          onFieldFocusChange={onFieldFocusChange}
+                          onChange={onEditorChange}
+                          onProcess={onProcessSelected}
+                          onCancel={onCancelSelected}
+                          onFormatChange={onFormatChange}
+                          onDestinationChange={onDestinationChange}
+                          onNormalizeChange={onNormalizeChange}
+                          onDeclickChange={onDeclickChange}
+                          onAddToAppleMusic={onAddSelectedToAppleMusic}
+                          onCleanUp={onCleanUp}
+                          onResultsWidthChange={onResultsWidthChange}
+                          onShowLoudnessHelp={onShowLoudnessHelp}
+                          onHideEditorHints={onHideEditorHints}
+                          onOpenRename={onOpenRename}
+                          onRegenerateName={onRegenerateName}
+                          onTrimDetectedAll={onTrimDetectedAll}
+                          onCopyFilename={onCopyFilename}
+                          onSearchWeb={onSearchWeb}
+                          onExportCollection={onOpenExport}
+                        />
+                      </Suspense>
+                    </ErrorBoundary>
+                  ) : (
+                    <div className="flex h-full items-center justify-center p-8 text-center">
+                      {/* The drag answers here as well as in the sidebar. The column stays the
                         place the rows land, but on an empty screen this panel is the only thing
                         on show, and inviting a drag while the wide panel beside the column
                         refused the drop was this screen's oldest lie. */}
-                    <div
-                      data-testid="empty-dropzone"
-                      data-drop-over={dragging || undefined}
-                      className="empty-dropzone max-w-md rounded-2xl px-10 py-11"
-                    >
-                      <div className="mb-5 flex justify-center">
-                        <EmptyDisc />
-                      </div>
-                      <p
-                        className="empty-copy-in text-base font-semibold tracking-[-0.01em] text-balance text-fg"
-                        style={{ animationDelay: '0.10s' }}
+                      <div
+                        data-testid="empty-dropzone"
+                        data-drop-over={dragging || undefined}
+                        className="empty-dropzone max-w-md rounded-2xl px-10 py-11"
                       >
-                        {tr('empty.title')}
-                      </p>
-                      <p
-                        className="empty-copy-in mt-1.5 text-sm text-pretty text-fg-dim"
-                        style={{ animationDelay: '0.16s' }}
-                      >
-                        {tr(
-                          window.api.platform === 'darwin'
-                            ? 'empty.subtitle'
-                            : 'empty.subtitleNoMusic',
-                        )}
-                      </p>
-                      <div className="mt-6 flex items-center justify-center gap-3">
-                        {/* The one primary action on the screen. On macOS this same dialog takes
-                            folders as well as files, so a single button covers both. */}
-                        <button
-                          type="button"
-                          data-testid="add-files"
-                          onClick={onAdd}
-                          className="press empty-copy-in rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover"
-                          style={{ animationDelay: '0.22s' }}
+                        <div className="mb-5 flex justify-center">
+                          <EmptyDisc />
+                        </div>
+                        <p
+                          className="empty-copy-in text-base font-semibold tracking-[-0.01em] text-balance text-fg"
+                          style={{ animationDelay: '0.10s' }}
                         >
-                          {tr('empty.addTracks')}
-                        </button>
-                        {isMac && (
-                          // A quieter sibling rather than a rival: as a second bordered button it
-                          // weighed the same as adding files, and the screen had no answer to
-                          // "where do I start".
-                          <>
-                            <span
-                              className="empty-copy-in text-sm text-fg-dim"
-                              style={{ animationDelay: '0.28s' }}
-                            >
-                              {tr('empty.or')}
-                            </span>
-                            <button
-                              type="button"
-                              data-testid="empty-import-playlist"
-                              onClick={overlays.openApplePlaylist}
-                              className="empty-copy-in -ml-2 rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
-                              style={{ animationDelay: '0.28s' }}
-                            >
-                              {tr('empty.importApplePlaylist')}
-                            </button>
-                          </>
-                        )}
+                          {tr('empty.title')}
+                        </p>
+                        <p
+                          className="empty-copy-in mt-1.5 text-sm text-pretty text-fg-dim"
+                          style={{ animationDelay: '0.16s' }}
+                        >
+                          {tr(
+                            window.api.platform === 'darwin'
+                              ? 'empty.subtitle'
+                              : 'empty.subtitleNoMusic',
+                          )}
+                        </p>
+                        <div className="mt-6 flex items-center justify-center gap-3">
+                          {/* The one primary action on the screen. On macOS this same dialog takes
+                            folders as well as files, so a single button covers both. */}
+                          <button
+                            type="button"
+                            data-testid="add-files"
+                            onClick={onAdd}
+                            className="press empty-copy-in rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover"
+                            style={{ animationDelay: '0.22s' }}
+                          >
+                            {tr('empty.addTracks')}
+                          </button>
+                          {isMac && (
+                            // A quieter sibling rather than a rival: as a second bordered button it
+                            // weighed the same as adding files, and the screen had no answer to
+                            // "where do I start".
+                            <>
+                              <span
+                                className="empty-copy-in text-sm text-fg-dim"
+                                style={{ animationDelay: '0.28s' }}
+                              >
+                                {tr('empty.or')}
+                              </span>
+                              <button
+                                type="button"
+                                data-testid="empty-import-playlist"
+                                onClick={overlays.openApplePlaylist}
+                                className="empty-copy-in -ml-2 rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
+                                style={{ animationDelay: '0.28s' }}
+                              >
+                                {tr('empty.importApplePlaylist')}
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </main>
-            </div>
+                  )}
+                </main>
+              </div>
+            </MusicReviewProvider>
 
             {/* The lazy overlays load their chunk on first open; fallback={null} because an
           overlay arriving a frame late is invisible (it fades in anyway). */}

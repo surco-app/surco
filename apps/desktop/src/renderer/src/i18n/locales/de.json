@@ -1544,6 +1544,10 @@
     "clean": "Nichts zu prüfen.",
     "error": "Die Apple-Music-Bibliothek konnte nicht gelesen werden.",
     "loading": "Bibliothek wird gelesen…",
-    "bothArtists": "Künstler und Albumkünstler"
+    "bothArtists": "Künstler und Albumkünstler",
+    "inTray": "vorgemerkt",
+    "detail": {
+      "options": "Wie es ist und wie es wird"
+    }
   }
 }

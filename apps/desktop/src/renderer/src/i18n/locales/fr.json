@@ -1544,6 +1544,10 @@
     "clean": "Rien à vérifier.",
     "error": "Impossible de lire la bibliothèque Apple Music.",
     "loading": "Lecture de la bibliothèque…",
-    "bothArtists": "Artiste et artiste de l'album"
+    "bothArtists": "Artiste et artiste de l'album",
+    "inTray": "dans le lot",
+    "detail": {
+      "options": "Comme c'est et comme ça reste"
+    }
   }
 }

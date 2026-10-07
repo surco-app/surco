@@ -3456,6 +3456,21 @@ describe('App Music review', () => {
     expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
   })
 
+  // The review needs the room of the main pane for the group it is deciding; the empty
+  // screen's invitation to add tracks would sit where that decision goes.
+  it('shows the selected group in the main pane instead of the empty screen', async () => {
+    vi.resetModules()
+    reviewApi(spellingFixture())
+    await renderApp()
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
+    runMenu('music-review')
+    const detail = await screen.findByTestId('music-review-detail')
+    await waitFor(() => expect(detail).toHaveTextContent('DJ Lara'))
+    expect(screen.queryByTestId('add-files')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
+  })
+
   // Reviewing a library is the point of the view; it must not need a track in the list.
   it('opens over an empty list', async () => {
     vi.resetModules()
@@ -3500,11 +3515,11 @@ describe('App Music review', () => {
     fireEvent.click(screen.getByTestId('music-review-tray-apply'))
     fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
     await screen.findByTestId('music-review-done')
+    fireEvent.click(screen.getByTestId('music-review-continue'))
+    fireEvent.click(screen.getByTestId('music-review-close'))
     await waitFor(() =>
       expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('DJ Lara'),
     )
-    fireEvent.click(screen.getByTestId('music-review-continue'))
-    fireEvent.click(screen.getByTestId('music-review-close'))
     fireEvent.keyDown((await screen.findAllByTestId('track-row'))[0], { key: 'Backspace' })
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
     expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
@@ -3593,7 +3608,8 @@ describe('App Music review', () => {
       expect(screen.queryByTestId('music-review-confirm-apply')).not.toBeInTheDocument(),
     )
     expect(screen.getByTestId('music-review')).toBeInTheDocument()
-    expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findByTestId('editor-trim')).toBeInTheDocument()
   })
 })
 

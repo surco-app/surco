@@ -1544,6 +1544,10 @@
     "clean": "Nothing to review.",
     "error": "Couldn't read your Apple Music library.",
     "loading": "Reading the library…",
-    "bothArtists": "Artist and album artist"
+    "bothArtists": "Artist and album artist",
+    "inTray": "in the batch",
+    "detail": {
+      "options": "How it is and how it ends up"
+    }
   }
 }

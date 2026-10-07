@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { MusicReview } from './MusicReview'
+import { useReviewSelection } from './MusicReviewColumn'
+import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
 afterEach(cleanup)
 
@@ -69,11 +72,118 @@ const written = {
 
 const done = (lastRun: ReviewRun) => review({ status: 'done', lastRun })
 
+const NO_SYNC: ReviewSync = { rekordbox: false, engineDj: false, traktor: false }
+
+function Panes({
+  review: base,
+  busy,
+  sync = NO_SYNC,
+}: {
+  review: Review
+  busy?: boolean
+  sync?: ReviewSync
+}) {
+  const [staged, setStaged] = useState(base.staged)
+  const r: Review = {
+    ...base,
+    staged,
+    toggleStaged: (key) => {
+      base.toggleStaged(key)
+      setStaged((s) => {
+        const next = new Set(s)
+        if (!next.delete(key)) next.add(key)
+        return next
+      })
+    },
+  }
+  const { selectedKey, select } = useReviewSelection(r)
+  return (
+    <>
+      <MusicReview
+        review={r}
+        selectedKey={selectedKey}
+        onSelect={select}
+        onClose={vi.fn()}
+        busy={busy}
+      />
+      <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} />
+    </>
+  )
+}
+
+const other = {
+  ...group,
+  key: 'genre||case|house',
+  fields: ['genre' as const],
+  variants: [
+    { value: 'House', persistentIds: ['D', 'E'] },
+    { value: 'house', persistentIds: ['F'] },
+  ],
+  suggested: 'House',
+}
+const rows = () => screen.getAllByTestId('music-review-row')
+const detail = () => screen.getByTestId('music-review-detail')
+
 describe('MusicReview', () => {
+  // The column is for finding a group; deciding happens in the detail beside it, so a
+  // row holds no control that could change what gets written.
+  it('lists each group as a row with no choice in it and opens its detail on click', () => {
+    const merged = { ...group, fields: ['artist' as const, 'albumArtist' as const] }
+    render(<Panes review={review({ spelling: [merged, other], choice: () => null })} />)
+    const list = screen.getByTestId('music-review')
+    expect(within(list).queryAllByRole('radio')).toHaveLength(0)
+    expect(within(list).queryByTestId('music-review-stage')).toBeNull()
+    expect(rows()[0]).toHaveTextContent('Artist and album artist · capitals or accents')
+    expect(rows()[0]).toHaveTextContent('3 tracks')
+    expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
+    expect(detail()).toHaveTextContent('DJ Lara')
+    fireEvent.click(rows()[1])
+    expect(rows()[1]).toHaveAttribute('aria-selected', 'true')
+    expect(detail()).toHaveTextContent('House')
+    expect(detail()).not.toHaveTextContent('DJ Lara')
+  })
+
+  it('dims a row staged from the detail and says it is in the batch', () => {
+    render(<Panes review={review({ spelling: [group, other] })} />)
+    expect(rows()[0]).not.toHaveTextContent('in the batch')
+    fireEvent.click(screen.getByTestId('music-review-stage'))
+    expect(rows()[0]).toHaveTextContent('in the batch')
+    expect(rows()[0]).toHaveAttribute('data-staged', 'true')
+    expect(rows()[1]).not.toHaveAttribute('data-staged')
+  })
+
+  it('moves the selection with the arrow keys', () => {
+    render(<Panes review={review({ spelling: [group, other] })} />)
+    fireEvent.keyDown(rows()[0], { key: 'ArrowDown' })
+    expect(rows()[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows()[1]).toHaveFocus()
+    fireEvent.keyDown(rows()[1], { key: 'ArrowDown' })
+    expect(rows()[1]).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(rows()[1], { key: 'ArrowUp' })
+    expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // A filter that hides the selected group must not leave the detail showing it.
+  it('selects the first visible group when the filter hides the selected one', () => {
+    const dup = {
+      group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
+      entries: [
+        { persistentId: '1', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+        { persistentId: '2', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+      ],
+      formats: {},
+      locations: {},
+    }
+    render(<Panes review={review({ filter: 'duplicates', duplicates: [dup] })} />)
+    expect(rows()).toHaveLength(1)
+    expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
+    expect(detail()).toHaveTextContent('Ann · Song')
+  })
+
   it('shows each spelling with its track count and stages the group on Unify', () => {
     const r = review()
-    render(<MusicReview review={r} onClose={vi.fn()} />)
-    expect(screen.getByTestId('music-review-group')).toHaveTextContent('Dj Lara')
+    render(<Panes review={r} />)
+    expect(detail()).toHaveTextContent('Dj Lara')
     fireEvent.click(screen.getByTestId('music-review-stage'))
     expect(r.toggleStaged).toHaveBeenCalledWith(group.key)
   })
@@ -81,17 +191,19 @@ describe('MusicReview', () => {
   // "Undo" already names the button that reverts a whole run; a staged group's button
   // only takes it back out of the tray.
   it('labels a staged group so it does not read as undoing the run', () => {
-    render(<MusicReview review={review({ staged: new Set([group.key]) })} onClose={vi.fn()} />)
+    render(<Panes review={review({ staged: new Set([group.key]) })} />)
     expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
   })
 
   it('marks a safe kind and a risky one with a different dot', () => {
     const typo = { ...group, key: 'typo', kind: 'typo' as const }
-    render(<MusicReview review={review({ spelling: [group, typo] })} onClose={vi.fn()} />)
-    expect(screen.getAllByRole('img').map((d) => d.getAttribute('aria-label'))).toEqual([
-      'Safe',
-      'Review',
-    ])
+    render(<Panes review={review({ spelling: [group, typo] })} />)
+    const list = screen.getByTestId('music-review')
+    expect(
+      within(list)
+        .getAllByRole('img')
+        .map((d) => d.getAttribute('aria-label')),
+    ).toEqual(['Safe', 'Review'])
   })
 
   // Nothing touches a file from the list itself: the tray opens a confirmation first.
@@ -100,7 +212,7 @@ describe('MusicReview', () => {
       staged: new Set([group.key]),
       summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
     })
-    render(<MusicReview review={r} onClose={vi.fn()} />)
+    render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-tray-apply'))
     expect(r.apply).not.toHaveBeenCalled()
     expect(screen.getByTestId('music-review-confirm')).toHaveTextContent('rekordbox, Engine DJ')
@@ -115,21 +227,21 @@ describe('MusicReview', () => {
       staged: new Set([group.key]),
       summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
     })
-    const { unmount } = render(<MusicReview review={staged} onClose={vi.fn()} busy />)
+    const { unmount } = render(<Panes review={staged} busy />)
     expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
     unmount()
-    render(<MusicReview review={done(run({ outcomes: [written] }))} onClose={vi.fn()} busy />)
+    render(<Panes review={done(run({ outcomes: [written] }))} busy />)
     expect(screen.getByTestId('music-review-undo')).toBeDisabled()
   })
 
   it('disables the tray while nothing is staged', () => {
-    render(<MusicReview review={review()} onClose={vi.fn()} />)
+    render(<Panes review={review()} />)
     expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
   })
 
   it('offers undo after a run', () => {
     const r = done(run({ outcomes: [written] }))
-    render(<MusicReview review={r} onClose={vi.fn()} />)
+    render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-undo'))
     expect(r.undo).toHaveBeenCalled()
   })
@@ -138,9 +250,8 @@ describe('MusicReview', () => {
   // report success and change nothing.
   it('hides undo and says removed copies stay removed when nothing can be undone', () => {
     render(
-      <MusicReview
+      <Panes
         review={done(run({ removed: [{ outcome: 'removed', playlists: 0, fileTrashed: true }] }))}
-        onClose={vi.fn()}
       />,
     )
     expect(screen.queryByTestId('music-review-undo')).toBeNull()
@@ -150,12 +261,7 @@ describe('MusicReview', () => {
   })
 
   it('hides undo for a file written without a backup', () => {
-    render(
-      <MusicReview
-        review={done(run({ outcomes: [{ ...written, backupId: undefined }] }))}
-        onClose={vi.fn()}
-      />,
-    )
+    render(<Panes review={done(run({ outcomes: [{ ...written, backupId: undefined }] }))} />)
     expect(screen.queryByTestId('music-review-undo')).toBeNull()
   })
 
@@ -164,7 +270,7 @@ describe('MusicReview', () => {
       staged: new Set([group.key]),
       summary: { tracks: 0, byField: {}, duplicates: 1 },
     })
-    render(<MusicReview review={r} onClose={vi.fn()} />)
+    render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-tray-apply'))
     expect(screen.getByTestId('music-review-confirm')).toHaveTextContent(
       "Removed copies don't come back with Undo.",
@@ -172,14 +278,14 @@ describe('MusicReview', () => {
   })
 
   it('says the library is empty', () => {
-    render(<MusicReview review={review({ status: 'empty', spelling: [] })} onClose={vi.fn()} />)
+    render(<Panes review={review({ status: 'empty', spelling: [] })} />)
     expect(screen.getByTestId('music-review-empty')).toBeInTheDocument()
   })
 
   // A removal that never reached the library must not read as a removed copy.
   it('counts a duplicate as removed only when it was, and the rest as failures', () => {
     render(
-      <MusicReview
+      <Panes
         review={done(
           run({
             removed: [
@@ -191,7 +297,6 @@ describe('MusicReview', () => {
             ],
           }),
         )}
-        onClose={vi.fn()}
       />,
     )
     const sheet = screen.getByTestId('music-review-done')
@@ -202,7 +307,7 @@ describe('MusicReview', () => {
   // The copy left Music but its file did not go to the Trash; the user should know why.
   it('says how many files stayed on disk for the DJ libraries', () => {
     render(
-      <MusicReview
+      <Panes
         review={done(
           run({
             removed: [
@@ -212,7 +317,6 @@ describe('MusicReview', () => {
             ],
           }),
         )}
-        onClose={vi.fn()}
       />,
     )
     expect(screen.getByTestId('music-review-done')).toHaveTextContent(
@@ -221,38 +325,26 @@ describe('MusicReview', () => {
   })
 
   it('warns when the other libraries did not follow and when Music refused the batch', () => {
-    render(
-      <MusicReview
-        review={done(run({ librarySync: 'failed', applyError: 'boom' }))}
-        onClose={vi.fn()}
-      />,
-    )
+    render(<Panes review={done(run({ librarySync: 'failed', applyError: 'boom' }))} />)
     const sheet = screen.getByTestId('music-review-done')
     expect(sheet).toHaveTextContent("rekordbox, Engine DJ or Traktor weren't updated")
     expect(sheet).toHaveTextContent("Couldn't apply in Apple Music.")
   })
 
   it('hides the groups-left line when the recount failed', () => {
-    render(<MusicReview review={done(run({ after: null }))} onClose={vi.fn()} />)
+    render(<Panes review={done(run({ after: null }))} />)
     expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('to review')
   })
 
   it('keeps the sheet open after a partial undo and says how many changes stayed', () => {
-    render(
-      <MusicReview
-        review={review({ status: 'ready', lastRun: run({ undoFailures: 2 }) })}
-        onClose={vi.fn()}
-      />,
-    )
+    render(<Panes review={review({ status: 'ready', lastRun: run({ undoFailures: 2 }) })} />)
     expect(screen.getByTestId('music-review-done')).toHaveTextContent(
       '2 changes could not be undone',
     )
   })
 
   it('does not show the sheet while a run is still going', () => {
-    render(
-      <MusicReview review={review({ status: 'applying', lastRun: run() })} onClose={vi.fn()} />,
-    )
+    render(<Panes review={review({ status: 'applying', lastRun: run() })} />)
     expect(screen.queryByTestId('music-review-done')).toBeNull()
   })
 
@@ -263,7 +355,7 @@ describe('MusicReview', () => {
       staged: new Set([group.key]),
       summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
     })
-    render(<MusicReview review={r} onClose={vi.fn()} />)
+    render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-tray-apply'))
     expect(screen.getByRole('dialog', { name: "You're about to change 1 track" })).toBeVisible()
     expect(screen.getByTestId('music-review-confirm-apply')).toHaveFocus()
@@ -273,7 +365,7 @@ describe('MusicReview', () => {
   })
 
   it('names the done sheet by its title and Escape keeps reviewing', () => {
-    render(<MusicReview review={done(run())} onClose={vi.fn()} />)
+    render(<Panes review={done(run())} />)
     expect(screen.getByRole('dialog', { name: 'Library reviewed' })).toBeVisible()
     expect(screen.getByTestId('music-review-continue')).toHaveFocus()
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -291,35 +383,40 @@ describe('MusicReview', () => {
       formats: {},
     }
     render(
-      <MusicReview
+      <Panes
         review={review({
           status: 'applying',
           lastRun: run(),
           duplicates: [dup as unknown as Review['duplicates'][number]],
           progress: { done: 1, total: 2 },
         })}
-        onClose={vi.fn()}
       />,
     )
-    const locked = [
-      ...screen.getAllByTestId('music-review-stage'),
-      ...screen.getAllByTestId('music-review-ignore'),
+    const controls = () => [
+      screen.getByTestId('music-review-stage'),
+      screen.getByTestId('music-review-ignore'),
       ...screen.getAllByRole('radio'),
+    ]
+    const spelling = controls()
+    fireEvent.click(rows()[1])
+    const locked = [
+      ...spelling,
+      ...controls(),
       screen.getByTestId('music-review-filter-all'),
       screen.getByTestId('music-review-filter-spelling'),
       screen.getByTestId('music-review-filter-duplicates'),
       screen.getByTestId('music-review-close'),
     ]
-    expect(locked).toHaveLength(2 + 2 + 4 + 3 + 1)
+    expect(locked).toHaveLength(4 + 4 + 3 + 1)
     for (const el of locked) expect(el).toBeDisabled()
     expect(screen.getByTestId('music-review-stop')).toBeEnabled()
   })
 
   it('groups the radios under a name and announces the loading state', () => {
-    const { unmount } = render(<MusicReview review={review()} onClose={vi.fn()} />)
+    const { unmount } = render(<Panes review={review()} />)
     expect(screen.getByRole('radiogroup', { name: 'Artist DJ Lara' })).toBeVisible()
     unmount()
-    render(<MusicReview review={review({ status: 'loading', spelling: [] })} onClose={vi.fn()} />)
+    render(<Panes review={review({ status: 'loading', spelling: [] })} />)
     expect(screen.getByTestId('music-review-loading')).toHaveTextContent('Reading the library')
   })
 })
