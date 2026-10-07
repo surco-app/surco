@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+  DuplicateReplaceOutcome,
   LibraryTagUpdate,
   MusicFieldFix,
   MusicFixOutcome,
@@ -39,6 +40,7 @@ export interface DuplicateCard {
 export interface ReviewRun {
   outcomes: MusicFixOutcome[]
   removed: RemoveCopyResult[]
+  replaced: DuplicateReplaceOutcome[]
   before: number
   after: number | null
   librarySync: 'ok' | 'failed' | 'none'
@@ -392,13 +394,23 @@ export function useMusicReview({
         if (cancelled.current || applyError !== undefined) break
         removed.push(await window.api.removeMusicDuplicate(r).catch(() => FAILED_REMOVAL))
       }
+      const pairs = removed.flatMap((r) => (r.pair ? [r.pair] : []))
+      let replaced: DuplicateReplaceOutcome[] = []
+      let replaceFailed = false
+      if (pairs.length && !cancelled.current)
+        replaced = await window.api.replaceDuplicatesInLibraries(pairs).catch(() => {
+          replaceFailed = true
+          return []
+        })
       const updates = tagUpdatesOf(outcomes, 'apply')
-      let librarySync: ReviewRun['librarySync'] = 'none'
-      if (updates.length)
-        librarySync = await window.api.syncLibraryTags(updates).then(
+      let librarySync: ReviewRun['librarySync'] = replaceFailed ? 'failed' : 'none'
+      if (updates.length) {
+        const synced = await window.api.syncLibraryTags(updates).then(
           () => 'ok' as const,
           () => 'failed' as const,
         )
+        if (librarySync !== 'failed') librarySync = synced
+      }
       if (updates.length) onFilesChanged(updates)
       const next = await load().catch(() => null)
       setStaged(new Set())
@@ -406,6 +418,7 @@ export function useMusicReview({
       setLastRun({
         outcomes,
         removed,
+        replaced,
         before,
         after: next ? pendingCount(next, hidden) : null,
         librarySync,

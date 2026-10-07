@@ -148,6 +148,12 @@ function Confirm({
   )
 }
 
+const LIBRARIES = [
+  ['rekordbox', 'rekordbox'],
+  ['engine', 'Engine DJ'],
+  ['traktor', 'Traktor'],
+] as const
+
 function Done({
   review,
   busy,
@@ -163,7 +169,12 @@ function Done({
   if (!run) return null
   const undone = run.undoFailures !== undefined
   const removed = run.removed.filter((r) => r.outcome === 'removed').length
-  const keptForLibrary = run.removed.filter((r) => r.keptForLibrary).length
+  const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
+  const replacedIn = LIBRARIES.map(([library, name]) => ({
+    name,
+    count: run.replaced.filter((r) => r[library] === 'replaced' || r[library] === 'repointed')
+      .length,
+  })).filter((l) => l.count > 0)
   const failedRemovals = run.removed.filter(
     (r) => r.outcome === 'playlist-failed' || r.outcome === 'failed' || r.outcome === 'mismatch',
   ).length
@@ -213,6 +224,11 @@ function Done({
       {run.librarySync === 'failed' && (
         <p className="text-[var(--color-danger)]">{t('musicReview.done.libraryFailed')}</p>
       )}
+      {replacedIn.map((l) => (
+        <p key={l.name} data-testid="music-review-done-replaced" className="text-fg-dim">
+          {t('musicReview.done.replacedIn', { count: l.count, library: l.name })}
+        </p>
+      ))}
       {keptForLibrary > 0 && (
         <p className="text-fg-dim">
           {t('musicReview.done.keptForLibrary', { count: keptForLibrary })}

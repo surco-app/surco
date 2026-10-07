@@ -1531,6 +1531,8 @@
       "musicOnly_other": "{{count}} in Apple Music only, their files say something else",
       "failed_one": "{{count}} could not be changed",
       "failed_other": "{{count}} could not be changed",
+      "replacedIn_one": "{{count}} copy replaced by the kept one in {{library}}",
+      "replacedIn_other": "{{count}} copies replaced by the kept ones in {{library}}",
       "keptForLibrary_one": "{{count}} file stays on disk because rekordbox, Engine DJ or Traktor use it.",
       "keptForLibrary_other": "{{count}} files stay on disk because rekordbox, Engine DJ or Traktor use them.",
       "left_one": "{{count}} group left to review",

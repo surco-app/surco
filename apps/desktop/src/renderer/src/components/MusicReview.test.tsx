@@ -49,6 +49,7 @@ function review(over: Partial<Review> = {}): Review {
 const run = (over: Partial<ReviewRun> = {}): ReviewRun => ({
   outcomes: [],
   removed: [],
+  replaced: [],
   before: 3,
   after: 2,
   librarySync: 'none',
@@ -347,10 +348,10 @@ describe('MusicReview', () => {
       <Panes
         review={done(
           run({
-            removed: [
-              { outcome: 'removed', playlists: 0, fileTrashed: false, keptForLibrary: true },
-              { outcome: 'removed', playlists: 0, fileTrashed: false, keptForLibrary: true },
-              { outcome: 'removed', playlists: 0, fileTrashed: true },
+            replaced: [
+              { from: '/a', engine: 'replaced', fileTrashed: false, keptForLibrary: true },
+              { from: '/b', rekordbox: 'skipped', fileTrashed: false, keptForLibrary: true },
+              { from: '/c', fileTrashed: true, keptForLibrary: false },
             ],
           }),
         )}
@@ -359,6 +360,40 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-done')).toHaveTextContent(
       '2 files stay on disk because rekordbox, Engine DJ or Traktor use them.',
     )
+  })
+
+  // Each library is named apart: the DJ checks the one they play from.
+  it('says how many removed copies each DJ library moved to the kept copy', () => {
+    render(
+      <Panes
+        review={done(
+          run({
+            replaced: [
+              {
+                from: '/a',
+                rekordbox: 'replaced',
+                traktor: 'repointed',
+                fileTrashed: true,
+                keptForLibrary: false,
+              },
+              {
+                from: '/b',
+                rekordbox: 'repointed',
+                traktor: 'none',
+                engine: 'skipped',
+                fileTrashed: false,
+                keptForLibrary: true,
+              },
+            ],
+          }),
+        )}
+      />,
+    )
+    const lines = screen.getAllByTestId('music-review-done-replaced').map((p) => p.textContent)
+    expect(lines).toEqual([
+      '2 copies replaced by the kept ones in rekordbox',
+      '1 copy replaced by the kept one in Traktor',
+    ])
   })
 
   it('warns when the other libraries did not follow and when Music refused the batch', () => {

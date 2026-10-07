@@ -43,6 +43,9 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
       .mockResolvedValue({ outcome: 'removed', playlists: 0, fileTrashed: true }),
     appleMusicEntryLocation: vi.fn<Api['appleMusicEntryLocation']>().mockResolvedValue('/m/x.aiff'),
     trashRestore: vi.fn<Api['trashRestore']>().mockResolvedValue({ restoredTo: '/m/c.mp3' }),
+    replaceDuplicatesInLibraries: vi
+      .fn<Api['replaceDuplicatesInLibraries']>()
+      .mockResolvedValue([]),
     ...over,
   }
   ;(window as unknown as { api: unknown }).api = api
@@ -310,11 +313,17 @@ describe('useMusicReview', () => {
       .mockImplementationOnce(
         () =>
           new Promise((r) => {
-            release = () => r({ outcome: 'removed', playlists: 0, fileTrashed: true })
+            release = () =>
+              r({
+                outcome: 'removed',
+                playlists: 0,
+                fileTrashed: false,
+                pair: { from: '/m/q.aiff', to: '/m/p.aiff', shared: false },
+              })
           }),
       )
       .mockResolvedValue({ outcome: 'removed', playlists: 0, fileTrashed: true })
-    setApi({ loadMusicReview: vi.fn().mockResolvedValue(lib), removeMusicDuplicate })
+    const api = setApi({ loadMusicReview: vi.fn().mockResolvedValue(lib), removeMusicDuplicate })
     const { result } = await ready()
     act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
     let run: Promise<void> = Promise.resolve()
@@ -328,6 +337,83 @@ describe('useMusicReview', () => {
       await run
     })
     expect(removeMusicDuplicate).toHaveBeenCalledTimes(1)
+    expect(api.replaceDuplicatesInLibraries).not.toHaveBeenCalled()
+  })
+
+  describe('the DJ libraries after removing copies', () => {
+    const THREE = [
+      e('P', 'Ann', { title: 'Song', durationSec: 200 }),
+      e('Q', 'Ann', { title: 'Song', durationSec: 201 }),
+      e('R', 'Ann', { title: 'Song', durationSec: 202 }),
+    ]
+    const removedWith = (from: string, shared = false) => ({
+      outcome: 'removed' as const,
+      playlists: 0,
+      fileTrashed: false,
+      pair: { from, to: '/m/p.aiff', shared },
+    })
+
+    // One write per library for the whole run, and only once Music no longer has the copies.
+    it('hands every removed copy to the libraries in one call after the removals', async () => {
+      const calls: string[] = []
+      const outcomes = [
+        {
+          from: '/m/q.aiff',
+          rekordbox: 'replaced' as const,
+          fileTrashed: true,
+          keptForLibrary: false,
+        },
+        { from: '/m/r.aiff', fileTrashed: false, keptForLibrary: false },
+      ]
+      const api = setApi({
+        loadMusicReview: vi.fn().mockResolvedValue(THREE),
+        removeMusicDuplicate: vi
+          .fn<Api['removeMusicDuplicate']>()
+          .mockImplementationOnce(async () => {
+            calls.push('remove')
+            return removedWith('/m/q.aiff')
+          })
+          .mockImplementationOnce(async () => {
+            calls.push('remove')
+            return removedWith('/m/r.aiff', true)
+          }),
+        replaceDuplicatesInLibraries: vi.fn(async () => {
+          calls.push('replace')
+          return outcomes
+        }),
+      })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      await act(() => result.current.apply())
+      expect(calls).toEqual(['remove', 'remove', 'replace'])
+      expect(api.replaceDuplicatesInLibraries).toHaveBeenCalledWith([
+        { from: '/m/q.aiff', to: '/m/p.aiff', shared: false },
+        { from: '/m/r.aiff', to: '/m/p.aiff', shared: true },
+      ])
+      expect(result.current.lastRun?.replaced).toEqual(outcomes)
+    })
+
+    it('calls nothing when no removed copy had a file', async () => {
+      const api = setApi({ loadMusicReview: vi.fn().mockResolvedValue(THREE) })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      await act(() => result.current.apply())
+      expect(api.replaceDuplicatesInLibraries).not.toHaveBeenCalled()
+      expect(result.current.lastRun?.replaced).toEqual([])
+    })
+
+    it('records a failed library step when the call rejects', async () => {
+      setApi({
+        loadMusicReview: vi.fn().mockResolvedValue(THREE),
+        removeMusicDuplicate: vi.fn().mockResolvedValue(removedWith('/m/q.aiff')),
+        replaceDuplicatesInLibraries: vi.fn().mockRejectedValue(new Error('boom')),
+      })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      await act(() => result.current.apply())
+      expect(result.current.status).toBe('done')
+      expect(result.current.lastRun).toMatchObject({ librarySync: 'failed', replaced: [] })
+    })
   })
 
   // A failed apply leaves Music in an unknown state; removing copies on top of it would
