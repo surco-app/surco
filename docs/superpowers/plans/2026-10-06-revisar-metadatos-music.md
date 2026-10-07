@@ -3734,3 +3734,34 @@ Dos entradas del mismo tema (una en una playlist normal). Quitar la peor y compr
 - [ ] **Step 4: Informe al usuario**
 
 Qué se probó, qué no y lo que se vio, con capturas. Sin merge hasta su visto bueno ([[cierre-features-merge-local]]).
+
+---
+
+### Task 19: Revisión en dos paneles y un grupo por nombre (artista + artista del álbum)
+
+Approved by the user on 07/10 after testing the app ("el boceto es mucho mejor"). Sketch (describe-only; you can't open it): https://claude.ai/artifact/S3s7JPSTyVf9edW47FV7N8 — left: compact list; right: detail of the selected group. Second user finding: the same name shows twice, once as Artista and once as Artista del álbum (measured: 53 of 62 album-artist groups repeat an artist group exactly; 142 → 89 after merging).
+
+## A. One group per name across artist and album artist (hook level, lib untouched)
+- In `useMusicReview`, merge spelling groups of field 'artist' and 'albumArtist' that have the same kind and the same set of variant values into one display group: `{ key, fields: MusicReviewField[], kind, variants (per value: union of persistentIds across parts, sorted), suggested, parts: SpellingGroup[] }`. Groups that don't pair stay single (fields of length 1). Key = parts' keys sorted and joined with '+'.
+- choose / toggleStaged / ignore on a merged key apply to every part (ignore persists each part's key, so ignores stay compatible and an ignore of a single-field group still hides it). planFixes receives every staged part with the chosen `to`.
+- suggested: majority by union counts; if parts disagree, recompute with the existing rule over the union.
+- Conflict unstaging (existing rule) works on the merged group as a whole.
+- Tests: two parts merge into one with fields ['artist','albumArtist'] and union counts (not doubled); staging the merged group yields fixes for both fields; ignoring it saves both part keys; a group present only in albumArtist stays single.
+
+## B. Two panes
+- The review list stays in the left column but becomes compact rows: colored dot (aria-label safe/review), name (chosen or suggested value), a secondary line with field label(s) and kind (e.g. "Artista y artista del álbum · mayúsculas"), and the track count. No radios or buttons in the rows. The selected row is highlighted (row-selected token); staged rows are dimmed with "en la tanda". ↑/↓ move the selection within the review list when it has focus; the first group is selected by default; filters keep a valid selection.
+- While the review is open, the right/main pane shows the detail of the selected group instead of the editor or the empty "Drop your tracks here" state.
+- Share one hook instance between both panes: mount a provider (context) when the review opens that owns `useMusicReview`, consumed by the list column and the detail pane. Keep MusicReviewColumn's existing behaviors (filter sync from the command, busy flag, onFilesChanged, close).
+- Detail for a spelling group: header with the name, the field label(s) · kind, and Ignorar / Unificar (or Quitar de la tanda when staged). "Cómo está y cómo queda": one option per variant with radio (choose) and track count; for kind 'invisible', show the current value with each invisible character rendered as an amber "·" and leading/trailing/double spaces as an amber "␣", and the clean result as the option that "queda". A one-line note explains the marks only when marks are shown. Then "Pistas afectadas": a table with Título, Campo, Ahora (with marks), Queda (accent/good color), and Dónde: chips for Music, Fichero, and rekordbox / Engine DJ / Traktor only when their sync setting is on (read settings), for each track and field that the chosen value would change. Tie → no option checked and the tie hint.
+- Detail for a duplicate/version group: header with "artista · título", count, Ignorar (Son distintas for version) / Quitar N (or Quitar de la tanda). Copies side by side (cards; stack on narrow widths): radio "Se queda", format chip, álbum, género, duración, fichero (short path tail) or "Sin fichero" when the location is empty. Values that differ across copies are shown in the warn color. A copy without a file can't be chosen to stay unless every copy lacks a file (radio disabled), and never becomes the default keep.
+  - Needs each copy's album/genre (already in entries) and location (the hook already fetches locations for formats: keep the full path too).
+- Tray, confirmation sheet, done sheet, busy/applying lock, Escape behavior: unchanged, still at the bottom of the left column.
+- All new strings in es/en/de/fr/pt-BR (castellano llano, no em dash, no explanatory colon); keys.test.ts and usedKeys.test.ts green. data-testid on: list rows `music-review-row`, detail root `music-review-detail`, detail options `music-review-option`, affected-tracks rows `music-review-affected`, copies `music-review-copy`, existing testids (stage, ignore, tray, confirm, done, filters, close) keep their names and move to where the sketch puts them.
+
+## Tests (TDD, RED first)
+- Hook merge tests (section A).
+- View: list rows render without radios; clicking a row shows its detail; staging from the detail dims the row; invisible marks render as "·" and "␣"; the affected table lists one row per track and field with the right Dónde chips for given settings; duplicate detail disables keeping a copy without a file and shows differing values in warn color; ↑/↓ moves selection.
+- App: with the review open, the main pane shows `music-review-detail` and not the empty-state "Add tracks" button; existing review App tests still pass.
+
+## Out of scope
+Search in providers, cover art, playlist counts per copy.
