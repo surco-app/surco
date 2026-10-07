@@ -1555,7 +1555,9 @@
       "after": "Becomes",
       "where": "Where",
       "duration": "Duration",
-      "noFile": "No file"
+      "noFile": "No file",
+      "unchecked": "File not checked",
+      "librariesNote": "Libraries only change if they still hold the old value."
     },
     "where": {
       "music": "Music",

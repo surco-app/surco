@@ -282,7 +282,9 @@ function Row({
       tabIndex={selected ? 0 : -1}
       onClick={onSelect}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onSelect()
+        if (e.key !== 'Enter' && e.key !== ' ') return
+        e.preventDefault()
+        onSelect()
       }}
       className={`flex min-w-0 cursor-default items-center gap-2.5 rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${selected ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]' : 'hover:bg-[var(--color-hover)]'} ${staged ? 'opacity-60' : ''}`}
     >

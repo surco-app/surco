@@ -1555,7 +1555,9 @@
       "after": "Wird",
       "where": "Wo",
       "duration": "Dauer",
-      "noFile": "Keine Datei"
+      "noFile": "Keine Datei",
+      "unchecked": "Datei nicht geprüft",
+      "librariesNote": "Die Bibliotheken ändern sich nur, wenn sie noch den alten Wert haben."
     },
     "where": {
       "music": "Music",

@@ -222,6 +222,7 @@ function SpellingDetail({
               </tbody>
             </table>
           </div>
+          <p className="text-xs text-fg-faint">{t('musicReview.detail.librariesNote')}</p>
         </section>
       )}
     </>
@@ -234,6 +235,7 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
   const busy = review.status === 'applying'
   const keep = review.choice(group.key)
   const anyFile = entries.some((e) => locations[e.persistentId] !== '')
+  const unknown = entries.some((e) => !(e.persistentId in locations))
   const differs = (value: (e: MusicReviewEntry) => string) => new Set(entries.map(value)).size > 1
   const staged = review.staged.has(group.key)
   const version = group.kind === 'version'
@@ -261,7 +263,7 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
           type="button"
           data-testid="music-review-stage"
           className={version ? GHOST : PRIMARY}
-          disabled={busy}
+          disabled={busy || (unknown && !staged)}
           onClick={() => review.toggleStaged(group.key)}
         >
           {staged
@@ -277,6 +279,12 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
         {entries.map((e) => {
           const path = locations[e.persistentId]
           const noFile = path === ''
+          const file =
+            path === undefined
+              ? t('musicReview.detail.unchecked')
+              : noFile
+                ? t('musicReview.detail.noFile')
+                : tail(path)
           const cells = [
             ['field.album', e.album, differs((c) => c.album)],
             ['field.genre', e.genre, differs((c) => c.genre)],
@@ -295,6 +303,9 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
                     name={group.key}
                     checked={keep === e.persistentId}
                     disabled={busy || (noFile && anyFile)}
+                    aria-label={[t('musicReview.keeps'), formats[e.persistentId], file]
+                      .filter(Boolean)
+                      .join(' ')}
                     onChange={() => review.choose(group.key, e.persistentId)}
                     className="accent-[var(--color-accent)]"
                   />
@@ -321,7 +332,7 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
                 ))}
                 <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>
                 <dd title={path} className={`truncate ${noFile ? 'text-[var(--color-warn)]' : ''}`}>
-                  {noFile ? t('musicReview.detail.noFile') : tail(path ?? '')}
+                  {file}
                 </dd>
               </dl>
             </div>

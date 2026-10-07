@@ -1,5 +1,5 @@
 import type React from 'react'
-import { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { LibraryTagUpdate } from '../../../shared/types'
 import {
   type MusicReview as Review,
@@ -17,17 +17,39 @@ interface Shared {
 
 const ReviewContext = createContext<Shared | null>(null)
 
-function validKey(review: Review, picked: string | null): string | null {
-  const keys = [
-    ...(review.filter === 'duplicates' ? [] : review.spelling.map((g) => g.key)),
-    ...(review.filter === 'spelling' ? [] : review.duplicates.map((c) => c.group.key)),
-  ]
-  return picked !== null && keys.includes(picked) ? picked : (keys[0] ?? null)
+const keysOf = (review: Review) => [
+  ...(review.filter === 'duplicates' ? [] : review.spelling.map((g) => g.key)),
+  ...(review.filter === 'spelling' ? [] : review.duplicates.map((c) => c.group.key)),
+]
+
+// When the selected group leaves the list (ignored, applied or filtered out) the user
+// keeps their place: the group that followed it, or the one before when it was last.
+function useSelection(review: Review | null) {
+  const [picked, select] = useState<string | null>(null)
+  const seen = useRef<string[]>([])
+  const keys = review ? keysOf(review) : []
+  let selectedKey: string | null = keys[0] ?? null
+  if (picked !== null && keys.includes(picked)) selectedKey = picked
+  else if (picked !== null) {
+    const at = seen.current.indexOf(picked)
+    const live = new Set(keys)
+    const after = seen.current.slice(at + 1).find((k) => live.has(k))
+    const before = seen.current
+      .slice(0, Math.max(at, 0))
+      .reverse()
+      .find((k) => live.has(k))
+    if (at >= 0) selectedKey = after ?? before ?? selectedKey
+  }
+  useEffect(() => {
+    seen.current = keys
+    if (review && selectedKey !== picked) select(selectedKey)
+    if (!review && picked !== null) select(null)
+  })
+  return { selectedKey, select }
 }
 
 export function useReviewSelection(review: Review) {
-  const [picked, select] = useState<string | null>(null)
-  return { selectedKey: validKey(review, picked), select }
+  return useSelection(review)
 }
 
 interface Options {
@@ -51,14 +73,9 @@ function Owner({
 }
 
 function Gate({ review, children }: { review: Review | null; children: React.ReactNode }) {
-  const [picked, select] = useState<string | null>(null)
-  useEffect(() => {
-    if (!review) select(null)
-  }, [review])
+  const { selectedKey, select } = useSelection(review)
   return (
-    <ReviewContext.Provider
-      value={review && { review, selectedKey: validKey(review, picked), select }}
-    >
+    <ReviewContext.Provider value={review && { review, selectedKey, select }}>
       {children}
     </ReviewContext.Provider>
   )

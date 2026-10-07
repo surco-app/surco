@@ -153,6 +153,42 @@ describe('MusicReview', () => {
     expect(rows()[1]).not.toHaveAttribute('data-staged')
   })
 
+  // Ignoring is how the user walks the list; jumping back to the top loses their place.
+  it('selects the next group after the selected one is ignored, or the previous at the end', () => {
+    const third = {
+      ...other,
+      key: 'genre||case|techno',
+      variants: [
+        { value: 'Techno', persistentIds: ['G'] },
+        { value: 'techno', persistentIds: ['H'] },
+      ],
+    }
+    function Ignoring() {
+      const [spelling, setSpelling] = useState([group, other, third])
+      return (
+        <Panes
+          review={review({
+            spelling,
+            ignore: (k) => setSpelling((s) => s.filter((g) => g.key !== k)),
+          })}
+        />
+      )
+    }
+    render(<Ignoring />)
+    fireEvent.click(rows()[1])
+    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    expect(rows()[1]).toHaveAttribute('aria-selected', 'true')
+    expect(detail()).toHaveTextContent('Techno')
+    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('keeps Space on a row from scrolling the list', () => {
+    render(<Panes review={review({ spelling: [group, other] })} />)
+    expect(fireEvent.keyDown(rows()[1], { key: ' ' })).toBe(false)
+    expect(rows()[1]).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('moves the selection with the arrow keys', () => {
     render(<Panes review={review({ spelling: [group, other] })} />)
     fireEvent.keyDown(rows()[0], { key: 'ArrowDown' })
@@ -498,6 +534,7 @@ describe('MusicReview', () => {
       expect(rowsOf[1]).toHaveTextContent('Song A')
       expect(rowsOf[1]).toHaveTextContent('Album artist')
       expect(rowsOf[2]).toHaveTextContent('Dj Lara␣')
+      expect(detail()).toHaveTextContent('Libraries only change if they still hold the old value.')
       for (const row of rowsOf) {
         expect(row).toHaveTextContent('Music')
         expect(row).toHaveTextContent('File')
@@ -540,6 +577,21 @@ describe('MusicReview', () => {
       expect(within(withFile).getByRole('radio')).toBeChecked()
       expect(withFile).toHaveTextContent('Ann/Song.aiff')
       expect(withFile).not.toHaveTextContent('/Music/')
+    })
+
+    it('says a copy whose file could not be checked is unknown and holds the removal', () => {
+      render(<Panes review={dupReview({ '2': '/Music/Ann/Song.aiff' })} />)
+      const [unknown] = screen.getAllByTestId('music-review-copy')
+      expect(unknown).not.toHaveTextContent('No file')
+      expect(unknown).toHaveTextContent('File not checked')
+      expect(within(unknown).getByRole('radio')).toBeEnabled()
+      expect(screen.getByTestId('music-review-stage')).toBeDisabled()
+    })
+
+    it('names each copy radio by its format and file', () => {
+      render(<Panes review={dupReview({ '1': '/a/x/1.aiff', '2': '' })} />)
+      expect(screen.getByRole('radio', { name: 'Kept AIFF x/1.aiff' })).toBeInTheDocument()
+      expect(screen.getByRole('radio', { name: 'Kept No file' })).toBeInTheDocument()
     })
 
     it('lets any copy stay when none has a file', () => {

@@ -622,6 +622,50 @@ describe('useMusicReview', () => {
     expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('P')
   })
 
+  // A lookup that failed says nothing about the file; reading it as "no file" would steer
+  // the user into removing the copy that still has the audio.
+  describe('a location lookup that fails', () => {
+    it('retries once and then leaves the copy unknown and the group unstageable', async () => {
+      const appleMusicEntryLocation = vi
+        .fn<Api['appleMusicEntryLocation']>()
+        .mockImplementation(async (pid) => {
+          if (pid === 'P') throw new Error('AppleScript')
+          return '/m/q.flac'
+        })
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(DUPS), appleMusicEntryLocation })
+      const { result } = await ready()
+      await waitFor(() =>
+        expect(appleMusicEntryLocation.mock.calls.filter(([pid]) => pid === 'P')).toHaveLength(2),
+      )
+      await act(async () => {})
+      expect(appleMusicEntryLocation.mock.calls.filter(([pid]) => pid === 'P')).toHaveLength(2)
+      const [card] = result.current.duplicates
+      expect(card.locations).toEqual({ Q: '/m/q.flac' })
+      act(() => result.current.toggleStaged(card.group.key))
+      expect(result.current.staged.size).toBe(0)
+    })
+
+    it('uses the retry when it succeeds', async () => {
+      let failed = false
+      const appleMusicEntryLocation = vi
+        .fn<Api['appleMusicEntryLocation']>()
+        .mockImplementation(async (pid) => {
+          if (pid === 'P' && !failed) {
+            failed = true
+            throw new Error('AppleScript')
+          }
+          return pid === 'P' ? '' : '/m/q.flac'
+        })
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(DUPS), appleMusicEntryLocation })
+      const { result } = await ready()
+      await waitFor(() =>
+        expect(result.current.duplicates[0].locations).toEqual({ P: '', Q: '/m/q.flac' }),
+      )
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      expect(result.current.staged.size).toBe(1)
+    })
+  })
+
   describe('one group per name across artist and album artist', () => {
     const BOTH = [
       e('A', 'DJ Lara', { albumArtist: 'DJ Lara' }),

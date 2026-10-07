@@ -1555,7 +1555,9 @@
       "after": "Fica",
       "where": "Onde",
       "duration": "Duração",
-      "noFile": "Sem arquivo"
+      "noFile": "Sem arquivo",
+      "unchecked": "Arquivo não verificado",
+      "librariesNote": "As bibliotecas só mudam se ainda tiverem o valor anterior."
     },
     "where": {
       "music": "Music",

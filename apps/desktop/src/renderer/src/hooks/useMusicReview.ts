@@ -212,22 +212,33 @@ export function useMusicReview({
     [entries, hidden],
   )
 
+  // A failed lookup is not "no file": it stays out of `locations` (unknown) and is tried
+  // once more, so only an answer from Music can mark a copy as having no file.
+  const attempts = useRef(new Map<string, number>())
+  const inFlight = useRef(new Set<string>())
+  const [retry, setRetry] = useState(0)
   useEffect(() => {
+    void retry
     const missing = [...new Set(dupGroups.flatMap((g) => g.ids))].filter(
-      (pid) => !(pid in locations),
+      (pid) =>
+        !(pid in locations) && !inFlight.current.has(pid) && (attempts.current.get(pid) ?? 0) < 2,
     )
     if (missing.length === 0) return
-    let live = true
-    Promise.all(
-      missing.map(
-        async (pid) =>
-          [pid, await window.api.appleMusicEntryLocation(pid).catch(() => '')] as const,
-      ),
-    ).then((pairs) => live && setLocations((l) => ({ ...l, ...Object.fromEntries(pairs) })))
-    return () => {
-      live = false
+    for (const pid of missing) {
+      attempts.current.set(pid, (attempts.current.get(pid) ?? 0) + 1)
+      inFlight.current.add(pid)
     }
-  }, [dupGroups, locations])
+    Promise.allSettled(missing.map((pid) => window.api.appleMusicEntryLocation(pid))).then(
+      (results) => {
+        for (const pid of missing) inFlight.current.delete(pid)
+        const found = results.flatMap((r, i) =>
+          r.status === 'fulfilled' ? [[missing[i], r.value] as const] : [],
+        )
+        if (found.length) setLocations((l) => ({ ...l, ...Object.fromEntries(found) }))
+        if (found.length < missing.length) setRetry((n) => n + 1)
+      },
+    )
+  }, [dupGroups, locations, retry])
 
   const formats = useMemo(
     () => Object.fromEntries(Object.entries(locations).map(([pid, path]) => [pid, extOf(path)])),
@@ -287,6 +298,7 @@ export function useMusicReview({
               next.delete(other.key)
         }
         const dup = dupGroups.find((g) => g.key === key)
+        if (dup?.ids.some((id) => !(id in locations))) return s
         if (dup) {
           for (const other of dupGroups)
             if (other.key !== key && other.ids.some((id) => dup.ids.includes(id)))
@@ -296,7 +308,7 @@ export function useMusicReview({
         return next
       })
     },
-    [choice, spelling, dupGroups],
+    [choice, spelling, dupGroups, locations],
   )
 
   const ignore = useCallback(
