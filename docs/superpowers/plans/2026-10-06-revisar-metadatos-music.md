@@ -3765,3 +3765,41 @@ Approved by the user on 07/10 after testing the app ("el boceto es mucho mejor")
 
 ## Out of scope
 Search in providers, cover art, playlist counts per copy.
+
+---
+
+### Task 20: Al quitar un duplicado, las bibliotecas DJ pasan a la copia que se queda
+
+User request (07/10): "si quitamos una duplicada, y esa duplicada está en playlists de rekordbox por ejemplo, tenemos que sustituirla por la que el usuario deja". Approved design ("sí, inténtalo").
+
+Measured on a copy of the user's rekordbox collection (same-file pairs excluded): This Rap, Violet Club Sandwich and Now Is The Time have BOTH copies in rekordbox, each with its own cues (11/11, 11/13, 13/12) and playlists; Possession has only the kept copy; Amigos Forever / Bleeding Love / Clear Blue Water are two Music entries on the same file (nothing to replace).
+
+## Behavior per enabled library (rekordbox: syncRekordbox; Engine DJ: syncEngineDj + m.db; Traktor: syncTraktor + path), pair = { from: removed copy's file, to: kept copy's file }
+1. Same real file (shared) → nothing.
+2. Library has `from` but not `to` → repoint `from` → `to` with the EXISTING repoint machinery (rekordboxLibrary.repointTracks, engineRepoint.repointEngineTracks, Traktor NML newFile/location patch as conversions do). Cues and playlists follow.
+3. Library has both → for every playlist entry of `from`: if that playlist doesn't contain `to`, point the entry at `to` keeping its position; if it already contains `to`, remove the `from` entry. Then remove `from` from the collection.
+   - rekordbox: playlist entry = djmdSongPlaylist (ID, PlaylistID, ContentID, TrackNo, UUID, rb_local_deleted, rb_local_usn, updated_at). Point: UPDATE ContentID, bump rb_local_usn (agentRegistry localUpdateCount, same helper style as rekordboxTags.ts) and updated_at. Remove entry / remove content: SOFT delete only — set rb_local_deleted = 1 and bump usn/updated_at on the djmdSongPlaylist row and on the djmdContent row of `from`. Never DELETE rows; never touch djmdCue or other tables. Same guards as rekordboxTags (closed before read and before write, session + .surco-backup, one transaction, read-only reason). Smart playlists (djmdPlaylist.SmartList not null) have no entries; ignore.
+   - Engine DJ: read the real schema from engine3Fixture.ts and the user's copy (.superpowers/sdd/2026-10-06-revisar-metadatos-music/engine/Database2/m.db, read-only): PlaylistEntity is a linked list (nextEntityId). Point: UPDATE trackId. Remove entry: relink the previous entity's nextEntityId to the removed entity's nextEntityId, then delete that entity. Remove `from` Track: only if you can show from the schema (triggers/foreign keys) and a test on a fixture copy that Engine's own constraints stay valid; otherwise leave the Track row (fail closed) and report it. Same lifecycle as engineTags/engineRepoint (closed check twice, backups, sql.js, temp + rename).
+   - Traktor: playlists reference tracks by PRIMARYKEY KEY (volume/:dir/:file). Point: replace the key; if the playlist already has `to`'s key, remove the `from` node and fix the playlist's ENTRIES count; then remove the `from` ENTRY from COLLECTION and fix COLLECTION ENTRIES. Pure string transform in traktorNml.ts with tests; flush through the existing Traktor flush (backup, Traktor closed).
+4. Library has only `to`, or neither → nothing.
+
+## Flow change
+- `removeDuplicateCopy` (main/musicDuplicates.ts) keeps doing the Music part (playlist transfer, label guards, delete entry) but no longer trashes the file itself: it returns the removed file location (and whether it's shared with the kept copy) for the next step.
+- New IPC `library:replaceDuplicates(pairs)` in main/index.ts, run through the shared library flush mutex (libraryTagSync's chain) with the same ensureClosed prompts/dialogs/Activity rows as the other flushes: apply steps 1-4 per enabled library, then for each pair: trash `from` only if not shared AND no enabled library still references it afterwards (reuse libraryFileUse.ts; fail closed if unreadable) AND every library step for that pair succeeded. Returns per pair `{ from, rekordbox?: outcome, engine?: outcome, traktor?: outcome, fileTrashed, keptForLibrary }`, outcomes: 'repointed' | 'replaced' | 'none' | 'skipped' (app open / no backup / unreadable) | 'failed'.
+- Preload `replaceDuplicatesInLibraries(pairs)`; the hook calls it once after all Music removals of a run (skipped if cancelled), stores the results in ReviewRun, and the done sheet says how many copies were replaced in rekordbox/Engine/Traktor and how many files stayed on disk.
+- Undo still doesn't bring removed copies back (unchanged copy in the sheets).
+
+## UI fixes found in the user's screenshot
+- In duplicate detail, the copy that will be removed is labelled "Se quita" (today both cards say "Kept"/"Se queda").
+- When two copies point to the same real file, show "Mismo fichero" on both cards (from the locations already fetched; compare normalized paths).
+- Each copy card shows, per enabled library, whether it's there and its cue and playlist counts (e.g. "rekordbox · 11 cues · 4 playlists" / "No está en rekordbox"), via a new read-only IPC `library:copyInfo(paths)` (rekordbox: djmdCue count where rb_local_deleted=0 + djmdSongPlaylist count; Engine: playlist entity count; Traktor: cue count + playlist count if cheap, else presence only). Fail quietly (show nothing) if a library can't be read.
+- A one-line note in duplicate detail when both copies are in a library: "Las cues de la copia que se quita no pasan a la que se queda." (5 locales, no em dash, no explanatory colon).
+
+## Tests (TDD, RED first)
+- rekordbox replace on an encrypted fixture: entry repointed keeping TrackNo; entry soft-deleted when `to` already in the playlist; `from` content soft-deleted; usn counter exact; cues untouched; guards (closed twice, backups, read-only) proven by mutation.
+- Engine replace on the fixture: linked list stays consistent (walk it); entity removal relinks; Track removal only if proven safe.
+- Traktor transform: key replaced, duplicate removed, ENTRIES counts fixed, COLLECTION entry removed.
+- Orchestrator: order (libraries then trash), fail-closed when any library step fails, shared file never trashed, mutex used.
+- Hook: called once per run with the right pairs, skipped on cancel; done sheet counts.
+- View: "Se quita" label, "Mismo fichero", library info line, cues note.
+- Real-copy check (temporary, uncommitted): run the rekordbox replace on a fresh copy of .superpowers/sdd/2026-10-06-revisar-metadatos-music/rb/master-copy.db for This Rap (from = …/Hard House Legacy Vol. 2/05 This Rap (Original Mix).aiff, to = …/DJ Ter/This Rap/05 This Rap.aiff under /Volumes/Public/Music/Media.localized/Music/) and report: playlists of `to` before/after, no playlist has both, `from` content soft-deleted, PRAGMA integrity_check ok. NEVER open ~/Library/Pioneer or ~/Music/Engine Library.
