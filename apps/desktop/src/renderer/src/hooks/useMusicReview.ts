@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   LibraryTagUpdate,
+  MusicFieldFix,
   MusicFixOutcome,
   MusicReviewEntry,
   MusicReviewField,
@@ -65,6 +66,7 @@ export interface MusicReview {
   cancel: () => void
   undo: () => Promise<void>
   lastRun: ReviewRun | null
+  affected: (key: string) => (MusicFieldFix & { title: string })[]
 }
 
 const RANK = ['AIFF', 'AIF', 'WAV', 'FLAC', 'M4A']
@@ -327,6 +329,19 @@ export function useMusicReview({
     )
   }, [entries, removals, spelling, staged, choice])
 
+  const affected = useCallback(
+    (key: string) => {
+      const group = spelling.find((g) => g.key === key)
+      const to = choice(key)
+      if (!group || to === null) return []
+      return planFixes(
+        entries,
+        group.parts.map((part) => ({ group: part, to })),
+      ).map((fix) => ({ ...fix, title: byPid.get(fix.persistentId)?.title ?? '' }))
+    },
+    [spelling, choice, entries, byPid],
+  )
+
   const summary = useMemo(
     () => ({ ...summarizeFixes(fixes), duplicates: removals.length }),
     [fixes, removals],
@@ -458,6 +473,7 @@ export function useMusicReview({
       cancel,
       undo,
       lastRun,
+      affected,
     }),
     [
       status,
@@ -475,6 +491,7 @@ export function useMusicReview({
       cancel,
       undo,
       lastRun,
+      affected,
     ],
   )
 }

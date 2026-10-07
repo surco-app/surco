@@ -1547,7 +1547,17 @@
     "bothArtists": "Artista y artista del álbum",
     "inTray": "en la tanda",
     "detail": {
-      "options": "Cómo está y cómo queda"
+      "options": "Cómo está y cómo queda",
+      "marks": "· es un carácter invisible y ␣ un espacio de más",
+      "affected": "Pistas afectadas",
+      "field": "Campo",
+      "now": "Ahora",
+      "after": "Queda",
+      "where": "Dónde"
+    },
+    "where": {
+      "music": "Music",
+      "file": "Fichero"
     }
   }
 }

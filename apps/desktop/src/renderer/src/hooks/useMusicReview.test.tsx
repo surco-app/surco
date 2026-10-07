@@ -554,6 +554,37 @@ describe('useMusicReview', () => {
     expect([...result.current.staged]).toEqual([ver])
   })
 
+  // The detail shows the writes before they are staged, so it must match what apply sends.
+  it('previews the tracks and fields the chosen spelling would change', async () => {
+    setApi({
+      loadMusicReview: vi
+        .fn()
+        .mockResolvedValue([
+          e('A', 'DJ Lara', { albumArtist: 'DJ Lara' }),
+          e('B', 'DJ Lara', { albumArtist: 'DJ Lara' }),
+          e('C', 'Dj Lara', { albumArtist: 'Dj Lara' }),
+        ]),
+    })
+    const { result } = await ready()
+    const key = result.current.spelling[0].key
+    expect(result.current.affected(key)).toEqual([
+      { persistentId: 'C', title: 'TC', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+      { persistentId: 'C', title: 'TC', field: 'albumArtist', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+    act(() => result.current.choose(key, 'Dj Lara'))
+    expect(result.current.affected(key).map((f) => f.persistentId)).toEqual(['A', 'B', 'A', 'B'])
+  })
+
+  it('previews nothing while the group is tied', async () => {
+    setApi({
+      loadMusicReview: vi
+        .fn()
+        .mockResolvedValue([e('A', 'Rachel Auburn'), e('B', 'Rahcel Auburn')]),
+    })
+    const { result } = await ready()
+    expect(result.current.affected(result.current.spelling[0].key)).toEqual([])
+  })
+
   describe('one group per name across artist and album artist', () => {
     const BOTH = [
       e('A', 'DJ Lara', { albumArtist: 'DJ Lara' }),

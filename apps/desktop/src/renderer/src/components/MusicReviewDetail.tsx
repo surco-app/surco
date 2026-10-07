@@ -4,6 +4,7 @@ import type {
   MusicReview as Review,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
+import { INVISIBLE } from '../lib/musicSpelling'
 import { fieldsLabel, GHOST, PRIMARY } from './MusicReview'
 
 export interface ReviewSync {
@@ -37,12 +38,80 @@ function Header({
   )
 }
 
-function SpellingDetail({ group, review }: { group: ReviewSpellingGroup; review: Review }) {
+const VISIBLY_INVISIBLE = new RegExp(INVISIBLE.source)
+const MARK = 'text-[var(--color-warn)]'
+
+// A stray space or an invisible character draws as nothing, so the two spellings would
+// look identical; each one gets a mark where clean() would remove or squeeze it.
+function Marked({ value }: { value: string }) {
+  const chars = [...value]
+  const visible = chars.map((c) => !VISIBLY_INVISIBLE.test(c))
+  const spaceAt = (i: number, step: number) => {
+    for (let j = i + step; j >= 0 && j < chars.length; j += step)
+      if (visible[j]) return /\s/.test(chars[j])
+    return true
+  }
+  const nodes: React.ReactNode[] = []
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i]
+    const extra = /\s/.test(c) && (c !== ' ' || spaceAt(i, -1) || spaceAt(i, 1))
+    nodes.push(
+      !visible[i] || extra ? (
+        <span key={i} className={MARK}>
+          {visible[i] ? '␣' : '·'}
+        </span>
+      ) : (
+        c
+      ),
+    )
+  }
+  return <>{nodes}</>
+}
+
+function Where({ sync }: { sync: ReviewSync }) {
+  const { t } = useTranslation()
+  const places = [
+    t('musicReview.where.music'),
+    t('musicReview.where.file'),
+    ...(sync.rekordbox ? ['rekordbox'] : []),
+    ...(sync.engineDj ? ['Engine DJ'] : []),
+    ...(sync.traktor ? ['Traktor'] : []),
+  ]
+  return (
+    <span className="flex flex-wrap gap-1">
+      {places.map((p) => (
+        <span
+          key={p}
+          className="rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] whitespace-nowrap text-fg-dim"
+        >
+          {p}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+function SpellingDetail({
+  group,
+  review,
+  sync,
+}: {
+  group: ReviewSpellingGroup
+  review: Review
+  sync: ReviewSync
+}) {
   const { t } = useTranslation()
   const busy = review.status === 'applying'
   const chosen = review.choice(group.key)
   const staged = review.staged.has(group.key)
   const name = chosen ?? group.variants[0].value
+  const options = [
+    ...group.variants,
+    ...(group.suggested !== null && !group.variants.some((v) => v.value === group.suggested)
+      ? [{ value: group.suggested, persistentIds: [] }]
+      : []),
+  ]
+  const affected = review.affected(group.key)
   return (
     <>
       <Header
@@ -75,11 +144,11 @@ function SpellingDetail({ group, review }: { group: ReviewSpellingGroup; review:
           aria-label={`${fieldsLabel(t, group)} ${name}`}
           className="grid gap-0.5"
         >
-          {group.variants.map((v) => (
+          {options.map((v) => (
             <label
               key={v.value}
               data-testid="music-review-option"
-              className="flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--color-hover)]"
+              className={`flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5 ${chosen === v.value ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-hover)]'}`}
             >
               <input
                 type="radio"
@@ -89,15 +158,69 @@ function SpellingDetail({ group, review }: { group: ReviewSpellingGroup; review:
                 onChange={() => review.choose(group.key, v.value)}
                 className="accent-[var(--color-accent)]"
               />
-              <span className="truncate text-sm">{v.value}</span>
-              <span className="ml-auto shrink-0 text-xs tabular-nums text-fg-faint">
-                {t('musicReview.tracks', { count: v.persistentIds.length })}
+              <span className="truncate text-sm whitespace-pre">
+                <Marked value={v.value} />
               </span>
+              {chosen === v.value && (
+                <span className="shrink-0 text-[11px] font-semibold text-[var(--color-accent)]">
+                  {t('musicReview.keeps')}
+                </span>
+              )}
+              {v.persistentIds.length > 0 && (
+                <span className="ml-auto shrink-0 text-xs tabular-nums text-fg-faint">
+                  {t('musicReview.tracks', { count: v.persistentIds.length })}
+                </span>
+              )}
             </label>
           ))}
         </div>
+        {group.kind === 'invisible' && (
+          <p className="text-xs text-fg-faint">{t('musicReview.detail.marks')}</p>
+        )}
         {chosen === null && <p className="text-xs text-fg-faint">{t('musicReview.tie')}</p>}
       </section>
+      {affected.length > 0 && (
+        <section className="grid gap-2">
+          <h3 className={HEADING}>
+            {t('musicReview.detail.affected')}{' '}
+            <span className="tabular-nums text-fg-faint">{affected.length}</span>
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs text-fg-faint">
+                <tr className="border-b border-[var(--color-line)]">
+                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.field.title')}</th>
+                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.field')}</th>
+                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.now')}</th>
+                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.after')}</th>
+                  <th className="py-1.5 font-normal">{t('musicReview.detail.where')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {affected.map((f) => (
+                  <tr
+                    key={`${f.persistentId}|${f.field}`}
+                    data-testid="music-review-affected"
+                    className="border-b border-[var(--color-line)] align-top"
+                  >
+                    <td className="max-w-48 truncate py-1.5 pr-3">{f.title}</td>
+                    <td className="py-1.5 pr-3 whitespace-nowrap text-fg-dim">
+                      {t(`musicReview.field.${f.field}`)}
+                    </td>
+                    <td className="py-1.5 pr-3 whitespace-pre-wrap">
+                      <Marked value={f.from} />
+                    </td>
+                    <td className="py-1.5 pr-3 text-[var(--color-good)]">{f.to}</td>
+                    <td className="py-1.5">
+                      <Where sync={sync} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </>
   )
 }
@@ -184,6 +307,7 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
 export function MusicReviewDetail({
   review,
   selectedKey,
+  sync,
 }: {
   review: Review
   selectedKey: string | null
@@ -194,7 +318,7 @@ export function MusicReviewDetail({
   return (
     <section data-testid="music-review-detail" className="h-full overflow-y-auto">
       <div className="mx-auto grid w-full max-w-3xl gap-6 p-8">
-        {spelling && <SpellingDetail group={spelling} review={review} />}
+        {spelling && <SpellingDetail group={spelling} review={review} sync={sync} />}
         {duplicate && <DuplicateDetail card={duplicate} review={review} />}
       </div>
     </section>

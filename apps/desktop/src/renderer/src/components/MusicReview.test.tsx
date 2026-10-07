@@ -41,6 +41,7 @@ function review(over: Partial<Review> = {}): Review {
     cancel: vi.fn(),
     undo: vi.fn(),
     lastRun: null,
+    affected: () => [],
     ...over,
   }
 }
@@ -418,5 +419,91 @@ describe('MusicReview', () => {
     unmount()
     render(<Panes review={review({ status: 'loading', spelling: [] })} />)
     expect(screen.getByTestId('music-review-loading')).toHaveTextContent('Reading the library')
+  })
+
+  describe('spelling detail', () => {
+    const dirty = {
+      ...group,
+      key: 'artist||invisible|djlara',
+      kind: 'invisible' as const,
+      variants: [{ value: ' DJ  Lara\u200B', persistentIds: ['A'] }],
+      suggested: 'DJ Lara',
+    }
+
+    // An invisible character or a stray space reads as nothing on screen; without a mark
+    // the user is asked to choose between two values that look identical.
+    it('marks invisible characters and extra spaces and offers the clean value', () => {
+      render(
+        <Panes
+          review={review({ spelling: [{ ...dirty, parts: [dirty] }], choice: () => 'DJ Lara' })}
+        />,
+      )
+      const options = screen.getAllByTestId('music-review-option')
+      expect(options.map((o) => o.textContent)).toEqual([
+        expect.stringContaining('␣DJ␣␣Lara·'),
+        expect.stringContaining('DJ Lara'),
+      ])
+      expect(within(options[1]).getByRole('radio')).toBeChecked()
+      expect(detail()).toHaveTextContent('· is an invisible character and ␣ a space too many')
+    })
+
+    it('explains no marks when the group shows none', () => {
+      render(<Panes review={review()} />)
+      expect(detail()).not.toHaveTextContent('invisible character')
+      expect(detail()).not.toHaveTextContent('␣')
+    })
+
+    it('checks nothing on a tie and says so', () => {
+      render(<Panes review={review({ choice: () => null })} />)
+      for (const radio of screen.getAllByRole('radio')) expect(radio).not.toBeChecked()
+      expect(detail()).toHaveTextContent('Tied. Pick the one to keep.')
+    })
+
+    // The user should see every write before staging it, and which libraries follow it,
+    // since only the ones with sync on are touched.
+    it('lists each track and field it would change and where the change goes', () => {
+      const affected = vi.fn(() => [
+        {
+          persistentId: 'A',
+          title: 'Song A',
+          field: 'artist' as const,
+          from: 'Dj Lara',
+          to: 'DJ Lara',
+        },
+        {
+          persistentId: 'A',
+          title: 'Song A',
+          field: 'albumArtist' as const,
+          from: 'Dj Lara',
+          to: 'DJ Lara',
+        },
+        {
+          persistentId: 'C',
+          title: 'Song C',
+          field: 'artist' as const,
+          from: 'Dj Lara ',
+          to: 'DJ Lara',
+        },
+      ])
+      render(
+        <Panes
+          review={review({ affected })}
+          sync={{ rekordbox: true, engineDj: false, traktor: true }}
+        />,
+      )
+      expect(affected).toHaveBeenCalledWith(group.key)
+      const rowsOf = screen.getAllByTestId('music-review-affected')
+      expect(rowsOf).toHaveLength(3)
+      expect(rowsOf[1]).toHaveTextContent('Song A')
+      expect(rowsOf[1]).toHaveTextContent('Album artist')
+      expect(rowsOf[2]).toHaveTextContent('Dj Lara␣')
+      for (const row of rowsOf) {
+        expect(row).toHaveTextContent('Music')
+        expect(row).toHaveTextContent('File')
+        expect(row).toHaveTextContent('rekordbox')
+        expect(row).toHaveTextContent('Traktor')
+        expect(row).not.toHaveTextContent('Engine DJ')
+      }
+    })
   })
 })

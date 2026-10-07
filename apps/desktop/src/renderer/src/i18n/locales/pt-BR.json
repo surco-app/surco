@@ -1547,7 +1547,17 @@
     "bothArtists": "Artista e artista do álbum",
     "inTray": "no lote",
     "detail": {
-      "options": "Como está e como fica"
+      "options": "Como está e como fica",
+      "marks": "· é um caractere invisível e ␣ um espaço a mais",
+      "affected": "Faixas afetadas",
+      "field": "Campo",
+      "now": "Agora",
+      "after": "Fica",
+      "where": "Onde"
+    },
+    "where": {
+      "music": "Music",
+      "file": "Arquivo"
     }
   }
 }

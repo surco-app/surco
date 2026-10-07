@@ -1547,7 +1547,17 @@
     "bothArtists": "Künstler und Albumkünstler",
     "inTray": "vorgemerkt",
     "detail": {
-      "options": "Wie es ist und wie es wird"
+      "options": "Wie es ist und wie es wird",
+      "marks": "· ist ein unsichtbares Zeichen und ␣ ein überflüssiges Leerzeichen",
+      "affected": "Betroffene Titel",
+      "field": "Feld",
+      "now": "Jetzt",
+      "after": "Wird",
+      "where": "Wo"
+    },
+    "where": {
+      "music": "Music",
+      "file": "Datei"
     }
   }
 }

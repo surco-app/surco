@@ -1547,7 +1547,17 @@
     "bothArtists": "Artist and album artist",
     "inTray": "in the batch",
     "detail": {
-      "options": "How it is and how it ends up"
+      "options": "How it is and how it ends up",
+      "marks": "· is an invisible character and ␣ a space too many",
+      "affected": "Affected tracks",
+      "field": "Field",
+      "now": "Now",
+      "after": "Becomes",
+      "where": "Where"
+    },
+    "where": {
+      "music": "Music",
+      "file": "File"
     }
   }
 }

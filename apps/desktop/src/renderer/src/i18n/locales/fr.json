@@ -1547,7 +1547,17 @@
     "bothArtists": "Artiste et artiste de l'album",
     "inTray": "dans le lot",
     "detail": {
-      "options": "Comme c'est et comme ça reste"
+      "options": "Comme c'est et comme ça reste",
+      "marks": "· est un caractère invisible et ␣ un espace en trop",
+      "affected": "Morceaux concernés",
+      "field": "Champ",
+      "now": "Maintenant",
+      "after": "Devient",
+      "where": "Où"
+    },
+    "where": {
+      "music": "Music",
+      "file": "Fichier"
     }
   }
 }
