@@ -4,11 +4,11 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import type { Api } from '../../../preload/api'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
+import { stubApi } from '../test/api'
 import { MusicReview } from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
-import type { Api } from '../../../preload/api'
-import { stubApi } from '../test/api'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
 afterEach(cleanup)

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { LibraryCopyInfo, MusicReviewEntry } from '../../../shared/types'
 import type {
   DuplicateCard,
   MusicReview as Review,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
-import type { LibraryCopyInfo, MusicReviewEntry } from '../../../shared/types'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { fieldsLabel, GHOST, PRIMARY } from './MusicReview'
 
