@@ -400,6 +400,19 @@ describe('MusicReview', () => {
     )
   })
 
+  // A file a DJ library still has stays on disk, so the sheet cannot promise the Trash.
+  it('says before applying that a file a DJ library still uses stays on disk', () => {
+    const r = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 0, byField: {}, duplicates: 1 },
+    })
+    render(<Panes review={r} />)
+    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    expect(screen.getByTestId('music-review-confirm')).toHaveTextContent(
+      'Their files go to the Trash, except those rekordbox, Engine DJ or Traktor still use.',
+    )
+  })
+
   it('says the library is empty', () => {
     render(<Panes review={review({ status: 'empty', spelling: [] })} />)
     expect(screen.getByTestId('music-review-empty')).toBeInTheDocument()

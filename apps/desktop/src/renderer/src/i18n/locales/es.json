@@ -1515,7 +1515,7 @@
       "title_other": "Vas a cambiar {{count}} pistas",
       "removed": "Copias quitadas de Apple Music",
       "playlists": "La copia que se queda entra al final de las playlists de la otra",
-      "trash": "Los ficheros de las copias quitadas van a la Papelera",
+      "trash": "Sus ficheros van a la Papelera, salvo los que rekordbox, Engine DJ o Traktor sigan usando",
       "untouched": "BPM, key, cues y rating no se tocan",
       "libraries": "rekordbox, Engine DJ y Traktor se actualizan como en un Actualizar, si su sincronización está activa",
       "backup": "Copia de seguridad de cada fichero",

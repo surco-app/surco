@@ -1515,7 +1515,7 @@
       "title_other": "You're about to change {{count}} tracks",
       "removed": "Copies removed from Apple Music",
       "playlists": "The kept copy joins the end of the other copy's playlists",
-      "trash": "Removed copies' files go to the Trash",
+      "trash": "Their files go to the Trash, except those rekordbox, Engine DJ or Traktor still use",
       "untouched": "BPM, key, cues and rating stay as they are",
       "libraries": "rekordbox, Engine DJ and Traktor follow like on an Update, when their sync is on",
       "backup": "Backup of every file",

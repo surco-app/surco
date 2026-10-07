@@ -1515,7 +1515,7 @@
       "title_other": "Você vai alterar {{count}} faixas",
       "removed": "Cópias removidas do Apple Music",
       "playlists": "A cópia que fica entra no fim das playlists da outra",
-      "trash": "Os arquivos das cópias removidas vão para a Lixeira",
+      "trash": "Os arquivos delas vão para a Lixeira, exceto os que rekordbox, Engine DJ ou Traktor ainda usam",
       "untouched": "BPM, tom, cues e avaliação não são alterados",
       "libraries": "rekordbox, Engine DJ e Traktor se atualizam como em um Atualizar, se a sincronização estiver ativa",
       "backup": "Backup de cada arquivo",
