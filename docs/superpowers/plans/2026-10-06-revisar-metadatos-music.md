@@ -3827,3 +3827,16 @@ User report (07/10, screenshot): the "posible errata" group "DJ Napo" lists DJ N
 - planFixes on the new typo group changes only the representative's tracks.
 - View: the differing segment is highlighted in both cells.
 - Real library (temporary uncommitted test over .superpowers/sdd/2026-10-06-revisar-metadatos-music/review-dump.json, delete after): report counts per kind before/after and list every remaining typo group, so the controller can show the user.
+
+---
+
+### Task 22: Erratas solo cuando son muy probables
+
+Measured after Task 21 on the user's library: 46 typo groups, almost all distinct artists (Katana/Kavana, Cascada/Cascade, Attic/Attica, Dasha/Masha/Marsha, Zentral/Central, Cream/D:Ream, Alex K/Alex C., Ivan H/Ivan X, Mary O/Mary-K, E-Motion/Emotions, Intrance/N-Trance, Solid/Sound Solution, Black House/Black Rose, DJ Carlos/Dj Karlos) and distinct genres (Euro House/Afro House, Hard Trance/Hard Dance). Real typos: Rachel/Rahcel Auburn, Álex Cervera/Álex Cevera, Chumi DJ Present/Presenta Limite.
+
+Controller ruling (data-driven, user prefers decisions made from measurements):
+- In lib/musicSpelling.ts typo detection: minimum length 8 on the compared keys (after the existing DJ/MC prefix stripping), distance limit 1 for every length, and the distance is Damerau-style (an adjacent transposition counts as 1) so "rachelauburn"/"rahcelauburn" is 1.
+- No typo groups for the genre field at all.
+- Keep the digits rule and everything else.
+Tests (RED first): Rahcel Auburn, Álex Cevera and Chumi DJ Present/Presenta Limite still typo groups; Katana/Kavana, Cascada/Cascade, Zentral/Central, Solid/Sound Solution, Black House/Black Rose and Euro House/Afro House (genre) are not. Mutation: revert to limit 2 → red.
+Real library (temporary uncommitted test over review-dump.json, delete after): report the full list of remaining typo groups and counts per kind.
