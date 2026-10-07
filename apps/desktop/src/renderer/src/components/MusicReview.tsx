@@ -1,8 +1,14 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import type { DuplicateCard, MusicReview as Review, ReviewFilter } from '../hooks/useMusicReview'
-import { SAFE_KINDS, type SpellingGroup } from '../lib/musicSpelling'
+import type {
+  DuplicateCard,
+  MusicReview as Review,
+  ReviewFilter,
+  ReviewSpellingGroup,
+} from '../hooks/useMusicReview'
+import { SAFE_KINDS } from '../lib/musicSpelling'
 import { ModalShell } from './ModalShell'
 
 const BTN = 'press rounded-md px-2.5 py-1 text-xs outline-none disabled:opacity-40'
@@ -24,7 +30,13 @@ function Dot({ safe }: { safe: boolean }) {
   )
 }
 
-function SpellingCard({ group, review }: { group: SpellingGroup; review: Review }) {
+function fieldsLabel(t: TFunction, group: ReviewSpellingGroup): string {
+  return group.fields.length > 1
+    ? t('musicReview.bothArtists')
+    : t(`musicReview.field.${group.fields[0]}`)
+}
+
+function SpellingCard({ group, review }: { group: ReviewSpellingGroup; review: Review }) {
   const { t } = useTranslation()
   const busy = review.status === 'applying'
   const chosen = review.choice(group.key)
@@ -35,7 +47,7 @@ function SpellingCard({ group, review }: { group: SpellingGroup; review: Review 
         <Dot safe={SAFE_KINDS.has(group.kind)} />
         <b className="truncate text-sm">{chosen ?? group.variants[0].value}</b>
         <span className="truncate text-xs text-fg-faint">
-          {t(`musicReview.field.${group.field}`)} · {t(`musicReview.kind.${group.kind}`)}
+          {fieldsLabel(t, group)} · {t(`musicReview.kind.${group.kind}`)}
         </span>
         <div className="ml-auto flex shrink-0 gap-1.5">
           <button
@@ -60,7 +72,7 @@ function SpellingCard({ group, review }: { group: SpellingGroup; review: Review 
       </div>
       <div
         role="radiogroup"
-        aria-label={`${t(`musicReview.field.${group.field}`)} ${chosen ?? group.variants[0].value}`}
+        aria-label={`${fieldsLabel(t, group)} ${chosen ?? group.variants[0].value}`}
         className="grid gap-0.5"
       >
         {group.variants.map((v) => (

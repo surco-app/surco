@@ -77,7 +77,7 @@ function mixedCase(value: string): boolean {
   return value !== value.toUpperCase() && value !== value.toLowerCase()
 }
 
-function suggest(variants: SpellingVariant[]): string | null {
+export function suggest(variants: SpellingVariant[]): string | null {
   const candidates = variants.filter((v) => isClean(v.value))
   if (candidates.length === 0) return clean(variants[0].value)
   const top = candidates[0].persistentIds.length

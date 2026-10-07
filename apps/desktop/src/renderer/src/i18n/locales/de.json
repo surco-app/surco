@@ -1543,6 +1543,7 @@
     "empty": "Deine Apple-Music-Bibliothek ist leer.",
     "clean": "Nichts zu prüfen.",
     "error": "Die Apple-Music-Bibliothek konnte nicht gelesen werden.",
-    "loading": "Bibliothek wird gelesen…"
+    "loading": "Bibliothek wird gelesen…",
+    "bothArtists": "Künstler und Albumkünstler"
   }
 }

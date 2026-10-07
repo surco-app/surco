@@ -1543,6 +1543,7 @@
     "empty": "Your Apple Music library is empty.",
     "clean": "Nothing to review.",
     "error": "Couldn't read your Apple Music library.",
-    "loading": "Reading the library…"
+    "loading": "Reading the library…",
+    "bothArtists": "Artist and album artist"
   }
 }

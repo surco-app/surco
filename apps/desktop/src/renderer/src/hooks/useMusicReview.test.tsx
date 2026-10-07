@@ -200,7 +200,7 @@ describe('useMusicReview', () => {
         ]),
     })
     const { result } = await ready()
-    const groups = result.current.spelling.filter((g) => g.field === 'artist')
+    const groups = result.current.spelling.filter((g) => g.fields.includes('artist'))
     expect(groups.length).toBeGreaterThan(1)
     const [first, second] = groups
     act(() => result.current.choose(first.key, first.variants[0].value))
@@ -552,5 +552,114 @@ describe('useMusicReview', () => {
     act(() => result.current.toggleStaged(dup))
     act(() => result.current.toggleStaged(ver))
     expect([...result.current.staged]).toEqual([ver])
+  })
+
+  describe('one group per name across artist and album artist', () => {
+    const BOTH = [
+      e('A', 'DJ Lara', { albumArtist: 'DJ Lara' }),
+      e('B', 'DJ Lara', { albumArtist: 'DJ Lara' }),
+      e('C', 'Dj Lara', { albumArtist: 'Dj Lara' }),
+      e('D', 'DJ Lara'),
+    ]
+
+    // The same misspelling credited as artist and as album artist is one decision for the
+    // user; showing it twice made them fix the same name twice.
+    it('merges both fields into one group counting each track once', async () => {
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(BOTH) })
+      const { result } = await ready()
+      expect(result.current.spelling).toHaveLength(1)
+      const [g] = result.current.spelling
+      expect(g.fields).toEqual(['artist', 'albumArtist'])
+      expect(g.variants).toEqual([
+        { value: 'DJ Lara', persistentIds: ['A', 'B', 'D'] },
+        { value: 'Dj Lara', persistentIds: ['C'] },
+      ])
+      expect(g.parts).toHaveLength(2)
+      expect(g.key).toBe(
+        g.parts
+          .map((p) => p.key)
+          .sort()
+          .join('+'),
+      )
+      expect(result.current.choice(g.key)).toBe('DJ Lara')
+    })
+
+    it('fixes both fields when the merged group is staged', async () => {
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(BOTH) })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      expect(result.current.summary).toMatchObject({
+        tracks: 1,
+        byField: { artist: 1, albumArtist: 1 },
+      })
+    })
+
+    it('applies the chosen spelling to both fields', async () => {
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(BOTH) })
+      const { result } = await ready()
+      const key = result.current.spelling[0].key
+      act(() => result.current.choose(key, 'Dj Lara'))
+      act(() => result.current.toggleStaged(key))
+      expect(result.current.summary).toMatchObject({
+        tracks: 3,
+        byField: { artist: 3, albumArtist: 2 },
+      })
+    })
+
+    // Ignores are stored per field so a list saved before the merge still hides its groups.
+    it('saves every part key when the merged group is ignored', async () => {
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(BOTH) })
+      const saveIgnored = vi.fn()
+      const { result } = await ready({ saveIgnored })
+      const [g] = result.current.spelling
+      act(() => result.current.toggleStaged(g.key))
+      act(() => result.current.ignore(g.key))
+      expect(saveIgnored).toHaveBeenCalledWith(g.parts.map((p) => p.key))
+      expect(result.current.spelling).toEqual([])
+      expect(result.current.staged.size).toBe(0)
+    })
+
+    it('keeps a group found only in album artist on its own', async () => {
+      setApi({
+        loadMusicReview: vi
+          .fn()
+          .mockResolvedValue([
+            e('A', 'Ann', { albumArtist: 'DJ Lara' }),
+            e('B', 'Bob', { albumArtist: 'Dj Lara' }),
+          ]),
+      })
+      const { result } = await ready()
+      expect(result.current.spelling.map((g) => g.fields)).toEqual([['albumArtist']])
+    })
+
+    it('still hides the other field when only one part was ignored before', async () => {
+      setApi({ loadMusicReview: vi.fn().mockResolvedValue(BOTH) })
+      const first = await ready()
+      const artistKey = first.result.current.spelling[0].parts.find((p) => p.field === 'artist')
+        ?.key as string
+      first.unmount()
+      const { result } = await ready({ ignored: [artistKey] })
+      expect(result.current.spelling.map((g) => g.fields)).toEqual([['albumArtist']])
+    })
+
+    // The parts can lean different ways; the union decides, never one field alone.
+    it('suggests from the union when the parts disagree', async () => {
+      setApi({
+        loadMusicReview: vi
+          .fn()
+          .mockResolvedValue([
+            e('A', 'DJ Lara', { albumArtist: 'DJ Lara' }),
+            e('B', 'DJ Lara'),
+            e('C', 'Dj Lara'),
+            e('D', 'Ann', { albumArtist: 'Dj Lara' }),
+            e('E', 'Ann', { albumArtist: 'Dj Lara' }),
+            e('F', 'Ann', { albumArtist: 'Dj Lara' }),
+          ]),
+      })
+      const { result } = await ready()
+      const [g] = result.current.spelling
+      expect(g.parts.map((p) => p.suggested)).toEqual(['DJ Lara', 'Dj Lara'])
+      expect(result.current.choice(g.key)).toBe('Dj Lara')
+    })
   })
 })

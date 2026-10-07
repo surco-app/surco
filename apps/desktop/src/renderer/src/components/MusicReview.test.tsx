@@ -8,7 +8,7 @@ import { MusicReview } from './MusicReview'
 
 afterEach(cleanup)
 
-const group = {
+const part = {
   key: 'artist||case|djlara',
   field: 'artist' as const,
   kind: 'case' as const,
@@ -18,6 +18,7 @@ const group = {
   ],
   suggested: 'DJ Lara',
 }
+const group = { ...part, fields: ['artist' as const], parts: [part] }
 
 function review(over: Partial<Review> = {}): Review {
   return {

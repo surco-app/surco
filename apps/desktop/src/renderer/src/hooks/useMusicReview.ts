@@ -3,14 +3,30 @@ import type {
   LibraryTagUpdate,
   MusicFixOutcome,
   MusicReviewEntry,
+  MusicReviewField,
   RemoveCopyResult,
 } from '../../../shared/types'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
 import { tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { planFixes, summarizeFixes } from '../lib/musicFixPlan'
-import { type SpellingGroup, spellingGroups } from '../lib/musicSpelling'
+import {
+  type SpellingGroup,
+  type SpellingKind,
+  type SpellingVariant,
+  spellingGroups,
+  suggest,
+} from '../lib/musicSpelling'
 
 export type ReviewFilter = 'all' | 'spelling' | 'duplicates'
+
+export interface ReviewSpellingGroup {
+  key: string
+  fields: MusicReviewField[]
+  kind: SpellingKind
+  variants: SpellingVariant[]
+  suggested: string | null
+  parts: SpellingGroup[]
+}
 
 export interface DuplicateCard {
   group: DuplicateGroup
@@ -32,7 +48,7 @@ export interface MusicReview {
   status: 'loading' | 'ready' | 'empty' | 'error' | 'applying' | 'done'
   filter: ReviewFilter
   setFilter: (f: ReviewFilter) => void
-  spelling: SpellingGroup[]
+  spelling: ReviewSpellingGroup[]
   duplicates: DuplicateCard[]
   choice: (key: string) => string | null
   choose: (key: string, value: string) => void
@@ -75,8 +91,70 @@ function uniqueKeys(groups: DuplicateGroup[]): DuplicateGroup[] {
   )
 }
 
+const signature = (g: SpellingGroup) =>
+  [g.kind, ...g.variants.map((v) => v.value).sort()].join('\u0000')
+
+const single = (g: SpellingGroup): ReviewSpellingGroup => ({
+  key: g.key,
+  fields: [g.field],
+  kind: g.kind,
+  variants: g.variants,
+  suggested: g.suggested,
+  parts: [g],
+})
+
+function joined(parts: SpellingGroup[]): ReviewSpellingGroup {
+  const ids = new Map<string, Set<string>>()
+  for (const part of parts)
+    for (const v of part.variants) {
+      const set = ids.get(v.value) ?? new Set<string>()
+      ids.set(v.value, set)
+      for (const id of v.persistentIds) set.add(id)
+    }
+  const variants = [...ids]
+    .map(([value, set]) => ({ value, persistentIds: [...set].sort() }))
+    .sort(
+      (a, b) => b.persistentIds.length - a.persistentIds.length || a.value.localeCompare(b.value),
+    )
+  const suggestions = new Set(parts.map((p) => p.suggested))
+  return {
+    key: parts
+      .map((p) => p.key)
+      .sort()
+      .join('+'),
+    fields: parts.map((p) => p.field),
+    kind: parts[0].kind,
+    variants,
+    suggested: suggestions.size === 1 ? parts[0].suggested : suggest(variants),
+    parts,
+  }
+}
+
+// A credit misspelled as artist is usually misspelled the same way as album artist; the
+// user decides it once, so both fields show as one group in the place of the first.
+export function mergeSpelling(groups: SpellingGroup[]): ReviewSpellingGroup[] {
+  const albumArtist = new Map<string, SpellingGroup>()
+  for (const g of groups)
+    if (g.field === 'albumArtist' && !albumArtist.has(signature(g)))
+      albumArtist.set(signature(g), g)
+  const paired = new Map<SpellingGroup, SpellingGroup>()
+  for (const g of groups) {
+    if (g.field !== 'artist') continue
+    const partner = albumArtist.get(signature(g))
+    if (!partner) continue
+    albumArtist.delete(signature(g))
+    paired.set(g, partner)
+  }
+  const taken = new Set(paired.values())
+  return groups.flatMap((g) => {
+    if (taken.has(g)) return []
+    const partner = paired.get(g)
+    return [partner ? joined([g, partner]) : single(g)]
+  })
+}
+
 function pendingCount(entries: MusicReviewEntry[], ignored: ReadonlySet<string>): number {
-  const spelling = spellingGroups(entries).filter((g) => !ignored.has(g.key)).length
+  const spelling = mergeSpelling(spellingGroups(entries).filter((g) => !ignored.has(g.key))).length
   const dups = uniqueKeys(duplicateGroups(entries.map(toItem))).filter(
     (g) => g.kind === 'duplicate' && !ignored.has(g.key),
   ).length
@@ -123,7 +201,7 @@ export function useMusicReview({
 
   const byPid = useMemo(() => new Map(entries.map((e) => [e.persistentId, e])), [entries])
   const spelling = useMemo(
-    () => spellingGroups(entries).filter((g) => !hidden.has(g.key)),
+    () => mergeSpelling(spellingGroups(entries).filter((g) => !hidden.has(g.key))),
     [entries, hidden],
   )
   const dupGroups = useMemo(
@@ -189,7 +267,7 @@ export function useMusicReview({
           for (const other of spelling)
             if (
               other.key !== key &&
-              other.field === added.field &&
+              other.fields.some((f) => added.fields.includes(f)) &&
               other.variants.some((v) => values.has(v.value))
             )
               next.delete(other.key)
@@ -209,7 +287,8 @@ export function useMusicReview({
 
   const ignore = useCallback(
     (key: string) => {
-      const next = new Set(hidden).add(key)
+      const next = new Set(hidden)
+      for (const part of spelling.find((g) => g.key === key)?.parts ?? [{ key }]) next.add(part.key)
       setHidden(next)
       saveIgnored([...next])
       setStaged((s) => {
@@ -218,7 +297,7 @@ export function useMusicReview({
         return copy
       })
     },
-    [hidden, saveIgnored],
+    [hidden, saveIgnored, spelling],
   )
 
   const removals = useMemo(
@@ -244,7 +323,7 @@ export function useMusicReview({
       entries.filter((e) => !removing.has(e.persistentId)),
       spelling
         .filter((g) => staged.has(g.key))
-        .map((group) => ({ group, to: choice(group.key) as string })),
+        .flatMap((g) => g.parts.map((group) => ({ group, to: choice(g.key) as string }))),
     )
   }, [entries, removals, spelling, staged, choice])
 
