@@ -7,8 +7,6 @@ function deps(over: Partial<RemoveCopyDeps> = {}): RemoveCopyDeps {
     realpath: vi.fn(async (p: string) => p),
     transferPlaylists: vi.fn().mockResolvedValue('2\t0'),
     deleteEntry: vi.fn().mockResolvedValue('/m/old.mp3'),
-    trash: vi.fn().mockResolvedValue(undefined),
-    usedByLibrary: vi.fn().mockResolvedValue(false),
     ...over,
   }
 }
@@ -20,12 +18,14 @@ const req = {
 }
 
 describe('removeDuplicateCopy', () => {
-  it('moves the playlists to the kept copy, then deletes the entry and trashes its file', async () => {
+  // The file waits for the DJ libraries to move to the kept copy (library:replaceDuplicates).
+  it('moves the playlists to the kept copy, deletes the entry and hands back both files', async () => {
     const d = deps()
     expect(await removeDuplicateCopy(req, d)).toEqual({
       outcome: 'removed',
       playlists: 2,
-      fileTrashed: true,
+      fileTrashed: false,
+      pair: { from: '/m/old.mp3', to: '/m/keep.aiff', shared: false },
     })
     expect(d.transferPlaylists).toHaveBeenCalledWith(
       'OLD',
@@ -33,10 +33,9 @@ describe('removeDuplicateCopy', () => {
       'Transfer - Possession',
       'Transfer - Possession (Remaster)',
     )
-    expect(d.trash).toHaveBeenCalledWith('/m/old.mp3')
   })
 
-  it('transfers before it deletes and deletes before it trashes', async () => {
+  it('transfers before it deletes', async () => {
     const calls: string[] = []
     const d = deps({
       transferPlaylists: vi.fn(async () => {
@@ -47,42 +46,45 @@ describe('removeDuplicateCopy', () => {
         calls.push('delete')
         return '/m/old.mp3'
       }),
-      trash: vi.fn(async () => {
-        calls.push('trash')
-      }),
     })
     await removeDuplicateCopy(req, d)
-    expect(calls).toEqual(['transfer', 'delete', 'trash'])
+    expect(calls).toEqual(['transfer', 'delete'])
   })
 
   // Measured: 34 entries of the real library are two Music entries on one file through a
   // symlink. Trashing "the duplicate's file" there would take the kept copy's audio with it.
-  it('never trashes a file the kept copy also points to', async () => {
+  it('marks the file as shared when the kept copy also points to it', async () => {
     const d = deps({ realpath: vi.fn().mockResolvedValue('/Volumes/Musica/same.aiff') })
     expect(await removeDuplicateCopy(req, d)).toMatchObject({
       outcome: 'removed',
-      fileTrashed: false,
+      pair: { shared: true },
     })
-    expect(d.trash).not.toHaveBeenCalled()
   })
 
-  it('keeps the file when the kept copy has no known location', async () => {
+  it('treats the file as shared when the kept copy has no known location', async () => {
     const d = deps({ locate: vi.fn(async (pid: string) => (pid === 'KEEP' ? '' : '/m/old.mp3')) })
     expect(await removeDuplicateCopy(req, d)).toMatchObject({
       outcome: 'removed',
-      fileTrashed: false,
+      pair: { shared: true },
     })
     expect(d.deleteEntry).toHaveBeenCalled()
-    expect(d.trash).not.toHaveBeenCalled()
   })
 
-  it('keeps the file when a path cannot be resolved', async () => {
+  it('treats the file as shared when a path cannot be resolved', async () => {
     const d = deps({ realpath: vi.fn().mockResolvedValue(null) })
     expect(await removeDuplicateCopy(req, d)).toMatchObject({
       outcome: 'removed',
+      pair: { shared: true },
+    })
+  })
+
+  it('hands back no file for an entry that had none', async () => {
+    const d = deps({ deleteEntry: vi.fn().mockResolvedValue('') })
+    expect(await removeDuplicateCopy(req, d)).toEqual({
+      outcome: 'removed',
+      playlists: 2,
       fileTrashed: false,
     })
-    expect(d.trash).not.toHaveBeenCalled()
   })
 
   it('deletes nothing when an entry no longer carries the confirmed label', async () => {
@@ -104,7 +106,6 @@ describe('removeDuplicateCopy', () => {
       playlists: 2,
       fileTrashed: false,
     })
-    expect(d.trash).not.toHaveBeenCalled()
   })
 
   it('treats an entry already gone as done', async () => {
@@ -142,38 +143,5 @@ describe('removeDuplicateCopy', () => {
       outcome: 'failed',
     })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
-  })
-
-  it('still reports removed when the trash fails after the delete', async () => {
-    const d = deps({ trash: vi.fn().mockRejectedValue(new Error('gone')) })
-    expect(await removeDuplicateCopy(req, d)).toEqual({
-      outcome: 'removed',
-      playlists: 2,
-      fileTrashed: false,
-    })
-  })
-
-  // rekordbox, Engine DJ or Traktor still pointing at the file would show it missing.
-  it('keeps the file a synced DJ library still uses and says so', async () => {
-    const d = deps({ usedByLibrary: vi.fn().mockResolvedValue(true) })
-    expect(await removeDuplicateCopy(req, d)).toEqual({
-      outcome: 'removed',
-      playlists: 2,
-      fileTrashed: false,
-      keptForLibrary: true,
-    })
-    expect(d.usedByLibrary).toHaveBeenCalledWith('/m/old.mp3')
-    expect(d.deleteEntry).toHaveBeenCalled()
-    expect(d.trash).not.toHaveBeenCalled()
-  })
-
-  it('keeps the file when a library cannot be read', async () => {
-    const d = deps({ usedByLibrary: vi.fn().mockRejectedValue(new Error('locked')) })
-    expect(await removeDuplicateCopy(req, d)).toMatchObject({
-      outcome: 'removed',
-      fileTrashed: false,
-      keptForLibrary: true,
-    })
-    expect(d.trash).not.toHaveBeenCalled()
   })
 })

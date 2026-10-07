@@ -746,12 +746,25 @@ export interface RemoveCopyResult {
   fileTrashed: boolean
   // The file stayed on disk because rekordbox, Engine DJ or Traktor still uses it.
   keptForLibrary?: boolean
+  // The removed copy's file and the kept copy's, when the removed entry had a file.
+  pair?: DuplicatePair & { shared: boolean }
 }
 
 // A removed duplicate's file and the kept copy's file, for the DJ libraries to follow.
 export interface DuplicatePair {
   from: string
   to: string
+}
+
+export type LibraryReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'skipped' | 'failed'
+
+export interface DuplicateReplaceOutcome {
+  from: string
+  rekordbox?: LibraryReplaceOutcome
+  engine?: LibraryReplaceOutcome
+  traktor?: LibraryReplaceOutcome
+  fileTrashed: boolean
+  keptForLibrary: boolean
 }
 
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'

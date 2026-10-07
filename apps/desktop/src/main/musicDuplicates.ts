@@ -1,4 +1,3 @@
-import log from 'electron-log/main'
 import type { RemoveCopyResult } from '../shared/types'
 
 export interface RemoveCopyDeps {
@@ -11,9 +10,6 @@ export interface RemoveCopyDeps {
     keepLabel: string,
   ) => Promise<string>
   deleteEntry: (persistentId: string, label: string) => Promise<string | null>
-  trash: (path: string) => Promise<void>
-  // Whether a DJ library with its sync on still points at this file.
-  usedByLibrary: (path: string) => Promise<boolean>
 }
 
 // Fails closed: when either side can't be resolved, the file might be shared, and
@@ -59,16 +55,12 @@ export async function removeDuplicateCopy(
     throw e
   }
   if (location === null) return none('missing', playlists)
-  if (!location || maybeShared) return { outcome: 'removed', playlists, fileTrashed: false }
-  // Fails closed like mayShareFile: a library that cannot be read may still use the file,
-  // and a trashed file shows there as a missing track with its cues out of reach.
-  if (await deps.usedByLibrary(location).catch(() => true))
-    return { outcome: 'removed', playlists, fileTrashed: false, keptForLibrary: true }
-  try {
-    await deps.trash(location)
-  } catch (e) {
-    log.warn('removeDuplicateCopy: trash failed', location, e)
-    return { outcome: 'removed', playlists, fileTrashed: false }
+  if (!location) return { outcome: 'removed', playlists, fileTrashed: false }
+  // The file is trashed later, once the DJ libraries have moved to the kept copy.
+  return {
+    outcome: 'removed',
+    playlists,
+    fileTrashed: false,
+    pair: { from: location, to: keepLoc, shared: maybeShared },
   }
-  return { outcome: 'removed', playlists, fileTrashed: true }
 }

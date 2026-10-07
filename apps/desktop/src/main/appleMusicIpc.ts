@@ -1,6 +1,4 @@
-import { existsSync, realpathSync } from 'node:fs'
 import { access, realpath } from 'node:fs/promises'
-import { join } from 'node:path'
 import { app, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import type {
@@ -34,11 +32,9 @@ import {
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT } from './i18n'
-import { usedByDjLibrary } from './libraryFileUse'
 import { removeDuplicateCopy } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
-import { findRekordboxCollection } from './rekordboxPath'
 import { getSettings } from './settings'
 
 // "Artist - Title" for the activity row, falling back to whichever field exists so a
@@ -46,21 +42,6 @@ import { getSettings } from './settings'
 function trackLabel(meta: TrackMetadata): string {
   if (meta.artist && meta.title) return `${meta.artist} - ${meta.title}`
   return meta.title || meta.artist || 'pista'
-}
-
-// The same toggles and locations the library flushes use: a library whose sync is off is
-// not Surco's to keep files for.
-function syncedLibraries() {
-  const settings = getSettings()
-  const engineDir = settings.engineLibraryDir
-  return {
-    rekordbox: settings.syncRekordbox
-      ? findRekordboxCollection({ configured: settings.rekordboxDbPath })
-      : '',
-    engine:
-      settings.syncEngineDj && existsSync(join(engineDir, 'Database2', 'm.db')) ? engineDir : '',
-    traktor: settings.syncTraktor ? settings.traktorNmlPath : '',
-  }
 }
 
 // The Apple Music bridge IPC: library lookups and the on-demand add/update/reveal a track
@@ -150,9 +131,6 @@ export function registerAppleMusicIpc(
               realpath: (p) => realpath(p).catch(() => null),
               transferPlaylists,
               deleteEntry: deleteFromAppleMusic,
-              trash: (p) => shell.trashItem(p),
-              usedByLibrary: (p) =>
-                usedByDjLibrary(p, syncedLibraries(), { realPath: realpathSync }),
             }),
           )
         : { outcome: 'missing', playlists: 0, fileTrashed: false },

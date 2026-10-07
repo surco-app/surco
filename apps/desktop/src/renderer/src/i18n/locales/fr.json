@@ -1416,6 +1416,8 @@
     "rekordboxSyncWritten_other": "{{count}} pistes pointent désormais vers le nouveau fichier",
     "rekordboxTagsWritten_one": "{{count}} piste dont les noms sont corrigés",
     "rekordboxTagsWritten_other": "{{count}} pistes dont les noms sont corrigés",
+    "duplicatesReplaced_one": "{{count}} copie retirée renvoie maintenant à celle que vous gardez",
+    "duplicatesReplaced_other": "{{count}} copies retirées renvoient maintenant à celles que vous gardez",
     "rekordboxSyncNothing": "Aucune de ces pistes n'est dans la collection",
     "rekordboxSyncRunning": "Ignoré : rekordbox était ouvert",
     "rekordboxSyncBackupFailed": "Ignoré : impossible de sauvegarder la collection",

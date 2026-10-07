@@ -12,7 +12,7 @@ import type { SyncResult } from './traktorNmlLibrary'
 // line. 'traktor-running' can't reach flushTraktorSync in practice (ensureTraktorClosed
 // already refused earlier), but syncCollection re-checks right before its own write for
 // a race, so the map still needs an entry for it.
-const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, string> = {
+export const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, string> = {
   'traktor-running': 'activity.traktorSyncTraktorRunning',
   'backup-failed': 'activity.traktorSyncBackupFailed',
   'no-matches': 'activity.traktorSyncNoMatches',

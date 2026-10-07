@@ -1416,6 +1416,8 @@
     "rekordboxSyncWritten_other": "{{count}} faixas agora apontam para o arquivo novo",
     "rekordboxTagsWritten_one": "{{count}} faixa com os nomes corrigidos",
     "rekordboxTagsWritten_other": "{{count}} faixas com os nomes corrigidos",
+    "duplicatesReplaced_one": "{{count}} cópia removida agora aponta para a que fica",
+    "duplicatesReplaced_other": "{{count}} cópias removidas agora apontam para as que ficam",
     "rekordboxSyncNothing": "Nenhuma dessas faixas está na coleção",
     "rekordboxSyncRunning": "Ignorado: o rekordbox estava aberto",
     "rekordboxSyncBackupFailed": "Ignorado: não foi possível fazer backup da coleção",

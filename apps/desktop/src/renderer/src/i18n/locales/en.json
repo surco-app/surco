@@ -1416,6 +1416,8 @@
     "rekordboxSyncWritten_other": "{{count}} tracks now point at the new file",
     "rekordboxTagsWritten_one": "{{count}} track with its names fixed",
     "rekordboxTagsWritten_other": "{{count}} tracks with their names fixed",
+    "duplicatesReplaced_one": "{{count}} removed copy now points at the one you kept",
+    "duplicatesReplaced_other": "{{count}} removed copies now point at the ones you kept",
     "rekordboxSyncNothing": "None of these tracks are in the collection",
     "rekordboxSyncRunning": "Skipped: rekordbox was open",
     "rekordboxSyncBackupFailed": "Skipped: couldn't back up the collection",

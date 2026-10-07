@@ -1416,6 +1416,8 @@
     "rekordboxSyncWritten_other": "{{count}} Titel zeigen jetzt auf die neue Datei",
     "rekordboxTagsWritten_one": "{{count}} Titel mit korrigierten Namen",
     "rekordboxTagsWritten_other": "{{count}} Titel mit korrigierten Namen",
+    "duplicatesReplaced_one": "{{count}} entfernte Kopie verweist jetzt auf die behaltene",
+    "duplicatesReplaced_other": "{{count}} entfernte Kopien verweisen jetzt auf die behaltenen",
     "rekordboxSyncNothing": "Keiner dieser Titel ist in der Sammlung",
     "rekordboxSyncRunning": "Übersprungen: rekordbox war geöffnet",
     "rekordboxSyncBackupFailed": "Übersprungen: keine Sicherung der Sammlung möglich",

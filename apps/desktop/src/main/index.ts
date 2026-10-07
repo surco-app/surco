@@ -38,6 +38,7 @@ import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
 import type {
   CoverExportJob,
+  DuplicateReplaceOutcome,
   LibraryTagUpdate,
   ProcessJob,
   RekordboxSyncIssue,
@@ -69,14 +70,22 @@ import { parseDockFrames } from './dockFrames'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { repointEngineTracks } from './engineRepoint'
+import { replaceEngineDuplicates } from './engineDuplicates'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { expandPaths } from './expand'
+import {
+  libraryOutcomes,
+  type ReplacePair,
+  replaceDuplicates,
+  traktorDuplicateStep,
+} from './duplicateReplace'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
 import { convertAudio, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
+import { usedByDjLibrary } from './libraryFileUse'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags } from './libraryTagSync'
@@ -95,6 +104,7 @@ import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordbo
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
+import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { loadLastSession, saveLastSession } from './session'
@@ -118,7 +128,7 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
-import { syncCollection } from './traktorNmlLibrary'
+import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
@@ -1022,6 +1032,86 @@ function registerIpc(): void {
       warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     })
   })
+
+  // A review removed duplicate copies from Music: each library with its sync on moves to the
+  // copy the user kept, through the same prompts, dialogs and Activity rows as the other
+  // flushes, and a removed copy's file goes to the Trash only once no library needs it.
+  ipcMain.handle(
+    'library:replaceDuplicates',
+    async (e, pairs: ReplacePair[]): Promise<DuplicateReplaceOutcome[]> => {
+      if (process.platform !== 'darwin' || pairs.length === 0) return []
+      const win = BrowserWindow.fromWebContents(e.sender)
+      const realPath = (p: string) => realpathSync(p)
+      const rekordbox = rekordboxFlushDeps(win, e.sender)
+      const engine = engineFlushDeps(win, e.sender)
+      const traktor = traktorFlushDeps(win)
+      const keys = { written: 'activity.duplicatesReplaced' }
+      return replaceDuplicates(pairs, {
+        libraries: {
+          ...(rekordbox.collectionPath && {
+            rekordbox: (list) =>
+              libraryOutcomes(
+                list,
+                (run) =>
+                  flushLibraryRepoints(
+                    {
+                      ...rekordbox,
+                      endBatch: () => list,
+                      labelOf: (p) => p.from,
+                      repointTracks: run,
+                    },
+                    { ...REKORDBOX_KEYS, ...keys },
+                  ),
+                (path, items) =>
+                  replaceRekordboxDuplicates(path, items, {
+                    realPath,
+                    sessionBackup: (db) => rekordboxSessionBackup.ensure(db),
+                  }),
+              ),
+          }),
+          ...(engine.collectionPath && {
+            engine: (list) =>
+              libraryOutcomes(
+                list,
+                (run) =>
+                  flushLibraryRepoints(
+                    { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
+                    { ...ENGINE_KEYS, ...keys },
+                  ),
+                (path, items) =>
+                  replaceEngineDuplicates(path, items, {
+                    realPath,
+                    sessionBackup: (db) => engineSessionBackup.ensure(db),
+                  }),
+              ),
+          }),
+          ...(traktor.traktorNmlPath && {
+            traktor: (list) =>
+              traktorDuplicateStep(list, {
+                nmlPath: traktor.traktorNmlPath,
+                ensureTraktorClosed: traktor.ensureTraktorClosed,
+                showBlockedDialog: traktor.showBlockedDialog,
+                track: traktor.track,
+                replace: replaceDuplicatesInCollection,
+              }),
+          }),
+        },
+        usedByLibrary: (path) =>
+          usedByDjLibrary(
+            path,
+            {
+              rekordbox: rekordbox.collectionPath,
+              engine: engine.collectionPath,
+              traktor: traktor.traktorNmlPath,
+            },
+            { realPath },
+          ),
+        trash: (path) => shell.trashItem(path),
+        serial: serialLibraryFlush,
+        warn: (message, error) => log.warn(message, error),
+      })
+    },
+  )
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
   // holds an OS handle on the very file the export renames over, and only main can
