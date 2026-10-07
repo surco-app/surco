@@ -47,7 +47,17 @@ const MARK = 'text-[var(--color-warn)]'
 
 // A stray space or an invisible character draws as nothing, so the two spellings would
 // look identical; each one gets a mark where clean() would remove or squeeze it.
-function Marked({ value }: { value: string }) {
+function Marked({
+  value,
+  changed,
+  testId,
+  tone,
+}: {
+  value: string
+  changed?: [number, number]
+  testId?: string
+  tone?: string
+}) {
   const chars = [...value]
   const visible = chars.map((c) => !VISIBLY_INVISIBLE.test(c))
   const spaceAt = (i: number, step: number) => {
@@ -69,7 +79,28 @@ function Marked({ value }: { value: string }) {
       ),
     )
   }
-  return <>{nodes}</>
+  if (!changed || changed[0] >= changed[1]) return <>{nodes}</>
+  return (
+    <>
+      {nodes.slice(0, changed[0])}
+      <span data-testid={testId} className={`font-semibold ${tone}`}>
+        {nodes.slice(changed[0], changed[1])}
+      </span>
+      {nodes.slice(changed[1])}
+    </>
+  )
+}
+
+// Credits often differ in one word out of many, so the shared start and end stay plain.
+function changedRanges(from: string, to: string): { from: [number, number]; to: [number, number] } {
+  const a = [...from]
+  const b = [...to]
+  const max = Math.min(a.length, b.length)
+  let start = 0
+  while (start < max && a[start] === b[start]) start++
+  let end = 0
+  while (end < max - start && a[a.length - 1 - end] === b[b.length - 1 - end]) end++
+  return { from: [start, a.length - end], to: [start, b.length - end] }
 }
 
 function Where({ sync }: { sync: ReviewSync }) {
@@ -201,7 +232,9 @@ function SpellingDetail({
                 </tr>
               </thead>
               <tbody>
-                {affected.map((f) => (
+                {affected.map((f) => {
+                  const ranges = changedRanges(f.from, f.to)
+                  return (
                   <tr
                     key={`${f.persistentId}|${f.field}`}
                     data-testid="music-review-affected"
@@ -212,14 +245,27 @@ function SpellingDetail({
                       {t(`musicReview.field.${f.field}`)}
                     </td>
                     <td className="py-1.5 pr-3 whitespace-pre-wrap">
-                      <Marked value={f.from} />
+                      <Marked
+                        value={f.from}
+                        changed={ranges.from}
+                        testId="music-review-diff-from"
+                        tone="text-[var(--color-warn)]"
+                      />
                     </td>
-                    <td className="py-1.5 pr-3 text-[var(--color-good)]">{f.to}</td>
+                    <td className="py-1.5 pr-3 whitespace-pre-wrap">
+                      <Marked
+                        value={f.to}
+                        changed={ranges.to}
+                        testId="music-review-diff-to"
+                        tone="text-[var(--color-good)]"
+                      />
+                    </td>
                     <td className="py-1.5">
                       <Where sync={sync} />
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

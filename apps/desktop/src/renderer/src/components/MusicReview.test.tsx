@@ -676,6 +676,29 @@ describe('MusicReview', () => {
         expect(row).not.toHaveTextContent('Engine DJ')
       }
     })
+
+    it('highlights only the part of a credit that changes, in both columns', () => {
+      const affected = () => [
+        {
+          persistentId: 'A',
+          title: 'Song A',
+          field: 'artist' as const,
+          from: 'Cultura Arcade & Dj Napo feat. Galaxiah',
+          to: 'Cultura Arcade & DJ Napo feat. Galaxiah',
+        },
+      ]
+      render(
+        <Panes
+          review={review({ affected })}
+          sync={{ rekordbox: false, engineDj: false, traktor: false }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^j$/)
+      expect(screen.getByTestId('music-review-diff-to')).toHaveTextContent(/^J$/)
+      expect(screen.getByTestId('music-review-affected')).toHaveTextContent(
+        'Cultura Arcade & Dj Napo feat. Galaxiah',
+      )
+    })
   })
 
   describe('duplicate detail', () => {
