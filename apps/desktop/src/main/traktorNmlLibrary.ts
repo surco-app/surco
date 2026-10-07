@@ -6,8 +6,11 @@ import {
   applyPatches,
   detachedOutputPaths,
   matchedPatchCount,
+  type NmlLocation,
   type NmlPatch,
+  type NmlReplaceOutcome,
   refreshedCoverIds,
+  replaceDuplicateInNml,
 } from './traktorNml'
 import { isTraktorRunning } from './traktorProcess'
 
@@ -57,38 +60,8 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
     return { written: false, matched: 0, reason: 'no-matches' }
   }
 
-  try {
-    await copyFile(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
-  } catch {
-    // No backup, no write. A write without a recoverable copy next to it is the one
-    // outcome this whole module exists to rule out.
-    return { written: false, matched: 0, reason: 'backup-failed' }
-  }
-
-  // Traktor can have launched during the read/backup above; check again right before
-  // the swap so the vulnerable window shrinks to the rename itself. Mirrors
-  // engineLibrary.ts's writeBatch, which checks Engine DJ at the same two points.
-  if (await isTraktorRunning()) {
-    return { written: false, matched: 0, reason: 'traktor-running' }
-  }
-
-  // Write-then-rename so a crash mid-write can never leave a truncated collection.
-  // The conversion on disk already succeeded by the time we get here (see the module
-  // comment), so a write/rename failure — disk full, read-only volume — must return a
-  // reason like every other failure path here, not throw past a caller that already
-  // told the DJ their files were converted.
-  const tmp = `${nmlPath}.surco-tmp`
-  try {
-    await writeFile(tmp, patched)
-    await renameWithRetry(tmp, nmlPath)
-  } catch {
-    // The backup taken above is what actually protects the collection; the leftover
-    // tmp file is not — left behind, it would keep shadowing every later sync at the
-    // same path, so clear it before reporting the failure. Best-effort: if even the
-    // unlink fails, the reason returned still stands.
-    await unlink(tmp).catch(() => {})
-    return { written: false, matched: 0, reason: 'write-failed' }
-  }
+  const failure = await writeCollection(nmlPath, patched)
+  if (failure) return { written: false, matched: 0, reason: failure }
 
   // Only now the collection is actually on disk. Traktor draws the library's artwork
   // from its own thumbnail cache, never from the audio file, so a converted track keeps
@@ -121,4 +94,84 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
   }
 
   return { written: true, matched: matchedPatchCount(original, patches) }
+}
+
+// The backup, the second check that Traktor is closed and the write-then-rename every
+// collection write goes through.
+async function writeCollection(
+  nmlPath: string,
+  patched: string,
+): Promise<SyncResult['reason'] | null> {
+  try {
+    await copyFile(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
+  } catch {
+    // No backup, no write. A write without a recoverable copy next to it is the one
+    // outcome this whole module exists to rule out.
+    return 'backup-failed'
+  }
+
+  // Traktor can have launched during the read/backup above; check again right before
+  // the swap so the vulnerable window shrinks to the rename itself. Mirrors
+  // engineLibrary.ts's writeBatch, which checks Engine DJ at the same two points.
+  if (await isTraktorRunning()) return 'traktor-running'
+
+  // Write-then-rename so a crash mid-write can never leave a truncated collection.
+  // The conversion on disk already succeeded by the time we get here (see the module
+  // comment), so a write/rename failure — disk full, read-only volume — must return a
+  // reason like every other failure path here, not throw past a caller that already
+  // told the DJ their files were converted.
+  const tmp = `${nmlPath}.surco-tmp`
+  try {
+    await writeFile(tmp, patched)
+    await renameWithRetry(tmp, nmlPath)
+  } catch {
+    // The backup taken above is what actually protects the collection; the leftover
+    // tmp file is not — left behind, it would keep shadowing every later sync at the
+    // same path, so clear it before reporting the failure. Best-effort: if even the
+    // unlink fails, the reason returned still stands.
+    await unlink(tmp).catch(() => {})
+    return 'write-failed'
+  }
+  return null
+}
+
+export interface DuplicateCollectionResult {
+  written: boolean
+  outcomes: (NmlReplaceOutcome | 'skipped')[]
+  reason?: SyncResult['reason']
+}
+
+// When the user removes duplicate copies from Music, the collection moves to the copies
+// they kept (see replaceDuplicateInNml), in one write with the same guards as a sync.
+export async function replaceDuplicatesInCollection(
+  nmlPath: string,
+  pairs: { from: NmlLocation; to: NmlLocation }[],
+): Promise<DuplicateCollectionResult> {
+  const skipped = (reason: SyncResult['reason']): DuplicateCollectionResult => ({
+    written: false,
+    reason,
+    outcomes: pairs.map(() => 'skipped'),
+  })
+  if (await isTraktorRunning()) return skipped('traktor-running')
+  let original: string
+  try {
+    original = await readFile(nmlPath, 'utf8')
+  } catch {
+    return skipped('unreadable')
+  }
+  let patched = original
+  const outcomes = pairs.map((pair) => {
+    const result = replaceDuplicateInNml(patched, pair)
+    patched = result.nml
+    return result.outcome
+  })
+  if (patched === original) return { written: false, outcomes }
+  const failure = await writeCollection(nmlPath, patched)
+  if (!failure) return { written: true, outcomes }
+  const lost = failure === 'write-failed' ? 'failed' : 'skipped'
+  return {
+    written: false,
+    reason: failure,
+    outcomes: outcomes.map((o) => (o === 'repointed' || o === 'replaced' ? lost : o)),
+  }
 }

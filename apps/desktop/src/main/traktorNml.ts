@@ -579,3 +579,102 @@ export function cuesToXml(tree: Uint8Array, bpm?: number): string {
     })
     .join('')
 }
+
+export interface NmlLocation {
+  volume: string
+  dir: string
+  file: string
+}
+
+export type NmlReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'failed'
+
+const COLLECTION_RE = /<COLLECTION\b[^>]*>[\s\S]*?<\/COLLECTION>/
+const PLAYLIST_RE = /<PLAYLIST\b[^>]*>[\s\S]*?<\/PLAYLIST>/g
+const ITEM_RE = /<ENTRY\b[^>]*>(?:(?!<\/ENTRY>)[\s\S])*<\/ENTRY>\r?\n?/g
+const ITEM_KEY_RE = /(<PRIMARYKEY\b[^>]*\sKEY=")([^"]*)(")/
+
+const sameText = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+
+// An empty volume is the boot disk, which Traktor stores under its own name.
+const at = (entry: NmlEntry, loc: NmlLocation) =>
+  sameText(entry.dir, loc.dir) &&
+  sameText(entry.file, loc.file) &&
+  (!loc.volume || sameText(entry.volume, loc.volume))
+
+const keyOf = (loc: NmlLocation) => `${loc.volume}${loc.dir}${loc.file}`
+
+const setCount = (open: string, count: number) =>
+  open.replace(/(\sENTRIES=")\d+(")/, (_m, a, b) => `${a}${count}${b}`)
+
+const countOf = (open: string) => Number(open.match(/\sENTRIES="(\d+)"/)?.[1] ?? 0)
+
+// Playlists name tracks by VOLUME + DIR + FILE, so they follow a moved entry only when
+// their keys are rewritten too. A playlist that already holds the kept copy loses the
+// removed one instead of playing the song twice.
+function rewritePlaylists(nml: string, fromKey: string, toKey: string): string {
+  const itemKey = (item: string) => unescapeAttr(item.match(ITEM_KEY_RE)?.[2] ?? '')
+  return nml.replace(PLAYLIST_RE, (block) => {
+    const items = [...block.matchAll(ITEM_RE)].map((m) => m[0])
+    if (!items.some((item) => sameText(itemKey(item), fromKey))) return block
+    const holds = items.some((item) => sameText(itemKey(item), toKey))
+    let removed = 0
+    const out = block.replace(ITEM_RE, (item) => {
+      if (!sameText(itemKey(item), fromKey)) return item
+      if (holds) {
+        removed += 1
+        return ''
+      }
+      return item.replace(ITEM_KEY_RE, (_m, a, _k, b) => `${a}${escapeAttr(toKey)}${b}`)
+    })
+    if (removed === 0) return out
+    const open = out.match(/<PLAYLIST\b[^>]*>/)?.[0] ?? ''
+    return out.replace(open, () => setCount(open, countOf(open) - removed))
+  })
+}
+
+function replaceLocation(block: string, dir: string, file: string): string {
+  return block.replace(/<LOCATION\b[^>]*>/, (tag) =>
+    tag
+      .replace(/(\sDIR=")[^"]*(")/, (_m, a, b) => `${a}${escapeAttr(dir)}${b}`)
+      .replace(/(\sFILE=")[^"]*(")/, (_m, a, b) => `${a}${escapeAttr(file)}${b}`),
+  )
+}
+
+// When the user removes a duplicate copy from Music, Traktor moves to the copy they kept:
+// the removed copy's entry is repointed when it is the only one, and otherwise its
+// playlist places go to the kept entry and the entry leaves the collection.
+export function replaceDuplicateInNml(
+  nml: string,
+  pair: { from: NmlLocation; to: NmlLocation },
+): { nml: string; outcome: NmlReplaceOutcome } {
+  const collection = nml.match(COLLECTION_RE)
+  if (!collection || collection.index === undefined) return { nml, outcome: 'none' }
+  const base = collection.index
+  const entries = findEntries(collection[0]).filter((e) => e.file)
+  const sources = entries.filter((e) => at(e, pair.from))
+  const kept = entries.filter((e) => at(e, pair.to))
+  if (sources.length > 1 || kept.length > 1) return { nml, outcome: 'failed' }
+  if (sources.length === 0 || sources[0] === kept[0]) return { nml, outcome: 'none' }
+  const source = sources[0]
+  const block = nml.slice(base + source.start, base + source.end)
+
+  if (kept.length === 0) {
+    // Another volume has another VOLUMEID, which only Traktor knows.
+    const volume = pair.to.volume || (pair.from.volume ? '' : source.volume)
+    if (!volume || !sameText(volume, source.volume)) return { nml, outcome: 'failed' }
+    const moved =
+      nml.slice(0, base + source.start) +
+      replaceLocation(block, pair.to.dir, pair.to.file) +
+      nml.slice(base + source.end)
+    return {
+      nml: rewritePlaylists(moved, keyOf(source), keyOf({ ...pair.to, volume: source.volume })),
+      outcome: 'repointed',
+    }
+  }
+
+  const trailing = nml.slice(base + source.end).match(/^\r?\n/)?.[0] ?? ''
+  const without = nml.slice(0, base + source.start) + nml.slice(base + source.end + trailing.length)
+  const open = without.match(/<COLLECTION\b[^>]*>/)?.[0] ?? ''
+  const counted = without.replace(open, () => setCount(open, countOf(open) - 1))
+  return { nml: rewritePlaylists(counted, keyOf(source), keyOf(kept[0])), outcome: 'replaced' }
+}

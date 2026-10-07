@@ -55,7 +55,7 @@ vi.mock('electron', () => ({
   },
 }))
 
-import { syncCollection } from './traktorNmlLibrary'
+import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
 
 const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
@@ -372,5 +372,77 @@ describe('syncCollection refreshes the cached artwork', () => {
     const result = await syncCollection(nmlPath, [coverPatch])
 
     expect(result.written).toBe(true)
+  })
+})
+
+describe('replaceDuplicatesInCollection', () => {
+  const BOTH = `<NML VERSION="19"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Old"><LOCATION DIR="/:M/:" FILE="old.aiff" VOLUME="HD"></LOCATION></ENTRY>
+<ENTRY TITLE="New"><LOCATION DIR="/:M/:" FILE="new.aiff" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION><PLAYLISTS><PLAYLIST ENTRIES="1" TYPE="LIST" UUID="p">
+<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="HD/:M/:old.aiff"></PRIMARYKEY></ENTRY>
+</PLAYLIST></PLAYLISTS></NML>`
+  const pair = {
+    from: { volume: 'HD', dir: '/:M/:', file: 'old.aiff' },
+    to: { volume: 'HD', dir: '/:M/:', file: 'new.aiff' },
+  }
+  const missing = {
+    from: { volume: 'HD', dir: '/:M/:', file: 'none.aiff' },
+    to: pair.to,
+  }
+
+  beforeEach(() => writeFileSync(nmlPath, BOTH))
+
+  it('writes the collection with a backup of it as it was and says what each pair did', async () => {
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair, missing])
+    expect(result).toEqual({ written: true, outcomes: ['replaced', 'none'] })
+    expect(readFileSync(`${nmlPath}.surco-backup`, 'utf8')).toBe(BOTH)
+    const out = readFileSync(nmlPath, 'utf8')
+    expect(out).not.toContain('TITLE="Old"')
+    expect(out).toContain('KEY="HD/:M/:new.aiff"')
+  })
+
+  it('writes nothing and makes no backup when no pair is in the collection', async () => {
+    const result = await replaceDuplicatesInCollection(nmlPath, [missing])
+    expect(result).toEqual({ written: false, outcomes: ['none'] })
+    expect(existsSync(`${nmlPath}.surco-backup`)).toBe(false)
+  })
+
+  it('skips every pair while Traktor is running', async () => {
+    vi.mocked(isTraktorRunning).mockResolvedValue(true)
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair, missing])
+    expect(result).toEqual({
+      written: false,
+      reason: 'traktor-running',
+      outcomes: ['skipped', 'skipped'],
+    })
+    expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
+  })
+
+  it('skips when Traktor starts between the read and the write', async () => {
+    vi.mocked(isTraktorRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair])
+    expect(result).toEqual({ written: false, reason: 'traktor-running', outcomes: ['skipped'] })
+    expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
+  })
+
+  it('skips when the backup cannot be made', async () => {
+    copyFileShouldFail.value = true
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair])
+    expect(result).toEqual({ written: false, reason: 'backup-failed', outcomes: ['skipped'] })
+    expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
+  })
+
+  it('reports a failed write and keeps the collection', async () => {
+    renameShouldFail.value = true
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair])
+    expect(result).toEqual({ written: false, reason: 'write-failed', outcomes: ['failed'] })
+    expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
+    expect(readdirSync(dir)).not.toContain('collection.nml.surco-tmp')
+  })
+
+  it('skips when the collection cannot be read', async () => {
+    const result = await replaceDuplicatesInCollection(join(dir, 'gone.nml'), [pair])
+    expect(result).toEqual({ written: false, reason: 'unreadable', outcomes: ['skipped'] })
   })
 })

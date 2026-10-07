@@ -10,6 +10,7 @@ import {
   matchedPatchCount,
   type NmlPatch,
   refreshedCoverIds,
+  replaceDuplicateInNml,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -1038,5 +1039,116 @@ describe('applyPatches with tags', () => {
     const out = applyPatches(both, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
     expect(out).toBe(both)
     expect(matchedPatchCount(both, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])).toBe(0)
+  })
+})
+
+describe('replaceDuplicateInNml', () => {
+  const FROM_KEY = 'Public/:Music/:Old/:this rap.aiff'
+  const TO_KEY = 'Public/:Music/:New/:this rap.aiff'
+  const entry = (dir: string, file: string, title: string) =>
+    `<ENTRY TITLE="${title}">\n<LOCATION DIR="${dir}" FILE="${file}" VOLUME="Public" VOLUMEID="Public"></LOCATION>\n<CUE_V2 NAME="n.n." TYPE="0" START="1.0"></CUE_V2>\n</ENTRY>\n`
+  const item = (key: string) =>
+    `<ENTRY>\n<PRIMARYKEY TYPE="TRACK" KEY="${key}"></PRIMARYKEY>\n</ENTRY>\n`
+  const playlist = (name: string, keys: string[]) =>
+    `<NODE TYPE="PLAYLIST" NAME="${name}">\n<PLAYLIST ENTRIES="${keys.length}" TYPE="LIST" UUID="${name}">\n${keys.map(item).join('')}</PLAYLIST>\n</NODE>\n`
+  const OTHER = 'Public/:Music/:x.aiff'
+  const nml = (withTo: boolean) =>
+    `<NML VERSION="19">\n<COLLECTION ENTRIES="${withTo ? 3 : 2}">\n` +
+    entry('/:Music/:Old/:', 'this rap.aiff', 'Old') +
+    (withTo ? entry('/:Music/:New/:', 'this rap.aiff', 'New') : '') +
+    entry('/:Music/:', 'x.aiff', 'X') +
+    `</COLLECTION>\n<PLAYLISTS>\n<NODE TYPE="FOLDER" NAME="$ROOT">\n<SUBNODES COUNT="2">\n` +
+    playlist('A', [FROM_KEY, OTHER]) +
+    playlist('B', withTo ? [TO_KEY, FROM_KEY, OTHER] : [OTHER]) +
+    `</SUBNODES>\n</NODE>\n</PLAYLISTS>\n</NML>\n`
+  const from = { volume: 'Public', dir: '/:Music/:Old/:', file: 'this rap.aiff' }
+  const to = { volume: 'Public', dir: '/:Music/:New/:', file: 'this rap.aiff' }
+  const keysOf = (out: string, name: string) => {
+    const block =
+      out.match(new RegExp(`<PLAYLIST [^>]*UUID="${name}">[\\s\\S]*?</PLAYLIST>`))?.[0] ?? ''
+    return {
+      count: block.match(/ENTRIES="(\d+)"/)?.[1],
+      keys: [...block.matchAll(/KEY="([^"]*)"/g)].map((m) => m[1]),
+    }
+  }
+
+  // The playlist keeps its order: the kept copy takes the removed one's place.
+  it('points a playlist at the kept copy when it does not hold it yet', () => {
+    const { nml: out, outcome } = replaceDuplicateInNml(nml(true), { from, to })
+    expect(outcome).toBe('replaced')
+    expect(keysOf(out, 'A')).toEqual({ count: '2', keys: [TO_KEY, OTHER] })
+  })
+
+  it('drops the removed copy from a playlist that already holds the kept one and fixes its count', () => {
+    const { nml: out } = replaceDuplicateInNml(nml(true), { from, to })
+    expect(keysOf(out, 'B')).toEqual({ count: '2', keys: [TO_KEY, OTHER] })
+  })
+
+  it('removes the removed copy from the collection and fixes the collection count', () => {
+    const { nml: out } = replaceDuplicateInNml(nml(true), { from, to })
+    expect(
+      findEntries(out)
+        .filter((e) => e.file)
+        .map((e) => e.dir),
+    ).toEqual(['/:Music/:New/:', '/:Music/:'])
+    expect(out).toContain('<COLLECTION ENTRIES="2">')
+    expect(out).not.toContain('TITLE="Old"')
+    expect(out).toContain('TITLE="New"')
+  })
+
+  // Repointing keeps the entry, so its cues, beatgrid and playlists stay with the track.
+  it('repoints the entry and its playlist keys when only the removed copy is there', () => {
+    const { nml: out, outcome } = replaceDuplicateInNml(nml(false), { from, to })
+    expect(outcome).toBe('repointed')
+    expect(out).toContain(
+      '<ENTRY TITLE="Old">\n<LOCATION DIR="/:Music/:New/:" FILE="this rap.aiff" VOLUME="Public" VOLUMEID="Public"></LOCATION>\n<CUE_V2 NAME="n.n." TYPE="0" START="1.0"></CUE_V2>',
+    )
+    expect(out).toContain('<COLLECTION ENTRIES="2">')
+    expect(keysOf(out, 'A')).toEqual({ count: '2', keys: [TO_KEY, OTHER] })
+  })
+
+  it('matches the boot disk whatever Traktor calls it', () => {
+    const boot = nml(true).replaceAll('Public', 'Macintosh HD')
+    const { outcome, nml: out } = replaceDuplicateInNml(boot, {
+      from: { ...from, volume: '' },
+      to: { ...to, volume: '' },
+    })
+    expect(outcome).toBe('replaced')
+    expect(keysOf(out, 'A').keys[0]).toBe('Macintosh HD/:Music/:New/:this rap.aiff')
+  })
+
+  it('leaves the collection alone when the removed copy is not in it', () => {
+    const doc = nml(true)
+    const result = replaceDuplicateInNml(doc, {
+      from: { ...from, file: 'none.aiff' },
+      to,
+    })
+    expect(result).toEqual({ nml: doc, outcome: 'none' })
+  })
+
+  // Another volume carries another VOLUMEID, which this does not know.
+  it('refuses to repoint across volumes', () => {
+    const doc = nml(false)
+    expect(replaceDuplicateInNml(doc, { from, to: { ...to, volume: 'Other' } })).toEqual({
+      nml: doc,
+      outcome: 'failed',
+    })
+    expect(replaceDuplicateInNml(doc, { from, to: { ...to, volume: '' } })).toEqual({
+      nml: doc,
+      outcome: 'failed',
+    })
+  })
+
+  it('keeps names with XML entities intact', () => {
+    const doc = nml(true).replaceAll('this rap', 'R&amp;B')
+    const { nml: out } = replaceDuplicateInNml(doc, {
+      from: { ...from, file: 'R&B.aiff' },
+      to: { ...to, file: 'R&B.aiff' },
+    })
+    expect(keysOf(out, 'A').keys[0]).toBe('Public/:Music/:New/:R&amp;B.aiff')
+    expect(keysOf(out, 'B')).toEqual({
+      count: '2',
+      keys: ['Public/:Music/:New/:R&amp;B.aiff', OTHER],
+    })
   })
 })
