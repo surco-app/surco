@@ -748,6 +748,12 @@ export interface RemoveCopyResult {
   keptForLibrary?: boolean
 }
 
+// A removed duplicate's file and the kept copy's file, for the DJ libraries to follow.
+export interface DuplicatePair {
+  from: string
+  to: string
+}
+
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
 
 export interface MusicFixOutcome {

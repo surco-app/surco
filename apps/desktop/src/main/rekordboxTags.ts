@@ -23,12 +23,12 @@ interface Current {
 const same = (a: string | null, b: string) => (a ?? '').normalize('NFC') === b.normalize('NFC')
 
 // The format rekordbox writes itself: 2024-06-25 12:16:14.804 +00:00
-function stamp(): string {
+export function stamp(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', ' +00:00')
 }
 
 // rekordbox reads rb_local_usn against this counter to know what changed locally.
-function nextUsn(db: Db): number {
+export function nextUsn(db: Db): number {
   const row = db
     .prepare(`SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`)
     .get() as { int_1: number | null } | undefined
