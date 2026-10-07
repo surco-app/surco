@@ -4,6 +4,7 @@ import type {
   MusicReview as Review,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
+import type { MusicReviewEntry } from '../../../shared/types'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { fieldsLabel, GHOST, PRIMARY } from './MusicReview'
 
@@ -14,6 +15,8 @@ export interface ReviewSync {
 }
 
 const HEADING = 'text-xs font-semibold text-fg-dim'
+
+const tail = (path: string) => path.split('/').slice(-2).join('/')
 
 const clock = (sec?: number) =>
   sec === undefined ? '' : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
@@ -227,9 +230,11 @@ function SpellingDetail({
 
 function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review }) {
   const { t } = useTranslation()
-  const { group, entries, formats } = card
+  const { group, entries, formats, locations } = card
   const busy = review.status === 'applying'
   const keep = review.choice(group.key)
+  const anyFile = entries.some((e) => locations[e.persistentId] !== '')
+  const differs = (value: (e: MusicReviewEntry) => string) => new Set(entries.map(value)).size > 1
   const staged = review.staged.has(group.key)
   const version = group.kind === 'version'
   const first = entries[0]
@@ -267,38 +272,61 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
       <div
         role="radiogroup"
         aria-label={`${first?.artist} · ${first?.title}`}
-        className="grid gap-0.5"
+        className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-3"
       >
-        {entries.map((e) => (
-          <label
-            key={e.persistentId}
-            data-testid="music-review-copy"
-            className={`flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1 ${keep === e.persistentId ? 'bg-[var(--color-accent-soft)]' : ''}`}
-          >
-            <input
-              type="radio"
-              name={group.key}
-              checked={keep === e.persistentId}
-              disabled={busy}
-              onChange={() => review.choose(group.key, e.persistentId)}
-              className="accent-[var(--color-accent)]"
-            />
-            <span className="grid min-w-0">
-              <span className="truncate text-sm">{e.title}</span>
-              <span className="truncate text-xs text-fg-faint tabular-nums">
-                {e.artist} · {clock(e.durationSec)}
-              </span>
-            </span>
-            <span className="ml-auto shrink-0 rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim">
-              {formats[e.persistentId] ?? ''}
-            </span>
-            {keep === e.persistentId && (
-              <span className="shrink-0 text-[11px] font-semibold text-[var(--color-accent)]">
-                {t('musicReview.keeps')}
-              </span>
-            )}
-          </label>
-        ))}
+        {entries.map((e) => {
+          const path = locations[e.persistentId]
+          const noFile = path === ''
+          const cells = [
+            ['field.album', e.album, differs((c) => c.album)],
+            ['field.genre', e.genre, differs((c) => c.genre)],
+            ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
+          ] as const
+          return (
+            <div
+              key={e.persistentId}
+              data-testid="music-review-copy"
+              className={`grid content-start gap-2.5 rounded-lg border p-3 ${keep === e.persistentId ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'}`}
+            >
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name={group.key}
+                    checked={keep === e.persistentId}
+                    disabled={busy || (noFile && anyFile)}
+                    onChange={() => review.choose(group.key, e.persistentId)}
+                    className="accent-[var(--color-accent)]"
+                  />
+                  {t('musicReview.keeps')}
+                </label>
+                <span
+                  data-differs={differs((c) => formats[c.persistentId] ?? '') || undefined}
+                  className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.persistentId] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
+                >
+                  {formats[e.persistentId] ?? ''}
+                </span>
+              </div>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                {cells.map(([label, value, differ]) => (
+                  <div key={label} className="contents">
+                    <dt className="text-fg-faint">{t(`musicReview.${label}`)}</dt>
+                    <dd
+                      data-differs={differ || undefined}
+                      className={`truncate tabular-nums ${differ ? 'text-[var(--color-warn)]' : ''}`}
+                    >
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+                <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>
+                <dd title={path} className={`truncate ${noFile ? 'text-[var(--color-warn)]' : ''}`}>
+                  {noFile ? t('musicReview.detail.noFile') : tail(path ?? '')}
+                </dd>
+              </dl>
+            </div>
+          )
+        })}
       </div>
     </>
   )

@@ -1553,7 +1553,9 @@
       "field": "Field",
       "now": "Now",
       "after": "Becomes",
-      "where": "Where"
+      "where": "Where",
+      "duration": "Duration",
+      "noFile": "No file"
     },
     "where": {
       "music": "Music",

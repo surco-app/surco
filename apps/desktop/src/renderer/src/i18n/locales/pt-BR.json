@@ -1553,7 +1553,9 @@
       "field": "Campo",
       "now": "Agora",
       "after": "Fica",
-      "where": "Onde"
+      "where": "Onde",
+      "duration": "Duração",
+      "noFile": "Sem arquivo"
     },
     "where": {
       "music": "Music",

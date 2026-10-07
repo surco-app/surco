@@ -382,6 +382,7 @@ describe('MusicReview', () => {
         { persistentId: '2', artist: 'A', title: 'T', durationSec: 60 },
       ],
       formats: {},
+      locations: {},
     }
     render(
       <Panes
@@ -504,6 +505,67 @@ describe('MusicReview', () => {
         expect(row).toHaveTextContent('Traktor')
         expect(row).not.toHaveTextContent('Engine DJ')
       }
+    })
+  })
+
+  describe('duplicate detail', () => {
+    const copy = (persistentId: string, extra = {}) => ({
+      persistentId,
+      artist: 'Ann',
+      title: 'Song',
+      albumArtist: '',
+      album: 'First',
+      genre: 'House',
+      durationSec: 200,
+      ...extra,
+    })
+    const card = (locations: Record<string, string>) => ({
+      group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
+      entries: [copy('1'), copy('2', { album: 'Second' })],
+      formats: Object.fromEntries(
+        Object.entries(locations).map(([id, path]) => [id, path ? 'AIFF' : '']),
+      ),
+      locations,
+    })
+    const dupReview = (locations: Record<string, string>, keep = '2') =>
+      review({ spelling: [], duplicates: [card(locations)], choice: () => keep })
+
+    // Keeping the copy without a file would leave the track with no audio in Music.
+    it('does not let a copy without a file stay while another has one', () => {
+      render(<Panes review={dupReview({ '1': '', '2': '/Music/Ann/Song.aiff' })} />)
+      const [noFile, withFile] = screen.getAllByTestId('music-review-copy')
+      expect(noFile).toHaveTextContent('No file')
+      expect(within(noFile).getByRole('radio')).toBeDisabled()
+      expect(within(withFile).getByRole('radio')).toBeEnabled()
+      expect(within(withFile).getByRole('radio')).toBeChecked()
+      expect(withFile).toHaveTextContent('Ann/Song.aiff')
+      expect(withFile).not.toHaveTextContent('/Music/')
+    })
+
+    it('lets any copy stay when none has a file', () => {
+      render(<Panes review={dupReview({ '1': '', '2': '' }, '1')} />)
+      for (const c of screen.getAllByTestId('music-review-copy'))
+        expect(within(c).getByRole('radio')).toBeEnabled()
+    })
+
+    // What tells two copies apart is what the user weighs before removing one.
+    it('marks the values that differ between copies', () => {
+      render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
+      const [first, second] = screen.getAllByTestId('music-review-copy')
+      expect(within(first).getByText('First')).toHaveAttribute('data-differs', 'true')
+      expect(within(second).getByText('Second')).toHaveAttribute('data-differs', 'true')
+      expect(within(first).getByText('House')).not.toHaveAttribute('data-differs')
+      expect(within(first).getByText('3:20')).not.toHaveAttribute('data-differs')
+    })
+
+    it('keeps a copy on its radio and stages the removal', () => {
+      const r = dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })
+      render(<Panes review={r} />)
+      fireEvent.click(within(screen.getAllByTestId('music-review-copy')[0]).getByRole('radio'))
+      expect(r.choose).toHaveBeenCalledWith('k#1', '1')
+      fireEvent.click(screen.getByTestId('music-review-stage'))
+      expect(r.toggleStaged).toHaveBeenCalledWith('k#1')
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
     })
   })
 })

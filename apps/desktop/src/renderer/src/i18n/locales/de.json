@@ -1553,7 +1553,9 @@
       "field": "Feld",
       "now": "Jetzt",
       "after": "Wird",
-      "where": "Wo"
+      "where": "Wo",
+      "duration": "Dauer",
+      "noFile": "Keine Datei"
     },
     "where": {
       "music": "Music",

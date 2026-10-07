@@ -585,6 +585,43 @@ describe('useMusicReview', () => {
     expect(result.current.affected(result.current.spelling[0].key)).toEqual([])
   })
 
+  it('keeps the full path of each copy for the detail', async () => {
+    setApi({
+      loadMusicReview: vi.fn().mockResolvedValue(DUPS),
+      appleMusicEntryLocation: vi
+        .fn<Api['appleMusicEntryLocation']>()
+        .mockImplementation(async (pid) => (pid === 'Q' ? '/m/Ann/q.flac' : '')),
+    })
+    const { result } = await ready()
+    await waitFor(() =>
+      expect(result.current.duplicates[0].locations).toEqual({ P: '', Q: '/m/Ann/q.flac' }),
+    )
+  })
+
+  // A copy Music lists without a file is the one to lose: keeping it would leave the
+  // library with no audio for the track.
+  it('never suggests keeping a copy without a file while another has one', async () => {
+    setApi({
+      loadMusicReview: vi.fn().mockResolvedValue(DUPS),
+      appleMusicEntryLocation: vi
+        .fn<Api['appleMusicEntryLocation']>()
+        .mockImplementation(async (pid) => (pid === 'Q' ? '/m/q.mp3' : '')),
+    })
+    const { result } = await ready()
+    await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
+    expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('Q')
+  })
+
+  it('suggests the first copy when none has a file', async () => {
+    setApi({
+      loadMusicReview: vi.fn().mockResolvedValue(DUPS),
+      appleMusicEntryLocation: vi.fn<Api['appleMusicEntryLocation']>().mockResolvedValue(''),
+    })
+    const { result } = await ready()
+    await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
+    expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('P')
+  })
+
   describe('one group per name across artist and album artist', () => {
     const BOTH = [
       e('A', 'DJ Lara', { albumArtist: 'DJ Lara' }),

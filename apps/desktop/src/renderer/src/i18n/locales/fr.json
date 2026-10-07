@@ -1553,7 +1553,9 @@
       "field": "Champ",
       "now": "Maintenant",
       "after": "Devient",
-      "where": "Où"
+      "where": "Où",
+      "duration": "Durée",
+      "noFile": "Pas de fichier"
     },
     "where": {
       "music": "Music",

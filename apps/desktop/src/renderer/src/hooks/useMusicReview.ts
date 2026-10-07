@@ -33,6 +33,7 @@ export interface DuplicateCard {
   group: DuplicateGroup
   entries: MusicReviewEntry[]
   formats: Record<string, string>
+  locations: Record<string, string>
 }
 
 export interface ReviewRun {
@@ -182,7 +183,7 @@ export function useMusicReview({
   const [hidden, setHidden] = useState<ReadonlySet<string>>(
     () => new Set(Array.isArray(ignored) ? ignored : []),
   )
-  const [formats, setFormats] = useState<Record<string, string>>({})
+  const [locations, setLocations] = useState<Record<string, string>>({})
   const [progress, setProgress] = useState<MusicReview['progress']>(null)
   const [lastRun, setLastRun] = useState<ReviewRun | null>(null)
   const running = useRef(false)
@@ -212,19 +213,26 @@ export function useMusicReview({
   )
 
   useEffect(() => {
-    const missing = [...new Set(dupGroups.flatMap((g) => g.ids))].filter((pid) => !(pid in formats))
+    const missing = [...new Set(dupGroups.flatMap((g) => g.ids))].filter(
+      (pid) => !(pid in locations),
+    )
     if (missing.length === 0) return
     let live = true
     Promise.all(
       missing.map(
         async (pid) =>
-          [pid, extOf(await window.api.appleMusicEntryLocation(pid).catch(() => ''))] as const,
+          [pid, await window.api.appleMusicEntryLocation(pid).catch(() => '')] as const,
       ),
-    ).then((pairs) => live && setFormats((f) => ({ ...f, ...Object.fromEntries(pairs) })))
+    ).then((pairs) => live && setLocations((l) => ({ ...l, ...Object.fromEntries(pairs) })))
     return () => {
       live = false
     }
-  }, [dupGroups, formats])
+  }, [dupGroups, locations])
+
+  const formats = useMemo(
+    () => Object.fromEntries(Object.entries(locations).map(([pid, path]) => [pid, extOf(path)])),
+    [locations],
+  )
 
   const duplicates = useMemo<DuplicateCard[]>(
     () =>
@@ -234,8 +242,11 @@ export function useMusicReview({
         formats: Object.fromEntries(
           group.ids.filter((id) => id in formats).map((id) => [id, formats[id]]),
         ),
+        locations: Object.fromEntries(
+          group.ids.filter((id) => id in locations).map((id) => [id, locations[id]]),
+        ),
       })),
-    [dupGroups, byPid, formats],
+    [dupGroups, byPid, formats, locations],
   )
 
   const choice = useCallback(
@@ -245,11 +256,12 @@ export function useMusicReview({
       if (s) return s.suggested
       const d = dupGroups.find((g) => g.key === key)
       if (!d) return null
-      return d.ids.reduce((best, id) =>
+      const withFile = d.ids.filter((id) => locations[id] !== '')
+      return (withFile.length ? withFile : d.ids).reduce((best, id) =>
         rankOf(formats[id] ?? '') < rankOf(formats[best] ?? '') ? id : best,
       )
     },
-    [choices, spelling, dupGroups, formats],
+    [choices, spelling, dupGroups, formats, locations],
   )
 
   const choose = useCallback(
