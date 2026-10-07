@@ -125,43 +125,46 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     expect(r).toEqual({ written: true, outcome: 'replaced' })
     const e1 = entry('e1')
     expect(e1).toMatchObject({ ContentID: 'B', TrackNo: 1, rb_local_deleted: 0 })
-    expect(e1.rb_local_usn).toBeGreaterThan(100)
+    expect(e1.rb_local_usn).toBe(101)
     expect(e1.updated_at).not.toBe(OLD)
     expect(entry('e2')).toMatchObject({ ContentID: 'X', TrackNo: 2, rb_local_usn: 7 })
   })
 
-  // Two entries of one song in a playlist would play it twice in a set.
-  it('soft-deletes the entry when the playlist already holds the kept copy and closes the gap', async () => {
+  // Two entries of one song in a playlist would play it twice in a set. rekordbox itself
+  // deletes a playlist entry outright (the real collection has no soft-deleted one).
+  it('deletes the entry when the playlist already holds the kept copy and closes the gap', async () => {
     await replaceRekordboxDuplicates(dbPath, pair())
-    expect(entry('e5')).toMatchObject({ ContentID: 'A', rb_local_deleted: 1 })
-    expect(entry('e5').rb_local_usn).toBeGreaterThan(100)
+    expect(entries().map((e) => e.ID)).not.toContain('e5')
     expect(entry('e3')).toMatchObject({ ContentID: 'B', TrackNo: 1, rb_local_usn: 7 })
     expect(entry('e6')).toMatchObject({ ContentID: 'Y', TrackNo: 3, rb_local_deleted: 0 })
-    expect(entry('e6').rb_local_usn).toBeGreaterThan(100)
     const live = entries().filter((e) => e.PlaylistID === 'p2' && !e.rb_local_deleted)
     expect(live.map((e) => e.TrackNo).sort()).toEqual([1, 2, 3])
   })
 
-  it('soft-deletes the removed copy from the collection and leaves the kept one and the cues alone', async () => {
+  // Unproven that rekordbox hides a soft-deleted track, so the removed copy stays in the
+  // collection with its cues, out of every playlist.
+  it('leaves both tracks and the cues in the collection as they were', async () => {
     const before = cues()
     await replaceRekordboxDuplicates(dbPath, pair())
-    expect(content('A')).toMatchObject({ rb_local_deleted: 1, FolderPath: FROM })
-    expect(content('A').rb_local_usn).toBeGreaterThan(100)
+    expect(content('A')).toMatchObject({
+      rb_local_deleted: 0,
+      FolderPath: FROM,
+      rb_local_usn: 7,
+      updated_at: OLD,
+    })
     expect(content('B')).toMatchObject({ rb_local_deleted: 0, rb_local_usn: 7, updated_at: OLD })
     expect(cues()).toEqual(before)
     expect(query(`SELECT count(*) AS n FROM djmdContent`)).toEqual([{ n: 3 }])
-    expect(query(`SELECT count(*) AS n FROM djmdSongPlaylist`)).toEqual([{ n: 7 }])
+    expect(query(`SELECT count(*) AS n FROM djmdSongPlaylist`)).toEqual([{ n: 6 }])
   })
 
-  // rekordbox finds local changes by comparing each row's usn with this counter.
-  it('bumps the counter once per changed row and gives each row its own usn', async () => {
+  // rekordbox stamps one operation with one usn and moves its counter once.
+  it('stamps every changed row with one usn and moves the counter once', async () => {
     await replaceRekordboxDuplicates(dbPath, pair())
-    expect(counter()).toBe(104)
-    const usns = [entry('e1'), entry('e5'), entry('e6')]
-      .map((e) => e.rb_local_usn)
-      .concat(content('A').rb_local_usn)
-    expect(new Set(usns).size).toBe(4)
-    expect(Math.max(...usns)).toBe(104)
+    expect(counter()).toBe(101)
+    expect(entry('e1').rb_local_usn).toBe(101)
+    expect(entry('e6').rb_local_usn).toBe(101)
+    expect(entry('e6').updated_at).not.toBe(OLD)
   })
 
   it('leaves an entry rekordbox already deleted as it was', async () => {
@@ -185,7 +188,7 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
       { written: false, reason: 'rekordbox-running' },
     ])
     expect(entry('e1').ContentID).toBe('A')
-    expect(content('A').rb_local_deleted).toBe(0)
+    expect(entries()).toHaveLength(7)
     expect(counter()).toBe(100)
   })
 
@@ -198,7 +201,7 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     const live = dbPath
     dbPath = `${live}.surco-backup`
     expect(entry('e1').ContentID).toBe('A')
-    expect(content('A').rb_local_deleted).toBe(0)
+    expect(entries()).toHaveLength(7)
     dbPath = live
     expect(entry('e1').ContentID).toBe('B')
   })
@@ -237,6 +240,28 @@ describe('replaceRekordboxDuplicates with one copy in the collection', () => {
     expect(content('A')).toMatchObject({ FolderPath: TO, rb_local_deleted: 0 })
     expect(entry('e1').ContentID).toBe('A')
     expect(entry('e5')).toMatchObject({ ContentID: 'A', rb_local_deleted: 0 })
+  })
+
+  // Both rows would end on one file, which the collection would then hold twice.
+  it('repoints only the first removed copy onto a kept file and fails the next', async () => {
+    dbPath = await makeDb(false)
+    const second = join(dir, 'second.aiff')
+    await writeFile(second, Buffer.alloc(5))
+    const db = open(dbPath)
+    db.prepare(
+      `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, rb_local_deleted) VALUES ('C', ?, 'second.aiff', 12, 5, 0)`,
+    ).run(second)
+    db.close()
+    const results = await replaceRekordboxDuplicates(dbPath, [
+      { from: FROM, to: TO },
+      { from: second, to: TO },
+    ])
+    expect(results).toEqual([
+      { written: true, outcome: 'repointed' },
+      { written: false, reason: 'kept-taken' },
+    ])
+    expect(content('A').FolderPath).toBe(TO)
+    expect(content('C').FolderPath).toBe(second)
   })
 
   it('touches nothing when only the kept copy is there', async () => {

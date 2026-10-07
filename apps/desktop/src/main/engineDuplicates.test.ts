@@ -201,6 +201,20 @@ describe('replaceEngineDuplicates with one copy in the library', () => {
     expect(await walk(lib.dbPath, 2)).toEqual([2, 1, 3])
   })
 
+  // Engine allows one row per path (C_path), so a second repoint onto it cannot land.
+  it('repoints only the first removed copy onto a kept file and fails the next', async () => {
+    const lib = await library(false)
+    const [first, second] = await replaceEngineDuplicates(lib.dir, [
+      { from: lib.from, to: lib.to },
+      { from: join(lib.dir, '..', 'music', 'x.aiff'), to: lib.to },
+    ])
+    expect(first).toEqual({ written: true, outcome: 'repointed' })
+    expect(second).toEqual({ written: false, reason: 'kept-taken' })
+    expect(await rows(lib.dbPath, 'SELECT path FROM Track WHERE id = 3')).toEqual([
+      ['../music/x.aiff'],
+    ])
+  })
+
   it('touches nothing when the removed copy is not in the library', async () => {
     const lib = await library()
     const [r] = await replaceEngineDuplicates(lib.dir, [

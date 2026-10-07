@@ -589,7 +589,9 @@ export interface NmlLocation {
 export type NmlReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'failed'
 
 const COLLECTION_RE = /<COLLECTION\b[^>]*>[\s\S]*?<\/COLLECTION>/
-const PLAYLIST_RE = /<PLAYLIST\b[^>]*>[\s\S]*?<\/PLAYLIST>/g
+// An empty playlist can be written self-closed; without the first branch the match would
+// run on into the next playlist.
+const PLAYLIST_RE = /<PLAYLIST\b[^>]*?(?:\/>|>[\s\S]*?<\/PLAYLIST>)/g
 const ITEM_RE = /<ENTRY\b[^>]*>(?:(?!<\/ENTRY>)[\s\S])*<\/ENTRY>\r?\n?/g
 const ITEM_KEY_RE = /(<PRIMARYKEY\b[^>]*\sKEY=")([^"]*)(")/
 

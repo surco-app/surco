@@ -9,8 +9,10 @@ import { nextUsn, stamp } from './rekordboxTags'
 // When the user removes a duplicate copy from Music, rekordbox moves to the copy they kept.
 // With only the removed copy in the collection its row is repointed (rekordboxLibrary.ts),
 // so cues and playlists follow. With both, the removed copy's playlist entries move to the
-// kept row and the removed row goes. Removals are soft (rb_local_deleted = 1, a fresh usn)
-// so rekordbox's own sync sees them as local deletions and the rows stay recoverable.
+// kept row; an entry whose playlist already holds the kept copy is deleted, as rekordbox
+// deletes playlist entries itself. The removed copy's own row stays, with its cues: nothing
+// shows that rekordbox hides a row marked rb_local_deleted, so it is left out of every
+// playlist instead, and its file stays on disk.
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
 
@@ -25,13 +27,13 @@ export interface ReplaceOptions extends FindOptions {
   sessionBackup?: (path: string) => Promise<void>
 }
 
-function touch(db: Db, table: string, id: string, set: Record<string, unknown>): void {
-  const columns = { ...set, rb_local_usn: nextUsn(db), updated_at: stamp() }
+// One run is one operation for rekordbox: every row it touches carries the same usn.
+function touch(db: Db, usn: number, id: string, set: Record<string, unknown>): void {
+  const columns = { ...set, rb_local_usn: usn, updated_at: stamp() }
   const names = Object.keys(columns)
-  db.prepare(`UPDATE ${table} SET ${names.map((n) => `${n} = ?`).join(', ')} WHERE ID = ?`).run(
-    ...Object.values(columns),
-    id,
-  )
+  db.prepare(
+    `UPDATE djmdSongPlaylist SET ${names.map((n) => `${n} = ?`).join(', ')} WHERE ID = ?`,
+  ).run(...Object.values(columns), id)
 }
 
 interface Entry {
@@ -42,7 +44,7 @@ interface Entry {
 
 // Whether a playlist already holds the kept copy is read before anything moves, so a song
 // the DJ put in a playlist twice keeps both places.
-function replace(db: Db, fromId: string, toId: string): void {
+function replace(db: Db, usn: number, fromId: string, toId: string): void {
   const entries = db
     .prepare(
       `SELECT ID, PlaylistID, TrackNo FROM djmdSongPlaylist WHERE ContentID = ? AND ${LIVE} ORDER BY PlaylistID, TrackNo`,
@@ -57,13 +59,13 @@ function replace(db: Db, fromId: string, toId: string): void {
   )
   for (const entry of entries) {
     if (!holding.has(entry.PlaylistID)) {
-      touch(db, 'djmdSongPlaylist', entry.ID, { ContentID: toId })
+      touch(db, usn, entry.ID, { ContentID: toId })
       continue
     }
     const at = db.prepare(`SELECT TrackNo FROM djmdSongPlaylist WHERE ID = ?`).get(entry.ID) as {
       TrackNo: number | null
     }
-    touch(db, 'djmdSongPlaylist', entry.ID, { rb_local_deleted: 1 })
+    db.prepare(`DELETE FROM djmdSongPlaylist WHERE ID = ?`).run(entry.ID)
     if (at.TrackNo === null) continue
     // rekordbox numbers each playlist 1..n with no gaps; the real collection has none.
     const after = db
@@ -71,9 +73,8 @@ function replace(db: Db, fromId: string, toId: string): void {
         `SELECT ID, TrackNo FROM djmdSongPlaylist WHERE PlaylistID = ? AND TrackNo > ? AND ${LIVE}`,
       )
       .all(entry.PlaylistID, at.TrackNo) as { ID: string; TrackNo: number }[]
-    for (const row of after) touch(db, 'djmdSongPlaylist', row.ID, { TrackNo: row.TrackNo - 1 })
+    for (const row of after) touch(db, usn, row.ID, { TrackNo: row.TrackNo - 1 })
   }
-  touch(db, 'djmdContent', fromId, { rb_local_deleted: 1 })
 }
 
 export async function replaceRekordboxDuplicates(
@@ -96,8 +97,12 @@ export async function replaceRekordboxDuplicates(
         results[index] = { written: false, reason: 'ambiguous' }
       else if (source === null || source.id === kept?.id)
         results[index] = { written: false, reason: 'no-match' }
-      else if (kept === null) repoints.push(index)
-      else replaces.push({ index, fromId: source.id, toId: kept.id })
+      else if (kept === null) {
+        // A second removed copy onto the same kept file would leave two rows on one file.
+        if (repoints.some((i) => pairs[i].to === to))
+          results[index] = { written: false, reason: 'kept-taken' }
+        else repoints.push(index)
+      } else replaces.push({ index, fromId: source.id, toId: kept.id })
     }
   } finally {
     db.close()
@@ -141,7 +146,8 @@ async function writeReplaces(
   if (!write) return 'unreadable'
   try {
     write.transaction(() => {
-      for (const r of replaces) replace(write, r.fromId, r.toId)
+      const usn = nextUsn(write)
+      for (const r of replaces) replace(write, usn, r.fromId, r.toId)
     })()
     return null
   } catch (e) {

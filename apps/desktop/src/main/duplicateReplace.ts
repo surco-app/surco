@@ -9,7 +9,8 @@ import { TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
 // After the review removes duplicate copies from Music, each DJ library with its sync on
 // moves to the copy the user kept, and only then does a removed copy's file go to the
 // Trash: never a file the kept copy shares, never one a library step left behind, never
-// one a library still names.
+// one a library still names. rekordbox and Engine DJ keep the removed copy's track (out of
+// every playlist) when both copies were there, so that file always stays.
 
 export type ReplacePair = DuplicatePair & { shared: boolean }
 
@@ -133,9 +134,11 @@ export function replaceDuplicates(
       for (const [library, outcomes] of Object.entries(byLibrary))
         result[library as Library] = outcomes[index]
       const settled = Object.values(byLibrary).every((o) => SETTLED.has(o[index]))
+      const stillHeld =
+        byLibrary.rekordbox?.[index] === 'replaced' || byLibrary.engine?.[index] === 'replaced'
       // Fails closed: a library that cannot be read may still use the file, and a trashed
       // file shows there as a missing track with its cues out of reach.
-      if (!settled || (await deps.usedByLibrary(pair.from).catch(() => true))) {
+      if (!settled || stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) {
         result.keptForLibrary = true
         continue
       }

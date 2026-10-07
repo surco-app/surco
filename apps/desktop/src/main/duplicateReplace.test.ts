@@ -21,7 +21,7 @@ const step = (outcome: LibraryReplaceOutcome) =>
 
 function deps(over: Partial<ReplaceDuplicatesDeps> = {}): ReplaceDuplicatesDeps {
   return {
-    libraries: { rekordbox: step('replaced') },
+    libraries: { rekordbox: step('repointed') },
     usedByLibrary: vi.fn().mockResolvedValue(false),
     trash: vi.fn().mockResolvedValue(undefined),
     serial: (task) => task(),
@@ -37,11 +37,11 @@ describe('replaceDuplicates', () => {
       libraries: {
         rekordbox: vi.fn(async () => {
           calls.push('rekordbox')
-          return ['replaced' as const]
+          return ['repointed' as const]
         }),
         traktor: vi.fn(async () => {
           calls.push('traktor')
-          return ['repointed' as const]
+          return ['replaced' as const]
         }),
         engine: vi.fn(async () => {
           calls.push('engine')
@@ -59,8 +59,8 @@ describe('replaceDuplicates', () => {
     expect(await replaceDuplicates([PAIR], d)).toEqual([
       {
         from: PAIR.from,
-        rekordbox: 'replaced',
-        traktor: 'repointed',
+        rekordbox: 'repointed',
+        traktor: 'replaced',
         engine: 'none',
         fileTrashed: true,
         keptForLibrary: false,
@@ -80,6 +80,18 @@ describe('replaceDuplicates', () => {
     expect(d.libraries.rekordbox).not.toHaveBeenCalled()
     expect(d.trash).not.toHaveBeenCalled()
   })
+
+  // rekordbox and Engine keep the removed copy's track, out of every playlist, so its file
+  // is still theirs.
+  it.each(['rekordbox', 'engine'] as const)(
+    'keeps the file when %s still holds the removed copy',
+    async (library) => {
+      const d = deps({ libraries: { [library]: step('replaced') } })
+      const [r] = await replaceDuplicates([PAIR], d)
+      expect(r).toMatchObject({ [library]: 'replaced', fileTrashed: false, keptForLibrary: true })
+      expect(d.trash).not.toHaveBeenCalled()
+    },
+  )
 
   // A library left on the removed file would show a missing track if the file went.
   it.each(['skipped', 'failed'] as const)('keeps the file when a library step is %s', async (o) => {
@@ -111,7 +123,7 @@ describe('replaceDuplicates', () => {
   it('keeps the file a library still uses afterwards', async () => {
     const d = deps({ usedByLibrary: vi.fn().mockResolvedValue(true) })
     expect(await replaceDuplicates([PAIR], d)).toEqual([
-      { from: PAIR.from, rekordbox: 'replaced', fileTrashed: false, keptForLibrary: true },
+      { from: PAIR.from, rekordbox: 'repointed', fileTrashed: false, keptForLibrary: true },
     ])
     expect(d.trash).not.toHaveBeenCalled()
   })

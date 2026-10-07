@@ -92,8 +92,12 @@ export async function replaceEngineDuplicates(
         results[index] = { written: false, reason: 'ambiguous' }
       else if (source.length === 0 || source[0].id === kept[0]?.id)
         results[index] = { written: false, reason: 'no-match' }
-      else if (kept.length === 0) repoints.push(index)
-      else replaces.push({ index, fromId: source[0].id, toId: kept[0].id })
+      else if (kept.length === 0) {
+        // Engine holds one row per path, so only the first removed copy can move onto it.
+        if (repoints.some((i) => pairs[i].to === to))
+          results[index] = { written: false, reason: 'kept-taken' }
+        else repoints.push(index)
+      } else replaces.push({ index, fromId: source[0].id, toId: kept[0].id })
     }
 
     if (replaces.length > 0) {

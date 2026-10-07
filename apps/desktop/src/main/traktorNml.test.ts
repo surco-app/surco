@@ -1139,6 +1139,33 @@ describe('replaceDuplicateInNml', () => {
     })
   })
 
+  // The first removed copy takes the kept file's place; the next one finds it there and
+  // hands over its playlists, so the collection never names the kept file twice.
+  it('replaces a second removed copy once the first was repointed onto the kept file', () => {
+    const two = nml(false).replace(
+      '<ENTRY TITLE="X">',
+      `<ENTRY TITLE="Other">\n<LOCATION DIR="/:Music/:Other/:" FILE="this rap.aiff" VOLUME="Public" VOLUMEID="Public"></LOCATION>\n</ENTRY>\n<ENTRY TITLE="X">`,
+    )
+    const first = replaceDuplicateInNml(two, { from, to })
+    const second = replaceDuplicateInNml(first.nml, {
+      from: { ...from, dir: '/:Music/:Other/:' },
+      to,
+    })
+    expect([first.outcome, second.outcome]).toEqual(['repointed', 'replaced'])
+    expect(findEntries(second.nml).filter((e) => e.dir === to.dir)).toHaveLength(1)
+  })
+
+  it('leaves an empty self-closing playlist and the one after it alone', () => {
+    const doc = nml(true).replace(
+      '<NODE TYPE="PLAYLIST" NAME="B">',
+      '<NODE TYPE="PLAYLIST" NAME="E">\n<PLAYLIST ENTRIES="0" TYPE="LIST" UUID="E"/>\n</NODE>\n<NODE TYPE="PLAYLIST" NAME="B">',
+    )
+    const { nml: out } = replaceDuplicateInNml(doc, { from, to })
+    expect(out).toContain('<PLAYLIST ENTRIES="0" TYPE="LIST" UUID="E"/>')
+    expect(keysOf(out, 'A')).toEqual({ count: '2', keys: [TO_KEY, OTHER] })
+    expect(keysOf(out, 'B')).toEqual({ count: '2', keys: [TO_KEY, OTHER] })
+  })
+
   it('keeps names with XML entities intact', () => {
     const doc = nml(true).replaceAll('this rap', 'R&amp;B')
     const { nml: out } = replaceDuplicateInNml(doc, {
