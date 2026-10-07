@@ -65,6 +65,22 @@ function distance(a: string, b: string, limit: number): number {
   return prev[b.length]
 }
 
+const ACT_TITLE = /^(?:dj|mc)\s+(?=\S)/i
+
+interface Cluster {
+  key: string
+  bare: string | null
+}
+
+function bareKey(value: string): string | null {
+  return ACT_TITLE.test(value) ? punctuationKey(value.replace(ACT_TITLE, '')) : null
+}
+
+// Names after DJ or MC are short and differ by one letter between real people (DJ Napo, DJ Nano).
+function isClusterTypo(a: Cluster, b: Cluster): boolean {
+  return a.bare !== null && b.bare !== null ? isTypoPair(a.bare, b.bare) : isTypoPair(a.key, b.key)
+}
+
 function isTypoPair(a: string, b: string): boolean {
   const shorter = Math.min(a.length, b.length)
   if (shorter < 5) return false
@@ -150,8 +166,19 @@ function kindOf(variants: SpellingVariant[]): SpellingKind {
   return new Set(variants.map((v) => caseKey(v.value))).size === 1 ? 'case' : 'punctuation'
 }
 
+function representative(variants: SpellingVariant[]): SpellingVariant {
+  const suggested = suggest(variants)
+  return variants.find((v) => v.value === suggested) ?? variants[0]
+}
+
 function typoGroups(field: MusicReviewField, scope: string, clusters: Bucket): SpellingGroup[] {
   const keys = [...clusters.keys()]
+  const reps = new Map(
+    keys.map((k) => [k, representative(variantsOf(clusters.get(k) as Map<string, Set<string>>))]),
+  )
+  const info = new Map<string, Cluster>(
+    keys.map((k) => [k, { key: k, bare: bareKey((reps.get(k) as SpellingVariant).value) }]),
+  )
   const parent = new Map(keys.map((k) => [k, k]))
   const find = (k: string): string => {
     const p = parent.get(k) as string
@@ -170,7 +197,8 @@ function typoGroups(field: MusicReviewField, scope: string, clusters: Bucket): S
     for (let len = a.length; len <= a.length + 2; len++) {
       for (const b of byLength.get(len) ?? []) {
         if (b <= a && len === a.length) continue
-        if (isTypoPair(a, b)) parent.set(find(a), find(b))
+        if (isClusterTypo(info.get(a) as Cluster, info.get(b) as Cluster))
+          parent.set(find(a), find(b))
       }
     }
   }
@@ -184,9 +212,12 @@ function typoGroups(field: MusicReviewField, scope: string, clusters: Bucket): S
   return [...sets.values()]
     .filter((members) => members.length > 1)
     .map((members) => {
-      const variants = variantsOf(
-        ...members.map((k) => clusters.get(k) as Map<string, Set<string>>),
-      )
+      const variants = members
+        .map((k) => reps.get(k) as SpellingVariant)
+        .sort(
+          (a, b) =>
+            b.persistentIds.length - a.persistentIds.length || a.value.localeCompare(b.value),
+        )
       return {
         key: groupKey(field, scope, members, 'typo'),
         field,

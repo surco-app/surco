@@ -196,10 +196,10 @@ describe('useMusicReview', () => {
       loadMusicReview: vi
         .fn()
         .mockResolvedValue([
-          e('A', 'Dj Lara'),
-          e('B', 'DJ Lara'),
-          e('C', 'dj lara'),
-          e('D', 'DJ Larra'),
+          e('A', 'Alex Cervera'),
+          e('B', 'Álex Cervera'),
+          e('C', 'Álex Cervera'),
+          e('D', 'Álex Cevera'),
         ]),
     })
     const { result } = await ready()

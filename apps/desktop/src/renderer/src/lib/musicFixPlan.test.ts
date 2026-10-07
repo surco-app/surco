@@ -77,6 +77,22 @@ describe('planFixes', () => {
   })
 })
 
+describe('planFixes on a typo group', () => {
+  it('changes only the tracks of the misspelled representative, not its other spellings', () => {
+    const entries = [
+      e('A', { artist: 'Álex Cervera' }),
+      e('B', { artist: 'Álex Cervera' }),
+      e('C', { artist: 'Alex Cervera' }),
+      e('D', { artist: 'Álex Cevera' }),
+    ]
+    const typo = spellingGroups(entries).find((g) => g.kind === 'typo')
+    if (!typo) throw new Error('no typo group')
+    expect(planFixes(entries, [{ group: typo, to: 'Álex Cervera' }])).toEqual([
+      { persistentId: 'D', field: 'artist', from: 'Álex Cevera', to: 'Álex Cervera' },
+    ])
+  })
+})
+
 describe('summarizeFixes', () => {
   it('counts tracks once and changes per field', () => {
     expect(

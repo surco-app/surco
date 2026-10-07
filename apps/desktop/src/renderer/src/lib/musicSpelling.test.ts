@@ -134,6 +134,69 @@ describe('spellingGroups', () => {
     expect(g.suggested).toBeNull()
   })
 
+  it('does not swallow a safe case fix into a typo group, and keeps two DJs apart', () => {
+    const groups = spellingGroups([
+      ...many(4, { artist: 'DJ Napo' }),
+      ...many(1, { artist: 'Dj Napo' }),
+      ...many(2, { artist: 'DJ Nano' }),
+    ])
+    const artists = byField(groups, 'artist')
+    expect(artists).toHaveLength(1)
+    expect(artists[0].kind).toBe('case')
+    expect(artists[0].variants.map((v) => v.value).sort()).toEqual(['DJ Napo', 'Dj Napo'])
+  })
+
+  it('lists one variant per cluster in a typo group, leaving the accent fix to its own group', () => {
+    const groups = byField(
+      spellingGroups([
+        ...many(6, { artist: 'Álex Cervera' }),
+        ...many(2, { artist: 'Alex Cervera' }),
+        ...many(1, { artist: 'Álex Cevera' }),
+      ]),
+      'artist',
+    )
+    const safe = groups.find((g) => g.kind === 'case')
+    const typo = groups.find((g) => g.kind === 'typo')
+    expect(safe?.variants.map((v) => v.value).sort()).toEqual(['Alex Cervera', 'Álex Cervera'])
+    expect(typo?.variants.map((v) => [v.value, v.persistentIds.length])).toEqual([
+      ['Álex Cervera', 6],
+      ['Álex Cevera', 1],
+    ])
+  })
+
+  it('does not treat short names after a DJ or MC prefix as typos', () => {
+    const pairs = [
+      ['DJ Kim', 'DJ Tim'],
+      ['DJ Jan', 'DJ Jean'],
+      ['DJ Ben', 'DJ Nen'],
+      ['DJ Miho', 'DJ Miko'],
+      ['MC Kim', 'Mc Tim'],
+    ]
+    for (const [a, b] of pairs)
+      expect(spellingGroups([entry({ artist: a }), entry({ artist: b })]), `${a}/${b}`).toEqual([])
+  })
+
+  it('still compares the full name when only one side has the prefix, or the prefix is inside a word', () => {
+    expect(
+      byField(spellingGroups([entry({ artist: 'Djago' }), entry({ artist: 'Djaga' })]), 'artist'),
+    ).toHaveLength(1)
+    expect(
+      byField(
+        spellingGroups([entry({ artist: 'DJ Rachel' }), entry({ artist: 'Rahcel' })]),
+        'artist',
+      ),
+    ).toEqual([])
+    expect(
+      byField(
+        spellingGroups([
+          entry({ artist: 'Djangoo Reinhardt' }),
+          entry({ artist: 'Djongoo Reinhardt' }),
+        ]),
+        'artist',
+      ),
+    ).toHaveLength(1)
+  })
+
   it('does not call two names a typo when their numbers differ', () => {
     expect(
       spellingGroups([entry({ album: 'Hits Vol 1' }), entry({ album: 'Hits Vol 2' })]),
