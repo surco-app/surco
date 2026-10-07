@@ -1461,6 +1461,267 @@
             "anchor": "editor"
           }
         ]
+      },
+      {
+        "id": "to-aiff",
+        "title": "Pasa tu colección a AIFF sin perder los cue points",
+        "body": [
+          "Tienes la música en FLAC o WAV y tu programa de DJ o tus CDJ prefieren AIFF, que además guarda la carátula. Quieres convertirlo todo de una vez y que tus cue points sigan donde estaban.",
+          "El sonido no pierde nada. Pasar de FLAC o WAV a AIFF es sin pérdida."
+        ],
+        "settings": [
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "AIFF",
+            "note": "Todo lo que conviertas saldrá en AIFF."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Mantener MP3 y M4A como están",
+            "note": "Un MP3 no gana calidad al pasar a AIFF, solo ocupa más. Así se queda como está."
+          },
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Junto al original",
+            "note": "El AIFF se guarda en la misma carpeta y el original no se toca."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de rekordbox",
+            "setting": "Actualizar la colección de rekordbox al convertir",
+            "optional": true,
+            "note": "Si usas rekordbox. La pista pasa al AIFF sin salir de sus playlists."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de Traktor",
+            "setting": "collection.nml",
+            "value": "Usar este",
+            "optional": true,
+            "note": "Si usas Traktor. Surco te propone tu colección y con esto Traktor ve los cue points en el AIFF."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Cierra rekordbox y Traktor",
+            "text": "Solo si los usas. Con ellos abiertos Surco no puede tocar sus colecciones, y se ofrece a cerrarlos."
+          },
+          {
+            "title": "Arrastra la carpeta a Surco",
+            "text": "También entran las pistas de sus subcarpetas."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Es el botón de la barra de arriba. Convierte todas las pistas de la lista de una vez."
+          },
+          {
+            "title": "Decide qué hacer con los originales",
+            "text": "Al acabar, Surco puede mandarlos a la papelera de una sola vez. Si prefieres guardarlos, no pulses nada."
+          }
+        ],
+        "points": [
+          "Los cue points de Traktor pasan al AIFF desde MP3, FLAC y WAV.",
+          "En ALAC no hay sitio para los cue points. Por eso esta receta usa AIFF.",
+          "Quita antes de la lista las pistas que ya sean AIFF. Si no, Surco hace otra copia con «(2)» en el nombre."
+        ],
+        "related": [
+          {
+            "label": "Convierte la pista",
+            "anchor": "convertir"
+          },
+          {
+            "label": "Que Traktor vea de verdad tus cambios",
+            "anchor": "traktor"
+          }
+        ]
+      },
+      {
+        "id": "check-quality",
+        "title": "Comprueba la calidad de lo que has comprado o descargado",
+        "body": [
+          "Te has bajado un pack o has comprado música y quieres saber si es lo que dice ser. Por ejemplo, un FLAC que en realidad viene de un MP3.",
+          "Esta receta no cambia nada. Surco solo mira y te dice qué ha encontrado."
+        ],
+        "settings": [
+          {
+            "tab": "Editor",
+            "setting": "Análisis de calidad de audio",
+            "note": "Viene activado. Es el que mira el espectro de cada pista."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Analizar todo al importar",
+            "note": "Viene activado. Analiza cada pista nada más entrar, sin que pulses nada."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra la carpeta a Surco",
+            "text": "También entran las pistas de sus subcarpetas."
+          },
+          {
+            "title": "Espera a que acabe el análisis",
+            "text": "Arriba verás «Analizando calidad…» con un contador."
+          },
+          {
+            "title": "Filtra por «Dudosas»",
+            "text": "En el filtro de la lista. Son las pistas en las que Surco ha encontrado algo."
+          },
+          {
+            "title": "Abre una para ver por qué",
+            "text": "El editor enseña el espectro y explica el veredicto con números medidos."
+          }
+        ],
+        "points": [
+          "En rojo solo salen «Fuente con pérdidas» y «Mala calidad».",
+          "«Posible reprocesado» sale en ámbar porque es una sospecha, no una prueba.",
+          "Un MP3 nunca sale como mala calidad. Que corte los agudos es propio del formato.",
+          "Mientras no pulses «Convertir», Surco no escribe nada en tus archivos."
+        ],
+        "related": [
+          {
+            "label": "Comprueba la calidad real",
+            "anchor": "calidad"
+          },
+          {
+            "label": "Conoce la lista de pistas",
+            "anchor": "lista"
+          }
+        ]
+      },
+      {
+        "id": "vinyl",
+        "title": "Digitaliza tus vinilos",
+        "body": [
+          "Has grabado tus discos en el ordenador y quieres dejarlos listos para pinchar. Sin clics de la aguja, sin silencio al principio y al final, y con sus datos de Discogs.",
+          "Surco no corta una cara entera en pistas. Necesitas un archivo por tema."
+        ],
+        "settings": [
+          {
+            "tab": "Procesado",
+            "setting": "Reparación de clicks de vinilo",
+            "value": "Estándar",
+            "note": "Quita los clics cortos de la aguja al convertir."
+          },
+          {
+            "tab": "Búsqueda",
+            "setting": "Mostrar solo estos formatos",
+            "value": "Vinyl",
+            "note": "Así Discogs te enseña la edición en vinilo y no la del CD."
+          },
+          {
+            "tab": "Procesado",
+            "setting": "Igualar volumen",
+            "value": "−1 dBFS",
+            "optional": true,
+            "note": "Sube cada pista hasta que su pico más alto quede en −1 dBFS. No comprime nada."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra tus grabaciones a Surco",
+            "text": "Un archivo por tema."
+          },
+          {
+            "title": "Etiqueta el disco entero de una vez",
+            "text": "Selecciona todas sus pistas y busca el disco con /. Surco reparte cada archivo en su canción, con su posición A1, B2."
+          },
+          {
+            "title": "Recorta el silencio",
+            "text": "Abre la paleta con ⌘K y elige «Recortar el silencio detectado en la selección»."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "La reparación de clics y el volumen se aplican al convertir."
+          }
+        ],
+        "points": [
+          "Antes de convertir puedes escuchar la reparación y compararla con el original en la sección de clics del editor.",
+          "Si un tema tiene muchos clics grandes, prueba «Fuerte». Puede suavizar un poco los golpes.",
+          "Un clic tapado por mucha música a la vez a veces se escapa."
+        ],
+        "related": [
+          {
+            "label": "Quita los clics del vinilo",
+            "anchor": "declick"
+          },
+          {
+            "label": "Recorta el silencio",
+            "anchor": "recorte"
+          },
+          {
+            "label": "Empareja un disco entero",
+            "anchor": "album"
+          }
+        ]
+      },
+      {
+        "id": "usb",
+        "title": "Prepara un USB para el club",
+        "body": [
+          "Quieres llevarte una selección en un USB, con nombres claros y en un formato que lea cualquier CDJ. Tus archivos de casa no se tocan."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Carpeta de salida",
+            "note": "Debajo te deja elegir la carpeta. Elige tu USB."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "AIFF",
+            "note": "Lo lee cualquier CDJ. Si te falta espacio, elige MP3 y en «Calidad MP3» elige 320."
+          },
+          {
+            "tab": "Nombres",
+            "setting": "Aplicar el patrón automáticamente",
+            "optional": true,
+            "note": "Pone a cada archivo un nombre a partir de sus datos. El patrón se edita justo encima, y una / crea carpetas."
+          },
+          {
+            "tab": "Procesado",
+            "setting": "Igualar volumen",
+            "value": "Club −9",
+            "optional": true,
+            "note": "Deja todas las pistas a un volumen parecido. Para llegar, a veces limita los picos y se pierde algo de pegada."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Conecta el USB",
+            "text": "Tiene que ser la misma carpeta que elegiste en los ajustes."
+          },
+          {
+            "title": "Arrastra las pistas a Surco",
+            "text": "Las de tu selección, de donde las tengas."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Es el botón de la barra de arriba. Las copias van al USB y los originales se quedan como estaban."
+          },
+          {
+            "title": "Expulsa el USB",
+            "text": "Desde el Finder o el Explorador, antes de desconectarlo."
+          }
+        ],
+        "points": [
+          "Los archivos de casa no cambian. Todo lo que hace Surco va a la copia del USB.",
+          "Si vuelves a usar Surco para casa, recuerda poner el destino de antes en los ajustes."
+        ],
+        "related": [
+          {
+            "label": "Nombra y ordena los archivos",
+            "anchor": "nombres"
+          },
+          {
+            "label": "Convierte la pista",
+            "anchor": "convertir"
+          }
+        ]
       }
     ]
   }
