@@ -1500,6 +1500,7 @@
     "notSame": "No es el mismo",
     "different": "Son distintas",
     "keeps": "Se queda",
+    "removes": "Se quita",
     "removedNoUndo": "Las copias quitadas no vuelven con Deshacer. Sus ficheros quedan en la Papelera.",
     "tracks_one": "{{count}} pista",
     "tracks_other": "{{count}} pistas",
@@ -1561,6 +1562,13 @@
       "duration": "Duración",
       "noFile": "Sin fichero",
       "unchecked": "Fichero sin comprobar",
+      "sameFile": "Mismo fichero",
+      "notIn": "No está en {{library}}",
+      "cues_one": "{{count}} cue",
+      "cues_other": "{{count}} cues",
+      "playlists_one": "{{count}} playlist",
+      "playlists_other": "{{count}} playlists",
+      "cuesNote": "Las cues de la copia que se quita no pasan a la que se queda.",
       "librariesNote": "Las bibliotecas solo cambian si aún tienen el valor de antes."
     },
     "where": {

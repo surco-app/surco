@@ -1,11 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { LibraryCopyInfo, LibraryCopyPresence } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { absolute } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
-import { findTrackByPath, openRekordboxDb } from './rekordboxDb'
-import { findEntries } from './traktorNml'
+import { findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
+import { findEntries, nmlCopyInfo } from './traktorNml'
 
 // Each library's location, or '' when its sync is off.
 export interface SyncedLibraries {
@@ -57,4 +58,91 @@ export async function usedByDjLibrary(
       return true
   }
   return false
+}
+
+const LIVE = '(rb_local_deleted IS NULL OR rb_local_deleted = 0)'
+
+function rekordboxInfo(
+  collection: string,
+  paths: string[],
+  options: PathMatchOptions,
+): LibraryCopyPresence[] {
+  const db = openRekordboxDb(collection, { readonly: true })
+  if (!db) throw new Error(`rekordbox collection unreadable: ${collection}`)
+  try {
+    return paths.map((path) => {
+      const match = findTrackByPath(db, path, options)
+      if (match === null || isAmbiguous(match)) return null
+      const count = (sql: string) => (db.prepare(sql).get(match.id) as { n: number }).n
+      return {
+        cues: count(`SELECT count(*) AS n FROM djmdCue WHERE ContentID = ? AND ${LIVE}`),
+        playlists: count(
+          `SELECT count(DISTINCT PlaylistID) AS n FROM djmdSongPlaylist WHERE ContentID = ? AND ${LIVE}`,
+        ),
+      }
+    })
+  } finally {
+    db.close()
+  }
+}
+
+async function engineInfo(
+  libraryDir: string,
+  paths: string[],
+  options: PathMatchOptions,
+): Promise<LibraryCopyPresence[]> {
+  const SQL = await loadSqlJs()
+  const db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+  try {
+    const key = pathKey(options)
+    const rows = (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(([id, stored]) => ({
+      id: Number(id),
+      key: key(absolute(libraryDir, String(stored))),
+    }))
+    return paths.map((path) => {
+      const target = key(path.normalize('NFC'))
+      const found = rows.filter((r) => r.key === target)
+      if (found.length !== 1) return null
+      const lists = db.exec('SELECT count(DISTINCT listId) FROM PlaylistEntity WHERE trackId = ?', [
+        found[0].id,
+      ])
+      return { playlists: Number(lists[0]?.values[0][0] ?? 0) }
+    })
+  } finally {
+    db.close()
+  }
+}
+
+// Read only, for the duplicate detail: what each enabled library holds for each copy. A
+// library that cannot be read is left out rather than reported, since this only informs.
+export async function libraryCopyInfo(
+  paths: string[],
+  libraries: SyncedLibraries,
+  options: PathMatchOptions = {},
+): Promise<Record<string, LibraryCopyInfo>> {
+  const info: Record<string, LibraryCopyInfo> = Object.fromEntries(paths.map((p) => [p, {}]))
+  const fill = (library: keyof LibraryCopyInfo, found: LibraryCopyPresence[]) =>
+    paths.forEach((p, i) => {
+      info[p][library] = found[i]
+    })
+  if (libraries.rekordbox) {
+    try {
+      fill('rekordbox', rekordboxInfo(libraries.rekordbox, paths, options))
+    } catch {}
+  }
+  if (libraries.engine) {
+    try {
+      fill('engine', await engineInfo(libraries.engine, paths, options))
+    } catch {}
+  }
+  if (libraries.traktor) {
+    try {
+      const nml = await readFile(libraries.traktor, 'utf8')
+      fill(
+        'traktor',
+        paths.map((p) => nmlCopyInfo(nml, toNmlLocation(p))),
+      )
+    } catch {}
+  }
+  return info
 }

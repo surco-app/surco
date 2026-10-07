@@ -1500,6 +1500,7 @@
     "notSame": "Não é o mesmo",
     "different": "São diferentes",
     "keeps": "Fica",
+    "removes": "Sai",
     "removedNoUndo": "As cópias removidas não voltam com Desfazer. Os arquivos ficam na Lixeira.",
     "tracks_one": "{{count}} faixa",
     "tracks_other": "{{count}} faixas",
@@ -1561,6 +1562,13 @@
       "duration": "Duração",
       "noFile": "Sem arquivo",
       "unchecked": "Arquivo não verificado",
+      "sameFile": "Mesmo arquivo",
+      "notIn": "Não está no {{library}}",
+      "cues_one": "{{count}} cue",
+      "cues_other": "{{count}} cues",
+      "playlists_one": "{{count}} playlist",
+      "playlists_other": "{{count}} playlists",
+      "cuesNote": "As cues da cópia que sai não passam para a que fica.",
       "librariesNote": "As bibliotecas só mudam se ainda tiverem o valor anterior."
     },
     "where": {

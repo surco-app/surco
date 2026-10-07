@@ -157,6 +157,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     cancelMusicFixes: async () => {},
     syncLibraryTags: async () => {},
     replaceDuplicatesInLibraries: async () => [],
+    libraryCopyInfo: async () => ({}),
     setMusicField: async () => 'missing',
     removeMusicDuplicate: async () => ({ outcome: 'missing', playlists: 0, fileTrashed: false }),
     onMusicFixProgress: unsubscribe,

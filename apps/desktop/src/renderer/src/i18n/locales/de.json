@@ -1500,6 +1500,7 @@
     "notSame": "Nicht derselbe",
     "different": "Sind verschieden",
     "keeps": "Bleibt",
+    "removes": "Wird entfernt",
     "removedNoUndo": "Entfernte Kopien kommen mit Rückgängig nicht zurück. Ihre Dateien bleiben im Papierkorb.",
     "tracks_one": "{{count}} Titel",
     "tracks_other": "{{count}} Titel",
@@ -1561,6 +1562,13 @@
       "duration": "Dauer",
       "noFile": "Keine Datei",
       "unchecked": "Datei nicht geprüft",
+      "sameFile": "Dieselbe Datei",
+      "notIn": "Nicht in {{library}}",
+      "cues_one": "{{count}} Cue",
+      "cues_other": "{{count}} Cues",
+      "playlists_one": "{{count}} Playlist",
+      "playlists_other": "{{count}} Playlists",
+      "cuesNote": "Die Cues der entfernten Kopie gehen nicht auf die behaltene über.",
       "librariesNote": "Die Bibliotheken ändern sich nur, wenn sie noch den alten Wert haben."
     },
     "where": {

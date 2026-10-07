@@ -1,10 +1,11 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   DuplicateCard,
   MusicReview as Review,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
-import type { MusicReviewEntry } from '../../../shared/types'
+import type { LibraryCopyInfo, MusicReviewEntry } from '../../../shared/types'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { fieldsLabel, GHOST, PRIMARY } from './MusicReview'
 
@@ -229,9 +230,70 @@ function SpellingDetail({
   )
 }
 
+const LIBRARIES = [
+  ['rekordbox', 'rekordbox'],
+  ['engine', 'Engine DJ'],
+  ['traktor', 'Traktor'],
+] as const
+
+const samePath = (a: string, b: string) =>
+  a.normalize('NFC').toLowerCase() === b.normalize('NFC').toLowerCase()
+
+function CopyLibraries({ info }: { info: LibraryCopyInfo | undefined }) {
+  const { t } = useTranslation()
+  if (!info) return null
+  return LIBRARIES.flatMap(([library, name]) => {
+    const presence = info[library]
+    if (presence === undefined) return []
+    const text =
+      presence === null
+        ? t('musicReview.detail.notIn', { library: name })
+        : [
+            name,
+            ...(presence.cues === undefined
+              ? []
+              : [t('musicReview.detail.cues', { count: presence.cues })]),
+            ...(presence.playlists === undefined
+              ? []
+              : [t('musicReview.detail.playlists', { count: presence.playlists })]),
+          ].join(' · ')
+    return [
+      <p key={library} data-testid="music-review-copy-library" className="text-xs text-fg-dim">
+        {text}
+      </p>,
+    ]
+  })
+}
+
+// Read when the detail opens, so a library changed since the review loaded is current.
+function useCopyInfo(paths: string[]): Record<string, LibraryCopyInfo> {
+  const [info, setInfo] = useState<Record<string, LibraryCopyInfo>>({})
+  const key = paths.join('\0')
+  useEffect(() => {
+    let live = true
+    setInfo({})
+    if (key)
+      window.api.libraryCopyInfo(key.split('\0')).then(
+        (found) => {
+          if (live) setInfo(found)
+        },
+        () => {},
+      )
+    return () => {
+      live = false
+    }
+  }, [key])
+  return info
+}
+
 function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review }) {
   const { t } = useTranslation()
   const { group, entries, formats, locations } = card
+  const info = useCopyInfo(entries.flatMap((e) => locations[e.persistentId] || []))
+  const cuesStay = LIBRARIES.some(
+    ([library]) =>
+      entries.filter((e) => info[locations[e.persistentId] ?? '']?.[library]).length > 1,
+  )
   const busy = review.status === 'applying'
   const keep = review.choice(group.key)
   const anyFile = entries.some((e) => locations[e.persistentId] !== '')
@@ -285,6 +347,12 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
               : noFile
                 ? t('musicReview.detail.noFile')
                 : tail(path)
+          const sameFile =
+            !!path &&
+            entries.some(
+              (o) =>
+                o !== e && !!locations[o.persistentId] && samePath(locations[o.persistentId], path),
+            )
           const cells = [
             ['field.album', e.album, differs((c) => c.album)],
             ['field.genre', e.genre, differs((c) => c.genre)],
@@ -309,8 +377,18 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
                     onChange={() => review.choose(group.key, e.persistentId)}
                     className="accent-[var(--color-accent)]"
                   />
-                  {t('musicReview.keeps')}
+                  <span data-testid="music-review-copy-role">
+                    {t(keep === e.persistentId ? 'musicReview.keeps' : 'musicReview.removes')}
+                  </span>
                 </label>
+                {sameFile && (
+                  <span
+                    data-testid="music-review-same-file"
+                    className="rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim"
+                  >
+                    {t('musicReview.detail.sameFile')}
+                  </span>
+                )}
                 <span
                   data-differs={differs((c) => formats[c.persistentId] ?? '') || undefined}
                   className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.persistentId] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
@@ -335,10 +413,16 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
                   {file}
                 </dd>
               </dl>
+              <CopyLibraries info={path ? info[path] : undefined} />
             </div>
           )
         })}
       </div>
+      {cuesStay && (
+        <p data-testid="music-review-cues-note" className="text-xs text-fg-faint">
+          {t('musicReview.detail.cuesNote')}
+        </p>
+      )}
     </>
   )
 }

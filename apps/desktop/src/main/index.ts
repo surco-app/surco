@@ -85,7 +85,7 @@ import { registerFeedbackIpc } from './feedback'
 import { convertAudio, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
-import { usedByDjLibrary } from './libraryFileUse'
+import { libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags } from './libraryTagSync'
@@ -1031,6 +1031,21 @@ function registerIpc(): void {
       },
       warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     })
+  })
+
+  // Read only, for the duplicate detail: what each enabled library holds for each copy.
+  ipcMain.handle('library:copyInfo', async (e, paths: string[]) => {
+    if (process.platform !== 'darwin' || paths.length === 0) return {}
+    const win = BrowserWindow.fromWebContents(e.sender)
+    return libraryCopyInfo(
+      paths,
+      {
+        rekordbox: rekordboxFlushDeps(win, e.sender).collectionPath,
+        engine: engineFlushDeps(win, e.sender).collectionPath,
+        traktor: traktorFlushDeps(win).traktorNmlPath,
+      },
+      { realPath: (p: string) => realpathSync(p) },
+    )
   })
 
   // A review removed duplicate copies from Music: each library with its sync on moves to the

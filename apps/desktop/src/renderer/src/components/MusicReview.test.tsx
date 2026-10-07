@@ -2,11 +2,13 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { MusicReview } from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
+import type { Api } from '../../../preload/api'
+import { stubApi } from '../test/api'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
 afterEach(cleanup)
@@ -601,6 +603,87 @@ describe('MusicReview', () => {
     })
     const dupReview = (locations: Record<string, string>, keep = '2') =>
       review({ spelling: [], duplicates: [card(locations)], choice: () => keep })
+    const setApi = (over: Partial<Api> = {}) => {
+      const api = stubApi(over)
+      ;(window as unknown as { api: Api }).api = api
+      return api
+    }
+
+    beforeEach(() => setApi())
+
+    // The screenshot showed "Kept" on both cards, so nothing said which one goes.
+    it('labels the copy that stays and the one that goes', () => {
+      render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
+      const roles = screen.getAllByTestId('music-review-copy-role').map((r) => r.textContent)
+      expect(roles).toEqual(['Removed', 'Kept'])
+    })
+
+    // Two Music entries on one file: removing one leaves the audio where it is.
+    it('says when both copies are the same file', () => {
+      render(
+        <Panes review={dupReview({ '1': '/Music/Ann/Song.aiff', '2': '/music/ann/song.aiff' })} />,
+      )
+      expect(screen.getAllByTestId('music-review-same-file')).toHaveLength(2)
+      expect(screen.getAllByTestId('music-review-same-file')[0]).toHaveTextContent('Same file')
+    })
+
+    it('says nothing about the file when the copies have different files', () => {
+      render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
+      expect(screen.queryByTestId('music-review-same-file')).toBeNull()
+    })
+
+    it('shows what each DJ library holds for each copy and warns that cues do not move', async () => {
+      const libraryCopyInfo = vi.fn<Api['libraryCopyInfo']>().mockResolvedValue({
+        '/a/1.aiff': { rekordbox: { cues: 11, playlists: 4 }, traktor: null },
+        '/a/2.aiff': {
+          rekordbox: { cues: 1, playlists: 1 },
+          traktor: { cues: 0, playlists: 2 },
+          engine: { playlists: 2 },
+        },
+      })
+      setApi({ libraryCopyInfo })
+      render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
+      const [first, second] = screen.getAllByTestId('music-review-copy')
+      await within(first).findAllByTestId('music-review-copy-library')
+      expect(libraryCopyInfo).toHaveBeenCalledWith(['/a/1.aiff', '/a/2.aiff'])
+      expect(
+        within(first)
+          .getAllByTestId('music-review-copy-library')
+          .map((l) => l.textContent),
+      ).toEqual(['rekordbox · 11 cues · 4 playlists', 'Not in Traktor'])
+      expect(
+        within(second)
+          .getAllByTestId('music-review-copy-library')
+          .map((l) => l.textContent),
+      ).toEqual([
+        'rekordbox · 1 cue · 1 playlist',
+        'Engine DJ · 2 playlists',
+        'Traktor · 0 cues · 2 playlists',
+      ])
+      expect(screen.getByTestId('music-review-cues-note')).toHaveTextContent(
+        "The removed copy's cues don't move to the one that stays.",
+      )
+    })
+
+    it('leaves out the cues note when no library has both copies', async () => {
+      setApi({
+        libraryCopyInfo: vi.fn<Api['libraryCopyInfo']>().mockResolvedValue({
+          '/a/1.aiff': { rekordbox: { cues: 3, playlists: 1 } },
+          '/a/2.aiff': { rekordbox: null },
+        }),
+      })
+      render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
+      await screen.findByText('Not in rekordbox')
+      expect(screen.queryByTestId('music-review-cues-note')).toBeNull()
+    })
+
+    it('shows no library line when the libraries cannot be read', async () => {
+      const libraryCopyInfo = vi.fn<Api['libraryCopyInfo']>().mockRejectedValue(new Error('x'))
+      setApi({ libraryCopyInfo })
+      render(<Panes review={dupReview({ '1': '/a/1.aiff', '2': '/a/2.aiff' })} />)
+      await vi.waitFor(() => expect(libraryCopyInfo).toHaveBeenCalled())
+      expect(screen.queryByTestId('music-review-copy-library')).toBeNull()
+    })
 
     // Keeping the copy without a file would leave the track with no audio in Music.
     it('does not let a copy without a file stay while another has one', () => {

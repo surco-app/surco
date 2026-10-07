@@ -756,6 +756,14 @@ export interface DuplicatePair {
   to: string
 }
 
+// What a DJ library holds for one copy: null when that copy is not in it.
+export type LibraryCopyPresence = { cues?: number; playlists?: number } | null
+
+// Only the libraries with their sync on that could be read.
+export type LibraryCopyInfo = Partial<
+  Record<'rekordbox' | 'engine' | 'traktor', LibraryCopyPresence>
+>
+
 export type LibraryReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'skipped' | 'failed'
 
 export interface DuplicateReplaceOutcome {

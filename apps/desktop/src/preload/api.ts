@@ -19,6 +19,7 @@ import type {
   DuplicatePair,
   DuplicateReplaceOutcome,
   KeyResult,
+  LibraryCopyInfo,
   LibraryTagUpdate,
   LifetimeStats,
   LoudnessResult,
@@ -128,6 +129,8 @@ export interface Api {
   replaceDuplicatesInLibraries: (
     pairs: (DuplicatePair & { shared: boolean })[],
   ) => Promise<DuplicateReplaceOutcome[]>
+  // Read only: what each DJ library with its sync on holds for each file. Empty off macOS.
+  libraryCopyInfo: (paths: string[]) => Promise<Record<string, LibraryCopyInfo>>
   cancelMusicFixes: () => Promise<void>
   setMusicField: (
     persistentId: string,

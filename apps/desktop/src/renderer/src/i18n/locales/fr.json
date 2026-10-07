@@ -1500,6 +1500,7 @@
     "notSame": "Pas le même",
     "different": "Sont différentes",
     "keeps": "Gardée",
+    "removes": "Retirée",
     "removedNoUndo": "Les copies retirées ne reviennent pas avec Annuler. Leurs fichiers restent dans la Corbeille.",
     "tracks_one": "{{count}} morceau",
     "tracks_other": "{{count}} morceaux",
@@ -1561,6 +1562,13 @@
       "duration": "Durée",
       "noFile": "Pas de fichier",
       "unchecked": "Fichier non vérifié",
+      "sameFile": "Même fichier",
+      "notIn": "Absente de {{library}}",
+      "cues_one": "{{count}} cue",
+      "cues_other": "{{count}} cues",
+      "playlists_one": "{{count}} playlist",
+      "playlists_other": "{{count}} playlists",
+      "cuesNote": "Les cues de la copie retirée ne passent pas à celle que vous gardez.",
       "librariesNote": "Les bibliothèques ne changent que si elles ont encore l'ancienne valeur."
     },
     "where": {

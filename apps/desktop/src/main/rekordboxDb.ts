@@ -66,10 +66,13 @@ type RekordboxDb = InstanceType<typeof Database>
 // never write. Returns null instead of throwing for every reason the file may not be
 // usable — absent, not a rekordbox database, a future cipher — because a user who does
 // not run rekordbox is the normal case, not an error to report.
-export function openRekordboxDb(path: string): RekordboxDb | null {
+export function openRekordboxDb(
+  path: string,
+  options: { readonly?: boolean } = {},
+): RekordboxDb | null {
   let db: RekordboxDb
   try {
-    db = new Database(path, { fileMustExist: true })
+    db = new Database(path, { fileMustExist: true, readonly: options.readonly ?? false })
   } catch {
     return null
   }

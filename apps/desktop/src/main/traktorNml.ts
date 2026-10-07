@@ -678,3 +678,26 @@ export function replaceDuplicateInNml(
   const counted = without.replace(open, () => setCount(open, countOf(open) - 1))
   return { nml: rewritePlaylists(counted, keyOf(source), keyOf(kept[0])), outcome: 'replaced' }
 }
+
+// How many cues (the beatgrid marker aside) and playlists the collection holds for a file,
+// or null when the collection does not have it.
+export function nmlCopyInfo(
+  nml: string,
+  loc: NmlLocation,
+): { cues: number; playlists: number } | null {
+  const collection = nml.match(COLLECTION_RE)
+  if (!collection) return null
+  const found = findEntries(collection[0]).filter((e) => e.file && at(e, loc))
+  if (found.length !== 1) return null
+  const block = collection[0].slice(found[0].start, found[0].end)
+  const cues = [...block.matchAll(/<CUE_V2\b[^>]*>/g)].filter(
+    (m) => !/\sTYPE="4"/.test(m[0]),
+  ).length
+  const key = keyOf(found[0])
+  const playlists = [...nml.matchAll(PLAYLIST_RE)].filter((m) =>
+    [...m[0].matchAll(ITEM_RE)].some((item) =>
+      sameText(unescapeAttr(item[0].match(ITEM_KEY_RE)?.[2] ?? ''), key),
+    ),
+  ).length
+  return { cues, playlists }
+}

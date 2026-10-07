@@ -1500,6 +1500,7 @@
     "notSame": "Not the same",
     "different": "They differ",
     "keeps": "Kept",
+    "removes": "Removed",
     "removedNoUndo": "Removed copies don't come back with Undo. Their files stay in the Trash.",
     "tracks_one": "{{count}} track",
     "tracks_other": "{{count}} tracks",
@@ -1561,6 +1562,13 @@
       "duration": "Duration",
       "noFile": "No file",
       "unchecked": "File not checked",
+      "sameFile": "Same file",
+      "notIn": "Not in {{library}}",
+      "cues_one": "{{count}} cue",
+      "cues_other": "{{count}} cues",
+      "playlists_one": "{{count}} playlist",
+      "playlists_other": "{{count}} playlists",
+      "cuesNote": "The removed copy's cues don't move to the one that stays.",
       "librariesNote": "Libraries only change if they still hold the old value."
     },
     "where": {
