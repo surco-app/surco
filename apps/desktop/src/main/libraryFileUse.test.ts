@@ -72,6 +72,14 @@ describe('usedByDjLibrary', () => {
     expect(await usedByDjLibrary('/Volumes/M/b.mp3', { ...OFF, rekordbox: collection })).toBe(false)
   })
 
+  it('looks in rekordbox read-only', async () => {
+    const collection = await rekordbox('/Volumes/M/a.mp3')
+    const open = vi.spyOn(rekordboxDb, 'openRekordboxDb')
+    await usedByDjLibrary('/Volumes/M/a.mp3', { ...OFF, rekordbox: collection })
+    expect(open).toHaveBeenCalledWith(collection, { readonly: true })
+    open.mockRestore()
+  })
+
   it('finds the file in an Engine DJ library by its stored relative path', async () => {
     const dir = await engine('../../music/a.mp3')
     const file = join(dir, '..', '..', 'music', 'a.mp3')

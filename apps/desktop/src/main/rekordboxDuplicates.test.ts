@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as rekordboxDb from './rekordboxDb'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
 import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 
@@ -170,6 +171,14 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
   it('leaves an entry rekordbox already deleted as it was', async () => {
     await replaceRekordboxDuplicates(dbPath, pair())
     expect(entry('e7')).toMatchObject({ ContentID: 'A', rb_local_deleted: 1, rb_local_usn: 7 })
+  })
+
+  it('looks the tracks up read-only and opens for writing only to write', async () => {
+    const open = vi.spyOn(rekordboxDb, 'openRekordboxDb')
+    await replaceRekordboxDuplicates(dbPath, pair())
+    expect(open.mock.calls[0]).toEqual([dbPath, { readonly: true }])
+    expect(open.mock.calls[1]).toEqual([dbPath])
+    open.mockRestore()
   })
 
   it('refuses the whole run while rekordbox is open', async () => {

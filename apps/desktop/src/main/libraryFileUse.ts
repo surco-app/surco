@@ -23,7 +23,7 @@ export async function usedByDjLibrary(
   options: PathMatchOptions = {},
 ): Promise<boolean> {
   if (libraries.rekordbox) {
-    const db = openRekordboxDb(libraries.rekordbox)
+    const db = openRekordboxDb(libraries.rekordbox, { readonly: true })
     if (!db) throw new Error(`rekordbox collection unreadable: ${libraries.rekordbox}`)
     try {
       if (findTrackByPath(db, path, options) !== null) return true

@@ -85,7 +85,7 @@ export async function replaceRekordboxDuplicates(
   const results: (DuplicateReplaceResult | undefined)[] = pairs.map(() => undefined)
   const settle = (r: DuplicateReplaceResult) => results.map((x) => x ?? r)
   if (await isRekordboxRunning()) return settle({ written: false, reason: 'rekordbox-running' })
-  const db = openRekordboxDb(collectionPath)
+  const db = openRekordboxDb(collectionPath, { readonly: true })
   if (!db) return settle({ written: false, reason: 'unreadable' })
   const repoints: number[] = []
   const replaces: { index: number; fromId: string; toId: string }[] = []
