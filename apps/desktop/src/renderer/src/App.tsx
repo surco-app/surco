@@ -1959,7 +1959,10 @@ export default function App(): React.JSX.Element {
                   // grows a scrollbar that flashes and disappears.
                   className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
                 >
-                  <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
+                  <div
+                    ref={listScrollRef}
+                    className={`min-h-0 flex-1 ${musicReview !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
+                  >
                     {musicReview !== null ? (
                       <MusicReviewColumn
                         onClose={() => setMusicReview(null)}

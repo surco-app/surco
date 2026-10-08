@@ -3412,6 +3412,11 @@ function reviewApi(over: Record<string, unknown> = {}): void {
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
     readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
     loadMusicReview: vi.fn().mockResolvedValue([]),
+    libraryStatus: vi.fn().mockResolvedValue({
+      rekordbox: { enabled: false, found: false },
+      engine: { enabled: false, found: false },
+      traktor: { enabled: false, found: false },
+    }),
     ...over,
   })
 }

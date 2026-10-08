@@ -141,6 +141,28 @@ const detail = () => screen.getByTestId('music-review-detail')
 describe('MusicReview', () => {
   // The column is for finding a group; deciding happens in the detail beside it, so a
   // row holds no control that could change what gets written.
+  // The tray rode along inside the column's own scrolling, so it ended up after the last
+  // group instead of staying where Apply can always be reached.
+  it('keeps the header and the tray outside the only scrolling area', () => {
+    render(<Panes review={review()} />)
+    const scroll = screen.getByTestId('music-review-scroll')
+    expect(scroll.className).toContain('overflow-y-auto')
+    expect(scroll).toContainElement(rows()[0])
+    expect(scroll).not.toContainElement(screen.getByTestId('music-review-tray'))
+    expect(scroll).not.toContainElement(screen.getByTestId('music-review-filter-all'))
+    expect(screen.getByTestId('music-review-tray').className).not.toContain('absolute')
+  })
+
+  it('gives the name and the secondary line the whole row and puts the count on the first line', () => {
+    render(<Panes review={review()} />)
+    const row = rows()[0]
+    const count = within(row).getByTestId('music-review-row-count')
+    expect(count.parentElement).toBe(within(row).getByTestId('music-review-row-name').parentElement)
+    expect(within(row).getByTestId('music-review-row-detail').parentElement).toBe(
+      row.lastElementChild,
+    )
+  })
+
   it('lists each group as a row with no choice in it and opens its detail on click', () => {
     const merged = { ...group, fields: ['artist' as const, 'albumArtist' as const] }
     render(<Panes review={review({ spelling: [merged, other], choice: () => null })} />)

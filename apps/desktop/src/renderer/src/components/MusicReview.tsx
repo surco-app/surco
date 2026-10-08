@@ -344,17 +344,24 @@ function Row({
     >
       <Dot safe={safe} />
       <span className="grid min-w-0 flex-1">
-        <span className="truncate text-sm">{name}</span>
-        <span className="truncate text-xs text-fg-faint">
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span data-testid="music-review-row-name" className="min-w-0 flex-1 truncate text-sm">
+            {name}
+          </span>
+          {count !== undefined && (
+            <span
+              data-testid="music-review-row-count"
+              className="shrink-0 text-xs tabular-nums text-fg-faint"
+            >
+              {t('musicReview.tracks', { count })}
+            </span>
+          )}
+        </span>
+        <span data-testid="music-review-row-detail" className="truncate text-xs text-fg-faint">
           {detail}
           {staged && ` · ${t('musicReview.inTray')}`}
         </span>
       </span>
-      {count !== undefined && (
-        <span className="shrink-0 text-xs tabular-nums text-fg-faint">
-          {t('musicReview.tracks', { count })}
-        </span>
-      )}
     </div>
   )
 }
@@ -389,7 +396,7 @@ export function MusicReview({
   const nothing = review.status === 'ready' && counts.all === 0
   return (
     <div data-testid="music-review" className="relative flex min-h-0 flex-1 flex-col">
-      <div className="grid gap-2.5 border-b border-[var(--color-line)] px-3 pt-3 pb-2.5">
+      <div className="grid shrink-0 gap-2.5 border-b border-[var(--color-line)] px-3 pt-3 pb-2.5">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold">{t('musicReview.title')}</h2>
           <button
@@ -419,7 +426,10 @@ export function MusicReview({
           ))}
         </div>
       </div>
-      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-3 pb-24">
+      <div
+        data-testid="music-review-scroll"
+        className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-3"
+      >
         {review.status === 'loading' && (
           <p
             data-testid="music-review-loading"
@@ -499,7 +509,7 @@ export function MusicReview({
       </div>
       <div
         data-testid="music-review-tray"
-        className="absolute right-3 bottom-3 left-3 flex items-center gap-2.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2.5"
+        className="m-3 flex shrink-0 items-center gap-2.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2.5"
       >
         {review.status === 'applying' ? (
           <>
