@@ -3497,6 +3497,38 @@ describe('App Music review', () => {
     expect(await screen.findByTestId('music-review-confirm')).toBeInTheDocument()
   })
 
+  it('gives Convert back to the toolbar when the review closes', async () => {
+    vi.resetModules()
+    reviewApi(spellingFixture())
+    await renderApp()
+    await addOneTrack()
+    runMenu('music-review')
+    await screen.findByTestId('music-review-apply')
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findByTestId('convert-all')).toBeInTheDocument()
+    expect(screen.queryByTestId('music-review-apply')).not.toBeInTheDocument()
+  })
+
+  // A running batch has its progress and its only Cancel in that button; opening the
+  // review must not take them away.
+  it('keeps the running batch and its cancel in the toolbar when the review opens', async () => {
+    vi.resetModules()
+    const cancelJob = vi.fn()
+    const processTrack = vi.fn(() => new Promise(() => {}))
+    reviewApi({ processTrack, cancelJob, ...spellingFixture() })
+    await renderApp()
+    await addOneTrack()
+    fireEvent.click(screen.getByTestId('convert-all'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    runMenu('music-review')
+    await screen.findByTestId('music-review')
+    const convert = screen.getByTestId('convert-all')
+    expect(convert).toHaveAccessibleName(/^Cancel the conversion/)
+    expect(screen.queryByTestId('music-review-apply')).not.toBeInTheDocument()
+    fireEvent.click(convert)
+    expect(cancelJob).toHaveBeenCalled()
+  })
+
   // Reviewing a library is the point of the view; it must not need a track in the list.
   it('opens over an empty list', async () => {
     vi.resetModules()

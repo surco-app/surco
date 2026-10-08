@@ -1875,8 +1875,11 @@ export default function App(): React.JSX.Element {
   // review holds its writes until it ends.
   const reviewBusy = batching || tracks.some((t) => t.status === 'processing')
   const reviewAction = useMemo(
-    () => (musicReview !== null ? <MusicReviewToolbarAction busy={reviewBusy} /> : undefined),
-    [musicReview, reviewBusy],
+    () =>
+      musicReview !== null && !batching ? (
+        <MusicReviewToolbarAction busy={reviewBusy} />
+      ) : undefined,
+    [musicReview, batching, reviewBusy],
   )
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
