@@ -7,12 +7,7 @@ import '../i18n'
 import type { Api } from '../../../preload/api'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { stubApi } from '../test/api'
-import {
-  MusicReview,
-  MusicReviewAction,
-  MusicReviewProgress,
-  type ReviewSort,
-} from './MusicReview'
+import { MusicReview, MusicReviewAction, MusicReviewProgress, type ReviewSort } from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
@@ -872,6 +867,74 @@ describe('MusicReview', () => {
     unmount()
     render(<Panes review={review({ status: 'loading', spelling: [] })} />)
     expect(screen.getByTestId('music-review-loading')).toHaveTextContent('Reading the library')
+  })
+
+  describe('detail sections', () => {
+    const affectedFix = {
+      persistentId: 'C',
+      field: 'artist' as const,
+      from: 'Dj Lara',
+      to: 'DJ Lara',
+      title: 'Song',
+    }
+
+    // The detail reads like the editor: the group's name opens it, then sections that fold
+    // from their header.
+    it('opens with the group name and folds a section from its header', () => {
+      render(<Panes review={review({ affected: () => [affectedFix] })} />)
+      expect(screen.getByTestId('music-review-detail-heading')).toHaveTextContent('DJ Lara')
+      const header = screen.getByRole('button', { name: 'Affected tracks' })
+      expect(header).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByTestId('music-review-affected')).toBeVisible()
+      fireEvent.click(header)
+      expect(header).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.getByRole('button', { name: 'How it is and how it ends up' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      )
+    })
+
+    it('keeps a folded section folded on the next group', () => {
+      render(<Panes review={review({ spelling: [group, other], affected: () => [affectedFix] })} />)
+      fireEvent.click(screen.getByRole('button', { name: 'Affected tracks' }))
+      fireEvent.click(rows()[1])
+      expect(screen.getByRole('button', { name: 'Affected tracks' })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      )
+    })
+
+    it('puts the copies of a duplicate in their own section', () => {
+      const dup = {
+        group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
+        entries: [
+          {
+            persistentId: '1',
+            artist: 'Ann',
+            title: 'Song',
+            album: '',
+            genre: '',
+            albumArtist: '',
+          },
+          {
+            persistentId: '2',
+            artist: 'Ann',
+            title: 'Song',
+            album: '',
+            genre: '',
+            albumArtist: '',
+          },
+        ],
+        formats: {},
+        locations: {},
+      }
+      render(<Panes review={review({ spelling: [], duplicates: [dup] })} />)
+      expect(screen.getByTestId('music-review-detail-heading')).toHaveTextContent('Ann · Song')
+      expect(screen.getByRole('button', { name: 'Copies' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      )
+    })
   })
 
   describe('spelling detail', () => {

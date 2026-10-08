@@ -1572,7 +1572,8 @@
       "playlists_one": "{{count}} playlist",
       "playlists_other": "{{count}} playlists",
       "cuesNote": "The removed copy's cues don't move to the one that stays.",
-      "librariesNote": "Libraries only change if they still hold the old value."
+      "librariesNote": "Libraries only change if they still hold the old value.",
+      "copies": "Copies"
     },
     "where": {
       "music": "Music",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibraryCopyInfo, LibraryStatus, MusicReviewEntry } from '../../../shared/types'
 import type {
@@ -8,6 +8,9 @@ import type {
 } from '../hooks/useMusicReview'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { fieldsLabel, GHOST, PRIMARY } from './MusicReview'
+import { SectionBody } from './SectionBody'
+import { SectionGroupHeading } from './SectionGroupHeading'
+import { SectionHeader } from './SectionHeader'
 
 export interface ReviewSync {
   rekordbox: boolean
@@ -15,7 +18,13 @@ export interface ReviewSync {
   traktor: boolean
 }
 
-const HEADING = 'text-xs font-semibold text-fg-dim'
+type Sections = Record<'options' | 'affected' | 'copies', boolean>
+interface Folding {
+  open: Sections
+  toggle: (section: keyof Sections) => void
+}
+
+const NEXT_SECTION = 'mt-6 border-t border-[var(--color-line)] pt-6'
 
 const tail = (path: string) => path.split('/').slice(-2).join('/')
 
@@ -32,12 +41,12 @@ function Header({
   children: React.ReactNode
 }) {
   return (
-    <header className="flex min-w-0 flex-wrap items-start gap-3">
-      <div className="grid min-w-0 gap-0.5">
-        <h2 className="truncate text-base font-semibold">{name}</h2>
+    <header className="mb-6">
+      <SectionGroupHeading label={name} testid="music-review-detail-heading" first />
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
         <p className="truncate text-xs text-fg-faint">{detail}</p>
+        <div className="ml-auto flex shrink-0 gap-1.5">{children}</div>
       </div>
-      <div className="ml-auto flex shrink-0 gap-1.5">{children}</div>
     </header>
   )
 }
@@ -154,12 +163,16 @@ function SpellingDetail({
   group,
   review,
   sync,
+  folding,
 }: {
   group: ReviewSpellingGroup
   review: Review
   sync: ReviewSync
+  folding: Folding
 }) {
   const { t } = useTranslation()
+  const optionsId = useId()
+  const affectedId = useId()
   const busy = review.status === 'applying'
   const chosen = review.choice(group.key)
   const staged = review.staged.has(group.key)
@@ -196,105 +209,120 @@ function SpellingDetail({
           {t(staged ? 'musicReview.staged' : 'musicReview.unify')}
         </button>
       </Header>
-      <section className="grid gap-2">
-        <h3 className={HEADING}>{t('musicReview.detail.options')}</h3>
-        <div
-          role="radiogroup"
-          aria-label={`${fieldsLabel(t, group)} ${name}`}
-          className="grid gap-0.5"
-        >
-          {options.map((v) => (
-            <label
-              key={v.value}
-              data-testid="music-review-option"
-              className={`flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5 ${chosen === v.value ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-hover)]'}`}
-            >
-              <input
-                type="radio"
-                name={group.key}
-                checked={chosen === v.value}
-                disabled={busy}
-                onChange={() => review.choose(group.key, v.value)}
-                className="accent-[var(--color-accent)]"
-              />
-              <span className="truncate text-sm whitespace-pre">
-                <Marked value={v.value} />
-              </span>
-              {chosen === v.value && (
-                <span className="shrink-0 text-[11px] font-semibold text-[var(--color-accent)]">
-                  {t('musicReview.keeps')}
+      <SectionHeader
+        title={t('musicReview.detail.options')}
+        open={folding.open.options}
+        onToggle={() => folding.toggle('options')}
+        bodyId={optionsId}
+        summary={chosen ?? undefined}
+      />
+      <SectionBody open={folding.open.options} id={optionsId}>
+        <div className="grid gap-2 pt-3">
+          <div
+            role="radiogroup"
+            aria-label={`${fieldsLabel(t, group)} ${name}`}
+            className="grid gap-0.5"
+          >
+            {options.map((v) => (
+              <label
+                key={v.value}
+                data-testid="music-review-option"
+                className={`flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5 ${chosen === v.value ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-hover)]'}`}
+              >
+                <input
+                  type="radio"
+                  name={group.key}
+                  checked={chosen === v.value}
+                  disabled={busy}
+                  onChange={() => review.choose(group.key, v.value)}
+                  className="accent-[var(--color-accent)]"
+                />
+                <span className="truncate text-sm whitespace-pre">
+                  <Marked value={v.value} />
                 </span>
-              )}
-              {v.persistentIds.length > 0 && (
-                <span className="ml-auto shrink-0 text-xs tabular-nums text-fg-faint">
-                  {t('musicReview.tracks', { count: v.persistentIds.length })}
-                </span>
-              )}
-            </label>
-          ))}
-        </div>
-        {group.kind === 'invisible' && (
-          <p className="text-xs text-fg-faint">{t('musicReview.detail.marks')}</p>
-        )}
-        {chosen === null && <p className="text-xs text-fg-faint">{t('musicReview.tie')}</p>}
-      </section>
-      {affected.length > 0 && (
-        <section className="grid gap-2">
-          <h3 className={HEADING}>
-            {t('musicReview.detail.affected')}{' '}
-            <span className="tabular-nums text-fg-faint">{affected.length}</span>
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs text-fg-faint">
-                <tr className="border-b border-[var(--color-line)]">
-                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.field.title')}</th>
-                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.field')}</th>
-                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.now')}</th>
-                  <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.after')}</th>
-                  <th className="py-1.5 font-normal">{t('musicReview.detail.where')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {affected.map((f) => {
-                  const ranges = changedRanges(f.from, f.to)
-                  return (
-                    <tr
-                      key={`${f.persistentId}|${f.field}`}
-                      data-testid="music-review-affected"
-                      className="border-b border-[var(--color-line)] align-top"
-                    >
-                      <td className="max-w-48 truncate py-1.5 pr-3">{f.title}</td>
-                      <td className="py-1.5 pr-3 whitespace-nowrap text-fg-dim">
-                        {t(`musicReview.field.${f.field}`)}
-                      </td>
-                      <td className="py-1.5 pr-3 whitespace-pre-wrap">
-                        <Marked
-                          value={f.from}
-                          changed={ranges.from}
-                          testId="music-review-diff-from"
-                          tone="text-[var(--color-warn)]"
-                        />
-                      </td>
-                      <td className="py-1.5 pr-3 whitespace-pre-wrap">
-                        <Marked
-                          value={f.to}
-                          changed={ranges.to}
-                          testId="music-review-diff-to"
-                          tone="text-[var(--color-good)]"
-                        />
-                      </td>
-                      <td className="py-1.5">
-                        <Where sync={sync} libraries={review.libraries} />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                {chosen === v.value && (
+                  <span className="shrink-0 text-[11px] font-semibold text-[var(--color-accent)]">
+                    {t('musicReview.keeps')}
+                  </span>
+                )}
+                {v.persistentIds.length > 0 && (
+                  <span className="ml-auto shrink-0 text-xs tabular-nums text-fg-faint">
+                    {t('musicReview.tracks', { count: v.persistentIds.length })}
+                  </span>
+                )}
+              </label>
+            ))}
           </div>
-          <p className="text-xs text-fg-faint">{t('musicReview.detail.librariesNote')}</p>
-        </section>
+          {group.kind === 'invisible' && (
+            <p className="text-xs text-fg-faint">{t('musicReview.detail.marks')}</p>
+          )}
+          {chosen === null && <p className="text-xs text-fg-faint">{t('musicReview.tie')}</p>}
+        </div>
+      </SectionBody>
+      {affected.length > 0 && (
+        <div className={NEXT_SECTION}>
+          <SectionHeader
+            title={t('musicReview.detail.affected')}
+            open={folding.open.affected}
+            onToggle={() => folding.toggle('affected')}
+            bodyId={affectedId}
+            status={<span className="tabular-nums">{affected.length}</span>}
+          />
+          <SectionBody open={folding.open.affected} id={affectedId}>
+            <div className="grid gap-2 pt-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs text-fg-faint">
+                    <tr className="border-b border-[var(--color-line)]">
+                      <th className="py-1.5 pr-3 font-normal">{t('musicReview.field.title')}</th>
+                      <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.field')}</th>
+                      <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.now')}</th>
+                      <th className="py-1.5 pr-3 font-normal">{t('musicReview.detail.after')}</th>
+                      <th className="py-1.5 font-normal">{t('musicReview.detail.where')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {affected.map((f) => {
+                      const ranges = changedRanges(f.from, f.to)
+                      return (
+                        <tr
+                          key={`${f.persistentId}|${f.field}`}
+                          data-testid="music-review-affected"
+                          className="border-b border-[var(--color-line)] align-top"
+                        >
+                          <td className="max-w-48 truncate py-1.5 pr-3">{f.title}</td>
+                          <td className="py-1.5 pr-3 whitespace-nowrap text-fg-dim">
+                            {t(`musicReview.field.${f.field}`)}
+                          </td>
+                          <td className="py-1.5 pr-3 whitespace-pre-wrap">
+                            <Marked
+                              value={f.from}
+                              changed={ranges.from}
+                              testId="music-review-diff-from"
+                              tone="text-[var(--color-warn)]"
+                            />
+                          </td>
+                          <td className="py-1.5 pr-3 whitespace-pre-wrap">
+                            <Marked
+                              value={f.to}
+                              changed={ranges.to}
+                              testId="music-review-diff-to"
+                              tone="text-[var(--color-good)]"
+                            />
+                          </td>
+                          <td className="py-1.5">
+                            <Where sync={sync} libraries={review.libraries} />
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-fg-faint">{t('musicReview.detail.librariesNote')}</p>
+            </div>
+          </SectionBody>
+        </div>
       )}
     </>
   )
@@ -356,8 +384,17 @@ function useCopyInfo(paths: string[]): Record<string, LibraryCopyInfo> {
   return info
 }
 
-function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review }) {
+function DuplicateDetail({
+  card,
+  review,
+  folding,
+}: {
+  card: DuplicateCard
+  review: Review
+  folding: Folding
+}) {
   const { t } = useTranslation()
+  const copiesId = useId()
   const { group, entries, formats, locations } = card
   const info = useCopyInfo(entries.flatMap((e) => locations[e.persistentId] || []))
   const cuesStay = LIBRARIES.some(([library]) => {
@@ -406,96 +443,112 @@ function DuplicateDetail({ card, review }: { card: DuplicateCard; review: Review
             : t('musicReview.remove', { count: entries.length - 1 })}
         </button>
       </Header>
-      <div
-        role="radiogroup"
-        aria-label={`${first?.artist} · ${first?.title}`}
-        className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-3"
-      >
-        {entries.map((e) => {
-          const path = locations[e.persistentId]
-          const noFile = path === ''
-          const file =
-            path === undefined
-              ? t('musicReview.detail.unchecked')
-              : noFile
-                ? t('musicReview.detail.noFile')
-                : tail(path)
-          const sameFile =
-            !!path &&
-            entries.some(
-              (o) =>
-                o !== e && !!locations[o.persistentId] && samePath(locations[o.persistentId], path),
-            )
-          const cells = [
-            ['field.album', e.album, differs((c) => c.album)],
-            ['field.genre', e.genre, differs((c) => c.genre)],
-            ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
-          ] as const
-          return (
-            <div
-              key={e.persistentId}
-              data-testid="music-review-copy"
-              className={`grid content-start gap-2.5 rounded-lg border p-3 ${keep === e.persistentId ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'}`}
-            >
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name={group.key}
-                    checked={keep === e.persistentId}
-                    disabled={busy || (noFile && anyFile)}
-                    aria-label={[t('musicReview.keeps'), formats[e.persistentId], file]
-                      .filter(Boolean)
-                      .join(' ')}
-                    onChange={() => review.choose(group.key, e.persistentId)}
-                    className="accent-[var(--color-accent)]"
-                  />
-                  <span data-testid="music-review-copy-role">
-                    {t(keep === e.persistentId ? 'musicReview.keeps' : 'musicReview.removes')}
-                  </span>
-                </label>
-                {sameFile && (
-                  <span
-                    data-testid="music-review-same-file"
-                    className="rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim"
-                  >
-                    {t('musicReview.detail.sameFile')}
-                  </span>
-                )}
-                <span
-                  data-differs={differs((c) => formats[c.persistentId] ?? '') || undefined}
-                  className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.persistentId] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
+      <SectionHeader
+        title={t('musicReview.detail.copies')}
+        open={folding.open.copies}
+        onToggle={() => folding.toggle('copies')}
+        bodyId={copiesId}
+        status={<span className="tabular-nums">{entries.length}</span>}
+      />
+      <SectionBody open={folding.open.copies} id={copiesId}>
+        <div className="grid gap-3 pt-3">
+          <div
+            role="radiogroup"
+            aria-label={`${first?.artist} · ${first?.title}`}
+            className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-3"
+          >
+            {entries.map((e) => {
+              const path = locations[e.persistentId]
+              const noFile = path === ''
+              const file =
+                path === undefined
+                  ? t('musicReview.detail.unchecked')
+                  : noFile
+                    ? t('musicReview.detail.noFile')
+                    : tail(path)
+              const sameFile =
+                !!path &&
+                entries.some(
+                  (o) =>
+                    o !== e &&
+                    !!locations[o.persistentId] &&
+                    samePath(locations[o.persistentId], path),
+                )
+              const cells = [
+                ['field.album', e.album, differs((c) => c.album)],
+                ['field.genre', e.genre, differs((c) => c.genre)],
+                ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
+              ] as const
+              return (
+                <div
+                  key={e.persistentId}
+                  data-testid="music-review-copy"
+                  className={`grid content-start gap-2.5 rounded-lg border p-3 ${keep === e.persistentId ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'}`}
                 >
-                  {formats[e.persistentId] ?? ''}
-                </span>
-              </div>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-                {cells.map(([label, value, differ]) => (
-                  <div key={label} className="contents">
-                    <dt className="text-fg-faint">{t(`musicReview.${label}`)}</dt>
-                    <dd
-                      data-differs={differ || undefined}
-                      className={`truncate tabular-nums ${differ ? 'text-[var(--color-warn)]' : ''}`}
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name={group.key}
+                        checked={keep === e.persistentId}
+                        disabled={busy || (noFile && anyFile)}
+                        aria-label={[t('musicReview.keeps'), formats[e.persistentId], file]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onChange={() => review.choose(group.key, e.persistentId)}
+                        className="accent-[var(--color-accent)]"
+                      />
+                      <span data-testid="music-review-copy-role">
+                        {t(keep === e.persistentId ? 'musicReview.keeps' : 'musicReview.removes')}
+                      </span>
+                    </label>
+                    {sameFile && (
+                      <span
+                        data-testid="music-review-same-file"
+                        className="rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim"
+                      >
+                        {t('musicReview.detail.sameFile')}
+                      </span>
+                    )}
+                    <span
+                      data-differs={differs((c) => formats[c.persistentId] ?? '') || undefined}
+                      className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.persistentId] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
                     >
-                      {value}
-                    </dd>
+                      {formats[e.persistentId] ?? ''}
+                    </span>
                   </div>
-                ))}
-                <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>
-                <dd title={path} className={`truncate ${noFile ? 'text-[var(--color-warn)]' : ''}`}>
-                  {file}
-                </dd>
-              </dl>
-              <CopyLibraries info={path ? info[path] : undefined} />
-            </div>
-          )
-        })}
-      </div>
-      {cuesStay && (
-        <p data-testid="music-review-cues-note" className="text-xs text-fg-faint">
-          {t('musicReview.detail.cuesNote')}
-        </p>
-      )}
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                    {cells.map(([label, value, differ]) => (
+                      <div key={label} className="contents">
+                        <dt className="text-fg-faint">{t(`musicReview.${label}`)}</dt>
+                        <dd
+                          data-differs={differ || undefined}
+                          className={`truncate tabular-nums ${differ ? 'text-[var(--color-warn)]' : ''}`}
+                        >
+                          {value}
+                        </dd>
+                      </div>
+                    ))}
+                    <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>
+                    <dd
+                      title={path}
+                      className={`truncate ${noFile ? 'text-[var(--color-warn)]' : ''}`}
+                    >
+                      {file}
+                    </dd>
+                  </dl>
+                  <CopyLibraries info={path ? info[path] : undefined} />
+                </div>
+              )
+            })}
+          </div>
+          {cuesStay && (
+            <p data-testid="music-review-cues-note" className="text-xs text-fg-faint">
+              {t('musicReview.detail.cuesNote')}
+            </p>
+          )}
+        </div>
+      </SectionBody>
     </>
   )
 }
@@ -511,11 +564,20 @@ export function MusicReviewDetail({
 }) {
   const spelling = review.spelling.find((g) => g.key === selectedKey)
   const duplicate = review.duplicates.find((c) => c.group.key === selectedKey)
+  // Held above the groups, like the editor's fold state, so a section folded on one group
+  // stays folded on the next.
+  const [open, setOpen] = useState<Sections>({ options: true, affected: true, copies: true })
+  const folding: Folding = {
+    open,
+    toggle: (section) => setOpen((o) => ({ ...o, [section]: !o[section] })),
+  }
   return (
-    <section data-testid="music-review-detail" className="h-full overflow-y-auto">
-      <div className="mx-auto grid w-full max-w-3xl gap-6 p-8">
-        {spelling && <SpellingDetail group={spelling} review={review} sync={sync} />}
-        {duplicate && <DuplicateDetail card={duplicate} review={review} />}
+    <section data-testid="music-review-detail" className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto p-7">
+        {spelling && (
+          <SpellingDetail group={spelling} review={review} sync={sync} folding={folding} />
+        )}
+        {duplicate && <DuplicateDetail card={duplicate} review={review} folding={folding} />}
       </div>
     </section>
   )

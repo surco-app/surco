@@ -1572,7 +1572,8 @@
       "playlists_one": "{{count}} playlist",
       "playlists_other": "{{count}} playlists",
       "cuesNote": "Les cues de la copie retirée ne passent pas à celle que vous gardez.",
-      "librariesNote": "Les bibliothèques ne changent que si elles ont encore l'ancienne valeur."
+      "librariesNote": "Les bibliothèques ne changent que si elles ont encore l'ancienne valeur.",
+      "copies": "Copies"
     },
     "where": {
       "music": "Music",

@@ -1572,7 +1572,8 @@
       "playlists_one": "{{count}} playlist",
       "playlists_other": "{{count}} playlists",
       "cuesNote": "As cues da cópia que sai não passam para a que fica.",
-      "librariesNote": "As bibliotecas só mudam se ainda tiverem o valor anterior."
+      "librariesNote": "As bibliotecas só mudam se ainda tiverem o valor anterior.",
+      "copies": "Cópias"
     },
     "where": {
       "music": "Music",
