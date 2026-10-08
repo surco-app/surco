@@ -922,25 +922,44 @@ describe('useMusicReview', () => {
           .mockImplementation(async (pid) => (pid === 'Q' ? '/m/q.mp3' : '')),
       })
 
-    it('refuses to stage a group whose chosen copy has no file while another has one', async () => {
-      noFileOnP()
-      const { result } = await ready()
-      await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
-      const key = result.current.duplicates[0].group.key
-      act(() => result.current.choose(key, 'P'))
-      act(() => result.current.toggleStaged(key))
-      expect(result.current.staged.has(key)).toBe(false)
-    })
-
-    it('removes nothing from a staged group once the chosen copy turns out to be the one without a file', async () => {
+    it('keeps the copy with a file when the one without is chosen', async () => {
       const api = noFileOnP()
       const { result } = await ready()
       await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
       const key = result.current.duplicates[0].group.key
-      act(() => result.current.toggleStaged(key))
       act(() => result.current.choose(key, 'P'))
+      act(() => result.current.toggleStaged(key))
+      expect(result.current.choice(key)).toBe('Q')
       await act(() => result.current.apply())
-      expect(api.removeMusicDuplicate).not.toHaveBeenCalled()
+      expect(api.removeMusicDuplicate).toHaveBeenCalledWith(
+        expect.objectContaining({ removePid: 'P', keepPid: 'Q' }),
+      )
+    })
+
+    it('falls back to the suggested copy when a copy picked early turns out to have no file', async () => {
+      let resolve: () => void = () => {}
+      const lookup = new Promise<void>((r) => (resolve = r))
+      const api = setApi({
+        loadMusicReview: vi.fn().mockResolvedValue(DUPS),
+        appleMusicEntryLocation: vi
+          .fn<Api['appleMusicEntryLocation']>()
+          .mockImplementation(async (pid) => {
+            await lookup
+            return pid === 'Q' ? '/m/q.mp3' : ''
+          }),
+      })
+      const { result } = await ready()
+      const key = result.current.duplicates[0].group.key
+      act(() => result.current.choose(key, 'P'))
+      expect(result.current.choice(key)).toBe('P')
+      resolve()
+      await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
+      expect(result.current.choice(key)).toBe('Q')
+      act(() => result.current.toggleStaged(key))
+      await act(() => result.current.apply())
+      expect(api.removeMusicDuplicate).toHaveBeenCalledWith(
+        expect.objectContaining({ removePid: 'P', keepPid: 'Q' }),
+      )
     })
   })
 

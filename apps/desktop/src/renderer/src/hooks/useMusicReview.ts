@@ -285,10 +285,10 @@ export function useMusicReview({
 
   const choice = useCallback(
     (key: string): string | null => {
-      if (choices[key]) return choices[key]
+      const d = dupGroups.find((g) => g.key === key)
+      if (choices[key] && !(d && keepsNoFile(d.ids, choices[key], locations))) return choices[key]
       const s = spelling.find((g) => g.key === key)
       if (s) return s.suggested
-      const d = dupGroups.find((g) => g.key === key)
       if (!d) return null
       const withFile = d.ids.filter((id) => locations[id] !== '')
       return (withFile.length ? withFile : d.ids).reduce((best, id) =>
@@ -322,7 +322,6 @@ export function useMusicReview({
         }
         const dup = dupGroups.find((g) => g.key === key)
         if (dup?.ids.some((id) => !(id in locations))) return s
-        if (dup && keepsNoFile(dup.ids, choice(key) as string, locations)) return s
         if (dup) {
           for (const other of dupGroups)
             if (other.key !== key && other.ids.some((id) => dup.ids.includes(id)))
@@ -357,14 +356,14 @@ export function useMusicReview({
         .flatMap((g) => {
           const keepPid = choice(g.key) as string
           const keep = byPid.get(keepPid)
-          if (!g.ids.includes(keepPid) || keepsNoFile(g.ids, keepPid, locations)) return []
+          if (!g.ids.includes(keepPid)) return []
           return g.ids.flatMap((removePid) => {
             const removed = byPid.get(removePid)
             if (removePid === keepPid || !removed || !keep) return []
             return [{ removePid, keepPid, label: labelOf(removed), keepLabel: labelOf(keep) }]
           })
         }),
-    [dupGroups, staged, choice, byPid, locations],
+    [dupGroups, staged, choice, byPid],
   )
 
   const fixes = useMemo(() => {
