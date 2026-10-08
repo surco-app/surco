@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bareAlbumTitle,
   cleanMatchTitle,
   dropLeadingCatalog,
   embeddedArtistTitle,
@@ -140,5 +141,24 @@ describe('embeddedArtistTitle', () => {
   it('finds nothing in a plain title', () => {
     expect(embeddedArtistTitle('Funky Roll (Original mix)')).toBeNull()
     expect(embeddedArtistTitle('Preview')).toBeNull()
+  })
+})
+
+describe('bareAlbumTitle', () => {
+  // Tags name the edition inside the album ("Duran Duran (Deluxe Edition)") where the
+  // catalogs keep it out of the title: MusicBrainz finds nothing for the tagged phrase and
+  // Discogs files the 2010 set as plain "Duran Duran". The bare title is what they list.
+  it('drops the edition the album tag carries in brackets', () => {
+    expect(bareAlbumTitle('Duran Duran (Deluxe Edition)')).toBe('Duran Duran')
+    expect(bareAlbumTitle('Rio [2009 Remaster]')).toBe('Rio')
+  })
+
+  it('leaves an album without an edition unchanged', () => {
+    expect(bareAlbumTitle('Seven and the Ragged Tiger')).toBe('Seven and the Ragged Tiger')
+  })
+
+  // An album titled only by its brackets would otherwise search for nothing at all.
+  it('never strips an album to nothing', () => {
+    expect(bareAlbumTitle('(What’s the Story)')).toBe('(What’s the Story)')
   })
 })

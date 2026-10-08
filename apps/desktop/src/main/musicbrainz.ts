@@ -1,4 +1,5 @@
 import { errorWithKey } from '../shared/errorKeys'
+import { bareAlbumTitle } from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
@@ -241,7 +242,8 @@ async function searchReleases(query: string, priority?: SearchPriority): Promise
 // "Search by album first" comes before everything, like on Discogs: the tagged album is the
 // release's own title, so it goes on the release index's title field, pinned to the artist
 // (an album name alone matches anyone's release, and a hit here ends the search). The album
-// hint only arrives while the setting is on; nothing found falls through unchanged.
+// hint only arrives while the setting is on. An edition the tag spells in brackets is
+// retried bare, the title MusicBrainz lists; nothing found falls through unchanged.
 //
 // With artist and title from the tags, a fielded recording query is far more precise than
 // free text. Compilations are excluded on the first try because a dance track sits on
@@ -268,13 +270,15 @@ export async function search(
       const title = hints.title?.trim()
       const album = hints.album?.trim()
       if (artist && album) {
-        const byAlbum = wanted(
-          await searchReleases(
-            `release:"${escapeLucene(album)}" AND artist:"${escapeLucene(artist)}"${clause}`,
-            priority,
-          ),
-        )
-        if (byAlbum.length) return byAlbum
+        for (const albumTitle of new Set([album, bareAlbumTitle(album)])) {
+          const byAlbum = wanted(
+            await searchReleases(
+              `release:"${escapeLucene(albumTitle)}" AND artist:"${escapeLucene(artist)}"${clause}`,
+              priority,
+            ),
+          )
+          if (byAlbum.length) return byAlbum
+        }
       }
       if (artist && title) {
         const fielded = `recording:"${escapeLucene(title)}" AND artist:"${escapeLucene(artist)}"`

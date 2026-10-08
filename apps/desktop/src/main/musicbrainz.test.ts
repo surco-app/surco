@@ -322,6 +322,20 @@ describe('search by album first', () => {
     )
   })
 
+  // MusicBrainz titles the 2010 set "Duran Duran" and keeps "special edition" apart, so the
+  // tagged "Duran Duran (Deluxe Edition)" found 0 releases and the search fell to the track.
+  it('retries the album without its edition before the recording ladder', async () => {
+    const fn = mockFetch([{ count: 0, releases: [] }, albumReleaseSearch])
+    const rows = await search('Duran Duran - Planet Earth', 'high', {
+      artist: 'Duran Duran',
+      title: 'Planet Earth',
+      album: 'Duran Duran (Deluxe Edition)',
+    })
+    expect(rows.length).toBeGreaterThan(0)
+    expect(pathOf(fn.mock.calls[1][0])).toBe('/ws/2/release')
+    expect(queryOf(fn.mock.calls[1][0])).toBe('release:"Duran Duran" AND artist:"Duran Duran"')
+  })
+
   // Off by default: without the album hint no release query is spent, so every request
   // (each one a second of MusicBrainz' rate limit) is the same as before the setting.
   it('never asks the release index when no album hint arrives', async () => {
