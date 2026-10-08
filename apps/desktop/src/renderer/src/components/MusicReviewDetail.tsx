@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LibraryCopyInfo, MusicReviewEntry } from '../../../shared/types'
+import type { LibraryCopyInfo, LibraryStatus, MusicReviewEntry } from '../../../shared/types'
 import type {
   DuplicateCard,
   MusicReview as Review,
@@ -119,23 +119,31 @@ function changedRanges(from: string, to: string): { from: [number, number]; to: 
   return { from: snap(a, [start, a.length - end]), to: snap(b, [start, b.length - end]) }
 }
 
-function Where({ sync }: { sync: ReviewSync }) {
+function Where({ sync, libraries }: { sync: ReviewSync; libraries: LibraryStatus | null }) {
   const { t } = useTranslation()
   const places = [
-    t('musicReview.where.music'),
-    t('musicReview.where.file'),
-    ...(sync.rekordbox ? ['rekordbox'] : []),
-    ...(sync.engineDj ? ['Engine DJ'] : []),
-    ...(sync.traktor ? ['Traktor'] : []),
+    { name: t('musicReview.where.music'), missing: false },
+    { name: t('musicReview.where.file'), missing: false },
+    ...(
+      [
+        [sync.rekordbox, 'rekordbox', 'rekordbox'],
+        [sync.engineDj, 'engine', 'Engine DJ'],
+        [sync.traktor, 'traktor', 'Traktor'],
+      ] as const
+    )
+      .filter(([on]) => on)
+      .map(([, library, name]) => ({ name, missing: libraries?.[library].found === false })),
   ]
   return (
     <span className="flex flex-wrap gap-1">
       {places.map((p) => (
         <span
-          key={p}
-          className="rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] whitespace-nowrap text-fg-dim"
+          key={p.name}
+          data-testid={p.missing ? 'music-review-where-missing' : undefined}
+          title={p.missing ? t('musicReview.where.notFound') : undefined}
+          className={`rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] whitespace-nowrap text-fg-dim ${p.missing ? 'line-through opacity-60' : ''}`}
         >
-          {p}
+          {p.name}
         </span>
       ))}
     </span>
@@ -277,7 +285,7 @@ function SpellingDetail({
                         />
                       </td>
                       <td className="py-1.5">
-                        <Where sync={sync} />
+                        <Where sync={sync} libraries={review.libraries} />
                       </td>
                     </tr>
                   )

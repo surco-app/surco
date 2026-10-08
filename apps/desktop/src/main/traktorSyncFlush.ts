@@ -22,6 +22,8 @@ export const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, s
 
 export interface FlushTraktorSyncDeps {
   traktorNmlPath: string
+  // The toggle is on but collection.nml is not on disk.
+  collectionMissing?: boolean
   // Closes this call's begin/end pair and returns the accumulated patches — empty if
   // this end was nested inside a still-open outer batch (see nmlBatch.ts), in which
   // case there is nothing to sync yet and the outer batch's own end will flush later.
@@ -37,8 +39,14 @@ export interface FlushTraktorSyncDeps {
 
 export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<void> {
   const patches = deps.endNmlBatch()
-  if (!deps.traktorNmlPath) return
   if (patches.length === 0) return
+  if (!deps.traktorNmlPath) {
+    if (deps.collectionMissing)
+      await deps.track('export', 'activity.traktorSync', async () => ({ written: false }), {
+        summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
+      })
+    return
+  }
   if (!(await deps.ensureTraktorClosed())) {
     deps.showBlockedDialog()
     return

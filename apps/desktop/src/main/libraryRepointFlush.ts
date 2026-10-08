@@ -37,11 +37,15 @@ export interface RepointKeys {
   unreadable: string
   writeFailed: string
   runningReason: string
+  collectionMissing: string
 }
 
 export interface FlushLibraryDeps<T = RekordboxRepoint> {
   // Empty when the user does not use this library, or pointed the setting at nothing.
   collectionPath: string
+  // The library is switched on but its collection is not on disk. Told apart from an empty
+  // path so the run says so instead of looking like it worked.
+  collectionMissing?: boolean
   // Closes this run's begin/end pair and returns what it accumulated — empty when this
   // end was nested inside a still-open outer batch, which flushes later.
   endBatch: () => T[]
@@ -100,6 +104,7 @@ function summaryOf(
   keys: RepointKeys,
   result: FlushResult,
 ): { detailKey: string; detailParams?: { count: number } } {
+  if (result.blocked === 'collection-missing') return { detailKey: keys.collectionMissing }
   if (result.blocked) return { detailKey: blockedKey(keys, result.blocked) }
   if (result.written > 0) {
     return { detailKey: keys.written, detailParams: { count: result.written } }
@@ -117,7 +122,15 @@ export async function flushLibraryRepoints<T = RekordboxRepoint>(
   keys: RepointKeys,
 ): Promise<FlushResult> {
   const repoints = deps.endBatch()
-  if (!deps.collectionPath || repoints.length === 0) return { written: 0, skipped: [] }
+  if (repoints.length === 0) return { written: 0, skipped: [] }
+  if (!deps.collectionPath) {
+    if (!deps.collectionMissing) return { written: 0, skipped: [] }
+    const missing: FlushResult = { written: 0, skipped: [], blocked: 'collection-missing' }
+    if (!deps.track) return missing
+    return deps.track('export', keys.step, async () => missing, {
+      summary: (result: FlushResult) => summaryOf(keys, result),
+    })
+  }
   // Wrapped only once there is real work: a run whose tracks the library never had would
   // otherwise put an empty "0 tracks" row in the panel on every single convert.
   if (!deps.track) return runRepoints(deps, keys, repoints)

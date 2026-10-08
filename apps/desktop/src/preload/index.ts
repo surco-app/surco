@@ -118,6 +118,7 @@ const api: Api = {
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
   syncLibraryTags: (updates) => ipcRenderer.invoke('library:syncTags', updates),
   replaceDuplicatesInLibraries: (pairs) => ipcRenderer.invoke('library:replaceDuplicates', pairs),
+  libraryStatus: () => ipcRenderer.invoke('library:status'),
   libraryCopyInfo: (paths) => ipcRenderer.invoke('library:copyInfo', paths),
   setMusicField: (pid: string, field: MusicReviewField, from: string, to: string) =>
     ipcRenderer.invoke('applemusic:setField', pid, field, from, to),

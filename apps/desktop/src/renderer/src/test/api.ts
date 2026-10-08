@@ -157,6 +157,10 @@ export function stubApi(over: Partial<Api> = {}): Api {
     cancelMusicFixes: async () => {},
     syncLibraryTags: async () => {},
     replaceDuplicatesInLibraries: async () => [],
+    libraryStatus: async () => {
+      const off = { enabled: false, found: false }
+      return { rekordbox: off, engine: off, traktor: off }
+    },
     libraryCopyInfo: async () => ({}),
     setMusicField: async () => 'missing',
     removeMusicDuplicate: async () => ({ outcome: 'missing', playlists: 0, fileTrashed: false }),

@@ -1146,3 +1146,10 @@ export interface RekordboxSyncIssue {
   blocked?: 'backup-failed' | 'read-only' | 'unreadable' | 'write-failed'
   ambiguous: string[]
 }
+
+// Per DJ library: whether its sync is on, and whether the collection it points at is
+// there. A library can be on and not found, which the review has to say out loud.
+export type LibraryStatus = Record<
+  'rekordbox' | 'engine' | 'traktor',
+  { enabled: boolean; found: boolean }
+>

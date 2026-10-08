@@ -24,6 +24,24 @@ function makeDeps(overrides: Partial<FlushTraktorSyncDeps> = {}): FlushTraktorSy
 // handler. Each guards a case where getting it wrong either drops the user's collection
 // update silently or writes it when it shouldn't have (Traktor still open).
 describe('flushTraktorSync', () => {
+  it('says the collection is missing when the toggle is on but the file is gone', async () => {
+    let summaryDetail: unknown
+    const deps = makeDeps({
+      traktorNmlPath: '',
+      collectionMissing: true,
+      track: vi.fn(async (_kind, _labelKey, task, opts) => {
+        const result = await task()
+        summaryDetail = opts?.summary?.(result)
+        return result
+      }),
+    })
+    await flushTraktorSync(deps)
+
+    expect(summaryDetail).toEqual({ detailKey: 'activity.traktorSyncCollectionMissing' })
+    expect(deps.ensureTraktorClosed).not.toHaveBeenCalled()
+    expect(deps.syncCollection).not.toHaveBeenCalled()
+  })
+
   it('does nothing when no collection.nml path is configured', async () => {
     const deps = makeDeps({ traktorNmlPath: '' })
     await flushTraktorSync(deps)

@@ -1444,7 +1444,10 @@
     "engineSyncUnreadable": "Übersprungen: die Bibliothek konnte nicht gelesen werden",
     "engineSyncWriteFailed": "Übersprungen: die Bibliothek konnte nicht geschrieben werden",
     "engineSyncSkipped_one": "{{count}} Titel übersprungen",
-    "engineSyncSkipped_other": "{{count}} Titel übersprungen"
+    "engineSyncSkipped_other": "{{count}} Titel übersprungen",
+    "rekordboxCollectionMissing": "Übersprungen, die rekordbox-Sammlung wurde nicht gefunden",
+    "engineCollectionMissing": "Übersprungen, die Engine-DJ-Bibliothek wurde nicht gefunden",
+    "traktorSyncCollectionMissing": "Übersprungen, collection.nml wurde nicht gefunden"
   },
   "applePlaylist": {
     "title": "Aus Apple Music importieren",
@@ -1520,7 +1523,8 @@
       "libraries": "rekordbox, Engine DJ und Traktor ziehen nach wie bei einem Aktualisieren, wenn ihr Abgleich aktiv ist",
       "backup": "Sicherung jeder Datei",
       "cancel": "Abbrechen",
-      "apply": "Anwenden"
+      "apply": "Anwenden",
+      "libraryMissing": "{{library}} wird nicht aktualisiert, weil die Sammlung nicht gefunden wurde."
     },
     "applying": "Wende {{done}} von {{total}} an",
     "stop": "Stoppen",
@@ -1550,7 +1554,8 @@
       "undoFailed_one": "{{count}} Änderung konnte nicht rückgängig gemacht werden",
       "undoFailed_other": "{{count}} Änderungen konnten nicht rückgängig gemacht werden",
       "undo": "Rückgängig",
-      "continue": "Weiter prüfen"
+      "continue": "Weiter prüfen",
+      "libraryMissing": "Die konfigurierte {{library}}-Sammlung wurde nicht gefunden. Prüfe sie in den Einstellungen."
     },
     "empty": "Deine Apple-Music-Bibliothek ist leer.",
     "clean": "Nichts zu prüfen.",
@@ -1580,7 +1585,8 @@
     },
     "where": {
       "music": "Music",
-      "file": "Datei"
+      "file": "Datei",
+      "notFound": "Sammlung nicht gefunden"
     }
   }
 }

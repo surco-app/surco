@@ -20,6 +20,7 @@ export const REKORDBOX_KEYS = {
   unreadable: 'activity.rekordboxSyncUnreadable',
   writeFailed: 'activity.rekordboxSyncWriteFailed',
   runningReason: 'rekordbox-running',
+  collectionMissing: 'activity.rekordboxCollectionMissing',
 }
 
 export function flushRekordboxSync(deps: FlushRekordboxDeps): Promise<FlushResult> {

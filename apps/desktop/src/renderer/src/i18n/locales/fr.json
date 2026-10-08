@@ -1444,7 +1444,10 @@
     "engineSyncUnreadable": "Ignoré : impossible de lire la bibliothèque",
     "engineSyncWriteFailed": "Ignoré : impossible d'écrire la bibliothèque",
     "engineSyncSkipped_one": "{{count}} piste ignorée",
-    "engineSyncSkipped_other": "{{count}} pistes ignorées"
+    "engineSyncSkipped_other": "{{count}} pistes ignorées",
+    "rekordboxCollectionMissing": "Ignoré, la collection rekordbox est introuvable",
+    "engineCollectionMissing": "Ignoré, la bibliothèque Engine DJ est introuvable",
+    "traktorSyncCollectionMissing": "Ignoré, collection.nml est introuvable"
   },
   "applePlaylist": {
     "title": "Importer depuis Apple Music",
@@ -1520,7 +1523,8 @@
       "libraries": "rekordbox, Engine DJ et Traktor suivent comme pour une Mise à jour, si leur synchronisation est activée",
       "backup": "Sauvegarde de chaque fichier",
       "cancel": "Annuler",
-      "apply": "Appliquer"
+      "apply": "Appliquer",
+      "libraryMissing": "{{library}} ne sera pas mis à jour car sa collection est introuvable."
     },
     "applying": "Application de {{done}} sur {{total}}",
     "stop": "Arrêter",
@@ -1550,7 +1554,8 @@
       "undoFailed_one": "{{count}} changement n'a pas pu être annulé",
       "undoFailed_other": "{{count}} changements n'ont pas pu être annulés",
       "undo": "Annuler",
-      "continue": "Continuer la vérification"
+      "continue": "Continuer la vérification",
+      "libraryMissing": "La collection {{library}} configurée est introuvable. Vérifie-la dans les Réglages."
     },
     "empty": "Ta bibliothèque Apple Music est vide.",
     "clean": "Rien à vérifier.",
@@ -1580,7 +1585,8 @@
     },
     "where": {
       "music": "Music",
-      "file": "Fichier"
+      "file": "Fichier",
+      "notFound": "Collection introuvable"
     }
   }
 }

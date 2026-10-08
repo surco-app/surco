@@ -20,6 +20,7 @@ import type {
   DuplicateReplaceOutcome,
   KeyResult,
   LibraryCopyInfo,
+  LibraryStatus,
   LibraryTagUpdate,
   LifetimeStats,
   LoudnessResult,
@@ -130,6 +131,8 @@ export interface Api {
     pairs: (DuplicatePair & { shared: boolean })[],
   ) => Promise<DuplicateReplaceOutcome[]>
   // Read only: what each DJ library with its sync on holds for each file. Empty off macOS.
+  // Read only: per DJ library, whether its sync is on and its collection is on disk.
+  libraryStatus: () => Promise<LibraryStatus>
   libraryCopyInfo: (paths: string[]) => Promise<Record<string, LibraryCopyInfo>>
   cancelMusicFixes: () => Promise<void>
   setMusicField: (

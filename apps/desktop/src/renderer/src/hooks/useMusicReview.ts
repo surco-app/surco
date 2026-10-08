@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   DuplicateReplaceOutcome,
+  LibraryStatus,
   LibraryTagUpdate,
   MusicFieldFix,
   MusicFixOutcome,
@@ -71,6 +72,8 @@ export interface MusicReview {
   cancel: () => void
   undo: () => Promise<void>
   lastRun: ReviewRun | null
+  // Null until main answers; a library that is on but not found is the case it exists for.
+  libraries: LibraryStatus | null
   affected: (key: string) => (MusicFieldFix & { title: string })[]
 }
 
@@ -193,7 +196,10 @@ export function useMusicReview({
   const running = useRef(false)
   const cancelled = useRef(false)
 
+  const [libraries, setLibraries] = useState<LibraryStatus | null>(null)
+
   const load = useCallback(async () => {
+    window.api.libraryStatus().then(setLibraries, () => {})
     const next = await window.api.loadMusicReview()
     setEntries(next)
     return next
@@ -513,6 +519,7 @@ export function useMusicReview({
       cancel,
       undo,
       lastRun,
+      libraries,
       affected,
     }),
     [
@@ -531,6 +538,7 @@ export function useMusicReview({
       cancel,
       undo,
       lastRun,
+      libraries,
       affected,
     ],
   )

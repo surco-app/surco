@@ -1,6 +1,6 @@
+import type { TFunction } from 'i18next'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type {
   MusicReview as Review,
@@ -118,6 +118,11 @@ function Confirm({
       {duplicates > 0 && <p className="text-xs text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
       <p className="text-xs text-fg-dim">{t('musicReview.confirm.untouched')}</p>
       <p className="text-xs text-fg-dim">{t('musicReview.confirm.libraries')}</p>
+      {missingLibraries(review).map((name) => (
+        <p key={name} data-testid="music-review-confirm-missing" className="text-xs text-fg-dim">
+          {t('musicReview.confirm.libraryMissing', { library: name })}
+        </p>
+      ))}
       <label className="flex items-center gap-2 text-xs text-fg-dim">
         <input type="checkbox" checked disabled readOnly /> {t('musicReview.confirm.backup')}
       </label>
@@ -153,6 +158,12 @@ const LIBRARIES = [
   ['engine', 'Engine DJ'],
   ['traktor', 'Traktor'],
 ] as const
+
+const missingLibraries = (review: Review) =>
+  LIBRARIES.filter(([library]) => {
+    const status = review.libraries?.[library]
+    return status?.enabled && !status.found
+  }).map(([, name]) => name)
 
 function Done({
   review,
@@ -239,6 +250,12 @@ function Done({
           {t('musicReview.done.replacedIn', { count: l.count, library: l.name })}
         </p>
       ))}
+      {(run.outcomes.some((o) => o.file === 'written') || run.replaced.length > 0) &&
+        missingLibraries(review).map((name) => (
+          <p key={name} data-testid="music-review-done-missing" className="text-fg-dim">
+            {t('musicReview.done.libraryMissing', { library: name })}
+          </p>
+        ))}
       {libraryLines.map((line) => (
         <p key={line} data-testid="music-review-done-library" className="text-fg-dim">
           {line}

@@ -43,6 +43,7 @@ function review(over: Partial<Review> = {}): Review {
     cancel: vi.fn(),
     undo: vi.fn(),
     lastRun: null,
+    libraries: null,
     affected: () => [],
     ...over,
   }
@@ -75,6 +76,15 @@ const written = {
 }
 
 const done = (lastRun: ReviewRun) => review({ status: 'done', lastRun })
+
+const status = (over: Partial<Record<'rekordbox' | 'engine' | 'traktor', boolean>> = {}) => {
+  const lib = (found: boolean | undefined) => ({ enabled: true, found: found ?? true })
+  return {
+    rekordbox: lib(over.rekordbox),
+    engine: lib(over.engine),
+    traktor: lib(over.traktor),
+  }
+}
 
 const NO_SYNC: ReviewSync = { rekordbox: false, engineDj: false, traktor: false }
 
@@ -492,6 +502,55 @@ describe('MusicReview', () => {
       '2 copies replaced by the kept ones in rekordbox',
       '1 copy replaced by the kept one in Traktor',
     ])
+  })
+
+  // Reported 08/10: rekordbox pointed at a deleted copy, the review applied to Music and
+  // files, and the screens still promised rekordbox.
+  describe('a library that is on but whose collection is missing', () => {
+    const staged = () =>
+      review({
+        staged: new Set([group.key]),
+        summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+        libraries: status({ rekordbox: false }),
+        affected: () => [
+          { persistentId: 'C', title: 'Song C', field: 'artist' as const, from: 'a', to: 'b' },
+        ],
+      })
+
+    it('shows its chip struck and explained instead of promising the sync', () => {
+      render(<Panes review={staged()} sync={{ rekordbox: true, engineDj: true, traktor: false }} />)
+      const chip = screen.getByTestId('music-review-where-missing')
+      expect(chip).toHaveTextContent('rekordbox')
+      expect(chip).toHaveAttribute('title', 'Collection not found')
+      expect(screen.getByTestId('music-review-affected')).toHaveTextContent('Engine DJ')
+    })
+
+    it('names each missing library on the confirmation sheet', () => {
+      render(<Panes review={staged()} />)
+      fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+      expect(screen.getByTestId('music-review-confirm-missing')).toHaveTextContent(
+        'rekordbox will not be updated because its collection was not found.',
+      )
+    })
+
+    it('tells Settings is the place to look once the files were written', () => {
+      render(
+        <Panes
+          review={{
+            ...done(run({ outcomes: [written] })),
+            libraries: status({ rekordbox: false }),
+          }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-missing')).toHaveTextContent(
+        'The configured rekordbox collection was not found. Check it in Settings.',
+      )
+    })
+
+    it('stays quiet when every library is found', () => {
+      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
+      expect(screen.queryByTestId('music-review-done-missing')).toBeNull()
+    })
   })
 
   it('warns when the other libraries did not follow and when Music refused the batch', () => {

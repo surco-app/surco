@@ -46,6 +46,11 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
     replaceDuplicatesInLibraries: vi
       .fn<Api['replaceDuplicatesInLibraries']>()
       .mockResolvedValue([]),
+    libraryStatus: vi.fn<Api['libraryStatus']>().mockResolvedValue({
+      rekordbox: { enabled: true, found: false },
+      engine: { enabled: false, found: false },
+      traktor: { enabled: false, found: false },
+    }),
     ...over,
   }
   ;(window as unknown as { api: unknown }).api = api
@@ -74,6 +79,14 @@ const DUPS = [
 afterEach(() => vi.restoreAllMocks())
 
 describe('useMusicReview', () => {
+  it('exposes which libraries are on and found so the review can be honest about them', async () => {
+    setApi()
+    const { result } = await ready()
+    await waitFor(() =>
+      expect(result.current.libraries?.rekordbox).toEqual({ enabled: true, found: false }),
+    )
+  })
+
   it('reads the library and offers the common spelling', async () => {
     setApi()
     const { result } = await ready()

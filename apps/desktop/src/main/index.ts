@@ -39,6 +39,7 @@ import { chordToAccelerator } from '../shared/shortcuts'
 import type {
   CoverExportJob,
   DuplicateReplaceOutcome,
+  LibraryStatus,
   LibraryTagUpdate,
   ProcessJob,
   RekordboxSyncIssue,
@@ -67,19 +68,19 @@ import { downloadCover, imageExt } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
-import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
-import { isEngineDjRunning, quitEngineDj } from './engineProcess'
-import { repointEngineTracks } from './engineRepoint'
-import { replaceEngineDuplicates } from './engineDuplicates'
-import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
-import { updateEngineTags } from './engineTags'
-import { expandPaths } from './expand'
 import {
   libraryOutcomes,
   type ReplacePair,
   replaceDuplicates,
   traktorDuplicateStep,
 } from './duplicateReplace'
+import { replaceEngineDuplicates } from './engineDuplicates'
+import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { isEngineDjRunning, quitEngineDj } from './engineProcess'
+import { repointEngineTracks } from './engineRepoint'
+import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
+import { updateEngineTags } from './engineTags'
+import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
 import { convertAudio, toNmlLocation } from './ffmpeg'
@@ -87,6 +88,7 @@ import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
 import { flushLibraryRepoints } from './libraryRepointFlush'
+import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags } from './libraryTagSync'
 import { createMediaAccess } from './mediaAccess'
@@ -100,11 +102,11 @@ import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
+import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
-import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { loadLastSession, saveLastSession } from './session'
@@ -882,11 +884,24 @@ function registerIpc(): void {
     else dialog.showMessageBox(opts)
   }
 
+  const currentLibraryStatus = () => libraryStatus(getSettings(), existsSync)
+
+  ipcMain.handle('library:status', (): LibraryStatus => {
+    const off = { enabled: false, found: false }
+    return process.platform === 'darwin'
+      ? currentLibraryStatus()
+      : { rekordbox: off, engine: off, traktor: off }
+  })
+
   const traktorFlushDeps = (win: BrowserWindow | null) => ({
     // Same rule as rekordbox below: the toggle grants permission, the path only says
     // where. Before these toggles a filled-in path meant both, which is why anyone
     // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
-    traktorNmlPath: getSettings().syncTraktor ? getSettings().traktorNmlPath : '',
+    traktorNmlPath:
+      getSettings().syncTraktor && currentLibraryStatus().traktor.found
+        ? getSettings().traktorNmlPath
+        : '',
+    collectionMissing: getSettings().syncTraktor && !currentLibraryStatus().traktor.found,
     ensureTraktorClosed: () => ensureTraktorClosed(win),
     showBlockedDialog: () => showSyncBlockedDialog(win, 'traktorSyncBlocked'),
     syncCollection,
@@ -896,9 +911,11 @@ function registerIpc(): void {
   const rekordboxFlushDeps = (win: BrowserWindow | null, sender: WebContents) => ({
     // The toggle decides, not the path: a collection sitting in its standard location is
     // not permission to write to it. An empty path here skips the flush entirely.
-    collectionPath: getSettings().syncRekordbox
-      ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
-      : '',
+    collectionPath:
+      getSettings().syncRekordbox && currentLibraryStatus().rekordbox.found
+        ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+        : '',
+    collectionMissing: getSettings().syncRekordbox && !currentLibraryStatus().rekordbox.found,
     ensureClosed: () => ensureRekordboxClosed(win),
     track: activity.track.bind(activity),
     showBlockedDialog: () => showSyncBlockedDialog(win, 'rekordboxSyncBlocked'),
@@ -912,9 +929,8 @@ function registerIpc(): void {
     const engineDir = getSettings().engineLibraryDir
     return {
       collectionPath:
-        getSettings().syncEngineDj && existsSync(join(engineDir, 'Database2', 'm.db'))
-          ? engineDir
-          : '',
+        getSettings().syncEngineDj && currentLibraryStatus().engine.found ? engineDir : '',
+      collectionMissing: getSettings().syncEngineDj && !currentLibraryStatus().engine.found,
       ensureClosed: () => ensureEngineDjClosed(win),
       track: activity.track.bind(activity),
       showBlockedDialog: () => showSyncBlockedDialog(win, 'engineSyncBlocked'),
@@ -1063,7 +1079,7 @@ function registerIpc(): void {
       const keys = { written: 'activity.duplicatesReplaced' }
       return replaceDuplicates(pairs, {
         libraries: {
-          ...(rekordbox.collectionPath && {
+          ...((rekordbox.collectionPath || rekordbox.collectionMissing) && {
             rekordbox: (list) =>
               libraryOutcomes(
                 list,
@@ -1084,7 +1100,7 @@ function registerIpc(): void {
                   }),
               ),
           }),
-          ...(engine.collectionPath && {
+          ...((engine.collectionPath || engine.collectionMissing) && {
             engine: (list) =>
               libraryOutcomes(
                 list,
@@ -1099,6 +1115,14 @@ function registerIpc(): void {
                     sessionBackup: (db) => engineSessionBackup.ensure(db),
                   }),
               ),
+          }),
+          ...(traktor.collectionMissing && {
+            traktor: async (list) => {
+              await traktor.track('export', 'activity.traktorSync', async () => ({}), {
+                summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
+              })
+              return list.map(() => 'skipped' as const)
+            },
           }),
           ...(traktor.traktorNmlPath && {
             traktor: (list) =>

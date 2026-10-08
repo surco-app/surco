@@ -17,6 +17,7 @@ export const ENGINE_KEYS = {
   unreadable: 'activity.engineSyncUnreadable',
   writeFailed: 'activity.engineSyncWriteFailed',
   runningReason: 'engine-running',
+  collectionMissing: 'activity.engineCollectionMissing',
 }
 
 export function flushEngineSync(deps: FlushLibraryDeps): Promise<FlushResult> {
