@@ -1,3 +1,4 @@
+import { readdirSync, realpathSync } from 'node:fs'
 import { copyFile, readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
@@ -141,6 +142,14 @@ export interface DuplicateCollectionResult {
   reason?: SyncResult['reason']
 }
 
+function bootVolumeName(): string {
+  try {
+    return readdirSync('/Volumes').find((name) => realpathSync(`/Volumes/${name}`) === '/') ?? ''
+  } catch {
+    return ''
+  }
+}
+
 // When the user removes duplicate copies from Music, the collection moves to the copies
 // they kept (see replaceDuplicateInNml), in one write with the same guards as a sync.
 export async function replaceDuplicatesInCollection(
@@ -160,8 +169,9 @@ export async function replaceDuplicatesInCollection(
     return skipped('unreadable')
   }
   let patched = original
+  const bootVolume = bootVolumeName()
   const outcomes = pairs.map((pair) => {
-    const result = replaceDuplicateInNml(patched, pair)
+    const result = replaceDuplicateInNml(patched, pair, bootVolume)
     patched = result.nml
     return result.outcome
   })

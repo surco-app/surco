@@ -1109,12 +1109,28 @@ describe('replaceDuplicateInNml', () => {
 
   it('matches the boot disk whatever Traktor calls it', () => {
     const boot = nml(true).replaceAll('Public', 'Macintosh HD')
-    const { outcome, nml: out } = replaceDuplicateInNml(boot, {
-      from: { ...from, volume: '' },
-      to: { ...to, volume: '' },
-    })
+    const { outcome, nml: out } = replaceDuplicateInNml(
+      boot,
+      { from: { ...from, volume: '' }, to: { ...to, volume: '' } },
+      'Macintosh HD',
+    )
     expect(outcome).toBe('replaced')
     expect(keysOf(out, 'A').keys[0]).toBe('Macintosh HD/:Music/:New/:this rap.aiff')
+  })
+
+  it('does not take another volume for the boot disk when the folder and file are the same', () => {
+    const doc = nml(true)
+    const pair = { from: { ...from, volume: '' }, to: { ...to, volume: '' } }
+    expect(replaceDuplicateInNml(doc, pair, 'Macintosh HD')).toEqual({
+      nml: doc,
+      outcome: 'failed',
+    })
+  })
+
+  it('fails closed when the boot disk name is unknown and the entry names a volume', () => {
+    const doc = nml(true)
+    const pair = { from: { ...from, volume: '' }, to: { ...to, volume: '' } }
+    expect(replaceDuplicateInNml(doc, pair)).toEqual({ nml: doc, outcome: 'failed' })
   })
 
   it('leaves the collection alone when the removed copy is not in it', () => {

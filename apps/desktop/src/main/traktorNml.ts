@@ -598,10 +598,14 @@ const ITEM_KEY_RE = /(<PRIMARYKEY\b[^>]*\sKEY=")([^"]*)(")/
 const sameText = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
 
 // An empty volume is the boot disk, which Traktor stores under its own name.
-const at = (entry: NmlEntry, loc: NmlLocation) =>
-  sameText(entry.dir, loc.dir) &&
-  sameText(entry.file, loc.file) &&
-  (!loc.volume || sameText(entry.volume, loc.volume))
+const atAnyVolume = (entry: NmlEntry, loc: NmlLocation) =>
+  sameText(entry.dir, loc.dir) && sameText(entry.file, loc.file)
+
+const at = (entry: NmlEntry, loc: NmlLocation, bootVolume?: string) =>
+  atAnyVolume(entry, loc) &&
+  (loc.volume
+    ? sameText(entry.volume, loc.volume)
+    : bootVolume === undefined || sameText(entry.volume, bootVolume))
 
 const keyOf = (loc: NmlLocation) => `${loc.volume}${loc.dir}${loc.file}`
 
@@ -648,13 +652,17 @@ function replaceLocation(block: string, dir: string, file: string): string {
 export function replaceDuplicateInNml(
   nml: string,
   pair: { from: NmlLocation; to: NmlLocation },
+  bootVolume = '',
 ): { nml: string; outcome: NmlReplaceOutcome } {
   const collection = nml.match(COLLECTION_RE)
   if (!collection || collection.index === undefined) return { nml, outcome: 'none' }
   const base = collection.index
   const entries = findEntries(collection[0]).filter((e) => e.file)
-  const sources = entries.filter((e) => at(e, pair.from))
-  const kept = entries.filter((e) => at(e, pair.to))
+  const sources = entries.filter((e) => at(e, pair.from, bootVolume))
+  const kept = entries.filter((e) => at(e, pair.to, bootVolume))
+  const elsewhere = (loc: NmlLocation, found: NmlEntry[]) =>
+    !loc.volume && found.length === 0 && entries.some((e) => atAnyVolume(e, loc))
+  if (elsewhere(pair.from, sources) || elsewhere(pair.to, kept)) return { nml, outcome: 'failed' }
   if (sources.length > 1 || kept.length > 1) return { nml, outcome: 'failed' }
   if (sources.length === 0 || sources[0] === kept[0]) return { nml, outcome: 'none' }
   const source = sources[0]
