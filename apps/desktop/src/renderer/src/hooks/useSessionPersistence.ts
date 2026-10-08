@@ -70,12 +70,14 @@ export function useSessionPersistence({
     lastSessionToastId.current = null
     void window.api.saveLastSession([], {})
   })
+  const forgetLastSessionOffer = useStableCallback(() => {
+    lastSessionToastId.current = null
+  })
   const offerLastSession = useStableCallback((session: SessionData) => {
     if (session.paths.length === 0 || tracksRef.current.length > 0 || withdrawnRef.current) return
-    // Two stakes, two behaviours: a paths-only session loses nothing when the offer
-    // ages out, so it keeps the countdown. Staged edits exist nowhere but in this
-    // saved session — expiring would destroy them, so the offer stays up until the
-    // user actually answers (Load, or the ✕ as a deliberate no).
+    // Two stakes, two expiries: a paths-only session loses nothing, so aging out is a no.
+    // Staged edits exist nowhere but in this saved session, so aging out only hides the
+    // offer and the next launch asks again; only the ✕ is a deliberate no.
     const hasEdits = Object.keys(session.edits).length > 0
     lastSessionToastId.current = pushToast(store, {
       key: 'last-session',
@@ -87,9 +89,8 @@ export function useSessionPersistence({
         onAction: () => void reopenLastSession(session),
       },
       onDismiss: declineLastSession,
-      ...(hasEdits
-        ? {}
-        : { duration: LAST_SESSION_PROMPT_TIMEOUT_MS, onExpire: declineLastSession }),
+      duration: LAST_SESSION_PROMPT_TIMEOUT_MS,
+      onExpire: hasEdits ? forgetLastSessionOffer : declineLastSession,
     })
   })
   useEffect(() => {

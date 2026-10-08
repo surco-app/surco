@@ -3055,11 +3055,9 @@ describe('App reopen last session', () => {
     expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
   })
 
-  // With staged edits the expiry IS destructive: they exist nowhere but in the saved
-  // session, and a user who reopens after a crash and looks away for six seconds
-  // would lose everything. The offer must wait for an explicit answer — no countdown,
-  // no self-dismissal; only Load or the ✕ retire it.
-  it('keeps the offer up without a countdown when the session carries staged edits', async () => {
+  // With staged edits the offer still ages out, so it never parks in the corner; its
+  // expiry keeps the saved session, so the edits are offered again on the next launch.
+  it('counts down the offer even when the session carries staged edits', async () => {
     setApi({
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
         paths: ['/music/a.wav'],
@@ -3068,7 +3066,7 @@ describe('App reopen last session', () => {
     })
     await renderApp()
     await screen.findByTestId('last-session')
-    expect(screen.queryByTestId('last-session-countdown')).toBeNull()
+    expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
   })
 
   // If the user has already started importing, restoring the old list on top would mix
