@@ -99,6 +99,7 @@
       "artist": "Artista",
       "duration": "Duración",
       "format": "Formato",
+      "trackNumber": "Número de pista",
       "ascending": "Orden ascendente",
       "descending": "Orden descendente"
     },
