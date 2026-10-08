@@ -3877,3 +3877,27 @@ User report (08/10): after pressing Apply there's a lag before anything visible 
 - main: start events before finish events, first event before the first setField resolves.
 - hook: progress total set synchronously on apply; phase sequence for apply and undo.
 - view: indeterminate bar before the first count, determinate width after, phase labels rendered.
+
+---
+
+### Task 25: La revisión, fiel al diseño de Surco (incluye la Task 24)
+
+User (08/10): "no estamos usando el mismo diseño de botones etc de Surco en esta nueva vista" + "quiero que sea fiel a diseño de Surco". Reference = the main screen: left column with TrackListHeader (search field, "All 16 ▾" filter dropdown, sort, list tools), TrackList rows (thumbnail, title, secondary line, right-aligned duration + format badge), the Toolbar's primary action top-right ("Convert 1 of 16", Toolbar.tsx ~118, with TopProgressBar), the Editor with SectionHeader sections ("Metadata", "Audio quality" with chevron, SectionHeader.tsx) and the full-width ConvertFooter split button at the bottom of the editor ("Missing Genre and Grouping" / Convert). The review currently invents its own chips, floating tray and ad-hoc buttons. This task SUPERSEDES Task 24 (immediate feedback) — implement Task 24's requirements inside this design (brief: task-24-brief.md, read it).
+
+## Rule
+REUSE the existing components (TrackListHeader patterns, TrackList row markup/classes, Toolbar primary button, TopProgressBar, SectionHeader, ConvertFooter/ExportButton split-button pattern, the app's filter dropdown/menu components, Tooltip, ModalShell). If a component can't be reused directly, extract the shared presentational piece from it (behavior-preserving, own commit, its tests green) rather than copying classes. No new visual styles: same tokens, sizes, radii, spacing, typography and icons (lucide) as those components. Read each component and its tests first.
+
+## Mapping
+- Left column header: like TrackListHeader — a search field ("Buscar en la revisión", filters groups by name/variants/titles) and the filter dropdown ("Todo 97 ▾" with options Todo / Grafías / Duplicados and counts), replacing the chips. Close as the app does to leave a view (look for an existing close/back affordance; otherwise an icon button with Tooltip "Cerrar", same style as the list tool icons).
+- Rows: same row component/markup as TrackList rows: title = group name, secondary line = fields · kind, right side = track count and a badge in the format-badge style with the kind ("Mayúsculas", "Signos", "Invisibles", "Errata", "Duplicado", "Versión"), using the existing badge colors (safe kinds like the good/neutral badge, typo/version like the warn style the app already uses). Selected row = TrackList's selected style; staged = the app's existing dimmed/marked convention (check TrackList for "processed/stale" markers and reuse). Thumbnails: duplicates may show the copy artwork if cheap (embeddedCover not available → use the existing placeholder music-note tile TrackList shows for tracks without art).
+- Batch action: the Toolbar's top-right primary button slot shows "Aplicar N cambios" (disabled with 0) while the review is open — instead of the floating tray. Clicking opens the existing confirmation sheet. While applying it becomes "Aplicando X de N" exactly like batch convert does, with TopProgressBar determinate/indeterminate and the Task 24 phase labels and immediate progress. Stop = the same cancel affordance batch convert uses.
+- Detail pane: sections with SectionHeader (chevron, collapsible like the editor): "Cómo queda" (options), "Pistas afectadas" (table), "Copias" for duplicates. Group title at the top styled like the editor's file header ("File" heading area).
+- Per-group action: full-width footer at the bottom of the detail pane, ConvertFooter/ExportButton split-button pattern: main button "Unificar en N pistas" / "Quitar N copias" / "Quitar de la tanda" when staged; the split menu holds "Ignorar" / "No es el mismo" / "Son distintas".
+- Remove the floating tray, the chips, and the ad-hoc buttons. Keep all data-testids that tests rely on (move them to the new elements) or update tests deliberately.
+- Keep behavior identical: staging rules, confirmation sheet, done sheet, undo, busy/applying locks, Escape handling, keyboard ↑/↓.
+
+## Tests
+- View tests updated for the new structure (search filters groups; dropdown filter; row badge text; top-right button label and disabled state; footer split button actions; SectionHeader collapse).
+- Task 24 tests (progress starts at click with total, start events from main, phase labels, indeterminate→determinate).
+- App test: with the review open, the toolbar's primary button shows "Aplicar N cambios" and Convert is not shown.
+Real-app check (controller does it): screenshot side by side with the main screen.
