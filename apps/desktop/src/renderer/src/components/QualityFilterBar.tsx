@@ -1,7 +1,6 @@
 import {
   AudioLines,
   Check,
-  ChevronDown,
   CircleAlert,
   CircleCheckBig,
   Copy as CopyIcon,
@@ -21,10 +20,11 @@ import {
   Zap,
 } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibrarySource } from '../lib/librarySource'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
+import { FilterBar, FilterDivider, FilterOption } from './FilterBar'
 import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
@@ -170,9 +170,6 @@ export function QualityFilterBar({
     librarySource === 'engineDj' && (mode === 'inLibrary' || mode === 'notInLibrary')
       ? tr(`sidebar.filter.${mode}Engine`)
       : tr(`sidebar.filter.${mode}`)
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
 
   // Conversion status and provenance, surfaced right under "All": "unconverted" is the
   // primary call to action (the whole backlog to convert), so it leads the buckets instead
@@ -223,65 +220,25 @@ export function QualityFilterBar({
     value.duplicates ??
     value.attention ??
     'all'
-  useEffect(() => {
-    if (!open) return
-    listRef.current
-      ?.querySelector<HTMLElement>(`[data-testid="quality-filter-${focusMode}"]`)
-      ?.focus()
-  }, [open, focusMode])
-
-  function close(): void {
-    setOpen(false)
-    triggerRef.current?.focus()
-  }
-
   // Toggle one axis and close, like a native select. The axes are still independent — the
   // reopened menu shows the current ticks — so layering a second axis is one reopen away,
   // while the common single-filter pick closes the moment it's made.
-  function toggle(mode: Mode): void {
+  function toggle(mode: Mode, close: () => void): void {
     const axis = axisOf(mode)
     onChange({ ...value, [axis]: isActive(mode) ? null : mode })
     close()
   }
 
-  function toggleFormat(format: string): void {
+  function toggleFormat(format: string, close: () => void): void {
     onChange({ ...value, format: value.format === format ? null : format })
     close()
   }
 
   // "All" clears every axis at once, so it's a true "show everything" reset rather than
   // only resetting one dimension and leaving the others quietly applied.
-  function chooseAll(): void {
+  function chooseAll(close: () => void): void {
     onChange(EMPTY_FILTER)
     close()
-  }
-
-  // The open menu owns its keys: each handled press stops propagating so the window-level
-  // shortcut handler can't also move the track selection behind the popover.
-  function onListKeyDown(e: React.KeyboardEvent): void {
-    if (e.key === 'Escape') {
-      e.stopPropagation()
-      close()
-      return
-    }
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.stopPropagation()
-      return
-    }
-    const items = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
-    )
-    if (items.length === 0) return
-    const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
-    e.preventDefault()
-    e.stopPropagation()
-    items[next].focus()
   }
 
   // What the closed trigger shows. With nothing active it's a bare "All"; with exactly one
@@ -340,142 +297,76 @@ export function QualityFilterBar({
       ? 'bg-[var(--color-accent)]'
       : null) ?? (tally.suspect > 0 ? 'bg-warn' : null)
 
-  const rowClass =
-    'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-hover)]'
-  const divider = (
-    // A hidden div, not an <hr>: a listbox may own only options, and the divider is
-    // decoration, so it stays out of the accessibility tree.
-    <div
-      aria-hidden="true"
-      data-testid="quality-filter-separator"
-      className="my-1 border-0 border-t border-[var(--color-line)]"
-    />
-  )
   // A primary bucket row. "All" is the odd one out: it reads as selected only when nothing
   // is filtered and clears every axis, so it gets nothingActive/chooseAll instead of the
   // plain axis match.
-  const renderPrimary = (mode: Mode | 'all'): React.JSX.Element => {
-    const Icon = FILTER_ICONS[mode]
-    const dot = mode === 'all' ? null : attentionDot(mode, tally)
-    const selected = mode === 'all' ? nothingActive : isActive(mode)
-    return (
-      <button
-        key={mode}
-        type="button"
-        role="option"
-        aria-selected={selected}
-        data-testid={`quality-filter-${mode}`}
-        onClick={mode === 'all' ? chooseAll : () => toggle(mode)}
-        className={rowClass}
-      >
-        <span className="relative">
-          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {dot && <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`} />}
-        </span>
-        <span className="flex-1">{filterLabel(mode)}</span>
-        <span className="tabular-nums text-fg-dim">
-          {mode === 'all' ? trackCount : countOf(mode)}
-        </span>
-        <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
-      </button>
-    )
-  }
+  const renderPrimary = (mode: Mode | 'all', close: () => void): React.JSX.Element => (
+    <FilterOption
+      key={mode}
+      testid={`quality-filter-${mode}`}
+      Icon={FILTER_ICONS[mode]}
+      dot={mode === 'all' ? null : attentionDot(mode, tally)}
+      label={filterLabel(mode)}
+      count={mode === 'all' ? trackCount : countOf(mode)}
+      selected={mode === 'all' ? nothingActive : isActive(mode)}
+      onClick={mode === 'all' ? () => chooseAll(close) : () => toggle(mode, close)}
+    />
+  )
   // A format bucket row: an independent toggle that ANDs with the bucket axes. Clicking the
   // active one clears it.
-  const renderFormat = (f: { format: string; count: number }): React.JSX.Element => {
-    const active = value.format === f.format
-    return (
-      <button
-        key={f.format}
-        type="button"
-        role="option"
-        aria-selected={active}
-        data-testid={`quality-filter-ext:${f.format}`}
-        onClick={() => toggleFormat(f.format)}
-        className={rowClass}
-      >
-        <FileAudio className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span className="flex-1">{f.format}</span>
-        <span className="tabular-nums text-fg-dim">{f.count}</span>
-        <Check aria-hidden="true" className={`size-3 shrink-0 ${active ? '' : 'invisible'}`} />
-      </button>
-    )
-  }
+  const renderFormat = (f: { format: string; count: number }, close: () => void) => (
+    <FilterOption
+      key={f.format}
+      testid={`quality-filter-ext:${f.format}`}
+      Icon={FileAudio}
+      label={f.format}
+      count={f.count}
+      selected={value.format === f.format}
+      onClick={() => toggleFormat(f.format, close)}
+    />
+  )
 
   return (
-    <div
-      ref={filterRef}
-      data-testid="quality-filter"
-      className="flex items-center gap-1.5 px-1.5 py-2"
+    <FilterBar
+      testid="quality-filter"
+      filterRef={filterRef}
+      trigger={{ ...trigger, dot: triggerDot }}
+      listLabel={tr('sidebar.filter.label')}
+      // Several buckets (one per axis) can be on at once.
+      multiselectable
+      focusTestId={`quality-filter-${focusMode}`}
+      options={(close) => (
+        <>
+          {/* "All" leads as the reset, then the conversion buckets right under it (the
+              primary "what's left to convert" action), then the format axis, then the
+              quality/library buckets. Fragments keep every option a direct child of the
+              listbox, with a divider between sections; empty sections (no formats, no
+              library) drop their divider too. */}
+          {renderPrimary('all', close)}
+          <Fragment key="conversion">
+            <FilterDivider />
+            {conversionSection.map((m) => renderPrimary(m, close))}
+          </Fragment>
+          {formats.length > 0 && (
+            <Fragment key="formats">
+              <FilterDivider />
+              {formats.map((f) => renderFormat(f, close))}
+            </Fragment>
+          )}
+          {primarySections.map((group) => (
+            <Fragment key={group[0]}>
+              <FilterDivider />
+              {group.map((m) => renderPrimary(m, close))}
+            </Fragment>
+          ))}
+        </>
+      )}
+      counterTestId="track"
+      visibleCount={visibleCount}
+      selectedPosition={selectedPosition}
+      selectedCount={selectedCount}
+      onRevealSelected={onRevealSelected}
     >
-      <div className="relative min-w-0 flex-1">
-        <button
-          ref={triggerRef}
-          type="button"
-          data-testid="quality-filter-trigger"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          // Carries the filter and count it shows: a fixed "Filter" hid which view the list
-          // is in and didn't match the words on screen.
-          aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
-          onClick={() => setOpen((v) => !v)}
-          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          <span className="relative shrink-0">
-            <trigger.Icon className="h-4 w-4" aria-hidden="true" />
-            {triggerDot && (
-              <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
-            )}
-          </span>
-          <span className="min-w-0 truncate text-left">{trigger.label}</span>
-          <span className="shrink-0 tabular-nums opacity-70">{trigger.count}</span>
-          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
-        </button>
-        {open && (
-          <>
-            <button
-              type="button"
-              data-testid="quality-filter-backdrop"
-              aria-label={tr('common.close')}
-              onClick={close}
-              className="fixed inset-0 z-40 cursor-default"
-            />
-            <div
-              ref={listRef}
-              role="listbox"
-              // Several buckets (one per axis) can be on at once.
-              aria-multiselectable="true"
-              data-testid="quality-filter-listbox"
-              aria-label={tr('sidebar.filter.label')}
-              onKeyDown={onListKeyDown}
-              className="animate-pop-flat origin-top-left absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
-            >
-              {/* "All" leads as the reset, then the conversion buckets right under it (the
-                  primary "what's left to convert" action), then the format axis, then the
-                  quality/library buckets. Fragments keep every option a direct child of the
-                  listbox, with a divider between sections; empty sections (no formats, no
-                  library) drop their divider too. */}
-              {renderPrimary('all')}
-              <Fragment key="conversion">
-                {divider}
-                {conversionSection.map(renderPrimary)}
-              </Fragment>
-              {formats.length > 0 && (
-                <Fragment key="formats">
-                  {divider}
-                  {formats.map(renderFormat)}
-                </Fragment>
-              )}
-              {primarySections.map((group) => (
-                <Fragment key={group[0]}>
-                  {divider}
-                  {group.map(renderPrimary)}
-                </Fragment>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
       {children}
       {value.quality === 'suspect' && tally.suspect > 0 && (
         <button
@@ -489,39 +380,6 @@ export function QualityFilterBar({
           <Tooltip label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })} />
         </button>
       )}
-      {selectedCount > 1 ? (
-        <span
-          data-testid="track-selected-count"
-          className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-dim"
-        >
-          {tr('sidebar.selectedCount', { count: selectedCount })}
-        </span>
-      ) : (
-        visibleCount > 0 &&
-        (selectedPosition !== null ? (
-          <button
-            type="button"
-            data-testid="track-position"
-            onClick={onRevealSelected}
-            // Bare digits say neither what they count nor that a press scrolls back to it.
-            aria-label={tr('sidebar.positionReveal', {
-              current: selectedPosition,
-              total: visibleCount,
-            })}
-            className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-faint outline-none hover:text-fg"
-          >
-            {`${selectedPosition}/${visibleCount}`}
-            <Tooltip label={tr('header.revealSelected')} />
-          </button>
-        ) : (
-          <span
-            data-testid="track-position"
-            className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
-          >
-            {`‒/${visibleCount}`}
-          </span>
-        ))
-      )}
-    </div>
+    </FilterBar>
   )
 }
