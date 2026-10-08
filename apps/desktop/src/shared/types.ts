@@ -777,6 +777,13 @@ export interface DuplicateReplaceOutcome {
 
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
 
+// `current` is the 1-based track being worked on; `done` counts the finished ones.
+export interface MusicFixProgress {
+  done: number
+  total: number
+  current: number
+}
+
 export interface MusicFixOutcome {
   persistentId: string
   path?: string

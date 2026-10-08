@@ -2,6 +2,7 @@ import type {
   MusicFieldFix,
   MusicFieldOutcome,
   MusicFixOutcome,
+  MusicFixProgress,
   MusicReviewField,
   TrashEntry,
 } from '../shared/types'
@@ -25,7 +26,7 @@ export interface ApplyDeps {
 
 export interface ApplyHooks {
   isCancelled?: () => boolean
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (progress: MusicFixProgress) => void
 }
 
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
@@ -68,13 +69,17 @@ export async function applyMusicFixes(
   const byTrack = new Map<string, MusicFieldFix[]>()
   for (const f of fixes) byTrack.set(f.persistentId, [...(byTrack.get(f.persistentId) ?? []), f])
   const outcomes: MusicFixOutcome[] = []
+  // Progress is a courtesy: a dead window must not lose the outcomes of tracks already written.
+  const report = (current: number) => {
+    try {
+      onProgress?.({ done: outcomes.length, total: byTrack.size, current })
+    } catch {}
+  }
   for (const [persistentId, trackFixes] of byTrack) {
     if (isCancelled()) break
+    report(outcomes.length + 1)
     outcomes.push(await applyTrack(persistentId, trackFixes, deps))
-    // Progress is a courtesy: a dead window must not lose the outcomes of tracks already written.
-    try {
-      onProgress?.(outcomes.length, byTrack.size)
-    } catch {}
+    report(outcomes.length)
   }
   return outcomes
 }

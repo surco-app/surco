@@ -104,8 +104,8 @@ export function registerAppleMusicIpc(
       },
       {
         isCancelled: () => fixesCancelled,
-        onProgress: (done, total) => {
-          if (!e.sender.isDestroyed()) e.sender.send('applemusic:fixProgress', { done, total })
+        onProgress: (progress) => {
+          if (!e.sender.isDestroyed()) e.sender.send('applemusic:fixProgress', progress)
         },
       },
     )

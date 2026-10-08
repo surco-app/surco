@@ -27,6 +27,7 @@ import type {
   MetaRead,
   MusicFieldFix,
   MusicFixOutcome,
+  MusicFixProgress,
   MusicReviewEntry,
   MusicReviewField,
   ProcessJob,
@@ -147,7 +148,7 @@ export interface Api {
     label: string
     keepLabel: string
   }) => Promise<RemoveCopyResult>
-  onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => () => void
+  onMusicFixProgress: (cb: (p: MusicFixProgress) => void) => () => void
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
   // macOS, where the renderer never offers the import.
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>

@@ -11,6 +11,7 @@ import type {
   KeyResult,
   LoudnessResult,
   MusicFieldFix,
+  MusicFixProgress,
   MusicReviewEntry,
   MusicReviewField,
   ProcessProgress,
@@ -123,8 +124,8 @@ const api: Api = {
   setMusicField: (pid: string, field: MusicReviewField, from: string, to: string) =>
     ipcRenderer.invoke('applemusic:setField', pid, field, from, to),
   removeMusicDuplicate: (req) => ipcRenderer.invoke('applemusic:removeDuplicate', req),
-  onMusicFixProgress: (cb: (p: { done: number; total: number }) => void) => {
-    const listener = (_e: unknown, p: { done: number; total: number }): void => cb(p)
+  onMusicFixProgress: (cb: (p: MusicFixProgress) => void) => {
+    const listener = (_e: unknown, p: MusicFixProgress): void => cb(p)
     ipcRenderer.on('applemusic:fixProgress', listener)
     return () => ipcRenderer.removeListener('applemusic:fixProgress', listener)
   },

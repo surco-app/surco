@@ -79,13 +79,33 @@ describe('applyMusicFixes', () => {
     expect(outs.map((o) => o.persistentId)).toEqual(['A'])
   })
 
-  it('reports progress per track', async () => {
+  // A track takes seconds (Music, then the file and its check); reporting only when one
+  // finished left the first seconds of a run looking like nothing had started.
+  it('reports each track when it starts and when it finishes', async () => {
     const onProgress = vi.fn()
     await applyMusicFixes([fix('A'), fix('B')], deps(), { onProgress })
     expect(onProgress.mock.calls).toEqual([
-      [1, 2],
-      [2, 2],
+      [{ done: 0, total: 2, current: 1 }],
+      [{ done: 1, total: 2, current: 1 }],
+      [{ done: 1, total: 2, current: 2 }],
+      [{ done: 2, total: 2, current: 2 }],
     ])
+  })
+
+  it('reports the first track before Music answers for it', async () => {
+    const onProgress = vi.fn()
+    let answer: (v: 'set') => void = () => {}
+    const setField = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+    )
+    const run = applyMusicFixes([fix('A')], deps({ setField }), { onProgress })
+    await Promise.resolve()
+    expect(onProgress).toHaveBeenCalledWith({ done: 0, total: 1, current: 1 })
+    answer('set')
+    await run
   })
 
   it('keeps every outcome when the progress hook throws', async () => {
