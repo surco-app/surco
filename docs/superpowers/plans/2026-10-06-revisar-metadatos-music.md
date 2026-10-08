@@ -3856,3 +3856,24 @@ Found in the user's real test (08/10): the dev instance's settings had `rekordbo
 - The review list column must be a fixed-height flex column: header (title, filters) fixed at the top, the group list is the only scrolling area, and the tray ("N cambios · Revisar y aplicar") always visible at the bottom (not inside the scrolling content). Today the column content scrolls as a whole inside App's list scroll container, so the tray ends up after the last group.
 - Rows: the secondary line ("Artista y artista del álbum · posible errata") must not be cut so early — let the name and secondary line use the full row width and put the track count on the first line's right edge (or below), so "Artista y artista del álbum · mayúsculas" fits at the default column width.
 - Tests: tray rendered outside the scrolling element (DOM structure assertion with data-testid on the scroll area), list scroll area has overflow-y auto, header outside it.
+
+---
+
+### Task 24: Respuesta inmediata al aplicar la revisión
+
+User report (08/10): after pressing Apply there's a lag before anything visible happens; it looks broken and then suddenly works. Diagnosis: the tray shows "Aplicando 0 de 0" (progress is null until main's first event), and main reports progress only AFTER each track finishes (Music osascript per field, locate, NAS copy + tag write + full decode check). Later phases (duplicate removal, rekordbox/Engine/Traktor sync — which may prompt to close the app — and the final full-library reread) have no label at all. Approved by the user ("adelante").
+
+## A. Progress from the first instant
+- main/musicReviewApply.ts: report progress when each track STARTS as well as when it finishes, so the first event arrives within ~0 ms of the run starting (`{ done, total, current }` where `current` is the 1-based index being worked on; keep `done` semantics). Tests.
+- Hook: set progress immediately on apply with the known total (fix tracks + duplicate removals) before any IPC returns; add a `phase` to the hook state: 'writing' | 'duplicates' | 'libraries' | 'verifying', set at each step of apply (and the equivalent for undo: 'restoring' | 'libraries' | 'verifying'). Tests.
+
+## B. Tray
+- Thin progress bar inside the tray: indeterminate with the existing `animate-top-progress` class (index.css top-progress keyframes) until the first count arrives, then determinate width with `transition-[width] duration-300 ease-out` (same pattern as TopProgressBar.tsx). Respect prefers-reduced-motion (existing media rules cover the class; a determinate bar just jumps).
+- One label per phase (5 locales, castellano llano, no em dash, no explanatory colon): es "Escribiendo en Music y ficheros {{current}} de {{total}}", "Quitando duplicados {{current}} de {{total}}", "Actualizando rekordbox, Engine DJ y Traktor", "Comprobando la biblioteca"; undo: "Restaurando {{current}} de {{total}}". Label changes use the existing `footer-swap-in` animation if it fits (or a 150ms opacity fade with cubic-bezier(0.2, 0, 0, 1)).
+- Make sure the bar reaches 100% (300 ms) before the done sheet opens (await one frame / the transition) — no jump between bar and result. Stop button unchanged.
+- Out of scope: animating list row selection, staggering affected rows, per-row "applied" marks (rejected in the scouting report).
+
+## Tests (TDD, RED first)
+- main: start events before finish events, first event before the first setField resolves.
+- hook: progress total set synchronously on apply; phase sequence for apply and undo.
+- view: indeterminate bar before the first count, determinate width after, phase labels rendered.
