@@ -149,6 +149,10 @@ const other = {
 }
 const rows = () => screen.getAllByTestId('music-review-row')
 const detail = () => screen.getByTestId('music-review-detail')
+const ignoreFromMenu = () => {
+  fireEvent.click(screen.getByTestId('music-review-more'))
+  fireEvent.click(screen.getByTestId('music-review-ignore'))
+}
 
 describe('MusicReview', () => {
   // The column is for finding a group; deciding happens in the detail beside it, so a
@@ -314,10 +318,10 @@ describe('MusicReview', () => {
     }
     render(<Ignoring />)
     fireEvent.click(rows()[1])
-    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    ignoreFromMenu()
     expect(rows()[1]).toHaveAttribute('aria-selected', 'true')
     expect(detail()).toHaveTextContent('Techno')
-    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    ignoreFromMenu()
     expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -849,7 +853,7 @@ describe('MusicReview', () => {
     )
     const controls = () => [
       screen.getByTestId('music-review-stage'),
-      screen.getByTestId('music-review-ignore'),
+      screen.getByTestId('music-review-more'),
       ...screen.getAllByRole('radio'),
     ]
     const spelling = controls()
@@ -934,6 +938,79 @@ describe('MusicReview', () => {
         'aria-expanded',
         'true',
       )
+    })
+  })
+
+  describe('group footer', () => {
+    const affected = () => [
+      { persistentId: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara', title: 'S' },
+      {
+        persistentId: 'C',
+        field: 'albumArtist' as const,
+        from: 'Dj Lara',
+        to: 'DJ Lara',
+        title: 'S',
+      },
+      { persistentId: 'D', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara', title: 'S' },
+    ]
+
+    // The group's own action sits where the editor puts Convert: the full-width split
+    // button at the foot of the pane, with the rarer choices behind its chevron.
+    it('stages from the main button at the foot of the detail and counts the tracks it changes', () => {
+      const r = review({ affected })
+      render(<Panes review={r} />)
+      const stage = screen.getByTestId('music-review-stage')
+      expect(screen.getByTestId('music-review-footer')).toContainElement(stage)
+      expect(screen.getByTestId('music-review-detail-scroll')).not.toContainElement(stage)
+      expect(stage).toHaveTextContent('Unify in 2 tracks')
+      fireEvent.click(stage)
+      expect(r.ignore).not.toHaveBeenCalled()
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
+    })
+
+    it('ignores a group from the menu and names it by kind', () => {
+      const r = review()
+      const { unmount } = render(<Panes review={r} />)
+      expect(screen.queryByTestId('music-review-ignore')).toBeNull()
+      fireEvent.click(screen.getByTestId('music-review-more'))
+      expect(screen.getByRole('menu')).toBeVisible()
+      expect(screen.getByTestId('music-review-ignore')).toHaveTextContent('Ignore')
+      fireEvent.click(screen.getByTestId('music-review-ignore'))
+      expect(r.ignore).toHaveBeenCalledWith(group.key)
+      unmount()
+      render(<Panes review={review({ spelling: [{ ...group, kind: 'typo' }] })} />)
+      fireEvent.click(screen.getByTestId('music-review-more'))
+      expect(screen.getByTestId('music-review-ignore')).toHaveTextContent('Not the same')
+    })
+
+    it('removes copies from the main button and says a version differs from the menu', () => {
+      const version = {
+        group: { key: 'v#1', kind: 'version' as const, ids: ['1', '2'] },
+        entries: [
+          {
+            persistentId: '1',
+            artist: 'Ann',
+            title: 'Song',
+            album: '',
+            genre: '',
+            albumArtist: '',
+          },
+          {
+            persistentId: '2',
+            artist: 'Ann',
+            title: 'Song',
+            album: '',
+            genre: '',
+            albumArtist: '',
+          },
+        ],
+        formats: {},
+        locations: {},
+      }
+      render(<Panes review={review({ spelling: [], duplicates: [version] })} />)
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove 1 copy')
+      fireEvent.click(screen.getByTestId('music-review-more'))
+      expect(screen.getByTestId('music-review-ignore')).toHaveTextContent('They differ')
     })
   })
 

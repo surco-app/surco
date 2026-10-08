@@ -1493,9 +1493,6 @@
       "version": "andere Version"
     },
     "tie": "Gleichstand. Wähle, welche bleibt.",
-    "unify": "Vereinheitlichen",
-    "remove_one": "{{count}} entfernen",
-    "remove_other": "{{count}} entfernen",
     "staged": "Vormerkung aufheben",
     "ignore": "Ignorieren",
     "notSame": "Nicht derselbe",
@@ -1602,6 +1599,11 @@
       "libraries": "Aktualisiere rekordbox, Engine DJ und Traktor",
       "verifying": "Prüfe die Mediathek",
       "restoring": "Stelle wieder her {{current}} von {{total}}"
-    }
+    },
+    "moreActions": "Weitere Aktionen",
+    "unifyCount_one": "In {{count}} Titel vereinheitlichen",
+    "unifyCount_other": "In {{count}} Titeln vereinheitlichen",
+    "removeCopies_one": "{{count}} Kopie entfernen",
+    "removeCopies_other": "{{count}} Kopien entfernen"
   }
 }

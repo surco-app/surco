@@ -1493,9 +1493,6 @@
       "version": "outra versão"
     },
     "tie": "Empate. Escolha qual fica.",
-    "unify": "Unificar",
-    "remove_one": "Remover {{count}}",
-    "remove_other": "Remover {{count}}",
     "staged": "Tirar do lote",
     "ignore": "Ignorar",
     "notSame": "Não é o mesmo",
@@ -1602,6 +1599,11 @@
       "libraries": "Atualizando rekordbox, Engine DJ e Traktor",
       "verifying": "Verificando a biblioteca",
       "restoring": "Restaurando {{current}} de {{total}}"
-    }
+    },
+    "moreActions": "Mais ações",
+    "unifyCount_one": "Unificar em {{count}} faixa",
+    "unifyCount_other": "Unificar em {{count}} faixas",
+    "removeCopies_one": "Remover {{count}} cópia",
+    "removeCopies_other": "Remover {{count}} cópias"
   }
 }

@@ -1493,9 +1493,6 @@
       "version": "another version"
     },
     "tie": "Tied. Pick the one to keep.",
-    "unify": "Unify",
-    "remove_one": "Remove {{count}}",
-    "remove_other": "Remove {{count}}",
     "staged": "Unstage",
     "ignore": "Ignore",
     "notSame": "Not the same",
@@ -1602,6 +1599,11 @@
       "libraries": "Updating rekordbox, Engine DJ and Traktor",
       "verifying": "Checking the library",
       "restoring": "Restoring {{current}} of {{total}}"
-    }
+    },
+    "moreActions": "More actions",
+    "unifyCount_one": "Unify in {{count}} track",
+    "unifyCount_other": "Unify in {{count}} tracks",
+    "removeCopies_one": "Remove {{count}} copy",
+    "removeCopies_other": "Remove {{count}} copies"
   }
 }
