@@ -794,6 +794,33 @@ describe('MusicReview', () => {
       )
     })
 
+    it('does not also say the missing library was open or unreadable', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                replaced: [
+                  {
+                    from: '/a',
+                    rekordbox: 'skipped',
+                    traktor: 'failed',
+                    fileTrashed: false,
+                    keptForLibrary: true,
+                  },
+                ],
+              }),
+            ),
+            libraries: status({ rekordbox: false }),
+          }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-missing')).toHaveTextContent('rekordbox')
+      expect(screen.getAllByTestId('music-review-done-library').map((p) => p.textContent)).toEqual([
+        "Traktor couldn't be updated. The copies are already out of Music.",
+      ])
+    })
+
     it('stays quiet when every library is found', () => {
       render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
       expect(screen.queryByTestId('music-review-done-missing')).toBeNull()

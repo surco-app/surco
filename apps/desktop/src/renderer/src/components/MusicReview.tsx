@@ -197,12 +197,15 @@ function Done({
   const removed = run.removed.filter((r) => r.outcome === 'removed').length
   const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
   const trashed = run.replaced.filter((r) => r.fileTrashed).length
+  const missing = missingLibraries(review)
   const libraryLines = LIBRARIES.flatMap(([library, name]) => {
     const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
     const held = library === 'traktor' ? 0 : count('replaced')
     return [
       ...(held ? [t('musicReview.done.stillInCollection', { count: held, library: name })] : []),
-      ...(count('skipped') ? [t('musicReview.done.librarySkipped', { library: name })] : []),
+      ...(count('skipped') && !missing.includes(name)
+        ? [t('musicReview.done.librarySkipped', { library: name })]
+        : []),
       ...(count('failed') ? [t('musicReview.done.libraryReplaceFailed', { library: name })] : []),
     ]
   })
@@ -266,7 +269,7 @@ function Done({
         </p>
       ))}
       {(run.outcomes.some((o) => o.file === 'written') || run.replaced.length > 0) &&
-        missingLibraries(review).map((name) => (
+        missing.map((name) => (
           <p key={name} data-testid="music-review-done-missing" className="text-fg-dim">
             {t('musicReview.done.libraryMissing', { library: name })}
           </p>
