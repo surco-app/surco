@@ -11,6 +11,7 @@ import type {
 } from '../../../shared/types'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
 import { tagUpdatesOf } from '../lib/libraryTagUpdates'
+import { prefersReducedMotion } from '../lib/motion'
 import { planFixes, summarizeFixes } from '../lib/musicFixPlan'
 import {
   type SpellingGroup,
@@ -51,6 +52,15 @@ export interface ReviewRun {
   undoFailures?: number
 }
 
+export type ReviewPhase =
+  | { name: 'writing' | 'duplicates' | 'restoring'; current: number; total: number }
+  | { name: 'libraries' | 'verifying' }
+
+// How long the bar takes to fill (TopProgressBar's transition), waited out before the
+// result opens so the bar never jumps from part way to gone. Reduced motion has no fill to
+// wait for: the bar jumps.
+const FILL_MS = 300
+
 export interface MusicReview {
   status: 'loading' | 'ready' | 'empty' | 'error' | 'applying' | 'done'
   filter: ReviewFilter
@@ -68,6 +78,7 @@ export interface MusicReview {
     duplicates: number
   }
   progress: { done: number; total: number } | null
+  phase: ReviewPhase | null
   apply: () => Promise<void>
   cancel: () => void
   undo: () => Promise<void>
@@ -190,6 +201,7 @@ export function useMusicReview({
   )
   const [locations, setLocations] = useState<Record<string, string>>({})
   const [progress, setProgress] = useState<MusicReview['progress']>(null)
+  const [phase, setPhase] = useState<ReviewPhase | null>(null)
   const [lastRun, setLastRun] = useState<ReviewRun | null>(null)
   const running = useRef(false)
   const cancelled = useRef(false)
@@ -379,13 +391,30 @@ export function useMusicReview({
     [fixes, removals],
   )
 
+  const fill = useCallback(async (total: number) => {
+    setProgress({ done: total, total })
+    setPhase(null)
+    if (!prefersReducedMotion()) await new Promise((resolve) => setTimeout(resolve, FILL_MS))
+  }, [])
+
   const apply = useCallback(async () => {
     if (running.current) return
     running.current = true
     cancelled.current = false
     setStatus('applying')
     const before = pendingCount(entries, hidden)
-    const off = window.api.onMusicFixProgress(setProgress)
+    const writes = new Set(fixes.map((f) => f.persistentId)).size
+    const total = writes + removals.length
+    setProgress({ done: 0, total })
+    setPhase(
+      writes
+        ? { name: 'writing', current: 1, total: writes }
+        : { name: 'duplicates', current: 1, total: removals.length },
+    )
+    const off = window.api.onMusicFixProgress((p) => {
+      setProgress({ done: p.done, total })
+      setPhase({ name: 'writing', current: p.current, total: p.total })
+    })
     try {
       let outcomes: MusicFixOutcome[] = []
       let applyError: string | undefined
@@ -398,17 +427,20 @@ export function useMusicReview({
       const removed: RemoveCopyResult[] = []
       for (const r of removals) {
         if (cancelled.current || applyError !== undefined) break
+        setPhase({ name: 'duplicates', current: removed.length + 1, total: removals.length })
         removed.push(await window.api.removeMusicDuplicate(r).catch(() => FAILED_REMOVAL))
+        setProgress({ done: writes + removed.length, total })
       }
       const pairs = removed.flatMap((r) => (r.pair ? [r.pair] : []))
       let replaced: DuplicateReplaceOutcome[] = []
       let replaceFailed = false
+      const updates = tagUpdatesOf(outcomes, 'apply')
+      if ((pairs.length && !cancelled.current) || updates.length) setPhase({ name: 'libraries' })
       if (pairs.length && !cancelled.current)
         replaced = await window.api.replaceDuplicatesInLibraries(pairs).catch(() => {
           replaceFailed = true
           return []
         })
-      const updates = tagUpdatesOf(outcomes, 'apply')
       let librarySync: ReviewRun['librarySync'] = replaceFailed ? 'failed' : 'none'
       if (updates.length) {
         const synced = await window.api.syncLibraryTags(updates).then(
@@ -418,6 +450,7 @@ export function useMusicReview({
         if (librarySync !== 'failed') librarySync = synced
       }
       if (updates.length) onFilesChanged(updates)
+      setPhase({ name: 'verifying' })
       const next = await load().catch(() => null)
       setStaged(new Set())
       setChoices({})
@@ -431,13 +464,15 @@ export function useMusicReview({
         librarySync,
         ...(applyError === undefined ? {} : { applyError }),
       })
+      await fill(total)
     } finally {
       off()
       setProgress(null)
+      setPhase(null)
       running.current = false
       setStatus('done')
     }
-  }, [entries, hidden, fixes, removals, load, onFilesChanged])
+  }, [entries, hidden, fixes, removals, load, onFilesChanged, fill])
 
   const cancel = useCallback(() => {
     cancelled.current = true
@@ -448,11 +483,16 @@ export function useMusicReview({
     if (running.current || !lastRun) return
     running.current = true
     setStatus('applying')
+    const total = lastRun.outcomes.length
+    setProgress({ done: 0, total })
+    setPhase({ name: 'restoring', current: 1, total })
     try {
       const restored: MusicFixOutcome[] = []
       const reverted: MusicFixOutcome[] = []
       const failed: MusicFixOutcome[] = []
-      for (const o of lastRun.outcomes) {
+      for (const [i, o] of lastRun.outcomes.entries()) {
+        setPhase({ name: 'restoring', current: i + 1, total })
+        setProgress({ done: i, total })
         if (o.file === 'written' && !o.backupId) {
           failed.push(o)
           continue
@@ -478,6 +518,7 @@ export function useMusicReview({
       }
       const updates = tagUpdatesOf(reverted, 'undo')
       let librarySync: ReviewRun['librarySync'] = 'none'
+      if (updates.length) setPhase({ name: 'libraries' })
       if (updates.length)
         librarySync = await window.api.syncLibraryTags(updates).then(
           () => 'ok' as const,
@@ -485,17 +526,21 @@ export function useMusicReview({
         )
       const back = tagUpdatesOf(restored, 'undo')
       if (back.length) onFilesChanged(back)
+      setPhase({ name: 'verifying' })
       await load().catch(() => null)
       setLastRun(
         failed.length === 0 && librarySync !== 'failed'
           ? null
           : { ...lastRun, outcomes: failed, librarySync, undoFailures: failed.length },
       )
+      await fill(total)
     } finally {
+      setProgress(null)
+      setPhase(null)
       running.current = false
       setStatus('ready')
     }
-  }, [lastRun, load, onFilesChanged])
+  }, [lastRun, load, onFilesChanged, fill])
 
   // Stable between renders because the provider keeps it in state: a fresh object each
   // render would set that state again and never settle.
@@ -513,6 +558,7 @@ export function useMusicReview({
       ignore,
       summary,
       progress,
+      phase,
       apply,
       cancel,
       undo,
@@ -532,6 +578,7 @@ export function useMusicReview({
       ignore,
       summary,
       progress,
+      phase,
       apply,
       cancel,
       undo,

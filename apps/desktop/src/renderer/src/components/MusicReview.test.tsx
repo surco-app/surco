@@ -39,6 +39,7 @@ function review(over: Partial<Review> = {}): Review {
     ignore: vi.fn(),
     summary: { tracks: 0, byField: {}, duplicates: 0 },
     progress: null,
+    phase: null,
     apply: vi.fn(),
     cancel: vi.fn(),
     undo: vi.fn(),

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import type { MusicReviewEntry } from '../../../shared/types'
-import { useMusicReview } from './useMusicReview'
+import type { MusicReviewEntry, RemoveCopyResult } from '../../../shared/types'
+import { type MusicReview, useMusicReview } from './useMusicReview'
 
 const e = (
   persistentId: string,
@@ -76,6 +76,12 @@ const DUPS = [
   e('Q', 'Ann', { title: 'Song', durationSec: 201 }),
 ]
 
+const reduceMotion = (reduce: boolean) => {
+  window.matchMedia = vi.fn().mockReturnValue({ matches: reduce }) as never
+}
+
+// The bar's fill is waited out only with motion on; most runs here skip it to stay fast.
+beforeEach(() => reduceMotion(true))
 afterEach(() => vi.restoreAllMocks())
 
 describe('useMusicReview', () => {
@@ -175,6 +181,131 @@ describe('useMusicReview', () => {
     act(() => result.current.choose(key, 'Rachel Auburn'))
     act(() => result.current.toggleStaged(key))
     expect(result.current.staged.has(key)).toBe(true)
+  })
+
+  describe('feedback while a run goes', () => {
+    const gate = <T,>() => {
+      let open: (v: T) => void = () => {}
+      const promise = new Promise<T>((resolve) => {
+        open = resolve
+      })
+      return { promise, open }
+    }
+
+    const recording = async (over = {}) => {
+      const states: (Pick<MusicReview, 'status' | 'progress'> & { at: number })[] = []
+      const hook = renderHook(() => {
+        const r = useMusicReview(props(over))
+        states.push({ status: r.status, progress: r.progress, at: performance.now() })
+        return r
+      })
+      await waitFor(() => expect(hook.result.current.status).toBe('ready'))
+      return { ...hook, states }
+    }
+
+    // The first event from main can take a moment; the total is known the instant the user
+    // confirms, so the run shows itself from the click.
+    it('sets the progress and the writing phase the moment apply starts', async () => {
+      setApi({ applyMusicFixes: vi.fn().mockReturnValue(new Promise(() => {})) })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      act(() => {
+        void result.current.apply()
+      })
+      expect(result.current.progress).toEqual({ done: 0, total: 1 })
+      expect(result.current.phase).toEqual({ name: 'writing', current: 1, total: 1 })
+    })
+
+    it('follows main as each track starts and finishes', async () => {
+      let send: (p: { done: number; total: number; current: number }) => void = () => {}
+      setApi({
+        applyMusicFixes: vi.fn().mockReturnValue(new Promise(() => {})),
+        onMusicFixProgress: vi.fn().mockImplementation((cb) => {
+          send = cb
+          return () => {}
+        }),
+      })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      act(() => {
+        void result.current.apply()
+      })
+      act(() => send({ done: 1, total: 1, current: 1 }))
+      expect(result.current.progress).toEqual({ done: 1, total: 1 })
+      expect(result.current.phase).toEqual({ name: 'writing', current: 1, total: 1 })
+    })
+
+    it('names each step of an apply in order and fills the bar before the result', async () => {
+      reduceMotion(false)
+      const write = gate<never[]>()
+      const remove = gate<RemoveCopyResult>()
+      const replace = gate<never[]>()
+      const reread = gate<typeof LIB>()
+      const load = vi
+        .fn()
+        .mockResolvedValueOnce([...LIB, ...DUPS])
+        .mockReturnValueOnce(reread.promise)
+      setApi({
+        loadMusicReview: load,
+        applyMusicFixes: vi.fn().mockReturnValue(write.promise),
+        removeMusicDuplicate: vi.fn().mockReturnValue(remove.promise),
+        replaceDuplicatesInLibraries: vi.fn().mockReturnValue(replace.promise),
+      })
+      const { result, states } = await recording()
+      await waitFor(() => expect(result.current.duplicates[0].formats.P).toBe('AIFF'))
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      let run: Promise<void> = Promise.resolve()
+      act(() => {
+        run = result.current.apply()
+      })
+      expect(result.current.progress).toEqual({ done: 0, total: 2 })
+      expect(result.current.phase?.name).toBe('writing')
+      write.open([])
+      await waitFor(() =>
+        expect(result.current.phase).toEqual({ name: 'duplicates', current: 1, total: 1 }),
+      )
+      remove.open({
+        outcome: 'removed',
+        playlists: 0,
+        fileTrashed: true,
+        pair: { from: '/a', to: '/b', shared: false },
+      })
+      await waitFor(() => expect(result.current.phase).toEqual({ name: 'libraries' }))
+      replace.open([])
+      await waitFor(() => expect(result.current.phase).toEqual({ name: 'verifying' }))
+      reread.open(LIB)
+      await act(() => run)
+      const full = states.find((x) => x.status === 'applying' && x.progress?.done === 2)
+      const shown = states.find((x) => x.status === 'done')
+      expect(full?.progress).toEqual({ done: 2, total: 2 })
+      expect((shown?.at ?? 0) - (full?.at ?? 0)).toBeGreaterThanOrEqual(250)
+      expect(result.current.status).toBe('done')
+      expect(result.current.progress).toBeNull()
+      expect(result.current.phase).toBeNull()
+    })
+
+    it('names the restore and the steps after it when undoing', async () => {
+      const restore = gate<{ restoredTo: string }>()
+      const sync = gate<undefined>()
+      setApi({
+        trashRestore: vi.fn().mockReturnValue(restore.promise),
+        syncLibraryTags: vi.fn().mockResolvedValueOnce(undefined).mockReturnValueOnce(sync.promise),
+      })
+      const { result } = await recording()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      await act(() => result.current.apply())
+      let run: Promise<void> = Promise.resolve()
+      act(() => {
+        run = result.current.undo()
+      })
+      expect(result.current.phase).toEqual({ name: 'restoring', current: 1, total: 1 })
+      restore.open({ restoredTo: '/m/c.mp3' })
+      await waitFor(() => expect(result.current.phase).toEqual({ name: 'libraries' }))
+      sync.open(undefined)
+      await act(() => run)
+      expect(result.current.phase).toBeNull()
+    })
   })
 
   // The main-side cancel flag is shared, so two runs at once would cancel each other.
