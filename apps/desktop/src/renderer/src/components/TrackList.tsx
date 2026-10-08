@@ -1,4 +1,4 @@
-import { Check, CircleAlert, Music, Play, TriangleAlert, Undo2, X } from 'lucide-react'
+import { Check, CircleAlert, Play, TriangleAlert, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import {
   memo,
@@ -22,6 +22,15 @@ import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
+import {
+  CoverPlaceholder,
+  listRowClass,
+  PILL_TEXT,
+  ROW_DETAIL,
+  ROW_TITLE,
+  ROW_TRAILING,
+  TonePill,
+} from './ListRow'
 import { Tooltip } from './Tooltip'
 
 const isMac = isMacOS()
@@ -185,12 +194,6 @@ const qualityShape: Record<RowTone, React.JSX.Element> = {
   danger: <rect x="2" y="2" width="8" height="8" rx="1.8" />,
 }
 
-const qualityPill: Record<RowTone, string> = {
-  good: 'bg-good/15 text-good',
-  warn: 'bg-warn/20 text-warn',
-  danger: 'bg-danger/20 text-danger',
-}
-
 const qualityLabel: Record<RowVerdict, string> = {
   good: 'editor.qualityGood',
   warn: 'editor.qualitySuspect',
@@ -222,25 +225,20 @@ function QualityPill({
 }): React.JSX.Element {
   const tone = qualityTone[verdict]
   return (
-    <span
-      data-testid="track-quality"
-      data-quality={verdict}
-      data-tone={tone}
-      className={`group/dot relative flex h-4 items-center gap-[3px] rounded px-[5px] ${qualityPill[tone]}`}
-    >
+    <TonePill tone={tone} quality={verdict}>
       {(tone !== 'good' || !format) && (
         <svg aria-hidden="true" viewBox="0 0 12 12" className="h-2 w-2" fill="currentColor">
           {qualityShape[tone]}
         </svg>
       )}
       {format && (
-        <span data-testid="track-format" className="text-[10px] font-semibold leading-4">
+        <span data-testid="track-format" className={PILL_TEXT}>
           {format}
         </span>
       )}
       <Tooltip label={label} align="end" scope="dot" />
       <span className="sr-only">{label}</span>
-    </span>
+    </TonePill>
   )
 }
 
@@ -580,18 +578,7 @@ const TrackRow = memo(function TrackRow({
           // just left trails behind a held key. Only the swipe position eases, and only the
           // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
           // the fingers with no easing (inline transition: none).
-          className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] duration-200 ease-out ${
-            // The primary row (the one open in the editor) takes the selection fill, the way
-            // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
-            // quieter accent tint. Everything else is bare: no outline and no fill of its own,
-            // like the lists in Music or Mail, so the page of rows reads as one list instead of
-            // a stack of cards, and only the hover tints it.
-            primary
-              ? 'is-primary bg-[var(--color-row-selected)]'
-              : selected
-                ? 'bg-[var(--color-accent-soft)]/85'
-                : 'hover:bg-[var(--color-hover)]/85'
-          } focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-[var(--color-accent)]`}
+          className={listRowClass(primary, selected)}
         >
           {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
               ones want attention before you read a single glyph. Hidden on the primary row,
@@ -633,14 +620,7 @@ const TrackRow = memo(function TrackRow({
                 }`}
               />
             ) : (
-              <span
-                data-testid="track-cover-placeholder"
-                className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
-                  converting ? 'rounded-full' : 'rounded-md'
-                }`}
-              >
-                <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
-              </span>
+              <CoverPlaceholder round={converting} />
             )}
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />
@@ -661,15 +641,12 @@ const TrackRow = memo(function TrackRow({
                 artist a few letters. */}
             <span data-testid="track-title-line" className="flex items-center gap-2">
               <span className="relative block min-w-0 flex-1 truncate">
-                <span className="relative block w-fit max-w-full truncate text-sm font-medium text-fg">
+                <span className={ROW_TITLE}>
                   <Tooltip label={rowTooltip(t, tr)} />
                   {t.listLabel}
                 </span>
               </span>
-              <span
-                data-testid="track-duration-slot"
-                className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
-              >
+              <span data-testid="track-duration-slot" className={`w-[34px] ${ROW_TRAILING}`}>
                 {t.duration !== undefined && (
                   <span data-testid="track-duration">{formatTime(t.duration)}</span>
                 )}
@@ -695,7 +672,7 @@ const TrackRow = memo(function TrackRow({
               </span>
             ) : (
               <span data-testid="track-detail-line" className="flex items-center gap-2">
-                <span className="relative block min-w-0 flex-1 truncate text-xs text-fg-dim">
+                <span className={ROW_DETAIL}>
                   <span className="relative block w-fit max-w-full truncate">
                     <Tooltip label={rowTooltip(t, tr)} />
                     {t.meta.artist || tr('trackList.noArtist')}

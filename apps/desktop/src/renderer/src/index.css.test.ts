@@ -200,8 +200,8 @@ describe('section pill label contrast (WCAG 1.4.3 AA)', () => {
 // fill the dark danger label drops to 2.70:1. The pill instead lays its tint over the panel
 // colour, opaque, so it reads on the selected row exactly as it does off it.
 describe('quality pill on the selected row', () => {
-  const trackList = readFileSync(
-    fileURLToPath(new URL('./components/TrackList.tsx', import.meta.url)),
+  const listRow = readFileSync(
+    fileURLToPath(new URL('./components/ListRow.tsx', import.meta.url)),
     'utf8',
   )
   const primaryBlock = css.slice(css.indexOf('.is-primary'))
@@ -211,7 +211,7 @@ describe('quality pill on the selected row', () => {
   })
 
   for (const tone of ['good', 'warn', 'danger']) {
-    const pct = Number(trackList.match(new RegExp(`bg-${tone}/(\\d+) text-${tone}`))?.[1])
+    const pct = Number(listRow.match(new RegExp(`bg-${tone}/(\\d+) text-${tone}`))?.[1])
 
     it(`paints the ${tone} pill with its off-row tint over the panel`, () => {
       expect(primaryBlock).toContain(
