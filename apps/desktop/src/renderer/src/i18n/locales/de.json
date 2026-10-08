@@ -1505,12 +1505,6 @@
     "removedNoUndo": "Entfernte Kopien kommen mit Rückgängig nicht zurück.",
     "tracks_one": "{{count}} Titel",
     "tracks_other": "{{count}} Titel",
-    "tray": {
-      "empty": "Wähle in jeder Gruppe und wende am Ende an",
-      "count_one": "{{count}} Änderung",
-      "count_other": "{{count}} Änderungen",
-      "apply": "Prüfen und anwenden"
-    },
     "confirm": {
       "title_one": "Du änderst {{count}} Titel",
       "title_other": "Du änderst {{count}} Titel",
@@ -1524,7 +1518,6 @@
       "apply": "Anwenden",
       "libraryMissing": "{{library}} wird nicht aktualisiert, weil die Sammlung nicht gefunden wurde."
     },
-    "applying": "Wende {{done}} von {{total}} an",
     "stop": "Stoppen",
     "done": {
       "title": "Bibliothek geprüft",
@@ -1599,6 +1592,15 @@
       "typo": "Tippfehler",
       "duplicate": "Duplikat",
       "version": "Version"
+    },
+    "applyCount_one": "{{count}} Änderung anwenden",
+    "applyCount_other": "{{count}} Änderungen anwenden",
+    "phase": {
+      "writing": "Schreibe in Music und Dateien {{current}} von {{total}}",
+      "duplicates": "Entferne Duplikate {{current}} von {{total}}",
+      "libraries": "Aktualisiere rekordbox, Engine DJ und Traktor",
+      "verifying": "Prüfe die Mediathek",
+      "restoring": "Stelle wieder her {{current}} von {{total}}"
     }
   }
 }

@@ -6,7 +6,13 @@ import {
   type ReviewFilter,
   useMusicReview,
 } from '../hooks/useMusicReview'
-import { MusicReview, type ReviewSort, visibleKeys } from './MusicReview'
+import {
+  MusicReview,
+  MusicReviewAction,
+  MusicReviewProgress,
+  type ReviewSort,
+  visibleKeys,
+} from './MusicReview'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
 interface Shared {
@@ -17,6 +23,8 @@ interface Shared {
   setSearch: (value: string) => void
   sort: ReviewSort
   setSort: (sort: ReviewSort) => void
+  confirming: boolean
+  setConfirming: (open: boolean) => void
 }
 
 const ReviewContext = createContext<Shared | null>(null)
@@ -74,16 +82,30 @@ function Owner({
 function Gate({ review, children }: { review: Review | null; children: React.ReactNode }) {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<ReviewSort>('default')
+  const [confirming, setConfirming] = useState(false)
   const { selectedKey, select } = useSelection(review, search, sort)
   const closed = review === null
   useEffect(() => {
     if (!closed) return
     setSearch('')
     setSort('default')
+    setConfirming(false)
   }, [closed])
   return (
     <ReviewContext.Provider
-      value={review && { review, selectedKey, select, search, setSearch, sort, setSort }}
+      value={
+        review && {
+          review,
+          selectedKey,
+          select,
+          search,
+          setSearch,
+          sort,
+          setSort,
+          confirming,
+          setConfirming,
+        }
+      }
     >
       {children}
     </ReviewContext.Provider>
@@ -121,6 +143,8 @@ export function MusicReviewColumn({ onClose, busy }: { onClose: () => void; busy
       onSearch={shared.setSearch}
       sort={shared.sort}
       onSort={shared.setSort}
+      confirming={shared.confirming}
+      onConfirming={shared.setConfirming}
     />
   )
 }
@@ -129,4 +153,21 @@ export function MusicReviewDetailPane({ sync }: { sync: ReviewSync }) {
   const shared = useContext(ReviewContext)
   if (!shared) return <section data-testid="music-review-detail" className="h-full" />
   return <MusicReviewDetail review={shared.review} selectedKey={shared.selectedKey} sync={sync} />
+}
+
+export function MusicReviewToolbarAction({ busy }: { busy: boolean }) {
+  const shared = useContext(ReviewContext)
+  if (!shared) return null
+  return (
+    <MusicReviewAction
+      review={shared.review}
+      busy={busy}
+      onConfirm={() => shared.setConfirming(true)}
+    />
+  )
+}
+
+export function MusicReviewTopProgress() {
+  const shared = useContext(ReviewContext)
+  return shared ? <MusicReviewProgress review={shared.review} /> : null
 }

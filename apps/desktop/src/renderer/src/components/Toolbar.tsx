@@ -72,6 +72,9 @@ interface Props {
   // for the dot on the activity button — the same signal the panel's rows show.
   activityRunning: boolean
   onSettings: () => void
+  // Takes the main action's place while another view owns the screen (the Music review),
+  // so Convert never acts on a list that is out of sight.
+  primary?: React.ReactNode
 }
 
 // The window's title-bar toolbar: the convert-the-list action, the auto-match and
@@ -109,6 +112,7 @@ export const Toolbar = memo(function Toolbar({
   onActivity,
   activityRunning,
   onSettings,
+  primary,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const convertLabel =
@@ -352,25 +356,35 @@ export const Toolbar = memo(function Toolbar({
             trailing edge, where a macOS toolbar keeps its main action, on the same side as
             the editor footer's action for the open track. Labelled rather than a bare
             glyph: it rewrites files, and an icon alone would not say what it touches. */}
-        {trackCount > 0 && (
+        {primary ? (
           <>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            <PrimaryAction
-              testid="convert-all"
-              Icon={ArrowRightLeft}
-              label={convertLabel}
-              running={batching}
-              runningLabel={tr('header.convertingCount', {
-                done: batchProgress.done,
-                total: batchProgress.total,
-              })}
-              cancelLabel={tr('header.cancelConvert')}
-              ready={canConvertAll}
-              hint={hintFor('process-all')}
-              onRun={onConvertAll}
-              onCancel={onCancelBatch}
-            />
+            {primary}
           </>
+        ) : (
+          trackCount > 0 && (
+            <>
+              <div
+                aria-hidden="true"
+                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
+              />
+              <PrimaryAction
+                testid="convert-all"
+                Icon={ArrowRightLeft}
+                label={convertLabel}
+                running={batching}
+                runningLabel={tr('header.convertingCount', {
+                  done: batchProgress.done,
+                  total: batchProgress.total,
+                })}
+                cancelLabel={tr('header.cancelConvert')}
+                ready={canConvertAll}
+                hint={hintFor('process-all')}
+                onRun={onConvertAll}
+                onCancel={onCancelBatch}
+              />
+            </>
+          )
         )}
       </div>
     </header>

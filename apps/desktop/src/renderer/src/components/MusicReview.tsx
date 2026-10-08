@@ -4,6 +4,7 @@ import {
   CaseSensitive,
   Copy as CopyIcon,
   List,
+  ListChecks,
   ListMusic,
   type LucideIcon,
   SpellCheck,
@@ -16,6 +17,7 @@ import type {
   DuplicateCard,
   MusicReview as Review,
   ReviewFilter,
+  ReviewPhase,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { INVISIBLE } from '../lib/musicSpelling'
@@ -33,7 +35,9 @@ import {
 import { ModalShell } from './ModalShell'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
+import { PrimaryAction } from './Toolbar'
 import { Tooltip } from './Tooltip'
+import { TopProgressBar } from './TopProgressBar'
 
 const BTN = 'press rounded-md px-2.5 py-1 text-xs outline-none disabled:opacity-40'
 export const PRIMARY = `${BTN} bg-[var(--color-accent)] text-[var(--color-on-accent)]`
@@ -456,6 +460,8 @@ export function MusicReview({
   onSearch,
   sort,
   onSort,
+  confirming,
+  onConfirming,
 }: {
   review: Review
   selectedKey: string | null
@@ -466,10 +472,11 @@ export function MusicReview({
   onSearch: (value: string) => void
   sort: ReviewSort
   onSort: (sort: ReviewSort) => void
+  confirming: boolean
+  onConfirming: (open: boolean) => void
 }) {
   const { t } = useTranslation()
   const applying = review.status === 'applying'
-  const [confirming, setConfirming] = useState(false)
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const counts = {
@@ -480,7 +487,6 @@ export function MusicReview({
   const visible = visibleGroups(review, search, sort)
   const keys = visibleKeys(review, search, sort)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
-  const pending = review.summary.tracks + review.summary.duplicates
   const nothing = review.status === 'ready' && counts.all === 0
   return (
     <div data-testid="music-review" className="relative flex min-h-0 flex-1 flex-col">
@@ -646,47 +652,7 @@ export function MusicReview({
           ))}
         </div>
       </div>
-      <div
-        data-testid="music-review-tray"
-        className="m-3 flex shrink-0 items-center gap-2.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2.5"
-      >
-        {review.status === 'applying' ? (
-          <>
-            <span className="text-xs tabular-nums">
-              {t('musicReview.applying', {
-                done: review.progress?.done ?? 0,
-                total: review.progress?.total ?? 0,
-              })}
-            </span>
-            <button
-              type="button"
-              data-testid="music-review-stop"
-              className={`${GHOST} ml-auto`}
-              onClick={review.cancel}
-            >
-              {t('musicReview.stop')}
-            </button>
-          </>
-        ) : (
-          <>
-            <span className="min-w-0 truncate text-xs">
-              {pending > 0
-                ? t('musicReview.tray.count', { count: pending })
-                : t('musicReview.tray.empty')}
-            </span>
-            <button
-              type="button"
-              data-testid="music-review-tray-apply"
-              className={`${PRIMARY} ml-auto shrink-0`}
-              disabled={busy || review.staged.size === 0}
-              onClick={() => setConfirming(true)}
-            >
-              {t('musicReview.tray.apply')}
-            </button>
-          </>
-        )}
-      </div>
-      {confirming && <Confirm review={review} busy={busy} onCancel={() => setConfirming(false)} />}
+      {confirming && <Confirm review={review} busy={busy} onCancel={() => onConfirming(false)} />}
       {(review.status === 'done' || review.status === 'ready') &&
         review.lastRun &&
         doneSeen !== review.lastRun && (
@@ -694,4 +660,64 @@ export function MusicReview({
         )}
     </div>
   )
+}
+
+function phaseLabel(t: TFunction, phase: ReviewPhase | null): string {
+  if (phase === null) return t('musicReview.phase.verifying')
+  if ('current' in phase)
+    return t(`musicReview.phase.${phase.name}`, { current: phase.current, total: phase.total })
+  return t(`musicReview.phase.${phase.name}`)
+}
+
+// The review's batch takes the toolbar's main button while the review is open: Apply with
+// the count, and while it runs, the step it is on, pressed to stop.
+export function MusicReviewAction({
+  review,
+  busy,
+  onConfirm,
+}: {
+  review: Review
+  busy: boolean
+  onConfirm: () => void
+}) {
+  const { t } = useTranslation()
+  const running = review.status === 'applying'
+  const label = phaseLabel(t, review.phase)
+  return (
+    <>
+      <span role="status" className="sr-only">
+        {running ? label : ''}
+      </span>
+      <PrimaryAction
+        testid="music-review-apply"
+        Icon={ListChecks}
+        label={t('musicReview.applyCount', {
+          count: review.summary.tracks + review.summary.duplicates,
+        })}
+        running={running}
+        runningLabel={
+          <span key={review.phase?.name} className="animate-footer-swap inline-block">
+            {label}
+          </span>
+        }
+        cancelLabel={t('musicReview.stop')}
+        ready={!busy && review.staged.size > 0}
+        onRun={onConfirm}
+        onCancel={review.cancel}
+      />
+    </>
+  )
+}
+
+// The steps with a count fill the bar; the ones without (the libraries, the reread) and
+// the wait for the first track slide it.
+export function MusicReviewProgress({ review }: { review: Review }) {
+  if (review.status !== 'applying') return null
+  const { progress, phase } = review
+  const counted =
+    progress !== null &&
+    progress.done > 0 &&
+    phase?.name !== 'libraries' &&
+    phase?.name !== 'verifying'
+  return <TopProgressBar fraction={counted ? progress.done / progress.total : null} />
 }

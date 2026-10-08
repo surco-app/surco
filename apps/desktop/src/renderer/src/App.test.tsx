@@ -3476,6 +3476,27 @@ describe('App Music review', () => {
     expect(await screen.findByTestId('add-files')).toBeInTheDocument()
   })
 
+  // The review's batch is the screen's main action while it is open, so it takes the
+  // toolbar's main button the way converting does for the list.
+  it('puts Apply in the toolbar in place of Convert while the review is open', async () => {
+    vi.resetModules()
+    reviewApi(spellingFixture())
+    await renderApp()
+    await addOneTrack()
+    expect(screen.getByTestId('convert-all')).toBeInTheDocument()
+    runMenu('music-review')
+    const apply = await screen.findByTestId('music-review-apply')
+    expect(screen.getByTestId('open-settings').closest('header')).toContainElement(apply)
+    expect(apply).toHaveTextContent('Apply 0 changes')
+    expect(apply).toBeDisabled()
+    expect(screen.queryByTestId('convert-all')).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    expect(apply).toHaveTextContent('Apply 1 change')
+    expect(apply).toBeEnabled()
+    fireEvent.click(apply)
+    expect(await screen.findByTestId('music-review-confirm')).toBeInTheDocument()
+  })
+
   // Reviewing a library is the point of the view; it must not need a track in the list.
   it('opens over an empty list', async () => {
     vi.resetModules()
@@ -3514,7 +3535,7 @@ describe('App Music review', () => {
     )
     runMenu('music-review')
     fireEvent.click(await screen.findByTestId('music-review-stage'))
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
     await screen.findByTestId('music-review-done')
     fireEvent.click(screen.getByTestId('music-review-continue'))
@@ -3573,7 +3594,7 @@ describe('App Music review', () => {
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     runMenu('music-review')
     fireEvent.click(await screen.findByTestId('music-review-stage'))
-    expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
+    expect(screen.getByTestId('music-review-apply')).toBeDisabled()
   })
 
   it('switches the filter when a Music command runs while the review is open', async () => {
@@ -3600,7 +3621,7 @@ describe('App Music review', () => {
     await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
     runMenu('music-review')
     fireEvent.click(await screen.findByTestId('music-review-stage'))
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(await screen.findByTestId('music-review-confirm-apply')).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() =>

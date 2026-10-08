@@ -1505,12 +1505,6 @@
     "removedNoUndo": "Las copias quitadas no vuelven con Deshacer.",
     "tracks_one": "{{count}} pista",
     "tracks_other": "{{count}} pistas",
-    "tray": {
-      "empty": "Elige en cada grupo y aplica al final",
-      "count_one": "{{count}} cambio",
-      "count_other": "{{count}} cambios",
-      "apply": "Revisar y aplicar"
-    },
     "confirm": {
       "title_one": "Vas a cambiar {{count}} pista",
       "title_other": "Vas a cambiar {{count}} pistas",
@@ -1524,7 +1518,6 @@
       "apply": "Aplicar",
       "libraryMissing": "{{library}} no se actualizará porque no se encuentra su colección."
     },
-    "applying": "Aplicando {{done}} de {{total}}",
     "stop": "Detener",
     "done": {
       "title": "Biblioteca revisada",
@@ -1599,6 +1592,15 @@
       "typo": "Errata",
       "duplicate": "Duplicado",
       "version": "Versión"
+    },
+    "applyCount_one": "Aplicar {{count}} cambio",
+    "applyCount_other": "Aplicar {{count}} cambios",
+    "phase": {
+      "writing": "Escribiendo en Music y ficheros {{current}} de {{total}}",
+      "duplicates": "Quitando duplicados {{current}} de {{total}}",
+      "libraries": "Actualizando rekordbox, Engine DJ y Traktor",
+      "verifying": "Comprobando la biblioteca",
+      "restoring": "Restaurando {{current}} de {{total}}"
     }
   }
 }

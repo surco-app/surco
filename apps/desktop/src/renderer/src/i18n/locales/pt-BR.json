@@ -1505,12 +1505,6 @@
     "removedNoUndo": "As cópias removidas não voltam com Desfazer.",
     "tracks_one": "{{count}} faixa",
     "tracks_other": "{{count}} faixas",
-    "tray": {
-      "empty": "Escolha em cada grupo e aplique no final",
-      "count_one": "{{count}} alteração",
-      "count_other": "{{count}} alterações",
-      "apply": "Revisar e aplicar"
-    },
     "confirm": {
       "title_one": "Você vai alterar {{count}} faixa",
       "title_other": "Você vai alterar {{count}} faixas",
@@ -1524,7 +1518,6 @@
       "apply": "Aplicar",
       "libraryMissing": "O {{library}} não será atualizado porque a coleção dele não foi encontrada."
     },
-    "applying": "Aplicando {{done}} de {{total}}",
     "stop": "Parar",
     "done": {
       "title": "Biblioteca revisada",
@@ -1599,6 +1592,15 @@
       "typo": "Erro",
       "duplicate": "Duplicado",
       "version": "Versão"
+    },
+    "applyCount_one": "Aplicar {{count}} alteração",
+    "applyCount_other": "Aplicar {{count}} alterações",
+    "phase": {
+      "writing": "Gravando no Music e nos arquivos {{current}} de {{total}}",
+      "duplicates": "Removendo duplicados {{current}} de {{total}}",
+      "libraries": "Atualizando rekordbox, Engine DJ e Traktor",
+      "verifying": "Verificando a biblioteca",
+      "restoring": "Restaurando {{current}} de {{total}}"
     }
   }
 }

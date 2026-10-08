@@ -1505,12 +1505,6 @@
     "removedNoUndo": "Les copies retirées ne reviennent pas avec Annuler.",
     "tracks_one": "{{count}} morceau",
     "tracks_other": "{{count}} morceaux",
-    "tray": {
-      "empty": "Choisis dans chaque groupe et applique à la fin",
-      "count_one": "{{count}} changement",
-      "count_other": "{{count}} changements",
-      "apply": "Vérifier et appliquer"
-    },
     "confirm": {
       "title_one": "Tu vas modifier {{count}} morceau",
       "title_other": "Tu vas modifier {{count}} morceaux",
@@ -1524,7 +1518,6 @@
       "apply": "Appliquer",
       "libraryMissing": "{{library}} ne sera pas mis à jour car sa collection est introuvable."
     },
-    "applying": "Application de {{done}} sur {{total}}",
     "stop": "Arrêter",
     "done": {
       "title": "Bibliothèque vérifiée",
@@ -1599,6 +1592,15 @@
       "typo": "Faute",
       "duplicate": "Doublon",
       "version": "Version"
+    },
+    "applyCount_one": "Appliquer {{count}} changement",
+    "applyCount_other": "Appliquer {{count}} changements",
+    "phase": {
+      "writing": "Écriture dans Music et les fichiers {{current}} sur {{total}}",
+      "duplicates": "Suppression des doublons {{current}} sur {{total}}",
+      "libraries": "Mise à jour de rekordbox, Engine DJ et Traktor",
+      "verifying": "Vérification de la bibliothèque",
+      "restoring": "Restauration {{current}} sur {{total}}"
     }
   }
 }

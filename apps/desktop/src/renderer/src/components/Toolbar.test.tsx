@@ -48,6 +48,18 @@ function renderBar(over: Partial<Props> = {}): Props {
 }
 
 describe('Toolbar', () => {
+  // Another view (the Music review) can own the screen's main action; the convert button
+  // would then act on a list the user cannot see.
+  it('shows a given main action in place of Convert, even with no tracks', () => {
+    renderBar({ trackCount: 0, primary: <button type="button" data-testid="other-action" /> })
+    expect(screen.getByTestId('other-action')).toBeInTheDocument()
+    expect(screen.queryByTestId('convert-all')).toBeNull()
+    cleanup()
+    renderBar({ primary: <button type="button" data-testid="other-action" /> })
+    expect(screen.getByTestId('other-action')).toBeInTheDocument()
+    expect(screen.queryByTestId('convert-all')).toBeNull()
+  })
+
   // The two sweep buttons flip meaning mid-run: the same control must start the sweep
   // when idle and cancel it while running, or a misfired 500-track sweep could not be
   // stopped from where it was started.

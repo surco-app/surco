@@ -7,7 +7,12 @@ import '../i18n'
 import type { Api } from '../../../preload/api'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { stubApi } from '../test/api'
-import { MusicReview, type ReviewSort } from './MusicReview'
+import {
+  MusicReview,
+  MusicReviewAction,
+  MusicReviewProgress,
+  type ReviewSort,
+} from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
@@ -112,6 +117,7 @@ function Panes({
     },
   }
   const [search, setSearch] = useState('')
+  const [confirming, setConfirming] = useState(false)
   const [sort, setSort] = useState<ReviewSort>('default')
   const { selectedKey, select } = useReviewSelection(r, search, sort)
   return (
@@ -126,7 +132,11 @@ function Panes({
         onSearch={setSearch}
         sort={sort}
         onSort={setSort}
+        confirming={confirming}
+        onConfirming={setConfirming}
       />
+      <MusicReviewAction review={r} busy={busy ?? false} onConfirm={() => setConfirming(true)} />
+      <MusicReviewProgress review={r} />
       <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} />
     </>
   )
@@ -148,17 +158,15 @@ const detail = () => screen.getByTestId('music-review-detail')
 describe('MusicReview', () => {
   // The column is for finding a group; deciding happens in the detail beside it, so a
   // row holds no control that could change what gets written.
-  // The tray rode along inside the column's own scrolling, so it ended up after the last
-  // group instead of staying where Apply can always be reached.
-  it('keeps the header and the tray outside the only scrolling area', () => {
+  // Apply lives in the toolbar's main button, so the column holds no tray of its own.
+  it('keeps the header outside the only scrolling area and has no tray', () => {
     render(<Panes review={review()} />)
     const scroll = screen.getByTestId('music-review-scroll')
     expect(scroll.className).toContain('overflow-y-auto')
     expect(scroll).toContainElement(rows()[0])
-    expect(scroll).not.toContainElement(screen.getByTestId('music-review-tray'))
+    expect(screen.queryByTestId('music-review-tray')).toBeNull()
     expect(scroll).not.toContainElement(screen.getByTestId('music-review-search'))
     expect(scroll).not.toContainElement(screen.getByTestId('music-review-filter-trigger'))
-    expect(screen.getByTestId('music-review-tray').className).not.toContain('absolute')
   })
 
   // The same row as the track list: a cover tile, the name with the count beside it, and
@@ -383,7 +391,7 @@ describe('MusicReview', () => {
       summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
     })
     render(<Panes review={r} />)
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(r.apply).not.toHaveBeenCalled()
     expect(screen.getByTestId('music-review-confirm')).toHaveTextContent('rekordbox, Engine DJ')
     fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
@@ -401,7 +409,7 @@ describe('MusicReview', () => {
         })}
       />,
     )
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     const sheet = screen.getByTestId('music-review-confirm')
     expect(within(sheet).queryByRole('checkbox')).toBeNull()
     expect(sheet).toHaveTextContent('A copy of every file is kept in Backups.')
@@ -415,15 +423,100 @@ describe('MusicReview', () => {
       summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
     })
     const { unmount } = render(<Panes review={staged} busy />)
-    expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
+    expect(screen.getByTestId('music-review-apply')).toBeDisabled()
     unmount()
     render(<Panes review={done(run({ outcomes: [written] }))} busy />)
     expect(screen.getByTestId('music-review-undo')).toBeDisabled()
   })
 
-  it('disables the tray while nothing is staged', () => {
-    render(<Panes review={review()} />)
-    expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
+  it('disables Apply while nothing is staged and counts the changes once some are', () => {
+    const { unmount } = render(<Panes review={review()} />)
+    expect(screen.getByTestId('music-review-apply')).toBeDisabled()
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 0 changes')
+    unmount()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 2, byField: { artist: 2 }, duplicates: 1 },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply')).toBeEnabled()
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 3 changes')
+  })
+
+  describe('while a run goes', () => {
+    const applying = (over: Partial<Review>) => review({ status: 'applying', ...over })
+    const bar = () => screen.getByTestId('top-progress').firstElementChild as HTMLElement
+
+    it('slides the bar until the first track is done, then fills it', () => {
+      const { rerender } = render(
+        <MusicReviewProgress
+          review={applying({
+            progress: { done: 0, total: 4 },
+            phase: { name: 'writing', current: 1, total: 4 },
+          })}
+        />,
+      )
+      expect(bar().className).toContain('animate-top-progress')
+      rerender(
+        <MusicReviewProgress
+          review={applying({
+            progress: { done: 1, total: 4 },
+            phase: { name: 'writing', current: 2, total: 4 },
+          })}
+        />,
+      )
+      expect(bar().className).not.toContain('animate-top-progress')
+      expect(bar().style.width).toBe('25%')
+    })
+
+    // The libraries and the reread have no count to fill with; a full bar there would say
+    // the run had ended.
+    it('slides the bar while the libraries update and the library is reread', () => {
+      render(
+        <MusicReviewProgress
+          review={applying({ progress: { done: 2, total: 2 }, phase: { name: 'libraries' } })}
+        />,
+      )
+      expect(bar().className).toContain('animate-top-progress')
+    })
+
+    it('shows no bar when nothing runs', () => {
+      render(<MusicReviewProgress review={review()} />)
+      expect(screen.queryByTestId('top-progress')).toBeNull()
+    })
+
+    it('names the step the run is on in the main button', () => {
+      const label = (phase: Review['phase']) => {
+        const { unmount } = render(
+          <MusicReviewAction
+            review={applying({ progress: { done: 0, total: 3 }, phase })}
+            busy={false}
+            onConfirm={vi.fn()}
+          />,
+        )
+        const text = screen.getByTestId('music-review-apply').textContent
+        unmount()
+        return text
+      }
+      expect(label({ name: 'writing', current: 1, total: 3 })).toBe(
+        'Writing to Music and files 1 of 3',
+      )
+      expect(label({ name: 'duplicates', current: 2, total: 2 })).toBe('Removing duplicates 2 of 2')
+      expect(label({ name: 'libraries' })).toBe('Updating rekordbox, Engine DJ and Traktor')
+      expect(label({ name: 'verifying' })).toBe('Checking the library')
+      expect(label({ name: 'restoring', current: 1, total: 5 })).toBe('Restoring 1 of 5')
+    })
+
+    it('stops the run from the same button', () => {
+      const r = applying({ progress: { done: 0, total: 3 }, phase: null })
+      render(<MusicReviewAction review={r} busy={false} onConfirm={vi.fn()} />)
+      expect(screen.getByTestId('music-review-apply')).toHaveAccessibleName('Stop')
+      fireEvent.click(screen.getByTestId('music-review-apply'))
+      expect(r.cancel).toHaveBeenCalled()
+    })
   })
 
   it('offers undo after a run', () => {
@@ -541,7 +634,7 @@ describe('MusicReview', () => {
       summary: { tracks: 0, byField: {}, duplicates: 1 },
     })
     render(<Panes review={r} />)
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(screen.getByTestId('music-review-confirm')).toHaveTextContent(
       "Removed copies don't come back with Undo.",
     )
@@ -554,7 +647,7 @@ describe('MusicReview', () => {
       summary: { tracks: 0, byField: {}, duplicates: 1 },
     })
     render(<Panes review={r} />)
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(screen.getByTestId('music-review-confirm')).toHaveTextContent(
       'Their files go to the Trash, except those rekordbox, Engine DJ or Traktor still use.',
     )
@@ -664,7 +757,7 @@ describe('MusicReview', () => {
 
     it('names each missing library on the confirmation sheet', () => {
       render(<Panes review={staged()} />)
-      fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+      fireEvent.click(screen.getByTestId('music-review-apply'))
       expect(screen.getByTestId('music-review-confirm-missing')).toHaveTextContent(
         'rekordbox will not be updated because its collection was not found.',
       )
@@ -722,7 +815,7 @@ describe('MusicReview', () => {
       summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
     })
     render(<Panes review={r} />)
-    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(screen.getByRole('dialog', { name: "You're about to change 1 track" })).toBeVisible()
     expect(screen.getByTestId('music-review-confirm-apply')).toHaveFocus()
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -769,7 +862,8 @@ describe('MusicReview', () => {
     const locked = [...spelling, ...controls(), screen.getByTestId('music-review-close')]
     expect(locked).toHaveLength(4 + 4 + 1)
     for (const el of locked) expect(el).toBeDisabled()
-    expect(screen.getByTestId('music-review-stop')).toBeEnabled()
+    expect(screen.getByTestId('music-review-apply')).toBeEnabled()
+    expect(screen.getByTestId('music-review-apply')).toHaveAccessibleName('Stop')
   })
 
   it('groups the radios under a name and announces the loading state', () => {

@@ -39,6 +39,8 @@ import {
   MusicReviewColumn,
   MusicReviewDetailPane,
   MusicReviewProvider,
+  MusicReviewToolbarAction,
+  MusicReviewTopProgress,
 } from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
@@ -1869,6 +1871,13 @@ export default function App(): React.JSX.Element {
   // Memoized so the O(n) "any row still reading its tags?" scan runs only when the list
   // changes, not on every App render — the same frequent-render concern as `selected` above.
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
+  // A conversion writes the same files and library databases the review would, so the
+  // review holds its writes until it ends.
+  const reviewBusy = batching || tracks.some((t) => t.status === 'processing')
+  const reviewAction = useMemo(
+    () => (musicReview !== null ? <MusicReviewToolbarAction busy={reviewBusy} /> : undefined),
+    [musicReview, reviewBusy],
+  )
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
   const progress = topBarProgress(
@@ -1903,41 +1912,6 @@ export default function App(): React.JSX.Element {
             <h1 className="sr-only">Surco</h1>
             {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
           that divider so a long sweep lights up the line between the toolbar and the list. */}
-            <div className="relative">
-              {progress && <TopProgressBar fraction={progress.fraction} />}
-              <Toolbar
-                hintFor={hintFor}
-                trackCount={tracks.length}
-                convertibleCount={eligibleCount}
-                batchSize={bulkTracks.length}
-                canConvertAll={canProcessAll}
-                onConvertAll={onConvertAllTracks}
-                importing={importProgress}
-                batchSummary={batchSummary}
-                onShowFailed={onShowFailed}
-                batching={batching}
-                batchProgress={batchProgress}
-                analysis={analysis}
-                allAnalyzed={allAnalyzed}
-                matching={matching}
-                canAutoMatch={!!settings && autoMatchAvailable(settings)}
-                needsToken={needsToken}
-                autoMatchable={autoMatchable}
-                onAnalyzeAll={onAnalyzeAll}
-                onCancelAnalyze={cancelAnalysis}
-                onAutoMatch={onAutoMatchAll}
-                onCancelAutoMatch={cancelAutoMatch}
-                onFixToken={onFixToken}
-                onCancelBatch={cancelBatch}
-                onCancelImport={cancelImport}
-                onPalette={onOpenPalette}
-                onStats={onOpenStats}
-                onActivity={onToggleActivity}
-                activityRunning={activityRunning}
-                onSettings={onOpenSettings}
-              />
-            </div>
-
             <MusicReviewProvider
               open={musicReview !== null}
               filter={musicReview ?? 'all'}
@@ -1945,6 +1919,43 @@ export default function App(): React.JSX.Element {
               saveIgnored={(keys) => void saveSettings({ musicReviewIgnored: keys })}
               onFilesChanged={onReviewFilesChanged}
             >
+              <div className="relative">
+                {progress && <TopProgressBar fraction={progress.fraction} />}
+                {musicReview !== null && <MusicReviewTopProgress />}
+                <Toolbar
+                  hintFor={hintFor}
+                  trackCount={tracks.length}
+                  convertibleCount={eligibleCount}
+                  batchSize={bulkTracks.length}
+                  canConvertAll={canProcessAll}
+                  onConvertAll={onConvertAllTracks}
+                  importing={importProgress}
+                  batchSummary={batchSummary}
+                  onShowFailed={onShowFailed}
+                  batching={batching}
+                  batchProgress={batchProgress}
+                  analysis={analysis}
+                  allAnalyzed={allAnalyzed}
+                  matching={matching}
+                  canAutoMatch={!!settings && autoMatchAvailable(settings)}
+                  needsToken={needsToken}
+                  autoMatchable={autoMatchable}
+                  onAnalyzeAll={onAnalyzeAll}
+                  onCancelAnalyze={cancelAnalysis}
+                  onAutoMatch={onAutoMatchAll}
+                  onCancelAutoMatch={cancelAutoMatch}
+                  onFixToken={onFixToken}
+                  onCancelBatch={cancelBatch}
+                  onCancelImport={cancelImport}
+                  onPalette={onOpenPalette}
+                  onStats={onOpenStats}
+                  onActivity={onToggleActivity}
+                  activityRunning={activityRunning}
+                  onSettings={onOpenSettings}
+                  primary={reviewAction}
+                />
+              </div>
+
               <div className="flex min-h-0 flex-1">
                 <aside
                   data-testid="sidebar"
@@ -1964,10 +1975,7 @@ export default function App(): React.JSX.Element {
                     className={`min-h-0 flex-1 ${musicReview !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                   >
                     {musicReview !== null ? (
-                      <MusicReviewColumn
-                        onClose={() => setMusicReview(null)}
-                        busy={batching || tracks.some((t) => t.status === 'processing')}
-                      />
+                      <MusicReviewColumn onClose={() => setMusicReview(null)} busy={reviewBusy} />
                     ) : tracks.length === 0 ? (
                       // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the

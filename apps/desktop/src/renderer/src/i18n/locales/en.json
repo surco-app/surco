@@ -1505,12 +1505,6 @@
     "removedNoUndo": "Removed copies don't come back with Undo.",
     "tracks_one": "{{count}} track",
     "tracks_other": "{{count}} tracks",
-    "tray": {
-      "empty": "Choose in each group and apply at the end",
-      "count_one": "{{count}} change",
-      "count_other": "{{count}} changes",
-      "apply": "Review and apply"
-    },
     "confirm": {
       "title_one": "You're about to change {{count}} track",
       "title_other": "You're about to change {{count}} tracks",
@@ -1524,7 +1518,6 @@
       "apply": "Apply",
       "libraryMissing": "{{library}} will not be updated because its collection was not found."
     },
-    "applying": "Applying {{done}} of {{total}}",
     "stop": "Stop",
     "done": {
       "title": "Library reviewed",
@@ -1599,6 +1592,15 @@
       "typo": "Typo",
       "duplicate": "Duplicate",
       "version": "Version"
+    },
+    "applyCount_one": "Apply {{count}} change",
+    "applyCount_other": "Apply {{count}} changes",
+    "phase": {
+      "writing": "Writing to Music and files {{current}} of {{total}}",
+      "duplicates": "Removing duplicates {{current}} of {{total}}",
+      "libraries": "Updating rekordbox, Engine DJ and Traktor",
+      "verifying": "Checking the library",
+      "restoring": "Restoring {{current}} of {{total}}"
     }
   }
 }
