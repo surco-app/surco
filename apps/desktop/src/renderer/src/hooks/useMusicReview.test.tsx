@@ -832,6 +832,41 @@ describe('useMusicReview', () => {
       expect(result.current.staged.size).toBe(0)
     })
 
+    // The user saw "Aarón Alfonso" twice, once per field, for one invisible character.
+    it('merges an invisible character found in both fields into one group', async () => {
+      const dirty = 'Aar\u200Bón Alfonso'
+      setApi({
+        loadMusicReview: vi
+          .fn()
+          .mockResolvedValue([
+            e('A', dirty, { albumArtist: dirty }),
+            e('B', dirty, { albumArtist: dirty }),
+          ]),
+      })
+      const { result } = await ready()
+      expect(result.current.spelling.map((g) => [g.kind, g.fields])).toEqual([
+        ['invisible', ['artist', 'albumArtist']],
+      ])
+    })
+
+    it('merges the two fields when they share a spelling but one has more of them', async () => {
+      const dirty = 'Aar\u200Bón Alfonso'
+      setApi({
+        loadMusicReview: vi
+          .fn()
+          .mockResolvedValue([
+            e('A', dirty, { albumArtist: dirty }),
+            e('B', 'Aarón Alfonso'),
+            e('C', 'Aarón Alfonso'),
+          ]),
+      })
+      const { result } = await ready()
+      expect(result.current.spelling.map((g) => [g.kind, g.fields])).toEqual([
+        ['invisible', ['artist', 'albumArtist']],
+      ])
+      expect(result.current.choice(result.current.spelling[0].key)).toBe('Aarón Alfonso')
+    })
+
     it('keeps a group found only in album artist on its own', async () => {
       setApi({
         loadMusicReview: vi

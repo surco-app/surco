@@ -101,9 +101,6 @@ function uniqueKeys(groups: DuplicateGroup[]): DuplicateGroup[] {
   )
 }
 
-const signature = (g: SpellingGroup) =>
-  [g.kind, ...g.variants.map((v) => v.value).sort()].join('\u0000')
-
 const single = (g: SpellingGroup): ReviewSpellingGroup => ({
   key: g.key,
   fields: [g.field],
@@ -141,19 +138,20 @@ function joined(parts: SpellingGroup[]): ReviewSpellingGroup {
 }
 
 // A credit misspelled as artist is usually misspelled the same way as album artist; the
-// user decides it once, so both fields show as one group in the place of the first.
+// user decides it once, so both fields show as one group in the place of the first. The
+// fields need not hold the same set of spellings: one shared spelling makes it one name.
 export function mergeSpelling(groups: SpellingGroup[]): ReviewSpellingGroup[] {
-  const albumArtist = new Map<string, SpellingGroup>()
-  for (const g of groups)
-    if (g.field === 'albumArtist' && !albumArtist.has(signature(g)))
-      albumArtist.set(signature(g), g)
+  const albumArtist = groups.filter((g) => g.field === 'albumArtist')
   const paired = new Map<SpellingGroup, SpellingGroup>()
   for (const g of groups) {
     if (g.field !== 'artist') continue
-    const partner = albumArtist.get(signature(g))
-    if (!partner) continue
-    albumArtist.delete(signature(g))
-    paired.set(g, partner)
+    const values = new Set(g.variants.map((v) => v.value))
+    const at = albumArtist.findIndex(
+      (a) => a.kind === g.kind && a.variants.some((v) => values.has(v.value)),
+    )
+    if (at < 0) continue
+    paired.set(g, albumArtist[at])
+    albumArtist.splice(at, 1)
   }
   const taken = new Set(paired.values())
   return groups.flatMap((g) => {
