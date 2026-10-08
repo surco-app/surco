@@ -73,3 +73,18 @@ describe('search sources hint', () => {
     }
   })
 })
+
+describe('skipped library activity lines', () => {
+  it('read as one sentence with a comma, without an explanatory colon, in every language', () => {
+    for (const locale of [es, en, de, fr, ptBR]) {
+      const { rekordboxCollectionMissing, engineCollectionMissing, traktorSyncCollectionMissing } =
+        locale.activity
+      for (const text of [
+        rekordboxCollectionMissing,
+        engineCollectionMissing,
+        traktorSyncCollectionMissing,
+      ])
+        expect(text).not.toContain(':')
+    }
+  })
+})

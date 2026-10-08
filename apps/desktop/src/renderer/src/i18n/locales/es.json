@@ -1445,9 +1445,9 @@
     "engineSyncWriteFailed": "Omitido: no se pudo escribir la biblioteca",
     "engineSyncSkipped_one": "{{count}} pista omitida",
     "engineSyncSkipped_other": "{{count}} pistas omitidas",
-    "rekordboxCollectionMissing": "Omitido: no se encuentra la colección de rekordbox",
-    "engineCollectionMissing": "Omitido: no se encuentra la biblioteca de Engine DJ",
-    "traktorSyncCollectionMissing": "Omitido: no se encuentra collection.nml"
+    "rekordboxCollectionMissing": "Omitido, no se encuentra la colección de rekordbox",
+    "engineCollectionMissing": "Omitido, no se encuentra la biblioteca de Engine DJ",
+    "traktorSyncCollectionMissing": "Omitido, no se encuentra collection.nml"
   },
   "applePlaylist": {
     "title": "Importar de Apple Music",
