@@ -1,4 +1,4 @@
-import { readdirSync, realpathSync } from 'node:fs'
+import { type Dirent, readdirSync, readlinkSync } from 'node:fs'
 import { copyFile, readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
@@ -142,12 +142,26 @@ export interface DuplicateCollectionResult {
   reason?: SyncResult['reason']
 }
 
-function bootVolumeName(): string {
+interface VolumesFs {
+  readdir: () => Pick<Dirent, 'name' | 'isSymbolicLink'>[]
+  readlink: (path: string) => string
+}
+
+const volumesFs: VolumesFs = {
+  readdir: () => readdirSync('/Volumes', { withFileTypes: true }),
+  readlink: (path) => readlinkSync(path),
+}
+
+export function bootVolumeName(fs: VolumesFs = volumesFs): string {
   try {
-    return readdirSync('/Volumes').find((name) => realpathSync(`/Volumes/${name}`) === '/') ?? ''
-  } catch {
-    return ''
-  }
+    for (const entry of fs.readdir()) {
+      if (!entry.isSymbolicLink()) continue
+      try {
+        if (fs.readlink(`/Volumes/${entry.name}`) === '/') return entry.name
+      } catch {}
+    }
+  } catch {}
+  return ''
 }
 
 // When the user removes duplicate copies from Music, the collection moves to the copies

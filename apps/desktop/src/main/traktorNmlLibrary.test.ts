@@ -55,7 +55,7 @@ vi.mock('electron', () => ({
   },
 }))
 
-import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
+import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
 
 const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
@@ -444,5 +444,44 @@ describe('replaceDuplicatesInCollection', () => {
   it('skips when the collection cannot be read', async () => {
     const result = await replaceDuplicatesInCollection(join(dir, 'gone.nml'), [pair])
     expect(result).toEqual({ written: false, reason: 'unreadable', outcomes: ['skipped'] })
+  })
+})
+
+describe('bootVolumeName', () => {
+  const entry = (name: string, link: boolean) => ({ name, isSymbolicLink: () => link })
+
+  it('picks the symlink to the root without following any other entry', () => {
+    const readlink = vi.fn((path: string) =>
+      path === '/Volumes/Macintosh HD' ? '/' : '/Elsewhere',
+    )
+    const name = bootVolumeName({
+      readdir: () => [entry('Public', false), entry('Backup', true), entry('Macintosh HD', true)],
+      readlink,
+    })
+    expect(name).toBe('Macintosh HD')
+    expect(readlink).not.toHaveBeenCalledWith('/Volumes/Public')
+  })
+
+  it('keeps looking when one entry cannot be read', () => {
+    const name = bootVolumeName({
+      readdir: () => [entry('Broken', true), entry('Macintosh HD', true)],
+      readlink: (path) => {
+        if (path === '/Volumes/Broken') throw new Error('EIO')
+        return '/'
+      },
+    })
+    expect(name).toBe('Macintosh HD')
+  })
+
+  it('is empty when nothing points at the root or the folder cannot be listed', () => {
+    expect(bootVolumeName({ readdir: () => [entry('A', true)], readlink: () => '/x' })).toBe('')
+    expect(
+      bootVolumeName({
+        readdir: () => {
+          throw new Error('EACCES')
+        },
+        readlink: () => '/',
+      }),
+    ).toBe('')
   })
 })
