@@ -12,6 +12,7 @@ import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import { ExportButton } from './ExportButton'
+import { FOOTER_BAR } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
 const ICON_BUTTON =
@@ -181,10 +182,7 @@ export function ConvertFooter({
     footerRef.current?.querySelector<HTMLButtonElement>('[data-testid="process-btn"]')?.focus()
   })
   return (
-    <div
-      ref={footerRef}
-      className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5"
-    >
+    <div ref={footerRef} className={FOOTER_BAR}>
       {item.status === 'error' && (
         <div className="mb-2 flex items-center justify-between gap-3">
           <p role="alert" className="truncate text-xs text-danger">
