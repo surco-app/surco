@@ -536,6 +536,19 @@ describe('MusicReview', () => {
     })
   })
 
+  it('offers no Stop while the run is being undone', () => {
+    const r = review({
+      status: 'applying',
+      progress: { done: 0, total: 3 },
+      phase: { name: 'restoring', current: 1, total: 3 },
+    })
+    render(<MusicReviewAction review={r} busy={false} onConfirm={vi.fn()} />)
+    const button = screen.getByTestId('music-review-apply')
+    expect(button).toBeDisabled()
+    expect(button).not.toHaveAccessibleName('Stop')
+    expect(button).toHaveTextContent('Restoring 1 of 3')
+  })
+
   it('offers undo after a run', () => {
     const r = done(run({ outcomes: [written] }))
     render(<Panes review={r} />)

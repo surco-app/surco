@@ -705,7 +705,7 @@ export function MusicReviewAction({
         cancelLabel={t('musicReview.stop')}
         ready={!busy && review.staged.size > 0}
         onRun={onConfirm}
-        onCancel={review.cancel}
+        onCancel={review.phase?.name === 'restoring' ? undefined : review.cancel}
       />
     </>
   )

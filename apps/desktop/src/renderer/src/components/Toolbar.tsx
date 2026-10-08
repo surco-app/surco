@@ -414,15 +414,15 @@ export function PrimaryAction({
   ready: boolean
   hint?: string
   onRun: () => void
-  onCancel: () => void
+  onCancel?: () => void
 }): React.JSX.Element {
   return (
     <button
       type="button"
       data-testid={testid}
       onClick={running ? onCancel : onRun}
-      disabled={!running && !ready}
-      aria-label={running ? cancelLabel : label}
+      disabled={running ? !onCancel : !ready}
+      aria-label={running ? (onCancel ? cancelLabel : undefined) : label}
       className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
         running
           ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
@@ -444,7 +444,9 @@ export function PrimaryAction({
           {label}
         </>
       )}
-      <Tooltip label={running ? cancelLabel : label} hint={running ? undefined : hint} />
+      {(!running || onCancel) && (
+        <Tooltip label={running ? cancelLabel : label} hint={running ? undefined : hint} />
+      )}
     </button>
   )
 }
