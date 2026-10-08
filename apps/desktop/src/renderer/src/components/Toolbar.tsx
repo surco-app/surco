@@ -4,6 +4,7 @@ import {
   ChartColumn,
   FilePlus,
   Loader2,
+  type LucideIcon,
   Radio,
   Search,
   Settings as SettingsIcon,
@@ -354,46 +355,82 @@ export const Toolbar = memo(function Toolbar({
         {trackCount > 0 && (
           <>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            <button
-              type="button"
-              data-testid="convert-all"
-              onClick={batching ? onCancelBatch : onConvertAll}
-              disabled={!batching && !canConvertAll}
-              aria-label={batching ? tr('header.cancelConvert') : convertLabel}
-              className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
-                batching
-                  ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
-                  : canConvertAll
-                    ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
-                    : 'text-fg-muted'
-              }`}
-            >
-              {batching ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  {/* Spoken by the status regions at the top of the header, not here: the
-                    button's own name is the cancel action. */}
-                  <span className="tabular-nums">
-                    {tr('header.convertingCount', {
-                      done: batchProgress.done,
-                      total: batchProgress.total,
-                    })}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
-                  {convertLabel}
-                </>
-              )}
-              <Tooltip
-                label={batching ? tr('header.cancelConvert') : convertLabel}
-                hint={batching ? undefined : hintFor('process-all')}
-              />
-            </button>
+            <PrimaryAction
+              testid="convert-all"
+              Icon={ArrowRightLeft}
+              label={convertLabel}
+              running={batching}
+              runningLabel={tr('header.convertingCount', {
+                done: batchProgress.done,
+                total: batchProgress.total,
+              })}
+              cancelLabel={tr('header.cancelConvert')}
+              ready={canConvertAll}
+              hint={hintFor('process-all')}
+              onRun={onConvertAll}
+              onCancel={onCancelBatch}
+            />
           </>
         )}
       </div>
     </header>
   )
 })
+
+// The toolbar's trailing main action: labelled, tinted while it can run, and while it runs
+// the same button shows the count and cancels.
+export function PrimaryAction({
+  testid,
+  Icon,
+  label,
+  running,
+  runningLabel,
+  cancelLabel,
+  ready,
+  hint,
+  onRun,
+  onCancel,
+}: {
+  testid: string
+  Icon: LucideIcon
+  label: string
+  running: boolean
+  runningLabel: React.ReactNode
+  cancelLabel: string
+  ready: boolean
+  hint?: string
+  onRun: () => void
+  onCancel: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid={testid}
+      onClick={running ? onCancel : onRun}
+      disabled={!running && !ready}
+      aria-label={running ? cancelLabel : label}
+      className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
+        running
+          ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
+          : ready
+            ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+            : 'text-fg-muted'
+      }`}
+    >
+      {running ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          {/* Spoken by the status regions at the top of the header, not here: the
+            button's own name is the cancel action. */}
+          <span className="tabular-nums">{runningLabel}</span>
+        </>
+      ) : (
+        <>
+          <Icon className="h-4 w-4" aria-hidden="true" />
+          {label}
+        </>
+      )}
+      <Tooltip label={running ? cancelLabel : label} hint={running ? undefined : hint} />
+    </button>
+  )
+}
