@@ -16,6 +16,15 @@ interface Props {
   onClose: () => void
 }
 
+// The confirmation chrome, shared with the other sheets that ask before writing.
+export const DIALOG_PANEL =
+  'w-[440px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6'
+export const DIALOG_CANCEL =
+  'press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]'
+export const DIALOG_BUTTON =
+  'press rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:opacity-50'
+export const DIALOG_OK = 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]'
+
 // A plain confirm/cancel dialog for consequential bulk actions (e.g. overwriting tags
 // across the whole list). Caller supplies the copy so the same shell explains whatever it
 // is about to do; confirming runs the action and closes.
@@ -47,7 +56,7 @@ export function ConfirmDialog({
       onClose={onClose}
       backdropTestId="confirm-backdrop"
       labelledBy="confirm-title"
-      className="w-[440px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+      className={DIALOG_PANEL}
       onSubmit={() => {
         onConfirm()
         onClose()
@@ -72,7 +81,7 @@ export function ConfirmDialog({
           type="button"
           data-testid="confirm-cancel"
           onClick={onClose}
-          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
+          className={DIALOG_CANCEL}
         >
           {tr('common.cancel')}
         </button>
@@ -81,11 +90,7 @@ export function ConfirmDialog({
           type="submit"
           data-testid="confirm-ok"
           disabled={confirmDisabled}
-          className={`press rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:opacity-50 ${
-            destructive
-              ? 'bg-[var(--color-danger)] hover:brightness-110'
-              : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]'
-          }`}
+          className={`${DIALOG_BUTTON} ${destructive ? 'bg-[var(--color-danger)] hover:brightness-110' : DIALOG_OK}`}
         >
           {confirmLabel}
         </button>
