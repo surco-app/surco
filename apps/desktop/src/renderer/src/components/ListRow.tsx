@@ -68,3 +68,27 @@ export function TonePill({
     </span>
   )
 }
+
+// A hollow ring, not a filled dot: the conversion state shares the amber/red palette with
+// the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
+// thin outline it still carries its colour but sits back a weight, keeping the two axes —
+// conversion (this corner) and quality (the left stripe) — from competing.
+const badgeBase =
+  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-ink)] ring-2 ring-[var(--color-ink)]'
+
+// Amber is kept for what needs the user (here, changes not yet applied); a running
+// conversion needs nothing from them, so it pulses in the accent instead.
+const badgeTone = {
+  attention: 'border-warn',
+  busy: 'animate-pulse border-[var(--color-accent)]',
+} as const
+
+export function ToneBadge({ tone }: { tone: keyof typeof badgeTone }): React.JSX.Element {
+  return (
+    <span
+      data-testid="track-status-badge"
+      data-tone={tone}
+      className={`${badgeBase} ${badgeTone[tone]}`}
+    />
+  )
+}
