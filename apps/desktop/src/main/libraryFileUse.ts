@@ -95,6 +95,7 @@ async function engineInfo(
   const db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
   try {
     const key = pathKey(options)
+    const uuid = String(db.exec('SELECT uuid FROM Information')[0].values[0][0])
     const rows = (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(([id, stored]) => ({
       id: Number(id),
       key: key(absolute(libraryDir, String(stored))),
@@ -103,9 +104,10 @@ async function engineInfo(
       const target = key(path.normalize('NFC'))
       const found = rows.filter((r) => r.key === target)
       if (found.length !== 1) return null
-      const lists = db.exec('SELECT count(DISTINCT listId) FROM PlaylistEntity WHERE trackId = ?', [
-        found[0].id,
-      ])
+      const lists = db.exec(
+        'SELECT count(DISTINCT listId) FROM PlaylistEntity WHERE trackId = ? AND databaseUuid = ?',
+        [found[0].id, uuid],
+      )
       return { playlists: Number(lists[0]?.values[0][0] ?? 0) }
     })
   } finally {

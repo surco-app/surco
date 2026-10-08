@@ -26,16 +26,18 @@ export interface EngineDuplicateOptions extends PathMatchOptions {
 // A list holds a track once (C_NAME_UNIQUE_FOR_LIST), so where the kept copy is already
 // there the entity goes and its neighbour inherits its link, as Engine's own delete
 // trigger does.
-function replace(db: Database, fromId: number, toId: number): void {
+function replace(db: Database, uuid: string, fromId: number, toId: number): void {
   const entities = (
-    db.exec('SELECT id, listId, nextEntityId FROM PlaylistEntity WHERE trackId = ?', [fromId])[0]
-      ?.values ?? []
+    db.exec(
+      'SELECT id, listId, nextEntityId FROM PlaylistEntity WHERE trackId = ? AND databaseUuid = ?',
+      [fromId, uuid],
+    )[0]?.values ?? []
   ).map(([id, listId, next]) => ({ id: Number(id), listId: Number(listId), next: Number(next) }))
   for (const e of entities) {
-    const holding = db.exec('SELECT 1 FROM PlaylistEntity WHERE listId = ? AND trackId = ?', [
-      e.listId,
-      toId,
-    ])
+    const holding = db.exec(
+      'SELECT 1 FROM PlaylistEntity WHERE listId = ? AND trackId = ? AND databaseUuid = ?',
+      [e.listId, toId, uuid],
+    )
     if (holding.length === 0) {
       db.run('UPDATE PlaylistEntity SET trackId = ? WHERE id = ?', [toId, e.id])
       continue
@@ -65,10 +67,12 @@ export async function replaceEngineDuplicates(
   }
 
   let db: Database
+  let uuid: string
   try {
     const SQL = await loadSqlJs()
     db = new SQL.Database(await readFile(dbPath))
     db.exec('SELECT id FROM Track LIMIT 1')
+    uuid = String(db.exec('SELECT uuid FROM Information')[0].values[0][0])
   } catch (e) {
     log.warn(`Engine DJ duplicates: cannot read ${dbPath}: ${(e as Error).message}`)
     return settle({ written: false, reason: 'unreadable' })
@@ -101,7 +105,7 @@ export async function replaceEngineDuplicates(
     }
 
     if (replaces.length > 0) {
-      const reason = await writeReplaces(db, dbPath, replaces, options)
+      const reason = await writeReplaces(db, dbPath, uuid, replaces, options)
       for (const r of replaces)
         results[r.index] = reason
           ? { written: false, reason }
@@ -129,6 +133,7 @@ export async function replaceEngineDuplicates(
 async function writeReplaces(
   db: Database,
   dbPath: string,
+  uuid: string,
   replaces: { fromId: number; toId: number }[],
   options: EngineDuplicateOptions,
 ): Promise<string | null> {
@@ -140,7 +145,7 @@ async function writeReplaces(
     return 'backup-failed'
   }
   try {
-    for (const r of replaces) replace(db, r.fromId, r.toId)
+    for (const r of replaces) replace(db, uuid, r.fromId, r.toId)
   } catch (e) {
     log.warn(`Engine DJ duplicates: cannot move the entries: ${(e as Error).message}`)
     return 'write-failed'

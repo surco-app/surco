@@ -127,6 +127,27 @@ describe('replaceEngineDuplicates with both copies in the library', () => {
     ])
   })
 
+  it('leaves the entries that belong to another database of the library alone', async () => {
+    const lib = await library()
+    const db = new SQL.Database(await readFile(lib.dbPath))
+    db.run(
+      `INSERT INTO PlaylistEntity (id, listId, trackId, databaseUuid, nextEntityId, membershipReference) VALUES (10, 3, 1, 'other', 0, 0), (11, 1, 2, 'other', 0, 0)`,
+    )
+    await writeFile(lib.dbPath, db.export())
+    db.close()
+    await replaceEngineDuplicates(lib.dir, [{ from: lib.from, to: lib.to }])
+    expect(
+      await rows(
+        lib.dbPath,
+        `SELECT id, trackId FROM PlaylistEntity WHERE databaseUuid = 'other' ORDER BY id`,
+      ),
+    ).toEqual([
+      [10, 1],
+      [11, 2],
+    ])
+    expect(await rows(lib.dbPath, 'SELECT trackId FROM PlaylistEntity WHERE id = 1')).toEqual([[2]])
+  })
+
   // Engine's history and other databases can name a track id, so removing the row is not
   // proven safe: it stays, and the file stays with it.
   it('keeps the removed copy in the collection with its performance data', async () => {

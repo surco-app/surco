@@ -158,8 +158,14 @@ describe('libraryCopyInfo', () => {
     })
     const dbPath = join(dir, 'Database2', 'm.db')
     const db = new SQL.Database(await readFile(dbPath))
-    db.run('CREATE TABLE PlaylistEntity (id INTEGER PRIMARY KEY, listId INTEGER, trackId INTEGER)')
-    db.run('INSERT INTO PlaylistEntity VALUES (1, 7, 1), (2, 8, 1), (3, 8, 2)')
+    db.run('CREATE TABLE Information (uuid TEXT)')
+    db.run("INSERT INTO Information VALUES ('mine')")
+    db.run(
+      'CREATE TABLE PlaylistEntity (id INTEGER PRIMARY KEY, listId INTEGER, trackId INTEGER, databaseUuid TEXT)',
+    )
+    db.run(
+      "INSERT INTO PlaylistEntity VALUES (1, 7, 1, 'mine'), (2, 8, 1, 'mine'), (3, 8, 2, 'mine'), (4, 9, 1, 'other')",
+    )
     await writeFile(dbPath, db.export())
     const file = join(dir, '..', '..', 'music', 'a.mp3')
     expect(await libraryCopyInfo([file, `${file}.flac`], { ...OFF, engine: dir })).toEqual({
