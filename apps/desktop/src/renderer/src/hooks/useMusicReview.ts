@@ -538,7 +538,14 @@ export function useMusicReview({
       setLastRun(
         failed.length === 0 && librarySync !== 'failed'
           ? null
-          : { ...lastRun, outcomes: failed, librarySync, undoFailures: failed.length },
+          : {
+              ...lastRun,
+              outcomes: failed,
+              removed: [],
+              replaced: [],
+              librarySync,
+              undoFailures: failed.length,
+            },
       )
       await fill(total)
     } finally {

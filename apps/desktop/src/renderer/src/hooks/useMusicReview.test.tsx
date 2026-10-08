@@ -693,6 +693,29 @@ describe('useMusicReview', () => {
     expect(result.current.status).toBe('ready')
   })
 
+  it('forgets the removals and library lines when a failed undo leaves the run to retry', async () => {
+    const replaced = [{ from: '/m/q.aiff', fileTrashed: false, keptForLibrary: false }]
+    setApi({
+      applyMusicFixes: vi.fn().mockResolvedValue(twoOutcomes),
+      loadMusicReview: vi.fn().mockResolvedValue([...LIB, ...DUPS]),
+      trashRestore: vi.fn().mockRejectedValue(new Error('no such trash entry')),
+      replaceDuplicatesInLibraries: vi.fn().mockResolvedValue(replaced),
+      removeMusicDuplicate: vi.fn().mockResolvedValue({
+        outcome: 'removed',
+        playlists: 0,
+        fileTrashed: false,
+        pair: { from: '/m/q.aiff', to: '/m/p.aiff', shared: false },
+      }),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    await act(() => result.current.apply())
+    expect(result.current.lastRun?.removed).toHaveLength(1)
+    await act(() => result.current.undo())
+    expect(result.current.lastRun).toMatchObject({ undoFailures: 2, removed: [], replaced: [] })
+  })
+
   // Without its backup the file cannot go back; setting Music and the libraries back
   // anyway would leave them saying one thing and the file another.
   it('leaves a written file with no backup as it is and counts it as not undone', async () => {
