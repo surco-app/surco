@@ -890,6 +890,37 @@ describe('useMusicReview', () => {
     expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('Q')
   })
 
+  describe('keeping a copy without a file', () => {
+    const noFileOnP = () =>
+      setApi({
+        loadMusicReview: vi.fn().mockResolvedValue(DUPS),
+        appleMusicEntryLocation: vi
+          .fn<Api['appleMusicEntryLocation']>()
+          .mockImplementation(async (pid) => (pid === 'Q' ? '/m/q.mp3' : '')),
+      })
+
+    it('refuses to stage a group whose chosen copy has no file while another has one', async () => {
+      noFileOnP()
+      const { result } = await ready()
+      await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
+      const key = result.current.duplicates[0].group.key
+      act(() => result.current.choose(key, 'P'))
+      act(() => result.current.toggleStaged(key))
+      expect(result.current.staged.has(key)).toBe(false)
+    })
+
+    it('removes nothing from a staged group once the chosen copy turns out to be the one without a file', async () => {
+      const api = noFileOnP()
+      const { result } = await ready()
+      await waitFor(() => expect(result.current.duplicates[0].locations).toHaveProperty('Q'))
+      const key = result.current.duplicates[0].group.key
+      act(() => result.current.toggleStaged(key))
+      act(() => result.current.choose(key, 'P'))
+      await act(() => result.current.apply())
+      expect(api.removeMusicDuplicate).not.toHaveBeenCalled()
+    })
+  })
+
   it('suggests the first copy when none has a file', async () => {
     setApi({
       loadMusicReview: vi.fn().mockResolvedValue(DUPS),

@@ -102,6 +102,9 @@ const toItem = (e: MusicReviewEntry) => ({
   title: e.title,
   durationSec: e.durationSec,
 })
+const keepsNoFile = (ids: string[], keepPid: string, locations: Record<string, string>) =>
+  locations[keepPid] === '' && ids.some((id) => locations[id])
+
 const labelOf = (e: MusicReviewEntry) => `${e.artist} - ${e.title}`
 
 // Keyed by the smallest member so an ignore survives a reload and removing one cluster
@@ -319,6 +322,7 @@ export function useMusicReview({
         }
         const dup = dupGroups.find((g) => g.key === key)
         if (dup?.ids.some((id) => !(id in locations))) return s
+        if (dup && keepsNoFile(dup.ids, choice(key) as string, locations)) return s
         if (dup) {
           for (const other of dupGroups)
             if (other.key !== key && other.ids.some((id) => dup.ids.includes(id)))
@@ -353,14 +357,14 @@ export function useMusicReview({
         .flatMap((g) => {
           const keepPid = choice(g.key) as string
           const keep = byPid.get(keepPid)
-          if (!g.ids.includes(keepPid)) return []
+          if (!g.ids.includes(keepPid) || keepsNoFile(g.ids, keepPid, locations)) return []
           return g.ids.flatMap((removePid) => {
             const removed = byPid.get(removePid)
             if (removePid === keepPid || !removed || !keep) return []
             return [{ removePid, keepPid, label: labelOf(removed), keepLabel: labelOf(keep) }]
           })
         }),
-    [dupGroups, staged, choice, byPid],
+    [dupGroups, staged, choice, byPid, locations],
   )
 
   const fixes = useMemo(() => {
