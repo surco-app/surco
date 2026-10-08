@@ -31,6 +31,22 @@
       {
         "text": "A track Surco is converting inside a watched folder no longer shows up in the list as a new track.",
         "in": "1.6.2"
+      },
+      {
+        "text": "New setting, “Update the Engine DJ library when converting”: convert a track you keep in Engine DJ and it stays the same track, with its playlists and its cue points. Before writing, Surco saves a backup of the library, and it never writes while Engine DJ is open.",
+        "in": "1.6.3"
+      },
+      {
+        "text": "With rekordbox sync on, converting or updating a track also gives rekordbox what you edited in Surco: title, artist, album, genre, label, remixer, comment, year, track and disc numbers, and the artwork. No more typing it all again over there. Its BPM and key are left alone, and a field you leave empty in Surco does not wipe the one in rekordbox.",
+        "in": "1.6.3"
+      },
+      {
+        "text": "Searching by album finds more releases: when the tag spells the edition in brackets, like “(Deluxe Edition)”, Surco searches Discogs and MusicBrainz again without it. And the album your tag names comes first in the results.",
+        "in": "1.6.3"
+      },
+      {
+        "text": "The track list can now be sorted by track number, disc by disc, so an album shows in its running order.",
+        "in": "1.6.3"
       }
     ]
   },
