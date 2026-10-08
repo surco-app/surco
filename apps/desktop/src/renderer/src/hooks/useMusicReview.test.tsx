@@ -716,6 +716,26 @@ describe('useMusicReview', () => {
     expect(result.current.lastRun).toMatchObject({ undoFailures: 2, removed: [], replaced: [] })
   })
 
+  it('says it is undoing only while an undo runs', async () => {
+    const restore = (() => {
+      let open: () => void = () => {}
+      const promise = new Promise<{ restoredTo: string }>(
+        (r) => (open = () => r({ restoredTo: '/m/c.mp3' })),
+      )
+      return { promise, open }
+    })()
+    const { result } = await runTwo({ trashRestore: vi.fn().mockReturnValue(restore.promise) })
+    expect(result.current.undoing).toBe(false)
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.undo()
+    })
+    expect(result.current.undoing).toBe(true)
+    restore.open()
+    await act(() => run)
+    expect(result.current.undoing).toBe(false)
+  })
+
   // Without its backup the file cannot go back; setting Music and the libraries back
   // anyway would leave them saying one thing and the file another.
   it('leaves a written file with no backup as it is and counts it as not undone', async () => {

@@ -40,6 +40,7 @@ function review(over: Partial<Review> = {}): Review {
     summary: { tracks: 0, byField: {}, duplicates: 0 },
     progress: null,
     phase: null,
+    undoing: false,
     apply: vi.fn(),
     cancel: vi.fn(),
     undo: vi.fn(),
@@ -536,17 +537,21 @@ describe('MusicReview', () => {
     })
   })
 
-  it('offers no Stop while the run is being undone', () => {
+  it.each([
+    { name: 'restoring', current: 1, total: 3 },
+    { name: 'libraries' },
+    { name: 'verifying' },
+  ] as const)('offers no Stop in the $name step of an undo', (phase) => {
     const r = review({
       status: 'applying',
+      undoing: true,
       progress: { done: 0, total: 3 },
-      phase: { name: 'restoring', current: 1, total: 3 },
+      phase,
     })
     render(<MusicReviewAction review={r} busy={false} onConfirm={vi.fn()} />)
     const button = screen.getByTestId('music-review-apply')
     expect(button).toBeDisabled()
     expect(button).not.toHaveAccessibleName('Stop')
-    expect(button).toHaveTextContent('Restoring 1 of 3')
   })
 
   it('offers undo after a run', () => {

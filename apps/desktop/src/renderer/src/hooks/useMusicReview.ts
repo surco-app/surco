@@ -79,6 +79,7 @@ export interface MusicReview {
   }
   progress: { done: number; total: number } | null
   phase: ReviewPhase | null
+  undoing: boolean
   apply: () => Promise<void>
   cancel: () => void
   undo: () => Promise<void>
@@ -205,6 +206,7 @@ export function useMusicReview({
   const [locations, setLocations] = useState<Record<string, string>>({})
   const [progress, setProgress] = useState<MusicReview['progress']>(null)
   const [phase, setPhase] = useState<ReviewPhase | null>(null)
+  const [undoing, setUndoing] = useState(false)
   const [lastRun, setLastRun] = useState<ReviewRun | null>(null)
   const running = useRef(false)
   const cancelled = useRef(false)
@@ -488,6 +490,7 @@ export function useMusicReview({
   const undo = useCallback(async () => {
     if (running.current || !lastRun) return
     running.current = true
+    setUndoing(true)
     setStatus('applying')
     const total = lastRun.outcomes.length
     setProgress({ done: 0, total })
@@ -550,6 +553,7 @@ export function useMusicReview({
     } finally {
       setProgress(null)
       setPhase(null)
+      setUndoing(false)
       running.current = false
       setStatus('ready')
     }
@@ -572,6 +576,7 @@ export function useMusicReview({
       summary,
       progress,
       phase,
+      undoing,
       apply,
       cancel,
       undo,
@@ -592,6 +597,7 @@ export function useMusicReview({
       summary,
       progress,
       phase,
+      undoing,
       apply,
       cancel,
       undo,
