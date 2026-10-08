@@ -963,6 +963,7 @@ describe('MusicReview', () => {
       expect(screen.getByTestId('music-review-footer')).toContainElement(stage)
       expect(screen.getByTestId('music-review-detail-scroll')).not.toContainElement(stage)
       expect(stage).toHaveTextContent('Unify in 2 tracks')
+      expect(screen.getByTestId('music-review-stage-fill')).toHaveAttribute('data-on')
       fireEvent.click(stage)
       expect(r.ignore).not.toHaveBeenCalled()
       expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
@@ -1009,6 +1010,7 @@ describe('MusicReview', () => {
       }
       render(<Panes review={review({ spelling: [], duplicates: [version] })} />)
       expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove 1 copy')
+      expect(screen.getByTestId('music-review-stage-fill')).not.toHaveAttribute('data-on')
       fireEvent.click(screen.getByTestId('music-review-more'))
       expect(screen.getByTestId('music-review-ignore')).toHaveTextContent('They differ')
     })

@@ -15,10 +15,12 @@ import { SectionHeader } from './SectionHeader'
 import {
   FOOTER_BAR,
   SPLIT_BODY,
+  SPLIT_BODY_QUIET,
   SPLIT_BODY_READY,
   SPLIT_ITEM,
   SPLIT_MENU,
   SPLIT_TOGGLE,
+  SPLIT_TOGGLE_QUIET,
   SPLIT_TOGGLE_READY,
   useSplitMenu,
 } from './SplitButton'
@@ -55,6 +57,7 @@ function Header({ name, detail }: { name: string; detail: string }) {
 // foot of the pane, with the rarer choice behind its chevron.
 function GroupFooter({
   label,
+  quiet = false,
   disabled,
   onStage,
   menuLabel,
@@ -62,6 +65,7 @@ function GroupFooter({
   onMenu,
 }: {
   label: string
+  quiet?: boolean
   disabled: boolean
   onStage: () => void
   menuLabel: string
@@ -78,9 +82,14 @@ function GroupFooter({
           data-testid="music-review-stage"
           disabled={disabled}
           onClick={onStage}
-          className={`${SPLIT_BODY} ${SPLIT_BODY_READY}`}
+          className={`${SPLIT_BODY} ${quiet ? SPLIT_BODY_QUIET : SPLIT_BODY_READY}`}
         >
-          <span aria-hidden="true" data-on className="process-fill" />
+          <span
+            aria-hidden="true"
+            data-testid="music-review-stage-fill"
+            data-on={!quiet || undefined}
+            className="process-fill"
+          />
           <span className="relative">{label}</span>
         </button>
         <button
@@ -92,9 +101,9 @@ function GroupFooter({
           aria-expanded={open}
           disabled={menuDisabled}
           onClick={() => setOpen((v) => !v)}
-          className={`${SPLIT_TOGGLE} ${SPLIT_TOGGLE_READY}`}
+          className={`${SPLIT_TOGGLE} ${quiet ? SPLIT_TOGGLE_QUIET : SPLIT_TOGGLE_READY}`}
         >
-          <span aria-hidden="true" data-on className="process-fill" />
+          <span aria-hidden="true" data-on={!quiet || undefined} className="process-fill" />
           <ChevronDown
             aria-hidden="true"
             className={`relative h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -609,6 +618,7 @@ function DuplicateDetail({
             ? t('musicReview.staged')
             : t('musicReview.removeCopies', { count: entries.length - 1 })
         }
+        quiet={version}
         disabled={busy || (unknown && !staged)}
         onStage={() => review.toggleStaged(group.key)}
         menuLabel={t(version ? 'musicReview.different' : 'musicReview.ignore')}
