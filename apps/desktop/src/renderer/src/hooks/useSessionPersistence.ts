@@ -16,6 +16,7 @@ interface Params {
   addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   store: AppStore
+  withdrawOffer: boolean
 }
 
 // The last session: offered back at launch, and written out as it changes.
@@ -34,6 +35,7 @@ export function useSessionPersistence({
   addPaths,
   seedRestoredEdits,
   store,
+  withdrawOffer,
 }: Params): void {
   // The launch-time "reopen last session" offer. Asked once, and only while the list is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
@@ -44,6 +46,8 @@ export function useSessionPersistence({
   // next launch doesn't re-ask about the very list the user already waved off.
   const LAST_SESSION_PROMPT_TIMEOUT_MS = 6_000
   const lastSessionToastId = useRef<string | null>(null)
+  const withdrawnRef = useRef(withdrawOffer)
+  withdrawnRef.current = withdrawOffer
   const reopenLastSession = useStableCallback(async (session: SessionData) => {
     // Retire the prompt right here, not via the rows-exist effect below: the ref must
     // clear immediately (a second click mid-import would double-load), and once it is
@@ -67,7 +71,7 @@ export function useSessionPersistence({
     void window.api.saveLastSession([], {})
   })
   const offerLastSession = useStableCallback((session: SessionData) => {
-    if (session.paths.length === 0 || tracksRef.current.length > 0) return
+    if (session.paths.length === 0 || tracksRef.current.length > 0 || withdrawnRef.current) return
     // Two stakes, two behaviours: a paths-only session loses nothing when the offer
     // ages out, so it keeps the countdown. Staged edits exist nowhere but in this
     // saved session — expiring would destroy them, so the offer stays up until the
@@ -97,6 +101,11 @@ export function useSessionPersistence({
       cancelled = true
     }
   }, [offerLastSession])
+  useEffect(() => {
+    if (!withdrawOffer || !lastSessionToastId.current) return
+    dismissToast(store, lastSessionToastId.current)
+    lastSessionToastId.current = null
+  }, [withdrawOffer, store])
   useEffect(() => {
     if (tracks.length === 0 || !lastSessionToastId.current) return
     dismissToast(store, lastSessionToastId.current)

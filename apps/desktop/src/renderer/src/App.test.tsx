@@ -3529,6 +3529,26 @@ describe('App Music review', () => {
     expect(cancelJob).toHaveBeenCalled()
   })
 
+  // The offer reopens tracks into a list the review hides; it steps aside without
+  // answering for the user, so the next launch still offers the session and its edits.
+  it('withdraws the reopen offer when the review opens and keeps the saved session', async () => {
+    vi.resetModules()
+    const saveLastSession = vi.fn()
+    reviewApi({
+      saveLastSession,
+      getLastSession: vi.fn().mockResolvedValue({
+        paths: ['/music/a.wav'],
+        edits: { '/music/a.wav': { meta: { title: 'X' } } },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    runMenu('music-review')
+    await screen.findByTestId('music-review')
+    await waitFor(() => expect(screen.queryByTestId('last-session')).not.toBeInTheDocument())
+    expect(saveLastSession).not.toHaveBeenCalled()
+  })
+
   // Reviewing a library is the point of the view; it must not need a track in the list.
   it('opens over an empty list', async () => {
     vi.resetModules()

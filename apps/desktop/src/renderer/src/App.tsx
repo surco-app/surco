@@ -586,7 +586,14 @@ export default function App(): React.JSX.Element {
 
   // The last session: offered back at launch, written out as it changes. Self-contained —
   // it hands nothing back.
-  useSessionPersistence({ tracks, tracksRef, addPaths, seedRestoredEdits, store })
+  useSessionPersistence({
+    tracks,
+    tracksRef,
+    addPaths,
+    seedRestoredEdits,
+    store,
+    withdrawOffer: musicReview !== null,
+  })
 
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
   // second copy-in updates the count in place, and with a Load action that adds the tracks.
