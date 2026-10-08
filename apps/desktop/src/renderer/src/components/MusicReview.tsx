@@ -710,8 +710,14 @@ export function MusicReviewAction({
 
 // The steps with a count fill the bar; the ones without (the libraries, the reread) and
 // the wait for the first track slide it.
-export function MusicReviewProgress({ review }: { review: Review }) {
-  if (review.status !== 'applying') return null
+export function MusicReviewProgress({
+  review,
+  fallback = null,
+}: {
+  review: Review
+  fallback?: React.ReactNode
+}) {
+  if (review.status !== 'applying') return fallback
   const { progress, phase } = review
   const counted =
     progress !== null &&

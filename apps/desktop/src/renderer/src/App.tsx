@@ -1923,8 +1923,9 @@ export default function App(): React.JSX.Element {
               onFilesChanged={onReviewFilesChanged}
             >
               <div className="relative">
-                {progress && <TopProgressBar fraction={progress.fraction} />}
-                {musicReview !== null && <MusicReviewTopProgress />}
+                <MusicReviewTopProgress
+                  fallback={progress && <TopProgressBar fraction={progress.fraction} />}
+                />
                 <Toolbar
                   hintFor={hintFor}
                   trackCount={tracks.length}

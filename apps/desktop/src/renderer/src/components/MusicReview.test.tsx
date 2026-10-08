@@ -484,6 +484,22 @@ describe('MusicReview', () => {
       expect(bar().className).toContain('animate-top-progress')
     })
 
+    // Two bars on one line read as one bar jumping between two runs.
+    it('draws only its own bar over a sweep while applying, and the sweep otherwise', () => {
+      const sweep = <span data-testid="sweep-bar" />
+      const { rerender } = render(
+        <MusicReviewProgress
+          review={applying({ progress: { done: 0, total: 2 }, phase: null })}
+          fallback={sweep}
+        />,
+      )
+      expect(screen.getByTestId('top-progress')).toBeInTheDocument()
+      expect(screen.queryByTestId('sweep-bar')).toBeNull()
+      rerender(<MusicReviewProgress review={review()} fallback={sweep} />)
+      expect(screen.getByTestId('sweep-bar')).toBeInTheDocument()
+      expect(screen.queryByTestId('top-progress')).toBeNull()
+    })
+
     it('shows no bar when nothing runs', () => {
       render(<MusicReviewProgress review={review()} />)
       expect(screen.queryByTestId('top-progress')).toBeNull()

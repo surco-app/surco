@@ -167,7 +167,7 @@ export function MusicReviewToolbarAction({ busy }: { busy: boolean }) {
   )
 }
 
-export function MusicReviewTopProgress() {
+export function MusicReviewTopProgress({ fallback }: { fallback: React.ReactNode }) {
   const shared = useContext(ReviewContext)
-  return shared ? <MusicReviewProgress review={shared.review} /> : null
+  return shared ? <MusicReviewProgress review={shared.review} fallback={fallback} /> : fallback
 }
