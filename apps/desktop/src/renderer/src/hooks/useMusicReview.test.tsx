@@ -568,6 +568,32 @@ describe('useMusicReview', () => {
       expect(result.current.lastRun?.librariesUntouched).toBeUndefined()
     })
 
+    it('does not claim the libraries were untouched when stopped during their call', async () => {
+      let finishReplace: (v: never) => void = () => {}
+      const api = setApi({
+        loadMusicReview: vi.fn().mockResolvedValue(THREE),
+        removeMusicDuplicate: vi.fn().mockResolvedValue(removedWith('/m/q.aiff')),
+        replaceDuplicatesInLibraries: vi
+          .fn()
+          .mockReturnValue(new Promise((r) => (finishReplace = r))),
+      })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      let run: Promise<void> = Promise.resolve()
+      act(() => {
+        run = result.current.apply()
+      })
+      await waitFor(() => expect(api.replaceDuplicatesInLibraries).toHaveBeenCalled())
+      act(() => result.current.cancel())
+      const outcomes = [{ from: '/m/q.aiff', fileTrashed: false, keptForLibrary: false }]
+      await act(async () => {
+        finishReplace(outcomes as never)
+        await run
+      })
+      expect(result.current.lastRun?.librariesUntouched).toBeUndefined()
+      expect(result.current.lastRun?.replaced).toEqual(outcomes)
+    })
+
     it('records a failed library step when the call rejects', async () => {
       setApi({
         loadMusicReview: vi.fn().mockResolvedValue(THREE),

@@ -434,13 +434,16 @@ export function useMusicReview({
       const pairs = removed.flatMap((r) => (r.pair ? [r.pair] : []))
       let replaced: DuplicateReplaceOutcome[] = []
       let replaceFailed = false
+      let librariesCalled = false
       const updates = tagUpdatesOf(outcomes, 'apply')
       if ((pairs.length && !cancelled.current) || updates.length) setPhase({ name: 'libraries' })
-      if (pairs.length && !cancelled.current)
+      if (pairs.length && !cancelled.current) {
+        librariesCalled = true
         replaced = await window.api.replaceDuplicatesInLibraries(pairs).catch(() => {
           replaceFailed = true
           return []
         })
+      }
       let librarySync: ReviewRun['librarySync'] = replaceFailed ? 'failed' : 'none'
       if (updates.length) {
         const synced = await window.api.syncLibraryTags(updates).then(
@@ -458,7 +461,7 @@ export function useMusicReview({
         outcomes,
         removed,
         replaced,
-        ...(pairs.length && cancelled.current ? { librariesUntouched: true } : {}),
+        ...(pairs.length && !librariesCalled ? { librariesUntouched: true } : {}),
         before,
         after: next ? pendingCount(next, hidden) : null,
         librarySync,
