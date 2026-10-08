@@ -1521,7 +1521,7 @@
       "trash": "Sus ficheros van a la Papelera, salvo los que rekordbox, Engine DJ o Traktor sigan usando",
       "untouched": "BPM, key, cues y rating no se tocan",
       "libraries": "rekordbox, Engine DJ y Traktor se actualizan como en un Actualizar, si su sincronización está activa",
-      "backup": "Copia de seguridad de cada fichero",
+      "backup": "Se guarda una copia de cada fichero en Copias de seguridad.",
       "cancel": "Cancelar",
       "apply": "Aplicar",
       "libraryMissing": "{{library}} no se actualizará porque no se encuentra su colección."

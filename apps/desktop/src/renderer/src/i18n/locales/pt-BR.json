@@ -1521,7 +1521,7 @@
       "trash": "Os arquivos delas vão para a Lixeira, exceto os que rekordbox, Engine DJ ou Traktor ainda usam",
       "untouched": "BPM, tom, cues e avaliação não são alterados",
       "libraries": "rekordbox, Engine DJ e Traktor se atualizam como em um Atualizar, se a sincronização estiver ativa",
-      "backup": "Backup de cada arquivo",
+      "backup": "Uma cópia de cada arquivo é guardada em Backups.",
       "cancel": "Cancelar",
       "apply": "Aplicar",
       "libraryMissing": "O {{library}} não será atualizado porque a coleção dele não foi encontrada."

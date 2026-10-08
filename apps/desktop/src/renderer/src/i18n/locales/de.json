@@ -1521,7 +1521,7 @@
       "trash": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ oder Traktor noch nutzen",
       "untouched": "BPM, Tonart, Cues und Bewertung bleiben unverändert",
       "libraries": "rekordbox, Engine DJ und Traktor ziehen nach wie bei einem Aktualisieren, wenn ihr Abgleich aktiv ist",
-      "backup": "Sicherung jeder Datei",
+      "backup": "Von jeder Datei wird eine Kopie in den Sicherungen abgelegt.",
       "cancel": "Abbrechen",
       "apply": "Anwenden",
       "libraryMissing": "{{library}} wird nicht aktualisiert, weil die Sammlung nicht gefunden wurde."

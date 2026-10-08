@@ -292,6 +292,23 @@ describe('MusicReview', () => {
     expect(r.apply).toHaveBeenCalled()
   })
 
+  // A locked, always-ticked checkbox reads as a broken control; the backup is a promise,
+  // not a choice, so it is said as text.
+  it('says a backup is kept without offering a checkbox for it', () => {
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+        })}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    const sheet = screen.getByTestId('music-review-confirm')
+    expect(within(sheet).queryByRole('checkbox')).toBeNull()
+    expect(sheet).toHaveTextContent('A copy of every file is kept in Backups.')
+  })
+
   // A conversion writes the same files and library databases; applying or undoing on top
   // of it would race those writes.
   it('holds Apply and Undo while a conversion is running', () => {

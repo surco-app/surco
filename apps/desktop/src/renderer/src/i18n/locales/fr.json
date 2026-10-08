@@ -1521,7 +1521,7 @@
       "trash": "Leurs fichiers vont à la Corbeille, sauf ceux que rekordbox, Engine DJ ou Traktor utilisent encore",
       "untouched": "BPM, tonalité, cues et note ne sont pas touchés",
       "libraries": "rekordbox, Engine DJ et Traktor suivent comme pour une Mise à jour, si leur synchronisation est activée",
-      "backup": "Sauvegarde de chaque fichier",
+      "backup": "Une copie de chaque fichier est conservée dans les Sauvegardes.",
       "cancel": "Annuler",
       "apply": "Appliquer",
       "libraryMissing": "{{library}} ne sera pas mis à jour car sa collection est introuvable."

@@ -123,9 +123,7 @@ function Confirm({
           {t('musicReview.confirm.libraryMissing', { library: name })}
         </p>
       ))}
-      <label className="flex items-center gap-2 text-xs text-fg-dim">
-        <input type="checkbox" checked disabled readOnly /> {t('musicReview.confirm.backup')}
-      </label>
+      <p className="text-xs text-fg-dim">{t('musicReview.confirm.backup')}</p>
       <div className="flex justify-end gap-1.5">
         <button
           type="button"
