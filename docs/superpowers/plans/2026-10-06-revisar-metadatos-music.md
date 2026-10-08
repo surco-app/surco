@@ -3840,3 +3840,19 @@ Controller ruling (data-driven, user prefers decisions made from measurements):
 - Keep the digits rule and everything else.
 Tests (RED first): Rahcel Auburn, Álex Cevera and Chumi DJ Present/Presenta Limite still typo groups; Katana/Kavana, Cascada/Cascade, Zentral/Central, Solid/Sound Solution, Black House/Black Rose and Euro House/Afro House (genre) are not. Mutation: revert to limit 2 → red.
 Real library (temporary uncommitted test over review-dump.json, delete after): report the full list of remaining typo groups and counts per kind.
+
+---
+
+### Task 23: Colección de rekordbox que no existe y columna de la revisión
+
+Found in the user's real test (08/10): the dev instance's settings had `rekordboxDbPath` pointing to a test copy that no longer exists. `findRekordboxCollection({configured})` returns the configured path even when missing (rekordboxPath.ts:28-29), so the review applied to Music + files but rekordbox silently got nothing (counter unchanged). The "Dónde" chips still promised rekordbox.
+
+## A. Missing configured rekordbox collection
+- RULING: never fall back silently to another collection (a configured path may intentionally point elsewhere). Instead, treat a configured path that doesn't exist as "collection not found": the flushes (library:syncTags, library:replaceDuplicates, and process:batch-end's rekordbox flush) report a dedicated reason `collection-missing` (Activity row + the review's done sheet line "No se encuentra la colección de rekordbox configurada. Revísala en Ajustes." — 5 locales, no em dash, no explanatory colon). Same treatment for Engine's library dir and the Traktor NML path if they're configured but missing (they already check m.db existence for Engine; make the review surfaces honest for all three).
+- The renderer needs to know which libraries are actually usable: add a read-only IPC (e.g. `library:status`) returning per library { enabled, found } from main (sync toggle + path exists). The review uses it for the "Dónde" chips (a chip only if enabled AND found; if enabled but not found, show the library chip struck/dimmed with a title tooltip "no se encuentra"), for the confirmation sheet (one line naming each enabled-but-missing library), and the done sheet line above.
+- Tests: findRekordboxCollection behavior unchanged for the normal case; status IPC logic (pure function with fs injected); chips/confirm/done lines.
+
+## B. Review column layout
+- The review list column must be a fixed-height flex column: header (title, filters) fixed at the top, the group list is the only scrolling area, and the tray ("N cambios · Revisar y aplicar") always visible at the bottom (not inside the scrolling content). Today the column content scrolls as a whole inside App's list scroll container, so the tray ends up after the last group.
+- Rows: the secondary line ("Artista y artista del álbum · posible errata") must not be cut so early — let the name and secondary line use the full row width and put the track count on the first line's right edge (or below), so "Artista y artista del álbum · mayúsculas" fits at the default column width.
+- Tests: tray rendered outside the scrolling element (DOM structure assertion with data-testid on the scroll area), list scroll area has overflow-y auto, header outside it.
