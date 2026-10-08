@@ -11,6 +11,8 @@ export const SPLIT_BODY_READY =
   'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-50'
 export const SPLIT_TOGGLE =
   'press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] disabled:pointer-events-none'
+export const SPLIT_BODY_QUIET = 'text-fg-muted'
+export const SPLIT_TOGGLE_QUIET = 'border-[var(--color-line-strong)] text-fg-faint'
 export const SPLIT_TOGGLE_READY =
   'border-on-scrim/20 text-[var(--color-on-accent)] disabled:opacity-50'
 export const SPLIT_MENU =

@@ -10,10 +10,12 @@ import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
 import {
   SPLIT_BODY,
+  SPLIT_BODY_QUIET,
   SPLIT_BODY_READY,
   SPLIT_ITEM,
   SPLIT_MENU,
   SPLIT_TOGGLE,
+  SPLIT_TOGGLE_QUIET,
   SPLIT_TOGGLE_READY,
   useSplitMenu,
 } from './SplitButton'
@@ -234,7 +236,7 @@ export function ExportButton({
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
                   'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : `${SPLIT_BODY} ${faceBlocked ? 'text-fg-muted' : SPLIT_BODY_READY}`
+                : `${SPLIT_BODY} ${faceBlocked ? SPLIT_BODY_QUIET : SPLIT_BODY_READY}`
           }
         >
           {swapsFace && (
@@ -302,7 +304,7 @@ export function ExportButton({
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
                   'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : `${SPLIT_TOGGLE} ${faceBlocked ? 'border-[var(--color-line-strong)] text-fg-faint' : SPLIT_TOGGLE_READY}`
+                : `${SPLIT_TOGGLE} ${faceBlocked ? SPLIT_TOGGLE_QUIET : SPLIT_TOGGLE_READY}`
           }
         >
           {swapsFace && (
