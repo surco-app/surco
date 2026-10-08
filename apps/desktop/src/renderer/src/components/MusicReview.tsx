@@ -21,6 +21,7 @@ import type {
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { INVISIBLE } from '../lib/musicSpelling'
+import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
 import { FilterBar, FilterOption } from './FilterBar'
 import {
   CoverPlaceholder,
@@ -39,9 +40,7 @@ import { PrimaryAction } from './Toolbar'
 import { Tooltip } from './Tooltip'
 import { TopProgressBar } from './TopProgressBar'
 
-const BTN = 'press rounded-md px-2.5 py-1 text-xs outline-none disabled:opacity-40'
-export const PRIMARY = `${BTN} bg-[var(--color-accent)] text-[var(--color-on-accent)]`
-export const GHOST = `${BTN} text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg`
+const OK = `${DIALOG_BUTTON} ${DIALOG_OK}`
 
 export function fieldsLabel(t: TFunction, group: ReviewSpellingGroup): string {
   return group.fields.length > 1
@@ -82,7 +81,7 @@ function Sheet({
       backdropTestId={`${testId}-backdrop`}
       dialogTestId={testId}
       labelledBy={titleId}
-      className="grid w-full max-w-sm gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-4"
+      className={`grid gap-3 ${DIALOG_PANEL}`}
     >
       {children}
     </ModalShell>
@@ -108,7 +107,7 @@ function Confirm({
       onClose={onCancel}
       primaryRef={applyRef}
     >
-      <h3 id="music-review-confirm-title" className="text-sm font-semibold">
+      <h3 id="music-review-confirm-title" className="text-base font-semibold">
         {t('musicReview.confirm.title', { count: tracks + duplicates })}
       </h3>
       <dl className="grid gap-1 text-sm">
@@ -146,7 +145,7 @@ function Confirm({
         <button
           type="button"
           data-testid="music-review-confirm-cancel"
-          className={GHOST}
+          className={DIALOG_CANCEL}
           onClick={onCancel}
         >
           {t('musicReview.confirm.cancel')}
@@ -155,7 +154,7 @@ function Confirm({
           type="button"
           data-testid="music-review-confirm-apply"
           ref={applyRef}
-          className={PRIMARY}
+          className={OK}
           disabled={busy}
           onClick={() => {
             onCancel()
@@ -235,7 +234,7 @@ function Done({
       onClose={onContinue}
       primaryRef={continueRef}
     >
-      <h3 id="music-review-done-title" className="text-sm font-semibold">
+      <h3 id="music-review-done-title" className="text-base font-semibold">
         {t('musicReview.done.title')}
       </h3>
       {undone ? (
@@ -299,7 +298,7 @@ function Done({
           <button
             type="button"
             data-testid="music-review-undo"
-            className={GHOST}
+            className={DIALOG_CANCEL}
             disabled={busy}
             onClick={() => void review.undo()}
           >
@@ -310,7 +309,7 @@ function Done({
           type="button"
           data-testid="music-review-continue"
           ref={continueRef}
-          className={PRIMARY}
+          className={OK}
           onClick={onContinue}
         >
           {t('musicReview.done.continue')}
