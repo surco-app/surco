@@ -1,4 +1,5 @@
 import { METADATA_KEYS } from '../../../shared/metadata'
+import { bareAlbumTitle } from '../../../shared/searchClean'
 import { fullDateOf } from '../../../shared/tagFields'
 import type {
   MetaTextKey,
@@ -83,6 +84,9 @@ export interface TrackMatchTarget {
   // a differing year must never penalise a match — it just floats the pressing that shares the
   // file's year ahead of an equally-relevant reissue so the right one is probed first.
   year?: string
+  // The file's album, passed only while "Search by album first" is on. Ranks the release it
+  // names ahead of the artist's other albums, which all tie on the artist otherwise.
+  album?: string
   // A Discogs release the file was tagged from before (an earlier match, or hand-entered).
   // When present, autoMatchRelease tries loading this exact release before falling back to
   // a text search — a re-tagged file finds its release again on the first try instead of
@@ -452,12 +456,24 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
   // track's own name — so it leads before any score. Never a risk: if the ISRC was
   // mis-tagged, the probe still scores the tracklist and rejects it like any other row.
   const exactRank = (result: SearchResult): number => (result.exact ? 1 : 0)
+  // The tagged album word for word leads, then any edition whose bare title is the album's:
+  // catalogs keep "(Deluxe Edition)" out of the title as often as tags put it in.
+  const album = target.album ? normalize(target.album) : ''
+  const bareAlbum = target.album ? normalize(bareAlbumTitle(target.album)) : ''
+  const albumRank = (result: SearchResult): number => {
+    if (!album) return 0
+    const dash = result.title.indexOf(' - ')
+    const release = dash < 0 ? result.title : result.title.slice(dash + 3)
+    if (normalize(release) === album) return 2
+    return normalize(bareAlbumTitle(release)) === bareAlbum ? 1 : 0
+  }
   return results
     .map((result, index) => ({ result, index, score: relevance(result) }))
     .sort(
       (a, b) =>
         exactRank(b.result) - exactRank(a.result) ||
         b.score - a.score ||
+        albumRank(b.result) - albumRank(a.result) ||
         PROVIDER_RANK[a.result.provider] - PROVIDER_RANK[b.result.provider] ||
         yearMatch(b.result) - yearMatch(a.result) ||
         have(b.result) - have(a.result) ||

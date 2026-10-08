@@ -506,6 +506,35 @@ describe('preRankResults', () => {
     expect(ranked.map((x) => x.id)).toEqual([2, 1])
   })
 
+  // An album search returns every edition of the artist's catalog, and they all tie on the
+  // artist: popularity then buried the edition the file names 40 rows down (artexjay's
+  // "Duran Duran (Deluxe Edition)" under the 1981 LPs and other albums' deluxes). The tagged
+  // album says which release it is, word for word or once its edition is dropped.
+  it('ranks the tagged album first, its other editions next, and other albums last', () => {
+    const lp: SearchResult = {
+      ...r(1, 'Duran Duran - Duran Duran'),
+      community: { have: 5000, want: 1 },
+    }
+    const otherDeluxe = r(2, 'Duran Duran - Paper Gods (Deluxe Edition)')
+    const deluxe = r(3, 'Duran Duran - Duran Duran (Deluxe Edition)')
+    const ranked = preRankResults([otherDeluxe, lp, deluxe], {
+      title: 'Planet Earth',
+      artist: 'Duran Duran',
+      album: 'Duran Duran (Deluxe Edition)',
+    })
+    expect(ranked.map((x) => x.id)).toEqual([3, 1, 2])
+  })
+
+  // A catalog that lists the edition apart from the title (MusicBrainz's "Duran Duran") is
+  // still the tagged album, and must not sink below another album's same-named edition.
+  it('counts a row without the edition as the tagged album', () => {
+    const ranked = preRankResults(
+      [r(1, 'Duran Duran - Notorious (Deluxe Edition)'), r(2, 'Duran Duran - Duran Duran')],
+      { title: 'Planet Earth', artist: 'Duran Duran', album: 'Duran Duran (Deluxe Edition)' },
+    )
+    expect(ranked.map((x) => x.id)).toEqual([2, 1])
+  })
+
   it('keeps the original order when no row matches better', () => {
     const ranked = preRankResults([r(1, 'A - X'), r(2, 'B - Y')], { title: 'Z', artist: 'Q' })
     expect(ranked.map((x) => x.id)).toEqual([1, 2])

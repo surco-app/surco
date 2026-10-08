@@ -703,6 +703,41 @@ describe('useDiscogsBrowser', () => {
     expect(search.mock.calls[1][3]).toEqual(expect.objectContaining({ album: 'Play' }))
   })
 
+  // With "Search by album first" on, every edition of the artist's albums ties on the
+  // artist, and Discogs' most-owned LP led while the edition the file is tagged with sat
+  // 40 rows down. The tagged album decides the order; with the setting off, nothing moves.
+  it.each([
+    [true, [2, 1]],
+    [false, [1, 2]],
+  ])('ranks the tagged album first only while album-first is on (%s)', async (albumFirst, ids) => {
+    setApi({
+      search: vi.fn().mockResolvedValue([
+        {
+          provider: 'discogs',
+          id: 1,
+          title: 'Duran Duran - Duran Duran',
+          community: { have: 5000 },
+        },
+        { provider: 'discogs', id: 2, title: 'Duran Duran - Duran Duran (Deluxe Edition)' },
+      ]),
+    })
+    const tagged: TrackItem = {
+      ...item({ query: 'duran duran planet earth', title: 'Planet Earth' }),
+      meta: {
+        title: 'Planet Earth',
+        artist: 'Duran Duran',
+        album: 'Duran Duran (Deluxe Edition)',
+      } as TrackMetadata,
+    }
+    const { result } = renderHook(
+      () => useDiscogsBrowser(tagged, tr, undefined, ['discogs'], 25, {}, albumFirst),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    expect(result.current.results.map((r) => r.id)).toEqual(ids)
+  })
+
   // The format filter is applied in the main process too, so ticking Vinyl in Settings
   // leaves the term unchanged. Without the formats in the key, the track the user goes
   // back to keeps its unfiltered rows and the filter looks like it does nothing.

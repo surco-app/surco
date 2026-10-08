@@ -107,8 +107,8 @@ export function useDiscogsBrowser(
   // Title-cleanup settings (the Naming pattern), so the panel's ranking, hints and
   // auto-probe score against the undressed title exactly like the sweep does.
   cleanup: MatchCleanup = {},
-  // "Search by album first", from Settings. Only its place in the search key lives here:
-  // the main process applies it to the album hint every search already carries.
+  // "Search by album first", from Settings. The main process applies it to the album hint
+  // every search already carries; here it keys the search and ranks the tagged album first.
   searchByAlbumFirst = false,
   // The release-format filter, from Settings. Like album-first, the main process applies
   // it; only its place in the search key lives here.
@@ -258,12 +258,13 @@ export function useDiscogsBrowser(
   // down. There is no reranking once every source has answered, which used to reshuffle the
   // whole list seconds after the user had started reading it. While the user is in the list
   // or has a row open, a late answer goes below instead, so nothing moves under the pointer.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers are the trigger; the file's title/artist are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers are the trigger; the file's title/artist/album and the album-first setting are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
   const allResults = useMemo(() => {
     if (arrived.length === 0) return EMPTY_RESULTS
     const ranked = preRankResults(arrived.flat(), {
       title: matchTargetOf(item, cleanup).title,
       artist: item.meta.artist,
+      album: searchByAlbumFirst ? item.meta.album : undefined,
     })
     const rankedKeys = ranked.map(resultKey)
     const previous = shownOrder.current.term === searchTerm ? shownOrder.current.keys : []
