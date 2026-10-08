@@ -3491,10 +3491,7 @@ describe('App Music review', () => {
     await renderApp()
     runMenu('music-duplicates')
     await screen.findByTestId('music-review-empty')
-    expect(screen.getByTestId('music-review-filter-duplicates')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('Duplicates')
   })
 
   // A file the review rewrote may be open in the list. The row has to say what the file
@@ -3585,13 +3582,10 @@ describe('App Music review', () => {
     await renderApp()
     runMenu('music-review')
     await screen.findByTestId('music-review-empty')
-    expect(screen.getByTestId('music-review-filter-all')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('All')
     runMenu('music-duplicates')
     await waitFor(() =>
-      expect(screen.getByTestId('music-review-filter-duplicates')).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      ),
+      expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('Duplicates'),
     )
   })
 

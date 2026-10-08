@@ -1,29 +1,43 @@
 import type { TFunction } from 'i18next'
+import {
+  ArrowDownUp,
+  CaseSensitive,
+  Copy as CopyIcon,
+  List,
+  ListMusic,
+  type LucideIcon,
+  SpellCheck,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
+  DuplicateCard,
   MusicReview as Review,
   ReviewFilter,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
-import { SAFE_KINDS } from '../lib/musicSpelling'
+import { INVISIBLE } from '../lib/musicSpelling'
+import { FilterBar, FilterOption } from './FilterBar'
+import {
+  CoverPlaceholder,
+  listRowClass,
+  PILL_TEXT,
+  ROW_DETAIL,
+  ROW_TITLE,
+  ROW_TRAILING,
+  ToneBadge,
+  TonePill,
+} from './ListRow'
 import { ModalShell } from './ModalShell'
+import { SearchInput } from './SearchInput'
+import { Select } from './Select'
+import { Tooltip } from './Tooltip'
 
 const BTN = 'press rounded-md px-2.5 py-1 text-xs outline-none disabled:opacity-40'
 export const PRIMARY = `${BTN} bg-[var(--color-accent)] text-[var(--color-on-accent)]`
 export const GHOST = `${BTN} text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg`
-
-export function Dot({ safe }: { safe: boolean }) {
-  const { t } = useTranslation()
-  return (
-    <span
-      role="img"
-      aria-label={t(safe ? 'musicReview.safe' : 'musicReview.review')}
-      className={`h-2 w-2 shrink-0 rounded-full ${safe ? 'bg-[var(--color-good)]' : 'bg-[var(--color-warn)]'}`}
-    />
-  )
-}
 
 export function fieldsLabel(t: TFunction, group: ReviewSpellingGroup): string {
   return group.fields.length > 1
@@ -303,14 +317,66 @@ function Done({
 }
 
 const FILTERS: ReviewFilter[] = ['all', 'spelling', 'duplicates']
+const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
+  all: List,
+  spelling: SpellCheck,
+  duplicates: CopyIcon,
+}
+
+export type ReviewSort = 'default' | 'tracks' | 'name'
 
 const trackCount = (g: ReviewSpellingGroup) =>
   new Set(g.variants.flatMap((v) => v.persistentIds)).size
 
+const nameOf = (review: Review, g: ReviewSpellingGroup) =>
+  review.choice(g.key) ?? g.variants[0].value
+const duplicateName = (c: DuplicateCard) => `${c.entries[0]?.artist} · ${c.entries[0]?.title}`
+
+// A search ignores case, accents and the invisible characters the review exists to find.
+const fold = (value: string) =>
+  value.normalize('NFD').replace(/\p{M}/gu, '').replace(INVISIBLE, '').toLowerCase()
+
+export function visibleGroups(
+  review: Review,
+  search: string,
+  sort: ReviewSort,
+): { spelling: ReviewSpellingGroup[]; duplicates: DuplicateCard[] } {
+  const query = fold(search.trim())
+  const hit = (texts: string[]) => !query || texts.some((text) => fold(text).includes(query))
+  const spelling =
+    review.filter === 'duplicates'
+      ? []
+      : review.spelling.filter((g) => hit([nameOf(review, g), ...g.variants.map((v) => v.value)]))
+  const duplicates =
+    review.filter === 'spelling'
+      ? []
+      : review.duplicates.filter((c) =>
+          hit(c.entries.flatMap((e) => [e.artist, e.title, e.album ?? ''])),
+        )
+  if (sort === 'name')
+    return {
+      spelling: [...spelling].sort((a, b) => nameOf(review, a).localeCompare(nameOf(review, b))),
+      duplicates: [...duplicates].sort((a, b) => duplicateName(a).localeCompare(duplicateName(b))),
+    }
+  if (sort === 'tracks')
+    return {
+      spelling: [...spelling].sort((a, b) => trackCount(b) - trackCount(a)),
+      duplicates: [...duplicates].sort((a, b) => b.entries.length - a.entries.length),
+    }
+  return { spelling, duplicates }
+}
+
+export const visibleKeys = (review: Review, search: string, sort: ReviewSort) => {
+  const { spelling, duplicates } = visibleGroups(review, search, sort)
+  return [...spelling.map((g) => g.key), ...duplicates.map((c) => c.group.key)]
+}
+
+const RISKY_KINDS = new Set(['typo', 'version'])
+
 function Row({
   selected,
   staged,
-  safe,
+  kind,
   name,
   detail,
   count,
@@ -318,7 +384,7 @@ function Row({
 }: {
   selected: boolean
   staged: boolean
-  safe: boolean
+  kind: ReviewSpellingGroup['kind'] | DuplicateCard['group']['kind']
   name: string
   detail: string
   count?: number
@@ -338,31 +404,45 @@ function Row({
         e.preventDefault()
         onSelect()
       }}
-      className={`flex min-w-0 cursor-default items-center gap-2.5 rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${selected ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]' : 'hover:bg-[var(--color-hover)]'} ${staged ? 'opacity-60' : ''}`}
+      className={`cursor-default ${listRowClass(selected, false)}`}
     >
-      <Dot safe={safe} />
-      <span className="grid min-w-0 flex-1">
-        <span className="flex min-w-0 items-baseline gap-2">
-          <span data-testid="music-review-row-name" className="min-w-0 flex-1 truncate text-sm">
-            {name}
+      <span className="relative shrink-0">
+        <CoverPlaceholder />
+        {staged && <ToneBadge tone="attention" />}
+      </span>
+      <span data-fit className="relative min-w-0 flex-1">
+        <span data-testid="music-review-row-title-line" className="flex items-center gap-2">
+          <span className="relative block min-w-0 flex-1 truncate">
+            <span data-testid="music-review-row-name" className={ROW_TITLE}>
+              {name}
+            </span>
           </span>
           {count !== undefined && (
-            <span
-              data-testid="music-review-row-count"
-              className="shrink-0 text-xs tabular-nums text-fg-faint"
-            >
+            <span data-testid="music-review-row-count" className={ROW_TRAILING}>
               {t('musicReview.tracks', { count })}
             </span>
           )}
         </span>
-        <span data-testid="music-review-row-detail" className="truncate text-xs text-fg-faint">
-          {detail}
-          {staged && ` · ${t('musicReview.inTray')}`}
+        <span data-testid="music-review-row-detail-line" className="flex items-center gap-2">
+          <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
+            {detail}
+            {staged && ` · ${t('musicReview.inTray')}`}
+          </span>
+          <span className="flex shrink-0 justify-end">
+            <TonePill tone={RISKY_KINDS.has(kind) ? 'warn' : 'good'}>
+              <span data-testid="music-review-row-kind" className={PILL_TEXT}>
+                {t(`musicReview.badge.${kind}`)}
+              </span>
+            </TonePill>
+          </span>
         </span>
       </span>
     </div>
   )
 }
+
+const TOOL =
+  'press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
 
 // `busy` is a conversion running elsewhere in the app: it writes the same files and the
 // same library databases, so nothing here may start a write until it ends.
@@ -372,99 +452,162 @@ export function MusicReview({
   onSelect,
   onClose,
   busy = false,
+  search,
+  onSearch,
+  sort,
+  onSort,
 }: {
   review: Review
   selectedKey: string | null
   onSelect: (key: string) => void
   onClose: () => void
   busy?: boolean
+  search: string
+  onSearch: (value: string) => void
+  sort: ReviewSort
+  onSort: (sort: ReviewSort) => void
 }) {
   const { t } = useTranslation()
   const applying = review.status === 'applying'
   const [confirming, setConfirming] = useState(false)
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const counts = {
     all: review.spelling.length + review.duplicates.length,
     spelling: review.spelling.length,
     duplicates: review.duplicates.length,
   }
-  const showSpelling = review.filter !== 'duplicates'
-  const showDuplicates = review.filter !== 'spelling'
+  const visible = visibleGroups(review, search, sort)
+  const keys = visibleKeys(review, search, sort)
+  const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
   const pending = review.summary.tracks + review.summary.duplicates
   const nothing = review.status === 'ready' && counts.all === 0
   return (
     <div data-testid="music-review" className="relative flex min-h-0 flex-1 flex-col">
-      <div className="grid shrink-0 gap-2.5 border-b border-[var(--color-line)] px-3 pt-3 pb-2.5">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold">{t('musicReview.title')}</h2>
+      <div className="shrink-0 border-b border-[var(--color-line)] bg-[var(--color-ink)]">
+        <div className="flex items-center gap-1.5 px-1.5 pt-2">
+          <SearchInput
+            className="flex-1"
+            testid="music-review-search"
+            value={search}
+            onChange={onSearch}
+            onClear={() => onSearch('')}
+            onKeyDown={(e) => {
+              if (e.key !== 'Escape') return
+              if (search) {
+                e.stopPropagation()
+                onSearch('')
+              } else {
+                e.currentTarget.blur()
+              }
+            }}
+            ariaLabel={t('musicReview.search')}
+            placeholder={t('musicReview.search')}
+            clearLabel={t('sidebar.search.clear')}
+          />
           <button
             type="button"
             data-testid="music-review-close"
-            className={`${GHOST} ml-auto`}
+            aria-label={t('musicReview.close')}
+            className={TOOL}
             disabled={applying}
             onClick={onClose}
           >
-            {t('musicReview.close')}
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={t('musicReview.close')} />
           </button>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              type="button"
-              data-testid={`music-review-filter-${f}`}
-              aria-pressed={review.filter === f}
-              disabled={applying}
-              onClick={() => review.setFilter(f)}
-              className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-xs text-fg-dim outline-none disabled:opacity-40 aria-pressed:border-transparent aria-pressed:bg-[var(--color-accent-soft)] aria-pressed:text-fg"
-            >
-              {t(`musicReview.filter.${f}`)}{' '}
-              <span className="tabular-nums text-fg-faint">{counts[f]}</span>
-            </button>
-          ))}
-        </div>
+        <FilterBar
+          testid="music-review-filter"
+          trigger={{
+            Icon: FILTER_ICONS[review.filter],
+            label: t(`musicReview.filter.${review.filter}`),
+            count: counts[review.filter],
+          }}
+          listLabel={t('musicReview.title')}
+          focusTestId={`music-review-filter-${review.filter}`}
+          options={(close) =>
+            FILTERS.map((f) => (
+              <FilterOption
+                key={f}
+                testid={`music-review-filter-${f}`}
+                Icon={FILTER_ICONS[f]}
+                label={t(`musicReview.filter.${f}`)}
+                count={counts[f]}
+                selected={review.filter === f}
+                onClick={() => {
+                  review.setFilter(f)
+                  close()
+                }}
+              />
+            ))
+          }
+          counterTestId="music-review"
+          visibleCount={keys.length}
+          selectedPosition={at < 0 ? null : at + 1}
+          selectedCount={1}
+          onRevealSelected={() =>
+            listRef.current
+              ?.querySelector('[aria-selected="true"]')
+              ?.scrollIntoView({ block: 'nearest' })
+          }
+        >
+          <Select
+            testid="music-review-sort"
+            bare
+            value={sort}
+            onChange={(v) => onSort(v as ReviewSort)}
+            label={t('musicReview.sort.label')}
+            options={[
+              { value: 'default', label: t('sidebar.sort.import'), icon: ArrowDownUp },
+              { value: 'name', label: t('sidebar.sort.name'), icon: CaseSensitive },
+              { value: 'tracks', label: t('musicReview.sort.tracks'), icon: ListMusic },
+            ]}
+          />
+        </FilterBar>
       </div>
       <div
         data-testid="music-review-scroll"
-        className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-3"
+        className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-1.5"
       >
         {review.status === 'loading' && (
           <p
             data-testid="music-review-loading"
             aria-live="polite"
-            className="text-xs text-fg-faint"
+            className="p-1.5 text-xs text-fg-faint"
           >
             {t('musicReview.loading')}
           </p>
         )}
         {review.status === 'empty' && (
-          <p data-testid="music-review-empty" className="text-xs text-fg-faint">
+          <p data-testid="music-review-empty" className="p-1.5 text-xs text-fg-faint">
             {t('musicReview.empty')}
           </p>
         )}
         {review.status === 'error' && (
-          <p data-testid="music-review-error" className="text-xs text-fg-faint">
+          <p data-testid="music-review-error" className="p-1.5 text-xs text-fg-faint">
             {t('musicReview.error')}
           </p>
         )}
         {nothing && (
-          <p data-testid="music-review-clean" className="text-xs text-fg-faint">
+          <p data-testid="music-review-clean" className="p-1.5 text-xs text-fg-faint">
             {t('musicReview.clean')}
           </p>
         )}
+        {!nothing && search.trim() !== '' && keys.length === 0 && (
+          <p data-testid="music-review-no-match" className="p-6 text-center text-xs text-fg-faint">
+            {t('musicReview.noMatch')}
+          </p>
+        )}
         <div
+          ref={listRef}
           role="listbox"
           aria-label={t('musicReview.title')}
-          className="grid gap-0.5"
+          className="grid"
           onKeyDown={(e) => {
             if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
             e.preventDefault()
             const options = [...e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]')]
-            const keys = [
-              ...(showSpelling ? review.spelling.map((g) => g.key) : []),
-              ...(showDuplicates ? review.duplicates.map((c) => c.group.key) : []),
-            ]
-            const at = keys.indexOf(selectedKey ?? '')
             const next = Math.min(
               Math.max(at + (e.key === 'ArrowDown' ? 1 : -1), 0),
               keys.length - 1,
@@ -474,35 +617,33 @@ export function MusicReview({
             options[next]?.focus()
           }}
         >
-          {showSpelling &&
-            review.spelling.map((g) => (
-              <Row
-                key={g.key}
-                selected={g.key === selectedKey}
-                staged={review.staged.has(g.key)}
-                safe={SAFE_KINDS.has(g.kind)}
-                name={review.choice(g.key) ?? g.variants[0].value}
-                detail={`${fieldsLabel(t, g)} · ${t(`musicReview.kind.${g.kind}`)}`}
-                count={trackCount(g)}
-                onSelect={() => onSelect(g.key)}
-              />
-            ))}
-          {showDuplicates &&
-            review.duplicates.map(({ group, entries }) => (
-              <Row
-                key={group.key}
-                selected={group.key === selectedKey}
-                staged={review.staged.has(group.key)}
-                safe={group.kind !== 'version'}
-                name={`${entries[0]?.artist} · ${entries[0]?.title}`}
-                detail={
-                  group.kind === 'version'
-                    ? t('musicReview.kind.version')
-                    : t('musicReview.kind.duplicate', { count: entries.length })
-                }
-                onSelect={() => onSelect(group.key)}
-              />
-            ))}
+          {visible.spelling.map((g) => (
+            <Row
+              key={g.key}
+              selected={g.key === selectedKey}
+              staged={review.staged.has(g.key)}
+              kind={g.kind}
+              name={nameOf(review, g)}
+              detail={fieldsLabel(t, g)}
+              count={trackCount(g)}
+              onSelect={() => onSelect(g.key)}
+            />
+          ))}
+          {visible.duplicates.map((c) => (
+            <Row
+              key={c.group.key}
+              selected={c.group.key === selectedKey}
+              staged={review.staged.has(c.group.key)}
+              kind={c.group.kind}
+              name={duplicateName(c)}
+              detail={
+                c.group.kind === 'version'
+                  ? t('musicReview.kind.version')
+                  : t('musicReview.kind.duplicate', { count: c.entries.length })
+              }
+              onSelect={() => onSelect(c.group.key)}
+            />
+          ))}
         </div>
       </div>
       <div

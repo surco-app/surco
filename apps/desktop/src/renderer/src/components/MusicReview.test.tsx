@@ -7,7 +7,7 @@ import '../i18n'
 import type { Api } from '../../../preload/api'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { stubApi } from '../test/api'
-import { MusicReview } from './MusicReview'
+import { MusicReview, type ReviewSort } from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
@@ -110,7 +110,9 @@ function Panes({
       })
     },
   }
-  const { selectedKey, select } = useReviewSelection(r)
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<ReviewSort>('default')
+  const { selectedKey, select } = useReviewSelection(r, search, sort)
   return (
     <>
       <MusicReview
@@ -119,6 +121,10 @@ function Panes({
         onSelect={select}
         onClose={vi.fn()}
         busy={busy}
+        search={search}
+        onSearch={setSearch}
+        sort={sort}
+        onSort={setSort}
       />
       <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} />
     </>
@@ -149,18 +155,24 @@ describe('MusicReview', () => {
     expect(scroll.className).toContain('overflow-y-auto')
     expect(scroll).toContainElement(rows()[0])
     expect(scroll).not.toContainElement(screen.getByTestId('music-review-tray'))
-    expect(scroll).not.toContainElement(screen.getByTestId('music-review-filter-all'))
+    expect(scroll).not.toContainElement(screen.getByTestId('music-review-search'))
+    expect(scroll).not.toContainElement(screen.getByTestId('music-review-filter-trigger'))
     expect(screen.getByTestId('music-review-tray').className).not.toContain('absolute')
   })
 
-  it('gives the name and the secondary line the whole row and puts the count on the first line', () => {
+  // The same row as the track list: a cover tile, the name with the count beside it, and
+  // the secondary line with the kind as a pill where the format sits.
+  it('lays a row out like a track row, with the count on the first line and the kind below', () => {
     render(<Panes review={review()} />)
     const row = rows()[0]
-    const count = within(row).getByTestId('music-review-row-count')
-    expect(count.parentElement).toBe(within(row).getByTestId('music-review-row-name').parentElement)
-    expect(within(row).getByTestId('music-review-row-detail').parentElement).toBe(
-      row.lastElementChild,
-    )
+    expect(within(row).getByTestId('track-cover-placeholder')).toBeVisible()
+    const first = within(row).getByTestId('music-review-row-title-line')
+    expect(first).toContainElement(within(row).getByTestId('music-review-row-name'))
+    expect(first).toContainElement(within(row).getByTestId('music-review-row-count'))
+    const second = within(row).getByTestId('music-review-row-detail-line')
+    expect(second).toContainElement(within(row).getByTestId('music-review-row-detail'))
+    expect(second).toContainElement(within(row).getByTestId('music-review-row-kind'))
+    expect(row.className).toContain('is-primary')
   })
 
   it('lists each group as a row with no choice in it and opens its detail on click', () => {
@@ -169,7 +181,10 @@ describe('MusicReview', () => {
     const list = screen.getByTestId('music-review')
     expect(within(list).queryAllByRole('radio')).toHaveLength(0)
     expect(within(list).queryByTestId('music-review-stage')).toBeNull()
-    expect(rows()[0]).toHaveTextContent('Artist and album artist · capitals or accents')
+    expect(within(rows()[0]).getByTestId('music-review-row-detail')).toHaveTextContent(
+      'Artist and album artist',
+    )
+    expect(within(rows()[0]).getByTestId('music-review-row-kind')).toHaveTextContent('Capitals')
     expect(rows()[0]).toHaveTextContent('3 tracks')
     expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
     expect(detail()).toHaveTextContent('DJ Lara')
@@ -179,13 +194,97 @@ describe('MusicReview', () => {
     expect(detail()).not.toHaveTextContent('DJ Lara')
   })
 
-  it('dims a row staged from the detail and says it is in the batch', () => {
+  // A staged group is a change not applied yet, which the track list marks with the amber
+  // ring on the cover.
+  it('marks a row staged from the detail with the pending ring and says it is in the batch', () => {
     render(<Panes review={review({ spelling: [group, other] })} />)
     expect(rows()[0]).not.toHaveTextContent('in the batch')
+    expect(within(rows()[0]).queryByTestId('track-status-badge')).toBeNull()
     fireEvent.click(screen.getByTestId('music-review-stage'))
     expect(rows()[0]).toHaveTextContent('in the batch')
     expect(rows()[0]).toHaveAttribute('data-staged', 'true')
+    expect(within(rows()[0]).getByTestId('track-status-badge')).toHaveAttribute(
+      'data-tone',
+      'attention',
+    )
     expect(rows()[1]).not.toHaveAttribute('data-staged')
+  })
+
+  it('narrows the groups to the ones whose spellings match the search', () => {
+    render(<Panes review={review({ spelling: [group, other], choice: () => null })} />)
+    fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'hous' } })
+    expect(rows()).toHaveLength(1)
+    expect(rows()[0]).toHaveAttribute('aria-selected', 'true')
+    expect(detail()).toHaveTextContent('House')
+    fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'lara' } })
+    expect(rows().map((r) => within(r).getByTestId('music-review-row-name').textContent)).toEqual([
+      'DJ Lara',
+    ])
+    fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'nobody' } })
+    expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0)
+    expect(screen.getByTestId('music-review-no-match')).toBeVisible()
+  })
+
+  it('finds a duplicate by its title', () => {
+    const dup = {
+      group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
+      entries: [
+        { persistentId: '1', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+        { persistentId: '2', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+      ],
+      formats: {},
+      locations: {},
+    }
+    render(<Panes review={review({ duplicates: [dup] })} />)
+    fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'song' } })
+    expect(rows()).toHaveLength(1)
+    expect(within(rows()[0]).getByTestId('music-review-row-kind')).toHaveTextContent('Duplicate')
+  })
+
+  it('picks the view from the filter menu, each with its count', () => {
+    const r = review({ spelling: [group, other] })
+    render(<Panes review={r} />)
+    const trigger = screen.getByTestId('music-review-filter-trigger')
+    expect(trigger).toHaveTextContent('All2')
+    fireEvent.click(trigger)
+    expect(screen.getByTestId('music-review-filter-spelling')).toHaveTextContent('Spellings2')
+    expect(screen.getByTestId('music-review-filter-duplicates')).toHaveTextContent('Duplicates0')
+    fireEvent.click(screen.getByTestId('music-review-filter-duplicates'))
+    expect(r.setFilter).toHaveBeenCalledWith('duplicates')
+    expect(screen.queryByTestId('music-review-filter-listbox')).toBeNull()
+  })
+
+  it('counts the selected group among the visible ones', () => {
+    render(<Panes review={review({ spelling: [group, other] })} />)
+    expect(screen.getByTestId('music-review-position')).toHaveTextContent('1/2')
+    fireEvent.click(rows()[1])
+    expect(screen.getByTestId('music-review-position')).toHaveTextContent('2/2')
+  })
+
+  it('sorts the groups by name or by tracks', () => {
+    const big = {
+      ...other,
+      key: 'genre||case|ambient',
+      variants: [
+        { value: 'Ambient', persistentIds: ['G', 'H', 'I', 'J'] },
+        { value: 'ambient', persistentIds: ['K'] },
+      ],
+    }
+    const names = () =>
+      rows().map((r) => within(r).getByTestId('music-review-row-name').textContent)
+    render(<Panes review={review({ spelling: [group, other, big], choice: () => null })} />)
+    expect(names()).toEqual(['DJ Lara', 'House', 'Ambient'])
+    fireEvent.click(screen.getByTestId('music-review-sort'))
+    fireEvent.click(screen.getByTestId('music-review-sort-option-name'))
+    expect(names()).toEqual(['Ambient', 'DJ Lara', 'House'])
+    fireEvent.click(screen.getByTestId('music-review-sort'))
+    fireEvent.click(screen.getByTestId('music-review-sort-option-tracks'))
+    expect(names()).toEqual(['Ambient', 'DJ Lara', 'House'])
+  })
+
+  it('closes from an icon button named Close', () => {
+    render(<Panes review={review()} />)
+    expect(screen.getByTestId('music-review-close')).toHaveAccessibleName('Close')
   })
 
   // Ignoring is how the user walks the list; jumping back to the top loses their place.
@@ -267,15 +366,13 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
   })
 
-  it('marks a safe kind and a risky one with a different dot', () => {
+  it('tints a safe kind like a good pill and a risky one like a warning', () => {
     const typo = { ...group, key: 'typo', kind: 'typo' as const }
     render(<Panes review={review({ spelling: [group, typo] })} />)
-    const list = screen.getByTestId('music-review')
     expect(
-      within(list)
-        .getAllByRole('img')
-        .map((d) => d.getAttribute('aria-label')),
-    ).toEqual(['Safe', 'Review'])
+      rows().map((r) => within(r).getByTestId('track-quality').getAttribute('data-tone')),
+    ).toEqual(['good', 'warn'])
+    expect(within(rows()[1]).getByTestId('music-review-row-kind')).toHaveTextContent('Typo')
   })
 
   // Nothing touches a file from the list itself: the tray opens a confirmation first.
@@ -668,15 +765,8 @@ describe('MusicReview', () => {
     ]
     const spelling = controls()
     fireEvent.click(rows()[1])
-    const locked = [
-      ...spelling,
-      ...controls(),
-      screen.getByTestId('music-review-filter-all'),
-      screen.getByTestId('music-review-filter-spelling'),
-      screen.getByTestId('music-review-filter-duplicates'),
-      screen.getByTestId('music-review-close'),
-    ]
-    expect(locked).toHaveLength(4 + 4 + 3 + 1)
+    const locked = [...spelling, ...controls(), screen.getByTestId('music-review-close')]
+    expect(locked).toHaveLength(4 + 4 + 1)
     for (const el of locked) expect(el).toBeDisabled()
     expect(screen.getByTestId('music-review-stop')).toBeEnabled()
   })

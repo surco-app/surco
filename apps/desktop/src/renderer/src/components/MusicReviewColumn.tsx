@@ -6,28 +6,27 @@ import {
   type ReviewFilter,
   useMusicReview,
 } from '../hooks/useMusicReview'
-import { MusicReview } from './MusicReview'
+import { MusicReview, type ReviewSort, visibleKeys } from './MusicReview'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
 interface Shared {
   review: Review
   selectedKey: string | null
   select: (key: string) => void
+  search: string
+  setSearch: (value: string) => void
+  sort: ReviewSort
+  setSort: (sort: ReviewSort) => void
 }
 
 const ReviewContext = createContext<Shared | null>(null)
 
-const keysOf = (review: Review) => [
-  ...(review.filter === 'duplicates' ? [] : review.spelling.map((g) => g.key)),
-  ...(review.filter === 'spelling' ? [] : review.duplicates.map((c) => c.group.key)),
-]
-
 // When the selected group leaves the list (ignored, applied or filtered out) the user
 // keeps their place: the group that followed it, or the one before when it was last.
-function useSelection(review: Review | null) {
+function useSelection(review: Review | null, search: string, sort: ReviewSort) {
   const [picked, select] = useState<string | null>(null)
   const seen = useRef<string[]>([])
-  const keys = review ? keysOf(review) : []
+  const keys = review ? visibleKeys(review, search, sort) : []
   let selectedKey: string | null = keys[0] ?? null
   if (picked !== null && keys.includes(picked)) selectedKey = picked
   else if (picked !== null) {
@@ -48,8 +47,8 @@ function useSelection(review: Review | null) {
   return { selectedKey, select }
 }
 
-export function useReviewSelection(review: Review) {
-  return useSelection(review)
+export function useReviewSelection(review: Review, search: string, sort: ReviewSort) {
+  return useSelection(review, search, sort)
 }
 
 interface Options {
@@ -73,9 +72,19 @@ function Owner({
 }
 
 function Gate({ review, children }: { review: Review | null; children: React.ReactNode }) {
-  const { selectedKey, select } = useSelection(review)
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<ReviewSort>('default')
+  const { selectedKey, select } = useSelection(review, search, sort)
+  const closed = review === null
+  useEffect(() => {
+    if (!closed) return
+    setSearch('')
+    setSort('default')
+  }, [closed])
   return (
-    <ReviewContext.Provider value={review && { review, selectedKey, select }}>
+    <ReviewContext.Provider
+      value={review && { review, selectedKey, select, search, setSearch, sort, setSort }}
+    >
       {children}
     </ReviewContext.Provider>
   )
@@ -108,6 +117,10 @@ export function MusicReviewColumn({ onClose, busy }: { onClose: () => void; busy
       onSelect={shared.select}
       onClose={onClose}
       busy={busy}
+      search={shared.search}
+      onSearch={shared.setSearch}
+      sort={shared.sort}
+      onSort={shared.setSort}
     />
   )
 }

@@ -1492,8 +1492,6 @@
       "duplicate": "{{count}} copies",
       "version": "another version"
     },
-    "safe": "Safe",
-    "review": "Review",
     "tie": "Tied. Pick the one to keep.",
     "unify": "Unify",
     "remove_one": "Remove {{count}}",
@@ -1587,6 +1585,20 @@
       "music": "Music",
       "file": "File",
       "notFound": "Collection not found"
+    },
+    "search": "Search the review",
+    "noMatch": "No group matches.",
+    "sort": {
+      "label": "Sort groups",
+      "tracks": "Tracks"
+    },
+    "badge": {
+      "invisible": "Invisible",
+      "case": "Capitals",
+      "punctuation": "Punctuation",
+      "typo": "Typo",
+      "duplicate": "Duplicate",
+      "version": "Version"
     }
   }
 }

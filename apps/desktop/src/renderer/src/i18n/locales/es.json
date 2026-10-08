@@ -1492,8 +1492,6 @@
       "duplicate": "{{count}} copias",
       "version": "otra versión"
     },
-    "safe": "Seguro",
-    "review": "Revisar",
     "tie": "Empate. Elige cuál se queda.",
     "unify": "Unificar",
     "remove_one": "Quitar {{count}}",
@@ -1587,6 +1585,20 @@
       "music": "Music",
       "file": "Fichero",
       "notFound": "No se encuentra la colección"
+    },
+    "search": "Buscar en la revisión",
+    "noMatch": "Ningún grupo coincide.",
+    "sort": {
+      "label": "Ordenar grupos",
+      "tracks": "Pistas"
+    },
+    "badge": {
+      "invisible": "Invisibles",
+      "case": "Mayúsculas",
+      "punctuation": "Signos",
+      "typo": "Errata",
+      "duplicate": "Duplicado",
+      "version": "Versión"
     }
   }
 }

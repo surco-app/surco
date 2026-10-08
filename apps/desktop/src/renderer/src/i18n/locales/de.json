@@ -1492,8 +1492,6 @@
       "duplicate": "{{count}} Kopien",
       "version": "andere Version"
     },
-    "safe": "Sicher",
-    "review": "Prüfen",
     "tie": "Gleichstand. Wähle, welche bleibt.",
     "unify": "Vereinheitlichen",
     "remove_one": "{{count}} entfernen",
@@ -1587,6 +1585,20 @@
       "music": "Music",
       "file": "Datei",
       "notFound": "Sammlung nicht gefunden"
+    },
+    "search": "In der Prüfung suchen",
+    "noMatch": "Keine Gruppe passt.",
+    "sort": {
+      "label": "Gruppen sortieren",
+      "tracks": "Titel"
+    },
+    "badge": {
+      "invisible": "Unsichtbar",
+      "case": "Schreibung",
+      "punctuation": "Zeichen",
+      "typo": "Tippfehler",
+      "duplicate": "Duplikat",
+      "version": "Version"
     }
   }
 }
