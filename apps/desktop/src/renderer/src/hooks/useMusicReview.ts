@@ -464,7 +464,7 @@ export function useMusicReview({
         librarySync,
         ...(applyError === undefined ? {} : { applyError }),
       })
-      await fill(total)
+      if (!cancelled.current) await fill(total)
     } finally {
       off()
       setProgress(null)

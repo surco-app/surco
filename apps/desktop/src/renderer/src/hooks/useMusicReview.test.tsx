@@ -285,6 +285,26 @@ describe('useMusicReview', () => {
       expect(result.current.phase).toBeNull()
     })
 
+    // A stopped run did not finish; a full bar would say it had.
+    it('does not fill the bar when the run was stopped', async () => {
+      reduceMotion(false)
+      const write = gate<never[]>()
+      setApi({ applyMusicFixes: vi.fn().mockReturnValue(write.promise) })
+      const { result, states } = await recording()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      let run: Promise<void> = Promise.resolve()
+      act(() => {
+        run = result.current.apply()
+      })
+      act(() => result.current.cancel())
+      write.open([])
+      await waitFor(() => expect(result.current.status).toBe('done'))
+      await act(() => run)
+      expect(
+        states.some((x) => x.status === 'applying' && x.progress?.done === x.progress?.total),
+      ).toBe(false)
+    })
+
     it('names the restore and the steps after it when undoing', async () => {
       const restore = gate<{ restoredTo: string }>()
       const sync = gate<undefined>()
