@@ -173,7 +173,9 @@ describe('MusicReview', () => {
   it('lays a row out like a track row, with the count on the first line and the kind below', () => {
     render(<Panes review={review()} />)
     const row = rows()[0]
-    expect(within(row).getByTestId('track-cover-placeholder')).toBeVisible()
+    expect(within(row).getByTestId('music-review-row-cover')).toBeVisible()
+    expect(within(row).queryByTestId('track-cover-placeholder')).toBeNull()
+    expect(within(row).queryByTestId('track-quality')).toBeNull()
     const first = within(row).getByTestId('music-review-row-title-line')
     expect(first).toContainElement(within(row).getByTestId('music-review-row-name'))
     expect(first).toContainElement(within(row).getByTestId('music-review-row-count'))
@@ -207,11 +209,11 @@ describe('MusicReview', () => {
   it('marks a row staged from the detail with the pending ring and says it is in the batch', () => {
     render(<Panes review={review({ spelling: [group, other] })} />)
     expect(rows()[0]).not.toHaveTextContent('in the batch')
-    expect(within(rows()[0]).queryByTestId('track-status-badge')).toBeNull()
+    expect(within(rows()[0]).queryByTestId('music-review-row-staged')).toBeNull()
     fireEvent.click(screen.getByTestId('music-review-stage'))
     expect(rows()[0]).toHaveTextContent('in the batch')
     expect(rows()[0]).toHaveAttribute('data-staged', 'true')
-    expect(within(rows()[0]).getByTestId('track-status-badge')).toHaveAttribute(
+    expect(within(rows()[0]).getByTestId('music-review-row-staged')).toHaveAttribute(
       'data-tone',
       'attention',
     )
@@ -378,7 +380,7 @@ describe('MusicReview', () => {
     const typo = { ...group, key: 'typo', kind: 'typo' as const }
     render(<Panes review={review({ spelling: [group, typo] })} />)
     expect(
-      rows().map((r) => within(r).getByTestId('track-quality').getAttribute('data-tone')),
+      rows().map((r) => within(r).getByTestId('music-review-row-pill').getAttribute('data-tone')),
     ).toEqual(['good', 'warn'])
     expect(within(rows()[1]).getByTestId('music-review-row-kind')).toHaveTextContent('Typo')
   })

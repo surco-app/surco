@@ -344,18 +344,18 @@ export function QualityFilterBar({
               library) drop their divider too. */}
           {renderPrimary('all', close)}
           <Fragment key="conversion">
-            <FilterDivider />
+            <FilterDivider testid="quality-filter-separator" />
             {conversionSection.map((m) => renderPrimary(m, close))}
           </Fragment>
           {formats.length > 0 && (
             <Fragment key="formats">
-              <FilterDivider />
+              <FilterDivider testid="quality-filter-separator" />
               {formats.map((f) => renderFormat(f, close))}
             </Fragment>
           )}
           {primarySections.map((group) => (
             <Fragment key={group[0]}>
-              <FilterDivider />
+              <FilterDivider testid="quality-filter-separator" />
               {group.map((m) => renderPrimary(m, close))}
             </Fragment>
           ))}

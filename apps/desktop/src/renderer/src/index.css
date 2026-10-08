@@ -844,12 +844,15 @@ button:hover > .process-fill {
 .is-primary [data-testid="track-quality"] [data-testid="track-format"] {
   color: inherit;
 }
+.is-primary [data-testid="music-review-row-pill"][data-tone="good"],
 .is-primary [data-testid="track-quality"][data-tone="good"] {
   background: color-mix(in srgb, var(--color-good) 15%, var(--color-panel));
 }
+.is-primary [data-testid="music-review-row-pill"][data-tone="warn"],
 .is-primary [data-testid="track-quality"][data-tone="warn"] {
   background: color-mix(in srgb, var(--color-warn) 20%, var(--color-panel));
 }
+.is-primary [data-testid="music-review-row-pill"][data-tone="danger"],
 .is-primary [data-testid="track-quality"][data-tone="danger"] {
   background: color-mix(in srgb, var(--color-danger) 20%, var(--color-panel));
 }

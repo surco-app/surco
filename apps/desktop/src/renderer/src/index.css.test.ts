@@ -213,6 +213,14 @@ describe('quality pill on the selected row', () => {
   for (const tone of ['good', 'warn', 'danger']) {
     const pct = Number(listRow.match(new RegExp(`bg-${tone}/(\\d+) text-${tone}`))?.[1])
 
+    // The review's rows share the selected-row fill, so their kind pill needs the same
+    // opaque tint.
+    it(`paints the review's ${tone} pill like the track list's`, () => {
+      expect(primaryBlock).toContain(
+        `.is-primary [data-testid="music-review-row-pill"][data-tone="${tone}"],\n.is-primary [data-testid="track-quality"][data-tone="${tone}"] {`,
+      )
+    })
+
     it(`paints the ${tone} pill with its off-row tint over the panel`, () => {
       expect(primaryBlock).toContain(
         `.is-primary [data-testid="track-quality"][data-tone="${tone}"] {\n  background: color-mix(in srgb, var(--color-${tone}) ${pct}%, var(--color-panel));`,

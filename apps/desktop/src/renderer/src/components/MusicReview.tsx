@@ -410,8 +410,8 @@ function Row({
       className={`cursor-default ${listRowClass(selected, false)}`}
     >
       <span className="relative shrink-0">
-        <CoverPlaceholder />
-        {staged && <ToneBadge tone="attention" />}
+        <CoverPlaceholder testid="music-review-row-cover" />
+        {staged && <ToneBadge testid="music-review-row-staged" tone="attention" />}
       </span>
       <span data-fit className="relative min-w-0 flex-1">
         <span data-testid="music-review-row-title-line" className="flex items-center gap-2">
@@ -432,7 +432,7 @@ function Row({
             {staged && ` · ${t('musicReview.inTray')}`}
           </span>
           <span className="flex shrink-0 justify-end">
-            <TonePill tone={RISKY_KINDS.has(kind) ? 'warn' : 'good'}>
+            <TonePill testid="music-review-row-pill" tone={RISKY_KINDS.has(kind) ? 'warn' : 'good'}>
               <span data-testid="music-review-row-kind" className={PILL_TEXT}>
                 {t(`musicReview.badge.${kind}`)}
               </span>

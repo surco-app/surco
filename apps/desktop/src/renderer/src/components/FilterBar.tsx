@@ -44,13 +44,13 @@ export function FilterOption({
   )
 }
 
-export function FilterDivider(): React.JSX.Element {
+export function FilterDivider({ testid }: { testid: string }): React.JSX.Element {
   return (
     // A hidden div, not an <hr>: a listbox may own only options, and the divider is
     // decoration, so it stays out of the accessibility tree.
     <div
       aria-hidden="true"
-      data-testid="quality-filter-separator"
+      data-testid={testid}
       className="my-1 border-0 border-t border-[var(--color-line)]"
     />
   )

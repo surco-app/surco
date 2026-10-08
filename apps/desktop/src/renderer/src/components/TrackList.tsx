@@ -108,7 +108,7 @@ function StatusBadge({
 }): React.JSX.Element | null {
   // Stale wins over done: a converted track edited afterwards shows steady amber so
   // pending Updates stay visible and can be batched for later.
-  if (stale) return <ToneBadge tone="attention" />
+  if (stale) return <ToneBadge testid="track-status-badge" tone="attention" />
   // done lands as a check on a Tokyo Night accent coin — an unmistakable "converted" mark,
   // set apart from the ring states by its shape and fill. The check uses the ink token so it
   // keeps contrast on the accent in both the light and dark themes.
@@ -121,7 +121,7 @@ function StatusBadge({
   // idle is the default for nearly every imported row, so a constant dot says nothing; a clean
   // corner now reads as "not converted yet" and lets the live states stand out.
   if (track.status === 'idle') return null
-  if (track.status === 'processing') return <ToneBadge tone="busy" />
+  if (track.status === 'processing') return <ToneBadge testid="track-status-badge" tone="busy" />
   // A failure gets its own glyph, not just a red ring: the ring alone differed from the
   // amber "unapplied changes" one only by colour, which colour-blind users can't separate.
   return (
@@ -202,7 +202,7 @@ function QualityPill({
 }): React.JSX.Element {
   const tone = qualityTone[verdict]
   return (
-    <TonePill tone={tone} quality={verdict}>
+    <TonePill testid="track-quality" tone={tone} quality={verdict}>
       {(tone !== 'good' || !format) && (
         <svg aria-hidden="true" viewBox="0 0 12 12" className="h-2 w-2" fill="currentColor">
           {qualityShape[tone]}
@@ -597,7 +597,7 @@ const TrackRow = memo(function TrackRow({
                 }`}
               />
             ) : (
-              <CoverPlaceholder round={converting} />
+              <CoverPlaceholder testid="track-cover-placeholder" round={converting} />
             )}
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />

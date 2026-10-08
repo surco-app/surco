@@ -25,10 +25,16 @@ export const ROW_DETAIL = 'relative block min-w-0 flex-1 truncate text-xs text-f
 export const ROW_TRAILING = 'shrink-0 text-right text-xs tabular-nums text-fg-dim'
 export const PILL_TEXT = 'text-[10px] font-semibold leading-4'
 
-export function CoverPlaceholder({ round = false }: { round?: boolean }): React.JSX.Element {
+export function CoverPlaceholder({
+  testid,
+  round = false,
+}: {
+  testid: string
+  round?: boolean
+}): React.JSX.Element {
   return (
     <span
-      data-testid="track-cover-placeholder"
+      data-testid={testid}
       className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
         round ? 'rounded-full' : 'rounded-md'
       }`}
@@ -46,20 +52,21 @@ const PILL_TONE: Record<PillTone, string> = {
   danger: 'bg-danger/20 text-danger',
 }
 
-// The stylesheet keys the selected row's opaque pill off this testid and data-tone, so every
-// pill carries them whatever list it sits in.
+// The stylesheet keys the selected row's opaque pill off each list's testid and data-tone.
 export function TonePill({
+  testid,
   tone,
   quality,
   children,
 }: {
+  testid: string
   tone: PillTone
   quality?: string
   children: React.ReactNode
 }): React.JSX.Element {
   return (
     <span
-      data-testid="track-quality"
+      data-testid={testid}
       data-quality={quality}
       data-tone={tone}
       className={`group/dot relative flex h-4 items-center gap-[3px] rounded px-[5px] ${PILL_TONE[tone]}`}
@@ -83,12 +90,14 @@ const badgeTone = {
   busy: 'animate-pulse border-[var(--color-accent)]',
 } as const
 
-export function ToneBadge({ tone }: { tone: keyof typeof badgeTone }): React.JSX.Element {
+export function ToneBadge({
+  testid,
+  tone,
+}: {
+  testid: string
+  tone: keyof typeof badgeTone
+}): React.JSX.Element {
   return (
-    <span
-      data-testid="track-status-badge"
-      data-tone={tone}
-      className={`${badgeBase} ${badgeTone[tone]}`}
-    />
+    <span data-testid={testid} data-tone={tone} className={`${badgeBase} ${badgeTone[tone]}`} />
   )
 }
