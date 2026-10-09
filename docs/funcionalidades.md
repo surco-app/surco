@@ -1299,7 +1299,9 @@ guarda papelera (`trashSupport.ts:7-16`): APFS, HFS y exFAT sí; un SMB no, y ah
 fichero va a Copias de seguridad en vez de borrarse (actualizado para v1.7.0, antes el
 aviso decía que podía ser definitivo). Es una lista blanca, así que un sistema de
 ficheros imprevisto también va a Copias de seguridad. El aviso dice antes adónde irá cada
-fichero (claves `confirm.cleanUpMessageBackups*` y `*Mixed*`).
+fichero (claves `confirm.cleanUpMessageBackups*` y `*Mixed*`). Con Copias de seguridad en
+«Nunca», ese fichero se borra del todo y el aviso lo dice antes de confirmar (claves
+`confirm.cleanUpMessagePermanent*` y `*MixedPermanent*`, desde v1.7.1).
 
 **Un repunte rechazado no cancela la sustitución:** el fichero ya está en disco y la copia
 de biblioteca sigue mereciendo actualizarse. El motivo viaja hacia arriba para contarlo.
@@ -1483,19 +1485,29 @@ comparación»* (`useDeclickAb.ts:60-67`).
 - **Sin telemetría por diseño**, sin cuenta y sin nube. El renderer va en sandbox
   con lista blanca de ficheros: sin ella, un renderer comprometido podría leer
   cualquier fichero del disco a través de un `<audio src>` (`mediaAccess.ts:1-8`).
-- **Papelera, nunca borrado duro.** Todo borrado pasa por `trashRecoverably`
-  (`recoverableTrash.ts:20-30`, `shellIpc.ts:25-27`): a la papelera del sistema si el disco
-  la guarda, y si no (un NAS, o cualquier unidad de Windows, que responde 0 a `statfs`) a
-  Copias de seguridad. Si Copias de seguridad no puede guardarlo, el borrado falla y el
-  fichero se queda; nunca cae al borrado del sistema (`trashSupport.ts:7-16`). El diálogo de
-  borrar dice antes adónde irá cada fichero (claves `confirm.trash*Backups*` y `*Mixed*`).
+- **Nada se borra sin avisar.** Todo borrado va a la papelera del sistema si el disco la
+  guarda, y si no (un NAS, o cualquier unidad de Windows, que responde 0 a `statfs`) a
+  Copias de seguridad (`trashSupport.ts:7-16`). Los borrados automáticos (quitar duplicados
+  en la revisión, la copia vieja de Music, quitar de la lista) pasan por `trashRecoverably`
+  y guardan su copia sea cual sea el ajuste (`recoverableTrash.ts:17,26-37`); si Copias de
+  seguridad no puede guardarlo, el borrado falla y el fichero se queda. El que confirma el
+  usuario en el diálogo de papelera o de limpiar pasa por `trashAsConfirmed`
+  (`shellIpc.ts:26-28`, `recoverableTrash.ts:42-54`): con «Nunca» y un disco sin papelera
+  se borra del todo, pero solo si el diálogo lo dijo y el usuario lo confirmó; sin esa
+  confirmación main se niega. El diálogo dice antes adónde irá cada fichero (claves
+  `confirm.trash*Backups*`, `*Mixed*` y `*Permanent*`, `useConfirmFlows.ts:198-208`).
 - **Copias de seguridad** (antes «Originales»). Guarda el fichero que una conversión
   reescribe, el que un cambio de formato deja atrás y el que se borra en un disco sin
   papelera, 7 días y hasta 2 GB por defecto, y deja siempre 5 GB libres en el disco
-  (`shared/trash.ts`). **El ajuste «Qué se guarda» (Siempre, Solo si cambia el audio, Nunca)
-  no está conectado**: `policyKeeper` existe y está probado, pero el arranque configura el
-  guardián sin él (`main/index.ts:229`, `originalKeeper.ts:39`), así que los tres niveles
-  guardan siempre. Los límites de días y espacio sí se aplican.
+  (`shared/trash.ts`). **El ajuste «Qué se guarda»** se aplica desde v1.7.1 (hasta v1.7.0
+  el arranque instalaba el guardián sin él y los tres niveles guardaban siempre): el
+  arranque pone el almacén detrás de `policyKeeper` (`main/index.ts:229`,
+  `originalKeeper.ts:85-97`). «Siempre» guarda todo, «Solo si cambia el audio» se salta las
+  reescrituras que copian el audio sin tocarlo (solo etiquetas) y «Nunca» no guarda nada al
+  convertir, normalizar ni cambiar de formato. Dos excepciones guardan siempre: las
+  correcciones de la revisión de metadatos, cuyo Deshacer depende de la copia
+  (`musicFieldWrite.ts:38-42`), y los borrados automáticos de arriba. Los límites de días y
+  espacio se aplican igual.
 - **Pantalla de inicio** como lista de acciones: añadir pistas y, en macOS, importar una
   lista de Apple Music, revisar metadatos y mostrar duplicados de Music (`EmptyActions.tsx`).
 - **Deshacer** de hasta 20 pasos para ediciones de tags. No cubre operaciones de
@@ -1593,13 +1605,15 @@ Recopilado de los cinco informes. Cada punto está verificado.
     pistas en un NAS ese barrido tardó 47 s.
 31. **En Windows, todo borrado va a Copias de seguridad**, nunca a la Papelera de
     reciclaje: `statfs` responde 0 en cualquier unidad y la lista blanca no la reconoce
-    (`trashSupport.ts:7-16`). **Los pasos de rekordbox, Engine DJ y Traktor de la revisión
+    (`trashSupport.ts:7-16`). Con «Nunca», el borrado que confirma el usuario se borra del
+    todo aunque Windows tenga Papelera de reciclaje. **Los pasos de rekordbox, Engine DJ y Traktor de la revisión
     no se han probado en Windows.**
 32. **La revisión de Apple Music es solo de macOS**, la de la lista funciona en todas las
     plataformas. No toca campos vacíos, carátulas ni géneros con varios valores, no busca en
     proveedores y no renombra ficheros. Una errata nunca se aplica sin que el usuario la
     marque, y el detector solo ve una letra de diferencia en nombres de 8 o más.
-33. **No decir que «Nunca» o «Solo si cambia el audio» cambian lo que se guarda.** El
-    ajuste de Copias de seguridad no está conectado y los tres niveles guardan siempre
-    (`main/index.ts:229`). Tampoco que con «Nunca» un borrado en un NAS es definitivo: va a
-    Copias de seguridad igual.
+33. **No decir que «Nunca» no guarda nada en absoluto.** Las correcciones de la revisión
+    de metadatos y los borrados automáticos guardan su copia igualmente
+    (`musicFieldWrite.ts:38-42`, `recoverableTrash.ts:17`). Y con «Nunca» solo es definitivo
+    el borrado que el usuario confirma en un disco sin papelera, tras un aviso que lo dice;
+    un duplicado quitado en la revisión va a Copias de seguridad.
