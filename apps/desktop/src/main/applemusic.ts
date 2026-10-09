@@ -486,16 +486,43 @@ export function buildReviewDumpScript(): string {
     `  set theAlbums to ${of('album')}`,
     `  set theGenres to ${of('genre')}`,
     `  set theDurations to ${of('duration')}`,
+    `  set theAdded to ${of('date added')}`,
     'end tell',
+    'set epochRef to current date',
+    'set year of epochRef to 2001',
+    'set month of epochRef to January',
+    'set day of epochRef to 1',
+    'set time of epochRef to 0',
     'set RS to ASCII character 30',
     'set FS to ASCII character 31',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
-    '  set end of out to (item i of thePids) & FS & (item i of theNames) & FS & (item i of theArtists) & FS & (item i of theAlbumArtists) & FS & (item i of theAlbums) & FS & (item i of theGenres) & FS & (item i of theDurations)',
+    '  set added to ""',
+    '  try',
+    '    set x to (item i of theAdded) - epochRef',
+    '    set added to ((x div 86400) as integer as text) & ":" & ((x mod 86400) as integer as text)',
+    '  end try',
+    '  set end of out to (item i of thePids) & FS & (item i of theNames) & FS & (item i of theArtists) & FS & (item i of theAlbumArtists) & FS & (item i of theAlbums) & FS & (item i of theGenres) & FS & (item i of theDurations) & FS & added',
     'end repeat',
     "set AppleScript's text item delimiters to RS",
     'return out as text',
   ].join('\n')
+}
+
+// AppleScript date arithmetic counts wall-clock seconds, so the offset is read as UTC fields
+// and rebuilt as a local date; adding it to a local epoch would shift summer dates an hour.
+function parseDateAdded(field: string): string | undefined {
+  const m = /^(\d+):(\d+)$/.exec(field)
+  if (!m) return undefined
+  const wall = new Date(Date.UTC(2001, 0, 1) + (Number(m[1]) * 86400 + Number(m[2])) * 1000)
+  return new Date(
+    wall.getUTCFullYear(),
+    wall.getUTCMonth(),
+    wall.getUTCDate(),
+    wall.getUTCHours(),
+    wall.getUTCMinutes(),
+    wall.getUTCSeconds(),
+  ).toISOString()
 }
 
 export function parseReviewDump(stdout: string): MusicReviewEntry[] {
@@ -504,12 +531,14 @@ export function parseReviewDump(stdout: string): MusicReviewEntry[] {
   if (!body) return entries
   for (const row of body.split(REVIEW_RS)) {
     const fields = row.split(REVIEW_FS)
-    if (fields.length !== 7) continue
-    const [persistentId, title, artist, albumArtist, album, genre, duration] = fields
+    if (fields.length !== 8) continue
+    const [persistentId, title, artist, albumArtist, album, genre, duration, added] = fields
     if (!/^[0-9A-F]{16}$/.test(persistentId)) continue
     const entry: MusicReviewEntry = { persistentId, title, artist, albumArtist, album, genre }
     const sec = Math.round(Number(duration.replace(',', '.')))
     if (Number.isFinite(sec) && sec > 0) entry.durationSec = sec
+    const dateAdded = parseDateAdded(added)
+    if (dateAdded) entry.dateAdded = dateAdded
     entries.push(entry)
   }
   return entries

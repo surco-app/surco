@@ -731,6 +731,7 @@ export interface MusicReviewEntry {
   album: string
   genre: string
   durationSec?: number
+  dateAdded?: string
 }
 
 export interface MusicFieldFix {

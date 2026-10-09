@@ -439,10 +439,14 @@ describe('parseReviewDump', () => {
   const RS = '\u001e'
   const FS = '\u001f'
   const row = (...f: string[]) => f.join(FS)
+  const wallClock = (y: number, mo: number, d: number, h: number, mi: number, s: number) => {
+    const secs = (Date.UTC(y, mo, d, h, mi, s) - Date.UTC(2001, 0, 1)) / 1000
+    return `${Math.floor(secs / 86400)}:${secs % 86400}`
+  }
 
   it('reads every field of a file track, with the duration Music prints in a comma locale', () => {
     const out = parseReviewDump(
-      `${row('6E592CFE07A6246A', 'Bleeding Love', 'DJ Lara, DJ Sergi Val', 'DJ Lara', 'Bleeding Love', 'Electronic', '384,26')}\n`,
+      `${row('6E592CFE07A6246A', 'Bleeding Love', 'DJ Lara, DJ Sergi Val', 'DJ Lara', 'Bleeding Love', 'Electronic', '384,26', '')}\n`,
     )
     expect(out).toEqual([
       {
@@ -461,7 +465,7 @@ describe('parseReviewDump', () => {
   // space or an invisible character is a finding, so nothing may be trimmed away.
   it('keeps invisible characters, tabs and spaces inside a value', () => {
     const [e] = parseReviewDump(
-      row('5FA52DD35E307CBB', 'Funk\tFreak ', 'Aar\u200b\u00f3\u200bn Alfonso', '', '', '', '419'),
+      row('5FA52DD35E307CBB', 'Funk\tFreak ', 'Aar\u200b\u00f3\u200bn Alfonso', '', '', '', '419', ''),
     )
     expect(e.title).toBe('Funk\tFreak ')
     expect(e.artist).toBe('Aar\u200b\u00f3\u200bn Alfonso')
@@ -470,16 +474,30 @@ describe('parseReviewDump', () => {
   it('splits rows on the record separator, not on line breaks a title may hold', () => {
     const out = parseReviewDump(
       [
-        row('0000000000000001', 'A\nB', 'X', '', '', '', '1'),
-        row('0000000000000002', 'C', 'Y', '', '', '', '2'),
+        row('0000000000000001', 'A\nB', 'X', '', '', '', '1', ''),
+        row('0000000000000002', 'C', 'Y', '', '', '', '2', ''),
       ].join(RS),
     )
     expect(out.map((e) => e.title)).toEqual(['A\nB', 'C'])
   })
 
-  it('drops a row that is not seven fields or has no persistent ID', () => {
-    expect(parseReviewDump(row('nope', 'A', 'B', '', '', '', '1'))).toEqual([])
+  it('drops a row that is not eight fields or has no persistent ID', () => {
+    expect(parseReviewDump(row('nope', 'A', 'B', '', '', '', '1', ''))).toEqual([])
     expect(parseReviewDump(row('0000000000000001', 'A'))).toEqual([])
+  })
+
+  // Music prints dates in the system locale, so the script sends wall-clock seconds from a
+  // fixed local epoch and the parser turns them back into the date Music shows.
+  it('reads the date added as the local wall-clock time Music holds', () => {
+    const [e] = parseReviewDump(
+      row('0000000000000001', 'A', 'X', '', '', '', '1', wallClock(2026, 8, 25, 8, 47, 13)),
+    )
+    expect(e.dateAdded).toBe(new Date(2026, 8, 25, 8, 47, 13).toISOString())
+  })
+
+  it('leaves the date added out when Music gave none', () => {
+    const [e] = parseReviewDump(row('0000000000000001', 'A', 'X', '', '', '', '1', ''))
+    expect(e.dateAdded).toBeUndefined()
   })
 
   it('reads an empty library as no entries', () => {
@@ -496,6 +514,17 @@ describe('buildReviewDumpScript', () => {
     expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
     expect(script).toContain('album artist of every file track of library playlist 1')
     expect(script).not.toMatch(/of every track of/)
+  })
+
+  // Dates as text follow the system locale; whole numbers do not, and they stay small
+  // because AppleScript turns integers past 2^29 into locale-formatted reals.
+  it('sends the date added as days and seconds from a fixed epoch, never as locale text', () => {
+    const script = buildReviewDumpScript()
+    expect(script).toContain('date added of every file track of library playlist 1')
+    expect(script).toContain('set year of epochRef to 2001')
+    expect(script).toContain('(x div 86400) as integer as text')
+    expect(script).toContain('(x mod 86400) as integer as text')
+    expect(script).not.toMatch(/date added.* as text/)
   })
 })
 
