@@ -289,7 +289,7 @@ export function buildDeleteScript(persistentId: string, expectedLabel: string): 
     `  if (artist of theTrack) & " - " & (name of theTrack) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
     '  set loc to ""',
     '  try',
-    '    set loc to POSIX path of (location of theTrack)',
+    '    set loc to POSIX path of (get location of theTrack)',
     '  end try',
     '  delete theTrack',
     '  return "deleted" & tab & loc',

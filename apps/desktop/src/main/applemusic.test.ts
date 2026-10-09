@@ -237,8 +237,15 @@ describe('buildDeleteScript', () => {
       'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234ABCD1234")',
     )
     expect(script).toContain('if (count of theMatches) is 0 then return "missing"')
-    expect(script).toContain('POSIX path of (location of theTrack)')
+    expect(script).toContain('POSIX path of (get location of theTrack)')
     expect(script).toContain('delete theTrack')
+  })
+
+  // Without the get, Music raises -1700 inside the tell, the try left the location empty and
+  // a superseded copy's file was never trashed. Measured live 09/10.
+  it('reads the location with an explicit get, the form Music answers inside the tell', () => {
+    const script = buildDeleteScript('ABCD1234ABCD1234', 'Djmofly - Save My Love (26 Rmx)')
+    expect(script).not.toContain('POSIX path of (location of theTrack)')
   })
 
   it('reads the location before deleting, inside a try so a track without a file still deletes', () => {
