@@ -3838,6 +3838,22 @@ describe('App list review', () => {
       }),
     )
   })
+
+  // The list's own tools live in its header; the review is one of them now that it works
+  // on the loaded tracks.
+  it('opens from the list header, and holds the button still while a conversion runs', async () => {
+    vi.resetModules()
+    listApi({ processTrack: vi.fn(() => new Promise(() => {})) })
+    await renderApp()
+    await addThree()
+    const button = screen.getByTestId('list-review-open')
+    expect(button).toHaveAccessibleName('Review metadata in the list')
+    fireEvent.click(button)
+    expect(await screen.findByTestId('list-review-scope')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
+    await waitFor(() => expect(screen.getByTestId('list-review-open')).toBeDisabled())
+  })
 })
 
 // Reported while testing the Apple Music import: the entry point lived only in the empty

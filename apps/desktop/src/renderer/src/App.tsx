@@ -2061,6 +2061,8 @@ export default function App(): React.JSX.Element {
                           scrollToSelected={scrollToSelected}
                           onFillAll={onFillAll}
                           onFindReplace={onFindReplace}
+                          onReviewList={openListReview}
+                          canReviewList={tracks.length > 0 && !batching}
                           onClearAll={onClearAll}
                           onTrashSelected={onTrashSelected}
                           onTrashSuspects={onTrashSuspects}

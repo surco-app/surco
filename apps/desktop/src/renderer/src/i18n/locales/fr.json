@@ -40,6 +40,7 @@
     "selectAll": "Tout sélectionner",
     "revealSelected": "Aller au morceau sélectionné",
     "fillFromName": "Remplir tous les tags depuis le nom du fichier",
+    "reviewList": "Vérifier les métadonnées de la liste",
     "importingCount": "Lecture {{done}}/{{total}}",
     "analyzeQuality": "Analyser la qualité de tous les morceaux",
     "analyzingCount": "Analyse de la qualité… {{done}}/{{total}}",

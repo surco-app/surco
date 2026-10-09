@@ -40,6 +40,7 @@
     "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
     "fillFromName": "Alle Tags aus dem Dateinamen füllen",
+    "reviewList": "Metadaten der Liste prüfen",
     "importingCount": "Lese {{done}}/{{total}}",
     "analyzeQuality": "Qualität aller Tracks analysieren",
     "analyzingCount": "Analysiere Qualität… {{done}}/{{total}}",

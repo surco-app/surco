@@ -11,6 +11,7 @@ import {
   ListMusic,
   ListX,
   Replace,
+  SpellCheck,
   SquareCheckBig,
   Tag,
   Trash2,
@@ -59,6 +60,8 @@ interface Props {
   scrollToSelected: () => void
   onFillAll: () => void
   onFindReplace: () => void
+  onReviewList: () => void
+  canReviewList: boolean
   onClearAll: () => void
   onTrashSelected: () => void
   onTrashSuspects: () => void
@@ -95,6 +98,8 @@ export function TrackListHeader({
   scrollToSelected,
   onFillAll,
   onFindReplace,
+  onReviewList,
+  canReviewList,
   onClearAll,
   onTrashSelected,
   onTrashSuspects,
@@ -262,6 +267,17 @@ export function TrackListHeader({
             >
               <Replace className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('commands.findReplace')} hint={hintFor('find-replace')} />
+            </button>
+            <button
+              type="button"
+              data-testid="list-review-open"
+              onClick={onReviewList}
+              disabled={!canReviewList}
+              aria-label={tr('header.reviewList')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
+            >
+              <SpellCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={tr('header.reviewList')} hint={hintFor('list-review')} />
             </button>
             {/* The destructive pair sits apart at the far end, mildest first:
                   clear the list (rows only), then move the selection to the
