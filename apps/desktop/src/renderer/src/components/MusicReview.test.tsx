@@ -663,7 +663,7 @@ describe('MusicReview', () => {
             run({
               outcomes: [
                 written,
-                { ...written, persistentId: 'D', file: 'unchanged', backupId: undefined },
+                { ...written, id: 'D', musicId: 'D', file: 'unchanged', backupId: undefined },
               ],
               removed: [removal('removed')],
             }),
@@ -687,8 +687,8 @@ describe('MusicReview', () => {
               run({
                 outcomes: [
                   written,
-                  { ...written, persistentId: 'D', file: 'unchanged', backupId: undefined },
-                  { ...written, persistentId: 'E', file: 'missing', backupId: undefined },
+                  { ...written, id: 'D', musicId: 'D', file: 'unchanged', backupId: undefined },
+                  { ...written, id: 'E', musicId: 'E', file: 'missing', backupId: undefined },
                 ],
               }),
             ),
