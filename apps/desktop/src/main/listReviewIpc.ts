@@ -6,11 +6,12 @@ import { applyListFixes, type ListApplyDeps } from './listReviewApply'
 import { type ListMusicDeps, removeListCopyFromMusic } from './musicDuplicates'
 import type { MusicReviewLog } from './musicReviewLog'
 
+// Big integers: an NTFS or SMB file id does not fit a float exactly.
 export interface FileIdentity {
-  dev: number
-  ino: number
-  size: number
-  mtimeMs: number
+  dev: bigint
+  ino: bigint
+  size: bigint
+  mtimeNs: bigint
   // On a volume with no Trash of its own (a network share), where two mounts of one share
   // give one file two devices.
   remote: boolean
@@ -206,12 +207,13 @@ function musicEnding(music: ListMusicOutcome) {
   }
 }
 
-// realpath cannot see a hard link or a share mounted twice. A network share may hand out
-// new device numbers per mount, so there a size and date match counts too: a false match
-// only keeps a file.
+// realpath cannot see a hard link or a share mounted twice. Two mounts of one share give
+// the file two devices but the server's inode; a Finder or Explorer copy keeps the size and
+// the date and gets a new inode, so the inode always has to match.
 function sameAudio(a: FileIdentity, b: FileIdentity): boolean {
-  if (a.dev === b.dev && a.ino === b.ino) return true
-  return a.remote && b.remote && a.size === b.size && a.mtimeMs === b.mtimeMs
+  if (a.ino !== b.ino) return false
+  if (a.dev === b.dev) return true
+  return a.remote && b.remote && a.size === b.size && a.mtimeNs === b.mtimeNs
 }
 
 // Wider than the file system's own rule on purpose: a false match only keeps a file.

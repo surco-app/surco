@@ -1197,12 +1197,12 @@ function registerIpc(): void {
       replace: duplicateLibraryDeps(BrowserWindow.fromWebContents(sender), sender),
       realpath: (path) => realpath(path).catch(() => null),
       identity: (path) =>
-        stat(path).then(
+        stat(path, { bigint: true }).then(
           (s) => ({
             dev: s.dev,
             ino: s.ino,
             size: s.size,
-            mtimeMs: s.mtimeMs,
+            mtimeNs: s.mtimeNs,
             remote: !volumeKeepsTrash(path),
           }),
           () => null,

@@ -207,12 +207,13 @@ describe('listreview:removeDuplicates', () => {
   })
 
   // Two mounts of one share, or a hard link, resolve to different paths for the same audio.
+  // A Finder or Explorer copy keeps the size and the date, so those alone never decide it.
   describe('the same file under paths realpath tells apart', () => {
     const id = (over: Record<string, unknown>) => ({
-      dev: 1,
-      ino: 1,
-      size: 100,
-      mtimeMs: 5,
+      dev: 1n,
+      ino: 1n,
+      size: 100n,
+      mtimeNs: 5n,
       remote: false,
       ...over,
     })
@@ -222,41 +223,76 @@ describe('listreview:removeDuplicates', () => {
       ])
       return d
     }
+    const inodes: Record<string, bigint> = {
+      '/m/a.aiff': 7n,
+      '/m/b.aiff': 8n,
+      '/m/c.aiff': 9n,
+      '/m/d.aiff': 7n,
+    }
 
     it('leaves a copy alone when its device and inode are the kept copy’s', async () => {
       const d = await remove(register({ identity: vi.fn(async () => id({})) }))
       expect(d.trash).not.toHaveBeenCalled()
     })
 
-    it('leaves a network copy alone when its size and date match the kept copy’s', async () => {
+    it('leaves a copy alone when two mounts of one share give it the kept copy’s inode', async () => {
       const d = await remove(
         register({
           identity: vi.fn(async (p: string) =>
-            id({ remote: true, dev: p === '/m/a.aiff' ? 1 : 2, ino: p === '/m/a.aiff' ? 7 : 9 }),
+            id({ remote: true, dev: p === '/m/a.aiff' ? 1n : 2n, ino: 70000000000000001n }),
           ),
         }),
       )
       expect(d.trash).not.toHaveBeenCalled()
     })
 
+    // Two local disks number their inodes on their own; a match across them is chance.
+    it('removes a copy on another local disk whose inode happens to match', async () => {
+      const d = await remove(
+        register({
+          identity: vi.fn(async (p: string) => id({ dev: p === '/m/a.aiff' ? 1n : 2n })),
+        }),
+      )
+      expect(d.trash).toHaveBeenCalledWith('/m/a.aiff')
+    })
+
+    it('removes a NAS copy that only shares size and date with the kept one', async () => {
+      const d = await remove(
+        register({
+          identity: vi.fn(async (p: string) => id({ remote: true, ino: inodes[p] })),
+        }),
+      )
+      expect(d.trash).toHaveBeenCalledWith('/m/a.aiff')
+    })
+
+    // 2^53 + 1 and 2^53 are one number as a float: an NTFS or SMB file id that large would
+    // read as the kept copy's.
+    it('tells apart inodes a float would round together', async () => {
+      const d = await remove(
+        register({
+          identity: vi.fn(async (p: string) =>
+            id({ ino: p === '/m/a.aiff' ? 9007199254740993n : 9007199254740992n }),
+          ),
+        }),
+      )
+      expect(d.trash).toHaveBeenCalledWith('/m/a.aiff')
+    })
+
     it('still removes a local copy that only shares size and date with the kept one', async () => {
       const d = await remove(
-        register({ identity: vi.fn(async (p: string) => id({ ino: p === '/m/a.aiff' ? 7 : 9 })) }),
+        register({ identity: vi.fn(async (p: string) => id({ ino: inodes[p] })) }),
       )
       expect(d.trash).toHaveBeenCalledWith('/m/a.aiff')
     })
 
     it('leaves a copy alone when it is another pair’s kept copy by inode', async () => {
-      const d = register({
-        identity: vi.fn(async (p: string) =>
-          id({ ino: p === '/m/a.aiff' || p === '/m/d.aiff' ? 7 : p.length }),
-        ),
-      })
+      const d = register({ identity: vi.fn(async (p: string) => id({ ino: inodes[p] })) })
       await handlerFor('listreview:removeDuplicates')({ sender }, [
         removal('/m/a.aiff', '/m/b.aiff'),
         removal('/m/c.aiff', '/m/d.aiff'),
       ])
       expect(d.trash).not.toHaveBeenCalledWith('/m/a.aiff')
+      expect(d.trash).toHaveBeenCalledWith('/m/c.aiff')
     })
   })
 
