@@ -251,6 +251,35 @@ describe('listReviewSource', () => {
     ])
   })
 
+  // Music finds a file by its name, and after a fix the name Music shows is the new one.
+  it('asks Music by the titles as they are after the fixes and without the trashed copies', async () => {
+    const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
+    s.settle?.([{ path: '/m/a.aiff', fields: { title: { from: 'Song', to: 'New' } } }], ['/m/b.aiff'])
+    await s.load()
+    expect(api.appleMusicFileEntries).toHaveBeenCalledWith(
+      [{ path: '/m/a.aiff', title: 'New' }],
+      false,
+    )
+  })
+
+  // A stale answer would tell main a copy is free of Music when nobody asked this time.
+  it('forgets the last Music answer when a reload fails', async () => {
+    api.appleMusicFileEntries.mockResolvedValueOnce({
+      consulted: true,
+      entries: { '/m/b.aiff': [{ persistentId: 'B1', label: 'A - Song' }] },
+    })
+    const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
+    await s.load()
+    expect(s.inMusic?.('/m/b.aiff')).toBe(true)
+    api.appleMusicFileEntries.mockRejectedValueOnce(new Error('ipc'))
+    await expect(s.load()).rejects.toThrow('ipc')
+    expect(s.inMusic?.('/m/b.aiff')).toBe(false)
+    await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
+    expect(api.removeListDuplicates).toHaveBeenCalledWith([
+      { from: '/m/b.aiff', to: '/m/a.aiff', music: 'unknown' },
+    ])
+  })
+
   it('puts Music back on the entry the write went to, and nowhere when there was none', async () => {
     const s = source([])
     const f = { id: '/m/a.aiff', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }

@@ -40,17 +40,15 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
   return {
     kind: 'list',
     load: async () => {
-      const { entries, skipped } = listReviewEntries(deps.rows())
-      if (!deps.mac) return { entries: withListChanges(entries, changes, gone), skipped }
+      const read = listReviewEntries(deps.rows())
+      const entries = withListChanges(read.entries, changes, gone)
+      if (!deps.mac) return { entries, skipped: read.skipped }
+      lookup = { consulted: false, entries: {} }
       lookup = await window.api.appleMusicFileEntries(
         entries.map((e) => ({ path: e.id, title: e.title })),
         deps.launchMusic(),
       )
-      return {
-        entries: withListChanges(entries, changes, gone),
-        skipped,
-        musicConsulted: lookup.consulted,
-      }
+      return { entries, skipped: read.skipped, musicConsulted: lookup.consulted }
     },
     locate: async (id) => id,
     applyFixes: (fixes) =>
