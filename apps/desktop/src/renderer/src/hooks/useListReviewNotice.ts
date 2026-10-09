@@ -46,7 +46,9 @@ export function useListReviewNotice({
   })
 
   const onPathsAdded = useStableCallback((paths: string[]) => {
-    for (const path of paths) load.current?.paths.add(path)
+    const current = load.current
+    if (!current || current.running === 0) return
+    for (const path of paths) current.paths.add(path)
   })
 
   useEffect(() => {

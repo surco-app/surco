@@ -4070,6 +4070,42 @@ describe('App list review notice', () => {
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
   })
 
+  // Files that arrive another way while the drop's tags are still being read are not
+  // part of what the user dropped.
+  it('counts only what the drop or the pick handed over', async () => {
+    vi.resetModules()
+    let release: () => void = () => {}
+    const slow = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let openWith: ((paths: string[]) => void) | undefined
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
+      '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Dj Lara' },
+      '/music/e.wav': { title: 'Echo', artist: 'Kerri Chandler' },
+      '/music/f.wav': { title: 'Foxtrot', artist: 'Kerri chandler' },
+    }
+    listApi({
+      readTags: vi.fn(async (path: string) => {
+        if (path === '/music/c.wav') await slow
+        return tags[path]
+      }),
+      onOpenFiles: (cb: (paths: string[]) => void) => {
+        openWith = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    await addThree()
+    await act(async () => openWith?.(['/music/e.wav', '/music/f.wav']))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
+    await act(async () => release())
+    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
+      '3 tracks loaded. 1 spelling to review',
+    )
+  })
+
   it('tells once per load', async () => {
     vi.resetModules()
     let openWith: ((paths: string[]) => void) | undefined
