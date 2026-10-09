@@ -242,6 +242,10 @@
             "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one's place in Apple Music and rekordbox, instead of leaving you with two. The track stays in its playlists, with no adding it back to each one by hand. The Apple Music badge shows what format your copy is in, so you know whether it's worth it."
           },
           {
+            "t": "Typos and duplicates in your library",
+            "d": "Groups what your Apple Music library or your list spells more than one way, invisible characters and the tracks you have twice. Each fix reaches the file, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor, with a backup and Undo. The copy you remove hands its playlists to the one you keep. Apple Music on macOS only."
+          },
+          {
             "t": "Artwork inside a WAV",
             "d": "Which on its own holds neither artwork nor metadata."
           },
@@ -279,11 +283,11 @@
           },
           {
             "t": "Backups",
-            "d": "Before rewriting an original it keeps a copy you restore from the track itself. By default only when the audio changes, for 7 days and up to 2 GB. If the disk drops below 5 GB free, the oldest copies go first."
+            "d": "Before rewriting an original it keeps a copy you restore from the track itself. By default for 7 days and up to 2 GB. If the disk drops below 5 GB free, the oldest copies go first."
           },
           {
             "t": "Trash, never a hard delete",
-            "d": "Whatever you remove goes to the system Trash."
+            "d": "Whatever you remove goes to the system Trash. On a disk with no Trash, like a NAS, and on Windows, it goes to Backups, where you can restore it."
           }
         ]
       }
@@ -502,7 +506,7 @@
       },
       {
         "q": "My library is full of MP3s. Can I move them to lossless without losing my playlists?",
-        "a": "Yes, that's what replacing does. Load the AIFF or FLAC of the same track and, if Surco finds it in your library, the button reads “Replace” instead of “Add”. On convert, the Apple Music entry stops pointing at the MP3 and points at the new file, and in rekordbox the same row is repointed: it keeps its playlists and its cue points, because rekordbox links by track rather than by path. One caveat: rekordbox analyzes the new file and may move the beatgrid, so check the grid afterwards. rekordbox has to be closed to write to its database; Surco offers to close it and backs up first. When it's done it offers to send the old file to the Trash, and warns you if it sits on a network drive, where there may be no Trash."
+        "a": "Yes, that's what replacing does. Load the AIFF or FLAC of the same track and, if Surco finds it in your library, the button reads “Replace” instead of “Add”. On convert, the Apple Music entry stops pointing at the MP3 and points at the new file, and in rekordbox the same row is repointed: it keeps its playlists and its cue points, because rekordbox links by track rather than by path. One caveat: rekordbox analyzes the new file and may move the beatgrid, so check the grid afterwards. rekordbox has to be closed to write to its database; Surco offers to close it and backs up first. When it's done it offers to send the old file to the Trash, and if it sits on a disk with no Trash, like a NAS, it keeps it in Backups."
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
@@ -805,7 +809,7 @@
           "“Keep MP3s as MP3” stops your MP3s bloating for nothing when you export to a lossless format: they stay as they are and only their tags are updated.",
           "You can cancel a conversion midway, and apply the same decision to the rest of the batch at once when a file already exists.",
           "If the conversion rewrites an original, Surco keeps a backup first; the mark on the row (or ⌘K) takes you back to the original. In Settings → Output you decide whether to keep one always, only when the audio changes (the default) or never, for how many days and up to how much space.",
-          "Once converted, you can send the originals to the trash in a single action. To the trash, never a hard delete."
+          "Once converted, you can send the originals to the trash in a single action. To the trash, or to Backups on a disk without one, never a hard delete."
         ],
         "shot": "convertir-en.webp",
         "shotCaption": "The convert button with its format picker."
