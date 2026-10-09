@@ -743,14 +743,17 @@ export async function musicFileEntries(
 // time 102 s, these bulk lists 47 s with pairs identical to the one-at-a-time read. The
 // lists pair by position, so a library that changed in between fails the read. The script
 // tells an empty library apart itself (see buildLibraryDumpScript): every failure, -1728
-// included, reaches the caller, which keeps the file.
+// included, reaches the caller, which keeps the file. The 120 s Apple Event default
+// (-1712) would make a large library keep every file without saying why.
 export function buildFileLocationsAllScript(): string {
   return [
     'tell application "Music"',
     '  if (count of file tracks of library playlist 1) is 0 then return ""',
-    '  set pidsBefore to persistent ID of every file track of library playlist 1',
-    '  set theLocs to location of every file track of library playlist 1',
-    '  set pidsAfter to persistent ID of every file track of library playlist 1',
+    '  with timeout of 600 seconds',
+    '    set pidsBefore to persistent ID of every file track of library playlist 1',
+    '    set theLocs to location of every file track of library playlist 1',
+    '    set pidsAfter to persistent ID of every file track of library playlist 1',
+    '  end timeout',
     'end tell',
     'if pidsBefore is not pidsAfter then return "changed"',
     'set out to {}',

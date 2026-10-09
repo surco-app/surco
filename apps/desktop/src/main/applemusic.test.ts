@@ -819,6 +819,23 @@ describe('musicFileLocations', () => {
     expect(inMusic).not.toMatch(/\b(delete|duplicate|add)\b|set \w+ of/)
   })
 
+  // The default Apple Event timeout is 120 s (-1712); the reads took 45 s on 2045 tracks.
+  it('gives the bulk reads ten minutes, so a large library does not time out', async () => {
+    let script = ''
+    await musicFileLocations(
+      vi.fn(async (s: string) => {
+        script = s
+        return ''
+      }),
+    )
+    const start = script.indexOf('with timeout of 600 seconds')
+    const end = script.indexOf('end timeout')
+    expect(start).toBeGreaterThan(script.indexOf('tell application "Music"'))
+    expect(start).toBeLessThan(script.indexOf('set pidsBefore'))
+    expect(end).toBeGreaterThan(script.indexOf('set pidsAfter'))
+    expect(end).toBeLessThan(script.indexOf('end tell'))
+  })
+
   // Two bulk lists pair by position: a track added or removed in between would shift them.
   it('fails when the library changed while the locations were read', async () => {
     let script = ''
