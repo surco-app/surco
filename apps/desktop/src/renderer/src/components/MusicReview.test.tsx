@@ -1505,6 +1505,26 @@ describe('MusicReview', () => {
       }
     })
 
+    it("copies each affected row's own title verbatim", () => {
+      const api = stubApi({ copyText: vi.fn(async () => {}) })
+      ;(window as unknown as { api: Api }).api = api
+      const affected = () => [
+        { id: 'A', title: 'Song A', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' },
+        { id: 'B', title: 'Song B (Mix) ', field: 'artist' as const, from: 'Dj Ter', to: 'DJ Ter' },
+      ]
+      render(
+        <Panes
+          review={review({ affected })}
+          sync={{ rekordbox: false, engineDj: false, traktor: false }}
+        />,
+      )
+      const [first, second] = screen.getAllByTestId('music-review-affected')
+      fireEvent.click(within(first).getByTestId('music-review-affected-copy-title'))
+      expect(api.copyText).toHaveBeenCalledWith('Song A')
+      fireEvent.click(within(second).getByTestId('music-review-affected-copy-title'))
+      expect(api.copyText).toHaveBeenLastCalledWith('Song B (Mix) ')
+    })
+
     it('highlights only the part of a credit that changes, in both columns', () => {
       const affected = () => [
         {

@@ -52,7 +52,7 @@ const clock = (sec?: number) =>
 
 const COPIED_FEEDBACK_MS = 1500
 
-function CopyTitleButton({ title }: { title: string }) {
+function CopyTitleButton({ title, testId }: { title: string; testId: string }) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -60,7 +60,7 @@ function CopyTitleButton({ title }: { title: string }) {
   return (
     <button
       type="button"
-      data-testid="music-review-copy-title"
+      data-testid={testId}
       aria-label={t('musicReview.copyTitle')}
       onClick={(e) => {
         e.stopPropagation()
@@ -410,7 +410,15 @@ function SpellingDetail({
                             data-testid="music-review-affected"
                             className="border-b border-[var(--color-line)] align-top"
                           >
-                            <td className="max-w-48 truncate py-1.5 pr-3">{f.title}</td>
+                            <td className="max-w-48 py-1.5 pr-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="min-w-0 truncate">{f.title}</span>
+                                <CopyTitleButton
+                                  title={f.title}
+                                  testId="music-review-affected-copy-title"
+                                />
+                              </div>
+                            </td>
                             <td className="py-1.5 pr-3 whitespace-nowrap text-fg-dim">
                               {t(`musicReview.field.${f.field}`)}
                             </td>
@@ -696,7 +704,7 @@ function DuplicateDetail({
                               >
                                 {value}
                               </span>
-                              <CopyTitleButton title={e.title} />
+                              <CopyTitleButton title={e.title} testId="music-review-copy-title" />
                             </dd>
                           ) : (
                             <dd
