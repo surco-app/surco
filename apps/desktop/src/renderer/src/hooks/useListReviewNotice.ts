@@ -16,6 +16,7 @@ export function useListReviewNotice({
   tr,
   tracksRef,
   settled,
+  reviewOpen,
   ignored,
   openListReview,
 }: {
@@ -23,6 +24,7 @@ export function useListReviewNotice({
   tr: TFunction
   tracksRef: { readonly current: TrackItem[] }
   settled: boolean
+  reviewOpen: boolean
   ignored: () => readonly string[]
   openListReview: () => void
 }) {
@@ -52,6 +54,7 @@ export function useListReviewNotice({
     const current = load.current
     if (!current || current.running > 0 || !settled) return
     load.current = null
+    if (reviewOpen) return
     const rows = tracksRef.current
     const loaded = rows.filter((t) => current.paths.has(t.inputPath)).length
     const { duplicates, spelling } = pendingGroups(
@@ -84,7 +87,7 @@ export function useListReviewNotice({
       },
       duration: NOTICE_TIMEOUT_MS,
     })
-  }, [handedOver, settled, tracksRef, ignored, tr, store, openListReview])
+  }, [handedOver, settled, reviewOpen, tracksRef, ignored, tr, store, openListReview])
 
   return { watchLoad, onPathsAdded }
 }

@@ -1898,6 +1898,7 @@ export default function App(): React.JSX.Element {
     tr,
     tracksRef,
     settled: importProgress === null && !anyLoadingMeta,
+    reviewOpen: review !== null,
     ignored: listReviewIgnored,
     openListReview,
   })

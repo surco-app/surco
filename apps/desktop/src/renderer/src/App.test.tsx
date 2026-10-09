@@ -4029,6 +4029,47 @@ describe('App list review notice', () => {
     )
   })
 
+  // The user is already in a review; a prompt to open one would only cover it.
+  it('stays quiet about a load that lands while a review is open', async () => {
+    vi.resetModules()
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
+      '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Dj Lara' },
+      '/music/e.wav': { title: 'Echo', artist: 'Kerri Chandler' },
+      '/music/f.wav': { title: 'Foxtrot', artist: 'Kerri chandler' },
+    }
+    const readTags = vi.fn(async (path: string) => tags[path])
+    listApi({ readTags, getPathForFile: (f: { name: string }) => f.name })
+    await renderApp()
+    await addThree()
+    fireEvent.click(await screen.findByTestId('list-review-notice-dismiss'))
+    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    runMenu('list-review')
+    await screen.findByTestId('list-review-scope')
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    fireEvent.drop(root, {
+      dataTransfer: {
+        files: ['/music/e.wav', '/music/f.wav'].map((name) => ({ name })),
+        types: ['Files'],
+      },
+    })
+    await waitFor(() => expect(readTags).toHaveBeenCalledWith('/music/f.wav'))
+    await act(async () => {})
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('track-row')
+          .map((r) => r.textContent)
+          .join(),
+      ).toContain('Foxtrot'),
+    )
+    await act(async () => {})
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
+  })
+
   it('tells once per load', async () => {
     vi.resetModules()
     let openWith: ((paths: string[]) => void) | undefined
