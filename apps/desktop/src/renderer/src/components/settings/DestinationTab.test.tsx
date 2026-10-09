@@ -738,6 +738,7 @@ describe('DestinationTab originals', () => {
     renderTab({ backupPolicy: 'never' })
     const warning = screen.getByTestId('settings-backup-warning')
     expect(warning.textContent).toMatch(/trash/i)
+    expect(warning.textContent).toMatch(/metadata review still keeps its copies/i)
     cleanup()
     renderTab({ backupPolicy: 'audioChanges' })
     expect(screen.queryByTestId('settings-backup-warning')).not.toBeInTheDocument()
