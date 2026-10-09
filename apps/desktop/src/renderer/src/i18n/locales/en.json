@@ -1438,6 +1438,7 @@
     "playlistCount_other": "{{count}} playlists",
     "statusRunning": "Running",
     "statusDone": "Done",
+    "statusWarn": "Warning",
     "statusError": "Failed",
     "engineSync": "Updating Engine DJ's library",
     "engineSyncWritten_one": "{{count}} track now points at the new file",

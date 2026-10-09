@@ -1,6 +1,7 @@
 import {
   Activity as ActivityIcon,
   AlertCircle,
+  AlertTriangle,
   AudioLines,
   CheckCircle2,
   ChevronRight,
@@ -76,6 +77,7 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
 const STATUS_LABEL: Record<ActivityRow['status'], string> = {
   running: 'activity.statusRunning',
   done: 'activity.statusDone',
+  warn: 'activity.statusWarn',
   error: 'activity.statusError',
 }
 
@@ -88,6 +90,13 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
     return (
       <>
         <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
+        {word}
+      </>
+    )
+  if (status === 'warn')
+    return (
+      <>
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warn" aria-hidden="true" />
         {word}
       </>
     )

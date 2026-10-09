@@ -916,7 +916,9 @@ export type ActivityParams = Record<string, string | number>
 export interface ActivityEvent {
   id: string
   kind: ActivityKind
-  phase: 'start' | 'done' | 'error'
+  // 'warn' ends a step that finished without doing all it set out to (a file left as it
+  // was); 'error' also ends one that reported its own failure rather than throwing.
+  phase: 'start' | 'done' | 'warn' | 'error'
   labelKey: string
   labelParams?: ActivityParams
   detail?: string
@@ -925,6 +927,9 @@ export interface ActivityEvent {
   ms?: number
   group?: string
   groupLabel?: string
+  // A translatable title for the group, preferred over the raw groupLabel.
+  groupLabelKey?: string
+  groupLabelParams?: ActivityParams
   // A web page this step points at (a Discogs/Bandcamp release), so the panel can
   // offer an "open in browser" affordance on the row. Set for release loads.
   url?: string

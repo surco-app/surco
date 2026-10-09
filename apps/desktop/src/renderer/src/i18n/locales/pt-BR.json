@@ -1438,6 +1438,7 @@
     "playlistCount_other": "{{count}} playlists",
     "statusRunning": "Em andamento",
     "statusDone": "Concluído",
+    "statusWarn": "Com avisos",
     "statusError": "Falhou",
     "engineSync": "Atualizando a biblioteca do Engine DJ",
     "engineSyncWritten_one": "{{count}} faixa agora aponta para o arquivo novo",

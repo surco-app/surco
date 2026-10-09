@@ -177,6 +177,13 @@ describe('ActivityPanel accessibility', () => {
     expect(rows[2]).toHaveAccessibleName(new RegExp(i18n.t('activity.statusError')))
   })
 
+  it('speaks a step that ended with a warning', () => {
+    renderRows([{ id: 'a', kind: 'applemusic', status: 'warn', label: 'Funk Freak' }])
+    expect(screen.getByTestId('activity-row')).toHaveAccessibleName(
+      new RegExp(i18n.t('activity.statusWarn')),
+    )
+  })
+
   // The rows fold their steps and details away; without aria-expanded nothing said a
   // row could open or whether it already had.
   it('marks the expandable rows as collapsed or expanded', () => {

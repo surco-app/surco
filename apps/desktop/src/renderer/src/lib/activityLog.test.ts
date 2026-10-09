@@ -170,6 +170,42 @@ describe('applyActivity grouping', () => {
   })
 })
 
+describe('a step that ends in a warning', () => {
+  it('marks its row as a warning', () => {
+    let rows = applyActivity([], start('a'))
+    rows = applyActivity(rows, done('a', { phase: 'warn' }))
+    expect(rows[0].status).toBe('warn')
+  })
+
+  // A warning must show on the group without hiding a failure or a step still running.
+  it('rolls a warning up to its group below an error and a running step', () => {
+    const step = (id: string, phase: ActivityEvent['phase']): ActivityEvent => ({
+      id,
+      kind: 'applemusic',
+      phase,
+      labelKey: 'activity.reviewRun',
+      group: 'review-1',
+      groupLabelKey: 'activity.reviewRun',
+      groupLabelParams: { count: 2 },
+    })
+    let rows = applyActivity([], step('a', 'start'))
+    rows = applyActivity(rows, step('b', 'start'))
+    rows = applyActivity(rows, step('a', 'warn'))
+    expect(rows[0].status).toBe('running')
+    rows = applyActivity(rows, step('b', 'done'))
+    expect(rows[0].status).toBe('warn')
+    expect(rows[0]).toMatchObject({ labelKey: 'activity.reviewRun', labelParams: { count: 2 } })
+    rows = applyActivity(rows, step('c', 'start'))
+    rows = applyActivity(rows, step('c', 'error'))
+    expect(rows[0].status).toBe('error')
+  })
+
+  it('tags a warning in the copied feed', () => {
+    const row: ActivityRow = { id: 'a', kind: 'applemusic', status: 'warn', label: 'Funk Freak' }
+    expect(activityFeedText([row], (k) => k)).toBe('[warn] Funk Freak')
+  })
+})
+
 describe('reportRow', () => {
   const verdict: LocalActivityReport = {
     kind: 'match',

@@ -137,4 +137,41 @@ describe('createActivity', () => {
     await activity.track('cover', 'activity.downloadCover', async () => 0)
     expect(cb).not.toHaveBeenCalled()
   })
+
+  // A step that finished but did not do everything (a track changed in Music while its
+  // file had another value) is neither a success nor a failure, and the panel must say so.
+  it.each(['warn', 'error'] as const)(
+    'lets a summary end a finished step as %s',
+    async (status) => {
+      const activity = createActivity()
+      const events: ActivityEvent[] = []
+      activity.subscribe((e) => events.push(e))
+
+      const result = await activity.track('applemusic', 'activity.reviewRun', async () => 7, {
+        summary: () => ({ detailKey: 'activity.reviewFixFileDiffers', status }),
+      })
+
+      expect(result).toBe(7)
+      expect(events.map((e) => e.phase)).toEqual(['start', status])
+      expect(events[1]).toMatchObject({ detailKey: 'activity.reviewFixFileDiffers' })
+    },
+  )
+
+  it('titles a group with a translatable key', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+
+    await activity.track('applemusic', 'activity.reviewRun', async () => 1, {
+      group: 'review-1',
+      groupLabelKey: 'activity.reviewRun',
+      groupLabelParams: { count: 3 },
+    })
+
+    expect(events[0]).toMatchObject({
+      group: 'review-1',
+      groupLabelKey: 'activity.reviewRun',
+      groupLabelParams: { count: 3 },
+    })
+  })
 })

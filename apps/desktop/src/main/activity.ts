@@ -40,6 +40,9 @@ interface SummaryDetail {
   detail?: string
   detailKey?: string
   detailParams?: ActivityParams
+  // How the finished step ended when it is not a plain success. The task still resolved,
+  // so its value goes back to the caller either way.
+  status?: 'warn' | 'error'
 }
 
 interface TrackOpts<T> {
@@ -53,6 +56,8 @@ interface TrackOpts<T> {
   // name). Stamped onto every emitted event so the renderer can group start and done.
   group?: string
   groupLabel?: string
+  groupLabelKey?: string
+  groupLabelParams?: ActivityParams
   // A web page this step points at (a release page), surfaced as an open-in-browser
   // affordance on the row.
   url?: string
@@ -76,11 +81,31 @@ export function createActivity(): Activity {
     emit,
     async track(kind, labelKey, task, opts) {
       const id = `act-${nextId++}`
-      const { labelParams, detail, detailKey, detailParams, group, groupLabel, url } = opts ?? {}
+      const {
+        labelParams,
+        detail,
+        detailKey,
+        detailParams,
+        group,
+        groupLabel,
+        groupLabelKey,
+        groupLabelParams,
+        url,
+      } = opts ?? {}
       // performance.now() is the one clock available in this environment; it's a
       // monotonic relative timer, exactly what an elapsed-ms measure wants.
       const startedAt = performance.now()
-      const base = { id, kind, labelKey, labelParams, group, groupLabel, url }
+      const base = {
+        id,
+        kind,
+        labelKey,
+        labelParams,
+        group,
+        groupLabel,
+        groupLabelKey,
+        groupLabelParams,
+        url,
+      }
       emit({ ...base, phase: 'start', detail, detailKey, detailParams })
       try {
         const value = await task()
@@ -89,7 +114,7 @@ export function createActivity(): Activity {
         const summary = opts?.summary?.(value)
         emit({
           ...base,
-          phase: 'done',
+          phase: summary?.status ?? 'done',
           detail: summary?.detail ?? detail,
           detailKey: summary?.detailKey ?? detailKey,
           detailParams: summary?.detailParams ?? detailParams,

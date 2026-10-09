@@ -1438,6 +1438,7 @@
     "playlistCount_other": "{{count}} Playlists",
     "statusRunning": "Läuft",
     "statusDone": "Fertig",
+    "statusWarn": "Mit Hinweisen",
     "statusError": "Fehlgeschlagen",
     "engineSync": "Engine-DJ-Bibliothek wird aktualisiert",
     "engineSyncWritten_one": "{{count}} Titel zeigt jetzt auf die neue Datei",

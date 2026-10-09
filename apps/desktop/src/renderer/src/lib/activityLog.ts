@@ -19,7 +19,7 @@ export interface ActivityRow {
   labelKey?: string
   labelParams?: ActivityParams
   label?: string
-  status: 'running' | 'done' | 'error'
+  status: 'running' | 'done' | 'warn' | 'error'
   detail?: string
   detailKey?: string
   detailParams?: ActivityParams
@@ -51,7 +51,7 @@ export const MAX_ROWS = 200
 // A child step's own status from its phase. Used both for the leaf row and to roll
 // the parent group's status up from its children.
 function statusOf(phase: ActivityEvent['phase']): ActivityRow['status'] {
-  return phase === 'start' ? 'running' : phase === 'done' ? 'done' : 'error'
+  return phase === 'start' ? 'running' : phase
 }
 
 // A group's status rolls up from its probes: error wins (a failed probe must show),
@@ -59,6 +59,7 @@ function statusOf(phase: ActivityEvent['phase']): ActivityRow['status'] {
 function groupStatus(children: ActivityRow[]): ActivityRow['status'] {
   if (children.some((c) => c.status === 'error')) return 'error'
   if (children.some((c) => c.status === 'running')) return 'running'
+  if (children.some((c) => c.status === 'warn')) return 'warn'
   return 'done'
 }
 
@@ -131,8 +132,10 @@ function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] 
     const group: ActivityRow = {
       id: groupId,
       kind: event.kind,
-      // The group's title is the raw file name, not a key.
+      // The group's title is the raw file name, unless the step names it by key.
       label: event.groupLabel ?? event.group,
+      labelKey: event.groupLabelKey,
+      labelParams: event.groupLabelParams,
       status: 'running',
       children: [child],
     }
@@ -157,6 +160,7 @@ type Translate = (key: string, params?: ActivityParams) => string
 
 const STATUS_TAG: Record<ActivityRow['status'], string> = {
   done: '[ok]',
+  warn: '[warn]',
   error: '[error]',
   running: '[running]',
 }
