@@ -35,6 +35,7 @@ import { createMenuT } from './i18n'
 import { removeDuplicateCopy } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
+import { musicReviewLog } from './musicReviewLog'
 import { trashRecoverably } from './recoverableTrash'
 import { getSettings } from './settings'
 
@@ -76,16 +77,20 @@ export function registerAppleMusicIpc(
       : [],
   )
 
-  ipcMain.handle('applemusic:reviewDump', () =>
-    process.platform === 'darwin' ? appleMusicLimiter.run(() => dumpMusicReview()) : [],
-  )
+  ipcMain.handle('applemusic:reviewDump', async () => {
+    if (process.platform !== 'darwin') return []
+    const entries = await appleMusicLimiter.run(() => dumpMusicReview())
+    musicReviewLog.rememberTitles(entries)
+    return entries
+  })
 
   let fixesCancelled = false
   ipcMain.handle('applemusic:applyFixes', async (e, fixes: MusicFieldFix[]) => {
     if (process.platform !== 'darwin') return []
     fixesCancelled = false
     const { trackTmp, untrackTmp } = deps
-    return applyMusicFixes(
+    const group = musicReviewLog.beginRun()
+    const outcomes = await applyMusicFixes(
       fixes,
       {
         setField: (pid, field, from, to) =>
@@ -108,8 +113,11 @@ export function registerAppleMusicIpc(
         onProgress: (progress) => {
           if (!e.sender.isDestroyed()) e.sender.send('applemusic:fixProgress', progress)
         },
+        log: { track: activity.track, group, titleOf: musicReviewLog.titleOf },
       },
     )
+    musicReviewLog.rememberRun(group, outcomes)
+    return outcomes
   })
   ipcMain.handle('applemusic:cancelFixes', () => {
     fixesCancelled = true

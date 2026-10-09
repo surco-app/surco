@@ -6,6 +6,7 @@ import type {
   MusicReviewField,
   TrashEntry,
 } from '../shared/types'
+import type { Activity } from './activity'
 import type { MusicSetResult } from './applemusic'
 import type { FieldWrite, TagFieldChange } from './musicFieldWrite'
 
@@ -24,9 +25,60 @@ export interface ApplyDeps {
   ) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
 }
 
+export interface ApplyLog {
+  track: Activity['track']
+  // The run's own row in Activity, so hundreds of fixes fold under one entry.
+  group: string
+  titleOf: (persistentId: string) => string
+}
+
 export interface ApplyHooks {
   isCancelled?: () => boolean
   onProgress?: (progress: MusicFixProgress) => void
+  log?: ApplyLog
+}
+
+type Ending = { detailKey: string; detailParams?: { error: string }; status?: 'warn' | 'error' }
+
+// What happened to one field, in Music and then in the file.
+function endingOf(o: MusicFixOutcome, index: number): Ending {
+  const music = o.music[index]
+  if (music === 'mismatch') return { detailKey: 'activity.reviewFixMusicMismatch', status: 'warn' }
+  if (music === 'missing') return { detailKey: 'activity.reviewFixMusicMissing', status: 'warn' }
+  if (music === 'failed') return { detailKey: 'activity.reviewFixMusicFailed', status: 'error' }
+  if (o.written.includes(o.fixes[index].field))
+    return {
+      detailKey: o.backupId ? 'activity.reviewFixWrittenBackup' : 'activity.reviewFixWritten',
+    }
+  if (o.file === 'failed')
+    return {
+      detailKey: 'activity.reviewFixFileFailed',
+      detailParams: { error: o.error ?? '' },
+      status: 'error',
+    }
+  if (o.file === 'missing') return { detailKey: 'activity.reviewFixNoFile', status: 'warn' }
+  return { detailKey: 'activity.reviewFixFileDiffers', status: 'warn' }
+}
+
+async function loggedTrack(
+  work: Promise<MusicFixOutcome>,
+  fixes: MusicFieldFix[],
+  log: ApplyLog,
+  runSize: number,
+): Promise<MusicFixOutcome> {
+  const title = log.titleOf(fixes[0].persistentId)
+  await Promise.all(
+    fixes.map((f, i) =>
+      log.track('applemusic', `activity.reviewFix.${f.field}`, () => work, {
+        labelParams: { title },
+        group: log.group,
+        groupLabelKey: 'activity.reviewRun',
+        groupLabelParams: { count: runSize },
+        summary: (o) => endingOf(o, i),
+      }),
+    ),
+  )
+  return work
 }
 
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
@@ -64,7 +116,7 @@ async function applyTrack(
 export async function applyMusicFixes(
   fixes: MusicFieldFix[],
   deps: ApplyDeps,
-  { isCancelled = () => false, onProgress }: ApplyHooks = {},
+  { isCancelled = () => false, onProgress, log }: ApplyHooks = {},
 ): Promise<MusicFixOutcome[]> {
   const byTrack = new Map<string, MusicFieldFix[]>()
   for (const f of fixes) byTrack.set(f.persistentId, [...(byTrack.get(f.persistentId) ?? []), f])
@@ -78,7 +130,8 @@ export async function applyMusicFixes(
   for (const [persistentId, trackFixes] of byTrack) {
     if (isCancelled()) break
     report(outcomes.length + 1)
-    outcomes.push(await applyTrack(persistentId, trackFixes, deps))
+    const work = applyTrack(persistentId, trackFixes, deps)
+    outcomes.push(await (log ? loggedTrack(work, trackFixes, log, byTrack.size) : work))
     report(outcomes.length)
   }
   return outcomes

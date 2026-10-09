@@ -1454,7 +1454,24 @@
     "engineSyncSkipped_other": "{{count}} pistes ignorées",
     "rekordboxCollectionMissing": "Ignoré, la collection rekordbox est introuvable",
     "engineCollectionMissing": "Ignoré, la bibliothèque Engine DJ est introuvable",
-    "traktorSyncCollectionMissing": "Ignoré, collection.nml est introuvable"
+    "traktorSyncCollectionMissing": "Ignoré, collection.nml est introuvable",
+    "reviewRun_one": "Revue de Music, {{count}} morceau",
+    "reviewRun_other": "Revue de Music, {{count}} morceaux",
+    "reviewFix": {
+      "title": "{{title}} · Titre",
+      "artist": "{{title}} · Artiste",
+      "album": "{{title}} · Album",
+      "albumArtist": "{{title}} · Artiste de l'album",
+      "genre": "{{title}} · Genre"
+    },
+    "reviewFixWrittenBackup": "Modifié dans Music et dans le fichier, avec une sauvegarde",
+    "reviewFixWritten": "Modifié dans Music et dans le fichier",
+    "reviewFixFileDiffers": "Modifié dans Music. Le fichier avait une autre valeur et n'a pas été touché",
+    "reviewFixNoFile": "Modifié dans Music. Le morceau n'a pas de fichier sur le disque",
+    "reviewFixFileFailed": "Modifié dans Music. Le fichier n'a pas pu être écrit ({{error}})",
+    "reviewFixMusicMismatch": "Pas modifié. Music avait déjà une autre valeur",
+    "reviewFixMusicMissing": "Pas modifié. Le morceau n'est plus dans Music",
+    "reviewFixMusicFailed": "Pas modifié. Music n'a pas répondu"
   },
   "applePlaylist": {
     "title": "Importer depuis Apple Music",

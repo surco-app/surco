@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MusicFieldFix } from '../shared/types'
+import type { ActivityEvent, MusicFieldFix, TrashEntry } from '../shared/types'
+import { createActivity } from './activity'
 import { type ApplyDeps, applyMusicFixes } from './musicReviewApply'
 
 const fix = (persistentId: string, field: MusicFieldFix['field'] = 'artist'): MusicFieldFix => ({
@@ -144,5 +145,125 @@ describe('applyMusicFixes', () => {
     const [out] = await applyMusicFixes([fix('A')], d)
     expect(out).toMatchObject({ file: 'missing' })
     expect(out.path).toBeUndefined()
+  })
+})
+
+// The user applied fixes and Activity showed nothing. Every field the review touches gets
+// a row under the run's group, started when its track starts and ended with what happened
+// in Music and in the file.
+describe('applyMusicFixes in Activity', () => {
+  function logged() {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    return {
+      events,
+      log: { track: activity.track, group: 'review-1', titleOf: (pid: string) => `Title ${pid}` },
+    }
+  }
+  const ends = (events: ActivityEvent[]) => events.filter((e) => e.phase !== 'start')
+
+  it('names each field of each track and groups them under the run', async () => {
+    const { events, log } = logged()
+    await applyMusicFixes([fix('A'), fix('A', 'genre'), fix('B')], deps(), { log })
+    const starts = events.filter((e) => e.phase === 'start')
+    expect(starts.map((e) => [e.labelKey, e.labelParams])).toEqual([
+      ['activity.reviewFix.artist', { title: 'Title A' }],
+      ['activity.reviewFix.genre', { title: 'Title A' }],
+      ['activity.reviewFix.artist', { title: 'Title B' }],
+    ])
+    expect(starts[0]).toMatchObject({
+      kind: 'applemusic',
+      group: 'review-1',
+      groupLabelKey: 'activity.reviewRun',
+      groupLabelParams: { count: 2 },
+    })
+  })
+
+  // Rows appear while the run goes: a track's rows start before the next track's work.
+  it('starts a track row before that track is written and ends it after', async () => {
+    const { events, log } = logged()
+    const seen: string[] = []
+    const rewrite = vi.fn(async () => {
+      seen.push(events.map((e) => e.phase).join(','))
+      return { outcomes: ['written' as const], backup: { id: 'b1' } as TrashEntry }
+    })
+    await applyMusicFixes([fix('A'), fix('B')], deps({ rewrite }), { log })
+    expect(seen).toEqual(['start', 'start,done,start'])
+  })
+
+  it.each([
+    ['written with a backup', {}, 'done', 'activity.reviewFixWrittenBackup'],
+    [
+      'written without a backup',
+      { rewrite: vi.fn().mockResolvedValue({ outcomes: ['written'] }) },
+      'done',
+      'activity.reviewFixWritten',
+    ],
+    [
+      'left alone because the file held another value',
+      { rewrite: vi.fn().mockResolvedValue({ outcomes: ['unchanged'] }) },
+      'warn',
+      'activity.reviewFixFileDiffers',
+    ],
+    [
+      'changed in Music only, with no file',
+      { exists: vi.fn().mockResolvedValue(false) },
+      'warn',
+      'activity.reviewFixNoFile',
+    ],
+    [
+      'refused by Music',
+      { setField: vi.fn().mockResolvedValue('mismatch') },
+      'warn',
+      'activity.reviewFixMusicMismatch',
+    ],
+    [
+      'gone from Music',
+      { setField: vi.fn().mockResolvedValue('missing') },
+      'warn',
+      'activity.reviewFixMusicMissing',
+    ],
+    [
+      'unanswered by Music',
+      { setField: vi.fn().mockRejectedValue(new Error('timeout')) },
+      'error',
+      'activity.reviewFixMusicFailed',
+    ],
+  ] as const)('ends a field %s', async (_name, over, phase, detailKey) => {
+    const { events, log } = logged()
+    await applyMusicFixes([fix('A')], deps(over), { log })
+    expect(ends(events)).toEqual([expect.objectContaining({ phase, detailKey })])
+  })
+
+  it('carries the error of a file that could not be written', async () => {
+    const { events, log } = logged()
+    await applyMusicFixes(
+      [fix('A')],
+      deps({ rewrite: vi.fn().mockRejectedValue(new Error('no-backup')) }),
+      { log },
+    )
+    expect(ends(events)).toEqual([
+      expect.objectContaining({
+        phase: 'error',
+        detailKey: 'activity.reviewFixFileFailed',
+        detailParams: { error: 'no-backup' },
+      }),
+    ])
+  })
+
+  // One field of a track written and the other refused by the file guard: each row says
+  // its own field's fate, not the track's.
+  it('says each field of one track apart', async () => {
+    const { events, log } = logged()
+    await applyMusicFixes(
+      [fix('A'), fix('A', 'genre')],
+      deps({ rewrite: vi.fn().mockResolvedValue({ outcomes: ['written', 'unchanged'] }) }),
+      { log },
+    )
+    expect(ends(events).map((e) => [e.phase, e.detailKey])).toEqual([
+      ['done', 'activity.reviewFixWritten'],
+      ['warn', 'activity.reviewFixFileDiffers'],
+    ])
   })
 })
