@@ -121,11 +121,17 @@ export function setFieldLogged(
   })
 }
 
-// A file the review backed up, restored by its undo. Any other restore (the Backups panel)
-// stays out of the review's rows.
-export function restoreLogged<T>(id: string, restore: () => Promise<T>, { track, log }: UndoDeps) {
+// A file the review backed up, restored by its undo. The Backups panel restores through the
+// same call, the review's own backups too, and stays out of the review's rows: it is not
+// an undo of the run.
+export function restoreLogged<T>(
+  id: string,
+  restore: () => Promise<T>,
+  { track, log }: UndoDeps,
+  from: 'undo' | 'panel',
+) {
   const backup = log.backup(id)
-  if (!backup) return restore()
+  if (!backup || from !== 'undo') return restore()
   return track('applemusic', 'activity.reviewUndoFile', restore, {
     labelParams: { title: backup.title },
     group: backup.group,

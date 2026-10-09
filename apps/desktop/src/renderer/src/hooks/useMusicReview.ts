@@ -585,7 +585,7 @@ export function useMusicReview({
         }
         if (o.backupId) {
           try {
-            await window.api.trashRestore(o.backupId)
+            await window.api.trashRestore(o.backupId, 'undo')
             restored.push(o)
           } catch {
             failed.push(o)

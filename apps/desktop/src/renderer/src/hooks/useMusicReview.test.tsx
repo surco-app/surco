@@ -167,7 +167,7 @@ describe('useMusicReview', () => {
     act(() => result.current.toggleStaged(result.current.spelling[0].key))
     await act(() => result.current.apply())
     await act(() => result.current.undo())
-    expect(api.trashRestore).toHaveBeenCalledWith('b1')
+    expect(api.trashRestore).toHaveBeenCalledWith('b1', 'undo')
     expect(api.setMusicField).toHaveBeenCalledWith('C', 'artist', 'DJ Lara', 'Dj Lara')
     expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
       { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
@@ -1677,7 +1677,7 @@ describe('with the list as source', () => {
     await act(() => result.current.apply())
     expect(result.current.spelling).toEqual([])
     await act(() => result.current.undo())
-    expect(api.trashRestore).toHaveBeenCalledWith('b1')
+    expect(api.trashRestore).toHaveBeenCalledWith('b1', 'undo')
     expect(api.setMusicField).toHaveBeenCalledWith('PID', 'artist', 'DJ Lara', 'Dj Lara')
     expect(result.current.spelling).toHaveLength(1)
   })

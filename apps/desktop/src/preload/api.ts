@@ -245,7 +245,8 @@ export interface Api {
   // Surco's own trash (main/surcoTrash.ts): the originals conversions replaced, kept
   // for a while. restore puts one back where it was and returns where it landed.
   trashList: () => Promise<TrashEntry[]>
-  trashRestore: (id: string) => Promise<{ restoredTo: string }>
+  // 'undo' when a review's Undo brings back its own backup, for its Activity row.
+  trashRestore: (id: string, from?: 'undo') => Promise<{ restoredTo: string }>
   trashRemove: (id: string) => Promise<void>
   trashEmpty: () => Promise<void>
   trashReveal: () => Promise<void>

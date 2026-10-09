@@ -113,10 +113,12 @@ describe('the undo in Activity', () => {
 
   it('says a file came back from its backup', async () => {
     const { events, log, run, track } = setup()
-    const result = await restoreLogged('b1', async () => ({ restoredTo: '/m/a.mp3' }), {
-      track,
-      log,
-    })
+    const result = await restoreLogged(
+      'b1',
+      async () => ({ restoredTo: '/m/a.mp3' }),
+      { track, log },
+      'undo',
+    )
     expect(result).toEqual({ restoredTo: '/m/a.mp3' })
     expect(events.map((e) => [e.phase, e.labelKey, e.detailKey, e.group])).toEqual([
       ['start', 'activity.reviewUndoFile', undefined, run],
@@ -150,7 +152,7 @@ describe('the undo in Activity', () => {
       () => 'Funk Freak',
     )
     await setFieldLogged('PA', 'artist', async () => 'set', { track: activity.track, log })
-    await restoreLogged('b1', async () => ({}), { track: activity.track, log })
+    await restoreLogged('b1', async () => ({}), { track: activity.track, log }, 'undo')
     expect(
       events.filter((e) => e.phase === 'start').map((e) => [e.group, e.groupLabelKey]),
     ).toEqual([
@@ -162,7 +164,21 @@ describe('the undo in Activity', () => {
   // The Backups panel restores through the same call; those are not the review's.
   it('logs nothing for a backup the review did not make', async () => {
     const { events, log, track } = setup()
-    await restoreLogged('other', async () => ({ restoredTo: '/x' }), { track, log })
+    await restoreLogged('other', async () => ({ restoredTo: '/x' }), { track, log }, 'panel')
+    expect(events).toEqual([])
+  })
+
+  // A review backup the user brings back from the Backups panel is not the review's undo:
+  // logging it as "Deshacer la revisión" told them they had undone a run they had not.
+  it('logs nothing for a review backup restored from the Backups panel', async () => {
+    const { events, log, track } = setup()
+    const result = await restoreLogged(
+      'b1',
+      async () => ({ restoredTo: '/m/a.mp3' }),
+      { track, log },
+      'panel',
+    )
+    expect(result).toEqual({ restoredTo: '/m/a.mp3' })
     expect(events).toEqual([])
   })
 })

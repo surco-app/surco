@@ -10,11 +10,13 @@ import type { SurcoTrash } from './surcoTrash'
 // entries the manifest holds, so nothing here reaches a path the app did not stash.
 export function registerTrashIpc(trash: SurcoTrash, mediaAccess: MediaAccess): void {
   ipcMain.handle('trash:list', () => trash.list())
-  ipcMain.handle('trash:restore', async (_e, id: string) => {
-    const result = await restoreLogged(id, () => trash.restore(id), {
-      track: activity.track,
-      log: musicReviewLog,
-    })
+  ipcMain.handle('trash:restore', async (_e, id: string, from?: 'undo') => {
+    const result = await restoreLogged(
+      id,
+      () => trash.restore(id),
+      { track: activity.track, log: musicReviewLog },
+      from === 'undo' ? 'undo' : 'panel',
+    )
     // The row that pointed at this file can stream it again straight away.
     mediaAccess.allow(result.restoredTo)
     return result
