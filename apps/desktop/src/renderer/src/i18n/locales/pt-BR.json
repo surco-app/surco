@@ -1356,7 +1356,17 @@
     "convertLossyReencodeTitle": "Recodificar o MP3 original?",
     "convertLossyReencodeMessage_one": "Este filtro recodifica o MP3 de origem no lugar. Como o MP3 tem perdas, recodificá-lo sobre si mesmo degrada a qualidade de forma irreversível.",
     "convertLossyReencodeMessage_other": "Este filtro recodifica {{count}} MP3 de origem no lugar. Como o MP3 tem perdas, recodificá-los sobre si mesmos degrada a qualidade de forma irreversível.",
-    "convertLossyReencodeConfirm": "Recodificar e converter"
+    "convertLossyReencodeConfirm": "Recodificar e converter",
+    "trashTitleBackups_one": "Mover o arquivo para Cópias de segurança?",
+    "trashTitleBackups_other": "Mover {{count}} arquivos para Cópias de segurança?",
+    "trashMessageBackups_one": "Este disco não tem lixeira, então “{{name}}” é guardado em Cópias de segurança e sai da lista. Você pode restaurá-lo de lá.",
+    "trashMessageBackups_other": "Estes discos não têm lixeira, então {{count}} arquivos são guardados em Cópias de segurança e saem da lista. Você pode restaurá-los de lá.",
+    "trashConfirmBackups": "Mover para Cópias de segurança",
+    "trashTitleMixed_one": "Mover o arquivo para a Lixeira ou Cópias de segurança?",
+    "trashTitleMixed_other": "Mover {{count}} arquivos para a Lixeira ou Cópias de segurança?",
+    "trashMessageMixed_one": "Isso remove “{{name}}” da lista. Você pode restaurá-lo da Lixeira ou de Cópias de segurança.",
+    "trashMessageMixed_other": "Isso remove {{count}} arquivos da lista. Os que estão em um disco sem lixeira são guardados em Cópias de segurança e o resto vai para a Lixeira. Você pode restaurá-los de lá.",
+    "trashConfirmMixed": "Mover"
   },
   "activity": {
     "title": "Atividade",

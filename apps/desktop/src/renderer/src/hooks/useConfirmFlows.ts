@@ -107,7 +107,7 @@ interface Params {
 }
 
 interface ConfirmFlows {
-  askTrash: (targets: TrackItem[]) => void
+  askTrash: (targets: TrackItem[]) => Promise<void>
   // The post-convert "clean up": the original, the files a replacement superseded and the
   // old Apple Music copy, offered together in one dialog that lists each. Async because the
   // wording depends on whether each file's volume keeps a Trash, which only the main
@@ -153,6 +153,29 @@ function inPlaceMessageKey(settings: Settings | null): string {
   return 'confirm.convertInPlaceMessageBackup'
 }
 
+const TRASH_COPY = {
+  trash: {
+    title: 'confirm.trashTitle',
+    message: 'confirm.trashMessage',
+    confirm: 'confirm.trashConfirm',
+  },
+  win: {
+    title: 'confirm.trashTitleWin',
+    message: 'confirm.trashMessageWin',
+    confirm: 'confirm.trashConfirmWin',
+  },
+  backups: {
+    title: 'confirm.trashTitleBackups',
+    message: 'confirm.trashMessageBackups',
+    confirm: 'confirm.trashConfirmBackups',
+  },
+  mixed: {
+    title: 'confirm.trashTitleMixed',
+    message: 'confirm.trashMessageMixed',
+    confirm: 'confirm.trashConfirmMixed',
+  },
+}
+
 export function useConfirmFlows({
   settings,
   removeTrack,
@@ -171,18 +194,25 @@ export function useConfirmFlows({
   // Right-click "Move to Trash": confirm first, then send each original file to the OS
   // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
   // row untouched. Copy switches on platform because the destination differs, and on
-  // count so a multi-selection reads "N files" instead of naming just one.
-  function askTrash(targets: TrackItem[]): void {
+  // count so a multi-selection reads "N files" instead of naming just one. A disk with no
+  // Trash (a NAS, every Windows drive) keeps the file in Surco's backups instead, and the
+  // dialog says so: promising the Trash there is how a file was lost on 15/09.
+  async function askTrash(targets: TrackItem[]): Promise<void> {
     if (targets.length === 0) return
     const isWin = window.api.platform === 'win32'
     const count = targets.length
+    const keeps = await Promise.all(targets.map((t) => window.api.keepsTrash(t.inputPath)))
+    const copy = keeps.every(Boolean)
+      ? isWin
+        ? TRASH_COPY.win
+        : TRASH_COPY.trash
+      : keeps.some(Boolean)
+        ? TRASH_COPY.mixed
+        : TRASH_COPY.backups
     openConfirm({
-      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count }),
-      message: tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
-        count,
-        name: targets[0].fileName,
-      }),
-      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      title: tr(copy.title, { count }),
+      message: tr(copy.message, { count, name: targets[0].fileName }),
+      confirmLabel: tr(copy.confirm),
       destructive: true,
       onConfirm: () => {
         for (const track of targets) {

@@ -162,6 +162,54 @@ describe('useConfirmFlows scope wording', () => {
   })
 })
 
+// A disk with no Trash (a NAS, and every Windows drive by main's own answer) sends the
+// file to Surco's backups. The dialog promising the Trash there is how a file was lost
+// on 15/09.
+describe('useConfirmFlows move to Trash', () => {
+  it('says a file on a disk with no Trash goes to Backups', async () => {
+    installApi({ keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
+    const { flows, opened } = setup([a])
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Move file to Backups?')
+    expect(opened[0].message).toBe(
+      'This disk has no Trash, so “Artist - a.wav” is kept in Backups and removed from the list. You can restore it from there.',
+    )
+    expect(opened[0].message).not.toContain('from the Trash')
+  })
+
+  it('says it on Windows too instead of naming the Recycle Bin', async () => {
+    installApi({ platform: 'win32', keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a')
+    const { flows, opened } = setup([a])
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Move file to Backups?')
+    expect(opened[0].confirmLabel).toBe('Move to Backups')
+    expect(`${opened[0].title} ${opened[0].message}`).not.toContain('Recycle Bin')
+  })
+
+  it('names both places when only some files sit on a disk with no Trash', async () => {
+    installApi({ keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav') })
+    const a = track('a')
+    const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
+    const { flows, opened } = setup([a, b])
+    await flows.askTrash([a, b])
+    expect(opened[0].title).toBe('Move 2 files to the Trash or Backups?')
+    expect(opened[0].message).toBe(
+      'This removes 2 files from the list. Those on a disk with no Trash are kept in Backups and the rest go to the Trash. You can restore them from there.',
+    )
+  })
+
+  it('keeps the Trash wording when every file has a Trash', async () => {
+    installApi({ keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a')
+    const { flows, opened } = setup([a])
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Move file to Trash?')
+    expect(opened[0].confirmLabel).toBe('Move to Trash')
+  })
+})
+
 describe('useConfirmFlows clean up previous files', () => {
   const stale = { persistentId: 'OLDCOPY123456789', label: 'Djmofly - Save My Love (26 Rmx)' }
 

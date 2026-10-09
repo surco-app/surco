@@ -1356,7 +1356,17 @@
     "convertLossyReencodeTitle": "Re-encode the original MP3?",
     "convertLossyReencodeMessage_one": "This filter re-encodes the source MP3 in place. MP3 is lossy, so re-encoding it over itself degrades its quality and cannot be undone.",
     "convertLossyReencodeMessage_other": "This filter re-encodes {{count}} source MP3s in place. MP3 is lossy, so re-encoding them over themselves degrades their quality and cannot be undone.",
-    "convertLossyReencodeConfirm": "Re-encode and convert"
+    "convertLossyReencodeConfirm": "Re-encode and convert",
+    "trashTitleBackups_one": "Move file to Backups?",
+    "trashTitleBackups_other": "Move {{count}} files to Backups?",
+    "trashMessageBackups_one": "This disk has no Trash, so “{{name}}” is kept in Backups and removed from the list. You can restore it from there.",
+    "trashMessageBackups_other": "These disks have no Trash, so {{count}} files are kept in Backups and removed from the list. You can restore them from there.",
+    "trashConfirmBackups": "Move to Backups",
+    "trashTitleMixed_one": "Move file to the Trash or Backups?",
+    "trashTitleMixed_other": "Move {{count}} files to the Trash or Backups?",
+    "trashMessageMixed_one": "This removes “{{name}}” from the list. You can restore it from the Trash or Backups.",
+    "trashMessageMixed_other": "This removes {{count}} files from the list. Those on a disk with no Trash are kept in Backups and the rest go to the Trash. You can restore them from there.",
+    "trashConfirmMixed": "Move"
   },
   "activity": {
     "title": "Activity",

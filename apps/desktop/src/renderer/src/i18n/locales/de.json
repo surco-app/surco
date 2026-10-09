@@ -1356,7 +1356,17 @@
     "convertLossyReencodeTitle": "Original-MP3 neu kodieren?",
     "convertLossyReencodeMessage_one": "Dieser Filter kodiert die MP3-Quelldatei direkt neu. MP3 ist verlustbehaftet, daher verschlechtert eine Neukodierung über sich selbst die Qualität unwiderruflich.",
     "convertLossyReencodeMessage_other": "Dieser Filter kodiert {{count}} MP3-Quelldateien direkt neu. MP3 ist verlustbehaftet, daher verschlechtert eine Neukodierung über sich selbst die Qualität unwiderruflich.",
-    "convertLossyReencodeConfirm": "Neu kodieren und konvertieren"
+    "convertLossyReencodeConfirm": "Neu kodieren und konvertieren",
+    "trashTitleBackups_one": "Datei in die Sicherungskopien verschieben?",
+    "trashTitleBackups_other": "{{count}} Dateien in die Sicherungskopien verschieben?",
+    "trashMessageBackups_one": "Dieses Laufwerk hat keinen Papierkorb, daher wird „{{name}}“ in den Sicherungskopien aufbewahrt und aus der Liste entfernt. Du kannst die Datei von dort wiederherstellen.",
+    "trashMessageBackups_other": "Diese Laufwerke haben keinen Papierkorb, daher werden {{count}} Dateien in den Sicherungskopien aufbewahrt und aus der Liste entfernt. Du kannst sie von dort wiederherstellen.",
+    "trashConfirmBackups": "In die Sicherungskopien verschieben",
+    "trashTitleMixed_one": "Datei in den Papierkorb oder die Sicherungskopien verschieben?",
+    "trashTitleMixed_other": "{{count}} Dateien in den Papierkorb oder die Sicherungskopien verschieben?",
+    "trashMessageMixed_one": "Entfernt „{{name}}“ aus der Liste. Du kannst die Datei aus dem Papierkorb oder den Sicherungskopien wiederherstellen.",
+    "trashMessageMixed_other": "Entfernt {{count}} Dateien aus der Liste. Dateien auf einem Laufwerk ohne Papierkorb werden in den Sicherungskopien aufbewahrt, der Rest kommt in den Papierkorb. Du kannst sie von dort wiederherstellen.",
+    "trashConfirmMixed": "Verschieben"
   },
   "activity": {
     "title": "Aktivität",

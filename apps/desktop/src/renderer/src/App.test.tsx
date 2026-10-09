@@ -210,6 +210,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
+    keepsTrash: vi.fn().mockResolvedValue(true),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
     recordStat: vi.fn(),
     rekordboxCollection: vi.fn<Api['rekordboxCollection']>().mockResolvedValue(''),
@@ -924,7 +925,7 @@ describe('App error surfacing', () => {
 
     fireEvent.contextMenu(screen.getByTestId('track-row'))
     fireEvent.click(screen.getByTestId('track-menu-trash'))
-    fireEvent.click(screen.getByTestId('confirm-ok'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
 
     expect(await screen.findByTestId('app-error')).toBeInTheDocument()
     expect(screen.getByTestId('track-row')).toBeInTheDocument()
@@ -1070,7 +1071,7 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.contextMenu(rows[1])
     fireEvent.click(screen.getByTestId('track-menu-trash'))
-    fireEvent.click(screen.getByTestId('confirm-ok'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
   })

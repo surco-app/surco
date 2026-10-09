@@ -1356,7 +1356,17 @@
     "convertLossyReencodeTitle": "¿Recodificar el MP3 original?",
     "convertLossyReencodeMessage_one": "Este filtro recodifica el MP3 de origen en su sitio. El MP3 es un formato con pérdida, así que recodificarlo sobre sí mismo degrada su calidad y no se puede deshacer.",
     "convertLossyReencodeMessage_other": "Este filtro recodifica {{count}} MP3 de origen en su sitio. El MP3 es un formato con pérdida, así que recodificarlos sobre sí mismos degrada su calidad y no se puede deshacer.",
-    "convertLossyReencodeConfirm": "Recodificar y convertir"
+    "convertLossyReencodeConfirm": "Recodificar y convertir",
+    "trashTitleBackups_one": "¿Mover el archivo a Copias de seguridad?",
+    "trashTitleBackups_other": "¿Mover {{count}} archivos a Copias de seguridad?",
+    "trashMessageBackups_one": "Este disco no tiene papelera, así que «{{name}}» se guarda en Copias de seguridad y sale de la lista. Puedes restaurarlo desde ahí.",
+    "trashMessageBackups_other": "Estos discos no tienen papelera, así que {{count}} archivos se guardan en Copias de seguridad y salen de la lista. Puedes restaurarlos desde ahí.",
+    "trashConfirmBackups": "Mover a Copias de seguridad",
+    "trashTitleMixed_one": "¿Mover el archivo a la papelera o a Copias de seguridad?",
+    "trashTitleMixed_other": "¿Mover {{count}} archivos a la papelera o a Copias de seguridad?",
+    "trashMessageMixed_one": "Esto quita «{{name}}» de la lista. Puedes restaurarlo desde la papelera o desde Copias de seguridad.",
+    "trashMessageMixed_other": "Esto quita {{count}} archivos de la lista. Los que están en un disco sin papelera se guardan en Copias de seguridad y el resto va a la papelera. Puedes restaurarlos desde ahí.",
+    "trashConfirmMixed": "Mover"
   },
   "activity": {
     "title": "Actividad",
