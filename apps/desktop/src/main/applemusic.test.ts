@@ -566,6 +566,26 @@ describe('buildSetFieldScript', () => {
       'set name of theTrack to "b"',
     )
   })
+
+  // The list review found the ID by pairing two reads of the library by position, which a
+  // library changing in between could mispair. Only an entry still on that file is written.
+  it('writes only an entry that still points at the file the list review fixed', () => {
+    const script = buildSetFieldScript(
+      '6E592CFE07A6246A',
+      'artist',
+      'Dj Lara',
+      'DJ Lara',
+      '/m/Dj Lara.aiff',
+    )
+    expect(script).toContain('set theLoc to POSIX path of (location of theTrack)')
+    const check = script.indexOf('if theLoc is not "/m/Dj Lara.aiff" then return "mismatch"')
+    expect(check).toBeGreaterThan(script.indexOf('considering case'))
+    expect(check).toBeLessThan(script.indexOf('set artist of theTrack'))
+  })
+
+  it('leaves the Music review write unchanged, without a location check', () => {
+    expect(buildSetFieldScript('6E592CFE07A6246A', 'artist', 'a', 'b')).not.toContain('theLoc')
+  })
 })
 
 describe('buildPlaylistTransferScript', () => {

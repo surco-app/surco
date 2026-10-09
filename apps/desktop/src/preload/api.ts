@@ -24,6 +24,7 @@ import type {
   LibraryTagSyncReport,
   LibraryTagUpdate,
   LifetimeStats,
+  ListFixRequest,
   LoudnessResult,
   MetaRead,
   MusicFieldFix,
@@ -38,6 +39,7 @@ import type {
   RekordboxSyncIssue,
   Release,
   RemoveCopyResult,
+  ReviewOutcome,
   ScanVerdict,
   SearchHints,
   SearchPriority,
@@ -156,6 +158,10 @@ export interface Api {
     keepLabel: string
   }) => Promise<RemoveCopyResult>
   onMusicFixProgress: (cb: (p: MusicFixProgress) => void) => () => void
+  // The list review's spelling fixes: each file first, then its Music entry on macOS.
+  applyListFixes: (req: ListFixRequest) => Promise<ReviewOutcome[]>
+  cancelListFixes: () => Promise<void>
+  onListFixProgress: (cb: (p: MusicFixProgress) => void) => () => void
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
   // macOS, where the renderer never offers the import.
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>

@@ -9,6 +9,7 @@ import type {
   BpmResult,
   DockIconFrames,
   KeyResult,
+  ListFixRequest,
   LoudnessResult,
   MusicFieldFix,
   MusicFileLookup,
@@ -131,6 +132,13 @@ const api: Api = {
     const listener = (_e: unknown, p: MusicFixProgress): void => cb(p)
     ipcRenderer.on('applemusic:fixProgress', listener)
     return () => ipcRenderer.removeListener('applemusic:fixProgress', listener)
+  },
+  applyListFixes: (req: ListFixRequest) => ipcRenderer.invoke('listreview:applyFixes', req),
+  cancelListFixes: () => ipcRenderer.invoke('listreview:cancelFixes'),
+  onListFixProgress: (cb: (p: MusicFixProgress) => void) => {
+    const listener = (_e: unknown, p: MusicFixProgress): void => cb(p)
+    ipcRenderer.on('listreview:fixProgress', listener)
+    return () => ipcRenderer.removeListener('listreview:fixProgress', listener)
   },
   loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
     ipcRenderer.invoke('applemusic:libraryCached'),

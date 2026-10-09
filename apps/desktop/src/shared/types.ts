@@ -817,6 +817,12 @@ export interface ReviewFix {
   to: string
 }
 
+export interface ListFixRequest {
+  fixes: ReviewFix[]
+  // Path → the one Music entry on that file. A path with none or several is left out.
+  music: Record<string, string>
+}
+
 export interface MusicFileEntry {
   persistentId: string
   // "artist - name" exactly as Music holds it: what the delete and transfer scripts check.

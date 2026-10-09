@@ -718,6 +718,7 @@ export function buildSetFieldScript(
   field: MusicReviewField,
   from: string,
   to: string,
+  location?: string,
 ): string {
   const prop = MUSIC_PROPERTY[field]
   return [
@@ -725,7 +726,18 @@ export function buildSetFieldScript(
     `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
     '  if (count of theMatches) is 0 then return "missing"',
     '  set theTrack to item 1 of theMatches',
+    ...(location === undefined
+      ? []
+      : [
+          '  set theLoc to ""',
+          '  try',
+          '    set theLoc to POSIX path of (location of theTrack)',
+          '  end try',
+        ]),
     '  considering case, diacriticals, hyphens, punctuation and white space',
+    ...(location === undefined
+      ? []
+      : [`    if theLoc is not ${JSON.stringify(location)} then return "mismatch"`]),
     `    if (${prop} of theTrack) is not ${JSON.stringify(from)} then return "mismatch"`,
     '  end considering',
     `  set ${prop} of theTrack to ${JSON.stringify(to)}`,
@@ -739,8 +751,11 @@ export async function setAppleMusicField(
   field: MusicReviewField,
   from: string,
   to: string,
+  location?: string,
 ): Promise<MusicSetResult> {
-  const result = (await runOsascript(buildSetFieldScript(persistentId, field, from, to))).trim()
+  const result = (
+    await runOsascript(buildSetFieldScript(persistentId, field, from, to, location))
+  ).trim()
   if (result === 'set' || result === 'missing' || result === 'mismatch') return result
   throw new Error(`unexpected Music answer: ${result}`)
 }
