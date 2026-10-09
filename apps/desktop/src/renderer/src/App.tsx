@@ -64,6 +64,7 @@ import { useExitPresence } from './hooks/useExitPresence'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
 import { useListNavigation } from './hooks/useListNavigation'
+import { useListReviewNotice } from './hooks/useListReviewNotice'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import type { ReviewFilter } from './hooks/useMusicReview'
@@ -275,6 +276,7 @@ export default function App(): React.JSX.Element {
     null,
   )
   const openListReview = useStableCallback(() => setReview({ source: 'list', filter: 'all' }))
+  const listReviewIgnored = useStableCallback(() => settingsRef.current?.listReviewIgnored ?? [])
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     // Fired async after the first read lands, so closing over the hook defined right
@@ -584,7 +586,10 @@ export default function App(): React.JSX.Element {
     // dot and clipping flag can appear before any per-track probe runs. Fire-and-forget:
     // a hydration failure just leaves the normal lazy probes to fill the verdicts in, same
     // as a cold cache.
-    onPathsAdded: (paths) => void seedCachedAnalyses(queryClient, paths),
+    onPathsAdded: (paths) => {
+      void seedCachedAnalyses(queryClient, paths)
+      noticeOnPathsAdded(paths)
+    },
   })
 
   useEffect(
@@ -727,7 +732,7 @@ export default function App(): React.JSX.Element {
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
-    addPaths(await window.api.expandPaths(dropped))
+    await watchLoad(async () => addPaths(await window.api.expandPaths(dropped)))
   }
 
   // Warms a hovered track's spectrum and waveform so opening it is instant. Debounced
@@ -1281,7 +1286,7 @@ export default function App(): React.JSX.Element {
   // Every handler handed to the memoized Toolbar/Editor goes through
   // useStableCallback: one identity for the child's memo, the latest closure for the
   // call — so an inline-style body can still read current state.
-  const onAdd = useStableCallback(() => void pickFiles())
+  const onAdd = useStableCallback(() => void watchLoad(pickFiles))
   const onSelectAllTracks = useStableCallback(selectAll)
   // The toolbar bulk actions (fill, empty) act on the visible (filtered) rows — never the
   // whole list behind an active filter, and never scoped to the selection: the toolbar mirrors
@@ -1788,7 +1793,7 @@ export default function App(): React.JSX.Element {
       editorNormalizeRef,
       editorDeclickRef,
       trackSearchRef,
-      pickFiles: () => void pickFiles(),
+      pickFiles: () => void watchLoad(pickFiles),
       openApplePlaylist: isMac ? overlays.openApplePlaylist : undefined,
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview,
@@ -1888,6 +1893,14 @@ export default function App(): React.JSX.Element {
   // Memoized so the O(n) "any row still reading its tags?" scan runs only when the list
   // changes, not on every App render — the same frequent-render concern as `selected` above.
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
+  const { watchLoad, onPathsAdded: noticeOnPathsAdded } = useListReviewNotice({
+    store,
+    tr,
+    tracksRef,
+    settled: importProgress === null && !anyLoadingMeta,
+    ignored: listReviewIgnored,
+    openListReview,
+  })
   // One source per opening: it remembers what it wrote and trashed until the review closes.
   const reviewKind = review?.source
   const listSource = useMemo(

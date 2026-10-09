@@ -1753,6 +1753,17 @@
       "quality": "Quality",
       "size": "Size",
       "unanalyzed": "Not analyzed"
+    },
+    "notice": {
+      "loaded_one": "{{count}} track loaded",
+      "loaded_other": "{{count}} tracks loaded",
+      "duplicates_one": "{{count}} duplicate",
+      "duplicates_other": "{{count}} duplicates",
+      "spellings_one": "{{count}} spelling",
+      "spellings_other": "{{count}} spellings",
+      "both": "{{duplicates}} and {{spellings}}",
+      "found": "{{loaded}}. {{issues}} to review",
+      "review": "Review"
     }
   }
 }

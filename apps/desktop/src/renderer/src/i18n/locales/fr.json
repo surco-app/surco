@@ -1753,6 +1753,17 @@
       "quality": "Qualité",
       "size": "Taille",
       "unanalyzed": "Non analysée"
+    },
+    "notice": {
+      "loaded_one": "{{count}} piste chargée",
+      "loaded_other": "{{count}} pistes chargées",
+      "duplicates_one": "{{count}} doublon",
+      "duplicates_other": "{{count}} doublons",
+      "spellings_one": "{{count}} graphie",
+      "spellings_other": "{{count}} graphies",
+      "both": "{{duplicates}} et {{spellings}}",
+      "found": "{{loaded}}. {{issues}} à vérifier",
+      "review": "Vérifier"
     }
   }
 }

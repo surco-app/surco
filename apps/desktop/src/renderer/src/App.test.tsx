@@ -10,6 +10,7 @@ import { emptyMetadata } from '../../shared/metadata'
 import type { ActivityEvent, RekordboxSyncIssue, Release, Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import i18n from './i18n'
+import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
@@ -3853,6 +3854,148 @@ describe('App list review', () => {
     fireEvent.click(screen.getByTestId('music-review-close'))
     fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(screen.getByTestId('list-review-open')).toBeDisabled())
+  })
+})
+
+// A dropped folder is when the user can still fix its names before they spread to the
+// libraries; the notice says what the review would find without opening it uninvited.
+describe('App list review notice', () => {
+  it('says what a finished load leaves to review and opens the review from there', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    await addThree()
+    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
+      '3 tracks loaded. 1 spelling to review',
+    )
+    fireEvent.click(screen.getByTestId('list-review-notice-action'))
+    expect(await screen.findByTestId('list-review-scope')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+  })
+
+  it('counts duplicates and spellings together after a drop', async () => {
+    vi.resetModules()
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Song', artist: 'Ann' },
+      '/music/b.wav': { title: 'Song', artist: 'Ann' },
+      '/music/c.wav': { title: 'Other', artist: 'DJ Lara' },
+      '/music/d.wav': { title: 'More', artist: 'Dj Lara' },
+    }
+    listApi({
+      readTags: vi.fn(async (path: string) => tags[path]),
+      getPathForFile: (f: { name: string }) => f.name,
+    })
+    await renderApp()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    fireEvent.drop(root, {
+      dataTransfer: { files: Object.keys(tags).map((name) => ({ name })), types: ['Files'] },
+    })
+    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
+      '4 tracks loaded. 1 duplicate and 1 spelling to review',
+    )
+  })
+
+  it('waits for every file of the load to be read before it counts', async () => {
+    vi.resetModules()
+    let release: () => void = () => {}
+    const slow = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
+      '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Dj Lara' },
+    }
+    listApi({
+      readTags: vi.fn(async (path: string) => {
+        if (path === '/music/c.wav') await slow
+        return tags[path]
+      }),
+    })
+    await renderApp()
+    await addThree()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'))
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
+    await act(async () => release())
+    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
+      '3 tracks loaded. 1 spelling to review',
+    )
+  })
+
+  it('stays quiet when the list has nothing to review', async () => {
+    vi.resetModules()
+    const clean: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'Ann' },
+      '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Cleo' },
+    }
+    listApi({
+      readTags: vi.fn(async (path: string) => clean[path]),
+    })
+    await renderApp()
+    await addThree()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[2]).toHaveTextContent('Charlie'))
+    await act(async () => {})
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
+  })
+
+  // What the user already chose to ignore in the list review is not news.
+  it('leaves out the groups the list review ignores', async () => {
+    vi.resetModules()
+    const entry = (id: string, title: string, artist: string) => ({
+      id,
+      title,
+      artist,
+      albumArtist: '',
+      album: '',
+      genre: '',
+    })
+    const ignored = spellingGroups([
+      entry('/music/a.wav', 'Alpha', 'DJ Lara'),
+      entry('/music/b.wav', 'Bravo', 'DJ Lara'),
+      entry('/music/c.wav', 'Charlie', 'Dj Lara'),
+    ]).map((g) => g.key)
+    expect(ignored).toHaveLength(1)
+    listApi({ getSettings: vi.fn().mockResolvedValue(settings({ listReviewIgnored: ignored })) })
+    await renderApp()
+    await addThree()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[2]).toHaveTextContent('Charlie'))
+    await act(async () => {})
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
+  })
+
+  it('tells once per load', async () => {
+    vi.resetModules()
+    let openWith: ((paths: string[]) => void) | undefined
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
+      '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Dj Lara' },
+      '/music/d.wav': { title: 'Delta', artist: 'Dan' },
+    }
+    listApi({
+      readTags: vi.fn(async (path: string) => tags[path]),
+      onOpenFiles: (cb: (paths: string[]) => void) => {
+        openWith = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    await addThree()
+    await screen.findByTestId('list-review-notice')
+    fireEvent.click(screen.getByTestId('list-review-notice-dismiss'))
+    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    await act(async () => openWith?.(['/music/d.wav']))
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('track-row')
+          .map((r) => r.textContent)
+          .join(),
+      ).toContain('Delta'),
+    )
+    await act(async () => {})
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
   })
 })
 

@@ -1753,6 +1753,17 @@
       "quality": "Qualität",
       "size": "Größe",
       "unanalyzed": "Nicht analysiert"
+    },
+    "notice": {
+      "loaded_one": "{{count}} Titel geladen",
+      "loaded_other": "{{count}} Titel geladen",
+      "duplicates_one": "{{count}} Duplikat",
+      "duplicates_other": "{{count}} Duplikate",
+      "spellings_one": "{{count}} Schreibweise",
+      "spellings_other": "{{count}} Schreibweisen",
+      "both": "{{duplicates}} und {{spellings}}",
+      "found": "{{loaded}}. {{issues}} zu prüfen",
+      "review": "Prüfen"
     }
   }
 }

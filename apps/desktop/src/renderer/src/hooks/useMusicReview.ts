@@ -206,6 +206,15 @@ function pendingCount(
 const groupsOf = (entries: ReviewEntry[]) =>
   [spellingGroups(entries), uniqueKeys(duplicateGroups(entries.map(toItem)))] as const
 
+export function pendingGroups(entries: ReviewEntry[], ignored: readonly string[]) {
+  const hidden = new Set(ignored)
+  const [spelling, duplicates] = groupsOf(entries)
+  return {
+    spelling: mergeSpelling(spelling.filter((g) => !hidden.has(g.key))).length,
+    duplicates: duplicates.filter((g) => g.kind === 'duplicate' && !hidden.has(g.key)).length,
+  }
+}
+
 export function useMusicReview({
   source = musicSource,
   initialFilter,
