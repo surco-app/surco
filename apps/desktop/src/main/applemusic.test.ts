@@ -764,6 +764,18 @@ describe('Music entries for loaded files', () => {
     expect(run.mock.calls[1][0]).toBe(buildFileLocationsScript([PID]))
   })
 
+  // The review exists for stray spaces: a Music name with one must still find its file.
+  // Only the title filter is loose; the path still decides which entry is the file's.
+  it('matches a title against a Music name that differs only in surrounding spaces', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(row(PID, 'A', 'Song ', ''))
+      .mockResolvedValueOnce(row(PID, '/m/a.aiff'))
+    const out = await musicFileEntries([{ path: '/m/a.aiff', title: ' Song' }], true, run)
+    expect(out.entries['/m/a.aiff']).toEqual([{ persistentId: PID, label: 'A - Song ' }])
+    expect(run.mock.calls[1][0]).toBe(buildFileLocationsScript([PID]))
+  })
+
   it('asks an open Music without launching it and skips locations when no name matches', async () => {
     const run = vi
       .fn()
