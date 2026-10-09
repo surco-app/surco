@@ -19,11 +19,17 @@ vi.mock('electron-log/main', () => ({
   default: { warn: vi.fn(), error: (...args: unknown[]) => logError(...args), debug: vi.fn() },
 }))
 
+const trashRecoverably = vi.fn()
+vi.mock('./recoverableTrash', () => ({
+  trashRecoverably: (...args: unknown[]) => trashRecoverably(...args),
+}))
+
 const addToAppleMusic = vi.fn()
+const deleteFromAppleMusic = vi.fn()
 vi.mock('./applemusic', () => ({
   addToAppleMusic: (...args: unknown[]) => addToAppleMusic(...args),
   appleMusicLimiter: { run: (fn: () => unknown) => fn() },
-  deleteFromAppleMusic: vi.fn(),
+  deleteFromAppleMusic: (...args: unknown[]) => deleteFromAppleMusic(...args),
   dumpAppleMusicLibrary: vi.fn(),
   revealInAppleMusic: vi.fn(),
   updateInAppleMusic: vi.fn(),
@@ -90,5 +96,37 @@ describe('applemusic:add logging', () => {
     expect(logError).not.toHaveBeenCalled()
 
     Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  })
+})
+
+describe('applemusic:delete', () => {
+  const original = process.platform
+
+  beforeEach(async () => {
+    handlers.clear()
+    trashRecoverably.mockReset()
+    deleteFromAppleMusic.mockReset()
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  })
+
+  const run = () => handlers.get('applemusic:delete')?.(null, 'PID', 'Castion - El Consentido')
+
+  it('trashes the removed copy through the recoverable trash so a NAS never deletes it outright', async () => {
+    deleteFromAppleMusic.mockResolvedValue('/Volumes/Public/a.aiff')
+    trashRecoverably.mockResolvedValue(undefined)
+    expect(await run()).toEqual({ outcome: 'deleted', location: '/Volumes/Public/a.aiff' })
+    expect(trashRecoverably).toHaveBeenCalledWith('/Volumes/Public/a.aiff')
+  })
+
+  it('reports deleted without a location when the file could not be trashed, so no row is marked trashed', async () => {
+    deleteFromAppleMusic.mockResolvedValue('/Volumes/Public/a.aiff')
+    trashRecoverably.mockRejectedValue(new Error('No recoverable trash'))
+    expect(await run()).toEqual({ outcome: 'deleted', location: undefined })
   })
 })

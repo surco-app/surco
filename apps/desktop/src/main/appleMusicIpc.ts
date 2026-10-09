@@ -1,5 +1,5 @@
 import { access, realpath } from 'node:fs/promises'
-import { app, ipcMain, shell } from 'electron'
+import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type {
   AppleMusicAddJob,
@@ -35,6 +35,7 @@ import { createMenuT } from './i18n'
 import { removeDuplicateCopy } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
+import { trashRecoverably } from './recoverableTrash'
 import { getSettings } from './settings'
 
 // "Artist - Title" for the activity row, falling back to whichever field exists so a
@@ -297,7 +298,8 @@ export function registerAppleMusicIpc(
   )
 
   // Removes the superseded library copy after a replace: the entry leaves Music and its
-  // file goes to the OS Trash (recoverable, matching shell:trash's "never a hard delete").
+  // file goes to the OS Trash or Surco's trash (recoverable, matching shell:trash's
+  // "never a hard delete").
   // The trash failing — the file was already removed by hand, or sits on an unmounted
   // volume — must not report the action failed: the library entry is already gone and
   // that removal can't roll back, so the outcome the user asked for stands. "missing"
@@ -313,10 +315,16 @@ export function registerAppleMusicIpc(
         async () => {
           const location = await deleteFromAppleMusic(persistentId, track)
           if (location === null) return { outcome: 'missing' as const }
-          if (location) await shell.trashItem(location).catch(() => undefined)
+          const trashed = location
+            ? await trashRecoverably(location).then(
+                () => true,
+                () => false,
+              )
+            : false
           // The trashed path travels back so the renderer can mark any loaded row
-          // whose source file this was (Music referencing the user's own file).
-          return { outcome: 'deleted' as const, location: location || undefined }
+          // whose source file this was (Music referencing the user's own file). A file
+          // that stayed on disk is not reported, or its row would show as trashed.
+          return { outcome: 'deleted' as const, location: trashed ? location : undefined }
         },
         { labelParams: { track } },
       ),
