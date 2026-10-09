@@ -1892,7 +1892,8 @@ describe('MusicReview', () => {
     })
 
     // The date added is what tells an old copy from a recent one when deciding which to remove.
-    it('shows when each copy was added and marks the dates that differ', () => {
+    // Copies are added on different days by nature, so a differing date is no warning.
+    it('shows when each copy was added, without marking the dates as a difference', () => {
       const r = review({
         spelling: [],
         duplicates: [
@@ -1909,8 +1910,8 @@ describe('MusicReview', () => {
       render(<Panes review={r} />)
       const [first, second] = screen.getAllByTestId('music-review-copy')
       expect(within(first).getByText('Added')).toBeInTheDocument()
-      expect(within(first).getByText('Oct 24, 2024')).toHaveAttribute('data-differs', 'true')
-      expect(within(second).getByText('Sep 25, 2026')).toHaveAttribute('data-differs', 'true')
+      expect(within(first).getByText('Oct 24, 2024')).not.toHaveAttribute('data-differs')
+      expect(within(second).getByText('Sep 25, 2026')).not.toHaveAttribute('data-differs')
     })
 
     it('keeps a copy on its radio and stages the removal', () => {

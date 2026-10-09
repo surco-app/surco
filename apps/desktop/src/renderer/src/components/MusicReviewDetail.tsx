@@ -662,9 +662,7 @@ function DuplicateDetail({
                   ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
                   ...(list && !e.dateAdded
                     ? []
-                    : ([
-                        ['detail.added', day(e.dateAdded), differs((c) => day(c.dateAdded))],
-                      ] as const)),
+                    : ([['detail.added', day(e.dateAdded), false]] as const)),
                 ] as const
                 return (
                   <div
