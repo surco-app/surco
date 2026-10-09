@@ -1728,6 +1728,36 @@ describe('with the list as source', () => {
     expect(result.current.lastRun).toBeNull()
   })
 
+  // The card showed which copy stays when the user staged it. A verdict landing afterwards
+  // must not swap it: the copy removed would be the one the user saw marked to keep.
+  it('keeps the copy shown at staging even when a quality verdict arrives later', async () => {
+    const api = listApi()
+    const spectrum = (cutoffHz: number) =>
+      ({ cutoffHz, sampleRateHz: 44100, processed: false, hasKnee: true }) as TrackItem['spectrum']
+    let rows = [row('/m/a.aiff', 'Ann'), row('/m/b.aiff', 'Ann')]
+    const source = listReviewSource({
+      rows: () => rows,
+      mac: true,
+      launchMusic: () => true,
+      onRowsRemoved: vi.fn(),
+    })
+    const { result, rerender } = renderHook(() => useMusicReview(props({ source })))
+    await located(result)
+    const key = result.current.duplicates[0].group.key
+    expect(result.current.choice(key)).toBe('/m/a.aiff')
+    act(() => result.current.toggleStaged(key))
+    rows = [
+      row('/m/a.aiff', 'Ann', 'Song', { spectrum: spectrum(16000) }),
+      row('/m/b.aiff', 'Ann', 'Song', { spectrum: spectrum(20500) }),
+    ]
+    rerender()
+    expect(result.current.choice(key)).toBe('/m/a.aiff')
+    await act(() => result.current.apply())
+    expect(api.removeListDuplicates).toHaveBeenCalledWith([
+      expect.objectContaining({ from: '/m/b.aiff', to: '/m/a.aiff' }),
+    ])
+  })
+
   // Same format on both sides: the measured one that is not cut at 16 kHz is the one to keep.
   it('keeps the better analyzed copy when the format ties', async () => {
     listApi()

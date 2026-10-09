@@ -375,7 +375,13 @@ export function useMusicReview({
 
   const toggleStaged = useCallback(
     (key: string) => {
-      if (!choice(key)) return
+      const picked = choice(key)
+      if (!picked) return
+      // The copy the card shows as kept is the one removed against: a verdict or format
+      // arriving after staging would otherwise swap the pick under the user.
+      const dup = dupGroups.find((g) => g.key === key)
+      if (dup && !staged.has(key) && dup.ids.every((id) => id in locations))
+        setChoices((c) => (c[key] ? c : { ...c, [key]: picked }))
       setStaged((s) => {
         const next = new Set(s)
         if (next.delete(key)) return next
@@ -390,7 +396,6 @@ export function useMusicReview({
             )
               next.delete(other.key)
         }
-        const dup = dupGroups.find((g) => g.key === key)
         if (dup?.ids.some((id) => !(id in locations))) return s
         if (dup) {
           for (const other of dupGroups)
@@ -401,7 +406,7 @@ export function useMusicReview({
         return next
       })
     },
-    [choice, spelling, dupGroups, locations],
+    [choice, spelling, dupGroups, locations, staged],
   )
 
   const ignore = useCallback(
