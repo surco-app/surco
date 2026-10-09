@@ -903,12 +903,7 @@ function registerIpc(): void {
 
   const currentLibraryStatus = () => libraryStatus(getSettings(), existsSync)
 
-  ipcMain.handle('library:status', (): LibraryStatus => {
-    const off = { enabled: false, found: false }
-    return process.platform === 'darwin'
-      ? currentLibraryStatus()
-      : { rekordbox: off, engine: off, traktor: off }
-  })
+  ipcMain.handle('library:status', (): LibraryStatus => currentLibraryStatus())
 
   const traktorFlushDeps = (win: BrowserWindow | null) => ({
     // Same rule as rekordbox below: the toggle grants permission, the path only says
@@ -1069,7 +1064,7 @@ function registerIpc(): void {
 
   // Read only, for the duplicate detail: what each enabled library holds for each copy.
   ipcMain.handle('library:copyInfo', async (e, paths: string[]) => {
-    if (process.platform !== 'darwin' || paths.length === 0) return {}
+    if (paths.length === 0) return {}
     const win = BrowserWindow.fromWebContents(e.sender)
     return libraryCopyInfo(
       paths,
