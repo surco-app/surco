@@ -1455,6 +1455,24 @@ describe('with the list as source', () => {
     expect(result.current.inMusic('/m/c.aiff')).toBe(false)
   })
 
+  // The cards stop showing Music once a reload fails; the scope line must not still say it
+  // was asked.
+  it('says Music went unasked once a reload after applying fails', async () => {
+    listApi({
+      appleMusicFileEntries: vi
+        .fn()
+        .mockResolvedValueOnce({ consulted: true, entries: {} })
+        .mockRejectedValueOnce(new Error('ipc')),
+    })
+    const { result } = listHook(LARA)
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current.musicConsulted).toBe(true)
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(result.current.lastRun?.after).toBeNull()
+    expect(result.current.musicConsulted).toBe(false)
+  })
+
   it('locates each copy at its own path and takes the trashed copy out of the list', async () => {
     const api = listApi()
     const onRowsRemoved = vi.fn()

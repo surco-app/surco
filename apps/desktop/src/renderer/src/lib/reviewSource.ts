@@ -50,6 +50,8 @@ export interface ReviewSource {
   removeCopies: (removals: ReviewRemoval[], hooks: RemovalHooks) => Promise<ReviewRemovalRun>
   revertMusic: (outcome: ReviewOutcome, fix: ReviewFix) => Promise<unknown>
   inMusic?: (id: string) => boolean
+  // Whether the Music answer inMusic reads came from Music; undefined where there is none.
+  musicConsulted?: () => boolean | undefined
   facts?: (id: string) => TrackItem | undefined
   settle?: (updates: LibraryTagUpdate[], trashed: string[]) => void
 }

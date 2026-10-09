@@ -100,6 +100,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
         ? window.api.setMusicField(outcome.musicId, fix.field, fix.to, fix.from)
         : undefined,
     inMusic: (id) => music(id).length > 0,
+    musicConsulted: () => lookup?.consulted,
     facts: (id) => {
       const rows = deps.rows()
       if (snapshot?.rows !== rows) {

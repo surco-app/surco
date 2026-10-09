@@ -242,9 +242,14 @@ export function useMusicReview({
 
   const load = useCallback(async () => {
     window.api.libraryStatus().then(setLibraries, () => {})
-    const result = await source.load()
+    // A failed reload leaves the source's Music answer reset; the scope line follows it.
+    const consulted = (fallback?: boolean) => source.musicConsulted?.() ?? fallback
+    const result = await source.load().catch((error) => {
+      setLoaded((l) => ({ ...l, musicConsulted: consulted(l.musicConsulted) }))
+      throw error
+    })
     setEntries(result.entries)
-    setLoaded({ skipped: result.skipped, musicConsulted: result.musicConsulted })
+    setLoaded({ skipped: result.skipped, musicConsulted: consulted(result.musicConsulted) })
     return result.entries
   }, [source])
 
