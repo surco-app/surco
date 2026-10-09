@@ -24,7 +24,7 @@ export function EmptyDisc(): React.JSX.Element {
       data-testid="empty-disc"
       aria-hidden="true"
       viewBox="0 0 1024 1024"
-      className="empty-disc-in h-32 w-32"
+      className="empty-disc-in h-20 w-20"
     >
       <defs>
         <radialGradient id="empty-disc-face" cx="0.42" cy="0.36" r="0.85">

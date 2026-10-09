@@ -109,14 +109,17 @@
   },
   "empty": {
     "title": "Zieh deine Tracks hierher",
+    "lead": "Oder fang hier an.",
+    "bringGroup": "Tracks holen",
     "addTracks": "Tracks hinzufügen",
-    "subtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz und schickt sie an Apple Music oder Engine DJ.",
-    "subtitleNoMusic": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz und schickt sie an Engine DJ.",
-    "or": "oder",
+    "addTracksHint": "Deine Dateien konvertieren und taggen",
     "importApplePlaylist": "Aus Apple Music importieren",
-    "reviewHint": "Hat deine Bibliothek Tippfehler oder doppelte Titel?",
+    "importHint": "Die Tracks einer Playlist laden",
+    "libraryGroup": "Bibliothek aufräumen",
     "reviewMusic": "Metadaten in Apple Music prüfen",
-    "showDuplicates": "Duplikate anzeigen"
+    "reviewMusicHint": "Tippfehler, Großschreibung, unsichtbare Zeichen",
+    "showDuplicates": "Duplikate anzeigen",
+    "duplicatesHint": "Derselbe Track doppelt gespeichert"
   },
   "errors": {
     "unexpected": "Etwas ist schiefgelaufen: {{detail}}",

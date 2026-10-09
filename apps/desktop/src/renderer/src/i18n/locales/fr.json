@@ -109,14 +109,17 @@
   },
   "empty": {
     "title": "Dépose tes morceaux ici",
+    "lead": "Ou commence ici.",
+    "bringGroup": "Faire entrer des morceaux",
     "addTracks": "Ajouter des morceaux",
-    "subtitle": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, et les envoie dans Apple Music ou Engine DJ.",
-    "subtitleNoMusic": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, et les envoie dans Engine DJ.",
-    "or": "ou",
+    "addTracksHint": "Convertir et taguer tes fichiers",
     "importApplePlaylist": "Importer depuis Apple Music",
-    "reviewHint": "Votre bibliothèque a-t-elle des fautes ou des doublons ?",
+    "importHint": "Charger les morceaux d'une playlist",
+    "libraryGroup": "Ranger la bibliothèque",
     "reviewMusic": "Vérifier les métadonnées dans Apple Music",
-    "showDuplicates": "Afficher les doublons"
+    "reviewMusicHint": "Fautes, majuscules et caractères invisibles",
+    "showDuplicates": "Afficher les doublons",
+    "duplicatesHint": "Le même morceau enregistré deux fois"
   },
   "errors": {
     "unexpected": "Quelque chose a mal tourné : {{detail}}",

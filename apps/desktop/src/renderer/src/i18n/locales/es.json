@@ -109,14 +109,17 @@
   },
   "empty": {
     "title": "Suelta tus pistas aquí",
+    "lead": "O empieza por aquí.",
+    "bringGroup": "Traer pistas",
     "addTracks": "Añadir pistas",
-    "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y las manda a Apple Music o Engine DJ.",
-    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y las manda a Engine DJ.",
-    "or": "o",
+    "addTracksHint": "Convertir y etiquetar tus ficheros",
     "importApplePlaylist": "Importar de Apple Music",
-    "reviewHint": "¿Tu biblioteca tiene erratas o pistas repetidas?",
+    "importHint": "Cargar las pistas de una playlist",
+    "libraryGroup": "Ordenar la biblioteca",
     "reviewMusic": "Revisar metadatos en Apple Music",
-    "showDuplicates": "Mostrar duplicados"
+    "reviewMusicHint": "Erratas, mayúsculas y caracteres invisibles",
+    "showDuplicates": "Mostrar duplicados",
+    "duplicatesHint": "La misma pista guardada dos veces"
   },
   "errors": {
     "unexpected": "Algo ha fallado: {{detail}}",

@@ -109,14 +109,17 @@
   },
   "empty": {
     "title": "Arraste suas faixas para cá",
+    "lead": "Ou comece por aqui.",
+    "bringGroup": "Trazer faixas",
     "addTracks": "Adicionar faixas",
-    "subtitle": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e envia para o Apple Music ou Engine DJ.",
-    "subtitleNoMusic": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e envia para o Engine DJ.",
-    "or": "ou",
+    "addTracksHint": "Converter e etiquetar seus arquivos",
     "importApplePlaylist": "Importar do Apple Music",
-    "reviewHint": "Sua biblioteca tem erros de digitação ou faixas repetidas?",
+    "importHint": "Carregar as faixas de uma playlist",
+    "libraryGroup": "Organizar a biblioteca",
     "reviewMusic": "Revisar metadados no Apple Music",
-    "showDuplicates": "Mostrar duplicados"
+    "reviewMusicHint": "Erros, maiúsculas e caracteres invisíveis",
+    "showDuplicates": "Mostrar duplicados",
+    "duplicatesHint": "A mesma faixa salva duas vezes"
   },
   "errors": {
     "unexpected": "Algo deu errado: {{detail}}",

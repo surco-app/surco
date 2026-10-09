@@ -33,6 +33,7 @@ import type {
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
+import { EmptyActions } from './components/EmptyActions'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import {
@@ -2189,9 +2190,9 @@ export default function App(): React.JSX.Element {
                       <div
                         data-testid="empty-dropzone"
                         data-drop-over={dragging || undefined}
-                        className="empty-dropzone max-w-md rounded-2xl px-10 py-11"
+                        className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
                       >
-                        <div className="mb-5 flex justify-center">
+                        <div className="mb-4 flex justify-center">
                           <EmptyDisc />
                         </div>
                         <p
@@ -2201,78 +2202,22 @@ export default function App(): React.JSX.Element {
                           {tr('empty.title')}
                         </p>
                         <p
-                          className="empty-copy-in mt-1.5 text-sm text-pretty text-fg-dim"
+                          className="empty-copy-in mt-1 text-sm text-pretty text-fg-dim"
                           style={{ animationDelay: '0.16s' }}
                         >
-                          {tr(
-                            window.api.platform === 'darwin'
-                              ? 'empty.subtitle'
-                              : 'empty.subtitleNoMusic',
-                          )}
+                          {tr('empty.lead')}
                         </p>
-                        <div className="mt-6 flex items-center justify-center gap-3">
-                          {/* The one primary action on the screen. On macOS this same dialog takes
-                            folders as well as files, so a single button covers both. */}
-                          <button
-                            type="button"
-                            data-testid="add-files"
-                            onClick={onAdd}
-                            className="press empty-copy-in rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover"
-                            style={{ animationDelay: '0.22s' }}
-                          >
-                            {tr('empty.addTracks')}
-                          </button>
-                          {isMac && (
-                            // A quieter sibling rather than a rival: as a second bordered button it
-                            // weighed the same as adding files, and the screen had no answer to
-                            // "where do I start".
-                            <>
-                              <span
-                                className="empty-copy-in text-sm text-fg-dim"
-                                style={{ animationDelay: '0.28s' }}
-                              >
-                                {tr('empty.or')}
-                              </span>
-                              <button
-                                type="button"
-                                data-testid="empty-import-playlist"
-                                onClick={overlays.openApplePlaylist}
-                                className="empty-copy-in -ml-2 rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
-                                style={{ animationDelay: '0.28s' }}
-                              >
-                                {tr('empty.importApplePlaylist')}
-                              </button>
-                            </>
-                          )}
+                        <div className="empty-copy-in mt-5" style={{ animationDelay: '0.22s' }}>
+                          <EmptyActions
+                            onAdd={onAdd}
+                            addShortcut={hintFor('add')}
+                            onImportPlaylist={isMac ? overlays.openApplePlaylist : undefined}
+                            onReviewMusic={isMac ? () => setMusicReview('all') : undefined}
+                            onShowDuplicates={
+                              isMac ? () => setMusicReview('duplicates') : undefined
+                            }
+                          />
                         </div>
-                        {isMac && (
-                          <div
-                            data-testid="empty-review-hint"
-                            className="empty-copy-in mt-6 flex flex-col items-center gap-1 border-t border-line pt-4 text-xs text-fg-faint"
-                            style={{ animationDelay: '0.34s' }}
-                          >
-                            <span>{tr('empty.reviewHint')}</span>
-                            <span className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                data-testid="empty-music-review"
-                                onClick={() => setMusicReview('all')}
-                                className="rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
-                              >
-                                {tr('empty.reviewMusic')}
-                              </button>
-                              <span aria-hidden="true">·</span>
-                              <button
-                                type="button"
-                                data-testid="empty-music-duplicates"
-                                onClick={() => setMusicReview('duplicates')}
-                                className="rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
-                              >
-                                {tr('empty.showDuplicates')}
-                              </button>
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}

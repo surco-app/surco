@@ -109,14 +109,17 @@
   },
   "empty": {
     "title": "Drop your tracks here",
+    "lead": "Or start here.",
+    "bringGroup": "Bring in tracks",
     "addTracks": "Add tracks",
-    "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and sends them to Apple Music or Engine DJ.",
-    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and sends them to Engine DJ.",
-    "or": "or",
+    "addTracksHint": "Convert and tag your files",
     "importApplePlaylist": "Import from Apple Music",
-    "reviewHint": "Does your library have typos or repeated tracks?",
+    "importHint": "Load the tracks from a playlist",
+    "libraryGroup": "Tidy the library",
     "reviewMusic": "Review metadata in Apple Music",
-    "showDuplicates": "Show duplicates"
+    "reviewMusicHint": "Typos, capitals and invisible characters",
+    "showDuplicates": "Show duplicates",
+    "duplicatesHint": "The same track saved twice"
   },
   "errors": {
     "unexpected": "Something went wrong: {{detail}}",

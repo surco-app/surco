@@ -3728,30 +3728,79 @@ describe('App empty screen offers a single way in', () => {
     expect(add.closest('[data-testid="sidebar"]')).toBeNull()
   })
 
-  // The Apple Music route stays reachable, but as a quieter sibling: two buttons of equal
-  // weight is what left the old screen with no answer to "where do I start".
-  it('keeps the Apple Music route as the secondary option beside it', async () => {
-    vi.resetModules()
-    setApi({ platform: 'darwin' })
-    await renderApp()
-
-    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
-    expect(screen.getByTestId('empty-import-playlist')).toBeInTheDocument()
-  })
-
-  // The empty screen is where someone with a big Music library lands first, but the line
-  // stays quiet so it never competes with adding files.
-  it('offers the Music review and the duplicates view on macOS', async () => {
+  // One list, read top to bottom like ⌘K: bringing tracks in leads, tidying the library
+  // follows, so the first thing a new user meets is the way in.
+  it('lists bringing tracks in, then tidying the library, on macOS', async () => {
     vi.resetModules()
     reviewApi()
     await renderApp()
 
-    expect(await screen.findByTestId('empty-review-hint')).toBeInTheDocument()
-    expect(screen.getByTestId('empty-music-review')).toBeInTheDocument()
-    expect(screen.getByTestId('empty-music-duplicates')).toBeInTheDocument()
+    const bring = await screen.findByTestId('empty-group-bring')
+    const library = screen.getByTestId('empty-group-library')
+    expect(bring).toHaveRole('group')
+    expect(bring).toHaveAccessibleName('Bring in tracks')
+    expect(library).toHaveRole('group')
+    expect(library).toHaveAccessibleName('Tidy the library')
+    expect(
+      within(screen.getByTestId('empty-actions'))
+        .getAllByRole('button')
+        .map((b) => b.dataset.testid),
+    ).toEqual([
+      'add-files',
+      'empty-import-playlist',
+      'empty-music-review',
+      'empty-music-duplicates',
+    ])
   })
 
-  it('opens the review on all groups from its link', async () => {
+  // A keycap teaches the key that really opens the dialog; one on a row with no binding
+  // would teach a key that does nothing.
+  it('shows the real shortcut on adding tracks and none on rows without one', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+
+    expect(
+      within(await screen.findByTestId('add-files')).getByTestId('empty-action-shortcut'),
+    ).toHaveTextContent('⌘O')
+    for (const id of ['empty-import-playlist', 'empty-music-review', 'empty-music-duplicates']) {
+      expect(within(screen.getByTestId(id)).queryByTestId('empty-action-shortcut')).toBeNull()
+    }
+  })
+
+  // Apple Music and its review only exist on macOS; off it the second group would offer
+  // doors that open onto nothing.
+  it('drops the Apple Music rows and the library group off macOS', async () => {
+    vi.resetModules()
+    reviewApi({ platform: 'win32' })
+    await renderApp()
+
+    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
+    expect(screen.queryByTestId('empty-import-playlist')).toBeNull()
+    expect(screen.queryByTestId('empty-group-library')).toBeNull()
+    expect(screen.queryByTestId('empty-music-review')).toBeNull()
+    expect(screen.queryByTestId('empty-music-duplicates')).toBeNull()
+  })
+
+  it('opens the file dialog from adding tracks', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(window.api.pickFiles).toHaveBeenCalled())
+  })
+
+  it('opens the playlist picker from importing', async () => {
+    vi.resetModules()
+    reviewApi({ loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]) })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('empty-import-playlist'))
+    expect(await screen.findByTestId('apple-playlist-modal')).toBeInTheDocument()
+  })
+
+  it('opens the review on all groups from its row', async () => {
     vi.resetModules()
     reviewApi()
     await renderApp()
@@ -3761,7 +3810,7 @@ describe('App empty screen offers a single way in', () => {
     expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('All')
   })
 
-  it('opens the review on duplicates from its link', async () => {
+  it('opens the review on duplicates from its row', async () => {
     vi.resetModules()
     reviewApi()
     await renderApp()
@@ -3771,17 +3820,37 @@ describe('App empty screen offers a single way in', () => {
     expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('Duplicates')
   })
 
-  // The review reads Apple Music, so off macOS the commands do not exist and neither
-  // should the invitation.
-  it('is absent off macOS, like the commands it mirrors', async () => {
+  // Native buttons in the tab order are what make Tab reach each row and Enter or Space
+  // run it; a clickable div would leave the keyboard user facing a list they cannot use.
+  it('makes every row a native button the keyboard can reach', async () => {
     vi.resetModules()
-    reviewApi({ platform: 'win32' })
+    reviewApi()
     await renderApp()
 
-    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
-    expect(screen.queryByTestId('empty-review-hint')).toBeNull()
-    expect(screen.queryByTestId('empty-music-review')).toBeNull()
-    expect(screen.queryByTestId('empty-music-duplicates')).toBeNull()
+    const rows = within(await screen.findByTestId('empty-actions')).getAllByRole('button')
+    for (const row of rows) {
+      expect(row.tagName).toBe('BUTTON')
+      expect(row).toHaveAttribute('type', 'button')
+      expect(row).not.toHaveAttribute('tabindex', '-1')
+      act(() => row.focus())
+      expect(row).toHaveFocus()
+    }
+  })
+
+  // The list fills the panel, but the panel is still where people aim a folder: a drop
+  // anywhere on it has to bring the tracks in.
+  it('adds the files dropped on the empty panel', async () => {
+    vi.resetModules()
+    reviewApi({ getPathForFile: vi.fn(() => '/music/dropped.wav') })
+    await renderApp()
+
+    const zone = await screen.findByTestId('empty-dropzone')
+    const file = new File([''], 'dropped.wav')
+    fireEvent.drop(within(zone).getByTestId('empty-actions'), {
+      dataTransfer: { files: [file], types: ['Files'], getData: () => '' },
+    })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/dropped.wav'])
   })
 
   // The panel is where the tracks visibly land, so it has to answer the drag the copy
