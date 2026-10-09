@@ -18,7 +18,8 @@ vi.mock('electron-log/main', () => ({
   default: { transports: { file: { getFile: () => ({ path: '/logs/main.log' }) } } },
 }))
 
-vi.mock('./trashSupport', () => ({ volumeKeepsTrash: () => true }))
+const keepsTrash = vi.fn((_path: string) => true)
+vi.mock('./trashSupport', () => ({ volumeKeepsTrash: (path: string) => keepsTrash(path) }))
 
 import { ipcMain } from 'electron'
 import type { MediaAccess } from './mediaAccess'
@@ -42,6 +43,7 @@ function fakeMediaAccess(allowed: string[]): MediaAccess {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  keepsTrash.mockReturnValue(true)
 })
 
 // shell:open/trash/reveal take a renderer-supplied path straight into an OS call —
@@ -79,5 +81,23 @@ describe('registerShellIpc — path allowlist', () => {
     expect(openPath).toHaveBeenCalledWith('/music/allowed.wav')
     expect(trashItem).toHaveBeenCalledWith('/music/allowed.wav')
     expect(showItemInFolder).toHaveBeenCalledWith('/music/allowed.wav')
+  })
+})
+
+// The context-menu delete is the one the user confirmed by name. Under "Nunca" on a disk
+// with no Trash nothing keeps a copy, and Settings already says so.
+describe('registerShellIpc — delete under the backup setting', () => {
+  it('deletes a confirmed file on a disk with no Trash when the setting is never', async () => {
+    keepsTrash.mockReturnValue(false)
+    registerShellIpc(fakeMediaAccess(['/Volumes/Public/a.mp3']), () => 'never')
+    await handlerFor('shell:trash')({}, '/Volumes/Public/a.mp3')
+    expect(trashItem).toHaveBeenCalledWith('/Volumes/Public/a.mp3')
+  })
+
+  it('refuses it under a setting that promised a copy Surco could not keep', async () => {
+    keepsTrash.mockReturnValue(false)
+    registerShellIpc(fakeMediaAccess(['/Volumes/Public/a.mp3']), () => 'audioChanges')
+    await expect(handlerFor('shell:trash')({}, '/Volumes/Public/a.mp3')).rejects.toThrow()
+    expect(trashItem).not.toHaveBeenCalled()
   })
 })

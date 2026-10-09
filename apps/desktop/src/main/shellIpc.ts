@@ -1,5 +1,6 @@
 import { clipboard, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
+import type { BackupPolicy } from '../shared/backupPolicy'
 import { errorWithKey } from '../shared/errorKeys'
 import type { MediaAccess } from './mediaAccess'
 import { trashRecoverably } from './recoverableTrash'
@@ -12,7 +13,7 @@ import { volumeKeepsTrash } from './trashSupport'
 // app actually knows about. mediaAccess already tracks every path the app has
 // handed the renderer as a real track or conversion output (see mediaAccess.ts),
 // so it doubles as the allowlist here.
-export function registerShellIpc(mediaAccess: MediaAccess): void {
+export function registerShellIpc(mediaAccess: MediaAccess, policy?: () => BackupPolicy): void {
   ipcMain.handle('shell:reveal', (_e, path: string) => {
     if (!mediaAccess.isAllowed(path)) return
     return shell.showItemInFolder(path)
@@ -21,10 +22,11 @@ export function registerShellIpc(mediaAccess: MediaAccess): void {
     if (!mediaAccess.isAllowed(path)) return errorWithKey('pathNotAllowed').message
     return shell.openPath(path)
   })
-  // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.
+  // To the OS Trash / Recycle Bin, or Surco's backups on a disk with none. Only a "Nunca"
+  // setting lets this delete outright there, as Settings warns.
   ipcMain.handle('shell:trash', async (_e, path: string) => {
     if (!mediaAccess.isAllowed(path)) throw errorWithKey('pathNotAllowed')
-    await trashRecoverably(path)
+    await trashRecoverably(path, { userConfirmed: true, policy: policy?.() })
   })
   // Whether a delete of this file can be described as recoverable. Asked of the
   // filesystem, not guessed from the path: /Volumes/Macintosh HD is the local disk while

@@ -1548,7 +1548,7 @@ function registerIpc(): void {
   // Lets the cover well show its paste affordance only when there's an image to paste.
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
-  registerShellIpc(mediaAccess)
+  registerShellIpc(mediaAccess, () => getSettings().backupPolicy)
   registerTrashIpc(surcoTrash, mediaAccess)
   registerFeedbackIpc()
 
