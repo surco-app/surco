@@ -789,6 +789,8 @@ export interface DuplicateReplaceOutcome {
   keptForMusic?: boolean
   // Nothing held the file any more and the Trash still refused it.
   trashFailed?: boolean
+  // Trashed into Surco's backups, on a disk with no Trash of its own.
+  inBackups?: true
   // Left alone: the list review could not rule out that the kept audio lives in this file.
   keptShared?: true
 }

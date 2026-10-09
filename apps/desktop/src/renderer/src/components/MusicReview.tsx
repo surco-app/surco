@@ -232,6 +232,8 @@ function Done({
   const undone = run.undoFailures !== undefined
   const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
   const trashed = run.replaced.filter((r) => r.fileTrashed).length
+  const inBackups = run.replaced.filter((r) => r.fileTrashed && r.inBackups).length
+  const inTrash = trashed - inBackups
   // A list copy is removed when its file went to the Trash: only then does it leave the list.
   const removed = list ? trashed : run.removed.filter((r) => r.outcome === 'removed').length
   const keptBy = (steps: ListMusicStep[]) =>
@@ -421,19 +423,29 @@ function Done({
             ]
           : []),
         ...LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
-        ...(trashed || keptForLibrary || keptForMusic || heldForEntry
+        ...(inTrash || keptForLibrary || keptForMusic || heldForEntry
           ? [
               {
                 id: 'trash',
                 label: t('musicReview.done.where.trash'),
                 state: 'ok',
                 detail: joined([
-                  trashed > 0 && t('musicReview.done.where.trashed', { count: trashed }),
+                  inTrash > 0 && t('musicReview.done.where.trashed', { count: inTrash }),
                   keptForLibrary > 0 && t('musicReview.done.where.kept', { count: keptForLibrary }),
                   keptForMusic > 0 && t('listReview.done.keptForMusic', { count: keptForMusic }),
                   heldForEntry > 0 &&
                     t('listReview.done.where.heldForEntry', { count: heldForEntry }),
                 ]),
+              } as const,
+            ]
+          : []),
+        ...(inBackups
+          ? [
+              {
+                id: 'backups',
+                label: t('trash.title'),
+                state: 'ok',
+                detail: t('musicReview.done.where.trashed', { count: inBackups }),
               } as const,
             ]
           : []),

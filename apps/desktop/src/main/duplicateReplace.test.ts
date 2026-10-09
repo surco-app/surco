@@ -409,6 +409,16 @@ describe('replaceDuplicates in Activity', () => {
     expect(end(events)).toMatchObject({ detailKey: 'activity.reviewDuplicateFileSurco' })
   })
 
+  // The done sheet names the place the file went: the Trash, or Surco's backups.
+  it('marks a file kept in Surco’s backups apart from one in the Trash', async () => {
+    const { d } = logged({ trash: vi.fn().mockResolvedValue('surco') })
+    const [result] = await replaceDuplicates([PAIR], d)
+    expect(result).toMatchObject({ fileTrashed: true, inBackups: true })
+    const { d: os } = logged({ trash: vi.fn().mockResolvedValue('trash') })
+    const [trashed] = await replaceDuplicates([PAIR], os)
+    expect(trashed.inBackups).toBeUndefined()
+  })
+
   it.each([
     ['shared with the kept copy', [SHARED], {}, 'done', 'activity.reviewDuplicateFileShared'],
     [

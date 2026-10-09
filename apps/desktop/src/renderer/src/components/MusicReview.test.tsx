@@ -935,6 +935,40 @@ describe('MusicReview', () => {
       expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('Trash')
     })
 
+    // On a disk with no Trash the file went to Surco's backups; calling that the Trash sent
+    // the user looking in the wrong place.
+    it('counts the files kept in Copias de seguridad apart from the Trash', () => {
+      render(
+        <Panes
+          review={done(
+            run({
+              replaced: [
+                { from: '/a', fileTrashed: true, keptForLibrary: false },
+                { from: '/b', fileTrashed: true, keptForLibrary: false, inBackups: true },
+                { from: '/c', fileTrashed: true, keptForLibrary: false, inBackups: true },
+              ],
+            }),
+          )}
+        />,
+      )
+      expect(detailOf('trash')).toBe('1 file')
+      expect(detailOf('backups')).toBe('2 files')
+    })
+
+    it('leaves the Trash row out when every file went to the backups', () => {
+      render(
+        <Panes
+          review={done(
+            run({
+              replaced: [{ from: '/b', fileTrashed: true, keptForLibrary: false, inBackups: true }],
+            }),
+          )}
+        />,
+      )
+      expect(screen.queryByTestId('music-review-done-dest-trash')).toBeNull()
+      expect(detailOf('backups')).toBe('1 file')
+    })
+
     it('says which collections still hold a removed copy out of the playlists', () => {
       render(
         <Panes

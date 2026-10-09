@@ -194,6 +194,7 @@ export function replaceDuplicates(
       result.keptForLibrary = fate === 'unsettled' || fate === 'used'
       if (fate === 'music') result.keptForMusic = true
       result.fileTrashed = fate === 'trash' || fate === 'surco'
+      if (fate === 'surco') result.inBackups = true
       if (fate === 'failed') result.trashFailed = true
     }
     return results
