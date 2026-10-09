@@ -3824,6 +3824,25 @@ describe('App list review', () => {
     expect(window.api.libraryStatus).toHaveBeenCalledTimes(1)
   })
 
+  // The search, the order and the open sheet belong to the review they were set in; the
+  // other review starting with them would hide its groups behind a filter nobody typed.
+  it('starts the list review clean when it replaces the Music review', async () => {
+    vi.resetModules()
+    listApi({
+      platform: 'darwin',
+      loadMusicReview: vi.fn().mockResolvedValue([]),
+      appleMusicFileEntries: vi.fn().mockResolvedValue({ consulted: false, entries: {} }),
+    })
+    await renderApp()
+    await addThree()
+    runMenu('music-review')
+    await screen.findByTestId('music-review-empty')
+    fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'Lara' } })
+    runMenu('list-review')
+    await screen.findByTestId('list-review-scope')
+    expect(screen.getByTestId('music-review-search')).toHaveValue('')
+  })
+
   it('saves what is ignored in the list apart from Music', async () => {
     vi.resetModules()
     listApi()

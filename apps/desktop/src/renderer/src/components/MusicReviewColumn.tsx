@@ -81,18 +81,31 @@ function Owner({
   return null
 }
 
-function Gate({ review, children }: { review: Review | null; children: React.ReactNode }) {
+function Gate({
+  review,
+  kind,
+  children,
+}: {
+  review: Review | null
+  kind: string
+  children: React.ReactNode
+}) {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<ReviewSort>('default')
   const [confirming, setConfirming] = useState(false)
   const { selectedKey, select } = useSelection(review, search, sort)
-  const closed = review === null
-  useEffect(() => {
-    if (!closed) return
-    setSearch('')
-    setSort('default')
-    setConfirming(false)
-  }, [closed])
+  // Switching to the other review swaps the Owner in one commit, so the review is never
+  // null in between: the kind has to start the reset too.
+  const scope = review === null ? null : kind
+  const [seen, setSeen] = useState(scope)
+  if (scope !== seen) {
+    setSeen(scope)
+    if (scope === null || seen !== null) {
+      setSearch('')
+      setSort('default')
+      setConfirming(false)
+    }
+  }
   return (
     <ReviewContext.Provider
       value={
@@ -123,10 +136,13 @@ export function MusicReviewProvider({
   ...options
 }: Options & { open: boolean; children: React.ReactNode }) {
   const [review, setReview] = useState<Review | null>(null)
+  const kind = options.source?.kind ?? 'music'
   return (
     <>
-      {open && <Owner key={options.source?.kind ?? 'music'} {...options} onChange={setReview} />}
-      <Gate review={open ? review : null}>{children}</Gate>
+      {open && <Owner key={kind} {...options} onChange={setReview} />}
+      <Gate review={open ? review : null} kind={kind}>
+        {children}
+      </Gate>
     </>
   )
 }
