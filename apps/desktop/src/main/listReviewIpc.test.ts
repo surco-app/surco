@@ -184,6 +184,60 @@ describe('listreview:removeDuplicates', () => {
     expect(d.trash).not.toHaveBeenCalled()
   })
 
+  // Two mounts of one share, or a hard link, resolve to different paths for the same audio.
+  describe('the same file under paths realpath tells apart', () => {
+    const id = (over: Record<string, unknown>) => ({
+      dev: 1,
+      ino: 1,
+      size: 100,
+      mtimeMs: 5,
+      remote: false,
+      ...over,
+    })
+    const remove = async (d: ReturnType<typeof register>) => {
+      await handlerFor('listreview:removeDuplicates')({ sender }, [
+        removal('/m/a.aiff', '/m/b.aiff'),
+      ])
+      return d
+    }
+
+    it('leaves a copy alone when its device and inode are the kept copy’s', async () => {
+      const d = await remove(register({ identity: vi.fn(async () => id({})) }))
+      expect(d.trash).not.toHaveBeenCalled()
+    })
+
+    it('leaves a network copy alone when its size and date match the kept copy’s', async () => {
+      const d = await remove(
+        register({
+          identity: vi.fn(async (p: string) =>
+            id({ remote: true, dev: p === '/m/a.aiff' ? 1 : 2, ino: p === '/m/a.aiff' ? 7 : 9 }),
+          ),
+        }),
+      )
+      expect(d.trash).not.toHaveBeenCalled()
+    })
+
+    it('still removes a local copy that only shares size and date with the kept one', async () => {
+      const d = await remove(
+        register({ identity: vi.fn(async (p: string) => id({ ino: p === '/m/a.aiff' ? 7 : 9 })) }),
+      )
+      expect(d.trash).toHaveBeenCalledWith('/m/a.aiff')
+    })
+
+    it('leaves a copy alone when it is another pair’s kept copy by inode', async () => {
+      const d = register({
+        identity: vi.fn(async (p: string) =>
+          id({ ino: p === '/m/a.aiff' || p === '/m/d.aiff' ? 7 : p.length }),
+        ),
+      })
+      await handlerFor('listreview:removeDuplicates')({ sender }, [
+        removal('/m/a.aiff', '/m/b.aiff'),
+        removal('/m/c.aiff', '/m/d.aiff'),
+      ])
+      expect(d.trash).not.toHaveBeenCalledWith('/m/a.aiff')
+    })
+  })
+
   it('fails closed when a path cannot be resolved', async () => {
     const d = register({ realpath: vi.fn(async (p: string) => (p === '/m/b.aiff' ? null : p)) })
     await handlerFor('listreview:removeDuplicates')({ sender }, [removal('/m/a.aiff', '/m/b.aiff')])

@@ -6,9 +6,20 @@ import { applyListFixes, type ListApplyDeps } from './listReviewApply'
 import { type ListMusicDeps, removeListCopyFromMusic } from './musicDuplicates'
 import type { MusicReviewLog } from './musicReviewLog'
 
+export interface FileIdentity {
+  dev: number
+  ino: number
+  size: number
+  mtimeMs: number
+  // On a volume with no Trash of its own (a network share), where two mounts of one share
+  // give one file two devices.
+  remote: boolean
+}
+
 export interface ListRemovalDeps {
   replace: Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'>
   realpath: (path: string) => Promise<string | null>
+  identity?: (path: string) => Promise<FileIdentity | null>
   trash: (path: string) => Promise<'trash' | 'surco'>
   // Undefined off macOS.
   music?: Omit<ListMusicDeps, 'heldElsewhere'> & {
@@ -70,6 +81,16 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
       ),
     )
     const kept = new Set(removals.map((r) => real.get(r.to)))
+    const ids = new Map(
+      await Promise.all(
+        paths.map(async (p) => [p, (await d.identity?.(p).catch(() => null)) ?? null] as const),
+      ),
+    )
+    const keptIds = removals.flatMap((r) => ids.get(r.to) ?? [])
+    const sharesKeptAudio = (path: string) => {
+      const a = ids.get(path)
+      return !!a && keptIds.some((b) => sameAudio(a, b))
+    }
     const removedTimes = new Map<string | null | undefined, number>()
     for (const r of removals) {
       const key = real.get(r.from)
@@ -88,6 +109,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
           !realFrom ||
           !real.get(to) ||
           kept.has(realFrom) ||
+          sharesKeptAudio(from) ||
           (removedTimes.get(realFrom) ?? 0) > 1,
       }
       byPair.set(pair, removal)
@@ -181,6 +203,14 @@ function musicEnding(music: ListMusicOutcome) {
     ...MUSIC_ENDING[music.step],
     ...(ONLY_CHECKED.has(music.step) && { labelKey: 'activity.reviewDuplicateMusicChecked' }),
   }
+}
+
+// realpath cannot see a hard link or a share mounted twice. A network share may hand out
+// new device numbers per mount, so there a size and date match counts too: a false match
+// only keeps a file.
+function sameAudio(a: FileIdentity, b: FileIdentity): boolean {
+  if (a.dev === b.dev && a.ino === b.ino) return true
+  return a.remote && b.remote && a.size === b.size && a.mtimeMs === b.mtimeMs
 }
 
 // Wider than the file system's own rule on purpose: a false match only keeps a file.

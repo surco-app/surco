@@ -153,6 +153,7 @@ import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { registerTrashIpc } from './trashIpc'
+import { volumeKeepsTrash } from './trashSupport'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
@@ -1195,6 +1196,17 @@ function registerIpc(): void {
     removal: (sender) => ({
       replace: duplicateLibraryDeps(BrowserWindow.fromWebContents(sender), sender),
       realpath: (path) => realpath(path).catch(() => null),
+      identity: (path) =>
+        stat(path).then(
+          (s) => ({
+            dev: s.dev,
+            ino: s.ino,
+            size: s.size,
+            mtimeMs: s.mtimeMs,
+            remote: !volumeKeepsTrash(path),
+          }),
+          () => null,
+        ),
       trash: (path) => trashRecoverably(path),
       ...(process.platform === 'darwin' && {
         music: {
