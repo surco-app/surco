@@ -497,6 +497,19 @@ describe('listreview:removeDuplicates in Activity', () => {
     expect(new Set(events.map((e) => e.group)).size).toBe(1)
   })
 
+  // A second try at the same copy is a new run: folded under the first one's row, a
+  // success sat under the warning the first try left.
+  it('gives each removal run of the same copy its own row', async () => {
+    const { events } = register()
+    const remove = () =>
+      handlerFor('listreview:removeDuplicates')({ sender }, [
+        { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak', music: 'ambiguous' },
+      ])
+    await remove()
+    await remove()
+    expect(new Set(events.map((e) => e.group)).size).toBe(2)
+  })
+
   it('says a copy Music never had was not in Music', async () => {
     const { events } = register()
     await handlerFor('listreview:removeDuplicates')({ sender }, [

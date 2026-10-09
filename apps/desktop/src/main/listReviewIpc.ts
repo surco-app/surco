@@ -27,6 +27,7 @@ export interface ListReviewIpcDeps {
 // Music half of each step is left out where there is no Music.
 export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
   const running = new Set<{ cancelled: boolean }>()
+  let removalRuns = 0
   ipcMain.handle('listreview:applyFixes', async (e, req: ListFixRequest) => {
     const run = { cancelled: false }
     running.add(run)
@@ -109,9 +110,14 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
         .some((pid) => !except.includes(pid))
     }
     const log = deps.log
+    // Keyed by the run too: a second try at the same copy gets its own row.
+    const removalRun = ++removalRuns
     if (log)
       for (const r of removals)
-        log.reviewLog.rememberCopy(r.from, { group: `list-duplicate-${r.from}`, label: r.label })
+        log.reviewLog.rememberCopy(r.from, {
+          group: `list-duplicate-${removalRun}-${r.from}`,
+          label: r.label,
+        })
     const outcomes = await replaceDuplicates(pairs, {
       ...d.replace,
       trash: d.trash,
