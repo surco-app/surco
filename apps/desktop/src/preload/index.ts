@@ -10,6 +10,7 @@ import type {
   DockIconFrames,
   KeyResult,
   ListFixRequest,
+  ListRemoval,
   LoudnessResult,
   MusicFieldFix,
   MusicFileLookup,
@@ -140,6 +141,8 @@ const api: Api = {
     ipcRenderer.on('listreview:fixProgress', listener)
     return () => ipcRenderer.removeListener('listreview:fixProgress', listener)
   },
+  removeListDuplicates: (removals: ListRemoval[]) =>
+    ipcRenderer.invoke('listreview:removeDuplicates', removals),
   loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
     ipcRenderer.invoke('applemusic:libraryCached'),
   loadAppleMusicPlaylists: (): Promise<AppleMusicPlaylist[]> =>

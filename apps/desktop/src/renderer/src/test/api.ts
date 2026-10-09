@@ -172,6 +172,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     applyListFixes: async () => [],
     cancelListFixes: async () => {},
     onListFixProgress: unsubscribe,
+    removeListDuplicates: async () => [],
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
     loadAppleMusicPlaylistTracks: async () => ({

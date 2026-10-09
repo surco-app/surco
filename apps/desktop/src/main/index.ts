@@ -7,7 +7,17 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { access, copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import {
+  access,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
@@ -56,6 +66,7 @@ import {
   appleMusicLimiter,
   deleteFromAppleMusic,
   setAppleMusicField,
+  transferPlaylists,
   updateInAppleMusic,
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
@@ -1184,6 +1195,22 @@ function registerIpc(): void {
           appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to, location)),
       }),
     },
+    isAllowed: (path) => mediaAccess.isAllowed(path),
+    removal: (sender) => ({
+      replace: duplicateLibraryDeps(BrowserWindow.fromWebContents(sender), sender),
+      realpath: (path) => realpath(path).catch(() => null),
+      trash: (path) => trashRecoverably(path),
+      ...(process.platform === 'darwin' && {
+        music: {
+          transferPlaylists: (fromPid, toPid, label, keepLabel, locations) =>
+            appleMusicLimiter.run(() =>
+              transferPlaylists(fromPid, toPid, label, keepLabel, locations),
+            ),
+          deleteEntry: (pid, label, location) =>
+            appleMusicLimiter.run(() => deleteFromAppleMusic(pid, label, location)),
+        },
+      }),
+    }),
   })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream

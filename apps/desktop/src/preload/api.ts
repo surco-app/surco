@@ -25,6 +25,7 @@ import type {
   LibraryTagUpdate,
   LifetimeStats,
   ListFixRequest,
+  ListRemoval,
   LoudnessResult,
   MetaRead,
   MusicFieldFix,
@@ -162,6 +163,9 @@ export interface Api {
   applyListFixes: (req: ListFixRequest) => Promise<ReviewOutcome[]>
   cancelListFixes: () => Promise<void>
   onListFixProgress: (cb: (p: MusicFixProgress) => void) => () => void
+  // Removes duplicate copies from the list: the DJ libraries, then Apple Music on macOS, then
+  // a recoverable Trash. A file anything still holds stays on disk.
+  removeListDuplicates: (removals: ListRemoval[]) => Promise<DuplicateReplaceOutcome[]>
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
   // macOS, where the renderer never offers the import.
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>
