@@ -1344,7 +1344,6 @@
     "cleanUpOriginal": "Original: “{{name}}”",
     "cleanUpSuperseded": "Arquivo substituído: “{{name}}”",
     "cleanUpMusicCopy": "Cópia antiga no Apple Music: “{{copy}}” (sai da biblioteca)",
-    "trashRemoteWarning": "Os arquivos estão em um volume de rede, que pode não ter lixeira: a exclusão pode ser definitiva.",
     "convertInPlaceTitle": "Sobrescrever os arquivos originais?",
     "convertInPlaceMessage_one": "Sobrescrever o original está ativado: isso reescreve o arquivo de origem no lugar. O original é substituído e não pode ser recuperado.",
     "convertInPlaceMessage_other": "Sobrescrever o original está ativado: isso reescreve {{count}} arquivos de origem no lugar. Os originais são substituídos e não podem ser recuperados.",
@@ -1366,7 +1365,11 @@
     "trashTitleMixed_other": "Mover {{count}} arquivos para a Lixeira ou Cópias de segurança?",
     "trashMessageMixed_one": "Isso remove “{{name}}” da lista. Você pode restaurá-lo da Lixeira ou de Cópias de segurança.",
     "trashMessageMixed_other": "Isso remove {{count}} arquivos da lista. Os que estão em um disco sem lixeira são guardados em Cópias de segurança e o resto vai para a Lixeira. Você pode restaurá-los de lá.",
-    "trashConfirmMixed": "Mover"
+    "trashConfirmMixed": "Mover",
+    "cleanUpMessageBackups_one": "Seu arquivo convertido fica onde está. O item abaixo vai para Cópias de segurança porque o disco dele não tem lixeira. Você pode restaurá-lo de lá.",
+    "cleanUpMessageBackups_other": "Seu arquivo convertido fica onde está. Os itens abaixo vão para Cópias de segurança porque o disco deles não tem lixeira. Você pode restaurar tudo de lá.",
+    "cleanUpMessageMixed_one": "Seu arquivo convertido fica onde está. O item abaixo vai para a Lixeira ou, se o disco dele não tiver, para Cópias de segurança. Você pode restaurá-lo de lá.",
+    "cleanUpMessageMixed_other": "Seu arquivo convertido fica onde está. O que está em um disco sem lixeira vai para Cópias de segurança e o resto para a Lixeira. Você pode restaurar tudo de lá."
   },
   "activity": {
     "title": "Atividade",

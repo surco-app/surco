@@ -1344,7 +1344,6 @@
     "cleanUpOriginal": "Original : « {{name}} »",
     "cleanUpSuperseded": "Fichier remplacé : « {{name}} »",
     "cleanUpMusicCopy": "Ancienne copie dans Apple Music : « {{copy}} » (retirée de la bibliothèque)",
-    "trashRemoteWarning": "Les fichiers se trouvent sur un volume réseau, qui peut ne pas avoir de corbeille : la suppression peut être définitive.",
     "convertInPlaceTitle": "Écraser les fichiers originaux ?",
     "convertInPlaceMessage_one": "Écraser l'original est activé : le fichier source est réécrit sur place. L'original est remplacé et irrécupérable.",
     "convertInPlaceMessage_other": "Écraser l'original est activé : {{count}} fichiers source sont réécrits sur place. Les originaux sont remplacés et irrécupérables.",
@@ -1366,7 +1365,11 @@
     "trashTitleMixed_other": "Déplacer {{count}} fichiers vers la corbeille ou les copies de sauvegarde ?",
     "trashMessageMixed_one": "Retire « {{name}} » de la liste. Tu peux le restaurer depuis la corbeille ou les copies de sauvegarde.",
     "trashMessageMixed_other": "Retire {{count}} fichiers de la liste. Ceux d'un disque sans corbeille sont gardés dans les copies de sauvegarde et le reste va à la corbeille. Tu peux les restaurer depuis là.",
-    "trashConfirmMixed": "Déplacer"
+    "trashConfirmMixed": "Déplacer",
+    "cleanUpMessageBackups_one": "Ton fichier converti reste où il est. L'élément ci-dessous va dans les copies de sauvegarde car son disque n'a pas de corbeille. Tu peux le restaurer depuis là.",
+    "cleanUpMessageBackups_other": "Ton fichier converti reste où il est. Les éléments ci-dessous vont dans les copies de sauvegarde car leur disque n'a pas de corbeille. Tu peux tout restaurer depuis là.",
+    "cleanUpMessageMixed_one": "Ton fichier converti reste où il est. L'élément ci-dessous va à la corbeille, ou dans les copies de sauvegarde si son disque n'en a pas. Tu peux le restaurer depuis là.",
+    "cleanUpMessageMixed_other": "Ton fichier converti reste où il est. Ce qui est sur un disque sans corbeille va dans les copies de sauvegarde et le reste à la corbeille. Tu peux tout restaurer depuis là."
   },
   "activity": {
     "title": "Activité",

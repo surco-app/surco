@@ -1344,7 +1344,6 @@
     "cleanUpOriginal": "Original: „{{name}}“",
     "cleanUpSuperseded": "Ersetzte Datei: „{{name}}“",
     "cleanUpMusicCopy": "Alte Kopie in Apple Music: „{{copy}}“ (wird aus der Mediathek entfernt)",
-    "trashRemoteWarning": "Die Dateien liegen auf einem Netzlaufwerk, das möglicherweise keinen Papierkorb hat: Das Löschen kann endgültig sein.",
     "convertInPlaceTitle": "Originaldateien überschreiben?",
     "convertInPlaceMessage_one": "„Original überschreiben“ ist aktiv: Die Quelldatei wird direkt überschrieben. Das Original wird ersetzt und ist nicht wiederherstellbar.",
     "convertInPlaceMessage_other": "„Original überschreiben“ ist aktiv: {{count}} Quelldateien werden direkt überschrieben. Die Originale werden ersetzt und sind nicht wiederherstellbar.",
@@ -1366,7 +1365,11 @@
     "trashTitleMixed_other": "{{count}} Dateien in den Papierkorb oder die Sicherungskopien verschieben?",
     "trashMessageMixed_one": "Entfernt „{{name}}“ aus der Liste. Du kannst die Datei aus dem Papierkorb oder den Sicherungskopien wiederherstellen.",
     "trashMessageMixed_other": "Entfernt {{count}} Dateien aus der Liste. Dateien auf einem Laufwerk ohne Papierkorb werden in den Sicherungskopien aufbewahrt, der Rest kommt in den Papierkorb. Du kannst sie von dort wiederherstellen.",
-    "trashConfirmMixed": "Verschieben"
+    "trashConfirmMixed": "Verschieben",
+    "cleanUpMessageBackups_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in die Sicherungskopien, weil sein Laufwerk keinen Papierkorb hat. Du kannst es von dort wiederherstellen.",
+    "cleanUpMessageBackups_other": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in die Sicherungskopien, weil ihr Laufwerk keinen Papierkorb hat. Du kannst alles von dort wiederherstellen.",
+    "cleanUpMessageMixed_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in den Papierkorb oder, wenn sein Laufwerk keinen hat, in die Sicherungskopien. Du kannst es von dort wiederherstellen.",
+    "cleanUpMessageMixed_other": "Deine konvertierte Datei bleibt, wo sie ist. Was auf einem Laufwerk ohne Papierkorb liegt, kommt in die Sicherungskopien, der Rest in den Papierkorb. Du kannst alles von dort wiederherstellen."
   },
   "activity": {
     "title": "Aktivität",

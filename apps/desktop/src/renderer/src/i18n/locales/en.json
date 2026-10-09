@@ -1344,7 +1344,6 @@
     "cleanUpOriginal": "Original: “{{name}}”",
     "cleanUpSuperseded": "Replaced file: “{{name}}”",
     "cleanUpMusicCopy": "Old Apple Music copy: “{{copy}}” (removed from the library)",
-    "trashRemoteWarning": "The files sit on a network volume, which may have no Trash: the deletion may be permanent.",
     "convertInPlaceTitle": "Overwrite the original files?",
     "convertInPlaceMessage_one": "Overwrite original is on: this rewrites the source file in place. The original is replaced and cannot be recovered.",
     "convertInPlaceMessage_other": "Overwrite original is on: this rewrites {{count}} source files in place. The originals are replaced and cannot be recovered.",
@@ -1366,7 +1365,11 @@
     "trashTitleMixed_other": "Move {{count}} files to the Trash or Backups?",
     "trashMessageMixed_one": "This removes “{{name}}” from the list. You can restore it from the Trash or Backups.",
     "trashMessageMixed_other": "This removes {{count}} files from the list. Those on a disk with no Trash are kept in Backups and the rest go to the Trash. You can restore them from there.",
-    "trashConfirmMixed": "Move"
+    "trashConfirmMixed": "Move",
+    "cleanUpMessageBackups_one": "Your converted file stays where it is. The item below goes to Backups because its disk has no Trash. You can restore it from there.",
+    "cleanUpMessageBackups_other": "Your converted file stays where it is. The items below go to Backups because their disk has no Trash. You can restore them from there.",
+    "cleanUpMessageMixed_one": "Your converted file stays where it is. The item below goes to the Trash, or to Backups if its disk has none. You can restore it from there.",
+    "cleanUpMessageMixed_other": "Your converted file stays where it is. Items on a disk with no Trash go to Backups and the rest to the Trash. You can restore them from there."
   },
   "activity": {
     "title": "Activity",

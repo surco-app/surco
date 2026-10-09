@@ -1344,7 +1344,6 @@
     "cleanUpOriginal": "Original: «{{name}}»",
     "cleanUpSuperseded": "Archivo sustituido: «{{name}}»",
     "cleanUpMusicCopy": "Copia antigua en Apple Music: «{{copy}}» (sale de la biblioteca)",
-    "trashRemoteWarning": "Los archivos están en un volumen de red, donde puede que no haya papelera: el borrado puede ser definitivo.",
     "convertInPlaceTitle": "¿Sobrescribir los archivos originales?",
     "convertInPlaceMessage_one": "Sobrescribir el original está activado: esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
     "convertInPlaceMessage_other": "Sobrescribir el original está activado: esto reescribe {{count}} archivos de origen en su sitio. Los originales se reemplazan y no se pueden recuperar.",
@@ -1366,7 +1365,11 @@
     "trashTitleMixed_other": "¿Mover {{count}} archivos a la papelera o a Copias de seguridad?",
     "trashMessageMixed_one": "Esto quita «{{name}}» de la lista. Puedes restaurarlo desde la papelera o desde Copias de seguridad.",
     "trashMessageMixed_other": "Esto quita {{count}} archivos de la lista. Los que están en un disco sin papelera se guardan en Copias de seguridad y el resto va a la papelera. Puedes restaurarlos desde ahí.",
-    "trashConfirmMixed": "Mover"
+    "trashConfirmMixed": "Mover",
+    "cleanUpMessageBackups_one": "Tu archivo convertido se queda donde está. Lo que sigue va a Copias de seguridad porque su disco no tiene papelera. Puedes restaurarlo desde ahí.",
+    "cleanUpMessageBackups_other": "Tu archivo convertido se queda donde está. Lo que sigue va a Copias de seguridad porque su disco no tiene papelera. Puedes restaurarlo todo desde ahí.",
+    "cleanUpMessageMixed_one": "Tu archivo convertido se queda donde está. Lo que sigue va a la papelera o, si su disco no tiene, a Copias de seguridad. Puedes restaurarlo desde ahí.",
+    "cleanUpMessageMixed_other": "Tu archivo convertido se queda donde está. Lo que está en un disco sin papelera va a Copias de seguridad y el resto a la papelera. Puedes restaurarlo todo desde ahí."
   },
   "activity": {
     "title": "Actividad",

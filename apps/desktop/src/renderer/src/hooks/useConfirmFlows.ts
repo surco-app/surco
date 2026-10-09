@@ -158,22 +158,33 @@ const TRASH_COPY = {
     title: 'confirm.trashTitle',
     message: 'confirm.trashMessage',
     confirm: 'confirm.trashConfirm',
+    cleanUp: 'confirm.cleanUpMessage',
   },
   win: {
     title: 'confirm.trashTitleWin',
     message: 'confirm.trashMessageWin',
     confirm: 'confirm.trashConfirmWin',
+    cleanUp: 'confirm.cleanUpMessageWin',
   },
   backups: {
     title: 'confirm.trashTitleBackups',
     message: 'confirm.trashMessageBackups',
     confirm: 'confirm.trashConfirmBackups',
+    cleanUp: 'confirm.cleanUpMessageBackups',
   },
   mixed: {
     title: 'confirm.trashTitleMixed',
     message: 'confirm.trashMessageMixed',
     confirm: 'confirm.trashConfirmMixed',
+    cleanUp: 'confirm.cleanUpMessageMixed',
   },
+}
+
+// Where the files really go, asked per file: the OS Trash, Surco's backups on a disk with
+// none (a NAS, every Windows drive), or both.
+function trashCopy(keeps: boolean[], isWin: boolean) {
+  if (keeps.every(Boolean)) return isWin ? TRASH_COPY.win : TRASH_COPY.trash
+  return keeps.some(Boolean) ? TRASH_COPY.mixed : TRASH_COPY.backups
 }
 
 export function useConfirmFlows({
@@ -202,13 +213,7 @@ export function useConfirmFlows({
     const isWin = window.api.platform === 'win32'
     const count = targets.length
     const keeps = await Promise.all(targets.map((t) => window.api.keepsTrash(t.inputPath)))
-    const copy = keeps.every(Boolean)
-      ? isWin
-        ? TRASH_COPY.win
-        : TRASH_COPY.trash
-      : keeps.some(Boolean)
-        ? TRASH_COPY.mixed
-        : TRASH_COPY.backups
+    const copy = trashCopy(keeps, isWin)
     openConfirm({
       title: tr(copy.title, { count }),
       message: tr(copy.message, { count, name: targets[0].fileName }),
@@ -241,9 +246,9 @@ export function useConfirmFlows({
     const isWin = window.api.platform === 'win32'
     // A network volume may have no Trash, and the OS then deletes outright. Measured 15/09
     // on the user's NAS (smbfs, no .Trashes): a file was lost while the dialog promised it
-    // was recoverable. Any such file drops the promise for the whole offer.
+    // was recoverable. Such a file goes to Surco's backups now, and the dialog says so.
     const keeps = await Promise.all(files.map((path) => window.api.keepsTrash(path)))
-    const message = tr(isWin ? 'confirm.cleanUpMessageWin' : 'confirm.cleanUpMessage', { count })
+    const copy = trashCopy(keeps, isWin)
     const items = [
       ...(originalPath ? [tr('confirm.cleanUpOriginal', { name: baseName(originalPath) })] : []),
       ...superseded.map(({ path }) => tr('confirm.cleanUpSuperseded', { name: baseName(path) })),
@@ -264,10 +269,10 @@ export function useConfirmFlows({
       }
     }
     openConfirm({
-      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count }),
-      message: keeps.every(Boolean) ? message : `${message} ${tr('confirm.trashRemoteWarning')}`,
+      title: tr(copy.title, { count }),
+      message: tr(copy.cleanUp, { count }),
       items,
-      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      confirmLabel: tr(copy.confirm),
       destructive: true,
       onConfirm: () => {
         if (!staleMusicCopy) {

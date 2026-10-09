@@ -289,8 +289,9 @@ describe('useConfirmFlows clean up previous files', () => {
   })
 
   // Measured 15/09 on the user's NAS (smbfs, no .Trashes): a file was lost while the
-  // dialog promised it was recoverable. Any file on such a volume drops the promise.
-  it('warns that the deletion may be permanent when a file sits on a volume without a Trash', async () => {
+  // dialog promised it was recoverable. A file on such a volume goes to Backups now, and the
+  // dialog names the place each file really goes.
+  it('names both places when only some files sit on a disk with no Trash', async () => {
     installApi({
       keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/old/a.mp3'),
     })
@@ -301,7 +302,28 @@ describe('useConfirmFlows clean up previous files', () => {
       superseded: [{ trackId: 'a', path: '/Volumes/NAS/old/a.mp3' }],
       staleMusicCopy: null,
     })
-    expect(opened[0].message).toContain('network volume')
+    expect(opened[0].title).toBe('Move 2 files to the Trash or Backups?')
+    expect(opened[0].message).toBe(
+      'Your converted file stays where it is. Items on a disk with no Trash go to Backups and the rest to the Trash. You can restore them from there.',
+    )
+    expect(opened[0].confirmLabel).toBe('Move')
+  })
+
+  it('says every file goes to Backups when none has a Trash, on Windows too', async () => {
+    installApi({ platform: 'win32', keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { status: 'done', replacesPath: 'Z:\\old\\a.mp3' })
+    const { flows, opened } = setup([a])
+    await flows.askCleanUp(a, {
+      originalPath: 'Z:\\a.wav',
+      superseded: [{ trackId: 'a', path: 'Z:\\old\\a.mp3' }],
+      staleMusicCopy: null,
+    })
+    expect(opened[0].title).toBe('Move 2 files to Backups?')
+    expect(opened[0].message).toBe(
+      'Your converted file stays where it is. The items below go to Backups because their disk has no Trash. You can restore them from there.',
+    )
+    expect(opened[0].confirmLabel).toBe('Move to Backups')
+    expect(`${opened[0].title} ${opened[0].message}`).not.toContain('Recycle Bin')
   })
 
   // Windows hands the renderer backslash paths; splitting on '/' alone listed the whole
