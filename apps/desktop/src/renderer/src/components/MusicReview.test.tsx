@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -1867,6 +1867,28 @@ describe('MusicReview', () => {
       )
       expect(api.copyText).toHaveBeenLastCalledWith('This Rap (Original Mix) ')
       expect(r.choose).not.toHaveBeenCalled()
+    })
+
+    // The check says the title is on the clipboard; shown on a failed copy it would send the
+    // user to paste nothing.
+    it('confirms the copy only once the clipboard took the title', async () => {
+      const failing = stubApi({ copyText: vi.fn(async () => Promise.reject(new Error('x'))) })
+      ;(window as unknown as { api: Api }).api = failing
+      const r = review({
+        spelling: [],
+        duplicates: [{ ...card({ '1': '/a/1.aiff', '2': '/a/2.aiff' }) }],
+        choice: () => '2',
+      })
+      const { unmount } = render(<Panes review={r} />)
+      const button = () =>
+        within(screen.getAllByTestId('music-review-copy')[0]).getByTestId('music-review-copy-title')
+      await act(async () => fireEvent.click(button()))
+      expect(within(button()).queryByTestId('music-review-copied')).toBeNull()
+      unmount()
+      ;(window as unknown as { api: Api }).api = stubApi({ copyText: vi.fn(async () => {}) })
+      render(<Panes review={r} />)
+      await act(async () => fireEvent.click(button()))
+      expect(within(button()).getByTestId('music-review-copied')).toBeInTheDocument()
     })
 
     // The date added is what tells an old copy from a recent one when deciding which to remove.

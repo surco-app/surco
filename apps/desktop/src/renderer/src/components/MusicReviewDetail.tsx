@@ -64,15 +64,25 @@ function CopyTitleButton({ title, testId }: { title: string; testId: string }) {
       aria-label={t('musicReview.copyTitle')}
       onClick={(e) => {
         e.stopPropagation()
-        void window.api.copyText(title)
-        setCopied(true)
-        clearTimeout(timer.current)
-        timer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
+        window.api.copyText(title).then(
+          () => {
+            setCopied(true)
+            clearTimeout(timer.current)
+            timer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
+          },
+          () => {},
+        )
       }}
-      className="press flex h-4 w-4 shrink-0 items-center justify-center text-fg-muted hover:text-fg"
+      // A 28 px target that takes the 16 px it always took: the margins give back the padding,
+      // so the row keeps its height.
+      className="press -m-1.5 flex h-7 w-7 shrink-0 items-center justify-center text-fg-muted hover:text-fg"
     >
       {copied ? (
-        <Check className="h-3.5 w-3.5 text-good" aria-hidden="true" />
+        <Check
+          data-testid="music-review-copied"
+          className="h-3.5 w-3.5 text-good"
+          aria-hidden="true"
+        />
       ) : (
         <Copy className="h-3.5 w-3.5" aria-hidden="true" />
       )}
