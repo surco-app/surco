@@ -13,7 +13,10 @@ import type { TrashEntry, TrashReason } from '../shared/types'
 // and are always worth keeping, since their original cannot be reproduced by re-running
 // anything.
 export interface KeepContext {
-  reencodes: boolean
+  reencodes?: boolean
+  // A write whose own promise rests on the copy: the review's Undo, a removal the user
+  // never phrased as a delete for good. The setting does not get to break that promise.
+  regardlessOfPolicy?: boolean
 }
 
 export type OriginalKeeper = (
@@ -41,7 +44,7 @@ export function policyKeeper(policy: () => BackupPolicy, stash: OriginalKeeper):
     // No conversion to judge (a format change's leftover, a delete): nothing was
     // re-encoded, but nothing can be re-run either, so only 'never' skips these.
     const reencodes = ctx?.reencodes ?? true
-    if (!keepsBackup(policy(), { reencodes })) return null
+    if (!ctx?.regardlessOfPolicy && !keepsBackup(policy(), { reencodes })) return null
     return stash(path, reason, outputPath, ctx)
   }
 }

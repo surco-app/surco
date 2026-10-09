@@ -18,7 +18,7 @@ vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { rewriteTagFields } from './musicFieldWrite'
-import { configureOriginalKeeper } from './originalKeeper'
+import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { diffSnapshots, snapshotTags } from './tagSnapshot'
 
 const FF = ffmpegStatic as unknown as string
@@ -504,7 +504,10 @@ describe('rewriteTagFields', () => {
     ])
     expect(outcomes).toEqual(['written', 'written'])
     expect(keeper).toHaveBeenCalledTimes(1)
-    expect(keeper).toHaveBeenCalledWith(file, 'replaced', file, { reencodes: false })
+    expect(keeper).toHaveBeenCalledWith(file, 'replaced', file, {
+      reencodes: false,
+      regardlessOfPolicy: true,
+    })
     expect(backup).toEqual({ id: 'b1' })
   }, 60000)
 
@@ -525,5 +528,31 @@ describe('rewriteTagFields', () => {
     expect(snapshotTags(file)).toEqual(before)
     expect(untrack).toHaveBeenCalledWith(track.mock.calls[0][0])
     expect(existsSync(track.mock.calls[0][0])).toBe(false)
+  }, 60000)
+
+  // The review's Undo restores these copies, so "Never" in Settings cannot be allowed to
+  // turn a review fix into a write with no way back, nor into a refusal to write at all.
+  it('still writes the fix with a backup when the setting says never', async () => {
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'never',
+        async (path, reason) => ({
+          id: 'kept',
+          name: 'x',
+          originalPath: path,
+          storedPath: '',
+          bytes: 0,
+          trashedAt: 0,
+          reason,
+        }),
+      ),
+    )
+    const { outcomes, backup } = await rewriteTagFields(file, [
+      { field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+    expect(outcomes).toEqual(['written'])
+    expect(backup?.id).toBe('kept')
+    expect(snapshotTags(file).join('\n')).toContain('DJ Lara')
   }, 60000)
 })

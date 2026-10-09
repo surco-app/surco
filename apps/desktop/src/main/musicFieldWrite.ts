@@ -35,7 +35,10 @@ export async function rewriteTagFields(
       return { outcomes }
     }
     await assertDecodable(tmp, file)
-    archived = await keepOriginal(file, 'replaced', file, { reencodes: false })
+    archived = await keepOriginal(file, 'replaced', file, {
+      reencodes: false,
+      regardlessOfPolicy: true,
+    })
     if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
