@@ -21,7 +21,8 @@ de la biblioteca de Music. El boceto aprobado es `revision-carpetas.html`.
 - **Duplicados**: misma regla de grabación y duración. Cada copia enseña formato, calidad
   (el veredicto que Surco ya tiene de esa fila, o "sin analizar"), tamaño, álbum, duración,
   fichero y dónde está en las bibliotecas DJ y en Apple Music. Quitar una copia la saca de las
-  bibliotecas, de Music si está, manda su fichero a la Papelera y quita su fila de la lista.
+  bibliotecas, de Music si está, manda su fichero a la Papelera (a Copias de seguridad en un
+  volumen sin Papelera) y quita su fila de la lista.
 
 Queda fuera lo mismo que en Music: campos vacíos, búsqueda en proveedores, carátulas y
 géneros con varios valores. Tampoco se renombran ficheros en el disco.
@@ -52,15 +53,18 @@ géneros con varios valores. Tampoco se renombran ficheros en el disco.
   cómo se escribe, cómo se quita una copia y los textos que cambian) vive en una fuente. Las
   entradas llevan un `id` que es la ruta en la lista y el persistent ID en Music.
 - **Arreglar una grafía**: la escritura mínima por TagLib que ya existe, con copia de
-  seguridad y Deshacer. Después rekordbox, Engine DJ y Traktor como en la revisión de Music.
-  Si el fichero está en Apple Music, su entrada se corrige con guarda.
+  seguridad y Deshacer. Después rekordbox, Engine DJ y Traktor como en la revisión de Music,
+  con lo que tomó el fichero o Music. Si el fichero está en Apple Music, su entrada se corrige
+  con guarda.
 - **Quitar un duplicado**, en este orden: sus sitios en las playlists de rekordbox, Engine DJ
   y Traktor pasan a la copia que se queda; si está en Apple Music, sus playlists normales
-  pasan a la que se queda y sale de Music; su fichero va a la Papelera; su fila sale de la
+  pasan a la que se queda y sale de Music; su fichero va a la Papelera, o a Copias de
+  seguridad en un volumen sin Papelera; su fila sale de la
   lista. Nunca se tira un fichero que una biblioteca aún usa ni cuando la copia que se queda
   es el mismo fichero. Los duplicados quitados no se deshacen desde Surco.
 - **Ignorar es para siempre**, guardado aparte de lo ignorado en Music.
 - **Deshacer** restaura las copias de seguridad, las bibliotecas DJ y Music, como ya hace.
+  Una biblioteca vuelve atrás solo en los campos que Music o el fichero restaurado devolvieron.
 - **Coste**: agrupar sigue siendo rápido con 5000 pistas cargadas, y un test lo fija.
 - **Textos** en las cinco lenguas, castellano llano, sin guion largo ni dos puntos de
   explicación.

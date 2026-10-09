@@ -60,17 +60,20 @@ revisión, carátulas y géneros con varios valores.
 - **Music** se escribe campo a campo y solo si la entrada sigue diciendo lo
   que la revisión leyó (misma guarda que el borrado de copias).
 - **Duplicados**: quitar una copia la borra de Music y manda su fichero a la
-  Papelera, como ya hace el flujo de copia antigua, salvo que la copia que se
+  Papelera, o a Copias de seguridad en un volumen sin Papelera (un NAS), como ya
+  hace el flujo de copia antigua, salvo que la copia que se
   queda apunte al mismo fichero real. Antes, la copia que se queda entra en
   las playlists normales donde solo estaba la quitada (al final de la lista).
-- **Bibliotecas DJ, como un Actualizar**: lo que se escribe en el fichero se
+- **Bibliotecas DJ, como un Actualizar**: lo que tomó el fichero o Music se
   lleva a rekordbox, Engine DJ y Traktor si su sincronización está activa, con la
   app cerrada y copia de su base. En rekordbox artista, álbum y género son
   referencias a otras tablas: la pista se reapunta a la fila bien escrita (o a una
   nueva), nunca se renombra la fila compartida. Engine no guarda album artist ni
   Traktor tampoco. Si la biblioteca ya dice otra cosa, no se toca.
 - **Deshacer** restaura las copias de seguridad de la tanda y devuelve los
-  valores antiguos a Music y a las bibliotecas DJ. Las copias de duplicados quitadas no se deshacen
-  desde aquí: están en la Papelera de macOS.
+  valores antiguos a Music y a las bibliotecas DJ. Una biblioteca vuelve atrás solo en los
+  campos que Music o el fichero restaurado devolvieron. Las copias de duplicados quitadas no
+  se deshacen desde aquí. Sus ficheros están en la Papelera, o en Copias de seguridad en un
+  volumen sin Papelera.
 - **Verificar**: al terminar se vuelve a leer la biblioteca y se recuentan
   los grupos.
