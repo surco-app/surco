@@ -1501,6 +1501,7 @@
     "reviewDuplicateFileSurco": "Kept in Backups because this disk has no Trash",
     "reviewDuplicateFileTrashFailed": "Stays on disk because it couldn't be moved to the Trash ({{error}})",
     "reviewUndoRun": "Undo the Music review",
+    "listReviewUndoRun": "Undo the list review",
     "reviewUndoMusic": "Music holds the previous value again",
     "reviewUndoMusicMismatch": "Not undone in Music. It already held another value",
     "reviewUndoMusicMissing": "Not undone in Music. The track is gone",

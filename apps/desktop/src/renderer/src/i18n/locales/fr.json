@@ -1501,6 +1501,7 @@
     "reviewDuplicateFileSurco": "Gardé dans Copies de sauvegarde car ce disque n'a pas de Corbeille",
     "reviewDuplicateFileTrashFailed": "Reste sur le disque car il n'a pas pu être mis à la Corbeille ({{error}})",
     "reviewUndoRun": "Annuler la revue de Music",
+    "listReviewUndoRun": "Annuler la revue de la liste",
     "reviewUndoMusic": "Music retrouve la valeur précédente",
     "reviewUndoMusicMismatch": "Pas annulé dans Music. Il avait déjà une autre valeur",
     "reviewUndoMusicMissing": "Pas annulé dans Music. Le morceau n'y est plus",

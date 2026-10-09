@@ -125,6 +125,40 @@ describe('the undo in Activity', () => {
     expect(events[0].labelParams).toEqual({ title: 'Funk Freak' })
   })
 
+  // The list review's undo goes through the same calls; its rows land under the list run
+  // and, should that row be gone from the panel, come back titled as the list's undo.
+  it('logs a list run undo under that run, titled as the list review', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    const log = createMusicReviewLog()
+    const run = log.beginListRun()
+    log.rememberListRun(
+      run,
+      [
+        {
+          id: '/m/a.aiff',
+          musicId: 'PA',
+          path: '/m/a.aiff',
+          fixes: [],
+          music: [],
+          file: 'written',
+          written: [],
+          backupId: 'b1',
+        },
+      ],
+      () => 'Funk Freak',
+    )
+    await setFieldLogged('PA', 'artist', async () => 'set', { track: activity.track, log })
+    await restoreLogged('b1', async () => ({}), { track: activity.track, log })
+    expect(
+      events.filter((e) => e.phase === 'start').map((e) => [e.group, e.groupLabelKey]),
+    ).toEqual([
+      [run, 'activity.listReviewUndoRun'],
+      [run, 'activity.listReviewUndoRun'],
+    ])
+  })
+
   // The Backups panel restores through the same call; those are not the review's.
   it('logs nothing for a backup the review did not make', async () => {
     const { events, log, track } = setup()

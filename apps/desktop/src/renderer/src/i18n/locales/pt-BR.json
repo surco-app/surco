@@ -1501,6 +1501,7 @@
     "reviewDuplicateFileSurco": "Guardado em Cópias de segurança porque este disco não tem Lixo",
     "reviewDuplicateFileTrashFailed": "Fica no disco porque não pôde ir para o Lixo ({{error}})",
     "reviewUndoRun": "Desfazer a revisão do Music",
+    "listReviewUndoRun": "Desfazer a revisão da lista",
     "reviewUndoMusic": "O Music volta a ter o valor anterior",
     "reviewUndoMusicMismatch": "Não desfeito no Music. Já tinha outro valor",
     "reviewUndoMusicMissing": "Não desfeito no Music. A faixa não está mais lá",

@@ -9,6 +9,7 @@ export function createMusicReviewLog() {
   const groups = new Map<string, string>()
   const backups = new Map<string, { group: string; title: string }>()
   const copies = new Map<string, { group: string; label: string }>()
+  const listRuns = new Set<string>()
   let runs = 0
   const titleOf = (persistentId: string) => titles.get(persistentId) ?? persistentId
   return {
@@ -30,6 +31,7 @@ export function createMusicReviewLog() {
       outcomes: ReviewOutcome[],
       titleOfPath: (path: string) => string,
     ) {
+      listRuns.add(group)
       for (const o of outcomes) {
         const title = titleOfPath(o.id)
         if (o.musicId) {
@@ -40,6 +42,8 @@ export function createMusicReviewLog() {
       }
     },
     groupOf: (persistentId: string) => groups.get(persistentId),
+    undoLabelOf: (group: string) =>
+      listRuns.has(group) ? 'activity.listReviewUndoRun' : 'activity.reviewUndoRun',
     backup: (id: string) => backups.get(id),
     rememberCopy(path: string, copy: { group: string; label: string }) {
       copies.set(path, copy)
@@ -103,10 +107,11 @@ export function setFieldLogged(
   set: () => Promise<MusicSetResult>,
   { track, log }: UndoDeps,
 ): Promise<MusicSetResult> {
+  const group = log.groupOf(persistentId) ?? UNDO_GROUP
   return track('applemusic', `activity.reviewFix.${field}`, set, {
     labelParams: { title: log.titleOf(persistentId) },
-    group: log.groupOf(persistentId) ?? UNDO_GROUP,
-    groupLabelKey: 'activity.reviewUndoRun',
+    group,
+    groupLabelKey: log.undoLabelOf(group),
     summary: (answer) =>
       answer === 'set'
         ? { detailKey: 'activity.reviewUndoMusic' }
@@ -124,7 +129,7 @@ export function restoreLogged<T>(id: string, restore: () => Promise<T>, { track,
   return track('applemusic', 'activity.reviewUndoFile', restore, {
     labelParams: { title: backup.title },
     group: backup.group,
-    groupLabelKey: 'activity.reviewUndoRun',
+    groupLabelKey: log.undoLabelOf(backup.group),
     summary: () => ({ detailKey: 'activity.reviewUndoFileRestored' }),
   })
 }

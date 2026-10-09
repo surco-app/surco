@@ -1501,6 +1501,7 @@
     "reviewDuplicateFileSurco": "Guardado en Copias de seguridad porque este disco no tiene Papelera",
     "reviewDuplicateFileTrashFailed": "Se queda en disco porque no se pudo mover a la Papelera ({{error}})",
     "reviewUndoRun": "Deshacer la revisión de Music",
+    "listReviewUndoRun": "Deshacer la revisión de la lista",
     "reviewUndoMusic": "Music vuelve a tener el valor anterior",
     "reviewUndoMusicMismatch": "Sin deshacer en Music. Ya tenía otro valor",
     "reviewUndoMusicMissing": "Sin deshacer en Music. La pista ya no está",
