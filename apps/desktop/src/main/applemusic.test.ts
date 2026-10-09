@@ -577,10 +577,17 @@ describe('buildSetFieldScript', () => {
       'DJ Lara',
       '/m/Dj Lara.aiff',
     )
-    expect(script).toContain('set theLoc to POSIX path of (location of theTrack)')
+    expect(script).toContain('set theLoc to POSIX path of (get location of theTrack)')
     const check = script.indexOf('if theLoc is not "/m/Dj Lara.aiff" then return "mismatch"')
     expect(check).toBeGreaterThan(script.indexOf('considering case'))
     expect(check).toBeLessThan(script.indexOf('set artist of theTrack'))
+  })
+
+  // Inside the tell, `POSIX path of (location of theTrack)` raises -1700 and the try left
+  // theLoc empty, so every list review write came back mismatch. Measured live 09/10.
+  it('reads the location with an explicit get, the form Music answers inside the tell', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'artist', 'a', 'b', '/m/a.aiff')
+    expect(script).not.toContain('POSIX path of (location of theTrack)')
   })
 
   it('leaves the Music review write unchanged, without a location check', () => {

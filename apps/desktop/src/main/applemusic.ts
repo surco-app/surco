@@ -731,7 +731,7 @@ export function buildSetFieldScript(
       : [
           '  set theLoc to ""',
           '  try',
-          '    set theLoc to POSIX path of (location of theTrack)',
+          '    set theLoc to POSIX path of (get location of theTrack)',
           '  end try',
         ]),
     '  considering case, diacriticals, hyphens, punctuation and white space',
