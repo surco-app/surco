@@ -10,6 +10,7 @@ import type {
   ReviewFix,
   ReviewOutcome,
 } from '../../../shared/types'
+import { copyQuality, qualityRank } from '../lib/copyQuality'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
 import { libraryUpdatesOf, tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { prefersReducedMotion } from '../lib/motion'
@@ -27,6 +28,7 @@ import {
   type ReviewRemovalRun,
   type ReviewSource,
 } from '../lib/reviewSource'
+import type { TrackItem } from '../types'
 
 export type ReviewFilter = 'all' | 'spelling' | 'duplicates'
 
@@ -64,7 +66,7 @@ export interface ReviewRun {
 
 export type ReviewPhase =
   | { name: 'writing' | 'duplicates' | 'restoring'; current: number; total: number }
-  | { name: 'libraries' | 'verifying' }
+  | { name: 'libraries' | 'verifying' | 'checking-music' }
 
 // How long the bar takes to fill (TopProgressBar's transition), waited out before the
 // result opens so the bar never jumps from part way to gone. Reduced motion has no fill to
@@ -72,6 +74,7 @@ export type ReviewPhase =
 const FILL_MS = 300
 
 export interface MusicReview {
+  kind: ReviewSource['kind']
   status: 'loading' | 'ready' | 'empty' | 'error' | 'applying' | 'done'
   filter: ReviewFilter
   setFilter: (f: ReviewFilter) => void
@@ -97,6 +100,11 @@ export interface MusicReview {
   // Null until main answers; a library that is on but not found is the case it exists for.
   libraries: LibraryStatus | null
   affected: (key: string) => (ReviewFix & { title: string })[]
+  // Rows the list could not review because their file was not read.
+  skipped: number
+  musicConsulted?: boolean
+  inMusic: (id: string) => boolean
+  facts: (id: string) => TrackItem | undefined
 }
 
 const RANK = ['AIFF', 'AIF', 'WAV', 'FLAC', 'M4A']
@@ -227,13 +235,23 @@ export function useMusicReview({
   const cancelled = useRef(false)
 
   const [libraries, setLibraries] = useState<LibraryStatus | null>(null)
+  const [loaded, setLoaded] = useState<{ skipped: number; musicConsulted?: boolean }>({
+    skipped: 0,
+  })
 
   const load = useCallback(async () => {
     window.api.libraryStatus().then(setLibraries, () => {})
-    const { entries: next } = await source.load()
-    setEntries(next)
-    return next
+    const result = await source.load()
+    setEntries(result.entries)
+    setLoaded({ skipped: result.skipped, musicConsulted: result.musicConsulted })
+    return result.entries
   }, [source])
+
+  const inMusic = useCallback(
+    (id: string) => source.inMusic?.(id) ?? source.kind === 'music',
+    [source],
+  )
+  const facts = useCallback((id: string) => source.facts?.(id), [source])
 
   useEffect(() => {
     load().then(
@@ -308,11 +326,14 @@ export function useMusicReview({
       if (s) return s.suggested
       if (!d) return null
       const withFile = d.ids.filter((id) => locations[id] !== '')
+      const better = (a: string, b: string) =>
+        rankOf(formats[a] ?? '') - rankOf(formats[b] ?? '') ||
+        qualityRank(copyQuality(facts(a))) - qualityRank(copyQuality(facts(b)))
       return (withFile.length ? withFile : d.ids).reduce((best, id) =>
-        rankOf(formats[id] ?? '') < rankOf(formats[best] ?? '') ? id : best,
+        better(id, best) < 0 ? id : best,
       )
     },
-    [choices, spelling, dupGroups, formats, locations],
+    [choices, spelling, dupGroups, formats, locations, facts],
   )
 
   const choose = useCallback(
@@ -460,6 +481,7 @@ export function useMusicReview({
             librariesPhase = true
             setPhase({ name: 'libraries' })
           },
+          onCheckingMusic: () => setPhase({ name: 'checking-music' }),
         })
       const { removed, replaced } = removal
       const updates = libraryUpdatesOf(outcomes, 'apply')
@@ -477,6 +499,8 @@ export function useMusicReview({
         if (librarySync !== 'failed') librarySync = synced
       }
       const changedFiles = tagUpdatesOf(outcomes, 'apply')
+      const trashed = replaced.filter((r) => r.fileTrashed).map((r) => r.from)
+      if (changedFiles.length || trashed.length) source.settle?.(changedFiles, trashed)
       if (changedFiles.length) onFilesChanged(changedFiles)
       setPhase({ name: 'verifying' })
       const next = await load().catch(() => null)
@@ -559,6 +583,7 @@ export function useMusicReview({
           () => 'failed' as const,
         )
       const back = tagUpdatesOf(restored, 'undo')
+      if (back.length) source.settle?.(back, [])
       if (back.length) onFilesChanged(back)
       setPhase({ name: 'verifying' })
       await load().catch(() => null)
@@ -592,6 +617,7 @@ export function useMusicReview({
   // render would set that state again and never settle.
   return useMemo(
     () => ({
+      kind: source.kind,
       status,
       filter,
       setFilter,
@@ -612,8 +638,13 @@ export function useMusicReview({
       lastRun,
       libraries,
       affected,
+      skipped: loaded.skipped,
+      musicConsulted: loaded.musicConsulted,
+      inMusic,
+      facts,
     }),
     [
+      source.kind,
       status,
       filter,
       spelling,
@@ -633,6 +664,9 @@ export function useMusicReview({
       lastRun,
       libraries,
       affected,
+      loaded,
+      inMusic,
+      facts,
     ],
   )
 }

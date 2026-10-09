@@ -2,7 +2,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { emptyMetadata } from '../../../shared/metadata'
 import type { MusicReviewEntry, RemoveCopyResult } from '../../../shared/types'
+import { trackSignature } from '../lib/dirty'
+import { listReviewSource } from '../lib/listReviewSource'
+import type { TrackItem } from '../types'
 import { type MusicReview, useMusicReview } from './useMusicReview'
 
 const e = (
@@ -1331,5 +1335,257 @@ describe('useMusicReview', () => {
       to: 'DJ Lara',
     })
     expect(window.api.loadMusicReview).not.toHaveBeenCalled()
+  })
+})
+
+describe('with the list as source', () => {
+  const row = (path: string, artist: string, title = 'Song', over: Partial<TrackItem> = {}) => {
+    const meta = { ...emptyMetadata(), title, artist }
+    return {
+      id: path,
+      inputPath: path,
+      fileName: path,
+      listLabel: title,
+      query: '',
+      status: 'idle',
+      meta,
+      diskSignature: trackSignature({ meta }),
+      ...over,
+    } as TrackItem
+  }
+  const LARA = [
+    row('/m/a.aiff', 'DJ Lara', 'Ta'),
+    row('/m/b.aiff', 'DJ Lara', 'Tb'),
+    row('/m/c.aiff', 'Dj Lara', 'Tc'),
+  ]
+  const FIX = { id: '/m/c.aiff', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }
+  const listApi = (over = {}) =>
+    setApi({
+      appleMusicFileEntries: vi.fn().mockResolvedValue({
+        consulted: true,
+        entries: { '/m/c.aiff': [{ persistentId: 'PID', label: 'Dj Lara - Tc' }] },
+      }),
+      applyListFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/m/c.aiff',
+          musicId: 'PID',
+          path: '/m/c.aiff',
+          fixes: [FIX],
+          music: ['set'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+      onListFixProgress: vi.fn(() => () => {}),
+      cancelListFixes: vi.fn().mockResolvedValue(undefined),
+      removeListDuplicates: vi
+        .fn()
+        .mockResolvedValue([{ from: '/m/b.aiff', fileTrashed: true, keptForLibrary: false }]),
+      onListRemovalPhase: vi.fn(() => () => {}),
+      ...over,
+    })
+  const listHook = (rows: TrackItem[], onRowsRemoved = vi.fn(), over = {}) => {
+    const source = listReviewSource({
+      rows: () => rows,
+      mac: true,
+      launchMusic: () => true,
+      onRowsRemoved,
+    })
+    return renderHook(() => useMusicReview(props({ source, ...over })))
+  }
+  const ANN = [row('/m/a.aiff', 'Ann'), row('/m/b.aiff', 'Ann')]
+  const located = async (result: { current: MusicReview }) =>
+    waitFor(() =>
+      expect(result.current.duplicates[0]?.locations).toEqual({
+        '/m/a.aiff': '/m/a.aiff',
+        '/m/b.aiff': '/m/b.aiff',
+      }),
+    )
+
+  it('writes the file, follows the libraries and recounts without the fixed group', async () => {
+    const api = listApi()
+    const onRowsRemoved = vi.fn()
+    const { result } = listHook(LARA, onRowsRemoved)
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current.kind).toBe('list')
+    expect(result.current.inMusic('/m/c.aiff')).toBe(true)
+    expect(result.current.inMusic('/m/a.aiff')).toBe(false)
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.applyListFixes).toHaveBeenCalledWith({ fixes: [FIX], music: { '/m/c.aiff': 'PID' } })
+    expect(api.syncLibraryTags).toHaveBeenCalledWith([
+      { path: '/m/c.aiff', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
+    ])
+    expect(api.loadMusicReview).not.toHaveBeenCalled()
+    expect(onRowsRemoved).not.toHaveBeenCalled()
+    expect(result.current.spelling).toEqual([])
+    expect(result.current.lastRun).toMatchObject({ before: 1, after: 0 })
+  })
+
+  // A title or artist the list took from the file name is not in the file, so main's guard
+  // leaves it: the run must not count it as fixed nor tell the list or the libraries it was.
+  it('counts a fix main left unchanged as not touched', async () => {
+    const api = listApi({
+      applyListFixes: vi
+        .fn()
+        .mockResolvedValue([
+          { id: '/m/c.aiff', fixes: [FIX], music: ['none'], file: 'unchanged', written: [] },
+        ]),
+    })
+    const onFilesChanged = vi.fn()
+    const { result } = listHook(LARA, vi.fn(), { onFilesChanged })
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.syncLibraryTags).not.toHaveBeenCalled()
+    expect(onFilesChanged).not.toHaveBeenCalled()
+    expect(result.current.spelling).toHaveLength(1)
+    expect(result.current.lastRun).toMatchObject({ before: 1, after: 1 })
+    expect(result.current.lastRun?.outcomes.map((o) => o.file)).toEqual(['unchanged'])
+  })
+
+  it('says how many rows it left out and whether Music answered', async () => {
+    listApi({
+      appleMusicFileEntries: vi.fn().mockResolvedValue({ consulted: false, entries: {} }),
+    })
+    const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { metaReadFailed: true })])
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current).toMatchObject({ skipped: 1, musicConsulted: false })
+    expect(result.current.inMusic('/m/c.aiff')).toBe(false)
+  })
+
+  it('locates each copy at its own path and takes the trashed copy out of the list', async () => {
+    const api = listApi()
+    const onRowsRemoved = vi.fn()
+    const { result } = listHook(ANN, onRowsRemoved)
+    await located(result)
+    expect(result.current.duplicates[0].formats).toEqual({
+      '/m/a.aiff': 'AIFF',
+      '/m/b.aiff': 'AIFF',
+    })
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    await act(() => result.current.apply())
+    expect(api.removeListDuplicates).toHaveBeenCalledWith([{ from: '/m/b.aiff', to: '/m/a.aiff' }])
+    expect(onRowsRemoved).toHaveBeenCalledWith(['/m/b.aiff'])
+    expect(result.current.duplicates).toEqual([])
+    expect(result.current.lastRun).toMatchObject({
+      removed: [],
+      replaced: [{ from: '/m/b.aiff', fileTrashed: true }],
+    })
+  })
+
+  // A copy Music or a DJ library still holds stays on disk, so it stays in the list too.
+  it('keeps a copy whose file stayed on disk', async () => {
+    listApi({
+      removeListDuplicates: vi.fn().mockResolvedValue([
+        {
+          from: '/m/b.aiff',
+          fileTrashed: false,
+          keptForLibrary: false,
+          keptForMusic: true,
+          music: 'held',
+        },
+      ]),
+    })
+    const onRowsRemoved = vi.fn()
+    const { result } = listHook(ANN, onRowsRemoved)
+    await located(result)
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    await act(() => result.current.apply())
+    expect(onRowsRemoved).not.toHaveBeenCalled()
+    expect(result.current.duplicates).toHaveLength(1)
+    expect(result.current.lastRun?.replaced).toEqual([
+      expect.objectContaining({ keptForMusic: true, music: 'held' }),
+    ])
+  })
+
+  it('shows that main is checking Music while it removes', async () => {
+    let phase: (p: 'checking-music') => void = () => {}
+    let finish: (v: unknown[]) => void = () => {}
+    listApi({
+      onListRemovalPhase: vi.fn((cb: (p: 'checking-music') => void) => {
+        phase = cb
+        return () => {}
+      }),
+      removeListDuplicates: vi.fn(() => new Promise((r) => (finish = r))),
+    })
+    const { result } = listHook(ANN)
+    await located(result)
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.apply()
+    })
+    await waitFor(() => expect(result.current.phase).toMatchObject({ name: 'duplicates' }))
+    act(() => phase('checking-music'))
+    expect(result.current.phase).toEqual({ name: 'checking-music' })
+    await act(async () => {
+      finish([])
+      await run
+    })
+    expect(result.current.status).toBe('done')
+  })
+
+  it('stops the writes in main and removes nothing once the user stops the run', async () => {
+    let finish: (v: never[]) => void = () => {}
+    const api = listApi({
+      applyListFixes: vi.fn().mockReturnValue(new Promise<never[]>((r) => (finish = r))),
+    })
+    const { result } = listHook([
+      ...LARA,
+      ...ANN.map((r) => ({
+        ...r,
+        inputPath: r.inputPath.replace('/m/', '/n/'),
+        id: r.inputPath.replace('/m/', '/n/'),
+      })),
+    ])
+    await waitFor(() =>
+      expect(result.current.duplicates[0]?.locations).toEqual({
+        '/n/a.aiff': '/n/a.aiff',
+        '/n/b.aiff': '/n/b.aiff',
+      }),
+    )
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.apply()
+    })
+    await waitFor(() => expect(result.current.status).toBe('applying'))
+    act(() => result.current.cancel())
+    await act(async () => {
+      finish([])
+      await run
+    })
+    expect(api.cancelListFixes).toHaveBeenCalled()
+    expect(api.removeListDuplicates).not.toHaveBeenCalled()
+  })
+
+  it('undoes by restoring the backup and putting Music back on the entry it wrote', async () => {
+    const api = listApi()
+    const { result } = listHook(LARA)
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(result.current.spelling).toEqual([])
+    await act(() => result.current.undo())
+    expect(api.trashRestore).toHaveBeenCalledWith('b1')
+    expect(api.setMusicField).toHaveBeenCalledWith('PID', 'artist', 'DJ Lara', 'Dj Lara')
+    expect(result.current.spelling).toHaveLength(1)
+  })
+
+  // Same format on both sides: the measured one that is not cut at 16 kHz is the one to keep.
+  it('keeps the better analyzed copy when the format ties', async () => {
+    listApi()
+    const spectrum = (cutoffHz: number) =>
+      ({ cutoffHz, sampleRateHz: 44100, processed: false, hasKnee: true }) as TrackItem['spectrum']
+    const { result } = listHook([
+      row('/m/a.aiff', 'Ann', 'Song', { spectrum: spectrum(16000) }),
+      row('/m/b.aiff', 'Ann', 'Song', { spectrum: spectrum(20500) }),
+    ])
+    await located(result)
+    expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('/m/b.aiff')
+    expect(result.current.facts('/m/b.aiff')?.spectrum?.cutoffHz).toBe(20500)
   })
 })

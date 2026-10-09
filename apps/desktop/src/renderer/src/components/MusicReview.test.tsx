@@ -48,6 +48,10 @@ function review(over: Partial<Review> = {}): Review {
     lastRun: null,
     libraries: null,
     affected: () => [],
+    kind: 'music',
+    skipped: 0,
+    inMusic: () => true,
+    facts: () => undefined,
     ...over,
   }
 }

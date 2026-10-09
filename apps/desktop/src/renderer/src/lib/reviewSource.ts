@@ -1,5 +1,6 @@
 import type {
   DuplicateReplaceOutcome,
+  LibraryTagUpdate,
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewEntry,
@@ -8,10 +9,13 @@ import type {
   ReviewFix,
   ReviewOutcome,
 } from '../../../shared/types'
+import type { TrackItem } from '../types'
 
 export interface ReviewLoad {
   entries: ReviewEntry[]
   skipped: number
+  // Undefined where there is no Music; false when it was closed and not opened to ask.
+  musicConsulted?: boolean
 }
 
 export interface ReviewRemoval {
@@ -33,6 +37,7 @@ export interface RemovalHooks {
   onStep: (current: number) => void
   onDone: (done: number) => void
   onLibraries: () => void
+  onCheckingMusic?: () => void
 }
 
 export interface ReviewSource {
@@ -44,6 +49,9 @@ export interface ReviewSource {
   cancel: () => void
   removeCopies: (removals: ReviewRemoval[], hooks: RemovalHooks) => Promise<ReviewRemovalRun>
   revertMusic: (outcome: ReviewOutcome, fix: ReviewFix) => Promise<unknown>
+  inMusic?: (id: string) => boolean
+  facts?: (id: string) => TrackItem | undefined
+  settle?: (updates: LibraryTagUpdate[], trashed: string[]) => void
 }
 
 const FAILED_REMOVAL: RemoveCopyResult = { outcome: 'failed', playlists: 0, fileTrashed: false }
