@@ -1,4 +1,9 @@
-import type { MusicFixOutcome, MusicReviewField, ReviewOutcome } from '../shared/types'
+import type {
+  ActivityKind,
+  MusicFixOutcome,
+  MusicReviewField,
+  ReviewOutcome,
+} from '../shared/types'
 import type { Activity } from './activity'
 import type { MusicSetResult } from './applemusic'
 
@@ -44,6 +49,7 @@ export function createMusicReviewLog() {
     groupOf: (persistentId: string) => groups.get(persistentId),
     undoLabelOf: (group: string) =>
       listRuns.has(group) ? 'activity.listReviewUndoRun' : 'activity.reviewUndoRun',
+    kindOf: (group: string): ActivityKind => (listRuns.has(group) ? 'review' : 'applemusic'),
     backup: (id: string) => backups.get(id),
     rememberCopy(path: string, copy: { group: string; label: string }) {
       copies.set(path, copy)
@@ -67,6 +73,8 @@ export interface RunLog {
   track: Activity['track']
   // The run's own row in Activity, so hundreds of fixes fold under one entry.
   group: string
+  // Apple Music when absent.
+  kind?: ActivityKind
   titleOf: (id: string) => string
 }
 
@@ -88,7 +96,7 @@ export async function logFieldRows<O>(
   const title = log.titleOf(id)
   await Promise.all(
     fields.map((field, i) =>
-      log.track('applemusic', `activity.reviewFix.${field}`, () => work, {
+      log.track(log.kind ?? 'applemusic', `activity.reviewFix.${field}`, () => work, {
         labelParams: { title },
         group: log.group,
         groupLabelKey: run.labelKey,
@@ -108,7 +116,7 @@ export function setFieldLogged(
   { track, log }: UndoDeps,
 ): Promise<MusicSetResult> {
   const group = log.groupOf(persistentId) ?? UNDO_GROUP
-  return track('applemusic', `activity.reviewFix.${field}`, set, {
+  return track(log.kindOf(group), `activity.reviewFix.${field}`, set, {
     labelParams: { title: log.titleOf(persistentId) },
     group,
     groupLabelKey: log.undoLabelOf(group),
@@ -132,7 +140,7 @@ export function restoreLogged<T>(
 ) {
   const backup = log.backup(id)
   if (!backup || from !== 'undo') return restore()
-  return track('applemusic', 'activity.reviewUndoFile', restore, {
+  return track(log.kindOf(backup.group), 'activity.reviewUndoFile', restore, {
     labelParams: { title: backup.title },
     group: backup.group,
     groupLabelKey: log.undoLabelOf(backup.group),

@@ -13,6 +13,7 @@ import {
   FolderDown,
   Image as ImageIcon,
   Library,
+  ListChecks,
   Loader2,
   Music,
   Radio,
@@ -67,6 +68,8 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   convert: Disc3,
   analyze: ActivityIcon,
   applemusic: Library,
+  // The list's own review icon, the one its toolbar button wears.
+  review: ListChecks,
   import: FolderDown,
   export: FileOutput,
   // The same sparkle the track list stamps on auto-matched rows, so the verdict entry

@@ -159,6 +159,14 @@ describe('the undo in Activity', () => {
       [run, 'activity.listReviewUndoRun'],
       [run, 'activity.listReviewUndoRun'],
     ])
+    expect(new Set(events.map((e) => e.kind))).toEqual(new Set(['review']))
+  })
+
+  it('keeps a Music run undo under Apple Music', async () => {
+    const { events, log, track } = setup()
+    await setFieldLogged('A', 'artist', async () => 'set', { track, log })
+    await restoreLogged('b1', async () => ({}), { track, log }, 'undo')
+    expect(new Set(events.map((e) => e.kind))).toEqual(new Set(['applemusic']))
   })
 
   // The Backups panel restores through the same call; those are not the review's.

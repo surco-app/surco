@@ -47,6 +47,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
       track: deps.log.track,
       group: deps.log.reviewLog.beginListRun(),
       titleOf,
+      kind: 'review' as const,
     }
     try {
       const outcomes = await applyListFixes(req, deps.apply, {
@@ -143,7 +144,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
     const outcomes = await replaceDuplicates(pairs, {
       ...d.replace,
       trash: d.trash,
-      ...(log && { log: { track: log.track, copyOf: log.reviewLog.copyOf } }),
+      ...(log && { log: { track: log.track, copyOf: log.reviewLog.copyOf, kind: 'review' } }),
       ...(musicDeps && {
         musicStep: (pair: ReplacePair) => {
           const step = () =>
@@ -153,7 +154,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
             )
           const copy = log?.reviewLog.copyOf(pair.from)
           return log && copy
-            ? log.track('applemusic', 'activity.reviewDuplicateMusic', step, {
+            ? log.track('review', 'activity.reviewDuplicateMusic', step, {
                 group: copy.group,
                 groupLabel: copy.label,
                 summary: musicEnding,

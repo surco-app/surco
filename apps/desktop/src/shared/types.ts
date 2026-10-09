@@ -994,6 +994,8 @@ export type ActivityKind =
   | 'convert'
   | 'analyze'
   | 'applemusic'
+  // The list review: tag fixes and duplicate removals on the list's files, Music or not.
+  | 'review'
   | 'import'
   | 'export'
   // The auto-match sweep's verdicts. Unlike the rest, reported from the renderer (where

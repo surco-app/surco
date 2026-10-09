@@ -1,4 +1,5 @@
 import type {
+  ActivityKind,
   DuplicatePair,
   DuplicateReplaceOutcome,
   LibraryReplaceOutcome,
@@ -34,6 +35,8 @@ export interface ReplaceDuplicatesDeps {
   log?: {
     track: Activity['track']
     copyOf: (path: string) => { group: string; label: string } | undefined
+    // Apple Music when absent.
+    kind?: ActivityKind
   }
   // The list review only: Apple Music lets go of the removed copy after the DJ libraries and
   // before the Trash, and a file Music still holds is not thrown away.
@@ -181,7 +184,7 @@ export function replaceDuplicates(
       const copy = log?.copyOf(pair.from)
       const { fate } =
         log && copy
-          ? await log.track('applemusic', 'activity.reviewDuplicateFile', decide, {
+          ? await log.track(log.kind ?? 'applemusic', 'activity.reviewDuplicateFile', decide, {
               group: copy.group,
               groupLabel: copy.label,
               summary: (f) => ({

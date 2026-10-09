@@ -115,6 +115,28 @@ describe('listreview:applyFixes in Activity', () => {
     expect(reviewLog.groupOf('PA')).toBe(group)
     expect(reviewLog.backup('b1')).toEqual({ group, title: 'Funk Freak' })
   })
+
+  // The list review works on files on every platform; a Music icon on its rows said it was
+  // Music's doing.
+  it('files its rows under the review, not Apple Music', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    registerListReviewIpc({
+      apply: {
+        allowed: () => true,
+        exists: async () => true,
+        rewrite: async () => ({ outcomes: ['written'] }),
+      },
+      log: { track: activity.track, reviewLog: createMusicReviewLog() },
+    } as never)
+    await handlerFor('listreview:applyFixes')(
+      { sender },
+      { fixes: [{ id: '/m/a.aiff', field: 'artist', from: 'a', to: 'b' }], music: {}, titles: {} },
+    )
+    expect(events.length).toBeGreaterThan(0)
+    expect(new Set(events.map((e) => e.kind))).toEqual(new Set(['review']))
+  })
 })
 
 describe('listreview:removeDuplicates', () => {
@@ -549,6 +571,7 @@ describe('listreview:removeDuplicates in Activity', () => {
       ],
     ])
     expect(new Set(events.map((e) => e.group)).size).toBe(1)
+    expect(new Set(events.map((e) => e.kind))).toEqual(new Set(['review']))
   })
 
   // A second try at the same copy is a new run: folded under the first one's row, a
