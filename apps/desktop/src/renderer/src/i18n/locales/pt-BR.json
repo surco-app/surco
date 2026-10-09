@@ -1551,10 +1551,7 @@
         "corrected_one": "faixa corrigida",
         "corrected_other": "faixas corrigidas",
         "removed_one": "cópia removida",
-        "removed_other": "cópias removidas",
-        "left_one": "grupo para revisar",
-        "left_other": "grupos para revisar",
-        "before": "antes {{count}}"
+        "removed_other": "cópias removidas"
       },
       "where": {
         "title": "Onde foi aplicado",

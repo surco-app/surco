@@ -1551,10 +1551,7 @@
         "corrected_one": "morceau corrigé",
         "corrected_other": "morceaux corrigés",
         "removed_one": "copie retirée",
-        "removed_other": "copies retirées",
-        "left_one": "groupe à vérifier",
-        "left_other": "groupes à vérifier",
-        "before": "avant {{count}}"
+        "removed_other": "copies retirées"
       },
       "where": {
         "title": "Où cela a été appliqué",

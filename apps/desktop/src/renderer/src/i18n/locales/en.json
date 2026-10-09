@@ -1551,10 +1551,7 @@
         "corrected_one": "track corrected",
         "corrected_other": "tracks corrected",
         "removed_one": "copy removed",
-        "removed_other": "copies removed",
-        "left_one": "group to review",
-        "left_other": "groups to review",
-        "before": "before {{count}}"
+        "removed_other": "copies removed"
       },
       "where": {
         "title": "Where it was applied",

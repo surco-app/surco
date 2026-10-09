@@ -199,17 +199,7 @@ const DESTINATION_TONE: Record<DestinationState, string> = {
 
 const joined = (parts: (string | false)[]) => parts.filter(Boolean).join(' · ')
 
-function Stat({
-  testId,
-  value,
-  label,
-  children,
-}: {
-  testId: string
-  value: number
-  label: string
-  children?: React.ReactNode
-}) {
+function Stat({ testId, value, label }: { testId: string; value: number; label: string }) {
   return (
     <div
       data-testid={`music-review-done-stat-${testId}`}
@@ -217,7 +207,6 @@ function Stat({
     >
       <span className="block text-xl font-semibold tabular-nums">{value}</span>
       <span className="block text-xs text-fg-dim">{label}</span>
-      {children}
     </div>
   )
 }
@@ -458,20 +447,6 @@ function Done({
             value={removed}
             label={t('musicReview.done.stat.removed', { count: removed })}
           />
-          {run.after !== null && (
-            <Stat
-              testId="left"
-              value={run.after}
-              label={t('musicReview.done.stat.left', { count: run.after })}
-            >
-              <span
-                data-testid="music-review-done-stat-before"
-                className="block text-xs text-fg-faint tabular-nums"
-              >
-                {t('musicReview.done.stat.before', { count: run.before })}
-              </span>
-            </Stat>
-          )}
         </div>
       )}
       {destinations.length > 0 && (

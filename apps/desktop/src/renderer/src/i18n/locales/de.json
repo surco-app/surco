@@ -1551,10 +1551,7 @@
         "corrected_one": "Titel korrigiert",
         "corrected_other": "Titel korrigiert",
         "removed_one": "Kopie entfernt",
-        "removed_other": "Kopien entfernt",
-        "left_one": "Gruppe zu prüfen",
-        "left_other": "Gruppen zu prüfen",
-        "before": "vorher {{count}}"
+        "removed_other": "Kopien entfernt"
       },
       "where": {
         "title": "Wo es angewendet wurde",

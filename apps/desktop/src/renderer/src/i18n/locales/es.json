@@ -1551,10 +1551,7 @@
         "corrected_one": "pista corregida",
         "corrected_other": "pistas corregidas",
         "removed_one": "copia quitada",
-        "removed_other": "copias quitadas",
-        "left_one": "grupo por revisar",
-        "left_other": "grupos por revisar",
-        "before": "antes {{count}}"
+        "removed_other": "copias quitadas"
       },
       "where": {
         "title": "Dónde se ha aplicado",

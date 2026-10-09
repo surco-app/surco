@@ -631,7 +631,8 @@ describe('MusicReview', () => {
       expect(detailOf('engine')).toBe('not synced')
     })
 
-    it('counts corrected tracks, removed copies and the groups left against before', () => {
+    // The summary says what was done; what is still left to review is the list behind it.
+    it('counts corrected tracks and removed copies and nothing still left', () => {
       render(
         <Panes
           review={done(
@@ -645,10 +646,9 @@ describe('MusicReview', () => {
       expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent(
         '1copy removed',
       )
-      expect(screen.getByTestId('music-review-done-stat-left')).toHaveTextContent(
-        '59groups to review',
-      )
-      expect(screen.getByTestId('music-review-done-stat-before')).toHaveTextContent('before 64')
+      expect(screen.queryByTestId('music-review-done-stat-left')).toBeNull()
+      expect(screen.queryByTestId('music-review-done-stat-before')).toBeNull()
+      expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('to review')
     })
 
     // Each destination says what reached it, so the DJ checks the one they play from.
@@ -1185,12 +1185,6 @@ describe('MusicReview', () => {
       "Couldn't apply in Apple Music.",
       "rekordbox, Engine DJ or Traktor weren't updated. Check Activity.",
     ])
-  })
-
-  it('hides the groups-left line when the recount failed', () => {
-    render(<Panes review={done(run({ after: null }))} />)
-    expect(screen.queryByTestId('music-review-done-stat-left')).toBeNull()
-    expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('to review')
   })
 
   it('keeps the sheet open after a partial undo and says how many changes stayed', () => {
