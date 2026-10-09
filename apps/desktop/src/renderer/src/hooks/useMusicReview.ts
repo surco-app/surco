@@ -192,15 +192,29 @@ export function mergeSpelling(groups: SpellingGroup[]): ReviewSpellingGroup[] {
   })
 }
 
+function pending(
+  spelling: SpellingGroup[],
+  duplicates: DuplicateGroup[],
+  ignored: ReadonlySet<string>,
+  touches: (ids: string[]) => boolean = () => true,
+) {
+  return {
+    spelling: mergeSpelling(spelling.filter((g) => !ignored.has(g.key))).filter((g) =>
+      g.parts.some((p) => p.variants.some((v) => touches(v.ids))),
+    ).length,
+    duplicates: duplicates.filter(
+      (g) => g.kind === 'duplicate' && !ignored.has(g.key) && touches(g.ids),
+    ).length,
+  }
+}
+
 function pendingCount(
   spelling: SpellingGroup[],
   duplicates: DuplicateGroup[],
   ignored: ReadonlySet<string>,
 ): number {
-  return (
-    mergeSpelling(spelling.filter((g) => !ignored.has(g.key))).length +
-    duplicates.filter((g) => g.kind === 'duplicate' && !ignored.has(g.key)).length
-  )
+  const counts = pending(spelling, duplicates, ignored)
+  return counts.spelling + counts.duplicates
 }
 
 const groupsOf = (entries: ReviewEntry[]) =>
@@ -211,17 +225,9 @@ export function pendingGroups(
   ignored: readonly string[],
   touching: ReadonlySet<string>,
 ) {
-  const hidden = new Set(ignored)
-  const [spelling, duplicates] = groupsOf(entries)
-  const touches = (ids: string[]) => ids.some((id) => touching.has(id))
-  return {
-    spelling: mergeSpelling(spelling.filter((g) => !hidden.has(g.key))).filter((g) =>
-      g.parts.some((p) => p.variants.some((v) => touches(v.ids))),
-    ).length,
-    duplicates: duplicates.filter(
-      (g) => g.kind === 'duplicate' && !hidden.has(g.key) && touches(g.ids),
-    ).length,
-  }
+  return pending(...groupsOf(entries), new Set(ignored), (ids) =>
+    ids.some((id) => touching.has(id)),
+  )
 }
 
 export function useMusicReview({
