@@ -2160,7 +2160,10 @@ describe('list review', () => {
         'Lossy source · 16.0 kHz',
       )
       expect(within(a).getByText('Quality')).toBeInTheDocument()
-      expect(await within(a).findByTestId('list-review-copy-size')).toHaveTextContent('56.3 MB')
+      expect(await within(a).findByText('56.3 MB')).toHaveAttribute(
+        'data-testid',
+        'list-review-copy-size',
+      )
       expect(within(a).getByText('Size')).toBeInTheDocument()
       expect(within(a).getByTestId('list-review-copy-music')).toHaveTextContent('Apple Music')
       expect(within(b).queryByTestId('list-review-copy-music')).toBeNull()
