@@ -1514,7 +1514,9 @@
     "reviewUndoMusicMismatch": "Pas annulé dans Music. Il avait déjà une autre valeur",
     "reviewUndoMusicMissing": "Pas annulé dans Music. Le morceau n'y est plus",
     "reviewUndoFile": "{{title}} · Fichier",
-    "reviewUndoFileRestored": "Restauré depuis sa copie de sauvegarde"
+    "reviewUndoFileRestored": "Restauré depuis sa copie de sauvegarde",
+    "listReviewDuplicateUnchecked": "Non retirée. Apple Music n'a pas pu être vérifié",
+    "reviewDuplicateFileUnchecked": "Reste sur le disque car Apple Music n'a pas pu être vérifié"
   },
   "applePlaylist": {
     "title": "Importer depuis Apple Music",
@@ -1777,8 +1779,12 @@
         "playlists_one": "{{count}} playlist passée à la copie conservée",
         "playlists_other": "{{count}} playlists passées aux copies conservées",
         "heldForEntry_one": "{{count}} entrée est sortie d’Apple Music, mais son fichier reste car une autre entrée l’utilise encore",
-        "heldForEntry_other": "{{count}} entrées sont sorties d’Apple Music, mais leurs fichiers restent car d’autres entrées les utilisent encore"
-      }
+        "heldForEntry_other": "{{count}} entrées sont sorties d’Apple Music, mais leurs fichiers restent car d’autres entrées les utilisent encore",
+        "unchecked_one": "{{count}} non vérifiée",
+        "unchecked_other": "{{count}} non vérifiées"
+      },
+      "musicUnchecked_one": "{{count}} copie reste sur le disque car Apple Music n'a pas pu être vérifié",
+      "musicUnchecked_other": "{{count}} copies restent sur le disque car Apple Music n'a pas pu être vérifié"
     },
     "detail": {
       "quality": "Qualité",

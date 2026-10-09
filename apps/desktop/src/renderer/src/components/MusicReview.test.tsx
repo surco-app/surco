@@ -2264,6 +2264,15 @@ describe('list review', () => {
       expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
     })
 
+    // An unreadable Music refused nothing; "could not leave Apple Music" sent the user to
+    // look for an entry that was never touched.
+    it('says Apple Music could not be checked for a copy kept for that reason', () => {
+      show(run({ replaced: [gone('/m/c.aiff', { music: 'unchecked', keptForMusic: true })] }))
+      expect(warnings()).toEqual(["1 copy stays on disk because Apple Music couldn't be checked"])
+      expect(dest('music')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('music')).toBe('1 not checked')
+    })
+
     it('warns about every copy that could not be removed, each for its reason', () => {
       show(
         run({

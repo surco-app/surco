@@ -1514,7 +1514,9 @@
     "reviewUndoMusicMismatch": "In Music nicht rückgängig gemacht. Es hatte schon einen anderen Wert",
     "reviewUndoMusicMissing": "In Music nicht rückgängig gemacht. Der Titel ist weg",
     "reviewUndoFile": "{{title}} · Datei",
-    "reviewUndoFileRestored": "Aus der Sicherungskopie wiederhergestellt"
+    "reviewUndoFileRestored": "Aus der Sicherungskopie wiederhergestellt",
+    "listReviewDuplicateUnchecked": "Nicht entfernt. Apple Music konnte nicht geprüft werden",
+    "reviewDuplicateFileUnchecked": "Bleibt auf der Festplatte, weil Apple Music nicht geprüft werden konnte"
   },
   "applePlaylist": {
     "title": "Aus Apple Music importieren",
@@ -1777,8 +1779,12 @@
         "playlists_one": "{{count}} Playlist an die behaltene Kopie übergeben",
         "playlists_other": "{{count}} Playlists an die behaltenen Kopien übergeben",
         "heldForEntry_one": "{{count}} Eintrag wurde aus Apple Music entfernt, aber die Datei bleibt, weil ein anderer Eintrag sie noch nutzt",
-        "heldForEntry_other": "{{count}} Einträge wurden aus Apple Music entfernt, aber die Dateien bleiben, weil andere Einträge sie noch nutzen"
-      }
+        "heldForEntry_other": "{{count}} Einträge wurden aus Apple Music entfernt, aber die Dateien bleiben, weil andere Einträge sie noch nutzen",
+        "unchecked_one": "{{count}} nicht geprüft",
+        "unchecked_other": "{{count}} nicht geprüft"
+      },
+      "musicUnchecked_one": "{{count}} Kopie bleibt auf der Festplatte, weil Apple Music nicht geprüft werden konnte",
+      "musicUnchecked_other": "{{count}} Kopien bleiben auf der Festplatte, weil Apple Music nicht geprüft werden konnte"
     },
     "detail": {
       "quality": "Qualität",

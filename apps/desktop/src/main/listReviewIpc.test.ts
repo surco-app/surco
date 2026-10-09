@@ -326,7 +326,7 @@ describe('listreview:removeDuplicates', () => {
     expect(out).toEqual([
       {
         from: '/m/old.aiff',
-        music: 'failed',
+        music: 'unchecked',
         fileTrashed: false,
         keptForLibrary: false,
         keptForMusic: true,
@@ -574,6 +574,19 @@ describe('listreview:removeDuplicates in Activity', () => {
       ],
       ['activity.reviewDuplicateFile', 'warn', 'activity.reviewDuplicateFileMusic', undefined],
     ])
+  })
+
+  it('says Music could not be checked when its read of every location fails', async () => {
+    const { events, d } = register()
+    d.music.fileLocations.mockRejectedValue(new Error('Not authorized (-1743)'))
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak' },
+    ])
+    expect(steps(events).map(([, phase, detail]) => [phase, detail])).toEqual([
+      ['warn', 'activity.listReviewDuplicateUnchecked'],
+      ['warn', 'activity.reviewDuplicateFileUnchecked'],
+    ])
+    expect(d.trash).not.toHaveBeenCalled()
   })
 
   // Music's own read found the file under an entry the load never saw; nothing left Music.

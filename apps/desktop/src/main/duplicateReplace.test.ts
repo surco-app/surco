@@ -403,6 +403,17 @@ describe('replaceDuplicates in Activity', () => {
     })
   })
 
+  it('says the file stays because Music could not be checked, not because Music has it', async () => {
+    const { events, d } = logged({ musicStep: vi.fn().mockResolvedValue({ step: 'unchecked' }) })
+    const [result] = await replaceDuplicates([PAIR], d)
+    expect(result).toMatchObject({ music: 'unchecked', keptForMusic: true, fileTrashed: false })
+    expect(end(events)).toMatchObject({
+      phase: 'warn',
+      detailKey: 'activity.reviewDuplicateFileUnchecked',
+    })
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
   it('says the file went to Surco’s backup on a disk with no Trash', async () => {
     const { events, d } = logged({ trash: vi.fn().mockResolvedValue('surco') })
     await replaceDuplicates([PAIR], d)

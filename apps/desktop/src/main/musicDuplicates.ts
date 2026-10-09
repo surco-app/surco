@@ -135,11 +135,16 @@ export async function removeListCopyFromMusic(
   { from, to, music }: Omit<ListRemoval, 'label'>,
   deps: ListMusicDeps,
 ): Promise<ListMusicOutcome> {
-  if (music === undefined) return { step: (await deps.heldElsewhere(from, [])) ? 'held' : 'none' }
+  const held = (except: string[]) => deps.heldElsewhere(from, except).catch(() => null)
+  if (music === undefined) {
+    const found = await held([])
+    return { step: found === null ? 'unchecked' : found ? 'held' : 'none' }
+  }
   if (music === 'ambiguous') return { step: music }
   if (!music.keep) return { step: 'kept-no-entry' }
   if (music.keep.persistentId === music.removePid) return { step: 'failed' }
-  const heldElsewhere = await deps.heldElsewhere(from, [music.removePid])
+  const heldElsewhere = await held([music.removePid])
+  if (heldElsewhere === null) return { step: 'unchecked' }
   const answer = await deps.transferPlaylists(
     music.removePid,
     music.keep.persistentId,

@@ -1514,7 +1514,9 @@
     "reviewUndoMusicMismatch": "Not undone in Music. It already held another value",
     "reviewUndoMusicMissing": "Not undone in Music. The track is gone",
     "reviewUndoFile": "{{title}} · File",
-    "reviewUndoFileRestored": "Restored from its backup"
+    "reviewUndoFileRestored": "Restored from its backup",
+    "listReviewDuplicateUnchecked": "Not removed. Apple Music couldn't be checked",
+    "reviewDuplicateFileUnchecked": "Stays on disk because Apple Music couldn't be checked"
   },
   "applePlaylist": {
     "title": "Import from Apple Music",
@@ -1777,8 +1779,12 @@
         "playlists_one": "{{count}} playlist moved to the kept copy",
         "playlists_other": "{{count}} playlists moved to the kept copies",
         "heldForEntry_one": "{{count}} entry left Apple Music, but its file stays because another entry still uses it",
-        "heldForEntry_other": "{{count}} entries left Apple Music, but their files stay because other entries still use them"
-      }
+        "heldForEntry_other": "{{count}} entries left Apple Music, but their files stay because other entries still use them",
+        "unchecked_one": "{{count}} not checked",
+        "unchecked_other": "{{count}} not checked"
+      },
+      "musicUnchecked_one": "{{count}} copy stays on disk because Apple Music couldn't be checked",
+      "musicUnchecked_other": "{{count}} copies stay on disk because Apple Music couldn't be checked"
     },
     "detail": {
       "quality": "Quality",

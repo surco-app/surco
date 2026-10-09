@@ -817,6 +817,9 @@ export type ListMusicStep =
   | 'ambiguous'
   // Music holds the file under an entry the renderer never found, so the file stays.
   | 'held'
+  // Music's own read of its files failed (Automation denied, Music missing): nothing was
+  // taken out of it and the file stays.
+  | 'unchecked'
   | 'mismatch'
   | 'failed'
 

@@ -1514,7 +1514,9 @@
     "reviewUndoMusicMismatch": "Sin deshacer en Music. Ya tenía otro valor",
     "reviewUndoMusicMissing": "Sin deshacer en Music. La pista ya no está",
     "reviewUndoFile": "{{title}} · Fichero",
-    "reviewUndoFileRestored": "Restaurado desde su copia de seguridad"
+    "reviewUndoFileRestored": "Restaurado desde su copia de seguridad",
+    "listReviewDuplicateUnchecked": "Sin quitar. No se pudo comprobar Apple Music",
+    "reviewDuplicateFileUnchecked": "Se queda en disco porque no se pudo comprobar Apple Music"
   },
   "applePlaylist": {
     "title": "Importar de Apple Music",
@@ -1777,8 +1779,12 @@
         "playlists_one": "{{count}} playlist pasó a la copia que se queda",
         "playlists_other": "{{count}} playlists pasaron a las copias que se quedan",
         "heldForEntry_one": "{{count}} entrada salió de Apple Music, pero su fichero se queda porque otra entrada lo sigue usando",
-        "heldForEntry_other": "{{count}} entradas salieron de Apple Music, pero sus ficheros se quedan porque otras entradas los siguen usando"
-      }
+        "heldForEntry_other": "{{count}} entradas salieron de Apple Music, pero sus ficheros se quedan porque otras entradas los siguen usando",
+        "unchecked_one": "{{count}} sin comprobar",
+        "unchecked_other": "{{count}} sin comprobar"
+      },
+      "musicUnchecked_one": "{{count}} copia se queda en disco porque no se pudo comprobar Apple Music",
+      "musicUnchecked_other": "{{count}} copias se quedan en disco porque no se pudo comprobar Apple Music"
     },
     "detail": {
       "quality": "Calidad",

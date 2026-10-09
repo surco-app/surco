@@ -269,9 +269,11 @@ describe('removeListCopyFromMusic', () => {
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })
 
-  it('lets a failed check through as a failure', async () => {
+  // Music could not be read (Automation denied, Music missing): nothing was taken out of
+  // it, and that is not the same as Music refusing to let the copy go.
+  it('says Music went unchecked when its read fails', async () => {
     const d = listDeps({ heldElsewhere: vi.fn().mockRejectedValue(new Error('osascript')) })
-    await expect(removeListCopyFromMusic(removal(), d)).rejects.toThrow('osascript')
+    expect(await removeListCopyFromMusic(removal(), d)).toEqual({ step: 'unchecked' })
   })
 
   // Each entry is checked live against the file it was found by, not only by its label.
@@ -318,7 +320,7 @@ describe('removeListCopyFromMusic', () => {
 
   it('deletes nothing when Music could not be read first', async () => {
     const d = listDeps({ heldElsewhere: vi.fn().mockRejectedValue(new Error('osascript')) })
-    await expect(removeListCopyFromMusic(removal(ref), d)).rejects.toThrow('osascript')
+    expect(await removeListCopyFromMusic(removal(ref), d)).toEqual({ step: 'unchecked' })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })

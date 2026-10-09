@@ -242,6 +242,7 @@ function Done({
     ).length
   const keptForMusic = keptBy(['held', 'kept-no-entry', 'ambiguous'])
   const musicRemovalFailed = keptBy(['mismatch', 'failed'])
+  const musicUnchecked = keptBy(['unchecked'])
   const heldForEntry = run.replaced.filter((r) => r.musicEntryRemoved).length
   const leftMusic = run.replaced.filter((r) => r.music === 'removed' || r.musicEntryRemoved).length
   const musicPlaylists = run.replaced.reduce((n, r) => n + (r.musicPlaylists ?? 0), 0)
@@ -323,6 +324,7 @@ function Done({
     ...(musicRemovalFailed
       ? [t('listReview.done.musicFailed', { count: musicRemovalFailed })]
       : []),
+    ...(musicUnchecked ? [t('listReview.done.musicUnchecked', { count: musicUnchecked })] : []),
     ...(trashFailed ? [t('listReview.done.trashFailed', { count: trashFailed })] : []),
   ]
   const inMusic =
@@ -383,7 +385,10 @@ function Done({
               {
                 id: 'music',
                 label: 'Apple Music',
-                state: (!list && run.applyError !== undefined) || musicFailed ? 'warn' : 'ok',
+                state:
+                  (!list && run.applyError !== undefined) || musicFailed || musicUnchecked
+                    ? 'warn'
+                    : 'ok',
                 detail:
                   !list && run.applyError !== undefined
                     ? t('musicReview.done.where.notApplied')
@@ -399,6 +404,8 @@ function Done({
                           t('listReview.done.musicMismatch', { count: musicMismatch }),
                         musicFailed > 0 &&
                           t('musicReview.done.where.failed', { count: musicFailed }),
+                        musicUnchecked > 0 &&
+                          t('listReview.done.where.unchecked', { count: musicUnchecked }),
                       ]) || t('musicReview.done.where.nothing'),
               } as const,
             ]
