@@ -71,6 +71,7 @@ import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
 import {
   libraryOutcomes,
+  type ReplaceDuplicatesDeps,
   type ReplacePair,
   replaceDuplicates,
   traktorDuplicateStep,
@@ -1070,90 +1071,99 @@ function registerIpc(): void {
     )
   })
 
-  // A review removed duplicate copies from Music: each library with its sync on moves to the
-  // copy the user kept, through the same prompts, dialogs and Activity rows as the other
-  // flushes, and a removed copy's file goes to the Trash only once no library needs it.
+  // A removed duplicate copy: each library with its sync on moves to the copy the user kept,
+  // through the same prompts, dialogs and Activity rows as the other flushes.
+  const duplicateLibraryDeps = (
+    win: BrowserWindow | null,
+    sender: WebContents,
+  ): Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'> => {
+    const realPath = (p: string) => realpathSync(p)
+    const rekordbox = rekordboxFlushDeps(win, sender)
+    const engine = engineFlushDeps(win, sender)
+    const traktor = traktorFlushDeps(win)
+    const keys = { written: 'activity.duplicatesReplaced' }
+    return {
+      libraries: {
+        ...((rekordbox.collectionPath || rekordbox.collectionMissing) && {
+          rekordbox: (list) =>
+            libraryOutcomes(
+              list,
+              (run) =>
+                flushLibraryRepoints(
+                  {
+                    ...rekordbox,
+                    endBatch: () => list,
+                    labelOf: (p) => p.from,
+                    repointTracks: run,
+                  },
+                  { ...REKORDBOX_KEYS, ...keys },
+                ),
+              (path, items) =>
+                replaceRekordboxDuplicates(path, items, {
+                  realPath,
+                  sessionBackup: (db) => rekordboxSessionBackup.ensure(db),
+                }),
+            ),
+        }),
+        ...((engine.collectionPath || engine.collectionMissing) && {
+          engine: (list) =>
+            libraryOutcomes(
+              list,
+              (run) =>
+                flushLibraryRepoints(
+                  { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
+                  { ...ENGINE_KEYS, ...keys },
+                ),
+              (path, items) =>
+                replaceEngineDuplicates(path, items, {
+                  realPath,
+                  sessionBackup: (db) => engineSessionBackup.ensure(db),
+                }),
+            ),
+        }),
+        ...(traktor.collectionMissing && {
+          traktor: async (list) => {
+            await traktor.track('export', 'activity.traktorSync', async () => ({}), {
+              summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
+            })
+            return list.map(() => 'skipped' as const)
+          },
+        }),
+        ...(traktor.traktorNmlPath && {
+          traktor: (list) =>
+            traktorDuplicateStep(list, {
+              nmlPath: traktor.traktorNmlPath,
+              ensureTraktorClosed: traktor.ensureTraktorClosed,
+              showBlockedDialog: traktor.showBlockedDialog,
+              track: traktor.track,
+              replace: replaceDuplicatesInCollection,
+            }),
+        }),
+      },
+      usedByLibrary: (path) =>
+        usedByDjLibrary(
+          path,
+          {
+            rekordbox: rekordbox.collectionPath,
+            engine: engine.collectionPath,
+            traktor: traktor.traktorNmlPath,
+          },
+          { realPath },
+        ),
+      serial: serialLibraryFlush,
+      warn: (message, error) => log.warn(message, error),
+    }
+  }
+
+  // A review removed duplicate copies from Music: the libraries follow, and a removed copy's
+  // file goes to the Trash only once no library needs it.
   ipcMain.handle(
     'library:replaceDuplicates',
     async (e, pairs: ReplacePair[]): Promise<DuplicateReplaceOutcome[]> => {
       if (process.platform !== 'darwin' || pairs.length === 0) return []
-      const win = BrowserWindow.fromWebContents(e.sender)
-      const realPath = (p: string) => realpathSync(p)
-      const rekordbox = rekordboxFlushDeps(win, e.sender)
-      const engine = engineFlushDeps(win, e.sender)
-      const traktor = traktorFlushDeps(win)
-      const keys = { written: 'activity.duplicatesReplaced' }
       return replaceDuplicates(pairs, {
-        libraries: {
-          ...((rekordbox.collectionPath || rekordbox.collectionMissing) && {
-            rekordbox: (list) =>
-              libraryOutcomes(
-                list,
-                (run) =>
-                  flushLibraryRepoints(
-                    {
-                      ...rekordbox,
-                      endBatch: () => list,
-                      labelOf: (p) => p.from,
-                      repointTracks: run,
-                    },
-                    { ...REKORDBOX_KEYS, ...keys },
-                  ),
-                (path, items) =>
-                  replaceRekordboxDuplicates(path, items, {
-                    realPath,
-                    sessionBackup: (db) => rekordboxSessionBackup.ensure(db),
-                  }),
-              ),
-          }),
-          ...((engine.collectionPath || engine.collectionMissing) && {
-            engine: (list) =>
-              libraryOutcomes(
-                list,
-                (run) =>
-                  flushLibraryRepoints(
-                    { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
-                    { ...ENGINE_KEYS, ...keys },
-                  ),
-                (path, items) =>
-                  replaceEngineDuplicates(path, items, {
-                    realPath,
-                    sessionBackup: (db) => engineSessionBackup.ensure(db),
-                  }),
-              ),
-          }),
-          ...(traktor.collectionMissing && {
-            traktor: async (list) => {
-              await traktor.track('export', 'activity.traktorSync', async () => ({}), {
-                summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
-              })
-              return list.map(() => 'skipped' as const)
-            },
-          }),
-          ...(traktor.traktorNmlPath && {
-            traktor: (list) =>
-              traktorDuplicateStep(list, {
-                nmlPath: traktor.traktorNmlPath,
-                ensureTraktorClosed: traktor.ensureTraktorClosed,
-                showBlockedDialog: traktor.showBlockedDialog,
-                track: traktor.track,
-                replace: replaceDuplicatesInCollection,
-              }),
-          }),
-        },
-        usedByLibrary: (path) =>
-          usedByDjLibrary(
-            path,
-            {
-              rekordbox: rekordbox.collectionPath,
-              engine: engine.collectionPath,
-              traktor: traktor.traktorNmlPath,
-            },
-            { realPath },
-          ),
+        ...duplicateLibraryDeps(BrowserWindow.fromWebContents(e.sender), e.sender),
         trash: (path) => trashRecoverably(path),
-        serial: serialLibraryFlush,
-        warn: (message, error) => log.warn(message, error),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
       })
     },
