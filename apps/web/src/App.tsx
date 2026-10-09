@@ -6,6 +6,7 @@ import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
+import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
@@ -105,6 +106,7 @@ export default function App() {
             the heading that introduces the steps. */}
         <div className="mx-auto max-w-6xl px-6">
           <Walkthrough />
+          <LibraryReview />
         </div>
 
         {/* pb is smaller than pt: the footer brings its own py-14, and the two

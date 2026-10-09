@@ -1100,6 +1100,56 @@
       "convertCount": "Convert {{count}} tracks",
       "convertTo": "Convert to AIFF",
       "missingArtist": "Missing Artist"
+    },
+    "review": {
+      "kicker": "Your library",
+      "title": "Find the typos and duplicates in your library",
+      "lede": "Surco goes through your Apple Music library or the folder you drop and groups what's spelled more than one way, the invisible spaces and characters that sneak in when you copy from a website, and the tracks you have twice. You choose how it should read and the change reaches the files, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor.",
+      "points": {
+        "spelling": {
+          "title": "Spellings",
+          "text": "DJ Lara and Dj Lara, Head Horny's with two different apostrophes, accents that don't match."
+        },
+        "typo": {
+          "title": "Typos",
+          "text": "Rahcel for Rachel. A typo never joins the batch by itself, you decide."
+        },
+        "duplicate": {
+          "title": "Duplicates",
+          "text": "The same track twice. The copy you keep joins the playlists of the one you remove."
+        },
+        "everywhere": {
+          "title": "Everywhere",
+          "text": "Files, Apple Music, rekordbox, Engine DJ and Traktor, with a backup of every file. And corrections come with Undo."
+        }
+      },
+      "all": "All",
+      "artist": "Artist",
+      "bothArtists": "Artist and album artist",
+      "tracks_one": "{{count}} track",
+      "tracks_other": "{{count}} tracks",
+      "copies": "{{count}} copies",
+      "inBatch": "in the batch",
+      "badge": {
+        "case": "Capitals",
+        "invisible": "Invisible",
+        "punctuation": "Punctuation",
+        "typo": "Typo",
+        "duplicate": "Duplicate"
+      },
+      "typo": "possible typo",
+      "tie": "Tied. Pick the one to keep.",
+      "options": "How it is and how it ends up",
+      "keeps": "Kept",
+      "fieldTitle": "Title",
+      "now": "Now",
+      "after": "Becomes",
+      "where": "Where",
+      "music": "Music",
+      "file": "File",
+      "applyCount_one": "Apply {{count}} change",
+      "applyCount_other": "Apply {{count}} changes",
+      "done": "rekordbox · 4 tracks updated, playlists and cues untouched"
     }
   },
   "flacToAiff": {

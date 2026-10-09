@@ -1100,6 +1100,56 @@
       "convertCount": "Convertir {{count}} pistas",
       "convertTo": "Convertir a AIFF",
       "missingArtist": "Falta Artista"
+    },
+    "review": {
+      "kicker": "Tu biblioteca",
+      "title": "Encuentra las erratas y los duplicados de tu biblioteca",
+      "lede": "Surco repasa tu biblioteca de Apple Music o la carpeta que sueltes y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los ficheros, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor.",
+      "points": {
+        "spelling": {
+          "title": "Grafías",
+          "text": "DJ Lara y Dj Lara, Head Horny's con dos apóstrofes distintos, acentos que no casan."
+        },
+        "typo": {
+          "title": "Erratas",
+          "text": "Rahcel por Rachel. Una errata nunca entra sola en la tanda, la decides tú."
+        },
+        "duplicate": {
+          "title": "Duplicados",
+          "text": "La misma pista dos veces. La copia que se queda entra en las playlists de la que quitas."
+        },
+        "everywhere": {
+          "title": "En todas partes",
+          "text": "Ficheros, Apple Music, rekordbox, Engine DJ y Traktor, con copia de seguridad de cada fichero. Y las correcciones tienen Deshacer."
+        }
+      },
+      "all": "Todo",
+      "artist": "Artista",
+      "bothArtists": "Artista y artista del álbum",
+      "tracks_one": "{{count}} pista",
+      "tracks_other": "{{count}} pistas",
+      "copies": "{{count}} copias",
+      "inBatch": "en la tanda",
+      "badge": {
+        "case": "Mayúsculas",
+        "invisible": "Invisibles",
+        "punctuation": "Signos",
+        "typo": "Errata",
+        "duplicate": "Duplicado"
+      },
+      "typo": "posible errata",
+      "tie": "Empate. Elige cuál se queda.",
+      "options": "Cómo está y cómo queda",
+      "keeps": "Se queda",
+      "fieldTitle": "Título",
+      "now": "Ahora",
+      "after": "Queda",
+      "where": "Dónde",
+      "music": "Music",
+      "file": "Fichero",
+      "applyCount_one": "Aplicar {{count}} cambio",
+      "applyCount_other": "Aplicar {{count}} cambios",
+      "done": "rekordbox · 4 pistas actualizadas, playlists y cues intactas"
     }
   },
   "flacToAiff": {
