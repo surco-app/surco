@@ -465,7 +465,16 @@ describe('parseReviewDump', () => {
   // space or an invisible character is a finding, so nothing may be trimmed away.
   it('keeps invisible characters, tabs and spaces inside a value', () => {
     const [e] = parseReviewDump(
-      row('5FA52DD35E307CBB', 'Funk\tFreak ', 'Aar\u200b\u00f3\u200bn Alfonso', '', '', '', '419', ''),
+      row(
+        '5FA52DD35E307CBB',
+        'Funk\tFreak ',
+        'Aar\u200b\u00f3\u200bn Alfonso',
+        '',
+        '',
+        '',
+        '419',
+        '',
+      ),
     )
     expect(e.title).toBe('Funk\tFreak ')
     expect(e.artist).toBe('Aar\u200b\u00f3\u200bn Alfonso')
