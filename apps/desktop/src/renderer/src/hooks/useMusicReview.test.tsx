@@ -514,6 +514,53 @@ describe('useMusicReview', () => {
     expect(result.current.lastRun?.librariesUntouched).toBe(true)
   })
 
+  // The sheet after an undo reports the undo: "you stopped the review, so the libraries
+  // were not touched" belonged to the apply it undid.
+  it("carries none of the apply run's own flags into the undo it reports", async () => {
+    const lib = [
+      ...LIB,
+      e('P', 'Ann', { title: 'Song', durationSec: 200 }),
+      e('Q', 'Ann', { title: 'Song', durationSec: 201 }),
+      e('R', 'Ann', { title: 'Song', durationSec: 202 }),
+    ]
+    let release: () => void = () => {}
+    const removeMusicDuplicate = vi.fn<Api['removeMusicDuplicate']>().mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          release = () =>
+            r({
+              outcome: 'removed',
+              playlists: 0,
+              fileTrashed: false,
+              pair: { from: '/m/q.aiff', to: '/m/p.aiff', shared: false },
+            })
+        }),
+    )
+    setApi({
+      loadMusicReview: vi.fn().mockResolvedValue(lib),
+      removeMusicDuplicate,
+      trashRestore: vi.fn().mockRejectedValue(new Error('gone')),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.apply()
+    })
+    await waitFor(() => expect(removeMusicDuplicate).toHaveBeenCalledTimes(1))
+    act(() => result.current.cancel())
+    await act(async () => {
+      release()
+      await run
+    })
+    expect(result.current.lastRun?.librariesUntouched).toBe(true)
+    await act(() => result.current.undo())
+    expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
+    expect(result.current.lastRun?.librariesUntouched).toBeUndefined()
+    expect(result.current.lastRun?.applyError).toBeUndefined()
+  })
+
   describe('the DJ libraries after removing copies', () => {
     const THREE = [
       e('P', 'Ann', { title: 'Song', durationSec: 200 }),

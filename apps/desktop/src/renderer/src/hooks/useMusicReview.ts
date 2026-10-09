@@ -661,10 +661,13 @@ export function useMusicReview({
         failed.length === 0 && !libraryLeft
           ? null
           : {
-              ...lastRun,
+              // Built afresh: the apply's own flags (a stopped run, a refused batch) are not
+              // what the undo did.
               outcomes: failed,
               removed: [],
               replaced: [],
+              before: lastRun.before,
+              after: lastRun.after,
               librarySync,
               tagSync,
               undoFailures: failed.length,
