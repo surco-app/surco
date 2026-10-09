@@ -737,6 +737,39 @@ export async function musicFileEntries(
   }
 }
 
+// Every file Music holds, for a file the list review is about to trash with no entry found
+// for it: the title lookup misses a track renamed in Music. Measured 09/10 on a 2045-track
+// SMB library: `whose location is` never matched a real path and still took 35-45 s, the
+// one bulk read 38 s. Any failure but an empty library reaches the caller, which keeps the file.
+export function buildFilePathsScript(): string {
+  return [
+    'tell application "Music"',
+    '  set theLocs to location of every file track of library playlist 1',
+    'end tell',
+    'set out to {}',
+    'repeat with loc in theLocs',
+    '  try',
+    '    set end of out to POSIX path of loc',
+    '  end try',
+    'end repeat',
+    `set AppleScript's text item delimiters to (ASCII character 30)`,
+    'return out as text',
+  ].join('\n')
+}
+
+export async function musicFilePaths(run: typeof runOsascript = runOsascript): Promise<string[]> {
+  try {
+    const body = (await run(buildFilePathsScript(), { maxBuffer: 64 * 1024 * 1024 })).replace(
+      /\n$/,
+      '',
+    )
+    return body ? body.split(REVIEW_RS) : []
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('-1728')) return []
+    throw err
+  }
+}
+
 export type MusicSetResult = 'set' | 'missing' | 'mismatch'
 
 const MUSIC_PROPERTY: Record<MusicReviewField, string> = {

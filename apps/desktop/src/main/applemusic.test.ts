@@ -16,6 +16,7 @@ import {
   entriesForPaths,
   isAppleMusicOnly,
   musicFileEntries,
+  musicFilePaths,
   parseFileLocations,
   parseFileNames,
   parseLibraryDump,
@@ -663,9 +664,14 @@ describe('buildPlaylistTransferScript', () => {
   })
 
   it('leaves the Music review transfer unchanged, without a location check', () => {
-    expect(
-      buildPlaylistTransferScript('OLD0000000000000', 'KEEP000000000000', 'A - B', 'A - B (X)'),
-    ).not.toContain('Loc')
+    const s = buildPlaylistTransferScript(
+      'OLD0000000000000',
+      'KEEP000000000000',
+      'A - B',
+      'A - B (X)',
+    )
+    expect(s).not.toContain('get location')
+    expect(s).not.toContain('considering')
   })
 })
 
@@ -784,5 +790,40 @@ describe('Music entries for loaded files', () => {
     expect(script).toContain(`{"${PID}", "${OTHER}"}`)
     expect(script).toContain('location of item i of theTracks')
     expect(script.indexOf('POSIX path of loc')).toBeGreaterThan(script.indexOf('end tell'))
+  })
+})
+
+// Before trashing a file the list review found no Music entry for: the renderer's lookup goes
+// by title and misses a track renamed in Music. Measured 09/10 on a 2045-track SMB library:
+// `whose location is` never matched (and scanned for 35-45 s), the bulk read took 38 s.
+describe('musicFilePaths', () => {
+  const RS = '\u001e'
+
+  it('reads every file track location in one bulk call and converts outside the tell', () => {
+    let script = ''
+    const run = vi.fn(async (s: string) => {
+      script = s
+      return ['/m/a.aiff', '/m/b.wav'].join(RS)
+    })
+    return musicFilePaths(run).then((paths) => {
+      expect(paths).toEqual(['/m/a.aiff', '/m/b.wav'])
+      expect(script).toContain('set theLocs to location of every file track of library playlist 1')
+      expect(script.indexOf('POSIX path of')).toBeGreaterThan(script.indexOf('end tell'))
+      const inMusic = script.slice(0, script.indexOf('end tell'))
+      expect(inMusic).not.toMatch(/\b(delete|duplicate|add)\b|set \w+ of/)
+    })
+  })
+
+  it('reads an empty library as no files', async () => {
+    const run = vi.fn().mockResolvedValue('')
+    expect(await musicFilePaths(run)).toEqual([])
+    const empty = vi.fn().mockRejectedValue(new Error('execution error: (-1728)'))
+    expect(await musicFilePaths(empty)).toEqual([])
+  })
+
+  // The caller keeps the file when Music could not be read.
+  it('lets any other failure through', async () => {
+    const run = vi.fn().mockRejectedValue(new Error('execution error: (-600)'))
+    await expect(musicFilePaths(run)).rejects.toThrow('-600')
   })
 })
