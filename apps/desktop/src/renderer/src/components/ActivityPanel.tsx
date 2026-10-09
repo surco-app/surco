@@ -68,7 +68,7 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   convert: Disc3,
   analyze: ActivityIcon,
   applemusic: Library,
-  // The list's own review icon, the one its toolbar button wears.
+  // The icon the review's own Apply button wears.
   review: ListChecks,
   import: FolderDown,
   export: FileOutput,
