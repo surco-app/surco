@@ -395,4 +395,17 @@ describe('listreview:removeDuplicates', () => {
     expect(trashed(d)).toEqual(['/m/a.aiff', '/m/b.aiff', '/m/c.aiff'])
     expect(sender.send).toHaveBeenCalledTimes(1)
   })
+
+  // Music stores the path it was given; the list may reach the same file through a link.
+  it('finds a Music entry on the real file behind the removed path', async () => {
+    const d = register({
+      realpath: vi.fn(async (p: string) => (p === '/m/link.aiff' ? '/m/real.aiff' : p)),
+    })
+    d.music.fileLocations.mockResolvedValue([{ persistentId: 'OTHER', path: '/m/real.aiff' }])
+    const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/link.aiff', '/m/keep.aiff'),
+    ])
+    expect(out).toMatchObject([{ music: 'held', keptForMusic: true, fileTrashed: false }])
+    expect(d.trash).not.toHaveBeenCalled()
+  })
 })

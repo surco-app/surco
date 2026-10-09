@@ -90,7 +90,11 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
           byPath.set(heldKey(at), [...(byPath.get(heldKey(at)) ?? []), persistentId])
         return byPath
       })()
-      return ((await held).get(heldKey(path)) ?? []).some((pid) => !except.includes(pid))
+      const byPath = await held
+      const realPath = real.get(path)
+      return [path, ...(realPath ? [realPath] : [])]
+        .flatMap((p) => byPath.get(heldKey(p)) ?? [])
+        .some((pid) => !except.includes(pid))
     }
     const outcomes = await replaceDuplicates(pairs, {
       ...d.replace,
