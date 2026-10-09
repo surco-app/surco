@@ -74,6 +74,7 @@ export const testSettings: Settings = {
   editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
   musicReviewIgnored: [],
+  listReviewIgnored: [],
   hasSeenOnboarding: false,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,

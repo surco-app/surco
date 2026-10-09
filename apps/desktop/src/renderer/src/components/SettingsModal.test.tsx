@@ -94,6 +94,7 @@ const settings: Settings = {
   editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
   musicReviewIgnored: [],
+  listReviewIgnored: [],
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,

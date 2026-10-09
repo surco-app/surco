@@ -144,6 +144,7 @@ export const defaults: Settings = {
   },
   commandUsage: {},
   musicReviewIgnored: [],
+  listReviewIgnored: [],
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
   lastSeenChangelogVersion: '',
@@ -169,6 +170,8 @@ const LOCAL_KEYS = [
   'commandUsage',
   // Group keys of this Mac's Music library; another Mac's library has other entries.
   'musicReviewIgnored',
+  // Group keys of the list review; its duplicate keys are this machine's file paths.
+  'listReviewIgnored',
   // Each machine updates on its own schedule, so "which changelog did I already
   // see" only means something locally.
   'lastSeenChangelogVersion',

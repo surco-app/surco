@@ -485,6 +485,18 @@ describe('configurable settings folder', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  // Duplicate keys name file paths on this machine, and keeping them apart from the Music
+  // review's means ignoring a group in one never hides it in the other unseen.
+  it('keeps the ignored list review groups on this machine, apart from the Music ones', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ listReviewIgnored: ['artist||case|djlara'] })
+    expect(read(syncedFile(dir))).not.toHaveProperty('listReviewIgnored')
+    expect(getSettings().listReviewIgnored).toEqual(['artist||case|djlara'])
+    expect(getSettings().musicReviewIgnored).toEqual([])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   // The ignored groups name this Mac's Music library; on another Mac they mean nothing.
   it('keeps the ignored review groups on this machine', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))

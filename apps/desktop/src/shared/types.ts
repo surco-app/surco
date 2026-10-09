@@ -336,6 +336,7 @@ export interface Settings {
   commandUsage: Record<string, number>
   // Keys of the Music review groups (spelling and duplicates) the user chose to ignore.
   musicReviewIgnored: string[]
+  listReviewIgnored: string[]
   // The occasional stats + donate modal: "don't show again" and the last time it
   // appeared (ISO date, '' = never), which lib/donateNudge gates on.
   donateNudgeDismissed: boolean
