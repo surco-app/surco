@@ -1445,13 +1445,13 @@ describe('with the list as source', () => {
     expect(result.current.lastRun?.outcomes.map((o) => o.file)).toEqual(['unchanged'])
   })
 
-  it('says how many rows it left out and whether Music answered', async () => {
+  it('says how many rows it reviewed, how many it left out and whether Music answered', async () => {
     listApi({
       appleMusicFileEntries: vi.fn().mockResolvedValue({ consulted: false, entries: {} }),
     })
     const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { metaReadFailed: true })])
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(result.current).toMatchObject({ skipped: 1, musicConsulted: false })
+    expect(result.current).toMatchObject({ reviewed: 3, skipped: 1, musicConsulted: false })
     expect(result.current.inMusic('/m/c.aiff')).toBe(false)
   })
 

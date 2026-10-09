@@ -1695,5 +1695,61 @@
     "unifyCount_other": "Unifier dans {{count}} pistes",
     "removeCopies_one": "Retirer {{count}} copie",
     "removeCopies_other": "Retirer {{count}} copies"
+  },
+  "listReview": {
+    "loading": "Lecture de la liste…",
+    "empty": "Aucune piste de la liste n’a ses tags lus.",
+    "error": "Impossible de préparer la vérification de la liste.",
+    "scope_one": "{{count}} piste de la liste",
+    "scope_other": "{{count}} pistes de la liste",
+    "skipped_one": "{{count}} non lue, laissée de côté",
+    "skipped_other": "{{count}} non lues, laissées de côté",
+    "musicUnchecked": "Apple Music n’a pas été consulté car il est fermé.",
+    "where": {
+      "music": "Apple Music"
+    },
+    "phase": {
+      "writing": "Écriture des fichiers {{current}} sur {{total}}",
+      "verifying": "Vérification de la liste",
+      "checkingMusic": "Vérification d’Apple Music"
+    },
+    "confirm": {
+      "removed": "Copies retirées",
+      "playlists": "Leurs playlists rekordbox, Engine DJ et Traktor passent à la copie conservée, et si elle est dans Apple Music elle en sort",
+      "trash": "Leurs fichiers vont à la Corbeille, sauf ceux que rekordbox, Engine DJ, Traktor ou Apple Music utilisent encore"
+    },
+    "done": {
+      "title": "Liste vérifiée",
+      "applyError": "Impossible d’écrire dans les fichiers.",
+      "partial_one": "{{count}} fichier ne disait plus ce qui avait été lu et n’a pas été touché",
+      "partial_other": "{{count}} fichiers ne disaient plus ce qui avait été lu et n’ont pas été touchés",
+      "librarySkipped": "{{library}} n’a pas été mis à jour car il était ouvert ou illisible. Les copies sont toujours sur le disque.",
+      "libraryReplaceFailed": "{{library}} n’a pas pu être mis à jour. Les copies sont toujours sur le disque.",
+      "musicRemoved_one": "{{count}} copie retirée d’Apple Music",
+      "musicRemoved_other": "{{count}} copies retirées d’Apple Music",
+      "keptForMusic_one": "{{count}} fichier reste sur le disque car Apple Music l’utilise encore",
+      "keptForMusic_other": "{{count}} fichiers restent sur le disque car Apple Music les utilise encore",
+      "musicMismatch_one": "{{count}} entrée d’Apple Music disait autre chose et est restée telle quelle",
+      "musicMismatch_other": "{{count}} entrées d’Apple Music disaient autre chose et sont restées telles quelles",
+      "keptShared_one": "{{count}} copie a été laissée telle quelle car elle peut partager son audio avec la copie conservée",
+      "keptShared_other": "{{count}} copies ont été laissées telles quelles car elles peuvent partager leur audio avec les copies conservées",
+      "musicUnknown_one": "{{count}} fichier reste sur le disque car Apple Music n’a pas pu être consulté",
+      "musicUnknown_other": "{{count}} fichiers restent sur le disque car Apple Music n’a pas pu être consulté",
+      "musicFailed_one": "{{count}} copie n’a pas pu sortir d’Apple Music, son fichier reste sur le disque",
+      "musicFailed_other": "{{count}} copies n’ont pas pu sortir d’Apple Music, leurs fichiers restent sur le disque",
+      "trashFailed_one": "{{count}} fichier n’a pas pu aller à la Corbeille",
+      "trashFailed_other": "{{count}} fichiers n’ont pas pu aller à la Corbeille",
+      "where": {
+        "playlists_one": "{{count}} playlist passée à la copie conservée",
+        "playlists_other": "{{count}} playlists passées aux copies conservées",
+        "heldForEntry_one": "{{count}} entrée est sortie d’Apple Music, mais son fichier reste car une autre entrée l’utilise encore",
+        "heldForEntry_other": "{{count}} entrées sont sorties d’Apple Music, mais leurs fichiers restent car d’autres entrées les utilisent encore"
+      }
+    },
+    "detail": {
+      "quality": "Qualité",
+      "size": "Taille",
+      "unanalyzed": "Non analysée"
+    }
   }
 }

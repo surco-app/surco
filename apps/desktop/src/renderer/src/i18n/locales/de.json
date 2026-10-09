@@ -1695,5 +1695,61 @@
     "unifyCount_other": "In {{count}} Titeln vereinheitlichen",
     "removeCopies_one": "{{count}} Kopie entfernen",
     "removeCopies_other": "{{count}} Kopien entfernen"
+  },
+  "listReview": {
+    "loading": "Liste wird gelesen…",
+    "empty": "Bei keinem Titel der Liste wurden die Tags gelesen.",
+    "error": "Die Prüfung der Liste konnte nicht vorbereitet werden.",
+    "scope_one": "{{count}} Titel der Liste",
+    "scope_other": "{{count}} Titel der Liste",
+    "skipped_one": "{{count}} nicht gelesen, nicht geprüft",
+    "skipped_other": "{{count}} nicht gelesen, nicht geprüft",
+    "musicUnchecked": "Apple Music wurde nicht abgefragt, weil es geschlossen ist.",
+    "where": {
+      "music": "Apple Music"
+    },
+    "phase": {
+      "writing": "Dateien werden geschrieben {{current}} von {{total}}",
+      "verifying": "Liste wird geprüft",
+      "checkingMusic": "Apple Music wird geprüft"
+    },
+    "confirm": {
+      "removed": "Entfernte Kopien",
+      "playlists": "Ihre Playlists in rekordbox, Engine DJ und Traktor gehen an die behaltene Kopie, und ist sie in Apple Music, wird sie dort entfernt",
+      "trash": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ, Traktor oder Apple Music noch nutzen"
+    },
+    "done": {
+      "title": "Liste geprüft",
+      "applyError": "In die Dateien konnte nicht geschrieben werden.",
+      "partial_one": "{{count}} Datei enthielt nicht mehr den gelesenen Wert und blieb unverändert",
+      "partial_other": "{{count}} Dateien enthielten nicht mehr den gelesenen Wert und blieben unverändert",
+      "librarySkipped": "{{library}} wurde nicht aktualisiert, weil es geöffnet war oder nicht gelesen werden konnte. Die Kopien sind noch auf der Festplatte.",
+      "libraryReplaceFailed": "{{library}} konnte nicht aktualisiert werden. Die Kopien sind noch auf der Festplatte.",
+      "musicRemoved_one": "{{count}} Kopie aus Apple Music entfernt",
+      "musicRemoved_other": "{{count}} Kopien aus Apple Music entfernt",
+      "keptForMusic_one": "{{count}} Datei bleibt auf der Festplatte, weil Apple Music sie noch nutzt",
+      "keptForMusic_other": "{{count}} Dateien bleiben auf der Festplatte, weil Apple Music sie noch nutzt",
+      "musicMismatch_one": "{{count}} Eintrag in Apple Music hatte einen anderen Wert und blieb unverändert",
+      "musicMismatch_other": "{{count}} Einträge in Apple Music hatten einen anderen Wert und blieben unverändert",
+      "keptShared_one": "{{count}} Kopie blieb unverändert, weil sie ihr Audio mit der behaltenen Kopie teilen könnte",
+      "keptShared_other": "{{count}} Kopien blieben unverändert, weil sie ihr Audio mit den behaltenen Kopien teilen könnten",
+      "musicUnknown_one": "{{count}} Datei bleibt auf der Festplatte, weil Apple Music nicht abgefragt werden konnte",
+      "musicUnknown_other": "{{count}} Dateien bleiben auf der Festplatte, weil Apple Music nicht abgefragt werden konnte",
+      "musicFailed_one": "{{count}} Kopie konnte nicht aus Apple Music entfernt werden, ihre Datei bleibt auf der Festplatte",
+      "musicFailed_other": "{{count}} Kopien konnten nicht aus Apple Music entfernt werden, ihre Dateien bleiben auf der Festplatte",
+      "trashFailed_one": "{{count}} Datei konnte nicht in den Papierkorb",
+      "trashFailed_other": "{{count}} Dateien konnten nicht in den Papierkorb",
+      "where": {
+        "playlists_one": "{{count}} Playlist an die behaltene Kopie übergeben",
+        "playlists_other": "{{count}} Playlists an die behaltenen Kopien übergeben",
+        "heldForEntry_one": "{{count}} Eintrag wurde aus Apple Music entfernt, aber die Datei bleibt, weil ein anderer Eintrag sie noch nutzt",
+        "heldForEntry_other": "{{count}} Einträge wurden aus Apple Music entfernt, aber die Dateien bleiben, weil andere Einträge sie noch nutzen"
+      }
+    },
+    "detail": {
+      "quality": "Qualität",
+      "size": "Größe",
+      "unanalyzed": "Nicht analysiert"
+    }
   }
 }

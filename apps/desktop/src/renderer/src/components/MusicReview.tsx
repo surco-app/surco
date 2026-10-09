@@ -13,6 +13,7 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ListMusicStep } from '../../../shared/types'
 import type {
   DuplicateCard,
   MusicReview as Review,
@@ -21,6 +22,7 @@ import type {
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { INVISIBLE } from '../lib/musicSpelling'
+import { REVIEW_COPY, type ReviewCopy } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
 import { FilterBar, FilterOption } from './FilterBar'
 import {
@@ -99,6 +101,7 @@ function Confirm({
   onCancel: () => void
 }) {
   const { t } = useTranslation()
+  const copy = REVIEW_COPY[review.kind]
   const { tracks, byField, duplicates } = review.summary
   const applyRef = useRef<HTMLButtonElement>(null)
   return (
@@ -123,14 +126,14 @@ function Confirm({
         ))}
         {duplicates > 0 && (
           <div className="flex justify-between border-b border-[var(--color-line)] py-1">
-            <dt>{t('musicReview.confirm.removed')}</dt>
+            <dt>{t(copy.confirmRemoved)}</dt>
             <dd className="tabular-nums">{duplicates}</dd>
           </div>
         )}
       </dl>
       {duplicates > 0 && (
         <p className="text-xs text-fg-dim">
-          {t('musicReview.confirm.playlists')}. {t('musicReview.confirm.trash')}.
+          {t(copy.confirmPlaylists)}. {t(copy.confirmTrash)}.
         </p>
       )}
       {duplicates > 0 && <p className="text-xs text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
@@ -224,10 +227,26 @@ function Done({
   const continueRef = useRef<HTMLButtonElement>(null)
   const run = review.lastRun
   if (!run) return null
+  const copy = REVIEW_COPY[review.kind]
+  const list = review.kind === 'list'
   const undone = run.undoFailures !== undefined
-  const removed = run.removed.filter((r) => r.outcome === 'removed').length
   const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
   const trashed = run.replaced.filter((r) => r.fileTrashed).length
+  // A list copy is removed when its file went to the Trash: only then does it leave the list.
+  const removed = list ? trashed : run.removed.filter((r) => r.outcome === 'removed').length
+  const keptBy = (steps: ListMusicStep[]) =>
+    run.replaced.filter(
+      (r) => r.keptForMusic && !r.musicEntryRemoved && r.music && steps.includes(r.music),
+    ).length
+  const keptForMusic = keptBy(['held', 'kept-no-entry', 'ambiguous'])
+  const musicUnknown = keptBy(['unknown'])
+  const musicRemovalFailed = keptBy(['mismatch', 'failed'])
+  const heldForEntry = run.replaced.filter((r) => r.musicEntryRemoved).length
+  const leftMusic = run.replaced.filter((r) => r.music === 'removed' || r.musicEntryRemoved).length
+  const musicPlaylists = run.replaced.reduce((n, r) => n + (r.musicPlaylists ?? 0), 0)
+  const trashFailed = run.replaced.filter((r) => r.trashFailed).length
+  const keptShared = run.replaced.filter((r) => r.keptShared).length
+  const musicMismatch = list ? run.outcomes.filter((o) => o.music.includes('mismatch')).length : 0
   const missing = [
     ...new Set([
       ...missingLibraries(review),
@@ -242,9 +261,9 @@ function Done({
     const tags = run.tagSync?.[library].outcome
     return [
       ...(count('skipped') && !missing.includes(name)
-        ? [t('musicReview.done.librarySkipped', { library: name })]
+        ? [t(copy.librarySkipped, { library: name })]
         : []),
-      ...(count('failed') ? [t('musicReview.done.libraryReplaceFailed', { library: name })] : []),
+      ...(count('failed') ? [t(copy.libraryReplaceFailed, { library: name })] : []),
       ...(tags === 'open' ? [t('musicReview.done.libraryTagsOpen', { library: name })] : []),
       ...(tags === 'failed' ? [t('musicReview.done.libraryTagsFailed', { library: name })] : []),
     ]
@@ -252,9 +271,14 @@ function Done({
   const failedRemovals = run.removed.filter(
     (r) => r.outcome === 'playlist-failed' || r.outcome === 'failed' || r.outcome === 'mismatch',
   ).length
-  const corrected = run.outcomes.filter((o) => o.music.includes('set')).length
-  const musicOnly = run.outcomes.filter(
-    (o) => o.music.includes('set') && (o.file === 'unchanged' || o.file === 'missing'),
+  const musicSet = run.outcomes.filter((o) => o.music.includes('set')).length
+  // The list writes the file first and Music only after, so a list fix is done once its
+  // file is; the Music review is done once Music is, whatever its file said.
+  const corrected = list ? run.outcomes.filter((o) => o.file === 'written').length : musicSet
+  const partial = run.outcomes.filter((o) =>
+    list
+      ? o.file === 'unchanged'
+      : o.music.includes('set') && (o.file === 'unchanged' || o.file === 'missing'),
   ).length
   // Only a backup brings a file back; without one, setting Music back alone would leave
   // it saying one thing and the file another.
@@ -262,24 +286,39 @@ function Done({
     (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
   )
   const musicFailed =
-    run.outcomes.filter((o) => o.music.some((m) => m === 'failed' || m === 'mismatch')).length +
-    failedRemovals
-  const fileFailed = run.outcomes.filter((o) => o.file === 'failed').length
+    run.outcomes.filter((o) => o.music.some((m) => m === 'failed' || (!list && m === 'mismatch')))
+      .length +
+    failedRemovals +
+    musicRemovalFailed
+  const fileFailed = run.outcomes.filter(
+    (o) => o.file === 'failed' || (list && o.file === 'missing'),
+  ).length
   const failed =
-    run.outcomes.filter(
-      (o) => o.file === 'failed' || o.music.some((m) => m === 'failed' || m === 'mismatch'),
+    run.outcomes.filter((o) =>
+      list
+        ? o.file === 'failed' || o.file === 'missing' || o.music.includes('failed')
+        : o.file === 'failed' || o.music.some((m) => m === 'failed' || m === 'mismatch'),
     ).length + failedRemovals
   const warnings = [
     ...(undone ? [t('musicReview.done.undoFailed', { count: run.undoFailures })] : []),
     ...(!undone && failed > 0 ? [t('musicReview.done.failed', { count: failed })] : []),
-    ...(!undone && run.applyError !== undefined ? [t('musicReview.done.applyError')] : []),
+    ...(!undone && run.applyError !== undefined ? [t(copy.applyError)] : []),
     ...(run.librarySync === 'failed' ? [t('musicReview.done.libraryFailed')] : []),
     ...(reachedLibraries
       ? missing.map((name) => t('musicReview.done.libraryMissing', { library: name }))
       : []),
     ...libraryWarnings,
     ...(run.librariesUntouched ? [t('musicReview.done.librariesUntouched')] : []),
+    ...(keptShared ? [t('listReview.done.keptShared', { count: keptShared })] : []),
+    ...(musicUnknown ? [t('listReview.done.musicUnknown', { count: musicUnknown })] : []),
+    ...(musicRemovalFailed
+      ? [t('listReview.done.musicFailed', { count: musicRemovalFailed })]
+      : []),
+    ...(trashFailed ? [t('listReview.done.trashFailed', { count: trashFailed })] : []),
   ]
+  const inMusic =
+    run.outcomes.some((o) => o.musicId !== undefined) ||
+    run.replaced.some((r) => r.music !== undefined && r.music !== 'none' && r.music !== 'unknown')
   // Every library with its sync on gets a row: a library left out read as one that got
   // the change, which is what hid a rekordbox that got nothing.
   const libraryRow = (
@@ -326,42 +365,56 @@ function Done({
   const destinations: Destination[] = undone
     ? []
     : [
-        ...(run.outcomes.length || run.removed.length || run.applyError !== undefined
+        ...((
+          list
+            ? inMusic
+            : run.outcomes.length || run.removed.length || run.applyError !== undefined
+        )
           ? [
               {
                 id: 'music',
                 label: 'Apple Music',
-                state: run.applyError !== undefined || musicFailed ? 'warn' : 'ok',
+                state: (!list && run.applyError !== undefined) || musicFailed ? 'warn' : 'ok',
                 detail:
-                  run.applyError !== undefined
+                  !list && run.applyError !== undefined
                     ? t('musicReview.done.where.notApplied')
                     : joined([
-                        corrected > 0 && t('musicReview.done.where.tracks', { count: corrected }),
-                        removed > 0 && t('musicReview.done.where.removed', { count: removed }),
+                        musicSet > 0 && t('musicReview.done.where.tracks', { count: musicSet }),
+                        !list &&
+                          removed > 0 &&
+                          t('musicReview.done.where.removed', { count: removed }),
+                        leftMusic > 0 && t('listReview.done.musicRemoved', { count: leftMusic }),
+                        musicPlaylists > 0 &&
+                          t('listReview.done.where.playlists', { count: musicPlaylists }),
+                        musicMismatch > 0 &&
+                          t('listReview.done.musicMismatch', { count: musicMismatch }),
                         musicFailed > 0 &&
                           t('musicReview.done.where.failed', { count: musicFailed }),
                       ]) || t('musicReview.done.where.nothing'),
               } as const,
             ]
           : []),
-        ...(run.outcomes.length
+        ...(run.outcomes.length || (list && run.applyError !== undefined)
           ? [
               {
                 id: 'files',
                 label: t('musicReview.done.where.files'),
-                state: fileFailed ? 'warn' : 'ok',
+                state: fileFailed || (list && run.applyError !== undefined) ? 'warn' : 'ok',
                 detail:
-                  joined([
-                    written > 0 && t('musicReview.done.where.written', { count: written }),
-                    backups > 0 && t('musicReview.done.where.backups', { count: backups }),
-                    musicOnly > 0 && t('musicReview.done.where.musicOnly', { count: musicOnly }),
-                    fileFailed > 0 && t('musicReview.done.where.fileFailed', { count: fileFailed }),
-                  ]) || t('musicReview.done.where.nothing'),
+                  list && run.applyError !== undefined
+                    ? t('musicReview.done.where.notApplied')
+                    : joined([
+                        written > 0 && t('musicReview.done.where.written', { count: written }),
+                        backups > 0 && t('musicReview.done.where.backups', { count: backups }),
+                        partial > 0 && t(copy.partial, { count: partial }),
+                        fileFailed > 0 &&
+                          t('musicReview.done.where.fileFailed', { count: fileFailed }),
+                      ]) || t('musicReview.done.where.nothing'),
               } as const,
             ]
           : []),
         ...LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
-        ...(trashed || keptForLibrary
+        ...(trashed || keptForLibrary || keptForMusic || heldForEntry
           ? [
               {
                 id: 'trash',
@@ -370,6 +423,9 @@ function Done({
                 detail: joined([
                   trashed > 0 && t('musicReview.done.where.trashed', { count: trashed }),
                   keptForLibrary > 0 && t('musicReview.done.where.kept', { count: keptForLibrary }),
+                  keptForMusic > 0 && t('listReview.done.keptForMusic', { count: keptForMusic }),
+                  heldForEntry > 0 &&
+                    t('listReview.done.where.heldForEntry', { count: heldForEntry }),
                 ]),
               } as const,
             ]
@@ -403,11 +459,11 @@ function Done({
           >
             {warned
               ? t('musicReview.done.titleWarnings', { count: warnings.length })
-              : t('musicReview.done.title')}
+              : t(copy.doneTitle)}
           </h3>
           <p data-testid="music-review-done-subtitle" className="mt-0.5 text-sm text-fg-dim">
-            {musicOnly > 0
-              ? t('musicReview.done.subtitleMusicOnly', { count: musicOnly })
+            {!list && partial > 0
+              ? t('musicReview.done.subtitleMusicOnly', { count: partial })
               : librariesShort
                 ? t('musicReview.done.subtitleLibraries')
                 : t('musicReview.done.subtitle')}
@@ -672,6 +728,7 @@ export function MusicReview({
   onConfirming: (open: boolean) => void
 }) {
   const { t } = useTranslation()
+  const copy = REVIEW_COPY[review.kind]
   const applying = review.status === 'applying'
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -767,6 +824,15 @@ export function MusicReview({
             ]}
           />
         </FilterBar>
+        {review.kind === 'list' && review.status !== 'loading' && (
+          <p data-testid="list-review-scope" className="px-2 pb-2 text-xs text-fg-faint">
+            {[
+              t('listReview.scope', { count: review.reviewed }),
+              ...(review.skipped > 0 ? [t('listReview.skipped', { count: review.skipped })] : []),
+              ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
+            ].join(' · ')}
+          </p>
+        )}
       </div>
       <div
         data-testid="music-review-scroll"
@@ -778,17 +844,17 @@ export function MusicReview({
             aria-live="polite"
             className="p-1.5 text-xs text-fg-faint"
           >
-            {t('musicReview.loading')}
+            {t(copy.loading)}
           </p>
         )}
         {review.status === 'empty' && (
           <p data-testid="music-review-empty" className="p-1.5 text-xs text-fg-faint">
-            {t('musicReview.empty')}
+            {t(copy.empty)}
           </p>
         )}
         {review.status === 'error' && (
           <p data-testid="music-review-error" className="p-1.5 text-xs text-fg-faint">
-            {t('musicReview.error')}
+            {t(copy.error)}
           </p>
         )}
         {nothing && (
@@ -858,8 +924,11 @@ export function MusicReview({
   )
 }
 
-function phaseLabel(t: TFunction, phase: ReviewPhase | null): string {
-  if (phase === null) return t('musicReview.phase.verifying')
+function phaseLabel(t: TFunction, phase: ReviewPhase | null, copy: ReviewCopy): string {
+  if (phase === null || phase.name === 'verifying') return t(copy.phaseVerifying)
+  if (phase.name === 'checking-music') return t('listReview.phase.checkingMusic')
+  if (phase.name === 'writing')
+    return t(copy.phaseWriting, { current: phase.current, total: phase.total })
   if ('current' in phase)
     return t(`musicReview.phase.${phase.name}`, { current: phase.current, total: phase.total })
   return t(`musicReview.phase.${phase.name}`)
@@ -878,7 +947,9 @@ export function MusicReviewAction({
 }) {
   const { t } = useTranslation()
   const running = review.status === 'applying'
-  const label = phaseLabel(t, review.phase)
+  const label = phaseLabel(t, review.phase, REVIEW_COPY[review.kind])
+  // Main's read of every Music location before trashing cannot be interrupted.
+  const stoppable = !review.undoing && review.phase?.name !== 'checking-music'
   return (
     <>
       <span role="status" className="sr-only">
@@ -899,7 +970,7 @@ export function MusicReviewAction({
         cancelLabel={t('musicReview.stop')}
         ready={!busy && review.staged.size > 0}
         onRun={onConfirm}
-        onCancel={review.undoing ? undefined : review.cancel}
+        onCancel={stoppable ? review.cancel : undefined}
       />
     </>
   )

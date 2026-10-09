@@ -100,6 +100,7 @@ export interface MusicReview {
   // Null until main answers; a library that is on but not found is the case it exists for.
   libraries: LibraryStatus | null
   affected: (key: string) => (ReviewFix & { title: string })[]
+  reviewed: number
   // Rows the list could not review because their file was not read.
   skipped: number
   musicConsulted?: boolean
@@ -638,6 +639,7 @@ export function useMusicReview({
       lastRun,
       libraries,
       affected,
+      reviewed: entries.length,
       skipped: loaded.skipped,
       musicConsulted: loaded.musicConsulted,
       inMusic,
@@ -664,6 +666,7 @@ export function useMusicReview({
       lastRun,
       libraries,
       affected,
+      entries.length,
       loaded,
       inMusic,
       facts,

@@ -54,6 +54,60 @@ export interface ReviewSource {
   settle?: (updates: LibraryTagUpdate[], trashed: string[]) => void
 }
 
+// The texts that name where the review reads and writes: Music and its library, or the
+// list and its files.
+export interface ReviewCopy {
+  loading: string
+  empty: string
+  error: string
+  phaseWriting: string
+  phaseVerifying: string
+  confirmRemoved: string
+  confirmPlaylists: string
+  confirmTrash: string
+  doneTitle: string
+  applyError: string
+  partial: string
+  librarySkipped: string
+  libraryReplaceFailed: string
+  whereMusic: string
+}
+
+export const REVIEW_COPY: Record<ReviewSource['kind'], ReviewCopy> = {
+  music: {
+    loading: 'musicReview.loading',
+    empty: 'musicReview.empty',
+    error: 'musicReview.error',
+    phaseWriting: 'musicReview.phase.writing',
+    phaseVerifying: 'musicReview.phase.verifying',
+    confirmRemoved: 'musicReview.confirm.removed',
+    confirmPlaylists: 'musicReview.confirm.playlists',
+    confirmTrash: 'musicReview.confirm.trash',
+    doneTitle: 'musicReview.done.title',
+    applyError: 'musicReview.done.applyError',
+    partial: 'musicReview.done.where.musicOnly',
+    librarySkipped: 'musicReview.done.librarySkipped',
+    libraryReplaceFailed: 'musicReview.done.libraryReplaceFailed',
+    whereMusic: 'musicReview.where.music',
+  },
+  list: {
+    loading: 'listReview.loading',
+    empty: 'listReview.empty',
+    error: 'listReview.error',
+    phaseWriting: 'listReview.phase.writing',
+    phaseVerifying: 'listReview.phase.verifying',
+    confirmRemoved: 'listReview.confirm.removed',
+    confirmPlaylists: 'listReview.confirm.playlists',
+    confirmTrash: 'listReview.confirm.trash',
+    doneTitle: 'listReview.done.title',
+    applyError: 'listReview.done.applyError',
+    partial: 'listReview.done.partial',
+    librarySkipped: 'listReview.done.librarySkipped',
+    libraryReplaceFailed: 'listReview.done.libraryReplaceFailed',
+    whereMusic: 'listReview.where.music',
+  },
+}
+
 const FAILED_REMOVAL: RemoveCopyResult = { outcome: 'failed', playlists: 0, fileTrashed: false }
 
 const entryOf = ({ persistentId, ...rest }: MusicReviewEntry): ReviewEntry => ({

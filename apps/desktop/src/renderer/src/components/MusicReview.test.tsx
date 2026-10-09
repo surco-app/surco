@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,6 +8,7 @@ import '../i18n'
 import type { Api } from '../../../preload/api'
 import type { LibraryTagSyncReport } from '../../../shared/types'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
+import { createQueryClient } from '../lib/queryClient'
 import { stubApi } from '../test/api'
 import { MusicReview, MusicReviewAction, MusicReviewProgress, type ReviewSort } from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
@@ -50,6 +52,7 @@ function review(over: Partial<Review> = {}): Review {
     affected: () => [],
     kind: 'music',
     skipped: 0,
+    reviewed: 3,
     inMusic: () => true,
     facts: () => undefined,
     ...over,
@@ -1790,6 +1793,379 @@ describe('MusicReview', () => {
       fireEvent.click(screen.getByTestId('music-review-stage'))
       expect(r.toggleStaged).toHaveBeenCalledWith('k#1')
       expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
+    })
+  })
+})
+
+describe('list review', () => {
+  const listReview = (over: Partial<Review> = {}) => review({ kind: 'list', ...over })
+  const columnProps = {
+    selectedKey: null,
+    onSelect: vi.fn(),
+    onClose: vi.fn(),
+    search: '',
+    onSearch: vi.fn(),
+    sort: 'default' as ReviewSort,
+    onSort: vi.fn(),
+    confirming: false,
+    onConfirming: vi.fn(),
+  }
+
+  // The list review leaves out the rows it could not read; without saying so the user
+  // would take the count for the whole list.
+  it('says how many list tracks it covers, how many it left out and that Music went unasked', () => {
+    render(
+      <MusicReview review={listReview({ skipped: 4, musicConsulted: false })} {...columnProps} />,
+    )
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(
+      '3 tracks in the list · 4 not read yet, left out · Apple Music was not checked because it is closed.',
+    )
+  })
+
+  it('says only the list count when every row was read and Music answered', () => {
+    render(
+      <MusicReview review={listReview({ reviewed: 1, musicConsulted: true })} {...columnProps} />,
+    )
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(/^1 track in the list$/)
+  })
+
+  it('has no scope line in the Music review', () => {
+    render(<MusicReview review={review()} {...columnProps} />)
+    expect(screen.queryByTestId('list-review-scope')).toBeNull()
+  })
+
+  it('names the list, not the Music library, while loading, when empty and on error', () => {
+    const { rerender } = render(
+      <MusicReview review={listReview({ status: 'loading' })} {...columnProps} />,
+    )
+    expect(screen.getByTestId('music-review-loading')).toHaveTextContent('Reading the list…')
+    rerender(<MusicReview review={listReview({ status: 'empty' })} {...columnProps} />)
+    expect(screen.getByTestId('music-review-empty')).toHaveTextContent(
+      'No track in the list has its tags read.',
+    )
+    rerender(<MusicReview review={listReview({ status: 'error' })} {...columnProps} />)
+    expect(screen.getByTestId('music-review-error')).toHaveTextContent(
+      "Couldn't prepare the list review.",
+    )
+  })
+
+  describe('while a run goes', () => {
+    const action = (phase: Review['phase']) =>
+      render(
+        <MusicReviewAction
+          review={listReview({ status: 'applying', progress: { done: 0, total: 3 }, phase })}
+          busy={false}
+          onConfirm={vi.fn()}
+        />,
+      )
+
+    it('names the steps after the files and the list', () => {
+      const label = (phase: Review['phase']) => {
+        const { unmount } = action(phase)
+        const text = screen.getByTestId('music-review-apply').textContent
+        unmount()
+        return text
+      }
+      expect(label({ name: 'writing', current: 1, total: 3 })).toBe('Writing files 1 of 3')
+      expect(label({ name: 'verifying' })).toBe('Checking the list')
+      expect(label({ name: 'checking-music' })).toBe('Checking Apple Music')
+    })
+
+    // Main reads every Music location in one call that cannot be interrupted; a Stop there
+    // would promise what it cannot do.
+    it('offers no Stop while Apple Music is checked', () => {
+      action({ name: 'checking-music' })
+      const button = screen.getByTestId('music-review-apply')
+      expect(button).toBeDisabled()
+      expect(button).not.toHaveAccessibleName('Stop')
+    })
+  })
+
+  it('says before applying what happens to the list copies, Music included', () => {
+    render(
+      <MusicReview
+        review={listReview({ summary: { tracks: 0, byField: {}, duplicates: 1 } })}
+        {...columnProps}
+        confirming
+      />,
+    )
+    const sheet = screen.getByTestId('music-review-confirm')
+    expect(sheet).toHaveTextContent('Copies removed')
+    expect(sheet).toHaveTextContent(
+      'Their rekordbox, Engine DJ and Traktor playlists move to the copy you keep, and if it is in Apple Music it leaves Music.',
+    )
+    expect(sheet).toHaveTextContent(
+      'Their files go to the Trash, except those rekordbox, Engine DJ, Traktor or Apple Music still use.',
+    )
+    expect(sheet).not.toHaveTextContent('Copies removed from Apple Music')
+  })
+
+  it('shows Music in the affected rows only for files Music holds', () => {
+    const affected = () => [
+      { id: '/m/a.aiff', title: 'A', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' },
+      { id: '/m/b.aiff', title: 'B', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' },
+    ]
+    render(
+      <MusicReviewDetail
+        review={listReview({ affected, inMusic: (id) => id === '/m/a.aiff' })}
+        selectedKey={group.key}
+        sync={NO_SYNC}
+      />,
+    )
+    const [a, b] = screen.getAllByTestId('music-review-affected')
+    expect(within(a).getByTestId('music-review-where-music')).toHaveTextContent('Apple Music')
+    expect(within(a).getByTestId('music-review-where-file')).toHaveTextContent('File')
+    expect(within(b).queryByTestId('music-review-where-music')).toBeNull()
+    expect(within(b).getByTestId('music-review-where-file')).toHaveTextContent('File')
+  })
+
+  it('keeps Music first in the Music review affected rows', () => {
+    render(
+      <MusicReviewDetail
+        review={review({
+          affected: () => [
+            { id: 'A', title: 'A', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' },
+          ],
+        })}
+        selectedKey={group.key}
+        sync={NO_SYNC}
+      />,
+    )
+    const row = screen.getByTestId('music-review-affected')
+    expect(within(row).getByTestId('music-review-where-music')).toHaveTextContent(/^Music$/)
+    expect(within(row).getByTestId('music-review-where-file')).toBeInTheDocument()
+  })
+
+  describe('copies', () => {
+    const entry = (id: string, album: string, extra = {}) => ({
+      id,
+      artist: 'DJ Ter',
+      title: 'This Rap',
+      albumArtist: '',
+      album,
+      genre: '',
+      durationSec: 351,
+      ...extra,
+    })
+    const added = new Date(2025, 8, 25, 12).toISOString()
+    const card = {
+      group: { key: 'k#1', kind: 'duplicate' as const, ids: ['/m/a.aiff', '/m/b.aiff'] },
+      entries: [
+        entry('/m/a.aiff', 'This Rap', { dateAdded: added }),
+        entry('/m/b.aiff', 'Legacy Vol. 2'),
+      ],
+      formats: { '/m/a.aiff': 'AIFF', '/m/b.aiff': 'AIFF' },
+      locations: { '/m/a.aiff': '/m/a.aiff', '/m/b.aiff': '/m/b.aiff' },
+    }
+    const spectrum = { cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true }
+    const facts = (id: string) =>
+      (id === '/m/b.aiff' ? { inputPath: id, spectrum } : { inputPath: id }) as never
+
+    beforeEach(() => {
+      ;(window as unknown as { api: Api }).api = stubApi({
+        properties: vi.fn(async (path: string) => ({
+          sizeBytes: path === '/m/a.aiff' ? 59_000_000 : 61_000_000,
+        })) as never,
+      })
+    })
+
+    const renderCopies = () =>
+      render(
+        <QueryClientProvider client={createQueryClient()}>
+          <MusicReviewDetail
+            review={listReview({
+              spelling: [],
+              duplicates: [card],
+              choice: () => '/m/a.aiff',
+              facts,
+              inMusic: (id) => id === '/m/a.aiff',
+            })}
+            selectedKey="k#1"
+            sync={NO_SYNC}
+          />
+        </QueryClientProvider>,
+      )
+
+    // Which copy to keep is a quality call; the list already measured some of them, and a
+    // copy nobody analyzed must say so rather than look clean.
+    it('shows each copy quality, size and whether Music holds it', async () => {
+      renderCopies()
+      const [a, b] = screen.getAllByTestId('music-review-copy')
+      expect(within(a).getByTestId('list-review-copy-quality')).toHaveTextContent('Not analyzed')
+      expect(within(b).getByTestId('list-review-copy-quality')).toHaveTextContent(
+        'Lossy source · 16.0 kHz',
+      )
+      expect(within(a).getByText('Quality')).toBeInTheDocument()
+      expect(await within(a).findByTestId('list-review-copy-size')).toHaveTextContent('56.3 MB')
+      expect(within(a).getByText('Size')).toBeInTheDocument()
+      expect(within(a).getByTestId('list-review-copy-music')).toHaveTextContent('Apple Music')
+      expect(within(b).queryByTestId('list-review-copy-music')).toBeNull()
+    })
+
+    // The date added is Music's; a copy outside Music has none, and a file date would lie.
+    it('shows when Music added a copy, and nothing for a copy outside Music', () => {
+      renderCopies()
+      const [a, b] = screen.getAllByTestId('music-review-copy')
+      expect(within(a).getByText('Added')).toBeInTheDocument()
+      expect(within(a).getByText('Sep 25, 2025')).toBeInTheDocument()
+      expect(within(b).queryByText('Added')).toBeNull()
+    })
+  })
+
+  describe('done sheet', () => {
+    const dest = (id: string) => screen.queryByTestId(`music-review-done-dest-${id}`)
+    const detailOf = (id: string) =>
+      within(dest(id) as HTMLElement).getByTestId('music-review-done-dest-detail').textContent
+    const outcome = (
+      id: string,
+      file: ReviewRun['outcomes'][number]['file'],
+      music: ReviewRun['outcomes'][number]['music'][number],
+      extra = {},
+    ) => ({
+      id,
+      path: id,
+      fixes: [{ id, field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }],
+      music: [music],
+      file,
+      written: file === 'written' ? ['artist' as const] : [],
+      ...(file === 'written' ? { backupId: `b-${id}` } : {}),
+      ...extra,
+    })
+    const gone = (from: string, extra = {}) => ({
+      from,
+      fileTrashed: false,
+      keptForLibrary: false,
+      ...extra,
+    })
+    const show = (lastRun: ReviewRun) =>
+      render(<MusicReview review={listReview({ status: 'done', lastRun })} {...columnProps} />)
+
+    it('counts written files and trashed copies, and says what Music kept as it was', () => {
+      show(
+        run({
+          outcomes: [
+            outcome('/m/a.aiff', 'written', 'set', { musicId: 'A1' }),
+            outcome('/m/b.aiff', 'written', 'mismatch', { musicId: 'B1' }),
+            outcome('/m/c.aiff', 'unchanged', 'none'),
+          ],
+          replaced: [
+            gone('/m/d.aiff', { music: 'removed', fileTrashed: true, musicPlaylists: 2 }),
+            gone('/m/e.aiff', { music: 'kept-no-entry', keptForMusic: true }),
+          ],
+        }),
+      )
+      expect(screen.getByTestId('music-review-done-title')).toHaveTextContent('List reviewed')
+      expect(screen.getByTestId('music-review-done-badge')).toHaveAttribute('data-tone', 'good')
+      expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent('2')
+      expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('1')
+      expect(detailOf('files')).toBe(
+        '2 written · 2 with a backup · 1 file no longer said what was read and was left alone',
+      )
+      expect(detailOf('music')).toBe(
+        '1 track · 1 copy left Apple Music · 2 playlists moved to the kept copies · 1 Apple Music entry said something else and was left as it was',
+      )
+      expect(detailOf('trash')).toBe(
+        '1 file · 1 file stays on disk because Apple Music still uses it',
+      )
+      expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
+      expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('could not be changed')
+    })
+
+    it('leaves Apple Music out when no track of the run was in Music', () => {
+      show(
+        run({
+          outcomes: [outcome('/m/a.aiff', 'written', 'none')],
+          replaced: [gone('/m/d.aiff', { music: 'none', fileTrashed: true })],
+        }),
+      )
+      expect(dest('music')).toBeNull()
+      expect(dest('files')).toBeInTheDocument()
+    })
+
+    // A copy whose Music entry left while another entry keeps the file is half removed;
+    // both halves must show.
+    it('says when an entry left Music but its file stayed for another entry', () => {
+      show(
+        run({
+          replaced: [
+            gone('/m/d.aiff', { music: 'held', musicEntryRemoved: true, keptForMusic: true }),
+            gone('/m/e.aiff', { music: 'held', keptForMusic: true }),
+          ],
+        }),
+      )
+      expect(detailOf('music')).toBe('1 copy left Apple Music')
+      expect(detailOf('trash')).toBe(
+        '1 file stays on disk because Apple Music still uses it · 1 entry left Apple Music, but its file stays because another entry still uses it',
+      )
+      expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('0')
+      expect(screen.queryByTestId('music-review-done-note')).toBeNull()
+    })
+
+    it('warns about every copy that could not be removed, each for its reason', () => {
+      show(
+        run({
+          replaced: [
+            gone('/m/a.aiff', { keptShared: true }),
+            gone('/m/b.aiff', { music: 'unknown', keptForMusic: true }),
+            gone('/m/c.aiff', { music: 'mismatch', keptForMusic: true }),
+            gone('/m/d.aiff', { music: 'failed', keptForMusic: true, musicPlaylists: 1 }),
+            gone('/m/e.aiff', { music: 'removed', trashFailed: true }),
+          ],
+        }),
+      )
+      expect(screen.getByTestId('music-review-done-badge')).toHaveAttribute('data-tone', 'warn')
+      expect(warnings()).toEqual([
+        '1 copy was left alone because it may share its audio with the copy you keep',
+        '1 file stays on disk because Apple Music could not be checked',
+        '2 copies could not leave Apple Music, so their files stay on disk',
+        '1 file could not go to the Trash',
+      ])
+      expect(dest('music')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('music')).toBe(
+        '1 copy left Apple Music · 1 playlist moved to the kept copy · 2 not changed',
+      )
+      expect(dest('trash')).toBeNull()
+    })
+
+    it('counts a file that failed or went missing as not changed', () => {
+      show(
+        run({
+          outcomes: [
+            outcome('/m/a.aiff', 'failed', 'none'),
+            outcome('/m/b.aiff', 'missing', 'none'),
+            outcome('/m/c.aiff', 'written', 'failed', { musicId: 'C1' }),
+          ],
+        }),
+      )
+      expect(warnings()).toEqual(['3 could not be changed'])
+      expect(detailOf('files')).toBe('1 written · 1 with a backup · 2 failed')
+      expect(detailOf('music')).toBe('1 not changed')
+    })
+
+    it('says the files refused the batch, not Apple Music', () => {
+      show(run({ applyError: 'boom' }))
+      expect(warnings()).toEqual(["Couldn't write to the files."])
+      expect(dest('files')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('files')).toBe('not applied')
+      expect(dest('music')).toBeNull()
+    })
+
+    it('says a DJ library left out keeps the copies on disk', () => {
+      render(
+        <MusicReview
+          review={listReview({
+            status: 'done',
+            lastRun: run({
+              replaced: [gone('/m/a.aiff', { rekordbox: 'skipped', keptForLibrary: true })],
+            }),
+            libraries: status(),
+          })}
+          {...columnProps}
+        />,
+      )
+      expect(warnings()).toEqual([
+        'rekordbox was not updated because it was open or could not be read. The copies are still on disk.',
+      ])
     })
   })
 })

@@ -7,7 +7,13 @@ import type {
   MusicReview as Review,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
+import { useTrackProperties } from '../hooks/useTrackProperties'
+import { copyQuality } from '../lib/copyQuality'
 import { INVISIBLE } from '../lib/musicSpelling'
+import { formatFileSize } from '../lib/properties'
+import { formatKHz, type Verdict } from '../lib/quality'
+import { REVIEW_COPY } from '../lib/reviewSource'
+import type { TrackItem } from '../types'
 import { fieldsLabel } from './MusicReview'
 import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
@@ -243,11 +249,24 @@ function changedRanges(from: string, to: string): { from: [number, number]; to: 
   return { from: snap(a, [start, a.length - end]), to: snap(b, [start, b.length - end]) }
 }
 
-function Where({ sync, libraries }: { sync: ReviewSync; libraries: LibraryStatus | null }) {
+function Where({
+  sync,
+  libraries,
+  places: own,
+  musicLabel,
+}: {
+  sync: ReviewSync
+  libraries: LibraryStatus | null
+  places: ('music' | 'file')[]
+  musicLabel: string
+}) {
   const { t } = useTranslation()
   const places = [
-    { name: t('musicReview.where.music'), missing: false },
-    { name: t('musicReview.where.file'), missing: false },
+    ...own.map((id) => ({
+      id,
+      name: id === 'music' ? musicLabel : t('musicReview.where.file'),
+      missing: false,
+    })),
     ...(
       [
         [sync.rekordbox, 'rekordbox', 'rekordbox'],
@@ -256,14 +275,18 @@ function Where({ sync, libraries }: { sync: ReviewSync; libraries: LibraryStatus
       ] as const
     )
       .filter(([on]) => on)
-      .map(([, library, name]) => ({ name, missing: libraries?.[library].found === false })),
+      .map(([, library, name]) => ({
+        id: library,
+        name,
+        missing: libraries?.[library].found === false,
+      })),
   ]
   return (
     <span className="flex flex-wrap gap-1">
       {places.map((p) => (
         <span
           key={p.name}
-          data-testid={p.missing ? 'music-review-where-missing' : undefined}
+          data-testid={p.missing ? 'music-review-where-missing' : `music-review-where-${p.id}`}
           title={p.missing ? t('musicReview.where.notFound') : undefined}
           className={`rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] whitespace-nowrap text-fg-dim ${p.missing ? 'line-through opacity-60' : ''}`}
         >
@@ -408,7 +431,16 @@ function SpellingDetail({
                               />
                             </td>
                             <td className="py-1.5">
-                              <Where sync={sync} libraries={review.libraries} />
+                              <Where
+                                sync={sync}
+                                libraries={review.libraries}
+                                places={
+                                  review.kind === 'music'
+                                    ? ['music', 'file']
+                                    : ['file', ...(review.inMusic(f.id) ? ['music' as const] : [])]
+                                }
+                                musicLabel={t(REVIEW_COPY[review.kind].whereMusic)}
+                              />
                             </td>
                           </tr>
                         )
@@ -475,6 +507,42 @@ function CopyLibraries({ info }: { info: LibraryCopyInfo | undefined }) {
   })
 }
 
+const QUALITY_LABEL: Record<Verdict, string> = {
+  good: 'editor.qualityGood',
+  warn: 'editor.qualitySuspect',
+  bad: 'editor.qualityBad',
+  processed: 'editor.qualityProcessed',
+}
+
+function CopyQualityCell({ row }: { row: TrackItem | undefined }) {
+  const { t, i18n } = useTranslation()
+  const q = copyQuality(row)
+  if (q === null)
+    return (
+      <span data-testid="list-review-copy-quality" className="text-fg-faint">
+        {t('listReview.detail.unanalyzed')}
+      </span>
+    )
+  const tone =
+    q.verdict === 'good' && !q.transcode ? 'text-[var(--color-good)]' : 'text-[var(--color-warn)]'
+  return (
+    <span data-testid="list-review-copy-quality" className={tone}>
+      {t(q.transcode ? 'editor.qualityTranscode' : QUALITY_LABEL[q.verdict])}
+      {q.hasKnee && ` · ${formatKHz(q.cutoffHz, i18n.language)}`}
+    </span>
+  )
+}
+
+function CopySizeCell({ path }: { path: string }) {
+  const { i18n } = useTranslation()
+  const { data } = useTrackProperties(path, true)
+  return (
+    <span data-testid="list-review-copy-size">
+      {data ? formatFileSize(data.sizeBytes, i18n.language) : ''}
+    </span>
+  )
+}
+
 // Read when the detail opens, so a library changed since the review loaded is current.
 function useCopyInfo(paths: string[]): Record<string, LibraryCopyInfo> {
   const [info, setInfo] = useState<Record<string, LibraryCopyInfo>>({})
@@ -526,6 +594,7 @@ function DuplicateDetail({
   const staged = review.staged.has(group.key)
   const version = group.kind === 'version'
   const first = entries[0]
+  const list = review.kind === 'list'
   return (
     <>
       <div data-testid="music-review-detail-scroll" className="min-h-0 flex-1 overflow-y-auto p-7">
@@ -571,7 +640,11 @@ function DuplicateDetail({
                   ['field.album', e.album, differs((c) => c.album)],
                   ['field.genre', e.genre, differs((c) => c.genre)],
                   ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
-                  ['detail.added', day(e.dateAdded), differs((c) => day(c.dateAdded))],
+                  ...(list && !e.dateAdded
+                    ? []
+                    : ([
+                        ['detail.added', day(e.dateAdded), differs((c) => day(c.dateAdded))],
+                      ] as const)),
                 ] as const
                 return (
                   <div
@@ -635,6 +708,18 @@ function DuplicateDetail({
                           )}
                         </div>
                       ))}
+                      {list && (
+                        <>
+                          <dt className="text-fg-faint">{t('listReview.detail.quality')}</dt>
+                          <dd className="truncate">
+                            <CopyQualityCell row={review.facts(e.id)} />
+                          </dd>
+                          <dt className="text-fg-faint">{t('listReview.detail.size')}</dt>
+                          <dd className="truncate tabular-nums">
+                            <CopySizeCell path={e.id} />
+                          </dd>
+                        </>
+                      )}
                       <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>
                       <dd
                         title={path}
@@ -644,6 +729,14 @@ function DuplicateDetail({
                       </dd>
                     </dl>
                     <CopyLibraries info={path ? info[path] : undefined} />
+                    {list && review.inMusic(e.id) && (
+                      <span
+                        data-testid="list-review-copy-music"
+                        className="w-fit rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim"
+                      >
+                        {t('listReview.where.music')}
+                      </span>
+                    )}
                   </div>
                 )
               })}
