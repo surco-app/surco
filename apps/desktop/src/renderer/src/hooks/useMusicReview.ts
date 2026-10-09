@@ -10,7 +10,7 @@ import type {
   RemoveCopyResult,
 } from '../../../shared/types'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
-import { tagUpdatesOf } from '../lib/libraryTagUpdates'
+import { libraryUpdatesOf, tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { prefersReducedMotion } from '../lib/motion'
 import { planFixes, summarizeFixes } from '../lib/musicFixPlan'
 import {
@@ -440,7 +440,7 @@ export function useMusicReview({
       let replaced: DuplicateReplaceOutcome[] = []
       let replaceFailed = false
       let librariesCalled = false
-      const updates = tagUpdatesOf(outcomes, 'apply')
+      const updates = libraryUpdatesOf(outcomes, 'apply')
       if ((pairs.length && !cancelled.current) || updates.length) setPhase({ name: 'libraries' })
       if (pairs.length && !cancelled.current) {
         librariesCalled = true
@@ -457,7 +457,8 @@ export function useMusicReview({
         )
         if (librarySync !== 'failed') librarySync = synced
       }
-      if (updates.length) onFilesChanged(updates)
+      const changedFiles = tagUpdatesOf(outcomes, 'apply')
+      if (changedFiles.length) onFilesChanged(changedFiles)
       setPhase({ name: 'verifying' })
       const next = await load().catch(() => null)
       setStaged(new Set())
@@ -525,7 +526,7 @@ export function useMusicReview({
         // The file is back already: a retry only owes Music its value.
         else failed.push({ ...o, backupId: undefined, file: 'unchanged' })
       }
-      const updates = tagUpdatesOf(reverted, 'undo')
+      const updates = libraryUpdatesOf(reverted, 'undo')
       let librarySync: ReviewRun['librarySync'] = 'none'
       if (updates.length) setPhase({ name: 'libraries' })
       if (updates.length)

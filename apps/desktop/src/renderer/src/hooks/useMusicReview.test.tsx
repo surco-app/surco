@@ -792,6 +792,60 @@ describe('useMusicReview', () => {
     expect(result.current.status).toBe('done')
   })
 
+  describe('a track corrected in Music but not in its file', () => {
+    const musicOnly = {
+      persistentId: 'C',
+      path: '/m/c.wav',
+      fixes: [{ persistentId: 'C', field: 'album' as const, from: 'Ultra ', to: 'Ultra' }],
+      music: ['set' as const],
+      file: 'unchanged' as const,
+      written: [],
+    }
+
+    it('still hands the change to the DJ libraries, but reports no file changed', async () => {
+      const api = setApi({ applyMusicFixes: vi.fn().mockResolvedValue([musicOnly]) })
+      const onFilesChanged = vi.fn()
+      const { result } = await ready({ onFilesChanged })
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      await act(() => result.current.apply())
+      expect(api.syncLibraryTags).toHaveBeenCalledWith([
+        { path: '/m/c.wav', fields: { album: { from: 'Ultra ', to: 'Ultra' } } },
+      ])
+      expect(onFilesChanged).not.toHaveBeenCalled()
+      expect(result.current.lastRun?.librarySync).toBe('ok')
+    })
+
+    it('sends the libraries nothing when Music refused the change', async () => {
+      const api = setApi({
+        applyMusicFixes: vi
+          .fn()
+          .mockResolvedValue([
+            { ...musicOnly, music: ['mismatch'], file: 'skipped', path: undefined },
+          ]),
+      })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      await act(() => result.current.apply())
+      expect(api.syncLibraryTags).not.toHaveBeenCalled()
+      expect(result.current.lastRun?.librarySync).toBe('none')
+    })
+
+    it('puts the libraries back on undo along with Music', async () => {
+      const api = setApi({ applyMusicFixes: vi.fn().mockResolvedValue([musicOnly]) })
+      const onFilesChanged = vi.fn()
+      const { result } = await ready({ onFilesChanged })
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      await act(() => result.current.apply())
+      await act(() => result.current.undo())
+      expect(api.trashRestore).not.toHaveBeenCalled()
+      expect(api.setMusicField).toHaveBeenCalledWith('C', 'album', 'Ultra', 'Ultra ')
+      expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+        { path: '/m/c.wav', fields: { album: { from: 'Ultra', to: 'Ultra ' } } },
+      ])
+      expect(onFilesChanged).not.toHaveBeenCalled()
+    })
+  })
+
   it('records a failed library sync', async () => {
     const { result } = await runTwo({ syncLibraryTags: vi.fn().mockRejectedValue(new Error('x')) })
     expect(result.current.lastRun?.librarySync).toBe('failed')
