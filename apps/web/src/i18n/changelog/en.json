@@ -31,6 +31,10 @@
       {
         "text": "Search finds a release better when you type the artist and the album, and tells its editions apart to put first the one your track's tag names.",
         "in": "1.7.0"
+      },
+      {
+        "text": "The Backups setting now does what it says. “Only when the audio changes” stops keeping a copy when you only update tags, and “Never” keeps none. The metadata review always keeps its own so Undo works, and with “Never” deleting on a disk with no Trash is permanent, with a warning that says so before you confirm.",
+        "in": "1.7.1"
       }
     ]
   },

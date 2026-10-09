@@ -31,6 +31,10 @@
       {
         "text": "La búsqueda encuentra mejor un disco cuando escribes el artista y el álbum, y distingue sus ediciones para poner primero la que nombra la etiqueta de tu pista.",
         "in": "1.7.0"
+      },
+      {
+        "text": "El ajuste de Copias de seguridad ya hace lo que dice. «Solo si cambia el audio» deja de guardar una copia cuando solo actualizas las etiquetas, y «Nunca» no guarda ninguna. La revisión de metadatos guarda siempre la suya para que Deshacer funcione, y con «Nunca» borrar en un disco sin Papelera es definitivo, con un aviso que lo dice antes de confirmar.",
+        "in": "1.7.1"
       }
     ]
   },
