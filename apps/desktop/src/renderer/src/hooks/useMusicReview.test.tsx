@@ -783,6 +783,45 @@ describe('useMusicReview', () => {
     expect(result.current.lastRun).toBeNull()
   })
 
+  // Each field answers for itself: the one Music took back follows into the libraries, and
+  // a retry asks again only for the one it refused.
+  it('undoes field by field and retries only the field Music refused', async () => {
+    const both = {
+      persistentId: 'C',
+      path: '/m/c.mp3',
+      fixes: [
+        { persistentId: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' },
+        { persistentId: 'C', field: 'albumArtist' as const, from: 'Dj Lara', to: 'DJ Lara' },
+      ],
+      music: ['set' as const, 'set' as const],
+      file: 'written' as const,
+      written: ['artist' as const, 'albumArtist' as const],
+      backupId: 'b1',
+    }
+    const setMusicField = vi
+      .fn<Api['setMusicField']>()
+      .mockResolvedValueOnce('set')
+      .mockResolvedValueOnce('mismatch')
+      .mockResolvedValue('set')
+    const api = setApi({ applyMusicFixes: vi.fn().mockResolvedValue([both]), setMusicField })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
+    expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
+    await act(() => result.current.undo())
+    expect(setMusicField).toHaveBeenCalledTimes(3)
+    expect(api.trashRestore).toHaveBeenCalledTimes(1)
+    expect(setMusicField).toHaveBeenLastCalledWith('C', 'albumArtist', 'DJ Lara', 'Dj Lara')
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/c.mp3', fields: { albumArtist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
+    expect(result.current.lastRun).toBeNull()
+  })
+
   it('keeps the run and reports the files when the reread fails', async () => {
     const loadMusicReview = vi
       .fn<Api['loadMusicReview']>()
@@ -1641,6 +1680,52 @@ describe('with the list as source', () => {
     expect(api.trashRestore).toHaveBeenCalledWith('b1')
     expect(api.setMusicField).toHaveBeenCalledWith('PID', 'artist', 'DJ Lara', 'Dj Lara')
     expect(result.current.spelling).toHaveLength(1)
+  })
+
+  // Music did not go back, so the libraries keep the value Music still shows: undoing them
+  // alone would split the track between Music and rekordbox.
+  it.each(['mismatch', 'missing'] as const)(
+    'counts a Music undo answered %s as not undone and leaves the libraries',
+    async (answer) => {
+      const api = listApi({
+        setMusicField: vi.fn<Api['setMusicField']>().mockResolvedValue(answer),
+      })
+      const { result } = listHook(LARA)
+      await waitFor(() => expect(result.current.status).toBe('ready'))
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      await act(() => result.current.apply())
+      await act(() => result.current.undo())
+      expect(api.syncLibraryTags).toHaveBeenCalledTimes(1)
+      expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
+    },
+  )
+
+  // A file Music does not hold was only ever written to disk; with the file back, the
+  // libraries that followed it go back too.
+  it('puts the libraries back for a field only the file took once the file is restored', async () => {
+    const api = listApi({
+      applyListFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/m/c.aiff',
+          path: '/m/c.aiff',
+          fixes: [FIX],
+          music: ['none'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+    })
+    const { result } = listHook(LARA)
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(api.setMusicField).not.toHaveBeenCalled()
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/c.aiff', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
+    expect(result.current.lastRun).toBeNull()
   })
 
   // Same format on both sides: the measured one that is not cut at 16 kHz is the one to keep.

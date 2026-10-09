@@ -48,7 +48,11 @@ export interface ReviewSource {
   onProgress: (cb: (p: MusicFixProgress) => void) => () => void
   cancel: () => void
   removeCopies: (removals: ReviewRemoval[], hooks: RemovalHooks) => Promise<ReviewRemovalRun>
-  revertMusic: (outcome: ReviewOutcome, fix: ReviewFix) => Promise<unknown>
+  // What Music answered; undefined when the track has no Music entry to put back.
+  revertMusic: (
+    outcome: ReviewOutcome,
+    fix: ReviewFix,
+  ) => Promise<'set' | 'missing' | 'mismatch' | undefined>
   inMusic?: (id: string) => boolean
   // Whether the Music answer inMusic reads came from Music; undefined where there is none.
   musicConsulted?: () => boolean | undefined

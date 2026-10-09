@@ -583,7 +583,6 @@ export function useMusicReview({
           failed.push(o)
           continue
         }
-        let ok = true
         if (o.backupId) {
           try {
             await window.api.trashRestore(o.backupId)
@@ -593,14 +592,25 @@ export function useMusicReview({
             continue
           }
         }
-        for (const [i, f] of o.fixes.entries())
-          if (o.music[i] === 'set')
-            await source.revertMusic(o, f).catch(() => {
-              ok = false
-            })
-        if (ok) reverted.push(o)
-        // The file is back already: a retry only owes Music its value.
-        else failed.push({ ...o, backupId: undefined, file: 'unchanged' })
+        // A field goes back in the libraries only once whatever it followed went back: Music
+        // when Music took it, else the file just restored. A 'mismatch' or 'missing' left
+        // Music as it was, and the libraries stay with it.
+        const music = [...o.music]
+        const back: MusicReviewField[] = []
+        for (const [i, f] of o.fixes.entries()) {
+          if (o.music[i] !== 'set') {
+            if (o.backupId && o.written.includes(f.field)) back.push(f.field)
+            continue
+          }
+          const answer = await source.revertMusic(o, f).catch(() => 'failed' as const)
+          if (answer !== 'set') continue
+          music[i] = 'none'
+          back.push(f.field)
+        }
+        reverted.push({ ...o, music: o.music.map(() => 'none'), written: back })
+        // The file is back already: a retry only owes Music the fields it refused.
+        if (music.includes('set'))
+          failed.push({ ...o, music, backupId: undefined, file: 'unchanged' })
       }
       const updates = [...(lastRun.libraryUndo ?? []), ...libraryUpdatesOf(reverted, 'undo')]
       let librarySync: ReviewRun['librarySync'] = 'none'
