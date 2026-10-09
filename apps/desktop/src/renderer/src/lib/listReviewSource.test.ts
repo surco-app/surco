@@ -56,14 +56,22 @@ const r = (removeId: string, keepId: string) => ({
 
 describe('listReviewSource', () => {
   it('reviews the read rows, counts the rest and asks Music about the read ones only', async () => {
-    const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'B', { metaReadFailed: true })], {
-      launchMusic: () => true,
-    })
+    const s = source(
+      [
+        row('/m/a.aiff', 'A'),
+        row('/m/b.aiff', 'A', { metaReadFailed: true }),
+        row('/m/c.aiff', 'A'),
+      ],
+      { launchMusic: () => true },
+    )
     const load = await s.load()
     expect(load).toMatchObject({ skipped: 1, musicConsulted: true })
-    expect(load.entries.map((e) => e.id)).toEqual(['/m/a.aiff'])
+    expect(load.entries.map((e) => e.id)).toEqual(['/m/a.aiff', '/m/c.aiff'])
     expect(api.appleMusicFileEntries).toHaveBeenCalledWith(
-      [{ path: '/m/a.aiff', title: 'Song' }],
+      [
+        { path: '/m/a.aiff', title: 'Song' },
+        { path: '/m/c.aiff', title: 'Song' },
+      ],
       true,
     )
   })
@@ -277,14 +285,17 @@ describe('listReviewSource', () => {
 
   // Music finds a file by its name, and after a fix the name Music shows is the new one.
   it('asks Music by the titles as they are after the fixes and without the trashed copies', async () => {
-    const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
+    const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A'), row('/m/c.aiff', 'a')])
     s.settle?.(
       [{ path: '/m/a.aiff', fields: { title: { from: 'Song', to: 'New' } } }],
       ['/m/b.aiff'],
     )
     await s.load()
     expect(api.appleMusicFileEntries).toHaveBeenCalledWith(
-      [{ path: '/m/a.aiff', title: 'New' }],
+      [
+        { path: '/m/a.aiff', title: 'New' },
+        { path: '/m/c.aiff', title: 'Song' },
+      ],
       false,
     )
   })
@@ -301,10 +312,10 @@ describe('listReviewSource', () => {
       let rows = [row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')]
       const s = source([], { rows: () => rows })
       await s.load()
-      const renamed = { ...emptyMetadata(), title: 'New', artist: 'A' }
+      const renamed = { ...emptyMetadata(), title: 'New', artist: 'a' }
       rows = [
         rows[0],
-        row('/m/b.aiff', 'A', { meta: renamed, diskSignature: trackSignature({ meta: renamed }) }),
+        row('/m/b.aiff', 'a', { meta: renamed, diskSignature: trackSignature({ meta: renamed }) }),
       ]
       const load = await s.load()
       expect(api.appleMusicFileEntries).toHaveBeenLastCalledWith(
@@ -331,7 +342,7 @@ describe('listReviewSource', () => {
 
     // A write changes what Music holds too (its artist is in the label the removal checks).
     it('asks again for a file the review wrote', async () => {
-      const s = source([row('/m/a.aiff', 'Dj Lara'), row('/m/b.aiff', 'A')])
+      const s = source([row('/m/a.aiff', 'Dj Lara'), row('/m/b.aiff', 'DJ Lara')])
       await s.load()
       s.settle?.(
         [{ path: '/m/a.aiff', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } }],
@@ -362,11 +373,41 @@ describe('listReviewSource', () => {
 
     it('keeps no answer from a Music it could not ask', async () => {
       api.appleMusicFileEntries.mockResolvedValueOnce({ consulted: false, entries: {} })
-      const s = source([row('/m/a.aiff', 'A')])
+      const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
       await s.load()
       await s.load()
       expect(api.appleMusicFileEntries).toHaveBeenCalledTimes(2)
     })
+  })
+
+  // Only a file in some group can be written or removed, so only those need Music. Asking
+  // for every loaded file cost about 30 s on a 2000-track list imported from Music.
+  it('asks Music only about the files the review groups', async () => {
+    const word = (i: number) =>
+      [...String(i)]
+        .map((d) => 'abcdefghij'[Number(d)])
+        .join('')
+        .repeat(3)
+    const titled = (path: string, artist: string, title: string) => {
+      const meta = { ...emptyMetadata(), title, artist }
+      return row(path, artist, { meta, diskSignature: trackSignature({ meta }) })
+    }
+    const grouped = [
+      titled('/g/1.aiff', 'Dj Lara', 'Ta'),
+      titled('/g/2.aiff', 'DJ Lara', 'Tb'),
+      titled('/g/3.aiff', 'DJ Lara', 'Tc'),
+      titled('/g/4.aiff', 'Ann', 'Song'),
+      titled('/g/5.aiff', 'Ann', 'Song'),
+      titled('/g/6.aiff', 'Ann', 'Song'),
+    ]
+    const rest = Array.from({ length: 994 }, (_, i) =>
+      titled(`/r/${i}.aiff`, `x${word(i + 100)}`, `y${word(i + 100)}`),
+    )
+    await source([...rest.slice(0, 500), ...grouped, ...rest.slice(500)]).load()
+    const [candidates] = api.appleMusicFileEntries.mock.calls[0]
+    expect(candidates.map((c: { path: string }) => c.path).sort()).toEqual(
+      grouped.map((r) => r.inputPath),
+    )
   })
 
   // A stale answer would tell main a copy is free of Music when nobody asked this time.
@@ -378,7 +419,7 @@ describe('listReviewSource', () => {
     const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
     await s.load()
     expect(s.inMusic?.('/m/b.aiff')).toBe(true)
-    s.settle?.([{ path: '/m/a.aiff', fields: { artist: { from: 'A', to: 'B' } } }], [])
+    s.settle?.([{ path: '/m/a.aiff', fields: { album: { from: '', to: 'B' } } }], [])
     api.appleMusicFileEntries.mockRejectedValueOnce(new Error('ipc'))
     await expect(s.load()).rejects.toThrow('ipc')
     expect(s.inMusic?.('/m/b.aiff')).toBe(false)

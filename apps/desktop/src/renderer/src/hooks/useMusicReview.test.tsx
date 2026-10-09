@@ -1551,7 +1551,7 @@ describe('with the list as source', () => {
         .mockResolvedValueOnce({ consulted: true, entries: {} })
         .mockRejectedValueOnce(new Error('ipc')),
     })
-    const { result } = listHook(LARA)
+    const { result } = listHook([...LARA, row('/m/d.aiff', 'DJ Lara', 'Tc')])
     await waitFor(() => expect(result.current.status).toBe('ready'))
     expect(result.current.musicConsulted).toBe(true)
     act(() => result.current.toggleStaged(result.current.spelling[0].key))

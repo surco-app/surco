@@ -6,7 +6,9 @@ import type {
   MusicFileLookup,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { duplicateGroups } from './duplicates'
 import { listReviewEntries, withListChanges } from './listReviewEntries'
+import { spellingGroups } from './musicSpelling'
 import type { ReviewSource } from './reviewSource'
 
 export interface ListSourceDeps {
@@ -55,7 +57,15 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
       titles = new Map(entries.map((e) => [e.id, e.title]))
       if (!deps.mac) return { entries, skipped: read.skipped }
       lookup = { consulted: false, entries: {} }
-      const asked = entries.filter((e) => !answered.has(answerKey(e.id, e.title)))
+      // Only a grouped file is ever written or removed, so only those need Music; the rest of
+      // a large list would cost about 15 ms each on a NAS library for nothing.
+      const grouped = new Set([
+        ...spellingGroups(entries).flatMap((g) => g.variants.flatMap((v) => v.ids)),
+        ...duplicateGroups(entries).flatMap((g) => g.ids),
+      ])
+      const asked = entries.filter(
+        (e) => grouped.has(e.id) && !answered.has(answerKey(e.id, e.title)),
+      )
       const answer = asked.length
         ? await window.api.appleMusicFileEntries(
             asked.map((e) => ({ path: e.id, title: e.title })),
