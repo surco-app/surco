@@ -2108,7 +2108,8 @@ describe('list review', () => {
         '1 file stays on disk because Apple Music still uses it · 1 entry left Apple Music, but its file stays because another entry still uses it',
       )
       expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('0')
-      expect(screen.queryByTestId('music-review-done-note')).toBeNull()
+      // The entry that left Music does not come back with Undo either.
+      expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
     })
 
     it('warns about every copy that could not be removed, each for its reason', () => {

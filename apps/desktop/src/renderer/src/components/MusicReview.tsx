@@ -542,7 +542,7 @@ function Done({
           </div>
         </>
       )}
-      {removed > 0 && (
+      {(removed > 0 || leftMusic > 0) && (
         <p data-testid="music-review-done-note" className="text-xs text-fg-faint">
           {t('musicReview.removedNoUndo')}
         </p>
