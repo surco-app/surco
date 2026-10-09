@@ -1711,6 +1711,7 @@
     "phase": {
       "writing": "Écriture des fichiers {{current}} sur {{total}}",
       "verifying": "Vérification de la liste",
+      "duplicates": "Suppression des doublons",
       "checkingMusic": "Vérification d’Apple Music"
     },
     "confirm": {

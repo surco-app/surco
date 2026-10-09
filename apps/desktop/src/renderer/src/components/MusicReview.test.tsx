@@ -1879,6 +1879,16 @@ describe('list review', () => {
       expect(button).toBeDisabled()
       expect(button).not.toHaveAccessibleName('Stop')
     })
+
+    // The list removes every copy in one call to main, Music deletions included; a Stop
+    // there would promise to halt what is already permanent, and "1 of 3" would never move.
+    it('offers no Stop and no count while the list removes its copies', () => {
+      action({ name: 'duplicates', current: 1, total: 3 })
+      const button = screen.getByTestId('music-review-apply')
+      expect(button).toBeDisabled()
+      expect(button).not.toHaveAccessibleName('Stop')
+      expect(button).toHaveTextContent(/^Removing duplicates$/)
+    })
   })
 
   it('says before applying what happens to the list copies, Music included', () => {

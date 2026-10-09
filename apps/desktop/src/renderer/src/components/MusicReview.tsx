@@ -22,7 +22,7 @@ import type {
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { INVISIBLE } from '../lib/musicSpelling'
-import { REVIEW_COPY, type ReviewCopy } from '../lib/reviewSource'
+import { REVIEW_COPY } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
 import { FilterBar, FilterOption } from './FilterBar'
 import {
@@ -924,9 +924,11 @@ export function MusicReview({
   )
 }
 
-function phaseLabel(t: TFunction, phase: ReviewPhase | null, copy: ReviewCopy): string {
+function phaseLabel(t: TFunction, phase: ReviewPhase | null, kind: Review['kind']): string {
+  const copy = REVIEW_COPY[kind]
   if (phase === null || phase.name === 'verifying') return t(copy.phaseVerifying)
   if (phase.name === 'checking-music') return t('listReview.phase.checkingMusic')
+  if (kind === 'list' && phase.name === 'duplicates') return t('listReview.phase.duplicates')
   if (phase.name === 'writing')
     return t(copy.phaseWriting, { current: phase.current, total: phase.total })
   if ('current' in phase)
@@ -947,9 +949,13 @@ export function MusicReviewAction({
 }) {
   const { t } = useTranslation()
   const running = review.status === 'applying'
-  const label = phaseLabel(t, review.phase, REVIEW_COPY[review.kind])
-  // Main's read of every Music location before trashing cannot be interrupted.
-  const stoppable = !review.undoing && review.phase?.name !== 'checking-music'
+  const label = phaseLabel(t, review.phase, review.kind)
+  // Main's read of every Music location before trashing cannot be interrupted, and the list
+  // removes all its copies, Music deletions included, in that same single call.
+  const stoppable =
+    !review.undoing &&
+    review.phase?.name !== 'checking-music' &&
+    !(review.kind === 'list' && review.phase?.name === 'duplicates')
   return (
     <>
       <span role="status" className="sr-only">

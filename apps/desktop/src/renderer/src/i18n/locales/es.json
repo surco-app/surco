@@ -1711,6 +1711,7 @@
     "phase": {
       "writing": "Escribiendo en los ficheros {{current}} de {{total}}",
       "verifying": "Comprobando la lista",
+      "duplicates": "Quitando duplicados",
       "checkingMusic": "Comprobando Apple Music"
     },
     "confirm": {

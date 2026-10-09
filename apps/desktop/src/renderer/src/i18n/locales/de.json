@@ -1711,6 +1711,7 @@
     "phase": {
       "writing": "Dateien werden geschrieben {{current}} von {{total}}",
       "verifying": "Liste wird geprüft",
+      "duplicates": "Entferne Duplikate",
       "checkingMusic": "Apple Music wird geprüft"
     },
     "confirm": {
