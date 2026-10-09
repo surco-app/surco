@@ -382,3 +382,38 @@ export function replaceFrame(t: number): ReplaceFrame {
     saved: s >= 9,
   }
 }
+
+/* ---------------------------------------------------------------- 09 · review */
+
+export const REVIEW_ROWS = 6
+export const REVIEW_TRACKS = 2
+export const REVIEW_APPLY_BEFORE = 2
+export const REVIEW_APPLY_AFTER = 3
+export const REVIEW_SECONDS = 9
+
+export interface ReviewFrame {
+  rows: number
+  cursor: 'group' | 'option' | 'apply' | 'hidden'
+  selected: boolean
+  picked: boolean
+  resolved: number
+  applyCount: number
+  pressed: boolean
+  applying: boolean
+  applied: boolean
+}
+
+export function reviewFrame(t: number): ReviewFrame {
+  const s = clamp(t) * REVIEW_SECONDS
+  return {
+    rows: Math.floor(clamp((s - 0.2) / 1.2) * REVIEW_ROWS),
+    cursor: s < 1.6 || s >= 6.6 ? 'hidden' : s < 2.9 ? 'group' : s < 5.2 ? 'option' : 'apply',
+    selected: s >= 2.3,
+    picked: s >= 3.7,
+    resolved: Math.floor(clamp((s - 4.1) / 0.6) * REVIEW_TRACKS),
+    applyCount: s >= 5 ? REVIEW_APPLY_AFTER : REVIEW_APPLY_BEFORE,
+    pressed: s >= 6 && s < 6.2,
+    applying: s >= 6.2 && s < 6.9,
+    applied: s >= 6.9,
+  }
+}

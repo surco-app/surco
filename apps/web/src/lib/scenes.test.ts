@@ -11,7 +11,12 @@ import {
   normalizeFrame,
   qualityFrame,
   REPLACE_PLAYLISTS,
+  REVIEW_APPLY_AFTER,
+  REVIEW_APPLY_BEFORE,
+  REVIEW_ROWS,
+  REVIEW_TRACKS,
   replaceFrame,
+  reviewFrame,
   SPECTRUM_WALL,
   TAG_ARTIST,
   TAG_FIELDS,
@@ -419,6 +424,81 @@ describe('replaceFrame', () => {
     expect(end.repointed).toBe(true)
     expect(end.playlistsConfirmed).toBe(REPLACE_PLAYLISTS.length)
     expect(end.saved).toBe(true)
+    expect(end.cursor).toBe('hidden')
+  })
+})
+
+describe('reviewFrame', () => {
+  const frames = Array.from({ length: 201 }, (_, i) => reviewFrame(i / 200))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+
+  it('opens on an empty list, before anything is chosen', () => {
+    const start = reviewFrame(0)
+    expect(start.rows).toBe(0)
+    expect(start.selected).toBe(false)
+    expect(start.picked).toBe(false)
+    expect(start.applyCount).toBe(REVIEW_APPLY_BEFORE)
+  })
+
+  it('fills the list one group at a time and never takes one back', () => {
+    const rows = frames.map((f) => f.rows)
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i]).toBeGreaterThanOrEqual(rows[i - 1])
+      expect(rows[i] - rows[i - 1]).toBeLessThanOrEqual(1)
+    }
+    expect(reviewFrame(1).rows).toBe(REVIEW_ROWS)
+  })
+
+  // The pointer has to be seen reaching each control before it changes, or the scene
+  // shows the app deciding by itself, and a typo is the one thing it never decides.
+  it('opens the typo group only once the list is in and the pointer is on it', () => {
+    const selected = firstAt((f) => f.selected)
+    expect(frames[selected].rows).toBe(REVIEW_ROWS)
+    expect(firstAt((f) => f.cursor === 'group')).toBeGreaterThan(-1)
+    expect(firstAt((f) => f.cursor === 'group')).toBeLessThan(selected)
+  })
+
+  it('marks the spelling that stays only after the group is open and the pointer is on it', () => {
+    const picked = firstAt((f) => f.picked)
+    expect(picked).toBeGreaterThan(firstAt((f) => f.selected))
+    expect(firstAt((f) => f.cursor === 'option')).toBeGreaterThan(-1)
+    expect(firstAt((f) => f.cursor === 'option')).toBeLessThan(picked)
+  })
+
+  // The "Becomes" column is what the pick does to each track, so it resolves after the
+  // pick and track by track, the way the eye reads the table.
+  it('resolves the affected tracks one by one after the pick', () => {
+    for (const f of frames) if (f.resolved > 0) expect(f.picked).toBe(true)
+    const resolved = frames.map((f) => f.resolved)
+    for (let i = 1; i < resolved.length; i++) {
+      expect(resolved[i]).toBeGreaterThanOrEqual(resolved[i - 1])
+      expect(resolved[i] - resolved[i - 1]).toBeLessThanOrEqual(1)
+    }
+    expect(reviewFrame(1).resolved).toBe(REVIEW_TRACKS)
+  })
+
+  it('adds the pick to the batch only once its tracks are resolved', () => {
+    for (const f of frames) {
+      expect([REVIEW_APPLY_BEFORE, REVIEW_APPLY_AFTER]).toContain(f.applyCount)
+      if (f.applyCount === REVIEW_APPLY_AFTER) expect(f.resolved).toBe(REVIEW_TRACKS)
+    }
+  })
+
+  it('applies with a press after the count has gone up, and only then confirms', () => {
+    const pressed = firstAt((f) => f.pressed)
+    expect(pressed).toBeGreaterThan(firstAt((f) => f.applyCount === REVIEW_APPLY_AFTER))
+    expect(firstAt((f) => f.cursor === 'apply')).toBeGreaterThan(-1)
+    expect(firstAt((f) => f.cursor === 'apply')).toBeLessThan(pressed)
+    expect(firstAt((f) => f.applied)).toBeGreaterThan(pressed)
+  })
+
+  // Reduced motion jumps straight to t = 1, so the last frame has to tell the whole story.
+  it('ends applied, with the pointer gone', () => {
+    const end = reviewFrame(1)
+    expect(end.picked).toBe(true)
+    expect(end.applyCount).toBe(REVIEW_APPLY_AFTER)
+    expect(end.applied).toBe(true)
+    expect(end.pressed).toBe(false)
     expect(end.cursor).toBe('hidden')
   })
 })
