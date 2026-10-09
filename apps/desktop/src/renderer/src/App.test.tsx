@@ -2222,6 +2222,24 @@ describe('App derived list stability', () => {
 })
 
 describe('App sort direction', () => {
+  // An album dropped in file-name order is out of its running order; artexjay asked to read
+  // the list as the record plays.
+  it('lists the tracks in album order when sorted by track number', async () => {
+    setApi({
+      readTags: vi.fn(async (path: string) =>
+        path.endsWith('a.wav')
+          ? { ...emptyMetadata(), title: 'Second', trackNumber: '2' }
+          : { ...emptyMetadata(), title: 'First', trackNumber: '1' },
+      ),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[0]).toHaveTextContent('Second'))
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-trackNumber'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[0]).toHaveTextContent('First'))
+  })
+
   // The drop order ('Default') has no direction to flip, so the toggle stays hidden until
   // an actual sort key is chosen — otherwise it would imply reversing a non-existent order.
   it('hides the direction toggle for the default drop order and shows it once a sort is picked', async () => {

@@ -66,6 +66,13 @@ export function stripIgnoredWords(text: string, phrases: string[]): string {
   return squeeze(out) || text
 }
 
+// Album tags carry the edition in brackets ("Duran Duran (Deluxe Edition)", "Rio [2009
+// Remaster]") that the catalogs keep out of the release title, so an exact title search on
+// the tag finds nothing. The bare title is the one they file it under.
+export function bareAlbumTitle(album: string): string {
+  return squeeze(stripParentheticals(album).replace(/\[[^\]]*\]/g, ' ')) || album
+}
+
 // A "presents"/"pres." credit names a side-alias ("Brian Cross pres. Fat Synth") that the
 // catalog files under the lead act ("Brian Cross & Fat Synth"); for free-text search the
 // alias is noise that drags the query onto unrelated compilations. Keep only the lead artist

@@ -121,6 +121,26 @@ describe('groupByRelease', () => {
     })
   })
 
+  // MusicBrainz titles every edition of an album alike and tells them apart in the
+  // disambiguation: 51 rows of "Duran Duran - Duran Duran" hid which one was the deluxe.
+  it('shows the edition MusicBrainz names in its disambiguation', () => {
+    const [row] = groupByRelease([
+      {
+        id: 'rec',
+        title: 'Planet Earth',
+        releases: [
+          {
+            id: '11111111-2222-3333-4444-555555555555',
+            title: 'Duran Duran',
+            disambiguation: 'special edition',
+            'artist-credit': [{ name: 'Duran Duran' }],
+          },
+        ],
+      },
+    ])
+    expect(row.title).toBe('Duran Duran - Duran Duran (special edition)')
+  })
+
   // The renderer's pre-rank sinks rows whose format says "Compilation"; carrying the
   // release group's secondary type there is what keeps a DJ-mix CD from burying the
   // artist's own single, the dominant noise for any dance track on MusicBrainz.
@@ -255,7 +275,20 @@ describe('search', () => {
   it('searches free text straight away when the tags name no artist', async () => {
     const fn = mockFetch([recordingSearch])
     await search('Finally (Kosmic dub)', 'high', {})
-    expect(queryOf(fn.mock.calls[0][0])).toBe('Finally \\(Kosmic dub\\)')
+    expect(queryOf(fn.mock.calls[1][0])).toBe('Finally \\(Kosmic dub\\)')
+  })
+
+  // A search typed without the track's tags is as often an album as a song. On the
+  // recording index alone, artexjay's "Duran Duran Duran Duran (Deluxe Edition)" brought
+  // songs called "Duran Duran" by other artists; the release index put the deluxe first.
+  it('asks the release index too for free text with no artist, releases first', async () => {
+    const fn = mockFetch([albumReleaseSearch, recordingSearch])
+    const rows = await search('Duran Duran Duran Duran (Deluxe Edition)', 'high', {})
+    expect(new URL(String(fn.mock.calls[0][0])).pathname).toBe('/ws/2/release')
+    expect(new URL(String(fn.mock.calls[0][0])).searchParams.get('dismax')).toBe('true')
+    expect(new URL(String(fn.mock.calls[1][0])).pathname).toBe('/ws/2/recording')
+    expect(rows[0].releaseUrl).toBe(pageOf('2e84bec2-c062-411f-bec2-c0aefc0073b2'))
+    expect(rows.length).toBeGreaterThan(3)
   })
 
   // Same rule as every provider: an empty answer is not remembered on disk, since it
@@ -322,6 +355,39 @@ describe('search by album first', () => {
     )
   })
 
+  // MusicBrainz titles the 2010 set "Duran Duran" and keeps "special edition" apart, so the
+  // tagged "Duran Duran (Deluxe Edition)" found 0 releases and the search fell to the track.
+  it('retries the album without its edition before the recording ladder', async () => {
+    const fn = mockFetch([{ count: 0, releases: [] }, albumReleaseSearch])
+    const rows = await search('Duran Duran - Planet Earth', 'high', {
+      artist: 'Duran Duran',
+      title: 'Planet Earth',
+      album: 'Duran Duran (Deluxe Edition)',
+    })
+    expect(rows.length).toBeGreaterThan(0)
+    expect(pathOf(fn.mock.calls[1][0])).toBe('/ws/2/release')
+    expect(queryOf(fn.mock.calls[1][0])).toBe(
+      '+release:"Duran Duran" +artist:"Duran Duran" comment:(Deluxe Edition)',
+    )
+  })
+
+  // The bare title brings every edition (51 for Duran Duran) in MusicBrainz' own order, and
+  // the deluxe sat 22nd, out of reach of a 25-row page with the "deluxe" one missing. The
+  // edition the tag named stays in as an optional match on the disambiguation: nothing is
+  // filtered, the edition just scores first (measured live, CD filter included).
+  it('keeps the formats required and the edition optional on the bare retry', async () => {
+    const fn = mockFetch([{ count: 0, releases: [] }, albumReleaseSearch])
+    await search(
+      'Duran Duran - Planet Earth cd',
+      'high',
+      { artist: 'Duran Duran', title: 'Planet Earth', album: 'Rio [2009 Remaster]' },
+      ['CD'],
+    )
+    expect(queryOf(fn.mock.calls[1][0])).toBe(
+      '+release:"Rio" +artist:"Duran Duran" +format:(*cd) comment:(2009 Remaster)',
+    )
+  })
+
   // Off by default: without the album hint no release query is spent, so every request
   // (each one a second of MusicBrainz' rate limit) is the same as before the setting.
   it('never asks the release index when no album hint arrives', async () => {
@@ -345,7 +411,9 @@ describe('search by album first', () => {
   it('skips the album query when the tags name no artist', async () => {
     const fn = mockFetch([recordingSearch])
     await search('lifestyle no artist', 'high', { title: 'Finally Lone', album: LIFESTYLE })
-    expect(pathOf(fn.mock.calls[0][0])).toBe('/ws/2/recording')
+    expect(fn.mock.calls.map((c) => queryOf(c[0]))).not.toContainEqual(
+      expect.stringContaining('release:'),
+    )
   })
 })
 

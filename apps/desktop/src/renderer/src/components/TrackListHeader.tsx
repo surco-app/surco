@@ -9,6 +9,7 @@ import {
   FileAudio,
   FilePlus,
   ListMusic,
+  ListOrdered,
   ListX,
   Replace,
   SpellCheck,
@@ -163,6 +164,7 @@ export function TrackListHeader({
             { value: 'artist', label: tr('sidebar.sort.artist'), icon: User },
             { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
             { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
+            { value: 'trackNumber', label: tr('sidebar.sort.trackNumber'), icon: ListOrdered },
           ]}
         />
         {sortBy !== 'import' && (

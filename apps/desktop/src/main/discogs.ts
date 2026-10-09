@@ -1,5 +1,6 @@
 import { errorWithKey } from '../shared/errorKeys'
 import {
+  bareAlbumTitle,
   dropOriginalMarker,
   dropPresentsAlias,
   embeddedArtistTitle,
@@ -291,11 +292,14 @@ export async function search(
       // on the release_title field ahead of everything. The hint only arrives while the
       // setting is on (the provider seam drops it otherwise), and never runs without the
       // artist: an album name alone matches anyone's release, and a hit here ends the
-      // search. Nothing found falls through to the track ladder unchanged.
+      // search. An edition the tag spells in brackets is retried bare, the title Discogs
+      // files it under. Nothing found falls through to the track ladder unchanged.
       const album = hints?.album?.trim() ?? ''
       if (artist && album) {
-        const byAlbum = keep(await searchStructured(artist, album, token, opts, priority))
-        if (byAlbum.length) return byAlbum
+        for (const albumTitle of new Set([album, bareAlbumTitle(album)])) {
+          const byAlbum = keep(await searchStructured(artist, albumTitle, token, opts, priority))
+          if (byAlbum.length) return byAlbum
+        }
       }
       if (artist && title) {
         const structured = keep(await searchStructured(artist, title, token, opts, priority))

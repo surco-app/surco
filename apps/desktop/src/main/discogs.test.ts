@@ -210,6 +210,21 @@ describe('search', () => {
     expect(second.searchParams.get('release_title')).toBe('Chime')
   })
 
+  // The tag spells the edition ("Duran Duran (Deluxe Edition)") and Discogs files the set as
+  // plain "Duran Duran": with a format filter on, the exact title found nothing and the
+  // search fell to the track, the "it still searches by track" artexjay reported.
+  it('retries the album without its edition before falling to the track', async () => {
+    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 74 }] })])
+    const out = await search('duran duran planet earth', 'tok', undefined, {
+      artist: 'Duran Duran',
+      title: 'Planet Earth',
+      album: 'Duran Duran (Deluxe Edition)',
+    })
+    expect(out).toEqual([{ id: 74, provider: 'discogs' }])
+    const second = new URL(fetchMock.mock.calls[1][0] as string)
+    expect(second.searchParams.get('release_title')).toBe('Duran Duran')
+  })
+
   // An album name alone ("Greatest Hits") matches anyone's release, and any hit would end
   // the search before the track is tried, so without an artist the album is not searched.
   it('does not search the album without an artist to pin it', async () => {

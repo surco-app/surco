@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
 import {
   abandonRekordboxBatch,
   beginRekordboxBatch,
@@ -6,6 +7,7 @@ import {
   recordRekordboxRepoint,
   redirectRekordboxRepoint,
 } from './rekordboxBatch'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 
 const a = { from: '/m/one.mp3', to: '/m/one.wav' }
 const b = { from: '/m/two.mp3', to: '/m/two.wav' }
@@ -20,6 +22,18 @@ describe('rekordbox batch', () => {
     recordRekordboxRepoint(a)
     recordRekordboxRepoint(b)
     expect(endRekordboxBatch()).toEqual([a, b])
+  })
+
+  // A tags-only update keeps the path, but the entry still has to learn the new title.
+  it('keeps a same-path update that carries tags', () => {
+    const update = {
+      from: '/m/one.wav',
+      to: '/m/one.wav',
+      meta: rekordboxMetaFrom(emptyMetadata()),
+    }
+    beginRekordboxBatch()
+    recordRekordboxRepoint(update)
+    expect(endRekordboxBatch()).toEqual([update])
   })
 
   it('starts each batch empty', () => {
@@ -129,5 +143,17 @@ describe('rekordbox batch redirecting to where the file really landed', () => {
     redirectRekordboxRepoint('/tmp/surco-x/one.aiff', '/m/one.mp3')
 
     expect(endRekordboxBatch()).toEqual([])
+  })
+
+  // An in-place tags update that went through Apple Music lands back on its own path, and
+  // the entry still has the new details to learn.
+  it('keeps an entry that landed back on its path when it carries tags', () => {
+    const meta = rekordboxMetaFrom(emptyMetadata())
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/tmp/surco-x/one.mp3', meta })
+
+    redirectRekordboxRepoint('/tmp/surco-x/one.mp3', '/m/one.mp3')
+
+    expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/m/one.mp3', meta }])
   })
 })

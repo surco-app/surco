@@ -1,15 +1,37 @@
-import { chmod, copyFile, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
 import * as rekordboxDb from './rekordboxDb'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
 import { repointTrack, repointTracks } from './rekordboxLibrary'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 
 // The probe shells out to pgrep/tasklist; pinned so the suite never depends on whether
 // rekordbox happens to be open on the machine running it.
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+
+vi.mock('electron', () => ({
+  nativeImage: {
+    createFromBuffer: (buf: Buffer) => ({
+      isEmpty: () => buf.length === 0,
+      getSize: () => ({ width: 600, height: 600 }),
+      resize: () => ({ toJPEG: () => Buffer.from(`small:${buf}`) }),
+      toJPEG: () => Buffer.from(`jpeg:${buf}`),
+    }),
+  },
+}))
 
 import { isRekordboxRunning } from './rekordboxProcess'
 
@@ -77,6 +99,57 @@ function readRow(path: string, id = '900001') {
   return { ...row, playlists: playlists.c, cues: cues.c }
 }
 
+function addMetadataTables(path: string): void {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  for (const column of [
+    'Title',
+    'ArtistID',
+    'AlbumID',
+    'GenreID',
+    'LabelID',
+    'RemixerID',
+    'ImagePath',
+  ])
+    db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column} VARCHAR(255)`)
+  for (const column of ['Commnt TEXT', 'ReleaseYear INTEGER', 'TrackNo INTEGER', 'DiscNo INTEGER'])
+    db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column}`)
+  db.exec('ALTER TABLE djmdContent ADD COLUMN rb_local_usn BIGINT')
+  db.exec('ALTER TABLE djmdContent ADD COLUMN updated_at DATETIME')
+  db.exec(`CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
+    UUID VARCHAR(255), rb_data_status INTEGER, rb_local_data_status INTEGER,
+    rb_local_deleted TINYINT(1), rb_local_synced TINYINT(1), usn BIGINT, rb_local_usn BIGINT,
+    created_at DATETIME, updated_at DATETIME)`)
+  db.exec(
+    `CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`,
+  )
+  db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
+  db.close()
+}
+
+function readImagePath(path: string): string | null {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  const row = db.prepare(`SELECT ImagePath FROM djmdContent WHERE ID = '900001'`).get() as {
+    ImagePath: string | null
+  }
+  db.close()
+  return row.ImagePath
+}
+
+function readDetails(path: string): { Title: string; Artist: string | null } {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  const details = db
+    .prepare(
+      `SELECT c.Title, a.Name AS Artist FROM djmdContent c
+         LEFT JOIN djmdArtist a ON a.ID = c.ArtistID WHERE c.ID = '900001'`,
+    )
+    .get() as { Title: string; Artist: string | null }
+  db.close()
+  return details
+}
+
 beforeEach(async () => {
   vi.mocked(isRekordboxRunning).mockResolvedValue(false)
   dbPath = await makeDb()
@@ -97,6 +170,104 @@ describe('repointTrack', () => {
     // wav is 11; leaving the mp3 code behind would describe the row as a file it is not.
     expect(row.FileType).toBe(11)
     expect(row.FileSize).toBe(5000)
+  })
+
+  // rekordbox shows its collection, not the file's tags, so a corrected title has to be
+  // written onto the entry in the same write that moves it.
+  it('writes the track details onto the entry along with the new path', async () => {
+    addMetadataTables(dbPath)
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Everybody', artist: 'B.F.I.' })
+    const result = await repointTrack(dbPath, { from: MP3, to: output, meta })
+
+    expect(result.written).toBe(true)
+    expect(readDetails(dbPath)).toEqual({ Title: 'Everybody', Artist: 'B.F.I.' })
+  })
+
+  it('updates the details of a file whose path did not change', async () => {
+    addMetadataTables(dbPath)
+    const file = join(audioDir, 'kept.wav')
+    await writeFile(file, Buffer.alloc(4000))
+    const db = openRekordboxDb(dbPath)
+    db?.prepare(`UPDATE djmdContent SET FolderPath = ?, FileNameL = ? WHERE ID = '900001'`).run(
+      file,
+      'kept.wav',
+    )
+    db?.close()
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Kept' })
+    const result = await repointTrack(dbPath, { from: file, to: file, meta })
+
+    expect(result.written).toBe(true)
+    expect(readDetails(dbPath).Title).toBe('Kept')
+    expect(readRow(dbPath).FileSize).toBe(4000)
+  })
+
+  // rekordbox draws artwork from its own share folder, never from the file, so a cover
+  // fixed in Surco stayed old in rekordbox.
+  it('gives the entry the cover of the converted file', async () => {
+    addMetadataTables(dbPath)
+    const share = join(dirname(dbPath), 'share')
+    await mkdir(share)
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Everybody' })
+    const [result] = await repointTracks(dbPath, [{ from: MP3, to: output, meta }], {
+      readCover: () => Buffer.from('cover'),
+    })
+
+    expect(result.written).toBe(true)
+    const imagePath = readImagePath(dbPath)
+    expect(imagePath).toMatch(/^\/PIONEER\/Artwork\/[0-9a-f]{3}\/[0-9a-f-]+\/artwork\.jpg$/)
+    expect(await readFile(join(share, `.${imagePath}`), 'utf8')).toBe('jpeg:cover')
+  })
+
+  it('leaves the artwork alone when the file carries no cover', async () => {
+    addMetadataTables(dbPath)
+    await mkdir(join(dirname(dbPath), 'share'))
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Everybody' })
+    await repointTracks(dbPath, [{ from: MP3, to: output, meta }], { readCover: () => null })
+
+    expect(readImagePath(dbPath)).toBeNull()
+  })
+
+  // A write that fails is rolled back from the backup, which knows nothing of the images
+  // staged for it: left behind, they would be files no entry points at.
+  it('removes the staged artwork when the write fails', async () => {
+    addMetadataTables(dbPath)
+    const share = join(dirname(dbPath), 'share')
+    await mkdir(share)
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Everybody' })
+    const [result] = await repointTracks(
+      dbPath,
+      [
+        {
+          from: MP3,
+          to: output,
+          meta,
+          onWrite: () => {
+            throw new Error('disk gone')
+          },
+        },
+      ],
+      { readCover: () => Buffer.from('cover') },
+    )
+
+    expect(result.written).toBe(false)
+    expect(readImagePath(dbPath)).toBeNull()
+    const left = await readdir(join(share, 'PIONEER', 'Artwork'), { recursive: true }).catch(
+      () => [],
+    )
+    expect(left.filter((f) => String(f).endsWith('.jpg'))).toEqual([])
   })
 
   // The entire reason to repoint rather than re-import: the row keeps its ID, so every

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 
 // What a finished conversion should tell rekordbox. Kept separate from ffmpeg.ts so the
@@ -35,6 +37,17 @@ describe('rekordboxRepointFor', () => {
   // make the flush open and back up the collection for no change.
   it('does not repoint when the file stayed where it was', () => {
     expect(rekordboxRepointFor('/m/a/one.wav', '/m/a/one.wav')).toBeNull()
+  })
+
+  // Fixing a title in place leaves the path alone but changes what rekordbox should show,
+  // and rekordbox shows its own collection, never the file's tags.
+  it('still reports a file that stayed put when it carries tags for the entry', () => {
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'One' })
+    expect(rekordboxRepointFor('/m/a/one.wav', '/m/a/one.wav', { meta })).toEqual({
+      from: '/m/a/one.wav',
+      to: '/m/a/one.wav',
+      meta,
+    })
   })
 
   // Reported 14/09: converting a downloaded FLAC that supersedes an MP3 already in the

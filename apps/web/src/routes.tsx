@@ -13,12 +13,14 @@ import Features from './components/Features'
 import FlacToAiff from './components/FlacToAiff'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
+import UseCases from './components/UseCases'
 import { createI18n, type Language } from './i18n'
 import { SITE } from './lib/sitemap'
 
 const PATHS: Record<Language, string> = { es: '/', en: '/en' }
 const FEATURE_PATHS: Record<Language, string> = { es: '/funciones', en: '/en/features' }
 const GUIDE_PATHS: Record<Language, string> = { es: '/guia', en: '/en/guide' }
+const USE_CASES_PATHS: Record<Language, string> = { es: '/casos-de-uso', en: '/en/use-cases' }
 const CHANGELOG_PATHS: Record<Language, string> = { es: '/cambios', en: '/en/changelog' }
 const FLAC_TO_AIFF_PATHS: Record<Language, string> = {
   es: '/convertir/flac-a-aiff',
@@ -134,6 +136,37 @@ function LocalizedGuide({ lng }: { lng: Language }) {
   )
 }
 
+function UseCasesHead({ lng }: { lng: Language }) {
+  const t = I18N[lng].getFixedT(lng)
+  const url = SITE + USE_CASES_PATHS[lng]
+  return (
+    <Head>
+      <html lang={t('meta.htmlLang')} />
+      <title>{t('useCases.metaTitle')}</title>
+      <meta name="description" content={t('useCases.metaDescription')} />
+      <link rel="canonical" href={url} />
+      <link rel="alternate" hrefLang="es" href={`${SITE}${USE_CASES_PATHS.es}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}${USE_CASES_PATHS.en}`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE}${USE_CASES_PATHS.es}`} />
+      <meta property="og:locale" content={t('meta.ogLocale')} />
+      <meta property="og:url" content={url} />
+      <meta property="og:title" content={t('useCases.metaTitle')} />
+      <meta property="og:description" content={t('useCases.metaDescription')} />
+      <meta name="twitter:title" content={t('useCases.metaTitle')} />
+      <meta name="twitter:description" content={t('useCases.metaDescription')} />
+    </Head>
+  )
+}
+
+function LocalizedUseCases({ lng }: { lng: Language }) {
+  return (
+    <I18nextProvider i18n={I18N[lng]}>
+      <UseCasesHead lng={lng} />
+      <UseCases />
+    </I18nextProvider>
+  )
+}
+
 function ChangelogHead({ lng }: { lng: Language }) {
   const t = I18N[lng].getFixedT(lng)
   const url = SITE + CHANGELOG_PATHS[lng]
@@ -243,6 +276,8 @@ export const routes: RouteRecord[] = [
       { path: 'en/features', element: <LocalizedFeatures lng="en" />, entry: 'src/routes.tsx' },
       { path: 'guia', element: <LocalizedGuide lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'casos-de-uso', element: <LocalizedUseCases lng="es" />, entry: 'src/routes.tsx' },
+      { path: 'en/use-cases', element: <LocalizedUseCases lng="en" />, entry: 'src/routes.tsx' },
       { path: 'cambios', element: <LocalizedChangelog lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/changelog', element: <LocalizedChangelog lng="en" />, entry: 'src/routes.tsx' },
       {

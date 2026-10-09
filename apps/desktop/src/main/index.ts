@@ -147,6 +147,7 @@ import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
+import { readEmbeddedCover } from './tags'
 import { createTmpManifest } from './tmpManifest'
 import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
@@ -989,7 +990,10 @@ function registerIpc(): void {
         repointTracks(
           collectionPath,
           repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-          { sessionBackup: (path) => rekordboxSessionBackup.ensure(path) },
+          {
+            sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
+            readCover: readEmbeddedCover,
+          },
         ),
     })
     logLibraryFlush('rekordbox repoint', result)
@@ -997,7 +1001,7 @@ function registerIpc(): void {
     // writes to.
     const engineResult = await flushEngineSync({
       ...engineFlushDeps(win, e.sender),
-      endBatch: () => repoints,
+      endBatch: () => repoints.filter((repoint) => repoint.from !== repoint.to),
       repointTracks: (libraryDir, list) =>
         repointEngineTracks(
           libraryDir,

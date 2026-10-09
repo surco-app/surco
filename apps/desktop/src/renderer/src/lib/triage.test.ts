@@ -422,6 +422,25 @@ describe('sortTracks', () => {
     expect(sortTracks(list, 'artist').map((t) => t.id)).toEqual(['3', '1', '2'])
   })
 
+  // An album dropped in file-name order is out of its running order, and the user wants to
+  // read it as the record plays: disc first, then track, by number ("10" after "9", and a
+  // "3/12" total never throws it off). Untagged tracks wait at the end.
+  it('sorts by disc and track number in album order with the untagged tracks last', () => {
+    const list = [
+      mk({ id: '2-1', meta: { discNumber: '2', trackNumber: '1' } }),
+      mk({ id: 'none' }),
+      mk({ id: '1-10', meta: { discNumber: '1', trackNumber: '10/12' } }),
+      mk({ id: '1-9', meta: { discNumber: '1', trackNumber: '9/12' } }),
+    ]
+    expect(sortTracks(list, 'trackNumber').map((t) => t.id)).toEqual(['1-9', '1-10', '2-1', 'none'])
+    expect(sortTracks(list, 'trackNumber', 'desc').map((t) => t.id)).toEqual([
+      '2-1',
+      '1-10',
+      '1-9',
+      'none',
+    ])
+  })
+
   it('sorts by duration ascending with the unprobed tracks last', () => {
     const list = [
       mk({ id: 'long', duration: 400 }),

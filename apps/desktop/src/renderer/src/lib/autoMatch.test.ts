@@ -626,6 +626,32 @@ describe('searchHintsFor', () => {
     expect(searchHintsFor(jewel, {}, 'Kings Of Tomorrow - Finally')).toEqual({})
   })
 
+  // artexjay typed "Duran Duran Duran Duran (Deluxe Edition)": the artist and album of the
+  // selected track, not its song. As free text MusicBrainz answered with other artists'
+  // songs called "Duran Duran"; the typed artist and album are a precise album search.
+  it('carries the artist and album the typed search names, as an album search', () => {
+    const track = {
+      query: 'Duran Duran Planet Earth',
+      meta: { artist: 'Duran Duran', title: 'Planet Earth', album: 'Duran Duran (Deluxe Edition)' },
+    } as TrackItem
+    expect(searchHintsFor(track, {}, 'Duran Duran Duran Duran (Deluxe Edition)')).toEqual({
+      artist: 'Duran Duran',
+      album: 'Duran Duran (Deluxe Edition)',
+      albumTyped: true,
+    })
+  })
+
+  // An untagged artist leaves only the title to recognise the track's own search by.
+  it('keeps the tags of a track without an artist when the typed search names its title', () => {
+    const untagged = { query: 'Blacque Moon', meta: { title: 'Blacque Moon' } } as TrackItem
+    expect(searchHintsFor(untagged, {}, 'blacque moon')).toMatchObject({ title: 'Blacque Moon' })
+  })
+
+  // The album alone pins nothing: "La Morta!" by anyone else is not this record.
+  it('carries no tags when the typed search names the album but not the artist', () => {
+    expect(searchHintsFor(jewel, {}, 'La Morta!')).toEqual({})
+  })
+
   // Refining the tags' own search (a mix name, punctuation, case) is still that song.
   it('keeps the tags for a refinement of their own search', () => {
     expect(searchHintsFor(jewel, {}, 'jewel - blacque moon (original mix)')).toMatchObject({

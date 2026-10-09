@@ -31,6 +31,22 @@
       {
         "text": "Una pista que Surco está convirtiendo dentro de una carpeta vigilada ya no aparece en la lista como pista nueva.",
         "in": "1.6.2"
+      },
+      {
+        "text": "Nuevo ajuste «Actualizar la biblioteca de Engine DJ al convertir»: convierte una pista que tienes en Engine DJ y sigue siendo la misma pista, con sus playlists y sus cue points. Antes de escribir, Surco guarda una copia de seguridad de la biblioteca, y nunca escribe con Engine DJ abierto.",
+        "in": "1.6.3"
+      },
+      {
+        "text": "Con la sincronización de rekordbox activada, al convertir o actualizar una pista rekordbox recibe también lo que has editado en Surco: título, artista, álbum, género, sello, remixer, comentario, año, números de pista y disco, y la carátula. Ya no tienes que volver a escribirlo allí. Su BPM y su tonalidad no se tocan, y un campo que dejas vacío en Surco no borra el de rekordbox.",
+        "in": "1.6.3"
+      },
+      {
+        "text": "Buscar por álbum encuentra más discos: si la etiqueta lleva la edición entre paréntesis, como «(Deluxe Edition)», Surco vuelve a buscar sin ella en Discogs y MusicBrainz. Y el álbum que pone tu etiqueta sale el primero en los resultados.",
+        "in": "1.6.3"
+      },
+      {
+        "text": "La lista de pistas se puede ordenar por número de pista, disco a disco, para ver un álbum en su orden.",
+        "in": "1.6.3"
       }
     ]
   },

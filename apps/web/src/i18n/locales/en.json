@@ -21,6 +21,7 @@
     "instalar": "Install",
     "faq": "FAQ",
     "guia": "Guide",
+    "casos": "Use cases",
     "skipToContent": "Skip to content",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -856,6 +857,7 @@
           "Surco tells you when a track is already in your library, checking whichever one matches your destination. It's a well-tuned hint, not a guarantee.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
           "You can replace a track you already own: load another copy of something in your library, in any format including the same one (an MP3 to an AIFF, or a 128 MP3 to a 320), and the button turns into “Replace”. The Apple Music entry and the rekordbox row both follow the new file, keeping their playlists and cue points. rekordbox may recalculate the beatgrid when it sees a different file, so check the grid. When it finishes, Surco offers to send the old file to the Trash.",
+          "With “Update the rekordbox collection when converting” on (Settings › Output), the rekordbox entry also takes the title, artist, album, genre, label, remixer, comment, year, track and disc numbers and artwork, whether you convert or only update the tags. BPM, key and cue points stay as rekordbox has them, and a field you leave empty in Surco never clears rekordbox's. rekordbox has to be closed, and Surco offers to close it.",
           "Key, label, catalog number and remixer don't reach Apple Music (they only live in the file's tags) and FLAC is never sent, because Music can't handle it."
         ],
         "shot": "exportar-en.webp",
@@ -1282,5 +1284,499 @@
       "title": "Convert your FLACs to AIFF",
       "lede": "Surco also tags from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz and files everything into your library."
     }
+  },
+  "useCases": {
+    "metaTitle": "Surco use cases: how to set it up for each job",
+    "metaDescription": "Step by step recipes for Surco. Which settings to change once and what to click after, like adding tags and artwork to a whole folder without making copies.",
+    "kicker": "Use cases",
+    "title": "Surco for the job you came to do",
+    "lede": "Recipes for the everyday jobs. First, the settings you change once. Then, the steps you repeat each time.",
+    "tocLabel": "On this page",
+    "settingsLabel": "Settings, just once",
+    "settingsHint": "Open Surco's Settings (⌘ , on Mac) and find each option by its name.",
+    "settingsRoot": "Settings",
+    "on": "On",
+    "optional": "Optional",
+    "stepsLabel": "Then, each time",
+    "relatedLabel": "More in the guide",
+    "outroTitle": "Missing a use case?",
+    "outroLede": "Tell us what you want to do with your tracks and we'll add it here.",
+    "cases": [
+      {
+        "id": "in-place",
+        "title": "Add tags and artwork to a whole folder, without making copies",
+        "body": [
+          "You have a folder of music with missing tags or no artwork. You want Surco to fill them in on its own, in the same files, with no copies and no format change.",
+          "Set it up once. After that, every folder takes four steps."
+        ],
+        "settings": [
+          {
+            "tab": "Search",
+            "setting": "Auto-match on import",
+            "note": "When you drop your tracks, Surco looks each one up and adds its details and artwork when it is sure."
+          },
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "Same as source",
+            "note": "Every file keeps its format. An MP3 stays an MP3."
+          },
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Overwrite original",
+            "note": "Surco saves the changes into the same file instead of making a new one."
+          },
+          {
+            "tab": "Output",
+            "section": "Backups",
+            "setting": "What gets kept",
+            "value": "Always",
+            "optional": true,
+            "note": "So you can go back to the old file if you don't like something."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag the folder into Surco",
+            "text": "Tracks in its subfolders come in too. Surco starts looking them up on its own."
+          },
+          {
+            "title": "Wait for the lookup to finish",
+            "text": "At the top you'll see “Auto-matching…” with a counter. Wait for it to finish."
+          },
+          {
+            "title": "Check the ones left to confirm",
+            "text": "In the list filter, pick “To confirm”. These are the ones Surco wasn't sure about. Review them or leave them as they are."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "It's the button in the top bar. Surco asks before touching your files. Click “Overwrite and convert”."
+          }
+        ],
+        "points": [
+          "The sound doesn't change. Only the tags and artwork are written, which is why it's so fast.",
+          "Tracks you leave unconfirmed keep the tags they already had.",
+          "Traktor cue points stay where they were."
+        ],
+        "related": [
+          {
+            "label": "Auto-match",
+            "anchor": "automatch"
+          },
+          {
+            "label": "Tag without re-encoding",
+            "anchor": "igual-origen"
+          },
+          {
+            "label": "Convert every track",
+            "anchor": "lote"
+          }
+        ]
+      },
+      {
+        "id": "replace",
+        "title": "Swap a track in your library for a better copy",
+        "body": [
+          "You have a track as an MP3 in your library and you get hold of the AIFF or the WAV. You want the new copy to take the old one's place, without ending up with two and without adding it to every playlist again.",
+          "It only works on a Mac, because the swap goes through Apple Music. The old track has to be in your Apple Music library."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Apple Music",
+            "note": "That way Surco checks whether the track is already in your library."
+          },
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "AIFF",
+            "note": "Apple Music doesn't take FLAC. AIFF sounds the same as WAV and keeps the artwork too."
+          },
+          {
+            "tab": "Format",
+            "setting": "Keep MP3 and M4A files as they are",
+            "optional": true,
+            "note": "If the new copy is a better MP3 (320 instead of 128), it stays an MP3 instead of becoming an AIFF."
+          },
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "Update the rekordbox collection when converting",
+            "optional": true,
+            "note": "If you use rekordbox. The track stays in its playlists and keeps its cue points."
+          },
+          {
+            "tab": "Output",
+            "section": "Engine DJ library",
+            "setting": "Update the Engine DJ library when converting",
+            "optional": true,
+            "note": "If you use Engine DJ. The track stays in its playlists and keeps its cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Close rekordbox and Engine DJ",
+            "text": "Only if you use them. While they are open Surco can't touch their libraries, and it offers to close them."
+          },
+          {
+            "title": "Drag the new copies into Surco",
+            "text": "The better ones, for example the AIFF of a track you have as an MP3."
+          },
+          {
+            "title": "Check that the button says “Replace”",
+            "text": "That tells you Surco found the track in your Apple Music. If the new copy is worse than the one you have, it warns you."
+          },
+          {
+            "title": "Click “Replace”",
+            "text": "When it's done, Surco offers to move the old file to the Trash."
+          }
+        ],
+        "points": [
+          "In rekordbox and Engine DJ the track stays in its playlists and keeps its cue points.",
+          "In Apple Music, smart playlists pick it up on their own. If it was in a regular playlist, you'll need to add it again.",
+          "In rekordbox, check the beatgrid the first time you load the track. Seeing a different file can make it recalculate."
+        ],
+        "related": [
+          {
+            "label": "Take it to your decks",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Convert the track",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "apple-music-rekordbox",
+        "title": "Your music lives in Apple Music and you organize in rekordbox",
+        "body": [
+          "You add your music to Apple Music and import it into rekordbox to build your playlists. When you upgrade a track or fix its details in Surco, you want rekordbox to pick it up on its own, without importing again and without losing playlists or cue points.",
+          "It only works on a Mac, because it goes through Apple Music."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Apple Music",
+            "note": "Tracks go to your Apple Music library, just like you do now."
+          },
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "AIFF",
+            "note": "Apple Music doesn't take FLAC. AIFF sounds the same as WAV and keeps the artwork too."
+          },
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "Update the rekordbox collection when converting",
+            "note": "This is what keeps rekordbox up to date. Without it, rekordbox would stay on the old details and the old file."
+          },
+          {
+            "tab": "Format",
+            "setting": "Keep MP3 and M4A files as they are",
+            "optional": true,
+            "note": "If a track is an MP3, it stays an MP3 instead of becoming an AIFF."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Close rekordbox",
+            "text": "Surco doesn't write to your collection while rekordbox is open. If you forget, it offers to close it."
+          },
+          {
+            "title": "Drag the tracks into Surco",
+            "text": "The ones you want to upgrade or fix. If one is already in your Apple Music, Surco recognizes it."
+          },
+          {
+            "title": "Fix whatever needs fixing",
+            "text": "Title, artist, genre, anything. By hand or with auto-match."
+          },
+          {
+            "title": "Click the convert button",
+            "text": "It's the button at the bottom of the editor. Apple Music and rekordbox catch up at the same time."
+          }
+        ],
+        "points": [
+          "In rekordbox the track stays in its playlists, with its cue points, BPM and key.",
+          "rekordbox takes the title, artist, album, genre, label, remixer, comment, year, track and disc numbers and artwork.",
+          "A field you leave empty in Surco never clears what you have in rekordbox. If the track has no artwork, rekordbox keeps its own."
+        ],
+        "related": [
+          {
+            "label": "Take it to your decks",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Edit the metadata",
+            "anchor": "editor"
+          }
+        ]
+      },
+      {
+        "id": "to-aiff",
+        "title": "Move your collection to AIFF without losing cue points",
+        "body": [
+          "Your music is in FLAC or WAV and your DJ software or your CDJs prefer AIFF, which also keeps the artwork. You want to convert everything in one go and keep your cue points where they were.",
+          "The sound loses nothing. Going from FLAC or WAV to AIFF is lossless."
+        ],
+        "settings": [
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "AIFF",
+            "note": "Everything you convert comes out as AIFF."
+          },
+          {
+            "tab": "Format",
+            "setting": "Keep MP3 and M4A files as they are",
+            "note": "An MP3 gains no quality as an AIFF, it only takes more space. This leaves it as it is."
+          },
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Next to the original",
+            "note": "The AIFF is saved in the same folder and the original is left alone."
+          },
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "Update the rekordbox collection when converting",
+            "optional": true,
+            "note": "If you use rekordbox. The track moves to the AIFF without leaving its playlists."
+          },
+          {
+            "tab": "Output",
+            "section": "Traktor collection",
+            "setting": "collection.nml",
+            "value": "Use this",
+            "optional": true,
+            "note": "If you use Traktor. Surco suggests your collection, and this lets Traktor see the cue points in the AIFF."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Close rekordbox and Traktor",
+            "text": "Only if you use them. While they are open Surco can't touch their collections, and it offers to close them."
+          },
+          {
+            "title": "Drag the folder into Surco",
+            "text": "Tracks in its subfolders come in too."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "It's the button in the top bar. It converts every track in the list in one go."
+          },
+          {
+            "title": "Decide what to do with the originals",
+            "text": "When it's done, Surco can move them all to the Trash at once. If you'd rather keep them, do nothing."
+          }
+        ],
+        "points": [
+          "Traktor cue points carry over to the AIFF from MP3, FLAC and WAV.",
+          "ALAC has nowhere to keep cue points. That's why this recipe uses AIFF.",
+          "Take any tracks that are already AIFF out of the list first. Otherwise Surco makes a second copy with “(2)” in the name."
+        ],
+        "related": [
+          {
+            "label": "Convert the track",
+            "anchor": "convertir"
+          },
+          {
+            "label": "Make Traktor actually see your changes",
+            "anchor": "traktor"
+          }
+        ]
+      },
+      {
+        "id": "check-quality",
+        "title": "Check the quality of what you bought or downloaded",
+        "body": [
+          "You downloaded a pack or bought some music and want to know if it's what it claims to be. For example, a FLAC that really comes from an MP3.",
+          "This recipe changes nothing. Surco only looks and tells you what it found."
+        ],
+        "settings": [
+          {
+            "tab": "Editor",
+            "setting": "Audio quality analysis",
+            "note": "On by default. It's what looks at each track's spectrum."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Analyze everything on import",
+            "note": "On by default. It analyzes each track as soon as it comes in, without you clicking anything."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag the folder into Surco",
+            "text": "Tracks in its subfolders come in too."
+          },
+          {
+            "title": "Wait for the analysis to finish",
+            "text": "At the top you'll see “Analyzing quality…” with a counter."
+          },
+          {
+            "title": "Filter by “Doubtful”",
+            "text": "In the list filter. These are the tracks where Surco found something."
+          },
+          {
+            "title": "Open one to see why",
+            "text": "The editor shows the spectrum and explains the verdict with measured numbers."
+          }
+        ],
+        "points": [
+          "Only “Lossy source” and “Bad quality” show in red.",
+          "“Possibly reprocessed” shows in amber because it's a suspicion, not proof.",
+          "An MP3 is never rated bad quality. Cutting the highs is part of the format.",
+          "Until you click “Convert”, Surco writes nothing to your files."
+        ],
+        "related": [
+          {
+            "label": "Check the real quality",
+            "anchor": "calidad"
+          },
+          {
+            "label": "Get to know the track list",
+            "anchor": "lista"
+          }
+        ]
+      },
+      {
+        "id": "vinyl",
+        "title": "Digitize your vinyl",
+        "body": [
+          "You recorded your records on the computer and want them ready to play. No needle clicks, no silence at the start and end, and with their Discogs details.",
+          "Surco doesn't cut a whole side into tracks. You need one file per track."
+        ],
+        "settings": [
+          {
+            "tab": "Processing",
+            "setting": "Vinyl click repair",
+            "value": "Standard",
+            "note": "Removes short needle clicks when converting."
+          },
+          {
+            "tab": "Search",
+            "setting": "Show only these formats",
+            "value": "Vinyl",
+            "note": "So Discogs shows you the vinyl pressing and not the CD."
+          },
+          {
+            "tab": "Processing",
+            "setting": "Loudness normalization",
+            "value": "−1 dBFS",
+            "optional": true,
+            "note": "Raises each track until its loudest peak sits at −1 dBFS. It doesn't compress anything."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag your recordings into Surco",
+            "text": "One file per track."
+          },
+          {
+            "title": "Tag the whole record at once",
+            "text": "Select all its tracks and search for the record with /. Surco matches each file to its song, with its A1, B2 position."
+          },
+          {
+            "title": "Trim the silence",
+            "text": "Open the palette with ⌘K and choose “Trim detected silence on the selection”."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "Click repair and loudness are applied when converting."
+          }
+        ],
+        "points": [
+          "Before converting you can listen to the repair and compare it with the original in the editor's click section.",
+          "If a track has lots of big clicks, try “Strong”. It can soften the hits a little.",
+          "A click buried under a lot of music at once sometimes gets through."
+        ],
+        "related": [
+          {
+            "label": "Remove the vinyl clicks",
+            "anchor": "declick"
+          },
+          {
+            "label": "Trim the silence",
+            "anchor": "recorte"
+          },
+          {
+            "label": "Match a whole release",
+            "anchor": "album"
+          }
+        ]
+      },
+      {
+        "id": "usb",
+        "title": "Get a USB stick ready for the club",
+        "body": [
+          "You want to take a selection on a USB stick, with clear names and in a format any CDJ reads. Your files at home stay untouched."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Output folder",
+            "note": "Below it you can pick the folder. Pick your USB stick."
+          },
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "AIFF",
+            "note": "Any CDJ reads it. If you're short on space, pick MP3 and set “MP3 quality” to 320."
+          },
+          {
+            "tab": "Naming",
+            "setting": "Apply the pattern automatically",
+            "optional": true,
+            "note": "Names each file from its details. The pattern is edited just above, and a / makes folders."
+          },
+          {
+            "tab": "Processing",
+            "setting": "Loudness normalization",
+            "value": "Club −9",
+            "optional": true,
+            "note": "Brings every track to a similar loudness. To get there it sometimes limits the peaks and loses some punch."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Plug in the USB stick",
+            "text": "It has to be the same folder you picked in the settings."
+          },
+          {
+            "title": "Drag the tracks into Surco",
+            "text": "The ones in your selection, wherever you keep them."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "It's the button in the top bar. The copies go to the USB stick and the originals stay as they were."
+          },
+          {
+            "title": "Eject the USB stick",
+            "text": "From the Finder or File Explorer, before unplugging it."
+          }
+        ],
+        "points": [
+          "Your files at home don't change. Everything Surco does goes to the copy on the USB stick.",
+          "When you use Surco for home again, remember to set the destination back in the settings."
+        ],
+        "related": [
+          {
+            "label": "Name and organize the files",
+            "anchor": "nombres"
+          },
+          {
+            "label": "Convert the track",
+            "anchor": "convertir"
+          }
+        ]
+      }
+    ]
   }
 }

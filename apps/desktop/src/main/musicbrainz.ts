@@ -1,4 +1,5 @@
 import { errorWithKey } from '../shared/errorKeys'
+import { bareAlbumTitle } from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
@@ -50,6 +51,7 @@ interface MbCredit {
 export interface MbReleaseSummary {
   id: string
   title: string
+  disambiguation?: string
   status?: string
   'artist-credit'?: MbCredit[]
   'release-group'?: { id?: string; 'primary-type'?: string | null; 'secondary-types'?: string[] }
@@ -150,10 +152,15 @@ function releaseRow(release: MbReleaseSummary, fallbackCredit?: MbCredit[]): Sea
     formats.push('Compilation')
   const year = release.date?.match(/^(\d{4})/)?.[1]
   const group = release['release-group']?.id
+  // Every edition shares the album's title; the disambiguation ("special edition", "dutch
+  // pressing") is how MusicBrainz tells them apart, and how its own pages list them.
+  const title = release.disambiguation
+    ? `${release.title} (${release.disambiguation})`
+    : release.title
   return {
     provider: 'musicbrainz',
     id: numericIdOf(release.id),
-    title: artist ? `${artist} - ${release.title}` : release.title,
+    title: artist ? `${artist} - ${title}` : title,
     ...(year ? { year } : {}),
     ...(release.country ? { country: release.country } : {}),
     ...(formats.length ? { format: formats } : {}),
@@ -194,9 +201,18 @@ export function matchesMbFormats(row: SearchResult, formats: string[]): boolean 
   return formats.some((f) => row.format?.some((name) => FORMAT_BUCKETS[f]?.name.test(name)))
 }
 
-function formatClause(formats: string[]): string {
+function formatClause(formats: string[], join = ' AND '): string {
   const fields = formats.flatMap((f) => FORMAT_BUCKETS[f]?.field ?? [])
-  return fields.length ? ` AND format:(${fields.join(' OR ')})` : ''
+  return fields.length ? `${join}format:(${fields.join(' OR ')})` : ''
+}
+
+// What the album tag says in brackets ("Deluxe Edition" of "Duran Duran (Deluxe Edition)"):
+// the edition MusicBrainz writes in the release's disambiguation, not in its title.
+function editionOf(album: string): string {
+  return [...album.matchAll(/[([]([^)\]]*)[)\]]/g)]
+    .map((m) => m[1].trim())
+    .filter(Boolean)
+    .join(' ')
 }
 
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-lookup-cache-v2')
@@ -223,14 +239,20 @@ export async function searchOnce(
   return results
 }
 
-// The release index, asked only for "Search by album first". Cached under its own `rel:`
-// prefix so a release query and a recording query of the same text never share an entry.
-async function searchReleases(query: string, priority?: SearchPriority): Promise<SearchResult[]> {
-  const key = `rel:${query.trim().toLowerCase()}`
+// The release index, asked for an album: "Search by album first", or free text typed
+// without the track's tags. Cached under its own `rel:` prefix so a release query and a
+// recording query of the same text never share an entry.
+async function searchReleases(
+  query: string,
+  priority?: SearchPriority,
+  dismax = false,
+): Promise<SearchResult[]> {
+  const key = `rel${dismax ? 'dx' : ''}:${query.trim().toLowerCase()}`
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
+  const mode = dismax ? '&dismax=true' : ''
   const data = await api<MbReleaseSearch>(
-    `${BASE}/release?query=${encodeURIComponent(query)}&fmt=json&limit=25`,
+    `${BASE}/release?query=${encodeURIComponent(query)}${mode}&fmt=json&limit=25`,
     priority,
   )
   const results = (data.releases ?? []).map((release) => releaseRow(release))
@@ -241,7 +263,9 @@ async function searchReleases(query: string, priority?: SearchPriority): Promise
 // "Search by album first" comes before everything, like on Discogs: the tagged album is the
 // release's own title, so it goes on the release index's title field, pinned to the artist
 // (an album name alone matches anyone's release, and a hit here ends the search). The album
-// hint only arrives while the setting is on; nothing found falls through unchanged.
+// hint only arrives while the setting is on or the user typed it. An edition the tag spells
+// in brackets is retried bare, the title MusicBrainz lists, with the edition kept as an
+// optional match on the disambiguation so it scores first; nothing found falls through.
 //
 // With artist and title from the tags, a fielded recording query is far more precise than
 // free text. Compilations are excluded on the first try because a dance track sits on
@@ -249,6 +273,8 @@ async function searchReleases(query: string, priority?: SearchPriority): Promise
 // the second try for a track that only ever came out on one. Messy tags miss both, so the
 // free-text candidate ladder the other sources walk is the last resort, over the recording
 // index too: a file is a recording, and release titles only name the track on a single.
+// Free text with no artist was typed without the track's tags and names an album as often
+// as a song, so the release index answers first there and the recordings follow.
 // Every rung is one second of the rate limit, which is why the ladder stops at the first
 // rung that finds anything in the chosen formats.
 export async function search(
@@ -268,13 +294,21 @@ export async function search(
       const title = hints.title?.trim()
       const album = hints.album?.trim()
       if (artist && album) {
-        const byAlbum = wanted(
-          await searchReleases(
-            `release:"${escapeLucene(album)}" AND artist:"${escapeLucene(artist)}"${clause}`,
-            priority,
-          ),
-        )
-        if (byAlbum.length) return byAlbum
+        const pinned = `artist:"${escapeLucene(artist)}"`
+        const asTagged = `release:"${escapeLucene(album)}" AND ${pinned}${clause}`
+        const queries = [asTagged]
+        const bare = bareAlbumTitle(album)
+        if (bare !== album) {
+          const edition = editionOf(album)
+          queries.push(
+            `+release:"${escapeLucene(bare)}" +${pinned}${formatClause(formats, ' +')}` +
+              (edition ? ` comment:(${escapeLucene(edition)})` : ''),
+          )
+        }
+        for (const query of queries) {
+          const byAlbum = wanted(await searchReleases(query, priority))
+          if (byAlbum.length) return byAlbum
+        }
       }
       if (artist && title) {
         const fielded = `recording:"${escapeLucene(title)}" AND artist:"${escapeLucene(artist)}"`
@@ -285,9 +319,14 @@ export async function search(
       }
       // The album was already asked on the release index above; as a free-text candidate
       // against recordings it would only match tracks that happen to share its name.
-      return searchCandidates(query, { ...hints, album: undefined }, async (candidate) =>
-        wanted(await searchOnce(escapeLucene(candidate), priority, true)),
-      )
+      return searchCandidates(query, { ...hints, album: undefined }, async (candidate) => {
+        const recordings = (): Promise<SearchResult[]> =>
+          searchOnce(escapeLucene(candidate), priority, true)
+        if (artist) return wanted(await recordings())
+        const releases = await searchReleases(escapeLucene(candidate), priority, true)
+        const ids = new Set(releases.map((r) => r.id))
+        return wanted([...releases, ...(await recordings()).filter((r) => !ids.has(r.id))])
+      })
     },
     {
       labelParams: { query },

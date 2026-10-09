@@ -1,6 +1,14 @@
+import { existsSync } from 'node:fs'
 import { copyFile, stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import log from 'electron-log/main'
+import {
+  discardArtwork,
+  rekordboxShareDir,
+  renderArtwork,
+  type StagedArtwork,
+  stageArtwork,
+} from './rekordboxArtwork'
 import {
   FILE_TYPES,
   type FindOptions,
@@ -8,6 +16,7 @@ import {
   isAmbiguous,
   openRekordboxDb,
 } from './rekordboxDb'
+import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 // Moves an existing collection entry onto the file a conversion just produced, so the
@@ -38,6 +47,7 @@ export interface RepointOptions extends FindOptions, RepointBatchOptions {
   // The file the collection points at now, and the one it should point at instead.
   from: string
   to: string
+  meta?: RekordboxMeta
   // Seam for the tests to force the failure that must never be simulated by damaging a
   // real collection: a write that dies halfway. Runs right after this track's row changed.
   onWrite?: () => void
@@ -50,6 +60,7 @@ export interface RepointBatchOptions {
   // Takes the run's single pre-run copy, before the first write. A failure here refuses
   // the write like any other missing backup.
   sessionBackup?: (collectionPath: string) => Promise<void>
+  readCover?: (file: string) => Buffer | null
 }
 
 // rekordbox stores the format as a number, so an entry left on the old code would
@@ -69,6 +80,34 @@ export async function repointTrack(
 }
 
 type Repoint = Omit<RepointOptions, keyof RepointBatchOptions>
+
+function stageCovers(
+  db: NonNullable<ReturnType<typeof openRekordboxDb>>,
+  collectionPath: string,
+  repoints: Repoint[],
+  writes: { index: number; id: string }[],
+  readCover: RepointBatchOptions['readCover'],
+): Map<string, StagedArtwork> {
+  const staged = new Map<string, StagedArtwork>()
+  const share = rekordboxShareDir(collectionPath)
+  if (!readCover || !existsSync(share)) return staged
+  const current = db.prepare('SELECT ImagePath FROM djmdContent WHERE ID = ?')
+  for (const w of writes) {
+    const { to, meta } = repoints[w.index]
+    if (!meta) continue
+    try {
+      const cover = readCover(to)
+      const rendered = cover ? renderArtwork(cover) : null
+      if (!rendered) continue
+      const row = current.get(w.id) as { ImagePath: string | null } | undefined
+      const artwork = stageArtwork(share, row?.ImagePath ?? null, rendered)
+      if (artwork) staged.set(w.id, artwork)
+    } catch (err) {
+      log.warn(`rekordbox artwork skipped for ${to}: ${err}`)
+    }
+  }
+  return staged
+}
 
 // A whole run at once: one check that rekordbox is closed, one read to find every track,
 // one backup, one more check, and one write for all of them. Each track used to pay all of
@@ -153,6 +192,7 @@ export async function repointTracks(
 
   const write = openRekordboxDb(collectionPath)
   if (!write) return settle({ written: false, reason: 'unreadable' })
+  const staged = stageCovers(write, collectionPath, repoints, writes, batch.readCover)
   try {
     // FolderPath, FileNameL, FileType and FileSize are the four columns a format change
     // invalidates. OrgFolderPath is deliberately not among them: it records where the
@@ -165,8 +205,9 @@ export async function repointTracks(
     )
     write.transaction(() => {
       for (const w of writes) {
-        const { to, onWrite } = repoints[w.index]
+        const { to, meta, onWrite } = repoints[w.index]
         update.run(to, basename(to), w.fileType, w.size, w.id)
+        if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
         // Placed after the statement so a test can fail the write once the row has
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()
@@ -175,6 +216,7 @@ export async function repointTracks(
     for (const w of writes) results[w.index] = { written: true, id: w.id }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {
+    for (const artwork of staged.values()) discardArtwork(artwork)
     // A collection the process cannot write to is the user's to fix — a permission, a
     // locked volume, a copy restored read-only — and a bare "write failed" does not say
     // that. Separated after hitting it for real: a read-only copy of the live collection

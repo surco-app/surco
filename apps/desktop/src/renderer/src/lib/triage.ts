@@ -199,9 +199,9 @@ export function searchMatcher(query: string): (track: TrackItem) => boolean {
   return (track) => searchFields(track).some((field) => field.includes(q))
 }
 
-// The list sort modes: the drop order ('import'), or by name, artist, length or source
-// format (which groups a mixed crate by container).
-export type TrackSort = 'import' | 'name' | 'artist' | 'duration' | 'format'
+// The list sort modes: the drop order ('import'), or by name, artist, length, source
+// format (which groups a mixed crate by container) or album order (disc, then track).
+export type TrackSort = 'import' | 'name' | 'artist' | 'duration' | 'format' | 'trackNumber'
 
 // The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
 // there; every other mode flips between ascending and descending.
@@ -211,6 +211,9 @@ export type SortDir = 'asc' | 'desc'
 // every list-affecting render (each editor keystroke while a sort is active), and
 // localeCompare re-creates the collation tables on every call.
 const collator = new Intl.Collator()
+// Track and disc numbers compare by value ("9" before "10"), and a "/12" total after the
+// number never decides anything once the numbers differ.
+const numericCollator = new Intl.Collator(undefined, { numeric: true })
 
 // Compares two text keys, missing values last and direction-independent (see sortTracks).
 // Only the present-vs-present comparison takes the sign, so empties never flip to the top.
@@ -239,6 +242,15 @@ export function sortTracks(
     if (sort === 'name') return sign * collator.compare(a.listLabel, b.listLabel)
     if (sort === 'artist') return compareText(a.meta.artist, b.meta.artist, sign)
     if (sort === 'format') return compareText(sourceFormat(a), sourceFormat(b), sign)
+    if (sort === 'trackNumber') {
+      if (!a.meta.trackNumber || !b.meta.trackNumber)
+        return (a.meta.trackNumber ? 0 : 1) - (b.meta.trackNumber ? 0 : 1)
+      return (
+        sign *
+        (numericCollator.compare(a.meta.discNumber ?? '', b.meta.discNumber ?? '') ||
+          numericCollator.compare(a.meta.trackNumber, b.meta.trackNumber))
+      )
+    }
     if (a.duration == null || b.duration == null)
       return (a.duration == null ? 1 : 0) - (b.duration == null ? 1 : 0)
     return sign * (a.duration - b.duration)

@@ -26,8 +26,8 @@ function cleanQuery(query: string, words: string[]): string {
   return stripIgnoredWords(query.normalize('NFC'), words)
 }
 
-// The album hint is dropped here unless "Search by album first" is on, so with the
-// setting off every provider receives exactly the hints it always did. Also dropped when
+// The album hint is dropped here unless "Search by album first" is on or the user typed
+// it, so with the setting off a search from the tags gets exactly the hints it always did. Also dropped when
 // blank or when it just repeats the title (a single's album tag): the track search
 // already tries that, and it must not jump ahead of it.
 export function cleanHints(
@@ -36,13 +36,13 @@ export function cleanHints(
   albumFirst: boolean,
 ): SearchHints | undefined {
   if (!hints) return hints
-  const { album, ...rest } = hints
+  const { album, albumTyped, ...rest } = hints
   const cleaned: SearchHints = {
     ...rest,
     title: hints.title === undefined ? undefined : cleanQuery(hints.title, words),
     artist: hints.artist === undefined ? undefined : cleanQuery(hints.artist, words),
   }
-  const albumText = albumFirst && album ? cleanQuery(album, words).trim() : ''
+  const albumText = (albumFirst || albumTyped) && album ? cleanQuery(album, words).trim() : ''
   const repeatsTitle = albumText.toLowerCase() === cleaned.title?.trim().toLowerCase()
   return albumText && !repeatsTitle ? { ...cleaned, album: albumText } : cleaned
 }

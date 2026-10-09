@@ -6,6 +6,7 @@ export default function Footer() {
   const lang = i18n.language === 'en' ? 'en' : 'es'
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
+  const useCasesHref = PAGES.useCases[lang]
   const changelogHref = PAGES.changelog[lang]
   const flacToAiffHref = PAGES.flacToAiff[lang]
 
@@ -47,6 +48,15 @@ export default function Footer() {
             <li>
               <a href={guideHref} className="transition-colors hover:text-fg">
                 {t('nav.guia')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={useCasesHref}
+                data-testid="footer-use-cases"
+                className="transition-colors hover:text-fg"
+              >
+                {t('nav.casos')}
               </a>
             </li>
             <li>

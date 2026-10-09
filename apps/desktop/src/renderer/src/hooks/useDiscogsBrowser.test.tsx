@@ -615,6 +615,31 @@ describe('useDiscogsBrowser', () => {
     expect(search.mock.calls[1][3]).toEqual({})
   })
 
+  // The panel ranks a typed search by the typed words, not the selected track's tags: with
+  // a Planet Earth track selected, "Duran Duran Duran Duran (Deluxe Edition)" tied every
+  // Duran Duran deluxe on the artist and the most owned one led.
+  it('ranks the rows of a typed search by the words the user typed', async () => {
+    const search = vi.fn().mockResolvedValue([
+      {
+        provider: 'discogs',
+        id: 1,
+        title: 'Duran Duran - Paper Gods (Deluxe Edition)',
+        community: { have: 5000 },
+      },
+      { provider: 'discogs', id: 2, title: 'Duran Duran - Duran Duran (Deluxe Edition)' },
+    ])
+    setApi({ search })
+    const track = item({ query: 'Duran Duran Planet Earth', title: 'Planet Earth' })
+    track.meta.artist = 'Duran Duran'
+    const { result } = renderHook(() => useDiscogsBrowser(track, tr), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    expect(result.current.results.map((r) => r.id)).toEqual([1, 2])
+    act(() => result.current.setQuery('Duran Duran Duran Duran (Deluxe Edition)'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([2, 1]))
+  })
+
   // Flipping away and back remounts the panel on the typed query the track stored; it is
   // still the user's search and must not pick the tags back up.
   it('keeps searching a typed song without tags after a flip back to the track', async () => {
@@ -701,6 +726,41 @@ describe('useDiscogsBrowser', () => {
     rerender({ albumFirst: true })
     await waitFor(() => expect(result.current.results).toHaveLength(1))
     expect(search.mock.calls[1][3]).toEqual(expect.objectContaining({ album: 'Play' }))
+  })
+
+  // With "Search by album first" on, every edition of the artist's albums ties on the
+  // artist, and Discogs' most-owned LP led while the edition the file is tagged with sat
+  // 40 rows down. The tagged album decides the order; with the setting off, nothing moves.
+  it.each([
+    [true, [2, 1]],
+    [false, [1, 2]],
+  ])('ranks the tagged album first only while album-first is on (%s)', async (albumFirst, ids) => {
+    setApi({
+      search: vi.fn().mockResolvedValue([
+        {
+          provider: 'discogs',
+          id: 1,
+          title: 'Duran Duran - Duran Duran',
+          community: { have: 5000 },
+        },
+        { provider: 'discogs', id: 2, title: 'Duran Duran - Duran Duran (Deluxe Edition)' },
+      ]),
+    })
+    const tagged: TrackItem = {
+      ...item({ query: 'duran duran planet earth', title: 'Planet Earth' }),
+      meta: {
+        title: 'Planet Earth',
+        artist: 'Duran Duran',
+        album: 'Duran Duran (Deluxe Edition)',
+      } as TrackMetadata,
+    }
+    const { result } = renderHook(
+      () => useDiscogsBrowser(tagged, tr, undefined, ['discogs'], 25, {}, albumFirst),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    expect(result.current.results.map((r) => r.id)).toEqual(ids)
   })
 
   // The format filter is applied in the main process too, so ticking Vinyl in Settings

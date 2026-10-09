@@ -21,6 +21,7 @@ export default function Header({ page }: { page?: Page }) {
   const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
+  const useCasesHref = PAGES.useCases[lang]
   const changelogHref = PAGES.changelog[lang]
 
   useEffect(() => {
@@ -131,6 +132,13 @@ export default function Header({ page }: { page?: Page }) {
             <a href={guideHref} className="transition-colors hover:text-fg">
               {t('nav.guia')}
             </a>
+            <a
+              href={useCasesHref}
+              data-testid="header-use-cases"
+              className="transition-colors hover:text-fg"
+            >
+              {t('nav.casos')}
+            </a>
             <a href={changelogHref} className="transition-colors hover:text-fg">
               {t('nav.cambios')}
             </a>
@@ -229,6 +237,14 @@ export default function Header({ page }: { page?: Page }) {
             className="block py-3 text-sm text-muted transition-colors hover:text-fg"
           >
             {t('nav.guia')}
+          </a>
+          <a
+            href={useCasesHref}
+            data-testid="header-mobile-use-cases"
+            onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+          >
+            {t('nav.casos')}
           </a>
           <a
             href={changelogHref}

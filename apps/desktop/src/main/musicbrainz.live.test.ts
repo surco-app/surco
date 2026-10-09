@@ -9,6 +9,7 @@ const { liveCacheDir } = vi.hoisted(() => {
 vi.mock('electron', () => ({ app: { getPath: () => liveCacheDir, on: () => {} } }))
 
 import { getRelease, matchesMbFormats, search } from './musicbrainz'
+import { cleanHints } from './providers'
 
 const live = process.env.SURCO_MUSICBRAINZ_LIVE === '1'
 
@@ -27,6 +28,25 @@ describe.skipIf(!live)('MusicBrainz against the real API', () => {
     const cover = release.images?.[0].uri ?? ''
     const res = await fetch(cover)
     expect(res.ok).toBe(true)
+  }, 30_000)
+
+  // artexjay's report (08/10): with a Planet Earth track selected he typed the artist and
+  // album by hand, with album-first off, and got other artists' songs called "Duran Duran".
+  it('puts the deluxe edition first for an artist and album typed by hand', async () => {
+    const typed = 'Duran Duran Duran Duran (Deluxe Edition)'
+    const hints = cleanHints(
+      { artist: 'Duran Duran', album: 'Duran Duran (Deluxe Edition)', albumTyped: true },
+      [],
+      false,
+    )
+    const rows = await search(typed, 'high', hints)
+    expect(rows[0].title).toMatch(/^Duran Duran - Duran Duran \((deluxe|special edition)\)$/)
+  }, 30_000)
+
+  // The same text typed with a track of another artist selected travels as free text.
+  it("finds the album for free text typed without the track's tags", async () => {
+    const rows = await search('Duran Duran Duran Duran (Deluxe Edition)', 'high', {})
+    expect(rows[0].title).toMatch(/^Duran Duran - Duran Duran \(/)
   }, 30_000)
 
   it('finds the tagged album first when album-first search hands over the album', async () => {
