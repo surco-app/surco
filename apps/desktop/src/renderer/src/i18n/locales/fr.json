@@ -1531,6 +1531,8 @@
       "libraryReplaceFailed": "{{library}} n'a pas pu être mis à jour. Les copies ne sont déjà plus dans Music.",
       "librariesUntouched": "Vous avez arrêté la révision, donc rekordbox, Engine DJ et Traktor n'ont pas été touchés.",
       "libraryFailed": "rekordbox, Engine DJ ou Traktor n'ont pas été mis à jour. Regarde Activité.",
+      "libraryTagsFailed": "{{library}} n'a pas pu être mis à jour. Regarde Activité.",
+      "libraryTagsOpen": "{{library}} n'a pas été mis à jour car il était ouvert.",
       "applyError": "Impossible d'appliquer dans Apple Music.",
       "undoFailed_one": "{{count}} changement n'a pas pu être annulé",
       "undoFailed_other": "{{count}} changements n'ont pas pu être annulés",
@@ -1540,6 +1542,9 @@
       "titleWarnings_one": "Vérifiée, avec {{count}} avertissement",
       "titleWarnings_other": "Vérifiée, avec {{count}} avertissements",
       "subtitle": "Les changements sont déjà dans vos fichiers et bibliothèques.",
+      "subtitleMusicOnly_one": "{{count}} morceau modifié seulement dans Music, son fichier reste inchangé.",
+      "subtitleMusicOnly_other": "{{count}} morceaux modifiés seulement dans Music, leurs fichiers restent inchangés.",
+      "subtitleLibraries": "Les fichiers sont à jour, mais toutes les bibliothèques n'ont pas reçu les changements.",
       "warnings_one": "{{count}} chose n'a pas été faite",
       "warnings_other": "{{count}} choses n'ont pas été faites",
       "stat": {
@@ -1585,7 +1590,11 @@
         "trashed_one": "{{count}} fichier",
         "trashed_other": "{{count}} fichiers",
         "kept_one": "{{count}} reste sur le disque car rekordbox, Engine DJ ou Traktor l'utilisent",
-        "kept_other": "{{count}} restent sur le disque car rekordbox, Engine DJ ou Traktor les utilisent"
+        "kept_other": "{{count}} restent sur le disque car rekordbox, Engine DJ ou Traktor les utilisent",
+        "updated_one": "{{count}} morceau mis à jour",
+        "updated_other": "{{count}} morceaux mis à jour",
+        "open": "non touché, il était ouvert",
+        "noMatch": "aucun morceau avec l'ancienne valeur"
       }
     },
     "empty": "Ta bibliothèque Apple Music est vide.",

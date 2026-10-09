@@ -21,6 +21,7 @@ import type {
   KeyResult,
   LibraryCopyInfo,
   LibraryStatus,
+  LibraryTagSyncReport,
   LibraryTagUpdate,
   LifetimeStats,
   LoudnessResult,
@@ -125,7 +126,7 @@ export interface Api {
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
   loadMusicReview: () => Promise<MusicReviewEntry[]>
   applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
-  syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<void>
+  syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<LibraryTagSyncReport>
   // After a review removed duplicate copies: the DJ libraries move to the kept copies, then
   // the removed files go to the Trash when nothing needs them. Empty off macOS.
   replaceDuplicatesInLibraries: (

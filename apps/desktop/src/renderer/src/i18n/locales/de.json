@@ -1531,6 +1531,8 @@
       "libraryReplaceFailed": "{{library}} konnte nicht aktualisiert werden. Die Kopien sind schon nicht mehr in Music.",
       "librariesUntouched": "Du hast die Prüfung angehalten, daher wurden rekordbox, Engine DJ und Traktor nicht angefasst.",
       "libraryFailed": "rekordbox, Engine DJ oder Traktor wurden nicht aktualisiert. Sieh in Aktivität nach.",
+      "libraryTagsFailed": "{{library}} konnte nicht aktualisiert werden. Sieh in Aktivität nach.",
+      "libraryTagsOpen": "{{library}} wurde nicht aktualisiert, weil es geöffnet war.",
       "applyError": "In Apple Music konnte nichts angewendet werden.",
       "undoFailed_one": "{{count}} Änderung konnte nicht rückgängig gemacht werden",
       "undoFailed_other": "{{count}} Änderungen konnten nicht rückgängig gemacht werden",
@@ -1540,6 +1542,9 @@
       "titleWarnings_one": "Geprüft, mit {{count}} Hinweis",
       "titleWarnings_other": "Geprüft, mit {{count}} Hinweisen",
       "subtitle": "Die Änderungen sind schon in deinen Dateien und Bibliotheken.",
+      "subtitleMusicOnly_one": "{{count}} Titel nur in Music geändert, die Datei bleibt unverändert.",
+      "subtitleMusicOnly_other": "{{count}} Titel nur in Music geändert, die Dateien bleiben unverändert.",
+      "subtitleLibraries": "Die Dateien sind fertig, aber nicht jede Bibliothek hat die Änderungen erhalten.",
       "warnings_one": "{{count}} Sache wurde nicht erledigt",
       "warnings_other": "{{count}} Dinge wurden nicht erledigt",
       "stat": {
@@ -1585,7 +1590,11 @@
         "trashed_one": "{{count}} Datei",
         "trashed_other": "{{count}} Dateien",
         "kept_one": "{{count}} bleibt auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen",
-        "kept_other": "{{count}} bleiben auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen"
+        "kept_other": "{{count}} bleiben auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen",
+        "updated_one": "{{count}} Titel aktualisiert",
+        "updated_other": "{{count}} Titel aktualisiert",
+        "open": "nicht angefasst, war geöffnet",
+        "noMatch": "kein Titel mit dem alten Wert"
       }
     },
     "empty": "Deine Apple-Music-Bibliothek ist leer.",

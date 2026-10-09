@@ -1,3 +1,4 @@
+import type { LibraryTagSync } from '../shared/types'
 import type { Activity } from './activity'
 import type { NmlPatch } from './traktorNml'
 import type { SyncResult } from './traktorNmlLibrary'
@@ -37,21 +38,21 @@ export interface FlushTraktorSyncDeps {
   track: Activity['track']
 }
 
-export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<void> {
+export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<LibraryTagSync> {
   const patches = deps.endNmlBatch()
-  if (patches.length === 0) return
+  if (patches.length === 0) return { outcome: 'nothing' }
   if (!deps.traktorNmlPath) {
-    if (deps.collectionMissing)
-      await deps.track('export', 'activity.traktorSync', async () => ({ written: false }), {
-        summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
-      })
-    return
+    if (!deps.collectionMissing) return { outcome: 'nothing' }
+    await deps.track('export', 'activity.traktorSync', async () => ({ written: false }), {
+      summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
+    })
+    return { outcome: 'missing' }
   }
   if (!(await deps.ensureTraktorClosed())) {
     deps.showBlockedDialog()
-    return
+    return { outcome: 'open' }
   }
-  await deps.track(
+  const result = await deps.track(
     'export',
     'activity.traktorSync',
     () => deps.syncCollection(deps.traktorNmlPath, patches),
@@ -72,4 +73,8 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<void
       },
     },
   )
+  if (result.written) return { outcome: 'updated', count: result.matched }
+  if (result.reason === 'traktor-running') return { outcome: 'open' }
+  if (result.reason === 'no-matches') return { outcome: 'nothing' }
+  return { outcome: 'failed' }
 }

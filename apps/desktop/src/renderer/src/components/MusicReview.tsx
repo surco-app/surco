@@ -239,15 +239,25 @@ function Done({
   const removed = run.removed.filter((r) => r.outcome === 'removed').length
   const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
   const trashed = run.replaced.filter((r) => r.fileTrashed).length
-  const missing = missingLibraries(review)
-  const reachedLibraries = run.outcomes.some((o) => o.file === 'written') || run.replaced.length > 0
+  const missing = [
+    ...new Set([
+      ...missingLibraries(review),
+      ...LIBRARIES.filter(([library]) => run.tagSync?.[library].outcome === 'missing').map(
+        ([, name]) => name,
+      ),
+    ]),
+  ]
+  const reachedLibraries = run.librarySync !== 'none' || run.replaced.length > 0
   const libraryWarnings = LIBRARIES.flatMap(([library, name]) => {
     const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
+    const tags = run.tagSync?.[library].outcome
     return [
       ...(count('skipped') && !missing.includes(name)
         ? [t('musicReview.done.librarySkipped', { library: name })]
         : []),
       ...(count('failed') ? [t('musicReview.done.libraryReplaceFailed', { library: name })] : []),
+      ...(tags === 'open' ? [t('musicReview.done.libraryTagsOpen', { library: name })] : []),
+      ...(tags === 'failed' ? [t('musicReview.done.libraryTagsFailed', { library: name })] : []),
     ]
   })
   const failedRemovals = run.removed.filter(
@@ -281,8 +291,8 @@ function Done({
     ...libraryWarnings,
     ...(run.librariesUntouched ? [t('musicReview.done.librariesUntouched')] : []),
   ]
-  // A library's own result is only known for the removed copies: the tag sync reports each
-  // library to Activity alone, so a library the run says nothing else about is left out.
+  // Every library with its sync on gets a row: a library left out read as one that got
+  // the change, which is what hid a rekordbox that got nothing.
   const libraryRow = (
     library: (typeof LIBRARIES)[number][0],
     name: (typeof LIBRARIES)[number][1],
@@ -295,24 +305,33 @@ function Done({
       detail,
     })
     if (status && !status.enabled) return row('off', t('musicReview.done.where.off'))
-    if (missing.includes(name))
-      return reachedLibraries ? row('warn', t('musicReview.done.where.missing')) : null
+    if (missing.includes(name)) return row('warn', t('musicReview.done.where.missing'))
     const outcomes = run.replaced.map((r) => r[library]).filter((o) => o !== undefined)
     const count = (o: string) => outcomes.filter((x) => x === o).length
+    const tags = run.tagSync?.[library]
     if (count('skipped')) return row('warn', t('musicReview.done.where.skipped'))
-    if (count('failed')) return row('warn', t('musicReview.done.where.replaceFailed'))
+    if (count('failed') || tags?.outcome === 'failed')
+      return row('warn', t('musicReview.done.where.replaceFailed'))
+    if (tags?.outcome === 'open') return row('warn', t('musicReview.done.where.open'))
     if (status && run.librariesUntouched) return row('warn', t('musicReview.done.where.untouched'))
     if (status && run.librarySync === 'failed')
       return row('warn', t('musicReview.done.where.unconfirmed'))
-    if (!outcomes.length) return null
+    if (!status && !outcomes.length && !tags) return null
     const moved = count('replaced') + count('repointed')
     const held = library === 'traktor' ? 0 : count('replaced')
+    const updated = tags?.outcome === 'updated' ? tags.count : 0
     return row(
       'ok',
       joined([
+        updated > 0 && t('musicReview.done.where.updated', { count: updated }),
         moved > 0 && t('musicReview.done.where.replaced', { count: moved }),
         held > 0 && t('musicReview.done.where.held', { count: held }),
-      ]) || t('musicReview.done.where.none'),
+      ]) ||
+        (outcomes.length
+          ? t('musicReview.done.where.none')
+          : tags
+            ? t('musicReview.done.where.noMatch')
+            : t('musicReview.done.where.nothing')),
     )
   }
   const written = run.outcomes.filter((o) => o.file === 'written').length
@@ -370,6 +389,10 @@ function Done({
           : []),
       ]
   const warned = warnings.length > 0
+  const librariesShort = LIBRARIES.some(([library]) => {
+    const state = destinations.find((d) => d.id === library)?.state
+    return state === 'warn' || (state === 'ok' && run.tagSync?.[library].outcome === 'nothing')
+  })
   return (
     <Sheet
       testId="music-review-done"
@@ -397,7 +420,11 @@ function Done({
               : t('musicReview.done.title')}
           </h3>
           <p data-testid="music-review-done-subtitle" className="mt-0.5 text-sm text-fg-dim">
-            {t('musicReview.done.subtitle')}
+            {musicOnly > 0
+              ? t('musicReview.done.subtitleMusicOnly', { count: musicOnly })
+              : librariesShort
+                ? t('musicReview.done.subtitleLibraries')
+                : t('musicReview.done.subtitle')}
           </p>
         </div>
       </div>

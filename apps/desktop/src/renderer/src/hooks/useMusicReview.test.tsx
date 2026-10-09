@@ -18,6 +18,11 @@ const e = (
   genre: '',
   ...extra,
 })
+const SYNCED = {
+  rekordbox: { outcome: 'updated' as const, count: 1 },
+  engine: { outcome: 'nothing' as const },
+  traktor: { outcome: 'missing' as const },
+}
 const LIB = [e('A', 'DJ Lara'), e('B', 'DJ Lara'), e('C', 'Dj Lara')]
 
 function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
@@ -34,7 +39,7 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
         backupId: 'b1',
       },
     ]),
-    syncLibraryTags: vi.fn<Api['syncLibraryTags']>().mockResolvedValue(undefined),
+    syncLibraryTags: vi.fn<Api['syncLibraryTags']>().mockResolvedValue(SYNCED),
     cancelMusicFixes: vi.fn<Api['cancelMusicFixes']>().mockResolvedValue(undefined),
     onMusicFixProgress: vi.fn<Api['onMusicFixProgress']>().mockReturnValue(() => {}),
     setMusicField: vi.fn<Api['setMusicField']>().mockResolvedValue('set'),
@@ -813,6 +818,7 @@ describe('useMusicReview', () => {
       ])
       expect(onFilesChanged).not.toHaveBeenCalled()
       expect(result.current.lastRun?.librarySync).toBe('ok')
+      expect(result.current.lastRun?.tagSync).toEqual(SYNCED)
     })
 
     it('sends the libraries nothing when Music refused the change', async () => {
@@ -828,6 +834,7 @@ describe('useMusicReview', () => {
       await act(() => result.current.apply())
       expect(api.syncLibraryTags).not.toHaveBeenCalled()
       expect(result.current.lastRun?.librarySync).toBe('none')
+      expect(result.current.lastRun?.tagSync).toBeUndefined()
     })
 
     it('puts the libraries back on undo along with Music', async () => {
@@ -849,6 +856,48 @@ describe('useMusicReview', () => {
   it('records a failed library sync', async () => {
     const { result } = await runTwo({ syncLibraryTags: vi.fn().mockRejectedValue(new Error('x')) })
     expect(result.current.lastRun?.librarySync).toBe('failed')
+  })
+
+  // A library that failed or was open on undo is the one still holding the new value.
+  it('keeps what each library did on an undo that left something behind', async () => {
+    const syncLibraryTags = vi
+      .fn<Api['syncLibraryTags']>()
+      .mockResolvedValueOnce(SYNCED)
+      .mockResolvedValue({ ...SYNCED, rekordbox: { outcome: 'failed' } })
+    const trashRestore = vi
+      .fn<Api['trashRestore']>()
+      .mockRejectedValueOnce(new Error('gone'))
+      .mockResolvedValue({ restoredTo: '/m/d.mp3' })
+    const { result } = await runTwo({ syncLibraryTags, trashRestore })
+    await act(() => result.current.undo())
+    expect(result.current.lastRun?.tagSync).toEqual({ ...SYNCED, rekordbox: { outcome: 'failed' } })
+  })
+
+  it('keeps the sheet when a library could not be put back though every file was', async () => {
+    const syncLibraryTags = vi
+      .fn<Api['syncLibraryTags']>()
+      .mockResolvedValueOnce(SYNCED)
+      .mockResolvedValue({
+        ...SYNCED,
+        traktor: { outcome: 'nothing' },
+        engine: { outcome: 'open' },
+      })
+    const { result } = await runTwo({ syncLibraryTags })
+    await act(() => result.current.undo())
+    expect(result.current.lastRun).toMatchObject({
+      undoFailures: 0,
+      tagSync: { engine: { outcome: 'open' } },
+    })
+  })
+
+  it('closes the sheet when the undo reached every library it touched', async () => {
+    const syncLibraryTags = vi
+      .fn<Api['syncLibraryTags']>()
+      .mockResolvedValueOnce(SYNCED)
+      .mockResolvedValue({ ...SYNCED, traktor: { outcome: 'missing' } })
+    const { result } = await runTwo({ syncLibraryTags })
+    await act(() => result.current.undo())
+    expect(result.current.lastRun).toBeNull()
   })
 
   it('says none when no field reached a file', async () => {

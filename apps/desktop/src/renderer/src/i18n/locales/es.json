@@ -1531,6 +1531,8 @@
       "libraryReplaceFailed": "{{library}} no se pudo actualizar. Las copias ya no están en Music.",
       "librariesUntouched": "Paraste la revisión, así que rekordbox, Engine DJ y Traktor no se tocaron.",
       "libraryFailed": "rekordbox, Engine DJ o Traktor no se actualizaron. Mira Actividad.",
+      "libraryTagsFailed": "{{library}} no se pudo actualizar. Mira Actividad.",
+      "libraryTagsOpen": "{{library}} no se actualizó porque estaba abierto.",
       "applyError": "No se pudo aplicar en Apple Music.",
       "undoFailed_one": "{{count}} cambio no se pudo deshacer",
       "undoFailed_other": "{{count}} cambios no se pudieron deshacer",
@@ -1540,6 +1542,9 @@
       "titleWarnings_one": "Revisada, con {{count}} aviso",
       "titleWarnings_other": "Revisada, con {{count}} avisos",
       "subtitle": "Los cambios ya están en tus ficheros y bibliotecas.",
+      "subtitleMusicOnly_one": "{{count}} pista cambió solo en Music y su fichero sigue igual.",
+      "subtitleMusicOnly_other": "{{count}} pistas cambiaron solo en Music y sus ficheros siguen igual.",
+      "subtitleLibraries": "Los ficheros ya están, pero alguna biblioteca no recibió los cambios.",
       "warnings_one": "{{count}} cosa no se ha hecho",
       "warnings_other": "{{count}} cosas no se han hecho",
       "stat": {
@@ -1585,7 +1590,11 @@
         "trashed_one": "{{count}} fichero",
         "trashed_other": "{{count}} ficheros",
         "kept_one": "{{count}} se queda en disco porque rekordbox, Engine DJ o Traktor lo usan",
-        "kept_other": "{{count}} se quedan en disco porque rekordbox, Engine DJ o Traktor los usan"
+        "kept_other": "{{count}} se quedan en disco porque rekordbox, Engine DJ o Traktor los usan",
+        "updated_one": "{{count}} pista actualizada",
+        "updated_other": "{{count}} pistas actualizadas",
+        "open": "sin tocar, estaba abierto",
+        "noMatch": "ninguna pista con el valor anterior"
       }
     },
     "empty": "Tu biblioteca de Apple Music está vacía.",

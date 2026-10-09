@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
+import type { LibraryTagSyncReport } from '../../../shared/types'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { stubApi } from '../test/api'
 import { MusicReview, MusicReviewAction, MusicReviewProgress, type ReviewSort } from './MusicReview'
@@ -703,10 +704,152 @@ describe('MusicReview', () => {
       expect(detailOf('music')).toBe('not applied')
     })
 
-    // The tag sync reports each library only to Activity, so the sheet cannot vouch for it.
-    it('leaves a library out when the run has nothing to say about it', () => {
-      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
-      expect(screen.queryByTestId('music-review-done-dest-rekordbox')).toBeNull()
+    const synced = (over: Partial<LibraryTagSyncReport> = {}): LibraryTagSyncReport => ({
+      rekordbox: { outcome: 'updated', count: 1 },
+      engine: { outcome: 'updated', count: 1 },
+      traktor: { outcome: 'updated', count: 1 },
+      ...over,
+    })
+    const musicOnly = {
+      ...written,
+      persistentId: 'D',
+      file: 'unchanged' as const,
+      written: [],
+      backupId: undefined,
+    }
+
+    // The user's run: rekordbox sync on, one track changed only in Music, and the sheet had
+    // no rekordbox row at all while it said the changes were in every library.
+    it('gives every synced library a row saying what reached it', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [musicOnly],
+                librarySync: 'ok',
+                tagSync: synced({ engine: { outcome: 'nothing' } }),
+              }),
+            ),
+            libraries: { ...status(), traktor: { enabled: false, found: false } },
+          }}
+        />,
+      )
+      expect(dest('rekordbox')).toHaveAttribute('data-state', 'ok')
+      expect(detailOf('rekordbox')).toBe('1 track updated')
+      expect(dest('engine')).toHaveAttribute('data-state', 'ok')
+      expect(detailOf('engine')).toBe('no track with the old value')
+      expect(detailOf('traktor')).toBe('not synced')
+    })
+
+    it('still gives a synced library a row when nothing was sent to it', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [{ ...written, music: ['mismatch' as const], file: 'skipped' as const }],
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(detailOf('rekordbox')).toBe('no changes')
+    })
+
+    it.each([
+      ['open', 'untouched, it was open', "rekordbox wasn't updated because it was open."],
+      ['failed', "couldn't be updated", "rekordbox couldn't be updated. Check Activity."],
+    ] as const)('marks a library that was %s and warns about it', (outcome, row, warning) => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ rekordbox: { outcome } }),
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(dest('rekordbox')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('rekordbox')).toBe(row)
+      expect(warnings()).toEqual([warning])
+      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+        'The files are done, but not every library got the changes.',
+      )
+    })
+
+    it('says a library missing its collection on its row', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ engine: { outcome: 'missing' } }),
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(dest('engine')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('engine')).toBe('collection not found')
+    })
+
+    // The subtitle promised files and libraries on a run where one track never left Music.
+    it('says which tracks changed only in Music instead of promising the files', () => {
+      render(
+        <Panes
+          review={{
+            ...done(run({ outcomes: [written, musicOnly], librarySync: 'ok', tagSync: synced() })),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+        '1 track changed only in Music; its file is unchanged.',
+      )
+    })
+
+    it('does not promise a library that held none of the changed tracks', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ traktor: { outcome: 'nothing' } }),
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+        'The files are done, but not every library got the changes.',
+      )
+    })
+
+    it('keeps the full promise when every file and library got the change', () => {
+      render(
+        <Panes
+          review={{
+            ...done(run({ outcomes: [written], librarySync: 'ok', tagSync: synced() })),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+        'The changes are already in your files and libraries.',
+      )
     })
 
     it('marks every synced library unconfirmed when the libraries step failed', () => {
@@ -988,7 +1131,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={{
-            ...done(run({ outcomes: [written] })),
+            ...done(run({ outcomes: [written], librarySync: 'ok' })),
             libraries: status({ rekordbox: false }),
           }}
         />,

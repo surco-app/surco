@@ -1161,3 +1161,11 @@ export type LibraryStatus = Record<
   'rekordbox' | 'engine' | 'traktor',
   { enabled: boolean; found: boolean }
 >
+
+// What one library did with a review's tag changes, so the done sheet can say it per
+// library instead of claiming every change landed: how many tracks it updated, or why none.
+export type LibraryTagSync =
+  | { outcome: 'updated'; count: number }
+  | { outcome: 'nothing' | 'open' | 'missing' | 'failed' }
+
+export type LibraryTagSyncReport = Record<'rekordbox' | 'engine' | 'traktor', LibraryTagSync>

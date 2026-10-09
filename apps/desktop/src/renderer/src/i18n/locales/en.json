@@ -1531,6 +1531,8 @@
       "libraryReplaceFailed": "{{library}} couldn't be updated. The copies are already out of Music.",
       "librariesUntouched": "You stopped the run, so rekordbox, Engine DJ and Traktor weren't touched.",
       "libraryFailed": "rekordbox, Engine DJ or Traktor weren't updated. Check Activity.",
+      "libraryTagsFailed": "{{library}} couldn't be updated. Check Activity.",
+      "libraryTagsOpen": "{{library}} wasn't updated because it was open.",
       "applyError": "Couldn't apply in Apple Music.",
       "undoFailed_one": "{{count}} change could not be undone",
       "undoFailed_other": "{{count}} changes could not be undone",
@@ -1540,6 +1542,9 @@
       "titleWarnings_one": "Reviewed, with {{count}} warning",
       "titleWarnings_other": "Reviewed, with {{count}} warnings",
       "subtitle": "The changes are already in your files and libraries.",
+      "subtitleMusicOnly_one": "{{count}} track changed only in Music; its file is unchanged.",
+      "subtitleMusicOnly_other": "{{count}} tracks changed only in Music; their files are unchanged.",
+      "subtitleLibraries": "The files are done, but not every library got the changes.",
       "warnings_one": "{{count}} thing wasn't done",
       "warnings_other": "{{count}} things weren't done",
       "stat": {
@@ -1585,7 +1590,11 @@
         "trashed_one": "{{count}} file",
         "trashed_other": "{{count}} files",
         "kept_one": "{{count}} stays on disk because rekordbox, Engine DJ or Traktor use it",
-        "kept_other": "{{count}} stay on disk because rekordbox, Engine DJ or Traktor use them"
+        "kept_other": "{{count}} stay on disk because rekordbox, Engine DJ or Traktor use them",
+        "updated_one": "{{count}} track updated",
+        "updated_other": "{{count}} tracks updated",
+        "open": "untouched, it was open",
+        "noMatch": "no track with the old value"
       }
     },
     "empty": "Your Apple Music library is empty.",

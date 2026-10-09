@@ -1,8 +1,18 @@
+import type { LibraryTagSync, LibraryTagSyncReport } from '../shared/types'
+import type { FlushResult } from './libraryRepointFlush'
+
 export interface LibraryTagFlushers {
-  traktor: () => Promise<unknown>
-  rekordbox: () => Promise<unknown>
-  engine: () => Promise<unknown>
+  traktor: () => Promise<LibraryTagSync>
+  rekordbox: () => Promise<LibraryTagSync>
+  engine: () => Promise<LibraryTagSync>
   warn: (library: string, error: unknown) => void
+}
+
+export function tagSyncOf(result: FlushResult, runningReason: string): LibraryTagSync {
+  if (result.blocked === runningReason) return { outcome: 'open' }
+  if (result.blocked === 'collection-missing') return { outcome: 'missing' }
+  if (result.blocked) return { outcome: 'failed' }
+  return result.written > 0 ? { outcome: 'updated', count: result.written } : { outcome: 'nothing' }
 }
 
 let flushChain: Promise<unknown> = Promise.resolve()
@@ -18,15 +28,18 @@ export function serialLibraryFlush<T>(task: () => Promise<T>): Promise<T> {
 
 // The libraries are independent and the files are already correct by now, so one throwing
 // (a failed Activity row, an SQL error mid-write) must neither skip the next nor reject
-// back to the renderer.
-export function syncLibraryTags(flushers: LibraryTagFlushers): Promise<void> {
+// back to the renderer. Each library's outcome goes back instead, failure included.
+export function syncLibraryTags(flushers: LibraryTagFlushers): Promise<LibraryTagSyncReport> {
   return serialLibraryFlush(async () => {
+    const report = {} as LibraryTagSyncReport
     for (const library of ['traktor', 'rekordbox', 'engine'] as const) {
       try {
-        await flushers[library]()
+        report[library] = await flushers[library]()
       } catch (error) {
         flushers.warn(library, error)
+        report[library] = { outcome: 'failed' }
       }
     }
+    return report
   })
 }

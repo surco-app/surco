@@ -139,4 +139,56 @@ describe('flushTraktorSync', () => {
 
     expect(summaryDetail).not.toEqual({ detailKey: 'activity.traktorSyncUnreadable' })
   })
+
+  // What the review's done sheet shows on Traktor's row.
+  describe('the outcome it returns', () => {
+    it.each([
+      ['updated with the matched count', {}, { outcome: 'updated', count: 1 }],
+      [
+        'nothing when no patch was recorded',
+        { endNmlBatch: vi.fn(() => []) },
+        { outcome: 'nothing' },
+      ],
+      ['nothing when Traktor sync is off', { traktorNmlPath: '' }, { outcome: 'nothing' }],
+      [
+        'missing when collection.nml is gone',
+        { traktorNmlPath: '', collectionMissing: true },
+        { outcome: 'missing' },
+      ],
+      [
+        'open when the user kept Traktor open',
+        { ensureTraktorClosed: vi.fn(async () => false) },
+        { outcome: 'open' },
+      ],
+      [
+        'open when Traktor opened before the write',
+        {
+          syncCollection: vi.fn(
+            async () => ({ written: false, matched: 0, reason: 'traktor-running' }) as SyncResult,
+          ),
+        },
+        { outcome: 'open' },
+      ],
+      [
+        'nothing when no track matched',
+        {
+          syncCollection: vi.fn(
+            async () => ({ written: false, matched: 0, reason: 'no-matches' }) as SyncResult,
+          ),
+        },
+        { outcome: 'nothing' },
+      ],
+      [
+        'failed when the write failed',
+        {
+          syncCollection: vi.fn(
+            async () => ({ written: false, matched: 0, reason: 'write-failed' }) as SyncResult,
+          ),
+        },
+        { outcome: 'failed' },
+      ],
+    ] as const)('is %s', async (_name, over, expected) => {
+      await expect(flushTraktorSync(makeDeps(over))).resolves.toEqual(expected)
+    })
+  })
 })

@@ -90,7 +90,7 @@ import { libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
-import { serialLibraryFlush, syncLibraryTags } from './libraryTagSync'
+import { serialLibraryFlush, syncLibraryTags, tagSyncOf } from './libraryTagSync'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -999,17 +999,16 @@ function registerIpc(): void {
 
   // The names a metadata review fixed (or undid) follow the file into each library the way
   // an Update's do: same toggles, same prompt to close the app, same dialogs and Activity
-  // rows as the end of a conversion run. Each library only hears about the fields that
-  // reached the file, which the renderer already narrowed.
+  // rows as the end of a conversion run. Each library hears about every field Music took,
+  // written to the file or not, and answers with what it did so the done sheet can say so.
   // Session backups stay the ones a conversion run uses and are NOT reset here: both share
   // the .surco-session suffix, so a reset would overwrite a running conversion's pre-run
   // copy. The guarantee for this flow is the fresh .surco-backup that updateRekordboxTags
   // and updateEngineTags take right before each write.
   ipcMain.handle('library:syncTags', async (e, updates: LibraryTagUpdate[]) => {
-    if (updates.length === 0) return
     const win = BrowserWindow.fromWebContents(e.sender)
     const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
-    await syncLibraryTags({
+    return syncLibraryTags({
       traktor: () =>
         flushTraktorSync({
           ...traktorFlushDeps(win),
@@ -1030,6 +1029,7 @@ function registerIpc(): void {
           { ...REKORDBOX_KEYS, written: 'activity.rekordboxTagsWritten' },
         )
         logLibraryFlush('rekordbox tags', result)
+        return tagSyncOf(result, REKORDBOX_KEYS.runningReason)
       },
       engine: async () => {
         const result = await flushLibraryRepoints(
@@ -1045,6 +1045,7 @@ function registerIpc(): void {
           { ...ENGINE_KEYS, written: 'activity.engineTagsWritten' },
         )
         logLibraryFlush('Engine DJ tags', result)
+        return tagSyncOf(result, ENGINE_KEYS.runningReason)
       },
       warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     })

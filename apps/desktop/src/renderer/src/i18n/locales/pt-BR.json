@@ -1531,6 +1531,8 @@
       "libraryReplaceFailed": "{{library}} não pôde ser atualizado. As cópias já saíram do Music.",
       "librariesUntouched": "Você parou a revisão, então rekordbox, Engine DJ e Traktor não foram tocados.",
       "libraryFailed": "rekordbox, Engine DJ ou Traktor não foram atualizados. Veja Atividade.",
+      "libraryTagsFailed": "{{library}} não pôde ser atualizado. Veja Atividade.",
+      "libraryTagsOpen": "{{library}} não foi atualizado porque estava aberto.",
       "applyError": "Não foi possível aplicar no Apple Music.",
       "undoFailed_one": "{{count}} alteração não pôde ser desfeita",
       "undoFailed_other": "{{count}} alterações não puderam ser desfeitas",
@@ -1540,6 +1542,9 @@
       "titleWarnings_one": "Revisada, com {{count}} aviso",
       "titleWarnings_other": "Revisada, com {{count}} avisos",
       "subtitle": "As alterações já estão nos seus arquivos e bibliotecas.",
+      "subtitleMusicOnly_one": "{{count}} faixa mudou só no Music e o arquivo continua igual.",
+      "subtitleMusicOnly_other": "{{count}} faixas mudaram só no Music e os arquivos continuam iguais.",
+      "subtitleLibraries": "Os arquivos estão prontos, mas nem toda biblioteca recebeu as alterações.",
       "warnings_one": "{{count}} coisa não foi feita",
       "warnings_other": "{{count}} coisas não foram feitas",
       "stat": {
@@ -1585,7 +1590,11 @@
         "trashed_one": "{{count}} arquivo",
         "trashed_other": "{{count}} arquivos",
         "kept_one": "{{count}} fica no disco porque o rekordbox, o Engine DJ ou o Traktor o usam",
-        "kept_other": "{{count}} ficam no disco porque o rekordbox, o Engine DJ ou o Traktor os usam"
+        "kept_other": "{{count}} ficam no disco porque o rekordbox, o Engine DJ ou o Traktor os usam",
+        "updated_one": "{{count}} faixa atualizada",
+        "updated_other": "{{count}} faixas atualizadas",
+        "open": "intocado, estava aberto",
+        "noMatch": "nenhuma faixa com o valor anterior"
       }
     },
     "empty": "Sua biblioteca do Apple Music está vazia.",

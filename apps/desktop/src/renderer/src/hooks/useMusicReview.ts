@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   DuplicateReplaceOutcome,
   LibraryStatus,
+  LibraryTagSyncReport,
   LibraryTagUpdate,
   MusicFieldFix,
   MusicFixOutcome,
@@ -48,6 +49,9 @@ export interface ReviewRun {
   before: number
   after: number | null
   librarySync: 'ok' | 'failed' | 'none'
+  // Each library's own answer to the tag sync; absent when nothing was sent or the call
+  // itself failed.
+  tagSync?: LibraryTagSyncReport
   applyError?: string
   undoFailures?: number
 }
@@ -450,9 +454,13 @@ export function useMusicReview({
         })
       }
       let librarySync: ReviewRun['librarySync'] = replaceFailed ? 'failed' : 'none'
+      let tagSync: LibraryTagSyncReport | undefined
       if (updates.length) {
         const synced = await window.api.syncLibraryTags(updates).then(
-          () => 'ok' as const,
+          (report) => {
+            tagSync = report
+            return 'ok' as const
+          },
           () => 'failed' as const,
         )
         if (librarySync !== 'failed') librarySync = synced
@@ -471,6 +479,7 @@ export function useMusicReview({
         before,
         after: next ? pendingCount(next, hidden) : null,
         librarySync,
+        ...(tagSync ? { tagSync } : {}),
         ...(applyError === undefined ? {} : { applyError }),
       })
       if (!cancelled.current) await fill(total)
@@ -528,18 +537,25 @@ export function useMusicReview({
       }
       const updates = libraryUpdatesOf(reverted, 'undo')
       let librarySync: ReviewRun['librarySync'] = 'none'
+      let tagSync: LibraryTagSyncReport | undefined
       if (updates.length) setPhase({ name: 'libraries' })
       if (updates.length)
         librarySync = await window.api.syncLibraryTags(updates).then(
-          () => 'ok' as const,
+          (report) => {
+            tagSync = report
+            return 'ok' as const
+          },
           () => 'failed' as const,
         )
       const back = tagUpdatesOf(restored, 'undo')
       if (back.length) onFilesChanged(back)
       setPhase({ name: 'verifying' })
       await load().catch(() => null)
+      const libraryLeft = Object.values(tagSync ?? {}).some(
+        (s) => s.outcome === 'failed' || s.outcome === 'open',
+      )
       setLastRun(
-        failed.length === 0 && librarySync !== 'failed'
+        failed.length === 0 && librarySync !== 'failed' && !libraryLeft
           ? null
           : {
               ...lastRun,
@@ -547,6 +563,7 @@ export function useMusicReview({
               removed: [],
               replaced: [],
               librarySync,
+              tagSync,
               undoFailures: failed.length,
             },
       )
