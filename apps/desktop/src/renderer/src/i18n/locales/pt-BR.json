@@ -1487,7 +1487,13 @@
     "reviewDuplicateFileUsed": "Fica no disco porque o rekordbox, o Engine DJ ou o Traktor o usam",
     "reviewDuplicateFileTrash": "Movido para o Lixo",
     "reviewDuplicateFileSurco": "Guardado em Cópias de segurança porque este disco não tem Lixo",
-    "reviewDuplicateFileTrashFailed": "Fica no disco porque não pôde ir para o Lixo ({{error}})"
+    "reviewDuplicateFileTrashFailed": "Fica no disco porque não pôde ir para o Lixo ({{error}})",
+    "reviewUndoRun": "Desfazer a revisão do Music",
+    "reviewUndoMusic": "O Music volta a ter o valor anterior",
+    "reviewUndoMusicMismatch": "Não desfeito no Music. Já tinha outro valor",
+    "reviewUndoMusicMissing": "Não desfeito no Music. A faixa não está mais lá",
+    "reviewUndoFile": "{{title}} · Arquivo",
+    "reviewUndoFileRestored": "Restaurado da sua cópia de segurança"
   },
   "applePlaylist": {
     "title": "Importar do Apple Music",

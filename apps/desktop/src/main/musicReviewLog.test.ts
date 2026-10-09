@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { MusicFixOutcome } from '../shared/types'
-import { createMusicReviewLog } from './musicReviewLog'
+import type { ActivityEvent, MusicFixOutcome } from '../shared/types'
+import { createActivity } from './activity'
+import { createMusicReviewLog, restoreLogged, setFieldLogged } from './musicReviewLog'
 
 const outcome = (persistentId: string, backupId?: string): MusicFixOutcome => ({
   persistentId,
@@ -41,5 +42,65 @@ describe('createMusicReviewLog', () => {
     log.rememberCopy('/m/old.mp3', { group: 'duplicate-OLD', label: 'Old' })
     expect(log.copyOf('/m/old.mp3')).toEqual({ group: 'duplicate-OLD', label: 'Old' })
     expect(log.copyOf('/m/other.mp3')).toBeUndefined()
+  })
+})
+
+// Undo used to leave no trace: each field put back in Music and each file restored gets a
+// row under the run it undoes.
+describe('the undo in Activity', () => {
+  function setup() {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    const log = createMusicReviewLog()
+    log.rememberTitles([{ persistentId: 'A', title: 'Funk Freak' }])
+    const run = log.beginRun()
+    log.rememberRun(run, [outcome('A', 'b1')])
+    return { events, log, run, track: activity.track }
+  }
+
+  it('says a field went back in Music, under the run', async () => {
+    const { events, log, run, track } = setup()
+    const result = await setFieldLogged('A', 'artist', async () => 'set', { track, log })
+    expect(result).toBe('set')
+    expect(events[0]).toMatchObject({
+      phase: 'start',
+      kind: 'applemusic',
+      labelKey: 'activity.reviewFix.artist',
+      labelParams: { title: 'Funk Freak' },
+      group: run,
+      groupLabelKey: 'activity.reviewUndoRun',
+    })
+    expect(events[1]).toMatchObject({ phase: 'done', detailKey: 'activity.reviewUndoMusic' })
+  })
+
+  it.each([
+    ['mismatch', 'activity.reviewUndoMusicMismatch'],
+    ['missing', 'activity.reviewUndoMusicMissing'],
+  ] as const)('warns when Music answers %s', async (answer, detailKey) => {
+    const { events, log, track } = setup()
+    await setFieldLogged('A', 'artist', async () => answer, { track, log })
+    expect(events[1]).toMatchObject({ phase: 'warn', detailKey })
+  })
+
+  it('says a file came back from its backup', async () => {
+    const { events, log, run, track } = setup()
+    const result = await restoreLogged('b1', async () => ({ restoredTo: '/m/a.mp3' }), {
+      track,
+      log,
+    })
+    expect(result).toEqual({ restoredTo: '/m/a.mp3' })
+    expect(events.map((e) => [e.phase, e.labelKey, e.detailKey, e.group])).toEqual([
+      ['start', 'activity.reviewUndoFile', undefined, run],
+      ['done', 'activity.reviewUndoFile', 'activity.reviewUndoFileRestored', run],
+    ])
+    expect(events[0].labelParams).toEqual({ title: 'Funk Freak' })
+  })
+
+  // The Backups panel restores through the same call; those are not the review's.
+  it('logs nothing for a backup the review did not make', async () => {
+    const { events, log, track } = setup()
+    await restoreLogged('other', async () => ({ restoredTo: '/x' }), { track, log })
+    expect(events).toEqual([])
   })
 })

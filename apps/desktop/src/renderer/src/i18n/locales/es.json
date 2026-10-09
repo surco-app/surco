@@ -1487,7 +1487,13 @@
     "reviewDuplicateFileUsed": "Se queda en disco porque rekordbox, Engine DJ o Traktor lo usan",
     "reviewDuplicateFileTrash": "Movido a la Papelera",
     "reviewDuplicateFileSurco": "Guardado en Copias de seguridad porque este disco no tiene Papelera",
-    "reviewDuplicateFileTrashFailed": "Se queda en disco porque no se pudo mover a la Papelera ({{error}})"
+    "reviewDuplicateFileTrashFailed": "Se queda en disco porque no se pudo mover a la Papelera ({{error}})",
+    "reviewUndoRun": "Deshacer la revisión de Music",
+    "reviewUndoMusic": "Music vuelve a tener el valor anterior",
+    "reviewUndoMusicMismatch": "Sin deshacer en Music. Ya tenía otro valor",
+    "reviewUndoMusicMissing": "Sin deshacer en Music. La pista ya no está",
+    "reviewUndoFile": "{{title}} · Fichero",
+    "reviewUndoFileRestored": "Restaurado desde su copia de seguridad"
   },
   "applePlaylist": {
     "title": "Importar de Apple Music",

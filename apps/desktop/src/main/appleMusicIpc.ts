@@ -35,7 +35,7 @@ import { createMenuT } from './i18n'
 import { removeDuplicateCopyLogged } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
-import { musicReviewLog } from './musicReviewLog'
+import { musicReviewLog, setFieldLogged } from './musicReviewLog'
 import { trashRecoverably } from './recoverableTrash'
 import { getSettings } from './settings'
 
@@ -126,7 +126,12 @@ export function registerAppleMusicIpc(
     'applemusic:setField',
     (_e, pid: string, field: MusicReviewField, from: string, to: string) =>
       process.platform === 'darwin'
-        ? appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to))
+        ? setFieldLogged(
+            pid,
+            field,
+            () => appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to)),
+            { track: activity.track, log: musicReviewLog },
+          )
         : 'missing',
   )
 

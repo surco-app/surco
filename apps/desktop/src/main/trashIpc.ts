@@ -1,6 +1,8 @@
 import { mkdir } from 'node:fs/promises'
 import { ipcMain, shell } from 'electron'
+import { activity } from './activity'
 import type { MediaAccess } from './mediaAccess'
+import { musicReviewLog, restoreLogged } from './musicReviewLog'
 import type { SurcoTrash } from './surcoTrash'
 
 // The renderer's window onto Surco's trash (see surcoTrash.ts): list, restore, remove,
@@ -9,7 +11,10 @@ import type { SurcoTrash } from './surcoTrash'
 export function registerTrashIpc(trash: SurcoTrash, mediaAccess: MediaAccess): void {
   ipcMain.handle('trash:list', () => trash.list())
   ipcMain.handle('trash:restore', async (_e, id: string) => {
-    const result = await trash.restore(id)
+    const result = await restoreLogged(id, () => trash.restore(id), {
+      track: activity.track,
+      log: musicReviewLog,
+    })
     // The row that pointed at this file can stream it again straight away.
     mediaAccess.allow(result.restoredTo)
     return result

@@ -1487,7 +1487,13 @@
     "reviewDuplicateFileUsed": "Bleibt auf der Platte, weil rekordbox, Engine DJ oder Traktor sie nutzen",
     "reviewDuplicateFileTrash": "In den Papierkorb verschoben",
     "reviewDuplicateFileSurco": "In Sicherungskopien abgelegt, weil dieses Laufwerk keinen Papierkorb hat",
-    "reviewDuplicateFileTrashFailed": "Bleibt auf der Platte, weil sie nicht in den Papierkorb verschoben werden konnte ({{error}})"
+    "reviewDuplicateFileTrashFailed": "Bleibt auf der Platte, weil sie nicht in den Papierkorb verschoben werden konnte ({{error}})",
+    "reviewUndoRun": "Music-Prüfung rückgängig machen",
+    "reviewUndoMusic": "Music hat wieder den vorherigen Wert",
+    "reviewUndoMusicMismatch": "In Music nicht rückgängig gemacht. Es hatte schon einen anderen Wert",
+    "reviewUndoMusicMissing": "In Music nicht rückgängig gemacht. Der Titel ist weg",
+    "reviewUndoFile": "{{title}} · Datei",
+    "reviewUndoFileRestored": "Aus der Sicherungskopie wiederhergestellt"
   },
   "applePlaylist": {
     "title": "Aus Apple Music importieren",

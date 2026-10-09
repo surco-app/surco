@@ -1487,7 +1487,13 @@
     "reviewDuplicateFileUsed": "Stays on disk because rekordbox, Engine DJ or Traktor use it",
     "reviewDuplicateFileTrash": "Moved to the Trash",
     "reviewDuplicateFileSurco": "Kept in Backups because this disk has no Trash",
-    "reviewDuplicateFileTrashFailed": "Stays on disk because it couldn't be moved to the Trash ({{error}})"
+    "reviewDuplicateFileTrashFailed": "Stays on disk because it couldn't be moved to the Trash ({{error}})",
+    "reviewUndoRun": "Undo the Music review",
+    "reviewUndoMusic": "Music holds the previous value again",
+    "reviewUndoMusicMismatch": "Not undone in Music. It already held another value",
+    "reviewUndoMusicMissing": "Not undone in Music. The track is gone",
+    "reviewUndoFile": "{{title}} · File",
+    "reviewUndoFileRestored": "Restored from its backup"
   },
   "applePlaylist": {
     "title": "Import from Apple Music",
