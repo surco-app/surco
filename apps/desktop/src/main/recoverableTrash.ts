@@ -10,7 +10,7 @@ export interface RecoverableTrashDeps {
 
 const defaultDeps: RecoverableTrashDeps = {
   keepsTrash: volumeKeepsTrash,
-  keep: (path) => keepOriginal(path, 'deleted'),
+  keep: (path) => keepOriginal(path, 'deleted', undefined, { regardlessOfPolicy: true }),
   trashItem: (path) => shell.trashItem(path),
 }
 
@@ -19,8 +19,9 @@ const defaultDeps: RecoverableTrashDeps = {
 // Says which of the two took it.
 export async function trashRecoverably(
   path: string,
-  deps: RecoverableTrashDeps = defaultDeps,
+  over: Partial<RecoverableTrashDeps> = {},
 ): Promise<'trash' | 'surco'> {
+  const deps = { ...defaultDeps, ...over }
   if (!deps.keepsTrash(path)) {
     if (await deps.keep(path)) return 'surco'
     throw new Error(`No recoverable trash for ${path}`)
