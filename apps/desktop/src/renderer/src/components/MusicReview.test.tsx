@@ -667,9 +667,34 @@ describe('MusicReview', () => {
       )
       expect(dest('music')).toHaveAttribute('data-state', 'ok')
       expect(detailOf('music')).toBe('2 tracks · 1 entry removed')
-      expect(dest('files')).toHaveAttribute('data-state', 'warn')
-      expect(detailOf('files')).toBe('1 written · 1 with a backup · 1 not written')
-      expect(warnings()).toEqual(['1 in Apple Music only, its file says something else'])
+      expect(dest('files')).toHaveAttribute('data-state', 'ok')
+      expect(detailOf('files')).toBe('1 written · 1 with a backup · 1 in Music only')
+    })
+
+    // Correcting only Music when the file says something else, or has no file, is what the
+    // review promises to do and to say; flagging it would read as a failure on every run
+    // that touched such a track.
+    it('reports a track corrected only in Music as done, not as a warning', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [
+                  written,
+                  { ...written, persistentId: 'D', file: 'unchanged', backupId: undefined },
+                  { ...written, persistentId: 'E', file: 'missing', backupId: undefined },
+                ],
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(badge()).toHaveAttribute('data-tone', 'good')
+      expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
+      expect(dest('files')).toHaveAttribute('data-state', 'ok')
+      expect(detailOf('files')).toBe('1 written · 1 with a backup · 2 in Music only')
     })
 
     it('marks Apple Music when it refused the batch', () => {

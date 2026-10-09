@@ -274,7 +274,6 @@ function Done({
     ...(undone ? [t('musicReview.done.undoFailed', { count: run.undoFailures })] : []),
     ...(!undone && failed > 0 ? [t('musicReview.done.failed', { count: failed })] : []),
     ...(!undone && run.applyError !== undefined ? [t('musicReview.done.applyError')] : []),
-    ...(!undone && musicOnly > 0 ? [t('musicReview.done.musicOnly', { count: musicOnly })] : []),
     ...(run.librarySync === 'failed' ? [t('musicReview.done.libraryFailed')] : []),
     ...(reachedLibraries
       ? missing.map((name) => t('musicReview.done.libraryMissing', { library: name }))
@@ -344,12 +343,12 @@ function Done({
               {
                 id: 'files',
                 label: t('musicReview.done.where.files'),
-                state: musicOnly || fileFailed ? 'warn' : 'ok',
+                state: fileFailed ? 'warn' : 'ok',
                 detail:
                   joined([
                     written > 0 && t('musicReview.done.where.written', { count: written }),
                     backups > 0 && t('musicReview.done.where.backups', { count: backups }),
-                    musicOnly > 0 && t('musicReview.done.where.notWritten', { count: musicOnly }),
+                    musicOnly > 0 && t('musicReview.done.where.musicOnly', { count: musicOnly }),
                     fileFailed > 0 && t('musicReview.done.where.fileFailed', { count: fileFailed }),
                   ]) || t('musicReview.done.where.nothing'),
               } as const,
