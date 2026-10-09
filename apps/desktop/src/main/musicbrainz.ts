@@ -51,6 +51,7 @@ interface MbCredit {
 export interface MbReleaseSummary {
   id: string
   title: string
+  disambiguation?: string
   status?: string
   'artist-credit'?: MbCredit[]
   'release-group'?: { id?: string; 'primary-type'?: string | null; 'secondary-types'?: string[] }
@@ -151,10 +152,15 @@ function releaseRow(release: MbReleaseSummary, fallbackCredit?: MbCredit[]): Sea
     formats.push('Compilation')
   const year = release.date?.match(/^(\d{4})/)?.[1]
   const group = release['release-group']?.id
+  // Every edition shares the album's title; the disambiguation ("special edition", "dutch
+  // pressing") is how MusicBrainz tells them apart, and how its own pages list them.
+  const title = release.disambiguation
+    ? `${release.title} (${release.disambiguation})`
+    : release.title
   return {
     provider: 'musicbrainz',
     id: numericIdOf(release.id),
-    title: artist ? `${artist} - ${release.title}` : release.title,
+    title: artist ? `${artist} - ${title}` : title,
     ...(year ? { year } : {}),
     ...(release.country ? { country: release.country } : {}),
     ...(formats.length ? { format: formats } : {}),
@@ -195,9 +201,18 @@ export function matchesMbFormats(row: SearchResult, formats: string[]): boolean 
   return formats.some((f) => row.format?.some((name) => FORMAT_BUCKETS[f]?.name.test(name)))
 }
 
-function formatClause(formats: string[]): string {
+function formatClause(formats: string[], join = ' AND '): string {
   const fields = formats.flatMap((f) => FORMAT_BUCKETS[f]?.field ?? [])
-  return fields.length ? ` AND format:(${fields.join(' OR ')})` : ''
+  return fields.length ? `${join}format:(${fields.join(' OR ')})` : ''
+}
+
+// What the album tag says in brackets ("Deluxe Edition" of "Duran Duran (Deluxe Edition)"):
+// the edition MusicBrainz writes in the release's disambiguation, not in its title.
+function editionOf(album: string): string {
+  return [...album.matchAll(/[([]([^)\]]*)[)\]]/g)]
+    .map((m) => m[1].trim())
+    .filter(Boolean)
+    .join(' ')
 }
 
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-lookup-cache-v2')
@@ -248,8 +263,9 @@ async function searchReleases(
 // "Search by album first" comes before everything, like on Discogs: the tagged album is the
 // release's own title, so it goes on the release index's title field, pinned to the artist
 // (an album name alone matches anyone's release, and a hit here ends the search). The album
-// hint only arrives while the setting is on. An edition the tag spells in brackets is
-// retried bare, the title MusicBrainz lists; nothing found falls through unchanged.
+// hint only arrives while the setting is on or the user typed it. An edition the tag spells
+// in brackets is retried bare, the title MusicBrainz lists, with the edition kept as an
+// optional match on the disambiguation so it scores first; nothing found falls through.
 //
 // With artist and title from the tags, a fielded recording query is far more precise than
 // free text. Compilations are excluded on the first try because a dance track sits on
@@ -278,13 +294,19 @@ export async function search(
       const title = hints.title?.trim()
       const album = hints.album?.trim()
       if (artist && album) {
-        for (const albumTitle of new Set([album, bareAlbumTitle(album)])) {
-          const byAlbum = wanted(
-            await searchReleases(
-              `release:"${escapeLucene(albumTitle)}" AND artist:"${escapeLucene(artist)}"${clause}`,
-              priority,
-            ),
+        const pinned = `artist:"${escapeLucene(artist)}"`
+        const asTagged = `release:"${escapeLucene(album)}" AND ${pinned}${clause}`
+        const queries = [asTagged]
+        const bare = bareAlbumTitle(album)
+        if (bare !== album) {
+          const edition = editionOf(album)
+          queries.push(
+            `+release:"${escapeLucene(bare)}" +${pinned}${formatClause(formats, ' +')}` +
+              (edition ? ` comment:(${escapeLucene(edition)})` : ''),
           )
+        }
+        for (const query of queries) {
+          const byAlbum = wanted(await searchReleases(query, priority))
           if (byAlbum.length) return byAlbum
         }
       }

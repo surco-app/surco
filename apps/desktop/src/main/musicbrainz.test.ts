@@ -121,6 +121,26 @@ describe('groupByRelease', () => {
     })
   })
 
+  // MusicBrainz titles every edition of an album alike and tells them apart in the
+  // disambiguation: 51 rows of "Duran Duran - Duran Duran" hid which one was the deluxe.
+  it('shows the edition MusicBrainz names in its disambiguation', () => {
+    const [row] = groupByRelease([
+      {
+        id: 'rec',
+        title: 'Planet Earth',
+        releases: [
+          {
+            id: '11111111-2222-3333-4444-555555555555',
+            title: 'Duran Duran',
+            disambiguation: 'special edition',
+            'artist-credit': [{ name: 'Duran Duran' }],
+          },
+        ],
+      },
+    ])
+    expect(row.title).toBe('Duran Duran - Duran Duran (special edition)')
+  })
+
   // The renderer's pre-rank sinks rows whose format says "Compilation"; carrying the
   // release group's secondary type there is what keeps a DJ-mix CD from burying the
   // artist's own single, the dominant noise for any dance track on MusicBrainz.
@@ -346,7 +366,26 @@ describe('search by album first', () => {
     })
     expect(rows.length).toBeGreaterThan(0)
     expect(pathOf(fn.mock.calls[1][0])).toBe('/ws/2/release')
-    expect(queryOf(fn.mock.calls[1][0])).toBe('release:"Duran Duran" AND artist:"Duran Duran"')
+    expect(queryOf(fn.mock.calls[1][0])).toBe(
+      '+release:"Duran Duran" +artist:"Duran Duran" comment:(Deluxe Edition)',
+    )
+  })
+
+  // The bare title brings every edition (51 for Duran Duran) in MusicBrainz' own order, and
+  // the deluxe sat 22nd, out of reach of a 25-row page with the "deluxe" one missing. The
+  // edition the tag named stays in as an optional match on the disambiguation: nothing is
+  // filtered, the edition just scores first (measured live, CD filter included).
+  it('keeps the formats required and the edition optional on the bare retry', async () => {
+    const fn = mockFetch([{ count: 0, releases: [] }, albumReleaseSearch])
+    await search(
+      'Duran Duran - Planet Earth cd',
+      'high',
+      { artist: 'Duran Duran', title: 'Planet Earth', album: 'Rio [2009 Remaster]' },
+      ['CD'],
+    )
+    expect(queryOf(fn.mock.calls[1][0])).toBe(
+      '+release:"Rio" +artist:"Duran Duran" +format:(*cd) comment:(2009 Remaster)',
+    )
   })
 
   // Off by default: without the album hint no release query is spent, so every request
