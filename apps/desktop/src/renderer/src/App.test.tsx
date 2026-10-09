@@ -3802,7 +3802,7 @@ describe('App list review', () => {
     fireEvent.click(await screen.findByTestId('music-review-confirm-apply'))
     await screen.findByTestId('music-review-done')
     expect(window.api.removeListDuplicates).toHaveBeenCalledWith([
-      { from: '/music/b.wav', to: '/music/a.wav' },
+      { from: '/music/b.wav', to: '/music/a.wav', label: 'Ann - Song' },
     ])
     fireEvent.click(screen.getByTestId('music-review-continue'))
     fireEvent.click(screen.getByTestId('music-review-close'))

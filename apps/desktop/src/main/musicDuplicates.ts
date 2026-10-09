@@ -132,7 +132,7 @@ export interface ListMusicDeps {
 // Fails closed like removeDuplicateCopy: no transfer target, two entries on one file or any
 // doubt about the playlists leaves the entry, and the caller keeps the file.
 export async function removeListCopyFromMusic(
-  { from, to, music }: ListRemoval,
+  { from, to, music }: Omit<ListRemoval, 'label'>,
   deps: ListMusicDeps,
 ): Promise<ListMusicOutcome> {
   if (music === undefined) return { step: (await deps.heldElsewhere(from, [])) ? 'held' : 'none' }

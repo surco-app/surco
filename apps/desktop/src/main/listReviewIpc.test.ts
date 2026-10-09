@@ -449,3 +449,158 @@ describe('listreview:removeDuplicates', () => {
     expect(d.trash).not.toHaveBeenCalled()
   })
 })
+
+// A list removal used to leave no trace in Activity. Each removed copy gets its own row,
+// named by the title the list showed, with what Music did and then what became of the file.
+describe('listreview:removeDuplicates in Activity', () => {
+  function register(over: Record<string, unknown> = {}) {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    const d = {
+      replace: {
+        libraries: {},
+        usedByLibrary: vi.fn().mockResolvedValue(false),
+        serial: (task: () => Promise<unknown>) => task(),
+        warn: vi.fn(),
+      },
+      realpath: vi.fn(async (p: string) => p),
+      trash: vi.fn().mockResolvedValue('trash'),
+      music: {
+        transferPlaylists: vi.fn().mockResolvedValue('2\t0'),
+        deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
+        fileLocations: vi.fn().mockResolvedValue([]),
+      },
+      ...over,
+    }
+    registerListReviewIpc({
+      apply: {} as never,
+      isAllowed: (p: string) => p.startsWith('/m/'),
+      removal: () => d,
+      log: { track: activity.track, reviewLog: createMusicReviewLog() },
+    } as never)
+    return { events, d }
+  }
+  const steps = (events: ActivityEvent[]) =>
+    events
+      .filter((e) => e.phase !== 'start')
+      .map((e) => [e.labelKey, e.phase, e.detailKey, e.detailParams, e.groupLabel])
+  const musicRef = {
+    removePid: 'OLD',
+    label: 'A - T',
+    keep: { persistentId: 'K', label: 'A - T' },
+  }
+
+  it('says the copy left Music with its playlists, then went to the Trash', async () => {
+    const { events } = register()
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak', music: musicRef },
+    ])
+    expect(steps(events)).toEqual([
+      [
+        'activity.reviewDuplicateMusic',
+        'done',
+        'activity.reviewDuplicateRemoved',
+        { count: 2 },
+        'Funk Freak',
+      ],
+      [
+        'activity.reviewDuplicateFile',
+        'done',
+        'activity.reviewDuplicateFileTrash',
+        undefined,
+        'Funk Freak',
+      ],
+    ])
+    expect(new Set(events.map((e) => e.group)).size).toBe(1)
+  })
+
+  it('says a copy Music never had was not in Music', async () => {
+    const { events } = register()
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak' },
+    ])
+    expect(steps(events).map(([key, phase, detail]) => [key, phase, detail])).toEqual([
+      ['activity.reviewDuplicateMusic', 'done', 'activity.listReviewDuplicateNotInMusic'],
+      ['activity.reviewDuplicateFile', 'done', 'activity.reviewDuplicateFileTrash'],
+    ])
+  })
+
+  it.each([
+    [
+      'unknown',
+      'unknown',
+      'activity.listReviewDuplicateUnknown',
+      'activity.reviewDuplicateFileMusicUnknown',
+    ],
+    [
+      'ambiguous',
+      'ambiguous',
+      'activity.listReviewDuplicateAmbiguous',
+      'activity.reviewDuplicateFileMusic',
+    ],
+    [
+      'kept copy not in Music',
+      { removePid: 'OLD', label: 'A - T' },
+      'activity.listReviewDuplicateKeptNoEntry',
+      'activity.reviewDuplicateFileMusic',
+    ],
+  ] as const)(
+    'warns when Music keeps the copy (%s) and the file stays',
+    async (_n, music, musicKey, fileKey) => {
+      const { events, d } = register()
+      await handlerFor('listreview:removeDuplicates')({ sender }, [
+        { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak', music },
+      ])
+      expect(steps(events).map(([key, phase, detail]) => [key, phase, detail])).toEqual([
+        ['activity.reviewDuplicateMusic', 'warn', musicKey],
+        ['activity.reviewDuplicateFile', 'warn', fileKey],
+      ])
+      expect(d.trash).not.toHaveBeenCalled()
+    },
+  )
+
+  it('says an entry left Music while another entry keeps the file', async () => {
+    const { events } = register({
+      music: {
+        transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
+        deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
+        fileLocations: vi.fn().mockResolvedValue([
+          { persistentId: 'OLD', path: '/m/old.aiff' },
+          { persistentId: 'OTHER', path: '/m/old.aiff' },
+        ]),
+      },
+    })
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak', music: musicRef },
+    ])
+    expect(
+      steps(events).map(([key, phase, detail, params]) => [key, phase, detail, params]),
+    ).toEqual([
+      [
+        'activity.reviewDuplicateMusic',
+        'warn',
+        'activity.listReviewDuplicateRemovedHeld',
+        { count: 1 },
+      ],
+      ['activity.reviewDuplicateFile', 'warn', 'activity.reviewDuplicateFileMusic', undefined],
+    ])
+  })
+
+  it('says only what kept the file when a DJ library still uses it', async () => {
+    const { events } = register({
+      replace: {
+        libraries: {},
+        usedByLibrary: vi.fn().mockResolvedValue(true),
+        serial: (task: () => Promise<unknown>) => task(),
+        warn: vi.fn(),
+      },
+    })
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak', music: musicRef },
+    ])
+    expect(steps(events).map(([key, phase, detail]) => [key, phase, detail])).toEqual([
+      ['activity.reviewDuplicateFile', 'done', 'activity.reviewDuplicateFileUsed'],
+    ])
+  })
+})

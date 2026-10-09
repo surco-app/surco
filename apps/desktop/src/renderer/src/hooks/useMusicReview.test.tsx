@@ -1513,7 +1513,9 @@ describe('with the list as source', () => {
     })
     act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
     await act(() => result.current.apply())
-    expect(api.removeListDuplicates).toHaveBeenCalledWith([{ from: '/m/b.aiff', to: '/m/a.aiff' }])
+    expect(api.removeListDuplicates).toHaveBeenCalledWith([
+      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'Ann - Song' },
+    ])
     expect(onRowsRemoved).toHaveBeenCalledWith(['/m/b.aiff'])
     expect(result.current.duplicates).toEqual([])
     expect(result.current.lastRun).toMatchObject({

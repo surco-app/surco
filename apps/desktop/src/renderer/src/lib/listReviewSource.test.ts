@@ -154,11 +154,17 @@ describe('listReviewSource', () => {
       {
         from: '/m/old.aiff',
         to: '/m/keep.aiff',
+        label: 'A - T',
         music: { removePid: 'OLD', label: 'A - T', keep: { persistentId: 'KEEP', label: 'A - T' } },
       },
-      { from: '/m/twice.aiff', to: '/m/keep.aiff', music: 'ambiguous' },
-      { from: '/m/old.aiff', to: '/m/free.aiff', music: { removePid: 'OLD', label: 'A - T' } },
-      { from: '/m/free.aiff', to: '/m/keep.aiff' },
+      { from: '/m/twice.aiff', to: '/m/keep.aiff', label: 'A - T', music: 'ambiguous' },
+      {
+        from: '/m/old.aiff',
+        to: '/m/free.aiff',
+        label: 'A - T',
+        music: { removePid: 'OLD', label: 'A - T' },
+      },
+      { from: '/m/free.aiff', to: '/m/keep.aiff', label: 'A - T' },
     ])
   })
 
@@ -170,7 +176,7 @@ describe('listReviewSource', () => {
     await s.load()
     await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
     expect(api.removeListDuplicates).toHaveBeenCalledWith([
-      { from: '/m/b.aiff', to: '/m/a.aiff', music: 'unknown' },
+      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T', music: 'unknown' },
     ])
   })
 
@@ -178,7 +184,9 @@ describe('listReviewSource', () => {
     const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')], { mac: false })
     await s.load()
     await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
-    expect(api.removeListDuplicates).toHaveBeenCalledWith([{ from: '/m/b.aiff', to: '/m/a.aiff' }])
+    expect(api.removeListDuplicates).toHaveBeenCalledWith([
+      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T' },
+    ])
   })
 
   // The whole batch is one call in main, so its outcomes come back as they are, with no
@@ -293,7 +301,7 @@ describe('listReviewSource', () => {
     expect(s.inMusic?.('/m/b.aiff')).toBe(false)
     await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
     expect(api.removeListDuplicates).toHaveBeenCalledWith([
-      { from: '/m/b.aiff', to: '/m/a.aiff', music: 'unknown' },
+      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T', music: 'unknown' },
     ])
   })
 

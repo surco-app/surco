@@ -87,7 +87,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
         .removeListDuplicates(
           removals.map((r) => {
             const ref = musicOf(r.removeId, r.keepId)
-            return { from: r.removeId, to: r.keepId, ...(ref && { music: ref }) }
+            return { from: r.removeId, to: r.keepId, label: r.label, ...(ref && { music: ref }) }
           }),
         )
         .catch(() => {

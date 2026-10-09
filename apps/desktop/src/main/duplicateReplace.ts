@@ -40,16 +40,16 @@ export interface ReplaceDuplicatesDeps {
   musicStep?: (pair: ReplacePair) => Promise<ListMusicOutcome>
 }
 
-type FileFate = (
-  | { fate: 'shared' | 'unsettled' | 'used' | 'music' | 'trash' | 'surco' }
+type FileFate =
+  | { fate: 'shared' | 'unsettled' | 'used' | 'music' | 'musicUnknown' | 'trash' | 'surco' }
   | { fate: 'failed'; error: string }
-) & { music?: ListMusicOutcome }
 
 const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'error' }> = {
   shared: { detailKey: 'activity.reviewDuplicateFileShared' },
   unsettled: { detailKey: 'activity.reviewDuplicateFileUnsettled', status: 'warn' },
   used: { detailKey: 'activity.reviewDuplicateFileUsed' },
   music: { detailKey: 'activity.reviewDuplicateFileMusic', status: 'warn' },
+  musicUnknown: { detailKey: 'activity.reviewDuplicateFileMusicUnknown', status: 'warn' },
   trash: { detailKey: 'activity.reviewDuplicateFileTrash' },
   surco: { detailKey: 'activity.reviewDuplicateFileSurco' },
   failed: { detailKey: 'activity.reviewDuplicateFileTrashFailed', status: 'error' },
@@ -163,10 +163,23 @@ export function replaceDuplicates(
       if (!pair.shared)
         for (const [library, outcomes] of Object.entries(byLibrary))
           result[library as Library] = outcomes[index]
-      const decide = () => fileFate(pair, index, byLibrary, deps)
+      const kept = await keptFate(pair, index, byLibrary, deps)
+      const music =
+        kept || !deps.musicStep
+          ? undefined
+          : await deps.musicStep(pair).catch((error): ListMusicOutcome => {
+              deps.warn('library:replaceDuplicates Music step failed', error)
+              return { step: 'failed' }
+            })
+      const decide = async (): Promise<FileFate> => {
+        if (kept) return kept
+        if (music?.step === 'unknown') return { fate: 'musicUnknown' }
+        if (music && music.step !== 'none' && music.step !== 'removed') return { fate: 'music' }
+        return trashFate(pair, deps)
+      }
       const log = deps.log
       const copy = log?.copyOf(pair.from)
-      const { fate, music } =
+      const { fate } =
         log && copy
           ? await log.track('applemusic', 'activity.reviewDuplicateFile', decide, {
               group: copy.group,
@@ -181,7 +194,7 @@ export function replaceDuplicates(
       if (music?.playlists !== undefined) result.musicPlaylists = music.playlists
       if (music?.entryRemoved) result.musicEntryRemoved = true
       result.keptForLibrary = fate === 'unsettled' || fate === 'used'
-      if (fate === 'music') result.keptForMusic = true
+      if (fate === 'music' || fate === 'musicUnknown') result.keptForMusic = true
       result.fileTrashed = fate === 'trash' || fate === 'surco'
       if (fate === 'failed') result.trashFailed = true
     }
@@ -189,12 +202,13 @@ export function replaceDuplicates(
   })
 }
 
-async function fileFate(
+// What keeps the file before Music is even asked: the kept copy's own file, or a DJ library.
+async function keptFate(
   pair: ReplacePair,
   index: number,
   byLibrary: Partial<Record<Library, LibraryReplaceOutcome[]>>,
   deps: ReplaceDuplicatesDeps,
-): Promise<FileFate> {
+): Promise<FileFate | null> {
   if (pair.shared) return { fate: 'shared' }
   const settled = Object.values(byLibrary).every((o) => SETTLED.has(o[index]))
   if (!settled) return { fate: 'unsettled' }
@@ -203,18 +217,14 @@ async function fileFate(
   // Fails closed: a library that cannot be read may still use the file, and a trashed
   // file shows there as a missing track with its cues out of reach.
   if (stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) return { fate: 'used' }
-  let music: ListMusicOutcome | undefined
-  if (deps.musicStep) {
-    music = await deps.musicStep(pair).catch((error): ListMusicOutcome => {
-      deps.warn('library:replaceDuplicates Music step failed', error)
-      return { step: 'failed' }
-    })
-    if (music.step !== 'none' && music.step !== 'removed') return { fate: 'music', music }
-  }
+  return null
+}
+
+async function trashFate(pair: ReplacePair, deps: ReplaceDuplicatesDeps): Promise<FileFate> {
   try {
-    return { fate: await deps.trash(pair.from), music }
+    return { fate: await deps.trash(pair.from) }
   } catch (error) {
     deps.warn('library:replaceDuplicates trash failed', error)
-    return { fate: 'failed', error: error instanceof Error ? error.message : String(error), music }
+    return { fate: 'failed', error: error instanceof Error ? error.message : String(error) }
   }
 }

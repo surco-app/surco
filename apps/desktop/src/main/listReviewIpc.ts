@@ -1,5 +1,5 @@
 import { ipcMain, type WebContents } from 'electron'
-import type { ListFixRequest, ListRemoval } from '../shared/types'
+import type { ListFixRequest, ListMusicOutcome, ListRemoval } from '../shared/types'
 import type { Activity } from './activity'
 import { type ReplaceDuplicatesDeps, type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { applyListFixes, type ListApplyDeps } from './listReviewApply'
@@ -108,19 +108,61 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
         .flatMap((p) => byPath.get(heldKey(p)) ?? [])
         .some((pid) => !except.includes(pid))
     }
+    const log = deps.log
+    if (log)
+      for (const r of removals)
+        log.reviewLog.rememberCopy(r.from, { group: `list-duplicate-${r.from}`, label: r.label })
     const outcomes = await replaceDuplicates(pairs, {
       ...d.replace,
       trash: d.trash,
+      ...(log && { log: { track: log.track, copyOf: log.reviewLog.copyOf } }),
       ...(musicDeps && {
-        musicStep: (pair: ReplacePair) =>
-          removeListCopyFromMusic(
-            { ...pair, music: byPair.get(pair)?.music },
-            { ...musicDeps, heldElsewhere },
-          ),
+        musicStep: (pair: ReplacePair) => {
+          const step = () =>
+            removeListCopyFromMusic(
+              { ...pair, music: byPair.get(pair)?.music },
+              { ...musicDeps, heldElsewhere },
+            )
+          const copy = log?.reviewLog.copyOf(pair.from)
+          return log && copy
+            ? log.track('applemusic', 'activity.reviewDuplicateMusic', step, {
+                group: copy.group,
+                groupLabel: copy.label,
+                summary: musicEnding,
+              })
+            : step()
+        },
       }),
     })
     return outcomes.map((o, i) => (pairs[i].shared ? { ...o, keptShared: true as const } : o))
   })
+}
+
+const MUSIC_ENDING: Record<
+  Exclude<ListMusicOutcome['step'], 'removed'>,
+  { detailKey: string; status?: 'warn' | 'error' }
+> = {
+  none: { detailKey: 'activity.listReviewDuplicateNotInMusic' },
+  held: { detailKey: 'activity.listReviewDuplicateHeld', status: 'warn' },
+  'kept-no-entry': { detailKey: 'activity.listReviewDuplicateKeptNoEntry', status: 'warn' },
+  ambiguous: { detailKey: 'activity.listReviewDuplicateAmbiguous', status: 'warn' },
+  unknown: { detailKey: 'activity.listReviewDuplicateUnknown', status: 'warn' },
+  mismatch: { detailKey: 'activity.reviewDuplicateMismatch', status: 'warn' },
+  failed: { detailKey: 'activity.reviewDuplicateFailed', status: 'error' },
+}
+
+// What Music did with one removed list copy.
+function musicEnding(music: ListMusicOutcome) {
+  const count = { count: music.playlists ?? 0 }
+  if (music.entryRemoved)
+    return {
+      detailKey: 'activity.listReviewDuplicateRemovedHeld',
+      detailParams: count,
+      status: 'warn' as const,
+    }
+  if (music.step === 'removed')
+    return { detailKey: 'activity.reviewDuplicateRemoved', detailParams: count }
+  return MUSIC_ENDING[music.step]
 }
 
 // Wider than the file system's own rule on purpose: a false match only keeps a file.
