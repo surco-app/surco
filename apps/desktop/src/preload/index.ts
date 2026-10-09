@@ -115,8 +115,8 @@ const api: Api = {
     ipcRenderer.invoke('search:release', ref, provider, priority),
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('applemusic:library'),
-  appleMusicFileEntries: (paths, launch): Promise<MusicFileLookup> =>
-    ipcRenderer.invoke('applemusic:fileEntries', paths, launch),
+  appleMusicFileEntries: (candidates, launch): Promise<MusicFileLookup> =>
+    ipcRenderer.invoke('applemusic:fileEntries', candidates, launch),
   loadMusicReview: (): Promise<MusicReviewEntry[]> => ipcRenderer.invoke('applemusic:reviewDump'),
   applyMusicFixes: (fixes: MusicFieldFix[]) => ipcRenderer.invoke('applemusic:applyFixes', fixes),
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),

@@ -85,10 +85,12 @@ export function registerAppleMusicIpc(
     return entries
   })
 
-  ipcMain.handle('applemusic:fileEntries', (_e, paths: string[], launch: boolean) =>
-    process.platform === 'darwin'
-      ? appleMusicLimiter.run(() => musicFileEntries(paths, launch))
-      : { consulted: false, entries: {} },
+  ipcMain.handle(
+    'applemusic:fileEntries',
+    (_e, candidates: { path: string; title: string }[], launch: boolean) =>
+      process.platform === 'darwin'
+        ? appleMusicLimiter.run(() => musicFileEntries(candidates, launch))
+        : { consulted: false, entries: {} },
   )
 
   let fixesCancelled = false

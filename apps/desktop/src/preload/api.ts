@@ -126,7 +126,10 @@ export interface Api {
   // no snapshot exists yet (first run, or the file was unreadable).
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
   // Which loaded files Music holds. Not consulted off macOS, or when Music is closed and launch is false.
-  appleMusicFileEntries: (paths: string[], launch: boolean) => Promise<MusicFileLookup>
+  appleMusicFileEntries: (
+    candidates: { path: string; title: string }[],
+    launch: boolean,
+  ) => Promise<MusicFileLookup>
   loadMusicReview: () => Promise<MusicReviewEntry[]>
   applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
   syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<LibraryTagSyncReport>

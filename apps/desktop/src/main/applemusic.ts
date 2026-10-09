@@ -556,15 +556,15 @@ export function buildMusicRunningScript(): string {
   return 'return application "Music" is running'
 }
 
-// Four bulk fetches, as the playlist import does (measured 1.39 s for 400 tracks there),
-// instead of one lookup per loaded file.
-export function buildFileEntriesScript(): string {
+// Reading `location` costs about 15 ms per track on an SMB-backed library (30 s for 2042
+// tracks) while a bulk read of persistent ID, name or artist takes about 0.1 s each. So the
+// names come first for every file track and the locations only for the few that matter.
+export function buildFileNamesScript(): string {
   const of = (prop: string) => `${prop} of every file track of library playlist 1`
   return [
     'tell application "Music"',
     '  if (count of file tracks of library playlist 1) is 0 then return ""',
     `  set thePids to ${of('persistent ID')}`,
-    `  set theLocs to ${of('location')}`,
     `  set theArtists to ${of('artist')}`,
     `  set theNames to ${of('name')}`,
     'end tell',
@@ -572,32 +572,76 @@ export function buildFileEntriesScript(): string {
     'set FS to ASCII character 31',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
-    '  set loc to item i of theLocs',
-    '  set p to ""',
-    '  if loc is not missing value then',
-    '    try',
-    '      set p to POSIX path of loc',
-    '    end try',
-    '  end if',
-    '  set end of out to (item i of thePids) & FS & p & FS & (item i of theArtists) & FS & (item i of theNames)',
+    '  set end of out to (item i of thePids) & FS & (item i of theArtists) & FS & (item i of theNames)',
     'end repeat',
     "set AppleScript's text item delimiters to RS",
     'return out as text',
   ].join('\n')
 }
 
-export function parseFileEntries(
+// POSIX path is a system coercion, so it runs outside the tell block (see
+// buildLocationScript). The wanted IDs are checked against the live list in the same pass,
+// so a track added or removed since the names were read cannot shift the match.
+export function buildFileLocationsScript(persistentIds: string[]): string {
+  const wanted = `{${persistentIds.map((id) => JSON.stringify(id)).join(', ')}}`
+  return [
+    `set wanted to ${wanted}`,
+    'set theLocs to {}',
+    'tell application "Music"',
+    '  set theTracks to every file track of library playlist 1',
+    '  set thePids to persistent ID of every file track of library playlist 1',
+    '  repeat with i from 1 to count of thePids',
+    '    set theLoc to missing value',
+    '    if wanted contains (item i of thePids) then',
+    '      try',
+    '        set theLoc to location of item i of theTracks',
+    '      end try',
+    '    end if',
+    '    set end of theLocs to theLoc',
+    '  end repeat',
+    'end tell',
+    'set RS to ASCII character 30',
+    'set FS to ASCII character 31',
+    'set out to {}',
+    'repeat with i from 1 to count of thePids',
+    '  set loc to item i of theLocs',
+    '  if loc is not missing value then',
+    '    try',
+    '      set end of out to (item i of thePids) & FS & (POSIX path of loc)',
+    '    end try',
+    '  end if',
+    'end repeat',
+    "set AppleScript's text item delimiters to RS",
+    'return out as text',
+  ].join('\n')
+}
+
+export function parseFileNames(
   stdout: string,
-): { persistentId: string; path: string; label: string }[] {
-  const rows: { persistentId: string; path: string; label: string }[] = []
+): { persistentId: string; name: string; label: string }[] {
+  const rows: { persistentId: string; name: string; label: string }[] = []
   const body = stdout.replace(/\n$/, '')
   if (!body) return rows
   for (const line of body.split(REVIEW_RS)) {
     const fields = line.split(REVIEW_FS)
-    if (fields.length !== 4) continue
-    const [persistentId, path, artist, name] = fields
+    if (fields.length !== 3) continue
+    const [persistentId, artist, name] = fields
+    if (!/^[0-9A-F]{16}$/.test(persistentId)) continue
+    rows.push({ persistentId, name, label: `${artist} - ${name}` })
+  }
+  return rows
+}
+
+export function parseFileLocations(stdout: string): { persistentId: string; path: string }[] {
+  const rows: { persistentId: string; path: string }[] = []
+  const body = stdout.replace(/\n$/, '')
+  if (!body) return rows
+  for (const line of body.split(REVIEW_RS)) {
+    const fields = line.split(REVIEW_FS)
+    if (fields.length !== 2) continue
+    const [persistentId, path] = fields
     if (!/^[0-9A-F]{16}$/.test(persistentId) || !path) continue
-    rows.push({ persistentId, path, label: `${artist} - ${name}` })
+    rows.push({ persistentId, path })
   }
   return rows
 }
@@ -619,15 +663,44 @@ export function entriesForPaths(
   return out
 }
 
+const nameKey = (text: string) => text.normalize('NFC').toLowerCase()
+
+// A Music track whose name differs from the file's title tag is not found, so the file
+// counts as not in Music. That fails safe: nothing in Music is updated or removed for it.
 export async function musicFileEntries(
-  paths: string[],
+  candidates: { path: string; title: string }[],
   launch: boolean,
   run: typeof runOsascript = runOsascript,
 ): Promise<MusicFileLookup> {
-  if (!launch && (await run(buildMusicRunningScript())).trim() !== 'true')
+  try {
+    if (!launch && (await run(buildMusicRunningScript())).trim() !== 'true')
+      return { consulted: false, entries: {} }
+    const titles = new Set(candidates.map((c) => nameKey(c.title)))
+    const names = parseFileNames(
+      await run(buildFileNamesScript(), { maxBuffer: 64 * 1024 * 1024 }),
+    ).filter((r) => titles.has(nameKey(r.name)))
+    if (names.length === 0) return { consulted: true, entries: {} }
+    const labels = new Map(names.map((r) => [r.persistentId, r.label]))
+    const located = parseFileLocations(
+      await run(buildFileLocationsScript(names.map((r) => r.persistentId)), {
+        maxBuffer: 64 * 1024 * 1024,
+      }),
+    )
+      .filter((r) => labels.has(r.persistentId))
+      .map((r) => ({ ...r, label: labels.get(r.persistentId) as string }))
+    return {
+      consulted: true,
+      entries: entriesForPaths(
+        located,
+        candidates.map((c) => c.path),
+      ),
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('-1728')) return { consulted: true, entries: {} }
+    log.warn('Music file lookup failed', message)
     return { consulted: false, entries: {} }
-  const stdout = await run(buildFileEntriesScript(), { maxBuffer: 64 * 1024 * 1024 })
-  return { consulted: true, entries: entriesForPaths(parseFileEntries(stdout), paths) }
+  }
 }
 
 export type MusicSetResult = 'set' | 'missing' | 'mismatch'

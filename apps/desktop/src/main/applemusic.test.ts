@@ -3,7 +3,8 @@ import type { TrackMetadata } from '../shared/types'
 import {
   buildAddScript,
   buildDeleteScript,
-  buildFileEntriesScript,
+  buildFileLocationsScript,
+  buildFileNamesScript,
   buildLibraryDumpScript,
   buildLocationScript,
   buildMusicRunningScript,
@@ -15,7 +16,8 @@ import {
   entriesForPaths,
   isAppleMusicOnly,
   musicFileEntries,
-  parseFileEntries,
+  parseFileLocations,
+  parseFileNames,
   parseLibraryDump,
   parseReviewDump,
   shouldAddToAppleMusic,
@@ -590,21 +592,18 @@ describe('Music entries for loaded files', () => {
   const RS = '\u001e'
   const FS = '\u001f'
   const row = (...f: string[]) => f.join(FS)
+  const PID = '6E592CFE07A6246A'
+  const OTHER = '5FA52DD35E307CBB'
 
-  it('reads each file track with its location and the label the scripts check', () => {
+  it('reads each file track name with the label the scripts check', () => {
     expect(
-      parseFileEntries(
-        [
-          row('6E592CFE07A6246A', '/Volumes/Public/Musica/This Rap.aiff', 'DJ Ter', 'This Rap'),
-          row('5FA52DD35E307CBB', '', 'Gone', 'Missing file'),
-        ].join(RS),
-      ),
-    ).toEqual([
-      {
-        persistentId: '6E592CFE07A6246A',
-        path: '/Volumes/Public/Musica/This Rap.aiff',
-        label: 'DJ Ter - This Rap',
-      },
+      parseFileNames([row(PID, 'DJ Ter', 'This Rap'), row('nope', 'A', 'B')].join(RS)),
+    ).toEqual([{ persistentId: PID, name: 'This Rap', label: 'DJ Ter - This Rap' }])
+  })
+
+  it('reads locations and drops tracks whose file is missing', () => {
+    expect(parseFileLocations([row(PID, '/m/a.aiff'), row(OTHER, '')].join(RS))).toEqual([
+      { persistentId: PID, path: '/m/a.aiff' },
     ])
   })
 
@@ -630,7 +629,7 @@ describe('Music entries for loaded files', () => {
   // A user who never uses Music would see it launch just because they reviewed a folder.
   it('does not open Music to ask unless told to', async () => {
     const run = vi.fn().mockResolvedValue('false\n')
-    expect(await musicFileEntries(['/m/a.aiff'], false, run)).toEqual({
+    expect(await musicFileEntries([{ path: '/m/a.aiff', title: 'T' }], false, run)).toEqual({
       consulted: false,
       entries: {},
     })
@@ -638,24 +637,71 @@ describe('Music entries for loaded files', () => {
     expect(run.mock.calls[0][0]).toBe(buildMusicRunningScript())
   })
 
-  it('asks an open Music, or any Music when told to', async () => {
-    const dump = row('6E592CFE07A6246A', '/m/a.aiff', 'A', 'T')
-    const running = vi.fn().mockResolvedValueOnce('true\n').mockResolvedValueOnce(dump)
-    expect((await musicFileEntries(['/m/a.aiff'], false, running)).consulted).toBe(true)
-    const launch = vi.fn().mockResolvedValue(dump)
-    expect(await musicFileEntries(['/m/a.aiff'], true, launch)).toEqual({
+  // Locations cost 15 ms each on SMB, so only tracks named like a loaded title are asked.
+  it('asks for the location of only the tracks named like a loaded title, ignoring case', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(
+        [row(PID, 'A', 'Caf\u00e9 Mix'), row(OTHER, 'B', 'Unrelated')].join(RS),
+      )
+      .mockResolvedValueOnce(row(PID, '/m/a.aiff'))
+    const out = await musicFileEntries(
+      [
+        { path: '/m/a.aiff', title: 'CAFE\u0301 mix' },
+        { path: '/m/b.aiff', title: 'Other' },
+      ],
+      true,
+      run,
+    )
+    expect(out).toEqual({
       consulted: true,
-      entries: { '/m/a.aiff': [{ persistentId: '6E592CFE07A6246A', label: 'A - T' }] },
+      entries: { '/m/a.aiff': [{ persistentId: PID, label: 'A - Caf\u00e9 Mix' }] },
     })
-    expect(launch).toHaveBeenCalledTimes(1)
+    expect(run.mock.calls[1][0]).toBe(buildFileLocationsScript([PID]))
+  })
+
+  it('asks an open Music without launching it and skips locations when no name matches', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce('true\n')
+      .mockResolvedValueOnce(row(PID, 'A', 'Something else'))
+    expect(await musicFileEntries([{ path: '/m/a.aiff', title: 'T' }], false, run)).toEqual({
+      consulted: true,
+      entries: {},
+    })
+    expect(run).toHaveBeenCalledTimes(2)
+  })
+
+  // Music raises -1728 on an empty library; that is an answer ("nothing here"), not a failure.
+  it('treats an empty library as consulted with nothing found', async () => {
+    const run = vi.fn().mockRejectedValue(new Error("Can't get name of every track. (-1728)"))
+    expect(await musicFileEntries([{ path: '/m/a.aiff', title: 'T' }], true, run)).toEqual({
+      consulted: true,
+      entries: {},
+    })
+  })
+
+  it('reports not consulted instead of rejecting when Music fails otherwise', async () => {
+    const run = vi.fn().mockRejectedValue(new Error('Music got an error (-600)'))
+    expect(await musicFileEntries([{ path: '/m/a.aiff', title: 'T' }], true, run)).toEqual({
+      consulted: false,
+      entries: {},
+    })
+  })
+
+  it('reads the names in bulk and guards the empty library', () => {
+    const script = buildFileNamesScript()
+    expect(script).toContain('persistent ID of every file track of library playlist 1')
+    expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
+    expect(script).not.toContain('location')
   })
 
   // POSIX path is a system coercion: inside the tell block it yields "" for every track
   // (appleMusicPlaylists.ts), so the locations must leave it first.
-  it('reads locations in bulk and coerces them outside the tell block', () => {
-    const script = buildFileEntriesScript()
-    expect(script).toContain('location of every file track of library playlist 1')
-    expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
+  it('reads locations only for the wanted IDs and coerces them outside the tell block', () => {
+    const script = buildFileLocationsScript([PID, OTHER])
+    expect(script).toContain(`{"${PID}", "${OTHER}"}`)
+    expect(script).toContain('location of item i of theTracks')
     expect(script.indexOf('POSIX path of loc')).toBeGreaterThan(script.indexOf('end tell'))
   })
 })
