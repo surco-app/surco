@@ -408,7 +408,7 @@ function SpellingDetail({
                           <tr
                             key={`${f.id}|${f.field}`}
                             data-testid="music-review-affected"
-                            className="border-b border-[var(--color-line)] align-top"
+                            className="border-b border-[var(--color-line)] align-middle"
                           >
                             <td className="max-w-48 py-1.5 pr-3">
                               <div className="flex items-center gap-1.5">
