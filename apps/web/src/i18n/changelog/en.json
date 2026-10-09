@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.7",
+    "date": "October 9, 2026",
+    "title": "Put your library in order",
+    "items": [
+      {
+        "text": "New Apple Music metadata review, in File and in ⌘K. It groups what your library spells several ways (DJ Lara and Dj Lara, accents that don't match, spaces or invisible characters that sneak in when you copy from a website, and likely typos) and lets you choose how it ends up. The change reaches the file, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor, with a backup and Undo.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "The same review shows the tracks you have twice in Apple Music. It compares each copy by title, format, quality, the date you added it and what it holds in rekordbox, and a button copies the title so you can look it up. Remove one and the copy you keep joins its playlists in Music, rekordbox, Engine DJ and Traktor, and its file goes to the Trash.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "It also works on what is in your list. Drop a folder and, if it finds spellings or duplicates, Surco tells you and you open it in one click, from the button in the list's toolbar, from Tracks or from ⌘K.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "The start screen is now a list of actions, with add tracks, import from Apple Music, review metadata and show duplicates, each with what it does.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "When a review finishes, a summary says what changed and where, and Activity shows each step while it applies.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "Deleting a track from a disk with no Trash, such as a NAS, no longer removes it for good. It goes to Backups, and the prompt says beforehand where each file will go.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "Search finds a release better when you type the artist and the album, and tells its editions apart to put first the one your track's tag names.",
+        "in": "1.7.0"
+      }
+    ]
+  },
+  {
     "version": "1.6",
     "date": "October 1, 2026",
     "title": "Your M4As stay M4A",

@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.7",
+    "date": "9 de octubre de 2026",
+    "title": "Ordena tu biblioteca",
+    "items": [
+      {
+        "text": "Nueva revisión de metadatos de Apple Music, en Archivo y en ⌘K. Agrupa lo que tu biblioteca escribe de varias formas (DJ Lara y Dj Lara, acentos que no casan, espacios o caracteres invisibles que se cuelan al copiar de una web y posibles erratas) y deja que elijas cómo queda. El cambio llega al fichero, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia de seguridad y Deshacer.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "La misma revisión muestra las pistas que tienes dos veces en Apple Music. Compara cada copia con su título, formato, calidad, fecha en que la añadiste y lo que tiene en rekordbox, y un botón copia el título para buscarla. Al quitar una, la que se queda entra en sus playlists de Music, rekordbox, Engine DJ y Traktor, y su archivo va a la Papelera.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "Y también sobre lo que tienes en la lista. Suelta una carpeta y, si encuentra grafías o duplicados, Surco te lo dice y lo abres con un clic, desde el botón de la barra de la lista, desde Pistas o desde ⌘K.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "La pantalla de inicio es ahora una lista de acciones, con añadir pistas, importar de Apple Music, revisar metadatos y mostrar duplicados, cada una con lo que hace.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "Al terminar una revisión, un resumen dice qué ha cambiado y dónde, y Actividad muestra cada paso mientras se aplica.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "Borrar una pista de un disco sin Papelera, como un NAS, ya no la elimina para siempre. Va a Copias de seguridad, y el aviso dice antes adónde irá cada archivo.",
+        "in": "1.7.0"
+      },
+      {
+        "text": "La búsqueda encuentra mejor un disco cuando escribes el artista y el álbum, y distingue sus ediciones para poner primero la que nombra la etiqueta de tu pista.",
+        "in": "1.7.0"
+      }
+    ]
+  },
+  {
     "version": "1.6",
     "date": "1 de octubre de 2026",
     "title": "Tus M4A se quedan en M4A",
