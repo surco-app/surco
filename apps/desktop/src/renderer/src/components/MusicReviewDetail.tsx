@@ -1,5 +1,5 @@
-import { ChevronDown } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { Check, ChevronDown, Copy } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibraryCopyInfo, LibraryStatus, MusicReviewEntry } from '../../../shared/types'
 import type {
@@ -43,6 +43,36 @@ const tail = (path: string) => path.split('/').slice(-2).join('/')
 
 const clock = (sec?: number) =>
   sec === undefined ? '' : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+
+const COPIED_FEEDBACK_MS = 1500
+
+function CopyTitleButton({ title }: { title: string }) {
+  const { t } = useTranslation()
+  const [copied, setCopied] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  return (
+    <button
+      type="button"
+      data-testid="music-review-copy-title"
+      aria-label={t('musicReview.copyTitle')}
+      onClick={(e) => {
+        e.stopPropagation()
+        void window.api.copyText(title)
+        setCopied(true)
+        clearTimeout(timer.current)
+        timer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
+      }}
+      className="press flex h-4 w-4 shrink-0 items-center justify-center text-fg-muted hover:text-fg"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-good" aria-hidden="true" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
+    </button>
+  )
+}
 
 function Header({ name, detail }: { name: string; detail: string }) {
   return (
@@ -588,12 +618,24 @@ function DuplicateDetail({
                       {cells.map(([label, value, differ]) => (
                         <div key={label} className="contents">
                           <dt className="text-fg-faint">{t(`musicReview.${label}`)}</dt>
-                          <dd
-                            data-differs={differ || undefined}
-                            className={`truncate tabular-nums ${differ ? 'text-[var(--color-warn)]' : ''}`}
-                          >
-                            {value}
-                          </dd>
+                          {label === 'field.title' ? (
+                            <dd className="flex min-w-0 items-center gap-1.5">
+                              <span
+                                data-differs={differ || undefined}
+                                className={`truncate tabular-nums ${differ ? 'text-[var(--color-warn)]' : ''}`}
+                              >
+                                {value}
+                              </span>
+                              <CopyTitleButton title={e.title} />
+                            </dd>
+                          ) : (
+                            <dd
+                              data-differs={differ || undefined}
+                              className={`truncate tabular-nums ${differ ? 'text-[var(--color-warn)]' : ''}`}
+                            >
+                              {value}
+                            </dd>
+                          )}
                         </div>
                       ))}
                       <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>

@@ -1477,6 +1477,7 @@
       "spelling": "Spellings",
       "duplicates": "Duplicates"
     },
+    "copyTitle": "Copy title",
     "field": {
       "artist": "Artist",
       "albumArtist": "Album artist",
