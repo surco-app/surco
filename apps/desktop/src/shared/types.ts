@@ -777,6 +777,8 @@ export interface DuplicateReplaceOutcome {
   music?: ListMusicStep
   // Playlists in Music that now hold the kept copy instead.
   musicPlaylists?: number
+  // The confirmed entry left Music even though the file stayed ('held': another entry has it).
+  musicEntryRemoved?: true
   // The file stayed on disk because Apple Music still holds it.
   keptForMusic?: boolean
   // Nothing held the file any more and the Trash still refused it.
@@ -804,10 +806,16 @@ export type ListMusicStep =
   | 'kept-no-entry'
   | 'ambiguous'
   | 'unknown'
-  // Music holds the file under an entry the renderer never found, so never confirmed.
+  // Music holds the file under an entry the renderer never found, so the file stays.
   | 'held'
   | 'mismatch'
   | 'failed'
+
+export interface ListMusicOutcome {
+  step: ListMusicStep
+  playlists?: number
+  entryRemoved?: true
+}
 
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
 

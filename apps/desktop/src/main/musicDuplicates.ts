@@ -1,4 +1,4 @@
-import type { ListMusicStep, ListRemoval, RemoveCopyResult } from '../shared/types'
+import type { ListMusicOutcome, ListRemoval, RemoveCopyResult } from '../shared/types'
 import type { Activity } from './activity'
 
 export interface RemoveCopyDeps {
@@ -123,8 +123,9 @@ export interface ListMusicDeps {
     locations: { from: string; to: string },
   ) => Promise<string>
   deleteEntry: (persistentId: string, label: string, location: string) => Promise<string | null>
-  // Whether any Music file track points at the file, for one the renderer found no entry for.
-  holds: (path: string) => Promise<boolean>
+  // Whether a Music file track other than `except` points at the file. Read once per batch,
+  // before its first delete.
+  heldElsewhere: (path: string, except: string[]) => Promise<boolean>
 }
 
 // The list review's half of a removal in Music, run only once the file is really leaving.
@@ -133,11 +134,12 @@ export interface ListMusicDeps {
 export async function removeListCopyFromMusic(
   { from, to, music }: ListRemoval,
   deps: ListMusicDeps,
-): Promise<{ step: ListMusicStep; playlists?: number }> {
-  if (music === undefined) return { step: (await deps.holds(from)) ? 'held' : 'none' }
+): Promise<ListMusicOutcome> {
+  if (music === undefined) return { step: (await deps.heldElsewhere(from, [])) ? 'held' : 'none' }
   if (music === 'ambiguous' || music === 'unknown') return { step: music }
   if (!music.keep) return { step: 'kept-no-entry' }
   if (music.keep.persistentId === music.removePid) return { step: 'failed' }
+  const heldElsewhere = await deps.heldElsewhere(from, [music.removePid])
   const answer = await deps.transferPlaylists(
     music.removePid,
     music.keep.persistentId,
@@ -158,5 +160,8 @@ export async function removeListCopyFromMusic(
       return { step: 'mismatch', playlists }
     throw e
   }
-  return { step: location === null ? 'failed' : 'removed', playlists }
+  if (location === null) return { step: 'failed', playlists }
+  return heldElsewhere
+    ? { step: 'held', playlists, entryRemoved: true }
+    : { step: 'removed', playlists }
 }

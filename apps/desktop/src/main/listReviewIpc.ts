@@ -9,7 +9,9 @@ export interface ListRemovalDeps {
   realpath: (path: string) => Promise<string | null>
   trash: (path: string) => Promise<'trash' | 'surco'>
   // Undefined off macOS.
-  music?: Omit<ListMusicDeps, 'holds'> & { filePaths: () => Promise<string[]> }
+  music?: Omit<ListMusicDeps, 'heldElsewhere'> & {
+    fileLocations: () => Promise<{ persistentId: string; path: string }[]>
+  }
 }
 
 export interface ListReviewIpcDeps {
@@ -79,13 +81,16 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
       return pair
     })
     const musicDeps = d.music
-    let held: Promise<Set<string>> | undefined
-    const holds = (path: string) => {
+    let held: Promise<Map<string, string[]>> | undefined
+    const heldElsewhere = async (path: string, except: string[]) => {
       held ??= (async () => {
         if (!e.sender.isDestroyed()) e.sender.send('listreview:removalPhase', 'checking-music')
-        return new Set((await musicDeps?.filePaths())?.map(heldKey))
+        const byPath = new Map<string, string[]>()
+        for (const { persistentId, path: at } of (await musicDeps?.fileLocations()) ?? [])
+          byPath.set(heldKey(at), [...(byPath.get(heldKey(at)) ?? []), persistentId])
+        return byPath
       })()
-      return held.then((set) => set.has(heldKey(path)))
+      return ((await held).get(heldKey(path)) ?? []).some((pid) => !except.includes(pid))
     }
     const outcomes = await replaceDuplicates(pairs, {
       ...d.replace,
@@ -94,7 +99,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
         musicStep: (pair: ReplacePair) =>
           removeListCopyFromMusic(
             { ...pair, music: byPair.get(pair)?.music },
-            { ...musicDeps, holds },
+            { ...musicDeps, heldElsewhere },
           ),
       }),
     })

@@ -16,7 +16,7 @@ import {
   entriesForPaths,
   isAppleMusicOnly,
   musicFileEntries,
-  musicFilePaths,
+  musicFileLocations,
   parseFileLocations,
   parseFileNames,
   parseLibraryDump,
@@ -793,37 +793,57 @@ describe('Music entries for loaded files', () => {
   })
 })
 
-// Before trashing a file the list review found no Music entry for: the renderer's lookup goes
-// by title and misses a track renamed in Music. Measured 09/10 on a 2045-track SMB library:
-// `whose location is` never matched (and scanned for 35-45 s), the bulk read took 38 s.
-describe('musicFilePaths', () => {
+// Before trashing a list copy's file: the renderer's lookup goes by title and misses a track
+// renamed in Music. Measured 09/10 on a 2045-track SMB library: `whose location is` never
+// matched (35-45 s each), one track at a time took 102 s, the bulk lists 47 s with pairs
+// identical to the one-at-a-time read.
+describe('musicFileLocations', () => {
   const RS = '\u001e'
+  const FS = '\u001f'
+  const PID = '6E592CFE07A6246A'
+  const OTHER = '5FA52DD35E307CBB'
 
-  it('reads every file track location in one bulk call and converts outside the tell', () => {
+  it('pairs each file track with its file from bulk reads, converting outside the tell', async () => {
     let script = ''
     const run = vi.fn(async (s: string) => {
       script = s
-      return ['/m/a.aiff', '/m/b.wav'].join(RS)
+      return [`${PID}${FS}/m/a.aiff`, `${OTHER}${FS}/m/b.wav`].join(RS)
     })
-    return musicFilePaths(run).then((paths) => {
-      expect(paths).toEqual(['/m/a.aiff', '/m/b.wav'])
-      expect(script).toContain('set theLocs to location of every file track of library playlist 1')
-      expect(script.indexOf('POSIX path of')).toBeGreaterThan(script.indexOf('end tell'))
-      const inMusic = script.slice(0, script.indexOf('end tell'))
-      expect(inMusic).not.toMatch(/\b(delete|duplicate|add)\b|set \w+ of/)
+    expect(await musicFileLocations(run)).toEqual([
+      { persistentId: PID, path: '/m/a.aiff' },
+      { persistentId: OTHER, path: '/m/b.wav' },
+    ])
+    expect(script).toContain('set theLocs to location of every file track of library playlist 1')
+    expect(script.indexOf('POSIX path of')).toBeGreaterThan(script.indexOf('end tell'))
+    const inMusic = script.slice(0, script.indexOf('end tell'))
+    expect(inMusic).not.toMatch(/\b(delete|duplicate|add)\b|set \w+ of/)
+  })
+
+  // Two bulk lists pair by position: a track added or removed in between would shift them.
+  it('fails when the library changed while the locations were read', async () => {
+    let script = ''
+    const run = vi.fn(async (s: string) => {
+      script = s
+      return 'changed'
     })
+    await expect(musicFileLocations(run)).rejects.toThrow('music-library-changed')
+    const before = script.indexOf('set pidsBefore to persistent ID of every file track')
+    const after = script.indexOf('set pidsAfter to persistent ID of every file track')
+    expect(before).toBeGreaterThan(-1)
+    expect(before).toBeLessThan(script.indexOf('set theLocs'))
+    expect(after).toBeGreaterThan(script.indexOf('set theLocs'))
+    expect(script).toContain('if pidsBefore is not pidsAfter then return "changed"')
   })
 
   it('reads an empty library as no files', async () => {
-    const run = vi.fn().mockResolvedValue('')
-    expect(await musicFilePaths(run)).toEqual([])
+    expect(await musicFileLocations(vi.fn().mockResolvedValue(''))).toEqual([])
     const empty = vi.fn().mockRejectedValue(new Error('execution error: (-1728)'))
-    expect(await musicFilePaths(empty)).toEqual([])
+    expect(await musicFileLocations(empty)).toEqual([])
   })
 
   // The caller keeps the file when Music could not be read.
   it('lets any other failure through', async () => {
     const run = vi.fn().mockRejectedValue(new Error('execution error: (-600)'))
-    await expect(musicFilePaths(run)).rejects.toThrow('-600')
+    await expect(musicFileLocations(run)).rejects.toThrow('-600')
   })
 })

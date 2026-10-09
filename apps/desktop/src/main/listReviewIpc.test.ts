@@ -101,7 +101,7 @@ describe('listreview:removeDuplicates', () => {
       music: {
         transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
         deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
-        filePaths: vi.fn().mockResolvedValue([] as string[]),
+        fileLocations: vi.fn().mockResolvedValue([] as { persistentId: string; path: string }[]),
       },
       ...over,
     }
@@ -273,18 +273,20 @@ describe('listreview:removeDuplicates', () => {
         keptForMusic: true,
       },
     ])
-    expect(d.music.filePaths).not.toHaveBeenCalled()
+    expect(d.music.fileLocations).not.toHaveBeenCalled()
   })
 
   // The renderer's lookup goes by title: a track renamed in Music is not found there.
   it('reads Music once for every file it found no entry for and keeps the ones Music holds', async () => {
     const d = register()
-    d.music.filePaths.mockResolvedValue(['/M/Caf\u0065\u0301.aiff'])
+    d.music.fileLocations.mockResolvedValue([
+      { persistentId: 'OTHER', path: '/M/Caf\u0065\u0301.aiff' },
+    ])
     const out = (await handlerFor('listreview:removeDuplicates')({ sender }, [
       removal('/m/Caf\u00e9.aiff', '/m/keep1.aiff'),
       removal('/m/free.aiff', '/m/keep2.aiff'),
     ])) as { music?: string; keptForMusic?: boolean }[]
-    expect(d.music.filePaths).toHaveBeenCalledTimes(1)
+    expect(d.music.fileLocations).toHaveBeenCalledTimes(1)
     expect(out[0]).toMatchObject({ music: 'held', keptForMusic: true })
     expect(out[1]).toMatchObject({ music: 'none', fileTrashed: true })
     expect(trashed(d)).toEqual(['/m/free.aiff'])
@@ -294,7 +296,7 @@ describe('listreview:removeDuplicates', () => {
 
   it('keeps every file it could not check against Music', async () => {
     const d = register()
-    d.music.filePaths.mockRejectedValue(new Error('osascript'))
+    d.music.fileLocations.mockRejectedValue(new Error('osascript'))
     const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
       removal('/m/old.aiff', '/m/keep.aiff'),
     ])
@@ -311,13 +313,13 @@ describe('listreview:removeDuplicates', () => {
   })
 
   // The bulk read takes about 40 s on a NAS library: only when a file really needs it.
-  it('reads Music only for a file it found no entry for', async () => {
+  it('reads Music only when a file is about to be trashed', async () => {
     const d = register()
     await handlerFor('listreview:removeDuplicates')({ sender }, [
-      removal('/m/old.aiff', '/m/keep.aiff', musicRef),
+      removal('/m/one.aiff', '/m/keep.aiff', 'unknown'),
       removal('/m/two.aiff', '/m/keep2.aiff', 'ambiguous'),
     ])
-    expect(d.music.filePaths).not.toHaveBeenCalled()
+    expect(d.music.fileLocations).not.toHaveBeenCalled()
   })
 
   it('reads Music only for a file that is really leaving', async () => {
@@ -332,6 +334,65 @@ describe('listreview:removeDuplicates', () => {
     await handlerFor('listreview:removeDuplicates')({ sender }, [
       removal('/m/old.aiff', '/m/keep.aiff'),
     ])
-    expect(kept.music.filePaths).not.toHaveBeenCalled()
+    expect(kept.music.fileLocations).not.toHaveBeenCalled()
+  })
+
+  // The title lookup found one entry; a second one, renamed in Music, points at the same file.
+  it('keeps the file when another entry still points at it after the confirmed one goes', async () => {
+    const d = register()
+    d.music.fileLocations.mockResolvedValue([
+      { persistentId: 'OLD', path: '/m/old.aiff' },
+      { persistentId: 'RENAMED', path: '/M/OLD.aiff' },
+    ])
+    const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/old.aiff', '/m/keep.aiff', musicRef),
+    ])
+    expect(out).toEqual([
+      {
+        from: '/m/old.aiff',
+        music: 'held',
+        musicEntryRemoved: true,
+        musicPlaylists: 1,
+        fileTrashed: false,
+        keptForLibrary: false,
+        keptForMusic: true,
+      },
+    ])
+    expect(d.music.deleteEntry).toHaveBeenCalledWith('OLD', 'A - T', '/m/old.aiff')
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  it('trashes the file when the confirmed entry was the only one on it', async () => {
+    const d = register()
+    d.music.fileLocations.mockResolvedValue([
+      { persistentId: 'OLD', path: '/m/old.aiff' },
+      { persistentId: 'K', path: '/m/keep.aiff' },
+    ])
+    const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/old.aiff', '/m/keep.aiff', musicRef),
+    ])
+    expect(out).toMatchObject([{ music: 'removed', fileTrashed: true }])
+    expect(trashed(d)).toEqual(['/m/old.aiff'])
+  })
+
+  it('reads Music once per batch, before its first delete', async () => {
+    const calls: string[] = []
+    const d = register()
+    d.music.fileLocations.mockImplementation(async () => {
+      calls.push('scan')
+      return []
+    })
+    d.music.deleteEntry.mockImplementation(async (_pid: string, _label: string, at: string) => {
+      calls.push(`delete ${at}`)
+      return at
+    })
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/a.aiff', '/m/keep1.aiff', { ...musicRef, removePid: 'A' }),
+      removal('/m/b.aiff', '/m/keep2.aiff', { ...musicRef, removePid: 'B' }),
+      removal('/m/c.aiff', '/m/keep3.aiff'),
+    ])
+    expect(calls).toEqual(['scan', 'delete /m/a.aiff', 'delete /m/b.aiff'])
+    expect(trashed(d)).toEqual(['/m/a.aiff', '/m/b.aiff', '/m/c.aiff'])
+    expect(sender.send).toHaveBeenCalledTimes(1)
   })
 })

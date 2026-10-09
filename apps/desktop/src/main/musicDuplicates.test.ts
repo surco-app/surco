@@ -248,7 +248,7 @@ describe('removeListCopyFromMusic', () => {
     return {
       transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
       deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
-      holds: vi.fn().mockResolvedValue(false),
+      heldElsewhere: vi.fn().mockResolvedValue(false),
       ...over,
     }
   }
@@ -257,20 +257,20 @@ describe('removeListCopyFromMusic', () => {
   it('checks Music itself before calling a file it found no entry for free', async () => {
     const d = listDeps()
     expect(await removeListCopyFromMusic(removal(), d)).toEqual({ step: 'none' })
-    expect(d.holds).toHaveBeenCalledWith('/m/old.aiff')
+    expect(d.heldElsewhere).toHaveBeenCalledWith('/m/old.aiff', [])
     expect(d.transferPlaylists).not.toHaveBeenCalled()
   })
 
   // Nobody confirmed that entry, so it is neither moved nor deleted, and the file stays.
   it('touches nothing when Music holds a file the renderer found no entry for', async () => {
-    const d = listDeps({ holds: vi.fn().mockResolvedValue(true) })
+    const d = listDeps({ heldElsewhere: vi.fn().mockResolvedValue(true) })
     expect(await removeListCopyFromMusic(removal(), d)).toEqual({ step: 'held' })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })
 
   it('lets a failed check through as a failure', async () => {
-    const d = listDeps({ holds: vi.fn().mockRejectedValue(new Error('osascript')) })
+    const d = listDeps({ heldElsewhere: vi.fn().mockRejectedValue(new Error('osascript')) })
     await expect(removeListCopyFromMusic(removal(), d)).rejects.toThrow('osascript')
   })
 
@@ -278,7 +278,7 @@ describe('removeListCopyFromMusic', () => {
   it('touches nothing when the renderer could not ask Music', async () => {
     const d = listDeps()
     expect(await removeListCopyFromMusic(removal('unknown'), d)).toEqual({ step: 'unknown' })
-    expect(d.holds).not.toHaveBeenCalled()
+    expect(d.heldElsewhere).not.toHaveBeenCalled()
     expect(d.transferPlaylists).not.toHaveBeenCalled()
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })
@@ -287,6 +287,10 @@ describe('removeListCopyFromMusic', () => {
   it('moves the playlists to the kept entry and then deletes the removed one', async () => {
     const calls: string[] = []
     const d = listDeps({
+      heldElsewhere: vi.fn(async () => {
+        calls.push('scan')
+        return false
+      }),
       transferPlaylists: vi.fn(async () => {
         calls.push('transfer')
         return '3\t0'
@@ -305,8 +309,27 @@ describe('removeListCopyFromMusic', () => {
       to: '/m/keep.aiff',
     })
     expect(d.deleteEntry).toHaveBeenCalledWith('OLD', 'A - T', '/m/old.aiff')
-    expect(d.holds).not.toHaveBeenCalled()
-    expect(calls).toEqual(['transfer', 'delete'])
+    expect(d.heldElsewhere).toHaveBeenCalledWith('/m/old.aiff', ['OLD'])
+    expect(calls).toEqual(['scan', 'transfer', 'delete'])
+  })
+
+  // The title lookup misses a second, renamed entry on the same file: trashing the file
+  // would leave that entry dead in Music.
+  it('keeps the file when another entry still points at it after the confirmed one goes', async () => {
+    const d = listDeps({ heldElsewhere: vi.fn().mockResolvedValue(true) })
+    expect(await removeListCopyFromMusic(removal(ref), d)).toEqual({
+      step: 'held',
+      playlists: 1,
+      entryRemoved: true,
+    })
+    expect(d.deleteEntry).toHaveBeenCalledWith('OLD', 'A - T', '/m/old.aiff')
+  })
+
+  it('deletes nothing when Music could not be read first', async () => {
+    const d = listDeps({ heldElsewhere: vi.fn().mockRejectedValue(new Error('osascript')) })
+    await expect(removeListCopyFromMusic(removal(ref), d)).rejects.toThrow('osascript')
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+    expect(d.deleteEntry).not.toHaveBeenCalled()
   })
 
   // Its Music playlists would have nowhere to go.

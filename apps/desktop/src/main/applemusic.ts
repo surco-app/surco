@@ -737,19 +737,24 @@ export async function musicFileEntries(
   }
 }
 
-// Every file Music holds, for a file the list review is about to trash with no entry found
-// for it: the title lookup misses a track renamed in Music. Measured 09/10 on a 2045-track
-// SMB library: `whose location is` never matched a real path and still took 35-45 s, the
-// one bulk read 38 s. Any failure but an empty library reaches the caller, which keeps the file.
-export function buildFilePathsScript(): string {
+// Every file track and its file, read before the list review trashes a file: the title
+// lookup misses a track renamed in Music. Measured 09/10 on a 2045-track SMB library:
+// `whose location is` never matched a real path and still took 35-45 s, one track at a
+// time 102 s, these bulk lists 47 s with pairs identical to the one-at-a-time read. The
+// lists pair by position, so a library that changed in between fails the read. Any failure
+// but an empty library reaches the caller, which keeps the file.
+export function buildFileLocationsAllScript(): string {
   return [
     'tell application "Music"',
+    '  set pidsBefore to persistent ID of every file track of library playlist 1',
     '  set theLocs to location of every file track of library playlist 1',
+    '  set pidsAfter to persistent ID of every file track of library playlist 1',
     'end tell',
+    'if pidsBefore is not pidsAfter then return "changed"',
     'set out to {}',
-    'repeat with loc in theLocs',
+    'repeat with i from 1 to count of pidsBefore',
     '  try',
-    '    set end of out to POSIX path of loc',
+    '    set end of out to (item i of pidsBefore) & (ASCII character 31) & (POSIX path of (item i of theLocs))',
     '  end try',
     'end repeat',
     `set AppleScript's text item delimiters to (ASCII character 30)`,
@@ -757,17 +762,18 @@ export function buildFilePathsScript(): string {
   ].join('\n')
 }
 
-export async function musicFilePaths(run: typeof runOsascript = runOsascript): Promise<string[]> {
+export async function musicFileLocations(
+  run: typeof runOsascript = runOsascript,
+): Promise<{ persistentId: string; path: string }[]> {
+  let stdout: string
   try {
-    const body = (await run(buildFilePathsScript(), { maxBuffer: 64 * 1024 * 1024 })).replace(
-      /\n$/,
-      '',
-    )
-    return body ? body.split(REVIEW_RS) : []
+    stdout = await run(buildFileLocationsAllScript(), { maxBuffer: 64 * 1024 * 1024 })
   } catch (err) {
     if (err instanceof Error && err.message.includes('-1728')) return []
     throw err
   }
+  if (stdout.trim() === 'changed') throw new Error('music-library-changed')
+  return parseFileLocations(stdout)
 }
 
 export type MusicSetResult = 'set' | 'missing' | 'mismatch'
