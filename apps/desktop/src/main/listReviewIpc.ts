@@ -9,17 +9,22 @@ export interface ListReviewIpcDeps {
 // The list review's writes. Not limited to macOS: the list exists everywhere, and only the
 // Music half of each step is left out where there is no Music.
 export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
-  let cancelled = false
-  ipcMain.handle('listreview:applyFixes', (e, req: ListFixRequest) => {
-    cancelled = false
-    return applyListFixes(req, deps.apply, {
-      isCancelled: () => cancelled,
-      onProgress: (progress) => {
-        if (!e.sender.isDestroyed()) e.sender.send('listreview:fixProgress', progress)
-      },
-    })
+  const running = new Set<{ cancelled: boolean }>()
+  ipcMain.handle('listreview:applyFixes', async (e, req: ListFixRequest) => {
+    const run = { cancelled: false }
+    running.add(run)
+    try {
+      return await applyListFixes(req, deps.apply, {
+        isCancelled: () => run.cancelled,
+        onProgress: (progress) => {
+          if (!e.sender.isDestroyed()) e.sender.send('listreview:fixProgress', progress)
+        },
+      })
+    } finally {
+      running.delete(run)
+    }
   })
   ipcMain.handle('listreview:cancelFixes', () => {
-    cancelled = true
+    for (const run of running) run.cancelled = true
   })
 }
