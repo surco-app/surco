@@ -206,12 +206,21 @@ function pendingCount(
 const groupsOf = (entries: ReviewEntry[]) =>
   [spellingGroups(entries), uniqueKeys(duplicateGroups(entries.map(toItem)))] as const
 
-export function pendingGroups(entries: ReviewEntry[], ignored: readonly string[]) {
+export function pendingGroups(
+  entries: ReviewEntry[],
+  ignored: readonly string[],
+  touching: ReadonlySet<string>,
+) {
   const hidden = new Set(ignored)
   const [spelling, duplicates] = groupsOf(entries)
+  const touches = (ids: string[]) => ids.some((id) => touching.has(id))
   return {
-    spelling: mergeSpelling(spelling.filter((g) => !hidden.has(g.key))).length,
-    duplicates: duplicates.filter((g) => g.kind === 'duplicate' && !hidden.has(g.key)).length,
+    spelling: mergeSpelling(spelling.filter((g) => !hidden.has(g.key))).filter((g) =>
+      g.parts.some((p) => p.variants.some((v) => touches(v.ids))),
+    ).length,
+    duplicates: duplicates.filter(
+      (g) => g.kind === 'duplicate' && !hidden.has(g.key) && touches(g.ids),
+    ).length,
   }
 }
 

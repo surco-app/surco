@@ -3964,6 +3964,52 @@ describe('App list review notice', () => {
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
   })
 
+  // The groups the list already had were told about with their own load; a second drop
+  // repeating them would read as if the new files brought them.
+  it('counts only the groups a later drop takes part in', async () => {
+    vi.resetModules()
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
+      '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Dj Lara' },
+      '/music/g.wav': { title: 'Alpha', artist: 'DJ Lara' },
+      '/music/d.wav': { title: 'Delta', artist: 'Dan' },
+      '/music/e.wav': { title: 'Echo', artist: 'Kerri Chandler' },
+      '/music/f.wav': { title: 'Foxtrot', artist: 'Kerri chandler' },
+    }
+    listApi({
+      readTags: vi.fn(async (path: string) => tags[path]),
+      getPathForFile: (f: { name: string }) => f.name,
+    })
+    await renderApp()
+    const root = (await screen.findByTestId('sidebar')).closest('.flex.h-screen') as HTMLElement
+    const drop = (paths: string[]) =>
+      fireEvent.drop(root, {
+        dataTransfer: { files: paths.map((name) => ({ name })), types: ['Files'] },
+      })
+    drop(['/music/a.wav', '/music/b.wav', '/music/c.wav', '/music/g.wav'])
+    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
+      '4 tracks loaded. 1 duplicate and 1 spelling to review',
+    )
+    fireEvent.click(screen.getByTestId('list-review-notice-dismiss'))
+    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    drop(['/music/d.wav'])
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('track-row')
+          .map((r) => r.textContent)
+          .join(),
+      ).toContain('Delta'),
+    )
+    await act(async () => {})
+    expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
+    drop(['/music/e.wav', '/music/f.wav'])
+    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
+      '2 tracks loaded. 1 spelling to review',
+    )
+  })
+
   it('tells once per load', async () => {
     vi.resetModules()
     let openWith: ((paths: string[]) => void) | undefined

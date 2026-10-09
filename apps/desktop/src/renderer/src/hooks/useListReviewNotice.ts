@@ -54,7 +54,11 @@ export function useListReviewNotice({
     load.current = null
     const rows = tracksRef.current
     const loaded = rows.filter((t) => current.paths.has(t.inputPath)).length
-    const { duplicates, spelling } = pendingGroups(listReviewEntries(rows).entries, ignored())
+    const { duplicates, spelling } = pendingGroups(
+      listReviewEntries(rows).entries,
+      ignored(),
+      current.paths,
+    )
     if (loaded === 0 || duplicates + spelling === 0) return
     const parts = [
       duplicates > 0 && tr('listReview.notice.duplicates', { count: duplicates }),
