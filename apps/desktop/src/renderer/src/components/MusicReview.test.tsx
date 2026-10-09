@@ -149,6 +149,8 @@ const other = {
   suggested: 'House',
 }
 const rows = () => screen.getAllByTestId('music-review-row')
+const warnings = () =>
+  screen.queryAllByTestId('music-review-done-warning').map((p) => p.textContent)
 const detail = () => screen.getByTestId('music-review-detail')
 const ignoreFromMenu = () => {
   fireEvent.click(screen.getByTestId('music-review-more'))
@@ -561,6 +563,149 @@ describe('MusicReview', () => {
     expect(r.undo).toHaveBeenCalled()
   })
 
+  describe('the done sheet', () => {
+    const badge = () => screen.getByTestId('music-review-done-badge')
+    const dest = (id: string) => screen.getByTestId(`music-review-done-dest-${id}`)
+    const detailOf = (id: string) =>
+      within(dest(id)).getByTestId('music-review-done-dest-detail').textContent
+    const iconOf = (id: string) =>
+      within(dest(id)).getByTestId('music-review-done-dest-icon').textContent
+
+    // A clean run must read as done at a glance, with nothing asking for attention.
+    it('shows the good badge and no warnings when everything went through', () => {
+      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
+      expect(badge()).toHaveAttribute('data-tone', 'good')
+      expect(badge()).toHaveTextContent('✓')
+      expect(screen.getByTestId('music-review-done-title')).toHaveTextContent('Library reviewed')
+      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+        'The changes are already in your files and libraries.',
+      )
+      expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
+    })
+
+    // An open rekordbox is the common miss: the user has to see it before the numbers.
+    it('puts a library that was open at the top as a warning and marks its row', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                removed: [removal('removed')],
+                replaced: [
+                  { from: '/a', rekordbox: 'skipped', fileTrashed: false, keptForLibrary: true },
+                ],
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
+      expect(badge()).toHaveAttribute('data-tone', 'warn')
+      expect(badge()).toHaveTextContent('!')
+      expect(screen.getByTestId('music-review-done-title')).toHaveTextContent(
+        'Reviewed, with 1 warning',
+      )
+      expect(screen.getByTestId('music-review-done-warnings')).toHaveTextContent(
+        "1 thing wasn't done",
+      )
+      expect(warnings()).toEqual([
+        "rekordbox wasn't updated because it was open or couldn't be read. The copies are already out of Music.",
+      ])
+      expect(dest('rekordbox')).toHaveAttribute('data-state', 'warn')
+      expect(iconOf('rekordbox')).toBe('!')
+      expect(detailOf('rekordbox')).toBe("untouched, it was open or couldn't be read")
+    })
+
+    it('marks a library whose sync is off as not synced', () => {
+      render(
+        <Panes
+          review={{
+            ...done(run({ outcomes: [written] })),
+            libraries: { ...status(), engine: { enabled: false, found: false } },
+          }}
+        />,
+      )
+      expect(dest('engine')).toHaveAttribute('data-state', 'off')
+      expect(iconOf('engine')).toBe('–')
+      expect(detailOf('engine')).toBe('not synced')
+    })
+
+    it('counts corrected tracks, removed copies and the groups left against before', () => {
+      render(
+        <Panes
+          review={done(
+            run({ outcomes: [written], removed: [removal('removed')], before: 64, after: 59 }),
+          )}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent(
+        '1track corrected',
+      )
+      expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent(
+        '1copy removed',
+      )
+      expect(screen.getByTestId('music-review-done-stat-left')).toHaveTextContent(
+        '59groups to review',
+      )
+      expect(screen.getByTestId('music-review-done-stat-before')).toHaveTextContent('before 64')
+    })
+
+    // Each destination says what reached it, so the DJ checks the one they play from.
+    it('says what reached Apple Music and the files', () => {
+      render(
+        <Panes
+          review={done(
+            run({
+              outcomes: [
+                written,
+                { ...written, persistentId: 'D', file: 'unchanged', backupId: undefined },
+              ],
+              removed: [removal('removed')],
+            }),
+          )}
+        />,
+      )
+      expect(dest('music')).toHaveAttribute('data-state', 'ok')
+      expect(detailOf('music')).toBe('2 tracks · 1 entry removed')
+      expect(dest('files')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('files')).toBe('1 written · 1 with a backup · 1 not written')
+      expect(warnings()).toEqual(['1 in Apple Music only, its file says something else'])
+    })
+
+    it('marks Apple Music when it refused the batch', () => {
+      render(<Panes review={done(run({ applyError: 'boom' }))} />)
+      expect(dest('music')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('music')).toBe('not applied')
+    })
+
+    // The tag sync reports each library only to Activity, so the sheet cannot vouch for it.
+    it('leaves a library out when the run has nothing to say about it', () => {
+      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
+      expect(screen.queryByTestId('music-review-done-dest-rekordbox')).toBeNull()
+    })
+
+    it('marks every synced library unconfirmed when the libraries step failed', () => {
+      render(
+        <Panes
+          review={{
+            ...done(run({ removed: [removal('removed')], librarySync: 'failed' })),
+            libraries: { ...status(), traktor: { enabled: false, found: false } },
+          }}
+        />,
+      )
+      expect(dest('rekordbox')).toHaveAttribute('data-state', 'warn')
+      expect(detailOf('engine')).toBe('unconfirmed, check Activity')
+      expect(dest('traktor')).toHaveAttribute('data-state', 'off')
+    })
+
+    it('keeps the note that removed copies stay removed above the footer', () => {
+      render(<Panes review={done(run({ outcomes: [written], removed: [removal('removed')] }))} />)
+      expect(screen.getByTestId('music-review-done-note')).toHaveTextContent(
+        "Removed copies don't come back with Undo.",
+      )
+    })
+  })
+
   // A run that only removed copies has nothing Undo can bring back; the button would
   // report success and change nothing.
   it('hides undo and says removed copies stay removed when nothing can be undone', () => {
@@ -577,7 +722,10 @@ describe('MusicReview', () => {
   })
 
   describe('removed copies in the DJ libraries', () => {
-    const lines = () => screen.getAllByTestId('music-review-done-library').map((p) => p.textContent)
+    const detailOf = (id: string) =>
+      within(screen.getByTestId(`music-review-done-dest-${id}`)).getByTestId(
+        'music-review-done-dest-detail',
+      ).textContent
 
     // The Trash line counts what really went there.
     it('says how many files went to the Trash only when some did', () => {
@@ -594,7 +742,7 @@ describe('MusicReview', () => {
           )}
         />,
       )
-      expect(screen.getByTestId('music-review-done')).toHaveTextContent('2 files went to the Trash')
+      expect(detailOf('trash')).toBe('2 files')
       unmount()
       render(<Panes review={done(run({ replaced: [] }))} />)
       expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('Trash')
@@ -603,26 +751,31 @@ describe('MusicReview', () => {
     it('says which collections still hold a removed copy out of the playlists', () => {
       render(
         <Panes
-          review={done(
-            run({
-              replaced: [
-                {
-                  from: '/a',
-                  rekordbox: 'replaced',
-                  engine: 'replaced',
-                  fileTrashed: false,
-                  keptForLibrary: true,
-                },
-                { from: '/b', rekordbox: 'replaced', fileTrashed: false, keptForLibrary: true },
-              ],
-            }),
-          )}
+          review={{
+            ...done(
+              run({
+                replaced: [
+                  {
+                    from: '/a',
+                    rekordbox: 'replaced',
+                    engine: 'replaced',
+                    fileTrashed: false,
+                    keptForLibrary: true,
+                  },
+                  { from: '/b', rekordbox: 'replaced', fileTrashed: false, keptForLibrary: true },
+                ],
+              }),
+            ),
+            libraries: status(),
+          }}
         />,
       )
-      expect(lines()).toEqual([
-        "2 copies are still in rekordbox's collection, out of the playlists",
-        "1 copy is still in Engine DJ's collection, out of the playlists",
-      ])
+      expect(detailOf('rekordbox')).toBe(
+        '2 copies replaced by the kept ones · 2 still in the collection, out of the playlists',
+      )
+      expect(detailOf('engine')).toBe(
+        '1 copy replaced by the kept one · 1 still in the collection, out of the playlists',
+      )
     })
 
     // The Music entries are gone already; the user has to know which library lags behind.
@@ -644,7 +797,7 @@ describe('MusicReview', () => {
           )}
         />,
       )
-      expect(lines()).toEqual([
+      expect(warnings()).toEqual([
         "rekordbox wasn't updated because it was open or couldn't be read. The copies are already out of Music.",
         "Traktor couldn't be updated. The copies are already out of Music.",
       ])
@@ -710,9 +863,9 @@ describe('MusicReview', () => {
         )}
       />,
     )
-    const sheet = screen.getByTestId('music-review-done')
-    expect(sheet).toHaveTextContent('1 track updated')
-    expect(sheet).toHaveTextContent('3 could not be changed')
+    expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent('0')
+    expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('1copy removed')
+    expect(warnings()).toEqual(['3 could not be changed'])
   })
 
   // The copy left Music but its file did not go to the Trash; the user should know why.
@@ -730,43 +883,51 @@ describe('MusicReview', () => {
         )}
       />,
     )
-    expect(screen.getByTestId('music-review-done')).toHaveTextContent(
-      '2 files stay on disk because rekordbox, Engine DJ or Traktor use them.',
-    )
+    expect(
+      within(screen.getByTestId('music-review-done-dest-trash')).getByTestId(
+        'music-review-done-dest-detail',
+      ),
+    ).toHaveTextContent('1 file · 2 stay on disk because rekordbox, Engine DJ or Traktor use them')
   })
 
   // Each library is named apart: the DJ checks the one they play from.
   it('says how many removed copies each DJ library moved to the kept copy', () => {
     render(
       <Panes
-        review={done(
-          run({
-            replaced: [
-              {
-                from: '/a',
-                rekordbox: 'replaced',
-                traktor: 'repointed',
-                fileTrashed: true,
-                keptForLibrary: false,
-              },
-              {
-                from: '/b',
-                rekordbox: 'repointed',
-                traktor: 'none',
-                engine: 'skipped',
-                fileTrashed: false,
-                keptForLibrary: true,
-              },
-            ],
-          }),
-        )}
+        review={{
+          ...done(
+            run({
+              replaced: [
+                {
+                  from: '/a',
+                  rekordbox: 'replaced',
+                  traktor: 'repointed',
+                  fileTrashed: true,
+                  keptForLibrary: false,
+                },
+                {
+                  from: '/b',
+                  rekordbox: 'repointed',
+                  traktor: 'none',
+                  engine: 'skipped',
+                  fileTrashed: false,
+                  keptForLibrary: true,
+                },
+              ],
+            }),
+          ),
+          libraries: status(),
+        }}
       />,
     )
-    const lines = screen.getAllByTestId('music-review-done-replaced').map((p) => p.textContent)
-    expect(lines).toEqual([
-      '2 copies replaced by the kept ones in rekordbox',
-      '1 copy replaced by the kept one in Traktor',
-    ])
+    const detailOf = (id: string) =>
+      within(screen.getByTestId(`music-review-done-dest-${id}`)).getByTestId(
+        'music-review-done-dest-detail',
+      ).textContent
+    expect(detailOf('rekordbox')).toBe(
+      '2 copies replaced by the kept ones · 1 still in the collection, out of the playlists',
+    )
+    expect(detailOf('traktor')).toBe('1 copy replaced by the kept one')
   })
 
   // Reported 08/10: rekordbox pointed at a deleted copy, the review applied to Music and
@@ -807,9 +968,14 @@ describe('MusicReview', () => {
           }}
         />,
       )
-      expect(screen.getByTestId('music-review-done-missing')).toHaveTextContent(
+      expect(warnings()).toEqual([
         'The configured rekordbox collection was not found. Check it in Settings.',
-      )
+      ])
+      expect(
+        within(screen.getByTestId('music-review-done-dest-rekordbox')).getByTestId(
+          'music-review-done-dest-detail',
+        ),
+      ).toHaveTextContent('collection not found')
     })
 
     it('does not also say the missing library was open or unreadable', () => {
@@ -833,35 +999,35 @@ describe('MusicReview', () => {
           }}
         />,
       )
-      expect(screen.getByTestId('music-review-done-missing')).toHaveTextContent('rekordbox')
-      expect(screen.getAllByTestId('music-review-done-library').map((p) => p.textContent)).toEqual([
+      expect(warnings()).toEqual([
+        'The configured rekordbox collection was not found. Check it in Settings.',
         "Traktor couldn't be updated. The copies are already out of Music.",
       ])
     })
 
     it('stays quiet when every library is found', () => {
       render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
-      expect(screen.queryByTestId('music-review-done-missing')).toBeNull()
+      expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
     })
   })
 
   it('warns when the other libraries did not follow and when Music refused the batch', () => {
     render(<Panes review={done(run({ librarySync: 'failed', applyError: 'boom' }))} />)
-    const sheet = screen.getByTestId('music-review-done')
-    expect(sheet).toHaveTextContent("rekordbox, Engine DJ or Traktor weren't updated")
-    expect(sheet).toHaveTextContent("Couldn't apply in Apple Music.")
+    expect(warnings()).toEqual([
+      "Couldn't apply in Apple Music.",
+      "rekordbox, Engine DJ or Traktor weren't updated. Check Activity.",
+    ])
   })
 
   it('hides the groups-left line when the recount failed', () => {
     render(<Panes review={done(run({ after: null }))} />)
+    expect(screen.queryByTestId('music-review-done-stat-left')).toBeNull()
     expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('to review')
   })
 
   it('keeps the sheet open after a partial undo and says how many changes stayed', () => {
     render(<Panes review={review({ status: 'ready', lastRun: run({ undoFailures: 2 }) })} />)
-    expect(screen.getByTestId('music-review-done')).toHaveTextContent(
-      '2 changes could not be undone',
-    )
+    expect(warnings()).toEqual(['2 changes could not be undone'])
   })
 
   it('does not show the sheet while a run is still going', () => {

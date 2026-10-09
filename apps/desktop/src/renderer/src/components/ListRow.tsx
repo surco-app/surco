@@ -46,7 +46,7 @@ export function CoverPlaceholder({
 
 export type PillTone = 'good' | 'warn' | 'danger'
 
-const PILL_TONE: Record<PillTone, string> = {
+export const PILL_TONE: Record<PillTone, string> = {
   good: 'bg-good/15 text-good',
   warn: 'bg-warn/20 text-warn',
   danger: 'bg-danger/20 text-danger',

@@ -27,6 +27,7 @@ import {
   CoverPlaceholder,
   listRowClass,
   PILL_TEXT,
+  PILL_TONE,
   ROW_DETAIL,
   ROW_TITLE,
   ROW_TRAILING,
@@ -180,6 +181,47 @@ const missingLibraries = (review: Review) =>
     return status?.enabled && !status.found
   }).map(([, name]) => name)
 
+type DestinationState = 'ok' | 'warn' | 'off'
+
+interface Destination {
+  id: string
+  label: string
+  state: DestinationState
+  detail: string
+}
+
+const DESTINATION_ICON: Record<DestinationState, string> = { ok: '✓', warn: '!', off: '–' }
+const DESTINATION_TONE: Record<DestinationState, string> = {
+  ok: 'text-good',
+  warn: 'text-warn',
+  off: 'text-fg-faint',
+}
+
+const joined = (parts: (string | false)[]) => parts.filter(Boolean).join(' · ')
+
+function Stat({
+  testId,
+  value,
+  label,
+  children,
+}: {
+  testId: string
+  value: number
+  label: string
+  children?: React.ReactNode
+}) {
+  return (
+    <div
+      data-testid={`music-review-done-stat-${testId}`}
+      className="rounded-lg border border-[var(--color-line)] px-3 py-2.5"
+    >
+      <span className="block text-xl font-semibold tabular-nums">{value}</span>
+      <span className="block text-xs text-fg-dim">{label}</span>
+      {children}
+    </div>
+  )
+}
+
 function Done({
   review,
   busy,
@@ -198,26 +240,20 @@ function Done({
   const keptForLibrary = run.replaced.filter((r) => r.keptForLibrary).length
   const trashed = run.replaced.filter((r) => r.fileTrashed).length
   const missing = missingLibraries(review)
-  const libraryLines = LIBRARIES.flatMap(([library, name]) => {
+  const reachedLibraries = run.outcomes.some((o) => o.file === 'written') || run.replaced.length > 0
+  const libraryWarnings = LIBRARIES.flatMap(([library, name]) => {
     const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
-    const held = library === 'traktor' ? 0 : count('replaced')
     return [
-      ...(held ? [t('musicReview.done.stillInCollection', { count: held, library: name })] : []),
       ...(count('skipped') && !missing.includes(name)
         ? [t('musicReview.done.librarySkipped', { library: name })]
         : []),
       ...(count('failed') ? [t('musicReview.done.libraryReplaceFailed', { library: name })] : []),
     ]
   })
-  const replacedIn = LIBRARIES.map(([library, name]) => ({
-    name,
-    count: run.replaced.filter((r) => r[library] === 'replaced' || r[library] === 'repointed')
-      .length,
-  })).filter((l) => l.count > 0)
   const failedRemovals = run.removed.filter(
     (r) => r.outcome === 'playlist-failed' || r.outcome === 'failed' || r.outcome === 'mismatch',
   ).length
-  const updated = run.outcomes.filter((o) => o.music.includes('set')).length + removed
+  const corrected = run.outcomes.filter((o) => o.music.includes('set')).length
   const musicOnly = run.outcomes.filter(
     (o) => o.music.includes('set') && (o.file === 'unchanged' || o.file === 'missing'),
   ).length
@@ -226,10 +262,115 @@ function Done({
   const undoable = run.outcomes.some(
     (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
   )
+  const musicFailed =
+    run.outcomes.filter((o) => o.music.some((m) => m === 'failed' || m === 'mismatch')).length +
+    failedRemovals
+  const fileFailed = run.outcomes.filter((o) => o.file === 'failed').length
   const failed =
     run.outcomes.filter(
       (o) => o.file === 'failed' || o.music.some((m) => m === 'failed' || m === 'mismatch'),
     ).length + failedRemovals
+  const warnings = [
+    ...(undone ? [t('musicReview.done.undoFailed', { count: run.undoFailures })] : []),
+    ...(!undone && failed > 0 ? [t('musicReview.done.failed', { count: failed })] : []),
+    ...(!undone && run.applyError !== undefined ? [t('musicReview.done.applyError')] : []),
+    ...(!undone && musicOnly > 0 ? [t('musicReview.done.musicOnly', { count: musicOnly })] : []),
+    ...(run.librarySync === 'failed' ? [t('musicReview.done.libraryFailed')] : []),
+    ...(reachedLibraries
+      ? missing.map((name) => t('musicReview.done.libraryMissing', { library: name }))
+      : []),
+    ...libraryWarnings,
+    ...(run.librariesUntouched ? [t('musicReview.done.librariesUntouched')] : []),
+  ]
+  // A library's own result is only known for the removed copies: the tag sync reports each
+  // library to Activity alone, so a library the run says nothing else about is left out.
+  const libraryRow = (
+    library: (typeof LIBRARIES)[number][0],
+    name: (typeof LIBRARIES)[number][1],
+  ): Destination | null => {
+    const status = review.libraries?.[library]
+    const row = (state: DestinationState, detail: string) => ({
+      id: library,
+      label: name,
+      state,
+      detail,
+    })
+    if (status && !status.enabled) return row('off', t('musicReview.done.where.off'))
+    if (missing.includes(name))
+      return reachedLibraries ? row('warn', t('musicReview.done.where.missing')) : null
+    const outcomes = run.replaced.map((r) => r[library]).filter((o) => o !== undefined)
+    const count = (o: string) => outcomes.filter((x) => x === o).length
+    if (count('skipped')) return row('warn', t('musicReview.done.where.skipped'))
+    if (count('failed')) return row('warn', t('musicReview.done.where.replaceFailed'))
+    if (status && run.librariesUntouched) return row('warn', t('musicReview.done.where.untouched'))
+    if (status && run.librarySync === 'failed')
+      return row('warn', t('musicReview.done.where.unconfirmed'))
+    if (!outcomes.length) return null
+    const moved = count('replaced') + count('repointed')
+    const held = library === 'traktor' ? 0 : count('replaced')
+    return row(
+      'ok',
+      joined([
+        moved > 0 && t('musicReview.done.where.replaced', { count: moved }),
+        held > 0 && t('musicReview.done.where.held', { count: held }),
+      ]) || t('musicReview.done.where.none'),
+    )
+  }
+  const written = run.outcomes.filter((o) => o.file === 'written').length
+  const backups = run.outcomes.filter((o) => o.backupId !== undefined).length
+  const destinations: Destination[] = undone
+    ? []
+    : [
+        ...(run.outcomes.length || run.removed.length || run.applyError !== undefined
+          ? [
+              {
+                id: 'music',
+                label: 'Apple Music',
+                state: run.applyError !== undefined || musicFailed ? 'warn' : 'ok',
+                detail:
+                  run.applyError !== undefined
+                    ? t('musicReview.done.where.notApplied')
+                    : joined([
+                        corrected > 0 && t('musicReview.done.where.tracks', { count: corrected }),
+                        removed > 0 && t('musicReview.done.where.removed', { count: removed }),
+                        musicFailed > 0 &&
+                          t('musicReview.done.where.failed', { count: musicFailed }),
+                      ]) || t('musicReview.done.where.nothing'),
+              } as const,
+            ]
+          : []),
+        ...(run.outcomes.length
+          ? [
+              {
+                id: 'files',
+                label: t('musicReview.done.where.files'),
+                state: musicOnly || fileFailed ? 'warn' : 'ok',
+                detail:
+                  joined([
+                    written > 0 && t('musicReview.done.where.written', { count: written }),
+                    backups > 0 && t('musicReview.done.where.backups', { count: backups }),
+                    musicOnly > 0 && t('musicReview.done.where.notWritten', { count: musicOnly }),
+                    fileFailed > 0 && t('musicReview.done.where.fileFailed', { count: fileFailed }),
+                  ]) || t('musicReview.done.where.nothing'),
+              } as const,
+            ]
+          : []),
+        ...LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
+        ...(trashed || keptForLibrary
+          ? [
+              {
+                id: 'trash',
+                label: t('musicReview.done.where.trash'),
+                state: 'ok',
+                detail: joined([
+                  trashed > 0 && t('musicReview.done.where.trashed', { count: trashed }),
+                  keptForLibrary > 0 && t('musicReview.done.where.kept', { count: keptForLibrary }),
+                ]),
+              } as const,
+            ]
+          : []),
+      ]
+  const warned = warnings.length > 0
   return (
     <Sheet
       testId="music-review-done"
@@ -237,66 +378,122 @@ function Done({
       onClose={onContinue}
       primaryRef={continueRef}
     >
-      <h3 id="music-review-done-title" className="text-base font-semibold">
-        {t('musicReview.done.title')}
-      </h3>
-      {undone ? (
-        <p className="text-[var(--color-danger)]">
-          {t('musicReview.done.undoFailed', { count: run.undoFailures })}
-        </p>
-      ) : (
-        <>
-          <p>{t('musicReview.done.updated', { count: updated })}</p>
-          {musicOnly > 0 && (
-            <p className="text-fg-dim">{t('musicReview.done.musicOnly', { count: musicOnly })}</p>
-          )}
-          {failed > 0 && (
-            <p className="text-[var(--color-danger)]">
-              {t('musicReview.done.failed', { count: failed })}
+      <div className="flex items-center gap-3">
+        <span
+          data-testid="music-review-done-badge"
+          data-tone={warned ? 'warn' : 'good'}
+          aria-hidden="true"
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${PILL_TONE[warned ? 'warn' : 'good']}`}
+        >
+          {warned ? '!' : '✓'}
+        </span>
+        <div className="min-w-0">
+          <h3
+            id="music-review-done-title"
+            data-testid="music-review-done-title"
+            className="text-base font-semibold"
+          >
+            {warned
+              ? t('musicReview.done.titleWarnings', { count: warnings.length })
+              : t('musicReview.done.title')}
+          </h3>
+          <p data-testid="music-review-done-subtitle" className="mt-0.5 text-sm text-fg-dim">
+            {t('musicReview.done.subtitle')}
+          </p>
+        </div>
+      </div>
+      {warned && (
+        <div
+          data-testid="music-review-done-warnings"
+          className="grid gap-1 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2.5 text-sm"
+        >
+          <p data-testid="music-review-done-warnings-title" className="font-semibold text-warn">
+            {t('musicReview.done.warnings', { count: warnings.length })}
+          </p>
+          {warnings.map((line) => (
+            <p key={line} data-testid="music-review-done-warning" className="text-fg-dim">
+              {line}
             </p>
+          ))}
+        </div>
+      )}
+      {!undone && (
+        <div
+          data-testid="music-review-done-stats"
+          className="grid auto-cols-fr grid-flow-col gap-2"
+        >
+          <Stat
+            testId="corrected"
+            value={corrected}
+            label={t('musicReview.done.stat.corrected', { count: corrected })}
+          />
+          <Stat
+            testId="removed"
+            value={removed}
+            label={t('musicReview.done.stat.removed', { count: removed })}
+          />
+          {run.after !== null && (
+            <Stat
+              testId="left"
+              value={run.after}
+              label={t('musicReview.done.stat.left', { count: run.after })}
+            >
+              <span
+                data-testid="music-review-done-stat-before"
+                className="block text-xs text-fg-faint tabular-nums"
+              >
+                {t('musicReview.done.stat.before', { count: run.before })}
+              </span>
+            </Stat>
           )}
-          {run.applyError !== undefined && (
-            <p className="text-[var(--color-danger)]">{t('musicReview.done.applyError')}</p>
-          )}
+        </div>
+      )}
+      {destinations.length > 0 && (
+        <>
+          <h4
+            data-testid="music-review-done-where"
+            className="text-[13px] font-semibold text-fg-muted"
+          >
+            {t('musicReview.done.where.title')}
+          </h4>
+          <div className="grid gap-1.5">
+            {destinations.map((d) => (
+              <div
+                key={d.id}
+                data-testid={`music-review-done-dest-${d.id}`}
+                data-state={d.state}
+                className="flex items-baseline gap-2.5 rounded-lg border border-[var(--color-line)] px-4 py-2.5"
+              >
+                <span
+                  data-testid="music-review-done-dest-icon"
+                  aria-hidden="true"
+                  className={`w-3 shrink-0 text-center text-sm ${DESTINATION_TONE[d.state]}`}
+                >
+                  {DESTINATION_ICON[d.state]}
+                </span>
+                <span
+                  data-testid="music-review-done-dest-label"
+                  className={`shrink-0 text-sm font-medium ${d.state === 'off' ? 'text-fg-faint' : ''}`}
+                >
+                  {d.label}
+                </span>
+                <span
+                  data-testid="music-review-done-dest-detail"
+                  className={`min-w-0 flex-1 text-right text-xs tabular-nums ${d.state === 'off' ? 'text-fg-faint' : 'text-fg-dim'}`}
+                >
+                  {d.detail}
+                </span>
+              </div>
+            ))}
+          </div>
         </>
       )}
-      {run.librarySync === 'failed' && (
-        <p className="text-[var(--color-danger)]">{t('musicReview.done.libraryFailed')}</p>
-      )}
-      {replacedIn.map((l) => (
-        <p key={l.name} data-testid="music-review-done-replaced" className="text-fg-dim">
-          {t('musicReview.done.replacedIn', { count: l.count, library: l.name })}
-        </p>
-      ))}
-      {(run.outcomes.some((o) => o.file === 'written') || run.replaced.length > 0) &&
-        missing.map((name) => (
-          <p key={name} data-testid="music-review-done-missing" className="text-fg-dim">
-            {t('musicReview.done.libraryMissing', { library: name })}
-          </p>
-        ))}
-      {libraryLines.map((line) => (
-        <p key={line} data-testid="music-review-done-library" className="text-fg-dim">
-          {line}
-        </p>
-      ))}
-      {run.librariesUntouched && (
-        <p className="text-[var(--color-danger)]">{t('musicReview.done.librariesUntouched')}</p>
-      )}
-      {trashed > 0 && (
-        <p className="text-fg-dim">{t('musicReview.done.trashed', { count: trashed })}</p>
-      )}
-      {keptForLibrary > 0 && (
-        <p className="text-fg-dim">
-          {t('musicReview.done.keptForLibrary', { count: keptForLibrary })}
+      {removed > 0 && (
+        <p data-testid="music-review-done-note" className="text-xs text-fg-faint">
+          {t('musicReview.removedNoUndo')}
         </p>
       )}
-      {removed > 0 && <p className="text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
-      {!undone && run.after !== null && (
-        <p className="text-fg-dim tabular-nums">
-          {t('musicReview.done.left', { count: run.after })}
-        </p>
-      )}
-      <div className="flex justify-end gap-1.5">
+      <div className="flex items-center gap-1.5">
         {undoable && (
           <button
             type="button"
@@ -312,7 +509,7 @@ function Done({
           type="button"
           data-testid="music-review-continue"
           ref={continueRef}
-          className={OK}
+          className={`ml-auto ${OK}`}
           onClick={onContinue}
         >
           {t('musicReview.done.continue')}
