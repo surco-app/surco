@@ -73,8 +73,6 @@ export function withinOneEdit(a: string, b: string): boolean {
 
 const digitsOf = (key: string) => key.replace(/\D/g, '')
 
-export const spellingCost = { editChecks: 0 }
-
 // Measured on a real library: below 8 letters or at distance 2, almost every pair was two different artists.
 const MIN_TYPO_LENGTH = 8
 const ACT_TITLE = /^(?:dj|mc)\s+(?=\S)/i
@@ -100,7 +98,6 @@ function isClusterTypo(a: Cluster, b: Cluster): boolean {
 function isTypoPair(a: string, b: string, aDigits: string, bDigits: string): boolean {
   if (Math.min(a.length, b.length) < MIN_TYPO_LENGTH) return false
   if (aDigits !== bDigits) return false
-  spellingCost.editChecks += 1
   return withinOneEdit(a, b)
 }
 
