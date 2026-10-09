@@ -1,12 +1,12 @@
-import type { LibraryTagUpdate, TrackMetadata } from '../../../shared/types'
+import type { LibraryTagUpdate, ReviewRawFields, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 type Fields = LibraryTagUpdate['fields']
 
-function patchMeta(meta: TrackMetadata, fields: Fields): TrackMetadata {
+function patchMeta<T extends ReviewRawFields>(meta: T, fields: Fields): T {
   let next = meta
   for (const [field, change] of Object.entries(fields) as [keyof Fields, Fields[keyof Fields]][])
-    if (change && meta[field].normalize('NFC') === change.from.normalize('NFC'))
+    if (change && meta[field]?.normalize('NFC') === change.from.normalize('NFC'))
       next = { ...next, [field]: change.to }
   return next
 }
@@ -22,11 +22,22 @@ export function withReviewedFields(track: TrackItem, fields: Fields): TrackItem 
     const patched = patchMeta(diskMeta, fields)
     if (patched !== diskMeta) diskSignature = JSON.stringify([patched, ...rest])
   }
-  if (meta === track.meta && diskSignature === track.diskSignature) return track
+  const raw = track.reviewRaw
+  const reviewRaw =
+    raw && raw.signature === track.diskSignature && diskSignature !== undefined
+      ? { signature: diskSignature, fields: patchMeta(raw.fields, fields) }
+      : raw
+  if (
+    meta === track.meta &&
+    diskSignature === track.diskSignature &&
+    reviewRaw?.fields === raw?.fields
+  )
+    return track
   return {
     ...track,
     meta,
     diskSignature,
+    ...(reviewRaw && { reviewRaw }),
     ...(track.processedSignature !== undefined &&
       track.processedSignature === track.diskSignature && { processedSignature: diskSignature }),
   }

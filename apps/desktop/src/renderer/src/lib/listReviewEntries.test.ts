@@ -38,6 +38,25 @@ describe('listReviewEntries', () => {
     })
   })
 
+  // Every read trims, and a user's WAV album "Happiness " hid behind that: the review has to
+  // see the file's own spelling to offer the fix.
+  it('reads a field as the file spells it when the untrimmed read belongs to this disk state', () => {
+    const r = row('/m/a.wav', 'Marea')
+    const raw = {
+      ...r,
+      reviewRaw: { signature: r.diskSignature as string, fields: { album: 'Tides ' } },
+    }
+    expect(listReviewEntries([raw]).entries[0]).toMatchObject({ album: 'Tides ', artist: 'Marea' })
+  })
+
+  // A conversion rewrites the file with the trimmed values and moves the disk snapshot on;
+  // the untrimmed read from before would offer a fix the file no longer needs.
+  it('ignores an untrimmed read taken before the file was last written', () => {
+    const r = row('/m/a.wav', 'Marea')
+    const stale = { ...r, reviewRaw: { signature: 'older', fields: { album: 'Tides ' } } }
+    expect(listReviewEntries([stale]).entries[0].album).toBe('')
+  })
+
   // The review writes over the file, so it has to look at the file: an artist typed in
   // the editor and not saved yet is the user's pending work, not what is on disk.
   it('reads what is on disk, not an edit waiting in the editor', () => {

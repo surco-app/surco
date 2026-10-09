@@ -25,8 +25,10 @@ import type {
   MetaRead,
   MetaTextKey,
   Mp3Quality,
+  MusicReviewField,
   NormalizeConfig,
   OutputFormat,
+  ReviewRawFields,
   TrackMetadata,
   TrackProperties,
   TrashEntry,
@@ -104,6 +106,7 @@ import {
   readCueTree,
   readTagLibExtras,
   tagLibExtrasOf,
+  tagLibReviewRawOf,
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
@@ -224,31 +227,70 @@ function withTotal(number: string, total: string): string {
 // The containers whose tags ffprobe reads from ID3, where a TagField's id3Aliases apply.
 const ID3_CONTAINER = /^(mp3|aiff|wav)$/
 
-export function tagsFromProbe(data: ProbeTags): TrackMetadata {
-  // Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
-  // description as a comment tag on that video stream, which would otherwise be read
-  // as the track's comment whenever the file carries embedded art.
-  const sources: Record<string, unknown>[] = [
+// Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
+// description as a comment tag on that video stream, which would otherwise be read
+// as the track's comment whenever the file carries embedded art.
+function probeSources(data: ProbeTags): Record<string, unknown>[] {
+  return [
     data.format?.tags,
     ...(data.streams ?? []).filter((s) => s.codec_type !== 'video').map((s) => s.tags),
   ].filter((t): t is Record<string, unknown> => Boolean(t))
-  // First non-empty wins, in `names`' own priority order (see TAG_FIELDS) — not the
-  // order keys happen to appear in the source object. A file passed between taggers
-  // can carry a blanked-out higher-priority alias (e.g. an empty DATE) alongside a
-  // real value in a lower-priority fallback (YEAR); stopping at the first key that
-  // merely exists, empty or not, would shadow that real data with a blank field.
-  const pick = (...names: string[]): string => {
-    for (const name of names) {
-      for (const tags of sources) {
-        for (const [key, value] of Object.entries(tags)) {
-          if (key.toLowerCase() !== name) continue
-          const trimmed = String(value ?? '').trim()
-          if (trimmed) return trimmed
-        }
+}
+
+// First non-empty wins, in `names`' own priority order (see TAG_FIELDS) — not the
+// order keys happen to appear in the source object. A file passed between taggers
+// can carry a blanked-out higher-priority alias (e.g. an empty DATE) alongside a
+// real value in a lower-priority fallback (YEAR); stopping at the first key that
+// merely exists, empty or not, would shadow that real data with a blank field.
+// Returned as the file spells it; callers trim.
+function pickRaw(sources: Record<string, unknown>[], names: string[]): string {
+  for (const name of names) {
+    for (const tags of sources) {
+      for (const [key, value] of Object.entries(tags)) {
+        if (key.toLowerCase() !== name) continue
+        const raw = String(value ?? '')
+        if (raw.trim()) return raw
       }
     }
-    return ''
   }
+  return ''
+}
+
+const REVIEW_FIELDS: MusicReviewField[] = ['title', 'artist', 'albumArtist', 'album', 'genre']
+
+// The review fields as the probe found them, before the trim tagsFromProbe applies. The
+// list review groups "Tides " with "Tides"; every other reader wants them the same.
+export function reviewRawFromProbe(data: ProbeTags): ReviewRawFields {
+  const sources = probeSources(data)
+  const id3 = ID3_CONTAINER.test(data.format?.format_name ?? '')
+  const raw: ReviewRawFields = {}
+  for (const field of TAG_FIELDS) {
+    if (!REVIEW_FIELDS.includes(field.key as MusicReviewField)) continue
+    const value = pickRaw(sources, [...field.aliases, ...(id3 ? (field.id3Aliases ?? []) : [])])
+    if (value) raw[field.key as MusicReviewField] = value.replaceAll('\0', '')
+  }
+  return raw
+}
+
+// Only the fields whose spelling differs from the trimmed tags, taken from the probe or,
+// for a field TagLib filled in, from TagLib.
+function reviewRawOf(
+  tags: TrackMetadata,
+  probed: ReviewRawFields,
+  tagLib: () => ReviewRawFields,
+): ReviewRawFields | undefined {
+  const raw: ReviewRawFields = {}
+  for (const field of REVIEW_FIELDS) {
+    const value = probed[field] ?? (tags[field] ? tagLib()[field] : undefined)
+    if (value !== undefined && value !== tags[field] && value.trim() === tags[field])
+      raw[field] = value
+  }
+  return Object.keys(raw).length > 0 ? raw : undefined
+}
+
+export function tagsFromProbe(data: ProbeTags): TrackMetadata {
+  const sources = probeSources(data)
+  const pick = (...names: string[]): string => pickRaw(sources, names).trim()
   const id3 = ID3_CONTAINER.test(data.format?.format_name ?? '')
   const meta = {} as Record<MetaTextKey, string>
   for (const field of TAG_FIELDS) {
@@ -563,9 +605,15 @@ export async function extractCover(
 export async function readMeta(input: string): Promise<MetaRead> {
   // v4: a WAV's RIFF INFO strings no longer keep their trailing NUL (see tagLibExtrasOf). The
   // namespace is part of the cache key, so without this bump every library already probed
-  // would keep serving the value cached before.
-  const result = await cachedAnalysis('readmeta-v4', input, () => readMetaUncached(input))
-  if (result) return { ...result, tags: composeMeta(result.tags) }
+  // would keep serving the value cached before. v5: reads carry reviewRaw, the untrimmed
+  // review fields; a v4 entry would leave the list review blind to stray spaces.
+  const result = await cachedAnalysis('readmeta-v5', input, () => readMetaUncached(input))
+  if (result)
+    return {
+      ...result,
+      tags: composeMeta(result.tags),
+      ...(result.reviewRaw && { reviewRaw: composeMeta(result.reviewRaw) }),
+    }
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
   return {
@@ -608,6 +656,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
         ? { width, height }
         : { width: 0, height: 0 }
     const tags = tagsFromProbe(data)
+    let reviewRaw: ReviewRawFields | undefined
     // The three TagLib fallbacks below share one open of the file, made only if one of them
     // is needed at all.
     const taglib = lazyTagLibFile(input)
@@ -628,6 +677,11 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
         const popmRating = taglib.use(popmRatingOf, '')
         if (popmRating) tags.rating = popmRating
       }
+      let tagLibRaw: ReviewRawFields | undefined
+      reviewRaw = reviewRawOf(tags, reviewRawFromProbe(data), () => {
+        tagLibRaw ??= taglib.use(tagLibReviewRawOf, {})
+        return tagLibRaw
+      })
     } finally {
       taglib.dispose()
     }
@@ -639,6 +693,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
       // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
       // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
       foreignTags: await readForeignTags(input),
+      ...(reviewRaw && { reviewRaw }),
     }
   } catch {
     // A probe failure leaves an editable row with no tags/duration/cover — the same

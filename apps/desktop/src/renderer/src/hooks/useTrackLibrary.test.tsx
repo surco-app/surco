@@ -500,6 +500,52 @@ describe('useTrackLibrary cache hydration', () => {
   })
 })
 
+describe('useTrackLibrary untrimmed review fields', () => {
+  function readWith(meta: Record<string, unknown>) {
+    setApi({ readMeta: vi.fn().mockResolvedValue(meta) })
+    return renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    ).result
+  }
+
+  // The list review reads the row, not the file: the stray space the read trimmed has to
+  // reach the row, tied to the disk state it describes.
+  it('keeps the untrimmed spelling the read returns, tied to the row disk snapshot', async () => {
+    const result = readWith({
+      tags: { title: 'Shore', artist: 'Marea', album: 'Tides' },
+      duration: 20,
+      cover: null,
+      foreignTags: [],
+      reviewRaw: { album: 'Tides ' },
+    })
+    await act(() => result.current.addPaths(['/m/09 Shore.wav']))
+    const row = result.current.tracks[0]
+    expect(row.reviewRaw).toEqual({ signature: row.diskSignature, fields: { album: 'Tides ' } })
+  })
+
+  // A title the row took from the file name is not the file's spelling of anything.
+  it('drops an untrimmed value the row did not take from the file', async () => {
+    const result = readWith({
+      tags: { title: '', artist: '' },
+      duration: 20,
+      cover: null,
+      foreignTags: [],
+      reviewRaw: { title: ' ' },
+    })
+    await act(() => result.current.addPaths(['/m/Marea - Shore.wav']))
+    expect(result.current.tracks[0].reviewRaw).toBeUndefined()
+  })
+})
+
 describe('useTrackLibrary foreign tags', () => {
   // The inspector shows the third-party tags a file carries (SERATO_MARKERS_V2,
   // MUSICBRAINZ_*…) so the user can review and delete them. The read already returns

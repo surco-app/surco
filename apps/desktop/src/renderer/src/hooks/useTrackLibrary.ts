@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppleMusicTrackMeta,
   LibraryTagUpdate,
+  ReviewRawFields,
   SessionEdit,
   TrackMetadata,
 } from '../../../shared/types'
@@ -422,7 +423,8 @@ export function useTrackLibrary({
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
     try {
-      const { tags, duration, cover, foreignTags, failed } = await window.api.readMeta(path)
+      const { tags, duration, cover, foreignTags, failed, reviewRaw } =
+        await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
       // Whatever Music knows that this file does not. Consumed once, like the restored
       // edit above: a later start-over must rebuild from the file alone.
@@ -461,6 +463,15 @@ export function useTrackLibrary({
         // as staged until they are actually converted.
         diskSignature: trackSignature({ meta: readMeta, coverUrl: cover?.thumbUrl }),
       }
+      // Only a spelling the row took from the file: a title parsed from the file name or
+      // filled from Music is not the file's spelling of anything.
+      const rawFields = Object.fromEntries(
+        Object.entries(reviewRaw ?? {}).filter(
+          ([field, value]) => value.trim() === readMeta[field as keyof ReviewRawFields],
+        ),
+      )
+      if (Object.keys(rawFields).length > 0 && patch.diskSignature)
+        patch.reviewRaw = { signature: patch.diskSignature, fields: rawFields }
       if (saved) Object.assign(patch, restoredPatch(saved))
       // The row paints from embeddedCover, so a cover restored from the session has to
       // land there too — otherwise reopening showed the placeholder in the crate while the

@@ -71,6 +71,29 @@ describe('withReviewedFields', () => {
     expect(hasStagedEdits(reverted)).toBe(false)
   })
 
+  // The trimmed snapshot already said "Tides"; only the untrimmed read held "Tides ". Left
+  // as it was, the next review would offer the fix the file just took.
+  it('moves the untrimmed read with the fix, still tied to the disk snapshot', () => {
+    const t = row()
+    const raw = {
+      ...t,
+      reviewRaw: { signature: t.diskSignature as string, fields: { album: 'Tides ' } },
+    }
+    const next = withReviewedFields(raw, { album: { from: 'Tides ', to: 'Tides' } })
+    expect(next.reviewRaw).toEqual({ signature: next.diskSignature, fields: { album: 'Tides' } })
+  })
+
+  // An undo writes the stray space back; the review must see it again.
+  it('puts an undone spelling back on the untrimmed read', () => {
+    const t = row({ meta: { ...row().meta, album: 'Tides' } })
+    const at = { ...t, diskSignature: trackSignature(t) }
+    const raw = { ...at, reviewRaw: { signature: at.diskSignature, fields: { album: 'Tides ' } } }
+    const fixed = withReviewedFields(raw, { album: { from: 'Tides ', to: 'Tides' } })
+    const undone = withReviewedFields(fixed, { album: { from: 'Tides', to: 'Tides ' } })
+    expect(undone.reviewRaw?.fields.album).toBe('Tides ')
+    expect(undone.reviewRaw?.signature).toBe(undone.diskSignature)
+  })
+
   it('keeps a converted row from turning stale', () => {
     const t = row({ status: 'done' })
     const next = withReviewedFields({ ...t, processedSignature: t.diskSignature }, ARTIST)

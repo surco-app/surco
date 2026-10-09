@@ -6,6 +6,7 @@ import type {
   ProcessStage,
   Release,
   ReleaseTrack,
+  ReviewRawFields,
   SearchProviderId,
   SearchResult,
   SpectrumVerdict,
@@ -168,6 +169,9 @@ export interface TrackItem {
   // work that exists nowhere on disk — exactly what the session store must persist
   // and what makes the reopen offer refuse to expire on its own.
   diskSignature?: string
+  // The review fields as the file spells them where that differs from the trimmed read,
+  // valid only while diskSignature still equals `signature` (the read it came from).
+  reviewRaw?: { signature: string; fields: ReviewRawFields }
   error?: string
   // Tracks a manual "add to Apple Music" run, independent of status so the track
   // stays 'done' while it adds. 'error' carries the reason in musicError.

@@ -29,13 +29,15 @@ export function listReviewEntries(rows: TrackItem[]): ReviewLoad {
       skipped += 1
       continue
     }
+    // Every read trims; the untrimmed spelling is what the review is looking for.
+    const raw = row.reviewRaw?.signature === row.diskSignature ? row.reviewRaw?.fields : undefined
     const entry: ReviewEntry = {
       id: row.inputPath,
-      title: meta.title ?? '',
-      artist: meta.artist ?? '',
-      albumArtist: meta.albumArtist ?? '',
-      album: meta.album ?? '',
-      genre: meta.genre ?? '',
+      title: raw?.title ?? meta.title ?? '',
+      artist: raw?.artist ?? meta.artist ?? '',
+      albumArtist: raw?.albumArtist ?? meta.albumArtist ?? '',
+      album: raw?.album ?? meta.album ?? '',
+      genre: raw?.genre ?? meta.genre ?? '',
     }
     if (row.duration !== undefined && row.duration > 0) entry.durationSec = Math.round(row.duration)
     entries.push(entry)

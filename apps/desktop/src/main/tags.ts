@@ -28,7 +28,7 @@ import {
   WMP_RATING_USER,
 } from '../shared/rating'
 import { fullDateOf } from '../shared/tagFields'
-import type { TrackMetadata } from '../shared/types'
+import type { ReviewRawFields, TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
@@ -190,6 +190,22 @@ export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
       typeof v === 'string' ? v.replaceAll('\0', '').trim() : v,
     ]),
   )
+}
+
+// The review fields as TagLib reads them, untrimmed: the list review looks for the stray
+// spaces tagLibExtrasOf trims away. The NUL RIFF INFO pads with is never a spelling.
+export function tagLibReviewRawOf(f: TagFile): ReviewRawFields {
+  const tag = f.tag
+  const raw: ReviewRawFields = {
+    title: tag.title ?? '',
+    artist: tag.performers?.join(', ') ?? '',
+    album: tag.album ?? '',
+    albumArtist: tag.albumArtists?.join(', ') ?? '',
+    genre: tag.genres?.join(', ') ?? '',
+  }
+  return Object.fromEntries(
+    Object.entries(raw).map(([k, v]) => [k, (v ?? '').replaceAll('\0', '')]),
+  ) as ReviewRawFields
 }
 
 function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
