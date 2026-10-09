@@ -224,14 +224,20 @@ export async function searchOnce(
   return results
 }
 
-// The release index, asked only for "Search by album first". Cached under its own `rel:`
-// prefix so a release query and a recording query of the same text never share an entry.
-async function searchReleases(query: string, priority?: SearchPriority): Promise<SearchResult[]> {
-  const key = `rel:${query.trim().toLowerCase()}`
+// The release index, asked for an album: "Search by album first", or free text typed
+// without the track's tags. Cached under its own `rel:` prefix so a release query and a
+// recording query of the same text never share an entry.
+async function searchReleases(
+  query: string,
+  priority?: SearchPriority,
+  dismax = false,
+): Promise<SearchResult[]> {
+  const key = `rel${dismax ? 'dx' : ''}:${query.trim().toLowerCase()}`
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
+  const mode = dismax ? '&dismax=true' : ''
   const data = await api<MbReleaseSearch>(
-    `${BASE}/release?query=${encodeURIComponent(query)}&fmt=json&limit=25`,
+    `${BASE}/release?query=${encodeURIComponent(query)}${mode}&fmt=json&limit=25`,
     priority,
   )
   const results = (data.releases ?? []).map((release) => releaseRow(release))
@@ -251,6 +257,8 @@ async function searchReleases(query: string, priority?: SearchPriority): Promise
 // the second try for a track that only ever came out on one. Messy tags miss both, so the
 // free-text candidate ladder the other sources walk is the last resort, over the recording
 // index too: a file is a recording, and release titles only name the track on a single.
+// Free text with no artist was typed without the track's tags and names an album as often
+// as a song, so the release index answers first there and the recordings follow.
 // Every rung is one second of the rate limit, which is why the ladder stops at the first
 // rung that finds anything in the chosen formats.
 export async function search(
@@ -289,9 +297,14 @@ export async function search(
       }
       // The album was already asked on the release index above; as a free-text candidate
       // against recordings it would only match tracks that happen to share its name.
-      return searchCandidates(query, { ...hints, album: undefined }, async (candidate) =>
-        wanted(await searchOnce(escapeLucene(candidate), priority, true)),
-      )
+      return searchCandidates(query, { ...hints, album: undefined }, async (candidate) => {
+        const recordings = (): Promise<SearchResult[]> =>
+          searchOnce(escapeLucene(candidate), priority, true)
+        if (artist) return wanted(await recordings())
+        const releases = await searchReleases(escapeLucene(candidate), priority, true)
+        const ids = new Set(releases.map((r) => r.id))
+        return wanted([...releases, ...(await recordings()).filter((r) => !ids.has(r.id))])
+      })
     },
     {
       labelParams: { query },

@@ -255,7 +255,20 @@ describe('search', () => {
   it('searches free text straight away when the tags name no artist', async () => {
     const fn = mockFetch([recordingSearch])
     await search('Finally (Kosmic dub)', 'high', {})
-    expect(queryOf(fn.mock.calls[0][0])).toBe('Finally \\(Kosmic dub\\)')
+    expect(queryOf(fn.mock.calls[1][0])).toBe('Finally \\(Kosmic dub\\)')
+  })
+
+  // A search typed without the track's tags is as often an album as a song. On the
+  // recording index alone, artexjay's "Duran Duran Duran Duran (Deluxe Edition)" brought
+  // songs called "Duran Duran" by other artists; the release index put the deluxe first.
+  it('asks the release index too for free text with no artist, releases first', async () => {
+    const fn = mockFetch([albumReleaseSearch, recordingSearch])
+    const rows = await search('Duran Duran Duran Duran (Deluxe Edition)', 'high', {})
+    expect(new URL(String(fn.mock.calls[0][0])).pathname).toBe('/ws/2/release')
+    expect(new URL(String(fn.mock.calls[0][0])).searchParams.get('dismax')).toBe('true')
+    expect(new URL(String(fn.mock.calls[1][0])).pathname).toBe('/ws/2/recording')
+    expect(rows[0].releaseUrl).toBe(pageOf('2e84bec2-c062-411f-bec2-c0aefc0073b2'))
+    expect(rows.length).toBeGreaterThan(3)
   })
 
   // Same rule as every provider: an empty answer is not remembered on disk, since it
@@ -359,7 +372,9 @@ describe('search by album first', () => {
   it('skips the album query when the tags name no artist', async () => {
     const fn = mockFetch([recordingSearch])
     await search('lifestyle no artist', 'high', { title: 'Finally Lone', album: LIFESTYLE })
-    expect(pathOf(fn.mock.calls[0][0])).toBe('/ws/2/recording')
+    expect(fn.mock.calls.map((c) => queryOf(c[0]))).not.toContainEqual(
+      expect.stringContaining('release:'),
+    )
   })
 })
 
