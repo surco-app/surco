@@ -1678,7 +1678,13 @@ describe('with the list as source', () => {
     expect(result.current.spelling).toEqual([])
     await act(() => result.current.undo())
     expect(api.trashRestore).toHaveBeenCalledWith('b1', 'undo')
-    expect(api.setMusicField).toHaveBeenCalledWith('PID', 'artist', 'DJ Lara', 'Dj Lara')
+    expect(api.setMusicField).toHaveBeenCalledWith(
+      'PID',
+      'artist',
+      'DJ Lara',
+      'Dj Lara',
+      '/m/c.aiff',
+    )
     expect(result.current.spelling).toHaveLength(1)
   })
 

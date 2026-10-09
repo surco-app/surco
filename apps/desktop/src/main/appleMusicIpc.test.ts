@@ -26,12 +26,14 @@ vi.mock('./recoverableTrash', () => ({
 
 const addToAppleMusic = vi.fn()
 const deleteFromAppleMusic = vi.fn()
+const setAppleMusicField = vi.fn()
 vi.mock('./applemusic', () => ({
   addToAppleMusic: (...args: unknown[]) => addToAppleMusic(...args),
   appleMusicLimiter: { run: (fn: () => unknown) => fn() },
   deleteFromAppleMusic: (...args: unknown[]) => deleteFromAppleMusic(...args),
   dumpAppleMusicLibrary: vi.fn(),
   revealInAppleMusic: vi.fn(),
+  setAppleMusicField: (...args: unknown[]) => setAppleMusicField(...args),
   updateInAppleMusic: vi.fn(),
 }))
 
@@ -128,5 +130,35 @@ describe('applemusic:delete', () => {
     deleteFromAppleMusic.mockResolvedValue('/Volumes/Public/a.aiff')
     trashRecoverably.mockRejectedValue(new Error('No recoverable trash'))
     expect(await run()).toEqual({ outcome: 'deleted', location: undefined })
+  })
+})
+
+// A list undo puts a field back on the entry it wrote, and only while that entry still
+// points at the same file: the guard apply used.
+describe('applemusic:setField', () => {
+  const original = process.platform
+
+  beforeEach(async () => {
+    handlers.clear()
+    setAppleMusicField.mockReset().mockResolvedValue('set')
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  })
+
+  it('passes the file the entry must still point at to the Music write', async () => {
+    const set = handlers.get('applemusic:setField')
+    await set?.(null, 'PID', 'artist', 'DJ Lara', 'Dj Lara', '/m/c.aiff')
+    expect(setAppleMusicField).toHaveBeenCalledWith(
+      'PID',
+      'artist',
+      'DJ Lara',
+      'Dj Lara',
+      '/m/c.aiff',
+    )
   })
 })

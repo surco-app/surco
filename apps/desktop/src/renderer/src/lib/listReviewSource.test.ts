@@ -404,6 +404,30 @@ describe('listReviewSource', () => {
     expect(api.setMusicField).toHaveBeenCalledWith('PID', 'artist', 'DJ Lara', 'Dj Lara')
   })
 
+  it('puts Music back only while its entry still points at the file the write went to', async () => {
+    const s = source([])
+    const f = { id: '/m/a.aiff', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }
+    await s.revertMusic(
+      {
+        id: '/m/a.aiff',
+        musicId: 'PID',
+        path: '/m/a.aiff',
+        fixes: [f],
+        music: ['set'],
+        file: 'written',
+        written: ['artist'],
+      },
+      f,
+    )
+    expect(api.setMusicField).toHaveBeenCalledWith(
+      'PID',
+      'artist',
+      'DJ Lara',
+      'Dj Lara',
+      '/m/a.aiff',
+    )
+  })
+
   describe('facts', () => {
     // A copy's analysis is read for every duplicate card on every render; over thousands
     // of rows each lookup must not walk the list again.

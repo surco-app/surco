@@ -126,7 +126,13 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
     },
     revertMusic: async (outcome, fix) =>
       outcome.musicId
-        ? window.api.setMusicField(outcome.musicId, fix.field, fix.to, fix.from)
+        ? window.api.setMusicField(
+            outcome.musicId,
+            fix.field,
+            fix.to,
+            fix.from,
+            ...(outcome.path ? [outcome.path] : []),
+          )
         : undefined,
     inMusic: (id) => music(id).length > 0,
     musicConsulted: () => lookup?.consulted,

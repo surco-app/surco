@@ -146,11 +146,13 @@ export interface Api {
   libraryStatus: () => Promise<LibraryStatus>
   libraryCopyInfo: (paths: string[]) => Promise<Record<string, LibraryCopyInfo>>
   cancelMusicFixes: () => Promise<void>
+  // With `location`, only while the entry still points at that file (a list undo).
   setMusicField: (
     persistentId: string,
     field: MusicReviewField,
     from: string,
     to: string,
+    location?: string,
   ) => Promise<'set' | 'missing' | 'mismatch'>
   removeMusicDuplicate: (req: {
     removePid: string

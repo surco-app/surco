@@ -126,8 +126,13 @@ const api: Api = {
   replaceDuplicatesInLibraries: (pairs) => ipcRenderer.invoke('library:replaceDuplicates', pairs),
   libraryStatus: () => ipcRenderer.invoke('library:status'),
   libraryCopyInfo: (paths) => ipcRenderer.invoke('library:copyInfo', paths),
-  setMusicField: (pid: string, field: MusicReviewField, from: string, to: string) =>
-    ipcRenderer.invoke('applemusic:setField', pid, field, from, to),
+  setMusicField: (
+    pid: string,
+    field: MusicReviewField,
+    from: string,
+    to: string,
+    location?: string,
+  ) => ipcRenderer.invoke('applemusic:setField', pid, field, from, to, location),
   removeMusicDuplicate: (req) => ipcRenderer.invoke('applemusic:removeDuplicate', req),
   onMusicFixProgress: (cb: (p: MusicFixProgress) => void) => {
     const listener = (_e: unknown, p: MusicFixProgress): void => cb(p)

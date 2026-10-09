@@ -133,12 +133,12 @@ export function registerAppleMusicIpc(
   })
   ipcMain.handle(
     'applemusic:setField',
-    (_e, pid: string, field: MusicReviewField, from: string, to: string) =>
+    (_e, pid: string, field: MusicReviewField, from: string, to: string, location?: string) =>
       process.platform === 'darwin'
         ? setFieldLogged(
             pid,
             field,
-            () => appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to)),
+            () => appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to, location)),
             { track: activity.track, log: musicReviewLog },
           )
         : 'missing',
