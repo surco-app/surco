@@ -289,6 +289,86 @@ describe('listReviewSource', () => {
     )
   })
 
+  // Each reload after Apply or Undo asked Music about every loaded file again: about 15 ms
+  // a file on a NAS library, so seconds per reload on a list imported from Music.
+  describe('Music answers kept for the open review', () => {
+    const A1 = { persistentId: 'A1', label: 'A - Song' }
+    it('asks again only for a file whose title changed', async () => {
+      api.appleMusicFileEntries.mockResolvedValueOnce({
+        consulted: true,
+        entries: { '/m/a.aiff': [A1] },
+      })
+      let rows = [row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')]
+      const s = source([], { rows: () => rows })
+      await s.load()
+      const renamed = { ...emptyMetadata(), title: 'New', artist: 'A' }
+      rows = [
+        rows[0],
+        row('/m/b.aiff', 'A', { meta: renamed, diskSignature: trackSignature({ meta: renamed }) }),
+      ]
+      const load = await s.load()
+      expect(api.appleMusicFileEntries).toHaveBeenLastCalledWith(
+        [{ path: '/m/b.aiff', title: 'New' }],
+        false,
+      )
+      expect(s.inMusic?.('/m/a.aiff')).toBe(true)
+      expect(load.musicConsulted).toBe(true)
+    })
+
+    it('does not ask Music at all when nothing changed', async () => {
+      api.appleMusicFileEntries.mockResolvedValueOnce({
+        consulted: true,
+        entries: { '/m/a.aiff': [A1] },
+      })
+      const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
+      await s.load()
+      const load = await s.load()
+      expect(api.appleMusicFileEntries).toHaveBeenCalledTimes(1)
+      expect(load.musicConsulted).toBe(true)
+      expect(s.inMusic?.('/m/a.aiff')).toBe(true)
+      expect(s.inMusic?.('/m/b.aiff')).toBe(false)
+    })
+
+    // A write changes what Music holds too (its artist is in the label the removal checks).
+    it('asks again for a file the review wrote', async () => {
+      const s = source([row('/m/a.aiff', 'Dj Lara'), row('/m/b.aiff', 'A')])
+      await s.load()
+      s.settle?.(
+        [{ path: '/m/a.aiff', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } }],
+        [],
+      )
+      await s.load()
+      expect(api.appleMusicFileEntries).toHaveBeenLastCalledWith(
+        [{ path: '/m/a.aiff', title: 'Song' }],
+        false,
+      )
+    })
+
+    // A removal can take an entry out of Music and leave the file in the list.
+    it('asks again for the copies a removal touched', async () => {
+      const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
+      await s.load()
+      await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
+      await s.load()
+      expect(api.appleMusicFileEntries).toHaveBeenCalledTimes(2)
+      expect(api.appleMusicFileEntries).toHaveBeenLastCalledWith(
+        [
+          { path: '/m/a.aiff', title: 'Song' },
+          { path: '/m/b.aiff', title: 'Song' },
+        ],
+        false,
+      )
+    })
+
+    it('keeps no answer from a Music it could not ask', async () => {
+      api.appleMusicFileEntries.mockResolvedValueOnce({ consulted: false, entries: {} })
+      const s = source([row('/m/a.aiff', 'A')])
+      await s.load()
+      await s.load()
+      expect(api.appleMusicFileEntries).toHaveBeenCalledTimes(2)
+    })
+  })
+
   // A stale answer would tell main a copy is free of Music when nobody asked this time.
   it('forgets the last Music answer when a reload fails', async () => {
     api.appleMusicFileEntries.mockResolvedValueOnce({
@@ -298,6 +378,7 @@ describe('listReviewSource', () => {
     const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
     await s.load()
     expect(s.inMusic?.('/m/b.aiff')).toBe(true)
+    s.settle?.([{ path: '/m/a.aiff', fields: { artist: { from: 'A', to: 'B' } } }], [])
     api.appleMusicFileEntries.mockRejectedValueOnce(new Error('ipc'))
     await expect(s.load()).rejects.toThrow('ipc')
     expect(s.inMusic?.('/m/b.aiff')).toBe(false)

@@ -2,6 +2,7 @@ import type {
   DuplicateReplaceOutcome,
   LibraryTagUpdate,
   ListRemoval,
+  MusicFileEntry,
   MusicFileLookup,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -22,6 +23,14 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
   const changes: LibraryTagUpdate[] = []
   const gone = new Set<string>()
   let titles = new Map<string, string>()
+  // What Music answered for each file under each title, for this opening: a reload asks only
+  // about a file it has no answer for. A write or removal on a file forgets its answer.
+  const answered = new Map<string, MusicFileEntry[]>()
+  const answerKey = (path: string, title: string) => `${path}\u0000${title}`
+  const forget = (paths: string[]) => {
+    for (const key of answered.keys())
+      if (paths.some((path) => key.startsWith(answerKey(path, '')))) answered.delete(key)
+  }
   const music = (id: string) => lookup?.entries[id] ?? []
   const only = (id: string) => (music(id).length === 1 ? music(id)[0] : undefined)
   // An absent ref sends the copy to main's own read of every Music location before the
@@ -46,10 +55,26 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
       titles = new Map(entries.map((e) => [e.id, e.title]))
       if (!deps.mac) return { entries, skipped: read.skipped }
       lookup = { consulted: false, entries: {} }
-      lookup = await window.api.appleMusicFileEntries(
-        entries.map((e) => ({ path: e.id, title: e.title })),
-        deps.launchMusic(),
-      )
+      const asked = entries.filter((e) => !answered.has(answerKey(e.id, e.title)))
+      const answer = asked.length
+        ? await window.api.appleMusicFileEntries(
+            asked.map((e) => ({ path: e.id, title: e.title })),
+            deps.launchMusic(),
+          )
+        : { consulted: true, entries: {} }
+      if (answer.consulted)
+        for (const e of asked) answered.set(answerKey(e.id, e.title), answer.entries[e.id] ?? [])
+      lookup = answer.consulted
+        ? {
+            consulted: true,
+            entries: Object.fromEntries(
+              entries.flatMap((e) => {
+                const found = answered.get(answerKey(e.id, e.title)) ?? []
+                return found.length ? [[e.id, found]] : []
+              }),
+            ),
+          }
+        : answer
       return {
         entries: entries.map((e) => {
           const dateAdded = only(e.id)?.dateAdded
@@ -83,6 +108,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
       onStep(1)
       const off = window.api.onListRemovalPhase(() => onCheckingMusic?.())
       let replaceFailed = false
+      forget(removals.flatMap((r) => [r.removeId, r.keepId]))
       const replaced: DuplicateReplaceOutcome[] = await window.api
         .removeListDuplicates(
           removals.map((r) => {
@@ -114,6 +140,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
       return snapshot.byPath.get(id)
     },
     settle: (updates, trashed) => {
+      forget(updates.map((u) => u.path))
       changes.push(...updates)
       for (const path of trashed) gone.add(path)
       if (trashed.length) deps.onRowsRemoved(trashed)
