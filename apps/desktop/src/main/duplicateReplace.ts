@@ -37,13 +37,15 @@ export interface ReplaceDuplicatesDeps {
   }
   // The list review only: Apple Music lets go of the removed copy after the DJ libraries and
   // before the Trash, and a file Music still holds is not thrown away.
-  musicStep?: (pair: ReplacePair) => Promise<ListMusicStep>
+  musicStep?: (pair: ReplacePair) => Promise<MusicOutcome>
 }
+
+type MusicOutcome = { step: ListMusicStep; playlists?: number }
 
 type FileFate = (
   | { fate: 'shared' | 'unsettled' | 'used' | 'music' | 'trash' | 'surco' }
   | { fate: 'failed'; error: string }
-) & { music?: ListMusicStep }
+) & { music?: MusicOutcome }
 
 const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'error' }> = {
   shared: { detailKey: 'activity.reviewDuplicateFileShared' },
@@ -177,7 +179,8 @@ export function replaceDuplicates(
               }),
             })
           : await decide()
-      if (music !== undefined) result.music = music
+      if (music !== undefined) result.music = music.step
+      if (music?.playlists !== undefined) result.musicPlaylists = music.playlists
       result.keptForLibrary = fate === 'unsettled' || fate === 'used'
       if (fate === 'music') result.keptForMusic = true
       result.fileTrashed = fate === 'trash' || fate === 'surco'
@@ -201,13 +204,13 @@ async function fileFate(
   // Fails closed: a library that cannot be read may still use the file, and a trashed
   // file shows there as a missing track with its cues out of reach.
   if (stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) return { fate: 'used' }
-  let music: ListMusicStep | undefined
+  let music: MusicOutcome | undefined
   if (deps.musicStep) {
-    music = await deps.musicStep(pair).catch((error) => {
+    music = await deps.musicStep(pair).catch((error): MusicOutcome => {
       deps.warn('library:replaceDuplicates Music step failed', error)
-      return 'failed' as const
+      return { step: 'failed' }
     })
-    if (music !== 'none' && music !== 'removed') return { fate: 'music', music }
+    if (music.step !== 'none' && music.step !== 'removed') return { fate: 'music', music }
   }
   try {
     return { fate: await deps.trash(pair.from), music }

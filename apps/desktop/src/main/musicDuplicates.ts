@@ -131,11 +131,11 @@ export interface ListMusicDeps {
 export async function removeListCopyFromMusic(
   { from, to, music }: ListRemoval,
   deps: ListMusicDeps,
-): Promise<ListMusicStep> {
-  if (music === undefined) return 'none'
-  if (music === 'ambiguous') return 'ambiguous'
-  if (!music.keep) return 'kept-no-entry'
-  if (music.keep.persistentId === music.removePid) return 'failed'
+): Promise<{ step: ListMusicStep; playlists?: number }> {
+  if (music === undefined) return { step: 'none' }
+  if (music === 'ambiguous') return { step: 'ambiguous' }
+  if (!music.keep) return { step: 'kept-no-entry' }
+  if (music.keep.persistentId === music.removePid) return { step: 'failed' }
   const answer = await deps.transferPlaylists(
     music.removePid,
     music.keep.persistentId,
@@ -143,15 +143,18 @@ export async function removeListCopyFromMusic(
     music.keep.label,
     { from, to },
   )
-  if (answer === 'mismatch') return 'mismatch'
+  if (answer === 'mismatch') return { step: 'mismatch' }
   const parsed = /^(\d+)\t(\d+)$/.exec(answer)
-  if (!parsed || Number(parsed[2]) > 0) return 'failed'
+  if (!parsed) return { step: 'failed' }
+  const playlists = Number(parsed[1])
+  if (Number(parsed[2]) > 0) return { step: 'failed', playlists }
   let location: string | null
   try {
     location = await deps.deleteEntry(music.removePid, music.label, from)
   } catch (e) {
-    if (e instanceof Error && e.message === 'applemusic-delete-mismatch') return 'mismatch'
+    if (e instanceof Error && e.message === 'applemusic-delete-mismatch')
+      return { step: 'mismatch', playlists }
     throw e
   }
-  return location === null ? 'failed' : 'removed'
+  return { step: location === null ? 'failed' : 'removed', playlists }
 }

@@ -5,9 +5,9 @@ import { applyListFixes, type ListApplyDeps } from './listReviewApply'
 import { type ListMusicDeps, removeListCopyFromMusic } from './musicDuplicates'
 
 export interface ListRemovalDeps {
-  replace: Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep'>
+  replace: Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'>
   realpath: (path: string) => Promise<string | null>
-  trash: (path: string) => Promise<void>
+  trash: (path: string) => Promise<'trash' | 'surco'>
   // Undefined off macOS.
   music?: ListMusicDeps
 }

@@ -254,7 +254,7 @@ describe('removeListCopyFromMusic', () => {
 
   it('has nothing to do for a file Music does not hold', async () => {
     const d = listDeps()
-    expect(await removeListCopyFromMusic(removal(), d)).toBe('none')
+    expect(await removeListCopyFromMusic(removal(), d)).toEqual({ step: 'none' })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
   })
 
@@ -264,14 +264,17 @@ describe('removeListCopyFromMusic', () => {
     const d = listDeps({
       transferPlaylists: vi.fn(async () => {
         calls.push('transfer')
-        return '1\t0'
+        return '3\t0'
       }),
       deleteEntry: vi.fn(async () => {
         calls.push('delete')
         return '/m/old.aiff'
       }),
     })
-    expect(await removeListCopyFromMusic(removal(ref), d)).toBe('removed')
+    expect(await removeListCopyFromMusic(removal(ref), d)).toEqual({
+      step: 'removed',
+      playlists: 3,
+    })
     expect(d.transferPlaylists).toHaveBeenCalledWith('OLD', 'KEEP', 'A - T', 'A - T (Remaster)', {
       from: '/m/old.aiff',
       to: '/m/keep.aiff',
@@ -283,8 +286,8 @@ describe('removeListCopyFromMusic', () => {
   // Its Music playlists would have nowhere to go.
   it('touches nothing when the kept file is not in Music', async () => {
     const d = listDeps()
-    expect(await removeListCopyFromMusic(removal({ removePid: 'OLD', label: 'A - T' }), d)).toBe(
-      'kept-no-entry',
+    expect(await removeListCopyFromMusic(removal({ removePid: 'OLD', label: 'A - T' }), d)).toEqual(
+      { step: 'kept-no-entry' },
     )
     expect(d.transferPlaylists).not.toHaveBeenCalled()
     expect(d.deleteEntry).not.toHaveBeenCalled()
@@ -292,7 +295,7 @@ describe('removeListCopyFromMusic', () => {
 
   it('touches nothing for a file Music holds twice', async () => {
     const d = listDeps()
-    expect(await removeListCopyFromMusic(removal('ambiguous'), d)).toBe('ambiguous')
+    expect(await removeListCopyFromMusic(removal('ambiguous'), d)).toEqual({ step: 'ambiguous' })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })
@@ -300,19 +303,19 @@ describe('removeListCopyFromMusic', () => {
   it('touches nothing when both sides name the same entry', async () => {
     const d = listDeps()
     const same = { ...ref, keep: { persistentId: 'OLD', label: 'A - T' } }
-    expect(await removeListCopyFromMusic(removal(same), d)).toBe('failed')
+    expect(await removeListCopyFromMusic(removal(same), d)).toEqual({ step: 'failed' })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })
 
   it.each([
-    ['mismatch', 'mismatch'],
-    ['missing', 'failed'],
-    ['2\t1', 'failed'],
-    ['nonsense', 'failed'],
-  ])('deletes nothing when the transfer answers %s', async (answer, step) => {
+    ['mismatch', { step: 'mismatch' }],
+    ['missing', { step: 'failed' }],
+    ['2\t1', { step: 'failed', playlists: 2 }],
+    ['nonsense', { step: 'failed' }],
+  ])('deletes nothing when the transfer answers %s', async (answer, outcome) => {
     const d = listDeps({ transferPlaylists: vi.fn().mockResolvedValue(answer) })
-    expect(await removeListCopyFromMusic(removal(ref), d)).toBe(step)
+    expect(await removeListCopyFromMusic(removal(ref), d)).toEqual(outcome)
     expect(d.deleteEntry).not.toHaveBeenCalled()
   })
 
@@ -320,12 +323,15 @@ describe('removeListCopyFromMusic', () => {
     const d = listDeps({
       deleteEntry: vi.fn().mockRejectedValue(new Error('applemusic-delete-mismatch')),
     })
-    expect(await removeListCopyFromMusic(removal(ref), d)).toBe('mismatch')
+    expect(await removeListCopyFromMusic(removal(ref), d)).toEqual({
+      step: 'mismatch',
+      playlists: 1,
+    })
   })
 
   // Gone before the delete: nothing confirms Music let go of this file.
   it('does not count an entry that vanished before the delete as removed', async () => {
     const d = listDeps({ deleteEntry: vi.fn().mockResolvedValue(null) })
-    expect(await removeListCopyFromMusic(removal(ref), d)).toBe('failed')
+    expect(await removeListCopyFromMusic(removal(ref), d)).toEqual({ step: 'failed', playlists: 1 })
   })
 })

@@ -775,6 +775,8 @@ export interface DuplicateReplaceOutcome {
   fileTrashed: boolean
   keptForLibrary: boolean
   music?: ListMusicStep
+  // Playlists in Music that now hold the kept copy instead.
+  musicPlaylists?: number
   // The file stayed on disk because Apple Music still holds it.
   keptForMusic?: boolean
   // Nothing held the file any more and the Trash still refused it.

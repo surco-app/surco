@@ -97,7 +97,7 @@ describe('listreview:removeDuplicates', () => {
         warn: vi.fn(),
       },
       realpath: vi.fn(async (p: string) => p),
-      trash: vi.fn().mockResolvedValue(undefined),
+      trash: vi.fn().mockResolvedValue('trash'),
       music: {
         transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
         deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
@@ -118,7 +118,13 @@ describe('listreview:removeDuplicates', () => {
       removal('/m/old.aiff', '/m/keep.aiff', musicRef),
     ])
     expect(out).toEqual([
-      { from: '/m/old.aiff', music: 'removed', fileTrashed: true, keptForLibrary: false },
+      {
+        from: '/m/old.aiff',
+        music: 'removed',
+        musicPlaylists: 1,
+        fileTrashed: true,
+        keptForLibrary: false,
+      },
     ])
     expect(d.music.deleteEntry).toHaveBeenCalledWith('OLD', 'A - T', '/m/old.aiff')
     expect(d.trash).toHaveBeenCalledWith('/m/old.aiff')
@@ -193,6 +199,7 @@ describe('listreview:removeDuplicates', () => {
       {
         from: '/m/old.aiff',
         music: 'removed',
+        musicPlaylists: 1,
         fileTrashed: false,
         keptForLibrary: false,
         trashFailed: true,

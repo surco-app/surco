@@ -185,7 +185,7 @@ describe('replaceDuplicates', () => {
       }),
       musicStep: vi.fn(async () => {
         calls.push('music')
-        return 'removed' as const
+        return { step: 'removed' as const, playlists: 2 }
       }),
       trash: vi.fn(async () => {
         calls.push('trash')
@@ -197,6 +197,7 @@ describe('replaceDuplicates', () => {
         from: PAIR.from,
         rekordbox: 'repointed',
         music: 'removed',
+        musicPlaylists: 2,
         fileTrashed: true,
         keptForLibrary: false,
       },
@@ -208,7 +209,7 @@ describe('replaceDuplicates', () => {
   it.each(['kept-no-entry', 'ambiguous', 'mismatch', 'failed'] as const)(
     'keeps the file when Music answers %s',
     async (step) => {
-      const d = deps({ musicStep: vi.fn().mockResolvedValue(step) })
+      const d = deps({ musicStep: vi.fn().mockResolvedValue({ step }) })
       expect(await replaceDuplicates([PAIR], d)).toEqual([
         {
           from: PAIR.from,
@@ -224,7 +225,7 @@ describe('replaceDuplicates', () => {
   )
 
   it('trashes a file Music never held', async () => {
-    const d = deps({ musicStep: vi.fn().mockResolvedValue('none') })
+    const d = deps({ musicStep: vi.fn().mockResolvedValue({ step: 'none' }) })
     expect((await replaceDuplicates([PAIR], d))[0]).toMatchObject({
       music: 'none',
       fileTrashed: true,
@@ -257,7 +258,7 @@ describe('replaceDuplicates', () => {
   // Music already let go, so the file now sits outside every library: the user has to hear it.
   it('says so when the Trash fails after Music let go', async () => {
     const d = deps({
-      musicStep: vi.fn().mockResolvedValue('removed'),
+      musicStep: vi.fn().mockResolvedValue({ step: 'removed', playlists: 0 }),
       trash: vi.fn().mockRejectedValue(new Error('No recoverable trash')),
     })
     expect((await replaceDuplicates([PAIR], d))[0]).toMatchObject({
