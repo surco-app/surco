@@ -78,3 +78,18 @@ export function configureBackupDiscarder(next: BackupDiscarder | null): void {
 export async function discardBackup(entry: TrashEntry): Promise<void> {
   if (discarder) await discarder(entry)
 }
+
+// What launch installs: the real store behind the user's setting, and the same store
+// for dropping a copy a failed write no longer needs.
+export function configureBackupStore(
+  store: {
+    stash: (path: string, reason: TrashReason, outputPath?: string) => Promise<TrashEntry | null>
+    remove: (id: string) => Promise<void>
+  },
+  policy: () => BackupPolicy,
+): void {
+  configureOriginalKeeper(
+    policyKeeper(policy, (path, reason, outputPath) => store.stash(path, reason, outputPath)),
+  )
+  configureBackupDiscarder((entry) => store.remove(entry.id))
+}

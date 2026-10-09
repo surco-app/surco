@@ -1,8 +1,21 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BackupPolicy } from '../shared/backupPolicy'
-import { configureOriginalKeeper, keepOriginal, policyKeeper } from './originalKeeper'
+import type { TrashReason } from '../shared/types'
+import {
+  configureBackupDiscarder,
+  configureBackupStore,
+  configureOriginalKeeper,
+  discardBackup,
+  keepOriginal,
+  policyKeeper,
+} from './originalKeeper'
 
-afterEach(() => configureOriginalKeeper(null))
+afterEach(() => {
+  configureOriginalKeeper(null)
+  configureBackupDiscarder(null)
+})
 
 // Every write path that can cost the user a file goes through keepOriginal, so the
 // setting belongs on that seam rather than at each call site. When it lived only inside
@@ -85,5 +98,71 @@ describe('keepOriginal', () => {
     configureOriginalKeeper(keeper)
     await keepOriginal('/a.aiff', 'replaced', '/a.aiff', { reencodes: false })
     expect(keeper).toHaveBeenCalledWith('/a.aiff', 'replaced', '/a.aiff', { reencodes: false })
+  })
+})
+
+// The setting sat dead from v0.99.8 to v1.7.0: policyKeeper existed and was tested, but
+// launch installed the bare store, so every level kept a copy of everything.
+describe('configureBackupStore', () => {
+  function store() {
+    return {
+      stash: vi.fn(async (path: string, reason: TrashReason) => ({
+        id: 'kept',
+        name: 'x',
+        originalPath: path,
+        storedPath: '',
+        bytes: 0,
+        trashedAt: 0,
+        reason,
+      })),
+      remove: vi.fn(async (_id: string) => {}),
+    }
+  }
+
+  it('keeps nothing from a conversion under never', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    expect(await keepOriginal('/a.aiff', 'replaced', '/a.aiff', { reencodes: true })).toBeNull()
+    expect(await keepOriginal('/b.wav', 'renamed', '/b.flac')).toBeNull()
+    expect(s.stash).not.toHaveBeenCalled()
+  })
+
+  it('skips a tag-only update but keeps a re-encode under audioChanges', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'audioChanges')
+    expect(await keepOriginal('/a.aiff', 'replaced', '/a.aiff', { reencodes: false })).toBeNull()
+    expect(await keepOriginal('/b.aiff', 'replaced', '/b.aiff', { reencodes: true })).not.toBeNull()
+    expect(s.stash.mock.calls.map(([path]) => path)).toEqual(['/b.aiff'])
+  })
+
+  it('keeps a tag-only update under always', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'always')
+    expect(
+      await keepOriginal('/a.aiff', 'replaced', '/a.aiff', { reencodes: false }),
+    ).not.toBeNull()
+  })
+
+  it('discards a backup through the same store', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'always')
+    const entry = await keepOriginal('/a.aiff', 'replaced', '/a.aiff', { reencodes: true })
+    if (!entry) throw new Error('expected a backup')
+    await discardBackup(entry)
+    expect(s.remove).toHaveBeenCalledWith('kept')
+  })
+})
+
+// The bug itself lived in index.ts, which no unit test can import: launch called
+// configureOriginalKeeper with the bare store. Read the source so it cannot come back.
+describe('launch', () => {
+  const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+
+  it('installs the store behind the live backup setting', () => {
+    expect(source).toContain('configureBackupStore(surcoTrash, () => getSettings().backupPolicy)')
+  })
+
+  it('never installs a keeper that skips the setting', () => {
+    expect(source).not.toContain('configureOriginalKeeper(')
   })
 })

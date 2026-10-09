@@ -112,7 +112,7 @@ import { rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
-import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
+import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
@@ -226,8 +226,7 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
 const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =>
   trashLimits(getSettings()),
 )
-configureOriginalKeeper((path, reason, outputPath) => surcoTrash.stash(path, reason, outputPath))
-configureBackupDiscarder((entry) => surcoTrash.remove(entry.id))
+configureBackupStore(surcoTrash, () => getSettings().backupPolicy)
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
