@@ -101,6 +101,7 @@ describe('listreview:removeDuplicates', () => {
       music: {
         transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
         deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
+        filePaths: vi.fn().mockResolvedValue([] as string[]),
       },
       ...over,
     }
@@ -256,5 +257,81 @@ describe('listreview:removeDuplicates', () => {
       removal('/m/b.aiff', '/m/a.aiff'),
     ])
     expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  it('keeps the file when the renderer could not ask Music', async () => {
+    const d = register()
+    const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/old.aiff', '/m/keep.aiff', 'unknown'),
+    ])
+    expect(out).toEqual([
+      {
+        from: '/m/old.aiff',
+        music: 'unknown',
+        fileTrashed: false,
+        keptForLibrary: false,
+        keptForMusic: true,
+      },
+    ])
+    expect(d.music.filePaths).not.toHaveBeenCalled()
+  })
+
+  // The renderer's lookup goes by title: a track renamed in Music is not found there.
+  it('reads Music once for every file it found no entry for and keeps the ones Music holds', async () => {
+    const d = register()
+    d.music.filePaths.mockResolvedValue(['/M/Caf\u0065\u0301.aiff'])
+    const out = (await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/Caf\u00e9.aiff', '/m/keep1.aiff'),
+      removal('/m/free.aiff', '/m/keep2.aiff'),
+    ])) as { music?: string; keptForMusic?: boolean }[]
+    expect(d.music.filePaths).toHaveBeenCalledTimes(1)
+    expect(out[0]).toMatchObject({ music: 'held', keptForMusic: true })
+    expect(out[1]).toMatchObject({ music: 'none', fileTrashed: true })
+    expect(trashed(d)).toEqual(['/m/free.aiff'])
+    expect(sender.send).toHaveBeenCalledTimes(1)
+    expect(sender.send).toHaveBeenCalledWith('listreview:removalPhase', 'checking-music')
+  })
+
+  it('keeps every file it could not check against Music', async () => {
+    const d = register()
+    d.music.filePaths.mockRejectedValue(new Error('osascript'))
+    const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/old.aiff', '/m/keep.aiff'),
+    ])
+    expect(out).toEqual([
+      {
+        from: '/m/old.aiff',
+        music: 'failed',
+        fileTrashed: false,
+        keptForLibrary: false,
+        keptForMusic: true,
+      },
+    ])
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  // The bulk read takes about 40 s on a NAS library: only when a file really needs it.
+  it('reads Music only for a file it found no entry for', async () => {
+    const d = register()
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/old.aiff', '/m/keep.aiff', musicRef),
+      removal('/m/two.aiff', '/m/keep2.aiff', 'ambiguous'),
+    ])
+    expect(d.music.filePaths).not.toHaveBeenCalled()
+  })
+
+  it('reads Music only for a file that is really leaving', async () => {
+    const kept = register({
+      replace: {
+        libraries: {},
+        usedByLibrary: vi.fn().mockResolvedValue(true),
+        serial: (task: () => Promise<unknown>) => task(),
+        warn: vi.fn(),
+      },
+    })
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/old.aiff', '/m/keep.aiff'),
+    ])
+    expect(kept.music.filePaths).not.toHaveBeenCalled()
   })
 })

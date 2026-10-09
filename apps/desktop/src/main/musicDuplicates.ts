@@ -123,6 +123,8 @@ export interface ListMusicDeps {
     locations: { from: string; to: string },
   ) => Promise<string>
   deleteEntry: (persistentId: string, label: string, location: string) => Promise<string | null>
+  // Whether any Music file track points at the file, for one the renderer found no entry for.
+  holds: (path: string) => Promise<boolean>
 }
 
 // The list review's half of a removal in Music, run only once the file is really leaving.
@@ -132,8 +134,8 @@ export async function removeListCopyFromMusic(
   { from, to, music }: ListRemoval,
   deps: ListMusicDeps,
 ): Promise<{ step: ListMusicStep; playlists?: number }> {
-  if (music === undefined) return { step: 'none' }
-  if (music === 'ambiguous') return { step: 'ambiguous' }
+  if (music === undefined) return { step: (await deps.holds(from)) ? 'held' : 'none' }
+  if (music === 'ambiguous' || music === 'unknown') return { step: music }
   if (!music.keep) return { step: 'kept-no-entry' }
   if (music.keep.persistentId === music.removePid) return { step: 'failed' }
   const answer = await deps.transferPlaylists(

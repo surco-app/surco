@@ -65,6 +65,7 @@ import {
   appleMusicEntryLocation,
   appleMusicLimiter,
   deleteFromAppleMusic,
+  musicFilePaths,
   setAppleMusicField,
   transferPlaylists,
   updateInAppleMusic,
@@ -1203,6 +1204,7 @@ function registerIpc(): void {
             ),
           deleteEntry: (pid, label, location) =>
             appleMusicLimiter.run(() => deleteFromAppleMusic(pid, label, location)),
+          filePaths: () => appleMusicLimiter.run(() => musicFilePaths()),
         },
       }),
     }),

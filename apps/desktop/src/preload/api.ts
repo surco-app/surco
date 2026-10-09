@@ -166,6 +166,8 @@ export interface Api {
   // Removes duplicate copies from the list: the DJ libraries, then Apple Music on macOS, then
   // a recoverable Trash. A file anything still holds stays on disk.
   removeListDuplicates: (removals: ListRemoval[]) => Promise<DuplicateReplaceOutcome[]>
+  // A removal is reading every file Music holds (about 40 s on a NAS library).
+  onListRemovalPhase: (cb: (phase: 'checking-music') => void) => () => void
   // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
   // macOS, where the renderer never offers the import.
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>

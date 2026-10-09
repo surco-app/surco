@@ -143,6 +143,11 @@ const api: Api = {
   },
   removeListDuplicates: (removals: ListRemoval[]) =>
     ipcRenderer.invoke('listreview:removeDuplicates', removals),
+  onListRemovalPhase: (cb: (phase: 'checking-music') => void) => {
+    const listener = (_e: unknown, phase: 'checking-music'): void => cb(phase)
+    ipcRenderer.on('listreview:removalPhase', listener)
+    return () => ipcRenderer.removeListener('listreview:removalPhase', listener)
+  },
   loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
     ipcRenderer.invoke('applemusic:libraryCached'),
   loadAppleMusicPlaylists: (): Promise<AppleMusicPlaylist[]> =>

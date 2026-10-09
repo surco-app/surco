@@ -795,13 +795,17 @@ export interface ListMusicRef {
 export interface ListRemoval {
   from: string
   to: string
-  music?: ListMusicRef | 'ambiguous'
+  // 'unknown': the renderer could not ask Music, so nothing is assumed either way.
+  music?: ListMusicRef | 'ambiguous' | 'unknown'
 }
 export type ListMusicStep =
   | 'none'
   | 'removed'
   | 'kept-no-entry'
   | 'ambiguous'
+  | 'unknown'
+  // Music holds the file under an entry the renderer never found, so never confirmed.
+  | 'held'
   | 'mismatch'
   | 'failed'
 

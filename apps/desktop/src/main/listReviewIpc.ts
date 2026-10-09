@@ -9,7 +9,7 @@ export interface ListRemovalDeps {
   realpath: (path: string) => Promise<string | null>
   trash: (path: string) => Promise<'trash' | 'surco'>
   // Undefined off macOS.
-  music?: ListMusicDeps
+  music?: Omit<ListMusicDeps, 'holds'> & { filePaths: () => Promise<string[]> }
 }
 
 export interface ListReviewIpcDeps {
@@ -79,14 +79,28 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
       return pair
     })
     const musicDeps = d.music
+    let held: Promise<Set<string>> | undefined
+    const holds = (path: string) => {
+      held ??= (async () => {
+        if (!e.sender.isDestroyed()) e.sender.send('listreview:removalPhase', 'checking-music')
+        return new Set((await musicDeps?.filePaths())?.map(heldKey))
+      })()
+      return held.then((set) => set.has(heldKey(path)))
+    }
     const outcomes = await replaceDuplicates(pairs, {
       ...d.replace,
       trash: d.trash,
       ...(musicDeps && {
         musicStep: (pair: ReplacePair) =>
-          removeListCopyFromMusic({ ...pair, music: byPair.get(pair)?.music }, musicDeps),
+          removeListCopyFromMusic(
+            { ...pair, music: byPair.get(pair)?.music },
+            { ...musicDeps, holds },
+          ),
       }),
     })
     return outcomes.map((o, i) => (pairs[i].shared ? { ...o, keptShared: true as const } : o))
   })
 }
+
+// Wider than the file system's own rule on purpose: a false match only keeps a file.
+const heldKey = (path: string) => path.normalize('NFC').toLowerCase()

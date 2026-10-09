@@ -248,14 +248,39 @@ describe('removeListCopyFromMusic', () => {
     return {
       transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
       deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
+      holds: vi.fn().mockResolvedValue(false),
       ...over,
     }
   }
 
-  it('has nothing to do for a file Music does not hold', async () => {
+  // The renderer found no entry for the file, and its lookup misses a track renamed in Music.
+  it('checks Music itself before calling a file it found no entry for free', async () => {
     const d = listDeps()
     expect(await removeListCopyFromMusic(removal(), d)).toEqual({ step: 'none' })
+    expect(d.holds).toHaveBeenCalledWith('/m/old.aiff')
     expect(d.transferPlaylists).not.toHaveBeenCalled()
+  })
+
+  // Nobody confirmed that entry, so it is neither moved nor deleted, and the file stays.
+  it('touches nothing when Music holds a file the renderer found no entry for', async () => {
+    const d = listDeps({ holds: vi.fn().mockResolvedValue(true) })
+    expect(await removeListCopyFromMusic(removal(), d)).toEqual({ step: 'held' })
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+    expect(d.deleteEntry).not.toHaveBeenCalled()
+  })
+
+  it('lets a failed check through as a failure', async () => {
+    const d = listDeps({ holds: vi.fn().mockRejectedValue(new Error('osascript')) })
+    await expect(removeListCopyFromMusic(removal(), d)).rejects.toThrow('osascript')
+  })
+
+  // The renderer never consulted Music: it does not know, so nothing is assumed.
+  it('touches nothing when the renderer could not ask Music', async () => {
+    const d = listDeps()
+    expect(await removeListCopyFromMusic(removal('unknown'), d)).toEqual({ step: 'unknown' })
+    expect(d.holds).not.toHaveBeenCalled()
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+    expect(d.deleteEntry).not.toHaveBeenCalled()
   })
 
   // Each entry is checked live against the file it was found by, not only by its label.
@@ -280,6 +305,7 @@ describe('removeListCopyFromMusic', () => {
       to: '/m/keep.aiff',
     })
     expect(d.deleteEntry).toHaveBeenCalledWith('OLD', 'A - T', '/m/old.aiff')
+    expect(d.holds).not.toHaveBeenCalled()
     expect(calls).toEqual(['transfer', 'delete'])
   })
 
