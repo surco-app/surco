@@ -1,5 +1,12 @@
 import { extname } from 'node:path'
-import { type Id3v2Tag, type Tag, File as TagFile, TagTypes } from 'node-taglib-sharp'
+import {
+  CombinedTag,
+  type Id3v2Tag,
+  InfoTag,
+  type Tag,
+  File as TagFile,
+  TagTypes,
+} from 'node-taglib-sharp'
 import type { MusicReviewField } from '../shared/types'
 import { dropBrokenUfids } from './tags'
 
@@ -27,6 +34,60 @@ function valuesOf(tag: Tag, field: MusicReviewField): string[] {
       return tag.albumArtists
     case 'genre':
       return tag.genres
+  }
+}
+
+// The INFO ids ffmpeg, Music and rekordbox read, each value a NUL-terminated string. TagLib
+// reads album from DIRC and artist from ISTR, and takes IART as the album artist, so its own
+// view of an INFO list reads a different file than the one every DJ program shows. TagLib's
+// spellings are still checked and rewritten when present, since mp3tag and Surco's own
+// writeTags put them there. No INFO id holds an album artist anyone reads.
+const INFO_IDS: Record<MusicReviewField, string[]> = {
+  title: ['INAM'],
+  artist: ['IART', 'ISTR'],
+  album: ['IPRD', 'DIRC'],
+  albumArtist: [],
+  genre: ['IGNR'],
+}
+
+const TAGLIB_INFO_ID: Record<MusicReviewField, string> = {
+  title: 'INAM',
+  artist: 'ISTR',
+  album: 'DIRC',
+  albumArtist: 'IART',
+  genre: 'IGNR',
+}
+
+const infoValues = (tag: InfoTag, id: string): string[] =>
+  tag
+    .getValuesAsStrings(id)
+    .map((v) => v.replace(/\0+$/, ''))
+    .filter((v) => v !== '')
+
+const heldIds = (tag: InfoTag, field: MusicReviewField): string[] =>
+  INFO_IDS[field].filter((id) => infoValues(tag, id).length > 0)
+
+function readValues(tag: Tag, field: MusicReviewField): string[][] {
+  if (!(tag instanceof InfoTag)) return [valuesOf(tag, field)]
+  return heldIds(tag, field).map((id) => infoValues(tag, id))
+}
+
+const firstHeld = (f: TagFile, field: MusicReviewField): string[] => {
+  const tags = f.tag instanceof CombinedTag ? f.tag.tags : [f.tag]
+  for (const tag of tags) {
+    const held = readValues(tag, field).find((values) => values.length > 0)
+    if (held) return held
+  }
+  return []
+}
+
+function assignInfo(tag: InfoTag, field: MusicReviewField, to: string): void {
+  const held = heldIds(tag, field)
+  const targets = held.length > 0 ? held : INFO_IDS[field].slice(0, 1)
+  for (const id of targets) {
+    const nul = tag.getValuesAsStrings(id)[0]?.endsWith('\0') ? '\0' : ''
+    if (to === '') tag.removeValue(id)
+    else tag.setValuesFromStrings(id, [to + nul])
   }
 }
 
@@ -70,10 +131,23 @@ function onDiskTags(f: TagFile): Tag[] {
 }
 
 function setOne(f: TagFile, { field, from, to }: TagFieldChange): FieldWrite {
-  if (!matches(valuesOf(f.tag, field), from)) return 'unchanged'
+  if (!matches(firstHeld(f, field), from)) return 'unchanged'
   for (const tag of onDiskTags(f)) {
-    const values = valuesOf(tag, field)
-    if (values.length > 0 && !matches(values, from)) return 'unchanged'
+    for (const values of readValues(tag, field)) {
+      if (values.length > 0 && !matches(values, from)) return 'unchanged'
+    }
+  }
+  const info = f.getTag(TagTypes.RiffInfo, false)
+  if (info instanceof InfoTag) {
+    const elsewhere = f.tagTypesOnDisk & ~(TagTypes.RiffInfo | TagTypes.Id3v1)
+    if (INFO_IDS[field].length === 0 && !elsewhere) return 'unchanged'
+    const taglibId = TAGLIB_INFO_ID[field]
+    const before = info.getValues(taglibId)
+    assign(f.tag, field, to)
+    if (before.length > 0) info.setValues(taglibId, before)
+    else info.removeValue(taglibId)
+    assignInfo(info, field, to)
+    return 'written'
   }
   assign(f.tag, field, to)
   return 'written'

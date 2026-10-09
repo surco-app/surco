@@ -7,6 +7,7 @@ import {
   ByteVector,
   Id3v2PrivateFrame,
   type Id3v2Tag,
+  type InfoTag,
   StringType,
   File as TagFile,
   TagTypes,
@@ -123,6 +124,54 @@ function makeId3OnlyWav(id3Artist: string, infoArtist: string | null): string {
     f.dispose()
   }
   return file
+}
+
+function makeInfoOnlyWav(): string {
+  const file = join(dir, `info-only-${Math.random().toString(36).slice(2)}.wav`)
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=2',
+    '-c:a',
+    'pcm_s16le',
+    '-fflags',
+    '+bitexact',
+    '-map_metadata',
+    '-1',
+    '-metadata',
+    'title=Happiness ',
+    '-metadata',
+    'artist=Sound De-Zign',
+    '-metadata',
+    'album=Ultimate NRG - Best of 1996-2016 ',
+    '-metadata',
+    'genre=Electronic',
+    file,
+  ])
+  return file
+}
+
+function ffTags(file: string): Record<string, string> {
+  const out = execFileSync(FF, ['-v', 'error', '-i', file, '-f', 'ffmetadata', '-'])
+    .toString()
+    .split('\n')
+    .filter((line) => /^(title|artist|album|genre)=/.test(line))
+  return Object.fromEntries(
+    out.map((line) => [line.split('=')[0], line.slice(line.indexOf('=') + 1)]),
+  )
+}
+
+function infoRaw(file: string, id: string): string[] {
+  const f = TagFile.createFromPath(file)
+  try {
+    return (f.getTag(TagTypes.RiffInfo, false) as InfoTag).getValuesAsStrings(id)
+  } finally {
+    f.dispose()
+  }
 }
 
 function makeMp3WithBrokenUfid(shape: 'empty-id' | 'extra-nulls'): string {
@@ -332,6 +381,81 @@ describe('rewriteTagFields', () => {
     expect(outcomes).toEqual(['unchanged'])
     expect(backup).toBeUndefined()
     expect(snapshotTags(file)).toEqual(before)
+    expect(readFileSync(file).equals(bytes)).toBe(true)
+  }, 60000)
+
+  // rekordbox, Music and ffmpeg read a WAV's INFO list by INAM, IART, IPRD and IGNR, each
+  // value ending in a NUL. TagLib reads album from DIRC and artist from ISTR, so an
+  // INFO-only WAV looked empty, or NUL-padded, and every review fix on it was refused.
+  describe('a WAV whose only tag is RIFF INFO', () => {
+    it('confirms the fixture is INFO-only with NUL-terminated values', () => {
+      const file = makeInfoOnlyWav()
+      expect(diskTypes(file)).toBe(TagTypes.RiffInfo)
+      expect(infoRaw(file, 'IPRD')).toEqual(['Ultimate NRG - Best of 1996-2016 \u0000'])
+    })
+
+    it.each([
+      ['album', 'IPRD', 'Ultimate NRG - Best of 1996-2016 ', 'Ultimate NRG - Best of 1996-2016'],
+      ['title', 'INAM', 'Happiness ', 'Happiness'],
+      ['artist', 'IART', 'Sound De-Zign', 'Sound De Zign'],
+      ['genre', 'IGNR', 'Electronic', 'Trance'],
+    ] as const)(
+      'writes the %s ffmpeg reads into %s and keeps the audio',
+      async (field, id, from, to) => {
+        const file = makeInfoOnlyWav()
+        const before = snapshotTags(file)
+        const md5 = audioMd5(file)
+        const chunks = riffChunks(file)
+        const tagsBefore = ffTags(file)
+        const { outcomes } = await rewriteTagFields(file, [{ field, from, to }])
+        expect(outcomes).toEqual(['written'])
+        expect(ffTags(file)).toEqual({ ...tagsBefore, [field]: to })
+        expect(audioMd5(file)).toBe(md5)
+        // A shorter INFO list leaves TagLib's padding behind as a JUNK chunk, which every
+        // RIFF reader skips by definition.
+        expect(riffChunks(file).filter((chunk) => chunk !== 'JUNK')).toEqual(chunks)
+        expect(diskTypes(file)).toBe(TagTypes.RiffInfo)
+        // TagLib opens a WAV with an in-memory ID3 copied from INFO, so only the riff lines
+        // are what the disk holds.
+        const riff = (lines: string[]) => lines.filter((line) => line.startsWith('riff '))
+        expect(diffSnapshots(riff(before), riff(snapshotTags(file))).added).toEqual([
+          `riff ${id}=${to}`,
+        ])
+        expect(infoRaw(file, id)).toEqual([`${to}\u0000`])
+      },
+      60000,
+    )
+
+    it('refuses an INFO value that is not the one Music had', async () => {
+      const file = makeInfoOnlyWav()
+      const bytes = readFileSync(file)
+      const { outcomes } = await rewriteTagFields(file, [
+        { field: 'album', from: 'Another Album', to: 'Ultimate NRG' },
+      ])
+      expect(outcomes).toEqual(['unchanged'])
+      expect(readFileSync(file).equals(bytes)).toBe(true)
+    }, 60000)
+
+    // TagLib spells album artist IART, the id every other reader takes as the artist, so
+    // writing it there would overwrite the artist rekordbox and Music show.
+    it('never writes an album artist into the IART that holds the artist', async () => {
+      const file = makeInfoOnlyWav()
+      const bytes = readFileSync(file)
+      const { outcomes } = await rewriteTagFields(file, [
+        { field: 'albumArtist', from: '', to: 'Various Artists' },
+      ])
+      expect(outcomes).toEqual(['unchanged'])
+      expect(readFileSync(file).equals(bytes)).toBe(true)
+    }, 60000)
+  })
+
+  it('leaves a file alone when Music saw a value the file does not hold at all', async () => {
+    const file = makeId3OnlyWav('Dj Lara', null)
+    const bytes = readFileSync(file)
+    const { outcomes } = await rewriteTagFields(file, [
+      { field: 'title', from: 'Old Title', to: 'New Title' },
+    ])
+    expect(outcomes).toEqual(['unchanged'])
     expect(readFileSync(file).equals(bytes)).toBe(true)
   }, 60000)
 
