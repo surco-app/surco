@@ -18,6 +18,8 @@ vi.mock('electron-log/main', () => ({
   default: { transports: { file: { getFile: () => ({ path: '/logs/main.log' }) } } },
 }))
 
+vi.mock('./trashSupport', () => ({ volumeKeepsTrash: () => true }))
+
 import { ipcMain } from 'electron'
 import type { MediaAccess } from './mediaAccess'
 import { registerShellIpc } from './shellIpc'
