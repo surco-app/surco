@@ -1367,6 +1367,33 @@ describe('MusicReview', () => {
       expect(within(first).getByText('3:20')).not.toHaveAttribute('data-differs')
     })
 
+    // The group header only names the first copy, so a title or artist that differs between
+    // copies would go unseen without its own row.
+    it('shows each copy its own title and artist and marks them when they differ', () => {
+      const r = review({
+        spelling: [],
+        duplicates: [
+          {
+            ...card({ '1': '/a/1.aiff', '2': '/a/2.aiff' }),
+            entries: [
+              copy('1', { title: 'This Rap', artist: 'DJ Ter' }),
+              copy('2', { title: 'This Rap (Original Mix)', artist: 'Dj Ter' }),
+            ],
+          },
+        ],
+        choice: () => '2',
+      })
+      render(<Panes review={r} />)
+      const [first, second] = screen.getAllByTestId('music-review-copy')
+      expect(within(first).getByText('This Rap')).toHaveAttribute('data-differs', 'true')
+      expect(within(first).getByText('DJ Ter')).toHaveAttribute('data-differs', 'true')
+      expect(within(second).getByText('This Rap (Original Mix)')).toHaveAttribute(
+        'data-differs',
+        'true',
+      )
+      expect(within(second).getByText('Dj Ter')).toHaveAttribute('data-differs', 'true')
+    })
+
     // The date added is what tells an old copy from a recent one when deciding which to remove.
     it('shows when each copy was added and marks the dates that differ', () => {
       const r = review({

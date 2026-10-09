@@ -539,6 +539,8 @@ function DuplicateDetail({
                       samePath(locations[o.persistentId], path),
                   )
                 const cells = [
+                  ['field.title', e.title, differs((c) => c.title)],
+                  ['field.artist', e.artist, differs((c) => c.artist)],
                   ['field.album', e.album, differs((c) => c.album)],
                   ['field.genre', e.genre, differs((c) => c.genre)],
                   ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
