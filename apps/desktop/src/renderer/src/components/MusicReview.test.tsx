@@ -2039,6 +2039,31 @@ describe('list review', () => {
     expect(sheet).not.toHaveTextContent('Copies removed from Apple Music')
   })
 
+  // With Music left unasked at load, removing opens it and reads every file it holds,
+  // which takes a while on a large library; Apply should not look frozen.
+  it('says the removal will open Apple Music to check when the load did not ask it', () => {
+    const summary = { tracks: 0, byField: {}, duplicates: 1 }
+    const { unmount } = render(
+      <MusicReview
+        review={listReview({ summary, musicConsulted: false })}
+        {...columnProps}
+        confirming
+      />,
+    )
+    expect(screen.getByTestId('music-review-confirm-music-check')).toHaveTextContent(
+      'Removing will open Apple Music to check its files, and it may take a while.',
+    )
+    unmount()
+    render(
+      <MusicReview
+        review={listReview({ summary, musicConsulted: true })}
+        {...columnProps}
+        confirming
+      />,
+    )
+    expect(screen.queryByTestId('music-review-confirm-music-check')).toBeNull()
+  })
+
   it('shows Music in the affected rows only for files Music holds', () => {
     const affected = () => [
       { id: '/m/a.aiff', title: 'A', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' },

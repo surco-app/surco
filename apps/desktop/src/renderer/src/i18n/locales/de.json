@@ -1752,7 +1752,8 @@
     "confirm": {
       "removed": "Entfernte Kopien",
       "playlists": "Ihre Playlists in rekordbox, Engine DJ und Traktor gehen an die behaltene Kopie, und ist sie in Apple Music, wird sie dort entfernt",
-      "trash": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ, Traktor oder Apple Music noch nutzen"
+      "trash": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ, Traktor oder Apple Music noch nutzen",
+      "musicCheck": "Beim Entfernen wird Apple Music geöffnet, um seine Dateien zu prüfen, und das kann eine Weile dauern."
     },
     "done": {
       "title": "Liste geprüft",

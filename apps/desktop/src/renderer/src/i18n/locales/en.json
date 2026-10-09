@@ -1752,7 +1752,8 @@
     "confirm": {
       "removed": "Copies removed",
       "playlists": "Their rekordbox, Engine DJ and Traktor playlists move to the copy you keep, and if it is in Apple Music it leaves Music",
-      "trash": "Their files go to the Trash, except those rekordbox, Engine DJ, Traktor or Apple Music still use"
+      "trash": "Their files go to the Trash, except those rekordbox, Engine DJ, Traktor or Apple Music still use",
+      "musicCheck": "Removing will open Apple Music to check its files, and it may take a while."
     },
     "done": {
       "title": "List reviewed",

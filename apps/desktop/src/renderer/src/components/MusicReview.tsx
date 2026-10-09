@@ -137,6 +137,11 @@ function Confirm({
         </p>
       )}
       {duplicates > 0 && <p className="text-xs text-fg-dim">{t('musicReview.removedNoUndo')}</p>}
+      {duplicates > 0 && review.kind === 'list' && review.musicConsulted === false && (
+        <p data-testid="music-review-confirm-music-check" className="text-xs text-fg-dim">
+          {t('listReview.confirm.musicCheck')}
+        </p>
+      )}
       <p className="text-xs text-fg-dim">{t('musicReview.confirm.untouched')}</p>
       <p className="text-xs text-fg-dim">{t('musicReview.confirm.libraries')}</p>
       {missingLibraries(review).map((name) => (
