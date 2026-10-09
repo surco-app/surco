@@ -1,9 +1,21 @@
-import type { LibraryTagUpdate, MusicFixOutcome } from '../../../shared/types'
+import type {
+  LibraryTagUpdate,
+  MusicFieldOutcome,
+  MusicReviewField,
+  TagChange,
+} from '../../../shared/types'
+
+type Taken = {
+  path?: string
+  written: MusicReviewField[]
+  fixes: ({ field: MusicReviewField } & TagChange)[]
+  music: (MusicFieldOutcome | 'none')[]
+}
 
 function updatesOf(
-  outcomes: MusicFixOutcome[],
+  outcomes: Taken[],
   direction: 'apply' | 'undo',
-  took: (o: MusicFixOutcome, index: number) => boolean,
+  took: (o: Taken, index: number) => boolean,
 ): LibraryTagUpdate[] {
   const updates: LibraryTagUpdate[] = []
   for (const o of outcomes) {
@@ -20,10 +32,10 @@ function updatesOf(
 }
 
 // The fields that reached the file: what the editor rereads.
-export const tagUpdatesOf = (outcomes: MusicFixOutcome[], direction: 'apply' | 'undo') =>
+export const tagUpdatesOf = (outcomes: Taken[], direction: 'apply' | 'undo') =>
   updatesOf(outcomes, direction, (o, i) => o.written.includes(o.fixes[i].field))
 
 // The fields Music took: what the DJ libraries follow, the file written or not, since the
 // user wants a track corrected in Music corrected in rekordbox, Engine DJ and Traktor too.
-export const libraryUpdatesOf = (outcomes: MusicFixOutcome[], direction: 'apply' | 'undo') =>
+export const libraryUpdatesOf = (outcomes: Taken[], direction: 'apply' | 'undo') =>
   updatesOf(outcomes, direction, (o, i) => o.music[i] === 'set')

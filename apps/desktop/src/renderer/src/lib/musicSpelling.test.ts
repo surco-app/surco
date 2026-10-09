@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { MusicReviewEntry } from '../../../shared/types'
+import type { ReviewEntry } from '../../../shared/types'
 import { replaceAct, SAFE_KINDS, spellingGroups, splitActs } from './musicSpelling'
 
 let n = 0
-function entry(over: Partial<MusicReviewEntry>): MusicReviewEntry {
+function entry(over: Partial<ReviewEntry>): ReviewEntry {
   n += 1
   return {
-    persistentId: n.toString(16).toUpperCase().padStart(16, '0'),
+    id: n.toString(16).toUpperCase().padStart(16, '0'),
     title: `T${n}`,
     artist: '',
     albumArtist: '',
@@ -15,7 +15,7 @@ function entry(over: Partial<MusicReviewEntry>): MusicReviewEntry {
     ...over,
   }
 }
-const many = (count: number, over: Partial<MusicReviewEntry>) =>
+const many = (count: number, over: Partial<ReviewEntry>) =>
   Array.from({ length: count }, () => entry(over))
 const byField = (groups: ReturnType<typeof spellingGroups>, field: string) =>
   groups.filter((g) => g.field === field)
@@ -70,7 +70,7 @@ describe('spellingGroups', () => {
     const [g] = byField(groups, 'artist')
     expect(g.kind).toBe('case')
     expect(g.suggested).toBe('DJ Lara')
-    expect(g.variants.map((v) => [v.value, v.persistentIds.length])).toEqual([
+    expect(g.variants.map((v) => [v.value, v.ids.length])).toEqual([
       ['DJ Lara', 11],
       ['Dj Lara', 1],
     ])
@@ -158,7 +158,7 @@ describe('spellingGroups', () => {
     const safe = groups.find((g) => g.kind === 'case')
     const typo = groups.find((g) => g.kind === 'typo')
     expect(safe?.variants.map((v) => v.value).sort()).toEqual(['Alex Cervera', 'Álex Cervera'])
-    expect(typo?.variants.map((v) => [v.value, v.persistentIds.length])).toEqual([
+    expect(typo?.variants.map((v) => [v.value, v.ids.length])).toEqual([
       ['Álex Cervera', 6],
       ['Álex Cevera', 1],
     ])

@@ -694,7 +694,7 @@ describe('useMusicReview', () => {
       { path: '/m/d.mp3', fields: { artist: { from: 'DJ Lara', to: 'dj lara' } } },
     ])
     expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
-    expect(result.current.lastRun?.outcomes.map((o) => o.persistentId)).toEqual(['C'])
+    expect(result.current.lastRun?.outcomes.map((o) => o.id)).toEqual(['C'])
     expect(result.current.status).toBe('ready')
   })
 
@@ -758,7 +758,7 @@ describe('useMusicReview', () => {
       { path: '/m/d.mp3', fields: { artist: { from: 'DJ Lara', to: 'dj lara' } } },
     ])
     expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
-    expect(result.current.lastRun?.outcomes.map((o) => o.persistentId)).toEqual(['C'])
+    expect(result.current.lastRun?.outcomes.map((o) => o.id)).toEqual(['C'])
   })
 
   // The file is already back after the first try; a second Undo still owes Music its value.
@@ -992,11 +992,11 @@ describe('useMusicReview', () => {
     const { result } = await ready()
     const key = result.current.spelling[0].key
     expect(result.current.affected(key)).toEqual([
-      { persistentId: 'C', title: 'TC', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
-      { persistentId: 'C', title: 'TC', field: 'albumArtist', from: 'Dj Lara', to: 'DJ Lara' },
+      { id: 'C', title: 'TC', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+      { id: 'C', title: 'TC', field: 'albumArtist', from: 'Dj Lara', to: 'DJ Lara' },
     ])
     act(() => result.current.choose(key, 'Dj Lara'))
-    expect(result.current.affected(key).map((f) => f.persistentId)).toEqual(['A', 'B', 'A', 'B'])
+    expect(result.current.affected(key).map((f) => f.id)).toEqual(['A', 'B', 'A', 'B'])
   })
 
   it('previews nothing while the group is tied', async () => {
@@ -1157,8 +1157,8 @@ describe('useMusicReview', () => {
       const [g] = result.current.spelling
       expect(g.fields).toEqual(['artist', 'albumArtist'])
       expect(g.variants).toEqual([
-        { value: 'DJ Lara', persistentIds: ['A', 'B', 'D'] },
-        { value: 'Dj Lara', persistentIds: ['C'] },
+        { value: 'DJ Lara', ids: ['A', 'B', 'D'] },
+        { value: 'Dj Lara', ids: ['C'] },
       ])
       expect(g.parts).toHaveLength(2)
       expect(g.key).toBe(
@@ -1282,5 +1282,54 @@ describe('useMusicReview', () => {
       expect(g.parts.map((p) => p.suggested)).toEqual(['DJ Lara', 'Dj Lara'])
       expect(result.current.choice(g.key)).toBe('Dj Lara')
     })
+  })
+
+  // The seam the list review plugs into: a source given to the hook is the only thing it
+  // talks to for reading, writing and undoing.
+  it('reads, writes and undoes through the source it is given', async () => {
+    setApi()
+    const source = {
+      kind: 'music' as const,
+      load: vi.fn().mockResolvedValue({
+        entries: [
+          { id: '/a', title: 'A', artist: 'DJ Lara', albumArtist: '', album: '', genre: '' },
+          { id: '/b', title: 'B', artist: 'DJ Lara', albumArtist: '', album: '', genre: '' },
+          { id: '/c', title: 'C', artist: 'Dj Lara', albumArtist: '', album: '', genre: '' },
+        ],
+        skipped: 0,
+      }),
+      locate: vi.fn(async (id: string) => id),
+      applyFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/c',
+          musicId: 'PID',
+          path: '/c',
+          fixes: [{ id: '/c', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+          music: ['set'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+      onProgress: vi.fn(() => () => {}),
+      cancel: vi.fn(),
+      removeCopies: vi.fn(),
+      revertMusic: vi.fn().mockResolvedValue('set'),
+    }
+    const { result } = renderHook(() => useMusicReview(props({ source })))
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(source.applyFixes).toHaveBeenCalledWith([
+      { id: '/c', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+    await act(() => result.current.undo())
+    expect(source.revertMusic).toHaveBeenCalledWith(expect.objectContaining({ musicId: 'PID' }), {
+      id: '/c',
+      field: 'artist',
+      from: 'Dj Lara',
+      to: 'DJ Lara',
+    })
+    expect(window.api.loadMusicReview).not.toHaveBeenCalled()
   })
 })

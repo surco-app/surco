@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { MusicReviewEntry } from '../../../shared/types'
+import type { ReviewEntry } from '../../../shared/types'
 import { planFixes, summarizeFixes } from './musicFixPlan'
 import { spellingGroups } from './musicSpelling'
 
-const e = (persistentId: string, over: Partial<MusicReviewEntry>): MusicReviewEntry => ({
-  persistentId,
+const e = (id: string, over: Partial<ReviewEntry>): ReviewEntry => ({
+  id,
   title: 'T',
   artist: '',
   albumArtist: '',
@@ -23,7 +23,7 @@ describe('planFixes', () => {
     const [group] = spellingGroups(entries)
     expect(planFixes(entries, [{ group, to: 'DJ Lara' }])).toEqual([
       {
-        persistentId: 'C',
+        id: 'C',
         field: 'artist',
         from: 'Dj Lara, DJ Sergi Val',
         to: 'DJ Lara, DJ Sergi Val',
@@ -46,7 +46,7 @@ describe('planFixes', () => {
     )
     expect(fixes).toEqual([
       {
-        persistentId: 'C',
+        id: 'C',
         field: 'artist',
         from: 'Dj Lara & dj sergi val',
         to: 'DJ Lara & DJ Sergi Val',
@@ -62,7 +62,7 @@ describe('planFixes', () => {
     ]
     const [group] = spellingGroups(entries)
     expect(planFixes(entries, [{ group, to: 'Electronic' }])).toEqual([
-      { persistentId: 'C', field: 'genre', from: 'electronic', to: 'Electronic' },
+      { id: 'C', field: 'genre', from: 'electronic', to: 'Electronic' },
     ])
   })
 
@@ -88,7 +88,7 @@ describe('planFixes on a typo group', () => {
     const typo = spellingGroups(entries).find((g) => g.kind === 'typo')
     if (!typo) throw new Error('no typo group')
     expect(planFixes(entries, [{ group: typo, to: 'Álex Cervera' }])).toEqual([
-      { persistentId: 'D', field: 'artist', from: 'Álex Cevera', to: 'Álex Cervera' },
+      { id: 'D', field: 'artist', from: 'Álex Cevera', to: 'Álex Cervera' },
     ])
   })
 })
@@ -97,9 +97,9 @@ describe('summarizeFixes', () => {
   it('counts tracks once and changes per field', () => {
     expect(
       summarizeFixes([
-        { persistentId: 'A', field: 'artist', from: 'a', to: 'b' },
-        { persistentId: 'A', field: 'genre', from: 'a', to: 'b' },
-        { persistentId: 'B', field: 'artist', from: 'a', to: 'b' },
+        { id: 'A', field: 'artist', from: 'a', to: 'b' },
+        { id: 'A', field: 'genre', from: 'a', to: 'b' },
+        { id: 'B', field: 'artist', from: 'a', to: 'b' },
       ]),
     ).toEqual({ tracks: 2, byField: { artist: 2, genre: 1 } })
   })

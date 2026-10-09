@@ -797,6 +797,39 @@ export interface MusicFixOutcome {
   error?: string
 }
 
+// One track as the review sees it: `id` is the Music persistent ID for the library review
+// and the file path for the list review.
+export interface ReviewEntry {
+  id: string
+  title: string
+  artist: string
+  albumArtist: string
+  album: string
+  genre: string
+  durationSec?: number
+  dateAdded?: string
+}
+
+export interface ReviewFix {
+  id: string
+  field: MusicReviewField
+  from: string
+  to: string
+}
+
+// `music` runs parallel to `fixes`; 'none' is a field Music was never asked about.
+export interface ReviewOutcome {
+  id: string
+  musicId?: string
+  path?: string
+  fixes: ReviewFix[]
+  music: (MusicFieldOutcome | 'none')[]
+  file: MusicFixOutcome['file']
+  written: MusicReviewField[]
+  backupId?: string
+  error?: string
+}
+
 // One artist/title pair to probe for in the Apple Music library. The lookup takes
 // several — the live tags plus the Discogs-suggested track — so a song whose tags
 // still hold the filename's rough spelling is found under its canonical name too.

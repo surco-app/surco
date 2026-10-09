@@ -1,7 +1,7 @@
 import { Check, ChevronDown, Copy } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LibraryCopyInfo, LibraryStatus, MusicReviewEntry } from '../../../shared/types'
+import type { LibraryCopyInfo, LibraryStatus, ReviewEntry } from '../../../shared/types'
 import type {
   DuplicateCard,
   MusicReview as Review,
@@ -295,7 +295,7 @@ function SpellingDetail({
   const options = [
     ...group.variants,
     ...(group.suggested !== null && !group.variants.some((v) => v.value === group.suggested)
-      ? [{ value: group.suggested, persistentIds: [] }]
+      ? [{ value: group.suggested, ids: [] }]
       : []),
   ]
   const affected = review.affected(group.key)
@@ -342,9 +342,9 @@ function SpellingDetail({
                       {t('musicReview.keeps')}
                     </span>
                   )}
-                  {v.persistentIds.length > 0 && (
+                  {v.ids.length > 0 && (
                     <span className="ml-auto shrink-0 text-xs tabular-nums text-fg-faint">
-                      {t('musicReview.tracks', { count: v.persistentIds.length })}
+                      {t('musicReview.tracks', { count: v.ids.length })}
                     </span>
                   )}
                 </label>
@@ -383,7 +383,7 @@ function SpellingDetail({
                         const ranges = changedRanges(f.from, f.to)
                         return (
                           <tr
-                            key={`${f.persistentId}|${f.field}`}
+                            key={`${f.id}|${f.field}`}
                             data-testid="music-review-affected"
                             className="border-b border-[var(--color-line)] align-top"
                           >
@@ -427,7 +427,7 @@ function SpellingDetail({
           staged
             ? t('musicReview.staged')
             : t('musicReview.unifyCount', {
-                count: new Set(affected.map((f) => f.persistentId)).size,
+                count: new Set(affected.map((f) => f.id)).size,
               })
         }
         disabled={busy || chosen === null}
@@ -508,19 +508,19 @@ function DuplicateDetail({
   const { t, i18n } = useTranslation()
   const copiesId = useId()
   const { group, entries, formats, locations } = card
-  const info = useCopyInfo(entries.flatMap((e) => locations[e.persistentId] || []))
+  const info = useCopyInfo(entries.flatMap((e) => locations[e.id] || []))
   const cuesStay = LIBRARIES.some(([library]) => {
     const held = entries.flatMap((e) => {
-      const path = locations[e.persistentId]
+      const path = locations[e.id]
       return path && info[path]?.[library] ? [pathKey(path)] : []
     })
     return new Set(held).size > 1
   })
   const busy = review.status === 'applying'
   const keep = review.choice(group.key)
-  const anyFile = entries.some((e) => locations[e.persistentId] !== '')
-  const unknown = entries.some((e) => !(e.persistentId in locations))
-  const differs = (value: (e: MusicReviewEntry) => string) => new Set(entries.map(value)).size > 1
+  const anyFile = entries.some((e) => locations[e.id] !== '')
+  const unknown = entries.some((e) => !(e.id in locations))
+  const differs = (value: (e: ReviewEntry) => string) => new Set(entries.map(value)).size > 1
   const day = (iso?: string) =>
     iso ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(iso)) : ''
   const staged = review.staged.has(group.key)
@@ -552,7 +552,7 @@ function DuplicateDetail({
               className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-3"
             >
               {entries.map((e) => {
-                const path = locations[e.persistentId]
+                const path = locations[e.id]
                 const noFile = path === ''
                 const file =
                   path === undefined
@@ -563,10 +563,7 @@ function DuplicateDetail({
                 const sameFile =
                   !!path &&
                   entries.some(
-                    (o) =>
-                      o !== e &&
-                      !!locations[o.persistentId] &&
-                      samePath(locations[o.persistentId], path),
+                    (o) => o !== e && !!locations[o.id] && samePath(locations[o.id], path),
                   )
                 const cells = [
                   ['field.title', e.title, differs((c) => c.title)],
@@ -578,25 +575,25 @@ function DuplicateDetail({
                 ] as const
                 return (
                   <div
-                    key={e.persistentId}
+                    key={e.id}
                     data-testid="music-review-copy"
-                    className={`grid content-start gap-2.5 rounded-lg border p-3 ${keep === e.persistentId ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'}`}
+                    className={`grid content-start gap-2.5 rounded-lg border p-3 ${keep === e.id ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'}`}
                   >
                     <div className="flex items-center gap-2">
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="radio"
                           name={group.key}
-                          checked={keep === e.persistentId}
+                          checked={keep === e.id}
                           disabled={busy || (noFile && anyFile)}
-                          aria-label={[t('musicReview.keeps'), formats[e.persistentId], file]
+                          aria-label={[t('musicReview.keeps'), formats[e.id], file]
                             .filter(Boolean)
                             .join(' ')}
-                          onChange={() => review.choose(group.key, e.persistentId)}
+                          onChange={() => review.choose(group.key, e.id)}
                           className="accent-[var(--color-accent)]"
                         />
                         <span data-testid="music-review-copy-role">
-                          {t(keep === e.persistentId ? 'musicReview.keeps' : 'musicReview.removes')}
+                          {t(keep === e.id ? 'musicReview.keeps' : 'musicReview.removes')}
                         </span>
                       </label>
                       {sameFile && (
@@ -608,10 +605,10 @@ function DuplicateDetail({
                         </span>
                       )}
                       <span
-                        data-differs={differs((c) => formats[c.persistentId] ?? '') || undefined}
-                        className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.persistentId] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
+                        data-differs={differs((c) => formats[c.id] ?? '') || undefined}
+                        className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.id] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
                       >
-                        {formats[e.persistentId] ?? ''}
+                        {formats[e.id] ?? ''}
                       </span>
                     </div>
                     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">

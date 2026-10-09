@@ -19,8 +19,8 @@ const part = {
   field: 'artist' as const,
   kind: 'case' as const,
   variants: [
-    { value: 'DJ Lara', persistentIds: ['A', 'B'] },
-    { value: 'Dj Lara', persistentIds: ['C'] },
+    { value: 'DJ Lara', ids: ['A', 'B'] },
+    { value: 'Dj Lara', ids: ['C'] },
   ],
   suggested: 'DJ Lara',
 }
@@ -69,9 +69,9 @@ const removal = (outcome: ReviewRun['removed'][number]['outcome']) => ({
 })
 
 const written = {
-  persistentId: 'C',
+  id: 'C',
   path: '/m/c.mp3',
-  fixes: [{ persistentId: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }],
+  fixes: [{ id: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }],
   music: ['set' as const],
   file: 'written' as const,
   written: ['artist' as const],
@@ -144,8 +144,8 @@ const other = {
   key: 'genre||case|house',
   fields: ['genre' as const],
   variants: [
-    { value: 'House', persistentIds: ['D', 'E'] },
-    { value: 'house', persistentIds: ['F'] },
+    { value: 'House', ids: ['D', 'E'] },
+    { value: 'house', ids: ['F'] },
   ],
   suggested: 'House',
 }
@@ -243,8 +243,8 @@ describe('MusicReview', () => {
     const dup = {
       group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
       entries: [
-        { persistentId: '1', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
-        { persistentId: '2', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+        { id: '1', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+        { id: '2', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
       ],
       formats: {},
       locations: {},
@@ -280,8 +280,8 @@ describe('MusicReview', () => {
       ...other,
       key: 'genre||case|ambient',
       variants: [
-        { value: 'Ambient', persistentIds: ['G', 'H', 'I', 'J'] },
-        { value: 'ambient', persistentIds: ['K'] },
+        { value: 'Ambient', ids: ['G', 'H', 'I', 'J'] },
+        { value: 'ambient', ids: ['K'] },
       ],
     }
     const names = () =>
@@ -307,8 +307,8 @@ describe('MusicReview', () => {
       ...other,
       key: 'genre||case|techno',
       variants: [
-        { value: 'Techno', persistentIds: ['G'] },
-        { value: 'techno', persistentIds: ['H'] },
+        { value: 'Techno', ids: ['G'] },
+        { value: 'techno', ids: ['H'] },
       ],
     }
     function Ignoring() {
@@ -353,8 +353,8 @@ describe('MusicReview', () => {
     const dup = {
       group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
       entries: [
-        { persistentId: '1', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
-        { persistentId: '2', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+        { id: '1', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
+        { id: '2', artist: 'Ann', title: 'Song', album: '', genre: '', albumArtist: '' },
       ],
       formats: {},
       locations: {},
@@ -1112,7 +1112,7 @@ describe('MusicReview', () => {
         summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
         libraries: status({ rekordbox: false }),
         affected: () => [
-          { persistentId: 'C', title: 'Song C', field: 'artist' as const, from: 'a', to: 'b' },
+          { id: 'C', title: 'Song C', field: 'artist' as const, from: 'a', to: 'b' },
         ],
       })
 
@@ -1231,8 +1231,8 @@ describe('MusicReview', () => {
     const dup = {
       group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
       entries: [
-        { persistentId: '1', artist: 'A', title: 'T', durationSec: 60 },
-        { persistentId: '2', artist: 'A', title: 'T', durationSec: 60 },
+        { id: '1', artist: 'A', title: 'T', durationSec: 60 },
+        { id: '2', artist: 'A', title: 'T', durationSec: 60 },
       ],
       formats: {},
       locations: {},
@@ -1271,7 +1271,7 @@ describe('MusicReview', () => {
 
   describe('detail sections', () => {
     const affectedFix = {
-      persistentId: 'C',
+      id: 'C',
       field: 'artist' as const,
       from: 'Dj Lara',
       to: 'DJ Lara',
@@ -1309,7 +1309,7 @@ describe('MusicReview', () => {
         group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
         entries: [
           {
-            persistentId: '1',
+            id: '1',
             artist: 'Ann',
             title: 'Song',
             album: '',
@@ -1317,7 +1317,7 @@ describe('MusicReview', () => {
             albumArtist: '',
           },
           {
-            persistentId: '2',
+            id: '2',
             artist: 'Ann',
             title: 'Song',
             album: '',
@@ -1339,15 +1339,15 @@ describe('MusicReview', () => {
 
   describe('group footer', () => {
     const affected = () => [
-      { persistentId: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara', title: 'S' },
+      { id: 'C', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara', title: 'S' },
       {
-        persistentId: 'C',
+        id: 'C',
         field: 'albumArtist' as const,
         from: 'Dj Lara',
         to: 'DJ Lara',
         title: 'S',
       },
-      { persistentId: 'D', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara', title: 'S' },
+      { id: 'D', field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara', title: 'S' },
     ]
 
     // The group's own action sits where the editor puts Convert: the full-width split
@@ -1385,7 +1385,7 @@ describe('MusicReview', () => {
         group: { key: 'v#1', kind: 'version' as const, ids: ['1', '2'] },
         entries: [
           {
-            persistentId: '1',
+            id: '1',
             artist: 'Ann',
             title: 'Song',
             album: '',
@@ -1393,7 +1393,7 @@ describe('MusicReview', () => {
             albumArtist: '',
           },
           {
-            persistentId: '2',
+            id: '2',
             artist: 'Ann',
             title: 'Song',
             album: '',
@@ -1417,7 +1417,7 @@ describe('MusicReview', () => {
       ...group,
       key: 'artist||invisible|djlara',
       kind: 'invisible' as const,
-      variants: [{ value: ' DJ  Lara\u200B', persistentIds: ['A'] }],
+      variants: [{ value: ' DJ  Lara\u200B', ids: ['A'] }],
       suggested: 'DJ Lara',
     }
 
@@ -1455,21 +1455,21 @@ describe('MusicReview', () => {
     it('lists each track and field it would change and where the change goes', () => {
       const affected = vi.fn(() => [
         {
-          persistentId: 'A',
+          id: 'A',
           title: 'Song A',
           field: 'artist' as const,
           from: 'Dj Lara',
           to: 'DJ Lara',
         },
         {
-          persistentId: 'A',
+          id: 'A',
           title: 'Song A',
           field: 'albumArtist' as const,
           from: 'Dj Lara',
           to: 'DJ Lara',
         },
         {
-          persistentId: 'C',
+          id: 'C',
           title: 'Song C',
           field: 'artist' as const,
           from: 'Dj Lara ',
@@ -1501,7 +1501,7 @@ describe('MusicReview', () => {
     it('highlights only the part of a credit that changes, in both columns', () => {
       const affected = () => [
         {
-          persistentId: 'A',
+          id: 'A',
           title: 'Song A',
           field: 'artist' as const,
           from: 'Cultura Arcade & Dj Napo feat. Galaxiah',
@@ -1524,7 +1524,7 @@ describe('MusicReview', () => {
     it('keeps a decomposed accent with its letter when highlighting what changes', () => {
       const affected = () => [
         {
-          persistentId: 'A',
+          id: 'A',
           title: 'Song A',
           field: 'artist' as const,
           from: 'Cafe\u0301 Del Mar',
@@ -1543,8 +1543,8 @@ describe('MusicReview', () => {
   })
 
   describe('duplicate detail', () => {
-    const copy = (persistentId: string, extra = {}) => ({
-      persistentId,
+    const copy = (id: string, extra = {}) => ({
+      id,
       artist: 'Ann',
       title: 'Song',
       albumArtist: '',

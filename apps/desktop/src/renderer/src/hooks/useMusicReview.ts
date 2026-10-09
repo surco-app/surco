@@ -4,11 +4,11 @@ import type {
   LibraryStatus,
   LibraryTagSyncReport,
   LibraryTagUpdate,
-  MusicFieldFix,
-  MusicFixOutcome,
-  MusicReviewEntry,
   MusicReviewField,
   RemoveCopyResult,
+  ReviewEntry,
+  ReviewFix,
+  ReviewOutcome,
 } from '../../../shared/types'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
 import { libraryUpdatesOf, tagUpdatesOf } from '../lib/libraryTagUpdates'
@@ -21,6 +21,12 @@ import {
   spellingGroups,
   suggest,
 } from '../lib/musicSpelling'
+import {
+  musicSource,
+  type ReviewRemoval,
+  type ReviewRemovalRun,
+  type ReviewSource,
+} from '../lib/reviewSource'
 
 export type ReviewFilter = 'all' | 'spelling' | 'duplicates'
 
@@ -35,13 +41,13 @@ export interface ReviewSpellingGroup {
 
 export interface DuplicateCard {
   group: DuplicateGroup
-  entries: MusicReviewEntry[]
+  entries: ReviewEntry[]
   formats: Record<string, string>
   locations: Record<string, string>
 }
 
 export interface ReviewRun {
-  outcomes: MusicFixOutcome[]
+  outcomes: ReviewOutcome[]
   removed: RemoveCopyResult[]
   replaced: DuplicateReplaceOutcome[]
   // The run was stopped with removed copies the libraries never heard about.
@@ -90,7 +96,7 @@ export interface MusicReview {
   lastRun: ReviewRun | null
   // Null until main answers; a library that is on but not found is the case it exists for.
   libraries: LibraryStatus | null
-  affected: (key: string) => (MusicFieldFix & { title: string })[]
+  affected: (key: string) => (ReviewFix & { title: string })[]
 }
 
 const RANK = ['AIFF', 'AIF', 'WAV', 'FLAC', 'M4A']
@@ -98,11 +104,10 @@ const rankOf = (format: string) => {
   const i = RANK.indexOf(format)
   return i < 0 ? 2 : i < 4 ? 0 : 1
 }
-const FAILED_REMOVAL: RemoveCopyResult = { outcome: 'failed', playlists: 0, fileTrashed: false }
 
 const extOf = (path: string) => (path.match(/\.([^./]+)$/)?.[1] ?? '').toUpperCase()
-const toItem = (e: MusicReviewEntry) => ({
-  id: e.persistentId,
+const toItem = (e: ReviewEntry) => ({
+  id: e.id,
   artist: e.artist,
   title: e.title,
   durationSec: e.durationSec,
@@ -110,7 +115,7 @@ const toItem = (e: MusicReviewEntry) => ({
 const keepsNoFile = (ids: string[], keepPid: string, locations: Record<string, string>) =>
   locations[keepPid] === '' && ids.some((id) => locations[id])
 
-const labelOf = (e: MusicReviewEntry) => `${e.artist} - ${e.title}`
+const labelOf = (e: ReviewEntry) => `${e.artist} - ${e.title}`
 
 // Keyed by the smallest member so an ignore survives a reload and removing one cluster
 // never renames its sibling that shares the recording key.
@@ -135,13 +140,11 @@ function joined(parts: SpellingGroup[]): ReviewSpellingGroup {
     for (const v of part.variants) {
       const set = ids.get(v.value) ?? new Set<string>()
       ids.set(v.value, set)
-      for (const id of v.persistentIds) set.add(id)
+      for (const id of v.ids) set.add(id)
     }
   const variants = [...ids]
-    .map(([value, set]) => ({ value, persistentIds: [...set].sort() }))
-    .sort(
-      (a, b) => b.persistentIds.length - a.persistentIds.length || a.value.localeCompare(b.value),
-    )
+    .map(([value, set]) => ({ value, ids: [...set].sort() }))
+    .sort((a, b) => b.ids.length - a.ids.length || a.value.localeCompare(b.value))
   const suggestions = new Set(parts.map((p) => p.suggested))
   return {
     key: parts
@@ -180,7 +183,7 @@ export function mergeSpelling(groups: SpellingGroup[]): ReviewSpellingGroup[] {
   })
 }
 
-function pendingCount(entries: MusicReviewEntry[], ignored: ReadonlySet<string>): number {
+function pendingCount(entries: ReviewEntry[], ignored: ReadonlySet<string>): number {
   const spelling = mergeSpelling(spellingGroups(entries).filter((g) => !ignored.has(g.key))).length
   const dups = uniqueKeys(duplicateGroups(entries.map(toItem))).filter(
     (g) => g.kind === 'duplicate' && !ignored.has(g.key),
@@ -189,18 +192,20 @@ function pendingCount(entries: MusicReviewEntry[], ignored: ReadonlySet<string>)
 }
 
 export function useMusicReview({
+  source = musicSource,
   initialFilter,
   ignored,
   saveIgnored,
   onFilesChanged,
 }: {
+  source?: ReviewSource
   initialFilter: ReviewFilter
   ignored: string[]
   saveIgnored: (keys: string[]) => void
   onFilesChanged: (updates: LibraryTagUpdate[]) => void
 }): MusicReview {
   const [status, setStatus] = useState<MusicReview['status']>('loading')
-  const [entries, setEntries] = useState<MusicReviewEntry[]>([])
+  const [entries, setEntries] = useState<ReviewEntry[]>([])
   const [filter, setFilter] = useState<ReviewFilter>(initialFilter)
   const [choices, setChoices] = useState<Record<string, string>>({})
   const [staged, setStaged] = useState<ReadonlySet<string>>(new Set())
@@ -219,10 +224,10 @@ export function useMusicReview({
 
   const load = useCallback(async () => {
     window.api.libraryStatus().then(setLibraries, () => {})
-    const next = await window.api.loadMusicReview()
+    const { entries: next } = await source.load()
     setEntries(next)
     return next
-  }, [])
+  }, [source])
 
   useEffect(() => {
     load().then(
@@ -231,7 +236,7 @@ export function useMusicReview({
     )
   }, [load])
 
-  const byPid = useMemo(() => new Map(entries.map((e) => [e.persistentId, e])), [entries])
+  const byId = useMemo(() => new Map(entries.map((e) => [e.id, e])), [entries])
   const spelling = useMemo(
     () => mergeSpelling(spellingGroups(entries).filter((g) => !hidden.has(g.key))),
     [entries, hidden],
@@ -257,17 +262,15 @@ export function useMusicReview({
       attempts.current.set(pid, (attempts.current.get(pid) ?? 0) + 1)
       inFlight.current.add(pid)
     }
-    Promise.allSettled(missing.map((pid) => window.api.appleMusicEntryLocation(pid))).then(
-      (results) => {
-        for (const pid of missing) inFlight.current.delete(pid)
-        const found = results.flatMap((r, i) =>
-          r.status === 'fulfilled' ? [[missing[i], r.value] as const] : [],
-        )
-        if (found.length) setLocations((l) => ({ ...l, ...Object.fromEntries(found) }))
-        if (found.length < missing.length) setRetry((n) => n + 1)
-      },
-    )
-  }, [dupGroups, locations, retry])
+    Promise.allSettled(missing.map((id) => source.locate(id))).then((results) => {
+      for (const pid of missing) inFlight.current.delete(pid)
+      const found = results.flatMap((r, i) =>
+        r.status === 'fulfilled' ? [[missing[i], r.value] as const] : [],
+      )
+      if (found.length) setLocations((l) => ({ ...l, ...Object.fromEntries(found) }))
+      if (found.length < missing.length) setRetry((n) => n + 1)
+    })
+  }, [dupGroups, locations, retry, source])
 
   const formats = useMemo(
     () => Object.fromEntries(Object.entries(locations).map(([pid, path]) => [pid, extOf(path)])),
@@ -278,7 +281,7 @@ export function useMusicReview({
     () =>
       dupGroups.map((group) => ({
         group,
-        entries: group.ids.flatMap((id) => byPid.get(id) ?? []),
+        entries: group.ids.flatMap((id) => byId.get(id) ?? []),
         formats: Object.fromEntries(
           group.ids.filter((id) => id in formats).map((id) => [id, formats[id]]),
         ),
@@ -286,7 +289,7 @@ export function useMusicReview({
           group.ids.filter((id) => id in locations).map((id) => [id, locations[id]]),
         ),
       })),
-    [dupGroups, byPid, formats, locations],
+    [dupGroups, byId, formats, locations],
   )
 
   const choice = useCallback(
@@ -355,27 +358,27 @@ export function useMusicReview({
     [hidden, saveIgnored, spelling],
   )
 
-  const removals = useMemo(
+  const removals = useMemo<ReviewRemoval[]>(
     () =>
       dupGroups
         .filter((g) => staged.has(g.key))
         .flatMap((g) => {
-          const keepPid = choice(g.key) as string
-          const keep = byPid.get(keepPid)
-          if (!g.ids.includes(keepPid)) return []
-          return g.ids.flatMap((removePid) => {
-            const removed = byPid.get(removePid)
-            if (removePid === keepPid || !removed || !keep) return []
-            return [{ removePid, keepPid, label: labelOf(removed), keepLabel: labelOf(keep) }]
+          const keepId = choice(g.key) as string
+          const keep = byId.get(keepId)
+          if (!g.ids.includes(keepId)) return []
+          return g.ids.flatMap((removeId) => {
+            const removed = byId.get(removeId)
+            if (removeId === keepId || !removed || !keep) return []
+            return [{ removeId, keepId, label: labelOf(removed), keepLabel: labelOf(keep) }]
           })
         }),
-    [dupGroups, staged, choice, byPid],
+    [dupGroups, staged, choice, byId],
   )
 
   const fixes = useMemo(() => {
-    const removing = new Set(removals.map((r) => r.removePid))
+    const removing = new Set(removals.map((r) => r.removeId))
     return planFixes(
-      entries.filter((e) => !removing.has(e.persistentId)),
+      entries.filter((e) => !removing.has(e.id)),
       spelling
         .filter((g) => staged.has(g.key))
         .flatMap((g) => g.parts.map((group) => ({ group, to: choice(g.key) as string }))),
@@ -390,9 +393,9 @@ export function useMusicReview({
       return planFixes(
         entries,
         group.parts.map((part) => ({ group: part, to })),
-      ).map((fix) => ({ ...fix, title: byPid.get(fix.persistentId)?.title ?? '' }))
+      ).map((fix) => ({ ...fix, title: byId.get(fix.id)?.title ?? '' }))
     },
-    [spelling, choice, entries, byPid],
+    [spelling, choice, entries, byId],
   )
 
   const summary = useMemo(
@@ -412,7 +415,7 @@ export function useMusicReview({
     cancelled.current = false
     setStatus('applying')
     const before = pendingCount(entries, hidden)
-    const writes = new Set(fixes.map((f) => f.persistentId)).size
+    const writes = new Set(fixes.map((f) => f.id)).size
     const total = writes + removals.length
     setProgress({ done: 0, total })
     setPhase(
@@ -420,40 +423,40 @@ export function useMusicReview({
         ? { name: 'writing', current: 1, total: writes }
         : { name: 'duplicates', current: 1, total: removals.length },
     )
-    const off = window.api.onMusicFixProgress((p) => {
+    const off = source.onProgress((p) => {
       setProgress({ done: p.done, total })
       setPhase({ name: 'writing', current: p.current, total: p.total })
     })
     try {
-      let outcomes: MusicFixOutcome[] = []
+      let outcomes: ReviewOutcome[] = []
       let applyError: string | undefined
       if (fixes.length)
         try {
-          outcomes = await window.api.applyMusicFixes(fixes)
+          outcomes = await source.applyFixes(fixes)
         } catch (error) {
           applyError = error instanceof Error ? error.message : String(error)
         }
-      const removed: RemoveCopyResult[] = []
-      for (const r of removals) {
-        if (cancelled.current || applyError !== undefined) break
-        setPhase({ name: 'duplicates', current: removed.length + 1, total: removals.length })
-        removed.push(await window.api.removeMusicDuplicate(r).catch(() => FAILED_REMOVAL))
-        setProgress({ done: writes + removed.length, total })
+      let librariesPhase = false
+      let removal: ReviewRemovalRun = {
+        removed: [],
+        replaced: [],
+        librariesUntouched: false,
+        replaceFailed: false,
       }
-      const pairs = removed.flatMap((r) => (r.pair ? [r.pair] : []))
-      let replaced: DuplicateReplaceOutcome[] = []
-      let replaceFailed = false
-      let librariesCalled = false
-      const updates = libraryUpdatesOf(outcomes, 'apply')
-      if ((pairs.length && !cancelled.current) || updates.length) setPhase({ name: 'libraries' })
-      if (pairs.length && !cancelled.current) {
-        librariesCalled = true
-        replaced = await window.api.replaceDuplicatesInLibraries(pairs).catch(() => {
-          replaceFailed = true
-          return []
+      if (applyError === undefined && removals.length)
+        removal = await source.removeCopies(removals, {
+          isCancelled: () => cancelled.current,
+          onStep: (current) => setPhase({ name: 'duplicates', current, total: removals.length }),
+          onDone: (done) => setProgress({ done: writes + done, total }),
+          onLibraries: () => {
+            librariesPhase = true
+            setPhase({ name: 'libraries' })
+          },
         })
-      }
-      let librarySync: ReviewRun['librarySync'] = replaceFailed ? 'failed' : 'none'
+      const { removed, replaced } = removal
+      const updates = libraryUpdatesOf(outcomes, 'apply')
+      if (updates.length && !librariesPhase) setPhase({ name: 'libraries' })
+      let librarySync: ReviewRun['librarySync'] = removal.replaceFailed ? 'failed' : 'none'
       let tagSync: LibraryTagSyncReport | undefined
       if (updates.length) {
         const synced = await window.api.syncLibraryTags(updates).then(
@@ -475,7 +478,7 @@ export function useMusicReview({
         outcomes,
         removed,
         replaced,
-        ...(pairs.length && !librariesCalled ? { librariesUntouched: true } : {}),
+        ...(removal.librariesUntouched ? { librariesUntouched: true } : {}),
         before,
         after: next ? pendingCount(next, hidden) : null,
         librarySync,
@@ -490,12 +493,12 @@ export function useMusicReview({
       running.current = false
       setStatus('done')
     }
-  }, [entries, hidden, fixes, removals, load, onFilesChanged, fill])
+  }, [entries, hidden, fixes, removals, load, onFilesChanged, fill, source])
 
   const cancel = useCallback(() => {
     cancelled.current = true
-    void window.api.cancelMusicFixes()
-  }, [])
+    source.cancel()
+  }, [source])
 
   const undo = useCallback(async () => {
     if (running.current || !lastRun) return
@@ -506,9 +509,9 @@ export function useMusicReview({
     setProgress({ done: 0, total })
     setPhase({ name: 'restoring', current: 1, total })
     try {
-      const restored: MusicFixOutcome[] = []
-      const reverted: MusicFixOutcome[] = []
-      const failed: MusicFixOutcome[] = []
+      const restored: ReviewOutcome[] = []
+      const reverted: ReviewOutcome[] = []
+      const failed: ReviewOutcome[] = []
       for (const [i, o] of lastRun.outcomes.entries()) {
         setPhase({ name: 'restoring', current: i + 1, total })
         setProgress({ done: i, total })
@@ -528,7 +531,7 @@ export function useMusicReview({
         }
         for (const [i, f] of o.fixes.entries())
           if (o.music[i] === 'set')
-            await window.api.setMusicField(f.persistentId, f.field, f.to, f.from).catch(() => {
+            await source.revertMusic(o, f).catch(() => {
               ok = false
             })
         if (ok) reverted.push(o)
@@ -575,7 +578,7 @@ export function useMusicReview({
       running.current = false
       setStatus('ready')
     }
-  }, [lastRun, load, onFilesChanged, fill])
+  }, [lastRun, load, onFilesChanged, fill, source])
 
   // Stable between renders because the provider keeps it in state: a fresh object each
   // render would set that state again and never settle.

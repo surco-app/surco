@@ -1,10 +1,10 @@
-import type { MusicReviewEntry, MusicReviewField } from '../../../shared/types'
+import type { MusicReviewField, ReviewEntry } from '../../../shared/types'
 
 export type SpellingKind = 'invisible' | 'case' | 'punctuation' | 'typo'
 
 export interface SpellingVariant {
   value: string
-  persistentIds: string[]
+  ids: string[]
 }
 
 export interface SpellingGroup {
@@ -104,8 +104,8 @@ function mixedCase(value: string): boolean {
 export function suggest(variants: SpellingVariant[]): string | null {
   const candidates = variants.filter((v) => isClean(v.value))
   if (candidates.length === 0) return clean(variants[0].value)
-  const top = candidates[0].persistentIds.length
-  const tied = candidates.filter((v) => v.persistentIds.length === top)
+  const top = candidates[0].ids.length
+  const tied = candidates.filter((v) => v.ids.length === top)
   if (tied.length === 1) return tied[0].value
   const mixed = tied.filter((v) => mixedCase(v.value))
   return mixed.length === 1 ? mixed[0].value : null
@@ -113,10 +113,7 @@ export function suggest(variants: SpellingVariant[]): string | null {
 
 type Bucket = Map<string, Map<string, Set<string>>>
 
-function valuesOf(
-  entry: MusicReviewEntry,
-  field: MusicReviewField,
-): { scope: string; value: string }[] {
+function valuesOf(entry: ReviewEntry, field: MusicReviewField): { scope: string; value: string }[] {
   switch (field) {
     case 'artist':
     case 'albumArtist':
@@ -134,7 +131,7 @@ function valuesOf(
   }
 }
 
-function collect(entries: MusicReviewEntry[], field: MusicReviewField): Map<string, Bucket> {
+function collect(entries: ReviewEntry[], field: MusicReviewField): Map<string, Bucket> {
   const scopes = new Map<string, Bucket>()
   for (const entry of entries) {
     for (const { scope, value } of valuesOf(entry, field)) {
@@ -146,7 +143,7 @@ function collect(entries: MusicReviewEntry[], field: MusicReviewField): Map<stri
       clusters.set(key, exact)
       const ids = exact.get(value) ?? new Set<string>()
       exact.set(value, ids)
-      ids.add(entry.persistentId)
+      ids.add(entry.id)
     }
   }
   return scopes
@@ -154,10 +151,8 @@ function collect(entries: MusicReviewEntry[], field: MusicReviewField): Map<stri
 
 function variantsOf(...clusters: Map<string, Set<string>>[]): SpellingVariant[] {
   return clusters
-    .flatMap((c) => [...c].map(([value, ids]) => ({ value, persistentIds: [...ids].sort() })))
-    .sort(
-      (a, b) => b.persistentIds.length - a.persistentIds.length || a.value.localeCompare(b.value),
-    )
+    .flatMap((c) => [...c].map(([value, ids]) => ({ value, ids: [...ids].sort() })))
+    .sort((a, b) => b.ids.length - a.ids.length || a.value.localeCompare(b.value))
 }
 
 function groupKey(
@@ -222,10 +217,7 @@ function typoGroups(field: MusicReviewField, scope: string, clusters: Bucket): S
     .map((members) => {
       const variants = members
         .map((k) => reps.get(k) as SpellingVariant)
-        .sort(
-          (a, b) =>
-            b.persistentIds.length - a.persistentIds.length || a.value.localeCompare(b.value),
-        )
+        .sort((a, b) => b.ids.length - a.ids.length || a.value.localeCompare(b.value))
       return {
         key: groupKey(field, scope, members, 'typo'),
         field,
@@ -238,7 +230,7 @@ function typoGroups(field: MusicReviewField, scope: string, clusters: Bucket): S
 
 const FIELDS: MusicReviewField[] = ['artist', 'albumArtist', 'album', 'genre', 'title']
 
-export function spellingGroups(entries: MusicReviewEntry[]): SpellingGroup[] {
+export function spellingGroups(entries: ReviewEntry[]): SpellingGroup[] {
   const groups: SpellingGroup[] = []
   for (const field of FIELDS) {
     for (const [scope, clusters] of collect(entries, field)) {
@@ -257,7 +249,7 @@ export function spellingGroups(entries: MusicReviewEntry[]): SpellingGroup[] {
       if (field !== 'title' && field !== 'genre') groups.push(...typoGroups(field, scope, clusters))
     }
   }
-  const tracks = (g: SpellingGroup) => g.variants.reduce((n, v) => n + v.persistentIds.length, 0)
+  const tracks = (g: SpellingGroup) => g.variants.reduce((n, v) => n + v.ids.length, 0)
   return groups.sort(
     (a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || tracks(b) - tracks(a),
   )

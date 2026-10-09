@@ -526,8 +526,7 @@ const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
 
 export type ReviewSort = 'default' | 'tracks' | 'name'
 
-const trackCount = (g: ReviewSpellingGroup) =>
-  new Set(g.variants.flatMap((v) => v.persistentIds)).size
+const trackCount = (g: ReviewSpellingGroup) => new Set(g.variants.flatMap((v) => v.ids)).size
 
 const nameOf = (review: Review, g: ReviewSpellingGroup) =>
   review.choice(g.key) ?? g.variants[0].value
