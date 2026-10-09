@@ -113,7 +113,10 @@
     "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y las manda a Apple Music o Engine DJ.",
     "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y las manda a Engine DJ.",
     "or": "o",
-    "importApplePlaylist": "Importar de Apple Music"
+    "importApplePlaylist": "Importar de Apple Music",
+    "reviewHint": "¿Tu biblioteca tiene erratas o pistas repetidas?",
+    "reviewMusic": "Revisar metadatos en Apple Music",
+    "showDuplicates": "Mostrar duplicados"
   },
   "errors": {
     "unexpected": "Algo ha fallado: {{detail}}",

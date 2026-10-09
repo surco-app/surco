@@ -3739,6 +3739,51 @@ describe('App empty screen offers a single way in', () => {
     expect(screen.getByTestId('empty-import-playlist')).toBeInTheDocument()
   })
 
+  // The empty screen is where someone with a big Music library lands first, but the line
+  // stays quiet so it never competes with adding files.
+  it('offers the Music review and the duplicates view on macOS', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+
+    expect(await screen.findByTestId('empty-review-hint')).toBeInTheDocument()
+    expect(screen.getByTestId('empty-music-review')).toBeInTheDocument()
+    expect(screen.getByTestId('empty-music-duplicates')).toBeInTheDocument()
+  })
+
+  it('opens the review on all groups from its link', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('empty-music-review'))
+    await screen.findByTestId('music-review-empty')
+    expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('All')
+  })
+
+  it('opens the review on duplicates from its link', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('empty-music-duplicates'))
+    await screen.findByTestId('music-review-empty')
+    expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('Duplicates')
+  })
+
+  // The review reads Apple Music, so off macOS the commands do not exist and neither
+  // should the invitation.
+  it('is absent off macOS, like the commands it mirrors', async () => {
+    vi.resetModules()
+    reviewApi({ platform: 'win32' })
+    await renderApp()
+
+    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
+    expect(screen.queryByTestId('empty-review-hint')).toBeNull()
+    expect(screen.queryByTestId('empty-music-review')).toBeNull()
+    expect(screen.queryByTestId('empty-music-duplicates')).toBeNull()
+  })
+
   // The panel is where the tracks visibly land, so it has to answer the drag the copy
   // invites. Previously only the sidebar carried the drop state.
   it('answers the drag in the panel the copy points at', async () => {

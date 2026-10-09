@@ -2245,6 +2245,34 @@ export default function App(): React.JSX.Element {
                             </>
                           )}
                         </div>
+                        {isMac && (
+                          <div
+                            data-testid="empty-review-hint"
+                            className="empty-copy-in mt-6 flex flex-col items-center gap-1 border-t border-line pt-4 text-xs text-fg-faint"
+                            style={{ animationDelay: '0.34s' }}
+                          >
+                            <span>{tr('empty.reviewHint')}</span>
+                            <span className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                data-testid="empty-music-review"
+                                onClick={() => setMusicReview('all')}
+                                className="rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
+                              >
+                                {tr('empty.reviewMusic')}
+                              </button>
+                              <span aria-hidden="true">·</span>
+                              <button
+                                type="button"
+                                data-testid="empty-music-duplicates"
+                                onClick={() => setMusicReview('duplicates')}
+                                className="rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
+                              >
+                                {tr('empty.showDuplicates')}
+                              </button>
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
