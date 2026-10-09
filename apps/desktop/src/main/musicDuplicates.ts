@@ -1,4 +1,4 @@
-import type { RemoveCopyResult } from '../shared/types'
+import type { ListMusicStep, ListRemoval, RemoveCopyResult } from '../shared/types'
 import type { Activity } from './activity'
 
 export interface RemoveCopyDeps {
@@ -15,7 +15,11 @@ export interface RemoveCopyDeps {
 
 // Fails closed: when either side can't be resolved, the file might be shared, and
 // trashing it would take the kept copy's audio along. Leaving a stray file is recoverable.
-async function mayShareFile(a: string, b: string, deps: RemoveCopyDeps): Promise<boolean> {
+export async function mayShareFile(
+  a: string,
+  b: string,
+  deps: Pick<RemoveCopyDeps, 'realpath'>,
+): Promise<boolean> {
   if (!a || !b) return true
   const [ra, rb] = await Promise.all([deps.realpath(a), deps.realpath(b)])
   if (ra === null || rb === null) return true
@@ -111,4 +115,47 @@ export async function removeDuplicateCopyLogged(
   )
   if (result.pair) log.rememberCopy(result.pair.from, { group, label: req.label })
   return result
+}
+
+// The list review found each entry by its file, so every live check names that file too.
+export interface ListMusicDeps {
+  transferPlaylists: (
+    fromPid: string,
+    toPid: string,
+    label: string,
+    keepLabel: string,
+    locations: { from: string; to: string },
+  ) => Promise<string>
+  deleteEntry: (persistentId: string, label: string, location: string) => Promise<string | null>
+}
+
+// The list review's half of a removal in Music, run only once the file is really leaving.
+// Fails closed like removeDuplicateCopy: no transfer target, two entries on one file or any
+// doubt about the playlists leaves the entry, and the caller keeps the file.
+export async function removeListCopyFromMusic(
+  { from, to, music }: ListRemoval,
+  deps: ListMusicDeps,
+): Promise<ListMusicStep> {
+  if (music === undefined) return 'none'
+  if (music === 'ambiguous') return 'ambiguous'
+  if (!music.keep) return 'kept-no-entry'
+  if (music.keep.persistentId === music.removePid) return 'failed'
+  const answer = await deps.transferPlaylists(
+    music.removePid,
+    music.keep.persistentId,
+    music.label,
+    music.keep.label,
+    { from, to },
+  )
+  if (answer === 'mismatch') return 'mismatch'
+  const parsed = /^(\d+)\t(\d+)$/.exec(answer)
+  if (!parsed || Number(parsed[2]) > 0) return 'failed'
+  let location: string | null
+  try {
+    location = await deps.deleteEntry(music.removePid, music.label, from)
+  } catch (e) {
+    if (e instanceof Error && e.message === 'applemusic-delete-mismatch') return 'mismatch'
+    throw e
+  }
+  return location === null ? 'failed' : 'removed'
 }

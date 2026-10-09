@@ -774,7 +774,32 @@ export interface DuplicateReplaceOutcome {
   traktor?: LibraryReplaceOutcome
   fileTrashed: boolean
   keptForLibrary: boolean
+  music?: ListMusicStep
+  // The file stayed on disk because Apple Music still holds it.
+  keptForMusic?: boolean
+  // Nothing held the file any more and the Trash still refused it.
+  trashFailed?: boolean
 }
+
+// A copy the list review removes: its file, the kept copy's file and its Apple Music entries.
+export interface ListMusicRef {
+  removePid: string
+  label: string
+  // The kept copy's entry; absent when the kept file is not in Music (or is there twice).
+  keep?: { persistentId: string; label: string }
+}
+export interface ListRemoval {
+  from: string
+  to: string
+  music?: ListMusicRef | 'ambiguous'
+}
+export type ListMusicStep =
+  | 'none'
+  | 'removed'
+  | 'kept-no-entry'
+  | 'ambiguous'
+  | 'mismatch'
+  | 'failed'
 
 export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
 

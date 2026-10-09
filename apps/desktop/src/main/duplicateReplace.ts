@@ -1,4 +1,9 @@
-import type { DuplicatePair, DuplicateReplaceOutcome, LibraryReplaceOutcome } from '../shared/types'
+import type {
+  DuplicatePair,
+  DuplicateReplaceOutcome,
+  LibraryReplaceOutcome,
+  ListMusicStep,
+} from '../shared/types'
 import type { Activity } from './activity'
 import { toNmlLocation } from './ffmpeg'
 import type { DuplicateReplaceResult } from './rekordboxDuplicates'
@@ -30,16 +35,21 @@ export interface ReplaceDuplicatesDeps {
     track: Activity['track']
     copyOf: (path: string) => { group: string; label: string } | undefined
   }
+  // The list review only: Apple Music lets go of the removed copy after the DJ libraries and
+  // before the Trash, and a file Music still holds is not thrown away.
+  musicStep?: (pair: ReplacePair) => Promise<ListMusicStep>
 }
 
-type FileFate =
-  | { fate: 'shared' | 'unsettled' | 'used' | 'trash' | 'surco' }
+type FileFate = (
+  | { fate: 'shared' | 'unsettled' | 'used' | 'music' | 'trash' | 'surco' }
   | { fate: 'failed'; error: string }
+) & { music?: ListMusicStep }
 
 const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'error' }> = {
   shared: { detailKey: 'activity.reviewDuplicateFileShared' },
   unsettled: { detailKey: 'activity.reviewDuplicateFileUnsettled', status: 'warn' },
   used: { detailKey: 'activity.reviewDuplicateFileUsed' },
+  music: { detailKey: 'activity.reviewDuplicateFileMusic', status: 'warn' },
   trash: { detailKey: 'activity.reviewDuplicateFileTrash' },
   surco: { detailKey: 'activity.reviewDuplicateFileSurco' },
   failed: { detailKey: 'activity.reviewDuplicateFileTrashFailed', status: 'error' },
@@ -156,7 +166,7 @@ export function replaceDuplicates(
       const decide = () => fileFate(pair, index, byLibrary, deps)
       const log = deps.log
       const copy = log?.copyOf(pair.from)
-      const { fate } =
+      const { fate, music } =
         log && copy
           ? await log.track('applemusic', 'activity.reviewDuplicateFile', decide, {
               group: copy.group,
@@ -167,8 +177,11 @@ export function replaceDuplicates(
               }),
             })
           : await decide()
+      if (music !== undefined) result.music = music
       result.keptForLibrary = fate === 'unsettled' || fate === 'used'
+      if (fate === 'music') result.keptForMusic = true
       result.fileTrashed = fate === 'trash' || fate === 'surco'
+      if (fate === 'failed') result.trashFailed = true
     }
     return results
   })
@@ -188,10 +201,18 @@ async function fileFate(
   // Fails closed: a library that cannot be read may still use the file, and a trashed
   // file shows there as a missing track with its cues out of reach.
   if (stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) return { fate: 'used' }
+  let music: ListMusicStep | undefined
+  if (deps.musicStep) {
+    music = await deps.musicStep(pair).catch((error) => {
+      deps.warn('library:replaceDuplicates Music step failed', error)
+      return 'failed' as const
+    })
+    if (music !== 'none' && music !== 'removed') return { fate: 'music', music }
+  }
   try {
-    return { fate: await deps.trash(pair.from) }
+    return { fate: await deps.trash(pair.from), music }
   } catch (error) {
     deps.warn('library:replaceDuplicates trash failed', error)
-    return { fate: 'failed', error: error instanceof Error ? error.message : String(error) }
+    return { fate: 'failed', error: error instanceof Error ? error.message : String(error), music }
   }
 }

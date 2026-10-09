@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { ActivityEvent } from '../shared/types'
+import type { ActivityEvent, ListRemoval } from '../shared/types'
 import { createActivity } from './activity'
 import {
+  type ListMusicDeps,
   type RemoveCopyDeps,
   removeDuplicateCopy,
   removeDuplicateCopyLogged,
+  removeListCopyFromMusic,
 } from './musicDuplicates'
 
 function deps(over: Partial<RemoveCopyDeps> = {}): RemoveCopyDeps {
@@ -228,5 +230,102 @@ describe('removeDuplicateCopyLogged', () => {
     const { events, log } = logged()
     await removeDuplicateCopyLogged(req, deps(over), log)
     expect(events[1]).toMatchObject({ phase, detailKey })
+  })
+})
+
+describe('removeListCopyFromMusic', () => {
+  const ref = {
+    removePid: 'OLD',
+    label: 'A - T',
+    keep: { persistentId: 'KEEP', label: 'A - T (Remaster)' },
+  }
+  const removal = (music?: ListRemoval['music']) => ({
+    from: '/m/old.aiff',
+    to: '/m/keep.aiff',
+    ...(music && { music }),
+  })
+  function listDeps(over: Partial<ListMusicDeps> = {}): ListMusicDeps {
+    return {
+      transferPlaylists: vi.fn().mockResolvedValue('1\t0'),
+      deleteEntry: vi.fn().mockResolvedValue('/m/old.aiff'),
+      ...over,
+    }
+  }
+
+  it('has nothing to do for a file Music does not hold', async () => {
+    const d = listDeps()
+    expect(await removeListCopyFromMusic(removal(), d)).toBe('none')
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+  })
+
+  // Each entry is checked live against the file it was found by, not only by its label.
+  it('moves the playlists to the kept entry and then deletes the removed one', async () => {
+    const calls: string[] = []
+    const d = listDeps({
+      transferPlaylists: vi.fn(async () => {
+        calls.push('transfer')
+        return '1\t0'
+      }),
+      deleteEntry: vi.fn(async () => {
+        calls.push('delete')
+        return '/m/old.aiff'
+      }),
+    })
+    expect(await removeListCopyFromMusic(removal(ref), d)).toBe('removed')
+    expect(d.transferPlaylists).toHaveBeenCalledWith('OLD', 'KEEP', 'A - T', 'A - T (Remaster)', {
+      from: '/m/old.aiff',
+      to: '/m/keep.aiff',
+    })
+    expect(d.deleteEntry).toHaveBeenCalledWith('OLD', 'A - T', '/m/old.aiff')
+    expect(calls).toEqual(['transfer', 'delete'])
+  })
+
+  // Its Music playlists would have nowhere to go.
+  it('touches nothing when the kept file is not in Music', async () => {
+    const d = listDeps()
+    expect(await removeListCopyFromMusic(removal({ removePid: 'OLD', label: 'A - T' }), d)).toBe(
+      'kept-no-entry',
+    )
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+    expect(d.deleteEntry).not.toHaveBeenCalled()
+  })
+
+  it('touches nothing for a file Music holds twice', async () => {
+    const d = listDeps()
+    expect(await removeListCopyFromMusic(removal('ambiguous'), d)).toBe('ambiguous')
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+    expect(d.deleteEntry).not.toHaveBeenCalled()
+  })
+
+  it('touches nothing when both sides name the same entry', async () => {
+    const d = listDeps()
+    const same = { ...ref, keep: { persistentId: 'OLD', label: 'A - T' } }
+    expect(await removeListCopyFromMusic(removal(same), d)).toBe('failed')
+    expect(d.transferPlaylists).not.toHaveBeenCalled()
+    expect(d.deleteEntry).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['mismatch', 'mismatch'],
+    ['missing', 'failed'],
+    ['2\t1', 'failed'],
+    ['nonsense', 'failed'],
+  ])('deletes nothing when the transfer answers %s', async (answer, step) => {
+    const d = listDeps({ transferPlaylists: vi.fn().mockResolvedValue(answer) })
+    expect(await removeListCopyFromMusic(removal(ref), d)).toBe(step)
+    expect(d.deleteEntry).not.toHaveBeenCalled()
+  })
+
+  it('reports an entry that changed between the transfer and the delete', async () => {
+    const d = listDeps({
+      deleteEntry: vi.fn().mockRejectedValue(new Error('applemusic-delete-mismatch')),
+    })
+    expect(await removeListCopyFromMusic(removal(ref), d)).toBe('mismatch')
+  })
+
+  // Gone before the delete: nothing confirms Music let go of this file.
+  it('does not count an entry that vanished before the delete as removed', async () => {
+    const d = listDeps({ deleteEntry: vi.fn().mockResolvedValue(null) })
+    expect(await removeListCopyFromMusic(removal(ref), d)).toBe('failed')
   })
 })

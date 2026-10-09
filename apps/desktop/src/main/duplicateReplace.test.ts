@@ -168,6 +168,104 @@ describe('replaceDuplicates', () => {
     await replaceDuplicates([PAIR], d)
     expect(order).toEqual(['queued', 'trash', 'released'])
   })
+
+  // List review order: the DJ libraries first, then Music lets go, and only then the Trash.
+  it('lets Apple Music go between the libraries and the Trash', async () => {
+    const calls: string[] = []
+    const d = deps({
+      libraries: {
+        rekordbox: vi.fn(async () => {
+          calls.push('rekordbox')
+          return ['repointed' as const]
+        }),
+      },
+      usedByLibrary: vi.fn(async () => {
+        calls.push('used')
+        return false
+      }),
+      musicStep: vi.fn(async () => {
+        calls.push('music')
+        return 'removed' as const
+      }),
+      trash: vi.fn(async () => {
+        calls.push('trash')
+        return 'trash' as const
+      }),
+    })
+    expect(await replaceDuplicates([PAIR], d)).toEqual([
+      {
+        from: PAIR.from,
+        rekordbox: 'repointed',
+        music: 'removed',
+        fileTrashed: true,
+        keptForLibrary: false,
+      },
+    ])
+    expect(calls).toEqual(['rekordbox', 'used', 'music', 'trash'])
+  })
+
+  // A file Music still points at becomes a dead "!" entry with its playlists stranded.
+  it.each(['kept-no-entry', 'ambiguous', 'mismatch', 'failed'] as const)(
+    'keeps the file when Music answers %s',
+    async (step) => {
+      const d = deps({ musicStep: vi.fn().mockResolvedValue(step) })
+      expect(await replaceDuplicates([PAIR], d)).toEqual([
+        {
+          from: PAIR.from,
+          rekordbox: 'repointed',
+          music: step,
+          fileTrashed: false,
+          keptForLibrary: false,
+          keptForMusic: true,
+        },
+      ])
+      expect(d.trash).not.toHaveBeenCalled()
+    },
+  )
+
+  it('trashes a file Music never held', async () => {
+    const d = deps({ musicStep: vi.fn().mockResolvedValue('none') })
+    expect((await replaceDuplicates([PAIR], d))[0]).toMatchObject({
+      music: 'none',
+      fileTrashed: true,
+    })
+  })
+
+  it('keeps the file when the Music step throws', async () => {
+    const d = deps({ musicStep: vi.fn().mockRejectedValue(new Error('osascript')) })
+    expect((await replaceDuplicates([PAIR], d))[0]).toMatchObject({
+      music: 'failed',
+      keptForMusic: true,
+      fileTrashed: false,
+    })
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  // Music only lets go of a copy whose file is really leaving.
+  it('never asks Music when a library keeps the file', async () => {
+    const d = deps({ usedByLibrary: vi.fn().mockResolvedValue(true), musicStep: vi.fn() })
+    await replaceDuplicates([PAIR], d)
+    expect(d.musicStep).not.toHaveBeenCalled()
+  })
+
+  it('never asks Music about two paths that may be one file', async () => {
+    const d = deps({ musicStep: vi.fn() })
+    await replaceDuplicates([SHARED], d)
+    expect(d.musicStep).not.toHaveBeenCalled()
+  })
+
+  // Music already let go, so the file now sits outside every library: the user has to hear it.
+  it('says so when the Trash fails after Music let go', async () => {
+    const d = deps({
+      musicStep: vi.fn().mockResolvedValue('removed'),
+      trash: vi.fn().mockRejectedValue(new Error('No recoverable trash')),
+    })
+    expect((await replaceDuplicates([PAIR], d))[0]).toMatchObject({
+      music: 'removed',
+      fileTrashed: false,
+      trashFailed: true,
+    })
+  })
 })
 
 describe('outcomeOf', () => {
