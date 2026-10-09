@@ -299,23 +299,6 @@ describe('listreview:removeDuplicates', () => {
     expect(d.trash).not.toHaveBeenCalled()
   })
 
-  it('keeps the file when the renderer could not ask Music', async () => {
-    const d = register()
-    const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
-      removal('/m/old.aiff', '/m/keep.aiff', 'unknown'),
-    ])
-    expect(out).toEqual([
-      {
-        from: '/m/old.aiff',
-        music: 'unknown',
-        fileTrashed: false,
-        keptForLibrary: false,
-        keptForMusic: true,
-      },
-    ])
-    expect(d.music.fileLocations).not.toHaveBeenCalled()
-  })
-
   // The renderer's lookup goes by title: a track renamed in Music is not found there.
   it('reads Music once for every file it found no entry for and keeps the ones Music holds', async () => {
     const d = register()
@@ -356,7 +339,6 @@ describe('listreview:removeDuplicates', () => {
   it('reads Music only when a file is about to be trashed', async () => {
     const d = register()
     await handlerFor('listreview:removeDuplicates')({ sender }, [
-      removal('/m/one.aiff', '/m/keep.aiff', 'unknown'),
       removal('/m/two.aiff', '/m/keep2.aiff', 'ambiguous'),
     ])
     expect(d.music.fileLocations).not.toHaveBeenCalled()
@@ -527,12 +509,6 @@ describe('listreview:removeDuplicates in Activity', () => {
   })
 
   it.each([
-    [
-      'unknown',
-      'unknown',
-      'activity.listReviewDuplicateUnknown',
-      'activity.reviewDuplicateFileMusicUnknown',
-    ],
     [
       'ambiguous',
       'ambiguous',

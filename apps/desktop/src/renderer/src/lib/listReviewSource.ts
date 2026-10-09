@@ -24,10 +24,10 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
   let titles = new Map<string, string>()
   const music = (id: string) => lookup?.entries[id] ?? []
   const only = (id: string) => (music(id).length === 1 ? music(id)[0] : undefined)
-  // Main reads an absent ref as "Music has no entry"; that is only true when Music answered.
+  // An absent ref sends the copy to main's own read of every Music location before the
+  // Trash, which opens Music when it is closed: what the load could not ask is asked there.
   const musicOf = (removeId: string, keepId: string): ListRemoval['music'] => {
-    if (!lookup) return undefined
-    if (!lookup.consulted) return 'unknown'
+    if (!lookup?.consulted) return undefined
     const found = music(removeId)
     if (found.length === 0) return undefined
     if (found.length > 1) return 'ambiguous'

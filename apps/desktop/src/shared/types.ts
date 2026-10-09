@@ -805,15 +805,14 @@ export interface ListRemoval {
   to: string
   // The title the list showed, for the copy's Activity row.
   label: string
-  // 'unknown': the renderer could not ask Music, so nothing is assumed either way.
-  music?: ListMusicRef | 'ambiguous' | 'unknown'
+  // Absent when the renderer found no entry or could not ask: main reads Music itself.
+  music?: ListMusicRef | 'ambiguous'
 }
 export type ListMusicStep =
   | 'none'
   | 'removed'
   | 'kept-no-entry'
   | 'ambiguous'
-  | 'unknown'
   // Music holds the file under an entry the renderer never found, so the file stays.
   | 'held'
   | 'mismatch'

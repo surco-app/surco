@@ -206,7 +206,7 @@ describe('replaceDuplicates', () => {
   })
 
   // A file Music still points at becomes a dead "!" entry with its playlists stranded.
-  it.each(['kept-no-entry', 'ambiguous', 'unknown', 'held', 'mismatch', 'failed'] as const)(
+  it.each(['kept-no-entry', 'ambiguous', 'held', 'mismatch', 'failed'] as const)(
     'keeps the file when Music answers %s',
     async (step) => {
       const d = deps({ musicStep: vi.fn().mockResolvedValue({ step }) })

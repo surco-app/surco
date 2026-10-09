@@ -168,15 +168,17 @@ describe('listReviewSource', () => {
     ])
   })
 
-  // Closed Music that was not opened answers nothing: "no entry" would let main assume the
-  // file is free of Music, so every removal says the question went unasked.
-  it('says Music is unknown for every copy when it could not be asked', async () => {
+  // Closed Music that was not opened answers nothing. Sent with no ref, the copy reaches
+  // main's own read of every Music location, which opens Music and keeps the file if any
+  // entry points at it; marked unasked instead, a user with Music closed could never remove
+  // a copy at all.
+  it('leaves Music to main for every copy when the load could not ask it', async () => {
     api.appleMusicFileEntries.mockResolvedValue({ consulted: false, entries: {} })
     const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
     await s.load()
     await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
     expect(api.removeListDuplicates).toHaveBeenCalledWith([
-      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T', music: 'unknown' },
+      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T' },
     ])
   })
 
@@ -301,7 +303,7 @@ describe('listReviewSource', () => {
     expect(s.inMusic?.('/m/b.aiff')).toBe(false)
     await s.removeCopies([r('/m/b.aiff', '/m/a.aiff')], hooks())
     expect(api.removeListDuplicates).toHaveBeenCalledWith([
-      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T', music: 'unknown' },
+      { from: '/m/b.aiff', to: '/m/a.aiff', label: 'A - T' },
     ])
   })
 

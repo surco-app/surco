@@ -136,7 +136,7 @@ export async function removeListCopyFromMusic(
   deps: ListMusicDeps,
 ): Promise<ListMusicOutcome> {
   if (music === undefined) return { step: (await deps.heldElsewhere(from, [])) ? 'held' : 'none' }
-  if (music === 'ambiguous' || music === 'unknown') return { step: music }
+  if (music === 'ambiguous') return { step: music }
   if (!music.keep) return { step: 'kept-no-entry' }
   if (music.keep.persistentId === music.removePid) return { step: 'failed' }
   const heldElsewhere = await deps.heldElsewhere(from, [music.removePid])

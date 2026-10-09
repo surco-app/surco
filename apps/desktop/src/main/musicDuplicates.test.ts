@@ -274,15 +274,6 @@ describe('removeListCopyFromMusic', () => {
     await expect(removeListCopyFromMusic(removal(), d)).rejects.toThrow('osascript')
   })
 
-  // The renderer never consulted Music: it does not know, so nothing is assumed.
-  it('touches nothing when the renderer could not ask Music', async () => {
-    const d = listDeps()
-    expect(await removeListCopyFromMusic(removal('unknown'), d)).toEqual({ step: 'unknown' })
-    expect(d.heldElsewhere).not.toHaveBeenCalled()
-    expect(d.transferPlaylists).not.toHaveBeenCalled()
-    expect(d.deleteEntry).not.toHaveBeenCalled()
-  })
-
   // Each entry is checked live against the file it was found by, not only by its label.
   it('moves the playlists to the kept entry and then deletes the removed one', async () => {
     const calls: string[] = []

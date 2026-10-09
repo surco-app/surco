@@ -239,7 +239,6 @@ function Done({
       (r) => r.keptForMusic && !r.musicEntryRemoved && r.music && steps.includes(r.music),
     ).length
   const keptForMusic = keptBy(['held', 'kept-no-entry', 'ambiguous'])
-  const musicUnknown = keptBy(['unknown'])
   const musicRemovalFailed = keptBy(['mismatch', 'failed'])
   const heldForEntry = run.replaced.filter((r) => r.musicEntryRemoved).length
   const leftMusic = run.replaced.filter((r) => r.music === 'removed' || r.musicEntryRemoved).length
@@ -310,7 +309,6 @@ function Done({
     ...libraryWarnings,
     ...(run.librariesUntouched ? [t('musicReview.done.librariesUntouched')] : []),
     ...(keptShared ? [t('listReview.done.keptShared', { count: keptShared })] : []),
-    ...(musicUnknown ? [t('listReview.done.musicUnknown', { count: musicUnknown })] : []),
     ...(musicRemovalFailed
       ? [t('listReview.done.musicFailed', { count: musicRemovalFailed })]
       : []),
@@ -318,7 +316,7 @@ function Done({
   ]
   const inMusic =
     run.outcomes.some((o) => o.musicId !== undefined) ||
-    run.replaced.some((r) => r.music !== undefined && r.music !== 'none' && r.music !== 'unknown')
+    run.replaced.some((r) => r.music !== undefined && r.music !== 'none')
   // Every library with its sync on gets a row: a library left out read as one that got
   // the change, which is what hid a rekordbox that got nothing.
   const libraryRow = (

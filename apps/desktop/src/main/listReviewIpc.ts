@@ -146,7 +146,6 @@ const MUSIC_ENDING: Record<
   held: { detailKey: 'activity.listReviewDuplicateHeld', status: 'warn' },
   'kept-no-entry': { detailKey: 'activity.listReviewDuplicateKeptNoEntry', status: 'warn' },
   ambiguous: { detailKey: 'activity.listReviewDuplicateAmbiguous', status: 'warn' },
-  unknown: { detailKey: 'activity.listReviewDuplicateUnknown', status: 'warn' },
   mismatch: { detailKey: 'activity.reviewDuplicateMismatch', status: 'warn' },
   failed: { detailKey: 'activity.reviewDuplicateFailed', status: 'error' },
 }

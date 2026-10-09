@@ -41,7 +41,7 @@ export interface ReplaceDuplicatesDeps {
 }
 
 type FileFate =
-  | { fate: 'shared' | 'unsettled' | 'used' | 'music' | 'musicUnknown' | 'trash' | 'surco' }
+  | { fate: 'shared' | 'unsettled' | 'used' | 'music' | 'trash' | 'surco' }
   | { fate: 'failed'; error: string }
 
 const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'error' }> = {
@@ -49,7 +49,6 @@ const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'err
   unsettled: { detailKey: 'activity.reviewDuplicateFileUnsettled', status: 'warn' },
   used: { detailKey: 'activity.reviewDuplicateFileUsed' },
   music: { detailKey: 'activity.reviewDuplicateFileMusic', status: 'warn' },
-  musicUnknown: { detailKey: 'activity.reviewDuplicateFileMusicUnknown', status: 'warn' },
   trash: { detailKey: 'activity.reviewDuplicateFileTrash' },
   surco: { detailKey: 'activity.reviewDuplicateFileSurco' },
   failed: { detailKey: 'activity.reviewDuplicateFileTrashFailed', status: 'error' },
@@ -173,7 +172,6 @@ export function replaceDuplicates(
             })
       const decide = async (): Promise<FileFate> => {
         if (kept) return kept
-        if (music?.step === 'unknown') return { fate: 'musicUnknown' }
         if (music && music.step !== 'none' && music.step !== 'removed') return { fate: 'music' }
         return trashFate(pair, deps)
       }
@@ -194,7 +192,7 @@ export function replaceDuplicates(
       if (music?.playlists !== undefined) result.musicPlaylists = music.playlists
       if (music?.entryRemoved) result.musicEntryRemoved = true
       result.keptForLibrary = fate === 'unsettled' || fate === 'used'
-      if (fate === 'music' || fate === 'musicUnknown') result.keptForMusic = true
+      if (fate === 'music') result.keptForMusic = true
       result.fileTrashed = fate === 'trash' || fate === 'surco'
       if (fate === 'failed') result.trashFailed = true
     }

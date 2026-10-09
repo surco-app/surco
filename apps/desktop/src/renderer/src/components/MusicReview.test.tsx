@@ -2137,7 +2137,6 @@ describe('list review', () => {
         run({
           replaced: [
             gone('/m/a.aiff', { keptShared: true }),
-            gone('/m/b.aiff', { music: 'unknown', keptForMusic: true }),
             gone('/m/c.aiff', { music: 'mismatch', keptForMusic: true }),
             gone('/m/d.aiff', { music: 'failed', keptForMusic: true, musicPlaylists: 1 }),
             gone('/m/e.aiff', { music: 'removed', trashFailed: true }),
@@ -2147,7 +2146,6 @@ describe('list review', () => {
       expect(screen.getByTestId('music-review-done-badge')).toHaveAttribute('data-tone', 'warn')
       expect(warnings()).toEqual([
         '1 copy was left alone because it may share its audio with the copy you keep',
-        '1 file stays on disk because Apple Music could not be checked',
         '2 copies could not leave Apple Music, so their files stay on disk',
         '1 file could not go to the Trash',
       ])
