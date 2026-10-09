@@ -11,6 +11,7 @@ function deps(over: Partial<RecoverableTrashDeps>): RecoverableTrashDeps {
     trashItem: vi.fn(async () => {}),
     policy: () => 'audioChanges',
     remove: vi.fn(async () => {}),
+    platform: 'darwin',
     ...over,
   }
 }
@@ -73,6 +74,17 @@ describe('trashAsConfirmed', () => {
     expect(d.remove).not.toHaveBeenCalled()
     expect(d.keep).not.toHaveBeenCalled()
     expect(d.trashItem).not.toHaveBeenCalled()
+  })
+
+  // Windows drives all read as having no Trash, but a local one has a Recycle Bin: the
+  // OS gets the first try, so a confirmed delete under "Never" lands there when it can.
+  it('hands a confirmed delete under never to the OS first on Windows', async () => {
+    const d = deps({ keepsTrash: () => false, policy: () => 'never', platform: 'win32' })
+    expect(await trashAsConfirmed('C:\\Music\\a.mp3', { permanentConfirmed: true }, d)).toBe(
+      'trash',
+    )
+    expect(d.trashItem).toHaveBeenCalledWith('C:\\Music\\a.mp3')
+    expect(d.remove).not.toHaveBeenCalled()
   })
 
   it('deletes for good once confirmed under never on a disk with no Trash', async () => {

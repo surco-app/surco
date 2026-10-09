@@ -10,6 +10,7 @@ export interface RecoverableTrashDeps {
   trashItem: (path: string) => Promise<void>
   policy: () => BackupPolicy
   remove: (path: string) => Promise<void>
+  platform: NodeJS.Platform
 }
 
 const defaultDeps: RecoverableTrashDeps = {
@@ -18,6 +19,7 @@ const defaultDeps: RecoverableTrashDeps = {
   trashItem: (path) => shell.trashItem(path),
   policy: currentBackupPolicy,
   remove: unlink,
+  platform: process.platform,
 }
 
 // A volume with no Trash of its own (a NAS: macOS deletes outright there) sends the file
@@ -47,6 +49,11 @@ export async function trashAsConfirmed(
   const deps = { ...defaultDeps, ...over }
   if (!deps.keepsTrash(path) && deps.policy() === 'never') {
     if (!permanentConfirmed) throw new Error(`Permanent delete of ${path} was not confirmed`)
+    // Every Windows drive reads as having no Trash, yet a local one has a Recycle Bin.
+    if (deps.platform === 'win32') {
+      await deps.trashItem(path)
+      return 'trash'
+    }
     await deps.remove(path)
     return 'deleted'
   }
