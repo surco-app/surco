@@ -368,10 +368,19 @@ export function useMusicReview({
     [choices, spelling, dupGroups, formats, locations, facts],
   )
 
-  const choose = useCallback(
-    (key: string, value: string) => setChoices((c) => ({ ...c, [key]: value })),
-    [],
-  )
+  // Picks the hook froze at staging, as opposed to ones the user made: only those go when
+  // their group leaves the tray.
+  const frozen = useRef(new Set<string>())
+  const release = useCallback((keys: string[]) => {
+    const drop = keys.filter((k) => frozen.current.delete(k))
+    if (drop.length)
+      setChoices((c) => Object.fromEntries(Object.entries(c).filter(([k]) => !drop.includes(k))))
+  }, [])
+
+  const choose = useCallback((key: string, value: string) => {
+    frozen.current.delete(key)
+    setChoices((c) => ({ ...c, [key]: value }))
+  }, [])
 
   const toggleStaged = useCallback(
     (key: string) => {
@@ -380,33 +389,42 @@ export function useMusicReview({
       // The copy the card shows as kept is the one removed against: a verdict or format
       // arriving after staging would otherwise swap the pick under the user.
       const dup = dupGroups.find((g) => g.key === key)
-      if (dup && !staged.has(key) && dup.ids.every((id) => id in locations))
-        setChoices((c) => (c[key] ? c : { ...c, [key]: picked }))
-      setStaged((s) => {
-        const next = new Set(s)
-        if (next.delete(key)) return next
-        const added = spelling.find((g) => g.key === key)
-        if (added) {
-          const values = new Set(added.variants.map((v) => v.value))
-          for (const other of spelling)
-            if (
+      const next = new Set(staged)
+      if (next.delete(key)) {
+        setStaged(next)
+        release([key])
+        return
+      }
+      const added = spelling.find((g) => g.key === key)
+      if (added) {
+        const values = new Set(added.variants.map((v) => v.value))
+        for (const other of spelling)
+          if (
+            other.key !== key &&
+            other.fields.some((f) => added.fields.includes(f)) &&
+            other.variants.some((v) => values.has(v.value))
+          )
+            next.delete(other.key)
+      }
+      if (dup?.ids.some((id) => !(id in locations))) return
+      const displaced = dup
+        ? dupGroups.filter(
+            (other) =>
               other.key !== key &&
-              other.fields.some((f) => added.fields.includes(f)) &&
-              other.variants.some((v) => values.has(v.value))
-            )
-              next.delete(other.key)
-        }
-        if (dup?.ids.some((id) => !(id in locations))) return s
-        if (dup) {
-          for (const other of dupGroups)
-            if (other.key !== key && other.ids.some((id) => dup.ids.includes(id)))
-              next.delete(other.key)
-        }
-        next.add(key)
-        return next
-      })
+              next.has(other.key) &&
+              other.ids.some((id) => dup.ids.includes(id)),
+          )
+        : []
+      for (const other of displaced) next.delete(other.key)
+      if (dup && !choices[key]) {
+        frozen.current.add(key)
+        setChoices((c) => ({ ...c, [key]: picked }))
+      }
+      next.add(key)
+      setStaged(next)
+      release(displaced.map((g) => g.key))
     },
-    [choice, spelling, dupGroups, locations, staged],
+    [choice, choices, spelling, dupGroups, locations, staged, release],
   )
 
   const ignore = useCallback(
@@ -415,13 +433,14 @@ export function useMusicReview({
       for (const part of spelling.find((g) => g.key === key)?.parts ?? [{ key }]) next.add(part.key)
       setHidden(next)
       saveIgnored([...next])
+      release([key])
       setStaged((s) => {
         const copy = new Set(s)
         copy.delete(key)
         return copy
       })
     },
-    [hidden, saveIgnored, spelling],
+    [hidden, saveIgnored, spelling, release],
   )
 
   const removals = useMemo<ReviewRemoval[]>(
@@ -543,6 +562,7 @@ export function useMusicReview({
       const next = await load().catch(() => null)
       setStaged(new Set())
       setChoices({})
+      frozen.current.clear()
       setLastRun({
         outcomes,
         removed,

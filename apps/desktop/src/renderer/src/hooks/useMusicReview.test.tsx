@@ -1764,6 +1764,52 @@ describe('with the list as source', () => {
     ])
   })
 
+  // The freeze only holds the pick while the group sits in the tray; out of it, the card
+  // goes back to suggesting the best copy it knows of.
+  describe('a pick frozen at staging', () => {
+    const spectrum = (cutoffHz: number) =>
+      ({ cutoffHz, sampleRateHz: 44100, processed: false, hasKnee: true }) as TrackItem['spectrum']
+    const staged = async () => {
+      listApi()
+      let rows = [row('/m/a.aiff', 'Ann'), row('/m/b.aiff', 'Ann')]
+      const source = listReviewSource({
+        rows: () => rows,
+        mac: true,
+        launchMusic: () => true,
+        onRowsRemoved: vi.fn(),
+      })
+      const hook = renderHook(() => useMusicReview(props({ source })))
+      await located(hook.result)
+      const key = hook.result.current.duplicates[0].group.key
+      act(() => hook.result.current.toggleStaged(key))
+      rows = [
+        row('/m/a.aiff', 'Ann', 'Song', { spectrum: spectrum(16000) }),
+        row('/m/b.aiff', 'Ann', 'Song', { spectrum: spectrum(20500) }),
+      ]
+      hook.rerender()
+      return { ...hook, key }
+    }
+
+    it('lets go of it when the group is unstaged', async () => {
+      const { result, key } = await staged()
+      act(() => result.current.toggleStaged(key))
+      expect(result.current.choice(key)).toBe('/m/b.aiff')
+    })
+
+    it('lets go of it when the group is ignored', async () => {
+      const { result, key } = await staged()
+      act(() => result.current.ignore(key))
+      expect(result.current.choice(key)).toBeNull()
+    })
+
+    it('keeps a pick the user made themselves after unstaging', async () => {
+      const { result, key } = await staged()
+      act(() => result.current.choose(key, '/m/a.aiff'))
+      act(() => result.current.toggleStaged(key))
+      expect(result.current.choice(key)).toBe('/m/a.aiff')
+    })
+  })
+
   // Same format on both sides: the measured one that is not cut at 16 kHz is the one to keep.
   it('keeps the better analyzed copy when the format ties', async () => {
     listApi()
