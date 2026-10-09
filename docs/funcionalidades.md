@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 1 de octubre de 2026** (v1.6.0). Levantado por primera vez el
+**Última revisión: 9 de octubre de 2026** (v1.7.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -875,8 +875,8 @@ conectada queda fuera del auto-emparejado aunque esté marcado como fuente
 notación elegida, `providers/index.ts:102`), mix e ISRC (`beatport.ts:150-157`); un
 campo fuera de la lista de importación no se toca. Entre versiones con el mismo
 título se preselecciona la que nombra el fichero, y el mix se añade al título
-salvo «Original Mix» (`lib/release.ts:225-229`). En la lista de resultados va
-detrás de Discogs, Bandcamp y Deezer (`release.ts:396-402`).
+salvo «Original Mix» (`lib/release.ts:232-237`). En la lista de resultados va
+detrás de Discogs, Bandcamp y Deezer (`release.ts:403-409`).
 
 **MusicBrainz** es el catálogo abierto de la comunidad. Sale **encendido** para todos:
 en instalaciones nuevas por defecto (`shared/defaults.ts:76`) y en las existentes con
@@ -884,12 +884,18 @@ una migración de una sola vez; si el usuario lo desmarca no vuelve a aparecer
 (`settings.ts:507-513`). Su API pide una petición por segundo, así que cada búsqueda
 cuesta al menos un segundo por peldaño. Con artista y título en las etiquetas busca la
 grabación por esos campos, primero sin recopilatorios, porque un tema de baile sale en
-cientos y llenan la lista antes que el single original (`musicbrainz.ts:254`). El texto
-libre busca a la vez en título, artista y disco (`musicbrainz.ts:183-195`). Las carátulas
-vienen de Cover Art Archive: la miniatura es la del álbum, que existe en cuanto alguna
-edición tiene imagen (`musicbrainz.ts:160`), y una edición sin carátula propia toma la
-del álbum solo si responde (`musicbrainz.ts:338`). Va la última en la lista
-(`release.ts:401`).
+cientos y llenan la lista antes que el single original (`musicbrainz.ts:315`). El texto
+libre busca a la vez en título, artista y disco (`musicbrainz.ts:220-232`). Si el texto
+libre no lleva el artista de la pista (lo escribió el usuario sin las etiquetas), pregunta
+primero al índice de lanzamientos y después al de grabaciones, porque un texto así nombra
+un disco tanto como una canción (`musicbrainz.ts:276-277`). **Distingue las ediciones**:
+el título de cada fila lleva la desambiguación de MusicBrainz («special edition», «dutch
+pressing»), y una edición entre corchetes en la etiqueta de álbum («Duran Duran (Deluxe
+Edition)») se busca sin ella pero puntúa primero la edición que la nombra
+(`musicbrainz.ts:155-163`, `:207-215`, `:296-306`). Las carátulas vienen de Cover Art
+Archive: la miniatura es la del álbum, que existe en cuanto alguna edición tiene imagen
+(`musicbrainz.ts:141-145`), y una edición sin carátula propia toma la del álbum solo si
+responde (`musicbrainz.ts:436`). Va la última en la lista (`release.ts:408`).
 
 ### La escalera de búsqueda
 
@@ -910,20 +916,25 @@ campos de MusicBrainz no pasan por esta regla: ya fijan el artista en la consult
 
 **Buscar primero por álbum** (Ajustes → Búsqueda, apagado por defecto). Con artista y
 álbum en las etiquetas, Discogs y MusicBrainz buscan primero ese disco por sus campos
-(`discogs.ts:295-296`, `musicbrainz.ts:245`), y el resto prueba «artista álbum» como
+(`discogs.ts:298-302`, `musicbrainz.ts:285-310`), y el resto prueba «artista álbum» como
 primer peldaño (`searchQuery.ts:44`); si no aparece un disco del artista, sigue la
-búsqueda por pista de siempre. Un álbum igual al título o vacío se ignora.
+búsqueda por pista de siempre. Un álbum igual al título o vacío se ignora. Una edición
+entre corchetes en la etiqueta se reintenta sin ella en las dos fuentes.
 
 **Filtro de formatos** (Ajustes → Búsqueda, «Mostrar solo estos formatos»: vinilo,
 CD, digital, casete). Limita a la vez los resultados de Discogs y de MusicBrainz
-(`discogs.ts:79-82`, `musicbrainz.ts:185-199`); las demás fuentes no saben el formato
+(`discogs.ts:79-82`, `musicbrainz.ts:190-207`); las demás fuentes no saben el formato
 del lanzamiento y no se filtran. Con las dos fuentes apagadas el control queda
 deshabilitado y lo dice.
 
 **Lo que escribes manda.** Si el usuario escribe en la caja una búsqueda que no nombra
 el artista y el título de la pista seleccionada, se busca sin sus etiquetas, para que
-no arrastren los resultados a su propio disco (`lib/autoMatch.ts:72-83`). La búsqueda
-automática sigue usando siempre las etiquetas.
+no arrastren los resultados a su propio disco. Si lo escrito nombra el artista y el
+álbum de la pista pero no la canción, se busca ese disco, aunque «Buscar primero por
+álbum» esté apagado (`lib/autoMatch.ts:63-91`, `providers/index.ts:39-45`). Y los
+resultados de una búsqueda escrita se ordenan por cuánto del texto escrito cubre cada
+fila, no por las etiquetas del fichero (`typedCoverage`, `release.ts:420-443`). La
+búsqueda automática sigue usando siempre las etiquetas.
 
 **Descargas de sello y promo.** Cuando la etiqueta pone el sello como artista y el
 título trae «Acto - Pista» («HH Traxx» / «Francesco Donadoni - Funky Roll»), tras las
@@ -934,7 +945,7 @@ fichero bien etiquetado se resuelve igual que antes.
 
 **Orden de resultados.** Un disco acreditado al artista del fichero («Artista - …»)
 sube por delante de otro que solo lo nombra más adelante, como un remix o un bootleg
-que lleva el nombre entero del original (`release.ts:407-413`). Las respuestas de cada
+que lleva el nombre entero del original (`release.ts:456-464`). Las respuestas de cada
 fuente entran en su puesto según llegan, sin reordenar al final, y la que llega tarde
 a una lista ya visible se marca un momento.
 
@@ -1283,10 +1294,12 @@ codificaciones LAME; por debajo, dos copias del mismo tema a 320 se acusarían e
 separarlas (`replaceSelection.ts`).
 
 **El fichero sustituido se ofrece a la papelera** al acabar, por pista o el lote entero
-(`supersededFile.ts`, `selectionStatus.ts`). Antes de prometer nada se le pregunta al
-sistema de ficheros si el borrado es recuperable (`trashSupport.ts`): APFS, HFS y exFAT
-guardan papelera; un SMB no, y ahí el aviso dice que puede ser definitivo. Es una lista
-blanca, así que un sistema de ficheros imprevisto lee como «sin promesa».
+(`supersededFile.ts`, `selectionStatus.ts`). Se le pregunta al sistema de ficheros si
+guarda papelera (`trashSupport.ts:7-16`): APFS, HFS y exFAT sí; un SMB no, y ahí el
+fichero va a Copias de seguridad en vez de borrarse (actualizado para v1.7.0, antes el
+aviso decía que podía ser definitivo). Es una lista blanca, así que un sistema de
+ficheros imprevisto también va a Copias de seguridad. El aviso dice antes adónde irá cada
+fichero (claves `confirm.cleanUpMessageBackups*` y `*Mixed*`).
 
 **Un repunte rechazado no cancela la sustitución:** el fichero ya está en disco y la copia
 de biblioteca sigue mereciendo actualizarse. El motivo viaja hacia arriba para contarlo.
@@ -1316,6 +1329,70 @@ El propio código lo califica: **es un indicio, no una garantía**
 Si la biblioteca de Apple Music o de Engine DJ no se puede leer, un aviso lo dice
 (las pistas no se marcan como incluidas) y se reintenta al volver a la ventana
 (`useLibraryMembership.ts`, claves `libraryCheckFailed*`).
+
+### Revisar metadatos: grafías y duplicados
+
+Nuevo en v1.7.0. Una vista que ocupa la columna de la lista, agrupa lo que está escrito de
+varias formas y las pistas repetidas, y lo arregla con una hoja de confirmación antes de
+escribir y un resumen al terminar. Diseño en
+`docs/superpowers/specs/2026-10-06-revisar-metadatos-music-design.md` y
+`2026-10-08-revisar-metadatos-lista-design.md`.
+
+**Dos fuentes, un motor.** «Revisar metadatos en Apple Music…» y «Mostrar duplicados en
+Apple Music…» leen la biblioteca de Music en bloque por AppleScript; están en Archivo, en
+⌘K y en la pantalla de inicio, **solo en macOS** (`appMenu.ts:58-59`,
+`commands.ts:381-396`, `appleMusicIpc.ts:82`). «Revisar metadatos de la lista…» usa las
+etiquetas que la lista ya leyó, en todas las plataformas; está en el menú Pistas, en ⌘K y
+en un botón de la cabecera de la lista, y se desactiva mientras corre una conversión
+(`commands.ts:399-404`, `TrackListHeader.tsx:275`). Al soltar una carpeta o elegir
+ficheros, si las pistas cargadas tienen grafías o duplicados pendientes, un aviso lo dice y
+abre la revisión con un clic (`useListReviewNotice.ts`). Las filas cuya lectura falló o no
+ha terminado se quedan fuera, y la vista dice cuántas.
+
+**Grafías** (`musicSpelling.ts`). Artista y artista del álbum por actos (una colaboración
+se parte por comas, «&», «feat.» y demás), álbum dentro del mismo artista del álbum, género
+como valor entero (los géneros con varios valores se saltan) y título solo por caracteres
+invisibles (`musicSpelling.ts:120-135`). Cuatro tipos: invisibles, mayúsculas y acentos
+(NFC incluido), signos y espacios, y posible errata. Los tres primeros son seguros y la
+grafía mayoritaria va marcada; en empate no se marca ninguna. **Una errata nunca entra sola
+en la tanda** (`SAFE_KINDS`, `musicSpelling.ts:18`): es una sola edición (Damerau) entre
+nombres de 8 letras o más con los mismos dígitos, y nunca en género ni título
+(`musicSpelling.ts:77`, `:98-102`, `:259`). Medido sobre una biblioteca real: por debajo de
+8 letras casi todos los pares eran artistas distintos.
+
+**Duplicados** (`duplicates.ts`). Misma grabación (actos como conjunto, título sin «(Original
+Mix)» ni «feat.») y duración a 5 s o menos (`SAME_RECORDING_SEC`, `duplicates.ts:18`). Con
+más diferencia es otra versión, se muestra aparte y su botón no se destaca.
+
+**Arreglar una grafía** es una escritura mínima por TagLib sobre una copia: solo los frames
+del campo, `assertDecodable`, copia de seguridad del original y renombrado, sin pasar por la
+conversión (`musicFieldWrite.ts:19-21`). En la revisión de Music, Music es la guarda: el
+fichero solo se toca si Music seguía diciendo lo que se leyó y si el fichero dice
+exactamente ese valor; si no, se corrige solo Music y se dice
+(`musicReviewApply.ts:56-57`). En la de la lista la guarda es el fichero, y la entrada de
+Music, si la hay, se corrige después con su propia guarda. Lo que cambió llega a rekordbox,
+Engine DJ y Traktor si su sincronización está activa, con la app cerrada y copia de su base;
+en rekordbox la pista se reapunta a la fila bien escrita en vez de renombrar la fila
+compartida, y Engine DJ y Traktor no guardan artista del álbum (`libraryTagSync.ts`,
+`rekordboxTags.ts`, `engineTags.ts:21`). **Deshacer** restaura las copias de seguridad de
+la última tanda y devuelve los valores antiguos a Music y a las bibliotecas DJ
+(`useMusicReview.ts:592`).
+
+**Quitar un duplicado.** Los sitios de la copia quitada en las playlists de rekordbox,
+Engine DJ y Traktor pasan a la que se queda; en Music, sus playlists normales pasan a la que
+se queda y la entrada sale de Music. Solo entonces su fichero va a la Papelera, o a Copias de
+seguridad en un disco sin Papelera (`duplicateReplace.ts:15-19`, `recoverableTrash.ts`).
+**El fichero se queda** si la copia que se queda es el mismo fichero real (enlace simbólico,
+enlace duro, el mismo recurso montado dos veces), si una biblioteca aún lo usa o no se pudo
+leer, o si Music aún lo tiene en otra entrada (`listReviewIpc.ts:74-122`,
+`libraryFileUse.ts:19`). En la lista, una ruta con dos entradas de Music es ambigua y no se
+toca ninguna.
+
+**Ignorar es para siempre**, por equipo, y separado entre Music y la lista
+(`musicReviewIgnored` y `listReviewIgnored` en `LOCAL_KEYS`, `settings.ts:172-174`).
+
+**Cada paso queda en Actividad** mientras se aplica, y el resumen final tiene una fila por
+destino (fichero, Music y cada biblioteca DJ) con lo que hizo o por qué no.
 
 ---
 
@@ -1406,7 +1483,21 @@ comparación»* (`useDeclickAb.ts:60-67`).
 - **Sin telemetría por diseño**, sin cuenta y sin nube. El renderer va en sandbox
   con lista blanca de ficheros: sin ella, un renderer comprometido podría leer
   cualquier fichero del disco a través de un `<audio src>` (`mediaAccess.ts:1-8`).
-- **Papelera, nunca borrado duro** (`shellIpc.ts:24`).
+- **Papelera, nunca borrado duro.** Todo borrado pasa por `trashRecoverably`
+  (`recoverableTrash.ts:20-30`, `shellIpc.ts:25-27`): a la papelera del sistema si el disco
+  la guarda, y si no (un NAS, o cualquier unidad de Windows, que responde 0 a `statfs`) a
+  Copias de seguridad. Si Copias de seguridad no puede guardarlo, el borrado falla y el
+  fichero se queda; nunca cae al borrado del sistema (`trashSupport.ts:7-16`). El diálogo de
+  borrar dice antes adónde irá cada fichero (claves `confirm.trash*Backups*` y `*Mixed*`).
+- **Copias de seguridad** (antes «Originales»). Guarda el fichero que una conversión
+  reescribe, el que un cambio de formato deja atrás y el que se borra en un disco sin
+  papelera, 7 días y hasta 2 GB por defecto, y deja siempre 5 GB libres en el disco
+  (`shared/trash.ts`). **El ajuste «Qué se guarda» (Siempre, Solo si cambia el audio, Nunca)
+  no está conectado**: `policyKeeper` existe y está probado, pero el arranque configura el
+  guardián sin él (`main/index.ts:229`, `originalKeeper.ts:39`), así que los tres niveles
+  guardan siempre. Los límites de días y espacio sí se aplican.
+- **Pantalla de inicio** como lista de acciones: añadir pistas y, en macOS, importar una
+  lista de Apple Music, revisar metadatos y mostrar duplicados de Music (`EmptyActions.tsx`).
 - **Deshacer** de hasta 20 pasos para ediciones de tags. No cubre operaciones de
   fichero ni conversiones.
 
@@ -1489,3 +1580,26 @@ Recopilado de los cinco informes. Cada punto está verificado.
     fuente que funciona sin configurar nada, como Bandcamp o Deezer.
 28. **Finder covers y Traktor son excluyentes**: con la sincronización de Traktor
     activa, la carátula de Finder en FLAC no se aplica.
+29. **Los duplicados quitados no se deshacen desde Surco.** Deshacer de la revisión
+    restaura las grafías de la última tanda, no las copias quitadas: sus ficheros están en
+    la Papelera o en Copias de seguridad y sus entradas ya salieron de Music y de las
+    bibliotecas DJ (`musicReview.removedNoUndo`, `MusicReview.tsx:139`).
+30. **Una pista de Music cuyo nombre no coincide con el título de su fichero solo se
+    encuentra en el barrido de antes de quitar.** Al abrir la revisión de la lista, Music
+    se consulta por título, así que esa entrada cuenta como «no está en Music» y sus
+    grafías no se corrigen allí (`applemusic.ts:715-717`). Antes de mandar un fichero a la
+    papelera se leen todas las ubicaciones de Music, y si la entrada aparece el fichero se
+    queda (`applemusic.ts:755-762`, `listReviewIpc.ts:122`). En una biblioteca de 2045
+    pistas en un NAS ese barrido tardó 47 s.
+31. **En Windows, todo borrado va a Copias de seguridad**, nunca a la Papelera de
+    reciclaje: `statfs` responde 0 en cualquier unidad y la lista blanca no la reconoce
+    (`trashSupport.ts:7-16`). **Los pasos de rekordbox, Engine DJ y Traktor de la revisión
+    no se han probado en Windows.**
+32. **La revisión de Apple Music es solo de macOS**, la de la lista funciona en todas las
+    plataformas. No toca campos vacíos, carátulas ni géneros con varios valores, no busca en
+    proveedores y no renombra ficheros. Una errata nunca se aplica sin que el usuario la
+    marque, y el detector solo ve una letra de diferencia en nombres de 8 o más.
+33. **No decir que «Nunca» o «Solo si cambia el audio» cambian lo que se guarda.** El
+    ajuste de Copias de seguridad no está conectado y los tres niveles guardan siempre
+    (`main/index.ts:229`). Tampoco que con «Nunca» un borrado en un NAS es definitivo: va a
+    Copias de seguridad igual.
