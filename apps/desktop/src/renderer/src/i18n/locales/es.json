@@ -1726,6 +1726,8 @@
       "applyError": "No se pudo escribir en los ficheros.",
       "partial_one": "{{count}} fichero ya no decía lo que se leyó y no se tocó",
       "partial_other": "{{count}} ficheros ya no decían lo que se leyó y no se tocaron",
+      "subtitlePartial_one": "{{count}} fichero ya no decía lo que se leyó y se dejó como estaba.",
+      "subtitlePartial_other": "{{count}} ficheros ya no decían lo que se leyó y se dejaron como estaban.",
       "librarySkipped": "{{library}} no se actualizó porque estaba abierto o no se pudo leer. Las copias siguen en el disco.",
       "libraryReplaceFailed": "{{library}} no se pudo actualizar. Las copias siguen en el disco.",
       "musicRemoved_one": "{{count}} copia salió de Apple Music",

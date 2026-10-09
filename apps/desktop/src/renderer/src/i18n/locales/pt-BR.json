@@ -1726,6 +1726,8 @@
       "applyError": "Não foi possível gravar nos arquivos.",
       "partial_one": "{{count}} arquivo já não dizia o que foi lido e não foi alterado",
       "partial_other": "{{count}} arquivos já não diziam o que foi lido e não foram alterados",
+      "subtitlePartial_one": "{{count}} arquivo já não dizia o que foi lido e ficou como estava.",
+      "subtitlePartial_other": "{{count}} arquivos já não diziam o que foi lido e ficaram como estavam.",
       "librarySkipped": "{{library}} não foi atualizado porque estava aberto ou não pôde ser lido. As cópias continuam no disco.",
       "libraryReplaceFailed": "{{library}} não pôde ser atualizado. As cópias continuam no disco.",
       "musicRemoved_one": "{{count}} cópia saiu do Apple Music",

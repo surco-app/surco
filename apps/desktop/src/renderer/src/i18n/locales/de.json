@@ -1726,6 +1726,8 @@
       "applyError": "In die Dateien konnte nicht geschrieben werden.",
       "partial_one": "{{count}} Datei enthielt nicht mehr den gelesenen Wert und blieb unverändert",
       "partial_other": "{{count}} Dateien enthielten nicht mehr den gelesenen Wert und blieben unverändert",
+      "subtitlePartial_one": "{{count}} Datei enthielt nicht mehr den gelesenen Wert und blieb, wie sie war.",
+      "subtitlePartial_other": "{{count}} Dateien enthielten nicht mehr den gelesenen Wert und blieben, wie sie waren.",
       "librarySkipped": "{{library}} wurde nicht aktualisiert, weil es geöffnet war oder nicht gelesen werden konnte. Die Kopien sind noch auf der Festplatte.",
       "libraryReplaceFailed": "{{library}} konnte nicht aktualisiert werden. Die Kopien sind noch auf der Festplatte.",
       "musicRemoved_one": "{{count}} Kopie aus Apple Music entfernt",

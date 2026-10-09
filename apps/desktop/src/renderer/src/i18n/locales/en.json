@@ -1726,6 +1726,8 @@
       "applyError": "Couldn't write to the files.",
       "partial_one": "{{count}} file no longer said what was read and was left alone",
       "partial_other": "{{count}} files no longer said what was read and were left alone",
+      "subtitlePartial_one": "{{count}} file no longer said what was read and was left as it was.",
+      "subtitlePartial_other": "{{count}} files no longer said what was read and were left as they were.",
       "librarySkipped": "{{library}} was not updated because it was open or could not be read. The copies are still on disk.",
       "libraryReplaceFailed": "{{library}} could not be updated. The copies are still on disk.",
       "musicRemoved_one": "{{count}} copy left Apple Music",

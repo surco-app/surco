@@ -1726,6 +1726,8 @@
       "applyError": "Impossible d’écrire dans les fichiers.",
       "partial_one": "{{count}} fichier ne disait plus ce qui avait été lu et n’a pas été touché",
       "partial_other": "{{count}} fichiers ne disaient plus ce qui avait été lu et n’ont pas été touchés",
+      "subtitlePartial_one": "{{count}} fichier ne disait plus ce qui avait été lu et est resté tel quel.",
+      "subtitlePartial_other": "{{count}} fichiers ne disaient plus ce qui avait été lu et sont restés tels quels.",
       "librarySkipped": "{{library}} n’a pas été mis à jour car il était ouvert ou illisible. Les copies sont toujours sur le disque.",
       "libraryReplaceFailed": "{{library}} n’a pas pu être mis à jour. Les copies sont toujours sur le disque.",
       "musicRemoved_one": "{{count}} copie retirée d’Apple Music",

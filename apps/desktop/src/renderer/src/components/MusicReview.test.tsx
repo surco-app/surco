@@ -2198,5 +2198,74 @@ describe('list review', () => {
         'rekordbox was not updated because it was open or could not be read. The copies are still on disk.',
       ])
     })
+
+    const subtitle = () => screen.getByTestId('music-review-done-subtitle')
+    const withLibraries = (lastRun: ReviewRun) =>
+      render(
+        <MusicReview
+          review={listReview({ status: 'done', lastRun, libraries: status() })}
+          {...columnProps}
+        />,
+      )
+
+    // A list fix reaches the libraries from the file, Music or not: each synced library
+    // says what it got, as in the Music review.
+    it('gives every synced library a row saying what reached it', () => {
+      withLibraries(
+        run({
+          outcomes: [outcome('/m/a.aiff', 'written', 'none')],
+          librarySync: 'ok',
+          tagSync: {
+            rekordbox: { outcome: 'updated', count: 1 },
+            engine: { outcome: 'nothing' },
+            traktor: { outcome: 'open' },
+          },
+        }),
+      )
+      expect(detailOf('rekordbox')).toBe('1 track updated')
+      expect(dest('engine')).toHaveAttribute('data-state', 'off')
+      expect(dest('traktor')).toHaveAttribute('data-state', 'warn')
+      expect(warnings()).toEqual(["Traktor wasn't updated because it was open."])
+      expect(subtitle()).toHaveTextContent(
+        'The files are done, but not every library got the changes.',
+      )
+    })
+
+    it('keeps the full promise when every file and library got the change', () => {
+      withLibraries(
+        run({
+          outcomes: [outcome('/m/a.aiff', 'written', 'none')],
+          librarySync: 'ok',
+          tagSync: {
+            rekordbox: { outcome: 'updated', count: 1 },
+            engine: { outcome: 'updated', count: 1 },
+            traktor: { outcome: 'updated', count: 1 },
+          },
+        }),
+      )
+      expect(subtitle()).toHaveTextContent('The changes are already in your files and libraries.')
+    })
+
+    // A file the guard left alone got nothing, in the file or anywhere else: promising the
+    // files and libraries would hide it.
+    it('says which files were left alone instead of promising the files', () => {
+      withLibraries(
+        run({
+          outcomes: [
+            outcome('/m/a.aiff', 'written', 'none'),
+            outcome('/m/b.aiff', 'unchanged', 'none'),
+          ],
+          librarySync: 'ok',
+          tagSync: {
+            rekordbox: { outcome: 'updated', count: 1 },
+            engine: { outcome: 'updated', count: 1 },
+            traktor: { outcome: 'updated', count: 1 },
+          },
+        }),
+      )
+      expect(subtitle()).toHaveTextContent(
+        '1 file no longer said what was read and was left as it was.',
+      )
+    })
   })
 })

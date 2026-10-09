@@ -462,8 +462,10 @@ function Done({
               : t(copy.doneTitle)}
           </h3>
           <p data-testid="music-review-done-subtitle" className="mt-0.5 text-sm text-fg-dim">
-            {!list && partial > 0
-              ? t('musicReview.done.subtitleMusicOnly', { count: partial })
+            {partial > 0
+              ? t(list ? 'listReview.done.subtitlePartial' : 'musicReview.done.subtitleMusicOnly', {
+                  count: partial,
+                })
               : librariesShort
                 ? t('musicReview.done.subtitleLibraries')
                 : t('musicReview.done.subtitle')}
