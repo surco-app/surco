@@ -1413,7 +1413,11 @@ describe('with the list as source', () => {
     expect(result.current.inMusic('/m/a.aiff')).toBe(false)
     act(() => result.current.toggleStaged(result.current.spelling[0].key))
     await act(() => result.current.apply())
-    expect(api.applyListFixes).toHaveBeenCalledWith({ fixes: [FIX], music: { '/m/c.aiff': 'PID' } })
+    expect(api.applyListFixes).toHaveBeenCalledWith({
+      fixes: [FIX],
+      music: { '/m/c.aiff': 'PID' },
+      titles: { '/m/c.aiff': 'Tc' },
+    })
     expect(api.syncLibraryTags).toHaveBeenCalledWith([
       { path: '/m/c.aiff', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
     ])

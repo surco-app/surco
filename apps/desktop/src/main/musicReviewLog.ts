@@ -1,4 +1,4 @@
-import type { MusicFixOutcome, MusicReviewField } from '../shared/types'
+import type { MusicFixOutcome, MusicReviewField, ReviewOutcome } from '../shared/types'
 import type { Activity } from './activity'
 import type { MusicSetResult } from './applemusic'
 
@@ -23,6 +23,22 @@ export function createMusicReviewLog() {
         if (o.backupId) backups.set(o.backupId, { group, title: titleOf(o.persistentId) })
       }
     },
+    beginListRun: () => `list-review-${++runs}`,
+    // The list review keys its tracks by path; its undo comes back by Music id and backup.
+    rememberListRun(
+      group: string,
+      outcomes: ReviewOutcome[],
+      titleOfPath: (path: string) => string,
+    ) {
+      for (const o of outcomes) {
+        const title = titleOfPath(o.id)
+        if (o.musicId) {
+          groups.set(o.musicId, group)
+          titles.set(o.musicId, title)
+        }
+        if (o.backupId) backups.set(o.backupId, { group, title })
+      }
+    },
     groupOf: (persistentId: string) => groups.get(persistentId),
     backup: (id: string) => backups.get(id),
     rememberCopy(path: string, copy: { group: string; label: string }) {
@@ -34,7 +50,7 @@ export function createMusicReviewLog() {
 
 export const musicReviewLog = createMusicReviewLog()
 
-type MusicReviewLog = ReturnType<typeof createMusicReviewLog>
+export type MusicReviewLog = ReturnType<typeof createMusicReviewLog>
 
 interface UndoDeps {
   track: Activity['track']
@@ -42,6 +58,43 @@ interface UndoDeps {
 }
 
 const UNDO_GROUP = 'music-review-undo'
+
+export interface RunLog {
+  track: Activity['track']
+  // The run's own row in Activity, so hundreds of fixes fold under one entry.
+  group: string
+  titleOf: (id: string) => string
+}
+
+export type FieldEnding = {
+  detailKey: string
+  detailParams?: { error: string }
+  status?: 'warn' | 'error'
+}
+
+// One row per field of one track under the run's row, each started with the track's work
+// and ended by what became of that field.
+export async function logFieldRows<O>(
+  work: Promise<O>,
+  { id, fields }: { id: string; fields: MusicReviewField[] },
+  log: RunLog,
+  run: { labelKey: string; count: number },
+  endingOf: (outcome: O, index: number) => FieldEnding,
+): Promise<O> {
+  const title = log.titleOf(id)
+  await Promise.all(
+    fields.map((field, i) =>
+      log.track('applemusic', `activity.reviewFix.${field}`, () => work, {
+        labelParams: { title },
+        group: log.group,
+        groupLabelKey: run.labelKey,
+        groupLabelParams: { count: run.count },
+        summary: (o) => endingOf(o, i),
+      }),
+    ),
+  )
+  return work
+}
 
 // One field put back in Music by an undo, under the run it undoes.
 export function setFieldLogged(

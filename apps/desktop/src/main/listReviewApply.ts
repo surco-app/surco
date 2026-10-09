@@ -8,6 +8,7 @@ import type {
   TrashEntry,
 } from '../shared/types'
 import type { MusicSetResult } from './applemusic'
+import { type FieldEnding, logFieldRows, type RunLog } from './musicReviewLog'
 import type { FieldWrite, TagFieldChange } from './tagFieldSet'
 
 export interface ListApplyDeps {
@@ -27,6 +28,32 @@ export interface ListApplyDeps {
 }
 
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
+
+// What happened to one field, in the file and then in Music.
+function endingOf(o: ReviewOutcome, index: number): FieldEnding {
+  if (o.file === 'failed')
+    return {
+      detailKey: 'activity.listReviewFixFileFailed',
+      detailParams: { error: o.error ?? '' },
+      status: 'error',
+    }
+  if (o.file === 'missing') return { detailKey: 'activity.listReviewFixNoFile', status: 'warn' }
+  if (!o.written.includes(o.fixes[index].field))
+    return { detailKey: 'activity.listReviewFixFileDiffers', status: 'warn' }
+  const music = o.music[index]
+  if (music === 'mismatch')
+    return { detailKey: 'activity.listReviewFixMusicMismatch', status: 'warn' }
+  if (music === 'missing')
+    return { detailKey: 'activity.listReviewFixMusicMissing', status: 'warn' }
+  if (music === 'failed') return { detailKey: 'activity.listReviewFixMusicFailed', status: 'error' }
+  if (music === 'set')
+    return {
+      detailKey: o.backupId ? 'activity.reviewFixWrittenBackup' : 'activity.reviewFixWritten',
+    }
+  return {
+    detailKey: o.backupId ? 'activity.listReviewFixWrittenBackup' : 'activity.listReviewFixWritten',
+  }
+}
 
 // The file is the guard here, the reverse of the Music review: a field reaches Music only
 // once it reached the file, and Music is asked with the value the file held and the file's
@@ -71,12 +98,13 @@ async function applyFile(
 }
 
 export async function applyListFixes(
-  { fixes, music }: ListFixRequest,
+  { fixes, music }: Pick<ListFixRequest, 'fixes' | 'music'>,
   deps: ListApplyDeps,
   {
     isCancelled = () => false,
     onProgress,
-  }: { isCancelled?: () => boolean; onProgress?: (p: MusicFixProgress) => void } = {},
+    log,
+  }: { isCancelled?: () => boolean; onProgress?: (p: MusicFixProgress) => void; log?: RunLog } = {},
 ): Promise<ReviewOutcome[]> {
   const byFile = new Map<string, ReviewFix[]>()
   for (const f of fixes) byFile.set(f.id, [...(byFile.get(f.id) ?? []), f])
@@ -90,7 +118,18 @@ export async function applyListFixes(
   for (const [path, fileFixes] of byFile) {
     if (isCancelled()) break
     report(outcomes.length + 1)
-    outcomes.push(await applyFile(path, fileFixes, music[path], deps))
+    const work = applyFile(path, fileFixes, music[path], deps)
+    outcomes.push(
+      await (log
+        ? logFieldRows(
+            work,
+            { id: path, fields: fileFixes.map((f) => f.field) },
+            log,
+            { labelKey: 'activity.listReviewRun', count: byFile.size },
+            endingOf,
+          )
+        : work),
+    )
     report(outcomes.length)
   }
   return outcomes

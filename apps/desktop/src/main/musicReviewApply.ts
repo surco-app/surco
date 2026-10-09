@@ -6,9 +6,9 @@ import type {
   MusicReviewField,
   TrashEntry,
 } from '../shared/types'
-import type { Activity } from './activity'
 import type { MusicSetResult } from './applemusic'
 import type { FieldWrite, TagFieldChange } from './musicFieldWrite'
+import { type FieldEnding, logFieldRows, type RunLog } from './musicReviewLog'
 
 export interface ApplyDeps {
   setField: (
@@ -25,23 +25,14 @@ export interface ApplyDeps {
   ) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
 }
 
-export interface ApplyLog {
-  track: Activity['track']
-  // The run's own row in Activity, so hundreds of fixes fold under one entry.
-  group: string
-  titleOf: (persistentId: string) => string
-}
-
 export interface ApplyHooks {
   isCancelled?: () => boolean
   onProgress?: (progress: MusicFixProgress) => void
-  log?: ApplyLog
+  log?: RunLog
 }
 
-type Ending = { detailKey: string; detailParams?: { error: string }; status?: 'warn' | 'error' }
-
 // What happened to one field, in Music and then in the file.
-function endingOf(o: MusicFixOutcome, index: number): Ending {
+function endingOf(o: MusicFixOutcome, index: number): FieldEnding {
   const music = o.music[index]
   if (music === 'mismatch') return { detailKey: 'activity.reviewFixMusicMismatch', status: 'warn' }
   if (music === 'missing') return { detailKey: 'activity.reviewFixMusicMissing', status: 'warn' }
@@ -58,27 +49,6 @@ function endingOf(o: MusicFixOutcome, index: number): Ending {
     }
   if (o.file === 'missing') return { detailKey: 'activity.reviewFixNoFile', status: 'warn' }
   return { detailKey: 'activity.reviewFixFileDiffers', status: 'warn' }
-}
-
-async function loggedTrack(
-  work: Promise<MusicFixOutcome>,
-  fixes: MusicFieldFix[],
-  log: ApplyLog,
-  runSize: number,
-): Promise<MusicFixOutcome> {
-  const title = log.titleOf(fixes[0].persistentId)
-  await Promise.all(
-    fixes.map((f, i) =>
-      log.track('applemusic', `activity.reviewFix.${f.field}`, () => work, {
-        labelParams: { title },
-        group: log.group,
-        groupLabelKey: 'activity.reviewRun',
-        groupLabelParams: { count: runSize },
-        summary: (o) => endingOf(o, i),
-      }),
-    ),
-  )
-  return work
 }
 
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
@@ -131,7 +101,17 @@ export async function applyMusicFixes(
     if (isCancelled()) break
     report(outcomes.length + 1)
     const work = applyTrack(persistentId, trackFixes, deps)
-    outcomes.push(await (log ? loggedTrack(work, trackFixes, log, byTrack.size) : work))
+    outcomes.push(
+      await (log
+        ? logFieldRows(
+            work,
+            { id: persistentId, fields: trackFixes.map((f) => f.field) },
+            log,
+            { labelKey: 'activity.reviewRun', count: byTrack.size },
+            endingOf,
+          )
+        : work),
+    )
     report(outcomes.length)
   }
   return outcomes

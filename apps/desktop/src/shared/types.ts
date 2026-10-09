@@ -863,6 +863,8 @@ export interface ListFixRequest {
   fixes: ReviewFix[]
   // Path → the one Music entry on that file. A path with none or several is left out.
   music: Record<string, string>
+  // Path → the title the list showed, for the Activity rows.
+  titles: Record<string, string>
 }
 
 export interface MusicFileEntry {

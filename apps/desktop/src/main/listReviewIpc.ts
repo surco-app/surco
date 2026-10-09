@@ -1,8 +1,10 @@
 import { ipcMain, type WebContents } from 'electron'
 import type { ListFixRequest, ListRemoval } from '../shared/types'
+import type { Activity } from './activity'
 import { type ReplaceDuplicatesDeps, type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { applyListFixes, type ListApplyDeps } from './listReviewApply'
 import { type ListMusicDeps, removeListCopyFromMusic } from './musicDuplicates'
+import type { MusicReviewLog } from './musicReviewLog'
 
 export interface ListRemovalDeps {
   replace: Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'>
@@ -18,6 +20,7 @@ export interface ListReviewIpcDeps {
   apply: ListApplyDeps
   isAllowed: (path: string) => boolean
   removal: (sender: WebContents) => ListRemovalDeps
+  log?: { track: Activity['track']; reviewLog: MusicReviewLog }
 }
 
 // The list review's writes. Not limited to macOS: the list exists everywhere, and only the
@@ -27,13 +30,22 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
   ipcMain.handle('listreview:applyFixes', async (e, req: ListFixRequest) => {
     const run = { cancelled: false }
     running.add(run)
+    const titleOf = (path: string) => req.titles[path] ?? path
+    const log = deps.log && {
+      track: deps.log.track,
+      group: deps.log.reviewLog.beginListRun(),
+      titleOf,
+    }
     try {
-      return await applyListFixes(req, deps.apply, {
+      const outcomes = await applyListFixes(req, deps.apply, {
         isCancelled: () => run.cancelled,
         onProgress: (progress) => {
           if (!e.sender.isDestroyed()) e.sender.send('listreview:fixProgress', progress)
         },
+        ...(log && { log }),
       })
+      if (log) deps.log?.reviewLog.rememberListRun(log.group, outcomes, titleOf)
+      return outcomes
     } finally {
       running.delete(run)
     }

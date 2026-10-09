@@ -112,10 +112,12 @@ describe('listReviewSource', () => {
     await s.load()
     const fix = (id: string) => ({ id, field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' })
     await s.applyFixes([fix('/m/a.aiff'), fix('/m/b.aiff')])
-    expect(api.applyListFixes).toHaveBeenCalledWith({
-      fixes: [fix('/m/a.aiff'), fix('/m/b.aiff')],
-      music: { '/m/a.aiff': 'A1' },
-    })
+    expect(api.applyListFixes).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixes: [fix('/m/a.aiff'), fix('/m/b.aiff')],
+        music: { '/m/a.aiff': 'A1' },
+      }),
+    )
     expect(s.inMusic?.('/m/b.aiff')).toBe(true)
     expect(s.inMusic?.('/m/c.aiff')).toBe(false)
   })

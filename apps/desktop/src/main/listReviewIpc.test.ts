@@ -4,7 +4,10 @@ vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() }, app: { isPackaged: fa
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { ipcMain } from 'electron'
+import type { ActivityEvent } from '../shared/types'
+import { createActivity } from './activity'
 import { registerListReviewIpc } from './listReviewIpc'
+import { createMusicReviewLog } from './musicReviewLog'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = (ipcMain.handle as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -74,6 +77,43 @@ describe('registerListReviewIpc', () => {
     for (const release of releases) release()
     expect(await first).toHaveLength(1)
     expect(await second).toHaveLength(1)
+  })
+})
+
+describe('listreview:applyFixes in Activity', () => {
+  // One row per run, its fields named by the titles the list showed, and the run kept so an
+  // undo lands under it.
+  it('logs the run under its own group and remembers it for the undo', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    const reviewLog = createMusicReviewLog()
+    registerListReviewIpc({
+      apply: {
+        allowed: () => true,
+        exists: async () => true,
+        rewrite: async () => ({ outcomes: ['written'], backup: { id: 'b1' } }),
+        setMusicField: async () => 'set',
+      },
+      log: { track: activity.track, reviewLog },
+    } as never)
+    await handlerFor('listreview:applyFixes')(
+      { sender },
+      {
+        fixes: [{ id: '/m/a.aiff', field: 'artist', from: 'a', to: 'b' }],
+        music: { '/m/a.aiff': 'PA' },
+        titles: { '/m/a.aiff': 'Funk Freak' },
+      },
+    )
+    const group = events[0].group as string
+    expect(group).toMatch(/^list-review-/)
+    expect(events[0]).toMatchObject({
+      labelParams: { title: 'Funk Freak' },
+      groupLabelKey: 'activity.listReviewRun',
+      groupLabelParams: { count: 1 },
+    })
+    expect(reviewLog.groupOf('PA')).toBe(group)
+    expect(reviewLog.backup('b1')).toEqual({ group, title: 'Funk Freak' })
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ActivityEvent, MusicFixOutcome } from '../shared/types'
+import type { ActivityEvent, MusicFixOutcome, ReviewOutcome } from '../shared/types'
 import { createActivity } from './activity'
 import { createMusicReviewLog, restoreLogged, setFieldLogged } from './musicReviewLog'
 
@@ -35,6 +35,34 @@ describe('createMusicReviewLog', () => {
     expect(log.groupOf('A')).toBe(run)
     expect(log.backup('b1')).toEqual({ group: run, title: 'Funk Freak' })
     expect(log.backup('other')).toBeUndefined()
+  })
+
+  // The list review keys its tracks by path; its undo comes back by Music id and backup.
+  it('finds the list run a later undo belongs to, by Music id and backup', () => {
+    const log = createMusicReviewLog()
+    const run = log.beginListRun()
+    expect(run).not.toBe(log.beginRun())
+    const listOutcome = (id: string, extra: Partial<ReviewOutcome>): ReviewOutcome => ({
+      id,
+      path: id,
+      fixes: [],
+      music: [],
+      file: 'written',
+      written: [],
+      ...extra,
+    })
+    log.rememberListRun(
+      run,
+      [
+        listOutcome('/m/a.aiff', { musicId: 'PA', backupId: 'b1' }),
+        listOutcome('/m/b.aiff', { backupId: 'b2' }),
+      ],
+      (path) => (path === '/m/a.aiff' ? 'Funk Freak' : 'Bassline'),
+    )
+    expect(log.groupOf('PA')).toBe(run)
+    expect(log.titleOf('PA')).toBe('Funk Freak')
+    expect(log.backup('b1')).toEqual({ group: run, title: 'Funk Freak' })
+    expect(log.backup('b2')).toEqual({ group: run, title: 'Bassline' })
   })
 
   it('keeps the row a removed copy opened for its file to join', () => {

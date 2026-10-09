@@ -3774,6 +3774,7 @@ describe('App list review', () => {
     expect(window.api.applyListFixes).toHaveBeenCalledWith({
       fixes: [{ id: '/music/c.wav', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
       music: {},
+      titles: { '/music/c.wav': 'Charlie' },
     })
     fireEvent.click(screen.getByTestId('music-review-continue'))
     fireEvent.click(screen.getByTestId('music-review-close'))

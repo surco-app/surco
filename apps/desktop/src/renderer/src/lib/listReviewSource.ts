@@ -21,6 +21,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
   let snapshot: { rows: TrackItem[]; byPath: Map<string, TrackItem> } | null = null
   const changes: LibraryTagUpdate[] = []
   const gone = new Set<string>()
+  let titles = new Map<string, string>()
   const music = (id: string) => lookup?.entries[id] ?? []
   const only = (id: string) => (music(id).length === 1 ? music(id)[0] : undefined)
   // Main reads an absent ref as "Music has no entry"; that is only true when Music answered.
@@ -42,6 +43,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
     load: async () => {
       const read = listReviewEntries(deps.rows())
       const entries = withListChanges(read.entries, changes, gone)
+      titles = new Map(entries.map((e) => [e.id, e.title]))
       if (!deps.mac) return { entries, skipped: read.skipped }
       lookup = { consulted: false, entries: {} }
       lookup = await window.api.appleMusicFileEntries(
@@ -67,6 +69,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
             return entry ? [[f.id, entry.persistentId]] : []
           }),
         ),
+        titles: Object.fromEntries(fixes.map((f) => [f.id, titles.get(f.id) ?? f.id])),
       }),
     onProgress: (cb) => window.api.onListFixProgress(cb),
     cancel: () => {

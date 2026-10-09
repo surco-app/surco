@@ -4,11 +4,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it, vi } from 'vitest'
-import type { ReviewFix } from '../shared/types'
+import type { ActivityEvent, ReviewFix } from '../shared/types'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { createActivity } from './activity'
 import { applyListFixes, type ListApplyDeps } from './listReviewApply'
 import { rewriteTagFields } from './musicFieldWrite'
 
@@ -182,4 +183,127 @@ describe('applyListFixes', () => {
     expect(d.setMusicField).not.toHaveBeenCalled()
     expect(readFileSync(file).equals(before)).toBe(true)
   }, 60000)
+})
+
+// The list review left Activity empty too. Every field it touches gets a row under the
+// run's group, ended with what happened in the file and then in Music.
+describe('applyListFixes in Activity', () => {
+  function logged() {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    return {
+      events,
+      log: { track: activity.track, group: 'list-1', titleOf: (path: string) => `Title ${path}` },
+    }
+  }
+  const ends = (events: ActivityEvent[]) => events.filter((e) => e.phase !== 'start')
+  const inMusic = { '/m/a.aiff': 'PID' }
+
+  it('names each field of each file and groups them under the run', async () => {
+    const { events, log } = logged()
+    await applyListFixes(
+      { fixes: [fix('/m/a.aiff'), fix('/m/a.aiff', 'genre'), fix('/m/b.aiff')], music: {} },
+      deps(),
+      { log },
+    )
+    const starts = events.filter((e) => e.phase === 'start')
+    expect(starts.map((e) => [e.labelKey, e.labelParams])).toEqual([
+      ['activity.reviewFix.artist', { title: 'Title /m/a.aiff' }],
+      ['activity.reviewFix.genre', { title: 'Title /m/a.aiff' }],
+      ['activity.reviewFix.artist', { title: 'Title /m/b.aiff' }],
+    ])
+    expect(starts[0]).toMatchObject({
+      kind: 'applemusic',
+      group: 'list-1',
+      groupLabelKey: 'activity.listReviewRun',
+      groupLabelParams: { count: 2 },
+    })
+  })
+
+  it.each([
+    [
+      'written and set in Music, with a backup',
+      {},
+      inMusic,
+      'done',
+      'activity.reviewFixWrittenBackup',
+    ],
+    [
+      'written and set in Music, without a backup',
+      { rewrite: vi.fn().mockResolvedValue({ outcomes: ['written'] }) },
+      inMusic,
+      'done',
+      'activity.reviewFixWritten',
+    ],
+    [
+      'written to a file Music does not hold',
+      {},
+      {},
+      'done',
+      'activity.listReviewFixWrittenBackup',
+    ],
+    [
+      'written to a file Music does not hold, without a backup',
+      { rewrite: vi.fn().mockResolvedValue({ outcomes: ['written'] }) },
+      {},
+      'done',
+      'activity.listReviewFixWritten',
+    ],
+    [
+      'left alone because the file held another value',
+      { rewrite: vi.fn().mockResolvedValue({ outcomes: ['unchanged'] }) },
+      inMusic,
+      'warn',
+      'activity.listReviewFixFileDiffers',
+    ],
+    [
+      'left alone because the file is gone',
+      { exists: vi.fn().mockResolvedValue(false) },
+      inMusic,
+      'warn',
+      'activity.listReviewFixNoFile',
+    ],
+    [
+      'written but refused by Music',
+      { setMusicField: vi.fn().mockResolvedValue('mismatch') },
+      inMusic,
+      'warn',
+      'activity.listReviewFixMusicMismatch',
+    ],
+    [
+      'written but gone from Music',
+      { setMusicField: vi.fn().mockResolvedValue('missing') },
+      inMusic,
+      'warn',
+      'activity.listReviewFixMusicMissing',
+    ],
+    [
+      'written but unanswered by Music',
+      { setMusicField: vi.fn().mockRejectedValue(new Error('timeout')) },
+      inMusic,
+      'error',
+      'activity.listReviewFixMusicFailed',
+    ],
+  ] as const)('ends a field %s', async (_name, over, music, phase, detailKey) => {
+    const { events, log } = logged()
+    await applyListFixes({ fixes: [fix('/m/a.aiff')], music }, deps(over), { log })
+    expect(ends(events)).toEqual([expect.objectContaining({ phase, detailKey })])
+  })
+
+  it('carries the error of a file that could not be written', async () => {
+    const { events, log } = logged()
+    await applyListFixes(
+      { fixes: [fix('/m/a.aiff')], music: {} },
+      deps({ rewrite: vi.fn().mockRejectedValue(new Error('no-backup')) }),
+      { log },
+    )
+    expect(ends(events)).toEqual([
+      expect.objectContaining({
+        phase: 'error',
+        detailKey: 'activity.listReviewFixFileFailed',
+        detailParams: { error: 'no-backup' },
+      }),
+    ])
+  })
 })

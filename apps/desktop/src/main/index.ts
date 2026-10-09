@@ -1208,6 +1208,7 @@ function registerIpc(): void {
         },
       }),
     }),
+    log: { track: activity.track, reviewLog: musicReviewLog },
   })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
