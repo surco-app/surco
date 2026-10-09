@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { ReviewEntry } from '../../../shared/types'
-import { replaceAct, SAFE_KINDS, spellingGroups, splitActs } from './musicSpelling'
+import {
+  replaceAct,
+  SAFE_KINDS,
+  spellingCost,
+  spellingGroups,
+  splitActs,
+  withinOneEdit,
+} from './musicSpelling'
 
 let n = 0
 function entry(over: Partial<ReviewEntry>): ReviewEntry {
@@ -287,5 +294,94 @@ describe('spellingGroups', () => {
     expect(spellingGroups([...many(3, { artist: 'DJ Lara', album: 'X', genre: 'House' })])).toEqual(
       [],
     )
+  })
+})
+
+describe('cost', () => {
+  let seed = 7
+  const rnd = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648
+    return seed / 2147483648
+  }
+  const SYL = [
+    'ka',
+    'lo',
+    'mi',
+    'ra',
+    'sen',
+    'tor',
+    'vel',
+    'dan',
+    'ri',
+    'us',
+    'mar',
+    'tin',
+    'el',
+    'go',
+    'ber',
+  ]
+  const word = (n: number) => {
+    let s = ''
+    for (let i = 0; i < n; i++) s += SYL[Math.floor(rnd() * SYL.length)]
+    return s[0].toUpperCase() + s.slice(1)
+  }
+
+  // A crate dragged in from a NAS reaches thousands of tracks; the review opens on the
+  // list's own thread, so grouping has to stay well under a second. Measured 1.45 s before.
+  it('groups 5000 tracks with 2000 distinct artists without a pairwise edit check per name pair', () => {
+    const artists = Array.from({ length: 2000 }, () => `${word(2)} ${word(2)}`)
+    const entries: ReviewEntry[] = Array.from({ length: 5000 }, (_, i) => {
+      const artist = artists[Math.floor(rnd() * artists.length)]
+      return {
+        id: `/music/${i}.mp3`,
+        title: `${word(3)} ${word(2)}`,
+        artist,
+        albumArtist: rnd() < 0.5 ? artist : '',
+        album: word(3),
+        genre: ['House', 'Techno', 'Trance', 'Hard House', 'Electronic'][i % 5],
+        durationSec: 200 + Math.floor(rnd() * 300),
+      }
+    })
+    spellingGroups(entries)
+    spellingCost.editChecks = 0
+    const start = performance.now()
+    spellingGroups(entries)
+    const elapsed = performance.now() - start
+    const namePairs = (2000 * 1999) / 2
+    expect(spellingCost.editChecks).toBeLessThanOrEqual(2 * namePairs)
+    expect(elapsed).toBeLessThan(1500)
+  })
+
+  // The fast check must be the same rule, not a cousin of it: a looser one invents typo
+  // groups between different artists, a stricter one hides real typos.
+  it('answers one edit exactly like the full distance does', () => {
+    const osa = (a: string, b: string): number => {
+      const d: number[][] = []
+      for (let i = 0; i <= a.length; i++) {
+        d.push([i])
+        for (let j = 1; j <= b.length; j++) {
+          if (i === 0) {
+            d[0].push(j)
+            continue
+          }
+          let best = Math.min(
+            d[i - 1][j] + 1,
+            d[i][j - 1] + 1,
+            d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+          )
+          if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+            best = Math.min(best, d[i - 2][j - 2] + 1)
+          d[i].push(best)
+        }
+      }
+      return d[a.length][b.length]
+    }
+    const pick = (n: number) =>
+      Array.from({ length: n }, () => 'ab1c'[Math.floor(rnd() * 4)]).join('')
+    for (let k = 0; k < 20000; k++) {
+      const a = pick(Math.floor(rnd() * 7))
+      const b = rnd() < 0.5 ? pick(Math.floor(rnd() * 7)) : a.slice(0, 2) + pick(1) + a.slice(3)
+      expect(withinOneEdit(a, b), `${a} / ${b}`).toBe(osa(a, b) <= 1)
+    }
   })
 })

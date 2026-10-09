@@ -183,13 +183,19 @@ export function mergeSpelling(groups: SpellingGroup[]): ReviewSpellingGroup[] {
   })
 }
 
-function pendingCount(entries: ReviewEntry[], ignored: ReadonlySet<string>): number {
-  const spelling = mergeSpelling(spellingGroups(entries).filter((g) => !ignored.has(g.key))).length
-  const dups = uniqueKeys(duplicateGroups(entries.map(toItem))).filter(
-    (g) => g.kind === 'duplicate' && !ignored.has(g.key),
-  ).length
-  return spelling + dups
+function pendingCount(
+  spelling: SpellingGroup[],
+  duplicates: DuplicateGroup[],
+  ignored: ReadonlySet<string>,
+): number {
+  return (
+    mergeSpelling(spelling.filter((g) => !ignored.has(g.key))).length +
+    duplicates.filter((g) => g.kind === 'duplicate' && !ignored.has(g.key)).length
+  )
 }
+
+const groupsOf = (entries: ReviewEntry[]) =>
+  [spellingGroups(entries), uniqueKeys(duplicateGroups(entries.map(toItem)))] as const
 
 export function useMusicReview({
   source = musicSource,
@@ -237,13 +243,15 @@ export function useMusicReview({
   }, [load])
 
   const byId = useMemo(() => new Map(entries.map((e) => [e.id, e])), [entries])
+  const allSpelling = useMemo(() => spellingGroups(entries), [entries])
+  const allDuplicates = useMemo(() => uniqueKeys(duplicateGroups(entries.map(toItem))), [entries])
   const spelling = useMemo(
-    () => mergeSpelling(spellingGroups(entries).filter((g) => !hidden.has(g.key))),
-    [entries, hidden],
+    () => mergeSpelling(allSpelling.filter((g) => !hidden.has(g.key))),
+    [allSpelling, hidden],
   )
   const dupGroups = useMemo(
-    () => uniqueKeys(duplicateGroups(entries.map(toItem))).filter((g) => !hidden.has(g.key)),
-    [entries, hidden],
+    () => allDuplicates.filter((g) => !hidden.has(g.key)),
+    [allDuplicates, hidden],
   )
 
   // A failed lookup is not "no file": it stays out of `locations` (unknown) and is tried
@@ -414,7 +422,7 @@ export function useMusicReview({
     running.current = true
     cancelled.current = false
     setStatus('applying')
-    const before = pendingCount(entries, hidden)
+    const before = pendingCount(allSpelling, allDuplicates, hidden)
     const writes = new Set(fixes.map((f) => f.id)).size
     const total = writes + removals.length
     setProgress({ done: 0, total })
@@ -480,7 +488,7 @@ export function useMusicReview({
         replaced,
         ...(removal.librariesUntouched ? { librariesUntouched: true } : {}),
         before,
-        after: next ? pendingCount(next, hidden) : null,
+        after: next ? pendingCount(...groupsOf(next), hidden) : null,
         librarySync,
         ...(tagSync ? { tagSync } : {}),
         ...(applyError === undefined ? {} : { applyError }),
@@ -493,7 +501,7 @@ export function useMusicReview({
       running.current = false
       setStatus('done')
     }
-  }, [entries, hidden, fixes, removals, load, onFilesChanged, fill, source])
+  }, [allSpelling, allDuplicates, hidden, fixes, removals, load, onFilesChanged, fill, source])
 
   const cancel = useCallback(() => {
     cancelled.current = true
