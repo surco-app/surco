@@ -48,7 +48,14 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
         entries.map((e) => ({ path: e.id, title: e.title })),
         deps.launchMusic(),
       )
-      return { entries, skipped: read.skipped, musicConsulted: lookup.consulted }
+      return {
+        entries: entries.map((e) => {
+          const dateAdded = only(e.id)?.dateAdded
+          return dateAdded ? { ...e, dateAdded } : e
+        }),
+        skipped: read.skipped,
+        musicConsulted: lookup.consulted,
+      }
     },
     locate: async (id) => id,
     applyFixes: (fixes) =>

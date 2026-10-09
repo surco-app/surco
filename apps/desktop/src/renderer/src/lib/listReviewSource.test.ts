@@ -74,14 +74,26 @@ describe('listReviewSource', () => {
     expect(load.musicConsulted).toBeUndefined()
   })
 
-  // The lookup carries no date added; a guess from the file system would be a different date.
-  it('leaves the date added empty', async () => {
+  // The date added is Music's; a date from the file system would be a different one, and a
+  // file Music holds twice has no single date to show.
+  it('takes the date added from the one Music entry of a file, and none otherwise', async () => {
+    const added = new Date(2025, 8, 25).toISOString()
     api.appleMusicFileEntries.mockResolvedValue({
       consulted: true,
-      entries: { '/m/a.aiff': [{ persistentId: 'A1', label: 'A - Song' }] },
+      entries: {
+        '/m/a.aiff': [{ persistentId: 'A1', label: 'A - Song', dateAdded: added }],
+        '/m/b.aiff': [
+          { persistentId: 'B1', label: 'A - Song', dateAdded: added },
+          { persistentId: 'B2', label: 'A - Song', dateAdded: added },
+        ],
+      },
     })
-    const load = await source([row('/m/a.aiff', 'A')]).load()
-    expect(load.entries[0].dateAdded).toBeUndefined()
+    const load = await source([
+      row('/m/a.aiff', 'A'),
+      row('/m/b.aiff', 'A'),
+      row('/m/c.aiff', 'A'),
+    ]).load()
+    expect(load.entries.map((e) => e.dateAdded)).toEqual([added, undefined, undefined])
   })
 
   // Several entries on one file: correcting one at random could leave the other wrong.
@@ -254,7 +266,10 @@ describe('listReviewSource', () => {
   // Music finds a file by its name, and after a fix the name Music shows is the new one.
   it('asks Music by the titles as they are after the fixes and without the trashed copies', async () => {
     const s = source([row('/m/a.aiff', 'A'), row('/m/b.aiff', 'A')])
-    s.settle?.([{ path: '/m/a.aiff', fields: { title: { from: 'Song', to: 'New' } } }], ['/m/b.aiff'])
+    s.settle?.(
+      [{ path: '/m/a.aiff', fields: { title: { from: 'Song', to: 'New' } } }],
+      ['/m/b.aiff'],
+    )
     await s.load()
     expect(api.appleMusicFileEntries).toHaveBeenCalledWith(
       [{ path: '/m/a.aiff', title: 'New' }],

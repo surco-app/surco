@@ -869,6 +869,7 @@ export interface MusicFileEntry {
   persistentId: string
   // "artist - name" exactly as Music holds it: what the delete and transfer scripts check.
   label: string
+  dateAdded?: string
 }
 
 export interface MusicFileLookup {

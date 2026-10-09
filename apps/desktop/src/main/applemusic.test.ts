@@ -684,8 +684,17 @@ describe('Music entries for loaded files', () => {
 
   it('reads each file track name with the label the scripts check', () => {
     expect(
-      parseFileNames([row(PID, 'DJ Ter', 'This Rap'), row('nope', 'A', 'B')].join(RS)),
+      parseFileNames([row(PID, 'DJ Ter', 'This Rap', ''), row('nope', 'A', 'B', '')].join(RS)),
     ).toEqual([{ persistentId: PID, name: 'This Rap', label: 'DJ Ter - This Rap' }])
+  })
+
+  // A list copy in Music shows when it was added, read the way the Music review reads it.
+  it('reads the date added as the local wall-clock time Music holds', () => {
+    const secs = (Date.UTC(2026, 8, 25, 8, 47, 13) - Date.UTC(2001, 0, 1)) / 1000
+    const [r] = parseFileNames(
+      row(PID, 'DJ Ter', 'This Rap', `${Math.floor(secs / 86400)}:${secs % 86400}`),
+    )
+    expect(r.dateAdded).toBe(new Date(2026, 8, 25, 8, 47, 13).toISOString())
   })
 
   it('reads locations and drops tracks whose file is missing', () => {
@@ -729,7 +738,7 @@ describe('Music entries for loaded files', () => {
     const run = vi
       .fn()
       .mockResolvedValueOnce(
-        [row(PID, 'A', 'Caf\u00e9 Mix'), row(OTHER, 'B', 'Unrelated')].join(RS),
+        [row(PID, 'A', 'Caf\u00e9 Mix', '9033:31633'), row(OTHER, 'B', 'Unrelated', '')].join(RS),
       )
       .mockResolvedValueOnce(row(PID, '/m/a.aiff'))
     const out = await musicFileEntries(
@@ -742,7 +751,15 @@ describe('Music entries for loaded files', () => {
     )
     expect(out).toEqual({
       consulted: true,
-      entries: { '/m/a.aiff': [{ persistentId: PID, label: 'A - Caf\u00e9 Mix' }] },
+      entries: {
+        '/m/a.aiff': [
+          {
+            persistentId: PID,
+            label: 'A - Caf\u00e9 Mix',
+            dateAdded: new Date(2025, 8, 25, 8, 47, 13).toISOString(),
+          },
+        ],
+      },
     })
     expect(run.mock.calls[1][0]).toBe(buildFileLocationsScript([PID]))
   })
@@ -751,7 +768,7 @@ describe('Music entries for loaded files', () => {
     const run = vi
       .fn()
       .mockResolvedValueOnce('true\n')
-      .mockResolvedValueOnce(row(PID, 'A', 'Something else'))
+      .mockResolvedValueOnce(row(PID, 'A', 'Something else', ''))
     expect(await musicFileEntries([{ path: '/m/a.aiff', title: 'T' }], false, run)).toEqual({
       consulted: true,
       entries: {},
@@ -781,6 +798,8 @@ describe('Music entries for loaded files', () => {
     expect(script).toContain('persistent ID of every file track of library playlist 1')
     expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
     expect(script).not.toContain('location')
+    expect(script).toContain('date added of every file track of library playlist 1')
+    expect(script).toContain('(x div 86400)')
   })
 
   // POSIX path is a system coercion: inside the tell block it yields "" for every track

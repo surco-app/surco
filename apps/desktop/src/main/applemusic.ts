@@ -507,6 +507,23 @@ export async function dumpAppleMusicLibrary(): Promise<AppleMusicLookupCandidate
 const REVIEW_RS = '\u001e'
 const REVIEW_FS = '\u001f'
 
+// Music prints dates in the system locale, so the scripts send wall-clock seconds from a
+// fixed local epoch as "days:seconds" (parseDateAdded) instead.
+const ADDED_EPOCH = [
+  'set epochRef to current date',
+  'set year of epochRef to 2001',
+  'set month of epochRef to January',
+  'set day of epochRef to 1',
+  'set time of epochRef to 0',
+]
+const ADDED_FIELD = [
+  '  set added to ""',
+  '  try',
+  '    set x to (item i of theAdded) - epochRef',
+  '    set added to ((x div 86400) as integer as text) & ":" & ((x mod 86400) as integer as text)',
+  '  end try',
+]
+
 // The review reads the values to correct, so it uses control separators instead of the
 // tabs and newlines the membership dump uses: a title can hold either, and losing or
 // trimming a character here would hide exactly what the review exists to find.
@@ -524,20 +541,12 @@ export function buildReviewDumpScript(): string {
     `  set theDurations to ${of('duration')}`,
     `  set theAdded to ${of('date added')}`,
     'end tell',
-    'set epochRef to current date',
-    'set year of epochRef to 2001',
-    'set month of epochRef to January',
-    'set day of epochRef to 1',
-    'set time of epochRef to 0',
+    ...ADDED_EPOCH,
     'set RS to ASCII character 30',
     'set FS to ASCII character 31',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
-    '  set added to ""',
-    '  try',
-    '    set x to (item i of theAdded) - epochRef',
-    '    set added to ((x div 86400) as integer as text) & ":" & ((x mod 86400) as integer as text)',
-    '  end try',
+    ...ADDED_FIELD,
     '  set end of out to (item i of thePids) & FS & (item i of theNames) & FS & (item i of theArtists) & FS & (item i of theAlbumArtists) & FS & (item i of theAlbums) & FS & (item i of theGenres) & FS & (item i of theDurations) & FS & added',
     'end repeat',
     "set AppleScript's text item delimiters to RS",
@@ -601,12 +610,15 @@ export function buildFileNamesScript(): string {
     `  set thePids to ${of('persistent ID')}`,
     `  set theArtists to ${of('artist')}`,
     `  set theNames to ${of('name')}`,
+    `  set theAdded to ${of('date added')}`,
     'end tell',
+    ...ADDED_EPOCH,
     'set RS to ASCII character 30',
     'set FS to ASCII character 31',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
-    '  set end of out to (item i of thePids) & FS & (item i of theArtists) & FS & (item i of theNames)',
+    ...ADDED_FIELD,
+    '  set end of out to (item i of thePids) & FS & (item i of theArtists) & FS & (item i of theNames) & FS & added',
     'end repeat',
     "set AppleScript's text item delimiters to RS",
     'return out as text',
@@ -650,18 +662,19 @@ export function buildFileLocationsScript(persistentIds: string[]): string {
   ].join('\n')
 }
 
-export function parseFileNames(
-  stdout: string,
-): { persistentId: string; name: string; label: string }[] {
-  const rows: { persistentId: string; name: string; label: string }[] = []
+type FileName = { persistentId: string; name: string; label: string; dateAdded?: string }
+
+export function parseFileNames(stdout: string): FileName[] {
+  const rows: FileName[] = []
   const body = stdout.replace(/\n$/, '')
   if (!body) return rows
   for (const line of body.split(REVIEW_RS)) {
     const fields = line.split(REVIEW_FS)
-    if (fields.length !== 3) continue
-    const [persistentId, artist, name] = fields
+    if (fields.length !== 4) continue
+    const [persistentId, artist, name, added] = fields
     if (!/^[0-9A-F]{16}$/.test(persistentId)) continue
-    rows.push({ persistentId, name, label: `${artist} - ${name}` })
+    const dateAdded = parseDateAdded(added)
+    rows.push({ persistentId, name, label: `${artist} - ${name}`, ...(dateAdded && { dateAdded }) })
   }
   return rows
 }
@@ -681,13 +694,13 @@ export function parseFileLocations(stdout: string): { persistentId: string; path
 }
 
 export function entriesForPaths(
-  rows: { persistentId: string; path: string; label: string }[],
+  rows: ({ path: string } & MusicFileEntry)[],
   paths: string[],
 ): Record<string, MusicFileEntry[]> {
   const byPath = new Map<string, MusicFileEntry[]>()
-  for (const r of rows) {
-    const key = r.path.normalize('NFC')
-    byPath.set(key, [...(byPath.get(key) ?? []), { persistentId: r.persistentId, label: r.label }])
+  for (const { path, ...entry } of rows) {
+    const key = path.normalize('NFC')
+    byPath.set(key, [...(byPath.get(key) ?? []), entry])
   }
   const out: Record<string, MusicFileEntry[]> = {}
   for (const path of paths) {
@@ -714,14 +727,15 @@ export async function musicFileEntries(
       await run(buildFileNamesScript(), { maxBuffer: 64 * 1024 * 1024 }),
     ).filter((r) => titles.has(nameKey(r.name)))
     if (names.length === 0) return { consulted: true, entries: {} }
-    const labels = new Map(names.map((r) => [r.persistentId, r.label]))
+    const byPid = new Map(names.map(({ name, ...entry }) => [entry.persistentId, entry]))
     const located = parseFileLocations(
       await run(buildFileLocationsScript(names.map((r) => r.persistentId)), {
         maxBuffer: 64 * 1024 * 1024,
       }),
-    )
-      .filter((r) => labels.has(r.persistentId))
-      .map((r) => ({ ...r, label: labels.get(r.persistentId) as string }))
+    ).flatMap((r) => {
+      const entry = byPid.get(r.persistentId)
+      return entry ? [{ ...entry, path: r.path }] : []
+    })
     return {
       consulted: true,
       entries: entriesForPaths(
