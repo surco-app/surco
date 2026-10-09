@@ -1055,6 +1055,10 @@
         "note": "Apple Music, Engine DJ, rekordbox, Traktor o Serato. Sin importar nada.",
         "lead": "Y aparecen en tu programa.",
         "rest": "Apple Music, Engine DJ, rekordbox."
+      },
+      "review": {
+        "lead": "Y tu biblioteca, en orden.",
+        "rest": "Erratas, grafías y duplicados."
       }
     },
     "replace": {

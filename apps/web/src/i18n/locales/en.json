@@ -1055,6 +1055,10 @@
         "note": "Apple Music, Engine DJ, rekordbox, Traktor or Serato. Nothing to import.",
         "lead": "And they land in your program.",
         "rest": "Apple Music, Engine DJ, rekordbox."
+      },
+      "review": {
+        "lead": "And your library, tidied.",
+        "rest": "Typos, spellings and duplicates."
       }
     },
     "replace": {
