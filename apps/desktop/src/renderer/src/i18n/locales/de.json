@@ -1370,7 +1370,21 @@
     "cleanUpMessageBackups_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in die Sicherungskopien, weil sein Laufwerk keinen Papierkorb hat. Du kannst es von dort wiederherstellen.",
     "cleanUpMessageBackups_other": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in die Sicherungskopien, weil ihr Laufwerk keinen Papierkorb hat. Du kannst alles von dort wiederherstellen.",
     "cleanUpMessageMixed_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in den Papierkorb oder, wenn sein Laufwerk keinen hat, in die Sicherungskopien. Du kannst es von dort wiederherstellen.",
-    "cleanUpMessageMixed_other": "Deine konvertierte Datei bleibt, wo sie ist. Was auf einem Laufwerk ohne Papierkorb liegt, kommt in die Sicherungskopien, der Rest in den Papierkorb. Du kannst alles von dort wiederherstellen."
+    "cleanUpMessageMixed_other": "Deine konvertierte Datei bleibt, wo sie ist. Was auf einem Laufwerk ohne Papierkorb liegt, kommt in die Sicherungskopien, der Rest in den Papierkorb. Du kannst alles von dort wiederherstellen.",
+    "trashTitlePermanent_one": "Datei endgültig löschen?",
+    "trashTitlePermanent_other": "{{count}} Dateien endgültig löschen?",
+    "trashMessagePermanent_one": "Dieses Laufwerk hat keinen Papierkorb und Sicherungskopien steht auf „Nie“, daher wird „{{name}}“ endgültig gelöscht. Du kannst die Datei nicht wiederherstellen.",
+    "trashMessagePermanent_other": "Diese Laufwerke haben keinen Papierkorb und Sicherungskopien steht auf „Nie“, daher werden {{count}} Dateien endgültig gelöscht. Du kannst sie nicht wiederherstellen.",
+    "trashConfirmPermanent": "Endgültig löschen",
+    "cleanUpMessagePermanent_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende wird endgültig gelöscht, weil sein Laufwerk keinen Papierkorb hat und Sicherungskopien auf „Nie“ steht. Du kannst es nicht wiederherstellen.",
+    "cleanUpMessagePermanent_other": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende wird endgültig gelöscht, weil ihr Laufwerk keinen Papierkorb hat und Sicherungskopien auf „Nie“ steht. Du kannst nichts davon wiederherstellen.",
+    "trashTitleMixedPermanent_one": "Datei in den Papierkorb legen oder endgültig löschen?",
+    "trashTitleMixedPermanent_other": "{{count}} Dateien in den Papierkorb legen oder endgültig löschen?",
+    "trashMessageMixedPermanent_one": "Entfernt „{{name}}“ aus der Liste. Hat ihr Laufwerk einen Papierkorb, kommt sie dorthin. Sonst wird sie endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst sie nicht wiederherstellen.",
+    "trashMessageMixedPermanent_other": "Entfernt {{count}} Dateien aus der Liste. Dateien auf einem Laufwerk mit Papierkorb kommen dorthin. Der Rest wird endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst ihn nicht wiederherstellen.",
+    "trashConfirmMixedPermanent": "Verschieben und löschen",
+    "cleanUpMessageMixedPermanent_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in den Papierkorb, wenn sein Laufwerk einen hat. Sonst wird es endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst es nicht wiederherstellen.",
+    "cleanUpMessageMixedPermanent_other": "Deine konvertierte Datei bleibt, wo sie ist. Was auf einem Laufwerk mit Papierkorb liegt, kommt dorthin. Der Rest wird endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst ihn nicht wiederherstellen."
   },
   "activity": {
     "title": "Aktivität",

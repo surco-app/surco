@@ -1370,7 +1370,21 @@
     "cleanUpMessageBackups_one": "Ton fichier converti reste où il est. L'élément ci-dessous va dans les copies de sauvegarde car son disque n'a pas de corbeille. Tu peux le restaurer depuis là.",
     "cleanUpMessageBackups_other": "Ton fichier converti reste où il est. Les éléments ci-dessous vont dans les copies de sauvegarde car leur disque n'a pas de corbeille. Tu peux tout restaurer depuis là.",
     "cleanUpMessageMixed_one": "Ton fichier converti reste où il est. L'élément ci-dessous va à la corbeille, ou dans les copies de sauvegarde si son disque n'en a pas. Tu peux le restaurer depuis là.",
-    "cleanUpMessageMixed_other": "Ton fichier converti reste où il est. Ce qui est sur un disque sans corbeille va dans les copies de sauvegarde et le reste à la corbeille. Tu peux tout restaurer depuis là."
+    "cleanUpMessageMixed_other": "Ton fichier converti reste où il est. Ce qui est sur un disque sans corbeille va dans les copies de sauvegarde et le reste à la corbeille. Tu peux tout restaurer depuis là.",
+    "trashTitlePermanent_one": "Supprimer le fichier définitivement ?",
+    "trashTitlePermanent_other": "Supprimer {{count}} fichiers définitivement ?",
+    "trashMessagePermanent_one": "Ce disque n'a pas de corbeille et les copies de sauvegarde sont sur « Jamais », donc « {{name}} » sera supprimé définitivement. Tu ne pourras pas le récupérer.",
+    "trashMessagePermanent_other": "Ces disques n'ont pas de corbeille et les copies de sauvegarde sont sur « Jamais », donc {{count}} fichiers seront supprimés définitivement. Tu ne pourras pas les récupérer.",
+    "trashConfirmPermanent": "Supprimer définitivement",
+    "cleanUpMessagePermanent_one": "Ton fichier converti reste où il est. L'élément ci-dessous est supprimé définitivement car son disque n'a pas de corbeille et les copies de sauvegarde sont sur « Jamais ». Tu ne pourras pas le récupérer.",
+    "cleanUpMessagePermanent_other": "Ton fichier converti reste où il est. Les éléments ci-dessous sont supprimés définitivement car leur disque n'a pas de corbeille et les copies de sauvegarde sont sur « Jamais ». Tu ne pourras rien récupérer.",
+    "trashTitleMixedPermanent_one": "Mettre le fichier à la corbeille ou le supprimer définitivement ?",
+    "trashTitleMixedPermanent_other": "Mettre {{count}} fichiers à la corbeille ou les supprimer définitivement ?",
+    "trashMessageMixedPermanent_one": "Retire « {{name}} » de la liste. Si son disque a une corbeille, il y va. Sinon il est supprimé définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas le récupérer.",
+    "trashMessageMixedPermanent_other": "Retire {{count}} fichiers de la liste. Ceux d'un disque avec corbeille y vont. Les autres sont supprimés définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas les récupérer.",
+    "trashConfirmMixedPermanent": "Déplacer et supprimer",
+    "cleanUpMessageMixedPermanent_one": "Ton fichier converti reste où il est. L'élément ci-dessous va à la corbeille si son disque en a une. Sinon il est supprimé définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas le récupérer.",
+    "cleanUpMessageMixedPermanent_other": "Ton fichier converti reste où il est. Ce qui est sur un disque avec corbeille y va. Le reste est supprimé définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas le récupérer."
   },
   "activity": {
     "title": "Activité",

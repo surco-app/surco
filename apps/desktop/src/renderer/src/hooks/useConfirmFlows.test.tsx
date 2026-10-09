@@ -210,6 +210,106 @@ describe('useConfirmFlows move to Trash', () => {
   })
 })
 
+// Under "Never" Surco keeps nothing, so a file on a disk with no Trash is deleted for
+// good. The dialog has to say that before the click, and only that click carries the
+// confirmation main needs to delete it.
+describe('useConfirmFlows delete for good', () => {
+  const never = { backupPolicy: 'never' } as Settings
+
+  it('says a file on a disk with no Trash is deleted for good under never', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
+    const { flows, opened } = setup([a], { settings: never })
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Delete file permanently?')
+    expect(opened[0].message).toBe(
+      'This disk has no Trash and Backups is set to Never, so “Artist - a.wav” will be deleted for good. You won’t be able to get it back.',
+    )
+    expect(opened[0].confirmLabel).toBe('Delete permanently')
+    expect(trashFile).not.toHaveBeenCalled()
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/a.wav', true)
+  })
+
+  it('names both outcomes and confirms the permanent delete only for the file without a Trash', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({
+      trashFile,
+      keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav'),
+    })
+    const a = track('a')
+    const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
+    const { flows, opened } = setup([a, b], { settings: never })
+    await flows.askTrash([a, b])
+    expect(opened[0].title).toBe('Move 2 files to the Trash or delete them for good?')
+    expect(opened[0].message).toBe(
+      'This removes 2 files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.',
+    )
+    expect(opened[0].confirmLabel).toBe('Move and delete')
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/b.wav', true)
+  })
+
+  it('keeps the Trash wording under never when every file has a Trash', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a')
+    const { flows, opened } = setup([a], { settings: never })
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Move file to Trash?')
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+  })
+
+  it('still keeps it in Backups when the setting keeps copies', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
+    const { flows, opened } = setup([a], { settings: { backupPolicy: 'audioChanges' } as Settings })
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Move file to Backups?')
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/a.wav', false)
+  })
+
+  it('says the clean-up deletes for good when no file has a Trash under never', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { status: 'done', replacesPath: '/Volumes/NAS/old/a.mp3' })
+    const { flows, opened } = setup([a], { settings: never })
+    await flows.askCleanUp(a, {
+      originalPath: '/Volumes/NAS/a.wav',
+      superseded: [{ trackId: 'a', path: '/Volumes/NAS/old/a.mp3' }],
+      staleMusicCopy: null,
+    })
+    expect(opened[0].title).toBe('Delete 2 files permanently?')
+    expect(opened[0].message).toBe(
+      'Your converted file stays where it is. The items below are deleted for good because their disk has no Trash and Backups is set to Never. You won’t be able to get them back.',
+    )
+    expect(opened[0].confirmLabel).toBe('Delete permanently')
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/a.wav', true)
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/old/a.mp3', true)
+  })
+
+  it('names both outcomes in the clean-up when only some files have a Trash under never', async () => {
+    installApi({ keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/old/a.mp3') })
+    const a = track('a', { status: 'done', replacesPath: '/Volumes/NAS/old/a.mp3' })
+    const { flows, opened } = setup([a], { settings: never })
+    await flows.askCleanUp(a, {
+      originalPath: '/a.wav',
+      superseded: [{ trackId: 'a', path: '/Volumes/NAS/old/a.mp3' }],
+      staleMusicCopy: null,
+    })
+    expect(opened[0].title).toBe('Move 2 files to the Trash or delete them for good?')
+    expect(opened[0].message).toBe(
+      'Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.',
+    )
+  })
+})
+
 describe('useConfirmFlows clean up previous files', () => {
   const stale = { persistentId: 'OLDCOPY123456789', label: 'Djmofly - Save My Love (26 Rmx)' }
 
@@ -259,8 +359,8 @@ describe('useConfirmFlows clean up previous files', () => {
     await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('a', { originalTrashed: true }))
     await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('a', { supersededTrashed: true }))
     expect(deleteAppleMusic).toHaveBeenCalledWith(stale.persistentId, stale.label)
-    expect(trashFile).toHaveBeenCalledWith('/a.wav')
-    expect(trashFile).toHaveBeenCalledWith('/old/a.mp3')
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    expect(trashFile).toHaveBeenCalledWith('/old/a.mp3', false)
     expect(onOldMusicCopyRemoved).toHaveBeenCalled()
   })
 

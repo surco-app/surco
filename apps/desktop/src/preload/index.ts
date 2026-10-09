@@ -182,7 +182,8 @@ const api: Api = {
     ipcRenderer.send('track:drag', { paths, coverUrl }),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
-  trashFile: (path: string): Promise<void> => ipcRenderer.invoke('shell:trash', path),
+  trashFile: (path: string, permanentConfirmed: boolean): Promise<void> =>
+    ipcRenderer.invoke('shell:trash', path, permanentConfirmed),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
   trashList: (): Promise<TrashEntry[]> => ipcRenderer.invoke('trash:list'),
   trashRestore: (id: string, from?: 'undo'): Promise<{ restoredTo: string }> =>

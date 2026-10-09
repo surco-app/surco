@@ -178,13 +178,33 @@ const TRASH_COPY = {
     confirm: 'confirm.trashConfirmMixed',
     cleanUp: 'confirm.cleanUpMessageMixed',
   },
+  permanent: {
+    title: 'confirm.trashTitlePermanent',
+    message: 'confirm.trashMessagePermanent',
+    confirm: 'confirm.trashConfirmPermanent',
+    cleanUp: 'confirm.cleanUpMessagePermanent',
+  },
+  mixedPermanent: {
+    title: 'confirm.trashTitleMixedPermanent',
+    message: 'confirm.trashMessageMixedPermanent',
+    confirm: 'confirm.trashConfirmMixedPermanent',
+    cleanUp: 'confirm.cleanUpMessageMixedPermanent',
+  },
 }
 
 // Where the files really go, asked per file: the OS Trash, Surco's backups on a disk with
-// none (a NAS, every Windows drive), or both.
-function trashCopy(keeps: boolean[], isWin: boolean) {
+// none (a NAS, every Windows drive), or both. Under "Never" the backups keep nothing, so a
+// file on a disk with no Trash is deleted for good instead.
+function trashCopy(keeps: boolean[], isWin: boolean, settings: Settings | null) {
   if (keeps.every(Boolean)) return isWin ? TRASH_COPY.win : TRASH_COPY.trash
+  if (settings?.backupPolicy === 'never')
+    return keeps.some(Boolean) ? TRASH_COPY.mixedPermanent : TRASH_COPY.permanent
   return keeps.some(Boolean) ? TRASH_COPY.mixed : TRASH_COPY.backups
+}
+
+// What the click confirms for one file: a delete for good exactly when the dialog said so.
+function confirmsPermanent(keepsTrash: boolean, settings: Settings | null): boolean {
+  return !keepsTrash && settings?.backupPolicy === 'never'
 }
 
 export function useConfirmFlows({
@@ -213,16 +233,16 @@ export function useConfirmFlows({
     const isWin = window.api.platform === 'win32'
     const count = targets.length
     const keeps = await Promise.all(targets.map((t) => window.api.keepsTrash(t.inputPath)))
-    const copy = trashCopy(keeps, isWin)
+    const copy = trashCopy(keeps, isWin, settings)
     openConfirm({
       title: tr(copy.title, { count }),
       message: tr(copy.message, { count, name: targets[0].fileName }),
       confirmLabel: tr(copy.confirm),
       destructive: true,
       onConfirm: () => {
-        for (const track of targets) {
+        for (const [i, track] of targets.entries()) {
           window.api
-            .trashFile(track.inputPath)
+            .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
             .then(() => removeTrack(track.id))
             // The user confirmed a destructive dialog; a silent failure here reads
             // as "the file is in the trash" when it isn't.
@@ -235,7 +255,7 @@ export function useConfirmFlows({
   // Nothing here is automatic: three runs on 15/09 looked like a correct replacement and
   // were not, and an automatic delete in any of them would have destroyed the only copy.
   // So one confirmed dialog names every file it moves, to the OS Trash rather than a hard
-  // delete. The old library copy goes first because its file can BE the listed original
+  // delete unless it says otherwise (see trashCopy). The old library copy goes first because its file can BE the listed original
   // (Music's "copy files to the Media folder" off): that removal already trashed it, and
   // a second trash would fail on a missing file. Each row is marked only once its own file
   // is gone, so a partial failure leaves the rest of the offer standing.
@@ -248,7 +268,7 @@ export function useConfirmFlows({
     // on the user's NAS (smbfs, no .Trashes): a file was lost while the dialog promised it
     // was recoverable. Such a file goes to Surco's backups now, and the dialog says so.
     const keeps = await Promise.all(files.map((path) => window.api.keepsTrash(path)))
-    const copy = trashCopy(keeps, isWin)
+    const copy = trashCopy(keeps, isWin, settings)
     const items = [
       ...(originalPath ? [tr('confirm.cleanUpOriginal', { name: baseName(originalPath) })] : []),
       ...superseded.map(({ path }) => tr('confirm.cleanUpSuperseded', { name: baseName(path) })),
@@ -256,7 +276,7 @@ export function useConfirmFlows({
     ]
     const trash = (path: string, patch: Partial<TrackItem>, id: string): void => {
       window.api
-        .trashFile(path)
+        .trashFile(path, confirmsPermanent(keeps[files.indexOf(path)], settings))
         .then(() => updateTrack(id, patch))
         .catch(() => reportTrashFailure(baseName(path)))
     }

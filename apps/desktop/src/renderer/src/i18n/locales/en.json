@@ -1370,7 +1370,21 @@
     "cleanUpMessageBackups_one": "Your converted file stays where it is. The item below goes to Backups because its disk has no Trash. You can restore it from there.",
     "cleanUpMessageBackups_other": "Your converted file stays where it is. The items below go to Backups because their disk has no Trash. You can restore them from there.",
     "cleanUpMessageMixed_one": "Your converted file stays where it is. The item below goes to the Trash, or to Backups if its disk has none. You can restore it from there.",
-    "cleanUpMessageMixed_other": "Your converted file stays where it is. Items on a disk with no Trash go to Backups and the rest to the Trash. You can restore them from there."
+    "cleanUpMessageMixed_other": "Your converted file stays where it is. Items on a disk with no Trash go to Backups and the rest to the Trash. You can restore them from there.",
+    "trashTitlePermanent_one": "Delete file permanently?",
+    "trashTitlePermanent_other": "Delete {{count}} files permanently?",
+    "trashMessagePermanent_one": "This disk has no Trash and Backups is set to Never, so “{{name}}” will be deleted for good. You won’t be able to get it back.",
+    "trashMessagePermanent_other": "These disks have no Trash and Backups is set to Never, so {{count}} files will be deleted for good. You won’t be able to get them back.",
+    "trashConfirmPermanent": "Delete permanently",
+    "cleanUpMessagePermanent_one": "Your converted file stays where it is. The item below is deleted for good because its disk has no Trash and Backups is set to Never. You won’t be able to get it back.",
+    "cleanUpMessagePermanent_other": "Your converted file stays where it is. The items below are deleted for good because their disk has no Trash and Backups is set to Never. You won’t be able to get them back.",
+    "trashTitleMixedPermanent_one": "Move file to the Trash or delete it for good?",
+    "trashTitleMixedPermanent_other": "Move {{count}} files to the Trash or delete them for good?",
+    "trashMessageMixedPermanent_one": "This removes “{{name}}” from the list. If its disk has a Trash, it goes there. Otherwise it is deleted for good because Backups is set to Never, and you won’t be able to get it back.",
+    "trashMessageMixedPermanent_other": "This removes {{count}} files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.",
+    "trashConfirmMixedPermanent": "Move and delete",
+    "cleanUpMessageMixedPermanent_one": "Your converted file stays where it is. The item below goes to the Trash if its disk has one. Otherwise it is deleted for good because Backups is set to Never, and you won’t be able to get it back.",
+    "cleanUpMessageMixedPermanent_other": "Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back."
   },
   "activity": {
     "title": "Activity",

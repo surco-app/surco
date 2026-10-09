@@ -1370,7 +1370,21 @@
     "cleanUpMessageBackups_one": "Seu arquivo convertido fica onde está. O item abaixo vai para Cópias de segurança porque o disco dele não tem lixeira. Você pode restaurá-lo de lá.",
     "cleanUpMessageBackups_other": "Seu arquivo convertido fica onde está. Os itens abaixo vão para Cópias de segurança porque o disco deles não tem lixeira. Você pode restaurar tudo de lá.",
     "cleanUpMessageMixed_one": "Seu arquivo convertido fica onde está. O item abaixo vai para a Lixeira ou, se o disco dele não tiver, para Cópias de segurança. Você pode restaurá-lo de lá.",
-    "cleanUpMessageMixed_other": "Seu arquivo convertido fica onde está. O que está em um disco sem lixeira vai para Cópias de segurança e o resto para a Lixeira. Você pode restaurar tudo de lá."
+    "cleanUpMessageMixed_other": "Seu arquivo convertido fica onde está. O que está em um disco sem lixeira vai para Cópias de segurança e o resto para a Lixeira. Você pode restaurar tudo de lá.",
+    "trashTitlePermanent_one": "Apagar o arquivo para sempre?",
+    "trashTitlePermanent_other": "Apagar {{count}} arquivos para sempre?",
+    "trashMessagePermanent_one": "Este disco não tem lixeira e Cópias de segurança está em “Nunca”, então “{{name}}” será apagado para sempre. Você não poderá recuperá-lo.",
+    "trashMessagePermanent_other": "Estes discos não têm lixeira e Cópias de segurança está em “Nunca”, então {{count}} arquivos serão apagados para sempre. Você não poderá recuperá-los.",
+    "trashConfirmPermanent": "Apagar para sempre",
+    "cleanUpMessagePermanent_one": "Seu arquivo convertido fica onde está. O item abaixo é apagado para sempre porque o disco dele não tem lixeira e Cópias de segurança está em “Nunca”. Você não poderá recuperá-lo.",
+    "cleanUpMessagePermanent_other": "Seu arquivo convertido fica onde está. Os itens abaixo são apagados para sempre porque o disco deles não tem lixeira e Cópias de segurança está em “Nunca”. Você não poderá recuperar nada.",
+    "trashTitleMixedPermanent_one": "Mover o arquivo para a Lixeira ou apagá-lo para sempre?",
+    "trashTitleMixedPermanent_other": "Mover {{count}} arquivos para a Lixeira ou apagá-los para sempre?",
+    "trashMessageMixedPermanent_one": "Isso remove “{{name}}” da lista. Se o disco dele tiver lixeira, vai para ela. Se não, é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperá-lo.",
+    "trashMessageMixedPermanent_other": "Isso remove {{count}} arquivos da lista. Os que estão em um disco com lixeira vão para ela. O resto é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperá-los.",
+    "trashConfirmMixedPermanent": "Mover e apagar",
+    "cleanUpMessageMixedPermanent_one": "Seu arquivo convertido fica onde está. O item abaixo vai para a Lixeira se o disco dele tiver uma. Se não, é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperá-lo.",
+    "cleanUpMessageMixedPermanent_other": "Seu arquivo convertido fica onde está. O que está em um disco com lixeira vai para ela. O resto é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperar nada disso."
   },
   "activity": {
     "title": "Atividade",

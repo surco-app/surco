@@ -1370,7 +1370,21 @@
     "cleanUpMessageBackups_one": "Tu archivo convertido se queda donde está. Lo que sigue va a Copias de seguridad porque su disco no tiene papelera. Puedes restaurarlo desde ahí.",
     "cleanUpMessageBackups_other": "Tu archivo convertido se queda donde está. Lo que sigue va a Copias de seguridad porque su disco no tiene papelera. Puedes restaurarlo todo desde ahí.",
     "cleanUpMessageMixed_one": "Tu archivo convertido se queda donde está. Lo que sigue va a la papelera o, si su disco no tiene, a Copias de seguridad. Puedes restaurarlo desde ahí.",
-    "cleanUpMessageMixed_other": "Tu archivo convertido se queda donde está. Lo que está en un disco sin papelera va a Copias de seguridad y el resto a la papelera. Puedes restaurarlo todo desde ahí."
+    "cleanUpMessageMixed_other": "Tu archivo convertido se queda donde está. Lo que está en un disco sin papelera va a Copias de seguridad y el resto a la papelera. Puedes restaurarlo todo desde ahí.",
+    "trashTitlePermanent_one": "¿Borrar el archivo para siempre?",
+    "trashTitlePermanent_other": "¿Borrar {{count}} archivos para siempre?",
+    "trashMessagePermanent_one": "Este disco no tiene papelera y Copias de seguridad está en «Nunca», así que «{{name}}» se borrará para siempre. No podrás recuperarlo.",
+    "trashMessagePermanent_other": "Estos discos no tienen papelera y Copias de seguridad está en «Nunca», así que {{count}} archivos se borrarán para siempre. No podrás recuperarlos.",
+    "trashConfirmPermanent": "Borrar para siempre",
+    "cleanUpMessagePermanent_one": "Tu archivo convertido se queda donde está. Lo que sigue se borra para siempre porque su disco no tiene papelera y Copias de seguridad está en «Nunca». No podrás recuperarlo.",
+    "cleanUpMessagePermanent_other": "Tu archivo convertido se queda donde está. Lo que sigue se borra para siempre porque su disco no tiene papelera y Copias de seguridad está en «Nunca». No podrás recuperar nada.",
+    "trashTitleMixedPermanent_one": "¿Mover el archivo a la papelera o borrarlo para siempre?",
+    "trashTitleMixedPermanent_other": "¿Mover {{count}} archivos a la papelera o borrarlos para siempre?",
+    "trashMessageMixedPermanent_one": "Esto quita «{{name}}» de la lista. Si su disco tiene papelera, va a ella. Si no, se borra para siempre porque Copias de seguridad está en «Nunca», y no podrás recuperarlo.",
+    "trashMessageMixedPermanent_other": "Esto quita {{count}} archivos de la lista. Los que están en un disco con papelera van a ella. Los demás se borran para siempre porque Copias de seguridad está en «Nunca», y no podrás recuperarlos.",
+    "trashConfirmMixedPermanent": "Mover y borrar",
+    "cleanUpMessageMixedPermanent_one": "Tu archivo convertido se queda donde está. Lo que sigue va a la papelera si su disco tiene una. Si no, se borra para siempre porque Copias de seguridad está en «Nunca», y no podrás recuperarlo.",
+    "cleanUpMessageMixedPermanent_other": "Tu archivo convertido se queda donde está. Lo que está en un disco con papelera va a ella. Lo demás se borra para siempre porque Copias de seguridad está en «Nunca», y no podrás recuperarlo."
   },
   "activity": {
     "title": "Actividad",
