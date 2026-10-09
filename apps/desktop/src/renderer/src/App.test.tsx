@@ -3684,6 +3684,162 @@ describe('App Music review', () => {
   })
 })
 
+const listApi = (over: Record<string, unknown> = {}) => {
+  const tags: Record<string, { title: string; artist: string }> = {
+    '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
+    '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+    '/music/c.wav': { title: 'Charlie', artist: 'Dj Lara' },
+  }
+  setApi({
+    pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
+    readTags: vi.fn(async (path: string) => tags[path]),
+    properties: vi.fn().mockResolvedValue(null),
+    libraryStatus: vi.fn().mockResolvedValue({
+      rekordbox: { enabled: false, found: false },
+      engine: { enabled: false, found: false },
+      traktor: { enabled: false, found: false },
+    }),
+    applyListFixes: vi.fn(async () => {
+      tags['/music/c.wav'] = { title: 'Charlie', artist: 'DJ Lara' }
+      return [
+        {
+          id: '/music/c.wav',
+          path: '/music/c.wav',
+          fixes: [{ id: '/music/c.wav', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+          music: ['none'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]
+    }),
+    libraryCopyInfo: vi.fn().mockResolvedValue({}),
+    onListFixProgress: () => () => {},
+    cancelListFixes: vi.fn(),
+    onListRemovalPhase: () => () => {},
+    removeListDuplicates: vi.fn().mockResolvedValue([]),
+    syncLibraryTags: vi.fn().mockResolvedValue(undefined),
+    ...over,
+  })
+}
+
+const addThree = async () => {
+  fireEvent.click(await screen.findByTestId('add-files'))
+  await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+  return screen.getAllByTestId('track-row')
+}
+
+describe('App list review', () => {
+  // Windows has no Music, but it has the list and the DJ libraries.
+  it('opens over the list on Windows and gives the list back as it was', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    await addThree()
+    runMenu('list-review')
+    expect(await screen.findByTestId('list-review-scope')).toHaveTextContent('3 tracks in the list')
+    expect(screen.queryByTestId('track-row')).not.toBeInTheDocument()
+    expect(window.api.appleMusicFileEntries).toBeUndefined()
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(3)
+  })
+
+  it('does nothing with an empty list', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    runMenu('list-review')
+    await act(async () => {})
+    expect(screen.queryByTestId('music-review')).not.toBeInTheDocument()
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
+  })
+
+  // The row shows the fixed artist straight away, so a later Update cannot write the old
+  // spelling back over the fix.
+  it('fixes a spelling in the file and shows it on the row', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    const rows = await addThree()
+    fireEvent.click(rows[2])
+    await waitFor(() =>
+      expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Dj Lara'),
+    )
+    runMenu('list-review')
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
+    await screen.findByTestId('music-review-done')
+    expect(window.api.applyListFixes).toHaveBeenCalledWith({
+      fixes: [{ id: '/music/c.wav', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      music: {},
+    })
+    fireEvent.click(screen.getByTestId('music-review-continue'))
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    await waitFor(() =>
+      expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('DJ Lara'),
+    )
+  })
+
+  it('takes a trashed duplicate out of the list', async () => {
+    vi.resetModules()
+    listApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Ann' }),
+      spectrogram: vi.fn(() => new Promise(() => {})),
+      removeListDuplicates: vi
+        .fn()
+        .mockResolvedValue([{ from: '/music/b.wav', fileTrashed: true, keptForLibrary: false }]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('list-review')
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    fireEvent.click(await screen.findByTestId('music-review-confirm-apply'))
+    await screen.findByTestId('music-review-done')
+    expect(window.api.removeListDuplicates).toHaveBeenCalledWith([
+      { from: '/music/b.wav', to: '/music/a.wav' },
+    ])
+    fireEvent.click(screen.getByTestId('music-review-continue'))
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
+  })
+
+  // The source remembers what the review wrote and trashed; a second click on the entry
+  // must not start the review over and drop what the user had staged.
+  it('keeps the open review as it is when it is asked for again', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    await addThree()
+    runMenu('list-review')
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
+    runMenu('list-review')
+    await act(async () => {})
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
+    expect(window.api.libraryStatus).toHaveBeenCalledTimes(1)
+  })
+
+  it('saves what is ignored in the list apart from Music', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    await addThree()
+    runMenu('list-review')
+    await screen.findByTestId('music-review-stage')
+    fireEvent.click(screen.getByTestId('music-review-more'))
+    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    await waitFor(() =>
+      expect(window.api.saveSettings).toHaveBeenCalledWith({
+        listReviewIgnored: [expect.stringContaining('artist')],
+      }),
+    )
+  })
+})
+
 // Reported while testing the Apple Music import: the entry point lived only in the empty
 // state, so once a playlist was loaded there was no visible way to load another. The
 // command palette still had it, but a shortcut nobody can see is not a door.

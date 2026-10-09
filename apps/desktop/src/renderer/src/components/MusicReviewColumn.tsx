@@ -6,6 +6,7 @@ import {
   type ReviewFilter,
   useMusicReview,
 } from '../hooks/useMusicReview'
+import type { ReviewSource } from '../lib/reviewSource'
 import {
   MusicReview,
   MusicReviewAction,
@@ -61,6 +62,7 @@ export function useReviewSelection(review: Review, search: string, sort: ReviewS
 
 interface Options {
   filter: ReviewFilter
+  source?: ReviewSource
   ignored: string[]
   saveIgnored: (keys: string[]) => void
   onFilesChanged: (updates: LibraryTagUpdate[]) => void
@@ -123,7 +125,7 @@ export function MusicReviewProvider({
   const [review, setReview] = useState<Review | null>(null)
   return (
     <>
-      {open && <Owner {...options} onChange={setReview} />}
+      {open && <Owner key={options.source?.kind ?? 'music'} {...options} onChange={setReview} />}
       <Gate review={open ? review : null}>{children}</Gate>
     </>
   )

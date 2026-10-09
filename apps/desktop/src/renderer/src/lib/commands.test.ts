@@ -58,6 +58,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     editorDeclickRef: { current: null },
     trackSearchRef: { current: null },
     pickFiles: () => {},
+    openListReview: vi.fn(),
     selectAll: () => {},
     askFillAll: () => {},
     moveSelection: () => {},
@@ -135,6 +136,20 @@ describe('Music review commands', () => {
     expect(
       buildCommands(makeDeps({ openMusicReview: undefined })).some((c) => c.id === 'music-review'),
     ).toBe(false)
+  })
+
+  // The review works on the loaded tracks and writes the same files a conversion does.
+  it('offers the list review only with tracks loaded and no conversion running', () => {
+    const open = vi.fn()
+    const find = (deps: Partial<CommandDeps>) =>
+      buildCommands(makeDeps({ openListReview: open, ...deps })).find((c) => c.id === 'list-review')
+    expect(find({ tracks: [] })?.enabled).toBe(false)
+    expect(find({ tracks: [track()], batching: true })?.enabled).toBe(false)
+    const ready = buildCommands(
+      makeDeps({ openListReview: open, tracks: [track()], platform: 'win32' }),
+    )
+    runCommand(ready, 'list-review')
+    expect(open).toHaveBeenCalledTimes(1)
   })
 })
 

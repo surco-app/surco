@@ -351,7 +351,8 @@
     "trimEndZoomOut": "Alejar la vista del corte de salida",
     "importApplePlaylist": "Importar de Apple Music…",
     "musicReview": "Revisar metadatos en Apple Music…",
-    "musicDuplicates": "Mostrar duplicados en Apple Music…"
+    "musicDuplicates": "Mostrar duplicados en Apple Music…",
+    "listReview": "Revisar metadatos de la lista…"
   },
   "trackList": {
     "backup": "Volver al original… (copia del {{when}})",

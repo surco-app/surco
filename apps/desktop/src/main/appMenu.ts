@@ -75,6 +75,7 @@ export function appMenuTemplate({
       submenu: [
         keymapItem(t('selectAllTracks'), 'select-all'),
         keymapItem(t('fillAll'), 'fill-all'),
+        keymapItem(t('reviewList'), 'list-review'),
         { type: 'separator' },
         keymapItem(t('analyzeQuality'), 'analyze-quality'),
         { type: 'separator' },

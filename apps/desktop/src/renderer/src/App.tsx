@@ -27,6 +27,7 @@ import type {
   OutputFormat,
   SearchHints,
   SearchProviderId,
+  Settings,
   ThemePref,
   TrackMetadata,
   TrashEntry,
@@ -65,6 +66,7 @@ import { useLaunchModals } from './hooks/useLaunchModals'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
+import type { ReviewFilter } from './hooks/useMusicReview'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -99,6 +101,7 @@ import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
+import { listReviewSource } from './lib/listReviewSource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
@@ -268,7 +271,10 @@ export default function App(): React.JSX.Element {
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
-  const [musicReview, setMusicReview] = useState<'all' | 'duplicates' | null>(null)
+  const [review, setReview] = useState<{ source: 'music' | 'list'; filter: ReviewFilter } | null>(
+    null,
+  )
+  const openListReview = useStableCallback(() => setReview({ source: 'list', filter: 'all' }))
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     // Fired async after the first read lands, so closing over the hook defined right
@@ -373,6 +379,7 @@ export default function App(): React.JSX.Element {
   // callbacks (which read refs to stay stable) can see each track's cached spectrum
   // without re-subscribing.
   const tracksViewRef = useRef<TrackItem[]>([])
+  const settingsRef = useRef<Settings | null>(null)
   // The current visible (filtered/sorted/searched) order, so the stable select callback
   // resolves a Shift range over what's on screen rather than the full import order.
   const visibleTracksRef = useRef<TrackItem[]>([])
@@ -593,7 +600,7 @@ export default function App(): React.JSX.Element {
     addPaths,
     seedRestoredEdits,
     store,
-    withdrawOffer: musicReview !== null,
+    withdrawOffer: review !== null,
   })
 
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
@@ -1138,6 +1145,7 @@ export default function App(): React.JSX.Element {
     return () => dismissToast(store, id)
   }, [libraryFailed, librarySource, store])
   tracksViewRef.current = tracksView
+  settingsRef.current = settings
   // Feed the snapshot to the background sweep so it can re-check ownership against each
   // match's canonical metadata (the sweep reads .current at apply time, not at render).
   libraryIndexRef.current = libraryIndex
@@ -1782,7 +1790,8 @@ export default function App(): React.JSX.Element {
       trackSearchRef,
       pickFiles: () => void pickFiles(),
       openApplePlaylist: isMac ? overlays.openApplePlaylist : undefined,
-      openMusicReview: isMac ? setMusicReview : undefined,
+      openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
+      openListReview,
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
@@ -1853,7 +1862,7 @@ export default function App(): React.JSX.Element {
       setTrashOpen(false)
       return
     }
-    if (musicReview !== null) return
+    if (review !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
     // clear the selection, unmounting the editor mid-review.
@@ -1864,7 +1873,7 @@ export default function App(): React.JSX.Element {
 
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
-  const overlayOpen = activeModal !== null || trashOpen || musicReview !== null
+  const overlayOpen = activeModal !== null || trashOpen || review !== null
 
   useKeyboardShortcuts({
     isMac,
@@ -1879,15 +1888,32 @@ export default function App(): React.JSX.Element {
   // Memoized so the O(n) "any row still reading its tags?" scan runs only when the list
   // changes, not on every App render — the same frequent-render concern as `selected` above.
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
+  // One source per opening: it remembers what it wrote and trashed until the review closes.
+  const reviewKind = review?.source
+  const listSource = useMemo(
+    () =>
+      reviewKind === 'list'
+        ? listReviewSource({
+            rows: () => tracksViewRef.current,
+            mac: isMac,
+            launchMusic: () =>
+              !!settingsRef.current?.addToAppleMusic ||
+              tracksRef.current.some((t) => t.fromAppleMusic || t.musicPersistentId),
+            onRowsRemoved: (paths) =>
+              removeTracks(
+                tracksRef.current.filter((t) => paths.includes(t.inputPath)).map((t) => t.id),
+              ),
+          })
+        : undefined,
+    [reviewKind, removeTracks, tracksRef],
+  )
   // A conversion writes the same files and library databases the review would, so the
   // review holds its writes until it ends.
   const reviewBusy = batching || tracks.some((t) => t.status === 'processing')
   const reviewAction = useMemo(
     () =>
-      musicReview !== null && !batching ? (
-        <MusicReviewToolbarAction busy={reviewBusy} />
-      ) : undefined,
-    [musicReview, batching, reviewBusy],
+      review !== null && !batching ? <MusicReviewToolbarAction busy={reviewBusy} /> : undefined,
+    [review, batching, reviewBusy],
   )
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
@@ -1924,10 +1950,21 @@ export default function App(): React.JSX.Element {
             {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
           that divider so a long sweep lights up the line between the toolbar and the list. */}
             <MusicReviewProvider
-              open={musicReview !== null}
-              filter={musicReview ?? 'all'}
-              ignored={settings?.musicReviewIgnored ?? []}
-              saveIgnored={(keys) => void saveSettings({ musicReviewIgnored: keys })}
+              open={review !== null}
+              filter={review?.filter ?? 'all'}
+              source={listSource}
+              ignored={
+                (review?.source === 'list'
+                  ? settings?.listReviewIgnored
+                  : settings?.musicReviewIgnored) ?? []
+              }
+              saveIgnored={(keys) =>
+                void saveSettings(
+                  review?.source === 'list'
+                    ? { listReviewIgnored: keys }
+                    : { musicReviewIgnored: keys },
+                )
+              }
               onFilesChanged={onReviewFilesChanged}
             >
               <div className="relative">
@@ -1984,10 +2021,10 @@ export default function App(): React.JSX.Element {
                 >
                   <div
                     ref={listScrollRef}
-                    className={`min-h-0 flex-1 ${musicReview !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
+                    className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                   >
-                    {musicReview !== null ? (
-                      <MusicReviewColumn onClose={() => setMusicReview(null)} busy={reviewBusy} />
+                    {review !== null ? (
+                      <MusicReviewColumn onClose={() => setReview(null)} busy={reviewBusy} />
                     ) : tracks.length === 0 ? (
                       // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the
@@ -2123,7 +2160,7 @@ export default function App(): React.JSX.Element {
                 />
 
                 <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
-                  {musicReview !== null ? (
+                  {review !== null ? (
                     <MusicReviewDetailPane
                       sync={{
                         rekordbox: settings?.syncRekordbox ?? false,
@@ -2212,9 +2249,15 @@ export default function App(): React.JSX.Element {
                             onAdd={onAdd}
                             addShortcut={hintFor('add')}
                             onImportPlaylist={isMac ? overlays.openApplePlaylist : undefined}
-                            onReviewMusic={isMac ? () => setMusicReview('all') : undefined}
+                            onReviewMusic={
+                              isMac
+                                ? () => setReview({ source: 'music', filter: 'all' })
+                                : undefined
+                            }
                             onShowDuplicates={
-                              isMac ? () => setMusicReview('duplicates') : undefined
+                              isMac
+                                ? () => setReview({ source: 'music', filter: 'duplicates' })
+                                : undefined
                             }
                           />
                         </div>

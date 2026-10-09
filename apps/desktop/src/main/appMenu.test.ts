@@ -46,6 +46,14 @@ describe('appMenuTemplate', () => {
     expect(run.mock.calls.map((c) => c[0])).toEqual(['music-review', 'music-duplicates'])
   })
 
+  it('reviews the list from the Tracks menu on every platform', () => {
+    for (const mac of [true, false]) {
+      const { template, run } = build('en', mac)
+      click(itemFor(menu(template, 'Tracks'), 'Review metadata in the list…'))
+      expect(run).toHaveBeenCalledWith('list-review')
+    }
+  })
+
   it('has no Music review where there is no Music to script', () => {
     const file = menu(build('en', false).template, 'File')
     expect(file.find((i) => i.label === 'Review metadata in Apple Music…')).toBeUndefined()

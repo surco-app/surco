@@ -31,6 +31,7 @@ interface MenuStrings {
   analyzeQuality: string
   selectAllTracks: string
   fillAll: string
+  reviewList: string
   trashSelected: string
   search: string
   play: string
@@ -118,6 +119,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analizar calidad',
     selectAllTracks: 'Seleccionar todas las pistas',
     fillAll: 'Rellenar todo desde el nombre…',
+    reviewList: 'Revisar metadatos de la lista…',
     trashSelected: 'Mover la selección a la papelera…',
     search: 'Buscar en la lista de pistas',
     play: 'Reproducir / pausar',
@@ -209,6 +211,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analyze quality',
     selectAllTracks: 'Select all tracks',
     fillAll: 'Fill all tags from file name…',
+    reviewList: 'Review metadata in the list…',
     trashSelected: 'Move selection to Trash…',
     search: 'Search the track list',
     play: 'Play / pause',
@@ -300,6 +303,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Qualität analysieren',
     selectAllTracks: 'Alle Tracks auswählen',
     fillAll: 'Alle Tags aus dem Dateinamen füllen…',
+    reviewList: 'Metadaten der Liste prüfen…',
     trashSelected: 'Auswahl in den Papierkorb legen…',
     search: 'In der Trackliste suchen',
     play: 'Abspielen / Pause',
@@ -391,6 +395,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analyser la qualité',
     selectAllTracks: 'Sélectionner tous les morceaux',
     fillAll: 'Remplir tous les tags depuis le nom du fichier…',
+    reviewList: 'Vérifier les métadonnées de la liste…',
     trashSelected: 'Mettre la sélection à la corbeille…',
     search: 'Rechercher dans la liste des morceaux',
     play: 'Lecture / pause',
@@ -483,6 +488,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analisar qualidade',
     selectAllTracks: 'Selecionar todas as faixas',
     fillAll: 'Preencher tudo a partir do nome…',
+    reviewList: 'Revisar metadados da lista…',
     trashSelected: 'Mover a seleção para a lixeira…',
     search: 'Buscar na lista de faixas',
     play: 'Reproduzir / pausar',

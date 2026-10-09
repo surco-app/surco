@@ -156,6 +156,8 @@ export interface CommandDeps {
   openApplePlaylist?: () => void
   // Undefined off macOS, like openApplePlaylist: the review reads the Music library.
   openMusicReview?: (filter: 'all' | 'duplicates') => void
+  // Opens the review of the loaded tracks. Every platform: it reads the list, not Music.
+  openListReview: () => void
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
@@ -300,6 +302,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     pickFiles,
     openApplePlaylist,
     openMusicReview,
+    openListReview,
     selectAll,
     askFillAll,
     moveSelection,
@@ -392,6 +395,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
           },
         ]
       : []),
+    {
+      id: 'list-review',
+      group: 'library',
+      title: tr('commands.listReview'),
+      hint: hintFor('list-review'),
+      enabled: tracks.length > 0 && !batching,
+      run: openListReview,
+    },
     {
       id: 'find-replace',
       group: 'tags',
