@@ -163,6 +163,7 @@ const ONLY_CHECKED = new Set<ListMusicOutcome['step']>([
   'held',
   'kept-no-entry',
   'ambiguous',
+  'unchecked',
 ])
 
 // What Music did with one removed list copy.

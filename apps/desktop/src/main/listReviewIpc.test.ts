@@ -582,6 +582,7 @@ describe('listreview:removeDuplicates in Activity', () => {
     await handlerFor('listreview:removeDuplicates')({ sender }, [
       { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak' },
     ])
+    expect(steps(events)[0][0]).toBe('activity.reviewDuplicateMusicChecked')
     expect(steps(events).map(([, phase, detail]) => [phase, detail])).toEqual([
       ['warn', 'activity.listReviewDuplicateUnchecked'],
       ['warn', 'activity.reviewDuplicateFileUnchecked'],
