@@ -53,5 +53,6 @@ describe('locale key usage', () => {
         return !literal.test(source) && !dynamicPrefixes.some((p) => key.startsWith(p))
       })
     expect(orphans).toEqual([])
-  })
+    // One regex per key over the whole source: past 1500 keys it ran 5.4 s on CI's runner.
+  }, 30_000)
 })
