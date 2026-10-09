@@ -713,7 +713,8 @@ export function entriesForPaths(
 const nameKey = (text: string) => text.normalize('NFC').trim().toLowerCase()
 
 // A Music track whose name differs from the file's title tag (beyond case and surrounding
-// spaces, which is what the review fixes) is not found, so the file counts as not in Music. That fails safe: nothing in Music is updated or removed for it.
+// spaces, which is what the review fixes) is not found, so the file counts as not in Music.
+// That fails safe: nothing in Music is updated or removed for it.
 export async function musicFileEntries(
   candidates: { path: string; title: string }[],
   launch: boolean,
