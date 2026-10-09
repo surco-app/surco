@@ -156,6 +156,14 @@ const MUSIC_ENDING: Record<
   failed: { detailKey: 'activity.reviewDuplicateFailed', status: 'error' },
 }
 
+// Steps that never tried to take an entry out of Music: their row says Music was checked.
+const ONLY_CHECKED = new Set<ListMusicOutcome['step']>([
+  'none',
+  'held',
+  'kept-no-entry',
+  'ambiguous',
+])
+
 // What Music did with one removed list copy.
 function musicEnding(music: ListMusicOutcome) {
   const count = { count: music.playlists ?? 0 }
@@ -167,7 +175,10 @@ function musicEnding(music: ListMusicOutcome) {
     }
   if (music.step === 'removed')
     return { detailKey: 'activity.reviewDuplicateRemoved', detailParams: count }
-  return MUSIC_ENDING[music.step]
+  return {
+    ...MUSIC_ENDING[music.step],
+    ...(ONLY_CHECKED.has(music.step) && { labelKey: 'activity.reviewDuplicateMusicChecked' }),
+  }
 }
 
 // Wider than the file system's own rule on purpose: a false match only keeps a file.

@@ -1485,6 +1485,7 @@
     "listReviewFixMusicMissing": "Cambiado en el fichero. La pista ya no está en Music",
     "listReviewFixMusicFailed": "Cambiado en el fichero. Music no respondió",
     "reviewDuplicateMusic": "Quitar de Music",
+    "reviewDuplicateMusicChecked": "Comprobar en Music",
     "reviewDuplicateRemoved_one": "Quitada de Music, {{count}} playlist pasa a la copia que se queda",
     "reviewDuplicateRemoved_other": "Quitada de Music, {{count}} playlists pasan a la copia que se queda",
     "reviewDuplicateRemovedNoFile_one": "Quitada de Music, {{count}} playlist pasa a la copia que se queda. No tenía fichero",

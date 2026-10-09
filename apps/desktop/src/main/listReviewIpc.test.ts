@@ -516,7 +516,7 @@ describe('listreview:removeDuplicates in Activity', () => {
       { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak' },
     ])
     expect(steps(events).map(([key, phase, detail]) => [key, phase, detail])).toEqual([
-      ['activity.reviewDuplicateMusic', 'done', 'activity.listReviewDuplicateNotInMusic'],
+      ['activity.reviewDuplicateMusicChecked', 'done', 'activity.listReviewDuplicateNotInMusic'],
       ['activity.reviewDuplicateFile', 'done', 'activity.reviewDuplicateFileTrash'],
     ])
   })
@@ -542,7 +542,7 @@ describe('listreview:removeDuplicates in Activity', () => {
         { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak', music },
       ])
       expect(steps(events).map(([key, phase, detail]) => [key, phase, detail])).toEqual([
-        ['activity.reviewDuplicateMusic', 'warn', musicKey],
+        ['activity.reviewDuplicateMusicChecked', 'warn', musicKey],
         ['activity.reviewDuplicateFile', 'warn', fileKey],
       ])
       expect(d.trash).not.toHaveBeenCalled()
@@ -573,6 +573,20 @@ describe('listreview:removeDuplicates in Activity', () => {
         { count: 1 },
       ],
       ['activity.reviewDuplicateFile', 'warn', 'activity.reviewDuplicateFileMusic', undefined],
+    ])
+  })
+
+  // Music's own read found the file under an entry the load never saw; nothing left Music.
+  it('names a Music step that only found the file held a check, not a removal', async () => {
+    const { events, d } = register()
+    d.music.fileLocations.mockResolvedValue([{ persistentId: 'OTHER', path: '/m/old.aiff' }])
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff', label: 'Funk Freak' },
+    ])
+    expect(steps(events)[0].slice(0, 3)).toEqual([
+      'activity.reviewDuplicateMusicChecked',
+      'warn',
+      'activity.listReviewDuplicateHeld',
     ])
   })
 

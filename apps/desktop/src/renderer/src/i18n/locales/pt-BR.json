@@ -1485,6 +1485,7 @@
     "listReviewFixMusicMissing": "Alterado no arquivo. A faixa não está mais no Music",
     "listReviewFixMusicFailed": "Alterado no arquivo. O Music não respondeu",
     "reviewDuplicateMusic": "Remover do Music",
+    "reviewDuplicateMusicChecked": "Verificar no Music",
     "reviewDuplicateRemoved_one": "Removida do Music, {{count}} playlist passa para a cópia mantida",
     "reviewDuplicateRemoved_other": "Removida do Music, {{count}} playlists passam para a cópia mantida",
     "reviewDuplicateRemovedNoFile_one": "Removida do Music, {{count}} playlist passa para a cópia mantida. Não tinha arquivo",

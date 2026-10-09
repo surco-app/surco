@@ -1485,6 +1485,7 @@
     "listReviewFixMusicMissing": "In der Datei geändert. Der Titel ist nicht mehr in Music",
     "listReviewFixMusicFailed": "In der Datei geändert. Music hat nicht geantwortet",
     "reviewDuplicateMusic": "Aus Music entfernen",
+    "reviewDuplicateMusicChecked": "In Music prüfen",
     "reviewDuplicateRemoved_one": "Aus Music entfernt, {{count}} Playlist geht an die behaltene Kopie",
     "reviewDuplicateRemoved_other": "Aus Music entfernt, {{count}} Playlists gehen an die behaltene Kopie",
     "reviewDuplicateRemovedNoFile_one": "Aus Music entfernt, {{count}} Playlist geht an die behaltene Kopie. Sie hatte keine Datei",

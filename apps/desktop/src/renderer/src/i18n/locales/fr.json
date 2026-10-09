@@ -1485,6 +1485,7 @@
     "listReviewFixMusicMissing": "Modifié dans le fichier. Le morceau n'est plus dans Music",
     "listReviewFixMusicFailed": "Modifié dans le fichier. Music n'a pas répondu",
     "reviewDuplicateMusic": "Retirer de Music",
+    "reviewDuplicateMusicChecked": "Vérifier dans Music",
     "reviewDuplicateRemoved_one": "Retirée de Music, {{count}} playlist passe à la copie gardée",
     "reviewDuplicateRemoved_other": "Retirée de Music, {{count}} playlists passent à la copie gardée",
     "reviewDuplicateRemovedNoFile_one": "Retirée de Music, {{count}} playlist passe à la copie gardée. Elle n'avait pas de fichier",

@@ -157,6 +157,23 @@ describe('createActivity', () => {
     },
   )
 
+  // A step that turned out to only check (a Music removal with nothing to remove) must not
+  // keep the name of what it set out to do.
+  it('lets a summary rename the finished step', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+
+    await activity.track('applemusic', 'activity.reviewDuplicateMusic', async () => 1, {
+      summary: () => ({ labelKey: 'activity.reviewDuplicateMusicChecked' }),
+    })
+
+    expect(events.map((e) => e.labelKey)).toEqual([
+      'activity.reviewDuplicateMusic',
+      'activity.reviewDuplicateMusicChecked',
+    ])
+  })
+
   it('titles a group with a translatable key', async () => {
     const activity = createActivity()
     const events: ActivityEvent[] = []

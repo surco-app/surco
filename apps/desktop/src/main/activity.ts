@@ -37,6 +37,8 @@ export interface Activity {
 // key (+params) or a raw string for untranslatable data (a title). Mutually
 // exclusive in practice; the emitter prefers the key when both are somehow set.
 interface SummaryDetail {
+  // Renames the finished step when what it did turned out narrower than its start said.
+  labelKey?: string
   detail?: string
   detailKey?: string
   detailParams?: ActivityParams
@@ -114,6 +116,7 @@ export function createActivity(): Activity {
         const summary = opts?.summary?.(value)
         emit({
           ...base,
+          labelKey: summary?.labelKey ?? labelKey,
           phase: summary?.status ?? 'done',
           detail: summary?.detail ?? detail,
           detailKey: summary?.detailKey ?? detailKey,
