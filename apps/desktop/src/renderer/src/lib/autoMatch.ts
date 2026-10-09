@@ -64,8 +64,10 @@ export interface MatchCleanup {
 // or title it names another song ("Kings Of Tomorrow - Finally" with a Jewel track
 // selected), and searching the file's fields first, or keeping only rows naming its artist,
 // would answer with the file's own album. So a typed term that does not name the tags
-// carries none. Only a typed term: the query the app built can lag behind tags the user
-// just corrected, and those corrected tags are exactly what the search needs.
+// carries none. A typed term that names the artist and the album but not the song asks for
+// that album, so it carries just those two. Only a typed term: the query the app built can
+// lag behind tags the user just corrected, and those corrected tags are exactly what the
+// search needs.
 export function searchHintsFor(
   track: TrackItem,
   cleanup: MatchCleanup = {},
@@ -77,10 +79,15 @@ export function searchHintsFor(
   }
   if (typedTerm === undefined) return hints
   const words = new Set(foldText(typedTerm).split(' '))
-  const named = foldText(`${hints.artist ?? ''} ${hints.title ?? ''}`)
-    .split(' ')
-    .every((w) => w === '' || words.has(w))
-  return named ? hints : {}
+  const names = (field: string | undefined): boolean =>
+    foldText(field ?? '')
+      .split(' ')
+      .every((w) => w === '' || words.has(w))
+  if (names(hints.artist) && names(hints.title)) return hints
+  const pinned = hints.artist?.trim() && hints.album?.trim()
+  return pinned && names(hints.artist) && names(hints.album)
+    ? { artist: hints.artist, album: hints.album, albumTyped: true }
+    : {}
 }
 
 // What the sweep reads off a track to score release candidates against it.

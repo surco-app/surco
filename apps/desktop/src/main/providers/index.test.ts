@@ -177,6 +177,21 @@ describe('getProvider', () => {
     expect(dzSearch.mock.calls[0][2]).toEqual({ artist: 'Moby', title: 'Porcelain', album: 'Play' })
   })
 
+  // Typing the artist and the album into the box asks for that album, setting or not: the
+  // album search runs as if album-first were on, and providers never see the marker.
+  it('hands over an album the user typed even while album-first search is off', async () => {
+    search.mockResolvedValue([])
+    await getProvider('discogs').search('duran duran duran duran (deluxe edition)', 'high', {
+      artist: 'Duran Duran',
+      album: 'Duran Duran (Deluxe Edition)',
+      albumTyped: true,
+    })
+    expect(search.mock.calls[0][3]).toEqual({
+      artist: 'Duran Duran',
+      album: 'Duran Duran (Deluxe Edition)',
+    })
+  })
+
   it('hands the album to MusicBrainz only when album-first search is on', async () => {
     mbSearch.mockResolvedValue([])
     const hints = { artist: 'Moby', title: 'Porcelain', album: 'Play' }

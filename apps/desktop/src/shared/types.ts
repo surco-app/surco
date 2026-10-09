@@ -65,6 +65,9 @@ export interface SearchHints {
   // while "Search by album first" is on, so providers can try the release it names
   // before the track.
   album?: string
+  // The user typed this album (with its artist) into the search box, which asks for the
+  // album search whether or not "Search by album first" is on.
+  albumTyped?: boolean
   catalogNumber?: string
   // The recording's ISRC from the file's own tags (streaming rips carry it). Only the
   // Deezer provider consumes it: an exact-identity lookup that puts the original
