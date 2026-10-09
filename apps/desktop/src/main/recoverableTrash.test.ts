@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
-import { type RecoverableTrashDeps, trashRecoverably } from './recoverableTrash'
+import { type RecoverableTrashDeps, trashAsConfirmed, trashRecoverably } from './recoverableTrash'
 
 afterEach(() => configureOriginalKeeper(null))
 
@@ -9,6 +9,8 @@ function deps(over: Partial<RecoverableTrashDeps>): RecoverableTrashDeps {
     keepsTrash: () => true,
     keep: vi.fn(async () => ({})),
     trashItem: vi.fn(async () => {}),
+    policy: () => 'audioChanges',
+    remove: vi.fn(async () => {}),
     ...over,
   }
 }
@@ -49,9 +51,48 @@ describe('trashRecoverably', () => {
     configureOriginalKeeper(policyKeeper(() => 'never', stash))
     const trashItem = vi.fn(async () => {})
     expect(
-      await trashRecoverably('/Volumes/Public/a.mp3', { keepsTrash: () => false, trashItem }),
+      await trashRecoverably('/Volumes/Public/a.mp3', {
+        keepsTrash: () => false,
+        trashItem,
+      }),
     ).toBe('surco')
     expect(stash).toHaveBeenCalledTimes(1)
     expect(trashItem).not.toHaveBeenCalled()
+  })
+})
+
+// Under "Never" Surco keeps nothing, so a delete on a disk with no Trash has nowhere
+// recoverable to go. Only the user can turn that into a delete for good, in a dialog
+// that said so before they confirmed; main checks the setting and the volume itself.
+describe('trashAsConfirmed', () => {
+  const nas = '/Volumes/Public/a.mp3'
+
+  it('refuses to delete for good without the confirmation, and keeps nothing', async () => {
+    const d = deps({ keepsTrash: () => false, policy: () => 'never' })
+    await expect(trashAsConfirmed(nas, { permanentConfirmed: false }, d)).rejects.toThrow()
+    expect(d.remove).not.toHaveBeenCalled()
+    expect(d.keep).not.toHaveBeenCalled()
+    expect(d.trashItem).not.toHaveBeenCalled()
+  })
+
+  it('deletes for good once confirmed under never on a disk with no Trash', async () => {
+    const d = deps({ keepsTrash: () => false, policy: () => 'never' })
+    expect(await trashAsConfirmed(nas, { permanentConfirmed: true }, d)).toBe('deleted')
+    expect(d.remove).toHaveBeenCalledWith(nas)
+    expect(d.keep).not.toHaveBeenCalled()
+  })
+
+  it('still keeps a copy when the setting keeps one, confirmation or not', async () => {
+    for (const policy of ['always', 'audioChanges'] as const) {
+      const d = deps({ keepsTrash: () => false, policy: () => policy })
+      expect(await trashAsConfirmed(nas, { permanentConfirmed: true }, d)).toBe('surco')
+      expect(d.remove).not.toHaveBeenCalled()
+    }
+  })
+
+  it('still uses the Trash on a disk that has one, even under never', async () => {
+    const d = deps({ policy: () => 'never' })
+    expect(await trashAsConfirmed('/Users/me/a.mp3', { permanentConfirmed: true }, d)).toBe('trash')
+    expect(d.remove).not.toHaveBeenCalled()
   })
 })

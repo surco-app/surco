@@ -18,10 +18,15 @@ vi.mock('electron-log/main', () => ({
   default: { transports: { file: { getFile: () => ({ path: '/logs/main.log' }) } } },
 }))
 
-vi.mock('./trashSupport', () => ({ volumeKeepsTrash: () => true }))
+let keepsTrash = true
+vi.mock('./trashSupport', () => ({ volumeKeepsTrash: () => keepsTrash }))
 
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { ipcMain } from 'electron'
 import type { MediaAccess } from './mediaAccess'
+import { configureBackupStore, configureOriginalKeeper } from './originalKeeper'
 import { registerShellIpc } from './shellIpc'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
@@ -42,6 +47,8 @@ function fakeMediaAccess(allowed: string[]): MediaAccess {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  keepsTrash = true
+  configureOriginalKeeper(null)
 })
 
 // shell:open/trash/reveal take a renderer-supplied path straight into an OS call —
@@ -79,5 +86,36 @@ describe('registerShellIpc — path allowlist', () => {
     expect(openPath).toHaveBeenCalledWith('/music/allowed.wav')
     expect(trashItem).toHaveBeenCalledWith('/music/allowed.wav')
     expect(showItemInFolder).toHaveBeenCalledWith('/music/allowed.wav')
+  })
+})
+
+// The trash and clean-up dialogs say "deleted for good" before the user confirms, under
+// "Never" on a disk with no Trash. The confirmation travels with the call, and without
+// it main refuses rather than delete a file the dialog promised to keep.
+describe('registerShellIpc — a delete for good', () => {
+  const stash = vi.fn(async () => null)
+
+  function nasFile(): string {
+    const file = join(mkdtempSync(join(tmpdir(), 'surco-shell-trash-')), 'a.mp3')
+    writeFileSync(file, 'audio')
+    keepsTrash = false
+    configureBackupStore({ stash, remove: async () => {} }, () => 'never')
+    registerShellIpc(fakeMediaAccess([file]))
+    return file
+  }
+
+  it('refuses it when the user did not confirm a permanent delete', async () => {
+    const file = nasFile()
+    await expect(handlerFor('shell:trash')({}, file)).rejects.toThrow()
+    await expect(handlerFor('shell:trash')({}, file, 'yes')).rejects.toThrow()
+    expect(existsSync(file)).toBe(true)
+    expect(trashItem).not.toHaveBeenCalled()
+  })
+
+  it('deletes the file when the user confirmed it under never on a disk with no Trash', async () => {
+    const file = nasFile()
+    await handlerFor('shell:trash')({}, file, true)
+    expect(existsSync(file)).toBe(false)
+    expect(trashItem).not.toHaveBeenCalled()
   })
 })

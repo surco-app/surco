@@ -2,7 +2,7 @@ import { clipboard, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import type { MediaAccess } from './mediaAccess'
-import { trashRecoverably } from './recoverableTrash'
+import { trashAsConfirmed } from './recoverableTrash'
 import { volumeKeepsTrash } from './trashSupport'
 
 // The OS pass-throughs (reveal/open/trash + plain clipboard text), split out of
@@ -21,10 +21,11 @@ export function registerShellIpc(mediaAccess: MediaAccess): void {
     if (!mediaAccess.isAllowed(path)) return errorWithKey('pathNotAllowed').message
     return shell.openPath(path)
   })
-  // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.
-  ipcMain.handle('shell:trash', async (_e, path: string) => {
+  // To the OS Trash, or to Surco's backups on a disk with none. A hard delete only when
+  // the dialog told the user so and they confirmed it (see trashAsConfirmed).
+  ipcMain.handle('shell:trash', async (_e, path: string, permanentConfirmed?: unknown) => {
     if (!mediaAccess.isAllowed(path)) throw errorWithKey('pathNotAllowed')
-    await trashRecoverably(path)
+    await trashAsConfirmed(path, { permanentConfirmed: permanentConfirmed === true })
   })
   // Whether a delete of this file can be described as recoverable. Asked of the
   // filesystem, not guessed from the path: /Volumes/Macintosh HD is the local disk while

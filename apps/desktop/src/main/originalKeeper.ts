@@ -27,6 +27,7 @@ export type OriginalKeeper = (
 ) => Promise<TrashEntry | null>
 
 let keeper: OriginalKeeper | null = null
+let livePolicy: (() => BackupPolicy) | null = null
 
 export function configureOriginalKeeper(next: OriginalKeeper | null): void {
   keeper = next
@@ -88,8 +89,14 @@ export function configureBackupStore(
   },
   policy: () => BackupPolicy,
 ): void {
+  livePolicy = policy
   configureOriginalKeeper(
     policyKeeper(policy, (path, reason, outputPath) => store.stash(path, reason, outputPath)),
   )
   configureBackupDiscarder((entry) => store.remove(entry.id))
+}
+
+// Unconfigured it answers the level that never allows a delete for good.
+export function currentBackupPolicy(): BackupPolicy {
+  return livePolicy?.() ?? 'always'
 }
