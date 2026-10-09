@@ -2039,6 +2039,29 @@ describe('list review', () => {
       expect(within(b).queryByTestId('list-review-copy-music')).toBeNull()
     })
 
+    // The removed copy's card stays up under the done sheet while its row leaves the list and
+    // its cached size is evicted: probed again, the file in the Trash logged a failure.
+    it('never probes the size of a copy whose row has left the list', async () => {
+      const client = createQueryClient()
+      render(
+        <QueryClientProvider client={client}>
+          <MusicReviewDetail
+            review={listReview({
+              spelling: [],
+              duplicates: [card],
+              choice: () => '/m/a.aiff',
+              facts: (id: string) => (id === '/m/b.aiff' ? undefined : facts(id)),
+            })}
+            selectedKey="k#1"
+            sync={NO_SYNC}
+          />
+        </QueryClientProvider>,
+      )
+      const [a] = screen.getAllByTestId('music-review-copy')
+      expect(await within(a).findByText('56.3 MB')).toBeInTheDocument()
+      expect(window.api.properties).not.toHaveBeenCalledWith('/m/b.aiff')
+    })
+
     // The date added is Music's; a copy outside Music has none, and a file date would lie.
     it('shows when Music added a copy, and nothing for a copy outside Music', () => {
       renderCopies()

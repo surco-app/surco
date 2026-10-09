@@ -541,9 +541,11 @@ function CopyQualityCell({ row }: { row: TrackItem | undefined }) {
   )
 }
 
-function CopySizeCell({ path }: { path: string }) {
+// Probed only while the copy is still a row: a removed copy's card outlives its row under
+// the done sheet, and re-probing the file it sent to the Trash logged a failure.
+function CopySizeCell({ path, listed }: { path: string; listed: boolean }) {
   const { i18n } = useTranslation()
-  const { data } = useTrackProperties(path, true)
+  const { data } = useTrackProperties(path, listed)
   return (
     <span data-testid="list-review-copy-size">
       {data ? formatFileSize(data.sizeBytes, i18n.language) : ''}
@@ -724,7 +726,7 @@ function DuplicateDetail({
                           </dd>
                           <dt className="text-fg-faint">{t('listReview.detail.size')}</dt>
                           <dd className="truncate tabular-nums">
-                            <CopySizeCell path={e.id} />
+                            <CopySizeCell path={e.id} listed={review.facts(e.id) !== undefined} />
                           </dd>
                         </>
                       )}
