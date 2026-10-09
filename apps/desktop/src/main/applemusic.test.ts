@@ -835,10 +835,22 @@ describe('musicFileLocations', () => {
     expect(script).toContain('if pidsBefore is not pidsAfter then return "changed"')
   })
 
-  it('reads an empty library as no files', async () => {
-    expect(await musicFileLocations(vi.fn().mockResolvedValue(''))).toEqual([])
-    const empty = vi.fn().mockRejectedValue(new Error('execution error: (-1728)'))
-    expect(await musicFileLocations(empty)).toEqual([])
+  // -1728 is also what a vanished track reference raises: only the script's own count may
+  // call the library empty, or the file would be trashed on a failed read.
+  it('reads an empty library as no files, told apart inside the script', async () => {
+    let script = ''
+    const run = vi.fn(async (s: string) => {
+      script = s
+      return ''
+    })
+    expect(await musicFileLocations(run)).toEqual([])
+    const guard = script.indexOf(
+      'if (count of file tracks of library playlist 1) is 0 then return ""',
+    )
+    expect(guard).toBeGreaterThan(script.indexOf('tell application "Music"'))
+    expect(guard).toBeLessThan(script.indexOf('set pidsBefore'))
+    const failed = vi.fn().mockRejectedValue(new Error('execution error: (-1728)'))
+    await expect(musicFileLocations(failed)).rejects.toThrow('-1728')
   })
 
   // The caller keeps the file when Music could not be read.

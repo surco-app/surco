@@ -741,11 +741,13 @@ export async function musicFileEntries(
 // lookup misses a track renamed in Music. Measured 09/10 on a 2045-track SMB library:
 // `whose location is` never matched a real path and still took 35-45 s, one track at a
 // time 102 s, these bulk lists 47 s with pairs identical to the one-at-a-time read. The
-// lists pair by position, so a library that changed in between fails the read. Any failure
-// but an empty library reaches the caller, which keeps the file.
+// lists pair by position, so a library that changed in between fails the read. The script
+// tells an empty library apart itself (see buildLibraryDumpScript): every failure, -1728
+// included, reaches the caller, which keeps the file.
 export function buildFileLocationsAllScript(): string {
   return [
     'tell application "Music"',
+    '  if (count of file tracks of library playlist 1) is 0 then return ""',
     '  set pidsBefore to persistent ID of every file track of library playlist 1',
     '  set theLocs to location of every file track of library playlist 1',
     '  set pidsAfter to persistent ID of every file track of library playlist 1',
@@ -765,13 +767,7 @@ export function buildFileLocationsAllScript(): string {
 export async function musicFileLocations(
   run: typeof runOsascript = runOsascript,
 ): Promise<{ persistentId: string; path: string }[]> {
-  let stdout: string
-  try {
-    stdout = await run(buildFileLocationsAllScript(), { maxBuffer: 64 * 1024 * 1024 })
-  } catch (err) {
-    if (err instanceof Error && err.message.includes('-1728')) return []
-    throw err
-  }
+  const stdout = await run(buildFileLocationsAllScript(), { maxBuffer: 64 * 1024 * 1024 })
   if (stdout.trim() === 'changed') throw new Error('music-library-changed')
   return parseFileLocations(stdout)
 }
