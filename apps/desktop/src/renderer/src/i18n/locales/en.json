@@ -1657,7 +1657,15 @@
         "updated_other": "{{count}} tracks updated",
         "open": "untouched, it was open",
         "noMatch": "didn't have these tracks"
-      }
+      },
+      "undoTitle": "Changes undone",
+      "undoTitleWarnings_one": "Undone, with {{count}} warning",
+      "undoTitleWarnings_other": "Undone, with {{count}} warnings",
+      "undoSubtitle": "Everything is back as it was.",
+      "undoSubtitleFailed": "Some changes are still applied.",
+      "undoSubtitleLibraries": "The rest is back as it was, but a library still has the change.",
+      "undoLibraryOpen": "{{library}} still has the change because it was open. Close it and press Undo again.",
+      "undoLibraryFailed": "{{library}} still has the change because it couldn't be updated. Press Undo again or check Activity."
     },
     "empty": "Your Apple Music library is empty.",
     "clean": "Nothing to review.",

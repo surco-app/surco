@@ -894,6 +894,25 @@ describe('useMusicReview', () => {
     })
   })
 
+  // Closing the open library and pressing Undo again is the only way left to put it back:
+  // the files and Music are already back, so the retry owes only the libraries.
+  it('sends a library left open on undo its change again on the next undo', async () => {
+    const syncLibraryTags = vi
+      .fn<Api['syncLibraryTags']>()
+      .mockResolvedValueOnce(SYNCED)
+      .mockResolvedValueOnce({ ...SYNCED, engine: { outcome: 'open' } })
+      .mockResolvedValue(SYNCED)
+    const { api, result } = await runTwo({ syncLibraryTags })
+    await act(() => result.current.undo())
+    const sent = syncLibraryTags.mock.calls[1][0]
+    expect(result.current.lastRun?.libraryUndo).toEqual(sent)
+    await act(() => result.current.undo())
+    expect(syncLibraryTags).toHaveBeenCalledTimes(3)
+    expect(syncLibraryTags).toHaveBeenLastCalledWith(sent)
+    expect(api.trashRestore).toHaveBeenCalledTimes(2)
+    expect(result.current.lastRun).toBeNull()
+  })
+
   it('closes the sheet when the undo reached every library it touched', async () => {
     const syncLibraryTags = vi
       .fn<Api['syncLibraryTags']>()

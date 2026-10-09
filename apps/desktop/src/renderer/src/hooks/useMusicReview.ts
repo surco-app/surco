@@ -62,6 +62,8 @@ export interface ReviewRun {
   tagSync?: LibraryTagSyncReport
   applyError?: string
   undoFailures?: number
+  // What an undo sent the libraries when one was open or failed: the next Undo sends it again.
+  libraryUndo?: LibraryTagUpdate[]
 }
 
 export type ReviewPhase =
@@ -600,7 +602,7 @@ export function useMusicReview({
         // The file is back already: a retry only owes Music its value.
         else failed.push({ ...o, backupId: undefined, file: 'unchanged' })
       }
-      const updates = libraryUpdatesOf(reverted, 'undo')
+      const updates = [...(lastRun.libraryUndo ?? []), ...libraryUpdatesOf(reverted, 'undo')]
       let librarySync: ReviewRun['librarySync'] = 'none'
       let tagSync: LibraryTagSyncReport | undefined
       if (updates.length) setPhase({ name: 'libraries' })
@@ -617,11 +619,11 @@ export function useMusicReview({
       if (back.length) onFilesChanged(back)
       setPhase({ name: 'verifying' })
       await load().catch(() => null)
-      const libraryLeft = Object.values(tagSync ?? {}).some(
-        (s) => s.outcome === 'failed' || s.outcome === 'open',
-      )
+      const libraryLeft =
+        librarySync === 'failed' ||
+        Object.values(tagSync ?? {}).some((s) => s.outcome === 'failed' || s.outcome === 'open')
       setLastRun(
-        failed.length === 0 && librarySync !== 'failed' && !libraryLeft
+        failed.length === 0 && !libraryLeft
           ? null
           : {
               ...lastRun,
@@ -631,6 +633,7 @@ export function useMusicReview({
               librarySync,
               tagSync,
               undoFailures: failed.length,
+              libraryUndo: libraryLeft ? updates : [],
             },
       )
       await fill(total)

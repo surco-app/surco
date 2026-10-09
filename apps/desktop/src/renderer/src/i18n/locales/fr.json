@@ -1657,7 +1657,15 @@
         "updated_other": "{{count}} morceaux mis à jour",
         "open": "non touché, il était ouvert",
         "noMatch": "n'avait pas ces morceaux"
-      }
+      },
+      "undoTitle": "Changements annulés",
+      "undoTitleWarnings_one": "Annulé, avec {{count}} avertissement",
+      "undoTitleWarnings_other": "Annulé, avec {{count}} avertissements",
+      "undoSubtitle": "Tout est revenu comme avant.",
+      "undoSubtitleFailed": "Certains changements sont toujours appliqués.",
+      "undoSubtitleLibraries": "Le reste est revenu comme avant, mais une bibliothèque a encore le changement.",
+      "undoLibraryOpen": "{{library}} a encore le changement car il était ouvert. Ferme-le et clique de nouveau sur Annuler.",
+      "undoLibraryFailed": "{{library}} a encore le changement car il n'a pas pu être mis à jour. Clique de nouveau sur Annuler ou consulte Activité."
     },
     "empty": "Ta bibliothèque Apple Music est vide.",
     "clean": "Rien à vérifier.",

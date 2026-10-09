@@ -1657,7 +1657,15 @@
         "updated_other": "{{count}} pistas actualizadas",
         "open": "sin tocar, estaba abierto",
         "noMatch": "no tenía estas pistas"
-      }
+      },
+      "undoTitle": "Cambios deshechos",
+      "undoTitleWarnings_one": "Deshecho, con {{count}} aviso",
+      "undoTitleWarnings_other": "Deshecho, con {{count}} avisos",
+      "undoSubtitle": "Todo vuelve a estar como antes.",
+      "undoSubtitleFailed": "Algunos cambios siguen aplicados.",
+      "undoSubtitleLibraries": "Lo demás vuelve a estar como antes, pero alguna biblioteca sigue con el cambio.",
+      "undoLibraryOpen": "{{library}} sigue con el cambio porque estaba abierto. Ciérralo y pulsa Deshacer otra vez.",
+      "undoLibraryFailed": "{{library}} sigue con el cambio porque no se pudo actualizar. Pulsa Deshacer otra vez o mira Actividad."
     },
     "empty": "Tu biblioteca de Apple Music está vacía.",
     "clean": "No hay nada que revisar.",

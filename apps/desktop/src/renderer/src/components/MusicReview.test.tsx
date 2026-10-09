@@ -1211,6 +1211,51 @@ describe('MusicReview', () => {
     expect(warnings()).toEqual(['2 changes could not be undone'])
   })
 
+  // After an undo the sheet reports the undo, not the apply it undid: "the changes are in
+  // your files" was the opposite of what had just happened.
+  it('reports an undo that left a library open as an undo, with Undo to retry', () => {
+    const libraryUndo = [
+      { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ]
+    render(
+      <Panes
+        review={review({
+          status: 'ready',
+          lastRun: run({
+            undoFailures: 0,
+            librarySync: 'ok',
+            tagSync: {
+              rekordbox: { outcome: 'updated', count: 1 },
+              engine: { outcome: 'open' },
+              traktor: { outcome: 'nothing' },
+            },
+            libraryUndo,
+          }),
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-done-title')).toHaveTextContent(
+      'Undone, with 1 warning',
+    )
+    expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+      'The rest is back as it was, but a library still has the change.',
+    )
+    expect(warnings()).toEqual([
+      'Engine DJ still has the change because it was open. Close it and press Undo again.',
+    ])
+    expect(screen.getByTestId('music-review-undo')).toBeEnabled()
+  })
+
+  it('titles a fully failed undo as an undo and never with the apply subtitle', () => {
+    render(<Panes review={review({ status: 'ready', lastRun: run({ undoFailures: 2 }) })} />)
+    expect(screen.getByTestId('music-review-done-title')).toHaveTextContent(
+      'Undone, with 1 warning',
+    )
+    expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+      'Some changes are still applied.',
+    )
+  })
+
   it('does not show the sheet while a run is still going', () => {
     render(<Panes review={review({ status: 'applying', lastRun: run() })} />)
     expect(screen.queryByTestId('music-review-done')).toBeNull()

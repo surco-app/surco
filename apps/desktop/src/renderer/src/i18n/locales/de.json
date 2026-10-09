@@ -1657,7 +1657,15 @@
         "updated_other": "{{count}} Titel aktualisiert",
         "open": "nicht angefasst, war geöffnet",
         "noMatch": "hatte diese Titel nicht"
-      }
+      },
+      "undoTitle": "Änderungen rückgängig gemacht",
+      "undoTitleWarnings_one": "Rückgängig gemacht, mit {{count}} Hinweis",
+      "undoTitleWarnings_other": "Rückgängig gemacht, mit {{count}} Hinweisen",
+      "undoSubtitle": "Alles ist wieder wie vorher.",
+      "undoSubtitleFailed": "Einige Änderungen sind noch übernommen.",
+      "undoSubtitleLibraries": "Der Rest ist wieder wie vorher, aber eine Bibliothek hat die Änderung noch.",
+      "undoLibraryOpen": "{{library}} hat die Änderung noch, weil es geöffnet war. Schließe es und klicke erneut auf Rückgängig.",
+      "undoLibraryFailed": "{{library}} hat die Änderung noch, weil es nicht aktualisiert werden konnte. Klicke erneut auf Rückgängig oder sieh in Aktivität nach."
     },
     "empty": "Deine Apple-Music-Bibliothek ist leer.",
     "clean": "Nichts zu prüfen.",

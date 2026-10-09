@@ -258,14 +258,22 @@ function Done({
   const libraryWarnings = LIBRARIES.flatMap(([library, name]) => {
     const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
     const tags = run.tagSync?.[library].outcome
+    const open = undone ? 'musicReview.done.undoLibraryOpen' : 'musicReview.done.libraryTagsOpen'
+    const tagsFailed = undone
+      ? 'musicReview.done.undoLibraryFailed'
+      : 'musicReview.done.libraryTagsFailed'
     return [
       ...(count('skipped') && !missing.includes(name)
         ? [t(copy.librarySkipped, { library: name })]
         : []),
       ...(count('failed') ? [t(copy.libraryReplaceFailed, { library: name })] : []),
-      ...(tags === 'open' ? [t('musicReview.done.libraryTagsOpen', { library: name })] : []),
-      ...(tags === 'failed' ? [t('musicReview.done.libraryTagsFailed', { library: name })] : []),
+      ...(tags === 'open' ? [t(open, { library: name })] : []),
+      ...(tags === 'failed' ? [t(tagsFailed, { library: name })] : []),
     ]
+  })
+  const libraryLeft = LIBRARIES.some(([library]) => {
+    const tags = run.tagSync?.[library].outcome
+    return tags === 'open' || tags === 'failed'
   })
   const failedRemovals = run.removed.filter(
     (r) => r.outcome === 'playlist-failed' || r.outcome === 'failed' || r.outcome === 'mismatch',
@@ -281,9 +289,10 @@ function Done({
   ).length
   // Only a backup brings a file back; without one, setting Music back alone would leave
   // it saying one thing and the file another.
-  const undoable = run.outcomes.some(
-    (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
-  )
+  const undoable =
+    run.outcomes.some(
+      (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
+    ) || (run.libraryUndo?.length ?? 0) > 0
   const musicFailed =
     run.outcomes.filter((o) => o.music.some((m) => m === 'failed' || (!list && m === 'mismatch')))
       .length +
@@ -299,7 +308,7 @@ function Done({
         : o.file === 'failed' || o.music.some((m) => m === 'failed' || m === 'mismatch'),
     ).length + failedRemovals
   const warnings = [
-    ...(undone ? [t('musicReview.done.undoFailed', { count: run.undoFailures })] : []),
+    ...(run.undoFailures ? [t('musicReview.done.undoFailed', { count: run.undoFailures })] : []),
     ...(!undone && failed > 0 ? [t('musicReview.done.failed', { count: failed })] : []),
     ...(!undone && run.applyError !== undefined ? [t(copy.applyError)] : []),
     ...(run.librarySync === 'failed' ? [t('musicReview.done.libraryFailed')] : []),
@@ -473,26 +482,39 @@ function Done({
             data-testid="music-review-done-title"
             className="text-base font-semibold"
           >
-            {nothing
-              ? t('musicReview.done.titleNothing')
-              : warned
-                ? t('musicReview.done.titleWarnings', { count: warnings.length })
-                : t(copy.doneTitle)}
+            {undone
+              ? warned
+                ? t('musicReview.done.undoTitleWarnings', { count: warnings.length })
+                : t('musicReview.done.undoTitle')
+              : nothing
+                ? t('musicReview.done.titleNothing')
+                : warned
+                  ? t('musicReview.done.titleWarnings', { count: warnings.length })
+                  : t(copy.doneTitle)}
           </h3>
           <p data-testid="music-review-done-subtitle" className="mt-0.5 text-sm text-fg-dim">
-            {partial > 0
-              ? t(list ? 'listReview.done.subtitlePartial' : 'musicReview.done.subtitleMusicOnly', {
-                  count: partial,
-                })
-              : librariesShort
-                ? t('musicReview.done.subtitleLibraries')
-                : nothing
-                  ? t('musicReview.done.subtitleNothing')
-                  : djReceived
-                    ? t('musicReview.done.subtitle')
-                    : musicReceived
-                      ? t('musicReview.done.subtitleFilesMusic')
-                      : t('musicReview.done.subtitleFiles')}
+            {undone
+              ? run.undoFailures
+                ? t('musicReview.done.undoSubtitleFailed')
+                : libraryLeft || run.librarySync === 'failed'
+                  ? t('musicReview.done.undoSubtitleLibraries')
+                  : t('musicReview.done.undoSubtitle')
+              : partial > 0
+                ? t(
+                    list ? 'listReview.done.subtitlePartial' : 'musicReview.done.subtitleMusicOnly',
+                    {
+                      count: partial,
+                    },
+                  )
+                : librariesShort
+                  ? t('musicReview.done.subtitleLibraries')
+                  : nothing
+                    ? t('musicReview.done.subtitleNothing')
+                    : djReceived
+                      ? t('musicReview.done.subtitle')
+                      : musicReceived
+                        ? t('musicReview.done.subtitleFilesMusic')
+                        : t('musicReview.done.subtitleFiles')}
           </p>
         </div>
       </div>

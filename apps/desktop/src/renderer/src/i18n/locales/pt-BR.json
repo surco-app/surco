@@ -1657,7 +1657,15 @@
         "updated_other": "{{count}} faixas atualizadas",
         "open": "intocado, estava aberto",
         "noMatch": "não tinha estas faixas"
-      }
+      },
+      "undoTitle": "Alterações desfeitas",
+      "undoTitleWarnings_one": "Desfeito, com {{count}} aviso",
+      "undoTitleWarnings_other": "Desfeito, com {{count}} avisos",
+      "undoSubtitle": "Tudo voltou a ser como antes.",
+      "undoSubtitleFailed": "Algumas alterações continuam aplicadas.",
+      "undoSubtitleLibraries": "O resto voltou a ser como antes, mas uma biblioteca ainda tem a alteração.",
+      "undoLibraryOpen": "{{library}} ainda tem a alteração porque estava aberto. Feche-o e clique em Desfazer de novo.",
+      "undoLibraryFailed": "{{library}} ainda tem a alteração porque não pôde ser atualizado. Clique em Desfazer de novo ou veja Atividade."
     },
     "empty": "Sua biblioteca do Apple Music está vazia.",
     "clean": "Nada para revisar.",
