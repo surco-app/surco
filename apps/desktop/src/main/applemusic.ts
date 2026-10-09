@@ -280,7 +280,13 @@ export function buildRevealScript(persistentId: string): string {
 // AppleScript's delete removes only the library entry and never touches the file, which
 // is why the location travels back: trashing the superseded file is the caller's half
 // of the job.
-export function buildDeleteScript(persistentId: string, expectedLabel: string): string {
+// With `location` (the list review, which found the entry by its file) the live entry must
+// also still point at that file: the kept copy often carries the very same label.
+export function buildDeleteScript(
+  persistentId: string,
+  expectedLabel: string,
+  location?: string,
+): string {
   return [
     'tell application "Music"',
     `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
@@ -291,6 +297,13 @@ export function buildDeleteScript(persistentId: string, expectedLabel: string): 
     '  try',
     '    set loc to POSIX path of (get location of theTrack)',
     '  end try',
+    ...(location === undefined
+      ? []
+      : [
+          '  considering case, diacriticals, hyphens, punctuation and white space',
+          `    if loc is not ${JSON.stringify(location)} then return "mismatch"`,
+          '  end considering',
+        ]),
     '  delete theTrack',
     '  return "deleted" & tab & loc',
     'end tell',
@@ -300,11 +313,13 @@ export function buildDeleteScript(persistentId: string, expectedLabel: string): 
 // Smart playlists recompute from their rules and refuse a manual add (-54), and folders
 // hold no tracks, so only plain playlists are touched. The kept copy lands at the end of
 // each one: Music offers no way to insert at a position, and the sheet says so.
+// With `locations` (the list review) both live entries must also still point at their files.
 export function buildPlaylistTransferScript(
   fromPid: string,
   toPid: string,
   expectedLabel: string,
   keepLabel: string,
+  locations?: { from: string; to: string },
 ): string {
   return [
     'tell application "Music"',
@@ -315,6 +330,22 @@ export function buildPlaylistTransferScript(
     '  set dst to item 1 of dsts',
     `  if (artist of src) & " - " & (name of src) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
     `  if (artist of dst) & " - " & (name of dst) is not ${JSON.stringify(keepLabel)} then return "mismatch"`,
+    ...(locations === undefined
+      ? []
+      : [
+          '  set srcLoc to ""',
+          '  set dstLoc to ""',
+          '  try',
+          '    set srcLoc to POSIX path of (get location of src)',
+          '  end try',
+          '  try',
+          '    set dstLoc to POSIX path of (get location of dst)',
+          '  end try',
+          '  considering case, diacriticals, hyphens, punctuation and white space',
+          `    if srcLoc is not ${JSON.stringify(locations.from)} then return "mismatch"`,
+          `    if dstLoc is not ${JSON.stringify(locations.to)} then return "mismatch"`,
+          '  end considering',
+        ]),
     '  set moved to 0',
     '  set failed to 0',
     '  repeat with p in (every user playlist whose smart is false and special kind is none)',
@@ -337,9 +368,12 @@ export async function transferPlaylists(
   toPid: string,
   expectedLabel: string,
   keepLabel: string,
+  locations?: { from: string; to: string },
 ): Promise<string> {
   return (
-    await runOsascript(buildPlaylistTransferScript(fromPid, toPid, expectedLabel, keepLabel))
+    await runOsascript(
+      buildPlaylistTransferScript(fromPid, toPid, expectedLabel, keepLabel, locations),
+    )
   ).trim()
 }
 
@@ -792,8 +826,9 @@ export async function revealInAppleMusic(persistentId: string): Promise<void> {
 export async function deleteFromAppleMusic(
   persistentId: string,
   expectedLabel: string,
+  location?: string,
 ): Promise<string | null> {
-  const stdout = await runOsascript(buildDeleteScript(persistentId, expectedLabel))
+  const stdout = await runOsascript(buildDeleteScript(persistentId, expectedLabel, location))
   const result = stdout.trim()
   if (result === 'missing') return null
   if (result === 'mismatch') throw new Error('applemusic-delete-mismatch')

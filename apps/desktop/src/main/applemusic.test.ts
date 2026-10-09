@@ -266,6 +266,22 @@ describe('buildDeleteScript', () => {
     expect(script).toContain('return "mismatch"')
     expect(script.indexOf('return "mismatch"')).toBeLessThan(script.indexOf('delete theTrack'))
   })
+
+  // The list review found the entry by its file, and that lookup can pair an ID with the
+  // wrong track if the library changes in between: the kept copy often carries the same label.
+  it('deletes only an entry that still points at the file the list review removes', () => {
+    const script = buildDeleteScript('ABCD1234ABCD1234', 'A - T', '/m/old.aiff')
+    const check = script.indexOf('if loc is not "/m/old.aiff" then return "mismatch"')
+    expect(check).toBeGreaterThan(script.indexOf('considering case'))
+    expect(check).toBeGreaterThan(
+      script.indexOf('set loc to POSIX path of (get location of theTrack)'),
+    )
+    expect(check).toBeLessThan(script.indexOf('delete theTrack'))
+  })
+
+  it('leaves the Music review delete unchanged, without a location check', () => {
+    expect(buildDeleteScript('ABCD1234ABCD1234', 'A - T')).not.toContain('considering')
+  })
 })
 
 describe('buildLocationScript', () => {
@@ -619,6 +635,37 @@ describe('buildPlaylistTransferScript', () => {
     )
     expect(s).toContain('duplicate dst to (contents of p)')
     expect(s).toContain('return (moved as text) & tab & (failed as text)')
+  })
+
+  // Same pairing risk as the delete: a swapped pair would copy the removed entry into the
+  // kept one's playlists.
+  it('moves playlists only between the entries on the files the list review names', () => {
+    const s = buildPlaylistTransferScript(
+      'OLD0000000000000',
+      'KEEP000000000000',
+      'A - B',
+      'A - B',
+      {
+        from: '/m/old.aiff',
+        to: '/m/keep.aiff',
+      },
+    )
+    expect(s).toContain('set srcLoc to POSIX path of (get location of src)')
+    expect(s).toContain('set dstLoc to POSIX path of (get location of dst)')
+    const checks = [
+      s.indexOf('if srcLoc is not "/m/old.aiff" then return "mismatch"'),
+      s.indexOf('if dstLoc is not "/m/keep.aiff" then return "mismatch"'),
+    ]
+    for (const check of checks) {
+      expect(check).toBeGreaterThan(s.indexOf('considering case'))
+      expect(check).toBeLessThan(s.indexOf('duplicate dst to'))
+    }
+  })
+
+  it('leaves the Music review transfer unchanged, without a location check', () => {
+    expect(
+      buildPlaylistTransferScript('OLD0000000000000', 'KEEP000000000000', 'A - B', 'A - B (X)'),
+    ).not.toContain('Loc')
   })
 })
 
