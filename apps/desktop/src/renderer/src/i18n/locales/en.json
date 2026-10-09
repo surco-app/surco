@@ -1605,6 +1605,10 @@
       "subtitleMusicOnly_one": "{{count}} track changed only in Music; its file is unchanged.",
       "subtitleMusicOnly_other": "{{count}} tracks changed only in Music; their files are unchanged.",
       "subtitleLibraries": "The files are done, but not every library got the changes.",
+      "subtitleFiles": "The changes are already in your files.",
+      "subtitleFilesMusic": "The changes are already in your files and in Apple Music.",
+      "subtitleNothing": "No track or copy was changed.",
+      "titleNothing": "Nothing changed",
       "warnings_one": "{{count}} thing wasn't done",
       "warnings_other": "{{count}} things weren't done",
       "stat": {

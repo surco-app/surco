@@ -433,6 +433,24 @@ function Done({
   const librariesShort = destinations.some(
     (d) => d.state === 'warn' && LIBRARIES.some(([library]) => library === d.id),
   )
+  // "Libraries" only when a DJ library really took something; Music is named on its own.
+  const djReceived = LIBRARIES.some(([library]) => {
+    const tags = run.tagSync?.[library]
+    return (
+      (tags?.outcome === 'updated' && tags.count > 0) ||
+      run.replaced.some((r) => r[library] === 'replaced' || r[library] === 'repointed')
+    )
+  })
+  const musicReceived = musicSet > 0 || leftMusic > 0 || (!list && removed > 0)
+  const nothing =
+    !undone &&
+    written === 0 &&
+    corrected === 0 &&
+    removed === 0 &&
+    partial === 0 &&
+    !musicReceived &&
+    !djReceived
+  const tone = warned ? 'warn' : nothing ? 'neutral' : 'good'
   return (
     <Sheet
       testId="music-review-done"
@@ -443,11 +461,11 @@ function Done({
       <div className="flex items-center gap-3">
         <span
           data-testid="music-review-done-badge"
-          data-tone={warned ? 'warn' : 'good'}
+          data-tone={tone}
           aria-hidden="true"
-          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${PILL_TONE[warned ? 'warn' : 'good']}`}
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${tone === 'neutral' ? 'bg-fg-faint/15 text-fg-dim' : PILL_TONE[tone]}`}
         >
-          {warned ? '!' : '✓'}
+          {{ warn: '!', neutral: '–', good: '✓' }[tone]}
         </span>
         <div className="min-w-0">
           <h3
@@ -455,9 +473,11 @@ function Done({
             data-testid="music-review-done-title"
             className="text-base font-semibold"
           >
-            {warned
-              ? t('musicReview.done.titleWarnings', { count: warnings.length })
-              : t(copy.doneTitle)}
+            {nothing
+              ? t('musicReview.done.titleNothing')
+              : warned
+                ? t('musicReview.done.titleWarnings', { count: warnings.length })
+                : t(copy.doneTitle)}
           </h3>
           <p data-testid="music-review-done-subtitle" className="mt-0.5 text-sm text-fg-dim">
             {partial > 0
@@ -466,7 +486,13 @@ function Done({
                 })
               : librariesShort
                 ? t('musicReview.done.subtitleLibraries')
-                : t('musicReview.done.subtitle')}
+                : nothing
+                  ? t('musicReview.done.subtitleNothing')
+                  : djReceived
+                    ? t('musicReview.done.subtitle')
+                    : musicReceived
+                      ? t('musicReview.done.subtitleFilesMusic')
+                      : t('musicReview.done.subtitleFiles')}
           </p>
         </div>
       </div>

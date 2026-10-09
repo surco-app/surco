@@ -1605,6 +1605,10 @@
       "subtitleMusicOnly_one": "{{count}} faixa mudou só no Music e o arquivo continua igual.",
       "subtitleMusicOnly_other": "{{count}} faixas mudaram só no Music e os arquivos continuam iguais.",
       "subtitleLibraries": "Os arquivos estão prontos, mas nem toda biblioteca recebeu as alterações.",
+      "subtitleFiles": "As alterações já estão nos seus arquivos.",
+      "subtitleFilesMusic": "As alterações já estão nos seus arquivos e no Apple Music.",
+      "subtitleNothing": "Nenhuma faixa ou cópia foi alterada.",
+      "titleNothing": "Nada mudou",
       "warnings_one": "{{count}} coisa não foi feita",
       "warnings_other": "{{count}} coisas não foram feitas",
       "stat": {

@@ -586,9 +586,16 @@ describe('MusicReview', () => {
       expect(badge()).toHaveTextContent('✓')
       expect(screen.getByTestId('music-review-done-title')).toHaveTextContent('Library reviewed')
       expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
-        'The changes are already in your files and libraries.',
+        'The changes are already in your files and in Apple Music.',
       )
       expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
+    })
+
+    // No DJ library synced anything: promising "libraries" told the user rekordbox had the
+    // fix when nothing was sent there.
+    it('names only Music and the files when no DJ library received the change', () => {
+      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
+      expect(screen.getByTestId('music-review-done-subtitle')).not.toHaveTextContent('libraries')
     })
 
     // An open rekordbox is the common miss: the user has to see it before the numbers.
@@ -1226,7 +1233,7 @@ describe('MusicReview', () => {
   })
 
   it('names the done sheet by its title and Escape keeps reviewing', () => {
-    render(<Panes review={done(run())} />)
+    render(<Panes review={done(run({ outcomes: [written] }))} />)
     expect(screen.getByRole('dialog', { name: 'Library reviewed' })).toBeVisible()
     expect(screen.getByTestId('music-review-continue')).toHaveFocus()
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -2242,6 +2249,39 @@ describe('list review', () => {
         }),
       )
       expect(subtitle()).toHaveTextContent('The changes are already in your files and libraries.')
+    })
+
+    // With every DJ sync off, the files are all that changed.
+    it('names only the files when nothing else received the change', () => {
+      show(run({ outcomes: [outcome('/m/a.aiff', 'written', 'none')] }))
+      expect(subtitle()).toHaveTextContent('The changes are already in your files.')
+      expect(subtitle()).not.toHaveTextContent('libraries')
+    })
+
+    it('names Music beside the files when Music took the fix too', () => {
+      show(run({ outcomes: [outcome('/m/a.aiff', 'written', 'set', { musicId: 'A1' })] }))
+      expect(subtitle()).toHaveTextContent(
+        'The changes are already in your files and in Apple Music.',
+      )
+    })
+
+    // A run where Music could not be checked removed nothing and fixed nothing; a green
+    // check over "the changes are already in your files" told the user the opposite.
+    it('says nothing changed, with the warning badge, when a run applied nothing and warned', () => {
+      show(run({ replaced: [gone('/m/b.aiff', { keptShared: true })] }))
+      expect(screen.getByTestId('music-review-done-title')).toHaveTextContent('Nothing changed')
+      expect(subtitle()).toHaveTextContent('No track or copy was changed.')
+      expect(screen.getByTestId('music-review-done-badge')).toHaveAttribute('data-tone', 'warn')
+      expect(screen.getByTestId('music-review-done-badge')).not.toHaveTextContent('✓')
+      expect(warnings()).toHaveLength(1)
+    })
+
+    it('says nothing changed with a neutral badge when a run applied nothing and did not warn', () => {
+      show(run({ replaced: [gone('/m/b.aiff', { keptForLibrary: true })] }))
+      expect(screen.getByTestId('music-review-done-title')).toHaveTextContent('Nothing changed')
+      expect(subtitle()).toHaveTextContent('No track or copy was changed.')
+      expect(screen.getByTestId('music-review-done-badge')).toHaveAttribute('data-tone', 'neutral')
+      expect(screen.getByTestId('music-review-done-badge')).not.toHaveTextContent('✓')
     })
 
     // A file the guard left alone got nothing, in the file or anywhere else: promising the
