@@ -1423,6 +1423,31 @@ describe('with the list as source', () => {
     expect(result.current.lastRun).toMatchObject({ before: 1, after: 0 })
   })
 
+  // Most list tracks are not in Music: the libraries follow the file there, or the fix
+  // stops at the file and rekordbox keeps the old spelling.
+  it('sends a fix the file took to the libraries when Music does not hold the track', async () => {
+    const api = listApi({
+      applyListFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/m/c.aiff',
+          path: '/m/c.aiff',
+          fixes: [FIX],
+          music: ['none'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+    })
+    const { result } = listHook(LARA)
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.syncLibraryTags).toHaveBeenCalledWith([
+      { path: '/m/c.aiff', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
+    ])
+  })
+
   // A title or artist the list took from the file name is not in the file, so main's guard
   // leaves it: the run must not count it as fixed nor tell the list or the libraries it was.
   it('counts a fix main left unchanged as not touched', async () => {

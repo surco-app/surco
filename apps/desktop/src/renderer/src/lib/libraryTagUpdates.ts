@@ -35,7 +35,12 @@ function updatesOf(
 export const tagUpdatesOf = (outcomes: Taken[], direction: 'apply' | 'undo') =>
   updatesOf(outcomes, direction, (o, i) => o.written.includes(o.fixes[i].field))
 
-// The fields Music took: what the DJ libraries follow, the file written or not, since the
-// user wants a track corrected in Music corrected in rekordbox, Engine DJ and Traktor too.
+// The fields Music or the file took: what the DJ libraries follow, since the user wants a
+// track corrected in Music corrected in rekordbox, Engine DJ and Traktor too, its file
+// written or not, and a list track Music does not hold corrected there from its file.
 export const libraryUpdatesOf = (outcomes: Taken[], direction: 'apply' | 'undo') =>
-  updatesOf(outcomes, direction, (o, i) => o.music[i] === 'set')
+  updatesOf(
+    outcomes,
+    direction,
+    (o, i) => o.music[i] === 'set' || o.written.includes(o.fixes[i].field),
+  )

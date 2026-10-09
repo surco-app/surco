@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import type { MusicFixOutcome } from '../../../shared/types'
+import type { ReviewOutcome } from '../../../shared/types'
 import { libraryUpdatesOf, tagUpdatesOf } from './libraryTagUpdates'
 
-const outcome = (over: Partial<MusicFixOutcome>): MusicFixOutcome => ({
-  persistentId: 'C',
+const outcome = (over: Partial<ReviewOutcome>): ReviewOutcome => ({
+  id: 'C',
   path: '/m/c.mp3',
   fixes: [
-    { persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
-    { persistentId: 'C', field: 'genre', from: 'electronic', to: 'Electronic' },
+    { id: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    { id: 'C', field: 'genre', from: 'electronic', to: 'Electronic' },
   ],
   music: ['set', 'set'],
   file: 'written',
@@ -64,6 +64,25 @@ describe('libraryUpdatesOf', () => {
         fields: {
           artist: { from: 'DJ Lara', to: 'Dj Lara' },
           genre: { from: 'Electronic', to: 'electronic' },
+        },
+      },
+    ])
+  })
+
+  // The list review writes the file first and Music only for a track Music holds: a list
+  // track outside Music must still reach the libraries, or its fix stops at the file.
+  it('carries what the file took for a track Music does not hold', () => {
+    expect(
+      libraryUpdatesOf(
+        [outcome({ written: ['artist', 'genre'], music: ['none', 'none'] })],
+        'apply',
+      ),
+    ).toEqual([
+      {
+        path: '/m/c.mp3',
+        fields: {
+          artist: { from: 'Dj Lara', to: 'DJ Lara' },
+          genre: { from: 'electronic', to: 'Electronic' },
         },
       },
     ])
