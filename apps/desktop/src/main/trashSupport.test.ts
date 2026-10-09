@@ -59,4 +59,15 @@ describe('volumeKeepsTrash', () => {
     expect(volumeKeepsTrash('/Volumes/Public/Music/a.mp3', { statfs })).toBe(false)
     expect(statfs).toHaveBeenCalledTimes(2)
   })
+
+  // libuv answers statfs on Windows with type 0 for every drive, local or mapped. Node
+  // cannot tell a local NTFS drive from a mapped share or a USB stick (no Recycle Bin on
+  // either) without a native call, so Windows makes no promise and a delete goes to
+  // Surco's backups. Wrong in the safe direction: a local file the Recycle Bin would have
+  // taken waits in the backups instead.
+  it('makes no promise for a Windows drive, whose statfs type is always 0', () => {
+    expect(volumeKeepsTrash('C:\\Users\\me\\Music\\a.mp3', { statfs: () => ({ type: 0 }) })).toBe(
+      false,
+    )
+  })
 })

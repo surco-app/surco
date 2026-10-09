@@ -8,7 +8,7 @@ import { dirname } from 'node:path'
 // An allow-list rather than a block-list of network types: a filesystem nobody anticipated
 // then reads as "no promise", which is the safe direction. Getting this wrong towards
 // "recoverable" is what costs a file — it already did once, when a dialog promised a Trash
-// the NAS does not have.
+// the NAS does not have. Windows reports 0 for every drive, so it never gets the promise.
 const KEEPS_TRASH: ReadonlySet<number> = new Set([
   26, // apfs
   23, // hfs
