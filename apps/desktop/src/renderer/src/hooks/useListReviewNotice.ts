@@ -51,8 +51,8 @@ export function useListReviewNotice({
     for (const path of paths) current.paths.add(path)
   })
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: handedOver is the signal that a watched run returned; the load itself lives in a ref the effect reads.
   useEffect(() => {
-    void handedOver
     const current = load.current
     if (!current || current.running > 0 || !settled) return
     load.current = null
