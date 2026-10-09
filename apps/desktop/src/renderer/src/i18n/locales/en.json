@@ -1591,7 +1591,7 @@
         "updated_one": "{{count}} track updated",
         "updated_other": "{{count}} tracks updated",
         "open": "untouched, it was open",
-        "noMatch": "no track with the old value"
+        "noMatch": "didn't have these tracks"
       }
     },
     "empty": "Your Apple Music library is empty.",

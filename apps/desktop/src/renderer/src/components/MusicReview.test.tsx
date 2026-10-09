@@ -737,8 +737,9 @@ describe('MusicReview', () => {
       )
       expect(dest('rekordbox')).toHaveAttribute('data-state', 'ok')
       expect(detailOf('rekordbox')).toBe('1 track updated')
-      expect(dest('engine')).toHaveAttribute('data-state', 'ok')
-      expect(detailOf('engine')).toBe('no track with the old value')
+      expect(dest('engine')).toHaveAttribute('data-state', 'off')
+      expect(iconOf('engine')).toBe('–')
+      expect(detailOf('engine')).toBe("didn't have these tracks")
       expect(detailOf('traktor')).toBe('not synced')
     })
 
@@ -818,7 +819,9 @@ describe('MusicReview', () => {
       )
     })
 
-    it('does not promise a library that held none of the changed tracks', () => {
+    // A library that only imported part of the music never had these tracks; that is not
+    // a change that went missing, so it neither warns nor softens the promise.
+    it('treats a library without these tracks as neutral, not as a miss', () => {
       render(
         <Panes
           review={{
@@ -834,8 +837,10 @@ describe('MusicReview', () => {
         />,
       )
       expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
-        'The files are done, but not every library got the changes.',
+        'The changes are already in your files and libraries.',
       )
+      expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
+      expect(dest('traktor')).toHaveAttribute('data-state', 'off')
     })
 
     it('keeps the full promise when every file and library got the change', () => {

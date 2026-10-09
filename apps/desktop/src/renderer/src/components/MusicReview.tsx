@@ -309,6 +309,8 @@ function Done({
     const moved = count('replaced') + count('repointed')
     const held = library === 'traktor' ? 0 : count('replaced')
     const updated = tags?.outcome === 'updated' ? tags.count : 0
+    if (tags?.outcome === 'nothing' && !outcomes.length)
+      return row('off', t('musicReview.done.where.noMatch'))
     return row(
       'ok',
       joined([
@@ -316,11 +318,7 @@ function Done({
         moved > 0 && t('musicReview.done.where.replaced', { count: moved }),
         held > 0 && t('musicReview.done.where.held', { count: held }),
       ]) ||
-        (outcomes.length
-          ? t('musicReview.done.where.none')
-          : tags
-            ? t('musicReview.done.where.noMatch')
-            : t('musicReview.done.where.nothing')),
+        (outcomes.length ? t('musicReview.done.where.none') : t('musicReview.done.where.nothing')),
     )
   }
   const written = run.outcomes.filter((o) => o.file === 'written').length
@@ -378,10 +376,9 @@ function Done({
           : []),
       ]
   const warned = warnings.length > 0
-  const librariesShort = LIBRARIES.some(([library]) => {
-    const state = destinations.find((d) => d.id === library)?.state
-    return state === 'warn' || (state === 'ok' && run.tagSync?.[library].outcome === 'nothing')
-  })
+  const librariesShort = destinations.some(
+    (d) => d.state === 'warn' && LIBRARIES.some(([library]) => library === d.id),
+  )
   return (
     <Sheet
       testId="music-review-done"

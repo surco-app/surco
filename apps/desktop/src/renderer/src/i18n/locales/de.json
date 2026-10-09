@@ -1591,7 +1591,7 @@
         "updated_one": "{{count}} Titel aktualisiert",
         "updated_other": "{{count}} Titel aktualisiert",
         "open": "nicht angefasst, war geöffnet",
-        "noMatch": "kein Titel mit dem alten Wert"
+        "noMatch": "hatte diese Titel nicht"
       }
     },
     "empty": "Deine Apple-Music-Bibliothek ist leer.",

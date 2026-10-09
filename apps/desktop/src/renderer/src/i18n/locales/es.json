@@ -1591,7 +1591,7 @@
         "updated_one": "{{count}} pista actualizada",
         "updated_other": "{{count}} pistas actualizadas",
         "open": "sin tocar, estaba abierto",
-        "noMatch": "ninguna pista con el valor anterior"
+        "noMatch": "no tenía estas pistas"
       }
     },
     "empty": "Tu biblioteca de Apple Music está vacía.",
