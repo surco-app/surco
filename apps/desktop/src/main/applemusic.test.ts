@@ -1,16 +1,21 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import {
   buildAddScript,
   buildDeleteScript,
+  buildFileEntriesScript,
   buildLibraryDumpScript,
   buildLocationScript,
+  buildMusicRunningScript,
   buildPlaylistTransferScript,
   buildRevealScript,
   buildReviewDumpScript,
   buildSetFieldScript,
   buildUpdateScript,
+  entriesForPaths,
   isAppleMusicOnly,
+  musicFileEntries,
+  parseFileEntries,
   parseLibraryDump,
   parseReviewDump,
   shouldAddToAppleMusic,
@@ -578,5 +583,79 @@ describe('buildPlaylistTransferScript', () => {
     )
     expect(s).toContain('duplicate dst to (contents of p)')
     expect(s).toContain('return (moved as text) & tab & (failed as text)')
+  })
+})
+
+describe('Music entries for loaded files', () => {
+  const RS = '\u001e'
+  const FS = '\u001f'
+  const row = (...f: string[]) => f.join(FS)
+
+  it('reads each file track with its location and the label the scripts check', () => {
+    expect(
+      parseFileEntries(
+        [
+          row('6E592CFE07A6246A', '/Volumes/Public/Musica/This Rap.aiff', 'DJ Ter', 'This Rap'),
+          row('5FA52DD35E307CBB', '', 'Gone', 'Missing file'),
+        ].join(RS),
+      ),
+    ).toEqual([
+      {
+        persistentId: '6E592CFE07A6246A',
+        path: '/Volumes/Public/Musica/This Rap.aiff',
+        label: 'DJ Ter - This Rap',
+      },
+    ])
+  })
+
+  // The NAS stores names decomposed while Surco works composed (entryForFile), and a file
+  // Music holds twice must come back as two entries so the review can refuse to guess.
+  it('matches a loaded path composed and keeps every entry on the same file', () => {
+    const composed = '/m/Caf\u00e9.aiff'
+    const decomposed = '/m/Cafe\u0301.aiff'
+    expect(decomposed).not.toBe(composed)
+    const rows = [
+      { persistentId: 'A', path: decomposed, label: 'X - Caf\u00e9' },
+      { persistentId: 'B', path: decomposed, label: 'X - Caf\u00e9' },
+      { persistentId: 'C', path: '/m/other.aiff', label: 'Y - Z' },
+    ]
+    expect(entriesForPaths(rows, [composed, '/m/none.aiff'])).toEqual({
+      [composed]: [
+        { persistentId: 'A', label: 'X - Caf\u00e9' },
+        { persistentId: 'B', label: 'X - Caf\u00e9' },
+      ],
+    })
+  })
+
+  // A user who never uses Music would see it launch just because they reviewed a folder.
+  it('does not open Music to ask unless told to', async () => {
+    const run = vi.fn().mockResolvedValue('false\n')
+    expect(await musicFileEntries(['/m/a.aiff'], false, run)).toEqual({
+      consulted: false,
+      entries: {},
+    })
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(run.mock.calls[0][0]).toBe(buildMusicRunningScript())
+  })
+
+  it('asks an open Music, or any Music when told to', async () => {
+    const dump = row('6E592CFE07A6246A', '/m/a.aiff', 'A', 'T')
+    const running = vi.fn().mockResolvedValueOnce('true\n').mockResolvedValueOnce(dump)
+    expect((await musicFileEntries(['/m/a.aiff'], false, running)).consulted).toBe(true)
+    const launch = vi.fn().mockResolvedValue(dump)
+    expect(await musicFileEntries(['/m/a.aiff'], true, launch)).toEqual({
+      consulted: true,
+      entries: { '/m/a.aiff': [{ persistentId: '6E592CFE07A6246A', label: 'A - T' }] },
+    })
+    expect(launch).toHaveBeenCalledTimes(1)
+  })
+
+  // POSIX path is a system coercion: inside the tell block it yields "" for every track
+  // (appleMusicPlaylists.ts), so the locations must leave it first.
+  it('reads locations in bulk and coerces them outside the tell block', () => {
+    const script = buildFileEntriesScript()
+    expect(script).toContain('location of every file track of library playlist 1')
+    expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
+    expect(script.indexOf('POSIX path of loc')).toBeGreaterThan(script.indexOf('end tell'))
   })
 })

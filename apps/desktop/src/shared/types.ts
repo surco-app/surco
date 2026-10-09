@@ -817,6 +817,17 @@ export interface ReviewFix {
   to: string
 }
 
+export interface MusicFileEntry {
+  persistentId: string
+  // "artist - name" exactly as Music holds it: what the delete and transfer scripts check.
+  label: string
+}
+
+export interface MusicFileLookup {
+  consulted: boolean
+  entries: Record<string, MusicFileEntry[]>
+}
+
 // `music` runs parallel to `fixes`; 'none' is a field Music was never asked about.
 export interface ReviewOutcome {
   id: string

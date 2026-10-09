@@ -24,6 +24,7 @@ import {
   deleteFromAppleMusic,
   dumpAppleMusicLibrary,
   dumpMusicReview,
+  musicFileEntries,
   revealInAppleMusic,
   setAppleMusicField,
   transferPlaylists,
@@ -83,6 +84,12 @@ export function registerAppleMusicIpc(
     musicReviewLog.rememberTitles(entries)
     return entries
   })
+
+  ipcMain.handle('applemusic:fileEntries', (_e, paths: string[], launch: boolean) =>
+    process.platform === 'darwin'
+      ? appleMusicLimiter.run(() => musicFileEntries(paths, launch))
+      : { consulted: false, entries: {} },
+  )
 
   let fixesCancelled = false
   ipcMain.handle('applemusic:applyFixes', async (e, fixes: MusicFieldFix[]) => {

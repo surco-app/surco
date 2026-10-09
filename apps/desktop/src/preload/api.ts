@@ -27,6 +27,7 @@ import type {
   LoudnessResult,
   MetaRead,
   MusicFieldFix,
+  MusicFileLookup,
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewEntry,
@@ -124,6 +125,8 @@ export interface Api {
   // osascript — to seed the membership index while the fresh dump runs. Null when
   // no snapshot exists yet (first run, or the file was unreadable).
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
+  // Which loaded files Music holds. Not consulted off macOS, or when Music is closed and launch is false.
+  appleMusicFileEntries: (paths: string[], launch: boolean) => Promise<MusicFileLookup>
   loadMusicReview: () => Promise<MusicReviewEntry[]>
   applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
   syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<LibraryTagSyncReport>

@@ -3,6 +3,8 @@ import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import type {
   AppleMusicLookupCandidate,
+  MusicFileEntry,
+  MusicFileLookup,
   MusicReviewEntry,
   MusicReviewField,
   OutputFormat,
@@ -547,6 +549,85 @@ export function parseReviewDump(stdout: string): MusicReviewEntry[] {
 export async function dumpMusicReview(): Promise<MusicReviewEntry[]> {
   const stdout = await runOsascript(buildReviewDumpScript(), { maxBuffer: 64 * 1024 * 1024 })
   return parseReviewDump(stdout)
+}
+
+// Referring to the application outside a tell block does not launch it.
+export function buildMusicRunningScript(): string {
+  return 'return application "Music" is running'
+}
+
+// Four bulk fetches, as the playlist import does (measured 1.39 s for 400 tracks there),
+// instead of one lookup per loaded file.
+export function buildFileEntriesScript(): string {
+  const of = (prop: string) => `${prop} of every file track of library playlist 1`
+  return [
+    'tell application "Music"',
+    '  if (count of file tracks of library playlist 1) is 0 then return ""',
+    `  set thePids to ${of('persistent ID')}`,
+    `  set theLocs to ${of('location')}`,
+    `  set theArtists to ${of('artist')}`,
+    `  set theNames to ${of('name')}`,
+    'end tell',
+    'set RS to ASCII character 30',
+    'set FS to ASCII character 31',
+    'set out to {}',
+    'repeat with i from 1 to count of thePids',
+    '  set loc to item i of theLocs',
+    '  set p to ""',
+    '  if loc is not missing value then',
+    '    try',
+    '      set p to POSIX path of loc',
+    '    end try',
+    '  end if',
+    '  set end of out to (item i of thePids) & FS & p & FS & (item i of theArtists) & FS & (item i of theNames)',
+    'end repeat',
+    "set AppleScript's text item delimiters to RS",
+    'return out as text',
+  ].join('\n')
+}
+
+export function parseFileEntries(
+  stdout: string,
+): { persistentId: string; path: string; label: string }[] {
+  const rows: { persistentId: string; path: string; label: string }[] = []
+  const body = stdout.replace(/\n$/, '')
+  if (!body) return rows
+  for (const line of body.split(REVIEW_RS)) {
+    const fields = line.split(REVIEW_FS)
+    if (fields.length !== 4) continue
+    const [persistentId, path, artist, name] = fields
+    if (!/^[0-9A-F]{16}$/.test(persistentId) || !path) continue
+    rows.push({ persistentId, path, label: `${artist} - ${name}` })
+  }
+  return rows
+}
+
+export function entriesForPaths(
+  rows: { persistentId: string; path: string; label: string }[],
+  paths: string[],
+): Record<string, MusicFileEntry[]> {
+  const byPath = new Map<string, MusicFileEntry[]>()
+  for (const r of rows) {
+    const key = r.path.normalize('NFC')
+    byPath.set(key, [...(byPath.get(key) ?? []), { persistentId: r.persistentId, label: r.label }])
+  }
+  const out: Record<string, MusicFileEntry[]> = {}
+  for (const path of paths) {
+    const found = byPath.get(path.normalize('NFC'))
+    if (found) out[path] = found
+  }
+  return out
+}
+
+export async function musicFileEntries(
+  paths: string[],
+  launch: boolean,
+  run: typeof runOsascript = runOsascript,
+): Promise<MusicFileLookup> {
+  if (!launch && (await run(buildMusicRunningScript())).trim() !== 'true')
+    return { consulted: false, entries: {} }
+  const stdout = await run(buildFileEntriesScript(), { maxBuffer: 64 * 1024 * 1024 })
+  return { consulted: true, entries: entriesForPaths(parseFileEntries(stdout), paths) }
 }
 
 export type MusicSetResult = 'set' | 'missing' | 'mismatch'

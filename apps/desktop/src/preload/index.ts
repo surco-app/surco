@@ -11,6 +11,7 @@ import type {
   KeyResult,
   LoudnessResult,
   MusicFieldFix,
+  MusicFileLookup,
   MusicFixProgress,
   MusicReviewEntry,
   MusicReviewField,
@@ -114,6 +115,8 @@ const api: Api = {
     ipcRenderer.invoke('search:release', ref, provider, priority),
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('applemusic:library'),
+  appleMusicFileEntries: (paths, launch): Promise<MusicFileLookup> =>
+    ipcRenderer.invoke('applemusic:fileEntries', paths, launch),
   loadMusicReview: (): Promise<MusicReviewEntry[]> => ipcRenderer.invoke('applemusic:reviewDump'),
   applyMusicFixes: (fixes: MusicFieldFix[]) => ipcRenderer.invoke('applemusic:applyFixes', fixes),
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
