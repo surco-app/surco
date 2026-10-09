@@ -1588,4 +1588,17 @@ describe('with the list as source', () => {
     expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('/m/b.aiff')
     expect(result.current.facts('/m/b.aiff')?.spectrum?.cutoffHz).toBe(20500)
   })
+
+  // The unmeasured copy may be the good one; the measured transcode is known not to be.
+  it('keeps an unanalyzed copy over one measured as a transcode', async () => {
+    listApi()
+    const { result } = listHook([
+      row('/m/a.aiff', 'Ann', 'Song', {
+        spectrum: { cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
+      }),
+      row('/m/b.aiff', 'Ann', 'Song'),
+    ])
+    await located(result)
+    expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('/m/b.aiff')
+  })
 })

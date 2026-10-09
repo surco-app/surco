@@ -35,13 +35,15 @@ describe('copyQuality', () => {
     })
   })
 
-  it('ranks good before doubtful, reprocessed, bad and unknown', () => {
+  // A copy nobody measured may still be the good one; a measured transcode never is, so the
+  // review never suggests keeping it over an unmeasured copy.
+  it('ranks good before doubtful, reprocessed, unknown and bad', () => {
     const ranks = [
       at('/a.aiff', {}),
       at('/a.m4a', { cutoffHz: 18500 }),
       at('/a.aiff', { processed: true }),
-      at('/a.aiff', { cutoffHz: 16000 }),
       at('/a.aiff', undefined),
+      at('/a.aiff', { cutoffHz: 16000 }),
     ].map((r) => qualityRank(copyQuality(r)))
     expect(ranks).toEqual([0, 1, 2, 3, 4])
   })

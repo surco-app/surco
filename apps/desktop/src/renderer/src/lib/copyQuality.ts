@@ -28,9 +28,10 @@ export function copyQuality(row: TrackItem | undefined): CopyQuality {
   }
 }
 
-const ORDER: Record<Verdict, number> = { good: 0, warn: 1, processed: 2, bad: 3 }
+const ORDER: Record<Verdict, number> = { good: 0, warn: 1, processed: 2, bad: 4 }
+const UNMEASURED = 3
 
 export function qualityRank(quality: CopyQuality): number {
-  if (quality === null) return 4
+  if (quality === null) return UNMEASURED
   return quality.transcode ? ORDER.bad : ORDER[quality.verdict]
 }
