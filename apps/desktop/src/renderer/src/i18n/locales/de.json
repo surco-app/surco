@@ -1570,7 +1570,8 @@
       "playlists_other": "{{count}} Playlists",
       "cuesNote": "Die Cues der entfernten Kopie gehen nicht auf die behaltene über.",
       "librariesNote": "Die Bibliotheken ändern sich nur, wenn sie noch den alten Wert haben.",
-      "copies": "Kopien"
+      "copies": "Kopien",
+      "added": "Hinzugefügt"
     },
     "where": {
       "music": "Music",

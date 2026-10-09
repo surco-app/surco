@@ -475,7 +475,7 @@ function DuplicateDetail({
   review: Review
   folding: Folding
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const copiesId = useId()
   const { group, entries, formats, locations } = card
   const info = useCopyInfo(entries.flatMap((e) => locations[e.persistentId] || []))
@@ -491,6 +491,8 @@ function DuplicateDetail({
   const anyFile = entries.some((e) => locations[e.persistentId] !== '')
   const unknown = entries.some((e) => !(e.persistentId in locations))
   const differs = (value: (e: MusicReviewEntry) => string) => new Set(entries.map(value)).size > 1
+  const day = (iso?: string) =>
+    iso ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(iso)) : ''
   const staged = review.staged.has(group.key)
   const version = group.kind === 'version'
   const first = entries[0]
@@ -540,6 +542,7 @@ function DuplicateDetail({
                   ['field.album', e.album, differs((c) => c.album)],
                   ['field.genre', e.genre, differs((c) => c.genre)],
                   ['detail.duration', clock(e.durationSec), differs((c) => clock(c.durationSec))],
+                  ['detail.added', day(e.dateAdded), differs((c) => day(c.dateAdded))],
                 ] as const
                 return (
                   <div
