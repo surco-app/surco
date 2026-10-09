@@ -101,6 +101,7 @@ import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playb
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
+import { trashRecoverably } from './recoverableTrash'
 import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
 import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
@@ -1145,7 +1146,7 @@ function registerIpc(): void {
             },
             { realPath },
           ),
-        trash: (path) => shell.trashItem(path),
+        trash: (path) => trashRecoverably(path),
         serial: serialLibraryFlush,
         warn: (message, error) => log.warn(message, error),
       })
