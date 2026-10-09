@@ -779,6 +779,8 @@ export interface DuplicateReplaceOutcome {
   keptForMusic?: boolean
   // Nothing held the file any more and the Trash still refused it.
   trashFailed?: boolean
+  // Left alone: the list review could not rule out that the kept audio lives in this file.
+  keptShared?: true
 }
 
 // A copy the list review removes: its file, the kept copy's file and its Apple Music entries.

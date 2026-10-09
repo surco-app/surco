@@ -130,13 +130,21 @@ describe('listreview:removeDuplicates', () => {
     const out = await handlerFor('listreview:removeDuplicates')({ sender }, [
       removal('/m/a.aiff', '/m/b.aiff', musicRef),
     ])
-    expect(out).toEqual([{ from: '/m/a.aiff', fileTrashed: false, keptForLibrary: false }])
+    expect(out).toEqual([
+      { from: '/m/a.aiff', fileTrashed: false, keptForLibrary: false, keptShared: true },
+    ])
     expect(d.music.transferPlaylists).not.toHaveBeenCalled()
     expect(d.trash).not.toHaveBeenCalled()
   })
 
   it('fails closed when a path cannot be resolved', async () => {
     const d = register({ realpath: vi.fn(async (p: string) => (p === '/m/b.aiff' ? null : p)) })
+    await handlerFor('listreview:removeDuplicates')({ sender }, [removal('/m/a.aiff', '/m/b.aiff')])
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  it('fails closed when the removed copy cannot be resolved', async () => {
+    const d = register({ realpath: vi.fn(async (p: string) => (p === '/m/a.aiff' ? null : p)) })
     await handlerFor('listreview:removeDuplicates')({ sender }, [removal('/m/a.aiff', '/m/b.aiff')])
     expect(d.trash).not.toHaveBeenCalled()
   })
@@ -199,5 +207,47 @@ describe('listreview:removeDuplicates', () => {
     ])
     expect(out).toEqual([{ from: '/m/old.aiff', fileTrashed: true, keptForLibrary: false }])
     expect(d.trash).toHaveBeenCalled()
+  })
+
+  const trashed = (d: { trash: ReturnType<typeof vi.fn> }) => d.trash.mock.calls.map(([p]) => p)
+
+  // The kept copy of one pair is the removed copy of another: trashing it loses the audio.
+  it('keeps a removed file that another pair keeps', async () => {
+    const d = register()
+    const out = (await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/a.aiff', '/m/b.aiff'),
+      removal('/m/c.aiff', '/m/a.aiff'),
+    ])) as { keptShared?: true }[]
+    expect(trashed(d)).toEqual(['/m/c.aiff'])
+    expect(out[0].keptShared).toBe(true)
+  })
+
+  it('compares the kept and removed files across pairs by their real path', async () => {
+    const d = register({
+      realpath: vi.fn(async (p: string) => (p === '/m/alias-a.aiff' ? '/m/a.aiff' : p)),
+    })
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/a.aiff', '/m/b.aiff'),
+      removal('/m/c.aiff', '/m/alias-a.aiff'),
+    ])
+    expect(trashed(d)).toEqual(['/m/c.aiff'])
+  })
+
+  it('keeps a file named twice for removal', async () => {
+    const d = register()
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/a.aiff', '/m/b.aiff'),
+      removal('/m/a.aiff', '/m/c.aiff'),
+    ])
+    expect(d.trash).not.toHaveBeenCalled()
+  })
+
+  it('keeps both files of two pairs that each keep the other', async () => {
+    const d = register()
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      removal('/m/a.aiff', '/m/b.aiff'),
+      removal('/m/b.aiff', '/m/a.aiff'),
+    ])
+    expect(d.trash).not.toHaveBeenCalled()
   })
 })

@@ -15,11 +15,7 @@ export interface RemoveCopyDeps {
 
 // Fails closed: when either side can't be resolved, the file might be shared, and
 // trashing it would take the kept copy's audio along. Leaving a stray file is recoverable.
-export async function mayShareFile(
-  a: string,
-  b: string,
-  deps: Pick<RemoveCopyDeps, 'realpath'>,
-): Promise<boolean> {
+async function mayShareFile(a: string, b: string, deps: RemoveCopyDeps): Promise<boolean> {
   if (!a || !b) return true
   const [ra, rb] = await Promise.all([deps.realpath(a), deps.realpath(b)])
   if (ra === null || rb === null) return true
