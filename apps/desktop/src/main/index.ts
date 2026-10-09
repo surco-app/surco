@@ -93,6 +93,7 @@ import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags, tagSyncOf } from './libraryTagSync'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
+import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
 import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
@@ -1150,6 +1151,7 @@ function registerIpc(): void {
         trash: (path) => trashRecoverably(path),
         serial: serialLibraryFlush,
         warn: (message, error) => log.warn(message, error),
+        log: { track: activity.track, copyOf: musicReviewLog.copyOf },
       })
     },
   )

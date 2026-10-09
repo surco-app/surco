@@ -6,6 +6,7 @@ export function createMusicReviewLog() {
   const titles = new Map<string, string>()
   const groups = new Map<string, string>()
   const backups = new Map<string, { group: string; title: string }>()
+  const copies = new Map<string, { group: string; label: string }>()
   let runs = 0
   const titleOf = (persistentId: string) => titles.get(persistentId) ?? persistentId
   return {
@@ -22,6 +23,10 @@ export function createMusicReviewLog() {
     },
     groupOf: (persistentId: string) => groups.get(persistentId),
     backup: (id: string) => backups.get(id),
+    rememberCopy(path: string, copy: { group: string; label: string }) {
+      copies.set(path, copy)
+    },
+    copyOf: (path: string) => copies.get(path),
   }
 }
 

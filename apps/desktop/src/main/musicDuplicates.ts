@@ -1,4 +1,5 @@
 import type { RemoveCopyResult } from '../shared/types'
+import type { Activity } from './activity'
 
 export interface RemoveCopyDeps {
   locate: (persistentId: string) => Promise<string>
@@ -63,4 +64,51 @@ export async function removeDuplicateCopy(
     fileTrashed: false,
     pair: { from: location, to: keepLoc, shared: maybeShared },
   }
+}
+
+export interface RemoveCopyLog {
+  track: Activity['track']
+  // Where the file's fate is logged later, once the DJ libraries have moved.
+  rememberCopy: (path: string, copy: { group: string; label: string }) => void
+}
+
+const STAYED: Record<Exclude<RemoveCopyResult['outcome'], 'removed'>, Ending> = {
+  mismatch: { detailKey: 'activity.reviewDuplicateMismatch', status: 'warn' },
+  missing: { detailKey: 'activity.reviewDuplicateMissing', status: 'warn' },
+  'playlist-failed': { detailKey: 'activity.reviewDuplicatePlaylistFailed', status: 'error' },
+  failed: { detailKey: 'activity.reviewDuplicateFailed', status: 'error' },
+}
+
+type Ending = {
+  detailKey: string
+  detailParams?: { count: number }
+  status?: 'warn' | 'error'
+}
+
+function endingOf(result: RemoveCopyResult): Ending {
+  if (result.outcome !== 'removed') return STAYED[result.outcome]
+  return {
+    detailKey: result.pair
+      ? 'activity.reviewDuplicateRemoved'
+      : 'activity.reviewDuplicateRemovedNoFile',
+    detailParams: { count: result.playlists },
+  }
+}
+
+// One Activity row per removed copy, titled by the copy the user saw; its file's fate joins
+// the same row later.
+export async function removeDuplicateCopyLogged(
+  req: { removePid: string; keepPid: string; label: string; keepLabel: string },
+  deps: RemoveCopyDeps,
+  log: RemoveCopyLog,
+): Promise<RemoveCopyResult> {
+  const group = `duplicate-${req.removePid}`
+  const result = await log.track(
+    'applemusic',
+    'activity.reviewDuplicateMusic',
+    () => removeDuplicateCopy(req, deps),
+    { group, groupLabel: req.label, summary: endingOf },
+  )
+  if (result.pair) log.rememberCopy(result.pair.from, { group, label: req.label })
+  return result
 }

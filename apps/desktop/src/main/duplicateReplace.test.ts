@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { LibraryReplaceOutcome } from '../shared/types'
+import type { ActivityEvent, LibraryReplaceOutcome } from '../shared/types'
+import { createActivity } from './activity'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
@@ -23,7 +24,7 @@ function deps(over: Partial<ReplaceDuplicatesDeps> = {}): ReplaceDuplicatesDeps 
   return {
     libraries: { rekordbox: step('repointed') },
     usedByLibrary: vi.fn().mockResolvedValue(false),
-    trash: vi.fn().mockResolvedValue(undefined),
+    trash: vi.fn().mockResolvedValue('trash'),
     serial: (task) => task(),
     warn: vi.fn(),
     ...over,
@@ -54,6 +55,7 @@ describe('replaceDuplicates', () => {
       }),
       trash: vi.fn(async () => {
         calls.push('trash')
+        return 'trash' as const
       }),
     })
     expect(await replaceDuplicates([PAIR], d)).toEqual([
@@ -160,6 +162,7 @@ describe('replaceDuplicates', () => {
       },
       trash: vi.fn(async () => {
         order.push('trash')
+        return 'trash' as const
       }),
     })
     await replaceDuplicates([PAIR], d)
@@ -222,6 +225,24 @@ describe('traktorDuplicateStep', () => {
     expect(replace).not.toHaveBeenCalled()
   })
 
+  it('leaves a warning row in Activity when the user keeps Traktor open', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    await traktorDuplicateStep([PAIR], {
+      nmlPath: '/c.nml',
+      ensureTraktorClosed: async () => false,
+      showBlockedDialog: vi.fn(),
+      track: activity.track,
+      replace: vi.fn(),
+    })
+    expect(events.at(-1)).toMatchObject({
+      phase: 'warn',
+      labelKey: 'activity.traktorSync',
+      detailKey: 'activity.traktorSyncTraktorRunning',
+    })
+  })
+
   it('writes the collection as an Activity step with Traktor locations', async () => {
     const replace = vi.fn().mockResolvedValue({ written: true, outcomes: ['replaced'] })
     const deps: Parameters<typeof traktorDuplicateStep>[1] = {
@@ -246,5 +267,84 @@ describe('traktorDuplicateStep', () => {
         to: { volume: '', dir: '/:m/:', file: 'keep.aiff' },
       },
     ])
+  })
+})
+
+// The second half of a removed copy's Activity row: what became of its file, under the
+// row the removal opened.
+describe('replaceDuplicates in Activity', () => {
+  function logged(over: Partial<ReplaceDuplicatesDeps> = {}) {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    const copies = new Map([
+      [PAIR.from, { group: 'duplicate-OLD', label: 'Old copy' }],
+      [SHARED.from, { group: 'duplicate-SAME', label: 'Same copy' }],
+    ])
+    const d = deps({
+      log: { track: activity.track, copyOf: (path) => copies.get(path) },
+      ...over,
+    })
+    return { events, d }
+  }
+  const end = (events: ActivityEvent[]) => events.find((e) => e.phase !== 'start')
+
+  it('says the file went to the Trash, under the copy it belonged to', async () => {
+    const { events, d } = logged({ trash: vi.fn().mockResolvedValue('trash') })
+    await replaceDuplicates([PAIR], d)
+    expect(events[0]).toMatchObject({
+      phase: 'start',
+      labelKey: 'activity.reviewDuplicateFile',
+      group: 'duplicate-OLD',
+      groupLabel: 'Old copy',
+    })
+    expect(end(events)).toMatchObject({
+      phase: 'done',
+      detailKey: 'activity.reviewDuplicateFileTrash',
+    })
+  })
+
+  it('says the file went to Surco’s backup on a disk with no Trash', async () => {
+    const { events, d } = logged({ trash: vi.fn().mockResolvedValue('surco') })
+    await replaceDuplicates([PAIR], d)
+    expect(end(events)).toMatchObject({ detailKey: 'activity.reviewDuplicateFileSurco' })
+  })
+
+  it.each([
+    ['shared with the kept copy', [SHARED], {}, 'done', 'activity.reviewDuplicateFileShared'],
+    [
+      'held by a library that was not updated',
+      [PAIR],
+      { libraries: { rekordbox: step('skipped') } },
+      'warn',
+      'activity.reviewDuplicateFileUnsettled',
+    ],
+    [
+      'used by a library',
+      [PAIR],
+      { usedByLibrary: vi.fn().mockResolvedValue(true) },
+      'done',
+      'activity.reviewDuplicateFileUsed',
+    ],
+    [
+      'not trashable',
+      [PAIR],
+      { trash: vi.fn().mockRejectedValue(new Error('gone')) },
+      'error',
+      'activity.reviewDuplicateFileTrashFailed',
+    ],
+  ] as const)(
+    'says why the file stayed when it is %s',
+    async (_name, pairs, over, phase, detailKey) => {
+      const { events, d } = logged(over)
+      await replaceDuplicates([...pairs], d)
+      expect(end(events)).toMatchObject({ phase, detailKey })
+    },
+  )
+
+  it('logs nothing for a file no removed copy owns', async () => {
+    const { events, d } = logged()
+    await replaceDuplicates([{ ...PAIR, from: '/m/unknown.aiff' }], d)
+    expect(events).toEqual([])
   })
 })

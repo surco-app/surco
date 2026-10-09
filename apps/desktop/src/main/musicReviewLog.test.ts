@@ -35,4 +35,11 @@ describe('createMusicReviewLog', () => {
     expect(log.backup('b1')).toEqual({ group: run, title: 'Funk Freak' })
     expect(log.backup('other')).toBeUndefined()
   })
+
+  it('keeps the row a removed copy opened for its file to join', () => {
+    const log = createMusicReviewLog()
+    log.rememberCopy('/m/old.mp3', { group: 'duplicate-OLD', label: 'Old' })
+    expect(log.copyOf('/m/old.mp3')).toEqual({ group: 'duplicate-OLD', label: 'Old' })
+    expect(log.copyOf('/m/other.mp3')).toBeUndefined()
+  })
 })

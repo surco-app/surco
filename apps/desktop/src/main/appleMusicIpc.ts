@@ -32,7 +32,7 @@ import {
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT } from './i18n'
-import { removeDuplicateCopy } from './musicDuplicates'
+import { removeDuplicateCopyLogged } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { musicReviewLog } from './musicReviewLog'
@@ -135,12 +135,16 @@ export function registerAppleMusicIpc(
     (_e, req: { removePid: string; keepPid: string; label: string; keepLabel: string }) =>
       process.platform === 'darwin'
         ? appleMusicLimiter.run(() =>
-            removeDuplicateCopy(req, {
-              locate: appleMusicEntryLocation,
-              realpath: (p) => realpath(p).catch(() => null),
-              transferPlaylists,
-              deleteEntry: deleteFromAppleMusic,
-            }),
+            removeDuplicateCopyLogged(
+              req,
+              {
+                locate: appleMusicEntryLocation,
+                realpath: (p) => realpath(p).catch(() => null),
+                transferPlaylists,
+                deleteEntry: deleteFromAppleMusic,
+              },
+              { track: activity.track, rememberCopy: musicReviewLog.rememberCopy },
+            ),
           )
         : { outcome: 'missing', playlists: 0, fileTrashed: false },
   )

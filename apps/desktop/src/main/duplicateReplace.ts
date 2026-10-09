@@ -4,7 +4,7 @@ import { toNmlLocation } from './ffmpeg'
 import type { DuplicateReplaceResult } from './rekordboxDuplicates'
 import type { NmlLocation } from './traktorNml'
 import type { DuplicateCollectionResult } from './traktorNmlLibrary'
-import { TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
+import { logKeptOpen, TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
 
 // After the review removes duplicate copies from Music, each DJ library with its sync on
 // moves to the copy the user kept, and only then does a removed copy's file go to the
@@ -21,9 +21,28 @@ export interface ReplaceDuplicatesDeps {
   // Only the libraries whose sync is on.
   libraries: Partial<Record<Library, LibraryStep>>
   usedByLibrary: (path: string) => Promise<boolean>
-  trash: (path: string) => Promise<void>
+  // Says where the file went: the system Trash, or Surco's own on a disk without one.
+  trash: (path: string) => Promise<'trash' | 'surco'>
   serial: <T>(task: () => Promise<T>) => Promise<T>
   warn: (message: string, error: unknown) => void
+  // The Activity row each removed copy opened, for its file's fate to join.
+  log?: {
+    track: Activity['track']
+    copyOf: (path: string) => { group: string; label: string } | undefined
+  }
+}
+
+type FileFate =
+  | { fate: 'shared' | 'unsettled' | 'used' | 'trash' | 'surco' }
+  | { fate: 'failed'; error: string }
+
+const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'error' }> = {
+  shared: { detailKey: 'activity.reviewDuplicateFileShared' },
+  unsettled: { detailKey: 'activity.reviewDuplicateFileUnsettled', status: 'warn' },
+  used: { detailKey: 'activity.reviewDuplicateFileUsed' },
+  trash: { detailKey: 'activity.reviewDuplicateFileTrash' },
+  surco: { detailKey: 'activity.reviewDuplicateFileSurco' },
+  failed: { detailKey: 'activity.reviewDuplicateFileTrashFailed', status: 'error' },
 }
 
 const SETTLED: ReadonlySet<LibraryReplaceOutcome> = new Set(['repointed', 'replaced', 'none'])
@@ -78,6 +97,7 @@ export async function traktorDuplicateStep(
 ): Promise<LibraryReplaceOutcome[]> {
   if (!(await deps.ensureTraktorClosed())) {
     deps.showBlockedDialog()
+    await logKeptOpen(deps.track)
     return pairs.map(() => 'skipped')
   }
   const result = await deps.track(
@@ -129,26 +149,49 @@ export function replaceDuplicates(
         keptForLibrary: false,
       }
       results.push(result)
-      if (pair.shared) continue
       const index = active.indexOf(pair)
-      for (const [library, outcomes] of Object.entries(byLibrary))
-        result[library as Library] = outcomes[index]
-      const settled = Object.values(byLibrary).every((o) => SETTLED.has(o[index]))
-      const stillHeld =
-        byLibrary.rekordbox?.[index] === 'replaced' || byLibrary.engine?.[index] === 'replaced'
-      // Fails closed: a library that cannot be read may still use the file, and a trashed
-      // file shows there as a missing track with its cues out of reach.
-      if (!settled || stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) {
-        result.keptForLibrary = true
-        continue
-      }
-      try {
-        await deps.trash(pair.from)
-        result.fileTrashed = true
-      } catch (error) {
-        deps.warn('library:replaceDuplicates trash failed', error)
-      }
+      if (!pair.shared)
+        for (const [library, outcomes] of Object.entries(byLibrary))
+          result[library as Library] = outcomes[index]
+      const decide = () => fileFate(pair, index, byLibrary, deps)
+      const log = deps.log
+      const copy = log?.copyOf(pair.from)
+      const { fate } =
+        log && copy
+          ? await log.track('applemusic', 'activity.reviewDuplicateFile', decide, {
+              group: copy.group,
+              groupLabel: copy.label,
+              summary: (f) => ({
+                ...FATE[f.fate],
+                ...(f.fate === 'failed' ? { detailParams: { error: f.error } } : {}),
+              }),
+            })
+          : await decide()
+      result.keptForLibrary = fate === 'unsettled' || fate === 'used'
+      result.fileTrashed = fate === 'trash' || fate === 'surco'
     }
     return results
   })
+}
+
+async function fileFate(
+  pair: ReplacePair,
+  index: number,
+  byLibrary: Partial<Record<Library, LibraryReplaceOutcome[]>>,
+  deps: ReplaceDuplicatesDeps,
+): Promise<FileFate> {
+  if (pair.shared) return { fate: 'shared' }
+  const settled = Object.values(byLibrary).every((o) => SETTLED.has(o[index]))
+  if (!settled) return { fate: 'unsettled' }
+  const stillHeld =
+    byLibrary.rekordbox?.[index] === 'replaced' || byLibrary.engine?.[index] === 'replaced'
+  // Fails closed: a library that cannot be read may still use the file, and a trashed
+  // file shows there as a missing track with its cues out of reach.
+  if (stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) return { fate: 'used' }
+  try {
+    return { fate: await deps.trash(pair.from) }
+  } catch (error) {
+    deps.warn('library:replaceDuplicates trash failed', error)
+    return { fate: 'failed', error: error instanceof Error ? error.message : String(error) }
+  }
 }

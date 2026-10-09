@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type RemoveCopyDeps, removeDuplicateCopy } from './musicDuplicates'
+import type { ActivityEvent } from '../shared/types'
+import { createActivity } from './activity'
+import {
+  type RemoveCopyDeps,
+  removeDuplicateCopy,
+  removeDuplicateCopyLogged,
+} from './musicDuplicates'
 
 function deps(over: Partial<RemoveCopyDeps> = {}): RemoveCopyDeps {
   return {
@@ -143,5 +149,84 @@ describe('removeDuplicateCopy', () => {
       outcome: 'failed',
     })
     expect(d.transferPlaylists).not.toHaveBeenCalled()
+  })
+})
+
+// Each removed copy gets its own row in Activity: what left Music and how many playlists
+// moved now, and later, under the same row, what became of its file.
+describe('removeDuplicateCopyLogged', () => {
+  function logged() {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    const copies = new Map<string, { group: string; label: string }>()
+    return {
+      events,
+      copies,
+      log: {
+        track: activity.track,
+        rememberCopy: (path: string, copy: { group: string; label: string }) =>
+          copies.set(path, copy),
+      },
+    }
+  }
+
+  it('names the copy and says it left Music with its playlists', async () => {
+    const { events, copies, log } = logged()
+    await removeDuplicateCopyLogged(req, deps(), log)
+    expect(events[0]).toMatchObject({
+      phase: 'start',
+      kind: 'applemusic',
+      labelKey: 'activity.reviewDuplicateMusic',
+      group: 'duplicate-OLD',
+      groupLabel: 'Transfer - Possession',
+    })
+    expect(events[1]).toMatchObject({
+      phase: 'done',
+      detailKey: 'activity.reviewDuplicateRemoved',
+      detailParams: { count: 2 },
+    })
+    expect(copies.get('/m/old.mp3')).toEqual({
+      group: 'duplicate-OLD',
+      label: 'Transfer - Possession',
+    })
+  })
+
+  it('says a copy with no file left only Music', async () => {
+    const { events, copies, log } = logged()
+    await removeDuplicateCopyLogged(req, deps({ deleteEntry: vi.fn().mockResolvedValue('') }), log)
+    expect(events[1]).toMatchObject({ detailKey: 'activity.reviewDuplicateRemovedNoFile' })
+    expect(copies.size).toBe(0)
+  })
+
+  it.each([
+    [
+      'mismatch',
+      { transferPlaylists: vi.fn().mockResolvedValue('mismatch') },
+      'warn',
+      'activity.reviewDuplicateMismatch',
+    ],
+    [
+      'missing',
+      { transferPlaylists: vi.fn().mockResolvedValue('missing') },
+      'warn',
+      'activity.reviewDuplicateMissing',
+    ],
+    [
+      'playlist-failed',
+      { transferPlaylists: vi.fn().mockResolvedValue('3\t1') },
+      'error',
+      'activity.reviewDuplicatePlaylistFailed',
+    ],
+    [
+      'failed',
+      { transferPlaylists: vi.fn().mockResolvedValue('garbage') },
+      'error',
+      'activity.reviewDuplicateFailed',
+    ],
+  ] as const)('says why a copy stayed (%s)', async (_name, over, phase, detailKey) => {
+    const { events, log } = logged()
+    await removeDuplicateCopyLogged(req, deps(over), log)
+    expect(events[1]).toMatchObject({ phase, detailKey })
   })
 })

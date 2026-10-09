@@ -24,7 +24,7 @@ export function registerShellIpc(mediaAccess: MediaAccess): void {
   // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.
   ipcMain.handle('shell:trash', async (_e, path: string) => {
     if (!mediaAccess.isAllowed(path)) throw errorWithKey('pathNotAllowed')
-    return trashRecoverably(path)
+    await trashRecoverably(path)
   })
   // Whether a delete of this file can be described as recoverable. Asked of the
   // filesystem, not guessed from the path: /Volumes/Macintosh HD is the local disk while

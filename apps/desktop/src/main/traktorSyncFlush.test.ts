@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { ActivityEvent } from '../shared/types'
+import { createActivity } from './activity'
 import type { NmlPatch } from './traktorNml'
 import type { SyncResult } from './traktorNmlLibrary'
 import { type FlushTraktorSyncDeps, flushTraktorSync } from './traktorSyncFlush'
@@ -68,6 +70,21 @@ describe('flushTraktorSync', () => {
 
     expect(deps.showBlockedDialog).toHaveBeenCalledOnce()
     expect(deps.syncCollection).not.toHaveBeenCalled()
+  })
+
+  // rekordbox and Engine DJ leave a row when the user keeps them open; Traktor said it
+  // only in a dialog, so Activity showed nothing for a library that got nothing.
+  it('leaves a warning row in Activity when the user keeps Traktor open', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    await flushTraktorSync(
+      makeDeps({ ensureTraktorClosed: vi.fn(async () => false), track: activity.track }),
+    )
+    expect(events.map((e) => [e.phase, e.labelKey, e.detailKey])).toEqual([
+      ['start', 'activity.traktorSync', undefined],
+      ['warn', 'activity.traktorSync', 'activity.traktorSyncTraktorRunning'],
+    ])
   })
 
   it('writes the collection once Traktor is confirmed closed', async () => {

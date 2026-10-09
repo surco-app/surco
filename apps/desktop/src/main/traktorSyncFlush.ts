@@ -50,6 +50,7 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<Libr
   }
   if (!(await deps.ensureTraktorClosed())) {
     deps.showBlockedDialog()
+    await logKeptOpen(deps.track)
     return { outcome: 'open' }
   }
   const result = await deps.track(
@@ -77,4 +78,11 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<Libr
   if (result.reason === 'traktor-running') return { outcome: 'open' }
   if (result.reason === 'no-matches') return { outcome: 'nothing' }
   return { outcome: 'failed' }
+}
+
+// The dialog goes away; the row stays, so Activity says why this library got nothing.
+export function logKeptOpen(track: Activity['track']): Promise<unknown> {
+  return track('export', 'activity.traktorSync', async () => undefined, {
+    summary: () => ({ detailKey: TRAKTOR_SYNC_SKIP_KEYS['traktor-running'], status: 'warn' }),
+  })
 }
