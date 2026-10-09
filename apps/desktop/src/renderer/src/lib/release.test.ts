@@ -535,6 +535,23 @@ describe('preRankResults', () => {
     expect(ranked.map((x) => x.id)).toEqual([2, 1])
   })
 
+  // A typed search is the user's aim, not the selected track's: artexjay typed "Duran Duran
+  // Duran Duran (Deluxe Edition)" and every Duran Duran deluxe tied on the track's artist,
+  // so popularity buried the album he named. Each typed word counts as often as he typed
+  // it, so the second "Duran Duran" sets that album above Paper Gods' deluxe.
+  it('ranks a typed search by how much of the typed text each row covers', () => {
+    const popular: SearchResult = {
+      ...r(1, 'Duran Duran - Paper Gods (Deluxe Edition)'),
+      community: { have: 5000, want: 1 },
+    }
+    const ranked = preRankResults([popular, r(2, 'Duran Duran - Duran Duran (Deluxe Edition)')], {
+      title: 'Planet Earth',
+      artist: 'Duran Duran',
+      typed: 'Duran Duran Duran Duran (Deluxe Edition)',
+    })
+    expect(ranked.map((x) => x.id)).toEqual([2, 1])
+  })
+
   it('keeps the original order when no row matches better', () => {
     const ranked = preRankResults([r(1, 'A - X'), r(2, 'B - Y')], { title: 'Z', artist: 'Q' })
     expect(ranked.map((x) => x.id)).toEqual([1, 2])

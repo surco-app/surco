@@ -87,6 +87,9 @@ export interface TrackMatchTarget {
   // The file's album, passed only while "Search by album first" is on. Ranks the release it
   // names ahead of the artist's other albums, which all tie on the artist otherwise.
   album?: string
+  // A search the user typed into the panel. It aims the ranking instead of the file's tags,
+  // which may belong to another song than the one typed.
+  typed?: string
   // A Discogs release the file was tagged from before (an earlier match, or hand-entered).
   // When present, autoMatchRelease tries loading this exact release before falling back to
   // a text search — a re-tagged file finds its release again on the first try instead of
@@ -414,6 +417,27 @@ function isCompilation(result: SearchResult): boolean {
   return (result.format ?? []).some((f) => f.toLowerCase() === 'compilation')
 }
 
+// The share of the typed words a row's title and label carry, each word counted as often
+// as it was typed: "Duran Duran Duran Duran" asks for two "Duran Duran"s, so the self-titled
+// album covers it and another album by the same act covers half.
+function typedCoverage(result: SearchResult, typed: string): number {
+  const words = normalize(typed).split(' ').filter(Boolean)
+  if (!words.length) return 0
+  const left = new Map<string, number>()
+  for (const w of normalize(`${result.title} ${(result.label ?? []).join(' ')}`).split(' ')) {
+    if (w) left.set(w, (left.get(w) ?? 0) + 1)
+  }
+  let covered = 0
+  for (const w of words) {
+    const n = left.get(w) ?? 0
+    if (n > 0) {
+      covered++
+      left.set(w, n - 1)
+    }
+  }
+  return covered / words.length
+}
+
 export function preRankResults(results: SearchResult[], target: TrackMatchTarget): SearchResult[] {
   const relevance = (result: SearchResult): number => {
     // Whole words, never substrings: "Art" hiding inside "Artificial" must not count as
@@ -438,7 +462,9 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     const credited = result.title.includes(' - ')
       ? sameAct(target.artist ?? '', [{ name: result.title.slice(0, result.title.indexOf(' - ')) }])
       : false
-    const score = 2 * fraction(target.artist) + fraction(target.title) + (credited ? 1 : 0)
+    const score = target.typed
+      ? typedCoverage(result, target.typed)
+      : 2 * fraction(target.artist) + fraction(target.title) + (credited ? 1 : 0)
     return score - (isCompilation(result) ? COMPILATION_PENALTY : 0)
   }
   // A pressing whose year matches the file's tag is the edition the file came from, so it
