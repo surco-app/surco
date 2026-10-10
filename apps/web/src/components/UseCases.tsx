@@ -83,11 +83,11 @@ export default function UseCases() {
   const guideHref = PAGES.guide[lang]
   const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
   const groups = t('useCases.groups', { returnObjects: true }) as Group[]
-  const casesIn = (group: Group) => cases.filter((c) => c.group === group.id)
   const [query, setQuery] = useState('')
   const [source, setSource] = useState<UseCaseSource | null>(null)
   const shown = cases.filter((c) => matchesUseCase(c, query, source))
   const filtering = shown.length < cases.length
+  const casesIn = (group: Group) => shown.filter((c) => c.group === group.id)
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
@@ -207,7 +207,7 @@ export default function UseCases() {
               ) : (
                 <div className="mt-8 space-y-8">
                   {groups.map((group) => {
-                    const items = shown.filter((c) => c.group === group.id)
+                    const items = casesIn(group)
                     if (items.length === 0) return null
                     return (
                       <div key={group.id}>
@@ -250,99 +250,101 @@ export default function UseCases() {
           </Reveal>
         </section>
 
-        {groups.map((group) => (
-          <div key={group.id} id={group.id} data-testid="use-case-group" className="scroll-mt-20">
-            <div className="border-t border-line/60 pt-14 pb-2">
-              <h2 className="font-mono text-xs tracking-wider text-blue uppercase">
-                {group.title}
-              </h2>
-              <p className="mt-2 max-w-2xl text-lg leading-relaxed text-muted">{group.lede}</p>
-            </div>
-            {casesIn(group).map((c) => (
-              <section
-                key={c.id}
-                id={c.id}
-                data-testid="use-case"
-                className="scroll-mt-20 border-t border-line/60 py-12"
-              >
-                <Reveal>
-                  <h3 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                    {c.title}
-                  </h3>
-                  {c.macOnly && (
-                    <p className="mt-3">
-                      <MacBadge />
-                    </p>
-                  )}
-                  {c.body.map((p) => (
-                    <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
-                      {p}
-                    </p>
-                  ))}
+        {groups
+          .filter((group) => casesIn(group).length > 0)
+          .map((group) => (
+            <div key={group.id} id={group.id} data-testid="use-case-group" className="scroll-mt-20">
+              <div className="border-t border-line/60 pt-14 pb-2">
+                <h2 className="font-mono text-xs tracking-wider text-blue uppercase">
+                  {group.title}
+                </h2>
+                <p className="mt-2 max-w-2xl text-lg leading-relaxed text-muted">{group.lede}</p>
+              </div>
+              {casesIn(group).map((c) => (
+                <section
+                  key={c.id}
+                  id={c.id}
+                  data-testid="use-case"
+                  className="scroll-mt-20 border-t border-line/60 py-12"
+                >
+                  <Reveal>
+                    <h3 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+                      {c.title}
+                    </h3>
+                    {c.macOnly && (
+                      <p className="mt-3">
+                        <MacBadge />
+                      </p>
+                    )}
+                    {c.body.map((p) => (
+                      <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
+                        {p}
+                      </p>
+                    ))}
 
-                  {c.settings.length > 0 && (
-                    <div className="mt-8 overflow-hidden rounded-2xl border border-line">
-                      <div className="bg-surface2 px-5 py-3">
-                        <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                          {t('useCases.settingsLabel')}
-                        </p>
-                        <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
-                      </div>
-                      <ul>
-                        {c.settings.map((s) => (
-                          <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <p className="mt-10 font-mono text-xs tracking-wider text-faint uppercase">
-                    {t('useCases.stepsLabel')}
-                  </p>
-                  <ol className="mt-4 space-y-5">
-                    {c.steps.map((step, i) => (
-                      <li key={step.title} data-testid="use-case-step" className="flex gap-4">
-                        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-blue font-mono text-sm text-blue">
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-semibold">{step.title}</p>
-                          <p className="mt-0.5 text-sm leading-relaxed text-muted">{step.text}</p>
+                    {c.settings.length > 0 && (
+                      <div className="mt-8 overflow-hidden rounded-2xl border border-line">
+                        <div className="bg-surface2 px-5 py-3">
+                          <p className="font-mono text-xs tracking-wider text-faint uppercase">
+                            {t('useCases.settingsLabel')}
+                          </p>
+                          <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
                         </div>
-                      </li>
-                    ))}
-                  </ol>
+                        <ul>
+                          {c.settings.map((s) => (
+                            <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                  <ul className="mt-8 space-y-2.5">
-                    {c.points.map((point) => (
-                      <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                        <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {c.related.length > 0 && (
-                    <p className="mt-8 text-sm text-faint">
-                      {t('useCases.relatedLabel')}{' '}
-                      {c.related.map((r, i) => (
-                        <span key={r.anchor}>
-                          {i > 0 && ' · '}
-                          <a
-                            href={`${guideHref}#${r.anchor}`}
-                            className="text-blue transition-colors hover:text-cyan"
-                          >
-                            {r.label}
-                          </a>
-                        </span>
-                      ))}
+                    <p className="mt-10 font-mono text-xs tracking-wider text-faint uppercase">
+                      {t('useCases.stepsLabel')}
                     </p>
-                  )}
-                </Reveal>
-              </section>
-            ))}
-          </div>
-        ))}
+                    <ol className="mt-4 space-y-5">
+                      {c.steps.map((step, i) => (
+                        <li key={step.title} data-testid="use-case-step" className="flex gap-4">
+                          <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-blue font-mono text-sm text-blue">
+                            {i + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-semibold">{step.title}</p>
+                            <p className="mt-0.5 text-sm leading-relaxed text-muted">{step.text}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+
+                    <ul className="mt-8 space-y-2.5">
+                      {c.points.map((point) => (
+                        <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
+                          <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {c.related.length > 0 && (
+                      <p className="mt-8 text-sm text-faint">
+                        {t('useCases.relatedLabel')}{' '}
+                        {c.related.map((r, i) => (
+                          <span key={r.anchor}>
+                            {i > 0 && ' · '}
+                            <a
+                              href={`${guideHref}#${r.anchor}`}
+                              className="text-blue transition-colors hover:text-cyan"
+                            >
+                              {r.label}
+                            </a>
+                          </span>
+                        ))}
+                      </p>
+                    )}
+                  </Reveal>
+                </section>
+              ))}
+            </div>
+          ))}
 
         <section className="border-t border-line/60 py-16 text-center">
           <Reveal>
