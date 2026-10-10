@@ -244,7 +244,7 @@ export function TrackListHeader({
           the global toolbar where it wasn't clear which column they touched). */}
       {/* Quieter than the tracks they act on: faint 14px glyphs, so the eye lands on the
           list first and finds the tools when it looks for them. */}
-      <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
+      <div className="relative flex items-center gap-0.5 px-1.5 pb-1.5">
         {/* Add files leads the list's own action row: it's what fills this column,
             so it belongs with the list rather than the global toolbar. */}
         <button
@@ -311,7 +311,7 @@ export function TrackListHeader({
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('commands.trashSelected')} />
             </button>
-            <div ref={moreRef} className="relative shrink-0">
+            <div ref={moreRef} className="shrink-0">
               <button
                 type="button"
                 data-testid="list-actions-more"
@@ -331,7 +331,7 @@ export function TrackListHeader({
                   role="menu"
                   aria-label={tr('header.moreActions')}
                   onKeyDown={onMenuKeyDown}
-                  className="animate-pop-flat absolute top-full right-0 z-50 mt-1 w-max max-w-72 origin-top-right rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+                  className="animate-pop-flat absolute top-full right-1.5 z-50 w-max max-w-[calc(100%-0.75rem)] origin-top-right rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
                 >
                   <MenuAction
                     testid="list-review-open"
