@@ -1307,6 +1307,9 @@ export default function App(): React.JSX.Element {
   // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
+  const onRemoveSelected = useStableCallback(() =>
+    askRemoveFromList(editScope(selectedTracks, selected)),
+  )
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
@@ -2078,6 +2081,7 @@ export default function App(): React.JSX.Element {
                           onReviewList={openListReview}
                           canReviewList={tracks.length > 0 && !batching}
                           onClearAll={onClearAll}
+                          onRemoveSelected={onRemoveSelected}
                           onTrashSelected={onTrashSelected}
                           onTrashSuspects={onTrashSuspects}
                         />

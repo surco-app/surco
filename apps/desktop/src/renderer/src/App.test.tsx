@@ -4427,6 +4427,7 @@ describe('App list header', () => {
       'open-find-replace',
       'clear-all',
       'trash-selected',
+      'remove-selected',
     ]) {
       expect(screen.getByTestId(id)).toBeInTheDocument()
     }
@@ -4441,9 +4442,39 @@ describe('App list header', () => {
   it('disables the trash button while nothing is selected', async () => {
     await renderApp()
     await addTwoTracks()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     expect(screen.getByTestId('trash-selected')).toBeEnabled()
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.getByTestId('trash-selected')).toBeDisabled())
+  })
+
+  // The visible button only drops rows from the list, so it must never reach the files and
+  // must go through the same confirm as the context menu's Remove from list.
+  it('removes the selection from the list with the visible button, asking once and never trashing files', async () => {
+    const trashFile = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      trashFile,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('remove-selected'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(trashFile).not.toHaveBeenCalled()
+  })
+
+  it('disables the remove-from-list button while nothing is selected', async () => {
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.getByTestId('remove-selected')).toBeEnabled()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.getByTestId('remove-selected')).toBeDisabled())
   })
 
   // From the menu the selection goes to the OS Trash after a confirm; with nothing

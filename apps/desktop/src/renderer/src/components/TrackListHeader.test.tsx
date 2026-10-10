@@ -22,6 +22,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
     onFindReplace: vi.fn(),
     onReviewList: vi.fn(),
     onClearAll: vi.fn(),
+    onRemoveSelected: vi.fn(),
     onTrashSelected: vi.fn(),
     onTrashSuspects: vi.fn(),
   }
@@ -68,11 +69,17 @@ describe('TrackListHeader actions row', () => {
       'import-apple-playlist',
       'select-all',
       'reveal-selected',
-      'trash-selected',
+      'remove-selected',
     ]) {
       expect(screen.getByTestId(id)).toBeVisible()
     }
-    for (const id of ['list-review-open', 'fill-all', 'open-find-replace', 'clear-all']) {
+    for (const id of [
+      'list-review-open',
+      'fill-all',
+      'open-find-replace',
+      'trash-selected',
+      'clear-all',
+    ]) {
       expect(screen.queryByTestId(id)).toBeNull()
     }
     const more = screen.getByTestId('list-actions-more')
@@ -89,7 +96,7 @@ describe('TrackListHeader actions row', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((el) => el.dataset.testid),
-    ).toEqual(['list-review-open', 'fill-all', 'open-find-replace', 'clear-all'])
+    ).toEqual(['list-review-open', 'fill-all', 'open-find-replace', 'trash-selected', 'clear-all'])
     expect(within(menu).getByTestId('list-review-open')).toHaveTextContent(
       i18n.t('header.reviewList'),
     )
@@ -104,6 +111,7 @@ describe('TrackListHeader actions row', () => {
     renderHeader()
     openMenu()
     expect(screen.getByTestId('clear-all')).toHaveClass('text-danger')
+    expect(screen.getByTestId('trash-selected')).toHaveClass('text-danger')
     expect(screen.getByTestId('fill-all')).not.toHaveClass('text-danger')
   })
 
@@ -111,6 +119,7 @@ describe('TrackListHeader actions row', () => {
     ['list-review-open', 'onReviewList'],
     ['fill-all', 'onFillAll'],
     ['open-find-replace', 'onFindReplace'],
+    ['trash-selected', 'onTrashSelected'],
     ['clear-all', 'onClearAll'],
   ] as const)('runs %s from the menu and closes it', (id, handler) => {
     const handlers = renderHeader()
@@ -133,9 +142,28 @@ describe('TrackListHeader actions row', () => {
     expect(screen.getByTestId('fill-all')).toBeEnabled()
   })
 
-  it('keeps the trash icon disabled while nothing is selected', () => {
+  it('keeps the trash item in the menu disabled while nothing is selected', () => {
     renderHeader({ selectedId: null, selectedIds: [] })
+    openMenu()
     expect(screen.getByTestId('trash-selected')).toBeDisabled()
+  })
+
+  it('offers the neutral remove-from-list icon, never the red trash, so the visible action cannot delete files', () => {
+    const handlers = renderHeader()
+    const remove = screen.getByTestId('remove-selected')
+    expect(remove).toHaveAccessibleName(i18n.t('trackList.context.remove'))
+    expect(remove).not.toHaveClass('hover:text-danger')
+    fireEvent.click(remove)
+    expect(handlers.onRemoveSelected).toHaveBeenCalledTimes(1)
+    expect(handlers.onTrashSelected).not.toHaveBeenCalled()
+  })
+
+  it('disables remove-from-list while nothing is selected', () => {
+    const handlers = renderHeader({ selectedId: null, selectedIds: [] })
+    const remove = screen.getByTestId('remove-selected')
+    expect(remove).toBeDisabled()
+    fireEvent.click(remove)
+    expect(handlers.onRemoveSelected).not.toHaveBeenCalled()
   })
 
   it('walks the items with the arrow keys, skipping a disabled one', () => {
@@ -144,6 +172,8 @@ describe('TrackListHeader actions row', () => {
     expect(screen.getByTestId('fill-all')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('open-find-replace')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('trash-selected')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('clear-all')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })

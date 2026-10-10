@@ -9,6 +9,7 @@ import {
   Ellipsis,
   FileAudio,
   FilePlus,
+  ListMinus,
   ListMusic,
   ListOrdered,
   ListX,
@@ -67,6 +68,7 @@ interface Props {
   onReviewList: () => void
   canReviewList: boolean
   onClearAll: () => void
+  onRemoveSelected: () => void
   onTrashSelected: () => void
   onTrashSuspects: () => void
 }
@@ -144,6 +146,7 @@ export function TrackListHeader({
   onReviewList,
   canReviewList,
   onClearAll,
+  onRemoveSelected,
   onTrashSelected,
   onTrashSuspects,
 }: Props): React.JSX.Element {
@@ -302,14 +305,14 @@ export function TrackListHeader({
             <span className="flex-1" />
             <button
               type="button"
-              data-testid="trash-selected"
-              onClick={onTrashSelected}
+              data-testid="remove-selected"
+              onClick={onRemoveSelected}
               disabled={!selectedId && selectedIds.length === 0}
-              aria-label={tr('commands.trashSelected')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-danger disabled:opacity-40"
+              aria-label={tr('trackList.context.remove')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
             >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('commands.trashSelected')} />
+              <ListMinus className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={tr('trackList.context.remove')} />
             </button>
             <div ref={moreRef} className="shrink-0">
               <button
@@ -356,6 +359,14 @@ export function TrackListHeader({
                     onClick={() => run(onFindReplace)}
                   />
                   <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                  <MenuAction
+                    testid="trash-selected"
+                    icon={Trash2}
+                    label={tr('commands.trashSelected')}
+                    danger
+                    disabled={!selectedId && selectedIds.length === 0}
+                    onClick={() => run(onTrashSelected)}
+                  />
                   <MenuAction
                     testid="clear-all"
                     icon={ListX}
