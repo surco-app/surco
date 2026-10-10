@@ -12,7 +12,15 @@ import { diffSnapshots, snapshotTags } from '../main/tagSnapshot'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { ALLOWED_UPDATE_CHANGES, unexplainedChanges } from '../main/updateContract'
 import { coverOf } from '../renderer/src/lib/release'
-import { audioMd5, coverJpg, DROP_MS, embeddedCover, listFiles, makeTrack, release } from './fixtures'
+import {
+  audioMd5,
+  coverJpg,
+  DROP_MS,
+  embeddedCover,
+  listFiles,
+  makeTrack,
+  release,
+} from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 function sha1(data: Buffer | null): string {
