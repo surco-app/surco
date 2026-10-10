@@ -11,6 +11,9 @@ import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
+import { createMediaAccess } from '../main/mediaAccess'
+import { dirRoots, FolderWatcher } from '../main/watcher'
+import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { convertAudio } from '../main/ffmpeg'
 import { isSameFile, removeRenamedOriginal } from '../main/inplace'
 import { flushConversionBatch, type LibraryHost } from '../main/libraryFlushes'
@@ -173,6 +176,8 @@ function libraryHost(errors: string[]): LibraryHost {
   }
 }
 
+let watcher: FolderWatcher | undefined
+
 function scenarioApi(
   options: ScenarioOptions,
   errors: string[],
@@ -181,20 +186,40 @@ function scenarioApi(
 ): Api {
   const reservations = createOutputReservations()
   const expandedListeners = new Set<(paths: string[]) => void>()
+  const folderListeners = new Set<(root: string, files: string[]) => void>()
+  const mediaAccess = createMediaAccess()
+  watcher = new FolderWatcher((root, files) =>
+    onWatchedFilesChanged(
+      mediaAccess,
+      reservations.isReserved,
+      (r, f) => {
+        for (const listener of folderListeners) listener(r, f)
+      },
+      root,
+      files,
+    ),
+  )
   const wired: Partial<Api> = {
     platform: process.platform,
-    expandPaths: (paths) =>
-      expandPaths(paths, (batch) => {
+    expandPaths: async (paths) => {
+      const expanded = await expandPaths(paths, (batch) => {
         for (const listener of expandedListeners) listener(batch)
-      }),
+      })
+      const roots = await dirRoots(paths)
+      if (roots.length) watcher?.watch(roots)
+      return expanded
+    },
     onExpandedBatch: (listener) => {
       expandedListeners.add(listener)
       return () => expandedListeners.delete(listener)
     },
     onOpenFiles: () => () => {},
-    onFoldersChanged: () => () => {},
+    onFoldersChanged: (listener) => {
+      folderListeners.add(listener)
+      return () => folderListeners.delete(listener)
+    },
     takePendingFiles: async () => [],
-    unwatchFolders: async () => {},
+    unwatchFolders: async () => watcher?.close(),
     recordStat: (key, by) => recordStat(key, by),
     readMeta: (path) => invokeMain('audio:meta', path),
     spectrogram: (path, priority) => invokeMain('audio:spectrogram', path, priority),
@@ -240,6 +265,10 @@ export interface Scenario {
   acceptMatch: (fileName: string, release: Release, position: string) => void
   findAndReplace: (find: string, replace: string, options?: { regex?: boolean }) => string
   rows: () => TrackItem[]
+  waitForNewTracks: () => Promise<string[]>
+  loadNewTracks: () => Promise<void>
+  dismissNewTracks: () => void
+  close: () => void
   waitForAnalysis: () => Promise<void>
   trash: SurcoTrash
   errors: string[]
@@ -329,6 +358,20 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   return {
     tracks,
     rows: () => result.current.view.tracksView,
+    waitForNewTracks: async () => {
+      await waitFor(() => expect(result.current.library.pendingNew).not.toBeNull(), {
+        timeout: 5_000,
+      })
+      return result.current.library.pendingNew?.paths ?? []
+    },
+    loadNewTracks: async () => {
+      act(() => result.current.library.loadPending())
+      await waitFor(() => expect(tracks().some((t) => t.loadingMeta)).toBe(false), {
+        timeout: 20_000,
+      })
+    },
+    dismissNewTracks: () => act(() => result.current.library.dismissPending()),
+    close: () => watcher?.close(),
     waitForAnalysis: async () => {
       await waitFor(
         () => {
