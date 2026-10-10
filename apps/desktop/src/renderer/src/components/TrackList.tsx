@@ -14,6 +14,7 @@ import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
+import { activeCleanups } from '../lib/autoClean'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
 import { prefersReducedMotion } from '../lib/motion'
@@ -22,6 +23,7 @@ import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
+import { CleanSpark } from './CleanSpark'
 import {
   CoverPlaceholder,
   listRowClass,
@@ -400,6 +402,7 @@ const TrackRow = memo(function TrackRow({
     moveSwipe(0)
   }
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
+  const cleaned = activeCleanups(t).length > 0
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
@@ -690,6 +693,16 @@ const TrackRow = memo(function TrackRow({
                   </span>
                 ) : (
                   reviewPending && <span className="w-3 shrink-0" />
+                )}
+                {cleaned && (
+                  <span
+                    data-testid="track-cleaned"
+                    className="group/dot relative flex shrink-0 items-center text-good"
+                  >
+                    <CleanSpark />
+                    <Tooltip label={tr('trackList.cleaned')} align="end" scope="dot" />
+                    <span className="sr-only">{tr('trackList.cleaned')}</span>
+                  </span>
                 )}
                 {/* A fixed slot, right-aligned under the duration, so the two read as one
                     trailing column and the review sparkle's place never moves. Wide enough for

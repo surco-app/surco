@@ -7,6 +7,7 @@ import {
   activeCleanups,
   applyAutoClean,
   cleanReasons,
+  cleanupPatcher,
   planAutoClean,
   undoCleanup,
 } from './autoClean'
@@ -268,6 +269,27 @@ describe('applyAutoClean', () => {
     const [a, b] = [row({ title: 'A  B' }), row({ title: 'Clean' })]
     const next = applyAutoClean([a, b], plan([a, b]))
     expect(next[1]).toBe(b)
+  })
+})
+
+// The ref and the state get the same patch: auto-match tells an edit from its own probe by
+// the identity of meta, so two copies of the same clean-up would read as an edit.
+describe('cleanupPatcher', () => {
+  it('hands the ref and the state the very same cleaned meta', () => {
+    const r = row({ title: 'A  B' })
+    const stage = cleanupPatcher([r], plan([r]))
+    const inRef = stage(r)
+    const inState = stage({ ...r })
+    expect(inRef.meta.title).toBe('A B')
+    expect(inState.meta).toBe(inRef.meta)
+    expect(inState.cleaned).toEqual(inRef.cleaned)
+  })
+
+  it('leaves a row whose meta moved on since the plan', () => {
+    const r = row({ title: 'A  B' })
+    const stage = cleanupPatcher([r], plan([r]))
+    const later = { ...r, meta: { ...r.meta, genre: 'House' } }
+    expect(stage(later)).toBe(later)
   })
 })
 

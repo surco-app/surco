@@ -26,6 +26,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
+    cleanedCount: 0,
     canAutoMatch: true,
     needsToken: false,
     autoMatchable: 2,
@@ -48,6 +49,17 @@ function renderBar(over: Partial<Props> = {}): Props {
 }
 
 describe('Toolbar', () => {
+  // Nothing to click: unlike the auto-match pill there is no run to cancel, only staged edits.
+  it('counts the tracks holding a load-time clean-up, and stays out of the way at zero', () => {
+    renderBar({ cleanedCount: 3 })
+    const count = screen.getByTestId('auto-clean-count')
+    expect(count).toHaveTextContent('3 cleaned')
+    expect(count.closest('button')).toBeNull()
+    cleanup()
+    renderBar({ cleanedCount: 0 })
+    expect(screen.queryByTestId('auto-clean-count')).toBeNull()
+  })
+
   // Another view (the Music review) can own the screen's main action; the convert button
   // would then act on a list the user cannot see.
   it('shows a given main action in place of Convert, even with no tracks', () => {

@@ -4516,3 +4516,91 @@ describe('App document language', () => {
     }
   })
 })
+
+// Like auto-match: what loads gets the fixes nobody would argue with, staged on the row and
+// written only by the convert or Update the user already runs.
+describe('App clean-up on load', () => {
+  const cleanApi = (
+    over: Partial<Settings>,
+    tags: Record<string, { title: string; artist: string }>,
+  ) =>
+    listApi({
+      getSettings: vi.fn().mockResolvedValue(settings(over)),
+      pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
+      readTags: vi.fn(async (path: string) => tags[path]),
+    })
+  const load = async (count: number) => {
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(count))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('field-title')
+  }
+  const spaced = {
+    '/music/a.wav': { title: 'Alpha  Mix', artist: 'Ann' },
+    '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
+  }
+
+  it('leaves every row as read while the settings are off', async () => {
+    vi.resetModules()
+    cleanApi({}, spaced)
+    await renderApp()
+    await load(2)
+    await act(async () => {})
+    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
+    expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix')
+  })
+
+  it('stages the clean value, marks the row and counts it, writing nothing', async () => {
+    vi.resetModules()
+    cleanApi({ autoCleanSpacing: true }, spaced)
+    await renderApp()
+    await load(2)
+    expect(await screen.findByTestId('auto-clean-count')).toHaveTextContent('1 cleaned')
+    const [first, second] = screen.getAllByTestId('track-row')
+    expect(within(first).getByTestId('track-cleaned')).toBeInTheDocument()
+    expect(within(second).queryByTestId('track-cleaned')).not.toBeInTheDocument()
+    expect(screen.getByTestId('field-title')).toHaveValue('Alpha Mix')
+    expect(window.api.applyListFixes).not.toHaveBeenCalled()
+  })
+
+  it('says what was cleaned in the editor and puts the value as read back on undo', async () => {
+    vi.resetModules()
+    cleanApi({ autoCleanSpacing: true }, spaced)
+    await renderApp()
+    await load(2)
+    expect(await screen.findByTestId('field-cleaned-title')).toHaveTextContent(
+      'Cleaned · joined repeated spaces',
+    )
+    fireEvent.click(screen.getByTestId('field-cleaned-undo-title'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix'))
+    expect(screen.queryByTestId('field-cleaned-title')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+  })
+
+  it('writes a name the way most of the list does only when the majority is clear', async () => {
+    vi.resetModules()
+    cleanApi(
+      { autoCleanCase: true },
+      {
+        '/music/a.wav': { title: 'Alpha', artist: 'Dj Lara' },
+        '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
+        '/music/c.wav': { title: 'Charlie', artist: 'DJ Lara' },
+        '/music/d.wav': { title: 'Delta', artist: 'DJ Lara' },
+      },
+    )
+    await renderApp()
+    await load(4)
+    expect(await screen.findByTestId('auto-clean-count')).toHaveTextContent('1 cleaned')
+    expect(screen.getByTestId('field-artist')).toHaveValue('DJ Lara')
+  })
+
+  it('leaves a close call to the review', async () => {
+    vi.resetModules()
+    listApi({ getSettings: vi.fn().mockResolvedValue(settings({ autoCleanCase: true })) })
+    await renderApp()
+    await addThree()
+    expect(await screen.findByTestId('list-review-notice')).toBeInTheDocument()
+    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+  })
+})

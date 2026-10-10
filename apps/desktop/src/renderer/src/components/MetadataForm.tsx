@@ -64,6 +64,7 @@ function renderField(
       insertSources={f.insertSources}
       cleanResult={f.cleanResult}
       formatResult={f.formatResult}
+      cleaned={f.cleaned}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}

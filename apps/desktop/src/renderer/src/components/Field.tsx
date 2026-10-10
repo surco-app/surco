@@ -3,7 +3,9 @@ import { memo, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
+import type { FieldCleanedNote } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
+import { CleanSpark } from './CleanSpark'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { SuggestionChips } from './SuggestionChips'
 
@@ -44,6 +46,7 @@ interface FieldProps {
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
+  cleaned?: FieldCleanedNote
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -67,6 +70,7 @@ export const Field = memo(function Field({
   insertSources,
   cleanResult,
   formatResult,
+  cleaned,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const { t: tr } = useTranslation()
@@ -200,6 +204,31 @@ export const Field = memo(function Field({
           />
         )}
       </span>
+      {cleaned && (
+        <span
+          data-testid={`field-cleaned-${name}`}
+          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? '' : '@[28rem]:col-start-2 @[28rem]:-mt-1'}`}
+        >
+          <span className="inline-flex items-center gap-1 font-medium text-good">
+            <CleanSpark />
+            {tr('editor.cleaned.label')}
+          </span>
+          {` · ${cleaned.reasons}`}
+          {cleaned.onUndo && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                data-testid={`field-cleaned-undo-${name}`}
+                onClick={cleaned.onUndo}
+                className="text-[var(--color-accent)] hover:underline"
+              >
+                {tr('editor.cleaned.undo')}
+              </button>
+            </>
+          )}
+        </span>
+      )}
       {invalid && (
         <span id={requiredNoteId} className="sr-only">
           {tr('editor.requiredEmpty')}

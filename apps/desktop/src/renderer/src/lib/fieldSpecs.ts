@@ -44,11 +44,18 @@ export interface FieldSpec {
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
+  cleaned?: FieldCleanedNote
   perTrack?: {
     list: TagList
     tracks: TrackItem[]
     onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   }
+}
+
+// What the load-time clean-up did to this field, and how to put the value as read back.
+export interface FieldCleanedNote {
+  reasons: string
+  onUndo?: () => void
 }
 
 // The free-text fields that host the { } insert menu — the ones where composing a
@@ -109,6 +116,7 @@ export interface BuildFieldSpecsParams {
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
+  cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
 }
 
 // The fields whose chips add a tag rather than replace the value.
@@ -153,6 +161,7 @@ export function buildFieldSpecs({
   customBulkOnChange,
   onChangeTracksMeta,
   fullReleaseDate,
+  cleanedNotes,
 }: BuildFieldSpecsParams): FieldSpec[] {
   const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
     key === 'year' && fullReleaseDate ? 'medium' : FIELD_DEFS.find((d) => d.key === key)?.width
@@ -240,6 +249,7 @@ export function buildFieldSpecs({
               !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
+            cleaned: cleanedNotes?.[def.key],
             width: widthOf(def.key),
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),

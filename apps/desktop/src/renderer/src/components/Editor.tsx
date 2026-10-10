@@ -30,6 +30,7 @@ import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
+import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
@@ -61,7 +62,7 @@ import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
 import { stripParentheticals } from '../lib/textClean'
-import type { TrackItem } from '../types'
+import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { DeclickSection } from './DeclickSection'
 import { DiscogsPanel } from './DiscogsPanel'
@@ -845,6 +846,28 @@ export const Editor = memo(function Editor({
     [onChangeAllMeta],
   )
 
+  const cleanedNotes = useMemo(
+    () =>
+      isMulti
+        ? undefined
+        : Object.fromEntries(
+            activeCleanups({ meta: item.meta, cleaned: item.cleaned }).map((field) => {
+              const record = item.cleaned?.[field] as FieldCleanup
+              const patch = undoCleanup({ meta: item.meta, cleaned: item.cleaned }, field)
+              return [
+                field,
+                {
+                  reasons: cleanReasons(record.raw, record.to)
+                    .map(({ reason, count }) => tr(`editor.cleaned.${reason}`, { count }))
+                    .join(', '),
+                  onUndo: patch && record.before !== record.to ? () => onChange(patch) : undefined,
+                },
+              ]
+            }),
+          ),
+    [isMulti, item.meta, item.cleaned, tr, onChange],
+  )
+
   // Built once per real input change. setField and tr are identity-stable, so a
   // keystroke only rebuilds the specs because item.meta changed — and the form's
   // memoized fields re-render just for the keys whose value actually moved.
@@ -876,6 +899,7 @@ export const Editor = memo(function Editor({
         customBulkOnChange,
         fullReleaseDate,
         onChangeTracksMeta,
+        cleanedNotes,
       }),
     [
       isMulti,
@@ -902,6 +926,7 @@ export const Editor = memo(function Editor({
       customBulkOnChange,
       onChangeTracksMeta,
       fullReleaseDate,
+      cleanedNotes,
     ],
   )
 

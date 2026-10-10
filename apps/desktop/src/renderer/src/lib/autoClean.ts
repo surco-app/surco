@@ -118,14 +118,28 @@ export function applyAutoClean(tracks: TrackItem[], fixes: CleanFix[]): TrackIte
   })
 }
 
-export function activeCleanups(track: TrackItem): MusicReviewField[] {
+export function cleanupPatcher(rows: TrackItem[], fixes: CleanFix[]): (t: TrackItem) => TrackItem {
+  const next = applyAutoClean(rows, fixes)
+  const staged = new Map<string, { from: TrackItem; to: TrackItem }>()
+  rows.forEach((from, i) => {
+    if (next[i] !== from) staged.set(from.id, { from, to: next[i] })
+  })
+  return (t) => {
+    const s = staged.get(t.id)
+    return s && t.meta === s.from.meta ? { ...t, meta: s.to.meta, cleaned: s.to.cleaned } : t
+  }
+}
+
+type Cleanable = Pick<TrackItem, 'meta' | 'cleaned'>
+
+export function activeCleanups(track: Cleanable): MusicReviewField[] {
   return FIELDS.filter((field) => {
     const record = track.cleaned?.[field]
     return !!record && !record.undone && (track.meta[field] ?? '') === record.to
   })
 }
 
-export function undoCleanup(track: TrackItem, field: MusicReviewField): Partial<TrackItem> | null {
+export function undoCleanup(track: Cleanable, field: MusicReviewField): Cleanable | null {
   if (!activeCleanups(track).includes(field)) return null
   const record = track.cleaned?.[field] as FieldCleanup
   return {

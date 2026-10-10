@@ -84,6 +84,7 @@ import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
+import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewPatch,
   type MatchCleanup,
@@ -486,6 +487,7 @@ export default function App(): React.JSX.Element {
     pickFiles,
     importApplePlaylist,
     updateTrack,
+    mapTracks,
     updateTracksMeta,
     patchTracks,
     clearExtrasTracks,
@@ -1896,6 +1898,28 @@ export default function App(): React.JSX.Element {
   // Memoized so the O(n) "any row still reading its tags?" scan runs only when the list
   // changes, not on every App render — the same frequent-render concern as `selected` above.
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
+  // Staged like an auto-match result. The cleaned rows go back to auto-match because it drops
+  // a probe whose track changed while it searched.
+  const cleanLoad = useStableCallback((paths: ReadonlySet<string>) => {
+    const s = settingsRef.current
+    if (!s?.autoCleanSpacing && !s?.autoCleanCase) return
+    const fixes = planAutoClean(tracksRef.current, {
+      targets: paths,
+      spacing: !!s.autoCleanSpacing,
+      unifyCase: !!s.autoCleanCase,
+      ignored: s.listReviewIgnored ?? [],
+      editing: editingRef.current,
+    })
+    if (fixes.length === 0) return
+    mapTracks(cleanupPatcher(tracksRef.current, fixes))
+    const cleaned = new Set(fixes.map((f) => f.id))
+    if (s.autoMatch && autoMatchAvailable(s))
+      enqueueAutoMatch(tracksRef.current.filter((t) => cleaned.has(t.id)))
+  })
+  const cleanedCount = useMemo(
+    () => tracks.filter((t) => activeCleanups(t).length > 0).length,
+    [tracks],
+  )
   const { watchLoad, onPathsAdded: noticeOnPathsAdded } = useListReviewNotice({
     store,
     tr,
@@ -1904,6 +1928,7 @@ export default function App(): React.JSX.Element {
     reviewOpen: review !== null,
     ignored: listReviewIgnored,
     openListReview,
+    onSettled: cleanLoad,
   })
   // One source per opening: it remembers what it wrote and trashed until the review closes.
   const reviewKind = review?.source
@@ -2003,6 +2028,7 @@ export default function App(): React.JSX.Element {
                   analysis={analysis}
                   allAnalyzed={allAnalyzed}
                   matching={matching}
+                  cleanedCount={cleanedCount}
                   canAutoMatch={!!settings && autoMatchAvailable(settings)}
                   needsToken={needsToken}
                   autoMatchable={autoMatchable}

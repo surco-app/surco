@@ -19,6 +19,7 @@ export function useListReviewNotice({
   reviewOpen,
   ignored,
   openListReview,
+  onSettled,
 }: {
   store: AppStore
   tr: TFunction
@@ -27,6 +28,7 @@ export function useListReviewNotice({
   reviewOpen: boolean
   ignored: () => readonly string[]
   openListReview: () => void
+  onSettled: (paths: ReadonlySet<string>) => void
 }) {
   const load = useRef<{ paths: Set<string>; running: number } | null>(null)
   const [handedOver, setHandedOver] = useState(0)
@@ -56,6 +58,7 @@ export function useListReviewNotice({
     const current = load.current
     if (!current || current.running > 0 || !settled) return
     load.current = null
+    onSettled(current.paths)
     if (reviewOpen) return
     const rows = tracksRef.current
     const loaded = rows.filter((t) => current.paths.has(t.inputPath)).length
@@ -89,7 +92,7 @@ export function useListReviewNotice({
       },
       duration: NOTICE_TIMEOUT_MS,
     })
-  }, [handedOver, settled, reviewOpen, tracksRef, ignored, tr, store, openListReview])
+  }, [handedOver, settled, reviewOpen, tracksRef, ignored, tr, store, openListReview, onSettled])
 
   return { watchLoad, onPathsAdded }
 }

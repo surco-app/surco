@@ -141,6 +141,7 @@ interface TrackLibrary {
   // not offer it elsewhere.
   importApplePlaylist: (persistentId: string, name: string) => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  mapTracks: (patch: (t: TrackItem) => TrackItem) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
   clearExtrasTracks: (ids: string[]) => void
@@ -733,6 +734,12 @@ export function useTrackLibrary({
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }, [])
 
+  // The same ref-then-state publish as updateTrack, for a patch that depends on each row.
+  const mapTracks = useCallback((patch: (t: TrackItem) => TrackItem): void => {
+    tracksRef.current = tracksRef.current.map(patch)
+    setTracks((prev) => prev.map(patch))
+  }, [])
+
   // Writes a shared-field edit (or a dropped cover) onto every selected track at once —
   // the multi-select write path behind the editor's common-field form.
   const updateTracksMeta = useCallback((ids: string[], metaPatch: Partial<TrackMetadata>): void => {
@@ -859,6 +866,7 @@ export function useTrackLibrary({
     pickFiles,
     importApplePlaylist,
     updateTrack,
+    mapTracks,
     updateTracksMeta,
     patchTracks,
     clearExtrasTracks,

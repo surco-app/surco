@@ -14,6 +14,7 @@ import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BatchSummary } from '../lib/batch'
+import { CleanSpark } from './CleanSpark'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -50,6 +51,8 @@ interface Props {
   // Progress of the auto-match sweep (null when idle), whether its sources can run (see
   // autoMatchAvailable), and how many tracks are still matchable (zero disables the button).
   matching: { done: number; total: number } | null
+  // Tracks still holding a clean-up staged at load, beside auto-match since it works the same way.
+  cleanedCount: number
   canAutoMatch: boolean
   // Auto-match is on in Settings but the provider it needs can't run (no Discogs token) —
   // so the sweep would silently do nothing. The button then reads as a live "add a token"
@@ -97,6 +100,7 @@ export const Toolbar = memo(function Toolbar({
   analysis,
   allAnalyzed,
   matching,
+  cleanedCount,
   canAutoMatch,
   needsToken,
   autoMatchable,
@@ -265,6 +269,15 @@ export const Toolbar = memo(function Toolbar({
                 align="end"
               />
             </button>
+            {cleanedCount > 0 && (
+              <span
+                data-testid="auto-clean-count"
+                className="flex h-8 items-center gap-1.5 px-2 text-xs font-medium tabular-nums text-good"
+              >
+                <CleanSpark className="h-3.5 w-3.5" />
+                {tr('header.cleanedCount', { count: cleanedCount })}
+              </span>
+            )}
             <button
               type="button"
               data-testid="analyze-quality"
