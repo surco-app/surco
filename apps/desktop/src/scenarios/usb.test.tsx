@@ -60,7 +60,10 @@ describe('Get a USB stick ready for the club', () => {
   })
 
   it('puts an AIFF of each track on the stick, named by the pattern', () => {
-    expect(listFiles(usb)).toEqual(['Crystal Waters - Gypsy Woman.aiff', 'Robin S - Show Me Love.aiff'])
+    expect(listFiles(usb)).toEqual([
+      'Crystal Waters - Gypsy Woman.aiff',
+      'Robin S - Show Me Love.aiff',
+    ])
   })
 
   it('carries the tags onto the stick', async () => {

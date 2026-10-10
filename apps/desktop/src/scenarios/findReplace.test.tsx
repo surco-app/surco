@@ -21,8 +21,14 @@ describe('Clean up the titles of hundreds of tracks at once', () => {
 
   beforeAll(async () => {
     folder = mkdtempSync(join(tmpdir(), 'surco-find-replace-'))
-    makeTrack(join(folder, 'a.mp3'), { title: 'Sing It Back (Promo Only)', artist: 'Moloko (Promo Only)' })
-    makeTrack(join(folder, 'b.flac'), { title: 'Finally [FREE DOWNLOAD]', artist: 'Kings Of Tomorrow' })
+    makeTrack(join(folder, 'a.mp3'), {
+      title: 'Sing It Back (Promo Only)',
+      artist: 'Moloko (Promo Only)',
+    })
+    makeTrack(join(folder, 'b.flac'), {
+      title: 'Finally [FREE DOWNLOAD]',
+      artist: 'Kings Of Tomorrow',
+    })
     makeTrack(join(folder, 'c.aiff'), { title: 'Lady', artist: 'Modjo' })
     for (const file of listFiles(folder)) sound.set(file, audioMd5(join(folder, file)))
 
@@ -52,7 +58,10 @@ describe('Clean up the titles of hundreds of tracks at once', () => {
   })
 
   it('writes the cleaned title and artist, with no space left where the text was', async () => {
-    expect(await readTags(join(folder, 'a.mp3'))).toMatchObject({ title: 'Sing It Back', artist: 'Moloko' })
+    expect(await readTags(join(folder, 'a.mp3'))).toMatchObject({
+      title: 'Sing It Back',
+      artist: 'Moloko',
+    })
     expect(await readTags(join(folder, 'b.flac'))).toMatchObject({ title: 'Finally' })
     expect(await readTags(join(folder, 'c.aiff'))).toMatchObject({ title: 'Lady', artist: 'Modjo' })
     expect(snapshotTags(join(folder, 'a.mp3'))).toEqual(

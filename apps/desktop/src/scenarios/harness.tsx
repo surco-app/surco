@@ -1,10 +1,11 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
 import { app } from 'electron'
 import type React from 'react'
+import { useRef } from 'react'
 import { expect } from 'vitest'
 import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
@@ -23,13 +24,16 @@ import { getSettings, recordConversion, recordStat, replaceSettings } from '../m
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
 import type { Api } from '../preload/api'
-import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
+import { useQualityAnalysis } from '../renderer/src/hooks/useQualityAnalysis'
+import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
+import { useTracksView } from '../renderer/src/hooks/useTracksView'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import { type Destination, fromDestination } from '../renderer/src/lib/destination'
+import { createQueryClient } from '../renderer/src/lib/queryClient'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
@@ -193,6 +197,15 @@ function scenarioApi(
     unwatchFolders: async () => {},
     recordStat: (key, by) => recordStat(key, by),
     readMeta: (path) => invokeMain('audio:meta', path),
+    spectrogram: (path, priority) => invokeMain('audio:spectrogram', path, priority),
+    loudness: (path, priority) => invokeMain('audio:loudness', path, priority),
+    bpm: (path, priority) => invokeMain('audio:bpm', path, priority),
+    key: (path, priority) => invokeMain('audio:key', path, priority),
+    clicks: (path, priority) => invokeMain('audio:clicks', path, priority),
+    waveform: (path, priority) => invokeMain('audio:waveform', path, priority),
+    waveformScan: (path) => invokeMain('audio:waveform-scan', path),
+    cancelAnalysis: (path) => invokeMain('audio:cancelAnalysis', path),
+    onWindowFocus: () => () => {},
     properties: (path) => invokeMain('audio:properties', path),
     beginConversionBatch: () => {
       beginNmlBatch()
@@ -226,6 +239,8 @@ export interface Scenario {
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
   acceptMatch: (fileName: string, release: Release, position: string) => void
   findAndReplace: (find: string, replace: string, options?: { regex?: boolean }) => string
+  rows: () => TrackItem[]
+  waitForAnalysis: () => Promise<void>
   trash: SurcoTrash
   errors: string[]
   sentToAppleMusic: string[]
@@ -248,18 +263,22 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   let running: Promise<void> | undefined
   ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic, flushes)
 
-  const queryClient = new QueryClient()
+  const queryClient = createQueryClient()
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  const rowsCache = { current: new Map() }
   const { result } = renderHook(
     () => {
+      const analyzeRef = useRef<(tracks: TrackItem[]) => void>(() => {})
       const library = useTrackLibrary({
         setSelection: () => {},
         onForget: () => {},
         onRemove: () => {},
         onClear: () => {},
-        onMetaLoaded: () => {},
+        onMetaLoaded: (track) => {
+          if (settings.autoAnalyze) analyzeRef.current([track])
+        },
         onDuplicatesSkipped: () => {},
         onNoAudioFound: () => errors.push('no audio found in the drop'),
         onMetaReadFailed: (count) => errors.push(`${count} metadata reads failed`),
@@ -273,6 +292,12 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         rereadTrackMeta: library.rereadTrackMeta,
         onProcessError: (message, name) => errors.push(`${name}: ${message}`),
       })
+      const quality = useQualityAnalysis({
+        targetsRef: library.tracksRef,
+        onErrors: (ids) => errors.push(`${ids.length} tracks could not be analysed`),
+      })
+      analyzeRef.current = (tracks) => quality.analyzeAllQuality(tracks)
+      const view = useTracksView(library.tracks, rowsCache, null)
       const confirmFlows = useConfirmFlows({
         settings,
         removeTrack: library.removeTrack,
@@ -289,7 +314,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         reportOldCopyRemoveFailure: () => errors.push('old Apple Music copy not removed'),
         tracksRef: library.tracksRef,
       })
-      return { library, processing, confirmFlows }
+      return { library, processing, confirmFlows, quality, view }
     },
     { wrapper },
   )
@@ -303,6 +328,16 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
 
   return {
     tracks,
+    rows: () => result.current.view.tracksView,
+    waitForAnalysis: async () => {
+      await waitFor(
+        () => {
+          expect(result.current.quality.analysis).toBeNull()
+          expect(result.current.view.tracksView.every((row) => row.spectrum)).toBe(true)
+        },
+        { timeout: 60_000 },
+      )
+    },
     trash,
     errors,
     sentToAppleMusic,

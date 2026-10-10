@@ -11,6 +11,7 @@ import { readTags } from '../main/ffmpeg'
 import { diffSnapshots, snapshotTags } from '../main/tagSnapshot'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { ALLOWED_UPDATE_CHANGES, unexplainedChanges } from '../main/updateContract'
+import i18n from '../renderer/src/i18n'
 import { coverOf } from '../renderer/src/lib/release'
 import {
   audioMd5,
@@ -21,7 +22,6 @@ import {
   makeTrack,
   release,
 } from './fixtures'
-import i18n from '../renderer/src/i18n'
 import { openSurco, type Scenario } from './harness'
 
 function sha1(data: Buffer | null): string {

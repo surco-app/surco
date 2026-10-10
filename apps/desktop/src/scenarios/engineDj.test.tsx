@@ -105,6 +105,7 @@ describe('Take your tracks to Engine DJ', () => {
   it('points Engine at files that exist in the output folder', async () => {
     expect(listFiles(output)).toEqual(['a.aiff', 'b.aiff'])
     const paths = await query(mdb, "SELECT path FROM Track WHERE title != 'Already There'")
-    for (const [path] of paths) expect(existsSync(join(library, String(path))), String(path)).toBe(true)
+    for (const [path] of paths)
+      expect(existsSync(join(library, String(path))), String(path)).toBe(true)
   })
 })

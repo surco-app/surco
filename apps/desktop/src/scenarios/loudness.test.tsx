@@ -9,8 +9,8 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readTags } from '../main/ffmpeg'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
-import type { NormalizeConfig } from '../shared/types'
 import i18n from '../renderer/src/i18n'
+import type { NormalizeConfig } from '../shared/types'
 import { audioMd5, DROP_MS, listFiles, loudness, makeTrack } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
@@ -33,7 +33,12 @@ describe('Even out the volume of a whole folder', () => {
 
     beforeAll(async () => {
       folder = mkdtempSync(join(tmpdir(), 'surco-loudness-'))
-      makeTrack(join(folder, 'Loud.flac'), { title: 'Loud', artist: 'A', signal: 'kick', withCues: true })
+      makeTrack(join(folder, 'Loud.flac'), {
+        title: 'Loud',
+        artist: 'A',
+        signal: 'kick',
+        withCues: true,
+      })
       makeTrack(join(folder, 'Quiet.wav'), { title: 'Quiet', artist: 'B', withCues: true })
       surco = await openSurco({ settings: { normalize: STREAMING }, destination: 'beside' })
       await surco.drop(folder)
