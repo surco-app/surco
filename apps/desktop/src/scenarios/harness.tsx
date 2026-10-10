@@ -8,12 +8,17 @@ import type React from 'react'
 import { expect } from 'vitest'
 import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
+import { addToEngineLibrary, setEngineWriteGatherMs } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
 import { convertAudio } from '../main/ffmpeg'
 import { isSameFile, removeRenamedOriginal } from '../main/inplace'
+import { flushConversionBatch, type LibraryHost } from '../main/libraryFlushes'
+import { beginNmlBatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
+import { beginRekordboxBatch } from '../main/rekordboxBatch'
+import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
@@ -122,7 +127,17 @@ function processTrackInMain(
       return `scenario-pid-${appleMusic.length}`
     },
     updateInAppleMusic: () => Promise.reject(new Error('scenario: Apple Music is not simulated')),
-    addToEngineDj: () => Promise.reject(new Error('scenario: Engine DJ is not simulated')),
+    addToEngineDj: (target, meta, coverPath, replaces) => {
+      const s = getSettings()
+      return addToEngineLibrary(
+        s.engineLibraryDir,
+        target,
+        meta,
+        s.engineDjPlaylist,
+        coverPath,
+        s.syncEngineDj ? replaces : undefined,
+      )
+    },
     allowMedia: () => {},
     existsSync,
     isSameFile,
@@ -142,7 +157,24 @@ function processTrackInMain(
   })
 }
 
-function scenarioApi(options: ScenarioOptions, errors: string[], appleMusic: string[]): Api {
+const sessions = { rekordbox: createSessionBackup({}), engine: createSessionBackup({}) }
+
+function libraryHost(errors: string[]): LibraryHost {
+  return {
+    ensureTraktorClosed: async () => true,
+    ensureRekordboxClosed: async () => true,
+    ensureEngineDjClosed: async () => true,
+    showBlockedDialog: (key) => errors.push(`library sync blocked: ${key}`),
+    reportIssue: (channel, issue) => errors.push(`${channel}: ${JSON.stringify(issue)}`),
+  }
+}
+
+function scenarioApi(
+  options: ScenarioOptions,
+  errors: string[],
+  appleMusic: string[],
+  flushes: Promise<void>[],
+): Api {
   const reservations = createOutputReservations()
   const expandedListeners = new Set<(paths: string[]) => void>()
   const wired: Partial<Api> = {
@@ -162,8 +194,15 @@ function scenarioApi(options: ScenarioOptions, errors: string[], appleMusic: str
     recordStat: (key, by) => recordStat(key, by),
     readMeta: (path) => invokeMain('audio:meta', path),
     properties: (path) => invokeMain('audio:properties', path),
-    beginConversionBatch: () => {},
-    endConversionBatch: () => {},
+    beginConversionBatch: () => {
+      beginNmlBatch()
+      beginRekordboxBatch()
+      sessions.rekordbox.reset()
+      sessions.engine.reset()
+    },
+    endConversionBatch: () => {
+      flushes.push(flushConversionBatch(libraryHost(errors), sessions))
+    },
     processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusic),
   }
   return new Proxy(wired as Api, {
@@ -201,12 +240,14 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     trashLimits(getSettings()),
   )
   configureBackupStore(trash, () => getSettings().backupPolicy)
+  setEngineWriteGatherMs(0)
   if (!ipcHandlers.has('audio:meta')) registerAudioIpc(() => {})
   const errors: string[] = []
   const sentToAppleMusic: string[] = []
   const prompts: ConfirmModal[] = []
+  const flushes: Promise<void>[] = []
   let running: Promise<void> | undefined
-  ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic)
+  ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic, flushes)
 
   const queryClient = new QueryClient()
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -324,6 +365,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       if (!running && answer === 'confirm') act(() => prompts[prompts.length - 1].onConfirm())
       await act(async () => {
         await running
+        await Promise.all(flushes)
       })
     },
   }
