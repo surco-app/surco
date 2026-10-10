@@ -52,7 +52,6 @@ import type {
   LibraryStatus,
   LibraryTagUpdate,
   ProcessJob,
-  RekordboxSyncIssue,
   SessionEdit,
   Settings,
 } from '../shared/types'
@@ -91,8 +90,7 @@ import {
 import { replaceEngineDuplicates } from './engineDuplicates'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
-import { repointEngineTracks } from './engineRepoint'
-import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
+import { ENGINE_KEYS } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
@@ -101,8 +99,16 @@ import { convertAudio, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
+import {
+  currentLibraryStatus,
+  engineFlushDeps,
+  flushConversionBatch,
+  type LibraryHost,
+  logLibraryFlush,
+  rekordboxFlushDeps,
+  traktorFlushDeps,
+} from './libraryFlushes'
 import { flushLibraryRepoints } from './libraryRepointFlush'
-import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags, tagSyncOf } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
@@ -111,7 +117,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
+import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
@@ -119,10 +125,9 @@ import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { trashRecoverably } from './recoverableTrash'
-import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
+import { beginRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
 import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
-import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
-import { repointTracks } from './rekordboxLibrary'
+import { REKORDBOX_KEYS } from './rekordboxFlush'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { createSessionBackup } from './rekordboxSessionBackup'
@@ -147,9 +152,8 @@ import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
-import { readEmbeddedCover } from './tags'
 import { createTmpManifest } from './tmpManifest'
-import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
+import { replaceDuplicatesInCollection } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
@@ -903,115 +907,27 @@ function registerIpc(): void {
     else dialog.showMessageBox(opts)
   }
 
-  const currentLibraryStatus = () => libraryStatus(getSettings(), existsSync)
-
   ipcMain.handle('library:status', (): LibraryStatus => currentLibraryStatus())
 
-  const traktorFlushDeps = (win: BrowserWindow | null) => ({
-    // Same rule as rekordbox below: the toggle grants permission, the path only says
-    // where. Before these toggles a filled-in path meant both, which is why anyone
-    // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
-    traktorNmlPath:
-      getSettings().syncTraktor && currentLibraryStatus().traktor.found
-        ? getSettings().traktorNmlPath
-        : '',
-    collectionMissing: getSettings().syncTraktor && !currentLibraryStatus().traktor.found,
+  const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
     ensureTraktorClosed: () => ensureTraktorClosed(win),
-    showBlockedDialog: () => showSyncBlockedDialog(win, 'traktorSyncBlocked'),
-    syncCollection,
-    track: activity.track.bind(activity),
-  })
-
-  const rekordboxFlushDeps = (win: BrowserWindow | null, sender: WebContents) => ({
-    // The toggle decides, not the path: a collection sitting in its standard location is
-    // not permission to write to it. An empty path here skips the flush entirely.
-    collectionPath:
-      getSettings().syncRekordbox && currentLibraryStatus().rekordbox.found
-        ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
-        : '',
-    collectionMissing: getSettings().syncRekordbox && !currentLibraryStatus().rekordbox.found,
-    ensureClosed: () => ensureRekordboxClosed(win),
-    track: activity.track.bind(activity),
-    showBlockedDialog: () => showSyncBlockedDialog(win, 'rekordboxSyncBlocked'),
-    reportIssue: (issue: RekordboxSyncIssue) => {
-      if (!sender.isDestroyed()) sender.send('rekordbox:sync-issue', issue)
+    ensureRekordboxClosed: () => ensureRekordboxClosed(win),
+    ensureEngineDjClosed: () => ensureEngineDjClosed(win),
+    showBlockedDialog: (key) => showSyncBlockedDialog(win, key),
+    reportIssue: (channel, issue) => {
+      if (!sender.isDestroyed()) sender.send(channel, issue)
     },
   })
 
-  const engineFlushDeps = (win: BrowserWindow | null, sender: WebContents) => {
-    // With no m.db there yet there is nothing to write to.
-    const engineDir = getSettings().engineLibraryDir
-    return {
-      collectionPath:
-        getSettings().syncEngineDj && currentLibraryStatus().engine.found ? engineDir : '',
-      collectionMissing: getSettings().syncEngineDj && !currentLibraryStatus().engine.found,
-      ensureClosed: () => ensureEngineDjClosed(win),
-      track: activity.track.bind(activity),
-      showBlockedDialog: () => showSyncBlockedDialog(win, 'engineSyncBlocked'),
-      reportIssue: (issue: RekordboxSyncIssue) => {
-        if (!sender.isDestroyed()) sender.send('engine:sync-issue', issue)
-      },
-    }
-  }
-
-  // Logged in every case, on top of the dialog for the app being open and the notice
-  // for everything else the run could not do (see flushLibraryRepoints).
-  const logLibraryFlush = (label: string, result: FlushResult) => {
-    if (result.written > 0 || result.blocked || result.skipped.length > 0) {
-      log.info(
-        `${label}: ${result.written} written` +
-          `${result.blocked ? `, stopped by ${result.blocked}` : ''}` +
-          // Named, not counted: three runs of "1 skipped" said nothing about WHY, and the
-          // reason is the whole diagnosis — an ambiguous match, a missing output and a
-          // track the collection never had are different problems with different fixes.
-          `${result.skipped.length > 0 ? `, skipped ${result.skipped.map((s) => `${s.reason} (${s.track})`).join('; ')}` : ''}`,
-      )
-    }
-  }
-
-  // A convert-all run ends (however it ended — finished, cancelled, or failed, the
-  // renderer calls this from its finally block): flush whatever Traktor cue patches the
-  // batch recorded into collection.nml in one write. A failure here must never surface as
-  // a conversion failure — the audio is already correct on disk by this point — so every
-  // branch below only logs and returns, never throws back at the renderer.
-  const flushBatchEnd = async (e: Electron.IpcMainEvent): Promise<void> => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    await flushTraktorSync({ ...traktorFlushDeps(win), endNmlBatch })
-    // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
-    // their own library, and closing the batch twice would hand the second one nothing.
-    const repoints = endRekordboxBatch()
-    // rekordbox next, and independently: the two collections are separate libraries, so
-    // one being open or unwritable must not stop the other from being updated.
-    const result = await flushRekordboxSync({
-      ...rekordboxFlushDeps(win, e.sender),
-      endBatch: () => repoints,
-      repointTracks: (collectionPath, repoints) =>
-        repointTracks(
-          collectionPath,
-          repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-          {
-            sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
-            readCover: readEmbeddedCover,
-          },
-        ),
-    })
-    logLibraryFlush('rekordbox repoint', result)
-    // Engine DJ last, again independently. Its library is the one the Engine destination
-    // writes to.
-    const engineResult = await flushEngineSync({
-      ...engineFlushDeps(win, e.sender),
-      endBatch: () => repoints.filter((repoint) => repoint.from !== repoint.to),
-      repointTracks: (libraryDir, list) =>
-        repointEngineTracks(
-          libraryDir,
-          list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-          { sessionBackup: (path) => engineSessionBackup.ensure(path) },
-        ),
-    })
-    logLibraryFlush('Engine DJ repoint', engineResult)
-  }
   // Queued behind any review sync still writing, and the other way round.
-  ipcMain.on('process:batch-end', (e) => serialLibraryFlush(() => flushBatchEnd(e)))
+  ipcMain.on('process:batch-end', (e) =>
+    serialLibraryFlush(() =>
+      flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), {
+        rekordbox: rekordboxSessionBackup,
+        engine: engineSessionBackup,
+      }),
+    ),
+  )
 
   // The names a metadata review fixed (or undid) follow the file into each library the way
   // an Update's do: same toggles, same prompt to close the app, same dialogs and Activity
@@ -1027,13 +943,13 @@ function registerIpc(): void {
     return syncLibraryTags({
       traktor: () =>
         flushTraktorSync({
-          ...traktorFlushDeps(win),
+          ...traktorFlushDeps(hostFor(win, e.sender)),
           endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
         }),
       rekordbox: async () => {
         const result = await flushLibraryRepoints(
           {
-            ...rekordboxFlushDeps(win, e.sender),
+            ...rekordboxFlushDeps(hostFor(win, e.sender)),
             endBatch: () => updates,
             labelOf: (u) => u.path,
             repointTracks: (collectionPath, list) =>
@@ -1050,7 +966,7 @@ function registerIpc(): void {
       engine: async () => {
         const result = await flushLibraryRepoints(
           {
-            ...engineFlushDeps(win, e.sender),
+            ...engineFlushDeps(hostFor(win, e.sender)),
             endBatch: () => withRealPath,
             labelOf: (u) => u.path,
             repointTracks: (libraryDir, list) =>
@@ -1074,9 +990,9 @@ function registerIpc(): void {
     return libraryCopyInfo(
       paths,
       {
-        rekordbox: rekordboxFlushDeps(win, e.sender).collectionPath,
-        engine: engineFlushDeps(win, e.sender).collectionPath,
-        traktor: traktorFlushDeps(win).traktorNmlPath,
+        rekordbox: rekordboxFlushDeps(hostFor(win, e.sender)).collectionPath,
+        engine: engineFlushDeps(hostFor(win, e.sender)).collectionPath,
+        traktor: traktorFlushDeps(hostFor(win, e.sender)).traktorNmlPath,
       },
       { realPath: (p: string) => realpathSync(p) },
     )
@@ -1089,9 +1005,10 @@ function registerIpc(): void {
     sender: WebContents,
   ): Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'> => {
     const realPath = (p: string) => realpathSync(p)
-    const rekordbox = rekordboxFlushDeps(win, sender)
-    const engine = engineFlushDeps(win, sender)
-    const traktor = traktorFlushDeps(win)
+    const host = hostFor(win, sender)
+    const rekordbox = rekordboxFlushDeps(host)
+    const engine = engineFlushDeps(host)
+    const traktor = traktorFlushDeps(host)
     const keys = { written: 'activity.duplicatesReplaced' }
     return {
       libraries: {
