@@ -4,19 +4,25 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import {
-  Id3v2PrivateFrame,
   type Id3v2Tag,
   Id3v2UserTextInformationFrame,
   File as TagFile,
   TagTypes,
-  type XiphComment,
 } from 'node-taglib-sharp'
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { decodeBase91, encodeBase91 } from './base91'
+import { encodeBase91 } from './base91'
 import { automaticCueOffsetMs } from './cueCalibration'
 import { convertAudio } from './ffmpeg'
-import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
+import {
+  buildTraktorTree,
+  id3WithPriv,
+  injectAiffPriv,
+  injectWavPriv,
+  readTraktorCueStart,
+  storedTree,
+  traktorCue,
+} from './traktor4Fixture'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
@@ -54,47 +60,6 @@ function cueTree(): Uint8Array {
   return buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0), traktorCue('Drop', 0, DROP_MS, 1)])
 }
 
-// A raw ID3v2.3 tag holding Traktor's PRIV frame — the shape a real Traktor-written MP3
-// or AIFF carries, and the one this matrix asserts on the way out.
-function id3WithPriv(tree: Uint8Array): Buffer {
-  const body = Buffer.concat([
-    Buffer.from('TRAKTOR4', 'latin1'),
-    Buffer.from([0]),
-    Buffer.from(tree),
-  ])
-  const head = Buffer.alloc(10)
-  head.write('PRIV', 0, 'latin1')
-  head.writeUInt32BE(body.length, 4)
-  const frame = Buffer.concat([head, body])
-  const syncsafe = (n: number) =>
-    Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
-  return Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(frame.length), frame])
-}
-
-// Appends an AIFF 'ID3 ' chunk holding the cue tag, fixing up the FORM size.
-function injectAiffPriv(path: string, tree: Uint8Array): void {
-  const base = readFileSync(path)
-  const id3 = id3WithPriv(tree)
-  const body = id3.length % 2 ? Buffer.concat([id3, Buffer.from([0])]) : id3
-  const size = Buffer.alloc(4)
-  size.writeUInt32BE(id3.length)
-  const out = Buffer.concat([base, Buffer.from('ID3 '), size, body])
-  out.writeUInt32BE(out.length - 8, 4)
-  writeFileSync(path, out)
-}
-
-// Appends a RIFF 'id3 ' chunk to a WAV, fixing up the RIFF size.
-function injectWavPriv(path: string, tree: Uint8Array): void {
-  const base = readFileSync(path)
-  const id3 = id3WithPriv(tree)
-  const body = id3.length % 2 ? Buffer.concat([id3, Buffer.from([0])]) : id3
-  const size = Buffer.alloc(4)
-  size.writeUInt32LE(id3.length)
-  const out = Buffer.concat([base, Buffer.from('id3 '), size, body])
-  out.writeUInt32LE(out.length - 8, 4)
-  writeFileSync(path, out)
-}
-
 function makeSource(dir: string, ext: string): string {
   const tree = cueTree()
   const path = join(dir, `in${ext}`)
@@ -128,25 +93,6 @@ function makeSource(dir: string, ext: string): string {
   // An MP3 carries its ID3 tag as a plain prefix, not inside a container chunk.
   else writeFileSync(path, Buffer.concat([id3WithPriv(tree), readFileSync(path)]))
   return path
-}
-
-// The cue tree as the destination container actually stores it: a PRIV frame for the ID3
-// families, the armored Vorbis comment for FLAC. Returns null when neither is present —
-// which is exactly the "cues silently lost" outcome this matrix is looking for.
-function storedTree(file: string): Uint8Array | null {
-  const f = TagFile.createFromPath(file)
-  try {
-    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-    const priv = (id3?.frames ?? []).find(
-      (fr) => fr instanceof Id3v2PrivateFrame && fr.owner === 'TRAKTOR4',
-    ) as Id3v2PrivateFrame | undefined
-    if (priv) return priv.privateData.toByteArray()
-    const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
-    const armored = xiph?.getField('TRAKTOR4')?.[0]
-    return armored ? decodeBase91(armored) : null
-  } finally {
-    f.dispose()
-  }
 }
 
 // The TXXX ffmpeg synthesises from a Vorbis comment. Traktor never reads it, so a

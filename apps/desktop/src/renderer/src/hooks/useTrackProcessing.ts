@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
@@ -20,7 +21,7 @@ import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
-import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
+import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
@@ -247,6 +248,23 @@ export function useTrackProcessing({
         track.fromAppleMusic,
         formatChosen ?? formatOverride !== undefined,
       )
+      // A destination override expands to the full facet set: main falls back to
+      // Settings per facet, so sending only the changed flag would mix the pick with
+      // whatever the settings say for the rest. The explicit overwrite pin still wins
+      // (a batch pinned it before the destination existed as an override).
+      const destination = destinationOverride ? fromDestination(destinationOverride) : undefined
+      const overwriteOriginal =
+        overwriteOverride ?? destination?.overwriteOriginal ?? settings?.overwriteOriginal
+      const keptBesideOriginal =
+        keep &&
+        jobFormat !== pickedFormat &&
+        !overwriteOriginal &&
+        (destination?.convertBesideOriginal ?? settings?.convertBesideOriginal ?? false) &&
+        !processesAudio(jobAudio(track, normalizeOverride, declickOverride, settings))
+      if (keptBesideOriginal) {
+        updateTrack(id, { status: 'idle', stage: undefined })
+        return 'skipped'
+      }
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
       // musicPersistentId deliberately survives the reset: it is what turns that next
@@ -277,13 +295,6 @@ export function useTrackProcessing({
       const autoName = settings?.autoApplyFilename
         ? renderOutputName(settings.filenameFormat, meta)
         : ''
-      // A destination override expands to the full facet set: main falls back to
-      // Settings per facet, so sending only the changed flag would mix the pick with
-      // whatever the settings say for the rest. The explicit overwrite pin still wins
-      // (a batch pinned it before the destination existed as an override).
-      const destination = destinationOverride ? fromDestination(destinationOverride) : undefined
-      const overwriteOriginal =
-        overwriteOverride ?? destination?.overwriteOriginal ?? settings?.overwriteOriginal
       const outputName = overwriteOriginal
         ? track.fileName
         : track.outputName?.trim() || autoName || track.fileName

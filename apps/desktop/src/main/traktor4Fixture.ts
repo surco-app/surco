@@ -1,3 +1,13 @@
+import { readFileSync, writeFileSync } from 'node:fs'
+import {
+  Id3v2PrivateFrame,
+  type Id3v2Tag,
+  File as TagFile,
+  TagTypes,
+  type XiphComment,
+} from 'node-taglib-sharp'
+import { decodeBase91 } from './base91'
+
 // Builders for a TRAKTOR4 tree structurally identical to what real Traktor
 // writes (TRMD > [HDR > CHKS/FMOD/VRSN, DATA > CUEP + opaque tail]), shared by
 // the traktor4 and tags test suites so both exercise the same byte layout the
@@ -100,4 +110,64 @@ export function readTraktorCueStart(tree: Uint8Array, cueIndex: number): number 
     cursor += 16 + 8
   }
   throw new Error('cue not found')
+}
+
+// A raw ID3v2.3 tag holding Traktor's PRIV frame — the shape a real Traktor-written MP3
+// or AIFF carries, and the one this matrix asserts on the way out.
+export function id3WithPriv(tree: Uint8Array): Buffer {
+  const body = Buffer.concat([
+    Buffer.from('TRAKTOR4', 'latin1'),
+    Buffer.from([0]),
+    Buffer.from(tree),
+  ])
+  const head = Buffer.alloc(10)
+  head.write('PRIV', 0, 'latin1')
+  head.writeUInt32BE(body.length, 4)
+  const frame = Buffer.concat([head, body])
+  const syncsafe = (n: number) =>
+    Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+  return Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(frame.length), frame])
+}
+
+// Appends an AIFF 'ID3 ' chunk holding the cue tag, fixing up the FORM size.
+export function injectAiffPriv(path: string, tree: Uint8Array): void {
+  const base = readFileSync(path)
+  const id3 = id3WithPriv(tree)
+  const body = id3.length % 2 ? Buffer.concat([id3, Buffer.from([0])]) : id3
+  const size = Buffer.alloc(4)
+  size.writeUInt32BE(id3.length)
+  const out = Buffer.concat([base, Buffer.from('ID3 '), size, body])
+  out.writeUInt32BE(out.length - 8, 4)
+  writeFileSync(path, out)
+}
+
+// Appends a RIFF 'id3 ' chunk to a WAV, fixing up the RIFF size.
+export function injectWavPriv(path: string, tree: Uint8Array): void {
+  const base = readFileSync(path)
+  const id3 = id3WithPriv(tree)
+  const body = id3.length % 2 ? Buffer.concat([id3, Buffer.from([0])]) : id3
+  const size = Buffer.alloc(4)
+  size.writeUInt32LE(id3.length)
+  const out = Buffer.concat([base, Buffer.from('id3 '), size, body])
+  out.writeUInt32LE(out.length - 8, 4)
+  writeFileSync(path, out)
+}
+
+// The cue tree as the destination container actually stores it: a PRIV frame for the ID3
+// families, the armored Vorbis comment for FLAC. Returns null when neither is present —
+// which is exactly the "cues silently lost" outcome this matrix is looking for.
+export function storedTree(file: string): Uint8Array | null {
+  const f = TagFile.createFromPath(file)
+  try {
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    const priv = (id3?.frames ?? []).find(
+      (fr) => fr instanceof Id3v2PrivateFrame && fr.owner === 'TRAKTOR4',
+    ) as Id3v2PrivateFrame | undefined
+    if (priv) return priv.privateData.toByteArray()
+    const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+    const armored = xiph?.getField('TRAKTOR4')?.[0]
+    return armored ? decodeBase91(armored) : null
+  } finally {
+    f.dispose()
+  }
 }
