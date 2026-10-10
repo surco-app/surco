@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readTags } from '../main/ffmpeg'
+import { snapshotTags } from '../main/tagSnapshot'
 import i18n from '../renderer/src/i18n'
 import { audioMd5, listFiles, makeTrack } from './fixtures'
 import { openSurco, type Scenario } from './harness'
@@ -54,6 +55,9 @@ describe('Clean up the titles of hundreds of tracks at once', () => {
     expect(await readTags(join(folder, 'a.mp3'))).toMatchObject({ title: 'Sing It Back', artist: 'Moloko' })
     expect(await readTags(join(folder, 'b.flac'))).toMatchObject({ title: 'Finally' })
     expect(await readTags(join(folder, 'c.aiff'))).toMatchObject({ title: 'Lady', artist: 'Modjo' })
+    expect(snapshotTags(join(folder, 'a.mp3'))).toEqual(
+      expect.arrayContaining(['id3 TIT2=Sing It Back', 'id3 TPE1=Moloko']),
+    )
   })
 
   it('only touches the tags, never the sound', () => {
