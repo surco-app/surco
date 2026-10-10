@@ -20,6 +20,7 @@ export interface AutoCleanOptions {
 export interface CleanFix extends Omit<FieldCleanup, 'undone'> {
   id: string
   field: MusicReviewField
+  disk: string
 }
 
 export type CleanReason = 'leading' | 'trailing' | 'inner' | 'invisible' | 'case'
@@ -92,9 +93,9 @@ export function planAutoClean(rows: TrackItem[], options: AutoCleanOptions): Cle
       const to = next[field]
       if (to === (spacing ? from : from.trim())) continue
       if (blocked.has(`${field}|${row.inputPath}`) || row.cleaned?.[field]) continue
-      const before = disk[field] ?? ''
-      if ((row.meta[field] ?? '') !== before) continue
-      fixes.push({ id: row.id, field, raw: from, before, to })
+      const read = disk[field] ?? ''
+      if ((row.meta[field] ?? '') !== read) continue
+      fixes.push({ id: row.id, field, raw: from, disk: read, before: spacing ? from : read, to })
     }
   }
   return fixes
@@ -106,16 +107,34 @@ export function applyAutoClean(tracks: TrackItem[], fixes: CleanFix[]): TrackIte
   for (const fix of fixes) byId.set(fix.id, [...(byId.get(fix.id) ?? []), fix])
   return tracks.map((t) => {
     let next = t
-    for (const { field, raw, before, to } of byId.get(t.id) ?? []) {
-      if ((next.meta[field] ?? '') !== before || next.cleaned?.[field]) continue
+    for (const { field, raw, disk, before, to } of byId.get(t.id) ?? []) {
+      if ((next.meta[field] ?? '') !== disk || next.cleaned?.[field]) continue
       next = {
-        ...next,
+        ...(before === disk ? next : withDiskField(next, field, before)),
         meta: { ...next.meta, [field]: to },
         cleaned: { ...next.cleaned, [field]: { raw, before, to } },
       }
     }
     return next
   })
+}
+
+// A read trims, so the snapshot holds the trimmed value and a file's own leading space never
+// counts as staged. Putting the file's spelling there makes the trim a pending change.
+function withDiskField(track: TrackItem, field: MusicReviewField, value: string): TrackItem {
+  if (track.diskSignature === undefined) return track
+  const [meta, ...rest] = JSON.parse(track.diskSignature) as [Record<string, unknown>, ...unknown[]]
+  const diskSignature = JSON.stringify([{ ...meta, [field]: value }, ...rest])
+  const raw = track.reviewRaw
+  return {
+    ...track,
+    diskSignature,
+    ...(raw?.signature === track.diskSignature && {
+      reviewRaw: { ...raw, signature: diskSignature },
+    }),
+    ...(track.processedSignature !== undefined &&
+      track.processedSignature === track.diskSignature && { processedSignature: diskSignature }),
+  }
 }
 
 export function cleanupPatcher(rows: TrackItem[], fixes: CleanFix[]): (t: TrackItem) => TrackItem {
@@ -126,7 +145,16 @@ export function cleanupPatcher(rows: TrackItem[], fixes: CleanFix[]): (t: TrackI
   })
   return (t) => {
     const s = staged.get(t.id)
-    return s && t.meta === s.from.meta ? { ...t, meta: s.to.meta, cleaned: s.to.cleaned } : t
+    return s && t.meta === s.from.meta && t.diskSignature === s.from.diskSignature
+      ? {
+          ...t,
+          meta: s.to.meta,
+          cleaned: s.to.cleaned,
+          diskSignature: s.to.diskSignature,
+          reviewRaw: s.to.reviewRaw,
+          processedSignature: s.to.processedSignature,
+        }
+      : t
   }
 }
 

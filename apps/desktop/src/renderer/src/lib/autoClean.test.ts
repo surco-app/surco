@@ -12,7 +12,9 @@ import {
   undoCleanup,
 } from './autoClean'
 import { trackSignature } from './dirty'
+import { listReviewEntries } from './listReviewEntries'
 import { spellingGroups } from './musicSpelling'
+import { hasStagedEdits } from './sessionEdits'
 
 let n = 0
 function row(
@@ -69,26 +71,49 @@ describe('planAutoClean spacing', () => {
         id: r.id,
         field: 'title',
         raw: 'Mayday  (Original mix)',
+        disk: 'Mayday  (Original mix)',
         before: 'Mayday  (Original mix)',
         to: 'Mayday (Original mix)',
       },
-      { id: r.id, field: 'artist', raw: 'Head​ Horny', before: 'Head​ Horny', to: 'Head Horny' },
+      {
+        id: r.id,
+        field: 'artist',
+        raw: 'Head​ Horny',
+        disk: 'Head​ Horny',
+        before: 'Head​ Horny',
+        to: 'Head Horny',
+      },
       {
         id: r.id,
         field: 'albumArtist',
         raw: 'Head  Horny',
+        disk: 'Head  Horny',
         before: 'Head  Horny',
         to: 'Head Horny',
       },
-      { id: r.id, field: 'album', raw: 'Fuego﻿ EP', before: 'Fuego﻿ EP', to: 'Fuego EP' },
-      { id: r.id, field: 'genre', raw: 'Tech  House', before: 'Tech  House', to: 'Tech House' },
+      {
+        id: r.id,
+        field: 'album',
+        raw: 'Fuego﻿ EP',
+        disk: 'Fuego﻿ EP',
+        before: 'Fuego﻿ EP',
+        to: 'Fuego EP',
+      },
+      {
+        id: r.id,
+        field: 'genre',
+        raw: 'Tech  House',
+        disk: 'Tech  House',
+        before: 'Tech  House',
+        to: 'Tech House',
+      },
     ])
   })
 
   it('reads the untrimmed spelling the file carries, since every read already trims', () => {
     const r = row({ title: 'Mayday' }, { title: ' Mayday' })
     expect(plan([r])).toEqual([
-      { id: r.id, field: 'title', raw: ' Mayday', before: 'Mayday', to: 'Mayday' },
+      { id: r.id, field: 'title', raw: ' Mayday', disk: 'Mayday', before: ' Mayday', to: 'Mayday' },
     ])
   })
 
@@ -165,7 +190,14 @@ describe('planAutoClean case', () => {
     const minority = row({ artist: 'Dj Lara' })
     const rows = [...many(11, { artist: 'DJ Lara' }), minority]
     expect(plan(rows)).toEqual([
-      { id: minority.id, field: 'artist', raw: 'Dj Lara', before: 'Dj Lara', to: 'DJ Lara' },
+      {
+        id: minority.id,
+        field: 'artist',
+        raw: 'Dj Lara',
+        disk: 'Dj Lara',
+        before: 'Dj Lara',
+        to: 'DJ Lara',
+      },
     ])
   })
 
@@ -219,7 +251,14 @@ describe('planAutoClean case', () => {
     const minority = row({ artist: 'Dj Lara' }, { artist: 'Dj Lara ' })
     const rows = [...many(3, { artist: 'DJ Lara' }), minority]
     expect(plan(rows, { spacing: false })).toEqual([
-      { id: minority.id, field: 'artist', raw: 'Dj Lara ', before: 'Dj Lara', to: 'DJ Lara' },
+      {
+        id: minority.id,
+        field: 'artist',
+        raw: 'Dj Lara ',
+        disk: 'Dj Lara',
+        before: 'Dj Lara',
+        to: 'DJ Lara',
+      },
     ])
   })
 })
@@ -290,6 +329,50 @@ describe('cleanupPatcher', () => {
     const stage = cleanupPatcher([r], plan([r]))
     const later = { ...r, meta: { ...r.meta, genre: 'House' } }
     expect(stage(later)).toBe(later)
+  })
+})
+
+// A read trims, so a file's leading space never shows as an edit on its own. The clean-up
+// moves the file's spelling into the disk snapshot, which makes the trim a pending change
+// the next convert or Update writes, and lets undo hand the row back exactly as on disk.
+describe('a clean-up the read already trimmed', () => {
+  const spacedRow = () => row({ title: 'Mayday' }, { title: ' Mayday' })
+
+  it('counts as a staged edit once cleaned, and not before', () => {
+    const r = spacedRow()
+    expect(hasStagedEdits(r)).toBe(false)
+    const [cleaned] = applyAutoClean([r], plan([r]))
+    expect(cleaned.meta.title).toBe('Mayday')
+    expect(hasStagedEdits(cleaned)).toBe(true)
+  })
+
+  it('keeps the review reading the file as it is', () => {
+    const r = spacedRow()
+    const [cleaned] = applyAutoClean([r], plan([r]))
+    expect(listReviewEntries([cleaned]).entries[0].title).toBe(' Mayday')
+  })
+
+  it('undoes back to the file as it is, with nothing left staged', () => {
+    const r = spacedRow()
+    const [cleaned] = applyAutoClean([r], plan([r]))
+    const undone = { ...cleaned, ...undoCleanup(cleaned, 'title') }
+    expect(undone.meta.title).toBe(' Mayday')
+    expect(hasStagedEdits(undone)).toBe(false)
+  })
+
+  it('leaves the snapshot alone when only the casing setting is on', () => {
+    const minority = row({ artist: 'Dj Lara' }, { artist: 'Dj Lara ' })
+    const rows = [...many(3, { artist: 'DJ Lara' }), minority]
+    const next = applyAutoClean(rows, plan(rows, { spacing: false }))
+    expect(next[3].diskSignature).toBe(minority.diskSignature)
+    expect(next[3].cleaned?.artist?.before).toBe('Dj Lara')
+  })
+
+  it('carries the moved snapshot through the patcher', () => {
+    const r = spacedRow()
+    const staged = cleanupPatcher([r], plan([r]))(r)
+    expect(hasStagedEdits(staged)).toBe(true)
+    expect(listReviewEntries([staged]).entries[0].title).toBe(' Mayday')
   })
 })
 

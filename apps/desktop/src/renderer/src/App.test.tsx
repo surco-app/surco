@@ -4604,3 +4604,84 @@ describe('App clean-up on load', () => {
     expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
   })
 })
+
+// "␣Mayday (Original mix)": a read trims, so the row looks clean and a file's leading space
+// would never be written away. Cleaned, the row carries the trim as a pending change.
+describe('App clean-up of a space the read already trimmed', () => {
+  const spacedApi = (
+    over: Partial<Settings>,
+    saveLastSession = vi.fn().mockResolvedValue(undefined),
+  ) => {
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'Mayday (Original mix)', artist: "Head Horny's" },
+      '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
+    }
+    const processTrack = vi.fn(() => new Promise(() => {}))
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings(over)),
+      pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
+      readMeta: vi.fn(async (path: string) => ({
+        tags: tags[path],
+        duration: 180,
+        cover: null,
+        ...(path === '/music/a.wav' && { reviewRaw: { title: ' Mayday (Original mix)' } }),
+      })),
+      saveLastSession,
+      processTrack,
+    })
+    return { saveLastSession, processTrack }
+  }
+  const load = async () => {
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('field-title')
+  }
+  const lastEdits = (save: ReturnType<typeof vi.fn>) =>
+    (save.mock.calls.at(-1)?.[1] ?? {}) as Record<string, { meta: { title: string } }>
+
+  it('keeps the trim as a pending change and writes the trimmed title', async () => {
+    vi.resetModules()
+    const { saveLastSession, processTrack } = spacedApi({ autoCleanSpacing: true })
+    await renderApp()
+    await load()
+    expect(await screen.findByTestId('field-cleaned-title')).toHaveTextContent(
+      'Cleaned · removed a leading space · Undo',
+    )
+    await waitFor(
+      () =>
+        expect(lastEdits(saveLastSession)['/music/a.wav']?.meta.title).toBe(
+          'Mayday (Original mix)',
+        ),
+      { timeout: 3000 },
+    )
+    fireEvent.click(screen.getByTestId('convert-all'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    const job = processTrack.mock.calls
+      .map((c) => (c as unknown as [{ inputPath: string; meta: { title: string } }])[0])
+      .find((j) => j.inputPath === '/music/a.wav')
+    expect(job?.meta.title).toBe('Mayday (Original mix)')
+  })
+
+  it('leaves the row clean while the setting is off', async () => {
+    vi.resetModules()
+    const { saveLastSession } = spacedApi({})
+    await renderApp()
+    await load()
+    await waitFor(() => expect(saveLastSession).toHaveBeenCalled(), { timeout: 3000 })
+    expect(lastEdits(saveLastSession)).toEqual({})
+    expect(screen.queryByTestId('field-cleaned-title')).not.toBeInTheDocument()
+  })
+
+  it('undoes back to the file as it is, with nothing left to save', async () => {
+    vi.resetModules()
+    const { saveLastSession } = spacedApi({ autoCleanSpacing: true })
+    await renderApp()
+    await load()
+    fireEvent.click(await screen.findByTestId('field-cleaned-undo-title'))
+    await waitFor(() =>
+      expect(screen.getByTestId('field-title')).toHaveValue(' Mayday (Original mix)'),
+    )
+    await waitFor(() => expect(lastEdits(saveLastSession)).toEqual({}), { timeout: 3000 })
+  })
+})
