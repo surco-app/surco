@@ -61,6 +61,10 @@ describe('Move your collection to AIFF without losing the cue points', () => {
     expect(surco.sentToAppleMusic).toEqual([])
   })
 
+  it('converts without asking, since nothing existing is rewritten', () => {
+    expect(surco.prompts).toEqual([])
+  })
+
   it('writes each AIFF next to its original, and the "(2)" the recipe warns about for one that already was AIFF', () => {
     expect(listFiles(folder)).toEqual(
       [

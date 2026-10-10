@@ -19,6 +19,8 @@ import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
 import type { Api } from '../preload/api'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
+import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
+import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import { type Destination, fromDestination } from '../renderer/src/lib/destination'
@@ -158,6 +160,7 @@ function scenarioApi(options: ScenarioOptions, errors: string[], appleMusic: str
     unwatchFolders: async () => {},
     recordStat: (key, by) => recordStat(key, by),
     readMeta: (path) => invokeMain('audio:meta', path),
+    properties: (path) => invokeMain('audio:properties', path),
     beginConversionBatch: () => {},
     endConversionBatch: () => {},
     processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusic),
@@ -177,7 +180,8 @@ function searchResultOf(release: Release): SearchResult {
 export interface Scenario {
   tracks: () => TrackItem[]
   drop: (...paths: string[]) => Promise<void>
-  convertAll: () => Promise<void>
+  convertAll: (answer?: 'confirm' | 'cancel') => Promise<void>
+  prompts: Pick<ConfirmModal, 'title' | 'message'>[]
   patchTrack: (fileName: string, patch: Partial<TrackItem>) => void
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
   acceptMatch: (fileName: string, release: Release, position: string) => void
@@ -198,6 +202,8 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   if (!ipcHandlers.has('audio:meta')) registerAudioIpc(() => {})
   const errors: string[] = []
   const sentToAppleMusic: string[] = []
+  const prompts: ConfirmModal[] = []
+  let running: Promise<void> | undefined
   ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic)
 
   const queryClient = new QueryClient()
@@ -225,7 +231,23 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         rereadTrackMeta: library.rereadTrackMeta,
         onProcessError: (message, name) => errors.push(`${name}: ${message}`),
       })
-      return { library, processing }
+      const confirmFlows = useConfirmFlows({
+        settings,
+        removeTrack: library.removeTrack,
+        updateTrack: library.updateTrack,
+        emptyTracks: (targets) => library.removeTracks(targets.map((t) => t.id)),
+        deriveTracks: () => {},
+        processAll: (...args) => {
+          running = processing.processAll(...args)
+          return running
+        },
+        openConfirm: (modal) => prompts.push(modal),
+        reportTrashFailure: (fileName) => errors.push(`trash failed: ${fileName}`),
+        onOldMusicCopyRemoved: () => {},
+        reportOldCopyRemoveFailure: () => errors.push('old Apple Music copy not removed'),
+        tracksRef: library.tracksRef,
+      })
+      return { library, processing, confirmFlows }
     },
     { wrapper },
   )
@@ -242,6 +264,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     trash,
     errors,
     sentToAppleMusic,
+    prompts,
     drop: async (...paths) => {
       await act(async () => {
         await result.current.library.addPaths(await window.api.expandPaths(paths))
@@ -274,9 +297,14 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       if (!patch) throw new Error('scenario: the match produced no patch')
       act(() => result.current.library.updateTrack(track.id, patch))
     },
-    convertAll: async () => {
+    convertAll: async (answer = 'confirm') => {
+      running = undefined
+      const asked = prompts.length
+      act(() => result.current.confirmFlows.askConvertAll(tracks()))
+      await waitFor(() => expect(running !== undefined || prompts.length > asked).toBe(true))
+      if (!running && answer === 'confirm') act(() => prompts[prompts.length - 1].onConfirm())
       await act(async () => {
-        await result.current.processing.processAll(tracks())
+        await running
       })
     },
   }

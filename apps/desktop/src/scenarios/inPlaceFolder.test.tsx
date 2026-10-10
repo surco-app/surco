@@ -21,6 +21,7 @@ import {
   makeTrack,
   release,
 } from './fixtures'
+import i18n from '../renderer/src/i18n'
 import { openSurco, type Scenario } from './harness'
 
 function sha1(data: Buffer | null): string {
@@ -91,6 +92,10 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
       ['Unsure.aiff', 'done'],
       ['Untouched.wav', 'done'],
     ])
+  })
+
+  it('asks once before touching the files', () => {
+    expect(surco.prompts.map((p) => p.title)).toEqual([i18n.t('confirm.convertInPlaceTitle')])
   })
 
   it('leaves exactly the same files in the folder, with no copies and nothing half-written', () => {
