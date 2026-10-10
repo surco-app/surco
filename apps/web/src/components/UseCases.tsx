@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ISSUES_URL } from '../config'
 import { PAGES } from '../lib/nav'
 import { matchesUseCase, USE_CASE_SOURCES, type UseCaseSource } from '../lib/useCases'
 import DownloadButton from './DownloadButton'
@@ -118,7 +119,7 @@ export default function UseCases() {
             <nav aria-label={t('useCases.tocLabel')} className="mt-10">
               <label
                 data-testid="use-case-search"
-                className="flex h-12 items-center gap-3 rounded-xl border border-line bg-surface2 px-4 transition-colors focus-within:border-blue/60"
+                className="flex h-12 items-center gap-3 rounded-xl border border-line bg-surface2 px-4 transition-colors focus-within:border-blue focus-within:ring-1 focus-within:ring-blue"
               >
                 <svg
                   aria-hidden="true"
@@ -135,14 +136,21 @@ export default function UseCases() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t('useCases.searchPlaceholder')}
-                  className="h-full min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-faint"
+                  className="h-full min-w-0 flex-1 bg-transparent text-base text-fg placeholder:text-faint focus-visible:outline-none!"
                 />
                 {filtering && (
-                  <span className="flex-none font-mono text-xs text-faint">
+                  <span aria-hidden="true" className="flex-none font-mono text-xs text-faint">
                     {t('useCases.shownCount', { shown: shown.length, total: cases.length })}
                   </span>
                 )}
               </label>
+              <p aria-live="polite" className="sr-only">
+                {shown.length === 0
+                  ? t('useCases.emptyTitle')
+                  : filtering
+                    ? t('useCases.shownCount', { shown: shown.length, total: cases.length })
+                    : ''}
+              </p>
 
               <fieldset className="-mx-6 mt-3 flex min-w-0 items-center gap-1 overflow-x-auto px-6 [scrollbar-width:none]">
                 <legend className="sr-only">{t('useCases.sourcesLabel')}</legend>
@@ -174,16 +182,27 @@ export default function UseCases() {
                 <div className="mt-8 rounded-xl border border-dashed border-line px-6 py-10 text-center">
                   <p className="text-fg">{t('useCases.emptyTitle')}</p>
                   <p className="mt-2 text-sm text-muted">{t('useCases.outroLede')}</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery('')
-                      setSource(null)
-                    }}
-                    className="mt-4 text-sm text-blue transition-colors hover:text-cyan"
-                  >
-                    {t('useCases.clearFilters')}
-                  </button>
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    <a
+                      href={ISSUES_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid="use-case-request"
+                      className="text-sm font-semibold text-blue transition-colors hover:text-cyan"
+                    >
+                      {t('useCases.requestCase')}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery('')
+                        setSource(null)
+                      }}
+                      className="text-sm text-muted transition-colors hover:text-cyan"
+                    >
+                      {t('useCases.clearFilters')}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="mt-8 space-y-8">

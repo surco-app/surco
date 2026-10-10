@@ -1313,6 +1313,7 @@
     "shownCount": "{{shown}} de {{total}}",
     "emptyTitle": "Todavía no hay una receta para eso",
     "clearFilters": "Quitar filtros",
+    "requestCase": "Pídelo en GitHub",
     "sources": {
       "folder": "Una carpeta",
       "appleMusic": "Apple Music",
