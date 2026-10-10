@@ -552,7 +552,26 @@ describe('planConversion', () => {
     ).toEqual({ codec: 'copy', ext: '.m4a' })
   })
 
-  it('re-encodes an AAC .m4a to ALAC when a filter changes the samples', async () => {
+  // A filter has to re-encode, and an AAC source re-encoded to ALAC came back three to
+  // four times bigger without sounding any better, the same bloat the copy above avoids.
+  // It stays AAC at the bitrate it already had, the way an MP3 stays MP3.
+  it('re-encodes an AAC .m4a as AAC at its own bitrate when a filter changes the samples', async () => {
+    const aac = vi.fn(async () => ({
+      codecName: 'aac',
+      sampleFmt: 'fltp',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+      bitRate: 256000,
+    }))
+    expect(await planConversion('/in.m4a', 'alac', aac, true)).toEqual({
+      codec: 'aac',
+      bitrate: '256k',
+      ext: '.m4a',
+    })
+  })
+
+  it('falls back to 256 kbps when the AAC source reports no bitrate', async () => {
     const aac = vi.fn(async () => ({
       codecName: 'aac',
       sampleFmt: 'fltp',
@@ -560,7 +579,27 @@ describe('planConversion', () => {
       sampleRate: '44100',
       channels: 2,
     }))
-    expect(await planConversion('/in.m4a', 'alac', aac, true)).toMatchObject({ codec: 'alac' })
+    expect(await planConversion('/in.m4a', 'alac', aac, true)).toMatchObject({
+      codec: 'aac',
+      bitrate: '256k',
+    })
+  })
+
+  it('still resamples an AAC .m4a to a pinned rate when a filter re-encodes it', async () => {
+    const aac = vi.fn(async () => ({
+      codecName: 'aac',
+      sampleFmt: 'fltp',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+      bitRate: 192000,
+    }))
+    expect(await planConversion('/in.m4a', 'alac', aac, true, { sampleRate: '48000' })).toEqual({
+      codec: 'aac',
+      bitrate: '192k',
+      sampleRateHz: 48000,
+      ext: '.m4a',
+    })
   })
 
   it('copies an ALAC .m4a unless the pins would change its audio', async () => {
