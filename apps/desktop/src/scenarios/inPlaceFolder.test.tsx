@@ -44,6 +44,15 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
       coverJpg: coverJpg(join(mkdtempSync(join(tmpdir(), 'surco-cover-')), 'own.jpg')),
       withCues: true,
     })
+    makeTrack(join(folder, 'Vinyl', 'Untouched.wav'), {
+      title: 'Untouched',
+      artist: 'Somebody Else',
+      album: 'Never Matched',
+      grouping: 'Peak',
+      publisher: 'Dub Label',
+      bpm: 128,
+      withCues: true,
+    })
     for (const file of listFiles(folder)) {
       const path = join(folder, file)
       before.set(file, { md5: audioMd5(path), tags: snapshotTags(path) })
@@ -64,6 +73,7 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
       ['till i come.mp3', 'done'],
       ['9pm.flac', 'done'],
       ['Unsure.aiff', 'done'],
+      ['Untouched.wav', 'done'],
     ])
   })
 
@@ -94,14 +104,19 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
     }
   })
 
-  it('keeps the tags of a track the user left unconfirmed', () => {
-    const file = join('Vinyl', 'Unsure.aiff')
-    const { added, removed } = diffSnapshots(
-      before.get(file)?.tags ?? [],
-      snapshotTags(join(folder, file)),
-    )
-    expect(unexplainedChanges(added, ALLOWED_UPDATE_CHANGES.aiff.added)).toEqual([])
-    expect(unexplainedChanges(removed, ALLOWED_UPDATE_CHANGES.aiff.removed)).toEqual([])
+  it('keeps the tags of the tracks the user left unconfirmed', () => {
+    for (const [name, ext] of [
+      ['Unsure.aiff', 'aiff'],
+      ['Untouched.wav', 'wav'],
+    ] as const) {
+      const file = join('Vinyl', name)
+      const { added, removed } = diffSnapshots(
+        before.get(file)?.tags ?? [],
+        snapshotTags(join(folder, file)),
+      )
+      expect(unexplainedChanges(added, ALLOWED_UPDATE_CHANGES[ext].added), file).toEqual([])
+      expect(unexplainedChanges(removed, ALLOWED_UPDATE_CHANGES[ext].removed), file).toEqual([])
+    }
   })
 
   it('keeps the Traktor cue points where they were', () => {
