@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
+import { readTags } from '../main/ffmpeg'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import type { NormalizeConfig } from '../shared/types'
 import i18n from '../renderer/src/i18n'
@@ -73,6 +74,7 @@ describe('Even out the volume of a whole folder', () => {
       await surco.drop(folder)
       await surco.convertAll()
       afterFirst = audioMd5(join(folder, 'Master.flac'))
+      surco.editMeta('Master.flac', { title: 'Master (Edit)' })
       await surco.convertAll()
     }, 60_000)
 
@@ -84,7 +86,8 @@ describe('Even out the volume of a whole folder', () => {
       expect(surco.prompts[0]?.title).toBe(i18n.t('confirm.convertLossyReencodeTitle'))
     })
 
-    it('leaves an evened-out track alone when it is saved a second time, instead of processing its audio again', () => {
+    it('leaves an evened-out track alone when it is saved a second time, instead of processing its audio again', async () => {
+      expect(await readTags(join(folder, 'Master.flac'))).toMatchObject({ title: 'Master (Edit)' })
       expectStreaming(join(folder, 'Master.flac'))
       expect(audioMd5(join(folder, 'Master.flac'))).toBe(afterFirst)
     })
