@@ -1291,7 +1291,7 @@
   },
   "useCases": {
     "metaTitle": "Casos de uso de Surco: cómo configurarlo para cada trabajo",
-    "metaDescription": "Recetas paso a paso para Surco. Qué ajustes tocar una vez y qué pulsar después, como poner etiquetas y carátula a una carpeta entera sin crear copias.",
+    "metaDescription": "Recetas paso a paso para Surco. Qué ajustes tocar y qué pulsar para etiquetar una carpeta entera, quitar duplicados de Apple Music, igualar el volumen o llevar tus pistas a rekordbox y Engine DJ.",
     "kicker": "Casos de uso",
     "title": "Surco para lo que vienes a hacer",
     "lede": "Recetas para los trabajos de siempre. Primero, los ajustes que se tocan una sola vez. Después, los pasos que repites cada vez.",
@@ -1584,10 +1584,9 @@
           {
             "tab": "Destino",
             "section": "Colección de Traktor",
-            "setting": "collection.nml",
-            "value": "Usar este",
+            "setting": "Actualizar la colección de Traktor al convertir",
             "optional": true,
-            "note": "Si usas Traktor. Surco te propone tu colección y con esto Traktor ve los cue points en el AIFF."
+            "note": "Si usas Traktor. Elige tu collection.nml justo debajo, y Traktor verá los cue points en el AIFF."
           }
         ],
         "steps": [
@@ -1810,6 +1809,481 @@
           {
             "label": "Convierte la pista",
             "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "review-spellings",
+        "group": "organize",
+        "macOnly": true,
+        "title": "Unifica cómo se escribe tu biblioteca de Apple Music",
+        "body": [
+          "En tu biblioteca el mismo artista aparece como «DJ Lara» y «Dj Lara», hay acentos que no casan y espacios invisibles que se colaron al copiar de una web. Quieres dejarlo todo igual sin ir pista a pista."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "section": "Colección de rekordbox",
+            "setting": "Actualizar la colección de rekordbox al convertir",
+            "optional": true,
+            "note": "Si usas rekordbox. La corrección llega también allí."
+          },
+          {
+            "tab": "Destino",
+            "section": "Biblioteca de Engine DJ",
+            "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "optional": true,
+            "note": "Si usas Engine DJ. La corrección llega también allí."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de Traktor",
+            "setting": "Actualizar la colección de Traktor al convertir",
+            "optional": true,
+            "note": "Si usas Traktor. La corrección llega también allí."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Abre la revisión",
+            "text": "En el menú Archivo, o con ⌘K, elige «Revisar metadatos en Apple Music…»."
+          },
+          {
+            "title": "Elige cómo queda cada grupo",
+            "text": "Cada grupo junta las formas de escribir lo mismo y Surco marca la más usada. Cambia la que quieras y pulsa «Unificar»."
+          },
+          {
+            "title": "Decide las posibles erratas",
+            "text": "«Rahcel» por «Rachel» sale en ámbar y nunca entra sola en la tanda. Si no son lo mismo, elige «No es el mismo»."
+          },
+          {
+            "title": "Pulsa «Aplicar»",
+            "text": "Arriba, y confirma. Al terminar, un resumen dice dónde se ha cambiado cada cosa."
+          }
+        ],
+        "points": [
+          "El cambio llega al archivo y a Apple Music, y a rekordbox, Engine DJ y Traktor si los sincronizas.",
+          "Antes de tocar nada, Surco guarda una copia de cada archivo. «Deshacer» lo deja todo como estaba.",
+          "El BPM, la tonalidad, los cue points y la valoración no se tocan.",
+          "Si un programa de DJ está abierto, Surco se ofrece a cerrarlo."
+        ],
+        "related": []
+      },
+      {
+        "id": "duplicates",
+        "group": "organize",
+        "macOnly": true,
+        "title": "Quita las pistas repetidas de Apple Music",
+        "body": [
+          "Tienes la misma canción dos veces, quizá una en MP3 y otra en AIFF, cada una en sus playlists. Quieres quedarte con la buena sin perder las playlists de la otra."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "section": "Colección de rekordbox",
+            "setting": "Actualizar la colección de rekordbox al convertir",
+            "optional": true,
+            "note": "Si usas rekordbox. Verás qué copia tiene allí cues y playlists, y sus playlists pasan a la que se queda."
+          },
+          {
+            "tab": "Destino",
+            "section": "Biblioteca de Engine DJ",
+            "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "optional": true,
+            "note": "Si usas Engine DJ. Verás qué copia tiene allí cues y playlists, y sus playlists pasan a la que se queda."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de Traktor",
+            "setting": "Actualizar la colección de Traktor al convertir",
+            "optional": true,
+            "note": "Si usas Traktor. Verás qué copia tiene allí cues y playlists, y sus playlists pasan a la que se queda."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Abre los duplicados",
+            "text": "En el menú Archivo, o con ⌘K, elige «Mostrar duplicados en Apple Music…»."
+          },
+          {
+            "title": "Compara las copias",
+            "text": "Cada una enseña su formato, cuándo la añadiste y lo que tiene en tus programas de DJ. «Copiar título» te ayuda a buscarla."
+          },
+          {
+            "title": "Elige la que se queda",
+            "text": "Surco marca de entrada la de mejor formato. Cámbiala si quieres y pulsa «Quitar»."
+          },
+          {
+            "title": "Pulsa «Aplicar»",
+            "text": "Arriba, y confirma."
+          }
+        ],
+        "points": [
+          "La copia que se queda entra en las playlists de la otra, en Apple Music y en tus programas de DJ.",
+          "Los cue points de la copia que quitas no pasan a la otra. Mira cuál tiene cues antes de elegir.",
+          "El archivo quitado va a la Papelera, o a Copias de seguridad si el disco no tiene Papelera, como un NAS.",
+          "«Deshacer» no devuelve las copias quitadas. Si te equivocas, el archivo sigue en la Papelera o en Copias de seguridad."
+        ],
+        "related": []
+      },
+      {
+        "id": "review-folder",
+        "group": "organize",
+        "title": "Revisa una carpeta antes de meterla en tu biblioteca",
+        "body": [
+          "Te has bajado un pack y quieres que llegue limpio, sin el mismo artista escrito de tres formas y sin pistas repetidas.",
+          "Funciona en Mac y en Windows."
+        ],
+        "settings": [],
+        "steps": [
+          {
+            "title": "Arrastra la carpeta a Surco",
+            "text": "Si encuentra grafías distintas o pistas repetidas, te avisa con un botón «Revisar»."
+          },
+          {
+            "title": "Abre la revisión",
+            "text": "Con ese botón, o desde el menú ⋯ de la cabecera de la lista, «Revisar metadatos»."
+          },
+          {
+            "title": "Elige cómo queda cada grupo",
+            "text": "Y qué copia se queda en cada duplicado. Aquí cada copia enseña también su calidad y su tamaño."
+          },
+          {
+            "title": "Pulsa «Aplicar»",
+            "text": "Los cambios van a los archivos y, si la pista está en Apple Music o en tus programas de DJ, también allí."
+          }
+        ],
+        "points": [
+          "Las posibles erratas nunca entran solas. Las decides tú.",
+          "Antes de tocar nada, Surco guarda una copia de cada archivo, y «Deshacer» devuelve las correcciones.",
+          "Las copias que quitas no vuelven con «Deshacer»."
+        ],
+        "related": []
+      },
+      {
+        "id": "find-replace",
+        "group": "organize",
+        "title": "Limpia los títulos de cientos de pistas a la vez",
+        "body": [
+          "Tus títulos traen «(Original Mix)», la firma de la web de donde los bajaste o un guion bajo en vez de un espacio. Quieres quitarlo de todas las pistas de una vez."
+        ],
+        "settings": [],
+        "steps": [
+          {
+            "title": "Selecciona las pistas",
+            "text": "Si no seleccionas ninguna, se usan todas las que ves en la lista."
+          },
+          {
+            "title": "Abre «Buscar y reemplazar»",
+            "text": "Con ⌘F, o Ctrl+F en Windows."
+          },
+          {
+            "title": "Escribe qué buscar y por qué cambiarlo",
+            "text": "Deja «Reemplazar por» vacío para borrarlo. Surco te dice cuántas pistas cambian y enseña ejemplos de antes y después."
+          },
+          {
+            "title": "Reemplaza y guarda",
+            "text": "Pulsa «Reemplazar en…». El cambio aún no está en los archivos hasta que pulses «Actualizar etiquetas» o «Convertir»."
+          }
+        ],
+        "points": [
+          "Funciona en el título, el artista, el álbum, el género, el grouping, el comentario, el sello y otros campos de texto.",
+          "Si sabes de expresiones regulares, marca «Regex».",
+          "Si esas firmas solo te molestan al buscar en Discogs, añádelas en Ajustes › Búsqueda › «Palabras a ignorar en las búsquedas». Se quitan al buscar, sin tocar tus etiquetas."
+        ],
+        "related": [
+          {
+            "label": "Vuela con el teclado",
+            "anchor": "atajos"
+          }
+        ]
+      },
+      {
+        "id": "beatport",
+        "group": "organize",
+        "title": "Trae el BPM y la tonalidad de Beatport",
+        "body": [
+          "Quieres que tus pistas lleguen con el BPM, la tonalidad y el nombre del mix correctos, sin escribirlos a mano.",
+          "Necesitas una cuenta de Beatport. Una gratuita vale."
+        ],
+        "settings": [
+          {
+            "tab": "Búsqueda",
+            "section": "Fuentes de búsqueda",
+            "setting": "Beatport",
+            "note": "Justo debajo escribes tu usuario y tu contraseña y pulsas «Conectar». La contraseña se guarda cifrada y solo en tu ordenador."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Notación de la tonalidad",
+            "value": "Camelot (8A)",
+            "optional": true,
+            "note": "O «Musical (Am)». Es como se escribirá la tonalidad que trae Beatport."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Busca la pista",
+            "text": "Con / en el editor. Los resultados de Beatport salen junto a los de las demás fuentes."
+          },
+          {
+            "title": "Elige el lanzamiento",
+            "text": "La pista se lleva el BPM, la tonalidad, el mix, el sello, el catálogo y la carátula."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "O «Actualizar etiquetas». Hasta entonces el archivo no cambia."
+          }
+        ],
+        "points": [
+          "El mix pasa al título, salvo que sea «Original Mix».",
+          "Si prefieres que el BPM o la tonalidad de tu archivo no cambien, desmarca su «Auto» en Ajustes › Campos.",
+          "Con la cuenta conectada, el auto-emparejado también busca en Beatport."
+        ],
+        "related": [
+          {
+            "label": "Etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz",
+            "anchor": "discogs"
+          }
+        ]
+      },
+      {
+        "id": "watched-folder",
+        "group": "organize",
+        "title": "Que lo que descargas llegue ya etiquetado",
+        "body": [
+          "Tienes una carpeta donde caen tus descargas. Quieres que cada pista nueva entre en Surco y se etiquete sola, sin volver a arrastrar nada."
+        ],
+        "settings": [
+          {
+            "tab": "Búsqueda",
+            "setting": "Auto-emparejar al importar",
+            "note": "Busca cada pista nueva en tus fuentes y le pone sus datos cuando está seguro."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra tu carpeta de descargas",
+            "text": "Desde ese momento Surco la vigila, con sus subcarpetas."
+          },
+          {
+            "title": "Descarga como siempre",
+            "text": "Cuando cae una pista nueva, Surco te avisa de que hay pistas nuevas en esa carpeta, con un botón «Cargar»."
+          },
+          {
+            "title": "Pulsa «Cargar»",
+            "text": "La pista entra en la lista y el auto-emparejado la etiqueta si está seguro."
+          },
+          {
+            "title": "Revisa y convierte",
+            "text": "Mira las que quedan «Por confirmar» y pulsa «Convertir»."
+          }
+        ],
+        "points": [
+          "El aviso se cierra solo a los pocos segundos. Las pistas que no cargues no se vuelven a ofrecer, pero puedes arrastrarlas cuando quieras.",
+          "En un NAS, una pista nueva puede tardar unos minutos en aparecer.",
+          "La vigilancia dura mientras Surco está abierto. Al volver a abrirlo, arrastra otra vez la carpeta."
+        ],
+        "related": [
+          {
+            "label": "Auto-match",
+            "anchor": "automatch"
+          }
+        ]
+      },
+      {
+        "id": "loudness",
+        "group": "sound",
+        "title": "Iguala el volumen de una carpeta entera",
+        "body": [
+          "Tus pistas vienen de sitios distintos y unas suenan mucho más fuerte que otras. Quieres que todas queden a un volumen parecido."
+        ],
+        "settings": [
+          {
+            "tab": "Procesado",
+            "setting": "Igualar volumen",
+            "value": "Streaming −14",
+            "note": "El nivel de Spotify y Apple Music, seguro para escuchar. Para cabina, «Club −9»."
+          },
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Junto al original",
+            "optional": true,
+            "note": "Las pistas igualadas se guardan al lado y las originales no se tocan."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra la carpeta a Surco",
+            "text": "También entran las pistas de sus subcarpetas."
+          },
+          {
+            "title": "Mira qué le pasará a una pista",
+            "text": "Abre cualquiera. La tarjeta «Qué pasará con esta pista» dice cuánto sube o baja y si hay que limitar los picos."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Todas se igualan con el ajuste de arriba, salvo las que hayas cambiado a mano en el editor."
+          }
+        ],
+        "points": [
+          "El techo de picos viene en −1 dBTP. Es un límite de seguridad, no un segundo objetivo.",
+          "Si para llegar hay que limitar mucho, la tarjeta te avisa de que se pierde algo de pegada.",
+          "Igualar vuelve a codificar el audio. Antes de hacerlo sobre un MP3, Surco te lo pregunta.",
+          "Guardar otra vez una pista ya igualada no la vuelve a subir.",
+          "Los cue points de Traktor se conservan, salvo en ALAC."
+        ],
+        "related": [
+          {
+            "label": "Convierte la pista",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "engine-dj",
+        "group": "library",
+        "title": "Lleva tus pistas a Engine DJ",
+        "body": [
+          "Pinchas con Denon y quieres que lo que preparas en Surco aparezca en tu biblioteca de Engine DJ, con su carátula y en una playlist.",
+          "Funciona en Mac y en Windows."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Engine DJ",
+            "note": "Justo debajo eliges tu biblioteca y la playlist donde entran las pistas, que se llama «Surco» si no la cambias."
+          },
+          {
+            "tab": "Destino",
+            "section": "Biblioteca de Engine DJ",
+            "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "optional": true,
+            "note": "Si conviertes una pista que ya está en Engine, sigue siendo la misma pista, con sus playlists y sus cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Cierra Engine DJ",
+            "text": "Surco no escribe en la biblioteca con Engine abierto, y se ofrece a cerrarlo."
+          },
+          {
+            "title": "Arrastra las pistas a Surco",
+            "text": "Las que quieres llevar a Engine."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "El botón dice «+ Engine DJ». Cada pista entra en tu biblioteca y en la playlist."
+          },
+          {
+            "title": "Abre Engine DJ",
+            "text": "La primera vez que cargues cada pista, Engine la analiza."
+          }
+        ],
+        "points": [
+          "A Engine llegan los datos, la valoración y la carátula.",
+          "Los cue points y la rejilla no. Engine los calcula al cargar la pista.",
+          "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca."
+        ],
+        "related": [
+          {
+            "label": "Llévala a tus platos",
+            "anchor": "exportar"
+          }
+        ]
+      },
+      {
+        "id": "music-playlist-set",
+        "group": "go",
+        "macOnly": true,
+        "title": "Prepara un set desde una playlist de Apple Music",
+        "body": [
+          "Tu selección ya está hecha en una playlist de Apple Music. Quieres sacarla en AIFF, o al USB, sin buscar los archivos uno a uno."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Carpeta de salida",
+            "note": "Justo debajo eliges la carpeta del set, o tu USB."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Importa la playlist",
+            "text": "Desde la pantalla de inicio o con ⌘K, elige «Importar de Apple Music» y luego la lista."
+          },
+          {
+            "title": "Mira si falta alguna",
+            "text": "Surco carga los archivos que tienes en el disco. Las pistas de streaming o sin descargar se cuentan aparte, como «sin fichero»."
+          },
+          {
+            "title": "Elige el formato",
+            "text": "En la flecha del botón de convertir, por ejemplo AIFF. Si no, cada pista se queda en su formato."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Las copias van a la carpeta y tus archivos de Apple Music no se tocan."
+          }
+        ],
+        "points": [
+          "Si a un archivo le faltan datos que Music sí tiene, como el año o la carátula, Surco los toma de Music.",
+          "Surco carga la lista tal como está. Si después añades pistas a la playlist, vuelve a importarla."
+        ],
+        "related": [
+          {
+            "label": "Convierte todas las pistas",
+            "anchor": "lote"
+          }
+        ]
+      },
+      {
+        "id": "nas",
+        "group": "go",
+        "title": "Tu música en un NAS",
+        "body": [
+          "Guardas la música en un disco de red y trabajas con ella desde Surco, en Mac o en Windows."
+        ],
+        "settings": [
+          {
+            "tab": "Nombres",
+            "setting": "Nombres de archivo sin acentos",
+            "optional": true,
+            "note": "Escribe «Royksopp» en vez de «Röyksopp» en el nombre del archivo, útil para buscar en el NAS. Las etiquetas conservan los acentos."
+          },
+          {
+            "tab": "Destino",
+            "section": "Copias de seguridad",
+            "setting": "Qué se guarda",
+            "value": "Solo si cambia el audio",
+            "note": "Así viene. Un NAS no tiene Papelera, así que lo que borras va a Copias de seguridad."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra la carpeta del NAS",
+            "text": "La primera carga de una biblioteca grande tarda algo más. Las pistas van apareciendo mientras lee."
+          },
+          {
+            "title": "Etiqueta y convierte como siempre",
+            "text": "Todo funciona igual que en un disco del ordenador."
+          },
+          {
+            "title": "Antes de borrar, mira adónde va",
+            "text": "Surco te dice adónde irá cada archivo antes de confirmar."
+          }
+        ],
+        "points": [
+          "Si eliges «Nunca» en «Qué se guarda», borrar un archivo del NAS es definitivo. Surco te avisa antes.",
+          "Las copias de seguridad duran 7 días, ocupan como mucho 2 GB y siempre dejan 5 GB libres.",
+          "Una pista nueva en una carpeta vigilada del NAS puede tardar unos minutos en aparecer."
+        ],
+        "related": [
+          {
+            "label": "Nombra y ordena los archivos",
+            "anchor": "nombres"
           }
         ]
       }

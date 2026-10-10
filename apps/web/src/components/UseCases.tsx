@@ -206,20 +206,22 @@ export default function UseCases() {
                     ))}
                   </ul>
 
-                  <p className="mt-8 text-sm text-faint">
-                    {t('useCases.relatedLabel')}{' '}
-                    {c.related.map((r, i) => (
-                      <span key={r.anchor}>
-                        {i > 0 && ' · '}
-                        <a
-                          href={`${guideHref}#${r.anchor}`}
-                          className="text-blue transition-colors hover:text-cyan"
-                        >
-                          {r.label}
-                        </a>
-                      </span>
-                    ))}
-                  </p>
+                  {c.related.length > 0 && (
+                    <p className="mt-8 text-sm text-faint">
+                      {t('useCases.relatedLabel')}{' '}
+                      {c.related.map((r, i) => (
+                        <span key={r.anchor}>
+                          {i > 0 && ' · '}
+                          <a
+                            href={`${guideHref}#${r.anchor}`}
+                            className="text-blue transition-colors hover:text-cyan"
+                          >
+                            {r.label}
+                          </a>
+                        </span>
+                      ))}
+                    </p>
+                  )}
                 </Reveal>
               </section>
             ))}

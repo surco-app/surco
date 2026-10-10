@@ -1291,7 +1291,7 @@
   },
   "useCases": {
     "metaTitle": "Surco use cases: how to set it up for each job",
-    "metaDescription": "Step by step recipes for Surco. Which settings to change once and what to click after, like adding tags and artwork to a whole folder without making copies.",
+    "metaDescription": "Step by step recipes for Surco. Which settings to change and what to click to tag a whole folder, remove Apple Music duplicates, even out loudness or take your tracks to rekordbox and Engine DJ.",
     "kicker": "Use cases",
     "title": "Surco for the job you came to do",
     "lede": "Recipes for the everyday jobs. First, the settings you change once. Then, the steps you repeat each time.",
@@ -1584,10 +1584,9 @@
           {
             "tab": "Output",
             "section": "Traktor collection",
-            "setting": "collection.nml",
-            "value": "Use this",
+            "setting": "Update the Traktor collection when converting",
             "optional": true,
-            "note": "If you use Traktor. Surco suggests your collection, and this lets Traktor see the cue points in the AIFF."
+            "note": "If you use Traktor. Pick your collection.nml just below, and Traktor will see the cue points in the AIFF."
           }
         ],
         "steps": [
@@ -1810,6 +1809,481 @@
           {
             "label": "Convert the track",
             "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "review-spellings",
+        "group": "organize",
+        "macOnly": true,
+        "title": "Make your Apple Music library spell things one way",
+        "body": [
+          "In your library the same artist shows up as “DJ Lara” and “Dj Lara”, accents don't match and invisible spaces slipped in when you copied from a website. You want it all consistent without going track by track."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "Update the rekordbox collection when converting",
+            "optional": true,
+            "note": "If you use rekordbox. The fix reaches it too."
+          },
+          {
+            "tab": "Output",
+            "section": "Engine DJ library",
+            "setting": "Update the Engine DJ library when converting",
+            "optional": true,
+            "note": "If you use Engine DJ. The fix reaches it too."
+          },
+          {
+            "tab": "Output",
+            "section": "Traktor collection",
+            "setting": "Update the Traktor collection when converting",
+            "optional": true,
+            "note": "If you use Traktor. The fix reaches it too."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Open the review",
+            "text": "From the File menu, or with ⌘K, choose “Review metadata in Apple Music…”."
+          },
+          {
+            "title": "Pick how each group should read",
+            "text": "Each group gathers the ways the same thing is written, and Surco marks the most used one. Change it if you like and click “Unify”."
+          },
+          {
+            "title": "Decide on the possible typos",
+            "text": "“Rahcel” for “Rachel” shows in amber and never joins the batch on its own. If they're not the same, choose “Not the same”."
+          },
+          {
+            "title": "Click “Apply”",
+            "text": "At the top, then confirm. When it's done, a summary says where each change went."
+          }
+        ],
+        "points": [
+          "The change reaches the file and Apple Music, and rekordbox, Engine DJ and Traktor if you sync them.",
+          "Before touching anything, Surco keeps a copy of every file. “Undo” puts it all back.",
+          "BPM, key, cue points and rating are left alone.",
+          "If a DJ app is open, Surco offers to close it."
+        ],
+        "related": []
+      },
+      {
+        "id": "duplicates",
+        "group": "organize",
+        "macOnly": true,
+        "title": "Remove repeated tracks from Apple Music",
+        "body": [
+          "You have the same song twice, maybe one as an MP3 and one as an AIFF, each in its own playlists. You want to keep the good one without losing the other one's playlists."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "Update the rekordbox collection when converting",
+            "optional": true,
+            "note": "If you use rekordbox. You'll see which copy has cues and playlists there, and its playlists move to the one you keep."
+          },
+          {
+            "tab": "Output",
+            "section": "Engine DJ library",
+            "setting": "Update the Engine DJ library when converting",
+            "optional": true,
+            "note": "If you use Engine DJ. You'll see which copy has cues and playlists there, and its playlists move to the one you keep."
+          },
+          {
+            "tab": "Output",
+            "section": "Traktor collection",
+            "setting": "Update the Traktor collection when converting",
+            "optional": true,
+            "note": "If you use Traktor. You'll see which copy has cues and playlists there, and its playlists move to the one you keep."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Open the duplicates",
+            "text": "From the File menu, or with ⌘K, choose “Show duplicates in Apple Music…”."
+          },
+          {
+            "title": "Compare the copies",
+            "text": "Each shows its format, when you added it and what it has in your DJ apps. “Copy title” helps you look it up."
+          },
+          {
+            "title": "Pick the one to keep",
+            "text": "Surco marks the best format to start with. Change it if you like and click “Remove”."
+          },
+          {
+            "title": "Click “Apply”",
+            "text": "At the top, then confirm."
+          }
+        ],
+        "points": [
+          "The copy you keep joins the other one's playlists, in Apple Music and in your DJ apps.",
+          "The cue points of the copy you remove don't move to the other. Check which one has cues before you choose.",
+          "The removed file goes to the Trash, or to Backups on a disk with no Trash, like a NAS.",
+          "“Undo” doesn't bring removed copies back. If you get it wrong, the file is still in the Trash or in Backups."
+        ],
+        "related": []
+      },
+      {
+        "id": "review-folder",
+        "group": "organize",
+        "title": "Review a folder before it goes into your library",
+        "body": [
+          "You downloaded a pack and want it to arrive clean, without the same artist spelled three ways and without repeated tracks.",
+          "It works on Mac and Windows."
+        ],
+        "settings": [],
+        "steps": [
+          {
+            "title": "Drag the folder into Surco",
+            "text": "If it finds different spellings or repeated tracks, it tells you, with a “Review” button."
+          },
+          {
+            "title": "Open the review",
+            "text": "With that button, or from the ⋯ menu in the list header, “Review metadata”."
+          },
+          {
+            "title": "Pick how each group should read",
+            "text": "And which copy stays in each duplicate. Here each copy also shows its quality and size."
+          },
+          {
+            "title": "Click “Apply”",
+            "text": "The changes go to the files and, if the track is in Apple Music or your DJ apps, there too."
+          }
+        ],
+        "points": [
+          "Possible typos never join on their own. You decide them.",
+          "Before touching anything, Surco keeps a copy of every file, and “Undo” reverts the fixes.",
+          "Copies you remove don't come back with “Undo”."
+        ],
+        "related": []
+      },
+      {
+        "id": "find-replace",
+        "group": "organize",
+        "title": "Clean up the titles of hundreds of tracks at once",
+        "body": [
+          "Your titles carry “(Original Mix)”, the tag of the site you downloaded them from, or an underscore instead of a space. You want it gone from every track in one go."
+        ],
+        "settings": [],
+        "steps": [
+          {
+            "title": "Select the tracks",
+            "text": "If you select none, every track you see in the list is used."
+          },
+          {
+            "title": "Open “Find & Replace”",
+            "text": "With ⌘F, or Ctrl+F on Windows."
+          },
+          {
+            "title": "Type what to find and what to change it to",
+            "text": "Leave “Replace with” empty to delete it. Surco tells you how many tracks change and shows examples of before and after."
+          },
+          {
+            "title": "Replace and save",
+            "text": "Click “Replace in…”. The change isn't in the files until you click “Update tags” or “Convert”."
+          }
+        ],
+        "points": [
+          "It works on title, artist, album, genre, grouping, comment, label and other text fields.",
+          "If you know regular expressions, tick “Regex”.",
+          "If those tags only bother you when searching Discogs, add them in Settings › Search › “Words to ignore in searches”. They're dropped when searching, without touching your tags."
+        ],
+        "related": [
+          {
+            "label": "Fly with the keyboard",
+            "anchor": "atajos"
+          }
+        ]
+      },
+      {
+        "id": "beatport",
+        "group": "organize",
+        "title": "Get BPM and key from Beatport",
+        "body": [
+          "You want your tracks to arrive with the right BPM, key and mix name, without typing them in.",
+          "You need a Beatport account. A free one works."
+        ],
+        "settings": [
+          {
+            "tab": "Search",
+            "section": "Search sources",
+            "setting": "Beatport",
+            "note": "Just below, type your username and password and click “Connect”. The password is stored encrypted and only on your computer."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Key notation",
+            "value": "Camelot (8A)",
+            "optional": true,
+            "note": "Or “Musical (Am)”. It's how the key from Beatport will be written."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Search for the track",
+            "text": "With / in the editor. Beatport results show up next to the other sources."
+          },
+          {
+            "title": "Pick the release",
+            "text": "The track takes its BPM, key, mix, label, catalog number and artwork."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "Or “Update tags”. Until then the file doesn't change."
+          }
+        ],
+        "points": [
+          "The mix goes into the title, unless it's “Original Mix”.",
+          "If you'd rather your file's BPM or key didn't change, untick its “Auto” in Settings › Fields.",
+          "With the account connected, auto-match searches Beatport too."
+        ],
+        "related": [
+          {
+            "label": "Tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz",
+            "anchor": "discogs"
+          }
+        ]
+      },
+      {
+        "id": "watched-folder",
+        "group": "organize",
+        "title": "Have your downloads arrive already tagged",
+        "body": [
+          "You have a folder where your downloads land. You want each new track to come into Surco and tag itself, without dragging anything again."
+        ],
+        "settings": [
+          {
+            "tab": "Search",
+            "setting": "Auto-match on import",
+            "note": "Looks up each new track in your sources and adds its details when it's sure."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag your downloads folder in",
+            "text": "From then on Surco watches it, subfolders included."
+          },
+          {
+            "title": "Download as usual",
+            "text": "When a new track lands, Surco tells you there are new tracks in that folder, with a “Load” button."
+          },
+          {
+            "title": "Click “Load”",
+            "text": "The track joins the list and auto-match tags it when it's sure."
+          },
+          {
+            "title": "Review and convert",
+            "text": "Check the ones left “To confirm” and click “Convert”."
+          }
+        ],
+        "points": [
+          "The notice closes on its own after a few seconds. Tracks you don't load aren't offered again, but you can drag them in any time.",
+          "On a NAS, a new track can take a few minutes to show up.",
+          "Watching lasts while Surco is open. When you open it again, drag the folder in again."
+        ],
+        "related": [
+          {
+            "label": "Auto-match",
+            "anchor": "automatch"
+          }
+        ]
+      },
+      {
+        "id": "loudness",
+        "group": "sound",
+        "title": "Even out the loudness of a whole folder",
+        "body": [
+          "Your tracks come from different places and some sound much louder than others. You want them all at a similar level."
+        ],
+        "settings": [
+          {
+            "tab": "Processing",
+            "setting": "Loudness normalization",
+            "value": "Streaming −14",
+            "note": "The level of Spotify and Apple Music, safe for listening. For the booth, “Club −9”."
+          },
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Next to the original",
+            "optional": true,
+            "note": "The evened-out tracks are saved alongside and the originals are left alone."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag the folder into Surco",
+            "text": "Tracks in its subfolders come in too."
+          },
+          {
+            "title": "See what will happen to a track",
+            "text": "Open any of them. The “What will happen to this track” card says how much it goes up or down and whether peaks need limiting."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "They're all evened out with the setting above, except the ones you changed by hand in the editor."
+          }
+        ],
+        "points": [
+          "The peak ceiling defaults to −1 dBTP. It's a safety limit, not a second target.",
+          "If getting there takes a lot of limiting, the card warns you some punch is lost.",
+          "Evening out re-encodes the audio. Before doing it over an MP3, Surco asks you.",
+          "Saving an evened-out track again doesn't raise it again.",
+          "Traktor cue points are kept, except in ALAC."
+        ],
+        "related": [
+          {
+            "label": "Convert the track",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "engine-dj",
+        "group": "library",
+        "title": "Take your tracks to Engine DJ",
+        "body": [
+          "You play on Denon gear and want what you prepare in Surco to show up in your Engine DJ library, with its artwork and in a playlist.",
+          "It works on Mac and Windows."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Engine DJ",
+            "note": "Just below you pick your library and the playlist the tracks go into, called “Surco” unless you change it."
+          },
+          {
+            "tab": "Output",
+            "section": "Engine DJ library",
+            "setting": "Update the Engine DJ library when converting",
+            "optional": true,
+            "note": "If you convert a track that's already in Engine, it stays the same track, with its playlists and cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Close Engine DJ",
+            "text": "Surco doesn't write to the library while Engine is open, and it offers to close it."
+          },
+          {
+            "title": "Drag the tracks into Surco",
+            "text": "The ones you want in Engine."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "The button says “+ Engine DJ”. Each track goes into your library and into the playlist."
+          },
+          {
+            "title": "Open Engine DJ",
+            "text": "The first time you load each track, Engine analyzes it."
+          }
+        ],
+        "points": [
+          "Details, rating and artwork reach Engine.",
+          "Cue points and beatgrid don't. Engine works them out when you load the track.",
+          "Before writing, Surco keeps a backup of the library."
+        ],
+        "related": [
+          {
+            "label": "Take it to your decks",
+            "anchor": "exportar"
+          }
+        ]
+      },
+      {
+        "id": "music-playlist-set",
+        "group": "go",
+        "macOnly": true,
+        "title": "Prepare a set from an Apple Music playlist",
+        "body": [
+          "Your selection is already made in an Apple Music playlist. You want it out as AIFF, or on a USB stick, without hunting for the files one by one."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Output folder",
+            "note": "Just below you pick the folder for the set, or your USB stick."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Import the playlist",
+            "text": "From the start screen or with ⌘K, choose “Import from Apple Music” and then the playlist."
+          },
+          {
+            "title": "Check whether any are missing",
+            "text": "Surco loads the files you have on disk. Streaming or undownloaded tracks are counted apart, as “with no file”."
+          },
+          {
+            "title": "Pick the format",
+            "text": "In the arrow next to the convert button, AIFF for example. Otherwise each track keeps its format."
+          },
+          {
+            "title": "Click “Convert”",
+            "text": "The copies go to the folder and your Apple Music files are left alone."
+          }
+        ],
+        "points": [
+          "If a file is missing details Music has, like the year or the artwork, Surco takes them from Music.",
+          "Surco loads the playlist as it is. If you add tracks to it later, import it again."
+        ],
+        "related": [
+          {
+            "label": "Convert every track",
+            "anchor": "lote"
+          }
+        ]
+      },
+      {
+        "id": "nas",
+        "group": "go",
+        "title": "Your music on a NAS",
+        "body": [
+          "You keep your music on a network drive and work with it from Surco, on Mac or Windows."
+        ],
+        "settings": [
+          {
+            "tab": "Naming",
+            "setting": "File names without accents",
+            "optional": true,
+            "note": "Writes “Royksopp” instead of “Röyksopp” in the file name, handy for searching the NAS. Tags keep their accents."
+          },
+          {
+            "tab": "Output",
+            "section": "Backups",
+            "setting": "What gets kept",
+            "value": "Only when the audio changes",
+            "note": "That's the default. A NAS has no Trash, so what you delete goes to Backups."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Drag the NAS folder in",
+            "text": "The first load of a big library takes a bit longer. Tracks keep appearing while it reads."
+          },
+          {
+            "title": "Tag and convert as usual",
+            "text": "Everything works the same as on your computer's own disk."
+          },
+          {
+            "title": "Before deleting, check where it goes",
+            "text": "Surco tells you where each file will go before you confirm."
+          }
+        ],
+        "points": [
+          "If you pick “Never” under “What gets kept”, deleting a file from the NAS is permanent. Surco warns you first.",
+          "Backups last 7 days, take up to 2 GB and always leave 5 GB free.",
+          "A new track in a watched NAS folder can take a few minutes to show up."
+        ],
+        "related": [
+          {
+            "label": "Name and organize the files",
+            "anchor": "nombres"
           }
         ]
       }
