@@ -806,7 +806,7 @@
           "Normalization, trimming and click repair re-encode the audio: Traktor's cues survive across MP3, AIFF, FLAC and WAV in any combination; they're lost only on ALAC, which has nowhere to keep them. They ship off and Surco warns you before converting.",
           "Re-exporting a track onto itself doesn't re-apply the normalization or declick already baked in: changing only the metadata doesn't reprocess the audio, so you never stack gain or lose a generation.",
           "Dropping to 16 bits applies dither; and Surco keeps the original's depth instead of widening it behind your back.",
-          "“Keep MP3s as MP3” stops your MP3s bloating for nothing when you export to a lossless format: they stay as they are and only their tags are updated.",
+          "“Keep MP3 and M4A files as they are” stops your MP3s and M4As bloating for nothing when you export to a lossless format. They stay as they are and only their tags are updated, unless you normalize loudness, repair clicks or trim, which re-encode the audio.",
           "You can cancel a conversion midway, and apply the same decision to the rest of the batch at once when a file already exists.",
           "If the conversion changes the audio of an original, Surco keeps a backup first; the mark on the row (or ⌘K) takes you back to the original. In Settings → Output you decide whether to keep one always, only when the audio changes (the default) or never, for how many days and up to how much space.",
           "Once converted, you can send the originals to the trash in a single action. To the trash, or to Backups on a disk without one. Only with Backups set to Never are they deleted for good, and the dialog says so before you confirm."

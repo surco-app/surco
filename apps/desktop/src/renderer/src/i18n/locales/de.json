@@ -1025,7 +1025,7 @@
     },
     "outputFormatHint": "„Wie die Quelle“ behält jede Datei in ihrem eigenen Format, sodass ein gemischter Stapel nie neu kodiert wird. AIFF/WAV/FLAC sind verlustfrei (FLAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neucodierung kopiert.",
     "keepMp3Sources": "MP3- und M4A-Dateien behalten",
-    "keepMp3SourcesHint": "Die Umwandlung einer MP3 oder M4A in ein verlustfreies Format bringt keine Qualität zurück, die Datei wird nur größer. Ist dies aktiv, werden MP3s und M4As nicht konvertiert: Die Tags werden direkt in der Originaldatei aktualisiert.",
+    "keepMp3SourcesHint": "Die Umwandlung einer MP3 oder M4A in ein verlustfreies Format bringt keine Qualität zurück, die Datei wird nur größer. Ist dies aktiv, werden MP3s und M4As nicht konvertiert: Die Tags werden direkt in der Originaldatei aktualisiert. Wenn du die Lautstärke angleichst, Klicks reparierst oder Stille kürzt, wird der Ton trotzdem neu kodiert.",
     "keepMp3SourcesOff": "Bei MP3 oder „Wie die Quelle“ nicht nötig: MP3s bleiben ohnehin MP3.",
     "mp3Quality": "MP3-Qualität",
     "mp3Qualities": {

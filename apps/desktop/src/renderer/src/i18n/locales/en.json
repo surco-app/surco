@@ -1025,7 +1025,7 @@
     },
     "outputFormatHint": "“Same as source” keeps each file in its own format, so a mixed batch is never re-encoded. AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
     "keepMp3Sources": "Keep MP3 and M4A files as they are",
-    "keepMp3SourcesHint": "Converting an MP3 or an M4A to a lossless format can't restore quality: the file only gets bigger. With this on, MP3s and M4As skip the conversion: tags are updated on the original file, right where it lives.",
+    "keepMp3SourcesHint": "Converting an MP3 or an M4A to a lossless format can't restore quality: the file only gets bigger. With this on, MP3s and M4As skip the conversion: tags are updated on the original file, right where it lives. If you normalize loudness, repair clicks or trim, the audio is re-encoded after all.",
     "keepMp3SourcesOff": "Not needed with MP3 or “Same as source”: MP3s already stay MP3.",
     "mp3Quality": "MP3 quality",
     "mp3Qualities": {

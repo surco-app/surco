@@ -9,11 +9,11 @@
         "in": "1.7.0"
       },
       {
-        "text": "The same review shows the tracks you have twice in Apple Music. It compares each copy by title, format, quality, the date you added it and what it holds in rekordbox, and a button copies the title so you can look it up. Remove one and the copy you keep joins its playlists in Music, rekordbox, Engine DJ and Traktor, and its file goes to the Trash.",
+        "text": "The same review shows the tracks you have twice in Apple Music. It compares each copy by title, format, the date you added it and what it holds in rekordbox, and a button copies the title so you can look it up. Remove one and the copy you keep joins its playlists in Music, rekordbox, Engine DJ and Traktor, and its file goes to the Trash.",
         "in": "1.7.0"
       },
       {
-        "text": "It also works on what is in your list. Drop a folder and, if it finds spellings or duplicates, Surco tells you and you open it in one click, from the button in the list's toolbar, from Tracks or from ⌘K.",
+        "text": "It also works on what is in your list. Drop a folder and, if it finds spellings or duplicates, Surco tells you and you open it in one click, from the ⋯ menu in the list's toolbar, from Tracks or from ⌘K.",
         "in": "1.7.0"
       },
       {
