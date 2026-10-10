@@ -34,6 +34,7 @@ export function exportedPatch(
       // nothing is at risk anymore: the session store stops persisting this track
       // and the reopen offer may expire freely again.
       diskSignature: trackSignature(track),
+      cleaned: undefined,
     }
   }
   // An in-place export baked the staged trim into the rewritten source: the new
@@ -69,5 +70,6 @@ export function exportedPatch(
     // anymore: the session store stops persisting this track and the reopen offer
     // may expire freely again.
     diskSignature: trackSignature(settledTrack),
+    cleaned: undefined,
   }
 }

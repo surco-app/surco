@@ -123,6 +123,16 @@ describe('exportedPatch', () => {
   // Converting writes the staged state into a file, so nothing is at risk anymore:
   // re-stamping the disk snapshot is what makes the session store stop persisting
   // this track and lets the reopen offer expire freely again.
+  // Once written, the clean-up is just the file's spelling: no mark, no count, nothing to undo.
+  it('drops the load-time clean-up record once the values are written', () => {
+    const cleaned = { title: { raw: 'Till  I Come', before: 'Till  I Come', to: 'Till I Come' } }
+    for (const result of [
+      { outputPath: '/out/a.aiff', inPlace: false },
+      { outputPath: '', inPlace: false, addedToMusicOnly: true },
+    ])
+      expect(exportedPatch(track({ cleaned }), result)).toHaveProperty('cleaned', undefined)
+  })
+
   it('marks the exported state as safely on disk', () => {
     const t = track()
     const patch = exportedPatch(t, { outputPath: '/out/a.mp3', inPlace: false })
