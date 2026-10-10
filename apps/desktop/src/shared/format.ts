@@ -100,10 +100,21 @@ export function reencodesLossyInPlace(
   filtersActive: boolean,
   fallback: OutputFormat,
   keepMp3 = false,
+  source: { fromAppleMusic?: boolean; formatChosen?: boolean; lossyM4a?: boolean } = {},
 ): boolean {
   if (!filtersActive) return false
-  const resolved = resolveJobFormat(setting, inputPath, fallback, keepMp3)
-  return resolved === 'mp3' && editsInPlace(resolved, inputPath, overwriteOriginal)
+  const resolved = resolveJobFormat(
+    setting,
+    inputPath,
+    fallback,
+    keepMp3,
+    source.fromAppleMusic,
+    source.formatChosen,
+  )
+  const lossy =
+    resolved === 'mp3' ||
+    (resolved === 'alac' && formatMatchesInput('alac', inputPath) && !!source.lossyM4a)
+  return lossy && editsInPlace(resolved, inputPath, overwriteOriginal)
 }
 
 // Whether the Keep MP3 rule applies to a whole batch. A batch pins one format for the

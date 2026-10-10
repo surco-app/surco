@@ -10,3 +10,5 @@ export const GA_MEASUREMENT_ID = 'G-QWKNHNEBQE'
 // arrives; users asked for it as an alternative to the hosted donate button.
 export const PAYPAL_ME_URL = 'https://paypal.me/vicentgozalbes'
 export const PAYPAL_ME_LABEL = 'paypal.me/vicentgozalbes'
+
+export const ISSUES_URL = 'https://github.com/surco-app/surco/issues/new'

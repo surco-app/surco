@@ -165,6 +165,40 @@ describe('reencodesLossyInPlace', () => {
     expect(reencodesLossyInPlace('aiff', '/music/song.mp3', false, false, 'aiff', true)).toBe(false)
     expect(reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', false)).toBe(false)
   })
+
+  // An iTunes purchase is AAC inside an .m4a, as lossy as an MP3: a filter re-encodes it
+  // over the only copy just the same. The extension cannot tell AAC from ALAC, so the
+  // caller says which one the file holds.
+  it('flags an AAC .m4a rewritten in place with an active filter', () => {
+    expect(
+      reencodesLossyInPlace('source', '/music/song.m4a', false, true, 'aiff', false, {
+        lossyM4a: true,
+      }),
+    ).toBe(true)
+    expect(reencodesLossyInPlace('source', '/music/song.m4a', false, true, 'aiff')).toBe(false)
+    expect(
+      reencodesLossyInPlace('source', '/music/song.m4a', false, false, 'aiff', false, {
+        lossyM4a: true,
+      }),
+    ).toBe(false)
+  })
+
+  // The conversion keeps a track imported from Apple Music in its own format unless a
+  // format was picked by hand. The warning has to resolve it the same way, or a Music MP3
+  // under an AIFF setting is re-encoded in place without being asked.
+  it('resolves an Apple Music track to its own format, as the conversion does', () => {
+    expect(
+      reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', false, {
+        fromAppleMusic: true,
+      }),
+    ).toBe(true)
+    expect(
+      reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', false, {
+        fromAppleMusic: true,
+        formatChosen: true,
+      }),
+    ).toBe(false)
+  })
 })
 
 describe('batchKeepMp3', () => {

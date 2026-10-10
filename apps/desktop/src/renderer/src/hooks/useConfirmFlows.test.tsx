@@ -621,7 +621,7 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     const run = vi.fn()
     flows.askConvertOne(run, { track: mp3, format: 'mp3', declick: 'standard' })
     expect(opened[0].destructive).toBe(true)
-    expect(opened[0].title).toBe('Re-encode the original MP3?')
+    expect(opened[0].title).toBe('Re-encode the lossy original?')
     expect(run).not.toHaveBeenCalled()
   })
 
@@ -748,6 +748,59 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
 
     flows.askConvertAll([mp3], 'source')
 
+    expect(opened[0]?.destructive).toBe(true)
+  })
+
+  // An iTunes purchase is AAC inside an .m4a, as lossy as an MP3, and a filter re-encodes
+  // it over the only copy just the same. The extension can't tell AAC from ALAC, so the
+  // flow asks the file what it holds before deciding.
+  describe('an .m4a under a filter', () => {
+    const normalize = { mode: 'peak' as const, targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+
+    it('asks before a batch re-encodes an AAC .m4a in place', async () => {
+      installApi({ properties: vi.fn().mockResolvedValue({ codec: 'aac' }) })
+      const m4a = track('a', { inputPath: '/a.m4a', fileName: 'a.m4a' })
+      const { flows, opened } = setup([m4a])
+      flows.askConvertAll([m4a], 'source', normalize)
+      await waitFor(() => expect(opened).toHaveLength(1))
+      expect(opened[0].destructive).toBe(true)
+      expect(opened[0].title).toBe('Re-encode the lossy original?')
+    })
+
+    it('asks before a single convert re-encodes an AAC .m4a in place', async () => {
+      installApi({ properties: vi.fn().mockResolvedValue({ codec: 'aac' }) })
+      const m4a = track('a', { inputPath: '/a.m4a', fileName: 'a.m4a', trim: { startSec: 1 } })
+      const { flows, opened } = setup([m4a])
+      const run = vi.fn()
+      flows.askConvertOne(run, { track: m4a, format: 'source' })
+      await waitFor(() => expect(opened).toHaveLength(1))
+      expect(run).not.toHaveBeenCalled()
+    })
+
+    // ALAC is lossless: re-encoding it loses nothing, and calling it lossy would be false.
+    it('converts an ALAC .m4a straight through', async () => {
+      installApi({ properties: vi.fn().mockResolvedValue({ codec: 'alac' }) })
+      const m4a = track('a', { inputPath: '/a.m4a', fileName: 'a.m4a', trim: { startSec: 1 } })
+      const { flows, opened } = setup([m4a])
+      const run = vi.fn()
+      flows.askConvertOne(run, { track: m4a, format: 'source' })
+      await waitFor(() => expect(run).toHaveBeenCalledTimes(1))
+      expect(opened).toHaveLength(0)
+    })
+  })
+
+  // The conversion keeps a track imported from Apple Music in its own format unless a
+  // format was picked by hand, so a Music MP3 under an AIFF setting is rewritten in place
+  // as an MP3. The warning has to see the same format, or that re-encode goes unasked.
+  it('asks before re-encoding an Apple Music MP3 kept in its own format', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', fromAppleMusic: true })
+    const { flows, opened } = setup([mp3], { settings: { outputFormat: 'aiff' } as Settings })
+    flows.askConvertAll([mp3], undefined, {
+      mode: 'peak',
+      targetLufs: -14,
+      truePeakDb: -1,
+      peakDb: -1,
+    })
     expect(opened[0]?.destructive).toBe(true)
   })
 })

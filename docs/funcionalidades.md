@@ -44,8 +44,10 @@ un relleno 16-en-24 probado, recodifican; si el resultado sería idéntico al
 origen, se copia (`keepsSource`, `ffmpeg.ts:1116-1124`). **Un MP3 a MP3 se copia
 siempre**, diga lo que diga el bitrate: recodificar con pérdidas solo degrada
 (`ffmpeg.ts:1063`). **Un `.m4a` con AAC a ALAC también se copia**, diga lo que
-digan los ajustes de calidad, salvo que un filtro cambie el audio. Pasar un AAC a ALAC no recupera nada y el fichero crecía hasta cuatro veces
-(11 MB a 44 MB). Con ALAC dentro sigue la regla de WAV, FLAC y AIFF
+digan los ajustes de calidad. Pasar un AAC a ALAC no recupera nada y el fichero crecía hasta cuatro veces
+(11 MB a 44 MB). Si un filtro cambia el audio, se recodifica a AAC al bitrate que traía (256 kbps
+si no lo declara), igual que un MP3 se recodifica a MP3, y Surco lo pregunta antes, como con el MP3
+(`reencodesLossyInPlace`, que mira el códec real porque la extensión no distingue AAC de ALAC). Con ALAC dentro sigue la regla de WAV, FLAC y AIFF
 (`ffmpeg.ts:1151-1158`; tests `ffmpeg.test.ts:541`, `:566`).
 
 La misma regla decide la etiqueta del botón: «Actualizar etiquetas» solo cuando la
@@ -1552,8 +1554,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
 14. **En el mismo formato, los ajustes de calidad solo recodifican si cambian el
     audio** (WAV, FLAC, AIFF); si el resultado sería idéntico, solo se actualizan
     las etiquetas. Un MP3 nunca se recodifica a MP3 salvo por un filtro (volumen,
-    clics, recorte). Un `.m4a` con AAC tampoco se recodifica a ALAC salvo por un filtro; con ALAC
-    dentro sigue la regla de WAV, FLAC y AIFF.
+    clics, recorte). Un `.m4a` con AAC nunca pasa a ALAC: se copia, y con un filtro se recodifica
+    a AAC al bitrate que traía, con aviso previo; con ALAC dentro sigue la regla de WAV, FLAC y AIFF.
 15. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
     debajo no se oye; por encima la pérdida de pegada es real y la app lo dice.
 16. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el

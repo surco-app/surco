@@ -711,6 +711,7 @@ interface ProbeResult {
   bitsPerRawSample: number
   sampleRate: string
   channels: number
+  bitRate?: number
 }
 
 export async function probeAudio(input: string): Promise<ProbeResult> {
@@ -722,7 +723,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
       '-select_streams',
       'a:0',
       '-show_entries',
-      'stream=codec_name,sample_fmt,bits_per_raw_sample,sample_rate,channels',
+      'stream=codec_name,sample_fmt,bits_per_raw_sample,sample_rate,channels,bit_rate',
       '-of',
       'json',
       ...forcedInputArgs(input),
@@ -737,6 +738,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
     bitsPerRawSample: Number(stream.bits_per_raw_sample) || 0,
     sampleRate: String(stream.sample_rate ?? ''),
     channels: Number(stream.channels) || 2,
+    bitRate: Number(stream.bit_rate) || undefined,
   }
 }
 
@@ -1209,6 +1211,16 @@ export async function planConversion(
     // 11 MB AAC came back at 44 MB). Holding ALAC it is lossless like the rest.
     const same = M4A_INPUT.test(input) && copyOk
     if (same && (await probeOnce()).codecName !== 'alac') return { codec: 'copy', ext: '.m4a' }
+    if (M4A_INPUT.test(input) && (await probeOnce()).codecName !== 'alac') {
+      const kbps = Math.round(((await probeOnce()).bitRate ?? 256000) / 1000)
+      const rate = await pinnedRate()
+      return {
+        codec: 'aac',
+        bitrate: `${kbps}k`,
+        ...(rate ? { sampleRateHz: rate } : {}),
+        ext: '.m4a',
+      }
+    }
     if (same && !pinned) return { codec: 'copy', ext: '.m4a' }
     const plan = await losslessPlan()
     if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.m4a' }

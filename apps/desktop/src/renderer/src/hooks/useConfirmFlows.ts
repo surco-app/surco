@@ -61,6 +61,8 @@ function risksLossyReencode(
   declick: DeclickMode | undefined,
   settings: Settings | null,
   keepMp3: boolean,
+  picked: FormatSetting | undefined,
+  lossyM4a = false,
 ): boolean {
   if (!format) return false
   return reencodesLossyInPlace(
@@ -70,7 +72,37 @@ function risksLossyReencode(
     hasActiveFilters(track, normalize, declick, settings),
     'aiff',
     keepMp3,
+    {
+      fromAppleMusic: track.fromAppleMusic,
+      formatChosen: picked !== undefined && picked !== settings?.outputFormat,
+      lossyM4a,
+    },
   )
+}
+
+async function holdsLossyAudio(tracks: TrackItem[]): Promise<boolean> {
+  for (const t of tracks) {
+    const props = await window.api.properties(t.inputPath).catch(() => null)
+    if (props && props.codec !== 'alac') return true
+  }
+  return false
+}
+
+function decideLossyReencode(
+  risks: (t: TrackItem, lossyM4a: boolean) => boolean,
+  targets: TrackItem[],
+  decide: (lossyReencode: boolean) => void,
+): void {
+  if (targets.some((t) => risks(t, false))) {
+    decide(true)
+    return
+  }
+  const m4as = targets.filter((t) => risks(t, true))
+  if (m4as.length === 0) {
+    decide(false)
+    return
+  }
+  void holdsLossyAudio(m4as).then(decide)
 }
 
 interface Params {
@@ -421,46 +453,54 @@ export function useConfirmFlows({
     // the lossy re-encode risk is checked even when overwriting is off — it is the
     // one case where a non-overwrite run still rewrites the original. No explicit pick
     // falls back to the live setting, same as processAll resolves its pinned format.
-    const lossyReencode = targets.some((t) =>
-      risksLossyReencode(
-        t,
-        format ?? settings?.outputFormat,
-        overwriting,
-        normalize,
-        declick,
-        settings,
-        keep,
-      ),
-    )
-    if (!overwriting && !lossyReencode) {
-      void processAll(targets, format, normalize, destination, declick)
-      return
-    }
-    const count = eligibleForBatch(
+    decideLossyReencode(
+      (t, lossyM4a) =>
+        risksLossyReencode(
+          t,
+          format ?? settings?.outputFormat,
+          overwriting,
+          normalize,
+          declick,
+          settings,
+          keep,
+          format,
+          lossyM4a,
+        ),
       targets,
-      settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-      settings?.customFields,
-    ).length
-    // The lossy-reencode wording explains the quality-loss reason and wins whenever it
-    // applies, overwrite or not — a plain "originals are replaced" dialog would leave
-    // out exactly the risk (a generational MP3 re-encode) the user needs to weigh.
-    openConfirm(
-      lossyReencode
-        ? {
-            title: tr('confirm.convertLossyReencodeTitle'),
-            message: tr('confirm.convertLossyReencodeMessage', { count }),
-            confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
-            destructive: true,
-            onConfirm: () => void processAll(targets, format, normalize, destination, declick),
-          }
-        : {
-            title: tr('confirm.convertInPlaceTitle'),
-            message: tr(inPlaceMessageKey(settings), { count }),
-            confirmLabel: tr('confirm.convertInPlaceConfirm'),
-            destructive: true,
-            onConfirm: () => void processAll(targets, format, normalize, destination, declick),
-          },
+      confirmConvertAll,
     )
+
+    function confirmConvertAll(lossyReencode: boolean): void {
+      if (!overwriting && !lossyReencode) {
+        void processAll(targets, format, normalize, destination, declick)
+        return
+      }
+      const count = eligibleForBatch(
+        targets,
+        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields,
+      ).length
+      // The lossy-reencode wording explains the quality-loss reason and wins whenever it
+      // applies, overwrite or not — a plain "originals are replaced" dialog would leave
+      // out exactly the risk (a generational MP3 re-encode) the user needs to weigh.
+      openConfirm(
+        lossyReencode
+          ? {
+              title: tr('confirm.convertLossyReencodeTitle'),
+              message: tr('confirm.convertLossyReencodeMessage', { count }),
+              confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
+              destructive: true,
+              onConfirm: () => void processAll(targets, format, normalize, destination, declick),
+            }
+          : {
+              title: tr('confirm.convertInPlaceTitle'),
+              message: tr(inPlaceMessageKey(settings), { count }),
+              confirmLabel: tr('confirm.convertInPlaceConfirm'),
+              destructive: true,
+              onConfirm: () => void processAll(targets, format, normalize, destination, declick),
+            },
+      )
+    }
   }
 
   // A single in-place convert unlinks its source just as a batch does, so it asks the
@@ -483,38 +523,51 @@ export function useConfirmFlows({
       : settings?.overwriteOriginal
     // Same 'source'-resolves-to-mp3 case as askConvertAll: in place regardless of
     // overwrite, so it's checked even when overwriting is off.
-    const lossyReencode = opts.track
-      ? risksLossyReencode(
-          opts.track,
+    const track = opts.track
+    if (!track) {
+      confirmConvertOne(false)
+      return
+    }
+    decideLossyReencode(
+      (t, lossyM4a) =>
+        risksLossyReencode(
+          t,
           opts.format,
           overwriting,
           opts.normalize,
           opts.declick,
           settings,
           false,
-        )
-      : false
-    if (!overwriting && !lossyReencode) {
-      run()
-      return
-    }
-    openConfirm(
-      lossyReencode
-        ? {
-            title: tr('confirm.convertLossyReencodeTitle'),
-            message: tr('confirm.convertLossyReencodeMessage', { count: 1 }),
-            confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
-            destructive: true,
-            onConfirm: run,
-          }
-        : {
-            title: tr('confirm.convertInPlaceTitle'),
-            message: tr(inPlaceMessageKey(settings), { count: 1 }),
-            confirmLabel: tr('confirm.convertInPlaceConfirm'),
-            destructive: true,
-            onConfirm: run,
-          },
+          opts.format,
+          lossyM4a,
+        ),
+      [track],
+      confirmConvertOne,
     )
+
+    function confirmConvertOne(lossyReencode: boolean): void {
+      if (!overwriting && !lossyReencode) {
+        run()
+        return
+      }
+      openConfirm(
+        lossyReencode
+          ? {
+              title: tr('confirm.convertLossyReencodeTitle'),
+              message: tr('confirm.convertLossyReencodeMessage', { count: 1 }),
+              confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
+              destructive: true,
+              onConfirm: run,
+            }
+          : {
+              title: tr('confirm.convertInPlaceTitle'),
+              message: tr(inPlaceMessageKey(settings), { count: 1 }),
+              confirmLabel: tr('confirm.convertInPlaceConfirm'),
+              destructive: true,
+              onConfirm: run,
+            },
+      )
+    }
   }
 
   return {
