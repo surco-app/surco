@@ -63,14 +63,20 @@ describe('searchHintsOf', () => {
   // A provider search is biased by artist/title and pinned by the catalog number; the
   // album rides along for the album-first setting, which the main process applies. The
   // other tags would only add noise, so the hints carry exactly these fields.
-  it('carries artist, title, album and catalog number from the metadata', () => {
+  it('carries artist, title, album, year and catalog number from the metadata', () => {
     expect(searchHintsOf(FULLY_TAGGED)).toEqual({
       artist: 'Artist',
       title: 'Track',
       album: 'Album',
+      year: '2020',
       catalogNumber: 'CAT001',
       isrc: 'USRC17607839',
     })
+  })
+
+  // A catalog lists a release by its year alone, so a full date narrows to the year.
+  it('carries the year of a track dated to the day', () => {
+    expect(searchHintsOf({ ...FULLY_TAGGED, year: '2010-03-29' }).year).toBe('2010')
   })
 
   // Deezer's ISRC lookup is exact-identity, so it needs the file's own tag verbatim,

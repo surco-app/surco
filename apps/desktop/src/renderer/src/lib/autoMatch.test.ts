@@ -632,11 +632,17 @@ describe('searchHintsFor', () => {
   it('carries the artist and album the typed search names, as an album search', () => {
     const track = {
       query: 'Duran Duran Planet Earth',
-      meta: { artist: 'Duran Duran', title: 'Planet Earth', album: 'Duran Duran (Deluxe Edition)' },
+      meta: {
+        artist: 'Duran Duran',
+        title: 'Planet Earth',
+        album: 'Duran Duran (Deluxe Edition)',
+        year: '2010',
+      },
     } as TrackItem
     expect(searchHintsFor(track, {}, 'Duran Duran Duran Duran (Deluxe Edition)')).toEqual({
       artist: 'Duran Duran',
       album: 'Duran Duran (Deluxe Edition)',
+      year: '2010',
       albumTyped: true,
     })
   })

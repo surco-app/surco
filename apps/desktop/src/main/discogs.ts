@@ -93,6 +93,7 @@ function searchKey(query: string, format: string | undefined, perPage: number): 
 interface SearchOpts {
   format?: string
   perPage?: number
+  year?: string
 }
 
 // Whether a query/id is already cached, so the rate limiter can let a repeat through without
@@ -160,8 +161,9 @@ async function fetchSearch(
   // The API's `format` param filters server-side, so the whole page comes back in the
   // wanted format instead of a mix we'd thin out afterwards.
   const formatParam = opts.format ? `&format=${encodeURIComponent(opts.format)}` : ''
+  const yearParam = opts.year ? `&year=${encodeURIComponent(opts.year)}` : ''
   const data = await api<{ results: Omit<SearchResult, 'provider'>[] }>(
-    `/database/search?type=release&${queryParams}&per_page=${perPage}${formatParam}`,
+    `/database/search?type=release&${queryParams}&per_page=${perPage}${formatParam}${yearParam}`,
     token,
     priority,
   )
@@ -192,7 +194,8 @@ async function searchStructured(
   priority?: SearchPriority,
 ): Promise<SearchResult[]> {
   const params = `artist=${encodeURIComponent(artist)}&release_title=${encodeURIComponent(title)}`
-  return runSearch(params, `structured ${artist} ${title}`, token, opts, priority)
+  const cacheId = `structured ${artist} ${title}${opts.year ? ` year ${opts.year}` : ''}`
+  return runSearch(params, cacheId, token, opts, priority)
 }
 
 // The tracklist query: an album track's title is not the release's title, so the
@@ -293,12 +296,18 @@ export async function search(
       // setting is on (the provider seam drops it otherwise), and never runs without the
       // artist: an album name alone matches anyone's release, and a hit here ends the
       // search. An edition the tag spells in brackets is retried bare, the title Discogs
-      // files it under. Nothing found falls through to the track ladder unchanged.
+      // files it under. Nothing found falls through to the track ladder unchanged. A
+      // popular album has hundreds of editions and the one the file came from can sit
+      // pages down, so the tagged year's editions are asked for first and lead.
       const album = hints?.album?.trim() ?? ''
+      const year = hints?.year?.trim()
       if (artist && album) {
         for (const albumTitle of new Set([album, bareAlbumTitle(album)])) {
+          const byYear = year
+            ? keep(await searchStructured(artist, albumTitle, token, { ...opts, year }, priority))
+            : []
           const byAlbum = keep(await searchStructured(artist, albumTitle, token, opts, priority))
-          if (byAlbum.length) return byAlbum
+          if (byYear.length || byAlbum.length) return dedupeResults([...byYear, ...byAlbum])
         }
       }
       if (artist && title) {

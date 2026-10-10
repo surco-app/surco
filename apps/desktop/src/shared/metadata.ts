@@ -1,3 +1,4 @@
+import { yearFromDate } from './tagFields'
 import type { MetaTextKey, SearchHints, TrackMetadata } from './types'
 
 // The single source of truth for the complete set of metadata fields. A Record over
@@ -65,6 +66,7 @@ export function searchHintsOf(meta: TrackMetadata): SearchHints {
     artist: meta.artist,
     title: meta.title,
     album: meta.album,
+    year: meta.year ? yearFromDate(meta.year) : undefined,
     catalogNumber: meta.catalogNumber,
     isrc: meta.isrc,
   }

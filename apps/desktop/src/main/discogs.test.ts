@@ -225,6 +225,46 @@ describe('search', () => {
     expect(second.searchParams.get('release_title')).toBe('Duran Duran')
   })
 
+  // artexjay: the 2010 set is one of 535 Duran Duran editions on Discogs and the first
+  // one from 2010 sits 33 rows down, past the page Surco asks for, so no ordering could
+  // reach it. The tagged year asks Discogs for that year's editions and they lead.
+  it('asks for the tagged year first and leads with those editions', async () => {
+    const fetchMock = mockSequence([
+      res(200, { results: [{ id: 80, title: 'Duran Duran - Notorious', year: '2010' }] }),
+      res(200, {
+        results: [
+          { id: 81, title: 'Duran Duran - Notorious', year: '1981' },
+          { id: 80, title: 'Duran Duran - Notorious', year: '2010' },
+        ],
+      }),
+    ])
+    const out = await search('duran duran planet earth', 'tok', undefined, {
+      artist: 'Duran Duran',
+      title: 'Planet Earth',
+      album: 'Notorious',
+      year: '2010',
+    })
+    expect(out.map((r) => r.id)).toEqual([80, 81])
+    const first = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(first.searchParams.get('year')).toBe('2010')
+    expect(first.searchParams.get('release_title')).toBe('Notorious')
+    const second = new URL(fetchMock.mock.calls[1][0] as string)
+    expect(second.searchParams.get('year')).toBeNull()
+  })
+
+  // A year tagged wrong (the rip's year, a typo) must not cost the album: the editions
+  // of other years still answer.
+  it('keeps the album when no edition carries the tagged year', async () => {
+    mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 82 }] })])
+    const out = await search('duran duran planet earth', 'tok', undefined, {
+      artist: 'Duran Duran',
+      title: 'Planet Earth',
+      album: 'Big Thing',
+      year: '2031',
+    })
+    expect(out.map((r) => r.id)).toEqual([82])
+  })
+
   // An album name alone ("Greatest Hits") matches anyone's release, and any hit would end
   // the search before the track is tried, so without an artist the album is not searched.
   it('does not search the album without an artist to pin it', async () => {

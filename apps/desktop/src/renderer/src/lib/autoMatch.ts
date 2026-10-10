@@ -86,7 +86,7 @@ export function searchHintsFor(
   if (names(hints.artist) && names(hints.title)) return hints
   const pinned = hints.artist?.trim() && hints.album?.trim()
   return pinned && names(hints.artist) && names(hints.album)
-    ? { artist: hints.artist, album: hints.album, albumTyped: true }
+    ? { artist: hints.artist, album: hints.album, year: hints.year, albumTyped: true }
     : {}
 }
 
