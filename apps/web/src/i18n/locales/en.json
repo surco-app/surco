@@ -1306,6 +1306,21 @@
     "outroTitle": "Missing a use case?",
     "outroLede": "Tell us what you want to do with your tracks and we'll add it here.",
     "macOnly": "Mac only",
+    "searchLabel": "Search the use cases",
+    "searchPlaceholder": "Duplicates, cue points, loudness, USB…",
+    "sourcesLabel": "Your music is in",
+    "allSources": "All",
+    "shownCount": "{{shown}} of {{total}}",
+    "emptyTitle": "No recipe for that yet",
+    "clearFilters": "Clear filters",
+    "sources": {
+      "folder": "A folder",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engineDj": "Engine DJ",
+      "usb": "USB",
+      "nas": "NAS"
+    },
     "groups": [
       {
         "id": "organize",
@@ -1337,6 +1352,7 @@
           "You have a folder of music with missing tags or no artwork. You want Surco to fill them in on its own, in the same files, with no copies and no format change.",
           "Set it up once. After that, every folder takes four steps."
         ],
+        "keywords": "tag tags metadata artwork cover autofill",
         "settings": [
           {
             "tab": "Search",
@@ -1411,6 +1427,7 @@
           "You have a track as an MP3 in your library and you get hold of the AIFF or the WAV. You want the new copy to take the old one's place, without ending up with two and without adding it to every playlist again.",
           "It only works on a Mac, because the swap goes through Apple Music. The old track has to be in your Apple Music library."
         ],
+        "keywords": "swap replace better quality mp3 aiff wav",
         "settings": [
           {
             "tab": "Output",
@@ -1488,6 +1505,7 @@
           "You add your music to Apple Music and import it into rekordbox to build your playlists. When you upgrade a track or fix its details in Surco, you want rekordbox to pick it up on its own, without importing again and without losing playlists or cue points.",
           "It only works on a Mac, because it goes through Apple Music."
         ],
+        "keywords": "sync xml library playlists",
         "settings": [
           {
             "tab": "Output",
@@ -1556,6 +1574,7 @@
           "Your music is in FLAC or WAV and your DJ software or your CDJs prefer AIFF, which also keeps the artwork. You want to convert everything in one go and keep your cue points where they were.",
           "The sound loses nothing. Going from FLAC or WAV to AIFF is lossless."
         ],
+        "keywords": "convert format flac wav cdj cues",
         "settings": [
           {
             "tab": "Format",
@@ -1631,6 +1650,7 @@
           "You downloaded a pack or bought some music and want to know if it's what it claims to be. For example, a FLAC that really comes from an MP3.",
           "This recipe changes nothing. Surco only looks and tells you what it found."
         ],
+        "keywords": "fake flac spectrum lossless kbps transcode",
         "settings": [
           {
             "tab": "Editor",
@@ -1686,6 +1706,7 @@
           "You recorded your records on the computer and want them ready to play. No needle clicks, no silence at the start and end, and with their Discogs details.",
           "Surco doesn't cut a whole side into tracks. You need one file per track."
         ],
+        "keywords": "vinyl record clicks needle silence trim",
         "settings": [
           {
             "tab": "Processing",
@@ -1752,6 +1773,7 @@
         "body": [
           "You want to take a selection on a USB stick, with clear names and in a format any CDJ reads. Your files at home stay untouched."
         ],
+        "keywords": "stick cdj club export",
         "settings": [
           {
             "tab": "Output",
@@ -1820,6 +1842,7 @@
         "body": [
           "In your library the same artist shows up as “DJ Lara” and “Dj Lara”, accents don't match and invisible spaces slipped in when you copied from a website. You want it all consistent without going track by track."
         ],
+        "keywords": "capitals artists names accents spaces",
         "settings": [
           {
             "tab": "Output",
@@ -1877,6 +1900,7 @@
         "body": [
           "You have the same song twice, maybe one as an MP3 and one as an AIFF, each in its own playlists. You want to keep the good one without losing the other one's playlists."
         ],
+        "keywords": "duplicates doubles",
         "settings": [
           {
             "tab": "Output",
@@ -1934,6 +1958,7 @@
           "You downloaded a pack and want it to arrive clean, without the same artist spelled three ways and without repeated tracks.",
           "It works on Mac and Windows."
         ],
+        "keywords": "pack downloads clean",
         "settings": [],
         "steps": [
           {
@@ -1967,6 +1992,7 @@
         "body": [
           "Your titles carry “(Original Mix)”, the tag of the site you downloaded them from, or an underscore instead of a space. You want it gone from every track in one go."
         ],
+        "keywords": "find replace original mix underscore",
         "settings": [],
         "steps": [
           {
@@ -2006,6 +2032,7 @@
           "You want your tracks to arrive with the right BPM, key and mix name, without typing them in.",
           "You need a Beatport account. A free one works."
         ],
+        "keywords": "bpm key mix",
         "settings": [
           {
             "tab": "Search",
@@ -2054,6 +2081,7 @@
         "body": [
           "You have a folder where your downloads land. You want each new track to come into Surco and tag itself, without dragging anything again."
         ],
+        "keywords": "watch automatic downloads folder",
         "settings": [
           {
             "tab": "Search",
@@ -2098,6 +2126,7 @@
         "body": [
           "Your tracks come from different places and some sound much louder than others. You want them all at a similar level."
         ],
+        "keywords": "volume normalize lufs gain",
         "settings": [
           {
             "tab": "Processing",
@@ -2149,6 +2178,7 @@
           "You play on Denon gear and want what you prepare in Surco to show up in your Engine DJ library, with its artwork and in a playlist.",
           "It works on Mac and Windows."
         ],
+        "keywords": "denon engine prime playlist",
         "settings": [
           {
             "tab": "Output",
@@ -2202,6 +2232,7 @@
         "body": [
           "Your selection is already made in an Apple Music playlist. You want it out as AIFF, or on a USB stick, without hunting for the files one by one."
         ],
+        "keywords": "playlist set export gig",
         "settings": [
           {
             "tab": "Output",
@@ -2246,6 +2277,7 @@
         "body": [
           "You keep your music on a network drive and work with it from Surco, on Mac or Windows."
         ],
+        "keywords": "network smb server drive windows",
         "settings": [
           {
             "tab": "Naming",
