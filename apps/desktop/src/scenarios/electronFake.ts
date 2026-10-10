@@ -12,6 +12,7 @@ export function electronFake() {
   return {
     app: {
       isPackaged: false,
+      on: () => {},
       getPath: (name: string) => {
         const dir = join(home, name)
         mkdirSync(dir, { recursive: true })
