@@ -1305,9 +1305,33 @@
     "relatedLabel": "More in the guide",
     "outroTitle": "Missing a use case?",
     "outroLede": "Tell us what you want to do with your tracks and we'll add it here.",
+    "macOnly": "Mac only",
+    "groups": [
+      {
+        "id": "organize",
+        "title": "Tag and tidy up",
+        "lede": "Details, artwork and names in order, without going track by track."
+      },
+      {
+        "id": "sound",
+        "title": "Quality and sound",
+        "lede": "Know what you have and make it all sound even."
+      },
+      {
+        "id": "library",
+        "title": "Your library and your DJ software",
+        "lede": "Apple Music, rekordbox, Engine DJ and Traktor kept up to date with what you change in Surco."
+      },
+      {
+        "id": "go",
+        "title": "Take it with you",
+        "lede": "Your music away from home, on a USB stick or a NAS."
+      }
+    ],
     "cases": [
       {
         "id": "in-place",
+        "group": "organize",
         "title": "Add tags and artwork to a whole folder, without making copies",
         "body": [
           "You have a folder of music with missing tags or no artwork. You want Surco to fill them in on its own, in the same files, with no copies and no format change.",
@@ -1380,6 +1404,8 @@
       },
       {
         "id": "replace",
+        "group": "library",
+        "macOnly": true,
         "title": "Swap a track in your library for a better copy",
         "body": [
           "You have a track as an MP3 in your library and you get hold of the AIFF or the WAV. You want the new copy to take the old one's place, without ending up with two and without adding it to every playlist again.",
@@ -1455,6 +1481,8 @@
       },
       {
         "id": "apple-music-rekordbox",
+        "group": "library",
+        "macOnly": true,
         "title": "Your music lives in Apple Music and you organize in rekordbox",
         "body": [
           "You add your music to Apple Music and import it into rekordbox to build your playlists. When you upgrade a track or fix its details in Surco, you want rekordbox to pick it up on its own, without importing again and without losing playlists or cue points.",
@@ -1522,6 +1550,7 @@
       },
       {
         "id": "to-aiff",
+        "group": "library",
         "title": "Move your collection to AIFF without losing cue points",
         "body": [
           "Your music is in FLAC or WAV and your DJ software or your CDJs prefer AIFF, which also keeps the artwork. You want to convert everything in one go and keep your cue points where they were.",
@@ -1597,6 +1626,7 @@
       },
       {
         "id": "check-quality",
+        "group": "sound",
         "title": "Check the quality of what you bought or downloaded",
         "body": [
           "You downloaded a pack or bought some music and want to know if it's what it claims to be. For example, a FLAC that really comes from an MP3.",
@@ -1651,6 +1681,7 @@
       },
       {
         "id": "vinyl",
+        "group": "sound",
         "title": "Digitize your vinyl",
         "body": [
           "You recorded your records on the computer and want them ready to play. No needle clicks, no silence at the start and end, and with their Discogs details.",
@@ -1717,6 +1748,7 @@
       },
       {
         "id": "usb",
+        "group": "go",
         "title": "Get a USB stick ready for the club",
         "body": [
           "You want to take a selection on a USB stick, with clear names and in a format any CDJ reads. Your files at home stay untouched."

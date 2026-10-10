@@ -1305,9 +1305,33 @@
     "relatedLabel": "Más a fondo en la guía",
     "outroTitle": "¿Echas en falta un caso?",
     "outroLede": "Cuéntanos qué quieres hacer con tus pistas y lo añadimos aquí.",
+    "macOnly": "Solo Mac",
+    "groups": [
+      {
+        "id": "organize",
+        "title": "Etiqueta y ordena",
+        "lede": "Datos, carátulas y nombres en orden, sin ir pista a pista."
+      },
+      {
+        "id": "sound",
+        "title": "Calidad y sonido",
+        "lede": "Saber qué tienes y que todo suene parejo."
+      },
+      {
+        "id": "library",
+        "title": "Tu biblioteca y tu programa de DJ",
+        "lede": "Apple Music, rekordbox, Engine DJ y Traktor al día con lo que cambias en Surco."
+      },
+      {
+        "id": "go",
+        "title": "Llévatelo",
+        "lede": "Tu música fuera de casa, en un USB o en un NAS."
+      }
+    ],
     "cases": [
       {
         "id": "in-place",
+        "group": "organize",
         "title": "Pon etiquetas y carátula a una carpeta entera, sin crear copias",
         "body": [
           "Tienes una carpeta de música con etiquetas incompletas o sin carátula. Quieres que Surco las rellene solas, en los mismos archivos, sin copias y sin cambiar el formato.",
@@ -1380,6 +1404,8 @@
       },
       {
         "id": "replace",
+        "group": "library",
+        "macOnly": true,
         "title": "Cambia una pista de tu biblioteca por una copia mejor",
         "body": [
           "Tienes un tema en MP3 en tu biblioteca y consigues el AIFF o el WAV. Quieres que la copia nueva ocupe el sitio de la vieja, sin acabar con dos y sin volver a meterla en cada playlist.",
@@ -1455,6 +1481,8 @@
       },
       {
         "id": "apple-music-rekordbox",
+        "group": "library",
+        "macOnly": true,
         "title": "Tienes la música en Apple Music y organizas en rekordbox",
         "body": [
           "Pasas tu música a Apple Music y desde rekordbox la importas para hacer tus playlists. Quieres que, cuando mejoras una pista o corriges sus datos en Surco, rekordbox se entere solo, sin volver a importar y sin perder playlists ni cue points.",
@@ -1522,6 +1550,7 @@
       },
       {
         "id": "to-aiff",
+        "group": "library",
         "title": "Pasa tu colección a AIFF sin perder los cue points",
         "body": [
           "Tienes la música en FLAC o WAV y tu programa de DJ o tus CDJ prefieren AIFF, que además guarda la carátula. Quieres convertirlo todo de una vez y que tus cue points sigan donde estaban.",
@@ -1597,6 +1626,7 @@
       },
       {
         "id": "check-quality",
+        "group": "sound",
         "title": "Comprueba la calidad de lo que has comprado o descargado",
         "body": [
           "Te has bajado un pack o has comprado música y quieres saber si es lo que dice ser. Por ejemplo, un FLAC que en realidad viene de un MP3.",
@@ -1651,6 +1681,7 @@
       },
       {
         "id": "vinyl",
+        "group": "sound",
         "title": "Digitaliza tus vinilos",
         "body": [
           "Has grabado tus discos en el ordenador y quieres dejarlos listos para pinchar. Sin clics de la aguja, sin silencio al principio y al final, y con sus datos de Discogs.",
@@ -1717,6 +1748,7 @@
       },
       {
         "id": "usb",
+        "group": "go",
         "title": "Prepara un USB para el club",
         "body": [
           "Quieres llevarte una selección en un USB, con nombres claros y en un formato que lea cualquier CDJ. Tus archivos de casa no se tocan."
