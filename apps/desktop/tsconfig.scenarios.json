@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "electron-vite/node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "paths": { "@/*": ["./src/renderer/src/*"] }
+  },
+  "include": [
+    "src/scenarios/**/*",
+    "src/main/**/*",
+    "src/shared/**/*",
+    "src/preload/index.d.ts",
+    "src/preload/api.ts",
+    "src/renderer/src/**/*"
+  ]
+}
