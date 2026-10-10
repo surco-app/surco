@@ -141,7 +141,7 @@ function Panes({
       />
       <MusicReviewAction review={r} busy={busy ?? false} onConfirm={() => setConfirming(true)} />
       <MusicReviewProgress review={r} />
-      <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} />
+      <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} onClose={vi.fn()} />
     </>
   )
 }
@@ -2074,6 +2074,7 @@ describe('list review', () => {
         review={listReview({ affected, inMusic: (id) => id === '/m/a.aiff' })}
         selectedKey={group.key}
         sync={NO_SYNC}
+        onClose={vi.fn()}
       />,
     )
     const [a, b] = screen.getAllByTestId('music-review-affected')
@@ -2093,6 +2094,7 @@ describe('list review', () => {
         })}
         selectedKey={group.key}
         sync={NO_SYNC}
+        onClose={vi.fn()}
       />,
     )
     const row = screen.getByTestId('music-review-affected')
@@ -2146,6 +2148,7 @@ describe('list review', () => {
             })}
             selectedKey="k#1"
             sync={NO_SYNC}
+            onClose={vi.fn()}
           />
         </QueryClientProvider>,
       )
@@ -2184,6 +2187,7 @@ describe('list review', () => {
             })}
             selectedKey="k#1"
             sync={NO_SYNC}
+            onClose={vi.fn()}
           />
         </QueryClientProvider>,
       )

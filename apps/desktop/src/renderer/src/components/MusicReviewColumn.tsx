@@ -167,10 +167,23 @@ export function MusicReviewColumn({ onClose, busy }: { onClose: () => void; busy
   )
 }
 
-export function MusicReviewDetailPane({ sync }: { sync: ReviewSync }) {
+export function MusicReviewDetailPane({
+  sync,
+  onClose,
+}: {
+  sync: ReviewSync
+  onClose: () => void
+}) {
   const shared = useContext(ReviewContext)
   if (!shared) return <section data-testid="music-review-detail" className="h-full" />
-  return <MusicReviewDetail review={shared.review} selectedKey={shared.selectedKey} sync={sync} />
+  return (
+    <MusicReviewDetail
+      review={shared.review}
+      selectedKey={shared.selectedKey}
+      sync={sync}
+      onClose={onClose}
+    />
+  )
 }
 
 export function MusicReviewToolbarAction({ busy }: { busy: boolean }) {

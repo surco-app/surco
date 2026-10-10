@@ -3766,6 +3766,23 @@ describe('App list review', () => {
     expect(await screen.findAllByTestId('track-row')).toHaveLength(3)
   })
 
+  // A clean review used to leave the main pane blank: nothing said the list was fine, and the
+  // only way back was a small X that reads like clearing the search.
+  it('says the list is fine when there is nothing to review and leads back to it', async () => {
+    vi.resetModules()
+    listApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('list-review')
+    expect(await screen.findByTestId('music-review-all-clear')).toHaveTextContent(
+      'Everything looks right',
+    )
+    fireEvent.click(screen.getByTestId('music-review-back'))
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(2)
+    expect(screen.queryByTestId('music-review')).not.toBeInTheDocument()
+  })
+
   it('does nothing with an empty list', async () => {
     vi.resetModules()
     listApi()

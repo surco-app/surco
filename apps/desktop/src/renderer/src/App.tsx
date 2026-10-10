@@ -2213,6 +2213,7 @@ export default function App(): React.JSX.Element {
                         engineDj: settings?.syncEngineDj ?? false,
                         traktor: settings?.syncTraktor ?? false,
                       }}
+                      onClose={() => setReview(null)}
                     />
                   ) : selected ? (
                     // Its own boundary so a render bug in the editor degrades to "this panel
