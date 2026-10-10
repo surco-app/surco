@@ -10,7 +10,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import type { NormalizeConfig } from '../shared/types'
 import i18n from '../renderer/src/i18n'
-import { DROP_MS, listFiles, loudness, makeTrack } from './fixtures'
+import { audioMd5, DROP_MS, listFiles, loudness, makeTrack } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 const STREAMING: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
@@ -60,7 +60,7 @@ describe('Even out the volume of a whole folder', () => {
   describe('in place, with an MP3 in the folder', () => {
     let folder: string
     let surco: Scenario
-    let afterFirst: { integrated: number; truePeak: number }
+    let afterFirst: string
 
     beforeAll(async () => {
       folder = mkdtempSync(join(tmpdir(), 'surco-loudness-in-place-'))
@@ -72,7 +72,7 @@ describe('Even out the volume of a whole folder', () => {
       })
       await surco.drop(folder)
       await surco.convertAll()
-      afterFirst = loudness(join(folder, 'Master.flac'))
+      afterFirst = audioMd5(join(folder, 'Master.flac'))
       await surco.convertAll()
     }, 60_000)
 
@@ -84,9 +84,9 @@ describe('Even out the volume of a whole folder', () => {
       expect(surco.prompts[0]?.title).toBe(i18n.t('confirm.convertLossyReencodeTitle'))
     })
 
-    it('does not raise a track again when it is saved a second time', () => {
+    it('leaves an evened-out track alone when it is saved a second time, instead of processing its audio again', () => {
       expectStreaming(join(folder, 'Master.flac'))
-      expect(loudness(join(folder, 'Master.flac')).integrated).toBeCloseTo(afterFirst.integrated, 0)
+      expect(audioMd5(join(folder, 'Master.flac'))).toBe(afterFirst)
     })
 
     it('keeps the files where they were', () => {
