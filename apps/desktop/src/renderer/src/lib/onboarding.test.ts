@@ -29,6 +29,8 @@ const settings: Settings = {
   searchProviders: ['discogs'],
   searchIgnoreWords: [],
   searchByAlbumFirst: false,
+  autoCleanSpacing: false,
+  autoCleanCase: false,
   outputDir: '/out',
   outputFormat: 'aiff',
   keepMp3Sources: false,

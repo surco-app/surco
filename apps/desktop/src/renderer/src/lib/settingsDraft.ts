@@ -64,6 +64,8 @@ export interface SyncedDraft {
   searchProviders: Settings['searchProviders']
   searchIgnoreWords: string
   searchByAlbumFirst: boolean
+  autoCleanSpacing: boolean
+  autoCleanCase: boolean
 }
 
 // Machine-local staged fields. A config-dir switch may adopt another machine's synced
@@ -106,6 +108,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     searchProviders: s.searchProviders,
     searchIgnoreWords: s.searchIgnoreWords.join(', '),
     searchByAlbumFirst: s.searchByAlbumFirst,
+    autoCleanSpacing: s.autoCleanSpacing,
+    autoCleanCase: s.autoCleanCase,
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,

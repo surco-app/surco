@@ -36,6 +36,8 @@ const settings: Settings = {
   searchProviders: ['discogs'],
   searchIgnoreWords: [],
   searchByAlbumFirst: false,
+  autoCleanSpacing: false,
+  autoCleanCase: false,
   outputDir: '/out',
   outputFormat: 'aiff',
   keepMp3Sources: false,
@@ -453,6 +455,37 @@ describe('SettingsModal search by album first', () => {
     fireEvent.click(toggle)
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ searchByAlbumFirst: true }))
+  })
+})
+
+// Both clean-ups stage edits on their own, so nobody gets them without asking. They sit with
+// auto-match because they behave like it: what loads gets fixed and waits to be written.
+describe('SettingsModal clean-up on load', () => {
+  it('starts both off, next to auto-match, and saves each once ticked', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab="search"
+      />,
+    )
+    const spacing = screen.getByTestId('settings-auto-clean-spacing')
+    const casing = screen.getByTestId('settings-auto-clean-case')
+    const sectionOf = (el: HTMLElement) => el.closest('section')
+    expect(sectionOf(spacing)).toBe(sectionOf(screen.getByTestId('settings-auto-match')))
+    expect(sectionOf(casing)).toBe(sectionOf(spacing))
+    expect(spacing).not.toBeChecked()
+    expect(casing).not.toBeChecked()
+    fireEvent.click(spacing)
+    fireEvent.click(casing)
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ autoCleanSpacing: true, autoCleanCase: true }),
+    )
   })
 })
 

@@ -301,6 +301,10 @@ export interface Settings {
   // metadata of any high-confidence release match, without waiting for a click.
   // Off by default since it spends the token's rate limit across the whole crate.
   autoMatch: boolean
+  // When on, a finished load stages the extra spaces and invisible characters the list review
+  // flags as cleaned values, and the second also the casing a clear majority of the list uses.
+  autoCleanSpacing: boolean
+  autoCleanCase: boolean
   // When on, finishing a track auto-advances to the next one in the visible list
   // and plays it; at the end of the list playback stops. Off by default.
   continuousPlayback: boolean

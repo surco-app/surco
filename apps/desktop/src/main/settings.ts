@@ -117,6 +117,8 @@ export const defaults: Settings = {
   // import without the user having to discover it; it can be turned off in Settings.
   autoAnalyze: true,
   autoMatch: false,
+  autoCleanSpacing: false,
+  autoCleanCase: false,
   continuousPlayback: false,
   keyNotation: 'camelot',
   // Off by default: a conversion never changes loudness unless the user enables it.

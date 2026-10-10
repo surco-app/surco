@@ -164,6 +164,20 @@ export function SearchTab({
             beatportUsername={local.beatportUsername}
             testid="settings-auto-match"
           />
+          <SettingsCheckboxField
+            testid="settings-auto-clean-spacing"
+            checked={synced.autoCleanSpacing}
+            onChange={(v) => patch('autoCleanSpacing', v)}
+            label={tr('settings.autoCleanSpacing')}
+            hint={tr('settings.autoCleanSpacingHint')}
+          />
+          <SettingsCheckboxField
+            testid="settings-auto-clean-case"
+            checked={synced.autoCleanCase}
+            onChange={(v) => patch('autoCleanCase', v)}
+            label={tr('settings.autoCleanCase')}
+            hint={tr('settings.autoCleanCaseHint')}
+          />
         </div>
       </SettingsSection>
     </>

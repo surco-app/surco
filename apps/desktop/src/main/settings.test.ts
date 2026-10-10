@@ -100,6 +100,13 @@ describe('defaults for a fresh install', () => {
   it('keeps a copy only when the conversion re-encodes the audio', () => {
     expect(defaults.backupPolicy).toBe('audioChanges')
   })
+
+  // Both stage edits on every track that loads, so a user who never asked for them must not
+  // find their tags changed.
+  it('leaves the load-time clean-ups off', () => {
+    expect(defaults.autoCleanSpacing).toBe(false)
+    expect(defaults.autoCleanCase).toBe(false)
+  })
 })
 
 describe('the update channel default', () => {

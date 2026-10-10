@@ -70,6 +70,8 @@ const synced: SyncedDraft = {
   searchProviders: ['discogs'],
   searchIgnoreWords: '',
   searchByAlbumFirst: false,
+  autoCleanSpacing: false,
+  autoCleanCase: false,
 }
 
 const local: LocalDraft = {

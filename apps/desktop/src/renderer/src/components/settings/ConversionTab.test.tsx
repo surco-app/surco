@@ -68,6 +68,8 @@ const synced: SyncedDraft = {
   searchProviders: ['discogs'],
   searchIgnoreWords: '',
   searchByAlbumFirst: false,
+  autoCleanSpacing: false,
+  autoCleanCase: false,
   keepMp3Sources: false,
 }
 

@@ -66,6 +66,8 @@ export const testSettings: Settings = {
   showLoudness: true,
   showEditorHints: true,
   autoMatch: false,
+  autoCleanSpacing: false,
+  autoCleanCase: false,
   continuousPlayback: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
