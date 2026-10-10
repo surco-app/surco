@@ -49,7 +49,8 @@ describe('Move your collection to AIFF without losing the cue points', () => {
     }
 
     surco = await openSurco({
-      settings: { outputFormat: 'aiff', keepMp3Sources: true, convertBesideOriginal: true },
+      settings: { outputFormat: 'aiff', keepMp3Sources: true },
+      destination: 'beside',
     })
     await surco.drop(folder)
     await surco.convertAll()
@@ -57,6 +58,7 @@ describe('Move your collection to AIFF without losing the cue points', () => {
 
   it('runs without a single error the user would see', () => {
     expect(surco.errors).toEqual([])
+    expect(surco.sentToAppleMusic).toEqual([])
   })
 
   it('writes each AIFF next to its original, and the "(2)" the recipe warns about for one that already was AIFF', () => {

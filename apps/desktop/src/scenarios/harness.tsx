@@ -21,6 +21,7 @@ import type { Api } from '../preload/api'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
+import { type Destination, fromDestination } from '../renderer/src/lib/destination'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
@@ -32,6 +33,7 @@ export type ConflictChoice = 'overwrite' | 'keepBoth' | 'skip'
 
 export interface ScenarioOptions {
   settings: Partial<Settings>
+  destination?: Destination
   onConflict?: (outputName: string) => ConflictChoice
 }
 
@@ -184,7 +186,10 @@ export interface Scenario {
 }
 
 export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
-  const settings = replaceSettings(options.settings)
+  const settings = replaceSettings({
+    ...options.settings,
+    ...(options.destination && fromDestination(options.destination)),
+  })
   const trash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =>
     trashLimits(getSettings()),
   )

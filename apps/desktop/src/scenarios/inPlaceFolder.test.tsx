@@ -73,7 +73,8 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
     }
 
     surco = await openSurco({
-      settings: { outputFormat: 'source', overwriteOriginal: true, backupPolicy: 'always' },
+      settings: { outputFormat: 'source', backupPolicy: 'always' },
+      destination: 'overwrite',
     })
     await surco.drop(folder)
     surco.acceptMatch('till i come.mp3', movinMelodies, 'A1')
@@ -83,6 +84,7 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
 
   it('runs without a single error the user would see', () => {
     expect(surco.errors).toEqual([])
+    expect(surco.sentToAppleMusic).toEqual([])
     expect(surco.tracks().map((t) => [basename(t.inputPath), t.status])).toEqual([
       ['till i come.mp3', 'done'],
       ['9pm.flac', 'done'],
