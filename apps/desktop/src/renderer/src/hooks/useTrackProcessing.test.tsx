@@ -1690,6 +1690,57 @@ describe('useTrackProcessing', () => {
       expect(processTrack.mock.calls[0][0].format).toBe('wav')
     })
 
+    // Beside the original, a kept mp3 had nowhere to go but a "(2)" copy next to itself:
+    // a second identical file where the recipe promises the mp3 stays as it is.
+    it('leaves a kept mp3 alone when converting beside the original', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.aiff' })
+      setApi({ processTrack })
+      const settings = {
+        outputFormat: 'aiff',
+        keepMp3Sources: true,
+        overwriteOriginal: false,
+        convertBesideOriginal: true,
+      } as Settings
+      const tracks = [
+        track({ id: 'a', inputPath: '/music/a.flac' }),
+        track({ id: 'b', inputPath: '/music/b.mp3' }),
+      ]
+      const updateTrack = vi.fn()
+      const { result } = renderHook(() => useTrackProcessing({ tracks, settings, updateTrack }), {
+        wrapper: withClient(),
+      })
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      expect(processTrack.mock.calls.map(([job]) => job.inputPath)).toEqual(['/music/a.flac'])
+      expect(updateTrack).toHaveBeenCalledWith('b', expect.objectContaining({ status: 'idle' }))
+      expect(result.current.batchSummary).toMatchObject({ skipped: 1 })
+    })
+
+    // A trim, a declick or a normalize re-encodes the audio, so the copy beside the
+    // original is new sound the user asked for, not a duplicate.
+    it('still writes a kept mp3 beside the original when a filter re-encodes it', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/b (2).mp3' })
+      setApi({ processTrack })
+      const settings = {
+        outputFormat: 'aiff',
+        keepMp3Sources: true,
+        overwriteOriginal: false,
+        convertBesideOriginal: true,
+      } as Settings
+      const tracks = [
+        track({ id: 'b', inputPath: '/music/b.mp3', trim: { startSec: 1, endSec: 3 } }),
+      ]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      expect(processTrack.mock.calls[0][0]).toMatchObject({ format: 'mp3' })
+    })
+
     // The single-select already seeded the rule into the format it sends; an explicit
     // format in processOne must travel untouched or the editor's pick would lie.
     it('honors an explicit processOne format over the rule', async () => {
