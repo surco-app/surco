@@ -6,7 +6,7 @@ const FIELDS = ['title', 'artist', 'albumArtist', 'album', 'genre'] as const
 
 // diskSignature holds the pure read of the file; meta also carries what the user typed and
 // has not saved. The review writes over the file, so it reads the file's side.
-function diskMeta(row: TrackItem): TrackMetadata | null {
+export function diskMeta(row: TrackItem): TrackMetadata | null {
   if (!row.diskSignature) return null
   try {
     const [meta] = JSON.parse(row.diskSignature) as [TrackMetadata]

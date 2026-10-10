@@ -37,7 +37,7 @@ export function replaceAct(value: string, from: string, to: string): string {
     .join('')
 }
 
-function clean(value: string): string {
+export function clean(value: string): string {
   return value.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim()
 }
 

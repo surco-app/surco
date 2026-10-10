@@ -1,6 +1,7 @@
 import type {
   DeclickMode,
   ForeignTag,
+  MusicReviewField,
   NormalizeConfig,
   OutputFormat,
   ProcessStage,
@@ -13,6 +14,14 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../../shared/types'
+
+// raw is the file's spelling, before the row's value the clean-up replaced, to what it staged.
+export interface FieldCleanup {
+  raw: string
+  before: string
+  to: string
+  undone?: boolean
+}
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
 
@@ -172,6 +181,9 @@ export interface TrackItem {
   // The review fields as the file spells them where that differs from the trimmed read,
   // valid only while diskSignature still equals `signature` (the read it came from).
   reviewRaw?: { signature: string; fields: ReviewRawFields }
+  // What the load-time clean-up staged per field, so the row, the counter and the editor can
+  // show it and undo it. Dropped once an export writes the values out.
+  cleaned?: Partial<Record<MusicReviewField, FieldCleanup>>
   error?: string
   // Tracks a manual "add to Apple Music" run, independent of status so the track
   // stays 'done' while it adds. 'error' carries the reason in musicError.
