@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PAGES } from '../lib/nav'
+import { matchesUseCase, USE_CASE_SOURCES, type UseCaseSource } from '../lib/useCases'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -23,6 +25,7 @@ type UseCase = {
   macOnly?: boolean
   title: string
   body: string[]
+  keywords: string
   settings: Setting[]
   steps: Step[]
   points: string[]
@@ -80,6 +83,10 @@ export default function UseCases() {
   const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
   const groups = t('useCases.groups', { returnObjects: true }) as Group[]
   const casesIn = (group: Group) => cases.filter((c) => c.group === group.id)
+  const [query, setQuery] = useState('')
+  const [source, setSource] = useState<UseCaseSource | null>(null)
+  const shown = cases.filter((c) => matchesUseCase(c, query, source))
+  const filtering = shown.length < cases.length
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
@@ -108,28 +115,118 @@ export default function UseCases() {
           </Reveal>
 
           <Reveal eager delay={120}>
-            <nav aria-label={t('useCases.tocLabel')} className="mt-10 space-y-8">
-              {groups.map((group) => (
-                <div key={group.id}>
-                  <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                    {group.title}
-                  </p>
-                  <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                    {casesIn(group).map((c) => (
-                      <li key={c.id} className="min-w-0">
-                        <a
-                          href={`#${c.id}`}
-                          data-testid="use-case-toc-item"
-                          className="flex h-full items-start justify-between gap-3 rounded-xl border border-line bg-surface2/40 px-4 py-3 text-sm text-muted transition-colors hover:border-blue/50 hover:text-fg"
-                        >
-                          <span>{c.title}</span>
-                          {c.macOnly && <MacBadge />}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+            <nav aria-label={t('useCases.tocLabel')} className="mt-10">
+              <label
+                data-testid="use-case-search"
+                className="flex h-12 items-center gap-3 rounded-xl border border-line bg-surface2 px-4 transition-colors focus-within:border-blue/60"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 flex-none fill-none stroke-faint stroke-2"
+                  strokeLinecap="round"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20l-4-4" />
+                </svg>
+                <span className="sr-only">{t('useCases.searchLabel')}</span>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('useCases.searchPlaceholder')}
+                  className="h-full min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-faint"
+                />
+                {filtering && (
+                  <span className="flex-none font-mono text-xs text-faint">
+                    {t('useCases.shownCount', { shown: shown.length, total: cases.length })}
+                  </span>
+                )}
+              </label>
+
+              <fieldset className="-mx-6 mt-3 flex min-w-0 items-center gap-1 overflow-x-auto px-6 [scrollbar-width:none]">
+                <legend className="sr-only">{t('useCases.sourcesLabel')}</legend>
+                <span
+                  aria-hidden="true"
+                  className="mr-1 flex-none text-sm whitespace-nowrap text-faint"
+                >
+                  {t('useCases.sourcesLabel')}
+                </span>
+                {[null, ...USE_CASE_SOURCES].map((s) => (
+                  <button
+                    key={s ?? 'all'}
+                    type="button"
+                    data-testid="use-case-source"
+                    aria-pressed={source === s}
+                    onClick={() => setSource(s)}
+                    className={`h-9 flex-none rounded-full border px-2.5 text-sm whitespace-nowrap transition-colors ${
+                      source === s
+                        ? 'border-blue bg-blue font-semibold text-bg'
+                        : 'border-line text-muted hover:border-blue/50 hover:text-fg'
+                    }`}
+                  >
+                    {s ? t(`useCases.sources.${s}`) : t('useCases.allSources')}
+                  </button>
+                ))}
+              </fieldset>
+
+              {shown.length === 0 ? (
+                <div className="mt-8 rounded-xl border border-dashed border-line px-6 py-10 text-center">
+                  <p className="text-fg">{t('useCases.emptyTitle')}</p>
+                  <p className="mt-2 text-sm text-muted">{t('useCases.outroLede')}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery('')
+                      setSource(null)
+                    }}
+                    className="mt-4 text-sm text-blue transition-colors hover:text-cyan"
+                  >
+                    {t('useCases.clearFilters')}
+                  </button>
                 </div>
-              ))}
+              ) : (
+                <div className="mt-8 space-y-8">
+                  {groups.map((group) => {
+                    const items = shown.filter((c) => c.group === group.id)
+                    if (items.length === 0) return null
+                    return (
+                      <div key={group.id}>
+                        <p className="font-mono text-xs tracking-wider text-faint uppercase">
+                          {group.title}
+                        </p>
+                        <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line">
+                          {items.map((c) => (
+                            <li key={c.id}>
+                              <a
+                                href={`#${c.id}`}
+                                data-testid="use-case-toc-item"
+                                className="group flex items-start gap-4 bg-surface2/40 px-4 py-3.5 transition-colors hover:bg-surface2"
+                              >
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span className="font-medium text-fg">{c.title}</span>
+                                    {c.macOnly && <MacBadge />}
+                                  </span>
+                                  <span className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted">
+                                    {c.body[0]}
+                                  </span>
+                                </span>
+                                <span
+                                  aria-hidden="true"
+                                  className="mt-0.5 flex-none text-faint transition-colors group-hover:text-blue"
+                                >
+                                  ›
+                                </span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </nav>
           </Reveal>
         </section>
