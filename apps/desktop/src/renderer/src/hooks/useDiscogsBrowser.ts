@@ -261,10 +261,12 @@ export function useDiscogsBrowser(
   // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers are the trigger; the file's title/artist/album, the album-first setting and whether the user typed the term are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
   const allResults = useMemo(() => {
     if (arrived.length === 0) return EMPTY_RESULTS
+    const target = matchTargetOf(item, cleanup)
     const ranked = preRankResults(arrived.flat(), {
-      title: matchTargetOf(item, cleanup).title,
+      title: target.title,
       artist: item.meta.artist,
       album: searchByAlbumFirst ? item.meta.album : undefined,
+      year: target.year,
       typed: userDroveSearch.current || item.queryTyped === true ? searchTerm : undefined,
     })
     const rankedKeys = ranked.map(resultKey)

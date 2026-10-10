@@ -640,6 +640,28 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([2, 1]))
   })
 
+  // Every edition of an album ties on the artist and title, and the most owned one led:
+  // the tagged year names the edition the file came from (artexjay's 2010 Duran Duran).
+  it('ranks the edition from the tagged year above a more owned one', async () => {
+    setApi({
+      search: vi.fn().mockResolvedValue([
+        {
+          provider: 'discogs',
+          id: 1,
+          title: 'Duran Duran - Duran Duran',
+          year: '1981',
+          community: { have: 5000 },
+        },
+        { provider: 'discogs', id: 2, title: 'Duran Duran - Duran Duran', year: '2010' },
+      ]),
+    })
+    const track = item({ query: 'Duran Duran Planet Earth', title: 'Planet Earth' })
+    track.meta.artist = 'Duran Duran'
+    track.meta.year = '2010'
+    const { result } = renderHook(() => useDiscogsBrowser(track, tr), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([2, 1]))
+  })
+
   // Flipping away and back remounts the panel on the typed query the track stored; it is
   // still the user's search and must not pick the tags back up.
   it('keeps searching a typed song without tags after a flip back to the track', async () => {
