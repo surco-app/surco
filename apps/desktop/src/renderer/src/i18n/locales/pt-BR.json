@@ -39,8 +39,6 @@
     "activity": "Atividade",
     "selectAll": "Selecionar tudo",
     "revealSelected": "Ir para a faixa selecionada",
-    "fillFromName": "Preencher tudo a partir do nome",
-    "reviewList": "Revisar metadados da lista",
     "importingCount": "Lendo {{done}}/{{total}}",
     "analyzeQuality": "Analisar a qualidade de todas as faixas",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
@@ -56,8 +54,14 @@
     "autoMatchLabel": "Associar",
     "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
-    "clearAll": "Limpar a lista",
     "moreActions": "Mais ações",
+    "menu": {
+      "review": "Revisar metadados",
+      "fill": "Preencher pelo nome",
+      "findReplace": "Localizar e substituir…",
+      "trash": "Mover para a lixeira",
+      "clear": "Limpar a lista"
+    },
     "cancelAutoMatch": "Parar a correspondência automática: as faixas já correspondidas mantêm as tags",
     "cancelAnalyze": "Parar a análise: as faixas já analisadas mantêm o veredito"
   },

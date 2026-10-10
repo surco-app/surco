@@ -339,7 +339,7 @@ export function TrackListHeader({
                   <MenuAction
                     testid="list-review-open"
                     icon={SpellCheck}
-                    label={tr('header.reviewList')}
+                    label={tr('header.menu.review')}
                     hint={hintFor('list-review')}
                     disabled={!canReviewList}
                     onClick={() => run(onReviewList)}
@@ -347,14 +347,14 @@ export function TrackListHeader({
                   <MenuAction
                     testid="fill-all"
                     icon={Tag}
-                    label={tr('header.fillFromName')}
+                    label={tr('header.menu.fill')}
                     hint={hintFor('fill-all')}
                     onClick={() => run(onFillAll)}
                   />
                   <MenuAction
                     testid="open-find-replace"
                     icon={Replace}
-                    label={tr('commands.findReplace')}
+                    label={tr('header.menu.findReplace')}
                     hint={hintFor('find-replace')}
                     onClick={() => run(onFindReplace)}
                   />
@@ -362,7 +362,7 @@ export function TrackListHeader({
                   <MenuAction
                     testid="trash-selected"
                     icon={Trash2}
-                    label={tr('commands.trashSelected')}
+                    label={tr('header.menu.trash')}
                     danger
                     disabled={!selectedId && selectedIds.length === 0}
                     onClick={() => run(onTrashSelected)}
@@ -370,7 +370,7 @@ export function TrackListHeader({
                   <MenuAction
                     testid="clear-all"
                     icon={ListX}
-                    label={tr('header.clearAll')}
+                    label={tr('header.menu.clear')}
                     danger
                     onClick={() => run(onClearAll)}
                   />

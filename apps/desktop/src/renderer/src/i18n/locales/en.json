@@ -39,8 +39,6 @@
     "activity": "Activity",
     "selectAll": "Select all",
     "revealSelected": "Scroll to the selected track",
-    "fillFromName": "Fill all tags from file name",
-    "reviewList": "Review metadata in the list",
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
@@ -56,8 +54,14 @@
     "autoMatchLabel": "Match",
     "addToken": "Add token",
     "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
-    "clearAll": "Clear the list",
     "moreActions": "More actions",
+    "menu": {
+      "review": "Review metadata",
+      "fill": "Fill from file name",
+      "findReplace": "Find and replace…",
+      "trash": "Move to Trash",
+      "clear": "Clear list"
+    },
     "cancelAutoMatch": "Stop auto-matching: tracks already matched keep their tags",
     "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"
   },

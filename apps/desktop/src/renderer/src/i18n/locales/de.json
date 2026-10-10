@@ -39,8 +39,6 @@
     "activity": "Aktivität",
     "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
-    "fillFromName": "Alle Tags aus dem Dateinamen füllen",
-    "reviewList": "Metadaten der Liste prüfen",
     "importingCount": "Lese {{done}}/{{total}}",
     "analyzeQuality": "Qualität aller Tracks analysieren",
     "analyzingCount": "Analysiere Qualität… {{done}}/{{total}}",
@@ -56,8 +54,14 @@
     "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
     "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}",
-    "clearAll": "Liste leeren",
     "moreActions": "Weitere Aktionen",
+    "menu": {
+      "review": "Metadaten prüfen",
+      "fill": "Aus Dateiname füllen",
+      "findReplace": "Suchen und ersetzen…",
+      "trash": "In den Papierkorb",
+      "clear": "Liste leeren"
+    },
     "cancelAutoMatch": "Automatisches Zuordnen stoppen: bereits zugeordnete Tracks behalten ihre Tags",
     "cancelAnalyze": "Analyse stoppen: bereits analysierte Tracks behalten ihr Ergebnis"
   },

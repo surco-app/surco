@@ -39,8 +39,6 @@
     "activity": "Activité",
     "selectAll": "Tout sélectionner",
     "revealSelected": "Aller au morceau sélectionné",
-    "fillFromName": "Remplir tous les tags depuis le nom du fichier",
-    "reviewList": "Vérifier les métadonnées de la liste",
     "importingCount": "Lecture {{done}}/{{total}}",
     "analyzeQuality": "Analyser la qualité de tous les morceaux",
     "analyzingCount": "Analyse de la qualité… {{done}}/{{total}}",
@@ -56,8 +54,14 @@
     "autoMatchLabel": "Associer",
     "addToken": "Ajouter un token",
     "autoMatchingCount": "Association auto… {{done}}/{{total}}",
-    "clearAll": "Vider la liste",
     "moreActions": "Plus d'actions",
+    "menu": {
+      "review": "Vérifier les métadonnées",
+      "fill": "Remplir depuis le nom",
+      "findReplace": "Rechercher et remplacer…",
+      "trash": "Mettre à la corbeille",
+      "clear": "Vider la liste"
+    },
     "cancelAutoMatch": "Arrêter l'association automatique : les morceaux déjà associés gardent leurs tags",
     "cancelAnalyze": "Arrêter l'analyse : les morceaux déjà analysés gardent leur verdict"
   },

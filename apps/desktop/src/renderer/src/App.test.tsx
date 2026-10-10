@@ -3888,7 +3888,7 @@ describe('App list review', () => {
     await addThree()
     fireEvent.click(screen.getByTestId('list-actions-more'))
     const button = screen.getByTestId('list-review-open')
-    expect(button).toHaveAccessibleName('Review metadata in the list')
+    expect(button).toHaveAccessibleName('Review metadata')
     fireEvent.click(button)
     expect(await screen.findByTestId('list-review-scope')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('music-review-close'))

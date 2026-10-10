@@ -98,13 +98,16 @@ describe('TrackListHeader actions row', () => {
         .map((el) => el.dataset.testid),
     ).toEqual(['list-review-open', 'fill-all', 'open-find-replace', 'trash-selected', 'clear-all'])
     expect(within(menu).getByTestId('list-review-open')).toHaveTextContent(
-      i18n.t('header.reviewList'),
+      i18n.t('header.menu.review'),
     )
-    expect(within(menu).getByTestId('fill-all')).toHaveTextContent(i18n.t('header.fillFromName'))
+    expect(within(menu).getByTestId('fill-all')).toHaveTextContent(i18n.t('header.menu.fill'))
     expect(within(menu).getByTestId('open-find-replace')).toHaveTextContent(
-      i18n.t('commands.findReplace'),
+      i18n.t('header.menu.findReplace'),
     )
-    expect(within(menu).getByTestId('clear-all')).toHaveTextContent(i18n.t('header.clearAll'))
+    expect(within(menu).getByTestId('trash-selected')).toHaveTextContent(
+      i18n.t('header.menu.trash'),
+    )
+    expect(within(menu).getByTestId('clear-all')).toHaveTextContent(i18n.t('header.menu.clear'))
   })
 
   it('marks clearing the list as destructive, since it is the one item that throws work away', () => {

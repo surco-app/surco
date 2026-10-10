@@ -39,8 +39,6 @@
     "activity": "Actividad",
     "selectAll": "Seleccionar todo",
     "revealSelected": "Ir a la pista seleccionada",
-    "fillFromName": "Rellenar todo desde el nombre",
-    "reviewList": "Revisar metadatos de la lista",
     "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
@@ -56,8 +54,14 @@
     "autoMatchLabel": "Emparejar",
     "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
-    "clearAll": "Vaciar la lista",
     "moreActions": "Más acciones",
+    "menu": {
+      "review": "Revisar metadatos",
+      "fill": "Rellenar desde el nombre",
+      "findReplace": "Buscar y reemplazar…",
+      "trash": "Mover a la papelera",
+      "clear": "Vaciar la lista"
+    },
     "cancelAutoMatch": "Detener el emparejado: las pistas ya emparejadas conservan sus etiquetas",
     "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
   },
