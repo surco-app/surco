@@ -8,7 +8,7 @@ import type React from 'react'
 import { expect } from 'vitest'
 import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
-import { addToEngineLibrary, setEngineWriteGatherMs } from '../main/engineLibrary'
+import { addToEngineLibrary } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
 import { convertAudio } from '../main/ffmpeg'
 import { isSameFile, removeRenamedOriginal } from '../main/inplace'
@@ -240,7 +240,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     trashLimits(getSettings()),
   )
   configureBackupStore(trash, () => getSettings().backupPolicy)
-  setEngineWriteGatherMs(0)
   if (!ipcHandlers.has('audio:meta')) registerAudioIpc(() => {})
   const errors: string[] = []
   const sentToAppleMusic: string[] = []
