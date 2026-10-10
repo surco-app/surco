@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { isCancelledError, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef, useState } from 'react'
 import { analysisOptions } from '../lib/analysisQueries'
 import { mapWithConcurrency } from '../lib/concurrency'
@@ -154,6 +154,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // renames the file meanwhile leaves the queued row on a path that no longer exists,
         // and the probe then reports a file the user can see right there as missing.
         const path = targetsRef.current.find((x) => x.id === t.id)?.inputPath ?? t.inputPath
+        let evicted = false
         try {
           await queryClient.fetchQuery(spectrogramOptions(path))
           // The wave feeds the silence attention filter (silence left to trim); the
@@ -198,14 +199,15 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           // Reached only when the spectrum landed: the optional probes above are allowed
           // to fail without the track counting as unmeasured.
           onMeasuredRef.current?.(t.id)
-        } catch {
+        } catch (err) {
           // A single file ffmpeg can't read must not abort the whole sweep — remember
           // WHICH one, so the run can flag those rows at the end instead of reporting a
           // bare count the user cannot act on.
-          failed.push(t.id)
+          if (isCancelledError(err)) evicted = true
+          else failed.push(t.id)
         } finally {
           done += 1
-          measuredRef.current.add(t.id)
+          if (!evicted) measuredRef.current.add(t.id)
           pendingRef.current.delete(t.id)
           setAnalysis((a) => (a ? { ...a, done } : a))
         }
