@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { File as TagFile } from 'node-taglib-sharp'
+import { Picture, PictureType, File as TagFile } from 'node-taglib-sharp'
 import { encodeBase91 } from '../main/base91'
 import {
   buildTraktorTree,
@@ -25,6 +25,11 @@ export interface TrackSpec {
   title: string
   artist: string
   album?: string
+  grouping?: string
+  publisher?: string
+  bpm?: number
+  comment?: string
+  coverJpg?: string
   withCues?: boolean
 }
 
@@ -55,6 +60,15 @@ export function makeTrack(path: string, spec: TrackSpec): string {
     file.tag.title = spec.title
     file.tag.performers = [spec.artist]
     if (spec.album) file.tag.album = spec.album
+    if (spec.grouping) file.tag.grouping = spec.grouping
+    if (spec.publisher) file.tag.publisher = spec.publisher
+    if (spec.bpm) file.tag.beatsPerMinute = spec.bpm
+    if (spec.comment) file.tag.comment = spec.comment
+    if (spec.coverJpg) {
+      const picture = Picture.fromPath(spec.coverJpg)
+      picture.type = PictureType.FrontCover
+      file.tag.pictures = [picture]
+    }
     file.save()
   } finally {
     file.dispose()
@@ -81,21 +95,29 @@ export function listFiles(root: string): string[] {
   return walk(root).sort()
 }
 
+export function coverJpg(path: string, color = 'teal'): string {
+  writeFileSync(path, coverBytes(color))
+  return path
+}
+
 export function coverDataUrl(): string {
-  const jpg = execFileSync(FF, [
+  return `data:image/jpeg;base64,${coverBytes('orange').toString('base64')}`
+}
+
+function coverBytes(color: string): Buffer {
+  return execFileSync(FF, [
     '-loglevel',
     'error',
     '-f',
     'lavfi',
     '-i',
-    'color=c=orange:s=600x600:d=1',
+    `color=c=${color}:s=600x600:d=1`,
     '-frames:v',
     '1',
     '-f',
     'mjpeg',
     '-',
   ])
-  return `data:image/jpeg;base64,${jpg.toString('base64')}`
 }
 
 export function release(over: Partial<Release> & Pick<Release, 'tracklist'>): Release {

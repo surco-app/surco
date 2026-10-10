@@ -7,9 +7,10 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readMeta, readTags } from '../main/ffmpeg'
+import { diffSnapshots, snapshotTags } from '../main/tagSnapshot'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
-import type { TrackMetadata } from '../shared/types'
-import { audioMd5, DROP_MS, listFiles, makeTrack, release } from './fixtures'
+import { ALLOWED_UPDATE_CHANGES, unexplainedChanges } from '../main/updateContract'
+import { audioMd5, coverJpg, DROP_MS, listFiles, makeTrack, release } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 const movinMelodies = release({
@@ -22,7 +23,7 @@ const movinMelodies = release({
 describe('Tag and add covers to a whole folder, without making copies', () => {
   let folder: string
   let surco: Scenario
-  const before = new Map<string, { md5: string; tags: TrackMetadata }>()
+  const before = new Map<string, { md5: string; tags: string[] }>()
 
   beforeAll(async () => {
     folder = mkdtempSync(join(tmpdir(), 'surco-in-place-'))
@@ -36,11 +37,16 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
       title: 'Unsure',
       artist: 'Someone',
       album: 'Left As It Was',
+      grouping: 'Warm-up',
+      publisher: 'White Label',
+      bpm: 124,
+      comment: 'Energy 6',
+      coverJpg: coverJpg(join(mkdtempSync(join(tmpdir(), 'surco-cover-')), 'own.jpg')),
       withCues: true,
     })
     for (const file of listFiles(folder)) {
       const path = join(folder, file)
-      before.set(file, { md5: audioMd5(path), tags: await readTags(path) })
+      before.set(file, { md5: audioMd5(path), tags: snapshotTags(path) })
     }
 
     surco = await openSurco({
@@ -88,9 +94,14 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
     }
   })
 
-  it('keeps the tags of a track the user left unconfirmed', async () => {
+  it('keeps the tags of a track the user left unconfirmed', () => {
     const file = join('Vinyl', 'Unsure.aiff')
-    expect(await readTags(join(folder, file))).toEqual(before.get(file)?.tags)
+    const { added, removed } = diffSnapshots(
+      before.get(file)?.tags ?? [],
+      snapshotTags(join(folder, file)),
+    )
+    expect(unexplainedChanges(added, ALLOWED_UPDATE_CHANGES.aiff.added)).toEqual([])
+    expect(unexplainedChanges(removed, ALLOWED_UPDATE_CHANGES.aiff.removed)).toEqual([])
   })
 
   it('keeps the Traktor cue points where they were', () => {
