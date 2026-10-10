@@ -31,6 +31,12 @@ export interface TrackSpec {
   comment?: string
   coverJpg?: string
   withCues?: boolean
+  signal?: keyof typeof SIGNALS
+}
+
+const SIGNALS = {
+  tone: 'aevalsrc=0.3*sin(2*PI*220*t)+0.1*sin(2*PI*3000*t):s=44100:d=4',
+  kick: 'aevalsrc=0.95*sin(2*PI*55*t)*exp(-4*mod(t\\,0.5)):s=44100:d=8',
 }
 
 export function makeTrack(path: string, spec: TrackSpec): string {
@@ -44,7 +50,7 @@ export function makeTrack(path: string, spec: TrackSpec): string {
     '-f',
     'lavfi',
     '-i',
-    'aevalsrc=0.3*sin(2*PI*220*t)+0.1*sin(2*PI*3000*t):s=44100:d=4',
+    SIGNALS[spec.signal ?? 'tone'],
     '-ac',
     '2',
     ...cues,
