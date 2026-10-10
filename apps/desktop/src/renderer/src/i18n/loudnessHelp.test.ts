@@ -15,7 +15,7 @@ import ptBR from './locales/pt-BR.json'
 // ModalShell here installs a focus trap that leaks into the next test file's globals.
 describe('loudness help copy', () => {
   const METRICS = ['Lufs', 'Peak', 'Range', 'Crest', 'Balance', 'Dc', 'Noise']
-  const editor = en.editor as Record<string, string>
+  const editor = en.editor as Record<string, unknown>
 
   it('gives every metric a definition, a good range and a fix note', () => {
     for (const m of METRICS) {
