@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createHash } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -13,6 +14,10 @@ import { ALLOWED_UPDATE_CHANGES, unexplainedChanges } from '../main/updateContra
 import { coverOf } from '../renderer/src/lib/release'
 import { audioMd5, coverJpg, DROP_MS, embeddedCover, listFiles, makeTrack, release } from './fixtures'
 import { openSurco, type Scenario } from './harness'
+
+function sha1(data: Buffer | null): string {
+  return data ? createHash('sha1').update(data).digest('hex') : 'no cover'
+}
 
 const movinMelodies = release({
   tracklist: [
@@ -98,9 +103,9 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
   })
 
   it('embeds the cover of the match as it came, without re-encoding it', () => {
-    const fromRelease = Buffer.from(coverOf(movinMelodies)?.split(',')[1] ?? '', 'base64')
+    const fromRelease = sha1(Buffer.from(coverOf(movinMelodies)?.split(',')[1] ?? '', 'base64'))
     for (const file of ['till i come.mp3', join('Vinyl', '9pm.flac')]) {
-      expect(embeddedCover(join(folder, file)), file).toEqual(fromRelease)
+      expect(sha1(embeddedCover(join(folder, file))), file).toBe(fromRelease)
     }
   })
 
