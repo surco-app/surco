@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -84,6 +84,25 @@ export function audioMd5(path: string): string {
   return execFileSync(FF, ['-loglevel', 'error', '-i', path, '-map', '0:a', '-f', 'md5', '-'])
     .toString()
     .trim()
+}
+
+export function loudness(path: string): { integrated: number; truePeak: number } {
+  const log = spawnSync(FF, [
+    '-nostats',
+    '-i',
+    path,
+    '-af',
+    'ebur128=peak=true',
+    '-f',
+    'null',
+    '-',
+  ]).stderr.toString()
+  const summary = log.slice(log.lastIndexOf('Summary:'))
+  const number = (label: RegExp): number => Number(summary.match(label)?.[1])
+  return {
+    integrated: number(/I:\s+(-?[\d.]+) LUFS/),
+    truePeak: number(/Peak:\s+(-?[\d.]+) dBFS/),
+  }
 }
 
 export function listFiles(root: string): string[] {
