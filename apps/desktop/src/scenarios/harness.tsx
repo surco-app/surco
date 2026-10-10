@@ -2,7 +2,7 @@ import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
 import { app } from 'electron'
 import type React from 'react'
 import { expect } from 'vitest'
@@ -19,6 +19,7 @@ import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
 import type { Api } from '../preload/api'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
+import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
@@ -185,6 +186,7 @@ export interface Scenario {
   patchTrack: (fileName: string, patch: Partial<TrackItem>) => void
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
   acceptMatch: (fileName: string, release: Release, position: string) => void
+  findAndReplace: (find: string, replace: string, options?: { regex?: boolean }) => string
   trash: SurcoTrash
   errors: string[]
   sentToAppleMusic: string[]
@@ -296,6 +298,23 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       )
       if (!patch) throw new Error('scenario: the match produced no patch')
       act(() => result.current.library.updateTrack(track.id, patch))
+    },
+    findAndReplace: (find, replace, { regex = false } = {}) => {
+      const modal = render(
+        <FindReplaceModal
+          tracks={tracks()}
+          customFields={settings.customFields}
+          onApply={(patches) => result.current.library.deriveTracks(patches)}
+          onClose={() => {}}
+        />,
+      )
+      if (regex) fireEvent.click(modal.getByTestId('find-replace-regex'))
+      fireEvent.change(modal.getByTestId('find-replace-find'), { target: { value: find } })
+      fireEvent.change(modal.getByTestId('find-replace-replace'), { target: { value: replace } })
+      const preview = modal.getByTestId('find-replace-preview').textContent ?? ''
+      fireEvent.click(modal.getByTestId('find-replace-apply'))
+      modal.unmount()
+      return preview
     },
     convertAll: async (answer = 'confirm') => {
       running = undefined
