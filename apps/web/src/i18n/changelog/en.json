@@ -35,6 +35,14 @@
       {
         "text": "The Backups setting now does what it says. “Only when the audio changes” stops keeping a copy when you only update tags, and “Never” keeps none. The metadata review always keeps its own so Undo works, and with “Never” deleting on a disk with no Trash is permanent, with a warning that says so before you confirm.",
         "in": "1.7.1"
+      },
+      {
+        "text": "New setting in Search to clean up on load, off by default. It removes stray spaces and invisible characters from the title, artist, album and genre, and can also match capitals and accents to the spelling your library uses most. The top bar counts the cleaned tracks, each row carries a mark and the editor says what changed, with Undo. Nothing is written until you convert or update.",
+        "in": "1.7.2"
+      },
+      {
+        "text": "Applying a filter to an AAC file you keep in its format leaves it as AAC at the same quality, instead of a lossless file three times bigger. And Surco asks before re-encoding an MP3 or an AAC in place, because that degrades the original and cannot be undone.",
+        "in": "1.7.2"
       }
     ]
   },

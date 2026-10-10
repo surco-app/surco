@@ -35,6 +35,14 @@
       {
         "text": "El ajuste de Copias de seguridad ya hace lo que dice. «Solo si cambia el audio» deja de guardar una copia cuando solo actualizas las etiquetas, y «Nunca» no guarda ninguna. La revisión de metadatos guarda siempre la suya para que Deshacer funcione, y con «Nunca» borrar en un disco sin Papelera es definitivo, con un aviso que lo dice antes de confirmar.",
         "in": "1.7.1"
+      },
+      {
+        "text": "Nuevo ajuste en Búsqueda para limpiar al cargar, apagado por defecto. Quita los espacios sobrantes y los caracteres invisibles del título, el artista, el álbum y el género, y si quieres unifica mayúsculas y acentos con la forma que más usa tu biblioteca. La barra superior cuenta las pistas limpiadas, cada fila lleva su marca y el editor dice qué cambió, con Deshacer. Nada se escribe hasta que conviertes o actualizas.",
+        "in": "1.7.2"
+      },
+      {
+        "text": "Aplicar un filtro a un AAC que conservas en su formato lo deja en AAC con su misma calidad, en vez de un archivo sin pérdida tres veces más grande. Y Surco pregunta antes de recodificar en su sitio un MP3 o un AAC, porque eso degrada el original y no se puede deshacer.",
+        "in": "1.7.2"
       }
     ]
   },
