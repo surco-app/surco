@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { Picture, PictureType, File as TagFile } from 'node-taglib-sharp'
@@ -36,6 +36,7 @@ export interface TrackSpec {
 
 const SIGNALS = {
   tone: 'aevalsrc=0.3*sin(2*PI*220*t)+0.1*sin(2*PI*3000*t):s=44100:d=4',
+  noise: 'anoisesrc=color=pink:amplitude=0.4:duration=8:sample_rate=44100',
   kick: 'aevalsrc=0.95*sin(2*PI*55*t)*exp(-4*mod(t\\,0.5)):s=44100:d=8',
 }
 
@@ -80,6 +81,15 @@ export function makeTrack(path: string, spec: TrackSpec): string {
     file.dispose()
   }
   return path
+}
+
+export function lossyCopy(source: string, target: string, kbps = 128): string {
+  mkdirSync(dirname(target), { recursive: true })
+  const mp3 = `${target}.tmp.mp3`
+  execFileSync(FF, ['-y', '-loglevel', 'error', '-i', source, '-b:a', `${kbps}k`, mp3])
+  execFileSync(FF, ['-y', '-loglevel', 'error', '-i', mp3, target])
+  unlinkSync(mp3)
+  return target
 }
 
 function prependId3Priv(path: string): void {
