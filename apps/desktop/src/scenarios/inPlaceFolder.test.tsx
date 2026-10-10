@@ -6,11 +6,12 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
-import { readMeta, readTags } from '../main/ffmpeg'
+import { readTags } from '../main/ffmpeg'
 import { diffSnapshots, snapshotTags } from '../main/tagSnapshot'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { ALLOWED_UPDATE_CHANGES, unexplainedChanges } from '../main/updateContract'
-import { audioMd5, coverJpg, DROP_MS, listFiles, makeTrack, release } from './fixtures'
+import { coverOf } from '../renderer/src/lib/release'
+import { audioMd5, coverJpg, DROP_MS, embeddedCover, listFiles, makeTrack, release } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 const movinMelodies = release({
@@ -96,11 +97,10 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
     expect(flac).toMatchObject({ title: '9 PM', album: 'Movin Melodies', publisher: 'Kontor' })
   })
 
-  it('embeds the cover of the match', async () => {
+  it('embeds the cover of the match as it came, without re-encoding it', () => {
+    const fromRelease = Buffer.from(coverOf(movinMelodies)?.split(',')[1] ?? '', 'base64')
     for (const file of ['till i come.mp3', join('Vinyl', '9pm.flac')]) {
-      const { cover } = await readMeta(join(folder, file))
-      expect(cover, file).not.toBeNull()
-      expect(cover?.width, file).toBe(600)
+      expect(embeddedCover(join(folder, file)), file).toEqual(fromRelease)
     }
   })
 

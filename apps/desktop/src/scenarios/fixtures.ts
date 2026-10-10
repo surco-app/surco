@@ -95,6 +95,16 @@ export function listFiles(root: string): string[] {
   return walk(root).sort()
 }
 
+export function embeddedCover(path: string): Buffer | null {
+  const file = TagFile.createFromPath(path)
+  try {
+    const picture = file.tag.pictures[0]
+    return picture ? Buffer.from(picture.data.toByteArray()) : null
+  } finally {
+    file.dispose()
+  }
+}
+
 export function coverJpg(path: string, color = 'teal'): string {
   writeFileSync(path, coverBytes(color))
   return path
