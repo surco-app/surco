@@ -105,25 +105,27 @@ export function embeddedCover(path: string): Buffer | null {
   }
 }
 
-export function coverJpg(path: string, color = 'teal'): string {
-  writeFileSync(path, coverBytes(color))
+export function coverJpg(path: string, hue = 180): string {
+  writeFileSync(path, coverBytes(hue))
   return path
 }
 
 export function coverDataUrl(): string {
-  return `data:image/jpeg;base64,${coverBytes('orange').toString('base64')}`
+  return `data:image/jpeg;base64,${coverBytes(30).toString('base64')}`
 }
 
-function coverBytes(color: string): Buffer {
+function coverBytes(hue: number): Buffer {
   return execFileSync(FF, [
     '-loglevel',
     'error',
     '-f',
     'lavfi',
     '-i',
-    `color=c=${color}:s=600x600:d=1`,
+    `mandelbrot=s=600x600,hue=h=${hue}`,
     '-frames:v',
     '1',
+    '-q:v',
+    '6',
     '-f',
     'mjpeg',
     '-',
