@@ -1292,10 +1292,12 @@
   "useCases": {
     "metaTitle": "Surco use cases: how to set it up for each job",
     "metaDescription": "Step by step recipes for Surco. Which settings to change and what to click to tag a whole folder, remove Apple Music duplicates, even out loudness or take your tracks to rekordbox and Engine DJ.",
+    "recipeMetaTitle": "{{title}} with Surco",
     "kicker": "Use cases",
     "title": "Surco for the job you came to do",
     "lede": "Recipes for the everyday jobs. First, the settings you change once. Then, the steps you repeat each time.",
     "tocLabel": "On this page",
+    "backLabel": "All use cases",
     "settingsLabel": "Settings, just once",
     "settingsHint": "Open Surco's Settings (⌘ , on Mac) and find each option by its name.",
     "settingsRoot": "Settings",
@@ -1347,6 +1349,7 @@
     "cases": [
       {
         "id": "in-place",
+        "slug": "tag-a-whole-folder",
         "group": "organize",
         "title": "Add tags and artwork to a whole folder, without making copies",
         "body": [
@@ -1421,6 +1424,7 @@
       },
       {
         "id": "replace",
+        "slug": "replace-track-with-better-copy",
         "group": "library",
         "macOnly": true,
         "title": "Swap a track in your library for a better copy",
@@ -1499,6 +1503,7 @@
       },
       {
         "id": "apple-music-rekordbox",
+        "slug": "apple-music-and-rekordbox",
         "group": "library",
         "macOnly": true,
         "title": "Your music lives in Apple Music and you organize in rekordbox",
@@ -1569,6 +1574,7 @@
       },
       {
         "id": "to-aiff",
+        "slug": "convert-to-aiff-keeping-cue-points",
         "group": "library",
         "title": "Move your collection to AIFF without losing cue points",
         "body": [
@@ -1645,6 +1651,7 @@
       },
       {
         "id": "check-quality",
+        "slug": "check-audio-quality",
         "group": "sound",
         "title": "Check the quality of what you bought or downloaded",
         "body": [
@@ -1701,6 +1708,7 @@
       },
       {
         "id": "vinyl",
+        "slug": "digitize-vinyl",
         "group": "sound",
         "title": "Digitize your vinyl",
         "body": [
@@ -1769,6 +1777,7 @@
       },
       {
         "id": "usb",
+        "slug": "prepare-usb-for-the-club",
         "group": "go",
         "title": "Get a USB stick ready for the club",
         "body": [
@@ -1837,6 +1846,7 @@
       },
       {
         "id": "review-spellings",
+        "slug": "unify-apple-music-spellings",
         "group": "organize",
         "macOnly": true,
         "title": "Make your Apple Music library spell things one way",
@@ -1895,6 +1905,7 @@
       },
       {
         "id": "duplicates",
+        "slug": "remove-apple-music-duplicates",
         "group": "organize",
         "macOnly": true,
         "title": "Remove repeated tracks from Apple Music",
@@ -1953,6 +1964,7 @@
       },
       {
         "id": "review-folder",
+        "slug": "review-folder-before-import",
         "group": "organize",
         "title": "Review a folder before it goes into your library",
         "body": [
@@ -1988,6 +2000,7 @@
       },
       {
         "id": "find-replace",
+        "slug": "clean-up-titles-in-bulk",
         "group": "organize",
         "title": "Clean up the titles of hundreds of tracks at once",
         "body": [
@@ -2027,6 +2040,7 @@
       },
       {
         "id": "beatport",
+        "slug": "bpm-and-key-from-beatport",
         "group": "organize",
         "title": "Get BPM and key from Beatport",
         "body": [
@@ -2077,6 +2091,7 @@
       },
       {
         "id": "watched-folder",
+        "slug": "auto-tag-downloads",
         "group": "organize",
         "title": "Have your downloads arrive already tagged",
         "body": [
@@ -2122,6 +2137,7 @@
       },
       {
         "id": "loudness",
+        "slug": "even-out-loudness",
         "group": "sound",
         "title": "Even out the loudness of a whole folder",
         "body": [
@@ -2173,6 +2189,7 @@
       },
       {
         "id": "engine-dj",
+        "slug": "send-tracks-to-engine-dj",
         "group": "library",
         "title": "Take your tracks to Engine DJ",
         "body": [
@@ -2227,6 +2244,7 @@
       },
       {
         "id": "music-playlist-set",
+        "slug": "set-from-apple-music-playlist",
         "group": "go",
         "macOnly": true,
         "title": "Prepare a set from an Apple Music playlist",
@@ -2273,6 +2291,7 @@
       },
       {
         "id": "nas",
+        "slug": "music-on-a-nas",
         "group": "go",
         "title": "Your music on a NAS",
         "body": [

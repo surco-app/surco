@@ -8,7 +8,7 @@ import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 // `page` marks which standalone page renders the header; section links then
 // point back to the landing instead of to anchors that don't exist here.
-export default function Header({ page }: { page?: Page }) {
+export default function Header({ page, alternate }: { page?: Page; alternate?: string }) {
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
@@ -17,7 +17,7 @@ export default function Header({ page }: { page?: Page }) {
   const otherCode = lang === 'en' ? 'es' : 'en'
   const otherLabel = lang === 'en' ? 'ES' : 'EN'
   const home = lang === 'en' ? '/en' : '/'
-  const otherHref = page ? PAGES[page][otherCode] : lang === 'en' ? '/' : '/en'
+  const otherHref = alternate ?? (page ? PAGES[page][otherCode] : lang === 'en' ? '/' : '/en')
   const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]

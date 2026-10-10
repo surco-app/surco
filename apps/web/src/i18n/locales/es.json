@@ -1292,10 +1292,12 @@
   "useCases": {
     "metaTitle": "Casos de uso de Surco: cómo configurarlo para cada trabajo",
     "metaDescription": "Recetas paso a paso para Surco. Qué ajustes tocar y qué pulsar para etiquetar una carpeta entera, quitar duplicados de Apple Music, igualar el volumen o llevar tus pistas a rekordbox y Engine DJ.",
+    "recipeMetaTitle": "{{title}} con Surco",
     "kicker": "Casos de uso",
     "title": "Surco para lo que vienes a hacer",
     "lede": "Recetas para los trabajos de siempre. Primero, los ajustes que se tocan una sola vez. Después, los pasos que repites cada vez.",
     "tocLabel": "En esta página",
+    "backLabel": "Todos los casos de uso",
     "settingsLabel": "Ajustes, una sola vez",
     "settingsHint": "Abre los Ajustes de Surco (⌘ , en Mac) y busca cada opción por su nombre.",
     "settingsRoot": "Ajustes",
@@ -1347,6 +1349,7 @@
     "cases": [
       {
         "id": "in-place",
+        "slug": "etiquetar-carpeta-entera",
         "group": "organize",
         "title": "Pon etiquetas y carátula a una carpeta entera, sin crear copias",
         "body": [
@@ -1421,6 +1424,7 @@
       },
       {
         "id": "replace",
+        "slug": "sustituir-pista-por-copia-mejor",
         "group": "library",
         "macOnly": true,
         "title": "Cambia una pista de tu biblioteca por una copia mejor",
@@ -1499,6 +1503,7 @@
       },
       {
         "id": "apple-music-rekordbox",
+        "slug": "apple-music-y-rekordbox",
         "group": "library",
         "macOnly": true,
         "title": "Tienes la música en Apple Music y organizas en rekordbox",
@@ -1569,6 +1574,7 @@
       },
       {
         "id": "to-aiff",
+        "slug": "pasar-a-aiff-sin-perder-cue-points",
         "group": "library",
         "title": "Pasa tu colección a AIFF sin perder los cue points",
         "body": [
@@ -1645,6 +1651,7 @@
       },
       {
         "id": "check-quality",
+        "slug": "comprobar-calidad",
         "group": "sound",
         "title": "Comprueba la calidad de lo que has comprado o descargado",
         "body": [
@@ -1701,6 +1708,7 @@
       },
       {
         "id": "vinyl",
+        "slug": "digitalizar-vinilos",
         "group": "sound",
         "title": "Digitaliza tus vinilos",
         "body": [
@@ -1769,6 +1777,7 @@
       },
       {
         "id": "usb",
+        "slug": "preparar-usb-para-el-club",
         "group": "go",
         "title": "Prepara un USB para el club",
         "body": [
@@ -1837,6 +1846,7 @@
       },
       {
         "id": "review-spellings",
+        "slug": "unificar-nombres-apple-music",
         "group": "organize",
         "macOnly": true,
         "title": "Unifica cómo se escribe tu biblioteca de Apple Music",
@@ -1895,6 +1905,7 @@
       },
       {
         "id": "duplicates",
+        "slug": "quitar-duplicados-apple-music",
         "group": "organize",
         "macOnly": true,
         "title": "Quita las pistas repetidas de Apple Music",
@@ -1953,6 +1964,7 @@
       },
       {
         "id": "review-folder",
+        "slug": "revisar-carpeta-antes-de-importar",
         "group": "organize",
         "title": "Revisa una carpeta antes de meterla en tu biblioteca",
         "body": [
@@ -1988,6 +2000,7 @@
       },
       {
         "id": "find-replace",
+        "slug": "limpiar-titulos-en-lote",
         "group": "organize",
         "title": "Limpia los títulos de cientos de pistas a la vez",
         "body": [
@@ -2027,6 +2040,7 @@
       },
       {
         "id": "beatport",
+        "slug": "bpm-y-tonalidad-de-beatport",
         "group": "organize",
         "title": "Trae el BPM y la tonalidad de Beatport",
         "body": [
@@ -2077,6 +2091,7 @@
       },
       {
         "id": "watched-folder",
+        "slug": "etiquetar-descargas-automaticamente",
         "group": "organize",
         "title": "Que lo que descargas llegue ya etiquetado",
         "body": [
@@ -2122,6 +2137,7 @@
       },
       {
         "id": "loudness",
+        "slug": "igualar-volumen",
         "group": "sound",
         "title": "Iguala el volumen de una carpeta entera",
         "body": [
@@ -2173,6 +2189,7 @@
       },
       {
         "id": "engine-dj",
+        "slug": "llevar-pistas-a-engine-dj",
         "group": "library",
         "title": "Lleva tus pistas a Engine DJ",
         "body": [
@@ -2227,6 +2244,7 @@
       },
       {
         "id": "music-playlist-set",
+        "slug": "set-desde-playlist-apple-music",
         "group": "go",
         "macOnly": true,
         "title": "Prepara un set desde una playlist de Apple Music",
@@ -2273,6 +2291,7 @@
       },
       {
         "id": "nas",
+        "slug": "musica-en-un-nas",
         "group": "go",
         "title": "Tu música en un NAS",
         "body": [

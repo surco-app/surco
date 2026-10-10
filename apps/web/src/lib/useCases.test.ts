@@ -5,6 +5,8 @@ import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import {
   matchesUseCase,
+  recipePages,
+  recipePathForAnchor,
   USE_CASE_SOURCES,
   USE_CASE_SOURCES_BY_CASE,
   type UseCaseSource,
@@ -132,5 +134,52 @@ describe('finding a use case', () => {
       const labels = (locale.useCases as { sources: Record<string, string> }).sources
       expect(USE_CASE_SOURCES.filter((s) => !labels[s])).toEqual([])
     }
+  })
+})
+
+// Each recipe is its own page so it can be indexed, shared and linked from a support
+// reply on its own. A slug that is missing, malformed or shared by two recipes either
+// breaks the build or silently serves one recipe under another's address.
+describe('use case pages', () => {
+  for (const [name, locale] of [
+    ['es', es],
+    ['en', en],
+  ] as const) {
+    it(`${name} gives every recipe its own url-safe slug`, () => {
+      const slugs = (locale.useCases.cases as { slug?: string }[]).map((c) => c.slug ?? '')
+      expect(slugs.filter((s) => !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s))).toEqual([])
+      expect(new Set(slugs).size).toBe(slugs.length)
+    })
+  }
+
+  it('puts every recipe under the use cases page of its language', () => {
+    const pages = recipePages()
+    expect(pages).toHaveLength(findable(es).length * 2)
+    expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'es')?.path).toBe(
+      '/casos-de-uso/quitar-duplicados-apple-music',
+    )
+    expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'en')?.path).toBe(
+      '/en/use-cases/remove-apple-music-duplicates',
+    )
+  })
+
+  // The language switch and hreflang must land on the same recipe, not on the index.
+  it('pairs each recipe with the same recipe in the other language', () => {
+    const page = recipePages().find((p) => p.id === 'nas' && p.lang === 'es')
+    expect(page?.alternates).toEqual({
+      es: '/casos-de-uso/musica-en-un-nas',
+      en: '/en/use-cases/music-on-a-nas',
+    })
+  })
+
+  // Before each recipe had a page, links pointed at an anchor on the index
+  // (/casos-de-uso#nas). Those links are already out there in replies and chats.
+  it('sends an old anchor link to the recipe page', () => {
+    expect(recipePathForAnchor('es', '#nas')).toBe('/casos-de-uso/musica-en-un-nas')
+    expect(recipePathForAnchor('en', '#duplicates')).toBe(
+      '/en/use-cases/remove-apple-music-duplicates',
+    )
+    expect(recipePathForAnchor('es', '#main')).toBeNull()
+    expect(recipePathForAnchor('es', '')).toBeNull()
   })
 })
