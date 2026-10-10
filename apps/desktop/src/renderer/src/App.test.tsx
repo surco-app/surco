@@ -3886,12 +3886,14 @@ describe('App list review', () => {
     listApi({ processTrack: vi.fn(() => new Promise(() => {})) })
     await renderApp()
     await addThree()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     const button = screen.getByTestId('list-review-open')
     expect(button).toHaveAccessibleName('Review metadata in the list')
     fireEvent.click(button)
     expect(await screen.findByTestId('list-review-scope')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('music-review-close'))
     fireEvent.click(await screen.findByTestId('convert-all'))
+    fireEvent.click(await screen.findByTestId('list-actions-more'))
     await waitFor(() => expect(screen.getByTestId('list-review-open')).toBeDisabled())
   })
 })
@@ -4416,6 +4418,7 @@ describe('App list header', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     for (const id of [
       'add-files',
       'select-all',

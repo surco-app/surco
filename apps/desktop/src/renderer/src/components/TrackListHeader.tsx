@@ -6,11 +6,13 @@ import {
   CaseSensitive,
   Clock,
   Crosshair,
+  Ellipsis,
   FileAudio,
   FilePlus,
   ListMusic,
   ListOrdered,
   ListX,
+  type LucideIcon,
   Replace,
   SpellCheck,
   SquareCheckBig,
@@ -25,6 +27,7 @@ import type { TrackItem } from '../types'
 import { QualityFilterBar } from './QualityFilterBar'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
+import { useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -68,6 +71,45 @@ interface Props {
   onTrashSuspects: () => void
 }
 
+function MenuAction({
+  testid,
+  icon: Icon,
+  label,
+  hint,
+  danger,
+  disabled,
+  onClick,
+}: {
+  testid: string
+  icon: LucideIcon
+  label: string
+  hint?: string
+  danger?: boolean
+  disabled?: boolean
+  onClick: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      data-testid={testid}
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+        danger ? 'text-danger' : 'text-fg'
+      }`}
+    >
+      <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{label}</span>
+      {hint && (
+        <span aria-hidden="true" className="shrink-0 pl-3 text-fg-faint">
+          {hint}
+        </span>
+      )}
+    </button>
+  )
+}
+
 // The track column's sticky header: search, the quality/format filter, the sort control and
 // the list actions. Pure presentation — every handler is owned by App, which is where the
 // state they act on lives. Split out of App because it was 175 lines of markup wedged into
@@ -105,6 +147,13 @@ export function TrackListHeader({
   onTrashSelected,
   onTrashSuspects,
 }: Props): React.JSX.Element {
+  const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
+
+  function run(action: () => void): void {
+    setOpen(false)
+    action()
+  }
+
   return (
     // The ref measures the WHOLE sticky header (search + filter + sort), not just the filter
     // bar: keyboard paging offsets the selected row by this height so it lands clear of the
@@ -250,51 +299,7 @@ export function TrackListHeader({
                 <Tooltip label={tr('header.revealSelected')} />
               </button>
             )}
-            <button
-              type="button"
-              data-testid="fill-all"
-              onClick={onFillAll}
-              aria-label={tr('header.fillFromName')}
-              className="press relative flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-            >
-              <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('header.fillFromName')} hint={hintFor('fill-all')} />
-            </button>
-            <button
-              type="button"
-              data-testid="open-find-replace"
-              onClick={onFindReplace}
-              aria-label={tr('commands.findReplace')}
-              className="press relative flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-            >
-              <Replace className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('commands.findReplace')} hint={hintFor('find-replace')} />
-            </button>
-            <button
-              type="button"
-              data-testid="list-review-open"
-              onClick={onReviewList}
-              disabled={!canReviewList}
-              aria-label={tr('header.reviewList')}
-              className="press relative flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
-            >
-              <SpellCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('header.reviewList')} hint={hintFor('list-review')} />
-            </button>
-            {/* The destructive pair sits apart at the far end, mildest first:
-                  clear the list (rows only), then move the selection to the
-                  Trash (real files). */}
             <span className="flex-1" />
-            <button
-              type="button"
-              data-testid="clear-all"
-              onClick={onClearAll}
-              aria-label={tr('header.clearAll')}
-              className="press relative flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-danger"
-            >
-              <ListX className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('header.clearAll')} />
-            </button>
             <button
               type="button"
               data-testid="trash-selected"
@@ -306,6 +311,61 @@ export function TrackListHeader({
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('commands.trashSelected')} />
             </button>
+            <div ref={moreRef} className="relative shrink-0">
+              <button
+                type="button"
+                data-testid="list-actions-more"
+                ref={toggleRef}
+                onClick={() => setOpen((v) => !v)}
+                aria-label={tr('header.moreActions')}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="press relative flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
+              >
+                <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
+                <Tooltip label={tr('header.moreActions')} />
+              </button>
+              {open && (
+                <div
+                  ref={menuRef}
+                  role="menu"
+                  aria-label={tr('header.moreActions')}
+                  onKeyDown={onMenuKeyDown}
+                  className="animate-pop-flat absolute top-full right-0 z-50 mt-1 w-max max-w-72 origin-top-right rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+                >
+                  <MenuAction
+                    testid="list-review-open"
+                    icon={SpellCheck}
+                    label={tr('header.reviewList')}
+                    hint={hintFor('list-review')}
+                    disabled={!canReviewList}
+                    onClick={() => run(onReviewList)}
+                  />
+                  <MenuAction
+                    testid="fill-all"
+                    icon={Tag}
+                    label={tr('header.fillFromName')}
+                    hint={hintFor('fill-all')}
+                    onClick={() => run(onFillAll)}
+                  />
+                  <MenuAction
+                    testid="open-find-replace"
+                    icon={Replace}
+                    label={tr('commands.findReplace')}
+                    hint={hintFor('find-replace')}
+                    onClick={() => run(onFindReplace)}
+                  />
+                  <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                  <MenuAction
+                    testid="clear-all"
+                    icon={ListX}
+                    label={tr('header.clearAll')}
+                    danger
+                    onClick={() => run(onClearAll)}
+                  />
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
