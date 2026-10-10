@@ -178,7 +178,7 @@ export interface Scenario {
   tracks: () => TrackItem[]
   drop: (...paths: string[]) => Promise<void>
   convertAll: () => Promise<void>
-  editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
+  patchTrack: (fileName: string, patch: Partial<TrackItem>) => void
   acceptMatch: (fileName: string, release: Release, position: string) => void
   trash: SurcoTrash
   errors: string[]
@@ -249,9 +249,9 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         timeout: 20_000,
       })
     },
-    editMeta: (fileName, patch) => {
+    patchTrack: (fileName, patch) => {
       const track = trackNamed(fileName)
-      act(() => result.current.library.updateTrack(track.id, { meta: { ...track.meta, ...patch } }))
+      act(() => result.current.library.updateTrack(track.id, patch))
     },
     acceptMatch: (fileName, release, position) => {
       const track = trackNamed(fileName)
