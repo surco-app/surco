@@ -218,6 +218,7 @@
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
     "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden — prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
+    "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
     "convertFailed": "„{{name}}“ konnte nicht konvertiert werden: {{reason}}",
     "convertFailedMany": "„{{name}}“ und {{count}} weitere konnten nicht konvertiert werden: {{reason}}",

@@ -1440,6 +1440,37 @@ describe('App multi-select convert', () => {
     expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
   })
 
+  // The editor's convert button sent the format it showed, which the keep rule itself had
+  // chosen, as if the user had picked it. Beside the original that wrote a "(2).mp3" next to
+  // the file the setting promises to leave alone, while Convert all already left it be.
+  it('leaves a kept MP3 alone beside the original when converted from the editor, and says why', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/music/b (2).mp3', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          outputFormat: 'aiff',
+          keepMp3Sources: true,
+          convertBesideOriginal: true,
+          overwriteOriginal: false,
+          addToAppleMusic: false,
+        }),
+      ),
+      pickFiles: vi.fn().mockResolvedValue(['/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Promo', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    fireEvent.click((await screen.findAllByTestId('track-row'))[0])
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await waitFor(() =>
+      expect(screen.getByTestId('app-notice')).toHaveTextContent('stays as it is'),
+    )
+    expect(processTrack).not.toHaveBeenCalled()
+  })
+
   // The destination is seeded against the anchor track alone: a FLAC anchor pins it to the
   // output folder because Music can't take FLAC. Sent as a pick for the whole selection, it
   // kept every MP3 of the batch out of Apple Music too, which the user never asked for.

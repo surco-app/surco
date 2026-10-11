@@ -218,6 +218,7 @@
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",
     "noAudioFound": "Nenhum áudio encontrado no que você soltou — verifique se a pasta pode ser lida e tem formatos compatíveis.",
     "normalizeSkipped": "Não foi possível medir o volume de “{{name}}”: convertida sem normalização.",
+    "keptAsIs": "“{{name}}” fica como está porque “Manter arquivos MP3 e M4A como estão” está ativo com “Ao lado do original”.",
     "formatSkipped": "“{{name}}” não tem formato de saída equivalente para Igual à origem — pulada.",
     "convertFailed": "Não foi possível converter “{{name}}”: {{reason}}",
     "convertFailedMany": "Não foi possível converter “{{name}}” e mais {{count}}: {{reason}}",
