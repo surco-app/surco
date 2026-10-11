@@ -23,7 +23,7 @@ function sha1(path: string): string {
   return createHash('sha1').update(readFileSync(path)).digest('hex')
 }
 
-describe('Build a set from an Apple Music playlist', () => {
+describe.skipIf(process.platform !== 'darwin')('Build a set from an Apple Music playlist', () => {
   let library: string
   let output: string
   let surco: Scenario
