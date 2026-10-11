@@ -329,7 +329,7 @@ describe('Field with a bounded width', () => {
     expect(column.className).toContain('w-[4.5rem]')
     // When the row wraps onto a second line the grid cell grows, and a stretched label
     // centred itself between the two lines instead of beside its own box.
-    expect(screen.getByText('BPM').className).toContain('@[28rem]:self-start')
+    expect(screen.getByText('BPM').className).toContain('@[24rem]:self-start')
   })
 
   // A field joined onto a row has no cell of its own in the form's label column, so its

@@ -152,11 +152,11 @@ export function MetadataForm({
             macOS inspector lays out a form, so a value gets the column's full width instead of
             half of it ("Head Horny's & Migu"). The label track is as wide as the longest
             label, capped so a long custom name wraps instead of starving the inputs. Below
-            28rem an input beside its label is narrower than the value it holds, so the labels
+            24rem an input beside its label is narrower than the value it holds, so the labels
             go back on top and each input gets the column's full width. The column stops at
             48rem: past that an input only moves its end further from its label. */}
         <div className="@container min-w-0 flex-1">
-          <div className="grid max-w-[48rem] grid-cols-1 gap-y-4 @[28rem]:grid-cols-[auto_minmax(0,1fr)] @[28rem]:gap-x-3 @[28rem]:gap-y-2">
+          <div className="grid max-w-[48rem] grid-cols-1 gap-y-4 @[24rem]:grid-cols-[auto_minmax(0,1fr)] @[24rem]:gap-x-3 @[24rem]:gap-y-2">
             {toRows(fields).map(([f, ...rest]) =>
               f.width ? (
                 <Fragment key={f.key}>
@@ -167,11 +167,11 @@ export function MetadataForm({
                   })}
                 </Fragment>
               ) : f.perTrack ? (
-                <div key={f.key} className="@[28rem]:col-span-2">
+                <div key={f.key} className="@[24rem]:col-span-2">
                   {renderField(f)}
                 </div>
               ) : f.key === 'compilation' ? (
-                <div key={f.key} className="flex @[28rem]:col-start-2">
+                <div key={f.key} className="flex @[24rem]:col-start-2">
                   {renderField(f)}
                 </div>
               ) : (

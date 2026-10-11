@@ -134,6 +134,16 @@ describe('MetadataForm', () => {
     expect(screen.getByTestId('field-title').parentElement?.className).toContain('max-w-[48rem]')
   })
 
+  // In the default 1320px window the fields column beside the cover is about 438px, 10px
+  // short of the old 28rem switch, so every label sat on top of its input and only Year kept
+  // its label beside it. An input beside its label still holds a full title at 24rem.
+  it('puts the labels beside the inputs once the column reaches 24rem', () => {
+    renderForm([spec('title', 'Illusion'), spec('year', '2007')])
+    expect(screen.getByTestId('field-title').parentElement?.className).toContain(
+      '@[24rem]:grid-cols-[auto_minmax(0,1fr)]',
+    )
+  })
+
   // A year, a BPM and a key each took a full row in boxes as wide as the title. Bounded
   // fields that follow each other in the user's order share one row instead; a longer field
   // between them breaks the row, so the user's order is never rearranged to pack them.

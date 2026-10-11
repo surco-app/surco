@@ -150,8 +150,8 @@ export const Field = memo(function Field({
         inline
           ? 'min-h-[34px] flex-row-reverse whitespace-nowrap'
           : width
-            ? 'min-h-[34px] @[28rem]:col-start-1 @[28rem]:self-start @[28rem]:max-w-32 @[28rem]:flex-row-reverse @[28rem]:justify-start @[28rem]:text-right'
-            : 'mb-1.5 @[28rem]:col-start-1 @[28rem]:mb-0 @[28rem]:min-h-[34px] @[28rem]:max-w-32 @[28rem]:flex-row-reverse @[28rem]:justify-start @[28rem]:text-right'
+            ? 'min-h-[34px] @[24rem]:col-start-1 @[24rem]:self-start @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right'
+            : 'mb-1.5 @[24rem]:col-start-1 @[24rem]:mb-0 @[24rem]:min-h-[34px] @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right'
       }`}
     >
       {label}
@@ -169,7 +169,7 @@ export const Field = memo(function Field({
   )
   const control = (
     <>
-      <span className={`relative block ${width ? '' : '@[28rem]:col-start-2'}`}>
+      <span className={`relative block ${width ? '' : '@[24rem]:col-start-2'}`}>
         <input
           ref={inputRef}
           id={inputId}
@@ -207,7 +207,7 @@ export const Field = memo(function Field({
       {cleaned && (
         <span
           data-testid={`field-cleaned-${name}`}
-          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? '' : '@[28rem]:col-start-2 @[28rem]:-mt-1'}`}
+          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
         >
           <span className="inline-flex items-center gap-1 font-medium text-good">
             <CleanSpark />
@@ -243,7 +243,7 @@ export const Field = memo(function Field({
           of the real one, so the detected value swaps in without popping into empty space.
           Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}
       {suggesting && !(suggestions && suggestions.length > 0) && (
-        <span className={`mt-1.5 flex ${width ? '' : '@[28rem]:col-start-2 @[28rem]:mt-0'}`}>
+        <span className={`mt-1.5 flex ${width ? '' : '@[24rem]:col-start-2 @[24rem]:mt-0'}`}>
           <span
             data-testid={`suggestion-loading-${name}`}
             aria-hidden="true"
@@ -252,7 +252,7 @@ export const Field = memo(function Field({
         </span>
       )}
       {suggestions && suggestions.length > 0 && (
-        <div className={width ? '' : '@[28rem]:col-start-2 @[28rem]:-mt-1.5'}>
+        <div className={width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1.5'}>
           <SuggestionChips
             suggestions={suggestions}
             isOn={(s) =>
@@ -276,10 +276,10 @@ export const Field = memo(function Field({
     return (
       // A wrapping <label> would fold the { } menu button and every chip into the input's
       // accessible name, so the label points at the input by id and the rest sits beside it.
-      // From 28rem the field's parts join the form's two-track grid directly (contents), so
+      // From 24rem the field's parts join the form's two-track grid directly (contents), so
       // every label shares one column and every input the other; the chips sit under their
       // input.
-      <div className="group block @[28rem]:contents">
+      <div className="group block @[24rem]:contents">
         {labelEl}
         {control}
       </div>
@@ -306,9 +306,9 @@ export const Field = memo(function Field({
   // The first field of a row: its label takes the form's label column and the fields that
   // follow it (trailing) line up beside its box, wrapping when the column runs out.
   return (
-    <div className="group flex items-start gap-2 @[28rem]:contents">
+    <div className="group flex items-start gap-2 @[24rem]:contents">
       {labelEl}
-      <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 @[28rem]:col-start-2">
+      <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 @[24rem]:col-start-2">
         {column}
         {trailing}
       </div>
