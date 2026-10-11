@@ -56,6 +56,7 @@ import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { useTracksView } from '../renderer/src/hooks/useTracksView'
 import { waveformOptions } from '../renderer/src/hooks/useWaveform'
+import { removeAnalysisQueries } from '../renderer/src/lib/analysisQueries'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import { type Destination, fromDestination } from '../renderer/src/lib/destination'
 import { listReviewEntries } from '../renderer/src/lib/listReviewEntries'
@@ -414,10 +415,17 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   const { result } = renderHook(
     () => {
       const analyzeRef = useRef<(tracks: TrackItem[]) => void>(() => {})
+      const forgetRef = useRef<(ids: string[]) => void>(() => {})
       const library = useTrackLibrary({
         setSelection: () => {},
         onForget: () => {},
-        onRemove: () => {},
+        onRemove: (removed) => {
+          removeAnalysisQueries(
+            queryClient,
+            removed.map((t) => t.inputPath),
+          )
+          forgetRef.current(removed.map((t) => t.id))
+        },
         onClear: () => {},
         onMetaLoaded: (track) => {
           if (settings.autoAnalyze) analyzeRef.current([track])
@@ -440,6 +448,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         onErrors: (ids) => errors.push(`${ids.length} tracks could not be analysed`),
       })
       analyzeRef.current = (tracks) => quality.analyzeAllQuality(tracks)
+      forgetRef.current = quality.forgetTracks
       const view = useTracksView(library.tracks, rowsCache, null)
       const confirmFlows = useConfirmFlows({
         settings,
