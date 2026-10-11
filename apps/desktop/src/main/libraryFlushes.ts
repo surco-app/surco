@@ -44,7 +44,7 @@ export interface LibraryHost {
 }
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
-type Sessions = { rekordbox: SessionBackup; engine: SessionBackup }
+export type Sessions = { rekordbox: SessionBackup; engine: SessionBackup }
 
 export function currentLibraryStatus(): LibraryStatus {
   return libraryStatus(getSettings(), existsSync)

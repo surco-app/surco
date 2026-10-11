@@ -7,17 +7,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import {
-  access,
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  realpath,
-  rm,
-  stat,
-  writeFile,
-} from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
@@ -64,9 +54,6 @@ import {
   appleMusicEntryLocation,
   appleMusicLimiter,
   deleteFromAppleMusic,
-  musicFileLocations,
-  setAppleMusicField,
-  transferPlaylists,
   updateInAppleMusic,
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
@@ -102,9 +89,9 @@ import {
 } from './libraryFlushes'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
+import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
-import { rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
@@ -143,7 +130,6 @@ import { createTmpManifest } from './tmpManifest'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { registerTrashIpc } from './trashIpc'
-import { volumeKeepsTrash } from './trashSupport'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
@@ -952,54 +938,14 @@ function registerIpc(): void {
     },
   )
 
-  registerListReviewIpc({
-    apply: {
-      allowed: (path) => mediaAccess.isAllowed(path),
-      exists: (path) =>
-        access(path).then(
-          () => true,
-          () => false,
-        ),
-      rewrite: (file, changes) =>
-        rewriteTagFields(file, changes, { track: tmpManifest.track, untrack: tmpManifest.untrack }),
-      ...(process.platform === 'darwin' && {
-        setMusicField: (pid, field, from, to, location) =>
-          appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to, location)),
-      }),
-    },
-    isAllowed: (path) => mediaAccess.isAllowed(path),
-    removal: (sender) => ({
-      replace: duplicateLibraryDeps(
-        hostFor(BrowserWindow.fromWebContents(sender), sender),
-        sessions,
-      ),
-      realpath: (path) => realpath(path).catch(() => null),
-      identity: (path) =>
-        stat(path, { bigint: true }).then(
-          (s) => ({
-            dev: s.dev,
-            ino: s.ino,
-            size: s.size,
-            mtimeNs: s.mtimeNs,
-            remote: !volumeKeepsTrash(path),
-          }),
-          () => null,
-        ),
-      trash: (path) => trashRecoverably(path),
-      ...(process.platform === 'darwin' && {
-        music: {
-          transferPlaylists: (fromPid, toPid, label, keepLabel, locations) =>
-            appleMusicLimiter.run(() =>
-              transferPlaylists(fromPid, toPid, label, keepLabel, locations),
-            ),
-          deleteEntry: (pid, label, location) =>
-            appleMusicLimiter.run(() => deleteFromAppleMusic(pid, label, location)),
-          fileLocations: () => appleMusicLimiter.run(() => musicFileLocations()),
-        },
-      }),
+  registerListReviewIpc(
+    listReviewDeps({
+      mediaAccess,
+      tmp: tmpManifest,
+      hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
+      sessions,
     }),
-    log: { track: activity.track, reviewLog: musicReviewLog },
-  })
+  )
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
   // holds an OS handle on the very file the export renames over, and only main can
