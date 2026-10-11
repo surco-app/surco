@@ -118,8 +118,16 @@ describe('finding a use case', () => {
   })
 
   it('narrows to the recipes for where the music lives', () => {
-    expect(found(es, '', 'engineDj')).toEqual(['engine-dj'])
+    expect(found(es, '', 'nas')).toEqual(['nas'])
     expect(found(es, '', 'usb')).toEqual(['usb', 'music-playlist-set'])
+  })
+
+  // A recipe that only mentions a program in an optional setting still answers the question
+  // its users ask: a rekordbox DJ moving to AIFF wants to know the cues survive, and an
+  // Engine DJ user swapping in a better copy wants it to stay in the Engine playlists.
+  it('lists a recipe under every program it keeps in sync', () => {
+    expect(found(es, '', 'rekordbox')).toContain('to-aiff')
+    expect(found(es, '', 'engineDj')).toContain('replace')
   })
 
   // A recipe with no source is invisible as soon as the reader picks one, and a source
@@ -183,3 +191,4 @@ describe('use case pages', () => {
     expect(recipePathForAnchor('es', '')).toBeNull()
   })
 })
+

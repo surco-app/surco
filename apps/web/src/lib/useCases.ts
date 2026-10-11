@@ -15,9 +15,9 @@ export type UseCaseSource = (typeof USE_CASE_SOURCES)[number]
 
 export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'in-place': ['folder'],
-  replace: ['appleMusic', 'rekordbox'],
+  replace: ['appleMusic', 'rekordbox', 'engineDj'],
   'apple-music-rekordbox': ['appleMusic', 'rekordbox'],
-  'to-aiff': ['folder'],
+  'to-aiff': ['folder', 'rekordbox'],
   'check-quality': ['folder'],
   vinyl: ['folder'],
   usb: ['usb'],
