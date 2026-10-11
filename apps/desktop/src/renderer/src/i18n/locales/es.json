@@ -1592,7 +1592,6 @@
   },
   "musicReview": {
     "title": "Revisar metadatos",
-    "close": "Cerrar",
     "filter": {
       "all": "Todo",
       "spelling": "Grafías",
@@ -1726,6 +1725,7 @@
     "allClear": "Todo está correcto",
     "allClearHint": "Sin erratas, mayúsculas, caracteres invisibles ni duplicados.",
     "back": "Volver a las pistas",
+    "tracks": "Pistas",
     "error": "No se pudo leer la biblioteca de Apple Music.",
     "loading": "Leyendo la biblioteca…",
     "bothArtists": "Artista y artista del álbum",

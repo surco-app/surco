@@ -3634,9 +3634,23 @@ describe('App Music review', () => {
     await screen.findByTestId('music-review-empty')
     fireEvent.keyDown(window, { key: 'Backspace', metaKey: true })
     fireEvent.keyDown(window, { key: 'Escape' })
-    fireEvent.click(screen.getByTestId('music-review-close'))
     expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
     expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+  })
+
+  // Escape peels one layer at a time: closing Settings must not also throw away the review.
+  it('closes only the dialog on top of the review with Escape', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    await addOneTrack()
+    runMenu('music-review')
+    await screen.findByTestId('music-review-empty')
+    fireEvent.click(screen.getByTestId('open-settings'))
+    await screen.findByTestId('settings-save')
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('settings-save')).not.toBeInTheDocument())
+    expect(screen.getByTestId('music-review')).toBeInTheDocument()
   })
 
   it('does not convert the hidden selected track on the process shortcut', async () => {
