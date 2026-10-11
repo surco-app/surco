@@ -43,6 +43,34 @@
       {
         "text": "Applying a filter to an AAC file you keep in its format leaves it as AAC at the same quality, instead of a lossless file three times bigger. And Surco asks before re-encoding an MP3 or an AAC in place, because that degrades the original and cannot be undone.",
         "in": "1.7.2"
+      },
+      {
+        "text": "With “Keep MP3 and M4A files as they are” and “Next to the original”, converting leaves those files as they are instead of writing a (2) copy beside them, from the list and from the editor alike, and Surco tells you why it left them alone.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "Vinyl sides recorded under the name the recorder gives them, such as Track 01 or A1, are matched to the record’s tracks by duration, and an A1 in the name counts as its position.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "When you type a search, the year you type ranks the results and wins over the one in the tag, and the album is found even if you type its edition.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "In the editor, the Apple Music badge turns amber when the copy in your library is better than the file about to replace it.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "If your file has no cover and Apple Music has one, Surco embeds Apple Music’s.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "The Engine DJ backup keeps your library as it was before the whole conversion, not just before its last change.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "The metadata form puts each label beside its field, so the default window shows one line per field.",
+        "in": "1.7.3"
       }
     ]
   },

@@ -43,6 +43,34 @@
       {
         "text": "Aplicar un filtro a un AAC que conservas en su formato lo deja en AAC con su misma calidad, en vez de un archivo sin pérdida tres veces más grande. Y Surco pregunta antes de recodificar en su sitio un MP3 o un AAC, porque eso degrada el original y no se puede deshacer.",
         "in": "1.7.2"
+      },
+      {
+        "text": "Con «Mantener MP3 y M4A como están» y «Junto al original», convertir deja esos archivos como están en vez de escribir una copia con (2) al lado, tanto desde la lista como desde el editor, y Surco te dice por qué no los ha tocado.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "Las caras de un vinilo grabadas con el nombre que pone la grabadora, como Track 01 o A1, se reparten por las pistas del disco según su duración, y un A1 en el nombre cuenta como su posición.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "Al escribir una búsqueda, el año que pones ordena los resultados y manda sobre el de la etiqueta, y el álbum se encuentra aunque escribas su edición.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "En el editor, la marca de Apple Music se pone ámbar cuando la copia de tu biblioteca es mejor que el archivo que va a sustituirla.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "Si tu archivo no tiene carátula y Apple Music sí, Surco incrusta la de Apple Music.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "La copia de seguridad de Engine DJ guarda tu biblioteca tal como estaba antes de toda la conversión, no solo antes del último cambio.",
+        "in": "1.7.3"
+      },
+      {
+        "text": "El formulario de metadatos pone cada etiqueta al lado de su campo, así que con la ventana por defecto ves una línea por campo.",
+        "in": "1.7.3"
       }
     ]
   },
