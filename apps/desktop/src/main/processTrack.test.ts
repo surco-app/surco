@@ -1167,6 +1167,20 @@ describe('runProcessTrack — Apple Music only', () => {
     })
   })
 
+  // The swap recipe's own destination: Apple Music with no output copy. That branch returned
+  // before the superseded file was authorised, so the offer to trash the old MP3 at the end
+  // failed with "Ruta no permitida" exactly where the recipe promises it.
+  it('authorises the superseded file when it replaces a library copy', async () => {
+    const deps = musicOnly()
+
+    await runProcessTrack(
+      job({ musicPersistentId: 'old-id', replacesPath: '/m/old.mp3', replacesLabel: 'A - T' }),
+      deps,
+    )
+
+    expect(deps.allowMedia).toHaveBeenCalledWith('/m/old.mp3')
+  })
+
   it('removes the temp dir even when the Apple Music add throws', async () => {
     const deps = musicOnly()
     deps.addToAppleMusic = vi.fn(async () => {

@@ -35,6 +35,22 @@ describe('coverSourceOf', () => {
     })
   })
 
+  // Music's artwork for a file that carries none rides in as both the shown cover and the
+  // row's embedded one, with the picture itself in coverPath. Read as the file's own art,
+  // the job asked the coverless file for a cover and the copy came out without any: the
+  // playlist recipe's promise that the cover Music holds is taken was broken on convert.
+  it('embeds the cover Music holds for a file that has none of its own', () => {
+    const fromMusic = 'surco://cover/abc.jpg'
+    expect(
+      coverSourceOf({
+        ...base,
+        coverUrl: fromMusic,
+        embeddedCover: fromMusic,
+        coverPath: '/userData/applemusic-artwork/ID.jpg',
+      }),
+    ).toEqual({ coverUrl: fromMusic, coverPath: '/userData/applemusic-artwork/ID.jpg' })
+  })
+
   it('passes a Discogs URL through untouched', () => {
     const src = coverSourceOf({
       ...base,

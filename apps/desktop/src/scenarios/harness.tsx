@@ -36,6 +36,7 @@ import { trashRecoverably } from '../main/recoverableTrash'
 import { beginRekordboxBatch, redirectRekordboxRepoint } from '../main/rekordboxBatch'
 import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
+import { registerShellIpc } from '../main/shellIpc'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
 import { registerTrashIpc } from '../main/trashIpc'
@@ -44,10 +45,13 @@ import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
+import { useAppleMusicFill } from '../renderer/src/hooks/useAppleMusicFill'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
+import { useLibraryVerdict } from '../renderer/src/hooks/useLibraryVerdict'
 import {
   type MusicReview,
   pendingGroups,
+  type ReviewFilter,
   useMusicReview,
 } from '../renderer/src/hooks/useMusicReview'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
@@ -56,17 +60,36 @@ import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { useTracksView } from '../renderer/src/hooks/useTracksView'
 import { waveformOptions } from '../renderer/src/hooks/useWaveform'
+import { removeAnalysisQueries } from '../renderer/src/lib/analysisQueries'
+import {
+  isAmbiguousCandidate,
+  type ReplaceCandidate,
+  type StaleLibraryCopy,
+} from '../renderer/src/lib/appleMusicLibrary'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
-import { type Destination, fromDestination } from '../renderer/src/lib/destination'
+import type { BatchSummary } from '../renderer/src/lib/batch'
+import { type Destination, fromDestination, toDestination } from '../renderer/src/lib/destination'
+import { librarySourceOf } from '../renderer/src/lib/librarySource'
 import { listReviewEntries } from '../renderer/src/lib/listReviewEntries'
 import { listReviewSource } from '../renderer/src/lib/listReviewSource'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
+import { replacePatch } from '../renderer/src/lib/replaceBeforeConvert'
+import { musicSource, type ReviewSource } from '../renderer/src/lib/reviewSource'
 import { SettingsProvider } from '../renderer/src/lib/settingsContext'
+import { supersededFile } from '../renderer/src/lib/supersededFile'
 import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
-import type { ProcessJob, ProcessResult, Release, SearchResult, Settings } from '../shared/types'
+import { resolveJobFormat } from '../shared/format'
+import type {
+  FormatSetting,
+  ProcessJob,
+  ProcessResult,
+  Release,
+  SearchResult,
+  Settings,
+} from '../shared/types'
 import { ipcHandlers } from './electronFake'
 import '../renderer/src/i18n'
 
@@ -295,6 +318,9 @@ function scenarioApi(
     removeListDuplicates: (removals) => invokeMain('listreview:removeDuplicates', removals),
     onListRemovalPhase: (listener) => listen('listreview:removalPhase', listener),
     trashRestore: (id, from) => invokeMain('trash:restore', id, from),
+    trashFile: (path, permanent) => invokeMain('shell:trash', path, permanent),
+    keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
+    properties: (path) => invokeMain('audio:properties', path),
     ...(musicIsFake && {
       appleMusicEntryLocation: (pid) => invokeMain('applemusic:entryLocation', pid),
       appleMusicEntryMeta: (path, pids) => invokeMain('applemusic:entryMeta', path, pids),
@@ -321,7 +347,6 @@ function scenarioApi(
       updateAppleMusic: (job) => invokeMain('applemusic:update', job),
       deleteAppleMusic: (pid, track) => invokeMain('applemusic:delete', pid, track),
     }),
-    properties: (path) => invokeMain('audio:properties', path),
     beginConversionBatch: () => {
       beginNmlBatch()
       beginRekordboxBatch()
@@ -354,7 +379,11 @@ function searchResultOf(release: Release): SearchResult {
 export interface Scenario {
   tracks: () => TrackItem[]
   drop: (...paths: string[]) => Promise<void>
-  convertAll: (answer?: 'confirm' | 'cancel') => Promise<void>
+  convertAll: (answer?: 'confirm' | 'cancel', format?: FormatSetting) => Promise<void>
+  importPlaylist: (
+    persistentId: string,
+    name: string,
+  ) => Promise<{ name: string; imported: number; missing: number } | undefined>
   prompts: Pick<ConfirmModal, 'title' | 'message'>[]
   patchTrack: (fileName: string, patch: Partial<TrackItem>) => void
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
@@ -363,8 +392,14 @@ export interface Scenario {
   applyAlbum: (release: Release) => void
   trimDetectedSilence: () => Promise<void>
   rows: () => TrackItem[]
+  summary: () => BatchSummary | null
   reviewNotice: (dropped: string[]) => ReturnType<typeof pendingGroups>
   openListReview: () => Promise<() => MusicReview>
+  convertInEditor: (
+    fileName: string,
+  ) => Promise<{ replaces: boolean; target: ReplaceCandidate | null }>
+  cleanUp: (fileName: string) => Promise<void>
+  openMusicReview: (filter?: ReviewFilter) => Promise<() => MusicReview>
   waitForNewTracks: () => Promise<string[]>
   loadNewTracks: () => Promise<void>
   dismissNewTracks: () => void
@@ -389,6 +424,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   if (!ipcHandlers.has('audio:meta')) {
     registerAudioIpc((path) => mediaAccess.allow(path))
     registerTrashIpc(trash, mediaAccess)
+    registerShellIpc(mediaAccess)
     if (musicIsFake) registerAppleMusicIpc()
     registerListReviewIpc(
       listReviewDeps({
@@ -403,6 +439,8 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   const sentToAppleMusic: string[] = []
   const prompts: ConfirmModal[] = []
   const flushes: Promise<void>[] = []
+  const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
+  let playlistImported: { name: string; imported: number; missing: number } | undefined
   let running: Promise<void> | undefined
   ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic, flushes)
 
@@ -414,10 +452,17 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   const { result } = renderHook(
     () => {
       const analyzeRef = useRef<(tracks: TrackItem[]) => void>(() => {})
+      const forgetRef = useRef<(ids: string[]) => void>(() => {})
       const library = useTrackLibrary({
         setSelection: () => {},
         onForget: () => {},
-        onRemove: () => {},
+        onRemove: (removed) => {
+          removeAnalysisQueries(
+            queryClient,
+            removed.map((t) => t.inputPath),
+          )
+          forgetRef.current(removed.map((t) => t.id))
+        },
         onClear: () => {},
         onMetaLoaded: (track) => {
           if (settings.autoAnalyze) analyzeRef.current([track])
@@ -425,6 +470,9 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         onDuplicatesSkipped: () => {},
         onNoAudioFound: () => errors.push('no audio found in the drop'),
         onMetaReadFailed: (count) => errors.push(`${count} metadata reads failed`),
+        onPlaylistImported: (imported) => {
+          playlistImported = imported
+        },
       })
       const processing = useTrackProcessing({
         tracks: library.tracks,
@@ -440,7 +488,12 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         onErrors: (ids) => errors.push(`${ids.length} tracks could not be analysed`),
       })
       analyzeRef.current = (tracks) => quality.analyzeAllQuality(tracks)
-      const view = useTracksView(library.tracks, rowsCache, null)
+      forgetRef.current = quality.forgetTracks
+      const view = useTracksView(
+        library.tracks,
+        rowsCache,
+        librarySourceOf(settings, process.platform === 'darwin'),
+      )
       const confirmFlows = useConfirmFlows({
         settings,
         removeTrack: library.removeTrack,
@@ -469,9 +522,33 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     return track
   }
 
+  const mountReview = async (
+    source: ReviewSource,
+    initialFilter: ReviewFilter,
+  ): Promise<() => MusicReview> => {
+    const review = renderHook(() =>
+      useMusicReview({
+        source,
+        initialFilter,
+        ignored: [],
+        saveIgnored: () => {},
+        onFilesChanged: async (updates) => {
+          for (const { path, fields } of updates) {
+            result.current.library.patchReviewedFields(path, fields)
+            for (const row of tracks().filter((r) => r.inputPath === path))
+              await result.current.library.refreshTrackFromDisk(row.id, path)
+          }
+        },
+      }),
+    )
+    await waitFor(() => expect(review.result.current.status).not.toBe('loading'))
+    return () => review.result.current
+  }
+
   return {
     tracks,
     rows: () => result.current.view.tracksView,
+    summary: () => result.current.processing.batchSummary,
     reviewNotice: (dropped) =>
       pendingGroups(
         listReviewEntries(result.current.view.tracksView).entries,
@@ -490,23 +567,100 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
               .map((t) => t.id),
           ),
       })
-      const review = renderHook(() =>
-        useMusicReview({
-          source,
-          initialFilter: 'all',
-          ignored: [],
-          saveIgnored: () => {},
-          onFilesChanged: async (updates) => {
-            for (const { path, fields } of updates) {
-              result.current.library.patchReviewedFields(path, fields)
-              for (const row of tracks().filter((r) => r.inputPath === path))
-                await result.current.library.refreshTrackFromDisk(row.id, path)
-            }
-          },
-        }),
+      return mountReview(source, 'all')
+    },
+    openMusicReview: (filter = 'all') => mountReview(musicSource, filter),
+    convertInEditor: async (fileName) => {
+      const id = trackNamed(fileName).id
+      await waitFor(() => expect(result.current.view.libraryIndex).not.toBeNull())
+      const editor = renderHook(() => {
+        const item = tracks().find((t) => t.id === id) as TrackItem
+        const onChange = (patch: Partial<TrackItem>) =>
+          result.current.library.updateTrack(id, patch)
+        const verdict = useLibraryVerdict({
+          item,
+          libraryIndex: result.current.view.libraryIndex,
+          librarySource: librarySourceOf(settings, process.platform === 'darwin'),
+          suggestedMeta: undefined,
+          onChange,
+        })
+        const target = verdict.replaceTarget
+        useAppleMusicFill({
+          item,
+          onChange,
+          candidates: item.musicPersistentId
+            ? [item.musicPersistentId]
+            : !target
+              ? []
+              : isAmbiguousCandidate(target)
+                ? target.ambiguous
+                : [target.persistentId],
+        })
+        return verdict
+      })
+      editorVerdicts.set(fileName, () => editor.result.current)
+      const target = editor.result.current.replaceTarget
+      if (target && !isAmbiguousCandidate(target))
+        await waitFor(() =>
+          expect((editor.result.current.replaceTarget as StaleLibraryCopy)?.path).toBeTruthy(),
+        )
+      const offered = editor.result.current.replaceTarget
+      const replaces = !!offered && !isAmbiguousCandidate(offered)
+      const destination = toDestination(
+        settings.addToAppleMusic,
+        settings.outputFormat === 'flac',
+        settings.overwriteOriginal,
+        settings.addToEngineDj,
+        settings.convertBesideOriginal,
       )
-      await waitFor(() => expect(review.result.current.status).not.toBe('loading'))
-      return () => review.result.current
+      await act(async () => {
+        const patch = replacePatch(offered)
+        if (patch) result.current.library.updateTrack(id, patch)
+        const track = tracks().find((t) => t.id === id) as TrackItem
+        const format = resolveJobFormat(
+          settings.outputFormat,
+          track.inputPath,
+          'aiff',
+          settings.keepMp3Sources,
+          track.fromAppleMusic,
+        )
+        const normalize = track.normalize ?? settings.normalize
+        const declick = track.declick ?? settings.declick
+        let converting: Promise<unknown> = Promise.resolve()
+        result.current.confirmFlows.askConvertOne(
+          () => {
+            converting = result.current.processing.processOne(
+              id,
+              format,
+              normalize,
+              undefined,
+              destination,
+              declick,
+            )
+          },
+          { destination, track, format, normalize, declick },
+        )
+        await converting
+        await Promise.all(flushes)
+      })
+      return { replaces, target: offered }
+    },
+    cleanUp: async (fileName) => {
+      const track = trackNamed(fileName)
+      const superseded = supersededFile(track)
+      const asked = prompts.length
+      await act(async () => {
+        await result.current.confirmFlows.askCleanUp(track, {
+          originalPath: null,
+          superseded: superseded ? [{ trackId: track.id, path: superseded }] : [],
+          staleMusicCopy: editorVerdicts.get(fileName)?.().staleMusicCopy ?? null,
+        })
+      })
+      await waitFor(() => expect(prompts.length).toBeGreaterThan(asked))
+      await act(async () => {
+        prompts[prompts.length - 1].onConfirm()
+        await new Promise((resolve) => setTimeout(resolve, 200))
+      })
     },
     waitForNewTracks: async () => {
       await waitFor(() => expect(result.current.library.pendingNew).not.toBeNull(), {
@@ -611,10 +765,20 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         if (suggestion) act(() => result.current.library.updateTrack(t.id, { trim: suggestion }))
       }
     },
-    convertAll: async (answer = 'confirm') => {
+    importPlaylist: async (persistentId, name) => {
+      playlistImported = undefined
+      await act(async () => {
+        await result.current.library.importApplePlaylist(persistentId, name)
+      })
+      await waitFor(() => expect(tracks().some((t) => t.loadingMeta)).toBe(false), {
+        timeout: 20_000,
+      })
+      return playlistImported
+    },
+    convertAll: async (answer = 'confirm', format) => {
       running = undefined
       const asked = prompts.length
-      act(() => result.current.confirmFlows.askConvertAll(tracks()))
+      act(() => result.current.confirmFlows.askConvertAll(tracks(), format))
       await waitFor(() => expect(running !== undefined || prompts.length > asked).toBe(true))
       if (!running && answer === 'confirm') act(() => prompts[prompts.length - 1].onConfirm())
       await act(async () => {

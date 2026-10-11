@@ -170,6 +170,37 @@ describe('useQualityAnalysis', () => {
     expect(onMeasured).toHaveBeenCalledWith('a')
   })
 
+  // Removing duplicates from a folder review while the import sweep still runs is the
+  // review-a-folder recipe: the removed copy was already in the running pass, so the sweep
+  // went on to measure a file that no longer exists and reported it "could not analyze".
+  it('skips a track removed from the list while the sweep was still running', async () => {
+    const waiting: (() => void)[] = []
+    const spectrogram = vi.fn(
+      (path: string) =>
+        new Promise((resolve) =>
+          path === '/music/d.wav' ? resolve(spectrum) : waiting.push(() => resolve(spectrum)),
+        ),
+    )
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
+    const onErrors = vi.fn()
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(waiting).toHaveLength(3))
+    act(() => {
+      targetsRef.current = targetsRef.current.filter((t) => t.id !== 'd')
+      result.current.forgetTracks(['d'])
+    })
+    for (const release of waiting) release()
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(spectrogram.mock.calls.map(([path]) => path)).not.toContain('/music/d.wav')
+    expect(onErrors).not.toHaveBeenCalled()
+  })
+
   // A count alone is a dead end: "12 files could not be analyzed" for four seconds, and
   // no way to tell WHICH twelve out of six hundred, let alone retry them. The import
   // already flags its own failed rows (metaReadFailed) so they can be found and dealt
