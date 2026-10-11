@@ -48,6 +48,7 @@ import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import {
   type MusicReview,
   pendingGroups,
+  type ReviewFilter,
   useMusicReview,
 } from '../renderer/src/hooks/useMusicReview'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
@@ -63,6 +64,7 @@ import { type Destination, fromDestination } from '../renderer/src/lib/destinati
 import { listReviewEntries } from '../renderer/src/lib/listReviewEntries'
 import { listReviewSource } from '../renderer/src/lib/listReviewSource'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
+import { musicSource, type ReviewSource } from '../renderer/src/lib/reviewSource'
 import { SettingsProvider } from '../renderer/src/lib/settingsContext'
 import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
@@ -379,6 +381,7 @@ export interface Scenario {
   summary: () => BatchSummary | null
   reviewNotice: (dropped: string[]) => ReturnType<typeof pendingGroups>
   openListReview: () => Promise<() => MusicReview>
+  openMusicReview: (filter?: ReviewFilter) => Promise<() => MusicReview>
   waitForNewTracks: () => Promise<string[]>
   loadNewTracks: () => Promise<void>
   dismissNewTracks: () => void
@@ -495,6 +498,29 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     return track
   }
 
+  const mountReview = async (
+    source: ReviewSource,
+    initialFilter: ReviewFilter,
+  ): Promise<() => MusicReview> => {
+    const review = renderHook(() =>
+      useMusicReview({
+        source,
+        initialFilter,
+        ignored: [],
+        saveIgnored: () => {},
+        onFilesChanged: async (updates) => {
+          for (const { path, fields } of updates) {
+            result.current.library.patchReviewedFields(path, fields)
+            for (const row of tracks().filter((r) => r.inputPath === path))
+              await result.current.library.refreshTrackFromDisk(row.id, path)
+          }
+        },
+      }),
+    )
+    await waitFor(() => expect(review.result.current.status).not.toBe('loading'))
+    return () => review.result.current
+  }
+
   return {
     tracks,
     rows: () => result.current.view.tracksView,
@@ -517,24 +543,9 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
               .map((t) => t.id),
           ),
       })
-      const review = renderHook(() =>
-        useMusicReview({
-          source,
-          initialFilter: 'all',
-          ignored: [],
-          saveIgnored: () => {},
-          onFilesChanged: async (updates) => {
-            for (const { path, fields } of updates) {
-              result.current.library.patchReviewedFields(path, fields)
-              for (const row of tracks().filter((r) => r.inputPath === path))
-                await result.current.library.refreshTrackFromDisk(row.id, path)
-            }
-          },
-        }),
-      )
-      await waitFor(() => expect(review.result.current.status).not.toBe('loading'))
-      return () => review.result.current
+      return mountReview(source, 'all')
     },
+    openMusicReview: (filter = 'all') => mountReview(musicSource, filter),
     waitForNewTracks: async () => {
       await waitFor(() => expect(result.current.library.pendingNew).not.toBeNull(), {
         timeout: 5_000,
