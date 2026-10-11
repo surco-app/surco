@@ -15,8 +15,9 @@ vi.mock('../main/appleMusicArtwork', async (original) =>
 )
 
 import { snapshotTags } from '../main/tagSnapshot'
+import { volumeKeepsTrash } from '../main/trashSupport'
 import type { MusicReview } from '../renderer/src/hooks/useMusicReview'
-import { osTrash } from './electronFake'
+import { osTrash, scenarioRoot } from './electronFake'
 import { listFiles, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
@@ -97,11 +98,14 @@ describe('Review a folder before it goes into your library', () => {
     expect(backupsAfterApply).toContain('three.aiff')
   })
 
-  it('sends the removed copy to the Trash and out of the list', () => {
-    expect(existsSync(join(folder, 'omt.mp3'))).toBe(false)
-    expect(osTrash.map((p) => basename(p))).toEqual(['omt.mp3'])
-    expect(surco.tracks().some((t) => basename(t.inputPath) === 'omt.mp3')).toBe(false)
-  })
+  it.skipIf(!volumeKeepsTrash(scenarioRoot))(
+    'sends the removed copy to the Trash and out of the list',
+    () => {
+      expect(existsSync(join(folder, 'omt.mp3'))).toBe(false)
+      expect(osTrash.map((p) => basename(p))).toEqual(['omt.mp3'])
+      expect(surco.tracks().some((t) => basename(t.inputPath) === 'omt.mp3')).toBe(false)
+    },
+  )
 
   it('brings the corrections back on Undo, but not the removed copy', () => {
     expect(snapshotTags(join(folder, 'three.aiff'))).toContain('id3 TPE1=Daft punk')
