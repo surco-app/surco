@@ -156,6 +156,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         const path = targetsRef.current.find((x) => x.id === t.id)?.inputPath ?? t.inputPath
         let evicted = false
         try {
+          if (forgottenRef.current.has(t.id)) return
           await queryClient.fetchQuery(spectrogramOptions(path))
           // The wave feeds the silence attention filter (silence left to trim); the
           // clip/channel scan — a separate probe since the split — feeds the clipping
