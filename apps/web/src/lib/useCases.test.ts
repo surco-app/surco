@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
 import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
+import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import {
@@ -219,5 +220,27 @@ describe('use case filters in the address', () => {
   it('reads back what it writes', () => {
     const filters = { query: 'cue points & más', source: 'appleMusic' as const }
     expect(filtersFromSearch(searchForFilters(filters))).toEqual(filters)
+  })
+})
+
+// The recipe names a typo the review flags in amber. Short names never are (the app keeps
+// typos to eight letters and up, measured on a real library), and the example used to be
+// one of those: a reader looked for an amber "Rahcel" that could never appear.
+describe('the review recipe', () => {
+  it('names a typo the review really flags', () => {
+    const step = (es.useCases.cases as { id: string; steps: { text: string }[] }[])
+      .find((c) => c.id === 'review-spellings')
+      ?.steps.find((s) => s.text.includes('ámbar'))
+    const [typo, right] = [...(step?.text ?? '').matchAll(/«([^»]+)»/g)].map((m) => m[1])
+    const entry = (id: string, artist: string) => ({
+      id,
+      title: id,
+      artist,
+      albumArtist: '',
+      album: '',
+      genre: '',
+    })
+    const groups = spellingGroups([entry('a', right), entry('b', right), entry('c', typo)])
+    expect(groups.map((g) => g.kind)).toEqual(['typo'])
   })
 })
