@@ -1105,6 +1105,7 @@ function registerIpc(): void {
               // Only with the toggle on: moving a row is keeping the library in step with
               // converted files, which the user opted into, not just adding new ones.
               s.syncEngineDj ? replaces : undefined,
+              (db) => engineSessionBackup.ensure(db),
             )
           },
           { labelParams: { track } },
