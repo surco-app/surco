@@ -61,6 +61,7 @@ interface Params {
   // skipped" count, but a single-track convert has no summary to show it in — without
   // this the row just falls back to idle and the convert reads as if it did nothing.
   onFormatSkipped?: (name: string) => void
+  onKeptAsIs?: (name: string) => void
   // Re-reads a row whose import-time tag read failed (metaReadFailed), resolving true once
   // the row holds the file's own tags. A flagged row carries a name-parsed title and artist
   // and nothing else, so converting it as it stands would write every other managed field
@@ -127,6 +128,7 @@ export function useTrackProcessing({
   onDeclicked,
   onOldMusicCopyKept,
   onFormatSkipped,
+  onKeptAsIs,
   rereadTrackMeta,
   onConversion,
   onProcessError,
@@ -263,6 +265,7 @@ export function useTrackProcessing({
         !processesAudio(jobAudio(track, normalizeOverride, declickOverride, settings))
       if (keptBesideOriginal) {
         updateTrack(id, { status: 'idle', stage: undefined })
+        onKeptAsIs?.(track.listLabel)
         return 'skipped'
       }
       // Re-processing an edited (stale) track resets the Apple Music state too, since

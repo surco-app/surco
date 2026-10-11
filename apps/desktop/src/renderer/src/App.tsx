@@ -24,7 +24,6 @@ import type {
   LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
-  OutputFormat,
   SearchHints,
   SearchProviderId,
   Settings,
@@ -957,6 +956,7 @@ export default function App(): React.JSX.Element {
     // A batch run shows this skip through batchSummary's "N skipped" count, but a
     // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
+    onKeptAsIs: (name) => setNotice(tr('notices.keptAsIs', { name })),
     rereadTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast. The card names the track
@@ -1497,11 +1497,11 @@ export default function App(): React.JSX.Element {
   const onCancelSelected = useStableCallback(() => {
     if (selected) cancelOne(selected.id)
   })
-  const onProcessSelected = useStableCallback((format: OutputFormat) => {
+  const onProcessSelected = useStableCallback(() => {
     if (selected)
       void convertSelected(
         selected.id,
-        format,
+        editorFormatRef.current ?? undefined,
         editorNormalizeRef.current ?? undefined,
         editorDestinationRef.current ?? undefined,
         editorDeclickRef.current ?? undefined,
