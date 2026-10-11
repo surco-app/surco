@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
@@ -249,8 +249,10 @@ describe('OnboardingWizard destination', () => {
     openFormatStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
     fireEvent.click(screen.getByTestId('onboarding-engine-library-change'))
-    expect(await screen.findByTestId('onboarding-engine-library')).toHaveTextContent(
-      '/dj/Engine Library',
+    await waitFor(() =>
+      expect(screen.getByTestId('onboarding-engine-library')).toHaveTextContent(
+        '/dj/Engine Library',
+      ),
     )
 
     for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
