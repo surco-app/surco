@@ -1,5 +1,5 @@
 import { searchHintsOf } from '../../../shared/metadata'
-import { cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
+import { bareAlbumTitle, cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import { yearFromDate } from '../../../shared/tagFields'
 import type {
   MetaTextKey,
@@ -65,7 +65,9 @@ export interface MatchCleanup {
 // selected), and searching the file's fields first, or keeping only rows naming its artist,
 // would answer with the file's own album. So a typed term that does not name the tags
 // carries none. A typed term that names the artist and the album but not the song asks for
-// that album, so it carries just those two. Only a typed term: the query the app built can
+// that album, so it carries just those two; the album's edition may be left out or worded
+// another way ("Deluxe" for "(Deluxe Edition)"). A year typed beside them asks for that
+// year's edition over the tagged date, unless the tags themselves spell it ("Prince 1999"). Only a typed term: the query the app built can
 // lag behind tags the user just corrected, and those corrected tags are exactly what the
 // search needs.
 export function searchHintsFor(
@@ -83,11 +85,17 @@ export function searchHintsFor(
     foldText(field ?? '')
       .split(' ')
       .every((w) => w === '' || words.has(w))
-  if (names(hints.artist) && names(hints.title)) return hints
+  const tagWords = new Set(
+    foldText(`${hints.artist ?? ''} ${hints.title ?? ''} ${hints.album ?? ''}`).split(' '),
+  )
+  const typedYear = [...words].find((w) => /^(19|20)\d{2}$/.test(w) && !tagWords.has(w))
+  const year = typedYear ?? hints.year
+  if (names(hints.artist) && names(hints.title)) return { ...hints, year }
   const pinned = hints.artist?.trim() && hints.album?.trim()
-  return pinned && names(hints.artist) && names(hints.album)
-    ? { artist: hints.artist, album: hints.album, year: hints.year, albumTyped: true }
-    : {}
+  if (pinned && names(hints.artist) && names(bareAlbumTitle(hints.album ?? ''))) {
+    return { artist: hints.artist, album: hints.album, year, albumTyped: true }
+  }
+  return typedYear ? { year: typedYear } : {}
 }
 
 // What the sweep reads off a track to score release candidates against it.

@@ -647,6 +647,46 @@ describe('searchHintsFor', () => {
     })
   })
 
+  // artexjay typed "Duran Duran - Duran Duran Deluxe 2010": the edition in his own words
+  // and the year of the 2010 set, while his tags carry the 1981 date. Leaving out
+  // "Edition" kept it from being the album, and as free text Discogs answered with Rio
+  // and Kelly Clarkson; the typed year is the edition he is after.
+  it('takes a typed album without its edition and the typed year over the tag', () => {
+    const track = {
+      query: 'Duran Duran Planet Earth',
+      meta: {
+        artist: 'Duran Duran',
+        title: 'Planet Earth',
+        album: 'Duran Duran (Deluxe Edition)',
+        year: '1981',
+      },
+    } as TrackItem
+    expect(searchHintsFor(track, {}, 'Duran Duran - Duran Duran Deluxe 2010')).toEqual({
+      artist: 'Duran Duran',
+      album: 'Duran Duran (Deluxe Edition)',
+      year: '2010',
+      albumTyped: true,
+    })
+  })
+
+  it('takes the typed year over the tag when the typed search names the song', () => {
+    const track = {
+      query: 'Duran Duran Planet Earth',
+      meta: { artist: 'Duran Duran', title: 'Planet Earth', year: '1981' },
+    } as TrackItem
+    expect(searchHintsFor(track, {}, 'Duran Duran Planet Earth 2010').year).toBe('2010')
+  })
+
+  // A year that is the song's own name is not a year asked for: "Prince 1999" keeps the
+  // tagged 1982.
+  it('does not read a year out of the tags it names', () => {
+    const track = {
+      query: 'Prince 1999',
+      meta: { artist: 'Prince', title: '1999', year: '1982' },
+    } as TrackItem
+    expect(searchHintsFor(track, {}, 'Prince 1999').year).toBe('1982')
+  })
+
   // An untagged artist leaves only the title to recognise the track's own search by.
   it('keeps the tags of a track without an artist when the typed search names its title', () => {
     const untagged = { query: 'Blacque Moon', meta: { title: 'Blacque Moon' } } as TrackItem
