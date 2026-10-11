@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
+import { trackUseCaseSearch } from '../lib/analytics'
 import {
   filtersFromSearch,
   matchesUseCase,
@@ -32,6 +33,12 @@ export default function UseCases() {
     if (recipe) window.location.replace(recipe)
     else setFilters(filtersFromSearch(window.location.search))
   }, [lang])
+
+  useEffect(() => {
+    if (!query.trim() && !source) return
+    const timer = setTimeout(() => trackUseCaseSearch({ query, source }, shown.length), 1000)
+    return () => clearTimeout(timer)
+  }, [query, source, shown.length])
 
   const filterBy = (filters: UseCaseFilters) => {
     setFilters(filters)
