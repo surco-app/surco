@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import de from '../i18n/locales/de.json'
+import en from '../i18n/locales/en.json'
+import es from '../i18n/locales/es.json'
+import fr from '../i18n/locales/fr.json'
+import ptBR from '../i18n/locales/pt-BR.json'
 import {
   DEFAULT_FIELDS,
   DEFAULT_IMPORT_FIELDS,
@@ -178,5 +183,22 @@ describe('DEFAULT_REQUIRED_FIELDS', () => {
     // but not gated by default: a white label or promo with no release on Discogs
     // should still convert. Users add their own required fields in Settings.
     expect(DEFAULT_REQUIRED_FIELDS).toEqual(['title', 'artist'])
+  })
+})
+
+// The form's label column stops at 128px, about 18 characters of its 12px text. A longer
+// label breaks onto a second line and pushes the column to that cap for every field, which
+// takes the width away from the inputs ("ID de release de Discogs" did both).
+describe('field labels', () => {
+  it.each([
+    ['de', de],
+    ['en', en],
+    ['es', es],
+    ['fr', fr],
+    ['pt-BR', ptBR],
+  ])('fit the label column in %s', (_, locale) => {
+    const labels: Record<string, string> = locale.fields
+    const tooLong = FIELD_DEFS.map((d) => labels[d.key]).filter((label) => label.length > 18)
+    expect(tooLong).toEqual([])
   })
 })
