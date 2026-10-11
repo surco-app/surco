@@ -47,7 +47,7 @@ interface SummaryDetail {
   status?: 'warn' | 'error'
 }
 
-interface TrackOpts<T> {
+export interface TrackOpts<T> {
   labelParams?: ActivityParams
   detail?: string
   detailKey?: string

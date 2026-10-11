@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
+import { removeAnalysisQueries } from '../lib/analysisQueries'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { useQualityAnalysis } from './useQualityAnalysis'
@@ -135,6 +136,38 @@ describe('useQualityAnalysis', () => {
 
     expect(onErrors).toHaveBeenCalledTimes(1)
     expect(onErrors).toHaveBeenCalledWith(['b'])
+  })
+
+  // Dropping a folder and converting it in place right away is the in-place recipe: the
+  // export evicts the track's analyses while the import sweep is still measuring it. That
+  // cancellation was reported as "could not analyze" and flagged the row, an error the
+  // user never caused, about a file that is perfectly readable.
+  it('re-measures a track whose analysis an in-place export evicted, without reporting it failed', async () => {
+    let release: () => void = () => {}
+    const spectrogram = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve(spectrum))))
+      .mockResolvedValue(spectrum)
+    setApi({ spectrogram })
+    const client = createQueryClient()
+    const targetsRef = { current: [track('a')] }
+    const onErrors = vi.fn()
+    const onMeasured = vi.fn()
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors, onMeasured }), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(1))
+    act(() => removeAnalysisQueries(client, ['/music/a.wav']))
+    release()
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(onErrors).not.toHaveBeenCalled()
+    expect(spectrogram).toHaveBeenCalledTimes(2)
+    expect(onMeasured).toHaveBeenCalledWith('a')
   })
 
   // A count alone is a dead end: "12 files could not be analyzed" for four seconds, and

@@ -102,6 +102,48 @@ describe('assignTracks with a known album title', () => {
     expect(assignTracks(files, tracklist, 'Greatest Hits')[0].track?.position).toBe('B')
   })
 
+  // A vinyl rip is named by the recorder, not by the song: "Track 01", "untitled-02",
+  // "Side B track 1". Those names say nothing about which cut it is, so treating them
+  // as a contradiction left every file of the record unassigned and Apply disabled,
+  // the one step the vinyl recipe promises does the sorting for you.
+  it.each([
+    ['Track 01', 'Track 02', 'Track 03'],
+    ['01', '02', '03'],
+    ['untitled-01', 'untitled-02', 'untitled-03'],
+    ['Side A track 1', 'Side A track 2', 'Side B track 1'],
+    ['Pista 1', 'Pista 2', 'Pista 3'],
+  ])('places rips named %s, %s, %s by duration', (a, b, c) => {
+    const tracklist = [
+      t('A1', 'Long Version', '1:10'),
+      t('A2', 'Radio', '0:10'),
+      t('B1', 'Dub', '0:40'),
+    ]
+    const files: AssignInput[] = [
+      { id: 'a', target: { title: a, durationSec: 70 } },
+      { id: 'b', target: { title: b, durationSec: 10 } },
+      { id: 'c', target: { title: c, durationSec: 40 } },
+    ]
+    expect(assignTracks(files, tracklist, 'Plastic Dreams').map((x) => x.track?.position)).toEqual([
+      'A1',
+      'A2',
+      'B1',
+    ])
+  })
+
+  // Two cuts of nearly the same length cannot be told apart by duration; a rip the user
+  // named after its groove position ("A2") already says which one it is.
+  it('reads a vinyl position in a rip name as the position', () => {
+    const tracklist = [t('A1', 'Vocal', '6:00'), t('A2', 'Dub', '6:02')]
+    const files: AssignInput[] = [
+      { id: 'a2', target: { title: 'A2', durationSec: 361 } },
+      { id: 'a1', target: { title: 'A1', durationSec: 361 } },
+    ]
+    expect(assignTracks(files, tracklist, 'Some 12"').map((x) => x.track?.position)).toEqual([
+      'A2',
+      'A1',
+    ])
+  })
+
   it('keeps a cut whose title matches its track even when it differs from the album name', () => {
     // A normal album: the file's title matches its own track but not the album name, and
     // must still be assigned — the guard only fires on titles unrelated to BOTH.

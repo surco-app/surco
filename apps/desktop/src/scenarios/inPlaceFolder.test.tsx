@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -11,6 +9,7 @@ import { readTags } from '../main/ffmpeg'
 import { diffSnapshots, snapshotTags } from '../main/tagSnapshot'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { ALLOWED_UPDATE_CHANGES, unexplainedChanges } from '../main/updateContract'
+import i18n from '../renderer/src/i18n'
 import { coverOf } from '../renderer/src/lib/release'
 import {
   audioMd5,
@@ -20,6 +19,7 @@ import {
   listFiles,
   makeTrack,
   release,
+  scenarioDir,
 } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
@@ -40,7 +40,7 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
   const before = new Map<string, { md5: string; tags: string[] }>()
 
   beforeAll(async () => {
-    folder = mkdtempSync(join(tmpdir(), 'surco-in-place-'))
+    folder = scenarioDir('in-place')
     makeTrack(join(folder, 'till i come.mp3'), {
       title: 'till i come',
       artist: 'ATB',
@@ -55,7 +55,7 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
       publisher: 'White Label',
       bpm: 124,
       comment: 'Energy 6',
-      coverJpg: coverJpg(join(mkdtempSync(join(tmpdir(), 'surco-cover-')), 'own.jpg')),
+      coverJpg: coverJpg(join(scenarioDir('cover'), 'own.jpg')),
       withCues: true,
     })
     makeTrack(join(folder, 'Vinyl', 'Untouched.wav'), {
@@ -91,6 +91,10 @@ describe('Tag and add covers to a whole folder, without making copies', () => {
       ['Unsure.aiff', 'done'],
       ['Untouched.wav', 'done'],
     ])
+  })
+
+  it('asks once before touching the files', () => {
+    expect(surco.prompts.map((p) => p.title)).toEqual([i18n.t('confirm.convertInPlaceTitle')])
   })
 
   it('leaves exactly the same files in the folder, with no copies and nothing half-written', () => {

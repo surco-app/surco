@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -9,7 +8,15 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readTags } from '../main/ffmpeg'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
-import { audioMd5, coverJpg, DROP_MS, embeddedCover, listFiles, makeTrack } from './fixtures'
+import {
+  audioMd5,
+  coverJpg,
+  DROP_MS,
+  embeddedCover,
+  listFiles,
+  makeTrack,
+  scenarioDir,
+} from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 function sha1(data: Buffer | null): string {
@@ -22,8 +29,8 @@ describe('Move your collection to AIFF without losing the cue points', () => {
   const original = new Map<string, { bytes: string; md5: string }>()
 
   beforeAll(async () => {
-    folder = mkdtempSync(join(tmpdir(), 'surco-to-aiff-'))
-    const cover = coverJpg(join(mkdtempSync(join(tmpdir(), 'surco-cover-')), 'front.jpg'))
+    folder = scenarioDir('to-aiff')
+    const cover = coverJpg(join(scenarioDir('cover'), 'front.jpg'))
     makeTrack(join(folder, 'Stardust.flac'), {
       title: 'Music Sounds Better With You',
       artist: 'Stardust',
@@ -59,6 +66,10 @@ describe('Move your collection to AIFF without losing the cue points', () => {
   it('runs without a single error the user would see', () => {
     expect(surco.errors).toEqual([])
     expect(surco.sentToAppleMusic).toEqual([])
+  })
+
+  it('converts without asking, since nothing existing is rewritten', () => {
+    expect(surco.prompts).toEqual([])
   })
 
   it('writes each AIFF next to its original, and the "(2)" the recipe warns about for one that already was AIFF', () => {
