@@ -7,14 +7,19 @@ import { app } from 'electron'
 import type React from 'react'
 import { useRef } from 'react'
 import { expect } from 'vitest'
+import { activity } from '../main/activity'
+import { registerAppleMusicIpc } from '../main/appleMusicIpc'
+import * as appleMusic from '../main/applemusic'
 import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
+import { replaceDuplicates } from '../main/duplicateReplace'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
 import { convertAudio } from '../main/ffmpeg'
 import { isSameFile, removeRenamedOriginal } from '../main/inplace'
 import {
   currentLibraryStatus,
+  duplicateLibraryDeps,
   flushConversionBatch,
   type LibraryHost,
   syncTagsInLibraries,
@@ -22,11 +27,13 @@ import {
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
+import { musicReviewLog } from '../main/musicReviewLog'
 import { beginNmlBatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
-import { beginRekordboxBatch } from '../main/rekordboxBatch'
+import { trashRecoverably } from '../main/recoverableTrash'
+import { beginRekordboxBatch, redirectRekordboxRepoint } from '../main/rekordboxBatch'
 import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
@@ -73,6 +80,12 @@ export interface ScenarioOptions {
   onConflict?: (outputName: string) => ConflictChoice
 }
 
+const musicIsFake = (appleMusic as Record<string, unknown>).scenarioFake === true
+
+function noMusic(): Promise<never> {
+  return Promise.reject(new Error('scenario: this test did not load the Apple Music fake'))
+}
+
 const rendererListeners = new Map<string, Set<(...args: never[]) => void>>()
 const sender = {
   send: (channel: string, ...args: unknown[]) => {
@@ -100,7 +113,7 @@ function processTrackInMain(
   reservations: ReturnType<typeof createOutputReservations>,
   options: ScenarioOptions,
   errors: string[],
-  appleMusic: string[],
+  appleMusicSends: string[],
 ): Promise<ProcessResult> {
   const manifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp.json'), {
     readFileSync: (p) => readFileSync(p, 'utf8'),
@@ -166,11 +179,14 @@ function processTrackInMain(
     },
     recordConversion,
     removeRenamedOriginal,
-    addToAppleMusic: async (target) => {
-      appleMusic.push(target)
-      return `scenario-pid-${appleMusic.length}`
+    addToAppleMusic: async (target, meta, coverPath) => {
+      appleMusicSends.push(target)
+      return musicIsFake
+        ? appleMusic.addToAppleMusic(target, meta, coverPath)
+        : `scenario-pid-${appleMusicSends.length}`
     },
-    updateInAppleMusic: () => Promise.reject(new Error('scenario: Apple Music is not simulated')),
+    updateInAppleMusic: (pid, meta, coverPath) =>
+      musicIsFake ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
       return addToEngineLibrary(
@@ -195,9 +211,11 @@ function processTrackInMain(
       }
       return options.onConflict(outputName)
     },
-    appleMusicEntryLocation: () =>
-      Promise.reject(new Error('scenario: Apple Music is not simulated')),
-    deleteAppleMusic: () => Promise.reject(new Error('scenario: Apple Music is not simulated')),
+    appleMusicEntryLocation: (pid) =>
+      musicIsFake ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
+    deleteAppleMusic: (pid, label) =>
+      musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
+    redirectRepoint: redirectRekordboxRepoint,
   })
 }
 
@@ -218,7 +236,7 @@ let watcher: FolderWatcher | undefined
 function scenarioApi(
   options: ScenarioOptions,
   errors: string[],
-  appleMusic: string[],
+  appleMusicSends: string[],
   flushes: Promise<void>[],
 ): Api {
   const reservations = createOutputReservations()
@@ -277,6 +295,32 @@ function scenarioApi(
     removeListDuplicates: (removals) => invokeMain('listreview:removeDuplicates', removals),
     onListRemovalPhase: (listener) => listen('listreview:removalPhase', listener),
     trashRestore: (id, from) => invokeMain('trash:restore', id, from),
+    ...(musicIsFake && {
+      appleMusicEntryLocation: (pid) => invokeMain('applemusic:entryLocation', pid),
+      appleMusicEntryMeta: (path, pids) => invokeMain('applemusic:entryMeta', path, pids),
+      loadAppleMusicLibrary: () => invokeMain('applemusic:library'),
+      loadAppleMusicLibraryCached: () => invokeMain('applemusic:libraryCached'),
+      appleMusicFileEntries: (candidates, launch) =>
+        invokeMain('applemusic:fileEntries', candidates, launch),
+      loadMusicReview: () => invokeMain('applemusic:reviewDump'),
+      applyMusicFixes: (fixes) => invokeMain('applemusic:applyFixes', fixes),
+      cancelMusicFixes: () => invokeMain('applemusic:cancelFixes'),
+      onMusicFixProgress: (listener) => listen('applemusic:fixProgress', listener),
+      setMusicField: (pid, field, from, to, location) =>
+        invokeMain('applemusic:setField', pid, field, from, to, location),
+      removeMusicDuplicate: (request) => invokeMain('applemusic:removeDuplicate', request),
+      replaceDuplicatesInLibraries: (pairs) =>
+        replaceDuplicates(pairs, {
+          ...duplicateLibraryDeps(libraryHost(errors), sessions),
+          trash: (path) => trashRecoverably(path),
+          log: { track: activity.track, copyOf: musicReviewLog.copyOf },
+        }),
+      loadAppleMusicPlaylists: () => invokeMain('applemusic:playlists'),
+      loadAppleMusicPlaylistTracks: (pid) => invokeMain('applemusic:playlistTracks', pid),
+      addToAppleMusic: (job) => invokeMain('applemusic:add', job),
+      updateAppleMusic: (job) => invokeMain('applemusic:update', job),
+      deleteAppleMusic: (pid, track) => invokeMain('applemusic:delete', pid, track),
+    }),
     properties: (path) => invokeMain('audio:properties', path),
     beginConversionBatch: () => {
       beginNmlBatch()
@@ -287,7 +331,7 @@ function scenarioApi(
     endConversionBatch: () => {
       flushes.push(flushConversionBatch(libraryHost(errors), sessions))
     },
-    processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusic),
+    processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusicSends),
   }
   return new Proxy(wired as Api, {
     get(target, key) {
@@ -345,6 +389,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   if (!ipcHandlers.has('audio:meta')) {
     registerAudioIpc((path) => mediaAccess.allow(path))
     registerTrashIpc(trash, mediaAccess)
+    if (musicIsFake) registerAppleMusicIpc()
     registerListReviewIpc(
       listReviewDeps({
         mediaAccess,
