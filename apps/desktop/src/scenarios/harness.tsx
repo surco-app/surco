@@ -58,6 +58,7 @@ import { useTracksView } from '../renderer/src/hooks/useTracksView'
 import { waveformOptions } from '../renderer/src/hooks/useWaveform'
 import { removeAnalysisQueries } from '../renderer/src/lib/analysisQueries'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
+import type { BatchSummary } from '../renderer/src/lib/batch'
 import { type Destination, fromDestination } from '../renderer/src/lib/destination'
 import { listReviewEntries } from '../renderer/src/lib/listReviewEntries'
 import { listReviewSource } from '../renderer/src/lib/listReviewSource'
@@ -67,7 +68,14 @@ import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
-import type { ProcessJob, ProcessResult, Release, SearchResult, Settings } from '../shared/types'
+import type {
+  FormatSetting,
+  ProcessJob,
+  ProcessResult,
+  Release,
+  SearchResult,
+  Settings,
+} from '../shared/types'
 import { ipcHandlers } from './electronFake'
 import '../renderer/src/i18n'
 
@@ -355,7 +363,11 @@ function searchResultOf(release: Release): SearchResult {
 export interface Scenario {
   tracks: () => TrackItem[]
   drop: (...paths: string[]) => Promise<void>
-  convertAll: (answer?: 'confirm' | 'cancel') => Promise<void>
+  convertAll: (answer?: 'confirm' | 'cancel', format?: FormatSetting) => Promise<void>
+  importPlaylist: (
+    persistentId: string,
+    name: string,
+  ) => Promise<{ name: string; imported: number; missing: number } | undefined>
   prompts: Pick<ConfirmModal, 'title' | 'message'>[]
   patchTrack: (fileName: string, patch: Partial<TrackItem>) => void
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
@@ -364,6 +376,7 @@ export interface Scenario {
   applyAlbum: (release: Release) => void
   trimDetectedSilence: () => Promise<void>
   rows: () => TrackItem[]
+  summary: () => BatchSummary | null
   reviewNotice: (dropped: string[]) => ReturnType<typeof pendingGroups>
   openListReview: () => Promise<() => MusicReview>
   waitForNewTracks: () => Promise<string[]>
@@ -404,6 +417,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   const sentToAppleMusic: string[] = []
   const prompts: ConfirmModal[] = []
   const flushes: Promise<void>[] = []
+  let playlistImported: { name: string; imported: number; missing: number } | undefined
   let running: Promise<void> | undefined
   ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic, flushes)
 
@@ -433,6 +447,9 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         onDuplicatesSkipped: () => {},
         onNoAudioFound: () => errors.push('no audio found in the drop'),
         onMetaReadFailed: (count) => errors.push(`${count} metadata reads failed`),
+        onPlaylistImported: (imported) => {
+          playlistImported = imported
+        },
       })
       const processing = useTrackProcessing({
         tracks: library.tracks,
@@ -481,6 +498,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   return {
     tracks,
     rows: () => result.current.view.tracksView,
+    summary: () => result.current.processing.batchSummary,
     reviewNotice: (dropped) =>
       pendingGroups(
         listReviewEntries(result.current.view.tracksView).entries,
@@ -620,10 +638,20 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         if (suggestion) act(() => result.current.library.updateTrack(t.id, { trim: suggestion }))
       }
     },
-    convertAll: async (answer = 'confirm') => {
+    importPlaylist: async (persistentId, name) => {
+      playlistImported = undefined
+      await act(async () => {
+        await result.current.library.importApplePlaylist(persistentId, name)
+      })
+      await waitFor(() => expect(tracks().some((t) => t.loadingMeta)).toBe(false), {
+        timeout: 20_000,
+      })
+      return playlistImported
+    },
+    convertAll: async (answer = 'confirm', format) => {
       running = undefined
       const asked = prompts.length
-      act(() => result.current.confirmFlows.askConvertAll(tracks()))
+      act(() => result.current.confirmFlows.askConvertAll(tracks(), format))
       await waitFor(() => expect(running !== undefined || prompts.length > asked).toBe(true))
       if (!running && answer === 'confirm') act(() => prompts[prompts.length - 1].onConfirm())
       await act(async () => {
