@@ -1592,7 +1592,6 @@
   },
   "musicReview": {
     "title": "Vérifier les métadonnées",
-    "close": "Fermer",
     "filter": {
       "all": "Tout",
       "spelling": "Graphies",
@@ -1726,6 +1725,7 @@
     "allClear": "Tout est correct",
     "allClearHint": "Ni coquilles, ni majuscules, ni caractères invisibles, ni doublons.",
     "back": "Retour aux morceaux",
+    "tracks": "Morceaux",
     "error": "Impossible de lire la bibliothèque Apple Music.",
     "loading": "Lecture de la bibliothèque…",
     "bothArtists": "Artiste et artiste de l'album",
