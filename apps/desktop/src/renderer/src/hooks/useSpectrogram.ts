@@ -1,5 +1,5 @@
-import { type UseQueryResult, useQuery } from '@tanstack/react-query'
-import type { SpectrumResult } from '../../../shared/types'
+import { skipToken, type UseQueryResult, useQuery } from '@tanstack/react-query'
+import type { SpectrumResult, SpectrumVerdict } from '../../../shared/types'
 import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 
 // The one definition of a spectrogram cache entry. Four call sites share the cache —
@@ -36,4 +36,10 @@ export function useSpectrogram(
   // The editor mounts this only for the selected track — the one the user is waiting on —
   // so it asks 'high' to preempt a background auto-match sweep's 'low' decodes.
   return useQuery({ ...spectrogramOptions(inputPath, 'high'), enabled })
+}
+
+export function useCachedSpectrum(inputPath: string): SpectrumVerdict | undefined {
+  const full = useQuery({ ...spectrogramOptions(inputPath), enabled: false }).data
+  const verdict = useQuery({ queryKey: spectrumVerdictKey(inputPath), queryFn: skipToken }).data
+  return full ?? (verdict as SpectrumVerdict | undefined)
 }

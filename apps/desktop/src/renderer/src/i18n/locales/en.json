@@ -653,6 +653,7 @@
     "loudnessRangeNoise": "Good: -45 dB or lower.",
     "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
     "loudnessAfterHeader": "now → after converting",
+    "libraryCopyBetter": "better than this one",
     "replaceMusic": "Replace with {{format}} + Apple Music",
     "requiredEmpty": "Required: fill it in before converting",
     "coverMixed": "The selected tracks have different artwork",

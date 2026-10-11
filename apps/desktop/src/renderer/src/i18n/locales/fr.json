@@ -653,6 +653,7 @@
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
     "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
     "loudnessAfterHeader": "avant → après conversion",
+    "libraryCopyBetter": "meilleure que celle-ci",
     "replaceMusic": "Remplacer par {{format}} + Apple Music",
     "requiredEmpty": "Obligatoire : à remplir avant la conversion",
     "coverMixed": "Les pistes sélectionnées ont des pochettes différentes",

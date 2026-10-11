@@ -3184,6 +3184,57 @@ describe('Editor Apple Music library badge', () => {
     )
   })
 
+  // The swap recipe promises a warning when the file in hand is worse than the library copy.
+  // The commonest case is a "lossless" download made from an MP3: the swap would trade the
+  // copy for one no better, so the badge that names that copy says it is the better one.
+  it('says the library copy is better when the file in hand was made from a lossy source', async () => {
+    setApi('darwin')
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.mp3')
+    api.properties = vi.fn(async (path: string) => (path === '/Music/Strobe.mp3' ? mp3Copy : null))
+    api.peekAnalysis = vi.fn().mockResolvedValue(null)
+    api.spectrogram = vi.fn().mockResolvedValue({
+      image: '',
+      cutoffHz: 16000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: true,
+    })
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: ownedWithId,
+      showSpectrum: true,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('apple-music-copy-better')).toHaveTextContent(
+        'better than this one',
+      ),
+    )
+  })
+
+  it('says nothing about quality when the file in hand is a real upgrade', async () => {
+    setApi('darwin')
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.mp3')
+    api.properties = vi.fn(async (path: string) => (path === '/Music/Strobe.mp3' ? mp3Copy : null))
+    api.peekAnalysis = vi.fn().mockResolvedValue(null)
+    api.spectrogram = vi.fn().mockResolvedValue({
+      image: '',
+      cutoffHz: 21500,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+    })
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: ownedWithId,
+      showSpectrum: true,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
+    )
+    await waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
+    expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+  })
+
   // A copy that lives only in iCloud has no file to read, so there is no format to name;
   // the badge stays as it was rather than guessing.
   it('names no format when the library copy has no file on disk', async () => {
