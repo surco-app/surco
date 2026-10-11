@@ -152,14 +152,12 @@ describe('MetadataForm', () => {
       spec('title', 'Illusion'),
       { ...spec('year', '2007'), width: 'short' },
       { ...spec('bpm', '145'), width: 'short' },
-      { ...spec('isrc'), width: 'medium' },
       spec('genre', 'Electronic'),
       { ...spec('key', '4A'), width: 'short' },
     ])
     const year = screen.getByTestId('field-year')
     expect(year).not.toHaveAttribute('data-inline')
     expect(year).toContainElement(screen.getByTestId('field-bpm'))
-    expect(year).toContainElement(screen.getByTestId('field-isrc'))
     expect(screen.getByTestId('field-bpm')).toHaveAttribute('data-inline', 'true')
     expect(year).not.toContainElement(screen.getByTestId('field-key'))
     expect(screen.getByTestId('field-key')).not.toHaveAttribute('data-inline')
@@ -167,10 +165,31 @@ describe('MetadataForm', () => {
       'field-title',
       'field-year',
       'field-bpm',
-      'field-isrc',
       'field-genre',
       'field-key',
     ])
+  })
+
+  // Five bounded fields in one row wrapped wherever the column ran out, so each line began
+  // somewhere else and "Total discs" hung under a box. Two to a row, every line opens on its
+  // own label in the label column and the boxes stack into two clean columns.
+  it('puts at most two bounded fields on a row', () => {
+    renderForm([
+      { ...spec('discNumber', '1'), width: 'short' },
+      { ...spec('trackTotal', '4'), width: 'short' },
+      { ...spec('discTotal', '1'), width: 'short' },
+      { ...spec('bpm', '142'), width: 'short' },
+      { ...spec('key', '8A'), width: 'short' },
+    ])
+    const rowStarts = screen
+      .getAllByTestId(/^field-/)
+      .filter((n) => !n.hasAttribute('data-inline'))
+      .map((n) => n.getAttribute('data-testid'))
+    expect(rowStarts).toEqual(['field-discNumber', 'field-discTotal', 'field-key'])
+    expect(screen.getByTestId('field-discNumber')).toContainElement(
+      screen.getByTestId('field-trackTotal'),
+    )
+    expect(screen.getByTestId('field-discTotal')).toContainElement(screen.getByTestId('field-bpm'))
   })
 
   // The rating is a fact about the record, like its artwork, and above the form it cost a

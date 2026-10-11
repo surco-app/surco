@@ -75,13 +75,14 @@ function renderField(
   )
 }
 
-// Bounded fields that follow each other in the user's order share a row; any other field
-// stands alone. The order itself is never rearranged to pack more of them together.
+// Bounded fields that follow each other in the user's order share a row, two at most, so a
+// longer run starts each line on its own label instead of wrapping wherever the column ends;
+// any other field stands alone. The order itself is never rearranged to pack them together.
 function toRows(fields: FieldSpec[]): FieldSpec[][] {
   const rows: FieldSpec[][] = []
   for (const f of fields) {
     const last = rows.at(-1)
-    if (f.width && last?.[0].width) last.push(f)
+    if (f.width && last?.[0].width && last.length < 2) last.push(f)
     else rows.push([f])
   }
   return rows
