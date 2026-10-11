@@ -79,7 +79,7 @@ describe('Take your tracks to Engine DJ', () => {
   })
 
   it('backs up the library as it was before writing to it', () => {
-    expect(readFileSync(`${mdb}.surco-backup`).equals(before)).toBe(true)
+    expect(readFileSync(`${mdb}.surco-session`).equals(before)).toBe(true)
   })
 
   it('puts every track in the library and in the playlist, next to what was there', async () => {

@@ -37,6 +37,7 @@ import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { addToEngineLibrary, dumpEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
 import { isEngineDjRunning } from './engineProcess'
+import { createSessionBackup } from './rekordboxSessionBackup'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
 // what happens to be running on the machine (Engine DJ itself, for instance).
@@ -161,6 +162,42 @@ describe('addToEngineLibrary', () => {
     ])
     db.close()
     expect((await stat(join(lib, 'Database2', 'm.db.surco-backup'))).size).toBeGreaterThan(0)
+  })
+
+  // A run's adds reach Engine in several writes when the conversions are slow, and each
+  // write's own backup replaced the last, so after a run the backup could only undo the
+  // final track. The run's copy is taken once, before its first write, and holds the
+  // library as it was before converting.
+  it("keeps the library as it was before the run's first write, however many writes follow", async () => {
+    const lib = join(root, 'run-backup', 'Engine Library')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const { mkdir } = await import('node:fs/promises')
+    await mkdir(join(lib, 'Database2'), { recursive: true })
+    await writeFile(dbPath, await buildEngineDatabase([], 'Sets'))
+    const before = await readFile(dbPath)
+    const session = createSessionBackup({})
+    const sessionBackup = (path: string) => session.ensure(path)
+
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'run-1.aiff'),
+      meta({ title: 'One' }),
+      'Surco',
+      undefined,
+      undefined,
+      sessionBackup,
+    )
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'run-2.aiff'),
+      meta({ title: 'Two' }),
+      'Surco',
+      undefined,
+      undefined,
+      sessionBackup,
+    )
+
+    expect((await readFile(`${dbPath}.surco-session`)).equals(before)).toBe(true)
   })
 
   // A zero-byte m.db is what an interrupted Engine write, a crashed session or a

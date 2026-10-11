@@ -219,6 +219,7 @@ function processTrackInMain(
         s.engineDjPlaylist,
         coverPath,
         s.syncEngineDj ? replaces : undefined,
+        (db) => sessions.engine.ensure(db),
       )
     },
     allowMedia: (path) => mediaAccess.allow(path),

@@ -116,6 +116,7 @@ interface PendingAdd {
   // The file this conversion supersedes, when the user asked Surco to keep the library
   // pointing at converted files: its row moves onto the new file instead of a second row.
   replaces?: string
+  sessionBackup?: (dbPath: string) => Promise<void>
   resolve: () => void
   reject: (e: unknown) => void
 }
@@ -145,9 +146,20 @@ export function addToEngineLibrary(
   playlist: string,
   coverPath?: string,
   replaces?: string,
+  sessionBackup?: (dbPath: string) => Promise<void>,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    pending.push({ libraryDir, filePath, meta, playlist, coverPath, replaces, resolve, reject })
+    pending.push({
+      libraryDir,
+      filePath,
+      meta,
+      playlist,
+      coverPath,
+      replaces,
+      sessionBackup,
+      resolve,
+      reject,
+    })
     if (!draining) void drain()
   })
 }
@@ -197,6 +209,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
   if ((await fileSize(dbPath)) > 0) {
     // Keep the pre-write database around: this file is the user's real library, and a
     // backup next to it is the recovery path if a write ever goes wrong.
+    for (const backup of new Set(adds.map((add) => add.sessionBackup))) await backup?.(dbPath)
     await copyFile(dbPath, join(database2, 'm.db.surco-backup'))
     db = new SQL.Database(await readFile(dbPath))
   } else {
