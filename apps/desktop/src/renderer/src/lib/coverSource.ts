@@ -13,7 +13,7 @@ interface CoverSourceFields {
 export function coverSourceOf(
   track: Pick<TrackItem, 'coverUrl' | 'coverPath' | 'embeddedCover' | 'inputPath'>,
 ): CoverSourceFields {
-  if (track.coverUrl && track.coverUrl === track.embeddedCover) {
+  if (track.coverUrl && track.coverUrl === track.embeddedCover && !track.coverPath) {
     return { coverFromFile: track.inputPath }
   }
   return { coverUrl: track.coverUrl, coverPath: track.coverPath }
