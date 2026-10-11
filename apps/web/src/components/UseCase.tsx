@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { ISSUES_URL } from '../config'
 import { PAGES } from '../lib/nav'
 import { recipePath } from '../lib/useCases'
 import DownloadButton from './DownloadButton'
@@ -30,6 +31,34 @@ export type UseCase = {
   steps: Step[]
   points: string[]
   related: Related[]
+}
+
+export function UseCaseOutro() {
+  const { t } = useTranslation()
+  return (
+    <section className="border-t border-line/60 py-16 text-center">
+      <Reveal>
+        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          {t('useCases.outroTitle')}
+        </h2>
+        <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+          {t('useCases.outroLede')}
+        </p>
+        <a
+          href={ISSUES_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="use-case-outro-request"
+          className="mt-3 inline-block text-sm font-semibold text-blue transition-colors hover:text-cyan"
+        >
+          {t('useCases.requestCase')}
+        </a>
+        <div className="mt-2 flex flex-col items-center text-center">
+          <DownloadButton location="use-cases" />
+        </div>
+      </Reveal>
+    </section>
+  )
 }
 
 export function MacBadge() {
@@ -191,19 +220,7 @@ export default function UseCasePage({ id }: { id: string }) {
           </Reveal>
         </article>
 
-        <section className="border-t border-line/60 py-16 text-center">
-          <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {t('useCases.outroTitle')}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t('useCases.outroLede')}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="use-cases" />
-            </div>
-          </Reveal>
-        </section>
+        <UseCaseOutro />
       </main>
 
       <Footer />

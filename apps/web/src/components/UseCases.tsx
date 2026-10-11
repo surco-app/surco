@@ -1,27 +1,28 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
+import { trackUseCaseSearch } from '../lib/analytics'
 import {
+  filtersFromSearch,
   matchesUseCase,
   recipePath,
   recipePathForAnchor,
+  searchForFilters,
   USE_CASE_SOURCES,
-  type UseCaseSource,
+  type UseCaseFilters,
 } from '../lib/useCases'
-import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
-import { type Group, MacBadge, type UseCase } from './UseCase'
+import { type Group, MacBadge, type UseCase, UseCaseOutro } from './UseCase'
 
 export default function UseCases() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language === 'en' ? 'en' : 'es'
   const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
   const groups = t('useCases.groups', { returnObjects: true }) as Group[]
-  const [query, setQuery] = useState('')
-  const [source, setSource] = useState<UseCaseSource | null>(null)
+  const [{ query, source }, setFilters] = useState<UseCaseFilters>({ query: '', source: null })
   const shown = cases.filter((c) => matchesUseCase(c, query, source))
   const filtering = shown.length < cases.length
   const casesIn = (group: Group) => shown.filter((c) => c.group === group.id)
@@ -29,7 +30,19 @@ export default function UseCases() {
   useEffect(() => {
     const recipe = recipePathForAnchor(lang, window.location.hash)
     if (recipe) window.location.replace(recipe)
+    else setFilters(filtersFromSearch(window.location.search))
   }, [lang])
+
+  useEffect(() => {
+    if (!query.trim() && !source) return
+    const timer = setTimeout(() => trackUseCaseSearch({ query, source }, shown.length), 1000)
+    return () => clearTimeout(timer)
+  }, [query, source, shown.length])
+
+  const filterBy = (filters: UseCaseFilters) => {
+    setFilters(filters)
+    window.history.replaceState(null, '', window.location.pathname + searchForFilters(filters))
+  }
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
@@ -76,7 +89,7 @@ export default function UseCases() {
                 <input
                   type="search"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => filterBy({ query: e.target.value, source })}
                   placeholder={t('useCases.searchPlaceholder')}
                   className="h-full min-w-0 flex-1 bg-transparent text-base text-fg placeholder:text-faint focus-visible:outline-none!"
                 />
@@ -108,7 +121,7 @@ export default function UseCases() {
                     type="button"
                     data-testid="use-case-source"
                     aria-pressed={source === s}
-                    onClick={() => setSource(s)}
+                    onClick={() => filterBy({ query, source: s })}
                     className={`h-9 flex-none rounded-full border px-2.5 text-sm whitespace-nowrap transition-colors ${
                       source === s
                         ? 'border-blue bg-blue font-semibold text-bg'
@@ -136,10 +149,7 @@ export default function UseCases() {
                     </a>
                     <button
                       type="button"
-                      onClick={() => {
-                        setQuery('')
-                        setSource(null)
-                      }}
+                      onClick={() => filterBy({ query: '', source: null })}
                       className="text-sm text-muted transition-colors hover:text-cyan"
                     >
                       {t('useCases.clearFilters')}
@@ -192,19 +202,7 @@ export default function UseCases() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-16 text-center">
-          <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {t('useCases.outroTitle')}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t('useCases.outroLede')}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="use-cases" />
-            </div>
-          </Reveal>
-        </section>
+        <UseCaseOutro />
       </main>
 
       <Footer />

@@ -4,9 +4,11 @@ import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import {
+  filtersFromSearch,
   matchesUseCase,
   recipePages,
   recipePathForAnchor,
+  searchForFilters,
   USE_CASE_SOURCES,
   USE_CASE_SOURCES_BY_CASE,
   type UseCaseSource,
@@ -118,8 +120,16 @@ describe('finding a use case', () => {
   })
 
   it('narrows to the recipes for where the music lives', () => {
-    expect(found(es, '', 'engineDj')).toEqual(['engine-dj'])
+    expect(found(es, '', 'nas')).toEqual(['nas'])
     expect(found(es, '', 'usb')).toEqual(['usb', 'music-playlist-set'])
+  })
+
+  // A recipe that only mentions a program in an optional setting still answers the question
+  // its users ask: a rekordbox DJ moving to AIFF wants to know the cues survive, and an
+  // Engine DJ user swapping in a better copy wants it to stay in the Engine playlists.
+  it('lists a recipe under every program it keeps in sync', () => {
+    expect(found(es, '', 'rekordbox')).toContain('to-aiff')
+    expect(found(es, '', 'engineDj')).toContain('replace')
   })
 
   // A recipe with no source is invisible as soon as the reader picks one, and a source
@@ -181,5 +191,33 @@ describe('use case pages', () => {
     )
     expect(recipePathForAnchor('es', '#main')).toBeNull()
     expect(recipePathForAnchor('es', '')).toBeNull()
+  })
+})
+
+// The filters live in the address so a search can be shared or sent in a support reply,
+// and so going back from a recipe lands on the same short list instead of all of them.
+describe('use case filters in the address', () => {
+  it('reads the query and the source from the address', () => {
+    expect(filtersFromSearch('?q=cue+points&source=rekordbox')).toEqual({
+      query: 'cue points',
+      source: 'rekordbox',
+    })
+  })
+
+  it('starts unfiltered when the address carries nothing or a source that does not exist', () => {
+    expect(filtersFromSearch('')).toEqual({ query: '', source: null })
+    expect(filtersFromSearch('?source=traktor')).toEqual({ query: '', source: null })
+  })
+
+  it('writes only what is set, so the unfiltered page keeps its clean address', () => {
+    expect(searchForFilters({ query: '', source: null })).toBe('')
+    expect(searchForFilters({ query: '  ', source: null })).toBe('')
+    expect(searchForFilters({ query: 'nas', source: null })).toBe('?q=nas')
+    expect(searchForFilters({ query: '', source: 'usb' })).toBe('?source=usb')
+  })
+
+  it('reads back what it writes', () => {
+    const filters = { query: 'cue points & más', source: 'appleMusic' as const }
+    expect(filtersFromSearch(searchForFilters(filters))).toEqual(filters)
   })
 })

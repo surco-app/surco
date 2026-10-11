@@ -15,9 +15,9 @@ export type UseCaseSource = (typeof USE_CASE_SOURCES)[number]
 
 export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'in-place': ['folder'],
-  replace: ['appleMusic', 'rekordbox'],
+  replace: ['appleMusic', 'rekordbox', 'engineDj'],
   'apple-music-rekordbox': ['appleMusic', 'rekordbox'],
-  'to-aiff': ['folder'],
+  'to-aiff': ['folder', 'rekordbox'],
   'check-quality': ['folder'],
   vinyl: ['folder'],
   usb: ['usb'],
@@ -31,6 +31,25 @@ export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'engine-dj': ['engineDj'],
   'music-playlist-set': ['appleMusic', 'usb'],
   nas: ['nas'],
+}
+
+export type UseCaseFilters = { query: string; source: UseCaseSource | null }
+
+const isSource = (value: string | null): value is UseCaseSource =>
+  USE_CASE_SOURCES.some((s) => s === value)
+
+export function filtersFromSearch(search: string): UseCaseFilters {
+  const params = new URLSearchParams(search)
+  const source = params.get('source')
+  return { query: params.get('q') ?? '', source: isSource(source) ? source : null }
+}
+
+export function searchForFilters({ query, source }: UseCaseFilters): string {
+  const params = new URLSearchParams()
+  if (query.trim()) params.set('q', query)
+  if (source) params.set('source', source)
+  const search = params.toString()
+  return search ? `?${search}` : ''
 }
 
 type Searchable = { id: string; title: string; body: string[]; keywords: string }

@@ -1,4 +1,5 @@
 import type { OS } from './os'
+import type { UseCaseFilters } from './useCases'
 
 // Where on the site the download button was clicked. The same component renders in eight
 // places, several of them on one page, so page_path alone cannot say which CTA converts.
@@ -91,4 +92,16 @@ export function trackDonate(location: DonateLocation): void {
 // visitors who convert actually get.
 export function trackSectionView(location: SectionLocation): void {
   sendEvent('section_view', { surco_location: location })
+}
+
+export function searchEvent({ query, source }: UseCaseFilters, results: number) {
+  return {
+    ...(query.trim() ? { search_term: query.trim() } : {}),
+    ...(source ? { surco_source: source } : {}),
+    surco_results: results,
+  }
+}
+
+export function trackUseCaseSearch(filters: UseCaseFilters, results: number): void {
+  sendEvent('search', searchEvent(filters, results))
 }
