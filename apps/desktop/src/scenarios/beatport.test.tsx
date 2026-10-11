@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -29,7 +27,7 @@ vi.mock('../main/beatport', async (original) => {
 import { readTags } from '../main/ffmpeg'
 import { getProvider } from '../main/providers'
 import type { Release } from '../shared/types'
-import { makeTrack } from './fixtures'
+import { makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 describe('Bring in the BPM and key from Beatport', () => {
@@ -38,7 +36,7 @@ describe('Bring in the BPM and key from Beatport', () => {
   let beforeSaving: Awaited<ReturnType<typeof readTags>>
 
   beforeAll(async () => {
-    folder = mkdtempSync(join(tmpdir(), 'surco-beatport-'))
+    folder = scenarioDir('beatport')
     makeTrack(join(folder, 'despecha clean.mp3'), { title: 'despecha', artist: 'rosalia' })
     makeTrack(join(folder, 'despecha.flac'), { title: 'despecha', artist: 'rosalia' })
     surco = await openSurco({ settings: { outputFormat: 'source' }, destination: 'overwrite' })

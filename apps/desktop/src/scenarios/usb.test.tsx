@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readTags } from '../main/ffmpeg'
-import { listFiles, loudness, makeTrack } from './fixtures'
+import { listFiles, loudness, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 function sha1(path: string): string {
@@ -22,8 +21,8 @@ describe('Get a USB stick ready for the club', () => {
   const atHome = new Map<string, string>()
 
   beforeAll(async () => {
-    home = mkdtempSync(join(tmpdir(), 'surco-home-'))
-    usb = mkdtempSync(join(tmpdir(), 'surco-usb-'))
+    home = scenarioDir('home')
+    usb = scenarioDir('usb')
     makeTrack(join(home, 'Downloads', 'track01.flac'), {
       title: 'Gypsy Woman',
       artist: 'Crystal Waters',

@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -11,7 +10,7 @@ import { readTags } from '../main/ffmpeg'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import i18n from '../renderer/src/i18n'
 import type { NormalizeConfig } from '../shared/types'
-import { audioMd5, DROP_MS, listFiles, loudness, makeTrack } from './fixtures'
+import { audioMd5, DROP_MS, listFiles, loudness, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 const STREAMING: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
@@ -32,7 +31,7 @@ describe('Even out the volume of a whole folder', () => {
     let surco: Scenario
 
     beforeAll(async () => {
-      folder = mkdtempSync(join(tmpdir(), 'surco-loudness-'))
+      folder = scenarioDir('loudness')
       makeTrack(join(folder, 'Loud.flac'), {
         title: 'Loud',
         artist: 'A',
@@ -69,7 +68,7 @@ describe('Even out the volume of a whole folder', () => {
     let afterFirst: string
 
     beforeAll(async () => {
-      folder = mkdtempSync(join(tmpdir(), 'surco-loudness-in-place-'))
+      folder = scenarioDir('loudness-in-place')
       makeTrack(join(folder, 'Master.flac'), { title: 'Master', artist: 'A', signal: 'kick' })
       makeTrack(join(folder, 'Promo.mp3'), { title: 'Promo', artist: 'B' })
       surco = await openSurco({
@@ -104,7 +103,7 @@ describe('Even out the volume of a whole folder', () => {
 
   describe('when the user says no to re-encoding the MP3', () => {
     it('leaves the MP3 exactly as it was', async () => {
-      const folder = mkdtempSync(join(tmpdir(), 'surco-loudness-declined-'))
+      const folder = scenarioDir('loudness-declined')
       makeTrack(join(folder, 'Promo.mp3'), { title: 'Promo', artist: 'B' })
       const before = sha1(join(folder, 'Promo.mp3'))
       const surco = await openSurco({

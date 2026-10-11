@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -8,7 +6,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readTags } from '../main/ffmpeg'
 import { getSettings } from '../main/settings'
-import { audioMd5, listFiles, makeTrack } from './fixtures'
+import { audioMd5, listFiles, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 const fromSmb = (name: string): string => name.normalize('NFD')
@@ -19,7 +17,7 @@ describe('Your music on a NAS', () => {
     let surco: Scenario
 
     beforeAll(async () => {
-      share = mkdtempSync(join(tmpdir(), 'surco-nas-'))
+      share = scenarioDir('nas')
       makeTrack(join(share, fromSmb('Röyksopp - Eple.flac')), {
         title: 'Eple',
         artist: 'Röyksopp',
@@ -62,7 +60,7 @@ describe('Your music on a NAS', () => {
     let trimmedBefore: string
 
     beforeAll(async () => {
-      share = mkdtempSync(join(tmpdir(), 'surco-nas-backups-'))
+      share = scenarioDir('nas-backups')
       makeTrack(join(share, 'Retag.flac'), { title: 'Retag', artist: 'Someone' })
       makeTrack(join(share, 'Trim.flac'), { title: 'Trim', artist: 'Someone' })
       trimmedBefore = audioMd5(join(share, 'Trim.flac'))

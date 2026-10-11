@@ -1,5 +1,13 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { Picture, PictureType, File as TagFile } from 'node-taglib-sharp'
@@ -12,8 +20,13 @@ import {
   traktorCue,
 } from '../main/traktor4Fixture'
 import type { Release } from '../shared/types'
+import { scenarioRoot } from './electronFake'
 
 const FF = ffmpegStatic as unknown as string
+
+export function scenarioDir(name: string): string {
+  return mkdtempSync(join(scenarioRoot, `${name}-`))
+}
 
 export const DROP_MS = 79672.64
 

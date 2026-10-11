@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
-import { makeTrack } from './fixtures'
+import { makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 describe('Have your downloads arrive already tagged', () => {
@@ -17,7 +15,7 @@ describe('Have your downloads arrive already tagged', () => {
   let offeredAfterConvert: string[] | 'nothing'
 
   beforeAll(async () => {
-    downloads = mkdtempSync(join(tmpdir(), 'surco-downloads-'))
+    downloads = scenarioDir('downloads')
     makeTrack(join(downloads, 'old.flac'), { title: 'Old', artist: 'A' })
     surco = await openSurco({ settings: {}, destination: 'beside' })
     await surco.drop(downloads)

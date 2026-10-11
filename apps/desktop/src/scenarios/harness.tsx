@@ -48,6 +48,8 @@ import type { ProcessJob, ProcessResult, Release, SearchResult, Settings } from 
 import { ipcHandlers } from './electronFake'
 import '../renderer/src/i18n'
 
+const PLENTY_OF_DISK = 500 * 1024 ** 3
+
 export type ConflictChoice = 'overwrite' | 'keepBoth' | 'skip'
 
 export interface ScenarioOptions {
@@ -292,8 +294,10 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     ...options.settings,
     ...(options.destination && fromDestination(options.destination)),
   })
-  const trash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =>
-    trashLimits(getSettings()),
+  const trash = createSurcoTrash(
+    join(app.getPath('userData'), 'trash'),
+    () => trashLimits(getSettings()),
+    async () => PLENTY_OF_DISK,
   )
   configureBackupStore(trash, () => getSettings().backupPolicy)
   if (!ipcHandlers.has('audio:meta')) registerAudioIpc(() => {})

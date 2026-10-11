@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -8,7 +6,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readMeta, readTags } from '../main/ffmpeg'
 import { ipcHandlers } from './electronFake'
-import { listFiles, loudness, makeTrack, release, vinylSource } from './fixtures'
+import { listFiles, loudness, makeTrack, release, scenarioDir, vinylSource } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 const plasticDreams = release({
@@ -40,7 +38,7 @@ describe('Digitise your vinyl', () => {
   const clicksBefore = new Map<string, number>()
 
   beforeAll(async () => {
-    const root = mkdtempSync(join(tmpdir(), 'surco-vinyl-'))
+    const root = scenarioDir('vinyl')
     rips = join(root, 'Rips')
     output = join(root, 'Surco')
     makeTrack(join(rips, 'Track 01.wav'), { title: '', artist: '', lavfi: vinylSource(70) })

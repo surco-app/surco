@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -9,7 +7,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 import { readTags } from '../main/ffmpeg'
 import { snapshotTags } from '../main/tagSnapshot'
 import i18n from '../renderer/src/i18n'
-import { audioMd5, listFiles, makeTrack } from './fixtures'
+import { audioMd5, listFiles, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 describe('Clean up the titles of hundreds of tracks at once', () => {
@@ -20,7 +18,7 @@ describe('Clean up the titles of hundreds of tracks at once', () => {
   const sound = new Map<string, string>()
 
   beforeAll(async () => {
-    folder = mkdtempSync(join(tmpdir(), 'surco-find-replace-'))
+    folder = scenarioDir('find-replace')
     makeTrack(join(folder, 'a.mp3'), {
       title: 'Sing It Back (Promo Only)',
       artist: 'Moloko (Promo Only)',

@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { suspectTracks, trackQuality } from '../renderer/src/lib/triage'
-import { listFiles, lossyCopy, makeTrack } from './fixtures'
+import { listFiles, lossyCopy, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 function sha1(path: string): string {
@@ -25,7 +24,7 @@ describe('Check the quality of what you bought or downloaded', () => {
   }
 
   beforeAll(async () => {
-    folder = mkdtempSync(join(tmpdir(), 'surco-quality-'))
+    folder = scenarioDir('quality')
     const studio = makeTrack(join(folder, 'Bought', 'Real Lossless.flac'), {
       title: 'Real Lossless',
       artist: 'A',

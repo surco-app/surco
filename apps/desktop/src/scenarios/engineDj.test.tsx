@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -8,7 +7,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 vi.mock('../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 
 import { buildEngineDatabase, loadSqlJs } from '../main/engine'
-import { coverJpg, listFiles, makeTrack } from './fixtures'
+import { coverJpg, listFiles, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
 async function query(db: string, sql: string): Promise<unknown[][]> {
@@ -29,7 +28,7 @@ describe('Take your tracks to Engine DJ', () => {
   let surco: Scenario
 
   beforeAll(async () => {
-    const root = mkdtempSync(join(tmpdir(), 'surco-engine-'))
+    const root = scenarioDir('engine')
     library = join(root, 'Engine Library')
     output = join(root, 'Surco')
     mdb = join(library, 'Database2', 'm.db')
