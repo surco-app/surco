@@ -32,6 +32,13 @@ export interface TrackSpec {
   coverJpg?: string
   withCues?: boolean
   signal?: keyof typeof SIGNALS
+  lavfi?: string
+}
+
+export function vinylSource(seconds: number): string {
+  const music = '0.3*sin(2*PI*220*t)+0.1*sin(2*PI*3000*t)'
+  const click = 'if(lt(mod(t\\,0.37)\\,0.00005)\\,0.8\\,0)'
+  return `aevalsrc=if(between(t\\,1.5\\,${seconds - 1.5})\\,${music}+${click}\\,0):s=44100:d=${seconds}`
 }
 
 const SIGNALS = {
@@ -51,7 +58,7 @@ export function makeTrack(path: string, spec: TrackSpec): string {
     '-f',
     'lavfi',
     '-i',
-    SIGNALS[spec.signal ?? 'tone'],
+    spec.lavfi ?? SIGNALS[spec.signal ?? 'tone'],
     '-ac',
     '2',
     ...cues,

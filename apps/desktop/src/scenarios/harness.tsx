@@ -11,12 +11,10 @@ import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
-import { createMediaAccess } from '../main/mediaAccess'
-import { dirRoots, FolderWatcher } from '../main/watcher'
-import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { convertAudio } from '../main/ffmpeg'
 import { isSameFile, removeRenamedOriginal } from '../main/inplace'
 import { flushConversionBatch, type LibraryHost } from '../main/libraryFlushes'
+import { createMediaAccess } from '../main/mediaAccess'
 import { beginNmlBatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
@@ -26,7 +24,10 @@ import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
+import { onWatchedFilesChanged } from '../main/watchedFiles'
+import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
+import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
@@ -34,9 +35,12 @@ import { useQualityAnalysis } from '../renderer/src/hooks/useQualityAnalysis'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { useTracksView } from '../renderer/src/hooks/useTracksView'
+import { waveformOptions } from '../renderer/src/hooks/useWaveform'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import { type Destination, fromDestination } from '../renderer/src/lib/destination'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
+import { SettingsProvider } from '../renderer/src/lib/settingsContext'
+import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
@@ -251,6 +255,12 @@ function scenarioApi(
   })
 }
 
+function clickEnabled(button: HTMLElement): void {
+  if ((button as HTMLButtonElement).disabled)
+    throw new Error(`scenario: ${button.dataset.testid} is disabled, the user could not press it`)
+  fireEvent.click(button)
+}
+
 function searchResultOf(release: Release): SearchResult {
   return { provider: release.provider, id: release.id, title: release.title }
 }
@@ -264,6 +274,8 @@ export interface Scenario {
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
   acceptMatch: (fileName: string, release: Release, position: string) => void
   findAndReplace: (find: string, replace: string, options?: { regex?: boolean }) => string
+  applyAlbum: (release: Release) => void
+  trimDetectedSilence: () => Promise<void>
   rows: () => TrackItem[]
   waitForNewTracks: () => Promise<string[]>
   loadNewTracks: () => Promise<void>
@@ -430,9 +442,36 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       fireEvent.change(modal.getByTestId('find-replace-find'), { target: { value: find } })
       fireEvent.change(modal.getByTestId('find-replace-replace'), { target: { value: replace } })
       const preview = modal.getByTestId('find-replace-preview').textContent ?? ''
-      fireEvent.click(modal.getByTestId('find-replace-apply'))
+      clickEnabled(modal.getByTestId('find-replace-apply'))
       modal.unmount()
       return preview
+    },
+    applyAlbum: (release) => {
+      const rows = render(
+        <SettingsProvider settings={settings}>
+          <AlbumMatchRows
+            files={tracks()}
+            release={release}
+            onApply={(patches, provider) => {
+              for (const p of patches)
+                result.current.library.updateTrack(p.id, {
+                  ...p.patch,
+                  matched: true,
+                  matchProvider: provider,
+                })
+            }}
+          />
+        </SettingsProvider>,
+      )
+      act(() => clickEnabled(rows.getByTestId('match-apply')))
+      rows.unmount()
+    },
+    trimDetectedSilence: async () => {
+      for (const t of tracks().filter((track) => !track.trim)) {
+        const wave = await queryClient.fetchQuery(waveformOptions(t.inputPath))
+        const suggestion = wave ? detectTrim(wave) : undefined
+        if (suggestion) act(() => result.current.library.updateTrack(t.id, { trim: suggestion }))
+      }
     },
     convertAll: async (answer = 'confirm') => {
       running = undefined
