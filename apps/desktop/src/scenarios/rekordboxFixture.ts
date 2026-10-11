@@ -13,6 +13,7 @@ export interface RekordboxSeed {
   title: string
   artist: string
   fileType: number
+  genre?: string
   bpm?: number
   keyId?: string
   playlists?: string[]
@@ -26,6 +27,9 @@ export interface RekordboxRow {
   artist: string | null
   album: string | null
   label: string | null
+  genre: string | null
+  comment: string | null
+  year: number | null
   bpm: number | null
   keyId: string | null
   playlists: string[]
@@ -66,9 +70,15 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
       artistId,
       t.artist,
     )
+    const genreId = t.genre ? `genre-${t.id}` : null
+    if (t.genre)
+      db.prepare(`INSERT INTO djmdGenre (ID, Name, rb_local_deleted) VALUES (?, ?, 0)`).run(
+        genreId,
+        t.genre,
+      )
     db.prepare(
       `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, ArtistID,
-       BPM, KeyID) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)`,
+       BPM, KeyID, GenreID) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
     ).run(
       t.id,
       t.path,
@@ -78,6 +88,7 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
       artistId,
       t.bpm ?? null,
       t.keyId ?? null,
+      genreId,
     )
     for (const [i, playlist] of (t.playlists ?? []).entries())
       db.prepare(`INSERT INTO djmdSongPlaylist VALUES (?, ?, ?)`).run(
@@ -99,11 +110,13 @@ export function rekordboxRow(dbPath: string, id: string): RekordboxRow {
     const row = db
       .prepare(
         `SELECT c.FolderPath AS path, c.FileType AS fileType, c.Title AS title,
-         ar.Name AS artist, al.Name AS album, lb.Name AS label, c.BPM AS bpm, c.KeyID AS keyId
+         ar.Name AS artist, al.Name AS album, lb.Name AS label, gn.Name AS genre,
+         c.Commnt AS comment, c.ReleaseYear AS year, c.BPM AS bpm, c.KeyID AS keyId
          FROM djmdContent c
          LEFT JOIN djmdArtist ar ON ar.ID = c.ArtistID
          LEFT JOIN djmdAlbum al ON al.ID = c.AlbumID
          LEFT JOIN djmdLabel lb ON lb.ID = c.LabelID
+         LEFT JOIN djmdGenre gn ON gn.ID = c.GenreID
          WHERE c.ID = ?`,
       )
       .get(id) as Omit<RekordboxRow, 'playlists' | 'cuesMs'>
