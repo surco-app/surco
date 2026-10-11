@@ -4,9 +4,11 @@ import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import {
+  filtersFromSearch,
   matchesUseCase,
   recipePages,
   recipePathForAnchor,
+  searchForFilters,
   USE_CASE_SOURCES,
   USE_CASE_SOURCES_BY_CASE,
   type UseCaseSource,
@@ -192,3 +194,30 @@ describe('use case pages', () => {
   })
 })
 
+// The filters live in the address so a search can be shared or sent in a support reply,
+// and so going back from a recipe lands on the same short list instead of all of them.
+describe('use case filters in the address', () => {
+  it('reads the query and the source from the address', () => {
+    expect(filtersFromSearch('?q=cue+points&source=rekordbox')).toEqual({
+      query: 'cue points',
+      source: 'rekordbox',
+    })
+  })
+
+  it('starts unfiltered when the address carries nothing or a source that does not exist', () => {
+    expect(filtersFromSearch('')).toEqual({ query: '', source: null })
+    expect(filtersFromSearch('?source=traktor')).toEqual({ query: '', source: null })
+  })
+
+  it('writes only what is set, so the unfiltered page keeps its clean address', () => {
+    expect(searchForFilters({ query: '', source: null })).toBe('')
+    expect(searchForFilters({ query: '  ', source: null })).toBe('')
+    expect(searchForFilters({ query: 'nas', source: null })).toBe('?q=nas')
+    expect(searchForFilters({ query: '', source: 'usb' })).toBe('?source=usb')
+  })
+
+  it('reads back what it writes', () => {
+    const filters = { query: 'cue points & más', source: 'appleMusic' as const }
+    expect(filtersFromSearch(searchForFilters(filters))).toEqual(filters)
+  })
+})
