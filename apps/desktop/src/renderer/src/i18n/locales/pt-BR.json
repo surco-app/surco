@@ -653,6 +653,7 @@
     "loudnessRangeNoise": "Bom: -45 dB ou menos.",
     "loudnessFixNoise": "Não dá para corrigir aqui: o Surco não remove ruído. Vem da fonte ou da captura.",
     "loudnessAfterHeader": "agora → após converter",
+    "libraryCopyBetter": "melhor que esta",
     "replaceMusic": "Substituir por {{format}} + Apple Music",
     "requiredEmpty": "Obrigatório: preencha antes de converter",
     "coverMixed": "As faixas selecionadas têm capas diferentes",

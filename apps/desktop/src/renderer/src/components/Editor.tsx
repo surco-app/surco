@@ -1,4 +1,14 @@
-import { Copy, Eraser, Globe, Music, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
+import {
+  Copy,
+  Eraser,
+  Globe,
+  Music,
+  RefreshCw,
+  Scissors,
+  Tag,
+  TriangleAlert,
+  Type,
+} from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -26,6 +36,7 @@ import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSectio
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
+import { useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
@@ -44,7 +55,7 @@ import { missingSummary } from '../lib/missingSummary'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
-import { libraryCopyFormat } from '../lib/properties'
+import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { jobAudio } from '../lib/reapply'
 import {
@@ -57,6 +68,7 @@ import {
 } from '../lib/release'
 import { replacePatch } from '../lib/replaceBeforeConvert'
 import { selectionReplaceMode } from '../lib/replaceSelection'
+import { replaceWarning } from '../lib/replaceWarning'
 import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
@@ -543,6 +555,22 @@ export const Editor = memo(function Editor({
   const replacedCopyFormat = replacedCopyProps
     ? libraryCopyFormat(replacedCopyProps, replacedCopyPath, i18n.language)
     : ''
+  const spectrumInHand = useCachedSpectrum(item.inputPath)
+  const replacedCopySpectrum = useCachedSpectrum(replacedCopyPath)
+  const libraryCopyBetter =
+    !!replacedCopyPath &&
+    replaceWarning(
+      {
+        ext: fileExtension(replacedCopyPath),
+        cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
+        hasKnee: replacedCopySpectrum?.hasKnee,
+      },
+      {
+        ext: fileExtension(item.inputPath),
+        cutoffHz: spectrumInHand?.cutoffHz ?? undefined,
+        hasKnee: spectrumInHand?.hasKnee,
+      },
+    ) !== null
   // What Music holds for this file when it is in the library: grouping and artwork, which
   // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
   useAppleMusicFill({
@@ -1017,9 +1045,15 @@ export const Editor = memo(function Editor({
     <>
       {!isMulti && inLibrary === 'yes' && (
         <SectionPill
-          tone="good"
+          tone={libraryCopyBetter ? 'warn' : 'good'}
           testid="apple-music-status"
-          icon={<Music className="h-3.5 w-3.5" aria-hidden="true" />}
+          icon={
+            libraryCopyBetter ? (
+              <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <Music className="h-3.5 w-3.5" aria-hidden="true" />
+            )
+          }
         >
           <span aria-hidden="true">{libraryName}</span>
           <span className="sr-only">
@@ -1027,6 +1061,9 @@ export const Editor = memo(function Editor({
           </span>
           {replacedCopyFormat && (
             <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
+          )}
+          {libraryCopyBetter && (
+            <span data-testid="apple-music-copy-better">· {tr('editor.libraryCopyBetter')}</span>
           )}
         </SectionPill>
       )}
