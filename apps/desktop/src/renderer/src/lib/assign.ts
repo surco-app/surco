@@ -46,12 +46,38 @@ function durationDisqualifies(target: TrackMatchTarget, track: ReleaseTrack): bo
 // Only applied when the album title is known — and a title that's really just the album name
 // repeated across the rip (the album-rip case duration is meant to handle) is exempt, since
 // it carries no per-cut signal. Without an album title the old duration-wins behaviour holds.
+const RIP_WORDS = new Set(['track', 'pista', 'tema', 'side', 'cara', 'untitled', 'audio'])
+const VINYL_POSITION = /^[a-h]\d{1,2}$/
+
+function ripTokens(title: string): string[] {
+  return title
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+}
+
+function isRecorderName(title: string): boolean {
+  return ripTokens(title).every(
+    (token) =>
+      RIP_WORDS.has(token) ||
+      /^\d+$/.test(token) ||
+      /^[a-h]$/.test(token) ||
+      VINYL_POSITION.test(token),
+  )
+}
+
+function withRipPosition(target: TrackMatchTarget): TrackMatchTarget {
+  if (target.trackNumber || !isRecorderName(target.title)) return target
+  const position = ripTokens(target.title).find((token) => VINYL_POSITION.test(token))
+  return position ? { ...target, trackNumber: position.toUpperCase() } : target
+}
+
 function titleContradicts(
   target: TrackMatchTarget,
   track: ReleaseTrack,
   albumTitle: string | undefined,
 ): boolean {
-  if (!albumTitle || !normalize(target.title)) return false
+  if (!albumTitle || !normalize(target.title) || isRecorderName(target.title)) return false
   if (titleSimilarity(target.title, albumTitle) > 0) return false
   return titleSimilarity(target.title, track.title) === 0
 }
@@ -67,11 +93,12 @@ export function assignTracks(
   albumTitle?: string,
 ): Assignment[] {
   return files.map((file) => {
+    const target = withRipPosition(file.target)
     let best: { track: ReleaseTrack; confidence: number } | undefined
     for (const track of tracklist) {
-      if (durationDisqualifies(file.target, track)) continue
-      if (titleContradicts(file.target, track, albumTitle)) continue
-      const confidence = scoreTrack(track, file.target, ASSIGN_WEIGHTS)
+      if (durationDisqualifies(target, track)) continue
+      if (titleContradicts(target, track, albumTitle)) continue
+      const confidence = scoreTrack(track, target, ASSIGN_WEIGHTS)
       if (confidence > 0 && (!best || confidence > best.confidence)) best = { track, confidence }
     }
     return {
