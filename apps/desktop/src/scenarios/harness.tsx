@@ -13,7 +13,14 @@ import { addToEngineLibrary } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
 import { convertAudio } from '../main/ffmpeg'
 import { isSameFile, removeRenamedOriginal } from '../main/inplace'
-import { flushConversionBatch, type LibraryHost } from '../main/libraryFlushes'
+import {
+  currentLibraryStatus,
+  flushConversionBatch,
+  type LibraryHost,
+  syncTagsInLibraries,
+} from '../main/libraryFlushes'
+import { registerListReviewIpc } from '../main/listReviewIpc'
+import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
 import { beginNmlBatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
@@ -24,12 +31,18 @@ import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
+import { registerTrashIpc } from '../main/trashIpc'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
+import {
+  type MusicReview,
+  pendingGroups,
+  useMusicReview,
+} from '../renderer/src/hooks/useMusicReview'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
 import { useQualityAnalysis } from '../renderer/src/hooks/useQualityAnalysis'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
@@ -38,6 +51,8 @@ import { useTracksView } from '../renderer/src/hooks/useTracksView'
 import { waveformOptions } from '../renderer/src/hooks/useWaveform'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import { type Destination, fromDestination } from '../renderer/src/lib/destination'
+import { listReviewEntries } from '../renderer/src/lib/listReviewEntries'
+import { listReviewSource } from '../renderer/src/lib/listReviewSource'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
 import { SettingsProvider } from '../renderer/src/lib/settingsContext'
 import { detectTrim } from '../renderer/src/lib/trim'
@@ -58,10 +73,26 @@ export interface ScenarioOptions {
   onConflict?: (outputName: string) => ConflictChoice
 }
 
+const rendererListeners = new Map<string, Set<(...args: never[]) => void>>()
+const sender = {
+  send: (channel: string, ...args: unknown[]) => {
+    for (const listener of rendererListeners.get(channel) ?? []) listener(...(args as never[]))
+  },
+  isDestroyed: () => false,
+}
+const mediaAccess = createMediaAccess()
+
+function listen(channel: string, listener: (...args: never[]) => void): () => void {
+  const set = rendererListeners.get(channel) ?? new Set()
+  rendererListeners.set(channel, set)
+  set.add(listener)
+  return () => set.delete(listener)
+}
+
 function invokeMain<T>(channel: string, ...args: unknown[]): Promise<T> {
   const handler = ipcHandlers.get(channel)
   if (!handler) throw new Error(`scenario: main never registered ${channel}`)
-  return Promise.resolve(handler({}, ...(args as never[]))) as Promise<T>
+  return Promise.resolve(handler({ sender }, ...(args as never[]))) as Promise<T>
 }
 
 function processTrackInMain(
@@ -151,7 +182,7 @@ function processTrackInMain(
         s.syncEngineDj ? replaces : undefined,
       )
     },
-    allowMedia: () => {},
+    allowMedia: (path) => mediaAccess.allow(path),
     existsSync,
     isSameFile,
     mkdir,
@@ -193,7 +224,6 @@ function scenarioApi(
   const reservations = createOutputReservations()
   const expandedListeners = new Set<(paths: string[]) => void>()
   const folderListeners = new Set<(root: string, files: string[]) => void>()
-  const mediaAccess = createMediaAccess()
   watcher = new FolderWatcher((root, files) =>
     onWatchedFilesChanged(
       mediaAccess,
@@ -209,8 +239,10 @@ function scenarioApi(
     platform: process.platform,
     expandPaths: async (paths) => {
       const expanded = await expandPaths(paths, (batch) => {
+        mediaAccess.allowAll(batch)
         for (const listener of expandedListeners) listener(batch)
       })
+      mediaAccess.allowAll(expanded)
       const roots = await dirRoots(paths)
       if (roots.length) watcher?.watch(roots)
       return expanded
@@ -237,6 +269,14 @@ function scenarioApi(
     waveformScan: (path) => invokeMain('audio:waveform-scan', path),
     cancelAnalysis: (path) => invokeMain('audio:cancelAnalysis', path),
     onWindowFocus: () => () => {},
+    libraryStatus: async () => currentLibraryStatus(),
+    syncLibraryTags: (updates) => syncTagsInLibraries(updates, libraryHost(errors), sessions),
+    applyListFixes: (request) => invokeMain('listreview:applyFixes', request),
+    cancelListFixes: () => invokeMain('listreview:cancelFixes'),
+    onListFixProgress: (listener) => listen('listreview:fixProgress', listener),
+    removeListDuplicates: (removals) => invokeMain('listreview:removeDuplicates', removals),
+    onListRemovalPhase: (listener) => listen('listreview:removalPhase', listener),
+    trashRestore: (id, from) => invokeMain('trash:restore', id, from),
     properties: (path) => invokeMain('audio:properties', path),
     beginConversionBatch: () => {
       beginNmlBatch()
@@ -279,6 +319,8 @@ export interface Scenario {
   applyAlbum: (release: Release) => void
   trimDetectedSilence: () => Promise<void>
   rows: () => TrackItem[]
+  reviewNotice: (dropped: string[]) => ReturnType<typeof pendingGroups>
+  openListReview: () => Promise<() => MusicReview>
   waitForNewTracks: () => Promise<string[]>
   loadNewTracks: () => Promise<void>
   dismissNewTracks: () => void
@@ -300,7 +342,18 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     async () => PLENTY_OF_DISK,
   )
   configureBackupStore(trash, () => getSettings().backupPolicy)
-  if (!ipcHandlers.has('audio:meta')) registerAudioIpc(() => {})
+  if (!ipcHandlers.has('audio:meta')) {
+    registerAudioIpc((path) => mediaAccess.allow(path))
+    registerTrashIpc(trash, mediaAccess)
+    registerListReviewIpc(
+      listReviewDeps({
+        mediaAccess,
+        tmp: { track: () => {}, untrack: () => {} },
+        hostFor: () => libraryHost(errors),
+        sessions,
+      }),
+    )
+  }
   const errors: string[] = []
   const sentToAppleMusic: string[] = []
   const prompts: ConfirmModal[] = []
@@ -374,6 +427,42 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   return {
     tracks,
     rows: () => result.current.view.tracksView,
+    reviewNotice: (dropped) =>
+      pendingGroups(
+        listReviewEntries(result.current.view.tracksView).entries,
+        [],
+        new Set(dropped),
+      ),
+    openListReview: async () => {
+      const source = listReviewSource({
+        rows: () => result.current.view.tracksView,
+        mac: process.platform === 'darwin',
+        launchMusic: () => false,
+        onRowsRemoved: (paths) =>
+          result.current.library.removeTracks(
+            tracks()
+              .filter((t) => paths.includes(t.inputPath))
+              .map((t) => t.id),
+          ),
+      })
+      const review = renderHook(() =>
+        useMusicReview({
+          source,
+          initialFilter: 'all',
+          ignored: [],
+          saveIgnored: () => {},
+          onFilesChanged: async (updates) => {
+            for (const { path, fields } of updates) {
+              result.current.library.patchReviewedFields(path, fields)
+              for (const row of tracks().filter((r) => r.inputPath === path))
+                await result.current.library.refreshTrackFromDisk(row.id, path)
+            }
+          },
+        }),
+      )
+      await waitFor(() => expect(review.result.current.status).not.toBe('loading'))
+      return () => review.result.current
+    },
     waitForNewTracks: async () => {
       await waitFor(() => expect(result.current.library.pendingNew).not.toBeNull(), {
         timeout: 5_000,

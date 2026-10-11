@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 
 type Handler = (event: unknown, ...args: never[]) => unknown
 
@@ -18,6 +18,8 @@ for (const name of readdirSync(scenarios)) {
 export const scenarioRoot = mkdtempSync(join(scenarios, 'run-'))
 const home = join(scenarioRoot, 'home')
 
+export const osTrash: string[] = []
+
 export function electronFake() {
   return {
     app: {
@@ -27,6 +29,14 @@ export function electronFake() {
         const dir = join(home, name)
         mkdirSync(dir, { recursive: true })
         return dir
+      },
+    },
+    shell: {
+      trashItem: async (path: string) => {
+        const bin = join(home, 'Trash')
+        mkdirSync(bin, { recursive: true })
+        renameSync(path, join(bin, `${osTrash.length}-${basename(path)}`))
+        osTrash.push(path)
       },
     },
     ipcMain: {
