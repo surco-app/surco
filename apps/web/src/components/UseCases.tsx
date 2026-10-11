@@ -11,12 +11,11 @@ import {
   USE_CASE_SOURCES,
   type UseCaseFilters,
 } from '../lib/useCases'
-import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
-import { type Group, MacBadge, type UseCase } from './UseCase'
+import { type Group, MacBadge, type UseCase, UseCaseOutro } from './UseCase'
 
 export default function UseCases() {
   const { t, i18n } = useTranslation()
@@ -203,19 +202,7 @@ export default function UseCases() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-16 text-center">
-          <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {t('useCases.outroTitle')}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t('useCases.outroLede')}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="use-cases" />
-            </div>
-          </Reveal>
-        </section>
+        <UseCaseOutro />
       </main>
 
       <Footer />

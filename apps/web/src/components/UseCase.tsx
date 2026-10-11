@@ -32,6 +32,25 @@ export type UseCase = {
   related: Related[]
 }
 
+export function UseCaseOutro() {
+  const { t } = useTranslation()
+  return (
+    <section className="border-t border-line/60 py-16 text-center">
+      <Reveal>
+        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          {t('useCases.outroTitle')}
+        </h2>
+        <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+          {t('useCases.outroLede')}
+        </p>
+        <div className="mt-2 flex flex-col items-center text-center">
+          <DownloadButton location="use-cases" />
+        </div>
+      </Reveal>
+    </section>
+  )
+}
+
 export function MacBadge() {
   const { t } = useTranslation()
   return (
@@ -191,19 +210,7 @@ export default function UseCasePage({ id }: { id: string }) {
           </Reveal>
         </article>
 
-        <section className="border-t border-line/60 py-16 text-center">
-          <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {t('useCases.outroTitle')}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t('useCases.outroLede')}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="use-cases" />
-            </div>
-          </Reveal>
-        </section>
+        <UseCaseOutro />
       </main>
 
       <Footer />
