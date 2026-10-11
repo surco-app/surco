@@ -165,6 +165,17 @@ describe('parsePlaylistTracks', () => {
     expect(out.paths).toEqual(['/Users/dj/Music/a.aiff', '/Users/dj/Music/b.flac'])
   })
 
+  // osascript ends whatever a script returns with a newline, an empty result included, so
+  // an empty playlist answered "\n" and imported as one track without a file.
+  it('reads the newline osascript prints for an empty playlist as no tracks at all', () => {
+    expect(parsePlaylistTracks('\n')).toEqual({
+      paths: [],
+      persistentIds: {},
+      meta: {},
+      missing: 0,
+    })
+  })
+
   it('counts the tracks with no file instead of dropping them silently, so the status bar can say why fewer rows arrived', () => {
     // A user who counts 128 in Music and sees 122 in Surco has no way to tell which
     // six are missing or why. The count is what lets the app say it out loud.

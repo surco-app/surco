@@ -163,7 +163,7 @@ export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
   const seen = new Set<string>()
   let missing = 0
   // A trailing record separator is the delimiter's, not a track's.
-  const body = stdout.replace(new RegExp(`${RS}+$`), '')
+  const body = stdout.replace(/\n$/, '').replace(new RegExp(`${RS}+$`), '')
   if (!body) return { paths, persistentIds, meta, missing }
   for (const line of body.split(RS)) {
     const f = line.split(US)
