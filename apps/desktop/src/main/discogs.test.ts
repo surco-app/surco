@@ -252,6 +252,30 @@ describe('search', () => {
     expect(second.searchParams.get('year')).toBeNull()
   })
 
+  // Without a format filter the tagged "Duran Duran (Deluxe Edition)" finds one digital
+  // release with no year, and that ended the search before the bare title's 2010 editions
+  // were ever asked for. A title with nothing from the year leaves the next one to try.
+  it('asks the bare title for the year when the full title has nothing from it', async () => {
+    mockSequence([
+      res(200, { results: [] }),
+      res(200, { results: [{ id: 90, title: 'Duran Duran - Rio (Deluxe Edition)' }] }),
+      res(200, { results: [{ id: 91, title: 'Duran Duran - Rio', year: '2009' }] }),
+      res(200, {
+        results: [
+          { id: 92, title: 'Duran Duran - Rio', year: '1982' },
+          { id: 91, title: 'Duran Duran - Rio', year: '2009' },
+        ],
+      }),
+    ])
+    const out = await search('duran duran hungry like the wolf', 'tok', undefined, {
+      artist: 'Duran Duran',
+      title: 'Hungry Like The Wolf',
+      album: 'Rio (Deluxe Edition)',
+      year: '2009',
+    })
+    expect(out.map((r) => r.id)).toEqual([91, 90, 92])
+  })
+
   // A year tagged wrong (the rip's year, a typo) must not cost the album: the editions
   // of other years still answer.
   it('keeps the album when no edition carries the tagged year', async () => {

@@ -2,13 +2,13 @@ import type { TFunction } from 'i18next'
 import {
   ArrowDownUp,
   CaseSensitive,
+  ChevronLeft,
   Copy as CopyIcon,
   List,
   ListChecks,
   ListMusic,
   type LucideIcon,
   SpellCheck,
-  X,
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -21,6 +21,7 @@ import type {
   ReviewPhase,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
+import { isTypingTarget } from '../lib/keymap'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
@@ -40,7 +41,6 @@ import { ModalShell } from './ModalShell'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { PrimaryAction } from './Toolbar'
-import { Tooltip } from './Tooltip'
 import { TopProgressBar } from './TopProgressBar'
 
 const OK = `${DIALOG_BUTTON} ${DIALOG_OK}`
@@ -769,9 +769,6 @@ function Row({
   )
 }
 
-const TOOL =
-  'press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
-
 // `busy` is a conversion running elsewhere in the app: it writes the same files and the
 // same library databases, so nothing here may start a write until it ends.
 export function MusicReview({
@@ -813,9 +810,30 @@ export function MusicReview({
   const keys = visibleKeys(review, search, sort)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
   const nothing = review.status === 'ready' && counts.all === 0
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || applying) return
+      if (isTypingTarget(e.target as Element)) return
+      if (document.querySelector('[aria-modal="true"]')) return
+      onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [applying, onClose])
   return (
     <div data-testid="music-review" className="relative flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-[var(--color-line)] bg-[var(--color-ink)]">
+        <button
+          type="button"
+          data-testid="music-review-close"
+          className="press flex w-full items-center gap-1 border-b border-[var(--color-line)] px-2.5 py-2 text-left text-xs font-medium text-[var(--color-accent)] outline-none transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40"
+          disabled={applying}
+          onClick={onClose}
+        >
+          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('musicReview.tracks')}
+          <kbd className="ml-auto font-sans text-[11px] font-normal text-fg-faint">esc</kbd>
+        </button>
         <div className="flex items-center gap-1.5 px-1.5 pt-2">
           <SearchInput
             className="flex-1"
@@ -836,17 +854,6 @@ export function MusicReview({
             placeholder={t('musicReview.search')}
             clearLabel={t('sidebar.search.clear')}
           />
-          <button
-            type="button"
-            data-testid="music-review-close"
-            aria-label={t('musicReview.close')}
-            className={TOOL}
-            disabled={applying}
-            onClick={onClose}
-          >
-            <X className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={t('musicReview.close')} />
-          </button>
         </div>
         <FilterBar
           testid="music-review-filter"

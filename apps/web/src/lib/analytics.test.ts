@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   downloadEvent,
+  searchEvent,
   trackBrewCopy,
   trackDonate,
   trackDownload,
   trackSectionView,
+  trackUseCaseSearch,
 } from './analytics'
 
 const RELEASE = 'https://github.com/surco-app/surco-releases/releases/latest'
@@ -157,5 +159,45 @@ describe('trackSectionView', () => {
 
   it('does nothing when gtag was never loaded', () => {
     expect(() => trackSectionView('home-closing')).not.toThrow()
+  })
+})
+
+// The use cases page is where people say in their own words what they came to do. A
+// search that finds nothing is a recipe we are missing, and only GA can collect them.
+describe('searchEvent', () => {
+  it('uses GA4 search_term so the built-in search report reads it', () => {
+    expect(searchEvent({ query: ' karaoke ', source: null }, 0)).toEqual({
+      search_term: 'karaoke',
+      surco_results: 0,
+    })
+  })
+
+  it('carries the source picked, so a filter that answers nothing shows up too', () => {
+    expect(searchEvent({ query: '', source: 'nas' }, 1)).toEqual({
+      surco_source: 'nas',
+      surco_results: 1,
+    })
+  })
+})
+
+describe('trackUseCaseSearch', () => {
+  afterEach(() => {
+    delete (globalThis as { gtag?: unknown }).gtag
+  })
+
+  it('sends a GA4 search event', () => {
+    const gtag = vi.fn()
+    ;(globalThis as { gtag?: unknown }).gtag = gtag
+
+    trackUseCaseSearch({ query: 'karaoke', source: null }, 0)
+
+    expect(gtag).toHaveBeenCalledWith('event', 'search', {
+      search_term: 'karaoke',
+      surco_results: 0,
+    })
+  })
+
+  it('does nothing when gtag was never loaded', () => {
+    expect(() => trackUseCaseSearch({ query: 'nas', source: null }, 1)).not.toThrow()
   })
 })

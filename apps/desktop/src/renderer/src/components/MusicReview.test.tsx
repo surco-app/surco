@@ -102,10 +102,12 @@ function Panes({
   review: base,
   busy,
   sync = NO_SYNC,
+  onClose = vi.fn(),
 }: {
   review: Review
   busy?: boolean
   sync?: ReviewSync
+  onClose?: () => void
 }) {
   const [staged, setStaged] = useState(base.staged)
   const r: Review = {
@@ -130,7 +132,7 @@ function Panes({
         review={r}
         selectedKey={selectedKey}
         onSelect={select}
-        onClose={vi.fn()}
+        onClose={onClose}
         busy={busy}
         search={search}
         onSearch={setSearch}
@@ -141,7 +143,7 @@ function Panes({
       />
       <MusicReviewAction review={r} busy={busy ?? false} onConfirm={() => setConfirming(true)} />
       <MusicReviewProgress review={r} />
-      <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} />
+      <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} onClose={vi.fn()} />
     </>
   )
 }
@@ -303,9 +305,38 @@ describe('MusicReview', () => {
     expect(names()).toEqual(['Ambient', 'DJ Lara', 'House'])
   })
 
-  it('closes from an icon button named Close', () => {
-    render(<Panes review={review()} />)
-    expect(screen.getByTestId('music-review-close')).toHaveAccessibleName('Close')
+  // A lone X beside the search read as clearing the search, so users quit the app to leave.
+  it('goes back to the tracks from a labelled row above the search', () => {
+    const onClose = vi.fn()
+    render(<Panes review={review()} onClose={onClose} />)
+    expect(screen.getByTestId('music-review-close')).toHaveTextContent('Tracks')
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('goes back to the tracks with Escape', () => {
+    const onClose = vi.fn()
+    render(<Panes review={review()} onClose={onClose} />)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  // Leaving mid-write would hide a run the button refuses to abandon; in the search, Escape
+  // belongs to the field; under a sheet, Escape closes the sheet and stops there.
+  it('stays in the review on Escape while applying, in the search or under a sheet', () => {
+    const onClose = vi.fn()
+    const { unmount } = render(
+      <Panes review={review({ status: 'applying', lastRun: run() })} onClose={onClose} />,
+    )
+    fireEvent.keyDown(window, { key: 'Escape' })
+    unmount()
+    render(<Panes review={review()} onClose={onClose} />)
+    fireEvent.keyDown(screen.getByTestId('music-review-search'), { key: 'Escape' })
+    fireEvent.click(screen.getByTestId('music-review-stage'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    expect(screen.getByTestId('music-review-confirm-apply')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   // Ignoring is how the user walks the list; jumping back to the top loses their place.
@@ -2074,6 +2105,7 @@ describe('list review', () => {
         review={listReview({ affected, inMusic: (id) => id === '/m/a.aiff' })}
         selectedKey={group.key}
         sync={NO_SYNC}
+        onClose={vi.fn()}
       />,
     )
     const [a, b] = screen.getAllByTestId('music-review-affected')
@@ -2093,6 +2125,7 @@ describe('list review', () => {
         })}
         selectedKey={group.key}
         sync={NO_SYNC}
+        onClose={vi.fn()}
       />,
     )
     const row = screen.getByTestId('music-review-affected')
@@ -2146,6 +2179,7 @@ describe('list review', () => {
             })}
             selectedKey="k#1"
             sync={NO_SYNC}
+            onClose={vi.fn()}
           />
         </QueryClientProvider>,
       )
@@ -2184,6 +2218,7 @@ describe('list review', () => {
             })}
             selectedKey="k#1"
             sync={NO_SYNC}
+            onClose={vi.fn()}
           />
         </QueryClientProvider>,
       )

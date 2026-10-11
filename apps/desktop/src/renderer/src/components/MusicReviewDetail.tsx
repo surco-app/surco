@@ -14,6 +14,7 @@ import { formatFileSize } from '../lib/properties'
 import { formatKHz, type Verdict } from '../lib/quality'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import type { TrackItem } from '../types'
+import { DIALOG_CANCEL } from './ConfirmDialog'
 import { fieldsLabel } from './MusicReview'
 import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
@@ -788,11 +789,14 @@ export function MusicReviewDetail({
   review,
   selectedKey,
   sync,
+  onClose,
 }: {
   review: Review
   selectedKey: string | null
   sync: ReviewSync
+  onClose: () => void
 }) {
+  const { t } = useTranslation()
   const spelling = review.spelling.find((g) => g.key === selectedKey)
   const duplicate = review.duplicates.find((c) => c.group.key === selectedKey)
   // Held above the groups, like the editor's fold state, so a section folded on one group
@@ -804,6 +808,24 @@ export function MusicReviewDetail({
   }
   return (
     <section data-testid="music-review-detail" className="flex h-full min-h-0 flex-col">
+      {review.status === 'ready' && review.spelling.length + review.duplicates.length === 0 && (
+        <div
+          data-testid="music-review-all-clear"
+          className="flex h-full flex-col items-center justify-center p-8 text-center"
+        >
+          <Check className="h-6 w-6 text-[var(--color-accent)]" aria-hidden="true" />
+          <p className="mt-3 text-base font-semibold text-fg">{t('musicReview.allClear')}</p>
+          <p className="mt-1 text-sm text-fg-dim">{t('musicReview.allClearHint')}</p>
+          <button
+            type="button"
+            data-testid="music-review-back"
+            className={`mt-5 ${DIALOG_CANCEL}`}
+            onClick={onClose}
+          >
+            {t('musicReview.back')}
+          </button>
+        </div>
+      )}
       {spelling && (
         <SpellingDetail group={spelling} review={review} sync={sync} folding={folding} />
       )}

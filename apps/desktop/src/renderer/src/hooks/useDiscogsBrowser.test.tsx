@@ -662,6 +662,25 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([2, 1]))
   })
 
+  // artexjay's tags date the deluxe 1981; typing 2010 asks for the 2010 set, so the typed
+  // year breaks the tie, not the tag's.
+  it('ranks the edition from a typed year above the tagged one', async () => {
+    const search = vi.fn().mockResolvedValue([
+      { provider: 'discogs', id: 1, title: 'Duran Duran - Duran Duran', year: '1981' },
+      { provider: 'discogs', id: 2, title: 'Duran Duran - Duran Duran', year: '2010' },
+    ])
+    setApi({ search })
+    const track = item({ query: 'Duran Duran Planet Earth', title: 'Planet Earth' })
+    track.meta.artist = 'Duran Duran'
+    track.meta.year = '1981'
+    const { result } = renderHook(() => useDiscogsBrowser(track, tr), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([1, 2]))
+    act(() => result.current.setQuery('Duran Duran Duran Duran 2010'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([2, 1]))
+  })
+
   // Flipping away and back remounts the panel on the typed query the track stored; it is
   // still the user's search and must not pick the tags back up.
   it('keeps searching a typed song without tags after a flip back to the track', async () => {

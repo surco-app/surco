@@ -3634,9 +3634,23 @@ describe('App Music review', () => {
     await screen.findByTestId('music-review-empty')
     fireEvent.keyDown(window, { key: 'Backspace', metaKey: true })
     fireEvent.keyDown(window, { key: 'Escape' })
-    fireEvent.click(screen.getByTestId('music-review-close'))
     expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
     expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+  })
+
+  // Escape peels one layer at a time: closing Settings must not also throw away the review.
+  it('closes only the dialog on top of the review with Escape', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+    await addOneTrack()
+    runMenu('music-review')
+    await screen.findByTestId('music-review-empty')
+    fireEvent.click(screen.getByTestId('open-settings'))
+    await screen.findByTestId('settings-save')
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('settings-save')).not.toBeInTheDocument())
+    expect(screen.getByTestId('music-review')).toBeInTheDocument()
   })
 
   it('does not convert the hidden selected track on the process shortcut', async () => {
@@ -3764,6 +3778,23 @@ describe('App list review', () => {
     expect(window.api.appleMusicFileEntries).toBeUndefined()
     fireEvent.click(screen.getByTestId('music-review-close'))
     expect(await screen.findAllByTestId('track-row')).toHaveLength(3)
+  })
+
+  // A clean review used to leave the main pane blank: nothing said the list was fine, and the
+  // only way back was a small X that reads like clearing the search.
+  it('says the list is fine when there is nothing to review and leads back to it', async () => {
+    vi.resetModules()
+    listApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('list-review')
+    expect(await screen.findByTestId('music-review-all-clear')).toHaveTextContent(
+      'Everything looks right',
+    )
+    fireEvent.click(screen.getByTestId('music-review-back'))
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(2)
+    expect(screen.queryByTestId('music-review')).not.toBeInTheDocument()
   })
 
   it('does nothing with an empty list', async () => {

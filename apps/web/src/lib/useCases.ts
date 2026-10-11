@@ -1,3 +1,7 @@
+import en from '../i18n/locales/en.json'
+import es from '../i18n/locales/es.json'
+import { PAGES } from './nav'
+
 export const USE_CASE_SOURCES = [
   'folder',
   'appleMusic',
@@ -11,9 +15,9 @@ export type UseCaseSource = (typeof USE_CASE_SOURCES)[number]
 
 export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'in-place': ['folder'],
-  replace: ['appleMusic', 'rekordbox'],
+  replace: ['appleMusic', 'rekordbox', 'engineDj'],
   'apple-music-rekordbox': ['appleMusic', 'rekordbox'],
-  'to-aiff': ['folder'],
+  'to-aiff': ['folder', 'rekordbox'],
   'check-quality': ['folder'],
   vinyl: ['folder'],
   usb: ['usb'],
@@ -27,6 +31,25 @@ export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'engine-dj': ['engineDj'],
   'music-playlist-set': ['appleMusic', 'usb'],
   nas: ['nas'],
+}
+
+export type UseCaseFilters = { query: string; source: UseCaseSource | null }
+
+const isSource = (value: string | null): value is UseCaseSource =>
+  USE_CASE_SOURCES.some((s) => s === value)
+
+export function filtersFromSearch(search: string): UseCaseFilters {
+  const params = new URLSearchParams(search)
+  const source = params.get('source')
+  return { query: params.get('q') ?? '', source: isSource(source) ? source : null }
+}
+
+export function searchForFilters({ query, source }: UseCaseFilters): string {
+  const params = new URLSearchParams()
+  if (query.trim()) params.set('q', query)
+  if (source) params.set('source', source)
+  const search = params.toString()
+  return search ? `?${search}` : ''
 }
 
 type Searchable = { id: string; title: string; body: string[]; keywords: string }
@@ -46,4 +69,40 @@ export function matchesUseCase(c: Searchable, query: string, source: UseCaseSour
   if (source && !USE_CASE_SOURCES_BY_CASE[c.id]?.includes(source)) return false
   const haystack = words([c.title, ...c.body, c.keywords].join(' '))
   return words(query).every((q) => haystack.some((w) => w.startsWith(q)))
+}
+
+type Lang = 'es' | 'en'
+type PagedCase = { id: string; slug: string }
+
+const CASES: Record<Lang, PagedCase[]> = {
+  es: es.useCases.cases,
+  en: en.useCases.cases,
+}
+
+export const recipePath = (lang: Lang, slug: string) => `${PAGES.useCases[lang]}/${slug}`
+
+const pathOf = (lang: Lang, c: PagedCase) => recipePath(lang, c.slug)
+
+export type RecipePage = {
+  id: string
+  lang: Lang
+  path: string
+  alternates: Record<Lang, string>
+}
+
+export function recipePages(): RecipePage[] {
+  return (['es', 'en'] as const).flatMap((lang) =>
+    CASES[lang].map((c) => {
+      const alternates = {
+        es: pathOf('es', CASES.es.find((o) => o.id === c.id) ?? c),
+        en: pathOf('en', CASES.en.find((o) => o.id === c.id) ?? c),
+      }
+      return { id: c.id, lang, path: alternates[lang], alternates }
+    }),
+  )
+}
+
+export function recipePathForAnchor(lang: Lang, hash: string): string | null {
+  const c = CASES[lang].find((o) => `#${o.id}` === hash)
+  return c ? pathOf(lang, c) : null
 }

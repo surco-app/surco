@@ -13,9 +13,11 @@ import Features from './components/Features'
 import FlacToAiff from './components/FlacToAiff'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
+import UseCasePage, { type UseCase } from './components/UseCase'
 import UseCases from './components/UseCases'
 import { createI18n, type Language } from './i18n'
 import { SITE } from './lib/sitemap'
+import { type RecipePage, recipePages } from './lib/useCases'
 
 const PATHS: Record<Language, string> = { es: '/', en: '/en' }
 const FEATURE_PATHS: Record<Language, string> = { es: '/funciones', en: '/en/features' }
@@ -167,6 +169,40 @@ function LocalizedUseCases({ lng }: { lng: Language }) {
   )
 }
 
+function RecipeHead({ page }: { page: RecipePage }) {
+  const t = I18N[page.lang].getFixedT(page.lang)
+  const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
+  const c = cases.find((o) => o.id === page.id) as UseCase
+  const url = SITE + page.path
+  const title = t('useCases.recipeMetaTitle', { title: c.title })
+  return (
+    <Head>
+      <html lang={t('meta.htmlLang')} />
+      <title>{title}</title>
+      <meta name="description" content={c.body[0]} />
+      <link rel="canonical" href={url} />
+      <link rel="alternate" hrefLang="es" href={`${SITE}${page.alternates.es}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}${page.alternates.en}`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE}${page.alternates.es}`} />
+      <meta property="og:locale" content={t('meta.ogLocale')} />
+      <meta property="og:url" content={url} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={c.body[0]} />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={c.body[0]} />
+    </Head>
+  )
+}
+
+function LocalizedRecipe({ page }: { page: RecipePage }) {
+  return (
+    <I18nextProvider i18n={I18N[page.lang]}>
+      <RecipeHead page={page} />
+      <UseCasePage id={page.id} />
+    </I18nextProvider>
+  )
+}
+
 function ChangelogHead({ lng }: { lng: Language }) {
   const t = I18N[lng].getFixedT(lng)
   const url = SITE + CHANGELOG_PATHS[lng]
@@ -278,6 +314,11 @@ export const routes: RouteRecord[] = [
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
       { path: 'casos-de-uso', element: <LocalizedUseCases lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/use-cases', element: <LocalizedUseCases lng="en" />, entry: 'src/routes.tsx' },
+      ...recipePages().map((page) => ({
+        path: page.path.slice(1),
+        element: <LocalizedRecipe page={page} />,
+        entry: 'src/routes.tsx',
+      })),
       { path: 'cambios', element: <LocalizedChangelog lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/changelog', element: <LocalizedChangelog lng="en" />, entry: 'src/routes.tsx' },
       {

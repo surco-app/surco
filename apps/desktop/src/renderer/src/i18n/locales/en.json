@@ -1592,7 +1592,6 @@
   },
   "musicReview": {
     "title": "Review metadata",
-    "close": "Close",
     "filter": {
       "all": "All",
       "spelling": "Spellings",
@@ -1723,6 +1722,10 @@
     },
     "empty": "Your Apple Music library is empty.",
     "clean": "Nothing to review.",
+    "allClear": "Everything looks right",
+    "allClearHint": "No typos, capitals, invisible characters or duplicates.",
+    "back": "Back to the tracks",
+    "tracks": "Tracks",
     "error": "Couldn't read your Apple Music library.",
     "loading": "Reading the library…",
     "bothArtists": "Artist and album artist",

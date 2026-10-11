@@ -1592,7 +1592,6 @@
   },
   "musicReview": {
     "title": "Metadaten prüfen",
-    "close": "Schließen",
     "filter": {
       "all": "Alle",
       "spelling": "Schreibweisen",
@@ -1723,6 +1722,10 @@
     },
     "empty": "Deine Apple-Music-Bibliothek ist leer.",
     "clean": "Nichts zu prüfen.",
+    "allClear": "Alles in Ordnung",
+    "allClearHint": "Keine Tippfehler, Großschreibung, unsichtbaren Zeichen oder Duplikate.",
+    "back": "Zurück zu den Titeln",
+    "tracks": "Titel",
     "error": "Die Apple-Music-Bibliothek konnte nicht gelesen werden.",
     "loading": "Bibliothek wird gelesen…",
     "bothArtists": "Künstler und Albumkünstler",

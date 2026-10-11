@@ -298,17 +298,22 @@ export async function search(
       // search. An edition the tag spells in brackets is retried bare, the title Discogs
       // files it under. Nothing found falls through to the track ladder unchanged. A
       // popular album has hundreds of editions and the one the file came from can sit
-      // pages down, so the tagged year's editions are asked for first and lead.
+      // pages down, so the tagged year's editions are asked for first and lead, and a title
+      // with nothing from that year leaves the bare one to be asked before the search ends.
       const album = hints?.album?.trim() ?? ''
       const year = hints?.year?.trim()
       if (artist && album) {
+        let withoutYear: SearchResult[] = []
         for (const albumTitle of new Set([album, bareAlbumTitle(album)])) {
           const byYear = year
             ? keep(await searchStructured(artist, albumTitle, token, { ...opts, year }, priority))
             : []
           const byAlbum = keep(await searchStructured(artist, albumTitle, token, opts, priority))
-          if (byYear.length || byAlbum.length) return dedupeResults([...byYear, ...byAlbum])
+          if (byYear.length) return dedupeResults([...byYear, ...withoutYear, ...byAlbum])
+          if (byAlbum.length && !year) return byAlbum
+          if (!withoutYear.length) withoutYear = byAlbum
         }
+        if (withoutYear.length) return withoutYear
       }
       if (artist && title) {
         const structured = keep(await searchStructured(artist, title, token, opts, priority))

@@ -262,12 +262,13 @@ export function useDiscogsBrowser(
   const allResults = useMemo(() => {
     if (arrived.length === 0) return EMPTY_RESULTS
     const target = matchTargetOf(item, cleanup)
+    const typed = userDroveSearch.current || item.queryTyped === true
     const ranked = preRankResults(arrived.flat(), {
       title: target.title,
       artist: item.meta.artist,
       album: searchByAlbumFirst ? item.meta.album : undefined,
-      year: target.year,
-      typed: userDroveSearch.current || item.queryTyped === true ? searchTerm : undefined,
+      year: typed ? searchHintsFor(item, cleanup, searchTerm).year : target.year,
+      typed: typed ? searchTerm : undefined,
     })
     const rankedKeys = ranked.map(resultKey)
     const previous = shownOrder.current.term === searchTerm ? shownOrder.current.keys : []

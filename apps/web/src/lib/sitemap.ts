@@ -6,7 +6,9 @@ export const SITE = 'https://getsurco.app'
 // read off routes.tsx (which is JSX, and would drag React into the build script) with a
 // test holding the two in step, so a new page can't be served-but-unlisted the way
 // /funciones was.
-export const INDEXABLE_PATHS = [
+import { recipePages } from './useCases'
+
+export const INDEXABLE_PATHS: readonly string[] = [
   '/',
   '/en',
   '/funciones',
@@ -19,4 +21,5 @@ export const INDEXABLE_PATHS = [
   '/en/changelog',
   '/convertir/flac-a-aiff',
   '/en/convert/flac-to-aiff',
-] as const
+  ...recipePages().map((page) => page.path),
+]

@@ -1592,7 +1592,6 @@
   },
   "musicReview": {
     "title": "Revisar metadados",
-    "close": "Fechar",
     "filter": {
       "all": "Tudo",
       "spelling": "Grafias",
@@ -1723,6 +1722,10 @@
     },
     "empty": "Sua biblioteca do Apple Music está vazia.",
     "clean": "Nada para revisar.",
+    "allClear": "Está tudo certo",
+    "allClearHint": "Sem erros de digitação, maiúsculas, caracteres invisíveis ou duplicadas.",
+    "back": "Voltar às faixas",
+    "tracks": "Faixas",
     "error": "Não foi possível ler a biblioteca do Apple Music.",
     "loading": "Lendo a biblioteca…",
     "bothArtists": "Artista e artista do álbum",
