@@ -822,6 +822,21 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 12.345, endSec: 90.3 })
   })
 
+  // Mid-typing, the arrows are text keys: ← to fix a digit moved the cut instead, and the
+  // typed text then committed on blur over the nudge. Escape gives the value back.
+  it('lets the arrows move the caret while a time is being typed', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
+    fireEvent.change(start, { target: { value: '41.5' } })
+    expect(fireEvent.keyDown(start, { key: 'ArrowLeft' })).toBe(true)
+    expect(onChange).not.toHaveBeenCalled()
+    fireEvent.keyDown(start, { key: 'Escape' })
+    expect(start).toHaveValue('9.700')
+    fireEvent.blur(start)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   // The arrows still give the fine step, now from the field where the value is.
   // Left/right AND up/down both nudge: the cut moves along a horizontal wave, so the
   // horizontal arrows are the intuitive ones, but a field's arrows are up/down by

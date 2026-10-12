@@ -333,6 +333,15 @@ function Lane({
                 e.preventDefault()
                 commitTime()
               }
+              // Mid-typing the field is a text box: the arrows walk the caret, and
+              // Escape drops the typed text and shows the cut again.
+              if (timeText !== null) {
+                if (e.key === 'Escape') {
+                  e.stopPropagation()
+                  setTimeText(null)
+                }
+                return
+              }
               // The arrows nudge from the field, where the value is. Left/right move
               // the cut the way it reads on the wave — earlier is left, later is right
               // — and up/down do the same, so whichever pair the hand reaches for works.
