@@ -170,6 +170,17 @@ describe('TrashPanel', () => {
     expect(props.onEmpty).toHaveBeenCalledTimes(1)
   })
 
+  // The confirm appears where Delete all was, so a double-click armed it and fired it in
+  // one gesture: every backup gone for good. The second click of a double-click is not
+  // a confirmation.
+  it('does not empty on the second click of a double-click', () => {
+    const props = renderPanel([entry()])
+    fireEvent.click(screen.getByTestId('trash-empty-button'), { detail: 1 })
+    fireEvent.click(screen.getByTestId('trash-empty-confirm'), { detail: 2 })
+    expect(props.onEmpty).not.toHaveBeenCalled()
+    expect(screen.getByTestId('trash-empty-confirm')).toBeInTheDocument()
+  })
+
   it('removes one entry and reveals the folder', () => {
     const props = renderPanel([entry()])
     fireEvent.click(screen.getByTestId('trash-remove'))

@@ -293,7 +293,10 @@ export function TrashPanel({
           {confirmEmpty ? (
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                // The confirm takes the armed button's place, so a double-click's second
+                // click lands on it; only a fresh click confirms.
+                if (e.detail > 1) return
                 setConfirmEmpty(false)
                 onEmpty()
               }}
