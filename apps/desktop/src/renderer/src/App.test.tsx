@@ -3458,6 +3458,15 @@ const reviewEntry = (persistentId: string, artist: string) => ({
   genre: '',
 })
 
+// A duplicate group's stage button waits for the copies' locations, which arrive after the
+// group shows; a click on it before then is swallowed by the disabled button, and on a
+// loaded CI runner the review then had nothing to apply.
+async function stageGroup(): Promise<void> {
+  const stage = await screen.findByTestId('music-review-stage')
+  await waitFor(() => expect(stage).toBeEnabled())
+  fireEvent.click(stage)
+}
+
 function reviewApi(over: Record<string, unknown> = {}): void {
   setApi({
     platform: 'darwin',
@@ -3542,7 +3551,7 @@ describe('App Music review', () => {
     expect(apply).toHaveTextContent('Apply 0 changes')
     expect(apply).toBeDisabled()
     expect(screen.queryByTestId('convert-all')).not.toBeInTheDocument()
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     expect(apply).toHaveTextContent('Apply 1 change')
     expect(apply).toBeEnabled()
     fireEvent.click(apply)
@@ -3638,7 +3647,7 @@ describe('App Music review', () => {
       expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Dj Lara'),
     )
     runMenu('music-review')
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     fireEvent.click(screen.getByTestId('music-review-apply'))
     fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
     await screen.findByTestId('music-review-done')
@@ -3711,7 +3720,7 @@ describe('App Music review', () => {
     fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     runMenu('music-review')
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     expect(screen.getByTestId('music-review-apply')).toBeDisabled()
   })
 
@@ -3738,7 +3747,7 @@ describe('App Music review', () => {
     fireEvent.click(row)
     await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
     runMenu('music-review')
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(await screen.findByTestId('music-review-confirm-apply')).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -3850,7 +3859,7 @@ describe('App list review', () => {
       expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Dj Lara'),
     )
     runMenu('list-review')
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     fireEvent.click(screen.getByTestId('music-review-apply'))
     fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
     await screen.findByTestId('music-review-done')
@@ -3880,7 +3889,7 @@ describe('App list review', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     runMenu('list-review')
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     fireEvent.click(screen.getByTestId('music-review-apply'))
     fireEvent.click(await screen.findByTestId('music-review-confirm-apply'))
     await screen.findByTestId('music-review-done')
@@ -3900,7 +3909,7 @@ describe('App list review', () => {
     await renderApp()
     await addThree()
     runMenu('list-review')
-    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    await stageGroup()
     expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
     runMenu('list-review')
     await act(async () => {})
