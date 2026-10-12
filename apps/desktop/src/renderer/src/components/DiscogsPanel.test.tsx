@@ -585,3 +585,24 @@ describe('DiscogsPanel while the pointer is over the results', () => {
     expect(screen.getAllByTestId('discogs-track')).toHaveLength(1)
   })
 })
+
+describe('DiscogsPanel empty source', () => {
+  // Filtering to a source with no answers said "No albums matched your search" while the
+  // other sources had plenty, which read as a failed search.
+  it('names the filtered source when only it came back empty', () => {
+    renderPanel(
+      browser({
+        query: 'x',
+        noResults: true,
+        providerFilter: 'bandcamp',
+        providerCounts: [
+          { provider: 'discogs', count: 4 },
+          { provider: 'bandcamp', count: 0 },
+        ],
+      }),
+    )
+    expect(screen.getByTestId('discogs-no-results')).toHaveTextContent(
+      'Bandcamp has nothing for this search.',
+    )
+  })
+})

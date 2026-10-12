@@ -412,6 +412,7 @@
     "matchSuggested": "Suggested",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "noResults": "No albums matched your search.",
+    "noResultsFromSource": "{{provider}} has nothing for this search.",
     "formatFilter": "Showing only: {{formats}}",
     "providerFilter": "Filter results by source",
     "providerFilterAll": "All",

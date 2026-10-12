@@ -421,7 +421,11 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               className="flex flex-col items-center justify-center gap-2 px-6 pt-12 text-center text-xs text-fg-dim"
             >
               <SearchX className="h-5 w-5 text-fg-faint" aria-hidden="true" />
-              {tr('editor.noResults')}
+              {providerFilter !== 'all' && providerTotal > 0
+                ? tr('editor.noResultsFromSource', {
+                    provider: tr(`settings.provider.${providerFilter}`),
+                  })
+                : tr('editor.noResults')}
             </div>
           ) : results.length === 0 ? (
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>

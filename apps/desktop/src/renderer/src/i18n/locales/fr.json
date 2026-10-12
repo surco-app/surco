@@ -412,6 +412,7 @@
     "matchSuggested": "Suggéré",
     "chooseAlbumHint": "Choisis un album dans la liste pour voir ses morceaux.",
     "noResults": "Aucun album ne correspond à ta recherche.",
+    "noResultsFromSource": "{{provider}} n'a rien pour cette recherche.",
     "formatFilter": "Affichage limité à : {{formats}}",
     "providerFilter": "Filtrer les résultats par source",
     "providerFilterAll": "Toutes",
