@@ -399,6 +399,12 @@ describe('Player', () => {
     expect(identity.querySelector('[data-testid="player-time"]')).toHaveTextContent('1:05 / 12:34')
   })
 
+  // The artist gives way to the clock, so a long credit list is cut; hovering shows it all.
+  it('shows the whole artist on hover when the line cuts it', () => {
+    renderUI(<Player {...props()} />)
+    expect(screen.getByTitle('DJ Carlos')).toBeInTheDocument()
+  })
+
   it('shows the clock on the artist line while the waveform is hidden', () => {
     renderUI(<Player {...props({ showWaveform: false, currentTime: 65, duration: 754 })} />)
     const identity = screen.getByTestId('player-identity')

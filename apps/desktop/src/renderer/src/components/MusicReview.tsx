@@ -741,7 +741,7 @@ function Row({
       <span data-fit className="relative min-w-0 flex-1">
         <span data-testid="music-review-row-title-line" className="flex items-center gap-2">
           <span className="relative block min-w-0 flex-1 truncate">
-            <span data-testid="music-review-row-name" className={ROW_TITLE}>
+            <span data-testid="music-review-row-name" title={name} className={ROW_TITLE}>
               {name}
             </span>
           </span>

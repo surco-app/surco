@@ -207,7 +207,10 @@ export function TrashPanel({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
-                        <span className="truncate text-[13px] font-medium text-fg">
+                        <span
+                          title={entry.name}
+                          className="truncate text-[13px] font-medium text-fg"
+                        >
                           {entry.name}
                         </span>
                         <span className="shrink-0 text-[11px] text-fg-faint tabular-nums">
@@ -229,7 +232,10 @@ export function TrashPanel({
                           tr(`trash.reason.${entry.reason}`)
                         )}
                       </div>
-                      <div className="truncate font-mono text-[11px] text-fg-faint">
+                      <div
+                        title={folderOf(entry.originalPath)}
+                        className="truncate font-mono text-[11px] text-fg-faint"
+                      >
                         {folderOf(entry.originalPath)}
                       </div>
                     </div>

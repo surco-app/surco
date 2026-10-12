@@ -59,6 +59,14 @@ describe('TrashPanel', () => {
     expect(screen.getByTestId('trash-row')).toHaveTextContent('Track.flac')
   })
 
+  // "Track (Original Mix)" and "Track (Extended Mix)" cut at the same width look alike, and
+  // restoring the wrong one is the mistake this panel exists to undo. Hovering shows it all.
+  it('shows the full name and folder of a cut row on hover', () => {
+    renderPanel([entry({ name: 'Track (Extended Mix).aiff' })])
+    expect(screen.getByTitle('Track (Extended Mix).aiff')).toBeInTheDocument()
+    expect(screen.getByTitle('/Music/Crate')).toBeInTheDocument()
+  })
+
   it('falls back to the bare reason when nothing replaced the original', () => {
     renderPanel([entry({ reason: 'deleted' })])
     const row = screen.getByTestId('trash-row')

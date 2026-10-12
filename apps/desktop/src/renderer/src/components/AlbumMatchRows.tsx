@@ -116,7 +116,9 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
           return (
             <div key={a.id} data-testid="match-row" className="flex items-center gap-3 py-1">
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm">{file.meta.title || file.fileName}</span>
+                <span title={file.meta.title || file.fileName} className="block truncate text-sm">
+                  {file.meta.title || file.fileName}
+                </span>
                 {file.duration !== undefined && (
                   <span className="text-xs tabular-nums text-fg-dim">
                     {formatTime(file.duration)}

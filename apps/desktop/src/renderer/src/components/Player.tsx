@@ -303,7 +303,9 @@ export function Player({
             data-testid="player-identity"
             className="flex min-w-0 items-baseline gap-2 text-fg-dim text-xs leading-tight"
           >
-            <span className="min-w-0 flex-1 truncate">{track.meta.artist}</span>
+            <span title={track.meta.artist} className="min-w-0 flex-1 truncate">
+              {track.meta.artist}
+            </span>
             <span data-testid="player-time" className="shrink-0 text-[11px] tabular-nums">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>

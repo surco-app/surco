@@ -125,6 +125,14 @@ describe('AlbumMatchRows', () => {
     expect(status).toHaveTextContent('Applied')
   })
 
+  // Remixes of one track share a long prefix, so cut to the column they look identical
+  // exactly when each file has to be told apart to pick its track.
+  it('shows each file full name on hover', async () => {
+    renderRows([track('a', 'Track Name (Some Remixer Extended Vocal Mix)', 181)])
+    await screen.findAllByTestId('match-row')
+    expect(screen.getByTitle('Track Name (Some Remixer Extended Vocal Mix)')).toBeInTheDocument()
+  })
+
   it('applies the matched track title to each file when confirmed', async () => {
     const { onApply } = renderRows([
       track('short', 'radio edit', 181),

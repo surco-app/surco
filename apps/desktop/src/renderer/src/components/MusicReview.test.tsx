@@ -183,6 +183,14 @@ describe('MusicReview', () => {
 
   // The same row as the track list: a cover tile, the name with the count beside it, and
   // the secondary line with the kind as a pill where the format sits.
+  // Spelling variants of one artist usually differ at the end of the name, which is the
+  // part the cut hides; hovering a row has to show the whole name.
+  it('shows the whole row name on hover', () => {
+    render(<Panes review={review()} />)
+    const name = within(rows()[0]).getByTestId('music-review-row-name')
+    expect(name).toHaveAttribute('title', name.textContent)
+  })
+
   it('lays a row out like a track row, with the count on the first line and the kind below', () => {
     render(<Panes review={review()} />)
     const row = rows()[0]
