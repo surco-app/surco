@@ -19,6 +19,7 @@ import type {
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { resetEditorPlace } from '../lib/editorPlace'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
@@ -115,6 +116,7 @@ beforeEach(() => {
   // Section fold state persists in a module store across editor remounts; reset it so a
   // section a previous test toggled doesn't start the next one in the opposite state.
   resetEditorSections()
+  resetEditorPlace()
 })
 
 function item(

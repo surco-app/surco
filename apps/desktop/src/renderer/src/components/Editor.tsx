@@ -49,6 +49,7 @@ import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
+import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, missingRequiredOf } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
@@ -197,10 +198,6 @@ interface Props {
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
 
-// The editor remounts per track, so where it was scrolled lives here for the session: the
-// next track opens on the same section instead of back at the top.
-let sessionScrollTop = 0
-
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
 // selectedTracks identity), so search keystrokes and progress ticks on other tracks
 // skip this whole subtree.
@@ -290,7 +287,7 @@ export const Editor = memo(function Editor({
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const scrollRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = sessionScrollTop
+    if (scrollRef.current) scrollRef.current.scrollTop = editorPlace.scrollTop
   }, [])
   const { t: tr, i18n } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
@@ -1164,7 +1161,7 @@ export const Editor = memo(function Editor({
           ref={scrollRef}
           data-testid="editor-scroll"
           onScroll={(e) => {
-            sessionScrollTop = e.currentTarget.scrollTop
+            editorPlace.scrollTop = e.currentTarget.scrollTop
           }}
           className="min-h-0 flex-1 overflow-y-auto p-7"
         >

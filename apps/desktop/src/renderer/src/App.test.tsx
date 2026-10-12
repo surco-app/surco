@@ -11,6 +11,7 @@ import type { ActivityEvent, RekordboxSyncIssue, Release, Settings } from '../..
 import { resetEditorSections } from './hooks/useEditorSections'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
+import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
 
@@ -296,6 +297,7 @@ beforeEach(() => {
   // The editor section store is module-level and survives across tests; reset it so a
   // test that folds a section away doesn't leak that state into the next.
   resetEditorSections()
+  resetEditorPlace()
   observers.length = 0
   globalThis.IntersectionObserver =
     MockIntersectionObserver as unknown as typeof IntersectionObserver

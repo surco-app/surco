@@ -6,6 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
 import i18n from '../i18n'
+import { resetEditorPlace } from '../lib/editorPlace'
 import { createQueryClient } from '../lib/queryClient'
 import { runKeyClaim } from '../lib/spaceClaim'
 import { drawWaveform } from '../lib/waveform'
@@ -45,6 +46,7 @@ const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] =
 
 let client: QueryClient
 beforeEach(() => {
+  resetEditorPlace()
   play.mockReset().mockResolvedValue(undefined)
   pause.mockReset()
   audios.length = 0
@@ -522,6 +524,20 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '8.70-10.70')
     expect(screen.getByTestId('trim-context-end')).toHaveTextContent('±5s')
     expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', '85.30-95.30')
+  })
+
+  // Trimming a crate is the same cut judged track after track at the same zoom: the
+  // editor remounts per track and every lane came back at ±5 s, a click or two away.
+  it("keeps each lane's zoom on the next track", async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    cleanup()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const context = await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
+    expect(context).toHaveTextContent('±1s')
+    expect(screen.getByTestId('trim-context-end')).toHaveTextContent('±5s')
   })
 
   // The tightest windows are where a cut is actually judged, and a DJ's trim is

@@ -17,6 +17,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { formatTime } from '../lib/duration'
+import { editorPlace } from '../lib/editorPlace'
 import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
 import { detectOnsets, detectTrim, refineOnset, trimThresholdDb } from '../lib/trim'
@@ -623,10 +624,16 @@ export function TrimSection({
   )
   // How much track flanks each cut. Replaces the old zoom: there is no scrolling
   // here, so the only question left is how wide a window each lane shows.
-  const [contextIndex, setContextIndex] = useState<Record<Side, number>>({
-    start: DEFAULT_CONTEXT_INDEX,
-    end: DEFAULT_CONTEXT_INDEX,
-  })
+  const [contextIndex, setContextIndex] = useState<Record<Side, number>>(
+    () =>
+      editorPlace.trimContext ?? {
+        start: DEFAULT_CONTEXT_INDEX,
+        end: DEFAULT_CONTEXT_INDEX,
+      },
+  )
+  useEffect(() => {
+    editorPlace.trimContext = contextIndex
+  }, [contextIndex])
   const startContextSec = CONTEXT_SEC[contextIndex.start]
   const endContextSec = CONTEXT_SEC[contextIndex.end]
   function setContext(which: Side, next: number): void {
