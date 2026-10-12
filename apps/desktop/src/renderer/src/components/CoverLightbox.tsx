@@ -29,17 +29,19 @@ export function CoverLightbox({ src, fullResFrom, nav, onClose }: Props): React.
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
   const { data: fullSrc } = useCoverFull(fullResFrom)
 
-  // App's global Escape only closes App-owned modals; the lightbox is editor-local,
-  // so it dismisses itself (a no-op overlap: with no app modal open, App's handler
-  // does nothing).
+  // The lightbox is editor-local, so it dismisses itself. Captured and prevented: App's
+  // global handler is registered first and, with no App modal open, would otherwise clear
+  // the selection and unmount the editor along with the cover, or step the list behind it.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose()
       else if (nav && e.key === 'ArrowLeft') nav.onStep(-1)
       else if (nav && e.key === 'ArrowRight') nav.onStep(1)
+      else return
+      e.preventDefault()
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   }, [onClose, nav])
 
   return (
