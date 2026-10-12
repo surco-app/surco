@@ -1137,7 +1137,10 @@ export function TrimSection({
               {/* Only the summary of what will be cut. The per-side actions (hear
                   this cut, clear this cut) moved INTO the lane they act on — up here
                   they were an "end" button sitting a panel away from the end. */}
-              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              {/* Holds its line even when it has nothing to say (a suggestion, no cut yet):
+                  collapsing to nothing moved the lanes down under the pointer the moment
+                  the first scissors staged a cut. */}
+              <div className="mb-1.5 flex min-h-4 min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                 {shown ? (
                   <span
                     data-testid="trim-cuts"
