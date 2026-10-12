@@ -534,6 +534,28 @@ describe('useConfirmFlows single-track overwrite', () => {
     expect(run).toHaveBeenCalledTimes(1)
   })
 
+  // Overwrite is a choice made once in Settings. Asking again on every ⌘⏎ through a crate
+  // stopped the flow at each track (and Enter, on Cancel, ended it); once the user has
+  // confirmed it this session, the next converts go straight through.
+  it('asks once per session before overwriting, not on every track', () => {
+    const { flows, opened } = setup([track('a'), track('b')])
+    const first = vi.fn()
+    flows.askConvertOne(first, { destination: 'overwrite', track: track('a') })
+    opened[0].onConfirm()
+    const second = vi.fn()
+    flows.askConvertOne(second, { destination: 'overwrite', track: track('b') })
+    expect(opened).toHaveLength(1)
+    expect(second).toHaveBeenCalledTimes(1)
+  })
+
+  // Cancelling is not consent: the next convert asks again.
+  it('asks again after the overwrite prompt was cancelled', () => {
+    const { flows, opened } = setup([track('a')])
+    flows.askConvertOne(vi.fn(), { destination: 'overwrite', track: track('a') })
+    flows.askConvertOne(vi.fn(), { destination: 'overwrite', track: track('a') })
+    expect(opened).toHaveLength(2)
+  })
+
   // Every non-overwrite destination only writes new files, so a single convert there stays
   // one action with no dialog — the confirmation is reserved for the irreversible case.
   it('fires straight through for a non-overwrite single-track convert', () => {

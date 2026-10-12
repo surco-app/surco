@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { batchKeepMp3, reencodesLossyInPlace } from '../../../shared/format'
@@ -260,6 +261,11 @@ export function useConfirmFlows({
   tracksRef,
 }: Params): ConfirmFlows {
   const { t: tr } = useTranslation()
+  // Overwriting and re-encoding in place are choices the user makes once (in Settings or
+  // the first prompt). Asked again before every single convert, the prompt stopped a run
+  // through a crate at each track, so once confirmed it holds for the session. A batch
+  // still asks every time: its count is what the user is weighing.
+  const consented = useRef(new Set<'overwrite' | 'lossy'>())
 
   // Right-click "Move to Trash": confirm first, then send each original file to the OS
   // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
@@ -497,14 +503,20 @@ export function useConfirmFlows({
               message: tr(lossyReencodeMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
-              onConfirm: () => void processAll(targets, format, normalize, destination, declick),
+              onConfirm: () => {
+                consented.current.add('lossy')
+                void processAll(targets, format, normalize, destination, declick)
+              },
             }
           : {
               title: tr('confirm.convertInPlaceTitle'),
               message: tr(inPlaceMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertInPlaceConfirm'),
               destructive: true,
-              onConfirm: () => void processAll(targets, format, normalize, destination, declick),
+              onConfirm: () => {
+                consented.current.add('overwrite')
+                void processAll(targets, format, normalize, destination, declick)
+              },
             },
       )
     }
@@ -553,9 +565,14 @@ export function useConfirmFlows({
     )
 
     function confirmConvertOne(lossyReencode: boolean): void {
-      if (!overwriting && !lossyReencode) {
+      const kind = lossyReencode ? 'lossy' : 'overwrite'
+      if ((!overwriting && !lossyReencode) || consented.current.has(kind)) {
         run()
         return
+      }
+      const consent = (): void => {
+        consented.current.add(kind)
+        run()
       }
       openConfirm(
         lossyReencode
@@ -564,14 +581,14 @@ export function useConfirmFlows({
               message: tr(lossyReencodeMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
-              onConfirm: run,
+              onConfirm: consent,
             }
           : {
               title: tr('confirm.convertInPlaceTitle'),
               message: tr(inPlaceMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertInPlaceConfirm'),
               destructive: true,
-              onConfirm: run,
+              onConfirm: consent,
             },
       )
     }
