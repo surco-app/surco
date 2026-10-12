@@ -260,6 +260,23 @@ describe('Select full-width menu placement', () => {
     expect(screen.getByTestId('sort-listbox')).toBeInTheDocument()
   })
 
+  // ↓ on a closed select opens it, like a native one. Unhandled, it bubbled to the
+  // search results around the album-match rows and moved the focus to the first album;
+  // j/k inside the open menu likewise reached the global shortcuts behind it.
+  it('opens on the arrow keys and keeps every key it gets from the panel around it', () => {
+    const outer = vi.fn()
+    render(
+      // biome-ignore lint/a11y/noStaticElementInteractions: a stand-in for the results panel's key handler
+      <div onKeyDown={outer}>
+        <Select value="import" options={options} onChange={vi.fn()} label="Sort" testid="sort" />
+      </div>,
+    )
+    fireEvent.keyDown(screen.getByTestId('sort'), { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-listbox')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('sort-listbox'), { key: 'j' })
+    expect(outer).not.toHaveBeenCalled()
+  })
+
   // Captured on the way down, so a scroll inside the editor's own column counts too, not
   // just one on the window: that inner scroller is what moves the album-match rows.
   it('closes when an ancestor scrolls under an open menu', () => {

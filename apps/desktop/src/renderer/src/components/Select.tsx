@@ -178,9 +178,11 @@ export function Select({
     else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
     else if (e.key === 'Home') next = 0
     else if (e.key === 'End') next = items.length - 1
+    // Every other key stays in the menu too: j/k and friends would otherwise reach the
+    // global shortcuts and move the track list behind it.
+    e.stopPropagation()
     if (next === -1) return
     e.preventDefault()
-    e.stopPropagation()
     showOption(listRef.current, items[next])
   }
 
@@ -268,6 +270,14 @@ export function Select({
         // both, so this one does too.
         aria-label={selected ? `${label}: ${selected.label}` : label}
         onClick={toggle}
+        // ↑/↓ open a closed select like a native one, and stay here: left to bubble, they
+        // drove the keyboard roving of whatever list the select sits in.
+        onKeyDown={(e) => {
+          if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+          e.preventDefault()
+          e.stopPropagation()
+          if (!open) toggle()
+        }}
         className={`flex min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs text-fg-dim outline-none ${bare ? 'hover:bg-[var(--color-hover)] hover:text-fg' : 'border border-[var(--color-line)] bg-[var(--color-field)] focus:border-[var(--color-accent)]'} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
