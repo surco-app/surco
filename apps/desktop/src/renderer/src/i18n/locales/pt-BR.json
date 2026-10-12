@@ -763,6 +763,7 @@
     }
   },
   "trim": {
+    "waveFailed": "Não foi possível ler a forma de onda desta faixa, então ela não pode ser cortada aqui.",
     "title": "Corte de silêncio",
     "hint": "Corta o silêncio de entrada e de saída na conversão.",
     "laneStart": "Início",

@@ -763,6 +763,7 @@
     }
   },
   "trim": {
+    "waveFailed": "La forme d'onde de ce morceau n'a pas pu être lue, il ne peut donc pas être coupé ici.",
     "title": "Rognage du silence",
     "hint": "Coupe le silence d'entrée et de sortie lors de la conversion.",
     "laneStart": "Début",

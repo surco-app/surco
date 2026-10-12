@@ -763,6 +763,7 @@
     }
   },
   "trim": {
+    "waveFailed": "The waveform of this track could not be read, so it cannot be trimmed here.",
     "title": "Silence trim",
     "hint": "Cuts lead-in and run-out silence during conversion.",
     "laneStart": "Start",

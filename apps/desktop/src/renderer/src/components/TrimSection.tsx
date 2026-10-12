@@ -1142,7 +1142,13 @@ export function TrimSection({
                   )
                 )}
               </div>
-              {loading || !wave || durationSec <= 0 ? (
+              {wave === null ? (
+                // The decode failed (a moved or damaged file): said once, in place of
+                // the lanes, rather than a skeleton that keeps promising a wave.
+                <p data-testid="trim-wave-failed" className="py-6 text-center text-xs text-fg-dim">
+                  {tr('trim.waveFailed')}
+                </p>
+              ) : loading || !wave || durationSec <= 0 ? (
                 // The two-lane placeholder: mirrors the START/END split with its control
                 // rows and fixed-height waves, so the real lanes swap in without a jump.
                 // Each wave sits in a positioned h-24 box (the skeleton is absolute

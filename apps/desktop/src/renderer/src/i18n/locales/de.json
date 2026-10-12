@@ -763,6 +763,7 @@
     }
   },
   "trim": {
+    "waveFailed": "Die Wellenform dieses Titels konnte nicht gelesen werden, daher kann er hier nicht gekürzt werden.",
     "title": "Stille kürzen",
     "hint": "Schneidet Stille am Anfang und Ende bei der Konvertierung weg.",
     "laneStart": "Anfang",

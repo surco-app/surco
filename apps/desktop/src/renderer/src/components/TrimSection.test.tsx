@@ -196,6 +196,18 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.9, endSec: 80 })
   })
 
+  // A file that cannot be decoded (moved, damaged) resolves no wave. Read as "still
+  // loading", the skeleton pulsed forever and the section never said why.
+  it('says the wave could not be read instead of loading forever', async () => {
+    ;(window.api as unknown as { waveform: ReturnType<typeof vi.fn> }).waveform.mockResolvedValue(
+      null,
+    )
+    render(section())
+    expect(
+      await screen.findByTestId('trim-wave-failed', undefined, { timeout: 3000 }),
+    ).toHaveTextContent('The waveform of this track could not be read')
+  })
+
   it('says there is nothing to cut when the track starts and ends on music', async () => {
     ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
       .fn()
