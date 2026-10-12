@@ -473,10 +473,17 @@ export function QualitySection({
               />
             ) : (
               // Measuring (undefined): show the pill placeholders so the figures don't pop
-              // into empty space. A failed measure resolves null, and the skeleton hides —
-              // the readout is simply absent, as before. Gated on the same conditions the
-              // measure is, so a closed/multi section shows nothing.
-              open && loudness === undefined && <LoudnessSkeleton />
+              // into empty space. A failed measure resolves null and says so, rather than
+              // leaving an empty gap where the figures were. Gated on the same conditions
+              // the measure is, so a closed/multi section shows nothing.
+              open &&
+              (loudness === undefined ? (
+                <LoudnessSkeleton />
+              ) : (
+                <p data-testid="loudness-failed" className="mt-3 text-xs text-fg-dim">
+                  {tr('editor.loudnessFailed')}
+                </p>
+              ))
             ))}
         </div>
       </SectionBody>

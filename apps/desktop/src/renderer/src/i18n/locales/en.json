@@ -424,6 +424,7 @@
     "coverCopy": "Copy artwork",
     "coverPaste": "Paste artwork",
     "coverPasteEmpty": "No image in the clipboard",
+    "loudnessFailed": "The volume of this track could not be measured.",
     "coverExport": "Export artwork",
     "coverRemove": "Remove artwork",
     "coverPrev": "Previous image",

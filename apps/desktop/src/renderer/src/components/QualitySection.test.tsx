@@ -184,6 +184,33 @@ describe('QualitySection analysis gating', () => {
     expect(await screen.findByTestId('loudness-readout')).toBeInTheDocument()
   })
 
+  // A measurement that fails resolved to nothing, and the readout simply vanished: with
+  // no figures and no word, the section looked like it had forgotten the track.
+  it('says the volume could not be measured when the measurement fails', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn(() => new Promise(() => {})),
+      loudness: vi.fn().mockResolvedValue(null),
+      cancelAnalysis: vi.fn(),
+      peekAnalysis: vi.fn(async () => null),
+    }
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <QualitySection
+          item={track()}
+          showSpectrum={false}
+          showLoudness
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByTestId('loudness-failed')).toHaveTextContent(
+      'The volume of this track could not be measured.',
+    )
+  })
+
   // The editor only mounts this for the selected track — the one the user is waiting on.
   // During an auto-match sweep the background floods the analysis limiter with 'low'
   // decodes, so the selected track's spectrum must ask for 'high' to jump the queue,

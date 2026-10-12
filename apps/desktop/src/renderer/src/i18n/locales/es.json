@@ -424,6 +424,7 @@
     "coverCopy": "Copiar carátula",
     "coverPaste": "Pegar carátula",
     "coverPasteEmpty": "No hay ninguna imagen en el portapapeles",
+    "loudnessFailed": "No se ha podido medir el volumen de esta pista.",
     "coverExport": "Exportar carátula",
     "coverRemove": "Quitar carátula",
     "coverPrev": "Imagen anterior",

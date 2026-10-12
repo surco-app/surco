@@ -424,6 +424,7 @@
     "coverCopy": "Copiar capa",
     "coverPaste": "Colar capa",
     "coverPasteEmpty": "Nenhuma imagem na área de transferência",
+    "loudnessFailed": "Não foi possível medir o volume desta faixa.",
     "coverExport": "Exportar capa",
     "coverRemove": "Remover capa",
     "coverPrev": "Imagem anterior",
