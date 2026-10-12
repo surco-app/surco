@@ -749,13 +749,10 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 10, endSec: 90.3 })
   })
 
-  // Placing a cut is one gesture: pressing anywhere in a lane drops THAT lane's
-  // handle under the pointer, and releasing commits — no drag needed. Each lane
-  // owns one bound, so a press can never move the wrong one.
-  it("places a lane's cut where the wave is pressed", async () => {
-    const onChange = vi.fn()
-    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
-    const overlay = await screen.findByTestId('trim-overlay-start', undefined, { timeout: 3000 })
+  // A click on the wave, to focus it or by accident, moved the cut there and the magnet
+  // pulled it to the onset. The cut moves only once the pointer travels, so a press
+  // that stays put changes nothing; each lane still owns its one bound.
+  function mockLane(overlay: HTMLElement): void {
     vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue({
       left: 0,
       width: 1000,
@@ -767,8 +764,27 @@ describe('TrimSection', () => {
       y: 0,
       toJSON: () => ({}),
     } as DOMRect)
-    // 130 px into the 4.7–14.7 s window is 6.0 s.
+  }
+
+  it('leaves the cut alone on a click in the wave', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const overlay = await screen.findByTestId('trim-overlay-start', undefined, { timeout: 3000 })
+    mockLane(overlay)
     fireEvent(overlay, new MouseEvent('pointerdown', { bubbles: true, clientX: 130 }))
+    fireEvent(overlay, new MouseEvent('pointermove', { bubbles: true, clientX: 132 }))
+    fireEvent(overlay, new MouseEvent('pointerup', { bubbles: true }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it("places a lane's cut where a press in the wave is dragged to", async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const overlay = await screen.findByTestId('trim-overlay-start', undefined, { timeout: 3000 })
+    mockLane(overlay)
+    fireEvent(overlay, new MouseEvent('pointerdown', { bubbles: true, clientX: 140 }))
+    // 130 px into the 4.7–14.7 s window is 6.0 s.
+    fireEvent(overlay, new MouseEvent('pointermove', { bubbles: true, clientX: 130 }))
     fireEvent(overlay, new MouseEvent('pointerup', { bubbles: true }))
     expect(onChange).toHaveBeenCalledWith({ startSec: 6, endSec: 90.3 })
   })

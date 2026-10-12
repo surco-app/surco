@@ -61,6 +61,7 @@ const AUDITION_SEC = 4
 // something you point at. The wide end is unchanged: that is for FINDING the cut.
 const CONTEXT_SEC = [0.05, 0.15, 0.25, 0.5, 1, 2, 5, 15, 45] as const
 const DEFAULT_CONTEXT_INDEX = 6
+const DRAG_START_PX = 3
 // The fine steps, on buttons rather than buried in arrow keys: a frame-ish nudge
 // and a tenth. Same figures the arrows use (Shift takes the coarse one).
 // A millisecond, which is the unit the cut is actually stored in (see commit's
@@ -653,6 +654,9 @@ export function TrimSection({
   // only on release, so a drag doesn't spray staleness/session updates per pixel.
   const [draft, setDraft] = useState<TrimRange | null>(null)
   const dragging = useRef<Side | null>(null)
+  // Where the press landed: the cut follows only once the pointer has travelled from it,
+  // so a click to focus the wave never moves the cut.
+  const pressX = useRef<number | null>(null)
   const startOverlayRef = useRef<HTMLDivElement>(null)
   const endOverlayRef = useRef<HTMLDivElement>(null)
   const shown = draft ?? value
@@ -948,6 +952,7 @@ export function TrimSection({
   function release(): void {
     const committed = draft
     dragging.current = null
+    pressX.current = null
     setSnapped(false)
     if (!committed) return
     setDraft(null)
@@ -1105,11 +1110,13 @@ export function TrimSection({
       grabbed: draft !== null,
       onPointerDown: (e: React.PointerEvent) => {
         dragging.current = which
+        pressX.current = e.clientX
         ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
-        dragTo(which, e.clientX)
       },
       onPointerMove: (e: React.PointerEvent) => {
         if (dragging.current !== which) return
+        if (pressX.current !== null && Math.abs(e.clientX - pressX.current) < DRAG_START_PX) return
+        pressX.current = null
         dragTo(which, e.clientX)
       },
       onRelease: release,
