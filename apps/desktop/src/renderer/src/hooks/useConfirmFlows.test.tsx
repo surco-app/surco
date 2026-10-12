@@ -625,6 +625,21 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     expect(run).not.toHaveBeenCalled()
   })
 
+  // The editor reports no format until the user picks one by hand, so App passes undefined
+  // on the common path. The file still converts under the Settings format, and with
+  // 'source' a trimmed mp3 is re-encoded in place: Convert all warned, the single convert
+  // of the very same track did not.
+  it('confirms a single convert with no format pick when the Settings format re-encodes an mp3 in place', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3], {
+      settings: { overwriteOriginal: false, outputFormat: 'source' } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3 })
+    expect(opened[0].destructive).toBe(true)
+    expect(run).not.toHaveBeenCalled()
+  })
+
   // No filter, no warning: a plain in-place mp3 convert is a byte copy, and the single
   // path must stay one-click just as it does for any other non-destructive convert.
   it('does not confirm a single convert of an in-place mp3 under source with no filters active', () => {

@@ -532,7 +532,7 @@ export function useConfirmFlows({
       (t, lossyM4a) =>
         risksLossyReencode(
           t,
-          opts.format,
+          opts.format ?? settings?.outputFormat,
           overwriting,
           opts.normalize,
           opts.declick,
