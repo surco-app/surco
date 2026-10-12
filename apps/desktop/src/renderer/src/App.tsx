@@ -1178,7 +1178,8 @@ export default function App(): React.JSX.Element {
   // on TrackList (whose comment claims to survive exactly that) for a render with nothing
   // to show. The rows themselves stay memoized either way; this drops the reconciliation.
   const prevVisibleTracks = useRef<TrackItem[]>([])
-  const heldOrderKey = useRef('')
+  const heldOrder = useRef<{ view: string; selected: string | null }>({ view: '', selected: null })
+  const [listHovered, setListHovered] = useState(false)
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
@@ -1199,13 +1200,18 @@ export default function App(): React.JSX.Element {
     // While the same track stays selected under the same view, edits re-sort nothing: the
     // row the user is correcting (or one a background match rewrites) keeps its place, and
     // the list catches up when the user picks another track or changes the sort.
-    const orderKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}|${selectedId ?? ''}`
-    const next =
-      heldOrderKey.current === orderKey ? holdOrder(prevVisibleTracks.current, sorted) : sorted
-    heldOrderKey.current = orderKey
+    // Picking another track releases the hold, but not while the pointer is still over the
+    // list: a re-sort there slides rows under the cursor, and the second click of a
+    // double-click lands on whatever slid into place. The order catches up when it leaves.
+    const viewKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}`
+    const hold =
+      heldOrder.current.view === viewKey &&
+      (heldOrder.current.selected === selectedId || listHovered)
+    const next = hold ? holdOrder(prevVisibleTracks.current, sorted) : sorted
+    if (!hold) heldOrder.current = { view: viewKey, selected: selectedId }
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
-  }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir, selectedId])
+  }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir, selectedId, listHovered])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -2080,6 +2086,9 @@ export default function App(): React.JSX.Element {
                 >
                   <div
                     ref={listScrollRef}
+                    data-testid="track-list-scroll"
+                    onPointerEnter={() => setListHovered(true)}
+                    onPointerLeave={() => setListHovered(false)}
                     className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                   >
                     {review !== null ? (

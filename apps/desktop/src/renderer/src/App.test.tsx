@@ -1074,7 +1074,15 @@ describe('App list order while editing', () => {
     fireEvent.change(await screen.findByTestId('field-artist'), { target: { value: 'Zulu' } })
     await waitFor(() => expect(labels()[0]).toContain('Zulu'))
     expect(labels()[0]).toContain('First')
+    fireEvent.pointerEnter(screen.getByTestId('track-list-scroll'))
     fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    // Still under the pointer: a re-sort now would slide the row the user just clicked, and
+    // the second click of a double-click would play the row that slid into its place.
+    expect(labels()[0]).toContain('First')
+    fireEvent.pointerLeave(screen.getByTestId('track-list-scroll'))
     await waitFor(() => expect(labels()[0]).toContain('Second'))
   })
 })
