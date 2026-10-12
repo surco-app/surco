@@ -1702,6 +1702,16 @@ describe('buildSpectrum', () => {
     expect(res.cutoffError).toBeUndefined()
   })
 
+  // An .m4a holds AAC or ALAC, and only the stream says which: without it a healthy AAC
+  // was graded on the lossless scale and its encoder lowpass came out "Bad quality".
+  it('carries the codec the probe read, so the container can be told apart', async () => {
+    const res = await buildSpectrum(
+      '/in.m4a',
+      deps({ probe: vi.fn(async () => ({ sampleRate: '44100', codecName: 'aac' })) }),
+    )
+    expect(res.codec).toBe('aac')
+  })
+
   it('carries the processed, knee and upsample flags through, so the verdict reads the real signals', async () => {
     const res = await buildSpectrum(
       '/in.flac',

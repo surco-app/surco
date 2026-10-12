@@ -3073,7 +3073,7 @@ export async function analyzeShelf(
 }
 
 interface SpectrumDeps {
-  probe: (input: string) => Promise<{ sampleRate: string }>
+  probe: (input: string) => Promise<{ sampleRate: string; codecName?: string }>
   spectrogram: (input: string, sampleRateHz: number) => Promise<string>
   cutoff: (
     input: string,
@@ -3099,6 +3099,9 @@ interface SpectrumBuild {
   image: string
   cutoffHz: number | null
   sampleRateHz: number
+  // The stream's codec: an .m4a holds AAC or ALAC, and only this tells which scale to
+  // grade its cutoff on.
+  codec?: string
   // The frequency at the top edge of the image. Below the cap this is just Nyquist, but a
   // hi-res image is drawn to the cap instead, and every reader of the axis (the kHz marks,
   // the cutoff line, the hover crosshair) has to scale against the range actually drawn.
@@ -3134,7 +3137,8 @@ interface SpectrumBuild {
 // than inventing one) and the real ffmpeg error is handed back for the caller to
 // log instead of swallowing it.
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
-  const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
+  const probed = await deps.probe(input)
+  const sampleRateHz = Number(probed.sampleRate) || 0
   const [imageR, cutoffR, shelfR, bitsR] = await Promise.allSettled([
     deps.spectrogram(input, sampleRateHz),
     deps.cutoff(input, sampleRateHz),
@@ -3172,6 +3176,7 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
           ? Math.min(kneeCutoffHz, cutoff?.cutoffHz ?? kneeCutoffHz)
           : (cutoff?.cutoffHz ?? null),
     sampleRateHz,
+    codec: probed.codecName || undefined,
     imageTopHz: spectrogramTopHz(sampleRateHz),
     processed,
     hasKnee: (cutoff?.hasKnee ?? false) || kneeCutoffHz !== null,

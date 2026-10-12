@@ -1126,6 +1126,9 @@ export interface SpectrumResult {
   // still rendered — the UI then hides the quality verdict instead of inventing one.
   cutoffHz: number | null
   sampleRateHz: number
+  // The stream's codec ("aac", "alac"), so an .m4a is graded as what it holds. Absent
+  // from analyses cached before it was kept.
+  codec?: string
   // The frequency at the top edge of the image. A hi-res file is drawn to a 24 kHz cap
   // instead of its own Nyquist (96 kHz at 192 kHz), which would squash the audible band
   // into the bottom fifth of the panel, so the kHz marks, the cutoff line and the hover
