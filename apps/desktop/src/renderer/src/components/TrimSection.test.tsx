@@ -184,6 +184,18 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: expect.any(Number) })
   })
 
+  // Applying the detection fills in what is still uncut. Replacing the whole range threw
+  // away an end the user had just placed by hand.
+  it('applies the detection without overwriting a cut placed by hand', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { endSec: 80 }, onChange }))
+    await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
+    act(() => {
+      runKeyClaim('trim-apply', {})
+    })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.9, endSec: 80 })
+  })
+
   it('says there is nothing to cut when the track starts and ends on music', async () => {
     ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
       .fn()

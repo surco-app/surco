@@ -948,6 +948,7 @@ export function TrimSection({
     onChange,
     zoomTo,
     contextIndex,
+    value,
   })
   actionsRef.current = {
     nudge,
@@ -957,6 +958,7 @@ export function TrimSection({
     onChange,
     zoomTo,
     contextIndex,
+    value,
   }
   useEffect(() => {
     if (!open) return
@@ -981,10 +983,17 @@ export function TrimSection({
       'trim-end-zoom-out': () =>
         actionsRef.current.zoomTo('end', actionsRef.current.contextIndex.end + 1),
       // The detection proposes both cuts at once, so applying it is one action for the
-      // whole track rather than one per side.
+      // whole track rather than one per side. It fills only the sides still uncut: a cut
+      // the user placed by hand is theirs.
       'trim-apply': () => {
         const found = actionsRef.current.suggestion
-        if (found) actionsRef.current.onChange(found)
+        if (!found) return
+        const placed = actionsRef.current.value
+        actionsRef.current.onChange({
+          ...found,
+          ...(placed?.startSec !== undefined && { startSec: placed.startSec }),
+          ...(placed?.endSec !== undefined && { endSec: placed.endSec }),
+        })
       },
     })
   }, [open])
