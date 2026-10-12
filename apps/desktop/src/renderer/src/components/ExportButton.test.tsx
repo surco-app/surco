@@ -247,6 +247,41 @@ describe('ExportButton', () => {
     expect(onProcess).not.toHaveBeenCalled()
   })
 
+  // Only the encode can be stopped. Offered while the cover was written or the file went
+  // to Apple Music, the cancel was swallowed and the job finished anyway.
+  it('offers no cancel in a stage the job cannot be stopped in', () => {
+    const onCancel = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="appleMusic"
+        onCancel={onCancel}
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toBeDisabled()
+    expect(btn).not.toHaveAccessibleName(/cancel/i)
+  })
+
+  // A double-click on Convert lands its second click on the live bar, which had just
+  // become the cancel control: the convert stopped the moment it started.
+  it('does not cancel on the second click of the double-click that started it', () => {
+    const onCancel = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="converting"
+        onCancel={onCancel}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-btn'), { detail: 2 })
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
   // The live bar cancels on press, but its name was only the stage ("Converting to
   // AIFF…") and "Cancel" appeared on mouse hover alone: a keyboard or screen reader user
   // pressed it not knowing it would stop the job. The name must say so, keep the visible

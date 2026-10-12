@@ -150,10 +150,11 @@ export function ExportButton({
   // STAGE_PROGRESS marks). Only for the prominent button — the quiet re-export
   // variant never shows a processing state.
   const liveStage = !quiet && processing ? stage : undefined
-  // A single convert can be cancelled while it runs: the progress-bar button stays live and
-  // a click stops the job. Only when a cancel handler is wired (single, non-quiet) and the
-  // track is actually converting — the multi/quiet uses keep the inert bar.
-  const cancellable = !quiet && processing && !!onCancel
+  // A single convert can be cancelled while it encodes: the progress-bar button stays live
+  // and a click stops the job. Only when a cancel handler is wired (single, non-quiet) and
+  // the job is in the encode, the one stage a cancel reaches — writing the cover or adding
+  // to a library runs to the end, so offering Cancel there promised a stop that never came.
+  const cancellable = !quiet && processing && !!onCancel && stage === 'converting'
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)
@@ -205,7 +206,12 @@ export function ExportButton({
           // a click shakes the button once and hands the press to the editor.
           onClick={
             cancellable
-              ? onCancel
+              ? (e) => {
+                  // The double-click that started the convert lands its second click here,
+                  // after the button became the cancel control.
+                  if (e.detail > 1) return
+                  onCancel?.()
+                }
               : softBlocked
                 ? () => {
                     setShaking(true)
