@@ -176,6 +176,8 @@ function renderEditor(
     customFields?: Settings['customFields']
     discogsToken?: string
     searchProviders?: Settings['searchProviders']
+    outputDir?: string
+    convertBesideOriginal?: boolean
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -265,6 +267,8 @@ function renderEditor(
       ...(props.editorSections ? { editorSections: props.editorSections } : {}),
       ...(props.discogsToken !== undefined ? { discogsToken: props.discogsToken } : {}),
       ...(props.searchProviders ? { searchProviders: props.searchProviders } : {}),
+      ...(props.outputDir ? { outputDir: props.outputDir } : {}),
+      ...(props.convertBesideOriginal ? { convertBesideOriginal: true } : {}),
     },
   )
   return {
@@ -1574,6 +1578,27 @@ describe('Editor multi-select', () => {
 })
 
 describe('Editor export control', () => {
+  // "Output folder", "Beside the original" and "Overwrite" all read "Convert to WAV", so
+  // where the file lands showed only once it failed on an unplugged NAS.
+  it('names the output folder on the convert button', () => {
+    renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      outputDir: '/Volumes/NAS/Conversiones/',
+    })
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF in Conversiones')
+  })
+
+  it('says beside the original on the convert button when that is the destination', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      addToAppleMusic: false,
+      outputDir: '/out',
+      convertBesideOriginal: true,
+    })
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
+      'Convert to WAV beside the original',
+    )
+  })
+
   // The original bug: once a track was done its export button vanished, so a user
   // who exported WAV had no way to also export MP3 without reloading the file. The
   // quiet split-button keeps that path open: the chevron re-picks the format and

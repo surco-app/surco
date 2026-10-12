@@ -35,6 +35,7 @@ function footer(
       item={{ id: 't1', status: 'idle', inputPath: '/a.wav', meta: {} } as TrackItem}
       isMulti={false}
       selectedCount={1}
+      outputFolder=""
       status={status(showDone)}
       stale={false}
       done={showDone}

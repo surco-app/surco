@@ -45,6 +45,7 @@ interface ConvertFooterProps {
   // offers, pre-filtered by the editor (platform, configured overwrite).
   destination: Destination
   destinations: readonly Destination[]
+  outputFolder: string
   format: FormatSetting
   exportedFormat: OutputFormat | null
   // The format whose Apple Music eligibility gates the add button: the pick in multi
@@ -99,6 +100,7 @@ export function ConvertFooter({
   addToEngineDj,
   destination,
   destinations,
+  outputFolder,
   format,
   exportedFormat,
   musicExt,
@@ -374,6 +376,7 @@ export function ConvertFooter({
             inMusic={hasMusicCopy}
             destination={destination}
             destinations={destinations}
+            outputFolder={outputFolder}
             count={isMulti ? selectedCount : undefined}
             onProcess={onProcess}
             onCancel={onCancel}

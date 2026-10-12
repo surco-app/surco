@@ -44,6 +44,7 @@ import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
+import { baseName } from '../lib/baseName'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -249,6 +250,7 @@ export const Editor = memo(function Editor({
     addToAppleMusic,
     addToEngineDj,
     keepMp3Sources,
+    outputDir,
     overwriteOriginal,
     backupPolicy,
     convertBesideOriginal,
@@ -1498,6 +1500,7 @@ export const Editor = memo(function Editor({
           addToEngineDj={picked.addToEngineDj}
           destination={destination}
           destinations={destinationChoices}
+          outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}
           format={isMulti ? formatPick : format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}

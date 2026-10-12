@@ -38,6 +38,8 @@ interface ResolvedSettings {
   autoMatch: boolean
   outputFormat: FormatSetting
   keepMp3Sources: boolean
+  // Named on the convert button so where the file lands shows before the click.
+  outputDir: string
   // The quality pins, read by the editor's "re-encode this one" offer: a same-format
   // source that doesn't meet them gets the explicit action instead of a silent re-encode.
   outputBitDepth: OutputBitDepth
@@ -84,6 +86,7 @@ const DEFAULTS: ResolvedSettings = {
   autoMatch: false,
   outputFormat: 'aiff',
   keepMp3Sources: false,
+  outputDir: '',
   outputBitDepth: 'source',
   outputSampleRate: 'source',
   addToAppleMusic: false,
@@ -126,6 +129,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     autoMatch: settings.autoMatch ?? DEFAULTS.autoMatch,
     outputFormat: settings.outputFormat ?? DEFAULTS.outputFormat,
     keepMp3Sources: settings.keepMp3Sources ?? DEFAULTS.keepMp3Sources,
+    outputDir: settings.outputDir ?? DEFAULTS.outputDir,
     outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,

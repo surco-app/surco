@@ -1,3 +1,5 @@
+import type { Destination } from './destination'
+
 export interface ExportLabelState {
   processing: boolean
   quiet?: boolean
@@ -23,6 +25,17 @@ export interface ExportLabelState {
   // The track already has a copy Surco added to Music, which converting an edit syncs
   // instead of adding a second one.
   inMusic?: boolean
+  // Where the file lands, named on the button when no library suffix already does.
+  destination?: Destination
+  // The output folder's own name, empty while none is set.
+  folder?: string
+}
+
+function placeSuffix(state: ExportLabelState): 'Folder' | 'Beside' | 'Overwrite' | null {
+  if (state.destination === 'beside') return 'Beside'
+  if (state.destination === 'overwrite') return 'Overwrite'
+  if (state.destination === 'folder' && state.folder) return 'Folder'
+  return null
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -45,7 +58,14 @@ export function exportButtonLabel(state: ExportLabelState): {
     }
     return { key: 'editor.reexport' }
   }
+  const place = placeSuffix(state)
   if (state.count !== undefined) {
+    if (!state.withAppleMusic && !state.withEngineDj && place) {
+      return {
+        key: `editor.convertAll${place}`,
+        options: { count: state.count, format: state.format, folder: state.folder },
+      }
+    }
     return {
       key: state.withAppleMusic
         ? 'editor.convertAllMusic'
@@ -62,6 +82,15 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.appleMusicUpdate' }
   if (state.done) return { key: 'editor.exportAgain' }
   if (state.replaces) return { key: 'editor.replaceMusic', options: { format: state.format } }
+  if (!state.withAppleMusic && !state.withEngineDj && place) {
+    return {
+      key: `editor.convert${place}`,
+      options:
+        place === 'Folder'
+          ? { format: state.format, folder: state.folder }
+          : { format: state.format },
+    }
+  }
   return {
     key: state.withAppleMusic
       ? 'editor.convert'

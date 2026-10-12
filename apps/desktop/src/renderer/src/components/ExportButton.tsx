@@ -71,6 +71,8 @@ interface ExportButtonProps {
   // Like the format, picking one only relabels the button for this track.
   destination: Destination
   destinations: readonly Destination[]
+  // The output folder's own name, named on the button when the file goes there.
+  outputFolder?: string
   onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
   // job instead of firing another convert. Single-only — multi cancels via the toolbar
@@ -107,6 +109,7 @@ export function ExportButton({
   quiet,
   destination,
   destinations,
+  outputFolder,
   onProcess,
   onCancel,
   onSelectFormat,
@@ -144,6 +147,8 @@ export function ExportButton({
     withEngineDj,
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
+    destination,
+    folder: outputFolder,
   })
   // The in-flight view mirrors the track list's row: the stage names what's
   // happening, the fill below marks where in the pipeline it is (same keys, same
@@ -260,7 +265,7 @@ export function ExportButton({
             swaps in "Cancel" so the press's effect is legible before it's made. Without a
             cancel handler the stage label just stays. */}
           {swapsFace ? (
-            <span className="process-face">
+            <span className="process-face min-w-0 max-w-full px-3">
               {lastBlocked && (
                 <span
                   data-testid={faceBlocked ? 'process-blocked-face' : undefined}
@@ -271,8 +276,11 @@ export function ExportButton({
                   {lastBlocked}
                 </span>
               )}
-              <span aria-hidden={faceBlocked || undefined} className="process-face-action">
-                {label}
+              <span
+                aria-hidden={faceBlocked || undefined}
+                className="process-face-action min-w-0 max-w-full"
+              >
+                <span className="truncate">{label}</span>
               </span>
             </span>
           ) : quiet ? (
