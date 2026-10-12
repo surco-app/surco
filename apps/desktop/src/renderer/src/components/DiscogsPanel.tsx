@@ -15,6 +15,7 @@ import type { ReleaseTrack, SearchProviderId, SearchResult } from '../../../shar
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import {
+  joinArtists,
   type ReleaseMetaPatch,
   resultIdentity,
   resultPressing,
@@ -574,66 +575,85 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 onApply={onApplyMatches}
                               />
                             ) : (
-                              release.tracklist.map((t) => (
-                                <button
-                                  key={`${t.position}-${t.title}`}
-                                  type="button"
-                                  data-testid="discogs-track"
-                                  aria-current={
-                                    t === appliedTrack || t === matchedTrack ? 'true' : undefined
-                                  }
-                                  onClick={() => selectTrack(t)}
-                                  className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
-                                    // Same selection fill and rounded shape as the library row, so the
-                                    // applied track reads with equal weight in both columns (was a faint
-                                    // tint that looked second-class next to the filled library row).
-                                    t === appliedTrack || t === matchedTrack
-                                      ? 'is-applied bg-[var(--color-row-selected)]'
-                                      : 'hover:bg-[var(--color-hover)]'
-                                  }`}
-                                >
-                                  <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
-                                    {t.position}
-                                  </span>
-                                  <span
-                                    data-fit
-                                    className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
+                              release.tracklist.map((t) => {
+                                // A compilation credits each track to its own artist; shown
+                                // only where it differs from the album's, so a one-artist
+                                // album keeps its single-line rows.
+                                const trackArtist = joinArtists(t.artists)
+                                const ownArtist =
+                                  trackArtist !== '' && trackArtist !== joinArtists(release.artists)
+                                    ? trackArtist
+                                    : ''
+                                const fullTitle = ownArtist
+                                  ? `${ownArtist} - ${trackDisplayTitle(t)}`
+                                  : trackDisplayTitle(t)
+                                return (
+                                  <button
+                                    key={`${t.position}-${t.title}`}
+                                    type="button"
+                                    data-testid="discogs-track"
+                                    aria-current={
+                                      t === appliedTrack || t === matchedTrack ? 'true' : undefined
+                                    }
+                                    onClick={() => selectTrack(t)}
+                                    className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
+                                      // Same selection fill and rounded shape as the library row, so the
+                                      // applied track reads with equal weight in both columns (was a faint
+                                      // tint that looked second-class next to the filled library row).
+                                      t === appliedTrack || t === matchedTrack
+                                        ? 'is-applied bg-[var(--color-row-selected)]'
+                                        : 'hover:bg-[var(--color-hover)]'
+                                    }`}
                                   >
-                                    {trackDisplayTitle(t)}
-                                  </span>
-                                  {/* The suggestion mark mirrors the track list's match sparkle
+                                    <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                                      {t.position}
+                                    </span>
+                                    <span
+                                      data-fit
+                                      title={fullTitle}
+                                      className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
+                                    >
+                                      {trackDisplayTitle(t)}
+                                      {ownArtist && (
+                                        <span className="block truncate text-xs font-normal text-fg-dim">
+                                          {ownArtist}
+                                        </span>
+                                      )}
+                                    </span>
+                                    {/* The suggestion mark mirrors the track list's match sparkle
                                   (not a tick: a check reads as "already applied", but the
                                   metadata is only applied when the row is clicked). Accent
                                   for a confident tier, amber for a review-tier one, so the
                                   colour tells the user whether to trust it — the same
                                   vocabulary the left column uses. Sits in a fixed slot so a
                                   row without a suggestion keeps the duration aligned. */}
-                                  <span className="flex w-3 shrink-0 justify-center">
-                                    {t === matchedTrack && matchTier && (
-                                      // Accent versus amber was the whole difference between the
-                                      // tiers, so the name and tooltip say which one it is, for a
-                                      // screen reader and for anyone who can't tell the colours apart.
-                                      <span
-                                        data-testid="track-confidence"
-                                        data-confidence={matchTier}
-                                        role="img"
-                                        aria-label={tierLabel}
-                                        className={`group/dot relative flex ${
-                                          matchTier === 'high'
-                                            ? 'text-[var(--color-accent)]'
-                                            : 'text-warn'
-                                        }`}
-                                      >
-                                        <Sparkles className="h-3 w-3" aria-hidden="true" />
-                                        <Tooltip label={tierLabel} align="end" scope="dot" />
-                                      </span>
-                                    )}
-                                  </span>
-                                  <span className="min-w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
-                                    {t.duration}
-                                  </span>
-                                </button>
-                              ))
+                                    <span className="flex w-3 shrink-0 justify-center">
+                                      {t === matchedTrack && matchTier && (
+                                        // Accent versus amber was the whole difference between the
+                                        // tiers, so the name and tooltip say which one it is, for a
+                                        // screen reader and for anyone who can't tell the colours apart.
+                                        <span
+                                          data-testid="track-confidence"
+                                          data-confidence={matchTier}
+                                          role="img"
+                                          aria-label={tierLabel}
+                                          className={`group/dot relative flex ${
+                                            matchTier === 'high'
+                                              ? 'text-[var(--color-accent)]'
+                                              : 'text-warn'
+                                          }`}
+                                        >
+                                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                                          <Tooltip label={tierLabel} align="end" scope="dot" />
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="min-w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
+                                      {t.duration}
+                                    </span>
+                                  </button>
+                                )
+                              })
                             )
                           ) : (
                             <TrackSkeleton />

@@ -606,3 +606,33 @@ describe('DiscogsPanel empty source', () => {
     )
   })
 })
+
+describe('DiscogsPanel compilation tracklist', () => {
+  // On a compilation every track has its own artist, and the version that tells two
+  // tracks apart ("Extended Mix") sits at the end of a title the column cuts. Without
+  // both, matching the right track to the file was guesswork.
+  it('shows each track artist that differs from the album and the full title on hover', () => {
+    const release = {
+      provider: 'discogs' as const,
+      id: 1,
+      title: 'Hard House Nation',
+      artists: [{ name: 'Various' }],
+      tracklist: [
+        { position: '1', title: 'Snap (Extended Mix)', artists: [{ name: 'DJ Lara' }] },
+        { position: '2', title: 'Other', artists: [{ name: 'Various' }] },
+      ],
+    }
+    renderPanel(
+      browser({
+        query: 'x',
+        results: [{ provider: 'discogs', id: 1, title: 'Hard House Nation' }],
+        openKey: 'discogs:1',
+        release,
+      }),
+    )
+    const [first, second] = screen.getAllByTestId('discogs-track')
+    expect(first).toHaveTextContent('DJ Lara')
+    expect(within(first).getByTitle('DJ Lara - Snap (Extended Mix)')).toBeInTheDocument()
+    expect(second).not.toHaveTextContent('Various')
+  })
+})
