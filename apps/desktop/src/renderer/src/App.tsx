@@ -430,8 +430,9 @@ export default function App(): React.JSX.Element {
     onDestinationChange,
     onNormalizeChange,
     onDeclickChange,
+    rememberedPick,
     reset: resetEditorPicks,
-  } = useEditorPicks(settings, saveSettings)
+  } = useEditorPicks(settings, saveSettings, selection.ids.length === 1 ? selection.anchor : null)
 
   // Prewarms the editor chunk right after first paint, so the first real selection
   // doesn't pay its network/parse cost — most sessions select a track within seconds.
@@ -2265,6 +2266,9 @@ export default function App(): React.JSX.Element {
                           onCancel={onCancelSelected}
                           onFormatChange={onFormatChange}
                           onDestinationChange={onDestinationChange}
+                          rememberedPick={
+                            selectedTracks.length > 1 ? undefined : rememberedPick(selected.id)
+                          }
                           onNormalizeChange={onNormalizeChange}
                           onDeclickChange={onDeclickChange}
                           onAddToAppleMusic={onAddSelectedToAppleMusic}

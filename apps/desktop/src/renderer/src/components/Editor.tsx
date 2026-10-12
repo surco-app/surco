@@ -32,6 +32,7 @@ import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
+import type { RememberedPick } from '../hooks/useEditorPicks'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
@@ -150,6 +151,9 @@ interface Props {
   // a menu pick: only that one speaks for a batch, since a seed is resolved against this
   // track alone.
   onDestinationChange?: (destination: Destination, byHand?: boolean) => void
+  // The format and destination picked by hand for this track earlier in the session, so
+  // a glance at another track does not send this one back to the Settings default.
+  rememberedPick?: RememberedPick
   // Reports the per-track normalization override so the keyboard convert shortcuts
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
@@ -213,6 +217,7 @@ export const Editor = memo(function Editor({
   onCancel,
   onFormatChange,
   onDestinationChange,
+  rememberedPick,
   onNormalizeChange,
   onDeclickChange,
   onAddToAppleMusic,
@@ -323,12 +328,14 @@ export const Editor = memo(function Editor({
   const normalizeOpen = sectionOpen.normalize
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
-  // The Editor remounts per track (key={track.id}), so each track starts from the
-  // default rather than inheriting the last track's pick. 'source' is resolved
+  // The Editor remounts per track (key={track.id}), so each track starts from its own
+  // earlier pick, or from the default, rather than inheriting the last track's pick. 'source' is resolved
   // against this track right away — everything downstream (onProcess, in-place
   // checks) works with a real OutputFormat, never the setting itself.
   const [format, setFormat] = useState(
-    resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic),
+    () =>
+      rememberedPick?.format ??
+      resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic),
   )
   // The menu's raw pick, offered unresolved only in multi-select: 'source' means
   // nothing against the anchor track alone, so it must reach processAll as the
@@ -350,17 +357,19 @@ export const Editor = memo(function Editor({
     setFormatPick(isMulti ? outputFormat : format)
     onFormatChange?.(null)
   }, [isMulti])
-  // The chosen destination, same one-shot contract as the format: seeded from the
-  // Settings booleans, updated only by the split-button menu, reset by the per-track
-  // remount, never written back to Settings.
-  const [destination, setDestination] = useState(() =>
-    toDestination(
-      addToAppleMusic,
-      format === 'flac',
-      overwriteOriginal,
-      addToEngineDj,
-      convertBesideOriginal,
-    ),
+  // The chosen destination, same per-track contract as the format: seeded from this
+  // track's earlier pick or the Settings booleans, updated only by the split-button menu,
+  // never written back to Settings.
+  const [destination, setDestination] = useState(
+    () =>
+      rememberedPick?.destination ??
+      toDestination(
+        addToAppleMusic,
+        format === 'flac',
+        overwriteOriginal,
+        addToEngineDj,
+        convertBesideOriginal,
+      ),
   )
   // Changing the Default format (or the destination) in Settings while this same
   // track's editor is still open must reach it — otherwise `format` stays whatever
@@ -448,8 +457,9 @@ export const Editor = memo(function Editor({
   // mirror right by construction, with no selection-watching reset in App.
   // biome-ignore lint/correctness/useExhaustiveDependencies: deliberately mount-only — the change handlers report every later pick.
   useEffect(() => {
-    onFormatChange?.(null)
-    onDestinationChange?.(destination)
+    onFormatChange?.(rememberedPick?.format ?? null)
+    if (rememberedPick?.destination !== undefined) onDestinationChange?.(destination, true)
+    else onDestinationChange?.(destination)
     onNormalizeChange?.(normalizeCfg)
     onDeclickChange?.(declickCfg)
   }, [])

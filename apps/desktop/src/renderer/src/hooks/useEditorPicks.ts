@@ -1,8 +1,21 @@
 import type React from 'react'
 import { useRef } from 'react'
-import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type {
+  DeclickMode,
+  FormatSetting,
+  NormalizeConfig,
+  OutputFormat,
+  Settings,
+} from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { useStableCallback } from './useStableCallback'
+
+// What the user picked by hand in one track's split-button menu, kept for the session so
+// returning to the track finds the button as it was left.
+export interface RememberedPick {
+  format?: OutputFormat
+  destination?: Destination
+}
 
 interface EditorPicks {
   formatRef: React.RefObject<FormatSetting | null>
@@ -14,15 +27,18 @@ interface EditorPicks {
   onDestinationChange: (destination: Destination, byHand?: boolean) => void
   onNormalizeChange: (n: NormalizeConfig) => void
   onDeclickChange: (d: DeclickMode) => void
+  rememberedPick: (trackId: string) => RememberedPick | undefined
   // Called when the selection empties: the picks belong to the track that was open, and a
   // stale one would silently apply to whatever is opened next.
   reset: () => void
 }
 
 // What the editor's split-button currently says: the format, destination, normalization and
-// click-repair the open track will convert with. One-shot per track by design — the editor
-// remounts on `key={selected.id}` and reports its freshly seeded values back on mount — so
-// these live in refs, read at conversion time rather than driving a render.
+// click-repair the open track will convert with. Per track by design — the editor remounts
+// on `key={selected.id}` and reports its seeded values back on mount — so these live in
+// refs, read at conversion time rather than driving a render. A format or destination
+// picked by hand is also remembered against the open track (openTrackId, null while
+// several are selected) for the rest of the session, and seeds its editor next time.
 //
 // Gathered here because they were four refs, four writers and a reset smeared across App,
 // and because one of those writers is not what it looks like: onNormalizeChange also
@@ -33,7 +49,18 @@ interface EditorPicks {
 export function useEditorPicks(
   settings: Settings | null,
   saveSettings: (patch: Partial<Settings>) => void,
+  openTrackId: string | null,
 ): EditorPicks {
+  const remembered = useRef(new Map<string, RememberedPick>())
+  const openId = useRef(openTrackId)
+  openId.current = openTrackId
+  const remember = (patch: RememberedPick): void => {
+    const id = openId.current
+    if (id === null) return
+    const next = { ...remembered.current.get(id), ...patch }
+    if (next.format === undefined && next.destination === undefined) remembered.current.delete(id)
+    else remembered.current.set(id, next)
+  }
   // The format picked in the editor's split-button menu, for THIS track only.
   const formatRef = useRef<FormatSetting | null>(null)
   const destinationRef = useRef<Destination | null>(null)
@@ -45,11 +72,14 @@ export function useEditorPicks(
 
   const onFormatChange = useStableCallback((format: FormatSetting | null) => {
     formatRef.current = format
+    remember({ format: format === null || format === 'source' ? undefined : format })
   })
   const onDestinationChange = useStableCallback((destination: Destination, byHand = false) => {
     destinationRef.current = destination
     destinationPickRef.current = byHand ? destination : null
+    remember({ destination: byHand ? destination : undefined })
   })
+  const rememberedPick = useStableCallback((trackId: string) => remembered.current.get(trackId))
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     normalizeRef.current = n
     // The values — the peak/loudness inputs AND the two checkboxes — are lasting
@@ -102,6 +132,7 @@ export function useEditorPicks(
     onDestinationChange,
     onNormalizeChange,
     onDeclickChange,
+    rememberedPick,
     reset,
   }
 }

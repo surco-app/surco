@@ -1079,6 +1079,69 @@ describe('App list order while editing', () => {
   })
 })
 
+describe('App per-track format pick', () => {
+  const openFormatMenu = async (): Promise<void> => {
+    const toggle = await screen.findByTestId('process-format-toggle')
+    await waitFor(() => expect(toggle).toBeEnabled())
+    fireEvent.click(toggle)
+  }
+  // djotas lost his loudness pick the same way: a format chosen for one track came back
+  // as the Settings default after a glance at another, and ⌘⏎ then converted it wrong.
+  it('keeps the format picked for a track after visiting another one', async () => {
+    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }) })
+    await renderApp()
+    const [a] = await addTwoTracks()
+    fireEvent.click(a)
+    await openFormatMenu()
+    fireEvent.click(screen.getByTestId('process-format-flac'))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true'),
+    )
+    await openFormatMenu()
+    expect(screen.getByTestId('process-format-flac')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('keeps the destination picked for a track after visiting another one', async () => {
+    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }) })
+    await renderApp()
+    const [a] = await addTwoTracks()
+    fireEvent.click(a)
+    await openFormatMenu()
+    fireEvent.click(screen.getByTestId('process-destination-beside'))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true'),
+    )
+    await openFormatMenu()
+    expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  // The pick belongs to that track only; the next one still starts from Settings.
+  it('starts another track from the Settings format', async () => {
+    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }) })
+    await renderApp()
+    const [a] = await addTwoTracks()
+    fireEvent.click(a)
+    await openFormatMenu()
+    fireEvent.click(screen.getByTestId('process-format-flac'))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    await openFormatMenu()
+    expect(screen.getByTestId('process-format-flac')).toHaveAttribute('aria-checked', 'false')
+  })
+})
+
 describe('App maximized section', () => {
   // Escape while a section fills the window must ONLY restore the section. The
   // global Escape (clear the selection) used to fire too, so the overlay closed
