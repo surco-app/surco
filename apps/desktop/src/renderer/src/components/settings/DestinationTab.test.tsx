@@ -733,6 +733,22 @@ describe('DestinationTab originals', () => {
     expect(patch).toHaveBeenCalledWith('backupMaxGb', 25)
   })
 
+  // Clearing a field to type a new number staged 0, and the save clamped it to one day
+  // (or 0.1 GB): the next sweep then deleted every older backup, with nothing said. An
+  // empty field stages nothing and shows the value back when it loses focus.
+  it('stages nothing for a cleared limit and shows the value back on blur', () => {
+    const patch = renderTab()
+    const days = screen.getByTestId('settings-backup-days') as HTMLInputElement
+    const gb = screen.getByTestId('settings-backup-gb') as HTMLInputElement
+    fireEvent.change(days, { target: { value: '' } })
+    fireEvent.change(gb, { target: { value: '' } })
+    expect(patch).not.toHaveBeenCalled()
+    fireEvent.blur(days)
+    fireEvent.blur(gb)
+    expect(days.value).toBe(String(synced.backupRetentionDays))
+    expect(gb.value).toBe(String(synced.backupMaxGb))
+  })
+
   // Turning the net off is the one choice here that can cost a file, and with Never it
   // reaches a delete on a NAS too — where nothing else would have kept a copy. The
   // warning has to say that before the user picks it, not after.

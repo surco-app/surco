@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPolicy'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
@@ -218,15 +219,14 @@ export function DestinationTab({
               {tr('settings.originalBackupDays')}
             </SettingsLabel>
             <div className="flex items-center gap-2">
-              <input
+              <LimitInput
                 id="backup-days"
                 data-testid="settings-backup-days"
-                type="number"
                 min={1}
                 max={365}
                 value={synced.backupRetentionDays}
                 disabled={backupOff}
-                onChange={(e) => patch('backupRetentionDays', Number(e.target.value))}
+                onCommit={(n) => patch('backupRetentionDays', n)}
                 className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
               />
               <span className="text-xs text-fg-dim">{tr('settings.originalBackupDaysUnit')}</span>
@@ -237,10 +237,9 @@ export function DestinationTab({
               {tr('settings.originalBackupSize')}
             </SettingsLabel>
             <div className="flex items-center gap-2">
-              <input
+              <LimitInput
                 id="backup-gb"
                 data-testid="settings-backup-gb"
-                type="number"
                 min={0.1}
                 max={1024}
                 // "any", not a step: with min=0.1 a step of 0.5 makes the valid values
@@ -250,7 +249,7 @@ export function DestinationTab({
                 step="any"
                 value={synced.backupMaxGb}
                 disabled={backupOff}
-                onChange={(e) => patch('backupMaxGb', Number(e.target.value))}
+                onCommit={(n) => patch('backupMaxGb', n)}
                 className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
               />
               <span className="text-xs text-fg-dim">GB</span>
@@ -453,5 +452,32 @@ export function DestinationTab({
         <SettingsHint className="mt-2">{tr('settings.syncEngineDjHint')}</SettingsHint>
       </SettingsSection>
     </>
+  )
+}
+
+// A backup limit typed by hand. Clearing the field to type a new number must not stage
+// 0: the save clamps it to the floor (one day, 0.1 GB) and the next sweep deletes every
+// older backup. Only a real number is staged; an empty field shows the value back on blur.
+function LimitInput({
+  value,
+  onCommit,
+  ...rest
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
+  value: number
+  onCommit: (n: number) => void
+}): React.JSX.Element {
+  const [text, setText] = useState<string | null>(null)
+  return (
+    <input
+      {...rest}
+      type="number"
+      value={text ?? value}
+      onChange={(e) => {
+        const v = e.target.value
+        setText(v)
+        if (v.trim() !== '' && Number.isFinite(Number(v))) onCommit(Number(v))
+      }}
+      onBlur={() => setText(null)}
+    />
   )
 }
