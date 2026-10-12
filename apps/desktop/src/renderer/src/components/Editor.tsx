@@ -241,6 +241,7 @@ export const Editor = memo(function Editor({
     addToEngineDj,
     keepMp3Sources,
     overwriteOriginal,
+    backupPolicy,
     convertBesideOriginal,
     replaceLowResCover,
     autoApplyFilename,
@@ -1265,7 +1266,11 @@ export const Editor = memo(function Editor({
                             lossy={lossyOverwrite}
                             hint={
                               lossyOverwrite
-                                ? tr('editor.overwriteLossyHint')
+                                ? tr(
+                                    backupPolicy === 'never'
+                                      ? 'editor.overwriteLossyHint'
+                                      : 'editor.overwriteLossyHintBackup',
+                                  )
                                 : willEditInPlace
                                   ? tr('editor.overwriteHint')
                                   : tr('editor.overwriteAlacHint')

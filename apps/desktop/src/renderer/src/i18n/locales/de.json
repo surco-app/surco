@@ -553,6 +553,7 @@
     "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteAlacHint": "ALAC ersetzt das Original nicht: Eine neue Datei wird in den Ausgabeordner geschrieben und das Original bleibt erhalten.",
     "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
+    "overwriteLossyHintBackup": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt. Vorher legt Surco eine Sicherungskopie des Originals an, die du über den Titel wiederherstellen kannst.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateAll_other": "{{count}} Dateinamen aus den Metadaten neu erzeugen",
     "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",

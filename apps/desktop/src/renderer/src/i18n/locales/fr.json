@@ -553,6 +553,7 @@
     "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Sortie.",
     "overwriteAlacHint": "ALAC ne remplace pas l'original : un nouveau fichier est écrit dans le dossier de sortie et l'original est conservé.",
     "overwriteLossyHint": "Remplace l'original sans perte par un MP3 320 kbps sur place — le master est perdu et irrécupérable. Désactive-le dans Réglages → Sortie.",
+    "overwriteLossyHintBackup": "Remplace l'original sans perte par un MP3 320 kbps sur place. Avant, Surco garde une copie de sauvegarde de l'original, que vous pouvez restaurer depuis le morceau.",
     "regenerate": "Régénérer le nom du fichier depuis les métadonnées",
     "regenerateAll_other": "Régénérer {{count}} noms de fichiers depuis les métadonnées",
     "regenerateHint": "Reconstruit le nom du fichier à partir des métadonnées ci-dessus selon ton modèle de Réglages → Noms",

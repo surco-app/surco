@@ -160,6 +160,7 @@ function renderEditor(
     normalize?: NormalizeConfig
     declick?: DeclickMode
     overwriteOriginal?: boolean
+    backupPolicy?: Settings['backupPolicy']
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
     keepMp3Sources?: boolean
@@ -241,6 +242,7 @@ function renderEditor(
       addToEngineDj: props.addToEngineDj ?? false,
       keepMp3Sources: props.keepMp3Sources ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
+      ...(props.backupPolicy ? { backupPolicy: props.backupPolicy } : {}),
       replaceLowResCover: props.replaceLowResCover ?? false,
       autoApplyFilename: props.autoApplyFilename ?? false,
       filenameFormat: props.filenameFormat ?? '{artist} - {title}',
@@ -2323,8 +2325,20 @@ describe('Editor output file name', () => {
   // The one irreversible case — replacing a lossless master with MP3 — gets the louder
   // warning so the user isn't surprised that the original is gone.
   it('warns about losing the master when overwriting a lossless source with MP3', () => {
-    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3', { overwriteOriginal: true })
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3', {
+      overwriteOriginal: true,
+      backupPolicy: 'never',
+    })
     expect(screen.getByTestId('overwrite-hint')).toHaveTextContent(/master is lost/i)
+  })
+
+  // Re-encoding to MP3 changes the audio, so under the default backup policy the master
+  // is kept and can be restored from the track. Saying it is gone for good was untrue and
+  // pushed users away from a safe action.
+  it('says the master is backed up when the backup policy keeps it', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3', { overwriteOriginal: true })
+    expect(screen.getByTestId('overwrite-hint')).not.toHaveTextContent(/master is lost/i)
+    expect(screen.getByTestId('overwrite-hint')).toHaveTextContent(/backup/i)
   })
 
   // Overwriting MP3 with MP3, or any lossless target, is recoverable enough to skip the

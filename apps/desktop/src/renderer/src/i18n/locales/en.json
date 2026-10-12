@@ -553,6 +553,7 @@
     "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Output.",
     "overwriteAlacHint": "ALAC doesn't replace the original: a new file is written to the output folder and the original is kept.",
     "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Output.",
+    "overwriteLossyHintBackup": "This replaces the lossless original with a 320 kbps MP3 in place. Surco keeps a backup of the original first, which you can restore from the track.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateAll_other": "Regenerate {{count}} file names from metadata",
     "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",

@@ -553,6 +553,7 @@
     "overwriteHint": "Reescribe el archivo de origen en su sitio, conservando el nombre. No deja copia en la carpeta de salida. Desactívalo en Ajustes → Destino.",
     "overwriteAlacHint": "ALAC no reemplaza el original: se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
     "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio — el máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
+    "overwriteLossyHintBackup": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. Antes, Surco guarda una copia de seguridad del original, que puedes restaurar desde la pista.",
     "regenerate": "Regenerar nombre del archivo con los metadatos",
     "regenerateAll_other": "Regenerar {{count}} nombres de archivo con los metadatos",
     "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Nombres",

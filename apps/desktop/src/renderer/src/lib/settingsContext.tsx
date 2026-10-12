@@ -45,6 +45,7 @@ interface ResolvedSettings {
   addToAppleMusic: boolean
   addToEngineDj: boolean
   overwriteOriginal: boolean
+  backupPolicy: NonNullable<Settings['backupPolicy']>
   convertBesideOriginal: boolean
   replaceLowResCover: boolean
   autoApplyFilename: boolean
@@ -88,6 +89,7 @@ const DEFAULTS: ResolvedSettings = {
   addToAppleMusic: false,
   addToEngineDj: false,
   overwriteOriginal: false,
+  backupPolicy: 'audioChanges',
   convertBesideOriginal: false,
   replaceLowResCover: false,
   autoApplyFilename: false,
@@ -129,6 +131,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
+    backupPolicy: settings.backupPolicy ?? DEFAULTS.backupPolicy,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
     replaceLowResCover: settings.replaceLowResCover ?? DEFAULTS.replaceLowResCover,
     autoApplyFilename: settings.autoApplyFilename ?? DEFAULTS.autoApplyFilename,
