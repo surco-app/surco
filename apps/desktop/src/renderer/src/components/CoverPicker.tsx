@@ -31,6 +31,7 @@ function CoverActionButton({
   onClick,
   danger = false,
   disabled = false,
+  disabledReason,
   className = '',
 }: {
   testid: string
@@ -39,14 +40,19 @@ function CoverActionButton({
   onClick: () => void
   danger?: boolean
   disabled?: boolean
+  // Why the button does nothing right now. A disabled button takes no hover, so it stays
+  // focusable and inert (aria-disabled) and its tooltip says the reason instead.
+  disabledReason?: string
   className?: string
 }): React.JSX.Element {
+  const explained = disabled && disabledReason !== undefined
   return (
     <button
       type="button"
       data-testid={testid}
-      onClick={onClick}
-      disabled={disabled}
+      onClick={explained ? undefined : onClick}
+      disabled={disabled && !explained}
+      aria-disabled={explained || undefined}
       aria-label={label}
       className={`press pointer-events-auto rounded-lg p-1 text-on-scrim @[26rem]:p-1.5 transition-colors ${
         disabled
@@ -57,7 +63,11 @@ function CoverActionButton({
       } ${className}`}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />
-      {!disabled && <Tooltip label={label} scope="cover" />}
+      {explained ? (
+        <Tooltip label={disabledReason} scope="cover" />
+      ) : (
+        !disabled && <Tooltip label={label} scope="cover" />
+      )}
     </button>
   )
 }
@@ -268,6 +278,7 @@ export function CoverPicker({
         icon={ClipboardPaste}
         onClick={() => void onCoverPaste()}
         disabled={!canPaste}
+        disabledReason={tr('editor.coverPasteEmpty')}
       />
       {ownCover && (
         <CoverActionButton

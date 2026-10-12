@@ -423,6 +423,7 @@
     "coverView": "Cover in voller Größe ansehen",
     "coverCopy": "Cover kopieren",
     "coverPaste": "Cover einfügen",
+    "coverPasteEmpty": "Kein Bild in der Zwischenablage",
     "coverExport": "Cover exportieren",
     "coverRemove": "Cover entfernen",
     "coverPrev": "Vorheriges Bild",

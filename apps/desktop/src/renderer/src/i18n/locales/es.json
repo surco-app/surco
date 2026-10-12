@@ -423,6 +423,7 @@
     "coverView": "Ver la carátula a tamaño completo",
     "coverCopy": "Copiar carátula",
     "coverPaste": "Pegar carátula",
+    "coverPasteEmpty": "No hay ninguna imagen en el portapapeles",
     "coverExport": "Exportar carátula",
     "coverRemove": "Quitar carátula",
     "coverPrev": "Imagen anterior",

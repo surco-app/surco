@@ -423,6 +423,7 @@
     "coverView": "View the artwork full size",
     "coverCopy": "Copy artwork",
     "coverPaste": "Paste artwork",
+    "coverPasteEmpty": "No image in the clipboard",
     "coverExport": "Export artwork",
     "coverRemove": "Remove artwork",
     "coverPrev": "Previous image",

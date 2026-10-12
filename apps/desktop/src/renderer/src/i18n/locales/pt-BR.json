@@ -423,6 +423,7 @@
     "coverView": "Ver a capa em tamanho real",
     "coverCopy": "Copiar capa",
     "coverPaste": "Colar capa",
+    "coverPasteEmpty": "Nenhuma imagem na área de transferência",
     "coverExport": "Exportar capa",
     "coverRemove": "Remover capa",
     "coverPrev": "Imagem anterior",

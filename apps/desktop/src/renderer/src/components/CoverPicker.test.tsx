@@ -188,7 +188,28 @@ describe('CoverPicker copy/paste', () => {
     renderPicker({ coverUrl: 'http://img/cover.jpg' })
     // Let the on-mount clipboard check settle before asserting it stayed disabled.
     await waitFor(() => expect(api.hasClipboardImage).toHaveBeenCalled())
-    expect(screen.getByTestId('cover-paste')).toBeDisabled()
+    expect(screen.getByTestId('cover-paste')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  // A greyed button with no word on why reads as broken. Disabled for real, it also took no
+  // hover, so its own tooltip could never say it either.
+  it('says on hover that the clipboard holds no image', async () => {
+    api.hasClipboardImage.mockResolvedValue(false)
+    renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    await waitFor(() => expect(api.hasClipboardImage).toHaveBeenCalled())
+    vi.useFakeTimers()
+    try {
+      const paste = screen.getByTestId('cover-paste')
+      for (const type of ['pointerenter', 'pointermove']) {
+        paste.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+      }
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('No image in the clipboard')
+      fireEvent.click(paste)
+      expect(api.pasteCoverImage).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // A track with no artwork can still receive a paste — the button shows over the empty
