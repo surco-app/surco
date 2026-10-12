@@ -330,6 +330,40 @@ describe('CoverPicker drag and counter', () => {
     )
   })
 
+  // A browser image takes seconds to fetch. Moving to the next track meanwhile unmounts
+  // this picker, and the late cover used to land on whatever track was selected by then.
+  it('drops a dragged cover that resolves after the track was left', async () => {
+    let resolve: (v: { coverUrl: string; coverPath: string }) => void = () => {}
+    api.resolveDraggedCover.mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r
+      }),
+    )
+    const onChange = vi.fn()
+    const { unmount } = render(
+      <CoverPicker
+        item={item()}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={null}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={onChange}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+    fireEvent.drop(screen.getByTestId('cover-dropzone'), {
+      dataTransfer: {
+        files: [],
+        getData: (t: string) => (t === 'text/uri-list' ? 'https://img.example/cover.jpg' : ''),
+      },
+    })
+    unmount()
+    resolve({ coverUrl: 'data:image/jpeg;base64,AAAA', coverPath: '/tmp/cover.jpg' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   // The handler's third shape, and the one no test reached: an inline `data:` image small
   // enough that main keeps it as a preview without writing a file, so coverPath comes back
   // undefined (api.ts declares it optional for exactly this). The preview must still be

@@ -153,7 +153,18 @@ export function CoverPicker({
   // track in multi-select, otherwise just the primary. Freeing the previous blob URL
   // is left to App, the only place that knows whether another track still shows it (a
   // multi-select apply makes several tracks share one blob).
+  // The editor remounts per track, so a cover resolved after this picker unmounted (a
+  // browser image still downloading when the user moved on) belongs to a track that is no
+  // longer open; applying it would stamp it on whatever track is selected now.
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   function applyCover(coverUrl: string, coverPath?: string): void {
+    if (!mounted.current) return
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
     else onChange({ coverUrl, coverPath, coverRemoved: false })
   }
@@ -302,9 +313,11 @@ export function CoverPicker({
         // dragging from a browser. The drop highlight has already cleared by now, so saying
         // nothing makes a failed drop look exactly like a successful one — the user waits
         // for artwork that is never coming.
-        else reportError(tr('errors.draggedCover'))
+        else if (mounted.current) reportError(tr('errors.draggedCover'))
       })
-      .catch(() => reportError(tr('errors.draggedCover')))
+      .catch(() => {
+        if (mounted.current) reportError(tr('errors.draggedCover'))
+      })
   }
 
   // The covers the picker steps through: the file's own artwork first, then the
