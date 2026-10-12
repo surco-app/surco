@@ -891,6 +891,7 @@
       "reset": "Auf Standard zurücksetzen",
       "resetAll": "Alle zurücksetzen ({{count}})",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
+      "conflictElsewhere": "Zwei Befehle teilen sich ein Tastenkürzel. Behebe es unter Tastenkürzel, um zu speichern.",
       "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Suchergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
       "groupTrim": "Stille-Editor",
       "groupTrimHint": "Solange der Schnittbereich geöffnet ist",

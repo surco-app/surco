@@ -891,6 +891,7 @@
       "reset": "Restablecer al valor por defecto",
       "resetAll": "Restablecer todo ({{count}})",
       "conflict": "Dos comandos comparten un atajo. Resuélvelo para guardar.",
+      "conflictElsewhere": "Hay dos comandos con el mismo atajo. Revísalo en Atajos para guardar.",
       "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de búsqueda, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página.",
       "groupTrim": "Editor de silencios",
       "groupTrimHint": "Con la sección de recorte abierta",

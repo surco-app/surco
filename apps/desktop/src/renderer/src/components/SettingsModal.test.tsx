@@ -852,6 +852,16 @@ describe('SettingsModal shortcuts', () => {
     expect(screen.getByTestId('settings-save')).toBeDisabled()
   })
 
+  // From any other tab, Save just went grey with nothing saying why: the reason lived on
+  // the Shortcuts tab alone. The footer names it and leads back there.
+  it('says beside Save that a shortcut clash blocks it and opens the Shortcuts tab', () => {
+    openShortcuts()
+    record('add', { key: 'r', metaKey: true })
+    fireEvent.click(screen.getByTestId('settings-tab-general'))
+    fireEvent.click(screen.getByTestId('settings-save-blocked'))
+    expect(screen.getByTestId('settings-tab-shortcuts')).toHaveAttribute('aria-selected', 'true')
+  })
+
   // ⌘K opens the palette and isn't reconfigurable; recording it must be rejected so it
   // can't be stolen.
   it('rejects the reserved palette chord (⌘K)', () => {

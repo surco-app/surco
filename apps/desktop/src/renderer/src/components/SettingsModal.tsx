@@ -387,7 +387,19 @@ export function SettingsModal({
           />
         </div>
 
-        <div className="-mx-6 mt-6 flex shrink-0 justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
+        <div className="-mx-6 mt-6 flex shrink-0 items-center justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
+          {/* Save is blocked by a clash that may sit on a tab the user is not looking at;
+              the footer says so and leads there, instead of a grey button and no reason. */}
+          {conflictIds.size > 0 && tab !== 'shortcuts' && (
+            <button
+              type="button"
+              data-testid="settings-save-blocked"
+              onClick={() => setTab('shortcuts')}
+              className="mr-auto text-left text-xs text-warn underline-offset-2 hover:underline"
+            >
+              {tr('settings.shortcuts.conflictElsewhere')}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
