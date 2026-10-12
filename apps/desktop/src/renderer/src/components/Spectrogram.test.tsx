@@ -100,6 +100,39 @@ describe('Spectrogram dead-band shading', () => {
 // used to keep a fixed 320px height — so the picture flattened into a thin band stretched
 // across the window while the marks spread over the full height, the "waveform smeared
 // across the background" bug. The image must grow WITH its box so the two never desync.
+describe('Spectrogram evidence band', () => {
+  // The caption argued the verdict with a stretch of the spectrum ("4 rises between 16 and
+  // 20 kHz") that the picture never showed, so the eye had to find it alone. The picture
+  // marks the same stretch the caption names.
+  const pct = (el: HTMLElement, prop: 'top' | 'height'): number => Number.parseFloat(el.style[prop])
+
+  it('shades the stretch where the rises were counted', () => {
+    render(
+      <Spectrogram spectrum={{ ...base, teethCount: 4, teethFromHz: 16000, teethToHz: 20000 }} />,
+    )
+    const band = screen.getByTestId('spectrum-evidence-band')
+    expect(pct(band, 'top')).toBeCloseTo((1 - 20000 / 22050) * 100, 1)
+    expect(pct(band, 'height')).toBeCloseTo((4000 / 22050) * 100, 1)
+  })
+
+  it('shades the valley up to the hump and marks its crest', () => {
+    render(<Spectrogram spectrum={{ ...base, cutoffHz: 15000, humpPeakHz: 18000 }} />)
+    const band = screen.getByTestId('spectrum-evidence-band')
+    expect(pct(band, 'top')).toBeCloseTo((1 - 18000 / 22050) * 100, 1)
+    expect(pct(band, 'height')).toBeCloseTo((3000 / 22050) * 100, 1)
+    expect(pct(screen.getByTestId('spectrum-hump-peak'), 'top')).toBeCloseTo(
+      (1 - 18000 / 22050) * 100,
+      1,
+    )
+  })
+
+  it('marks nothing when the verdict rests on no stretch', () => {
+    render(<Spectrogram spectrum={{ ...base, hasKnee: true }} />)
+    expect(screen.queryByTestId('spectrum-evidence-band')).toBeNull()
+    expect(screen.queryByTestId('spectrum-hump-peak')).toBeNull()
+  })
+})
+
 describe('Spectrogram maximized height', () => {
   // A tiny harness that flips the shared maximize store to the quality section, the way a
   // SectionHeader's maximize button does, then renders the spectrogram under it.

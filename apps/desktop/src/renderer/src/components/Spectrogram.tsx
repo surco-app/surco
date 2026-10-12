@@ -47,6 +47,15 @@ export function Spectrogram({
     spectrum.cutoffHz !== null
       ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }, i18n.language)
       : null
+  // The stretch the caption argues the verdict with, in the caption's own priority: the
+  // counted rises first, else the valley at the cutoff up to the hump's crest.
+  const evidenceBand =
+    spectrum.teethFromHz !== undefined && spectrum.teethToHz !== undefined
+      ? { fromHz: spectrum.teethFromHz, toHz: spectrum.teethToHz }
+      : spectrum.humpPeakHz !== undefined && spectrum.cutoffHz !== null
+        ? { fromHz: spectrum.cutoffHz, toHz: spectrum.humpPeakHz }
+        : null
+  const humpPeakHz = spectrum.teethFromHz === undefined ? spectrum.humpPeakHz : undefined
   // The hover crosshair: where the cursor sits as a percent from the top, and the frequency
   // that row maps to. Null while the cursor is outside, so the line shows only when reading.
   const [hover, setHover] = useState<{ topPct: number; hz: number } | null>(null)
@@ -113,6 +122,25 @@ export function Spectrogram({
           aria-hidden="true"
           style={{ height: `${(1 - spectrum.cutoffHz / topHz) * 100}%` }}
           className="spectrum-deadband pointer-events-none absolute inset-x-0 top-0"
+        />
+      )}
+      {topHz > 0 && evidenceBand && (
+        <div
+          data-testid="spectrum-evidence-band"
+          aria-hidden="true"
+          style={{
+            top: `${(1 - evidenceBand.toHz / topHz) * 100}%`,
+            height: `${((evidenceBand.toHz - evidenceBand.fromHz) / topHz) * 100}%`,
+          }}
+          className="pointer-events-none absolute inset-x-0 border-y border-dashed border-warn/60 bg-warn/15"
+        />
+      )}
+      {topHz > 0 && humpPeakHz !== undefined && (
+        <div
+          data-testid="spectrum-hump-peak"
+          aria-hidden="true"
+          style={{ top: `${(1 - humpPeakHz / topHz) * 100}%` }}
+          className="pointer-events-none absolute inset-x-0 border-t border-warn"
         />
       )}
       {topHz > 0 && spectrum.cutoffHz !== null && chip && (
