@@ -807,6 +807,25 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.901 })
   })
 
+  // The end check is about what is cut: the media clock reports only every ~250 ms, so a
+  // stop waiting on it let the cut audio play on past the line. It stops on time instead.
+  it('stops the end audition right at the cut, not on the next clock report', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const btn = await screen.findByTestId('trim-audition-end', undefined, { timeout: 3000 })
+    vi.useFakeTimers()
+    try {
+      fireEvent.click(btn)
+      await act(async () => audios.at(-1)?.onloadedmetadata?.())
+      expect(pause).not.toHaveBeenCalled()
+      await act(async () => {
+        vi.advanceTimersByTime(4000)
+      })
+      expect(pause).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   // The arrows give the precision a drag on the coarse strip can't: tenths of a
   // second, a whole second with Shift.
   it('nudges the focused handle with the arrow keys', async () => {

@@ -776,7 +776,9 @@ export function TrimSection({
   // changes or the section unmounts, like the declick audition.
   const [auditing, setAuditing] = useState<Side | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const stopTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   function stopAudition(): void {
+    clearTimeout(stopTimer.current)
     audioRef.current?.pause()
     audioRef.current = null
     setAuditing(null)
@@ -784,6 +786,7 @@ export function TrimSection({
   // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is deliberately the trigger — a moved cut invalidates the playing boundary, so the cleanup must fire on it.
   useEffect(() => {
     return () => {
+      clearTimeout(stopTimer.current)
       audioRef.current?.pause()
       audioRef.current = null
       setAuditing(null)
@@ -805,9 +808,18 @@ export function TrimSection({
     const until = which === 'start' ? Math.min(durationSec, inSec + AUDITION_SEC) : outSec
     // Seek only once the element knows its duration — an immediate currentTime on
     // a still-loading element is dropped by the media pipeline.
+    // The media clock reports only every ~250 ms, so a stop waiting on it played on past
+    // the cut, which is exactly what the end check is judging. A timer from the moment
+    // playback starts stops it on the line; the clock check stays as the backstop.
     audio.onloadedmetadata = () => {
       audio.currentTime = from
-      audio.play().catch(() => stopAudition())
+      audio
+        .play()
+        .then(() => {
+          if (audioRef.current !== audio) return
+          stopTimer.current = setTimeout(stopAudition, (until - from) * 1000)
+        })
+        .catch(() => stopAudition())
     }
     audio.ontimeupdate = () => {
       if (audio.currentTime >= until) stopAudition()
