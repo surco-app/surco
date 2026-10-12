@@ -392,9 +392,9 @@ export default function App(): React.JSX.Element {
   // below the conversion hook that has to call it — a conversion rewriting the file
   // the player streams must drop that handle first (see usePlayer's releaseFile).
   const releaseFileRef = useRef<(path: string) => Promise<void>>(async () => {})
-  // The rows pinned into the current library-filter view, so a background auto-match that
-  // flips a row's "already owned" verdict can't drop it out from under the user mid-work
-  // (see filterWithSticky). Tied to the filter it was built for: switching filter (or
+  // The rows pinned into the current filter view, so a verdict that flips while the user
+  // works the list (an accepted suggestion, a finished analysis, a background auto-match)
+  // can't drop a row out from under them (see filterWithSticky). Tied to the filter it was built for: switching filter (or
   // re-clicking the same chip) resets it, which is the deliberate "refresh" that
   // recomputes membership from the live verdicts.
   const stickyFilter = useRef<string>('')
@@ -1178,7 +1178,7 @@ export default function App(): React.JSX.Element {
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
-    // library rows put even after a background auto-match flips their verdict.
+    // rows put even after their verdict flips under the user.
     const { quality, conversion, library, duplicates, format } = filterSelection
     const key = `${quality ?? ''}|${conversion ?? ''}|${library ?? ''}|${duplicates ?? ''}|${format ?? ''}`
     if (stickyFilter.current !== key) {

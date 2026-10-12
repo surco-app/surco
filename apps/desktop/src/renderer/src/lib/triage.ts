@@ -137,27 +137,21 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   return true
 }
 
-// Filters the list, but keeps the library buckets sticky: once a row is shown while a
-// library axis is active it stays in view even after a background auto-match rewrites its
-// tags to the canonical name — which then matches the Apple Music library and would flip
-// it out of the "missing" bucket — so the list never drops a row out from under the user
-// while they work the match column. `sticky` carries the pinned IDs across renders and is
-// extended in place with the rows matching now; the caller resets it (a fresh Set) when
-// the selection changes, the deliberate "refresh" that recomputes membership from the live
-// verdicts. With no library axis, the selection changes only by the user's own edits, so
-// it ignores the set and follows the live verdicts exactly like matchesFilter. A pinned
-// row must still satisfy the other axes — only the library flip is defeated — so a
-// completed background analysis can still drop it from, say, the 'unanalyzed' bucket.
+// Filters the list, but keeps every row it has shown in place for the rest of the filter
+// session: a row whose verdict flips while the user works the list (an accepted review
+// suggestion, a background auto-match that lands it in the library, an analysis that
+// finishes under 'unanalyzed', a conversion under 'unconverted') stays put instead of
+// vanishing and sliding the next row under the pointer. `sticky` carries the shown IDs
+// across renders and is extended in place with the rows matching now, so a row that newly
+// qualifies still appears. The caller resets it (a fresh Set) when the filter changes,
+// the deliberate "refresh" that recomputes membership from the live verdicts.
 export function filterWithSticky(
   tracks: TrackItem[],
   sel: FilterSelection,
   sticky: Set<string>,
 ): TrackItem[] {
-  const matching = tracks.filter((t) => matchesFilter(t, sel))
-  if (!sel.library) return matching
-  for (const t of matching) sticky.add(t.id)
-  const exceptLibrary: FilterSelection = { ...sel, library: null }
-  return tracks.filter((t) => sticky.has(t.id) && matchesFilter(t, exceptLibrary))
+  for (const t of tracks) if (matchesFilter(t, sel)) sticky.add(t.id)
+  return tracks.filter((t) => sticky.has(t.id))
 }
 
 // Free-text list search, applied on top of the quality filter. Matches what the user

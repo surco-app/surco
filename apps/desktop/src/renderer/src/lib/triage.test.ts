@@ -304,44 +304,38 @@ describe('filterWithSticky', () => {
     ).toEqual(['a', 'b'])
   })
 
-  it('does not pin when no library axis is active, dropping a row as soon as it stops matching', () => {
-    // Stickiness is scoped to the library buckets, where a background rewrite silently
-    // flips the verdict. The auto-matched bucket only changes by the user's own action,
-    // so it must follow the live verdict like matchesFilter.
+  it('keeps an accepted suggestion in place under the review filter', () => {
+    // Accepting the amber spark clears matchReview. Dropping the row at once slid the next
+    // row's spark under the pointer, and a quick second click accepted a suggestion the
+    // user never looked at.
+    const r = (id: string, matchReview: boolean): TrackItem =>
+      ({ id, status: 'idle', matchReview }) as TrackItem
     const sticky = new Set<string>()
-    filterWithSticky([am('x', true)], sel({ conversion: 'automatched' }), sticky)
-    expect(filterWithSticky([am('x', false)], sel({ conversion: 'automatched' }), sticky)).toEqual(
-      [],
-    )
-  })
-
-  it('drops a pinned row that stops matching a co-active non-library axis (only the library flip is defeated)', () => {
-    // A pinned row survives a background library flip, but must still satisfy the other
-    // axes: if a completed analysis moves it out of the co-active quality bucket it should
-    // drop, so stickiness never widens beyond the one verdict it's meant to hold steady.
-    const q = (id: string, cutoffHz: number | null, inLibrary: boolean): TrackItem =>
-      ({
-        id,
-        status: 'idle',
-        inLibrary,
-        spectrum: { cutoffHz, sampleRateHz: 44100 },
-      }) as TrackItem
-    const sticky = new Set<string>()
-    // 'a' is unanalyzed (null cutoff) and not in the library, so it's pinned…
-    filterWithSticky(
-      [q('a', null, false)],
-      sel({ library: 'notInLibrary', quality: 'unanalyzed' }),
-      sticky,
-    )
-    // …but once its analysis lands as 'good' it no longer matches the quality axis, so even
-    // though it's still pinned (and still not in the library) it drops out of view.
+    filterWithSticky([r('a', true), r('b', true)], sel({ conversion: 'matchReview' }), sticky)
     expect(
       filterWithSticky(
-        [q('a', 21000, false)],
-        sel({ library: 'notInLibrary', quality: 'unanalyzed' }),
+        [r('a', false), r('b', true)],
+        sel({ conversion: 'matchReview' }),
         sticky,
-      ),
-    ).toEqual([])
+      ).map((x) => x.id),
+    ).toEqual(['a', 'b'])
+  })
+
+  it('keeps a shown row when a background analysis moves it out of a quality bucket', () => {
+    // Analyses land on their own while the user works the 'unanalyzed' list; a row that
+    // vanished mid-click took the click to whatever slid into its place.
+    const q = (id: string, cutoffHz: number | null): TrackItem =>
+      ({ id, status: 'idle', spectrum: { cutoffHz, sampleRateHz: 44100 } }) as TrackItem
+    const sticky = new Set<string>()
+    filterWithSticky([q('a', null)], sel({ quality: 'unanalyzed' }), sticky)
+    expect(
+      filterWithSticky([q('a', 21000)], sel({ quality: 'unanalyzed' }), sticky).map((x) => x.id),
+    ).toEqual(['a'])
+  })
+
+  it('shows every track with no filter axis active', () => {
+    const sticky = new Set<string>()
+    expect(filterWithSticky([am('x', true), am('y', false)], EMPTY_FILTER, sticky)).toHaveLength(2)
   })
 })
 
