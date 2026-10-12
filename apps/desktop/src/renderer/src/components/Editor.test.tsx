@@ -1605,6 +1605,20 @@ describe('Editor multi-select', () => {
   })
 })
 
+describe('Editor place across tracks', () => {
+  // Reviewing the same section track after track (Trim, say) meant scrolling back down
+  // to it on every switch: the editor remounts per track and opened at the top each time.
+  it('opens the next track at the scroll position the last one was left at', () => {
+    renderEditor({ id: 'a' })
+    const scroller = screen.getByTestId('editor-scroll')
+    scroller.scrollTop = 420
+    fireEvent.scroll(scroller)
+    cleanup()
+    renderEditor({ id: 'b' })
+    expect(screen.getByTestId('editor-scroll').scrollTop).toBe(420)
+  })
+})
+
 describe('Editor export control', () => {
   // "Output folder", "Beside the original" and "Overwrite" all read "Convert to WAV", so
   // where the file lands showed only once it failed on an unplugged NAS.

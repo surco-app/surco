@@ -10,7 +10,7 @@ import {
   Type,
 } from 'lucide-react'
 import type React from 'react'
-import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
@@ -197,6 +197,10 @@ interface Props {
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
 
+// The editor remounts per track, so where it was scrolled lives here for the session: the
+// next track opens on the same section instead of back at the top.
+let sessionScrollTop = 0
+
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
 // selectedTracks identity), so search keystrokes and progress ticks on other tracks
 // skip this whole subtree.
@@ -284,6 +288,10 @@ export const Editor = memo(function Editor({
   } = useAppSettings()
   const showTokenTip = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = sessionScrollTop
+  }, [])
   const { t: tr, i18n } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
   // the box (and its cached results) instead of reverting to the filename guess.
@@ -1152,7 +1160,14 @@ export const Editor = memo(function Editor({
       />
 
       <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto p-7">
+        <div
+          ref={scrollRef}
+          data-testid="editor-scroll"
+          onScroll={(e) => {
+            sessionScrollTop = e.currentTarget.scrollTop
+          }}
+          className="min-h-0 flex-1 overflow-y-auto p-7"
+        >
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
           <SectionGroupHeading
