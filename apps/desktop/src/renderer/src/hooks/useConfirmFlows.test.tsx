@@ -640,6 +640,25 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     expect(run).not.toHaveBeenCalled()
   })
 
+  // The lossy re-encode changes the audio, so under the default backup policy the original
+  // is kept and can be restored. Saying it "cannot be undone" scared users off a safe step.
+  it('says the original is backed up when the backup policy keeps it', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3])
+    flows.askConvertOne(vi.fn(), { track: mp3, format: 'source' })
+    expect(opened[0].message).toMatch(/backup/i)
+    expect(opened[0].message).not.toMatch(/cannot be undone/i)
+  })
+
+  it('says the re-encode cannot be undone when no backup is kept', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3], {
+      settings: { overwriteOriginal: false, backupPolicy: 'never' } as Settings,
+    })
+    flows.askConvertOne(vi.fn(), { track: mp3, format: 'source' })
+    expect(opened[0].message).toMatch(/cannot be undone/i)
+  })
+
   // No filter, no warning: a plain in-place mp3 convert is a byte copy, and the single
   // path must stay one-click just as it does for any other non-destructive convert.
   it('does not confirm a single convert of an in-place mp3 under source with no filters active', () => {

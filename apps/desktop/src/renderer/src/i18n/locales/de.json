@@ -1387,6 +1387,8 @@
     "convertLossyReencodeTitle": "Verlustbehaftetes Original neu kodieren?",
     "convertLossyReencodeMessage_one": "Dieser Filter kodiert eine verlustbehaftete Datei (MP3 oder AAC) an Ort und Stelle neu. Das verschlechtert ihre Qualität und lässt sich nicht rückgängig machen.",
     "convertLossyReencodeMessage_other": "Dieser Filter kodiert {{count}} verlustbehaftete Dateien (MP3 oder AAC) an Ort und Stelle neu. Das verschlechtert ihre Qualität und lässt sich nicht rückgängig machen.",
+    "convertLossyReencodeMessageBackup_one": "Dieser Filter kodiert eine verlustbehaftete Datei (MP3 oder AAC) an Ort und Stelle neu, und das verschlechtert ihre Qualität. Vorher legt Surco eine Sicherungskopie des Originals an, die du über den Titel wiederherstellen kannst.",
+    "convertLossyReencodeMessageBackup_other": "Dieser Filter kodiert {{count}} verlustbehaftete Dateien (MP3 oder AAC) an Ort und Stelle neu, und das verschlechtert ihre Qualität. Vorher legt Surco von jedem Original eine Sicherungskopie an, die du über seinen Titel wiederherstellen kannst.",
     "convertLossyReencodeConfirm": "Neu kodieren und konvertieren",
     "trashTitleBackups_one": "Datei in die Sicherungskopien verschieben?",
     "trashTitleBackups_other": "{{count}} Dateien in die Sicherungskopien verschieben?",

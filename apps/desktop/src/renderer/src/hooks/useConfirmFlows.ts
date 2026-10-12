@@ -178,6 +178,13 @@ interface ConfirmFlows {
 // The overwrite prompt says what happens to the original under the backup policy: kept
 // as a backup, kept only when the audio changes, or gone for good. Main fills the policy
 // in on load ('audioChanges' by default), so a missing one only means settings not loaded yet.
+// A lossy re-encode always changes the audio, so every policy but 'never' keeps a backup.
+function lossyReencodeMessageKey(settings: Settings | null): string {
+  return settings?.backupPolicy === 'never'
+    ? 'confirm.convertLossyReencodeMessage'
+    : 'confirm.convertLossyReencodeMessageBackup'
+}
+
 function inPlaceMessageKey(settings: Settings | null): string {
   const policy = settings?.backupPolicy ?? 'audioChanges'
   if (policy === 'never') return 'confirm.convertInPlaceMessage'
@@ -487,7 +494,7 @@ export function useConfirmFlows({
         lossyReencode
           ? {
               title: tr('confirm.convertLossyReencodeTitle'),
-              message: tr('confirm.convertLossyReencodeMessage', { count }),
+              message: tr(lossyReencodeMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
               onConfirm: () => void processAll(targets, format, normalize, destination, declick),
@@ -554,7 +561,7 @@ export function useConfirmFlows({
         lossyReencode
           ? {
               title: tr('confirm.convertLossyReencodeTitle'),
-              message: tr('confirm.convertLossyReencodeMessage', { count: 1 }),
+              message: tr(lossyReencodeMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
               onConfirm: run,

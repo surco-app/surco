@@ -1387,6 +1387,8 @@
     "convertLossyReencodeTitle": "¿Recodificar el original con pérdida?",
     "convertLossyReencodeMessage_one": "Este filtro recodifica en su sitio un archivo con pérdida (MP3 o AAC). Recodificarlo sobre sí mismo degrada su calidad y no se puede deshacer.",
     "convertLossyReencodeMessage_other": "Este filtro recodifica en su sitio {{count}} archivos con pérdida (MP3 o AAC). Recodificarlos sobre sí mismos degrada su calidad y no se puede deshacer.",
+    "convertLossyReencodeMessageBackup_one": "Este filtro recodifica en su sitio un archivo con pérdida (MP3 o AAC), y recodificarlo sobre sí mismo degrada su calidad. Antes, Surco guarda una copia de seguridad del original, que puedes restaurar desde la pista.",
+    "convertLossyReencodeMessageBackup_other": "Este filtro recodifica en su sitio {{count}} archivos con pérdida (MP3 o AAC), y recodificarlos sobre sí mismos degrada su calidad. Antes, Surco guarda una copia de seguridad de cada original, que puedes restaurar desde su pista.",
     "convertLossyReencodeConfirm": "Recodificar y convertir",
     "trashTitleBackups_one": "¿Mover el archivo a Copias de seguridad?",
     "trashTitleBackups_other": "¿Mover {{count}} archivos a Copias de seguridad?",

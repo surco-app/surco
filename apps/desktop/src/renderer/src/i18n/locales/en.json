@@ -1387,6 +1387,8 @@
     "convertLossyReencodeTitle": "Re-encode the lossy original?",
     "convertLossyReencodeMessage_one": "This filter re-encodes a lossy file (MP3 or AAC) in place. Re-encoding it over itself degrades its quality and cannot be undone.",
     "convertLossyReencodeMessage_other": "This filter re-encodes {{count}} lossy files (MP3 or AAC) in place. Re-encoding them over themselves degrades their quality and cannot be undone.",
+    "convertLossyReencodeMessageBackup_one": "This filter re-encodes a lossy file (MP3 or AAC) in place, and re-encoding it over itself degrades its quality. Surco keeps a backup of the original first, which you can restore from the track.",
+    "convertLossyReencodeMessageBackup_other": "This filter re-encodes {{count}} lossy files (MP3 or AAC) in place, and re-encoding them over themselves degrades their quality. Surco keeps a backup of each original first, which you can restore from its track.",
     "convertLossyReencodeConfirm": "Re-encode and convert",
     "trashTitleBackups_one": "Move file to Backups?",
     "trashTitleBackups_other": "Move {{count}} files to Backups?",
