@@ -258,6 +258,45 @@ describe('Select full-width menu placement', () => {
     expect(screen.queryByTestId('pick-listbox')).toBeNull()
   })
 
+  // artexjay, 12/10: on a deluxe release the album-match picker closed as soon as he
+  // scrolled its tracklist with the wheel, the scrollbar or the arrows. The menu's own
+  // scroll was caught with the ancestors' and dismissed it.
+  it('stays open while its own list scrolls', () => {
+    const list = openAt(132)
+    fireEvent.scroll(list)
+    expect(screen.getByTestId('pick-listbox')).toBeInTheDocument()
+  })
+
+  // Focusing an option lets the browser scroll every ancestor to show it, and an ancestor's
+  // scroll closes the menu: opening on a track far down the list closed it at once, the
+  // "sometimes it does not appear" of the same report. Only the list may move.
+  it('focuses options without scrolling anything outside the menu', () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    const list = openAt(132)
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    const optionCalls = focus.mock.contexts
+      .map((el, i) => [el, focus.mock.calls[i][0]] as const)
+      .filter(([el]) => (el as HTMLElement).getAttribute('role') === 'option')
+    expect(optionCalls.length).toBeGreaterThanOrEqual(2)
+    for (const [, opts] of optionCalls) expect(opts).toEqual({ preventScroll: true })
+    focus.mockRestore()
+  })
+
+  // The album-match rows rebuild their options on every render, and a render while the
+  // menu was open pulled the focus, and the list with it, back to the assigned track.
+  it('keeps the focused option when the options are rebuilt while open', () => {
+    window.innerHeight = 800
+    const props = { value: '0', onChange: vi.fn(), label: 'Track', testid: 'pick', fullWidth: true }
+    const { rerender } = render(<Select {...props} options={many} />)
+    fireEvent.click(screen.getByTestId('pick'))
+    const list = screen.getByTestId('pick-listbox')
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(document.activeElement).toHaveTextContent('Track 3')
+    rerender(<Select {...props} options={many.map((o) => ({ ...o }))} />)
+    expect(document.activeElement).toHaveTextContent('Track 3')
+  })
+
   // Only while it is open: a stray scroll must not fight the click that opens it.
   it('leaves the trigger alone when nothing is open', () => {
     render(

@@ -76,26 +76,34 @@ export function Select({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLButtonElement>(null)
+  const openIndex = useRef(0)
   const selected = options.find((o) => o.value === value)
   // In a menu with examples, an option without one sets its label like them, in their
   // column and type, instead of starting in the narrow label column, so it reads as part of
   // the same list.
   const hinted = options.some((o) => o.hint)
 
+  // The focus lands on the chosen option once, when the menu opens: callers rebuild their
+  // options on every render, and following them would yank the focus, and the list, back
+  // to the chosen one while the user scrolls away from it.
   useEffect(() => {
     if (!open) return
     const items = listRef.current?.querySelectorAll<HTMLElement>('[role="option"]')
-    const idx = options.findIndex((o) => o.value === value)
-    items?.[Math.max(idx, 0)]?.focus()
-  }, [open, options, value])
+    const item = items?.[openIndex.current]
+    if (item) showOption(listRef.current, item)
+  }, [open])
 
   // The menu's placement is measured once, at open. Anything that moves the trigger
   // afterwards would strand it away from what it points at, so close instead of chasing
   // the trigger every frame — the same thing a native select does. The scroll is caught on
-  // the way down, so the editor's own scrolling column counts, not just the window.
+  // the way down, so the editor's own scrolling column counts, not just the window; the
+  // menu's own list scrolling moves nothing it points at.
   useEffect(() => {
     if (!open) return
-    const dismiss = (): void => setOpen(false)
+    const dismiss = (e: Event): void => {
+      if (e.target instanceof Node && listRef.current?.contains(e.target)) return
+      setOpen(false)
+    }
     window.addEventListener('resize', dismiss)
     window.addEventListener('scroll', dismiss, true)
     return () => {
@@ -113,6 +121,10 @@ export function Select({
     // with no first-frame jump. The menu is fixed, so a trigger near the bottom of the
     // window would push it past the edge where scrolling cannot reach it: flip it above
     // the trigger when there is more room up there, and cap it to the room it has.
+    openIndex.current = Math.max(
+      options.findIndex((o) => o.value === value),
+      0,
+    )
     if (fullWidth) {
       const r = triggerRef.current?.getBoundingClientRect()
       if (r) {
@@ -168,7 +180,7 @@ export function Select({
     if (next === -1) return
     e.preventDefault()
     e.stopPropagation()
-    items[next].focus()
+    showOption(listRef.current, items[next])
   }
 
   const list = (
@@ -283,4 +295,15 @@ export function Select({
       )}
     </div>
   )
+}
+
+// A plain focus scrolls every ancestor to show the option, and an ancestor's scroll closes
+// the menu; only the list itself is scrolled, which leaves it open.
+function showOption(list: HTMLElement | null, item: HTMLElement): void {
+  item.focus({ preventScroll: true })
+  if (!list) return
+  const top = item.offsetTop
+  const bottom = top + item.offsetHeight
+  if (top < list.scrollTop) list.scrollTop = top
+  else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight
 }
