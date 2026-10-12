@@ -13,6 +13,7 @@ import {
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { editorPlace } from '../lib/editorPlace'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import {
   joinArtists,
@@ -141,6 +142,18 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     }
   }
   const { results, openKey, suggestedKey, choosingBest } = view.current
+  // The album applied before this track opened rides first, so tagging a release track
+  // after track never means finding it again. Fixed for the mount, so nothing moves.
+  const [pinned] = useState(() => editorPlace.lastAlbum)
+  const pinnedKey = pinned ? resultKeyOf(pinned) : null
+  const listed = pinned ? results.filter((r) => resultKeyOf(r) !== pinnedKey) : results
+  const applyTrack = (track: ReleaseTrack): void => {
+    const open = [...(pinned ? [pinned] : []), ...results].find(
+      (r) => resultKeyOf(r) === liveOpenKey,
+    )
+    if (open) editorPlace.lastAlbum = open
+    selectTrack(track)
+  }
   const previewRelease = (r: SearchResult): void => {
     userActed.current = true
     livePreviewRelease(r)
@@ -272,7 +285,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     const rk = resultKeyOf(r)
     const expanded = openKey === rk
     const suggested = suggestedKey === rk
-    const best = suggested && i === 0
+    const best = suggested && i === 0 && rk !== pinnedKey
     const loaded = expanded && openKey === liveOpenKey && !!release && !loading
     // Both empty for every Bandcamp row — its search returns no year, label or
     // catalogue — so each span is dropped rather than rendered blank, and the row
@@ -415,7 +428,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                         type="button"
                         data-testid="discogs-track"
                         aria-current={t === appliedTrack || t === matchedTrack ? 'true' : undefined}
-                        onClick={() => selectTrack(t)}
+                        onClick={() => applyTrack(t)}
                         className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
                           // Same selection fill and rounded shape as the library row, so the
                           // applied track reads with equal weight in both columns (was a faint
@@ -618,7 +631,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           onPointerLeave={() => setPointerIn(false)}
           className="min-h-0 flex-1 overflow-y-auto"
         >
-          {busy && results.length === 0 ? (
+          {pinned && (
+            <>
+              <BestMatchLabel testid="last-applied-label" label={tr('editor.lastApplied')} />
+              {renderCard(pinned, 0)}
+            </>
+          )}
+          {busy && listed.length === 0 ? (
             // The list waits for every catalog before it shows, so nothing appears only to
             // move: skeleton rows mirror the result-row shape, and the count says the wait
             // is going somewhere.
@@ -642,7 +661,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   })
                 : tr('editor.noResults')}
             </div>
-          ) : results.length === 0 ? (
+          ) : listed.length === 0 ? (
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
             <>
@@ -652,13 +671,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   <SkeletonRows testid="best-match-skeleton" count={1} />
                 </div>
               )}
-              {results.map(renderCard)}
+              {listed.map(renderCard)}
               {heldButton}
             </>
           )}
           {/* A catalog still searching: its rows will wait behind the button, not land here,
               so the panel names it instead of drawing rows that will not come. */}
-          {results.length > 0 && pendingProviders.length > 0 && (
+          {listed.length > 0 && pendingProviders.length > 0 && (
             <p data-testid="discogs-pending" className="px-3 py-2 text-[11px] text-fg-faint">
               {tr('editor.stillSearching', {
                 providers: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),

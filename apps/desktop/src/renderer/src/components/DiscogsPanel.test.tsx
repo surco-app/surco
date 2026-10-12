@@ -5,9 +5,13 @@ import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { resetEditorPlace } from '../lib/editorPlace'
 import { DiscogsPanel } from './DiscogsPanel'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  resetEditorPlace()
+})
 
 function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
   return {
@@ -634,5 +638,61 @@ describe('DiscogsPanel compilation tracklist', () => {
     expect(first).toHaveTextContent('DJ Lara')
     expect(within(first).getByTitle('DJ Lara - Snap (Extended Mix)')).toBeInTheDocument()
     expect(second).not.toHaveTextContent('Various')
+  })
+})
+
+describe('DiscogsPanel last applied album', () => {
+  const hardHouse = { provider: 'discogs' as const, id: 1, title: 'Hard House Nation' }
+  const release = {
+    provider: 'discogs' as const,
+    id: 1,
+    title: 'Hard House Nation',
+    artists: [{ name: 'Various' }],
+    tracklist: [{ position: '1', title: 'Snap', artists: [{ name: 'Various' }] }],
+  }
+
+  function applyFromHardHouse(): void {
+    renderPanel(browser({ query: 'x', results: [hardHouse], openKey: 'discogs:1', release }))
+    fireEvent.click(screen.getByTestId('discogs-track'))
+    cleanup()
+  }
+
+  function shownKeys(): string[] {
+    return screen.getAllByTestId('result-card').map((c) => c.dataset.key ?? '')
+  }
+
+  // Tagging an album means the same release track after track, and the next track's search
+  // rarely put it first: finding it again was a scroll through near-identical pressings.
+  it('pins the album applied on the last track at the top of the next one', () => {
+    applyFromHardHouse()
+    const b = browser({
+      query: 'y',
+      results: [
+        { provider: 'discogs', id: 2, title: 'Other' },
+        { provider: 'discogs', id: 3, title: 'Another' },
+      ],
+    })
+    renderPanel(b)
+    expect(shownKeys()).toEqual(['discogs:1', 'discogs:2', 'discogs:3'])
+    expect(screen.getByTestId('last-applied-label')).toBeInTheDocument()
+    expect(b.previewRelease).not.toHaveBeenCalled()
+    fireEvent.click(screen.getAllByTestId('discogs-result')[0])
+    expect(b.previewRelease).toHaveBeenCalledWith(hardHouse)
+  })
+
+  it('shows the pinned album once when the search also found it', () => {
+    applyFromHardHouse()
+    renderPanel(
+      browser({
+        query: 'y',
+        results: [{ provider: 'discogs', id: 2, title: 'Other' }, hardHouse],
+      }),
+    )
+    expect(shownKeys()).toEqual(['discogs:1', 'discogs:2'])
+  })
+
+  it('pins nothing before an album was applied', () => {
+    renderPanel(browser({ query: 'y', results: [{ provider: 'discogs', id: 2, title: 'Other' }] }))
+    expect(screen.queryByTestId('last-applied-label')).not.toBeInTheDocument()
   })
 })

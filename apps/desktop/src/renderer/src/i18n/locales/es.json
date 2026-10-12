@@ -676,6 +676,7 @@
     "coverPositionNone": "Ninguna de las {{total}} imágenes elegida",
     "searching": "Buscando…",
     "bestMatch": "Mejor coincidencia",
+    "lastApplied": "Último álbum aplicado",
     "searchProgress": "{{answered}} de {{total}} servicios han respondido",
     "heldResults": "{{count}} más de {{providers}} · Mostrar",
     "stillSearching": "Sigue buscando en {{providers}}…",
