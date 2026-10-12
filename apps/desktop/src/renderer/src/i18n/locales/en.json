@@ -425,6 +425,7 @@
     "coverPaste": "Paste artwork",
     "coverPasteEmpty": "No image in the clipboard",
     "loudnessFailed": "The volume of this track could not be measured.",
+    "qualityNoCutoff": "The frequency cutoff of this track could not be read, so there is no quality verdict.",
     "coverExport": "Export artwork",
     "coverRemove": "Remove artwork",
     "coverPrev": "Previous image",

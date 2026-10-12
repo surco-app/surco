@@ -376,6 +376,11 @@ export function QualitySection({
             ) : spectrum ? (
               <>
                 <Spectrogram spectrum={spectrum} transcoded={transcoded} />
+                {spectrum.cutoffHz === null && (
+                  <p data-testid="quality-no-cutoff" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityNoCutoff')}
+                  </p>
+                )}
                 {/* Only when the verdict needs justifying: a full-band good file is
                     already said twice (green badge, cutoff chip), so its caption
                     would be the third telling of the same fact. With measured

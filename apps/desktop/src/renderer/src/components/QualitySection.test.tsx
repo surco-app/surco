@@ -211,6 +211,34 @@ describe('QualitySection analysis gating', () => {
     )
   })
 
+  // The image drew but no cutoff could be read (a silent or ungradeable file): no badge,
+  // no caption, nothing to say why the verdict is missing.
+  it('says the cutoff could not be read when the spectrum has none', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi
+        .fn()
+        .mockResolvedValue({ image: '', cutoffHz: null, sampleRateHz: 44100, processed: false }),
+      cancelAnalysis: vi.fn(),
+      peekAnalysis: vi.fn(async () => null),
+    }
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByTestId('quality-no-cutoff')).toHaveTextContent(
+      'The frequency cutoff of this track could not be read, so there is no quality verdict.',
+    )
+  })
+
   // The editor only mounts this for the selected track — the one the user is waiting on.
   // During an auto-match sweep the background floods the analysis limiter with 'low'
   // decodes, so the selected track's spectrum must ask for 'high' to jump the queue,

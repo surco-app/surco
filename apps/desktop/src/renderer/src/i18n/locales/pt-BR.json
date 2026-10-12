@@ -425,6 +425,7 @@
     "coverPaste": "Colar capa",
     "coverPasteEmpty": "Nenhuma imagem na área de transferência",
     "loudnessFailed": "Não foi possível medir o volume desta faixa.",
+    "qualityNoCutoff": "Não foi possível ler o corte de frequências desta faixa, então não há veredito de qualidade.",
     "coverExport": "Exportar capa",
     "coverRemove": "Remover capa",
     "coverPrev": "Imagem anterior",

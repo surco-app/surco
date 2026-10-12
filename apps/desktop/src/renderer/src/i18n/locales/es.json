@@ -425,6 +425,7 @@
     "coverPaste": "Pegar carátula",
     "coverPasteEmpty": "No hay ninguna imagen en el portapapeles",
     "loudnessFailed": "No se ha podido medir el volumen de esta pista.",
+    "qualityNoCutoff": "No se ha podido leer el corte de frecuencias de esta pista, así que no hay veredicto de calidad.",
     "coverExport": "Exportar carátula",
     "coverRemove": "Quitar carátula",
     "coverPrev": "Imagen anterior",

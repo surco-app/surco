@@ -425,6 +425,7 @@
     "coverPaste": "Cover einfügen",
     "coverPasteEmpty": "Kein Bild in der Zwischenablage",
     "loudnessFailed": "Die Lautstärke dieses Titels konnte nicht gemessen werden.",
+    "qualityNoCutoff": "Die Frequenzgrenze dieses Titels konnte nicht gelesen werden, daher gibt es keine Qualitätsbewertung.",
     "coverExport": "Cover exportieren",
     "coverRemove": "Cover entfernen",
     "coverPrev": "Vorheriges Bild",

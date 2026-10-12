@@ -425,6 +425,7 @@
     "coverPaste": "Coller la pochette",
     "coverPasteEmpty": "Aucune image dans le presse-papiers",
     "loudnessFailed": "Le volume de ce morceau n'a pas pu être mesuré.",
+    "qualityNoCutoff": "La coupure en fréquence de ce morceau n'a pas pu être lue, donc il n'y a pas de verdict de qualité.",
     "coverExport": "Exporter la pochette",
     "coverRemove": "Retirer la pochette",
     "coverPrev": "Image précédente",
