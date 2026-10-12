@@ -92,6 +92,14 @@ beforeEach(() => {
 
 // Folding the section away must stop its (heavy) decode, not just hide the result — the
 // whole point of the collapse is "not now". So a closed section never calls ffmpeg.
+// The report button is in the header from the start, off until a verdict arrives; waiting
+// for it to come on is waiting for the analysis.
+async function enabledReport(): Promise<HTMLElement> {
+  const button = await screen.findByTestId('quality-save-report')
+  await waitFor(() => expect(button).toBeEnabled())
+  return button
+}
+
 describe('QualitySection analysis gating', () => {
   it('does not analyze while the section is collapsed', async () => {
     const spectrogram = vi
@@ -239,6 +247,30 @@ describe('QualitySection analysis gating', () => {
     )
   })
 
+  // The report button used to pop into the header when the analysis landed, shifting the
+  // header under the pointer. It is there from the start, off until there is a verdict.
+  it('keeps the report button in the header while the analysis runs, disabled', () => {
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn(() => new Promise(() => {})),
+      cancelAnalysis: vi.fn(),
+      peekAnalysis: vi.fn(async () => null),
+    }
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    expect(screen.getByTestId('quality-save-report')).toBeDisabled()
+  })
+
   // The editor only mounts this for the selected track — the one the user is waiting on.
   // During an auto-match sweep the background floods the analysis limiter with 'low'
   // decodes, so the selected track's spectrum must ask for 'high' to jump the queue,
@@ -370,7 +402,7 @@ describe('QualitySection verdict caption', () => {
       { image: 'data:image/png;base64,x', cutoffHz: 21000, sampleRateHz: 44100, processed: false },
       '/m/a.flac',
     )
-    const button = await screen.findByTestId('quality-save-report')
+    const button = await enabledReport()
     const spectrogram = screen.getByTestId('spectrogram')
     expect(
       button.compareDocumentPosition(spectrogram) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -409,7 +441,7 @@ describe('QualitySection verdict caption', () => {
       </QueryClientProvider>,
     )
 
-    fireEvent.click(await screen.findByTestId('quality-save-report'))
+    fireEvent.click(await enabledReport())
 
     await waitFor(() => expect(reportError).toHaveBeenCalledWith(i18n.t('errors.qualityReport')))
   })
@@ -692,7 +724,7 @@ describe('QualitySection shareable report', () => {
     )
     ;(window as unknown as { api: { exportQualityReport: unknown } }).api.exportQualityReport =
       exportQualityReport
-    fireEvent.click(await screen.findByTestId('quality-save-report'))
+    fireEvent.click(await enabledReport())
     await waitFor(() => expect(exportQualityReport).toHaveBeenCalled())
     expect(exportQualityReport.mock.calls[0][0]).toBe('data:image/png;base64,report')
     expect(exportQualityReport.mock.calls[0][1]).toContain('a.flac')
@@ -710,7 +742,7 @@ describe('QualitySection shareable report', () => {
     ;(window as unknown as { api: { exportQualityReport: unknown } }).api.exportQualityReport = vi
       .fn()
       .mockResolvedValue('/tmp/r.png')
-    fireEvent.click(await screen.findByTestId('quality-save-report'))
+    fireEvent.click(await enabledReport())
     await waitFor(() => expect(reportInputs).toHaveLength(1))
     return reportInputs[0]
   }
@@ -767,7 +799,7 @@ describe('QualitySection shareable report', () => {
       '/m/a.flac',
     )
     expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
-    expect(screen.queryByTestId('quality-save-report')).not.toBeInTheDocument()
+    expect(screen.getByTestId('quality-save-report')).toBeDisabled()
   })
 })
 

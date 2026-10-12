@@ -330,13 +330,15 @@ export function QualitySection({
           <div className="flex items-center gap-1.5">
             {/* A rare action as a quiet header icon: on its own bordered row it cost
                 a full row of height under an already-tall spectrogram. */}
-            {open && spectrum && verdict && (
+            {/* There from the moment the section opens and off until a verdict exists:
+                popping in when the analysis landed shifted the header under the pointer. */}
+            {open && showSpectrum && (
               <button
                 type="button"
                 data-testid="quality-save-report"
                 aria-label={tr('editor.saveQualityReport')}
                 onClick={() => void saveReport()}
-                disabled={savingReport}
+                disabled={savingReport || !spectrum || !verdict}
                 className="press group relative flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-60"
               >
                 <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
