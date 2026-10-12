@@ -2107,6 +2107,7 @@ describe('App normalize peak preferences', () => {
     fireEvent.click(rows[0])
     fireEvent.click(await screen.findByTestId('normalize-mode-peak'))
     fireEvent.change(screen.getByTestId('normalize-peak'), { target: { value: '-1.5' } })
+    fireEvent.blur(screen.getByTestId('normalize-peak'))
     await waitFor(() =>
       expect(saveSettings).toHaveBeenCalledWith(
         expect.objectContaining({

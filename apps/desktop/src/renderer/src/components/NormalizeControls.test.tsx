@@ -72,7 +72,35 @@ describe('NormalizeControls number input', () => {
     expect(input.value).toBe('')
 
     fireEvent.change(input, { target: { value: '-9' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
     expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -9 })
+  })
+
+  // Typing -10 passes through -1. Committed per keystroke, that -1 reached the plan card
+  // (and, from the editor, the Settings default) for a moment; the value now lands when
+  // the user is done with it, on Enter or on leaving the field.
+  it('commits the typed value on Enter or blur, not on every keystroke', () => {
+    const onChange = vi.fn()
+    render(<NormalizeControls value={loudness} onChange={onChange} />)
+    const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '-1' } })
+    fireEvent.change(input, { target: { value: '-10' } })
+    expect(onChange).not.toHaveBeenCalled()
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -10 })
+  })
+
+  // ffmpeg takes a loudness target between -70 and -5 LUFS. A -4 kept showing -4 while the
+  // conversion quietly used -5; the field now shows the value that will be used.
+  it('brings an out-of-range target back into range where the user can see it', () => {
+    const onChange = vi.fn()
+    render(<NormalizeControls value={loudness} onChange={onChange} />)
+    const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '-4' } })
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -5 })
+    expect(input.value).toBe('-5')
   })
 
   // An abandoned draft (cleared, then focus moved on) must fall back to the committed
@@ -167,6 +195,16 @@ describe('NormalizeControls field help', () => {
     render(<Harness initial={loudness} />)
     fireEvent.click(screen.getByTestId('normalize-preset-custom'))
     expect(screen.getByTestId('normalize-target-lufs')).toHaveFocus()
+  })
+
+  // With Club's numbers still in the fields, Custom used to leave Club lit, so the press
+  // looked like it did nothing. The pick shows until another preset is chosen.
+  it('lights Custom when it is pressed over a preset', () => {
+    render(<Harness initial={loudness} />)
+    fireEvent.click(screen.getByTestId('normalize-preset-club'))
+    fireEvent.click(screen.getByTestId('normalize-preset-custom'))
+    expect(screen.getByTestId('normalize-preset-custom')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('normalize-preset-club')).toHaveAttribute('aria-pressed', 'false')
   })
 })
 

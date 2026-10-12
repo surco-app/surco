@@ -36,24 +36,38 @@ function NumberField({
   value,
   onChange,
   inputRef,
+  min,
+  max,
 }: {
   testid: string
   label: string
   value: number
   onChange: (n: number) => void
   inputRef?: React.RefObject<HTMLInputElement | null>
+  // The range ffmpeg accepts, when it has one: a value outside it is brought back in on
+  // commit, so the field shows the figure the conversion will really use.
+  min?: number
+  max?: number
 }): React.JSX.Element {
   // The field edits a text draft, not the number: every meaningful value here is
   // negative (-14 LUFS, -1 dBTP), so intermediate states ('', '-', '-0.') must
-  // survive typing instead of snapping back to the last committed figure. A finite
-  // parse commits immediately; an abandoned draft falls back on blur.
+  // survive typing instead of snapping back to the last committed figure. The draft
+  // commits on Enter or blur: typing -10 passes through -1, and a per-keystroke commit
+  // sent that -1 to the plan (and to the saved default) on the way.
   const [draft, setDraft] = useState(String(value))
-  // External writes (preset buttons, the per-track reseed) refresh the draft — but
-  // not while the draft already parses to the committed value, or committing '-9.'
-  // mid-typing would erase the trailing separator under the cursor.
   useEffect(() => {
-    setDraft((d) => (Number.parseFloat(d) === value ? d : String(value)))
+    setDraft(String(value))
   }, [value])
+  function commit(): void {
+    const n = Number.parseFloat(draft)
+    if (!Number.isFinite(n)) {
+      setDraft(String(value))
+      return
+    }
+    const clamped = Math.min(max ?? n, Math.max(min ?? n, n))
+    setDraft(String(clamped))
+    if (clamped !== value) onChange(clamped)
+  }
   return (
     <label className="flex flex-col gap-1 text-xs text-fg-muted">
       {label}
@@ -63,12 +77,17 @@ function NumberField({
         data-testid={testid}
         value={draft}
         step={0.1}
-        onChange={(e) => {
-          setDraft(e.target.value)
-          const n = Number.parseFloat(e.target.value)
-          if (Number.isFinite(n)) onChange(n)
+        min={min}
+        max={max}
+        onChange={(e) => setDraft(e.target.value)}
+        // Enter commits here and stops: inside the Settings form it would otherwise also
+        // submit, before the committed value had reached the draft being saved.
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter') return
+          e.preventDefault()
+          commit()
         }}
-        onBlur={() => setDraft(String(value))}
+        onBlur={commit}
         className="w-24 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-accent)]"
       />
     </label>
@@ -104,10 +123,16 @@ export function NormalizeControls({
     if (value.mode !== 'none')
       detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
   }, [value.mode])
-  const loudnessPreset =
-    LOUDNESS_PRESETS.find((p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb)?.id ??
-    'custom'
-  const peakPreset = PEAK_PRESETS.find((p) => p.peak === value.peakDb)?.id ?? 'custom'
+  // Custom pressed over a preset's numbers stays lit until another preset is picked;
+  // read off the numbers alone, the preset kept the highlight and the press looked dead.
+  const [customPicked, setCustomPicked] = useState(false)
+  const loudnessPreset = customPicked
+    ? 'custom'
+    : (LOUDNESS_PRESETS.find((p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb)?.id ??
+      'custom')
+  const peakPreset = customPicked
+    ? 'custom'
+    : (PEAK_PRESETS.find((p) => p.peak === value.peakDb)?.id ?? 'custom')
   // Custom carries no numbers of its own, so choosing it hands the caret to the field.
   const toField = (ref: React.RefObject<HTMLInputElement | null>): void => {
     ref.current?.focus()
@@ -137,6 +162,7 @@ export function NormalizeControls({
             value={loudnessPreset}
             onChange={(id) => {
               const preset = LOUDNESS_PRESETS.find((p) => p.id === id)
+              setCustomPicked(!preset)
               if (preset) onChange({ ...value, targetLufs: preset.lufs, truePeakDb: preset.tp })
               else toField(lufsRef)
             }}
@@ -155,6 +181,8 @@ export function NormalizeControls({
             <NumberField
               testid="normalize-target-lufs"
               label={tr('normalize.targetLufs')}
+              min={-70}
+              max={-5}
               value={value.targetLufs}
               onChange={(n) => onChange({ ...value, targetLufs: n })}
               inputRef={lufsRef}
@@ -163,6 +191,8 @@ export function NormalizeControls({
               <NumberField
                 testid="normalize-true-peak"
                 label={tr('normalize.truePeak')}
+                min={-9}
+                max={0}
                 value={value.truePeakDb}
                 onChange={(n) => onChange({ ...value, truePeakDb: n })}
               />
@@ -188,6 +218,7 @@ export function NormalizeControls({
             value={peakPreset}
             onChange={(id) => {
               const preset = PEAK_PRESETS.find((p) => p.id === id)
+              setCustomPicked(!preset)
               if (preset) onChange({ ...value, peakDb: preset.peak })
               else toField(peakRef)
             }}
