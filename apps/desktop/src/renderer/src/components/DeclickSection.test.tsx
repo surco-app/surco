@@ -86,8 +86,12 @@ function stubWidth(el: HTMLElement, width = 1000): void {
 
 // jsdom's synthetic pointer events drop clientX unless the event is built as a mouse
 // event, and a scrub with no clientX is a scrub to NaN.
-function pointerAt(el: HTMLElement, type: 'pointerDown' | 'pointerMove', clientX: number): void {
-  const e = new MouseEvent(type === 'pointerDown' ? 'pointerdown' : 'pointermove', {
+function pointerAt(
+  el: HTMLElement,
+  type: 'pointerDown' | 'pointerMove' | 'pointerUp',
+  clientX: number,
+): void {
+  const e = new MouseEvent(type.toLowerCase(), {
     clientX,
     bubbles: true,
   })
@@ -658,5 +662,132 @@ describe('DeclickSection', () => {
       fireEvent.click(await screen.findByTestId('declick-render'))
     })
     expect(screen.getByTestId('declick-failed')).toBeInTheDocument()
+  })
+})
+
+// A track zoomed to ×2: the scroller shows half of a strip twice its width, so the view
+// is exactly the first or second half depending on where it has been scrolled.
+async function zoomedIn(): Promise<{ scroller: HTMLElement; overlay: HTMLElement }> {
+  await withPreview()
+  fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+  const scroller = screen.getByTestId('waveform-scroller')
+  Object.defineProperty(scroller, 'clientWidth', { value: 1000, configurable: true })
+  Object.defineProperty(scroller, 'scrollWidth', { value: 2000, configurable: true })
+  fireEvent.scroll(scroller)
+  await act(tick)
+  const overlay = screen.getByTestId('declick-marks')
+  stubWidth(overlay, 2000)
+  overlay.setPointerCapture = vi.fn()
+  overlay.hasPointerCapture = () => true
+  return { scroller, overlay }
+}
+
+// The report: zoomed in, the wave had no scrollbar and every drag moved the playhead, so
+// with a mouse there was no way to reach the rest of the track at all.
+describe('DeclickSection zoomed navigation', () => {
+  it('pans the zoomed wave when it is dragged, leaving the playhead where it was', async () => {
+    const { scroller, overlay } = await zoomedIn()
+    scroller.scrollLeft = 500
+    pointerAt(overlay, 'pointerDown', 400)
+    pointerAt(overlay, 'pointerMove', 300)
+    expect(scroller.scrollLeft).toBe(600)
+    pointerAt(overlay, 'pointerUp', 300)
+    expect(seekSpy).not.toHaveBeenCalled()
+  })
+
+  // Grabbing the wave must not cost the other gesture: aiming the cursor at a passage
+  // is still a plain click, zoom or not.
+  it('still places the playhead on a click that does not drag', async () => {
+    const { overlay } = await zoomedIn()
+    pointerAt(overlay, 'pointerDown', 250)
+    pointerAt(overlay, 'pointerMove', 252)
+    pointerAt(overlay, 'pointerUp', 252)
+    expect(elements[1].currentTime).toBe(30)
+  })
+
+  it('shows the whole-track overview only while zoomed', async () => {
+    await withPreview()
+    expect(screen.queryByTestId('declick-overview')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    expect(screen.getByTestId('declick-overview')).toBeInTheDocument()
+  })
+
+  it('centres the view on the spot clicked in the overview', async () => {
+    const { scroller } = await zoomedIn()
+    const overview = screen.getByTestId('declick-overview')
+    stubWidth(overview)
+    overview.setPointerCapture = vi.fn()
+    pointerAt(overview, 'pointerDown', 600)
+    expect(scroller.scrollLeft).toBeCloseTo(700)
+  })
+
+  it('drags the view along with the overview window', async () => {
+    const { scroller } = await zoomedIn()
+    const overview = screen.getByTestId('declick-overview')
+    stubWidth(overview)
+    overview.setPointerCapture = vi.fn()
+    overview.hasPointerCapture = () => true
+    pointerAt(screen.getByTestId('declick-overview-window'), 'pointerDown', 100)
+    pointerAt(overview, 'pointerMove', 300)
+    expect(scroller.scrollLeft).toBeCloseTo(400)
+  })
+
+  it('never scrolls the view past the end of the track', async () => {
+    const { scroller } = await zoomedIn()
+    const overview = screen.getByTestId('declick-overview')
+    stubWidth(overview)
+    overview.setPointerCapture = vi.fn()
+    pointerAt(overview, 'pointerDown', 990)
+    expect(scroller.scrollLeft).toBe(1000)
+  })
+
+  // Walking to a click the view does not show would move a cursor nobody can see.
+  it('brings a click it walks to into view', async () => {
+    ;(window.api.clicks as ReturnType<typeof vi.fn>).mockResolvedValue({
+      count: 2,
+      marks: [10, 200],
+      scannedSec: 240,
+    })
+    const { scroller } = await zoomedIn()
+    fireEvent.click(screen.getByTestId('declick-skip'))
+    expect(scroller.scrollLeft).toBe(0)
+    fireEvent.click(screen.getByTestId('declick-skip'))
+    expect(scroller.scrollLeft).toBe(1000)
+  })
+
+  // A walk is an explicit ask to see that click, so it overrides a view the user had
+  // dragged away from the playhead — unlike playback, which leaves that view alone.
+  it('brings the click into view even after the user panned away from the playhead', async () => {
+    const { scroller, overlay } = await zoomedIn()
+    pointerAt(overlay, 'pointerDown', 900)
+    pointerAt(overlay, 'pointerMove', 100)
+    pointerAt(overlay, 'pointerUp', 100)
+    fireEvent.click(screen.getByTestId('declick-skip'))
+    expect(scroller.scrollLeft).toBe(0)
+  })
+
+  it('follows the playhead when playback runs off the edge of the view', async () => {
+    const { scroller } = await zoomedIn()
+    act(() => {
+      elements[1].currentTime = 130
+      elements[1].ontimeupdate?.()
+    })
+    expect(scroller.scrollLeft).toBeGreaterThan(800)
+    expect(scroller.scrollLeft).toBeLessThan(1083)
+  })
+
+  // Following must never fight the hand: someone who dragged away to look at another
+  // passage while it plays is not asking to be yanked back on every timeupdate.
+  it('leaves a view the user panned away from the playhead alone', async () => {
+    const { scroller, overlay } = await zoomedIn()
+    pointerAt(overlay, 'pointerDown', 900)
+    pointerAt(overlay, 'pointerMove', 100)
+    pointerAt(overlay, 'pointerUp', 100)
+    expect(scroller.scrollLeft).toBe(800)
+    act(() => {
+      elements[1].currentTime = 5
+      elements[1].ontimeupdate?.()
+    })
+    expect(scroller.scrollLeft).toBe(800)
   })
 })

@@ -18,10 +18,17 @@ import { SectionPill } from './SectionPill'
 import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 import { Strip, useWaveColors, ZOOM_MAX, zoomLabel } from './WaveformCompare'
+import { WaveOverview } from './WaveOverview'
 import { ZoomStepper } from './ZoomStepper'
 
 const PLAYHEAD_FINE_STEP_SEC = 0.01
 const PLAYHEAD_COARSE_STEP_SEC = 0.25
+// How far a press on the zoomed wave may wander and still count as a click that places
+// the cursor; past it the press is a hand dragging the view.
+const PAN_SLOP_PX = 4
+// Where a playhead brought back into view lands, as a fraction of the view from its left
+// edge: enough wave ahead of it to see what is coming.
+const FOLLOW_LEAD = 0.15
 
 interface Props {
   value: DeclickMode
@@ -82,6 +89,8 @@ export function DeclickSection({
       : undefined
   const [zoom, setZoom] = useState(1)
   const [view, setView] = useState({ from: 0, to: 1 })
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const panRef = useRef<{ x: number; left: number; moved: boolean } | null>(null)
 
   const [preview, setPreview] = useState<string | null>(null)
   const [rendering, setRendering] = useState(false)
@@ -130,8 +139,10 @@ export function DeclickSection({
     () => clickMarks(clicks?.marks ?? [], durationSec, view),
     [clicks, durationSec, view],
   )
+  const revealRef = useRef(false)
   const jump = useCallback(
     (sec: number) => {
+      revealRef.current = true
       ab.seek(sec)
       if (!ab.playing) ab.play()
     },
@@ -179,6 +190,31 @@ export function DeclickSection({
     },
     [ab, durationSec],
   )
+
+  const panTo = useCallback((from: number): void => {
+    const el = scrollerRef.current
+    if (!el) return
+    el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, Math.max(0, from * el.scrollWidth))
+  }, [])
+
+  // Zoomed in, the view keeps the playhead on screen: playback walking off the edge and
+  // a jump to a click out of sight both bring it back. A playhead that was ALREADY out of
+  // view is left there — the user dragged away to look at something else, and yanking
+  // them back on every timeupdate would make the hand useless while it plays.
+  const prevAtRef = useRef(ab.at)
+  useEffect(() => {
+    const prev = prevAtRef.current
+    prevAtRef.current = ab.at
+    const forced = revealRef.current
+    revealRef.current = false
+    const el = scrollerRef.current
+    if (zoom <= 1 || !el || el.scrollWidth === 0 || durationSec <= 0) return
+    const from = el.scrollLeft / el.scrollWidth
+    const to = (el.scrollLeft + el.clientWidth) / el.scrollWidth
+    const inView = (sec: number): boolean => sec / durationSec >= from && sec / durationSec <= to
+    if (inView(ab.at) || (!forced && !inView(prev))) return
+    panTo(ab.at / durationSec - (to - from) * FOLLOW_LEAD)
+  }, [ab.at, zoom, durationSec, panTo])
 
   const count = clicks?.count
   // The detector reads the first eight minutes (CLICK_SCAN_SECONDS). Past that nothing was
@@ -261,6 +297,7 @@ export function DeclickSection({
                 onZoomChange={setZoom}
                 onViewChange={setView}
                 trimShade={trimShade}
+                scrollerRef={scrollerRef}
               >
                 {/* Scrubbable, like the player's own strip: without it the only reachable
                     points in the track are the click marks, so "how did this passage come
@@ -268,9 +305,14 @@ export function DeclickSection({
                     NOT start playback: aiming and auditioning are different gestures, and
                     audio bursting out of a click meant to position would teach the user to
                     stop touching the wave. */}
+                {/* Zoomed in, the wave is also the hand that moves the view: a press that
+                    drags pans it, one that stays put still places the cursor. Unzoomed
+                    there is nothing to pan, so a drag scrubs as it always has. */}
                 <div
                   data-testid="declick-marks"
-                  className="absolute inset-0 cursor-pointer"
+                  className={`absolute inset-0 ${
+                    zoom > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                  }`}
                   role="slider"
                   tabIndex={0}
                   aria-label={tr('declick.playheadLabel')}
@@ -280,11 +322,33 @@ export function DeclickSection({
                   aria-valuetext={`${formatFixed(ab.at, 2, i18n.language)} s`}
                   onPointerDown={(e) => {
                     e.currentTarget.setPointerCapture?.(e.pointerId)
+                    const el = scrollerRef.current
+                    if (zoom > 1 && el) {
+                      panRef.current = { x: e.clientX, left: el.scrollLeft, moved: false }
+                      return
+                    }
                     scrubFrom(e.clientX, e.currentTarget)
                   }}
                   onPointerMove={(e) => {
-                    if (e.currentTarget.hasPointerCapture?.(e.pointerId))
-                      scrubFrom(e.clientX, e.currentTarget)
+                    if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) return
+                    const pan = panRef.current
+                    const el = scrollerRef.current
+                    if (!pan || !el) return scrubFrom(e.clientX, e.currentTarget)
+                    const dx = e.clientX - pan.x
+                    if (!pan.moved && Math.abs(dx) < PAN_SLOP_PX) return
+                    pan.moved = true
+                    el.scrollLeft = Math.min(
+                      el.scrollWidth - el.clientWidth,
+                      Math.max(0, pan.left - dx),
+                    )
+                  }}
+                  onPointerUp={(e) => {
+                    const pan = panRef.current
+                    panRef.current = null
+                    if (pan && !pan.moved) scrubFrom(pan.x, e.currentTarget)
+                  }}
+                  onPointerCancel={() => {
+                    panRef.current = null
                   }}
                   onKeyDown={(e) => {
                     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
@@ -336,6 +400,16 @@ export function DeclickSection({
                   />
                 )}
               </Strip>
+              {zoom > 1 && wave && (
+                <WaveOverview
+                  wave={wave}
+                  color={waveColor}
+                  view={view}
+                  marks={clicks?.marks ?? []}
+                  atSec={ab.at}
+                  onPan={panTo}
+                />
+              )}
               {unscanned && (
                 <p data-testid="declick-unscanned" className="mt-1 text-xs text-fg-dim">
                   {tr('declick.unscanned', { minutes: Math.floor(clicks.scannedSec / 60) })}

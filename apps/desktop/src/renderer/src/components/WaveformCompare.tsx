@@ -146,6 +146,7 @@ export function Strip({
   onViewChange,
   tall = false,
   trimShade,
+  scrollerRef,
   children,
 }: StripData & {
   color: string
@@ -183,6 +184,9 @@ export function Strip({
   // its grid every time the trim moves, while the user still sees which audio
   // the export drops. Same shade the trim section's own lanes use.
   trimShade?: { startFrac?: number; endFrac?: number }
+  // The horizontal scroller itself, for a section that moves the view on its own
+  // (a hand drag, an overview, following the playhead) rather than through the strip.
+  scrollerRef?: React.RefObject<HTMLDivElement | null>
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
@@ -483,6 +487,7 @@ export function Strip({
     <div
       ref={(el) => {
         scrollRef.current = el
+        if (scrollerRef) scrollerRef.current = el
       }}
       data-testid="waveform-scroller"
       // w-full + min-w-0 + contain pin the scroller to its column's width and isolate its
