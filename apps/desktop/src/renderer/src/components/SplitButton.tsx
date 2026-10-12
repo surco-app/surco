@@ -55,6 +55,10 @@ export function useSplitMenu() {
   }, [open])
 
   function onMenuKeyDown(e: React.KeyboardEvent): void {
+    if (e.key === 'Tab') {
+      setOpen(false)
+      return
+    }
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()

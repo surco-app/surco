@@ -119,6 +119,10 @@ export function FilterBar({
   // The open menu owns its keys: each handled press stops propagating so the window-level
   // shortcut handler can't also move the track selection behind the popover.
   function onListKeyDown(e: React.KeyboardEvent): void {
+    if (e.key === 'Tab') {
+      setOpen(false)
+      return
+    }
     if (e.key === 'Escape') {
       e.stopPropagation()
       close()

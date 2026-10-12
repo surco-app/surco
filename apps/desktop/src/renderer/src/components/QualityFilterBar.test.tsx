@@ -69,6 +69,15 @@ describe('QualityFilterBar menu', () => {
     for (const [, opts] of optionCalls) expect(opts).toEqual({ preventScroll: true })
     focus.mockRestore()
   })
+
+  // Tab leaves the menu like a native one. Left open, its full-window backdrop swallowed
+  // the next click wherever the user aimed it.
+  it('closes when Tab leaves it', () => {
+    renderBar({ tally: tally({ suspect: 3, good: 5 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.keyDown(screen.getByTestId('quality-filter-listbox'), { key: 'Tab' })
+    expect(screen.queryByTestId('quality-filter-listbox')).toBeNull()
+  })
 })
 
 describe('QualityFilterBar', () => {

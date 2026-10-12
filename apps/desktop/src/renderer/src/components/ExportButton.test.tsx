@@ -183,6 +183,15 @@ describe('ExportButton', () => {
     expect(toggle).toHaveFocus()
   })
 
+  // Tab leaves a native menu and closes it. Left open, it floated over the editor while the
+  // focus was already on the next control, and the next click landed on the stale menu.
+  it('closes the format menu when Tab leaves it', () => {
+    render(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.keyDown(screen.getByTestId('process-format-flac'), { key: 'Tab' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
   // Picking an item closes the menu; without handing focus back, it fell to <body>.
   it('returns focus to the chevron after a pick', () => {
     render(<ExportButton {...baseProps} incomplete={false} />)
