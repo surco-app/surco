@@ -735,7 +735,7 @@
     "cueWarning": "ALAC não guarda os cues nem o beatgrid do Traktor: eles se perdem ao converter.",
     "title": "Reparo de vinil",
     "clicksLabel": "Clicks",
-    "hint": "Detecta os clicks e estalos da agulha e os interpola durante a conversão.",
+    "hint": "Remove os clicks e pops da agulha e o ruído de fundo do disco ao converter.",
     "mode": {
       "off": "Não",
       "soft": "Suave",

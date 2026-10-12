@@ -292,7 +292,23 @@ export function DeclickSection({
               {tr('declick.appliesToSelection', { count: selectedCount })}
             </p>
           )}
-          <DeclickControls value={value.mode} onChange={(mode) => onChange({ ...value, mode })} />
+          {/* Side by side when the panel has the room, one under the other when it does
+              not: the two ladders are siblings, and stacking them pushed the wave and the
+              result button a whole row further down for nothing. */}
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+            <div className="min-w-0">
+              <DeclickControls
+                value={value.mode}
+                onChange={(mode) => onChange({ ...value, mode })}
+              />
+            </div>
+            <div className="min-w-0">
+              <NoiseControls
+                value={value.noise}
+                onChange={(noise) => onChange({ ...value, noise })}
+              />
+            </div>
+          </div>
           {!isMulti && (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -450,12 +466,6 @@ export function DeclickSection({
               )}
             </div>
           )}
-          <div className="mt-4">
-            <NoiseControls
-              value={value.noise}
-              onChange={(noise) => onChange({ ...value, noise })}
-            />
-          </div>
           {repairs && !isMulti && (
             <div className="mt-3">
               {!preview && !rendering && (

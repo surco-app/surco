@@ -21,16 +21,20 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
     <>
       <SettingsSection first>
         <SettingsLabel className="mb-3">{tr('declick.title')}</SettingsLabel>
-        <DeclickControls
-          value={synced.declick.mode}
-          onChange={(mode) => patch('declick', { ...synced.declick, mode })}
-        />
-        <SettingsHint className="mt-2">{tr('declick.hint')}</SettingsHint>
-        <div className="mt-4">
-          <NoiseControls
-            value={synced.declick.noise}
-            onChange={(noise) => patch('declick', { ...synced.declick, noise })}
-          />
+        <SettingsHint className="mb-4">{tr('declick.hint')}</SettingsHint>
+        <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+          <div className="min-w-0">
+            <DeclickControls
+              value={synced.declick.mode}
+              onChange={(mode) => patch('declick', { ...synced.declick, mode })}
+            />
+          </div>
+          <div className="min-w-0">
+            <NoiseControls
+              value={synced.declick.noise}
+              onChange={(noise) => patch('declick', { ...synced.declick, noise })}
+            />
+          </div>
         </div>
       </SettingsSection>
 

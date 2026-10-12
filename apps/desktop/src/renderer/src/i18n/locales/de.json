@@ -735,7 +735,7 @@
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
     "title": "Vinyl-Reparatur",
     "clicksLabel": "Knackser",
-    "hint": "Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
+    "hint": "Entfernt Knackser und Pops der Nadel sowie das Hintergrundrauschen der Platte beim Konvertieren.",
     "mode": {
       "off": "Aus",
       "soft": "Sanft",

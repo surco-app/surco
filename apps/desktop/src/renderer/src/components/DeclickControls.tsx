@@ -30,7 +30,7 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
         labelFor={(id) => tr(`declick.mode.${id}`)}
       />
       {value !== 'off' && (
-        <p data-testid="declick-mode-hint" className="mt-2 text-xs text-fg-dim">
+        <p data-testid="declick-mode-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
           {tr(`declick.modeHint.${value}`)}
         </p>
       )}
@@ -62,7 +62,7 @@ export function NoiseControls({
         label={tr('declick.noiseLabel')}
         labelFor={(id) => tr(`declick.noiseMode.${id}`)}
       />
-      <p data-testid="declick-noise-hint" className="mt-2 text-xs text-fg-dim">
+      <p data-testid="declick-noise-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
         {tr(`declick.noiseHint.${value}`)}
       </p>
     </div>

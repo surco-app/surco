@@ -735,7 +735,7 @@
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",
     "title": "Vinyl repair",
     "clicksLabel": "Clicks",
-    "hint": "Detects stylus clicks and pops and interpolates them away during conversion.",
+    "hint": "Removes stylus clicks and pops and the record's background noise when converting.",
     "mode": {
       "off": "Off",
       "soft": "Gentle",
