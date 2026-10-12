@@ -89,6 +89,24 @@ describe('AlbumMatchRows', () => {
     expect(screen.getByTestId('match-select-long')).toHaveTextContent('Extended Mix')
   })
 
+  // Shift-clicking one more track into the selection re-ran the matching for every file
+  // and threw away the rows the user had just corrected by hand.
+  it('keeps the rows corrected by hand when the selection grows', async () => {
+    const short = track('short', 'radio edit', 181)
+    const long = track('long', 'extended mix', 359)
+    const { rerender } = render(
+      <AlbumMatchRows files={[short]} release={release} onApply={vi.fn()} />,
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-short')).toHaveTextContent('Radio Edit'),
+    )
+    pickTrack('short', '1')
+    expect(screen.getByTestId('match-select-short')).toHaveTextContent('Extended Mix')
+    rerender(<AlbumMatchRows files={[short, long]} release={release} onApply={vi.fn()} />)
+    await screen.findByTestId('match-select-long')
+    expect(screen.getByTestId('match-select-short')).toHaveTextContent('Extended Mix')
+  })
+
   // The confidence tick is the only signal a row was auto-suggested; as a bare icon it
   // was invisible to a screen reader, so it carries an explicit name.
   it('announces the suggested-match badge to screen readers', async () => {

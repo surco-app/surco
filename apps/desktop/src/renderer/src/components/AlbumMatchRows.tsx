@@ -59,6 +59,13 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
   // keyed on the file ids, not the array identity, so a manual reassignment below (or an
   // unrelated re-render) never silently rebuilds the matches and discards the fixes.
   const fileIds = files.map((f) => f.id).join(',')
+  // A row the user corrected by hand stays corrected when the selection grows or shrinks:
+  // only a different release starts the matching over.
+  const byHand = useRef<{ release: typeof release; rows: Map<string, Assignment> }>({
+    release,
+    rows: new Map(),
+  })
+  if (byHand.current.release !== release) byHand.current = { release, rows: new Map() }
   // biome-ignore lint/correctness/useExhaustiveDependencies: filesRef is read fresh; depending on `files` would rebuild every render and wipe manual reassignments. fileIds and release are the real triggers.
   useEffect(() => {
     setAssignments(
@@ -71,7 +78,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
         // Pass the album name so a file whose title belongs to neither it nor the
         // near-length cut is left unassigned instead of force-matched by duration alone.
         release.title,
-      ),
+      ).map((a) => byHand.current.rows.get(a.id) ?? a),
     )
   }, [release, fileIds])
 
@@ -134,9 +141,16 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                   value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
                   onChange={(v) => {
                     setJustApplied(false)
-                    setAssignments((prev) =>
-                      reassign(prev, a.id, v === '' ? undefined : release.tracklist[Number(v)]),
-                    )
+                    setAssignments((prev) => {
+                      const next = reassign(
+                        prev,
+                        a.id,
+                        v === '' ? undefined : release.tracklist[Number(v)],
+                      )
+                      const row = next.find((x) => x.id === a.id)
+                      if (row) byHand.current.rows.set(a.id, row)
+                      return next
+                    })
                   }}
                   options={[
                     { value: '', label: tr('match.unassigned') },
