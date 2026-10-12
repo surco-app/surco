@@ -553,6 +553,7 @@
     "spectrumHighsCap": "highs ≥ {{cutoff}}",
     "outputName": "File name",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
+    "outputNameFolder": "Saved inside the folder “{{folder}}”, because a slash separates folders.",
     "overwriteTitle": "Overwrites the original",
     "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Output.",
     "overwriteAlacHint": "ALAC doesn't replace the original: a new file is written to the output folder and the original is kept.",

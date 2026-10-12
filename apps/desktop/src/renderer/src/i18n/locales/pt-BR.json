@@ -553,6 +553,7 @@
     "spectrumHighsCap": "agudos ≥ {{cutoff}}",
     "outputName": "Nome do arquivo",
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
+    "outputNameFolder": "Será salvo dentro da pasta “{{folder}}”, porque a barra separa pastas.",
     "overwriteTitle": "Sobrescreve o original",
     "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Saída.",
     "overwriteAlacHint": "ALAC não substitui o original: um arquivo novo é criado na pasta de saída e o original é mantido.",

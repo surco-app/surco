@@ -553,6 +553,7 @@
     "spectrumHighsCap": "aigus ≥ {{cutoff}}",
     "outputName": "Nom du fichier",
     "outputNameHintInPlace": "Même format que la source : le fichier original est mis à jour sur place et renommé — aucune copie n'est écrite dans le dossier de sortie.",
+    "outputNameFolder": "Sera enregistré dans le dossier « {{folder}} », car la barre oblique sépare les dossiers.",
     "overwriteTitle": "Écrase l'original",
     "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Sortie.",
     "overwriteAlacHint": "ALAC ne remplace pas l'original : un nouveau fichier est écrit dans le dossier de sortie et l'original est conservé.",

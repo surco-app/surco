@@ -37,10 +37,10 @@ const item: TrackItem = {
   meta,
 }
 
-function renderSection(autoApply: boolean): void {
+function renderSection(autoApply: boolean, outputName?: string): void {
   render(
     <OutputNameSection
-      item={item}
+      item={{ ...item, outputName }}
       format="aiff"
       defaultOutputName="a"
       autoApply={autoApply}
@@ -115,5 +115,25 @@ describe('OutputNameSection', () => {
     )
     expect(screen.queryByTestId('regenerate-output-name')).not.toBeInTheDocument()
     expect(screen.queryByTestId('customize-output-name')).not.toBeInTheDocument()
+  })
+})
+
+describe('OutputNameSection folder note', () => {
+  // A slash in the name is a folder separator on disk: "AC/DC - Thunderstruck" typed by
+  // hand saved the file inside a new "AC" folder, with nothing in the editor saying so.
+  // It stays a folder (a naming pattern uses it on purpose), and the note names it.
+  it('names the folder a slash in the name creates', () => {
+    renderSection(false, 'AC/DC - Thunderstruck')
+    expect(screen.getByTestId('output-name-folder')).toHaveTextContent('“AC”')
+  })
+
+  it('names every folder level', () => {
+    renderSection(false, 'Album/Disc 1/Track')
+    expect(screen.getByTestId('output-name-folder')).toHaveTextContent('“Album/Disc 1”')
+  })
+
+  it('says nothing for a plain name', () => {
+    renderSection(false, 'AC-DC - Thunderstruck')
+    expect(screen.queryByTestId('output-name-folder')).not.toBeInTheDocument()
   })
 })

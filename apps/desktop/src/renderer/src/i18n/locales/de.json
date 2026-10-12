@@ -553,6 +553,7 @@
     "spectrumHighsCap": "Höhen ≥ {{cutoff}}",
     "outputName": "Dateiname",
     "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
+    "outputNameFolder": "Wird im Ordner „{{folder}}“ gespeichert, weil der Schrägstrich Ordner trennt.",
     "overwriteTitle": "Überschreibt das Original",
     "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteAlacHint": "ALAC ersetzt das Original nicht: Eine neue Datei wird in den Ausgabeordner geschrieben und das Original bleibt erhalten.",

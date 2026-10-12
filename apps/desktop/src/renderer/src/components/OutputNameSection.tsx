@@ -42,6 +42,13 @@ export function OutputNameSection({
   onOpenRename,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const name = item.outputName ?? defaultOutputName
+  const folder = name
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .slice(0, -1)
+    .join('/')
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
@@ -95,6 +102,11 @@ export function OutputNameSection({
             .{formatExtension(format)}
           </span>
         </label>
+        {folder && (
+          <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-folder">
+            {tr('editor.outputNameFolder', { folder })}
+          </p>
+        )}
         {willEditInPlace && (
           <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
             {tr('editor.outputNameHintInPlace')}
