@@ -299,7 +299,7 @@ export function Select({
 
 // A plain focus scrolls every ancestor to show the option, and an ancestor's scroll closes
 // the menu; only the list itself is scrolled, which leaves it open.
-function showOption(list: HTMLElement | null, item: HTMLElement): void {
+export function showOption(list: HTMLElement | null, item: HTMLElement): void {
   item.focus({ preventScroll: true })
   if (!list) return
   const top = item.offsetTop

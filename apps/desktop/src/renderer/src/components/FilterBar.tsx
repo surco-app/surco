@@ -1,7 +1,8 @@
 import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
 const ROW_CLASS =
@@ -97,9 +98,17 @@ export function FilterBar({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  // The menu hangs from the sticky header over the scrolling list, so focus never scrolls
+  // anything but the menu itself, and the menu stops at the window's bottom edge and
+  // scrolls inside instead of running past it with its last rows out of reach.
+  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined)
+  useLayoutEffect(() => {
     if (!open) return
-    listRef.current?.querySelector<HTMLElement>(`[data-testid="${focusTestId}"]`)?.focus()
+    const list = listRef.current
+    if (!list) return
+    setMaxHeight(window.innerHeight - list.getBoundingClientRect().top - 8)
+    const item = list.querySelector<HTMLElement>(`[data-testid="${focusTestId}"]`)
+    if (item) showOption(list, item)
   }, [open, focusTestId])
 
   function close(): void {
@@ -132,7 +141,7 @@ export function FilterBar({
     if (next === -1) return
     e.preventDefault()
     e.stopPropagation()
-    items[next].focus()
+    showOption(listRef.current, items[next])
   }
 
   return (
@@ -178,7 +187,8 @@ export function FilterBar({
               data-testid={`${testid}-listbox`}
               aria-label={listLabel}
               onKeyDown={onListKeyDown}
-              className="animate-pop-flat origin-top-left absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+              style={{ maxHeight }}
+              className="animate-pop-flat origin-top-left absolute left-0 z-50 mt-1 min-w-full overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
             >
               {options(close)}
             </div>

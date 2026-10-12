@@ -52,6 +52,25 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
   return { onChange }
 }
 
+describe('QualityFilterBar menu', () => {
+  // The menu hangs from the sticky header over a 500-row list. Focusing an option without
+  // preventScroll let the browser scroll that list to reveal it, so walking the menu with
+  // the arrows lost the user's place in the crate behind it.
+  it('focuses options without scrolling anything outside the menu', () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    renderBar({ tally: tally({ suspect: 3, good: 5, unanalyzed: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.keyDown(screen.getByTestId('quality-filter-listbox'), { key: 'ArrowDown' })
+    fireEvent.keyDown(screen.getByTestId('quality-filter-listbox'), { key: 'End' })
+    const optionCalls = focus.mock.contexts
+      .map((el, i) => [el, focus.mock.calls[i][0]] as const)
+      .filter(([el]) => (el as HTMLElement).getAttribute('role') === 'option')
+    expect(optionCalls.length).toBeGreaterThanOrEqual(3)
+    for (const [, opts] of optionCalls) expect(opts).toEqual({ preventScroll: true })
+    focus.mockRestore()
+  })
+})
+
 describe('QualityFilterBar', () => {
   // A sweep over a mixed crate fills rows from two catalogs; the per-provider buckets
   // let each source be reviewed on its own (a Bandcamp match carries no Discogs id or
