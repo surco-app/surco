@@ -75,6 +75,9 @@ interface Props {
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
   onOpenBackup?: (track: TrackItem) => void
+  // Rows kept on screen after the active filter stopped matching them (filterWithSticky),
+  // drawn dimmed so they read as handled until the next filter refresh drops them.
+  outsideFilter?: ReadonlySet<string>
 }
 
 export type MenuState = { track: TrackItem; x: number; y: number }
@@ -288,6 +291,7 @@ interface RowProps {
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
   backupAt?: number
   onOpenBackup?: (track: TrackItem) => void
+  outsideFilter: boolean
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -316,6 +320,7 @@ const TrackRow = memo(function TrackRow({
   rowRegistry,
   backupAt,
   onOpenBackup,
+  outsideFilter,
 }: RowProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const quality = trackQuality(t)
@@ -478,6 +483,7 @@ const TrackRow = memo(function TrackRow({
             else rowRegistry.current.delete(t.id)
           }}
           data-testid="track-row"
+          data-outside-filter={outsideFilter || undefined}
           style={
             swipe > 0
               ? {
@@ -558,7 +564,7 @@ const TrackRow = memo(function TrackRow({
           // just left trails behind a held key. Only the swipe position eases, and only the
           // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
           // the fingers with no easing (inline transition: none).
-          className={listRowClass(primary, selected)}
+          className={`${listRowClass(primary, selected)}${outsideFilter && !selected ? ' opacity-50' : ''}`}
         >
           {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
               ones want attention before you read a single glyph. Hidden on the primary row,
@@ -840,6 +846,7 @@ export const TrackList = memo(function TrackList({
   rowRegistry,
   backupAtByPath,
   onOpenBackup,
+  outsideFilter,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
@@ -993,6 +1000,7 @@ export const TrackList = memo(function TrackList({
             rowRegistry={rowRegistry}
             backupAt={backupAtByPath?.get(t.inputPath)}
             onOpenBackup={onOpenBackup}
+            outsideFilter={outsideFilter?.has(t.id) ?? false}
           />
         ))}
       </div>

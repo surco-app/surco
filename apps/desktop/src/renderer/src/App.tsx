@@ -129,6 +129,7 @@ import {
   EMPTY_FILTER,
   filterWithSticky,
   formatBuckets,
+  outsideFilter,
   qualityCounts,
   searchMatcher,
   sortTracks,
@@ -1199,6 +1200,10 @@ export default function App(): React.JSX.Element {
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
   visibleTracksRef.current = visibleTracks
+  const outsideFilterIds = useMemo(
+    () => outsideFilter(visibleTracks, filterSelection),
+    [visibleTracks, filterSelection],
+  )
   // Find & Replace overwrites text tags across many rows, so it obeys the same rule as the
   // other bulk actions: a deliberate multi-selection when there is one, else the visible
   // (filtered) rows — never the tracks the active filter is hiding. Reactive because the
@@ -2148,6 +2153,7 @@ export default function App(): React.JSX.Element {
                             onPrefetch={handlePrefetch}
                             renderMenu={renderTrackMenu}
                             scrollRootRef={listScrollRef}
+                            outsideFilter={outsideFilterIds}
                             onVisible={onTrackVisible}
                             rowRegistry={rowEls}
                             backupAtByPath={backupAtByPath}

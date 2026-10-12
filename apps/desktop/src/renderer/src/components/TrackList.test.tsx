@@ -1441,3 +1441,30 @@ describe('TrackList row positions', () => {
     expect(rowRenders).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('TrackList rows the filter no longer matches', () => {
+  // A row whose verdict flipped stays in place so nothing slides under the pointer, but it
+  // must read as done: dimmed rows are the ones the next filter refresh will drop.
+  it('marks the rows outside the active filter and leaves the rest alone', () => {
+    render(
+      <TrackList
+        tracks={[track({ id: 'a' }), track({ id: 'b' })]}
+        selectedId={null}
+        selectedIds={new Set()}
+        outputFormat="aiff"
+        bindings={bindings}
+        onSelect={vi.fn()}
+        onActivate={vi.fn()}
+        onRemove={vi.fn()}
+        onSwipeRemove={vi.fn()}
+        onAcceptReview={vi.fn()}
+        onPrefetch={vi.fn()}
+        renderMenu={() => null}
+        outsideFilter={new Set(['a'])}
+      />,
+    )
+    const [a, b] = screen.getAllByTestId('track-row')
+    expect(a).toHaveAttribute('data-outside-filter', 'true')
+    expect(b).not.toHaveAttribute('data-outside-filter')
+  })
+})

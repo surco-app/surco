@@ -154,6 +154,12 @@ export function filterWithSticky(
   return tracks.filter((t) => sticky.has(t.id))
 }
 
+// The rows on screen that the live filter no longer matches: the ones filterWithSticky
+// kept in place after their verdict flipped, dimmed so they read as already handled.
+export function outsideFilter(tracks: TrackItem[], sel: FilterSelection): Set<string> {
+  return new Set(tracks.filter((t) => !matchesFilter(t, sel)).map((t) => t.id))
+}
+
 // Free-text list search, applied on top of the quality filter. Matches what the user
 // can actually see or recognise the track by: the frozen list label and the source file
 // name (both available before tags are read), plus the core artist/title/album tags, so

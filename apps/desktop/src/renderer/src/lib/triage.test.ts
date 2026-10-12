@@ -9,6 +9,7 @@ import {
   formatBuckets,
   matchesFilter,
   matchesSearch,
+  outsideFilter,
   qualityCounts,
   searchMatcher,
   sortTracks,
@@ -642,5 +643,17 @@ describe('suspectTracks', () => {
 
   it('returns nothing when no track has a suspect verdict, so the action stays disabled', () => {
     expect(suspectTracks([t('good', 21000), t('fresh')])).toEqual([])
+  })
+})
+
+describe('outsideFilter', () => {
+  // The rows filterWithSticky keeps on screen after their verdict flipped, so the list can
+  // dim them; with no filter active nothing is ever outside it.
+  it('names the shown rows that no longer match the live filter', () => {
+    const r = (id: string, matchReview: boolean): TrackItem =>
+      ({ id, status: 'idle', matchReview }) as TrackItem
+    const rows = [r('a', false), r('b', true)]
+    expect([...outsideFilter(rows, { ...EMPTY_FILTER, conversion: 'matchReview' })]).toEqual(['a'])
+    expect(outsideFilter(rows, EMPTY_FILTER).size).toBe(0)
   })
 })
