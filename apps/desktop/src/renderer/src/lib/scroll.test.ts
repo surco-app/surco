@@ -36,4 +36,25 @@ describe('pageScrollTop', () => {
     const top = pageScrollTop({ ...base, delta: 1, footerH: 128, rowTop: 320, rowBottom: 380 })
     expect(top).toBe(220)
   })
+
+  it('brings the row back when the user wheeled the list away from the selection', () => {
+    // Scrolling with the trackpad leaves the selection far above the viewport; pressing ↓
+    // selects the next row, and the editor loads a track the user can no longer see unless
+    // the list follows it, even though it lies against the direction of travel.
+    const top = pageScrollTop({
+      ...base,
+      delta: 1,
+      rowTop: -2000,
+      rowBottom: -1940,
+      scrollTop: 3000,
+    })
+    expect(top).toBe(3000 - 2000 - 40 - 60)
+  })
+
+  it('reveals an off-screen row with no travel direction, as the player locate button needs', () => {
+    // Locating the playing track that is already the selection has delta 0; returning null
+    // made the locate button a no-op exactly when the user had scrolled away from it.
+    const top = pageScrollTop({ ...base, delta: 0, rowTop: 900, rowBottom: 960, scrollTop: 0 })
+    expect(top).toBe(900 - 40 - 60)
+  })
 })

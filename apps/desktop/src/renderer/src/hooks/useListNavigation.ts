@@ -116,9 +116,8 @@ export function useListNavigation({
   }
 
   // Reveal the selected row unconditionally. Unlike revealSelection (which pages with a
-  // travel direction), the row here is usually already the selection, so delta would be 0
-  // and pageScrollTop would no-op. Instead centre the row in the visible band between the
-  // sticky header and the floating player, and only scroll if it isn't already in view.
+  // travel direction), centre the row in the visible band between the sticky header and
+  // the floating player, and only scroll if it isn't already in view.
   function scrollToSelected(): void {
     if (!selectedId) return
     const row = rowEls.current.get(selectedId)
