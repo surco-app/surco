@@ -350,19 +350,32 @@ export const Editor = memo(function Editor({
   // (already resolved against the anchor) instead of the raw setting multi-select
   // needs to offer 'source' and carry it unresolved to processAll.
   const wasMulti = useRef(isMulti)
+  // Whether `format` is a hand pick rather than the Settings seed, so narrowing back to
+  // one track reports what the button says: a null there converted in the Settings
+  // format under a button still reading the picked one.
+  const formatByHand = useRef(rememberedPick?.format !== undefined)
   // biome-ignore lint/correctness/useExhaustiveDependencies: reacts only to the single/multi transition — format/outputFormat/onFormatChange are read at that moment, not tracked continuously.
   useEffect(() => {
     if (wasMulti.current === isMulti) return
     wasMulti.current = isMulti
     setFormatPick(isMulti ? outputFormat : format)
-    onFormatChange?.(null)
+    onFormatChange?.(!isMulti && formatByHand.current ? format : null)
   }, [isMulti])
   // The chosen destination, same per-track contract as the format: seeded from this
   // track's earlier pick or the Settings booleans, updated only by the split-button menu,
   // never written back to Settings.
+  // A remembered destination the menu no longer offers (Overwrite turned off since, or
+  // Apple Music off macOS) is dropped, or the track would still go where the user can't
+  // see or pick it any more.
+  const rememberedDestination =
+    rememberedPick?.destination !== undefined &&
+    (rememberedPick.destination !== 'overwrite' || overwriteOriginal) &&
+    (rememberedPick.destination !== 'appleMusic' || isMacOS())
+      ? rememberedPick.destination
+      : undefined
   const [destination, setDestination] = useState(
     () =>
-      rememberedPick?.destination ??
+      rememberedDestination ??
       toDestination(
         addToAppleMusic,
         format === 'flac',
@@ -411,6 +424,7 @@ export const Editor = memo(function Editor({
       ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic)
       : format
     if (formatSettingChanged) {
+      formatByHand.current = false
       setFormat(seededFormat)
       setFormatPick(isMulti ? outputFormat : seededFormat)
       onFormatChange?.(null)
@@ -458,7 +472,7 @@ export const Editor = memo(function Editor({
   // biome-ignore lint/correctness/useExhaustiveDependencies: deliberately mount-only — the change handlers report every later pick.
   useEffect(() => {
     onFormatChange?.(rememberedPick?.format ?? null)
-    if (rememberedPick?.destination !== undefined) onDestinationChange?.(destination, true)
+    if (rememberedDestination !== undefined) onDestinationChange?.(destination, true)
     else onDestinationChange?.(destination)
     onNormalizeChange?.(normalizeCfg)
     onDeclickChange?.(declickCfg)
@@ -1487,7 +1501,10 @@ export const Editor = memo(function Editor({
             setFormatPick(f)
             // 'source' is only ever offered in the multi menu, so a real pick always
             // resolves for the single-track state everything else here still reads.
-            if (f !== 'source') setFormat(f)
+            if (f !== 'source') {
+              setFormat(f)
+              formatByHand.current = true
+            }
             onFormatChange?.(f)
             // Music can't ingest FLAC: picking it while Apple Music is the destination
             // silently falls back to the output folder — the same pin Settings applies —

@@ -161,6 +161,7 @@ function renderEditor(
     declick?: DeclickMode
     overwriteOriginal?: boolean
     backupPolicy?: Settings['backupPolicy']
+    rememberedPick?: React.ComponentProps<typeof Editor>['rememberedPick']
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
     keepMp3Sources?: boolean
@@ -218,6 +219,7 @@ function renderEditor(
         onProcess={onProcess}
         onFormatChange={onFormatChange}
         onDestinationChange={onDestinationChange}
+        rememberedPick={props.rememberedPick}
         onDeriveTags={onDeriveTags}
         onApplyTitleFormat={onApplyTitleFormat}
         onAddToAppleMusic={vi.fn()}
@@ -2320,6 +2322,17 @@ describe('Editor output file name', () => {
     renderEditor({ id: 'a', fileName: 'original track 01' }, 'wav', { overwriteOriginal: true })
     expect(screen.queryByTestId('output-name')).toBeNull()
     expect(screen.getByTestId('overwrite-notice')).toBeInTheDocument()
+  })
+
+  // A destination remembered for this track while Overwrite was on must not outlive the
+  // setting: the menu no longer offers it, yet the track would still rewrite in place.
+  it('drops a remembered destination the menu no longer offers', () => {
+    const { onDestinationChange } = renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', {
+      overwriteOriginal: false,
+      rememberedPick: { destination: 'overwrite' },
+    })
+    expect(onDestinationChange).not.toHaveBeenCalledWith('overwrite', expect.anything())
+    expect(screen.queryByTestId('overwrite-notice')).toBeNull()
   })
 
   // The one irreversible case — replacing a lossless master with MP3 — gets the louder

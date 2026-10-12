@@ -1133,6 +1133,35 @@ describe('App per-track format pick', () => {
     expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
   })
 
+  // Widening to several tracks and back to one kept "Convert to FLAC" on the button while
+  // the convert itself fell back to the Settings format.
+  it('converts in the picked format after the selection widens and narrows back', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/music/a.flac',
+    } as Awaited<ReturnType<Api['processTrack']>>)
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      processTrack,
+    })
+    await renderApp()
+    const [a] = await addTwoTracks()
+    fireEvent.click(a)
+    await openFormatMenu()
+    fireEvent.click(screen.getByTestId('process-format-flac'))
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'false'),
+    )
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('FLAC')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack.mock.calls[0][0].format).toBe('flac')
+  })
+
   // The pick belongs to that track only; the next one still starts from Settings.
   it('starts another track from the Settings format', async () => {
     setApi({ readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }) })
