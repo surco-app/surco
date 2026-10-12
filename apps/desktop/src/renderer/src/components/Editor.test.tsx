@@ -181,6 +181,7 @@ function renderEditor(
     searchProviders?: Settings['searchProviders']
     outputDir?: string
     convertBesideOriginal?: boolean
+    autoMatch?: boolean
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -272,6 +273,7 @@ function renderEditor(
       ...(props.searchProviders ? { searchProviders: props.searchProviders } : {}),
       ...(props.outputDir ? { outputDir: props.outputDir } : {}),
       ...(props.convertBesideOriginal ? { convertBesideOriginal: true } : {}),
+      ...(props.autoMatch ? { autoMatch: true } : {}),
     },
   )
   return {
@@ -2898,6 +2900,41 @@ describe('Editor track preselection', () => {
     const other = rows.find((r) => r.textContent?.includes('Track One'))
     expect(remix).toHaveAttribute('aria-current', 'true')
     expect(other).not.toHaveAttribute('aria-current')
+  })
+
+  // With auto-match on, a confident match applies itself as the release opens. Moving the
+  // focus to the title then is the same cue a click gives, but the user may still be
+  // typing in the search box: the next keys landed in the title and overwrote it.
+  it('leaves the focus in the search box when a confident match applies itself', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    const box = screen.getByTestId('discogs-query')
+    box.focus()
+    await loadTracklist({ autoOpens: true })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+    expect(box).toHaveFocus()
+  })
+
+  it('still moves the focus to the title when nothing is being typed', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+    expect(screen.getByTestId('field-title')).toHaveFocus()
   })
 
   // A confident preselection (exact title, artist agreeing) and a shakier one (a partial

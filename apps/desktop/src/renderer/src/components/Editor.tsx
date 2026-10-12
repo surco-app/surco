@@ -53,6 +53,7 @@ import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, missingRequiredOf } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
+import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
 import { missingSummary } from '../lib/missingSummary'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
@@ -624,7 +625,7 @@ export const Editor = memo(function Editor({
     onChange,
   })
 
-  function selectTrack(track: ReleaseTrack): void {
+  function selectTrack(track: ReleaseTrack, moveFocus = true): void {
     if (!release) return
     // The cover flag protects only the file's ORIGINAL embedded art. While the shown
     // cover is still that original (coverUrl === embeddedCover), keep it — unless the user
@@ -662,7 +663,7 @@ export const Editor = memo(function Editor({
     // Applying a release is the cue to verify the tags, so move focus to the first field:
     // the keyboard flow continues ⌘2 → pick → Enter → edit without a manual ⌘3. The field's
     // input node persists across the re-render (stable key), so focusing it now sticks.
-    document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
+    if (moveFocus) document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
   }
 
   // A confident match shouldn't cost a click the sweep would have spared: when the editor
@@ -671,8 +672,8 @@ export const Editor = memo(function Editor({
   // the suggested row. Guarded so it never fights the user — shouldAutoApplyMatch holds off
   // on an already-matched track, mid-edit, or in multi-select, and the ref makes it fire at
   // most once per opened release so the write (which lands as matched: true a tick later)
-  // can't loop. selectTrack itself moves focus to the title to verify, exactly as a manual
-  // pick does, so the auto-apply and the click leave the same keyboard state.
+  // can't loop. selectTrack moves focus to the title to verify, as a manual pick does,
+  // unless the user is typing somewhere when the match lands.
   const autoAppliedRelease = useRef<number | undefined>(undefined)
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectTrack is recreated every render; the effect keys on the release/match signals that decide whether to apply, and the ref guards against re-firing.
   useEffect(() => {
@@ -691,7 +692,8 @@ export const Editor = memo(function Editor({
       })
     ) {
       autoAppliedRelease.current = release.id
-      selectTrack(matchedTrack)
+      // Nobody clicked, so someone typing (in the search box) keeps their keys.
+      selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
     }
   }, [autoMatch, release, matchedTrack, matchTier, item.matched, isMulti])
 
