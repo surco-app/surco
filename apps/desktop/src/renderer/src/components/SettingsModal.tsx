@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, ThemePref } from '../../../shared/types'
@@ -18,6 +19,7 @@ import {
   SETTINGS_TABS,
   type SettingsTab,
 } from '../lib/settingsTabs'
+import { ConfirmDialog } from './ConfirmDialog'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { ArtworkTab } from './settings/ArtworkTab'
@@ -210,13 +212,32 @@ export function SettingsModal({
     onClose()
   }
 
+  const dirty =
+    JSON.stringify(synced) !== JSON.stringify(pickSynced(settings)) ||
+    JSON.stringify(local) !== JSON.stringify(pickLocal(settings))
+  const [askDiscard, setAskDiscard] = useState(false)
+  const escapeState = useRef({ dirty, askDiscard })
+  escapeState.current = { dirty, askDiscard }
+  useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if (e.key !== 'Escape' || e.defaultPrevented) return
+      const { dirty, askDiscard } = escapeState.current
+      if (!dirty && !askDiscard) return
+      e.preventDefault()
+      e.stopPropagation()
+      setAskDiscard(!askDiscard)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
   // Effective bindings shown in the Shortcuts tab, plus the clashes that block saving.
   const bindings = resolveBindings(synced.shortcutOverrides)
   const conflictIds = new Set(findConflicts(bindings).flat())
 
   return (
     <ModalShell
-      onClose={onClose}
+      onClose={dirty ? () => {} : onClose}
       backdropTestId="settings-backdrop"
       label={tr('header.settings')}
       align="top"
@@ -417,6 +438,18 @@ export function SettingsModal({
           </button>
         </div>
       </div>
+      {askDiscard &&
+        createPortal(
+          <ConfirmDialog
+            title={tr('settings.discardTitle')}
+            message={tr('settings.discardMessage')}
+            confirmLabel={tr('settings.discardConfirm')}
+            destructive
+            onConfirm={onClose}
+            onClose={() => setAskDiscard(false)}
+          />,
+          document.body,
+        )}
     </ModalShell>
   )
 }

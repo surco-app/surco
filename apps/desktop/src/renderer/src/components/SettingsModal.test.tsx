@@ -651,6 +651,60 @@ describe('SettingsModal filename tokens', () => {
   })
 })
 
+describe('SettingsModal unsaved changes', () => {
+  function renderDirty(onClose = vi.fn()): ReturnType<typeof vi.fn> {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={onClose}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-theme-dark'))
+    return onClose
+  }
+
+  // A click that only meant to leave the window, or a stray Escape, threw away every
+  // change staged across the tabs with nothing asked.
+  it('stays open on a backdrop click while something is changed', () => {
+    const onClose = renderDirty()
+    fireEvent.click(screen.getByTestId('settings-backdrop'))
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('asks before Escape discards the changes', () => {
+    const onClose = renderDirty()
+    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(false)
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('lets a second Escape take back the question and keep editing', () => {
+    const onClose = renderDirty()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(false)
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('leaves Escape to close Settings when nothing is changed', () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(true)
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
+  })
+})
+
 describe('SettingsModal theme preview', () => {
   // Picking a theme should apply it live so the user sees the result before
   // committing; the parent reverts the preview if they cancel instead of saving.

@@ -875,6 +875,9 @@
     }
   },
   "settings": {
+    "discardTitle": "¿Descartar los cambios?",
+    "discardMessage": "Lo que has cambiado en Ajustes todavía no está guardado.",
+    "discardConfirm": "Descartar",
     "tabs": {
       "general": "General",
       "search": "Búsqueda",

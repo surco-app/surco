@@ -875,6 +875,9 @@
     }
   },
   "settings": {
+    "discardTitle": "Abandonner les modifications ?",
+    "discardMessage": "Ce que vous avez modifié dans les Réglages n’est pas encore enregistré.",
+    "discardConfirm": "Abandonner",
     "tabs": {
       "general": "Général",
       "search": "Recherche",
