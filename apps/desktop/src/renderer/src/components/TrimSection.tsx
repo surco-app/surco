@@ -313,7 +313,7 @@ function Lane({
             type="button"
             data-testid={`trim-nudge-back-${side}`}
             aria-label={tr('trim.nudgeBack')}
-            disabled={cutSec === undefined}
+            disabled={cutSec === undefined && suggestionSec === undefined}
             onClick={() => onKeyStep(-fineStepSec)}
             className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
@@ -360,7 +360,7 @@ function Lane({
             type="button"
             data-testid={`trim-nudge-forward-${side}`}
             aria-label={tr('trim.nudgeForward')}
-            disabled={cutSec === undefined}
+            disabled={cutSec === undefined && suggestionSec === undefined}
             onClick={() => onKeyStep(fineStepSec)}
             className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
@@ -376,7 +376,7 @@ function Lane({
             type="button"
             data-testid={`trim-audition-${side}`}
             aria-label={tr(side === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')}
-            disabled={cutSec === undefined}
+            disabled={cutSec === undefined && suggestionSec === undefined}
             onClick={onAudition}
             className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
@@ -797,8 +797,12 @@ export function TrimSection({
     stopAudition()
     const audio = new Audio(mediaUrl(inputPath))
     audioRef.current = audio
-    const from = which === 'start' ? startSec : Math.max(0, endSec - AUDITION_SEC)
-    const until = which === 'start' ? Math.min(durationSec, startSec + AUDITION_SEC) : endSec
+    // With nothing staged yet the line on screen is the suggestion, so that is what plays:
+    // hearing a proposed cut before taking it is the point of the button.
+    const inSec = shown?.startSec ?? suggestedStart ?? 0
+    const outSec = shown?.endSec ?? suggestedEnd ?? durationSec
+    const from = which === 'start' ? inSec : Math.max(0, outSec - AUDITION_SEC)
+    const until = which === 'start' ? Math.min(durationSec, inSec + AUDITION_SEC) : outSec
     // Seek only once the element knows its duration — an immediate currentTime on
     // a still-loading element is dropped by the media pipeline.
     audio.onloadedmetadata = () => {

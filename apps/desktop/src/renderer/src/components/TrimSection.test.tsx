@@ -791,6 +791,22 @@ describe('TrimSection', () => {
     expect(pause).toHaveBeenCalledOnce()
   })
 
+  // The detection proposes a cut; hearing it before taking it is the whole judgement. The
+  // listen and nudge buttons were dead until the cut was staged, so the user had to apply,
+  // listen, and undo — while the keys already worked on the suggested line.
+  it('auditions and nudges the suggested cut before it is staged', async () => {
+    const onChange = vi.fn()
+    render(section({ onChange }))
+    await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
+    const listen = screen.getByTestId('trim-audition-start')
+    expect(listen).toBeEnabled()
+    fireEvent.click(listen)
+    act(() => audios.at(-1)?.onloadedmetadata?.())
+    expect(audios.at(-1)?.currentTime).toBe(9.9)
+    fireEvent.click(screen.getByTestId('trim-nudge-forward-start'))
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.901 })
+  })
+
   // The arrows give the precision a drag on the coarse strip can't: tenths of a
   // second, a whole second with Shift.
   it('nudges the focused handle with the arrow keys', async () => {
