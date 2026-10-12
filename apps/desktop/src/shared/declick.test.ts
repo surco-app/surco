@@ -17,6 +17,20 @@ describe('declickFilter', () => {
     expect(declickFilter({ mode: 'standard', rumble: false })).toBe('adeclick')
     expect(declickFilter({ mode: 'strong', rumble: false })).toBe('adeclick=b=4')
   })
+
+  // A fourth-order cut at 20 Hz, measured on sines: −25 dB at 10 Hz and −49 dB at 5 Hz,
+  // where turntable rumble lives, but only −0.2 dB at 50 Hz, where a kick's fundamental
+  // sits. At 25 Hz the same slope already took 1.2 dB off real 40 Hz sub.
+  it('cuts the rumble below 20 Hz on its own, with no click repair', () => {
+    expect(declickFilter({ mode: 'off', rumble: true })).toBe('highpass=f=20,highpass=f=20')
+  })
+
+  // Ahead of the repair, so the subsonic swing is gone before adeclick models the signal.
+  it('cuts the rumble before repairing the clicks', () => {
+    expect(declickFilter({ mode: 'standard', rumble: true })).toBe(
+      'highpass=f=20,highpass=f=20,adeclick',
+    )
+  })
 })
 
 describe('normalizeDeclick', () => {
@@ -34,7 +48,10 @@ describe('normalizeDeclick', () => {
   // A dev build briefly stored {mode, sensitivity}; its mode survives, the extra
   // dial is gone (the ladder covers its one useful position as 'soft').
   it('reads the short-lived config-object shape down to its mode', () => {
-    expect(normalizeDeclick({ mode: 'strong', sensitivity: 3 })).toEqual({ mode: 'strong', rumble: false })
+    expect(normalizeDeclick({ mode: 'strong', sensitivity: 3 })).toEqual({
+      mode: 'strong',
+      rumble: false,
+    })
   })
 
   it('keeps a stored config as it was saved', () => {

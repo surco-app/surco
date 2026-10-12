@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { losesTraktorCues } from '../../../../shared/outputFormats'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import { DeclickControls } from '../DeclickControls'
+import { DeclickControls, RumbleToggle } from '../DeclickControls'
 import { NormalizeControls } from '../NormalizeControls'
 import { SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
@@ -26,6 +26,12 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
           onChange={(mode) => patch('declick', { ...synced.declick, mode })}
         />
         <SettingsHint className="mt-2">{tr('declick.hint')}</SettingsHint>
+        <div className="mt-4">
+          <RumbleToggle
+            value={synced.declick.rumble}
+            onChange={(rumble) => patch('declick', { ...synced.declick, rumble })}
+          />
+        </div>
       </SettingsSection>
 
       <SettingsSection>

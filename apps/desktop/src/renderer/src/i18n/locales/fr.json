@@ -746,6 +746,8 @@
       "standard": "Répare les clics courts de la pointe.",
       "strong": "Capte aussi les craquements longs ; peut adoucir les transitoires."
     },
+    "rumble": "Supprimer le rumble",
+    "rumbleHint": "Coupe le grondement de la platine sous 20 Hz. Retire 0,2 dB à la grosse caisse (50 Hz).",
     "estimatePill": "~{{count}} clics",
     "estimateNonePill": "Aucun clic",
     "waveTitle": "Clics détectés",
@@ -769,7 +771,9 @@
       "soft": "Réparation douce",
       "standard": "Réparation standard",
       "strong": "Réparation forte"
-    }
+    },
+    "rowRumble": "{{row}} · sans rumble",
+    "rowRumbleOnly": "Sans rumble"
   },
   "trim": {
     "waveFailed": "La forme d'onde de ce morceau n'a pas pu être lue, il ne peut donc pas être coupé ici.",

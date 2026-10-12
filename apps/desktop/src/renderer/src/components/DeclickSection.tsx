@@ -2,6 +2,7 @@ import { ChevronRight, Loader2, Pause, Play, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { declickFilter } from '../../../shared/declick'
 import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { DeclickConfig, OutputFormat, TrimRange } from '../../../shared/types'
 import { useClicks } from '../hooks/useClicks'
@@ -11,7 +12,7 @@ import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
 import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
-import { DeclickControls } from './DeclickControls'
+import { DeclickControls, RumbleToggle } from './DeclickControls'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -71,6 +72,9 @@ export function DeclickSection({
   const { t: tr, i18n } = useTranslation()
   const waveColor = useWaveColors().after
   const isMulti = selectedCount > 1
+  // Whether the setting changes the audio at all — a click mode, the rumble cut, or both.
+  // Off with the rumble cut on still has a result to render and hear.
+  const repairs = declickFilter(value) !== null
   const solo = open && !isMulti
   useDiskCacheSeed('clicks', inputPath, open && !isMulti)
   useDiskCacheSeed('waveform', inputPath, open && !isMulti)
@@ -176,13 +180,13 @@ export function DeclickSection({
   // nothing rendered the key does the render — the same thing the button does — so the
   // gesture always acts on the wave in front of them.
   //
-  // Off is no exception: there is still a wave and a cursor on it, so the key plays the
-  // original from there. Only a selection, which shows no wave, leaves it to the
+  // Nothing to repair is no exception: there is still a wave and a cursor on it, so the
+  // key plays the original from there. Only a selection, which shows no wave, leaves it to the
   // mini-player.
   const spaceRef = useRef<() => void>(() => {})
   spaceRef.current = () => {
     if (preview || hearOriginal) return ab.playing ? ab.pause() : ab.play()
-    if (value.mode === 'off') {
+    if (!repairs) {
       playOnLoadRef.current = true
       setHearOriginal(true)
       return
@@ -191,9 +195,9 @@ export function DeclickSection({
     if (!rendering) void render()
   }
   useEffect(() => {
-    if (!open || (value.mode === 'off' && isMulti)) return
+    if (!open || (!repairs && isMulti)) return
     return claimKeys({ play: () => spaceRef.current() })
-  }, [open, value, isMulti])
+  }, [open, repairs, isMulti])
 
   // The overlay lives INSIDE the zoomed strip, so its own width is already the zoomed
   // width of the whole track — the ratio across it is the fraction of the track, at any
@@ -234,6 +238,12 @@ export function DeclickSection({
     panTo(ab.at / durationSec - (to - from) * FOLLOW_LEAD)
   }, [ab.at, zoom, durationSec, panTo])
 
+  const rowSentence = !value.rumble
+    ? tr(`declick.row.${value.mode}`)
+    : value.mode === 'off'
+      ? tr('declick.rowRumbleOnly')
+      : tr('declick.rowRumble', { row: tr(`declick.row.${value.mode}`) })
+
   const count = clicks?.count
   // The detector reads the first eight minutes (CLICK_SCAN_SECONDS). Past that nothing was
   // analysed, and a wave that simply stops marking would read as a clean tail — so the
@@ -256,9 +266,9 @@ export function DeclickSection({
         // clicks-found strip reads far better with the whole window to mark them in.
         sectionId="declick"
         maximizable
-        summary={tr(`declick.row.${value.mode}`)}
+        summary={rowSentence}
         summaryTestId="declick-row-sentence"
-        summaryMuted={value.mode === 'off'}
+        summaryMuted={!repairs}
         right={
           estimate ? (
             <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
@@ -277,10 +287,7 @@ export function DeclickSection({
               {tr('declick.appliesToSelection', { count: selectedCount })}
             </p>
           )}
-          <DeclickControls
-            value={value.mode}
-            onChange={(mode) => onChange({ ...value, mode })}
-          />
+          <DeclickControls value={value.mode} onChange={(mode) => onChange({ ...value, mode })} />
           {!isMulti && (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -438,7 +445,13 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value.mode !== 'off' && !isMulti && (
+          <div className="mt-4">
+            <RumbleToggle
+              value={value.rumble}
+              onChange={(rumble) => onChange({ ...value, rumble })}
+            />
+          </div>
+          {repairs && !isMulti && (
             <div className="mt-3">
               {!preview && !rendering && (
                 <button
@@ -535,7 +548,7 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value.mode !== 'off' && losesTraktorCues(format) && (
+          {repairs && losesTraktorCues(format) && (
             <p data-testid="declick-cue-warning" className="mt-3 text-xs text-warn">
               {tr('declick.cueWarning')}
             </p>

@@ -1,5 +1,5 @@
 import type { AudioProcessing } from '../../../shared/audioProcessing'
-import { DEFAULT_DECLICK } from '../../../shared/declick'
+import { DEFAULT_DECLICK, declickFilter } from '../../../shared/declick'
 import type { DeclickConfig, NormalizeConfig, Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { isDeclickStale, isNormalizeStale } from './dirty'
@@ -81,7 +81,7 @@ export function declickForJob(
   current: DeclickConfig | undefined,
 ): DeclickConfig | undefined {
   const applied = track.processedDeclick
-  if (!applied || applied.mode === 'off') return current
+  if (!applied || declickFilter(applied) === null) return current
   if (!readsItsOwnExport(track)) return current
   if (current && isDeclickStale(track, current)) return current
   return DEFAULT_DECLICK

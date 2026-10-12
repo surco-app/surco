@@ -746,6 +746,8 @@
       "standard": "Repairs short stylus clicks.",
       "strong": "Also catches long pops; may soften sharp transients."
     },
+    "rumble": "Remove rumble",
+    "rumbleHint": "Cuts turntable rumble below 20 Hz. Takes 0.2 dB off a kick drum (50 Hz).",
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "No clicks",
     "waveTitle": "Clicks found",
@@ -769,7 +771,9 @@
       "soft": "Gentle repair",
       "standard": "Standard repair",
       "strong": "Strong repair"
-    }
+    },
+    "rowRumble": "{{row}} · rumble cut",
+    "rowRumbleOnly": "Rumble cut"
   },
   "trim": {
     "waveFailed": "The waveform of this track could not be read, so it cannot be trimmed here.",

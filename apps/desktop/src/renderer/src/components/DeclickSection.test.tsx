@@ -164,7 +164,9 @@ async function withPreview(
 
 describe('DeclickSection', () => {
   it('reads the folded row as the repair mode in words', () => {
-    const { rerender } = render(section({ value: { mode: 'standard', rumble: false }, open: false }))
+    const { rerender } = render(
+      section({ value: { mode: 'standard', rumble: false }, open: false }),
+    )
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Standard repair')
     rerender(section({ value: { mode: 'off', rumble: false }, open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off')
@@ -203,6 +205,41 @@ describe('DeclickSection', () => {
       rerender(section({ value: { mode: 'strong', rumble: false }, format }))
       expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
     }
+  })
+
+  it('reads the rumble cut on the folded row next to the repair mode', () => {
+    const { rerender } = render(section({ value: { mode: 'standard', rumble: true }, open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(
+      'Standard repair · rumble cut',
+    )
+    rerender(section({ value: { mode: 'off', rumble: true }, open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(/^Rumble cut$/)
+  })
+
+  it('reports the rumble cut up through onChange, keeping the mode', () => {
+    const onChange = vi.fn()
+    render(section({ value: { mode: 'soft', rumble: false }, onChange }))
+    fireEvent.click(screen.getByTestId('declick-rumble'))
+    expect(onChange).toHaveBeenCalledWith({ mode: 'soft', rumble: true })
+  })
+
+  // With only the rumble cut on, there IS a result to hear, so the section offers the
+  // render and Space asks for it, exactly as a click mode does.
+  it('renders the rumble cut on its own when Space is pressed', async () => {
+    render(section({ value: { mode: 'off', rumble: true } }))
+    await screen.findByTestId('declick-render')
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'off',
+      rumble: true,
+    })
+  })
+
+  it('warns about dropped cues when only the rumble cut re-encodes', () => {
+    render(section({ value: { mode: 'off', rumble: true }, format: 'alac' }))
+    expect(screen.getByTestId('declick-cue-warning')).toBeInTheDocument()
   })
 
   it('reports mode picks up through onChange', () => {
@@ -294,7 +331,10 @@ describe('DeclickSection', () => {
 
   it('renders the repaired track for the picked mode', async () => {
     await withPreview({ value: { mode: 'strong', rumble: false } })
-    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', { mode: 'strong', rumble: false })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'strong',
+      rumble: false,
+    })
   })
 
   // The A/B is the whole feature: BOTH legs must exist, so switching between them is a
@@ -361,7 +401,10 @@ describe('DeclickSection', () => {
     await act(async () => {
       expect(runKeyClaim('play')).toBe(true)
     })
-    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', { mode: 'standard', rumble: false })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'standard',
+      rumble: false,
+    })
     await screen.findByTestId('declick-ab')
   })
 
@@ -431,7 +474,10 @@ describe('DeclickSection', () => {
     await act(async () => {
       runKeyClaim('play')
     })
-    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', { mode: 'standard', rumble: false })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'standard',
+      rumble: false,
+    })
   })
 
   // A selection shows no wave, so there is nothing here for Space to play.

@@ -746,6 +746,8 @@
       "standard": "Repara los clicks cortos de la aguja.",
       "strong": "Atrapa también pops largos; puede suavizar transitorios."
     },
+    "rumble": "Quitar el rumble",
+    "rumbleHint": "Corta el retumbe del giradiscos por debajo de 20 Hz. Al bombo (50 Hz) le quita 0,2 dB.",
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sin clicks",
     "waveTitle": "Clics encontrados",
@@ -769,7 +771,9 @@
       "soft": "Reparación suave",
       "standard": "Reparación estándar",
       "strong": "Reparación fuerte"
-    }
+    },
+    "rowRumble": "{{row}} · sin rumble",
+    "rowRumbleOnly": "Sin rumble"
   },
   "trim": {
     "waveFailed": "No se ha podido leer la onda de esta pista, así que no se puede recortar aquí.",

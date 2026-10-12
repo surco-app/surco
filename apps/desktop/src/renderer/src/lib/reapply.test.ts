@@ -129,12 +129,18 @@ describe('declickForJob', () => {
   // would fall back to the Settings default in main and run the filter again.
   it('asks for no click repair when it is already baked into the in-place file', () => {
     const t = exportedInPlace({ processedDeclick: { mode: 'standard', rumble: false } })
-    expect(declickForJob(t, { mode: 'standard', rumble: false })).toEqual({ mode: 'off', rumble: false })
+    expect(declickForJob(t, { mode: 'standard', rumble: false })).toEqual({
+      mode: 'off',
+      rumble: false,
+    })
   })
 
   it('re-applies when the user changed the intensity', () => {
     const t = exportedInPlace({ processedDeclick: { mode: 'standard', rumble: false } })
-    expect(declickForJob(t, { mode: 'strong', rumble: false })).toEqual({ mode: 'strong', rumble: false })
+    expect(declickForJob(t, { mode: 'strong', rumble: false })).toEqual({
+      mode: 'strong',
+      rumble: false,
+    })
   })
 
   it('keeps the click repair when the export wrote a separate copy', () => {
@@ -145,6 +151,12 @@ describe('declickForJob', () => {
         { mode: 'standard', rumble: false },
       ),
     ).toEqual({ mode: 'standard', rumble: false })
+  })
+
+  // A highpass run twice is a steeper highpass: the in-place file already lost its rumble.
+  it('asks for no rumble cut when it is already baked into the in-place file', () => {
+    const t = exportedInPlace({ processedDeclick: { mode: 'off', rumble: true } })
+    expect(declickForJob(t, { mode: 'off', rumble: true })).toEqual({ mode: 'off', rumble: false })
   })
 
   // 'off' means no filter ran, so it is never "already applied".

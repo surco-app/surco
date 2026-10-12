@@ -43,9 +43,20 @@ export function sameDeclick(a: DeclickConfig, b: DeclickConfig): boolean {
 // Two directions are deliberately unreachable, both measured hang zones: t below
 // 2 and b above 4 explode the AR interpolation cost past realtime on dense music
 // ("hung conversion" reports, twice). The window stays default (w=20 repairs worse).
-export function declickFilter({ mode }: DeclickConfig): string | null {
+function clickFilter(mode: DeclickMode): string | null {
   if (mode === 'soft') return 'adeclick=t=4'
   if (mode === 'standard') return 'adeclick'
   if (mode === 'strong') return 'adeclick=b=4'
   return null
+}
+
+// The rumble cut: two second-order Butterworth highpasses at 20 Hz, a fourth-order slope
+// measured on sines at −25 dB at 10 Hz and −49 dB at 5 Hz (turntable rumble) against
+// −0.5 dB at 40 Hz and −0.2 dB at 50 Hz (sub and kick). A 25 Hz corner took 1.2 dB off
+// 40 Hz, real music in a club track. Ahead of the click repair, so adeclick models the
+// signal without the subsonic swing under it.
+const RUMBLE_FILTER = 'highpass=f=20,highpass=f=20'
+
+export function declickFilter({ mode, rumble }: DeclickConfig): string | null {
+  return [rumble ? RUMBLE_FILTER : null, clickFilter(mode)].filter(Boolean).join(',') || null
 }

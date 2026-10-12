@@ -746,6 +746,8 @@
       "standard": "Repara os clicks curtos da agulha.",
       "strong": "Captura também estalos longos; pode suavizar transientes."
     },
+    "rumble": "Remover o rumble",
+    "rumbleHint": "Corta o ronco do toca-discos abaixo de 20 Hz. Tira 0,2 dB do bumbo (50 Hz).",
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sem clicks",
     "waveTitle": "Cliques encontrados",
@@ -769,7 +771,9 @@
       "soft": "Reparo suave",
       "standard": "Reparo padrão",
       "strong": "Reparo forte"
-    }
+    },
+    "rowRumble": "{{row}} · sem rumble",
+    "rowRumbleOnly": "Sem rumble"
   },
   "trim": {
     "waveFailed": "Não foi possível ler a forma de onda desta faixa, então ela não pode ser cortada aqui.",

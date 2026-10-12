@@ -1270,7 +1270,9 @@ export async function normalizeFilter(
   // gets its own cache entry; the bare namespace stays untouched for plain conversions.
   const ns = (base: string): string => {
     const trimmed = trimAf ? `-trim-${trim?.startSec ?? 0}-${trim?.endSec ?? 'end'}` : ''
-    const declicked = declickAf ? `-declick-${declick?.mode}` : ''
+    const declicked = declickAf
+      ? `-declick-${declick?.mode}${declick?.rumble ? '-rumble' : ''}`
+      : ''
     return `${base}${trimmed}${declicked}`
   }
   // Centring the signal is a correction, not a property of how the gain is sized, so it

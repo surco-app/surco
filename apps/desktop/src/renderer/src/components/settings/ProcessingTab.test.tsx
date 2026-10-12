@@ -84,6 +84,12 @@ describe('ProcessingTab', () => {
     expect(patch).toHaveBeenCalledWith('declick', { mode: 'standard', rumble: false })
   })
 
+  it('stages the rumble cut as the default for every conversion', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('declick-rumble'))
+    expect(patch).toHaveBeenCalledWith('declick', { mode: 'off', rumble: true })
+  })
+
   it('stages a loudness normalization mode', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
