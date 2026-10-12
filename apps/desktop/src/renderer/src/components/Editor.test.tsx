@@ -22,6 +22,7 @@ import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrar
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
+import { runKeyClaim } from '../lib/spaceClaim'
 import type { TrackItem } from '../types'
 
 // TrimSection (rendered by Editor) reads window.api.platform at module load, so stub
@@ -1386,11 +1387,38 @@ describe('Editor multi-select', () => {
   })
 
   // The spectrum and output filename describe a single file; over a multi-selection they
-  // are meaningless, so they must drop out rather than show the primary track's by accident.
+  // are meaningless, so they must not show the primary track's by accident.
   it('hides the per-track spectrum and filename when several tracks are selected', () => {
     renderMulti()
-    expect(screen.queryByText(i18n.t('editor.qualityTitle'))).toBeNull()
+    expect(screen.queryByTestId('quality-status')).toBeNull()
+    expect(screen.queryByTestId('properties-summary')).toBeNull()
     expect(screen.queryByTestId('output-name')).toBeNull()
+  })
+
+  // A Shift+click used to pull Quality and Properties out of the column, jumping every
+  // section below them up the editor. They stay in place, folded and off, saying why.
+  it.each([
+    ['quality', 'editor.qualityTitle'],
+    ['properties', 'editor.propertiesTitle'],
+  ])('keeps the %s header in place, folded and disabled, over several tracks', (id, title) => {
+    renderMulti()
+    const section = screen.getByTestId(`${id}-single-only`)
+    const header = within(section).getByRole('button', { name: i18n.t(title) })
+    expect(header).toBeDisabled()
+    expect(header).toHaveAttribute('aria-expanded', 'false')
+    expect(section).toHaveTextContent(i18n.t('editor.singleTrackOnly'))
+  })
+
+  // A disabled header refuses focus, so ⌘] aimed at one left focus where it was and every
+  // further press aimed at it again: the jump stuck above Properties.
+  it('jumps over the disabled headers to the next live section', () => {
+    renderMulti()
+    screen.getByTestId('field-album').focus()
+    act(() => {
+      runKeyClaim('section-next')
+    })
+    const landed = (document.activeElement as HTMLElement).dataset.sectionHeader
+    expect(landed).toBe('declick')
   })
 
   it('shows shared album fields and a convert-all action with the format picker', () => {

@@ -433,6 +433,7 @@
     "ratingStars_one": "{{count}} star",
     "ratingStars_other": "{{count}} stars",
     "propertiesTitle": "Properties",
+    "singleTrackOnly": "Only with one track",
     "propertiesGroupAudio": "Audio",
     "propertiesGroupFile": "File",
     "propertiesUnavailable": "Properties unavailable",

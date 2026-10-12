@@ -739,6 +739,26 @@ export const Editor = memo(function Editor({
 
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
+  function singleTrackOnly(id: 'quality' | 'properties', title: string): React.JSX.Element {
+    return (
+      <div
+        key={id}
+        data-testid={`${id}-single-only`}
+        className="mt-6 border-t border-[var(--color-line)] pt-6"
+      >
+        <SectionHeader
+          sectionId={id}
+          title={title}
+          open={false}
+          onToggle={() => {}}
+          disabled
+          summary={tr('editor.singleTrackOnly')}
+          summaryMuted
+        />
+      </div>
+    )
+  }
+
   function deriveFromNames(): void {
     if (!onDeriveTags) return
     const targets = isMulti ? (selectedTracks ?? []) : [item]
@@ -1257,6 +1277,7 @@ export const Editor = memo(function Editor({
                         )
                       )
                     case 'properties':
+                      if (isMulti) return singleTrackOnly(id, tr('editor.propertiesTitle'))
                       return (
                         !isMulti && (
                           <PropertiesSection
@@ -1268,6 +1289,8 @@ export const Editor = memo(function Editor({
                         )
                       )
                     case 'quality':
+                      if (isMulti && (showSpectrum || showLoudness))
+                        return singleTrackOnly(id, tr('editor.qualityTitle'))
                       return (
                         !isMulti &&
                         (showSpectrum || showLoudness) && (

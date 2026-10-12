@@ -14,7 +14,7 @@ export function useSectionNavigation(): void {
     const jump = (dir: 1 | -1): void => {
       const headers = [
         ...document.querySelectorAll<HTMLElement>(
-          '[data-shortcut-scope="editor"] [data-section-header]',
+          '[data-shortcut-scope="editor"] [data-section-header]:not(:disabled)',
         ),
       ]
       if (headers.length === 0) return

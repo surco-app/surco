@@ -40,6 +40,8 @@ interface SectionHeaderProps {
   // set right after the title on the same line, open or folded. It is described to a screen
   // reader rather than folded into the button's name, which stays the title alone.
   status?: React.ReactNode
+  // A section that has nothing to show for this selection keeps its place, folded and off.
+  disabled?: boolean
 }
 
 export function SectionHeader({
@@ -55,6 +57,7 @@ export function SectionHeader({
   maximizable,
   bodyId,
   status,
+  disabled,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const statusId = useId()
@@ -78,11 +81,12 @@ export function SectionHeader({
           // findable from outside React without a ref registry to keep in sync.
           data-section-header={sectionId}
           onClick={onToggle}
+          disabled={disabled}
           aria-label={title}
           aria-expanded={open}
           aria-controls={bodyId}
           aria-describedby={status ? statusId : undefined}
-          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg"
+          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg disabled:opacity-50 disabled:hover:text-fg-muted"
         >
           <ChevronRight
             aria-hidden="true"
