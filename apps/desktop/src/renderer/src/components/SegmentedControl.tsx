@@ -13,6 +13,8 @@ interface Props<T extends string> {
   // What the row chooses (usually the visible label above it), so a screen reader names
   // the group before reading its options.
   label?: string
+  // Tighter segments, for two rows that must share one line in a narrow panel.
+  compact?: boolean
 }
 
 // The option row used for normalization mode, theme, output format and key notation
@@ -37,7 +39,9 @@ export function SegmentedControl<T extends string>({
   labelFor,
   className,
   label,
+  compact = false,
 }: Props<T>): React.JSX.Element {
+  const segmentX = compact ? 'px-2.5' : 'px-4'
   const overlayRef = useRef<HTMLDivElement>(null)
   // null = no real measurement yet. A control can mount before it has geometry (a
   // hidden wizard step, a modal mid-entrance): zeros read as clip inset(0 0 0 0) —
@@ -109,7 +113,7 @@ export function SegmentedControl<T extends string>({
           // The buttons themselves all stay quiet — the overlay below paints the
           // raised state — so a segment the highlight is leaving fades back to muted
           // exactly as the clip uncovers it. Hover previews the fill without relief.
-          className="rounded-md px-4 py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+          className={`rounded-md ${segmentX} py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-hover)] hover:text-fg`}
         >
           {labelFor(id)}
         </button>
@@ -139,7 +143,7 @@ export function SegmentedControl<T extends string>({
         {options.map((id) => (
           <span
             key={id}
-            className="rounded-md bg-[var(--color-panel-2)] px-4 py-1.5 text-sm text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+            className={`rounded-md bg-[var(--color-panel-2)] ${segmentX} py-1.5 text-sm text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]`}
           >
             {labelFor(id)}
           </span>

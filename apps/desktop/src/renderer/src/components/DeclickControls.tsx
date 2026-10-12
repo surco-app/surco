@@ -26,6 +26,7 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
         value={value}
         onChange={onChange}
         testidPrefix="declick-mode"
+        compact
         label={tr('declick.clicksLabel')}
         labelFor={(id) => tr(`declick.mode.${id}`)}
       />
@@ -59,6 +60,7 @@ export function NoiseControls({
         value={value}
         onChange={onChange}
         testidPrefix="declick-noise"
+        compact
         label={tr('declick.noiseLabel')}
         labelFor={(id) => tr(`declick.noiseMode.${id}`)}
       />
