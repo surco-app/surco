@@ -185,7 +185,7 @@ export function ConvertFooter({
     <div ref={footerRef} className={FOOTER_BAR}>
       {item.status === 'error' && (
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p role="alert" className="truncate text-xs text-danger">
+          <p role="alert" title={item.error} className="line-clamp-3 min-w-0 text-xs text-danger">
             {item.error}
           </p>
           <button

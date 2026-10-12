@@ -132,6 +132,20 @@ describe('ConvertFooter announcements', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Disk full')
   })
 
+  // Conversion errors run to 200+ characters, and the part that says what to do comes
+  // last. Cut to one line with nothing to hover, the user could not read the fix.
+  it('keeps the whole conversion error readable when it does not fit', () => {
+    const error =
+      'Apple Music could not copy the file into its media folder. Turn on "Copy files to Music Media folder" in Music settings and convert again.'
+    render(
+      <ConvertFooter
+        {...footer(false).props}
+        item={{ id: 't1', status: 'error', error, inputPath: '/a.wav', meta: {} } as TrackItem}
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveAttribute('title', error)
+  })
+
   it('announces a failed Apple Music add as an alert', () => {
     render(
       <ConvertFooter
