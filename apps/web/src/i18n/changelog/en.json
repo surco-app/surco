@@ -71,6 +71,34 @@
       {
         "text": "The metadata form puts each label beside its field, so the default window shows one line per field.",
         "in": "1.7.3"
+      },
+      {
+        "text": "When you move to the next track, the release you applied on the last one comes first in the search results. The list no longer shifts while your pointer is over it, and late answers are added at the bottom.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "Surco remembers for the session the format and destination you picked for each track, and the convert button says where the file will go, in the output folder, next to the original or over it. If it is about to overwrite, it asks once per session instead of on every track.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "The editor opens the next track at the same scroll position you left the last one at, and each trim lane keeps its zoom.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "In trim you can listen to and nudge the suggested cut before you stage it, and Space stops the audition.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "The click-repair wave can be dragged with the mouse when zoomed in, with a whole-track overview to move around it.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "The spectrogram shades the stretch the quality verdict is based on.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "Settings no longer closes on an outside click while you have unsaved changes, and asks before Escape discards them.",
+        "in": "1.7.4"
       }
     ]
   },

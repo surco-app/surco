@@ -71,6 +71,34 @@
       {
         "text": "El formulario de metadatos pone cada etiqueta al lado de su campo, así que con la ventana por defecto ves una línea por campo.",
         "in": "1.7.3"
+      },
+      {
+        "text": "Al pasar a la siguiente pista, el disco que aplicaste en la anterior sale el primero en los resultados de búsqueda. La lista ya no se mueve mientras tienes el puntero encima, y lo que llega tarde se suma al final.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "Surco recuerda durante la sesión el formato y el destino que elegiste para cada pista, y el botón de convertir dice dónde irá el archivo, en la carpeta de salida, junto al original o encima. Si va a sobrescribir, pregunta una vez por sesión y no en cada pista.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "El editor abre la siguiente pista a la misma altura en que dejaste la anterior, y cada carril del recorte conserva su zoom.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "En el recorte puedes escuchar y ajustar el corte sugerido antes de marcarlo, y la barra espaciadora detiene la escucha.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "La onda de la reparación de clics se arrastra con el ratón cuando está ampliada, con una vista de la pista entera para moverte por ella.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "El espectrograma sombrea el tramo en el que se basa el veredicto de calidad.",
+        "in": "1.7.4"
+      },
+      {
+        "text": "Ajustes ya no se cierra al hacer clic fuera si tienes cambios sin guardar, y pregunta antes de que Escape los descarte.",
+        "in": "1.7.4"
       }
     ]
   },
