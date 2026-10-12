@@ -96,7 +96,6 @@ export const ICONS = {
     <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />
   ),
   play: <path d="M7 4v16l13-8z" />,
-  check: <path d="M20 6 9 17l-5-5" />,
   scissors: (
     <>
       <circle cx="6" cy="6" r="3" />

@@ -190,10 +190,9 @@ export function qualityFrame(t: number): QualityFrame {
 
 /* ---------------------------------------------------------------- 04 · declick */
 
-const DECLICK_CLICK = 0.18
-const DECLICK_NOISE = 0.32
-const DECLICK_RUMBLE = 0.44
-const DECLICK_LISTEN = 0.56
+const DECLICK_CLICK = 0.2
+const DECLICK_NOISE = 0.36
+const DECLICK_LISTEN = 0.52
 const DECLICK_PLAY_ENDS = 0.95
 // How long the cursor rests on a control before pressing it.
 const DECLICK_AIM = 0.1
@@ -201,16 +200,15 @@ const DECLICK_AIM = 0.1
 export interface DeclickFrame {
   mode: 'off' | 'standard'
   noise: 'off' | 'medium'
-  rumble: boolean
-  cursor: 'standard' | 'noise' | 'rumble' | 'listen' | null
+  cursor: 'standard' | 'noise' | 'listen' | null
   listen: boolean
   playhead: number
   marks: number
 }
 
 // The app's vinyl repair section: the clicks it found are marked on the strip, then
-// "Standard" clicks, "Medium" background noise and the rumble cut get chosen in the
-// order they sit in the app, and "Listen to the result" plays the repaired strip through.
+// "Standard" clicks and "Medium" background noise get chosen in the order they sit in
+// the app, and "Listen to the result" plays the repaired strip through.
 export function declickFrame(t: number): DeclickFrame {
   const p = clamp(t)
   const on = p >= DECLICK_CLICK
@@ -218,16 +216,13 @@ export function declickFrame(t: number): DeclickFrame {
   return {
     mode: on ? 'standard' : 'off',
     noise: p >= DECLICK_NOISE ? 'medium' : 'off',
-    rumble: p >= DECLICK_RUMBLE,
     cursor: aiming(DECLICK_CLICK, 0.06)
       ? 'standard'
       : aiming(DECLICK_NOISE)
         ? 'noise'
-        : aiming(DECLICK_RUMBLE)
-          ? 'rumble'
-          : aiming(DECLICK_LISTEN)
-            ? 'listen'
-            : null,
+        : aiming(DECLICK_LISTEN)
+          ? 'listen'
+          : null,
     listen: on,
     playhead: clamp((p - DECLICK_LISTEN) / (DECLICK_PLAY_ENDS - DECLICK_LISTEN)),
     marks: DECLICK_MARKS.length,

@@ -502,7 +502,7 @@
       },
       {
         "q": "¿Y los clics y el ruido del vinilo?",
-        "a": "Surco los detecta y los interpola al convertir, con cuatro niveles de intensidad. Marca cada clic que encuentra sobre la onda para que saltes de uno a otro, y renderiza la pista reparada para que la compares con la original mientras suena, sin ningún corte en el audio: así oyes si la reparación se ha llevado los clics, y si se ha llevado también algo de la música. También baja el ruido de fondo del disco, con su propia escala de cuatro niveles, y corta el rumble del giradiscos por debajo de 20 Hz. Los dos apenas tocan la música, y en una pista limpia no cambian nada. Viene desactivado."
+        "a": "Surco los detecta y los interpola al convertir, con cuatro niveles de intensidad. Marca cada clic que encuentra sobre la onda para que saltes de uno a otro, y renderiza la pista reparada para que la compares con la original mientras suena, sin ningún corte en el audio: así oyes si la reparación se ha llevado los clics, y si se ha llevado también algo de la música. También baja el ruido de fondo del disco, el soplido y el retumbe del plato, con su propia escala de cuatro niveles. Apenas toca la música, y en una pista limpia no cambia nada. Viene desactivado."
       },
       {
         "q": "Tengo MP3 en mi biblioteca. ¿Puedo pasarlos a lossless sin perder las playlists?",
@@ -687,7 +687,7 @@
         "body": [
           "Un rip de vinilo trae los clics y los pops de la aguja pegados al audio. La sección de reparación de clics los detecta y los interpola al convertir, con cuatro niveles: desactivado, suave, estándar y fuerte. Suave es el toque mínimo, para material delicado; fuerte atrapa también los pops largos, a costa de suavizar algún transitorio.",
           "Antes de decidir nada, Surco te dice cuántos clics audibles estima que tiene la pista, así sabes si merece la pena. Marca sobre la onda cada uno que encuentra, así que un disco sucio se lee de un vistazo en vez de como un número. Un clic dura milisegundos y buscarlo arrastrando es imposible: pulsa «Siguiente clic» para recorrerlos uno a uno, pincha una marca para oír ese en concreto, o coloca el cursor donde quieras y dale a Espacio para reproducir desde ahí.",
-          "Además de los clics, la sección baja el ruido de fondo, ese soplido continuo del disco que se oye sobre todo en los parones, con otra escala de cuatro niveles: desactivado, suave, medio y fuerte. Y una casilla corta el rumble, el retumbe del motor y del plato por debajo de 20 Hz. Las tres cosas se combinan como quieras y entran juntas en «Escuchar el resultado».",
+          "Además de los clics, la sección baja el ruido de fondo del disco con otra escala de cuatro niveles: desactivado, suave, medio y fuerte. Quita el soplido continuo que se oye sobre todo en los parones y, en cualquier nivel, también el rumble, el retumbe del motor y del plato por debajo de 20 Hz. Las dos cosas se combinan como quieras y entran juntas en «Escuchar el resultado».",
           "Lo importante es «Escuchar el resultado»: Surco renderiza la pista entera ya reparada y te deja alternar entre ella y la original mientras suena, sin ningún corte en el audio. Ese cambio instantáneo es justo lo que hace falta. Si la reparación se ha comido el ataque de una caja, la diferencia es sutil, y las diferencias sutiles solo se aprecian cambiando en caliente."
         ],
         "points": [
@@ -696,13 +696,13 @@
           "Es una estimación de clics audibles: los que quedan enterrados bajo un pasaje denso se escapan, igual que se le escapan al oído.",
           "El ruido de fondo se estima sobre la propia pista mientras suena. No hace falta una muestra de silencio, así que funciona también en rips ya recortados que empiezan con música.",
           "En una pista sin ruido, como un máster digital, la reducción de ruido no cambia nada aunque la actives.",
-          "El corte de rumble le quita 0,2 dB al bombo (50 Hz) y deja intacto todo lo que suena por encima.",
+          "Cualquier nivel de ruido de fondo corta también el rumble por debajo de 20 Hz. Al bombo (50 Hz) le quita 0,2 dB y deja intacto todo lo que suena por encima.",
           "El A/B compara la pista reparada con la original sin cortes, para oír si la reparación se ha llevado también algo de música.",
           "Si además recortas el silencio, la parte que se va queda atenuada en la onda para que no ajustes sobre audio que no saldrá.",
           "Repara el audio al convertir, así que recodifica: revisa la nota sobre cue points antes de aplicarlo a un ALAC con cues."
         ],
         "shot": "declick-es.webp",
-        "shotCaption": "Clics marcados sobre la onda, ruido de fondo y rumble en la misma sección."
+        "shotCaption": "Clics marcados sobre la onda y ruido de fondo en la misma sección."
       },
       {
         "id": "recorte",
@@ -1000,7 +1000,6 @@
       "strong": "Fuerte",
       "found": "Clics encontrados",
       "noise": "Ruido de fondo",
-      "rumble": "Quitar el rumble",
       "listen": "Escuchar el resultado"
     },
     "trim": {
@@ -1737,14 +1736,7 @@
             "setting": "Ruido de fondo",
             "value": "Medio",
             "optional": true,
-            "note": "Baja el soplido del disco que se oye en los parones. No toca la música."
-          },
-          {
-            "tab": "Procesado",
-            "section": "Reparación de vinilo",
-            "setting": "Quitar el rumble",
-            "optional": true,
-            "note": "Corta el retumbe del plato por debajo de 20 Hz."
+            "note": "Baja el soplido del disco que se oye en los parones y el retumbe del plato. No toca la música."
           },
           {
             "tab": "Búsqueda",

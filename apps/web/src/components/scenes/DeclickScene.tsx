@@ -6,17 +6,16 @@ import { DECLICK_ENVELOPE, DECLICK_MARKS } from '../../lib/waveforms'
 import { AppWave, EASE, EditorPanel, Glyph, ICONS, SceneCursor, Segmented } from './AppChrome'
 
 // The app's vinyl repair section: the clicks it found marked on the strip, "Standard"
-// clicks, "Medium" background noise and the rumble cut chosen in turn, and "Listen to
-// the result" playing the repaired strip through.
+// clicks and "Medium" background noise chosen in turn, and "Listen to the result"
+// playing the repaired strip through.
 export default function DeclickScene() {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const standard = useRef<HTMLSpanElement>(null)
   const noise = useRef<HTMLSpanElement>(null)
-  const rumble = useRef<HTMLSpanElement>(null)
   const listen = useRef<HTMLSpanElement>(null)
-  const [targets] = useState(() => ({ standard, noise, rumble, listen }))
+  const [targets] = useState(() => ({ standard, noise, listen }))
   const frame = declickFrame(useSceneProgress(ref, 6500))
   const on = frame.mode === 'standard'
 
@@ -39,7 +38,7 @@ export default function DeclickScene() {
           refs={{ 2: standard }}
         />
         <p className="mt-2.5 text-[11.5px] text-muted">{t('home.declick.found')}</p>
-        <div className="relative mt-1.5 h-14 overflow-hidden rounded-md bg-bg2">
+        <div className="relative mt-1.5 h-16 overflow-hidden rounded-md bg-bg2">
           <AppWave values={DECLICK_ENVELOPE} />
           {DECLICK_MARKS.map((m) => (
             <i
@@ -67,16 +66,6 @@ export default function DeclickScene() {
           active={frame.noise === 'medium' ? 2 : 0}
           refs={{ 2: noise }}
         />
-        <span ref={rumble} className="mt-2.5 flex w-fit items-center gap-2 text-xs text-fg">
-          <i
-            className={`flex size-3.5 items-center justify-center rounded-[4px] border transition-colors duration-200 ${
-              frame.rumble ? 'border-blue bg-blue text-bg' : 'border-[#737aa2]'
-            }`}
-          >
-            {frame.rumble && <Glyph size={10}>{ICONS.check}</Glyph>}
-          </i>
-          {t('home.declick.rumble')}
-        </span>
         <span
           ref={listen}
           className={`mt-2.5 inline-flex h-7 items-center gap-1.5 rounded-[7px] border border-line px-2.5 text-xs transition-colors duration-200 ${

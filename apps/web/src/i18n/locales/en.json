@@ -502,7 +502,7 @@
       },
       {
         "q": "What about vinyl clicks and noise?",
-        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio. So you hear whether the repair took the clicks out, and whether it took some of the music with them. It also lowers the record's background noise, on its own four-step ladder, and cuts turntable rumble below 20 Hz. Neither touches the music in any way you would notice, and on a clean track they change nothing. It ships off."
+        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio. So you hear whether the repair took the clicks out, and whether it took some of the music with them. It also lowers the record's background noise, the hiss and the platter rumble, on its own four-step ladder. It doesn't touch the music in any way you would notice, and on a clean track it changes nothing. It ships off."
       },
       {
         "q": "My library is full of MP3s. Can I move them to lossless without losing my playlists?",
@@ -687,7 +687,7 @@
         "body": [
           "A vinyl rip carries the needle's clicks and pops baked into the audio. The click repair section detects and interpolates them as it converts, with four levels: off, light, standard and strong. Light is the minimal touch, for delicate material; strong catches the long pops too, at the cost of softening the odd transient.",
           "Before you decide anything, Surco tells you how many audible clicks it estimates the track has, so you know whether it's worth it. It marks every one it finds on the waveform, so a dirty record reads at a glance instead of as a number. A click lasts milliseconds and hunting for it by dragging is hopeless: hit “Next click” to step through them one by one, click a mark to hear that one, or put the cursor wherever you like and press Space to play from there.",
-          "Besides the clicks, the section lowers the background noise, the steady hiss of the record you hear most in the breakdowns, on another four-step ladder: off, gentle, medium and strong. And a checkbox cuts the rumble, the motor and platter drone below 20 Hz. Mix the three however you like and they all go into “Hear the result” together.",
+          "Besides the clicks, the section lowers the record's background noise on another four-step ladder: off, gentle, medium and strong. It takes out the steady hiss you hear most in the breakdowns and, at any step, the rumble too, the motor and platter drone below 20 Hz. Mix the two however you like and they go into “Hear the result” together.",
           "The thing that matters is “Preview the result”: Surco renders the whole repaired track and lets you switch between it and the original while it plays, with no gap in the audio. That instant switch is exactly what's needed. If the repair has eaten the attack of a snare, the difference is subtle, and subtle differences only show up switching on the fly."
         ],
         "points": [
@@ -696,13 +696,13 @@
           "It's an estimate of audible clicks: the ones buried under a dense passage slip through, the same way they slip past your ear.",
           "The background noise is estimated from the track itself as it plays. No sample of silence is needed, so it works on rips already trimmed that start right on the music.",
           "On a track without noise, like a digital master, the noise reduction changes nothing even if you switch it on.",
-          "The rumble cut takes 0.2 dB off a kick drum (50 Hz) and leaves everything above it untouched.",
+          "Any background-noise step also cuts the rumble below 20 Hz. It takes 0.2 dB off a kick drum (50 Hz) and leaves everything above it untouched.",
           "The A/B compares the repaired track against the original with no gap, so you can hear whether the repair took some music with it.",
           "If you're also trimming silence, the part being cut is dimmed on the waveform so you don't tune against audio that won't make it out.",
           "It repairs the audio on conversion, so it re-encodes: check the cue point note before applying it to an ALAC with cues."
         ],
         "shot": "declick-en.webp",
-        "shotCaption": "Clicks marked on the waveform, background noise and rumble in one section."
+        "shotCaption": "Clicks marked on the waveform and background noise in one section."
       },
       {
         "id": "recorte",
@@ -1000,7 +1000,6 @@
       "strong": "Strong",
       "found": "Clicks found",
       "noise": "Background noise",
-      "rumble": "Remove rumble",
       "listen": "Hear the result"
     },
     "trim": {
@@ -1737,14 +1736,7 @@
             "setting": "Background noise",
             "value": "Medium",
             "optional": true,
-            "note": "Lowers the record hiss you hear in the breakdowns. Leaves the music alone."
-          },
-          {
-            "tab": "Processing",
-            "section": "Vinyl repair",
-            "setting": "Remove rumble",
-            "optional": true,
-            "note": "Cuts platter rumble below 20 Hz."
+            "note": "Lowers the record hiss you hear in the breakdowns and the platter rumble. Leaves the music alone."
           },
           {
             "tab": "Search",
