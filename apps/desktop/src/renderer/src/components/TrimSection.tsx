@@ -1055,7 +1055,7 @@ export function TrimSection({
       onKeyStep: (delta: number) => nudge(which, delta),
       onSetTime: (sec: number) => setCut(which, sec),
       onApplySuggestion: (sec: number) =>
-        commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }),
+        commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }, true),
       onAudition: () => audition(which),
       onClear: () => clearSide(which),
       auditing: auditing === which,

@@ -162,6 +162,28 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-apply-end').style.left).toContain('clamp(')
   })
 
+  // The scissors are an aimed placement. Zoomed out, the drag-edge snap (2 % of the lane)
+  // swallowed a short head silence, so the click staged nothing and said nothing.
+  it('stages a short detected cut from its scissors even zoomed all the way out', async () => {
+    const peaks = Array.from({ length: 200 }, (_, i) => (i >= 3 ? 0.3 : 0.0005))
+    ;(window.api as unknown as { waveform: ReturnType<typeof vi.fn> }).waveform.mockResolvedValue({
+      peaks,
+      rms: peaks,
+      durationSec: 100,
+    })
+    const onChange = vi.fn()
+    render(section({ onChange }))
+    const start = await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
+    act(() => {
+      runKeyClaim('trim-start-zoom-out', {})
+    })
+    act(() => {
+      runKeyClaim('trim-start-zoom-out', {})
+    })
+    fireEvent.click(start)
+    expect(onChange).toHaveBeenCalledWith({ startSec: expect.any(Number) })
+  })
+
   it('says there is nothing to cut when the track starts and ends on music', async () => {
     ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
       .fn()
