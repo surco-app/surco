@@ -4,6 +4,7 @@ import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mediaUrl } from '../../../shared/media'
 import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
 import { runKeyClaim } from '../lib/spaceClaim'
@@ -378,10 +379,64 @@ describe('DeclickSection', () => {
     expect(window.api.declickPreview).toHaveBeenCalledTimes(1)
   })
 
-  // Off means the repair does nothing, so there is no result to hear: the key belongs to
-  // the mini-player again, exactly as it would with the section closed.
-  it('leaves Space to the mini-player when the repair is off', () => {
+  // Off still has a wave and a cursor on it, so Space means what it means in every other
+  // mode — "play what I am looking at" — instead of jumping to the mini-player. With
+  // nothing repaired, what plays is the original.
+  it('plays the original on this wave when Space is pressed with the repair off', async () => {
     render(section({ value: 'off' }))
+    await act(async () => {
+      expect(runKeyClaim('play')).toBe(true)
+    })
+    expect(elements.length).toBeGreaterThan(0)
+    for (const el of elements) expect(el.src).toBe(mediaUrl('/in/track.wav'))
+    act(() => loadPair())
+    expect(play).toHaveBeenCalled()
+    expect(window.api.declickPreview).not.toHaveBeenCalled()
+  })
+
+  it('plays the original from wherever the cursor was put with the repair off', async () => {
+    render(section({ value: 'off' }))
+    await screen.findByTestId('declick-playhead')
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    pointerAt(overlay, 'pointerDown', 250)
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    act(() => loadPair())
+    expect(elements[1].currentTime).toBe(60)
+  })
+
+  it('pauses the original on a second Space with the repair off', async () => {
+    render(section({ value: 'off' }))
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    await act(async () => loadPair())
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(pause).toHaveBeenCalled()
+  })
+
+  // Picking a mode after listening in Off must not leave Space on the bare original: the
+  // user would hear an unrepaired track while the section says Standard.
+  it('stops playing the original once a repair mode is picked', async () => {
+    const { rerender } = render(section({ value: 'off' }))
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    await act(async () => loadPair())
+    rerender(section({ value: 'standard' }))
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', 'standard')
+  })
+
+  // A selection shows no wave, so there is nothing here for Space to play.
+  it('leaves Space to the mini-player with the repair off on a selection', () => {
+    render(section({ value: 'off', selectedCount: 3 }))
     expect(runKeyClaim('play')).toBe(false)
   })
 
