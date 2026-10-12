@@ -1,6 +1,15 @@
 import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
 import type React from 'react'
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -98,7 +107,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     openKey,
     suggestedKey,
     pendingProviders,
-    setListEngaged,
+    searchProgress,
+    held,
+    showHeld,
+    choosingBest,
     loading,
     busy,
     noResults,
@@ -207,6 +219,24 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     [searchInputRef],
   )
   const tierLabel = tr(matchTier === 'high' ? 'editor.matchSuggested' : 'match.toConfirm')
+  // What answered after the list showed waits under the best match (or at the top without
+  // one), so asking for it is one click and never moves the release the user came for.
+  const heldAt = results.length > 0 && suggestedKey === resultKeyOf(results[0]) ? 1 : 0
+  const heldButton = held.count > 0 && (
+    <div className="flex justify-center px-1.5 pt-1.5 pb-0.5">
+      <button
+        type="button"
+        data-testid="discogs-held"
+        onClick={showHeld}
+        className="press rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+      >
+        {tr('editor.heldResults', {
+          count: held.count,
+          providers: held.providers.map((p) => tr(`settings.provider.${p}`)).join(', '),
+        })}
+      </button>
+    </div>
+  )
   function onResultsKeyDown(e: React.KeyboardEvent): void {
     const map = { ArrowDown: 1, j: 1, ArrowUp: -1, k: -1, Home: 'first', End: 'last' } as const
     const to = map[e.key as keyof typeof map]
@@ -334,25 +364,25 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           )}
         </div>
 
-        {/* While the pointer or focus is in here the hook appends late answers below instead
-            of re-ranking, so the row the user is reaching for never moves under them. */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: keyboard roving for the result/track buttons inside; they keep their own native Enter/Space activation and Tab order */}
         <div
           ref={resultsRef}
           data-testid="discogs-results"
           onKeyDown={onResultsKeyDown}
-          onPointerEnter={() => setListEngaged(true)}
-          onPointerLeave={() => setListEngaged(false)}
-          onFocus={() => setListEngaged(true)}
-          onBlur={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget)) setListEngaged(false)
-          }}
           className="min-h-0 flex-1 overflow-y-auto"
         >
           {busy && results.length === 0 ? (
-            // Searching with nothing to show yet: skeleton rows mirror the result-row
-            // shape so the list doesn't pop into an area that looked idle.
-            <SkeletonRows testid="discogs-skeleton" count={4} />
+            // The list waits for every catalog before it shows, so nothing appears only to
+            // move: skeleton rows mirror the result-row shape, and the count says the wait
+            // is going somewhere.
+            <>
+              {searchProgress && searchProgress.total > 1 && (
+                <p data-testid="discogs-progress" className="px-3 pt-2 text-[11px] text-fg-faint">
+                  {tr('editor.searchProgress', searchProgress)}
+                </p>
+              )}
+              <SkeletonRows testid="discogs-skeleton" count={4} />
+            </>
           ) : noResults ? (
             <div
               data-testid="discogs-no-results"
@@ -364,211 +394,232 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           ) : results.length === 0 ? (
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
-            results.map((r, i) => {
-              const rk = resultKeyOf(r)
-              const expanded = openKey === rk
-              const suggested = suggestedKey === rk
-              const loaded = expanded && !!release && !loading
-              // Both empty for every Bandcamp row — its search returns no year, label or
-              // catalogue — so each span is dropped rather than rendered blank, and the row
-              // keeps its one-line height instead of paying for a line that says nothing.
-              const identity = resultIdentity(r)
-              const pressing = resultPressing(r)
-              return (
-                <div key={rk} data-testid="result-card" data-key={rk} className="px-1.5 pt-0.5">
-                  {/* Result as a card, matching the track list's rows so both columns read as the
+            <>
+              {choosingBest && (
+                <div data-testid="best-match-slot">
+                  <BestMatchLabel label={tr('editor.bestMatch')} />
+                  <SkeletonRows testid="best-match-skeleton" count={1} />
+                </div>
+              )}
+              {results.map((r, i) => {
+                const rk = resultKeyOf(r)
+                const expanded = openKey === rk
+                const suggested = suggestedKey === rk
+                const best = suggested && i === 0
+                const loaded = expanded && !!release && !loading
+                // Both empty for every Bandcamp row — its search returns no year, label or
+                // catalogue — so each span is dropped rather than rendered blank, and the row
+                // keeps its one-line height instead of paying for a line that says nothing.
+                const identity = resultIdentity(r)
+                const pressing = resultPressing(r)
+                return (
+                  <Fragment key={rk}>
+                    {i === heldAt && heldButton}
+                    {best && (
+                      <BestMatchLabel testid="best-match-label" label={tr('editor.bestMatch')} />
+                    )}
+                    <div data-testid="result-card" data-key={rk} className="px-1.5 pt-0.5">
+                      {/* Result as a card, matching the track list's rows so both columns read as the
                       same component. The wide column earns the title a full two lines instead of a
                       hard cut, and the release line shows year · label · catalogue no · format ·
                       country in full — the catalogue number and the pressing country being the
                       surest ways to tell two near-identical results apart. */}
-                  <button
-                    type="button"
-                    data-testid="discogs-result"
-                    data-fresh={freshKeys.has(rk) || undefined}
-                    aria-expanded={expanded}
-                    onClick={() => previewRelease(r)}
-                    // Only the rows above the fold ramp in; past STAGGERED_ROWS the delay is
-                    // zero, so a result the user scrolls down to is already there instead of
-                    // waiting on a queue of animations it can't see. Decoration must never
-                    // make content arrive later than it could.
-                    style={{
-                      animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
-                    }}
-                    className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
-                      // The open card takes no fill: the tracklist unfolding under it already
-                      // says which one is open, and the applied track keeps the column's only fill.
-                      expanded ? '' : 'hover:bg-[var(--color-hover)]/85'
-                    }`}
-                  >
-                    <ResultThumb src={r.thumb} />
-                    <span className="min-w-0 flex-1">
-                      <span data-fit className="block truncate text-sm leading-snug">
-                        {r.title}
-                      </span>
-                      {/* Origin, suggestion and release facts share one line under the title.
+                      <button
+                        type="button"
+                        data-testid="discogs-result"
+                        data-fresh={freshKeys.has(rk) || undefined}
+                        aria-expanded={expanded}
+                        onClick={() => previewRelease(r)}
+                        // Only the rows above the fold ramp in; past STAGGERED_ROWS the delay is
+                        // zero, so a result the user scrolls down to is already there instead of
+                        // waiting on a queue of animations it can't see. Decoration must never
+                        // make content arrive later than it could.
+                        style={{
+                          animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
+                        }}
+                        className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
+                          // The open card takes no fill: the tracklist unfolding under it already
+                          // says which one is open, and the applied track keeps the column's only fill.
+                          expanded ? '' : 'hover:bg-[var(--color-hover)]/85'
+                        }`}
+                      >
+                        <ResultThumb src={r.thumb} />
+                        <span className="min-w-0 flex-1">
+                          <span data-fit className="block truncate text-sm leading-snug">
+                            {r.title}
+                          </span>
+                          {/* Origin, suggestion and release facts share one line under the title.
                           Stacked on three lines they set the row's height at nearly twice the
                           track list's for the same one line of content — and for a Bandcamp
                           result, which carries no year/label/catalogue at all, two of those
                           lines said nothing. The facts truncate so one long Discogs row can't
                           blow up the card. */}
-                      <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                        {/* The provider is an origin label, so it reads as the same plain
+                          <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                            {/* The provider is an origin label, so it reads as the same plain
                             secondary text the track list gives the WAV/FLAC format tag —
                             same vocabulary across both columns. */}
-                        <span
-                          data-testid="result-provider"
-                          data-provider={r.provider}
-                          className="shrink-0 text-[11px] font-medium leading-4 text-fg-dim"
-                        >
-                          {tr(`settings.provider.${r.provider}`)}
-                        </span>
-                        {/* The suggestion is the track list's match sparkle, not a filled
+                            <span
+                              data-testid="result-provider"
+                              data-provider={r.provider}
+                              className="shrink-0 text-[11px] font-medium leading-4 text-fg-dim"
+                            >
+                              {tr(`settings.provider.${r.provider}`)}
+                            </span>
+                            {/* The suggestion is the track list's match sparkle, not a filled
                             chip: a signal, marked like the row's quality tick, with its
                             "Suggested" label in the tooltip. Never a check — nothing is
                             applied until the user opens the release and picks a track. */}
-                        {suggested && (
-                          // role="img" with the word as its name: the tooltip only answers a
-                          // pointer, and the name joins the row's so a screen reader hears
-                          // which release is suggested.
-                          <span
-                            data-testid="result-suggested"
-                            role="img"
-                            aria-label={tr('editor.matchSuggested')}
-                            className="group/dot relative flex shrink-0 text-[var(--color-accent)]"
-                          >
-                            <Sparkles className="h-3 w-3" aria-hidden="true" />
-                            <Tooltip
-                              label={tr('editor.matchSuggested')}
-                              align="start"
-                              scope="dot"
-                            />
-                          </span>
-                        )}
-                        {/* Curated, not raw: the first label only (Discogs' label[] also lists
+                            {suggested && (
+                              // role="img" with the word as its name: the tooltip only answers a
+                              // pointer, and the name joins the row's so a screen reader hears
+                              // which release is suggested.
+                              <span
+                                data-testid="result-suggested"
+                                role="img"
+                                aria-label={tr('editor.matchSuggested')}
+                                className="group/dot relative flex shrink-0 text-[var(--color-accent)]"
+                              >
+                                <Sparkles className="h-3 w-3" aria-hidden="true" />
+                                <Tooltip
+                                  label={tr('editor.matchSuggested')}
+                                  align="start"
+                                  scope="dot"
+                                />
+                              </span>
+                            )}
+                            {/* Curated, not raw: the first label only (Discogs' label[] also lists
                             publishers, distributors and studios — a wall of noise), and just the
                             base format (medium + size, e.g. "Vinyl, 12\"") dropping RPM/Single/
                             Stereo. */}
-                        {identity && (
-                          <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
-                            {identity}
+                            {identity && (
+                              <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
+                                {identity}
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </span>
-                      {/* The pressing goes on its own line: with the country appended, all five
+                          {/* The pressing goes on its own line: with the country appended, all five
                           facts overflowed one line for 19% of results and the ellipsis ate the
                           country — the field that separates a UK 12" from its German repress.
                           Only rendered when there is a pressing to describe, so a Bandcamp or
                           Deezer row stays the same height it was. */}
-                      {pressing && (
-                        <span className="mt-px flex min-w-0 items-center">
-                          <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
-                            {pressing}
-                          </span>
+                          {pressing && (
+                            <span className="mt-px flex min-w-0 items-center">
+                              <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
+                                {pressing}
+                              </span>
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
-                    <ChevronRight
-                      aria-hidden="true"
-                      className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${
-                        expanded
-                          ? 'rotate-90'
-                          : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
-                      }`}
-                    />
-                  </button>
-                  <CollapsibleTracks open={expanded}>
-                    <div className="flex flex-col gap-0.5 pb-1">
-                      {/* The album match gets a band because it is a different task
+                        <ChevronRight
+                          aria-hidden="true"
+                          className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${
+                            expanded
+                              ? 'rotate-90'
+                              : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                          }`}
+                        />
+                      </button>
+                      <CollapsibleTracks open={expanded}>
+                        <div className="flex flex-col gap-0.5 pb-1">
+                          {/* The album match gets a band because it is a different task
                           (pairing several files); a single file's tracks need none, indented
                           under the release they already read as its tracklist. */}
-                      {isMulti && (
-                        <div className="border-y border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1">
-                          <span className="text-[11px] font-semibold text-fg-dim">
-                            {tr('match.title')}
-                          </span>
-                        </div>
-                      )}
-                      {loaded && release ? (
-                        isMulti && selectedTracks && onApplyMatches ? (
-                          <AlbumMatchRows
-                            files={selectedTracks}
-                            release={release}
-                            onApply={onApplyMatches}
-                          />
-                        ) : (
-                          release.tracklist.map((t) => (
-                            <button
-                              key={`${t.position}-${t.title}`}
-                              type="button"
-                              data-testid="discogs-track"
-                              aria-current={
-                                t === appliedTrack || t === matchedTrack ? 'true' : undefined
-                              }
-                              onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
-                                // Same selection fill and rounded shape as the library row, so the
-                                // applied track reads with equal weight in both columns (was a faint
-                                // tint that looked second-class next to the filled library row).
-                                t === appliedTrack || t === matchedTrack
-                                  ? 'is-applied bg-[var(--color-row-selected)]'
-                                  : 'hover:bg-[var(--color-hover)]'
-                              }`}
-                            >
-                              <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
-                                {t.position}
+                          {isMulti && (
+                            <div className="border-y border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1">
+                              <span className="text-[11px] font-semibold text-fg-dim">
+                                {tr('match.title')}
                               </span>
-                              <span
-                                data-fit
-                                className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
-                              >
-                                {trackDisplayTitle(t)}
-                              </span>
-                              {/* The suggestion mark mirrors the track list's match sparkle
+                            </div>
+                          )}
+                          {loaded && release ? (
+                            isMulti && selectedTracks && onApplyMatches ? (
+                              <AlbumMatchRows
+                                files={selectedTracks}
+                                release={release}
+                                onApply={onApplyMatches}
+                              />
+                            ) : (
+                              release.tracklist.map((t) => (
+                                <button
+                                  key={`${t.position}-${t.title}`}
+                                  type="button"
+                                  data-testid="discogs-track"
+                                  aria-current={
+                                    t === appliedTrack || t === matchedTrack ? 'true' : undefined
+                                  }
+                                  onClick={() => selectTrack(t)}
+                                  className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
+                                    // Same selection fill and rounded shape as the library row, so the
+                                    // applied track reads with equal weight in both columns (was a faint
+                                    // tint that looked second-class next to the filled library row).
+                                    t === appliedTrack || t === matchedTrack
+                                      ? 'is-applied bg-[var(--color-row-selected)]'
+                                      : 'hover:bg-[var(--color-hover)]'
+                                  }`}
+                                >
+                                  <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                                    {t.position}
+                                  </span>
+                                  <span
+                                    data-fit
+                                    className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
+                                  >
+                                    {trackDisplayTitle(t)}
+                                  </span>
+                                  {/* The suggestion mark mirrors the track list's match sparkle
                                   (not a tick: a check reads as "already applied", but the
                                   metadata is only applied when the row is clicked). Accent
                                   for a confident tier, amber for a review-tier one, so the
                                   colour tells the user whether to trust it — the same
                                   vocabulary the left column uses. Sits in a fixed slot so a
                                   row without a suggestion keeps the duration aligned. */}
-                              <span className="flex w-3 shrink-0 justify-center">
-                                {t === matchedTrack && matchTier && (
-                                  // Accent versus amber was the whole difference between the
-                                  // tiers, so the name and tooltip say which one it is, for a
-                                  // screen reader and for anyone who can't tell the colours apart.
-                                  <span
-                                    data-testid="track-confidence"
-                                    data-confidence={matchTier}
-                                    role="img"
-                                    aria-label={tierLabel}
-                                    className={`group/dot relative flex ${
-                                      matchTier === 'high'
-                                        ? 'text-[var(--color-accent)]'
-                                        : 'text-warn'
-                                    }`}
-                                  >
-                                    <Sparkles className="h-3 w-3" aria-hidden="true" />
-                                    <Tooltip label={tierLabel} align="end" scope="dot" />
+                                  <span className="flex w-3 shrink-0 justify-center">
+                                    {t === matchedTrack && matchTier && (
+                                      // Accent versus amber was the whole difference between the
+                                      // tiers, so the name and tooltip say which one it is, for a
+                                      // screen reader and for anyone who can't tell the colours apart.
+                                      <span
+                                        data-testid="track-confidence"
+                                        data-confidence={matchTier}
+                                        role="img"
+                                        aria-label={tierLabel}
+                                        className={`group/dot relative flex ${
+                                          matchTier === 'high'
+                                            ? 'text-[var(--color-accent)]'
+                                            : 'text-warn'
+                                        }`}
+                                      >
+                                        <Sparkles className="h-3 w-3" aria-hidden="true" />
+                                        <Tooltip label={tierLabel} align="end" scope="dot" />
+                                      </span>
+                                    )}
                                   </span>
-                                )}
-                              </span>
-                              <span className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
-                                {t.duration}
-                              </span>
-                            </button>
-                          ))
-                        )
-                      ) : (
-                        <TrackSkeleton />
-                      )}
+                                  <span className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
+                                    {t.duration}
+                                  </span>
+                                </button>
+                              ))
+                            )
+                          ) : (
+                            <TrackSkeleton />
+                          )}
+                        </div>
+                      </CollapsibleTracks>
                     </div>
-                  </CollapsibleTracks>
-                </div>
-              )
-            })
+                  </Fragment>
+                )
+              })}
+              {heldAt === results.length && heldButton}
+            </>
           )}
-          {/* A catalog is still searching: more rows are on the way below these. */}
+          {/* A catalog still searching: its rows will wait behind the button, not land here,
+              so the panel names it instead of drawing rows that will not come. */}
           {results.length > 0 && pendingProviders.length > 0 && (
-            <SkeletonRows testid="discogs-pending" count={2} />
+            <p data-testid="discogs-pending" className="px-3 py-2 text-[11px] text-fg-faint">
+              {tr('editor.stillSearching', {
+                providers: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),
+              })}
+            </p>
           )}
         </div>
       </div>
@@ -690,5 +741,17 @@ function TrackSkeleton(): React.JSX.Element {
         </div>
       ))}
     </div>
+  )
+}
+
+// Heads the release the auto-match opens, at the top of the list where it always sits.
+function BestMatchLabel({ label, testid }: { label: string; testid?: string }): React.JSX.Element {
+  return (
+    <p
+      data-testid={testid}
+      className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-fg-faint"
+    >
+      {label}
+    </p>
   )
 }

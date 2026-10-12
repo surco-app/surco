@@ -662,6 +662,10 @@
     "coverPosition": "Image {{position}} of {{total}}",
     "coverPositionNone": "None of the {{total}} images picked",
     "searching": "Searching…",
+    "bestMatch": "Best match",
+    "searchProgress": "{{answered}} of {{total}} sources answered",
+    "heldResults": "{{count}} more from {{providers}} · Show",
+    "stillSearching": "Still searching {{providers}}…",
     "resultsCount_one": "{{count}} result",
     "resultsCount_other": "{{count}} results",
     "suggestedStatus": "Suggested: {{title}}"

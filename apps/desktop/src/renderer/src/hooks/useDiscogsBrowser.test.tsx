@@ -7,7 +7,7 @@ import type { Api } from '../../../preload/api'
 import type { SearchResult, TrackMetadata } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
-import { useDiscogsBrowser } from './useDiscogsBrowser'
+import { SEARCH_HOLD_MS, useDiscogsBrowser } from './useDiscogsBrowser'
 
 const searchResult = {
   provider: 'discogs' as const,
@@ -378,11 +378,10 @@ describe('useDiscogsBrowser', () => {
   })
 
   // The auto-match sweep can land while the panel is open: it writes the found release
-  // id onto the track, but the panel's search state seeds only on mount — so the user
-  // kept staring at the broad text-search candidates until they flipped to another track
-  // and back, which is when the remount finally showed the match. When the id appears
-  // mid-mount the panel must jump to that release, exactly as if the track were reopened.
-  it('jumps to the release when the stored id lands after mount', async () => {
+  // id onto the track. Switching the panel's search to that id swapped every candidate on
+  // screen for that one release, the results that "appear and then disappear" (12/10).
+  // The release takes the top, open, and the candidates stay where they were below it.
+  it('puts the release the sweep matched at the top and keeps the candidates', async () => {
     setApi({ getRelease: vi.fn((id: number) => Promise.resolve({ ...release, id })) })
     const { result, rerender } = renderHook(
       ({ discogsReleaseId }: { discogsReleaseId?: string }) =>
@@ -395,6 +394,9 @@ describe('useDiscogsBrowser', () => {
 
     rerender({ discogsReleaseId: '55' })
     await waitFor(() => expect(result.current.release?.id).toBe(55))
+    expect(result.current.openKey).toBe('discogs:55')
+    expect(result.current.suggestedKey).toBe('discogs:55')
+    expect(result.current.results.map((r) => r.id)).toEqual([55, 1])
   })
 
   // But a search the user typed themselves is theirs: if the sweep's id lands while
@@ -892,10 +894,12 @@ describe('useDiscogsBrowser', () => {
   })
 })
 
-// A catalog that lacks the artist makes Discogs walk its whole fallback ladder, several
-// seconds, while Bandcamp has already answered in a fraction of one. Waiting for the
-// slowest source kept the panel on its skeleton the whole time.
-describe('progressive search', () => {
+// Each catalog answers at its own pace: cold, Bandcamp and Deezer in under a second,
+// MusicBrainz in two and Discogs in nearly seven (measured on "More - 4 Ever With Me",
+// 12/10). Showing each answer as it landed slid rows in under the ones being read, and the
+// best ones came last. The list now waits for every source, up to a hold, and then shows
+// once, in order; what answers later waits behind a button instead of moving the rows.
+describe('stable search', () => {
   const bcResult: SearchResult = {
     provider: 'bandcamp',
     id: 9,
@@ -937,110 +941,126 @@ describe('progressive search', () => {
     ).result
   }
 
-  it('shows a fast provider as soon as it answers while a slow one keeps searching', async () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function passHold(): Promise<void> {
+    await act(async () => {
+      vi.advanceTimersByTime(SEARCH_HOLD_MS)
+    })
+  }
+
+  it('shows no row while a source is still answering within the hold', async () => {
     slowDiscogs()
     const result = render()
     act(() => result.current.doSearch())
 
-    await waitFor(() => expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp']))
-    expect(result.current.pendingProviders).toEqual(['discogs'])
+    await waitFor(() => expect(result.current.searchProgress).toEqual({ answered: 1, total: 2 }))
+    expect(result.current.results).toEqual([])
     expect(result.current.busy).toBe(true)
   })
 
-  // The row the user is reaching for must not move under the pointer or the keyboard focus,
-  // so while they are in the list a late answer goes below what is on screen, even when it
-  // scores better than the rows already there.
-  it('adds a late provider below the rows shown while the user is in the list', async () => {
+  it('shows the whole list at once, ranked, when every source answers within the hold', async () => {
     const discogs = slowDiscogs()
     const result = render('Some Album')
     act(() => result.current.doSearch())
-    await waitFor(() => expect(result.current.results).toHaveLength(1))
-    act(() => result.current.setListEngaged(true))
+    await waitFor(() => expect(result.current.searchProgress?.answered).toBe(1))
 
     await act(async () => discogs.resolve([searchResult]))
 
-    await waitFor(() => expect(result.current.pendingProviders).toEqual([]))
-    expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp', 'discogs'])
+    await waitFor(() =>
+      expect(result.current.results.map((r) => r.provider)).toEqual(['discogs', 'bandcamp']),
+    )
   })
 
-  // Nobody is reaching for a row while the list is left alone, so a late answer that scores
-  // better takes its ranked place above the rows already shown, sliding them down.
-  it('puts a better late answer in its ranked place if the list was left alone', async () => {
-    const discogs = slowDiscogs()
-    const result = render('Some Album')
+  it('shows what answered once the hold passes and names the source still searching', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    slowDiscogs()
+    const result = render()
     act(() => result.current.doSearch())
-    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    await waitFor(() => expect(result.current.searchProgress?.answered).toBe(1))
 
-    await act(async () => discogs.resolve([searchResult]))
+    await passHold()
 
-    await waitFor(() => expect(result.current.pendingProviders).toEqual([]))
-    expect(result.current.results.map((r) => r.provider)).toEqual(['discogs', 'bandcamp'])
+    await waitFor(() => expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp']))
+    expect(result.current.pendingProviders).toEqual(['discogs'])
   })
 
-  it('puts a late answer in its ranked place once the user has left the list', async () => {
+  // The rows on screen are what the user is reading; a late source no longer slides its
+  // rows in above them. It says how many it brought, and they join when asked.
+  it('holds a late answer back until the user asks for it', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     const discogs = slowDiscogs()
-    const result = render('Some Album')
+    const result = render()
     act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.searchProgress?.answered).toBe(1))
+    await passHold()
     await waitFor(() => expect(result.current.results).toHaveLength(1))
-    act(() => result.current.setListEngaged(true))
-    act(() => result.current.setListEngaged(false))
 
-    await act(async () => discogs.resolve([searchResult]))
+    await act(async () => discogs.resolve([{ ...searchResult, title: 'Other Record' }]))
 
-    await waitFor(() => expect(result.current.pendingProviders).toEqual([]))
-    expect(result.current.results.map((r) => r.provider)).toEqual(['discogs', 'bandcamp'])
+    await waitFor(() => expect(result.current.held).toEqual({ count: 1, providers: ['discogs'] }))
+    expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp'])
+    act(() => result.current.showHeld())
+    expect(result.current.results.map((r) => r.provider).sort()).toEqual(['bandcamp', 'discogs'])
+    expect(result.current.held).toEqual({ count: 0, providers: [] })
   })
 
-  // Every answer takes its ranked place as it lands, so there is nothing left to reshuffle
-  // when the slowest source finishes. Appending the fast answers and ranking the whole list
-  // only then moved every row the user was already reading, seconds after they started.
-  it('places each answer in its ranked position as it lands, before every source answered', async () => {
-    let resolveDiscogs: (r: SearchResult[]) => void = () => {}
-    const discogsPending = new Promise<SearchResult[]>((r) => {
-      resolveDiscogs = r
-    })
-    let resolveDeezer: (r: SearchResult[]) => void = () => {}
-    const deezerPending = new Promise<SearchResult[]>((r) => {
-      resolveDeezer = r
-    })
-    setApi({
-      search: vi.fn((_q: string, provider?: string) =>
-        provider === 'discogs'
-          ? discogsPending
-          : provider === 'deezer'
-            ? deezerPending
-            : Promise.resolve([bcResult]),
-      ),
-      getRelease: vi.fn().mockResolvedValue(release),
-    })
+  // The button promises rows the list will show: a source past its cap had shown "9 more
+  // from Discogs" with a cap of 5, four of which the click could never bring.
+  it('counts only the held rows the cap lets the list show', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const discogs = slowDiscogs()
     const result = renderHook(
       () =>
-        useDiscogsBrowser(item({ query: 'some album', title: 'Some Album' }), tr, undefined, [
-          'discogs',
-          'bandcamp',
-          'deezer',
-        ]),
+        useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp'], 2),
       { wrapper: wrapper() },
     ).result
     act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.searchProgress?.answered).toBe(1))
+    await passHold()
     await waitFor(() => expect(result.current.results).toHaveLength(1))
 
     await act(async () =>
-      resolveDeezer([{ provider: 'deezer', id: 5, title: 'Some Artist - Some Album' }]),
+      discogs.resolve([1, 2, 3, 4].map((id) => ({ ...searchResult, id, title: `Other ${id}` }))),
     )
 
-    await waitFor(() => expect(result.current.results).toHaveLength(2))
-    expect(result.current.pendingProviders).toEqual(['discogs'])
-    expect(result.current.results.map((r) => r.provider)).toEqual(['deezer', 'bandcamp'])
-    resolveDiscogs([])
+    await waitFor(() => expect(result.current.held.count).toBe(2))
+    act(() => result.current.showHeld())
+    expect(result.current.results.filter((r) => r.provider === 'discogs')).toHaveLength(2)
+  })
+
+  // The release the probe opens is the one the user came for: it takes the top of the list
+  // even when its source answered late, so nobody has to scroll to find it.
+  it('puts the best match at the top even when it answers after the hold', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const discogs = slowDiscogs()
+    const result = render('Track One')
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.searchProgress?.answered).toBe(1))
+    await passHold()
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(result.current.choosingBest).toBe(true)
+
+    await act(async () => discogs.resolve([searchResult]))
+
+    await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:1'))
+    expect(result.current.results.map((r) => r.provider)).toEqual(['discogs', 'bandcamp'])
+    expect(result.current.openKey).toBe('discogs:1')
+    expect(result.current.held.count).toBe(0)
+    expect(result.current.choosingBest).toBe(false)
   })
 
   // The probe still weighs every source before suggesting, but by then the user may have
   // opened a row themselves; yanking it shut for the suggestion would undo their click.
   it('suggests only once every provider answered and keeps the row the user opened', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     const discogs = slowDiscogs()
     const result = render('Track One')
     act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.searchProgress?.answered).toBe(1))
+    await passHold()
     await waitFor(() => expect(result.current.results).toHaveLength(1))
     act(() => result.current.previewRelease(bcResult))
     expect(result.current.suggestedKey).toBeNull()
@@ -1049,6 +1069,16 @@ describe('progressive search', () => {
 
     await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:1'))
     expect(result.current.openKey).toBe('bandcamp:9')
-    expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp', 'discogs'])
+  })
+
+  // A search that found no confident match leaves no empty slot waiting at the top.
+  it('stops choosing a best match once the probe finds none', async () => {
+    const discogs = slowDiscogs()
+    const result = render('Nothing Like It')
+    act(() => result.current.doSearch())
+    await act(async () => discogs.resolve([searchResult]))
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    await waitFor(() => expect(result.current.choosingBest).toBe(false))
+    expect(result.current.suggestedKey).toBeNull()
   })
 })

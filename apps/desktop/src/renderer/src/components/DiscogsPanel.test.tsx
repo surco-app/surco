@@ -22,7 +22,10 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     openKey: null,
     suggestedKey: null,
     pendingProviders: [],
-    setListEngaged: vi.fn(),
+    searchProgress: null,
+    held: { count: 0, providers: [] },
+    showHeld: vi.fn(),
+    choosingBest: false,
     loading: false,
     busy: false,
     noResults: false,
@@ -411,22 +414,27 @@ describe('pistas de una tarjeta plegada', () => {
   })
 })
 
-// Results now land provider by provider, so the list can look complete while a slower
-// catalog is still searching, and rows may be re-ranked once everything has answered.
-describe('DiscogsPanel progressive results', () => {
+// The list waits for every catalog (up to a hold) and then shows once; what answers later
+// waits behind a button instead of sliding in among the rows being read (12/10).
+describe('DiscogsPanel stable results', () => {
   const rows = [
     { provider: 'bandcamp', id: 9, title: 'Javier Fig - Fast Food / Slow Kids' },
+    { provider: 'deezer', id: 5, title: 'Javier Fig - Other' },
   ] as unknown as DiscogsBrowser['results']
 
-  // The same placeholder rows the empty list shows, so it reads as more rows on the way
-  // rather than a message about one catalog: naming only the last one still out made the
-  // search look like it only covered Discogs.
-  it('keeps placeholder rows below the rows that already arrived while a catalog searches', () => {
+  it('says how many catalogs answered while the list waits for them', () => {
+    renderPanel(browser({ query: 'x', busy: true, searchProgress: { answered: 2, total: 5 } }))
+    expect(screen.getByTestId('discogs-progress')).toHaveTextContent('2 of 5 sources answered')
+    expect(screen.getByTestId('discogs-skeleton')).toBeInTheDocument()
+  })
+
+  // No placeholder rows below the list: a late catalog's rows no longer land there, so the
+  // panel names it instead of promising rows in a spot they will not fill.
+  it('names the catalog still searching below the rows shown', () => {
     renderPanel(browser({ query: 'x', results: rows, busy: true, pendingProviders: ['discogs'] }))
     const pending = screen.getByTestId('discogs-pending')
-    expect(pending).toHaveAttribute('aria-hidden', 'true')
-    expect(within(pending).getAllByTestId('skeleton-row')).toHaveLength(2)
-    expect(pending).toHaveTextContent('')
+    expect(pending).toHaveTextContent('Still searching Discogs…')
+    expect(within(pending).queryAllByTestId('skeleton-row')).toHaveLength(0)
   })
 
   it('shows no pending line once every catalog has answered', () => {
@@ -434,36 +442,57 @@ describe('DiscogsPanel progressive results', () => {
     expect(screen.queryByTestId('discogs-pending')).toBeNull()
   })
 
-  // The hook only re-ranks the list when nobody is in it, so the panel has to report both
-  // ways in: the pointer and the keyboard focus.
-  it('reports the pointer entering and leaving the result list', () => {
-    const setListEngaged = vi.fn()
-    renderPanel(browser({ query: 'x', results: rows, setListEngaged }))
-    const list = screen.getByTestId('discogs-results')
-
-    fireEvent.pointerEnter(list)
-    expect(setListEngaged).toHaveBeenLastCalledWith(true)
-    fireEvent.pointerLeave(list)
-    expect(setListEngaged).toHaveBeenLastCalledWith(false)
+  // The release the auto-match opens is the one the user came for: it has a fixed place at
+  // the top, held open while it is being chosen, so nobody scrolls to find it.
+  it('keeps the top slot for the best match while it is being chosen', () => {
+    renderPanel(browser({ query: 'x', results: rows, choosingBest: true }))
+    const slot = screen.getByTestId('best-match-slot')
+    expect(slot).toHaveTextContent('Best match')
+    expect(within(slot).getAllByTestId('skeleton-row')).toHaveLength(1)
+    expect(slot.compareDocumentPosition(screen.getAllByTestId('result-card')[0])).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
   })
 
-  it('reports keyboard focus entering and leaving the result list', () => {
-    const setListEngaged = vi.fn()
-    renderPanel(browser({ query: 'x', results: rows, setListEngaged }))
-    const row = screen.getByTestId('discogs-result')
-
-    fireEvent.focus(row)
-    expect(setListEngaged).toHaveBeenLastCalledWith(true)
-    fireEvent.blur(row)
-    expect(setListEngaged).toHaveBeenLastCalledWith(false)
+  it('heads the best match at the top of the list', () => {
+    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
+    const label = screen.getByTestId('best-match-label')
+    expect(label).toHaveTextContent('Best match')
+    expect(label.compareDocumentPosition(screen.getAllByTestId('result-card')[0])).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
   })
 
-  // When the user is in the list the suggestion is not moved to the top, so a screen reader
-  // user needs to hear which release it is rather than find a sparkle further down.
+  it('heads nothing when the suggestion is not the first row', () => {
+    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'deezer:5' }))
+    expect(screen.queryByTestId('best-match-label')).toBeNull()
+  })
+
+  it('offers what answered late behind a button, under the best match', () => {
+    const showHeld = vi.fn()
+    renderPanel(
+      browser({
+        query: 'x',
+        results: rows,
+        suggestedKey: 'bandcamp:9',
+        held: { count: 4, providers: ['discogs'] },
+        showHeld,
+      }),
+    )
+    const button = screen.getByTestId('discogs-held')
+    expect(button).toHaveTextContent('4 more from Discogs · Show')
+    const cards = screen.getAllByTestId('result-card')
+    expect(cards[0].compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(button.compareDocumentPosition(cards[1])).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    fireEvent.click(button)
+    expect(showHeld).toHaveBeenCalled()
+  })
+
+  // The sparkle and the heading are visual; a screen reader hears which release is suggested.
   it('names the suggested release in the status once the search settled', () => {
     renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
     expect(screen.getByTestId('discogs-status')).toHaveTextContent(
-      '1 result. Suggested: Javier Fig - Fast Food / Slow Kids',
+      '2 results. Suggested: Javier Fig - Fast Food / Slow Kids',
     )
   })
 })

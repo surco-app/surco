@@ -662,6 +662,10 @@
     "coverPosition": "Imagen {{position}} de {{total}}",
     "coverPositionNone": "Ninguna de las {{total}} imágenes elegida",
     "searching": "Buscando…",
+    "bestMatch": "Mejor coincidencia",
+    "searchProgress": "{{answered}} de {{total}} servicios han respondido",
+    "heldResults": "{{count}} más de {{providers}} · Mostrar",
+    "stillSearching": "Sigue buscando en {{providers}}…",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
     "suggestedStatus": "Sugerido: {{title}}"

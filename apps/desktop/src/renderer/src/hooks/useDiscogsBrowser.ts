@@ -10,6 +10,10 @@ import type { TrackItem } from '../types'
 
 // Search fires this long after typing stops; Enter and the button fire at once.
 const DEBOUNCE_MS = 500
+// How long the list waits for every source before showing what has answered. Cached, every
+// source answers well inside it and the list appears once, whole; cold, Discogs can take
+// seven seconds, and the faster sources should not wait on it that long.
+export const SEARCH_HOLD_MS = 3000
 
 // A stable empty array for when no search has answered yet (no search run yet, or
 // the query key changed and React Query hasn't refetched). `?? []` would allocate a
@@ -34,6 +38,7 @@ function combineSearches(queries: UseQueryResult<SearchResult[]>[]) {
   return {
     arrived: queries.flatMap((q) => (q.data ? [q.data] : [])),
     fetching: queries.map((q) => q.isFetching),
+    answered: queries.filter((q) => !q.isFetching && (q.isSuccess || q.isError)).length,
     settled,
     // One source failing (e.g. Bandcamp's unofficial endpoint) must not sink the search;
     // only every source failing is an error.
@@ -71,9 +76,16 @@ export interface DiscogsBrowser {
   // The enabled catalogs whose answer is still out while others already filled the list, so
   // the panel can say what is still coming instead of the list looking final.
   pendingProviders: SearchProviderId[]
-  // Whether the pointer or keyboard focus is inside the result list. While it is, a late
-  // answer is appended below instead of re-ranking rows the user may be reaching for.
-  setListEngaged: (engaged: boolean) => void
+  // How many sources have answered while the list still waits for them, or null once it
+  // shows: the skeleton says how far along the search is.
+  searchProgress: { answered: number; total: number } | null
+  // What answered after the list was shown. It waits here instead of moving the rows being
+  // read, and joins them on showHeld. The best match never waits: it takes the top.
+  held: { count: number; providers: SearchProviderId[] }
+  showHeld: () => void
+  // The list is shown and the probe is still deciding which release holds the file's track,
+  // so the panel keeps the top slot for it.
+  choosingBest: boolean
   // Whether the expanded row's tracklist is still loading, so its row shows a skeleton.
   loading: boolean
   busy: boolean
@@ -157,8 +169,8 @@ export function useDiscogsBrowser(
   // The auto-match sweep can land while the panel is open: it writes the found release
   // id onto the track, but searchTerm seeds from that id only on mount — so the panel
   // kept showing the broad text-search candidates until the user flipped to another
-  // track and back. When the id appears mid-mount, re-seed to it exactly like the
-  // mount-time seed above (the box keeps showing item.query, same as a remount would).
+  // track and back. When the id appears mid-mount over a search, its release takes the
+  // top of the list, open; with nothing searched yet it seeds the panel like a remount.
   const storedId = item.meta.discogsReleaseId ?? ''
   const seenStoredId = useRef(storedId)
   useEffect(() => {
@@ -170,8 +182,21 @@ export function useDiscogsBrowser(
     // would collapse the candidate list right after they picked from it; the release
     // is already on screen, so there is nothing to jump to.
     if (openResult?.provider === 'discogs' && String(openResult.id) === storedId) return
-    setSearchTerm(storedId)
-  }, [storedId, openResult])
+    if (!searchTerm.trim()) {
+      setSearchTerm(storedId)
+      return
+    }
+    // Switching the search to the id swapped every candidate on screen for that one release:
+    // the results appeared and then disappeared. The release takes the top slot instead.
+    loadRelease({ provider: 'discogs', id: Number(storedId), title: '' })
+      .then((rel) => {
+        if (seenStoredId.current !== storedId) return
+        const pinned = resultFromRelease(rel)
+        setSuggested(pinned)
+        if (!userOpened.current) setOpenResult(pinned)
+      })
+      .catch(() => {})
+  }, [storedId, openResult, searchTerm, loadRelease])
 
   // Typing commits the query 500ms after it stops; Enter and the button commit at once
   // through doSearch. Until the user takes over the box, two states hold the commit
@@ -243,24 +268,41 @@ export function useDiscogsBrowser(
     })),
     combine: combineSearches,
   })
-  const { arrived, fetching, settled, allFailed, firstError, refetchAll } = searchQueries
+  const { arrived, fetching, answered, settled, allFailed, firstError, refetchAll } = searchQueries
 
-  // Reset per search; read when the list settles to decide whether the rows may move.
-  const listEngaged = useRef(false)
+  // One run of the search: the term with everything else that keys it, plus a bump when the
+  // same term is run again. The hold, the frozen order and the best-match slot reset per run.
+  const [rerun, setRerun] = useState(0)
+  const runKey = JSON.stringify([
+    searchTerm,
+    cleanup.ignoreWords ?? [],
+    searchByAlbumFirst,
+    formats,
+    rerun,
+  ])
   const userOpened = useRef(false)
-  const shownOrder = useRef<{ term: string; keys: string[] }>({ term: '', keys: [] })
-  const setListEngaged = useCallback((engaged: boolean) => {
-    listEngaged.current = engaged
-  }, [])
+  const [heldOutFor, setHeldOutFor] = useState<string | null>(null)
+  useEffect(() => {
+    if (!searchTerm.trim()) return
+    const id = setTimeout(() => setHeldOutFor(runKey), SEARCH_HOLD_MS)
+    return () => clearTimeout(id)
+  }, [runKey, searchTerm])
+  // The list shows once every source has answered, or once the hold has passed with
+  // something to show; until then the panel keeps its skeleton.
+  const revealed = settled || (heldOutFor === runKey && arrived.length > 0)
 
-  // Each answer takes its ranked place as it lands, and rows already on screen never change
-  // their order: a new row goes in right after the best-ranked row above it, pushing the rest
-  // down. There is no reranking once every source has answered, which used to reshuffle the
-  // whole list seconds after the user had started reading it. While the user is in the list
-  // or has a row open, a late answer goes below instead, so nothing moves under the pointer.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers are the trigger; the file's title/artist/album, the album-first setting and whether the user typed the term are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
-  const allResults = useMemo(() => {
-    if (arrived.length === 0) return EMPTY_RESULTS
+  // The rows are ranked once, when the list shows, and keep that order. What answers later
+  // is held apart rather than slid in among rows already being read; showHeld places it in
+  // its ranked spot, after the best-ranked row above it, when the user asks for it.
+  const [mergeAsked, setMergeAsked] = useState(0)
+  const shownOrder = useRef<{ run: string; keys: string[] | null; merged: number }>({
+    run: '',
+    keys: null,
+    merged: 0,
+  })
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers, the run, the reveal and the merge request are the triggers; the file's title/artist/album, the album-first setting and whether the user typed the term are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
+  const { shown, late } = useMemo(() => {
+    if (!revealed || arrived.length === 0) return { shown: EMPTY_RESULTS, late: EMPTY_RESULTS }
     const target = matchTargetOf(item, cleanup)
     const typed = userDroveSearch.current || item.queryTyped === true
     const ranked = preRankResults(arrived.flat(), {
@@ -271,19 +313,56 @@ export function useDiscogsBrowser(
       typed: typed ? searchTerm : undefined,
     })
     const rankedKeys = ranked.map(resultKey)
-    const previous = shownOrder.current.term === searchTerm ? shownOrder.current.keys : []
-    const keys = previous.filter((k) => rankedKeys.includes(k))
-    const holdBelow = listEngaged.current || userOpened.current
-    for (const [i, k] of rankedKeys.entries()) {
-      if (keys.includes(k)) continue
-      const above = holdBelow ? undefined : rankedKeys.slice(0, i).findLast((x) => keys.includes(x))
-      if (holdBelow) keys.push(k)
-      else keys.splice(above === undefined ? 0 : keys.indexOf(above) + 1, 0, k)
+    const sameRun = shownOrder.current.run === runKey
+    const before = sameRun ? shownOrder.current.keys : null
+    let keys = before?.filter((k) => rankedKeys.includes(k)) ?? []
+    // Nothing on screen yet (the reveal, or a reveal that showed no rows) has nothing to
+    // disturb: everything that answered goes in, in ranked order.
+    if (keys.length === 0) keys = [...rankedKeys]
+    else if (sameRun && mergeAsked !== shownOrder.current.merged) {
+      for (const [i, k] of rankedKeys.entries()) {
+        if (keys.includes(k)) continue
+        const above = rankedKeys.slice(0, i).findLast((x) => keys.includes(x))
+        keys.splice(above === undefined ? 0 : keys.indexOf(above) + 1, 0, k)
+      }
     }
-    shownOrder.current = { term: searchTerm, keys }
+    shownOrder.current = { run: runKey, keys, merged: mergeAsked }
     const byKey = new Map(ranked.map((r) => [resultKey(r), r]))
-    return keys.map((k) => byKey.get(k) as SearchResult)
-  }, [arrived, searchTerm])
+    const shownSet = new Set(keys)
+    return {
+      shown: keys.map((k) => byKey.get(k) as SearchResult),
+      late: ranked.filter((r) => !shownSet.has(resultKey(r))),
+    }
+  }, [arrived, runKey, revealed, mergeAsked])
+  const showHeld = useCallback(() => setMergeAsked((n) => n + 1), [])
+
+  // The release the probe or the sweep picked leads the list, open, wherever its source
+  // ranked it and whenever it answered: it is the one the user came for.
+  const suggestedKeyOf = suggested ? resultKey(suggested) : null
+  const allResults = useMemo(() => {
+    if (!suggested || !suggestedKeyOf) return shown
+    if (shown.length === 0 && late.length === 0) return shown
+    const pinned =
+      shown.find((r) => resultKey(r) === suggestedKeyOf) ??
+      late.find((r) => resultKey(r) === suggestedKeyOf) ??
+      suggested
+    return [pinned, ...shown.filter((r) => resultKey(r) !== suggestedKeyOf)]
+  }, [shown, late, suggested, suggestedKeyOf])
+  // Counted against each source's cap, so the button never promises rows the list won't show.
+  const held = useMemo(() => {
+    const room = new Map<SearchProviderId, number>()
+    for (const r of allResults) room.set(r.provider, (room.get(r.provider) ?? maxResults) - 1)
+    const waiting = late.filter((r) => {
+      if (resultKey(r) === suggestedKeyOf) return false
+      const left = room.get(r.provider) ?? maxResults
+      room.set(r.provider, left - 1)
+      return left > 0
+    })
+    return {
+      count: waiting.length,
+      providers: providers.filter((p) => waiting.some((r) => r.provider === p)),
+    }
+  }, [allResults, late, suggestedKeyOf, providers, maxResults])
   const direct = directId !== null && settled ? (allResults[0] ?? null) : null
   const pendingProviders = useMemo(
     () =>
@@ -291,6 +370,13 @@ export function useDiscogsBrowser(
         ? providers.filter((_, i) => fetching[i])
         : EMPTY_PROVIDERS,
     [directId, arrived, providers, fetching],
+  )
+  const searchProgress = useMemo(
+    () =>
+      directId === null && searchTerm.trim() !== '' && !revealed
+        ? { answered, total: providers.length }
+        : null,
+    [directId, searchTerm, revealed, answered, providers.length],
   )
   // Each source counts the rows the list can show it, never more than the cap: a count
   // past it names results the user has no way to reach.
@@ -324,20 +410,23 @@ export function useDiscogsBrowser(
     // Re-running the search with the same term must refetch explicitly: the term (and
     // so the query key) doesn't change, and a failed search — a 429 from the limiter,
     // a network blip — would otherwise be stuck in error until the text is edited.
-    if (query === searchTerm) refetchAll()
-    else setSearchTerm(query)
+    if (query === searchTerm) {
+      refetchAll()
+      setRerun((n) => n + 1)
+    } else setSearchTerm(query)
     if (query !== item.query) onQueryCommitted?.(query)
   }, [query, searchTerm, refetchAll, item.query, onQueryCommitted])
 
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: searchTerm is the deliberate trigger — resetting the open release and source filter on each new search is the point.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the run is the deliberate trigger — resetting the open release and source filter on each new search is the point.
   useEffect(() => {
     setOpenResult(null)
     setSuggested(null)
     setProviderFilter('all')
     userOpened.current = false
-  }, [searchTerm])
+  }, [runKey])
+  const [probedFor, setProbedFor] = useState<string | null>(null)
 
   // Once every source has answered, open the first result that confidently holds the
   // file's track (or the directly-loaded release), so the user lands on the right album.
@@ -356,7 +445,7 @@ export function useDiscogsBrowser(
     setAutoProbing(true)
     ;(async () => {
       const m = await probeReleases(
-        allResults,
+        [...allResults, ...late],
         matchTargetOf(item, cleanup),
         // 'review' is enough here: the probe only opens (highlights) the release for
         // the user's own click, it never writes anything.
@@ -367,7 +456,9 @@ export function useDiscogsBrowser(
         setSuggested(m.result)
       }
     })().finally(() => {
-      if (!cancelled) setAutoProbing(false)
+      if (cancelled) return
+      setAutoProbing(false)
+      setProbedFor(runKey)
     })
     return () => {
       cancelled = true
@@ -395,7 +486,14 @@ export function useDiscogsBrowser(
   }, [])
 
   const openKey = openResult ? `${openResult.provider}:${openResult.id}` : null
-  const suggestedKey = suggested ? `${suggested.provider}:${suggested.id}` : null
+  const suggestedKey = suggestedKeyOf
+  const choosingBest =
+    revealed &&
+    !allFailed &&
+    directId === null &&
+    suggested === null &&
+    probedFor !== runKey &&
+    item.meta.title.trim() !== ''
   const loading = releaseQuery.isFetching
   const searching = fetching.some(Boolean)
   const busy = searching || autoProbing || releaseQuery.isFetching
@@ -403,7 +501,7 @@ export function useDiscogsBrowser(
   // distinct from the never-searched-yet idle state so the panel can say "no matches" instead
   // of the "choose an album" hint. Also true when a provider filter empties an otherwise
   // non-empty result set.
-  const noResults = settled && !allFailed && results.length === 0
+  const noResults = settled && !allFailed && results.length === 0 && held.count === 0
   // A refused token or a rate limit is thrown by the main process, which has no
   // i18next instance to phrase it — those arrive stamped with a key and are resolved
   // here; anything else keeps the provider's own wording.
@@ -430,7 +528,10 @@ export function useDiscogsBrowser(
       openKey,
       suggestedKey,
       pendingProviders,
-      setListEngaged,
+      searchProgress,
+      held,
+      showHeld,
+      choosingBest,
       loading,
       busy,
       noResults,
@@ -448,7 +549,10 @@ export function useDiscogsBrowser(
       openKey,
       suggestedKey,
       pendingProviders,
-      setListEngaged,
+      searchProgress,
+      held,
+      showHeld,
+      choosingBest,
       loading,
       busy,
       noResults,
