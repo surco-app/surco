@@ -623,6 +623,13 @@ export function TrimSection({
       [which]: Math.min(CONTEXT_SEC.length - 1, Math.max(0, next)),
     }))
   }
+  // A zoom, from the buttons or the keys, re-aims the view on the cut, so whatever the
+  // user had panned to is no longer what they are asking for.
+  function zoomTo(which: Side, index: number): void {
+    setPanSec((p) => ({ ...p, [which]: 0 }))
+    reframe(which)
+    setContext(which, index)
+  }
   // The live range while a handle is dragged; committed to the track (onChange)
   // only on release, so a drag doesn't spray staleness/session updates per pixel.
   const [draft, setDraft] = useState<TrimRange | null>(null)
@@ -867,6 +874,12 @@ export function TrimSection({
       cleaned.startSec = Number(next.startSec.toFixed(3))
     if (next.endSec !== undefined && next.endSec < durationSec - edgeFor('end'))
       cleaned.endSec = Number(next.endSec.toFixed(3))
+    // A moved cut re-aims its lane: a pan left in place would keep the window somewhere
+    // else, and the cut (and its handle) would move off screen with nothing to show.
+    setPanSec((p) => ({
+      start: cleaned.startSec !== value?.startSec ? 0 : p.start,
+      end: cleaned.endSec !== value?.endSec ? 0 : p.end,
+    }))
     onChange(cleaned.startSec === undefined && cleaned.endSec === undefined ? undefined : cleaned)
   }
 
@@ -933,7 +946,7 @@ export function TrimSection({
     clearSide,
     suggestion,
     onChange,
-    setContext,
+    zoomTo,
     contextIndex,
   })
   actionsRef.current = {
@@ -942,7 +955,7 @@ export function TrimSection({
     clearSide,
     suggestion,
     onChange,
-    setContext,
+    zoomTo,
     contextIndex,
   }
   useEffect(() => {
@@ -960,13 +973,13 @@ export function TrimSection({
       'trim-end-clear': () => actionsRef.current.clearSide('end'),
       // Un índice MENOR es una ventana más estrecha, o sea más zoom.
       'trim-start-zoom-in': () =>
-        actionsRef.current.setContext('start', actionsRef.current.contextIndex.start - 1),
+        actionsRef.current.zoomTo('start', actionsRef.current.contextIndex.start - 1),
       'trim-start-zoom-out': () =>
-        actionsRef.current.setContext('start', actionsRef.current.contextIndex.start + 1),
+        actionsRef.current.zoomTo('start', actionsRef.current.contextIndex.start + 1),
       'trim-end-zoom-in': () =>
-        actionsRef.current.setContext('end', actionsRef.current.contextIndex.end - 1),
+        actionsRef.current.zoomTo('end', actionsRef.current.contextIndex.end - 1),
       'trim-end-zoom-out': () =>
-        actionsRef.current.setContext('end', actionsRef.current.contextIndex.end + 1),
+        actionsRef.current.zoomTo('end', actionsRef.current.contextIndex.end + 1),
       // The detection proposes both cuts at once, so applying it is one action for the
       // whole track rather than one per side.
       'trim-apply': () => {
@@ -1047,13 +1060,7 @@ export function TrimSection({
       onClear: () => clearSide(which),
       auditing: auditing === which,
       onWheelPan: (deltaX: number) => panBy(which, deltaX),
-      onContextChange: (index: number) => {
-        // A zoom re-aims the view on the cut, so whatever the user had panned to is
-        // no longer what they are asking for.
-        setPanSec((p) => ({ ...p, [which]: 0 }))
-        reframe(which)
-        setContext(which, index)
-      },
+      onContextChange: (index: number) => zoomTo(which, index),
       contextIndex: contextIndex[which],
       contextSec: which === 'start' ? startContextSec : endContextSec,
       contextCount: CONTEXT_SEC.length,

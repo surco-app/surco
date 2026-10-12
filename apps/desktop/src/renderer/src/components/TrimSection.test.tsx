@@ -323,6 +323,33 @@ describe('TrimSection', () => {
   // Un scroll vertical es la página desplazándose, no una intención de panear: el
   // panel de recorte vive en un editor con scroll y robarle la rueda vertical haría
   // que la onda se moviera sola mientras el usuario baja por la ficha.
+  // Moving the cut re-aims the view: after a pan away, a nudge moved the cut out of
+  // frame and hid its handle, so the key looked dead while it was working off screen.
+  it('brings the panned lane back onto the cut when the cut moves', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    for (let i = 0; i < 10; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 300, deltaY: 0 })
+    }
+    expect(screen.queryByTestId('trim-handle-start')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('trim-nudge-forward-start'))
+    expect(screen.getByTestId('trim-handle-start')).toBeInTheDocument()
+  })
+
+  // The zoom keys must aim like the zoom buttons: on the cut, dropping any pan. Going
+  // straight to the context index zoomed around a stale spot with the cut out of frame.
+  it('zooms from the keyboard onto the cut, like the buttons', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    for (let i = 0; i < 10; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 300, deltaY: 0 })
+    }
+    act(() => {
+      runKeyClaim('trim-start-zoom-in', {})
+    })
+    expect(screen.getByTestId('trim-handle-start')).toBeInTheDocument()
+  })
+
   it('ignores a vertical wheel so the editor can still scroll', async () => {
     render(section({ value: { startSec: 9.7 } }))
     await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
