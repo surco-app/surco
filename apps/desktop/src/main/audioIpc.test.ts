@@ -93,8 +93,8 @@ afterAll(() => {
 })
 
 let counter = 0
-async function makeFile(): Promise<string> {
-  const path = join(work, `track-${counter++}.aiff`)
+async function makeFile(ext = 'aiff'): Promise<string> {
+  const path = join(work, `track-${counter++}.${ext}`)
   await writeFile(path, 'audio')
   return path
 }
@@ -421,5 +421,68 @@ describe('release date over IPC', () => {
     const meta = (await handlerFor('audio:meta')({}, '/m/a.flac')) as { tags: { year: string } }
 
     expect([tags.year, meta.tags.year]).toEqual(['2020-12-01', '2020-12-01'])
+  })
+})
+
+// An .m4a is graded by the codec the analysis now keeps, which entries cached before it
+// lack: read as they were, a healthy AAC stayed "Bad quality" until the cache was
+// cleared. Only .m4a entries are measured again; every other file keeps its analysis.
+describe('the spectrogram cache of an .m4a', () => {
+  const built = {
+    image: 'data:image/png;base64,DDDD',
+    cutoffHz: 16000,
+    sampleRateHz: 44100,
+    imageTopHz: 22050,
+    processed: false,
+    hasKnee: true,
+    upsampled: false,
+    resolution: 'native',
+    codec: 'aac',
+  } as Awaited<ReturnType<typeof buildSpectrum>>
+
+  beforeEach(() => {
+    vi.mocked(buildSpectrum).mockResolvedValue(built)
+    vi.mocked(cacheableSpectrum).mockImplementation(
+      (b) => ({ ...b, cutoffFailed: false }) as ReturnType<typeof cacheableSpectrum>,
+    )
+  })
+
+  async function cachedWithoutCodec(file: string): Promise<void> {
+    await cachedAnalysis('spectrogram-mono-v31', file, async () => ({
+      image: 'data:image/png;base64,x',
+      cutoffHz: 16000,
+      sampleRateHz: 44100,
+      processed: false,
+    }))
+  }
+
+  it('measures an .m4a again when its cached analysis has no codec', async () => {
+    const file = await makeFile('m4a')
+    await cachedWithoutCodec(file)
+    expect(await handlerFor('audio:peek')({}, 'spectrogram', file)).toBeNull()
+    const batch = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>
+    expect(batch[file]).toBeUndefined()
+    const live = (await handlerFor('audio:spectrogram')({}, file)) as { codec?: string }
+    expect(live.codec).toBe('aac')
+    expect(buildSpectrum).toHaveBeenCalledTimes(1)
+  })
+
+  it('serves the new .m4a analysis warm on every route', async () => {
+    const file = await makeFile('m4a')
+    await handlerFor('audio:spectrogram')({}, file)
+    const peeked = (await handlerFor('audio:peek')({}, 'spectrogram', file)) as { codec?: string }
+    expect(peeked.codec).toBe('aac')
+    const batch = (await handlerFor('audio:cached-batch')({}, [file])) as Record<
+      string,
+      { spectrogram?: { codec?: string } }
+    >
+    expect(batch[file].spectrogram?.codec).toBe('aac')
+  })
+
+  it('keeps every other file on its cached analysis', async () => {
+    const file = await makeFile('flac')
+    await cachedWithoutCodec(file)
+    await handlerFor('audio:spectrogram')({}, file)
+    expect(buildSpectrum).not.toHaveBeenCalled()
   })
 })

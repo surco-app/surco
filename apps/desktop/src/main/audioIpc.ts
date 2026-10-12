@@ -82,6 +82,15 @@ const KEY_NAMESPACE = 'key'
 const WAVEFORM_NAMESPACE = 'waveform-v6'
 const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
 
+// An .m4a is graded by the codec it holds (AAC or ALAC), which entries cached before the
+// analysis kept it lack. Its own key measures only those files again; every other format
+// keeps the analysis it has.
+function spectrogramNamespace(inputPath: string): string {
+  return inputPath.toLowerCase().endsWith('.m4a')
+    ? `${SPECTROGRAM_NAMESPACE}-codec`
+    : SPECTROGRAM_NAMESPACE
+}
+
 const PEEK_NAMESPACES: Record<keyof PeekableAnalyses, string> = {
   spectrogram: SPECTROGRAM_NAMESPACE,
   loudness: LOUDNESS_NAMESPACE,
@@ -208,7 +217,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
           // (96 kHz at 192 kHz), squashing the audible band into the bottom fifth of the
           // panel. Those images change, and older entries carry no imageTopHz, so they must
           // regenerate rather than be read against an axis their picture never used.
-          SPECTROGRAM_NAMESPACE,
+          spectrogramNamespace(inputPath),
           inputPath,
           () =>
             probe('activity.probeSpectrogram', inputPath, () =>
@@ -265,7 +274,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
 
   handleAudio('audio:peek', async (_e, family, inputPath) => {
     const hit = await peekAnalysis<PeekableAnalyses[typeof family] & { cutoffFailed?: boolean }>(
-      PEEK_NAMESPACES[family],
+      family === 'spectrogram' ? spectrogramNamespace(inputPath) : PEEK_NAMESPACES[family],
       inputPath,
     )
     if (!hit) return null
@@ -436,7 +445,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     const entries = await Promise.all(
       paths.map(async (path) => {
         const [spectrogram, waveformScan] = await Promise.all([
-          peekAnalysis<SpectrumResult>(SPECTROGRAM_NAMESPACE, path),
+          peekAnalysis<SpectrumResult>(spectrogramNamespace(path), path),
           peekAnalysis<WaveformScan>(CHANNELSCAN_NAMESPACE, path),
         ])
         const hit: { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict } = {}
