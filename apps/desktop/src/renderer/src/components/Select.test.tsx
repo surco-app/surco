@@ -250,6 +250,16 @@ describe('Select full-width menu placement', () => {
     expect(screen.queryByTestId('pick-listbox')).toBeNull()
   })
 
+  // An inline menu hangs from its trigger and moves with it, so a scroll has nothing to
+  // strand. In Settings the separator picker sat near the panel's bottom edge, and
+  // scrolling the panel to see its options closed it every time.
+  it('keeps an inline menu open while the panel around it scrolls', () => {
+    renderSelect()
+    fireEvent.click(screen.getByTestId('sort'))
+    fireEvent.scroll(document.body)
+    expect(screen.getByTestId('sort-listbox')).toBeInTheDocument()
+  })
+
   // Captured on the way down, so a scroll inside the editor's own column counts too, not
   // just one on the window: that inner scroller is what moves the album-match rows.
   it('closes when an ancestor scrolls under an open menu', () => {

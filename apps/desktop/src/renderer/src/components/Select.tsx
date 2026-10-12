@@ -93,13 +93,14 @@ export function Select({
     if (item) showOption(listRef.current, item)
   }, [open])
 
-  // The menu's placement is measured once, at open. Anything that moves the trigger
-  // afterwards would strand it away from what it points at, so close instead of chasing
-  // the trigger every frame — the same thing a native select does. The scroll is caught on
-  // the way down, so the editor's own scrolling column counts, not just the window; the
-  // menu's own list scrolling moves nothing it points at.
+  // The full-width menu's placement is measured once, at open. Anything that moves the
+  // trigger afterwards would strand it away from what it points at, so close instead of
+  // chasing the trigger every frame — the same thing a native select does. The scroll is
+  // caught on the way down, so the editor's own scrolling column counts, not just the
+  // window; the menu's own list scrolling moves nothing it points at. An inline menu hangs
+  // from its trigger and moves with it, so it has nothing to dismiss.
   useEffect(() => {
-    if (!open) return
+    if (!open || !fullWidth) return
     const dismiss = (e: Event): void => {
       if (e.target instanceof Node && listRef.current?.contains(e.target)) return
       setOpen(false)
@@ -110,7 +111,7 @@ export function Select({
       window.removeEventListener('resize', dismiss)
       window.removeEventListener('scroll', dismiss, true)
     }
-  }, [open])
+  }, [open, fullWidth])
 
   function toggle(): void {
     if (open) {
