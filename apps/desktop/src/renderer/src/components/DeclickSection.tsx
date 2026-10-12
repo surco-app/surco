@@ -96,7 +96,17 @@ export function DeclickSection({
   const [rendering, setRendering] = useState(false)
   const [progress, setProgress] = useState(0)
   const [failed, setFailed] = useState(false)
-  const ab = useDeclickAb(inputPath, preview)
+  // Off repairs nothing, so Space plays the original itself on this wave. Loaded only on
+  // that first press, like the render: most tracks are never listened to here.
+  const [hearOriginal, setHearOriginal] = useState(false)
+  const playOnLoadRef = useRef(false)
+  const ab = useDeclickAb(inputPath, preview ?? (hearOriginal ? inputPath : null))
+
+  useEffect(() => {
+    if (!ab.ready || !playOnLoadRef.current) return
+    playOnLoadRef.current = false
+    ab.play()
+  }, [ab.ready, ab.play])
 
   useEffect(() => window.api.onDeclickPreviewProgress(setProgress), [])
 
@@ -108,6 +118,8 @@ export function DeclickSection({
     return () => {
       void window.api.cancelDeclickPreview()
       setPreview(null)
+      setHearOriginal(false)
+      playOnLoadRef.current = false
       setRendering(false)
       setProgress(0)
       setFailed(false)
@@ -164,18 +176,24 @@ export function DeclickSection({
   // nothing rendered the key does the render — the same thing the button does — so the
   // gesture always acts on the wave in front of them.
   //
-  // The exception is Off: nothing is repaired, so there is no result to hear, and the key
-  // rightly belongs to the mini-player again.
+  // Off is no exception: there is still a wave and a cursor on it, so the key plays the
+  // original from there. Only a selection, which shows no wave, leaves it to the
+  // mini-player.
   const spaceRef = useRef<() => void>(() => {})
   spaceRef.current = () => {
-    if (preview) return ab.playing ? ab.pause() : ab.play()
+    if (preview || hearOriginal) return ab.playing ? ab.pause() : ab.play()
+    if (value === 'off') {
+      playOnLoadRef.current = true
+      setHearOriginal(true)
+      return
+    }
     // A render is tens of seconds; an impatient second press must not queue another.
     if (!rendering) void render()
   }
   useEffect(() => {
-    if (!open || value === 'off') return
+    if (!open || (value === 'off' && isMulti)) return
     return claimKeys({ play: () => spaceRef.current() })
-  }, [open, value])
+  }, [open, value, isMulti])
 
   // The overlay lives INSIDE the zoomed strip, so its own width is already the zoomed
   // width of the whole track — the ratio across it is the fraction of the track, at any
