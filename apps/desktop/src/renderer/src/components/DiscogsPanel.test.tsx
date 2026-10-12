@@ -432,6 +432,51 @@ describe('DiscogsPanel stable results', () => {
     expect(screen.getByTestId('discogs-skeleton')).toBeInTheDocument()
   })
 
+  // The count sat in small grey text under the box; the divider above the list fills as
+  // the catalogs answer, the way the toolbar's line shows an import.
+  it('fills the divider under the search box as the catalogs answer', () => {
+    renderPanel(browser({ query: 'x', busy: true, searchProgress: { answered: 3, total: 5 } }))
+    const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
+    expect((bar.firstElementChild as HTMLElement).style.width).toBe('60%')
+  })
+
+  // Once the list shows, a slow catalog keeps searching behind it: the line keeps counting
+  // it instead of turning into an endless slide.
+  it('keeps counting a catalog that answers after the list showed', () => {
+    renderPanel(
+      browser({
+        query: 'x',
+        busy: true,
+        results: rows,
+        providerCounts: [
+          { provider: 'discogs', count: 1 },
+          { provider: 'bandcamp', count: 1 },
+          { provider: 'deezer', count: 1 },
+          { provider: 'beatport', count: 0 },
+        ],
+        pendingProviders: ['beatport'],
+      }),
+    )
+    const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
+    expect((bar.firstElementChild as HTMLElement).style.width).toBe('75%')
+  })
+
+  it('slides the divider while a single catalog or the best match is still working', () => {
+    renderPanel(browser({ query: 'x', busy: true }))
+    const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
+    expect(bar.firstElementChild?.className).toContain('animate-top-progress')
+  })
+
+  // Opening a release is not a search: the list is there and the tracks show their own
+  // placeholder, so the line stays still.
+  it('leaves the divider still while a release opens and when idle', () => {
+    renderPanel(browser({ query: 'x', busy: true, loading: true }))
+    expect(screen.queryByTestId('top-progress')).not.toBeInTheDocument()
+    cleanup()
+    renderPanel(browser({ query: 'x' }))
+    expect(screen.queryByTestId('top-progress')).not.toBeInTheDocument()
+  })
+
   // No placeholder rows below the list: a late catalog's rows no longer land there, so the
   // panel names it instead of promising rows in a spot they will not fill.
   it('names the catalog still searching below the rows shown', () => {

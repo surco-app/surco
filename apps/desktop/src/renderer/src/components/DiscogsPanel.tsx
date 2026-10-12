@@ -30,6 +30,7 @@ import { DEFAULT_RESULTS_WIDTH, ResizeHandle, useResizableWidth } from './Resize
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
+import { TopProgressBar } from './TopProgressBar'
 
 // How many result rows ramp in, and how far apart. Six covers roughly what the column shows
 // before the fold, which is the whole point: the stagger exists to make a resolved search
@@ -511,7 +512,20 @@ export const DiscogsPanel = memo(function DiscogsPanel({
         style={{ width: discogs.width }}
         className="flex shrink-0 flex-col border-r border-[var(--color-line)]"
       >
-        <div className="border-b border-[var(--color-line)] pb-2">
+        <div className="relative isolate border-b border-[var(--color-line)] pb-2">
+          {/* The divider fills as the catalogs answer, and slides while one catalog or the
+              best match is still working. Opening a release is not a search. */}
+          {busy && !loading && (
+            <TopProgressBar
+              fraction={
+                searchProgress && searchProgress.total > 1
+                  ? searchProgress.answered / searchProgress.total
+                  : pendingProviders.length > 0 && providerCounts.length > 1
+                    ? 1 - pendingProviders.length / providerCounts.length
+                    : null
+              }
+            />
+          )}
           {/* Mirrors the track list's header (its search row + filter/sort row) so the two
               columns read as one toolbar side by side: same shared SearchInput chrome.
               Enter searches; the magnifier turns into a spinner while a search is in flight. */}
