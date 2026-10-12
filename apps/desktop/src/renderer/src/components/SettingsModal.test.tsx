@@ -652,12 +652,12 @@ describe('SettingsModal filename tokens', () => {
 })
 
 describe('SettingsModal unsaved changes', () => {
-  function renderDirty(onClose = vi.fn()): ReturnType<typeof vi.fn> {
+  function renderDirty(onClose = vi.fn(), onSave = vi.fn()): ReturnType<typeof vi.fn> {
     render(
       <SettingsModal
         settings={settings}
         onClose={onClose}
-        onSave={() => {}}
+        onSave={onSave}
         onPreviewTheme={() => {}}
         onSettingsReplaced={() => {}}
       />,
@@ -680,6 +680,17 @@ describe('SettingsModal unsaved changes', () => {
     expect(onClose).not.toHaveBeenCalled()
     fireEvent.click(screen.getByTestId('confirm-ok'))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  // The question's own form sat inside the Settings form, so its submit bubbled up and
+  // Discard saved every change it promised to throw away.
+  it('discards without saving', () => {
+    const onSave = vi.fn()
+    const onClose = renderDirty(vi.fn(), onSave)
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(onClose).toHaveBeenCalled()
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('lets a second Escape take back the question and keep editing', () => {

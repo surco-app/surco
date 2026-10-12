@@ -1,6 +1,5 @@
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, ThemePref } from '../../../shared/types'
@@ -236,220 +235,225 @@ export function SettingsModal({
   const conflictIds = new Set(findConflicts(bindings).flat())
 
   return (
-    <ModalShell
-      onClose={dirty ? () => {} : onClose}
-      backdropTestId="settings-backdrop"
-      label={tr('header.settings')}
-      align="top"
-      onSubmit={save}
-      className="flex h-[min(84vh,760px)] w-[780px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
-    >
-      {/* A vertical nav down the side reads like macOS System Settings and scales past the
+    <>
+      <ModalShell
+        onClose={dirty ? () => {} : onClose}
+        backdropTestId="settings-backdrop"
+        label={tr('header.settings')}
+        align="top"
+        onSubmit={save}
+        className="flex h-[min(84vh,760px)] w-[780px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
+      >
+        {/* A vertical nav down the side reads like macOS System Settings and scales past the
           point a single centred row of ten tabs starts to crowd — every label gets its
           full width, and adding a tab costs a row, not horizontal space it doesn't have. */}
-      <div
-        ref={tablistRef}
-        role="tablist"
-        aria-orientation="vertical"
-        aria-label={tr('header.settings')}
-        // relative z-0 fences a stacking context so the pill's -z-10 stays above this
-        // column's own background instead of escaping behind it.
-        className="relative z-0 flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3"
-      >
-        {pill && (
-          <div
-            data-testid="settings-tab-indicator"
-            aria-hidden="true"
-            className="pointer-events-none absolute top-0 right-3 left-3 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
-            style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
-          />
-        )}
-        {SETTINGS_TAB_GROUPS.map((group) => (
-          // A tablist may only own tabs, so the group wrapper and its heading are
-          // presentational: the heading stays a visual divider and the arrows (and a
-          // screen reader's tab count) walk one flat list.
-          <div key={group.heading ?? 'main'} role="presentation" className="flex flex-col gap-0.5">
-            {group.heading && (
-              <p
-                role="presentation"
-                className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint"
-              >
-                {tr(`settings.tabGroups.${group.heading}`)}
-              </p>
-            )}
-            {group.tabs.map((id) => {
-              const Icon = SETTINGS_TAB_ICONS[id]
-              // The keyboard handler walks the flat SETTINGS_TABS order, so the button
-              // reports its index there, not its position within the group.
-              const idx = SETTINGS_TABS.indexOf(id)
-              return (
-                <button
-                  key={id}
-                  ref={(el) => {
-                    tabRefs.current[id] = el
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`settings-tab-${id}`}
-                  data-testid={`settings-tab-${id}`}
-                  aria-selected={tab === id}
-                  aria-controls="settings-tabpanel"
-                  tabIndex={tab === id ? 0 : -1}
-                  onClick={() => setTab(id)}
-                  onKeyDown={(e) => onTabKeyDown(e, idx)}
-                  // The button paints no background of its own — the sliding pill behind
-                  // it does, in the same ink sidebar and selected-row fill as the track
-                  // list, so Settings reads like the window it opens over. Text color
-                  // shares the pill's 200ms so the two arrive together.
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
-                    tab === id
-                      ? 'font-medium text-[var(--color-on-row-selected)]'
-                      : 'text-fg-muted hover:text-fg'
-                  }`}
+        <div
+          ref={tablistRef}
+          role="tablist"
+          aria-orientation="vertical"
+          aria-label={tr('header.settings')}
+          // relative z-0 fences a stacking context so the pill's -z-10 stays above this
+          // column's own background instead of escaping behind it.
+          className="relative z-0 flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3"
+        >
+          {pill && (
+            <div
+              data-testid="settings-tab-indicator"
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 right-3 left-3 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
+              style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
+            />
+          )}
+          {SETTINGS_TAB_GROUPS.map((group) => (
+            // A tablist may only own tabs, so the group wrapper and its heading are
+            // presentational: the heading stays a visual divider and the arrows (and a
+            // screen reader's tab count) walk one flat list.
+            <div
+              key={group.heading ?? 'main'}
+              role="presentation"
+              className="flex flex-col gap-0.5"
+            >
+              {group.heading && (
+                <p
+                  role="presentation"
+                  className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint"
                 >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-                  {tr(`settings.tabs.${id}`)}
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col p-6">
-        <div className="relative flex min-h-[280px] flex-1 flex-col">
-          <div
-            ref={bodyRef}
-            role="tabpanel"
-            id="settings-tabpanel"
-            aria-labelledby={`settings-tab-${tab}`}
-            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2"
-          >
-            {tab === 'general' && (
-              <GeneralTab
-                synced={synced}
-                patch={patch}
-                local={local}
-                patchLocal={patchLocal}
-                onPreviewTheme={onPreviewTheme}
-                configDir={configDir}
-                defaultDir={defaultDir}
-                onChangeConfigDir={changeConfigDir}
-                onResetConfigDir={() => moveConfigDir(null)}
-                onExportSettings={exportSettings}
-                onImportSettings={importSettings}
-              />
-            )}
-            {tab === 'search' && (
-              <SearchTab
-                synced={synced}
-                local={local}
-                patch={patch}
-                patchLocal={patchLocal}
-                onBeatportChange={(next) => {
-                  onSettingsReplaced(next)
-                  patchLocal('beatportUsername', next.beatportUsername)
-                }}
-              />
-            )}
-            {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
-            {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
-            {tab === 'destination' && (
-              <DestinationTab
-                synced={synced}
-                local={local}
-                patch={patch}
-                onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
-                onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
-                onChangeTraktorNmlPath={changeTraktorNmlPath}
-                rekordboxCollection={rekordboxCollection}
-                onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
-                detectedNmlPath={detectedNmlPath}
-                onAcceptDetectedNmlPath={acceptDetectedNmlPath}
-              />
-            )}
-            {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
-            {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
-            {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
-            {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
-            {tab === 'fields' && (
-              <FieldsEditor
-                visibleFields={synced.visibleFields}
-                requiredFields={synced.requiredFields}
-                importFields={synced.importFields}
-                customFields={synced.customFields}
-                onChangeVisible={(fields) => patch('visibleFields', fields)}
-                onChangeRequired={(fields) => patch('requiredFields', fields)}
-                onChangeImport={(fields) => patch('importFields', fields)}
-                onChangeCustom={(fields) => patch('customFields', fields)}
-                separators={{ genre: synced.genreSeparator, grouping: synced.groupingSeparator }}
-                onChangeSeparator={(key, separator) =>
-                  patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
-                }
-              />
-            )}
-            {tab === 'shortcuts' && (
-              <ShortcutsTab
-                synced={synced}
-                patch={patch}
-                bindings={bindings}
-                conflictIds={conflictIds}
-              />
-            )}
-            {tab === 'stats' && <StatsTab settings={settings} />}
-          </div>
-          {/* Fades the cut-off last line into the panel while there's more below, then
-            clears at the end — the "keep scrolling" cue the faint scrollbar didn't give. */}
-          <div
-            aria-hidden="true"
-            className={`pointer-events-none absolute inset-x-0 bottom-0 mr-2 h-10 bg-gradient-to-t from-[var(--color-panel)] to-transparent transition-opacity duration-200 ${
-              moreBelow ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
+                  {tr(`settings.tabGroups.${group.heading}`)}
+                </p>
+              )}
+              {group.tabs.map((id) => {
+                const Icon = SETTINGS_TAB_ICONS[id]
+                // The keyboard handler walks the flat SETTINGS_TABS order, so the button
+                // reports its index there, not its position within the group.
+                const idx = SETTINGS_TABS.indexOf(id)
+                return (
+                  <button
+                    key={id}
+                    ref={(el) => {
+                      tabRefs.current[id] = el
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`settings-tab-${id}`}
+                    data-testid={`settings-tab-${id}`}
+                    aria-selected={tab === id}
+                    aria-controls="settings-tabpanel"
+                    tabIndex={tab === id ? 0 : -1}
+                    onClick={() => setTab(id)}
+                    onKeyDown={(e) => onTabKeyDown(e, idx)}
+                    // The button paints no background of its own — the sliding pill behind
+                    // it does, in the same ink sidebar and selected-row fill as the track
+                    // list, so Settings reads like the window it opens over. Text color
+                    // shares the pill's 200ms so the two arrive together.
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
+                      tab === id
+                        ? 'font-medium text-[var(--color-on-row-selected)]'
+                        : 'text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                    {tr(`settings.tabs.${id}`)}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
         </div>
 
-        <div className="-mx-6 mt-6 flex shrink-0 items-center justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
-          {/* Save is blocked by a clash that may sit on a tab the user is not looking at;
+        <div className="flex min-w-0 flex-1 flex-col p-6">
+          <div className="relative flex min-h-[280px] flex-1 flex-col">
+            <div
+              ref={bodyRef}
+              role="tabpanel"
+              id="settings-tabpanel"
+              aria-labelledby={`settings-tab-${tab}`}
+              className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2"
+            >
+              {tab === 'general' && (
+                <GeneralTab
+                  synced={synced}
+                  patch={patch}
+                  local={local}
+                  patchLocal={patchLocal}
+                  onPreviewTheme={onPreviewTheme}
+                  configDir={configDir}
+                  defaultDir={defaultDir}
+                  onChangeConfigDir={changeConfigDir}
+                  onResetConfigDir={() => moveConfigDir(null)}
+                  onExportSettings={exportSettings}
+                  onImportSettings={importSettings}
+                />
+              )}
+              {tab === 'search' && (
+                <SearchTab
+                  synced={synced}
+                  local={local}
+                  patch={patch}
+                  patchLocal={patchLocal}
+                  onBeatportChange={(next) => {
+                    onSettingsReplaced(next)
+                    patchLocal('beatportUsername', next.beatportUsername)
+                  }}
+                />
+              )}
+              {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
+              {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
+              {tab === 'destination' && (
+                <DestinationTab
+                  synced={synced}
+                  local={local}
+                  patch={patch}
+                  onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
+                  onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
+                  onChangeTraktorNmlPath={changeTraktorNmlPath}
+                  rekordboxCollection={rekordboxCollection}
+                  onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                  detectedNmlPath={detectedNmlPath}
+                  onAcceptDetectedNmlPath={acceptDetectedNmlPath}
+                />
+              )}
+              {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
+              {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
+              {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
+              {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
+              {tab === 'fields' && (
+                <FieldsEditor
+                  visibleFields={synced.visibleFields}
+                  requiredFields={synced.requiredFields}
+                  importFields={synced.importFields}
+                  customFields={synced.customFields}
+                  onChangeVisible={(fields) => patch('visibleFields', fields)}
+                  onChangeRequired={(fields) => patch('requiredFields', fields)}
+                  onChangeImport={(fields) => patch('importFields', fields)}
+                  onChangeCustom={(fields) => patch('customFields', fields)}
+                  separators={{ genre: synced.genreSeparator, grouping: synced.groupingSeparator }}
+                  onChangeSeparator={(key, separator) =>
+                    patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
+                  }
+                />
+              )}
+              {tab === 'shortcuts' && (
+                <ShortcutsTab
+                  synced={synced}
+                  patch={patch}
+                  bindings={bindings}
+                  conflictIds={conflictIds}
+                />
+              )}
+              {tab === 'stats' && <StatsTab settings={settings} />}
+            </div>
+            {/* Fades the cut-off last line into the panel while there's more below, then
+            clears at the end — the "keep scrolling" cue the faint scrollbar didn't give. */}
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-x-0 bottom-0 mr-2 h-10 bg-gradient-to-t from-[var(--color-panel)] to-transparent transition-opacity duration-200 ${
+                moreBelow ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          </div>
+
+          <div className="-mx-6 mt-6 flex shrink-0 items-center justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
+            {/* Save is blocked by a clash that may sit on a tab the user is not looking at;
               the footer says so and leads there, instead of a grey button and no reason. */}
-          {conflictIds.size > 0 && tab !== 'shortcuts' && (
+            {conflictIds.size > 0 && tab !== 'shortcuts' && (
+              <button
+                type="button"
+                data-testid="settings-save-blocked"
+                onClick={() => setTab('shortcuts')}
+                className="mr-auto text-left text-xs text-warn underline-offset-2 hover:underline"
+              >
+                {tr('settings.shortcuts.conflictElsewhere')}
+              </button>
+            )}
             <button
               type="button"
-              data-testid="settings-save-blocked"
-              onClick={() => setTab('shortcuts')}
-              className="mr-auto text-left text-xs text-warn underline-offset-2 hover:underline"
+              onClick={onClose}
+              className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
             >
-              {tr('settings.shortcuts.conflictElsewhere')}
+              {tr('common.cancel')}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
-          >
-            {tr('common.cancel')}
-          </button>
-          <button
-            type="submit"
-            data-testid="settings-save"
-            disabled={conflictIds.size > 0}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-          >
-            {tr('common.save')}
-          </button>
+            <button
+              type="submit"
+              data-testid="settings-save"
+              disabled={conflictIds.size > 0}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            >
+              {tr('common.save')}
+            </button>
+          </div>
         </div>
-      </div>
-      {askDiscard &&
-        createPortal(
-          <ConfirmDialog
-            title={tr('settings.discardTitle')}
-            message={tr('settings.discardMessage')}
-            confirmLabel={tr('settings.discardConfirm')}
-            destructive
-            onConfirm={onClose}
-            onClose={() => setAskDiscard(false)}
-          />,
-          document.body,
-        )}
-    </ModalShell>
+      </ModalShell>
+      {/* Beside the Settings form, not inside it: React bubbles a submit up its own tree. */}
+      {askDiscard && (
+        <ConfirmDialog
+          title={tr('settings.discardTitle')}
+          message={tr('settings.discardMessage')}
+          confirmLabel={tr('settings.discardConfirm')}
+          destructive
+          onConfirm={onClose}
+          onClose={() => setAskDiscard(false)}
+        />
+      )}
+    </>
   )
 }
