@@ -68,6 +68,22 @@ describe('ForeignTagsInspector', () => {
     expect(onToggleRemove).toHaveBeenCalledWith('SERATO_MARKERS_V2')
   })
 
+  // Un comentario largo se corta en media columna, y hay que poder leerlo antes de decidir
+  // si se borra.
+  it('enseña el valor entero al pasar el ratón', () => {
+    const value = 'Purchased at Beatport.com, extended version for DJs, remastered 2009'
+    render(
+      <ForeignTagsInspector
+        foreignTags={[{ name: 'COMMENT', value }]}
+        foreignRemoved={[]}
+        onToggleRemove={vi.fn()}
+        open={true}
+        onToggle={vi.fn()}
+      />,
+    )
+    expect(screen.getByTitle(value)).toBeInTheDocument()
+  })
+
   it('un tag sin marcar tiene el botón "borrar"', () => {
     render(
       <ForeignTagsInspector

@@ -74,6 +74,7 @@ export function ForeignTagsInspector({
                     {tag.name}
                   </span>
                   <span
+                    title={tag.value}
                     className={`truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-muted'}`}
                   >
                     {tag.value}
