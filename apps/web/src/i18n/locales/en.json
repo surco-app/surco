@@ -207,8 +207,8 @@
             "d": "Re-decodes the visible slice instead of stretching pixels."
           },
           {
-            "t": "Vinyl clicks",
-            "d": "Switch between the original and the repair while it plays, with no gap, to hear what went."
+            "t": "Clean vinyl",
+            "d": "Clicks, background noise and rumble, with a gapless A/B to hear what it took."
           },
           {
             "t": "BPM and key",
@@ -501,8 +501,8 @@
         "a": "Yes. Surco detects the silence at the head and the tail and shows you both cuts on the waveform, with zoom and millisecond nudges, so you can hear how it lands before applying anything. Trim one track or a whole selection at once. Note that trimming re-encodes the audio, so check the cue point answer above."
       },
       {
-        "q": "What about vinyl clicks and pops?",
-        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio. So you hear whether the repair took the clicks out, and whether it took some of the music with them. It ships off."
+        "q": "What about vinyl clicks and noise?",
+        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio. So you hear whether the repair took the clicks out, and whether it took some of the music with them. It also lowers the record's background noise, on its own four-step ladder, and cuts turntable rumble below 20 Hz. Neither touches the music in any way you would notice, and on a clean track they change nothing. It ships off."
       },
       {
         "q": "My library is full of MP3s. Can I move them to lossless without losing my playlists?",
@@ -683,22 +683,26 @@
       },
       {
         "id": "declick",
-        "title": "Remove the vinyl clicks",
+        "title": "Clean up the vinyl",
         "body": [
           "A vinyl rip carries the needle's clicks and pops baked into the audio. The click repair section detects and interpolates them as it converts, with four levels: off, light, standard and strong. Light is the minimal touch, for delicate material; strong catches the long pops too, at the cost of softening the odd transient.",
           "Before you decide anything, Surco tells you how many audible clicks it estimates the track has, so you know whether it's worth it. It marks every one it finds on the waveform, so a dirty record reads at a glance instead of as a number. A click lasts milliseconds and hunting for it by dragging is hopeless: hit “Next click” to step through them one by one, click a mark to hear that one, or put the cursor wherever you like and press Space to play from there.",
+          "Besides the clicks, the section lowers the background noise, the steady hiss of the record you hear most in the breakdowns, on another four-step ladder: off, gentle, medium and strong. And a checkbox cuts the rumble, the motor and platter drone below 20 Hz. Mix the three however you like and they all go into “Hear the result” together.",
           "The thing that matters is “Preview the result”: Surco renders the whole repaired track and lets you switch between it and the original while it plays, with no gap in the audio. That instant switch is exactly what's needed. If the repair has eaten the attack of a snare, the difference is subtle, and subtle differences only show up switching on the fly."
         ],
         "points": [
           "It ships off: you decide whether the track needs it.",
           "Every detected click is marked on the waveform, and you can jump from one to the next.",
           "It's an estimate of audible clicks: the ones buried under a dense passage slip through, the same way they slip past your ear.",
+          "The background noise is estimated from the track itself as it plays. No sample of silence is needed, so it works on rips already trimmed that start right on the music.",
+          "On a track without noise, like a digital master, the noise reduction changes nothing even if you switch it on.",
+          "The rumble cut takes 0.2 dB off a kick drum (50 Hz) and leaves everything above it untouched.",
           "The A/B compares the repaired track against the original with no gap, so you can hear whether the repair took some music with it.",
           "If you're also trimming silence, the part being cut is dimmed on the waveform so you don't tune against audio that won't make it out.",
           "It repairs the audio on conversion, so it re-encodes: check the cue point note before applying it to an ALAC with cues."
         ],
         "shot": "declick-en.webp",
-        "shotCaption": "Detected clicks marked on the waveform."
+        "shotCaption": "Clicks marked on the waveform, background noise and rumble in one section."
       },
       {
         "id": "recorte",
@@ -973,7 +977,7 @@
     "audioGroup": {
       "step": "04 · 05 · 06 · the polish",
       "title": "And better audio while it does.",
-      "lede": "Three fixes Surco makes to the same track: it removes the vinyl clicks, trims the silence off the end and levels every track to the same volume."
+      "lede": "Three fixes Surco makes to the same track: it cleans the clicks and noise off vinyl, trims the silence off the end and levels every track to the same volume."
     },
     "tag": {
       "step": "02 · tagged",
@@ -983,17 +987,20 @@
     },
     "declick": {
       "step": "04 · cleaned",
-      "title": "Vinyl clicks, gone.",
-      "lede": "If your tracks came off a record, they carry clicks. Surco finds them, marks them on the wave and takes them out, and you can compare against the original while it plays to check the repair took nothing with it.",
-      "short": "Finds them and marks them on the waveform. You can hear the result before you convert.",
-      "section": "Vinyl click repair",
+      "title": "Vinyl, cleaned up.",
+      "lede": "If your tracks came off a record, they carry clicks, background hiss and platter rumble. Surco marks the clicks on the wave and takes them out, lowers the noise and cuts the rumble, and you can compare against the original while it plays to check the repair took nothing with it.",
+      "short": "Removes clicks, background noise and rumble. You can hear the result before you convert.",
+      "section": "Vinyl repair",
       "count": "~{{count}} clicks",
+      "clicks": "Clicks",
       "off": "Off",
       "soft": "Gentle",
       "standard": "Standard",
+      "medium": "Medium",
       "strong": "Strong",
-      "hint": "Repairs short stylus clicks.",
       "found": "Clicks found",
+      "noise": "Background noise",
+      "rumble": "Remove rumble",
       "listen": "Hear the result"
     },
     "trim": {
@@ -1052,7 +1059,7 @@
       },
       "audio": {
         "title": "And better audio while it does",
-        "note": "Catches the FLACs that came from an MP3, trims silence, removes vinyl clicks and levels the volume.",
+        "note": "Catches the FLACs that came from an MP3, trims silence, cleans clicks and noise off vinyl and levels the volume.",
         "lead": "And better audio while it does.",
         "rest": "Catches the FLACs that came from an MP3."
       },
@@ -1712,16 +1719,32 @@
         "group": "sound",
         "title": "Digitize your vinyl",
         "body": [
-          "You recorded your records on the computer and want them ready to play. No needle clicks, no silence at the start and end, and with their Discogs details.",
+          "You recorded your records on the computer and want them ready to play. No needle clicks, no background hiss, no silence at the start and end, and with their Discogs details.",
           "Surco doesn't cut a whole side into tracks. You need one file per track."
         ],
-        "keywords": "vinyl record clicks needle silence trim",
+        "keywords": "vinyl record clicks needle silence trim noise hiss rumble",
         "settings": [
           {
             "tab": "Processing",
-            "setting": "Vinyl click repair",
+            "section": "Vinyl repair",
+            "setting": "Clicks",
             "value": "Standard",
             "note": "Removes short needle clicks when converting."
+          },
+          {
+            "tab": "Processing",
+            "section": "Vinyl repair",
+            "setting": "Background noise",
+            "value": "Medium",
+            "optional": true,
+            "note": "Lowers the record hiss you hear in the breakdowns. Leaves the music alone."
+          },
+          {
+            "tab": "Processing",
+            "section": "Vinyl repair",
+            "setting": "Remove rumble",
+            "optional": true,
+            "note": "Cuts platter rumble below 20 Hz."
           },
           {
             "tab": "Search",
@@ -1752,17 +1775,18 @@
           },
           {
             "title": "Click “Convert”",
-            "text": "Click repair and loudness are applied when converting."
+            "text": "Vinyl repair and loudness are applied when converting."
           }
         ],
         "points": [
-          "Before converting you can listen to the repair and compare it with the original in the editor's click section.",
+          "Before converting you can listen to the repair and compare it with the original in the editor's vinyl section.",
           "If a track has lots of big clicks, try “Strong”. It can soften the hits a little.",
+          "If you hear hiss in the breakdowns, turn up “Background noise”. It works even if the track is already trimmed.",
           "A click buried under a lot of music at once sometimes gets through."
         ],
         "related": [
           {
-            "label": "Remove the vinyl clicks",
+            "label": "Clean up the vinyl",
             "anchor": "declick"
           },
           {

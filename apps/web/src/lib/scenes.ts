@@ -190,31 +190,44 @@ export function qualityFrame(t: number): QualityFrame {
 
 /* ---------------------------------------------------------------- 04 · declick */
 
-const DECLICK_CLICK = 0.2
-const DECLICK_LISTEN = 0.42
+const DECLICK_CLICK = 0.18
+const DECLICK_NOISE = 0.32
+const DECLICK_RUMBLE = 0.44
+const DECLICK_LISTEN = 0.56
 const DECLICK_PLAY_ENDS = 0.95
+// How long the cursor rests on a control before pressing it.
+const DECLICK_AIM = 0.1
 
 export interface DeclickFrame {
   mode: 'off' | 'standard'
-  cursor: 'standard' | 'listen' | null
+  noise: 'off' | 'medium'
+  rumble: boolean
+  cursor: 'standard' | 'noise' | 'rumble' | 'listen' | null
   listen: boolean
   playhead: number
   marks: number
 }
 
-// The app's vinyl click repair section: the clicks it found are marked on the strip,
-// "Standard" gets chosen, and "Listen to the result" plays the repaired strip through.
+// The app's vinyl repair section: the clicks it found are marked on the strip, then
+// "Standard" clicks, "Medium" background noise and the rumble cut get chosen in the
+// order they sit in the app, and "Listen to the result" plays the repaired strip through.
 export function declickFrame(t: number): DeclickFrame {
   const p = clamp(t)
   const on = p >= DECLICK_CLICK
+  const aiming = (at: number, from = at - DECLICK_AIM): boolean => p >= from && p < at + 0.04
   return {
     mode: on ? 'standard' : 'off',
-    cursor:
-      p >= 0.06 && p < DECLICK_CLICK + 0.04
-        ? 'standard'
-        : p >= DECLICK_CLICK + 0.1 && p < DECLICK_LISTEN + 0.04
-          ? 'listen'
-          : null,
+    noise: p >= DECLICK_NOISE ? 'medium' : 'off',
+    rumble: p >= DECLICK_RUMBLE,
+    cursor: aiming(DECLICK_CLICK, 0.06)
+      ? 'standard'
+      : aiming(DECLICK_NOISE)
+        ? 'noise'
+        : aiming(DECLICK_RUMBLE)
+          ? 'rumble'
+          : aiming(DECLICK_LISTEN)
+            ? 'listen'
+            : null,
     listen: on,
     playhead: clamp((p - DECLICK_LISTEN) / (DECLICK_PLAY_ENDS - DECLICK_LISTEN)),
     marks: DECLICK_MARKS.length,

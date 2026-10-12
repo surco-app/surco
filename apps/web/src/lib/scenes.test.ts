@@ -144,6 +144,33 @@ describe('declickFrame', () => {
     expect(firstAt((f) => f.cursor === 'listen')).toBeLessThan(playing)
   })
 
+  // The section now fixes three things; the scene shows each one being chosen, in the
+  // order they sit in the app, each pointed at before it switches.
+  it('picks the background noise after the clicks, pointing at it first', () => {
+    expect(declickFrame(0).noise).toBe('off')
+    expect(declickFrame(1).noise).toBe('medium')
+    const picked = firstAt((f) => f.noise === 'medium')
+    expect(picked).toBeGreaterThan(firstAt((f) => f.mode === 'standard'))
+    const pointing = firstAt((f) => f.cursor === 'noise')
+    expect(pointing).toBeGreaterThan(-1)
+    expect(pointing).toBeLessThan(picked)
+  })
+
+  it('ticks the rumble cut after the noise, pointing at it first', () => {
+    expect(declickFrame(0).rumble).toBe(false)
+    expect(declickFrame(1).rumble).toBe(true)
+    const ticked = firstAt((f) => f.rumble)
+    expect(ticked).toBeGreaterThan(firstAt((f) => f.noise === 'medium'))
+    const pointing = firstAt((f) => f.cursor === 'rumble')
+    expect(pointing).toBeGreaterThan(-1)
+    expect(pointing).toBeLessThan(ticked)
+  })
+
+  // What plays is the result of all three, so it only starts once they are set.
+  it('plays the result only after every fix is chosen', () => {
+    expect(firstAt((f) => f.playhead > 0)).toBeGreaterThan(firstAt((f) => f.rumble))
+  })
+
   it('plays forward to the end of the strip', () => {
     const heads = frames.map((f) => f.playhead)
     for (let i = 1; i < heads.length; i++) expect(heads[i]).toBeGreaterThanOrEqual(heads[i - 1])

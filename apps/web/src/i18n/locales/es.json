@@ -207,8 +207,8 @@
             "d": "Re-decodifica el trozo visible en vez de estirar píxeles."
           },
           {
-            "t": "Clics del vinilo",
-            "d": "Alterna entre la original y la reparada mientras suena, sin cortes, para oír qué se llevó."
+            "t": "Vinilo limpio",
+            "d": "Clics, ruido de fondo y rumble, con un A/B sin cortes para oír qué se llevó."
           },
           {
             "t": "BPM y tonalidad",
@@ -501,8 +501,8 @@
         "a": "Sí. Surco detecta el silencio de entrada y de salida y te enseña los dos cortes sobre la onda, con zoom y ajuste al milisegundo, para que escuches cómo queda antes de aplicarlo. Puedes recortar una pista o toda la selección de una vez. Ojo: recortar recodifica el audio, así que revisa la nota sobre los cue points."
       },
       {
-        "q": "¿Y los clics y pops del vinilo?",
-        "a": "Surco los detecta y los interpola al convertir, con cuatro niveles de intensidad. Marca cada clic que encuentra sobre la onda para que saltes de uno a otro, y renderiza la pista reparada para que la compares con la original mientras suena, sin ningún corte en el audio: así oyes si la reparación se ha llevado los clics, y si se ha llevado también algo de la música. Viene desactivado."
+        "q": "¿Y los clics y el ruido del vinilo?",
+        "a": "Surco los detecta y los interpola al convertir, con cuatro niveles de intensidad. Marca cada clic que encuentra sobre la onda para que saltes de uno a otro, y renderiza la pista reparada para que la compares con la original mientras suena, sin ningún corte en el audio: así oyes si la reparación se ha llevado los clics, y si se ha llevado también algo de la música. También baja el ruido de fondo del disco, con su propia escala de cuatro niveles, y corta el rumble del giradiscos por debajo de 20 Hz. Los dos apenas tocan la música, y en una pista limpia no cambian nada. Viene desactivado."
       },
       {
         "q": "Tengo MP3 en mi biblioteca. ¿Puedo pasarlos a lossless sin perder las playlists?",
@@ -683,22 +683,26 @@
       },
       {
         "id": "declick",
-        "title": "Quita los clics del vinilo",
+        "title": "Limpia el vinilo",
         "body": [
           "Un rip de vinilo trae los clics y los pops de la aguja pegados al audio. La sección de reparación de clics los detecta y los interpola al convertir, con cuatro niveles: desactivado, suave, estándar y fuerte. Suave es el toque mínimo, para material delicado; fuerte atrapa también los pops largos, a costa de suavizar algún transitorio.",
           "Antes de decidir nada, Surco te dice cuántos clics audibles estima que tiene la pista, así sabes si merece la pena. Marca sobre la onda cada uno que encuentra, así que un disco sucio se lee de un vistazo en vez de como un número. Un clic dura milisegundos y buscarlo arrastrando es imposible: pulsa «Siguiente clic» para recorrerlos uno a uno, pincha una marca para oír ese en concreto, o coloca el cursor donde quieras y dale a Espacio para reproducir desde ahí.",
+          "Además de los clics, la sección baja el ruido de fondo, ese soplido continuo del disco que se oye sobre todo en los parones, con otra escala de cuatro niveles: desactivado, suave, medio y fuerte. Y una casilla corta el rumble, el retumbe del motor y del plato por debajo de 20 Hz. Las tres cosas se combinan como quieras y entran juntas en «Escuchar el resultado».",
           "Lo importante es «Escuchar el resultado»: Surco renderiza la pista entera ya reparada y te deja alternar entre ella y la original mientras suena, sin ningún corte en el audio. Ese cambio instantáneo es justo lo que hace falta. Si la reparación se ha comido el ataque de una caja, la diferencia es sutil, y las diferencias sutiles solo se aprecian cambiando en caliente."
         ],
         "points": [
           "Viene desactivado: tú decides si la pista lo necesita.",
           "Cada clic detectado queda marcado en la onda, y puedes saltar de uno a otro.",
           "Es una estimación de clics audibles: los que quedan enterrados bajo un pasaje denso se escapan, igual que se le escapan al oído.",
+          "El ruido de fondo se estima sobre la propia pista mientras suena. No hace falta una muestra de silencio, así que funciona también en rips ya recortados que empiezan con música.",
+          "En una pista sin ruido, como un máster digital, la reducción de ruido no cambia nada aunque la actives.",
+          "El corte de rumble le quita 0,2 dB al bombo (50 Hz) y deja intacto todo lo que suena por encima.",
           "El A/B compara la pista reparada con la original sin cortes, para oír si la reparación se ha llevado también algo de música.",
           "Si además recortas el silencio, la parte que se va queda atenuada en la onda para que no ajustes sobre audio que no saldrá.",
           "Repara el audio al convertir, así que recodifica: revisa la nota sobre cue points antes de aplicarlo a un ALAC con cues."
         ],
         "shot": "declick-es.webp",
-        "shotCaption": "Los clics detectados, marcados sobre la forma de onda."
+        "shotCaption": "Clics marcados sobre la onda, ruido de fondo y rumble en la misma sección."
       },
       {
         "id": "recorte",
@@ -973,7 +977,7 @@
     "audioGroup": {
       "step": "04 · 05 · 06 · se afina",
       "title": "Y de paso, mejor audio.",
-      "lede": "Tres arreglos que Surco hace sobre la misma pista: quita los chasquidos del vinilo, recorta el silencio del final y las deja todas al mismo volumen."
+      "lede": "Tres arreglos que Surco hace sobre la misma pista: limpia el vinilo de clics y ruido, recorta el silencio del final y las deja todas al mismo volumen."
     },
     "tag": {
       "step": "02 · se etiqueta",
@@ -983,17 +987,20 @@
     },
     "declick": {
       "step": "04 · se limpia",
-      "title": "Los clics del vinilo, fuera.",
-      "lede": "Si tus pistas vienen de un disco, traen chasquidos. Surco los encuentra, los marca sobre la onda y los quita, y puedes comparar con el original mientras suena para comprobar que no se ha llevado nada por delante.",
-      "short": "Los encuentra y los marca sobre la onda. Puedes escuchar el resultado antes de convertir.",
-      "section": "Reparación de clicks de vinilo",
+      "title": "El vinilo, limpio.",
+      "lede": "Si tus pistas vienen de un disco, traen chasquidos, soplido de fondo y el retumbe del plato. Surco marca los clics sobre la onda y los quita, baja el ruido y corta el rumble, y puedes comparar con el original mientras suena para comprobar que no se ha llevado nada por delante.",
+      "short": "Quita clics, ruido de fondo y rumble. Puedes escuchar el resultado antes de convertir.",
+      "section": "Reparación de vinilo",
       "count": "~{{count}} clicks",
+      "clicks": "Clicks",
       "off": "No",
       "soft": "Suave",
       "standard": "Estándar",
+      "medium": "Medio",
       "strong": "Fuerte",
-      "hint": "Repara los clicks cortos de la aguja.",
       "found": "Clics encontrados",
+      "noise": "Ruido de fondo",
+      "rumble": "Quitar el rumble",
       "listen": "Escuchar el resultado"
     },
     "trim": {
@@ -1052,7 +1059,7 @@
       },
       "audio": {
         "title": "Y de paso, mejor audio",
-        "note": "Caza los FLAC que salieron de un MP3, quita silencios, clics de vinilo y nivela el volumen.",
+        "note": "Caza los FLAC que salieron de un MP3, quita silencios, clics y ruido de vinilo y nivela el volumen.",
         "lead": "Y de paso, mejor audio.",
         "rest": "Caza los FLAC que salieron de un MP3."
       },
@@ -1712,16 +1719,32 @@
         "group": "sound",
         "title": "Digitaliza tus vinilos",
         "body": [
-          "Has grabado tus discos en el ordenador y quieres dejarlos listos para pinchar. Sin clics de la aguja, sin silencio al principio y al final, y con sus datos de Discogs.",
+          "Has grabado tus discos en el ordenador y quieres dejarlos listos para pinchar. Sin clics de la aguja, sin soplido de fondo, sin silencio al principio y al final, y con sus datos de Discogs.",
           "Surco no corta una cara entera en pistas. Necesitas un archivo por tema."
         ],
-        "keywords": "vinilos grabar clics aguja silencio recortar",
+        "keywords": "vinilos grabar clics aguja silencio recortar ruido soplido rumble",
         "settings": [
           {
             "tab": "Procesado",
-            "setting": "Reparación de clicks de vinilo",
+            "section": "Reparación de vinilo",
+            "setting": "Clicks",
             "value": "Estándar",
             "note": "Quita los clics cortos de la aguja al convertir."
+          },
+          {
+            "tab": "Procesado",
+            "section": "Reparación de vinilo",
+            "setting": "Ruido de fondo",
+            "value": "Medio",
+            "optional": true,
+            "note": "Baja el soplido del disco que se oye en los parones. No toca la música."
+          },
+          {
+            "tab": "Procesado",
+            "section": "Reparación de vinilo",
+            "setting": "Quitar el rumble",
+            "optional": true,
+            "note": "Corta el retumbe del plato por debajo de 20 Hz."
           },
           {
             "tab": "Búsqueda",
@@ -1752,17 +1775,18 @@
           },
           {
             "title": "Pulsa «Convertir»",
-            "text": "La reparación de clics y el volumen se aplican al convertir."
+            "text": "La reparación de vinilo y el volumen se aplican al convertir."
           }
         ],
         "points": [
-          "Antes de convertir puedes escuchar la reparación y compararla con el original en la sección de clics del editor.",
+          "Antes de convertir puedes escuchar la reparación y compararla con el original en la sección de vinilo del editor.",
           "Si un tema tiene muchos clics grandes, prueba «Fuerte». Puede suavizar un poco los golpes.",
+          "Si en los parones se oye un soplido, sube «Ruido de fondo». Funciona aunque la pista ya venga recortada.",
           "Un clic tapado por mucha música a la vez a veces se escapa."
         ],
         "related": [
           {
-            "label": "Quita los clics del vinilo",
+            "label": "Limpia el vinilo",
             "anchor": "declick"
           },
           {
