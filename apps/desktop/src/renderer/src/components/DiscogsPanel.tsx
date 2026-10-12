@@ -143,7 +143,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   }
   const { results, openKey, suggestedKey, choosingBest } = view.current
   // The album applied before this track opened rides first, so tagging a release track
-  // after track never means finding it again. Fixed for the mount, so nothing moves.
+  // after track never means finding it again. Fixed for the mount, and shown with the
+  // results so the filter row arriving above them never slides it down.
   const [pinned] = useState(() => editorPlace.lastAlbum)
   const pinnedKey = pinned ? resultKeyOf(pinned) : null
   const listed = pinned ? results.filter((r) => resultKeyOf(r) !== pinnedKey) : results
@@ -631,7 +632,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           onPointerLeave={() => setPointerIn(false)}
           className="min-h-0 flex-1 overflow-y-auto"
         >
-          {pinned && (
+          {pinned && (listed.length > 0 || noResults) && (
             <>
               <BestMatchLabel testid="last-applied-label" label={tr('editor.lastApplied')} />
               {renderCard(pinned, 0)}

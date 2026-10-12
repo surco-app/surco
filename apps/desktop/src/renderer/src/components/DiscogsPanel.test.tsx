@@ -691,6 +691,15 @@ describe('DiscogsPanel last applied album', () => {
     expect(shownKeys()).toEqual(['discogs:1', 'discogs:2'])
   })
 
+  // The source filter row lands above the list with the first results; a pinned card drawn
+  // before them slid down under the pointer the moment they arrived.
+  it('waits for the results to show the pinned album with them', () => {
+    applyFromHardHouse()
+    renderPanel(browser({ query: 'y', results: [], busy: true }))
+    expect(screen.queryByTestId('last-applied-label')).not.toBeInTheDocument()
+    expect(screen.getByTestId('discogs-skeleton')).toBeInTheDocument()
+  })
+
   it('pins nothing before an album was applied', () => {
     renderPanel(browser({ query: 'y', results: [{ provider: 'discogs', id: 2, title: 'Other' }] }))
     expect(screen.queryByTestId('last-applied-label')).not.toBeInTheDocument()
