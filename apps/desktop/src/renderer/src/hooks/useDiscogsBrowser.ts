@@ -433,7 +433,7 @@ export function useDiscogsBrowser(
   // It waits for all of them so the pick weighs every catalog, and a row the user already
   // opened by hand stays open: the pick is then only flagged. A newer search supersedes an
   // in-flight probe via the cleanup flag; editing the file's tags does not re-run it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the settled result list; item.meta/duration are read at probe time, not triggers — depending on them would re-probe on every keystroke.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the settled result list and the run (a repeated search answers from cache, already settled); item.meta/duration are read at probe time, not triggers — depending on them would re-probe on every keystroke.
   useEffect(() => {
     if (!settled || allFailed) return
     if (direct !== null) {
@@ -468,7 +468,7 @@ export function useDiscogsBrowser(
       // button until the editor remounts.
       setAutoProbing(false)
     }
-  }, [settled, allFailed, direct, loadRelease])
+  }, [settled, allFailed, direct, loadRelease, runKey])
 
   const releaseQuery = useQuery({
     queryKey: releaseKey(openResult),

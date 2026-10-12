@@ -1071,6 +1071,24 @@ describe('stable search', () => {
     expect(result.current.openKey).toBe('bandcamp:9')
   })
 
+  // Going back to a term already searched answers from cache, so the list is settled from
+  // the first render; the best-match pick still has to run for it, or the top slot waits
+  // as a skeleton forever.
+  it('picks the best match again when a cached search is repeated', async () => {
+    const discogs = slowDiscogs()
+    const result = render('Track One')
+    act(() => result.current.doSearch())
+    await act(async () => discogs.resolve([searchResult]))
+    await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:1'))
+    act(() => result.current.setQuery('something else'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.choosingBest).toBe(false))
+    act(() => result.current.setQuery('some album'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:1'))
+    expect(result.current.choosingBest).toBe(false)
+  })
+
   // A search that found no confident match leaves no empty slot waiting at the top.
   it('stops choosing a best match once the probe finds none', async () => {
     const discogs = slowDiscogs()
