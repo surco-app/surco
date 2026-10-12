@@ -796,8 +796,8 @@
     "auditionEnd": "Hear the end",
     "row": {
       "removeBoth": "Removes {{start}} at the start and {{end}} at the end",
-      "removeStart": "Removes {{start}} of silence at the start",
-      "removeEnd": "Removes {{end}} of silence at the end",
+      "removeStart": "Removes {{start}} at the start",
+      "removeEnd": "Removes {{end}} at the end",
       "foundBoth": "{{start}} of silence at the start and {{end}} at the end",
       "foundStart": "{{start}} of silence at the start",
       "foundEnd": "{{end}} of silence at the end",

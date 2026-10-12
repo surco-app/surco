@@ -927,10 +927,11 @@ describe('TrimSection', () => {
       'Removes 9.7 s at the start and 9.7 s at the end',
     )
     expect(screen.getByTestId('trim-active-badge')).toHaveTextContent('−19.4 s')
+    // A staged cut is wherever the user put it, often into the music up to the first
+    // beat, so it is not called silence: only what the detection found is.
     rerender(section({ value: { endSec: 96.4 }, open: false, durationSec: 100 }))
-    expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
-      'Removes 3.6 s of silence at the end',
-    )
+    expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent('Removes 3.6 s at the end')
+    expect(screen.getByTestId('trim-row-sentence')).not.toHaveTextContent('silence')
   })
 
   it('says what it does without decoding while nothing has been measured', () => {
