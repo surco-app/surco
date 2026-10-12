@@ -1011,6 +1011,22 @@ describe('App maximized section', () => {
     expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
     expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
   })
+
+  // A dialog opened over the maximized section owns Escape: the press that dismisses the
+  // palette must leave the section the user was working in maximized.
+  it('closes only the palette when Escape is pressed over a maximized section', async () => {
+    await renderApp()
+    const [row] = await addTwoTracks()
+    fireEvent.click(row)
+    const trim = await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    fireEvent.click(within(trim).getByTestId('section-maximize'))
+    await screen.findByTestId('section-maximized-overlay')
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    expect(await screen.findByTestId('palette-input')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('palette-input')).toBeNull())
+    expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+  })
 })
 
 describe('App track removal', () => {

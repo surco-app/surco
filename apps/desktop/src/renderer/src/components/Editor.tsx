@@ -299,12 +299,15 @@ export const Editor = memo(function Editor({
   // store): its element renders into a portal overlay instead of the column,
   // and Esc restores it. Surviving the per-track remount is deliberate — a
   // maximized Trim plus arrow-key track switching is a full-screen review
-  // flow over the whole track list.
+  // flow over the whole track list. A dialog opened over it (palette, settings) owns
+  // Escape, and the overlay sits under the z-50 modals so that dialog is the one on top.
   const { maximized, setMaximized } = useMaximizedSection()
   useEffect(() => {
     if (maximized === null) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setMaximized(null)
+      if (e.key !== 'Escape') return
+      if (document.querySelector('[aria-modal="true"]')) return
+      setMaximized(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -1389,7 +1392,7 @@ export const Editor = memo(function Editor({
                     createPortal(
                       <div
                         data-testid="section-maximized-overlay"
-                        className="fixed inset-0 z-50 overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                        className="fixed inset-0 z-[46] overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
                       >
                         {element}
                       </div>,
