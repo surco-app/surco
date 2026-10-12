@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
+import type { ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import {
@@ -21,6 +21,7 @@ import {
   trackDisplayTitle,
 } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
+import { holdOrder } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { DEFAULT_RESULTS_WIDTH, ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -99,24 +100,54 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     query,
     setQuery,
     doSearch,
-    results,
+    results: liveResults,
     providerCounts,
     providerFilter,
     setProviderFilter,
     release,
-    openKey,
-    suggestedKey,
+    openKey: liveOpenKey,
+    suggestedKey: liveSuggestedKey,
     pendingProviders,
     searchProgress,
     held,
-    showHeld,
-    choosingBest,
+    showHeld: liveShowHeld,
+    choosingBest: liveChoosingBest,
     loading,
     busy,
     noResults,
     error,
-    previewRelease,
+    previewRelease: livePreviewRelease,
   } = browser
+  // While the pointer is over the list, nothing the search does on its own moves a row:
+  // the best-match pin, its slot and its auto-open wait until the pointer leaves, so a row
+  // never slides away from a user about to click it. The user's own clicks apply at once.
+  const [pointerIn, setPointerIn] = useState(false)
+  const userActed = useRef(false)
+  const liveView = {
+    results: liveResults,
+    openKey: liveOpenKey,
+    suggestedKey: liveSuggestedKey,
+    choosingBest: liveChoosingBest,
+  }
+  const view = useRef(liveView)
+  if (!pointerIn || userActed.current) {
+    view.current = liveView
+    userActed.current = false
+  } else {
+    view.current = {
+      ...view.current,
+      results: holdOrder(view.current.results, liveResults, resultKeyOf),
+    }
+  }
+  const { results, openKey, suggestedKey, choosingBest } = view.current
+  const previewRelease = (r: SearchResult): void => {
+    userActed.current = true
+    livePreviewRelease(r)
+  }
+  const showHeld = (): void => {
+    userActed.current = true
+    liveShowHeld()
+  }
   const suggestedTitle = suggestedKey
     ? results.find((r) => `${r.provider}:${r.id}` === suggestedKey)?.title
     : undefined
@@ -219,9 +250,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     [searchInputRef],
   )
   const tierLabel = tr(matchTier === 'high' ? 'editor.matchSuggested' : 'match.toConfirm')
-  // What answered after the list showed waits under the best match (or at the top without
-  // one), so asking for it is one click and never moves the release the user came for.
-  const heldAt = results.length > 0 && suggestedKey === resultKeyOf(results[0]) ? 1 : 0
+  // What answered after the list showed waits at the foot of the list, where "Still
+  // searching" stood, so its arrival moves no row; showing it is the user's own click.
   const heldButton = held.count > 0 && (
     <div className="flex justify-center px-1.5 pt-1.5 pb-0.5">
       <button
@@ -369,6 +399,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           ref={resultsRef}
           data-testid="discogs-results"
           onKeyDown={onResultsKeyDown}
+          onPointerEnter={() => setPointerIn(true)}
+          onPointerLeave={() => setPointerIn(false)}
           className="min-h-0 flex-1 overflow-y-auto"
         >
           {busy && results.length === 0 ? (
@@ -406,7 +438,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 const expanded = openKey === rk
                 const suggested = suggestedKey === rk
                 const best = suggested && i === 0
-                const loaded = expanded && !!release && !loading
+                const loaded = expanded && openKey === liveOpenKey && !!release && !loading
                 // Both empty for every Bandcamp row — its search returns no year, label or
                 // catalogue — so each span is dropped rather than rendered blank, and the row
                 // keeps its one-line height instead of paying for a line that says nothing.
@@ -414,7 +446,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 const pressing = resultPressing(r)
                 return (
                   <Fragment key={rk}>
-                    {i === heldAt && heldButton}
                     {best && (
                       <BestMatchLabel testid="best-match-label" label={tr('editor.bestMatch')} />
                     )}
@@ -609,7 +640,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   </Fragment>
                 )
               })}
-              {heldAt === results.length && heldButton}
+              {heldButton}
             </>
           )}
           {/* A catalog still searching: its rows will wait behind the button, not land here,

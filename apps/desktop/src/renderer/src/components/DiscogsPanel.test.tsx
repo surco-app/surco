@@ -468,7 +468,9 @@ describe('DiscogsPanel stable results', () => {
     expect(screen.queryByTestId('best-match-label')).toBeNull()
   })
 
-  it('offers what answered late behind a button, under the best match', () => {
+  // Late answers wait at the foot of the list, where "Still searching" stood: inserted
+  // at the top they pushed every row down under the pointer the moment Discogs answered.
+  it('offers what answered late behind a button, after the rows', () => {
     const showHeld = vi.fn()
     renderPanel(
       browser({
@@ -482,8 +484,7 @@ describe('DiscogsPanel stable results', () => {
     const button = screen.getByTestId('discogs-held')
     expect(button).toHaveTextContent('4 more from Discogs · Show')
     const cards = screen.getAllByTestId('result-card')
-    expect(cards[0].compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(button.compareDocumentPosition(cards[1])).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(cards.at(-1)?.compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     fireEvent.click(button)
     expect(showHeld).toHaveBeenCalled()
   })
@@ -519,5 +520,68 @@ describe('DiscogsPanel result thumbnail', () => {
     fireEvent.error(thumb)
     expect(screen.queryByTestId('result-thumb')).toBeNull()
     expect(screen.getByTestId('result-thumb-empty')).toBeInTheDocument()
+  })
+})
+
+describe('DiscogsPanel while the pointer is over the results', () => {
+  const a = { provider: 'discogs' as const, id: 1, title: 'Album A' }
+  const b = { provider: 'discogs' as const, id: 2, title: 'Album B' }
+  const c = { provider: 'discogs' as const, id: 3, title: 'Album C' }
+  const keys = (): string[] =>
+    screen.getAllByTestId('result-card').map((r) => r.getAttribute('data-key') ?? '')
+  const releaseC = {
+    provider: 'discogs' as const,
+    id: 3,
+    title: 'Album C',
+    artists: [],
+    tracklist: [{ position: '1', title: 'One' }],
+  }
+
+  // The best-match pick lands seconds after the list shows. Pinning it to the top and
+  // unfolding its tracklist moved every row under a user about to click one, and the
+  // click opened a different album. Nothing moves until the pointer leaves the list.
+  it('holds the order and the auto-open until the pointer leaves', () => {
+    const { rerender } = renderPanel(
+      browser({ query: 'x', results: [a, b, c], choosingBest: true }),
+    )
+    fireEvent.pointerEnter(screen.getByTestId('discogs-results'))
+    rerender(
+      panel(
+        browser({
+          query: 'x',
+          results: [c, a, b],
+          suggestedKey: 'discogs:3',
+          openKey: 'discogs:3',
+          release: releaseC,
+        }),
+      ),
+    )
+    expect(keys()).toEqual(['discogs:1', 'discogs:2', 'discogs:3'])
+    expect(screen.getByTestId('best-match-slot')).toBeInTheDocument()
+    expect(screen.queryByTestId('discogs-track')).toBeNull()
+    fireEvent.pointerLeave(screen.getByTestId('discogs-results'))
+    expect(keys()).toEqual(['discogs:3', 'discogs:1', 'discogs:2'])
+    expect(screen.getAllByTestId('discogs-track')).toHaveLength(1)
+  })
+
+  // The user's own click is never held: it opens the row under the pointer at once.
+  it('opens a row the user clicks right away', () => {
+    const previewRelease = vi.fn()
+    const { rerender } = renderPanel(browser({ query: 'x', results: [a, b, c], previewRelease }))
+    fireEvent.pointerEnter(screen.getByTestId('discogs-results'))
+    fireEvent.click(screen.getAllByTestId('discogs-result')[2])
+    expect(previewRelease).toHaveBeenCalled()
+    rerender(
+      panel(
+        browser({
+          query: 'x',
+          results: [a, b, c],
+          previewRelease,
+          openKey: 'discogs:3',
+          release: releaseC,
+        }),
+      ),
+    )
+    expect(screen.getAllByTestId('discogs-track')).toHaveLength(1)
   })
 })

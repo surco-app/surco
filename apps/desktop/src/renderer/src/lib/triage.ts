@@ -163,12 +163,16 @@ export function outsideFilter(tracks: TrackItem[], sel: FilterSelection): Set<st
 // The fresh rows laid out in the order the list already shows, so a sort that would move
 // a row under the user waits. Falls back to the fresh order whenever the set of rows
 // changed (an import, a removal, a row the search no longer matches).
-export function holdOrder(shown: TrackItem[], fresh: TrackItem[]): TrackItem[] {
+export function holdOrder<T extends { id: string | number }>(
+  shown: T[],
+  fresh: T[],
+  keyOf: (t: T) => string = (t) => String(t.id),
+): T[] {
   if (shown.length !== fresh.length) return fresh
-  const byId = new Map(fresh.map((t) => [t.id, t]))
-  const held: TrackItem[] = []
+  const byKey = new Map(fresh.map((t) => [keyOf(t), t]))
+  const held: T[] = []
   for (const t of shown) {
-    const live = byId.get(t.id)
+    const live = byKey.get(keyOf(t))
     if (!live) return fresh
     held.push(live)
   }
