@@ -612,8 +612,8 @@ export default function App(): React.JSX.Element {
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
   // second copy-in updates the count in place, and with a Load action that adds the tracks.
   // Re-pushed whenever the pending set changes; dismissed when it clears (the user accepted,
-  // the hook's timeout declined it, or the crate was emptied). The duration only draws the
-  // countdown bar — the expiry that counts is the hook's, which remembers the declined files.
+  // the countdown declined it, or the crate was emptied). The countdown is the toast's own,
+  // so it holds while the pointer rests on the card, and expiring declines like the ✕.
   useEffect(() => {
     if (!pendingNew) return
     // Both separators — the watcher root is a raw OS path, backslashed on Windows.
@@ -625,6 +625,7 @@ export default function App(): React.JSX.Element {
       message: { key: 'newTracks.prompt', values: { count: pendingNew.paths.length, folder } },
       action: { label: { key: 'newTracks.load' }, onAction: loadPending },
       onDismiss: dismissPending,
+      onExpire: dismissPending,
       duration: NEW_TRACKS_PROMPT_TIMEOUT_MS,
     })
     return () => dismissToast(store, id)

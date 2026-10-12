@@ -3,7 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import { isStale, trackSignature } from '../lib/dirty'
-import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './useTrackLibrary'
+import { useTrackLibrary } from './useTrackLibrary'
 
 afterEach(() => {
   cleanup()
@@ -363,26 +363,6 @@ describe('useTrackLibrary new-tracks prompt lifetime', () => {
     act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
 
     expect(result.current.pendingNew).toBe(first)
-  })
-
-  // The prompt must not demand an answer: left alone it times out, and timing out counts
-  // as declining — otherwise the next poll would raise it again a minute later.
-  it('expires the prompt on its own and does not re-offer the files', async () => {
-    vi.useFakeTimers()
-    try {
-      const { result, fire } = setupWithTracks()
-      await act(() => result.current.addPaths(['/m/a.wav']))
-
-      act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
-      expect(result.current.pendingNew).not.toBeNull()
-      act(() => vi.advanceTimersByTime(NEW_TRACKS_PROMPT_TIMEOUT_MS))
-      expect(result.current.pendingNew).toBeNull()
-
-      act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
-      expect(result.current.pendingNew).toBeNull()
-    } finally {
-      vi.useRealTimers()
-    }
   })
 })
 

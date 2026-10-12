@@ -9,6 +9,7 @@ import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
 import type { ActivityEvent, RekordboxSyncIssue, Release, Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
+import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
@@ -993,6 +994,60 @@ describe('App loudness help overlay', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByTestId('loudness-help')).toBeNull()
+  })
+})
+
+describe('App new-tracks offer', () => {
+  // The toast holds its countdown while the pointer rests on it, so the user can still
+  // reach Load. Expiring declines the files for good, so the offer must not age out
+  // underneath the cursor on a clock of its own.
+  it('keeps the offer up while the pointer rests on it', async () => {
+    let fire: (root: string, files: string[]) => void = () => {}
+    setApi({
+      onFoldersChanged: vi.fn<Api['onFoldersChanged']>((cb) => {
+        fire = cb
+        return () => {}
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      act(() => fire('/music', ['/music/a.wav', '/music/b.wav', '/music/c.wav']))
+      fireEvent.pointerEnter(await screen.findByTestId('new-tracks'))
+      act(() => vi.advanceTimersByTime(NEW_TRACKS_PROMPT_TIMEOUT_MS * 2))
+      expect(screen.getByTestId('new-tracks')).not.toHaveAttribute('aria-hidden')
+      fireEvent.click(screen.getByTestId('new-tracks-action'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // The prompt must not demand an answer: left alone it times out, and timing out counts
+  // as declining, otherwise the next poll would raise it again a minute later.
+  it('expires the offer on its own and does not re-offer the files', async () => {
+    let fire: (root: string, files: string[]) => void = () => {}
+    setApi({
+      onFoldersChanged: vi.fn<Api['onFoldersChanged']>((cb) => {
+        fire = cb
+        return () => {}
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const files = ['/music/a.wav', '/music/b.wav', '/music/c.wav']
+      act(() => fire('/music', files))
+      await screen.findByTestId('new-tracks')
+      act(() => vi.advanceTimersByTime(NEW_TRACKS_PROMPT_TIMEOUT_MS + 1000))
+      await waitFor(() => expect(screen.queryByTestId('new-tracks')).toBeNull())
+      act(() => fire('/music', [...files, '/music/d.wav']))
+      expect(await screen.findByTestId('new-tracks')).toHaveTextContent('1 new track in')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

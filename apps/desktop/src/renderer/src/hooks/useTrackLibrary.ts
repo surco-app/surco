@@ -686,15 +686,6 @@ export function useTrackLibrary({
     })
   }, [])
 
-  // The prompt dismisses itself after a while: it is an offer, not a question that blocks
-  // anything. The timer restarts when the pending set changes (a second copy-in updates the
-  // count) and is disarmed the moment the offer clears.
-  useEffect(() => {
-    if (!pendingNew) return
-    const timer = setTimeout(dismissPending, NEW_TRACKS_PROMPT_TIMEOUT_MS)
-    return () => clearTimeout(timer)
-  }, [pendingNew, dismissPending])
-
   async function pickFiles(): Promise<void> {
     // Expand the picker's result the same way a drop does: a folder picked on macOS walks
     // to its audio files, and ._ AppleDouble and hidden entries are filtered out either way.
