@@ -344,6 +344,25 @@ describe('QualitySection verdict caption', () => {
     ).toBeInTheDocument()
   })
 
+  // The editor reads the same codec the row does: an AAC's lowpass is the format, reported
+  // in the caption without calling the file bad.
+  it('reports an AAC .m4a cut as its encoder, not as bad quality', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: true,
+        codec: 'aac',
+      },
+      '/m/a.m4a',
+    )
+    expect(
+      await screen.findByText(i18n.t('editor.qualityCaptionLossy', { cutoff: '16.0 kHz' })),
+    ).toBeInTheDocument()
+  })
+
   it('explains a warn verdict as the high-bitrate-lossy ambiguity zone', async () => {
     renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
     expect(

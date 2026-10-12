@@ -13,6 +13,7 @@ import {
   formatKHz,
   formatSampleRate,
   GOOD_CUTOFF_HZ,
+  gradedExt,
   isLossyContainer,
   isTranscode,
   qualityVerdict,
@@ -126,7 +127,7 @@ export function QualitySection({
   const { data: loudness } = useTrackLoudness(item.inputPath, showLoudness && open)
   // The container decides which scale the cutoff is read on, so it is resolved before the
   // verdict: lossy files are exempt (their lowpass is the format), lossless ones are graded.
-  const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
+  const ext = gradedExt(item.inputPath, spectrum?.codec)
   // Resolve the verdict once and reuse it for the badge and the caption.
   const verdict =
     spectrum && spectrum.cutoffHz !== null

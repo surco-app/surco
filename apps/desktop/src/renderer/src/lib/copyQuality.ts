@@ -1,5 +1,5 @@
 import type { TrackItem } from '../types'
-import { isTranscode, qualityVerdict, type Verdict } from './quality'
+import { gradedExt, isTranscode, qualityVerdict, type Verdict } from './quality'
 
 export type CopyQuality = {
   verdict: Verdict
@@ -13,7 +13,7 @@ export type CopyQuality = {
 export function copyQuality(row: TrackItem | undefined): CopyQuality {
   const spectrum = row?.spectrum
   if (!row || !spectrum || spectrum.cutoffHz === null) return null
-  const ext = row.inputPath.split('.').pop()?.toLowerCase() ?? ''
+  const ext = gradedExt(row.inputPath, spectrum.codec)
   return {
     verdict: qualityVerdict(
       spectrum.cutoffHz,

@@ -1,6 +1,6 @@
 import type { TrackItem } from '../types'
 import { foldText } from './normalizeText'
-import { isTranscode, qualityVerdict, type Verdict } from './quality'
+import { gradedExt, isTranscode, qualityVerdict, type Verdict } from './quality'
 
 // The per-track quality verdict surfaced as a row badge, so a whole dropped folder
 // can be triaged at a glance instead of opening each track. 'unanalyzed' covers both
@@ -16,7 +16,7 @@ export function trackQuality(track: TrackItem): TrackQuality {
   // Transcode outranks the plain 'bad' grade the same way it does in the editor: a codec
   // knee in a .flac/.wav/.aiff means the file lies about its format, which is the headline.
   // Needs the extension, so it reads inputPath — the spectrum alone can't tell the container.
-  const ext = track.inputPath?.split('.').pop()?.toLowerCase() ?? ''
+  const ext = gradedExt(track.inputPath ?? '', s.codec)
   if (isTranscode(ext, s.cutoffHz, s.hasKnee, s.processed)) return 'transcoded'
   return qualityVerdict(s.cutoffHz, s.sampleRateHz, s.processed, s.hasKnee, ext)
 }

@@ -87,6 +87,19 @@ describe('trackQuality', () => {
     ;(track as { inputPath: string }).inputPath = '/x/on-the-edge.mp3'
     expect(trackQuality(track)).toBe('good')
   })
+
+  // An .m4a says nothing on its own; the analysis's codec does. A healthy AAC was graded
+  // on the lossless scale and its encoder lowpass came out red; an ALAC with the same cut
+  // is a lossy source dressed as lossless, like a .flac.
+  it.each([
+    ['aac', 'good'],
+    ['alac', 'transcoded'],
+    [undefined, 'bad'],
+  ])('grades an .m4a holding %s as %s', (codec, verdict) => {
+    const track = withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true, codec })
+    ;(track as { inputPath: string }).inputPath = '/x/song.m4a'
+    expect(trackQuality(track)).toBe(verdict)
+  })
 })
 
 describe('tracksToAnalyze', () => {

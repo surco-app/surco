@@ -62,6 +62,15 @@ export function isLossyContainer(ext: string): boolean {
   return LOSSY_CONTAINERS.includes(ext.toLowerCase())
 }
 
+// The container a file is graded as: its extension, except an .m4a, which is graded as
+// the codec the analysis found in it. Without one (an analysis cached before it was kept)
+// the .m4a stays ambiguous and takes the strict scale.
+export function gradedExt(inputPath: string, codec: string | undefined): string {
+  const ext = inputPath.split('.').pop()?.toLowerCase() ?? ''
+  if (ext === 'm4a' && (codec === 'aac' || codec === 'alac')) return codec
+  return ext
+}
+
 // A "fake lossless" / transcode: a lossless-container file whose spectrum carries a real
 // codec lowpass (a knee) below the full-quality line — i.e. a lossy file re-encoded as
 // lossless. Gated tightly to stay high-precision: only lossless containers, only a detected
