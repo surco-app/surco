@@ -1788,8 +1788,8 @@ describe('Editor export control', () => {
   // dusty rip was re-seeded from the global default on the way back, so the choice was
   // silently gone. Click repair is per track exactly like trim and normalize.
   it('seeds the click repair from the track when it has its own', () => {
-    renderEditor({ id: 'a', declick: { mode: 'strong', rumble: false } }, 'wav', {
-      declick: { mode: 'off', rumble: false },
+    renderEditor({ id: 'a', declick: { mode: 'strong', rumble: false, noise: 'off' } }, 'wav', {
+      declick: { mode: 'off', rumble: false, noise: 'off' },
       editorSections: [{ id: 'declick' as const, open: true }],
     })
     expect(screen.getByTestId('declick-mode-strong')).toHaveAttribute('aria-pressed', 'true')
@@ -1799,7 +1799,7 @@ describe('Editor export control', () => {
   // default, so configuring click repair globally governs freshly imported tracks.
   it('seeds the click repair from Settings when the track has none', () => {
     renderEditor({ id: 'a' }, 'wav', {
-      declick: { mode: 'soft', rumble: false },
+      declick: { mode: 'soft', rumble: false, noise: 'off' },
       editorSections: [{ id: 'declick' as const, open: true }],
     })
     expect(screen.getByTestId('declick-mode-soft')).toHaveAttribute('aria-pressed', 'true')
@@ -1808,11 +1808,13 @@ describe('Editor export control', () => {
   // Dialling a level must stage it ON the track, or coming back finds the global value.
   it('stages the click repair on the track when it changes', () => {
     const { onChange } = renderEditor({ id: 'a' }, 'wav', {
-      declick: { mode: 'off', rumble: false },
+      declick: { mode: 'off', rumble: false, noise: 'off' },
       editorSections: [{ id: 'declick' as const, open: true }],
     })
     fireEvent.click(screen.getByTestId('declick-mode-standard'))
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ declick: { mode: 'standard', rumble: false } }))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ declick: { mode: 'standard', rumble: false, noise: 'off' } }),
+    )
   })
 
   // The other half: a track the user never touched still opens on the Settings default,
@@ -2072,7 +2074,14 @@ describe('Editor export control', () => {
         { normalize: { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 } },
       ],
     ],
-    ['declick', [{ id: 'a', inputPath: '/music/a.wav' }, 'wav', { declick: { mode: 'standard', rumble: false } }]],
+    [
+      'declick',
+      [
+        { id: 'a', inputPath: '/music/a.wav' },
+        'wav',
+        { declick: { mode: 'standard', rumble: false, noise: 'off' } },
+      ],
+    ],
     ['trim', [{ id: 'a', inputPath: '/music/a.wav', trim: { startSec: 2 } }, 'wav']],
   ])('labels a same-format export with a staged %s as a conversion', (_, args) => {
     renderEditor(...args)

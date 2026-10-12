@@ -118,13 +118,18 @@ export interface NormalizeConfig {
 // a re-encode, like normalization.
 export type DeclickMode = 'off' | 'soft' | 'standard' | 'strong'
 
-// The vinyl section's whole setting: the click-repair intensity plus the rumble cut,
-// carried as one value because they are one stage of the filter chain and one choice
-// in the editor — a track's override, the Settings default and a job all hold both.
+// The vinyl section's whole setting: the click-repair intensity, the rumble cut and the
+// noise reduction, carried as one value because they are one stage of the filter chain
+// and one choice in the editor — a track's override, the Settings default and a job all hold all three.
 export interface DeclickConfig {
   mode: DeclickMode
   rumble: boolean
+  noise: NoiseMode
 }
+
+// Surface-noise reduction, its own ladder beside the clicks: a different fault, so any
+// intensity pairs with any click mode.
+export type NoiseMode = 'off' | 'soft' | 'medium' | 'strong'
 
 // Optional leading/trailing silence trim ("top and tail"), applied during
 // conversion ahead of click repair and normalization. Absolute seconds into the

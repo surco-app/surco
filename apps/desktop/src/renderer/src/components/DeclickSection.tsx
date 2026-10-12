@@ -12,7 +12,7 @@ import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
 import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
-import { DeclickControls, RumbleToggle } from './DeclickControls'
+import { DeclickControls, NoiseControls, RumbleToggle } from './DeclickControls'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -238,11 +238,17 @@ export function DeclickSection({
     panTo(ab.at / durationSec - (to - from) * FOLLOW_LEAD)
   }, [ab.at, zoom, durationSec, panTo])
 
-  const rowSentence = !value.rumble
-    ? tr(`declick.row.${value.mode}`)
-    : value.mode === 'off'
-      ? tr('declick.rowRumbleOnly')
-      : tr('declick.rowRumble', { row: tr(`declick.row.${value.mode}`) })
+  // Every fix that is on, in chain order after the clicks; the first part capitalised
+  // for whichever one leads.
+  const rowParts = [
+    value.mode !== 'off' ? tr(`declick.row.${value.mode}`) : null,
+    value.noise !== 'off' ? tr(`declick.rowNoise.${value.noise}`) : null,
+    value.rumble ? tr('declick.rowRumble') : null,
+  ].filter((p): p is string => p !== null)
+  const rowSentence =
+    rowParts.length === 0
+      ? tr('declick.row.off')
+      : rowParts.join(' · ').replace(/^./, (c) => c.toLocaleUpperCase(i18n.language))
 
   const count = clicks?.count
   // The detector reads the first eight minutes (CLICK_SCAN_SECONDS). Past that nothing was
@@ -445,6 +451,12 @@ export function DeclickSection({
               )}
             </div>
           )}
+          <div className="mt-4">
+            <NoiseControls
+              value={value.noise}
+              onChange={(noise) => onChange({ ...value, noise })}
+            />
+          </div>
           <div className="mt-4">
             <RumbleToggle
               value={value.rumble}

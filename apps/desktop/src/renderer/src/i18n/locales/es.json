@@ -733,7 +733,8 @@
   },
   "declick": {
     "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
-    "title": "Reparación de clicks de vinilo",
+    "title": "Reparación de vinilo",
+    "clicksLabel": "Clicks",
     "hint": "Detecta los clicks y pops de la aguja y los interpola durante la conversión.",
     "mode": {
       "off": "No",
@@ -748,6 +749,19 @@
     },
     "rumble": "Quitar el rumble",
     "rumbleHint": "Corta el retumbe del giradiscos por debajo de 20 Hz. Al bombo (50 Hz) le quita 0,2 dB.",
+    "noiseLabel": "Ruido de fondo",
+    "noiseMode": {
+      "off": "No",
+      "soft": "Suave",
+      "medium": "Medio",
+      "strong": "Fuerte"
+    },
+    "noiseHint": {
+      "off": "El soplido continuo del disco, el que más se oye en los parones.",
+      "soft": "El toque mínimo.",
+      "medium": "Más reducción. Compara los platos en el A/B.",
+      "strong": "La que más quita. Compara los platos en el A/B."
+    },
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sin clicks",
     "waveTitle": "Clics encontrados",
@@ -772,8 +786,12 @@
       "standard": "Reparación estándar",
       "strong": "Reparación fuerte"
     },
-    "rowRumble": "{{row}} · sin rumble",
-    "rowRumbleOnly": "Sin rumble"
+    "rowNoise": {
+      "soft": "reducción de ruido suave",
+      "medium": "reducción de ruido media",
+      "strong": "reducción de ruido fuerte"
+    },
+    "rowRumble": "sin rumble"
   },
   "trim": {
     "waveFailed": "No se ha podido leer la onda de esta pista, así que no se puede recortar aquí.",

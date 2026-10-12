@@ -641,7 +641,11 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
     const { flows, opened } = setup([mp3], { settings: { overwriteOriginal: true } as Settings })
     const run = vi.fn()
-    flows.askConvertOne(run, { track: mp3, format: 'mp3', declick: { mode: 'standard', rumble: false } })
+    flows.askConvertOne(run, {
+      track: mp3,
+      format: 'mp3',
+      declick: { mode: 'standard', rumble: false, noise: 'off' },
+    })
     expect(opened[0].destructive).toBe(true)
     expect(opened[0].title).toBe('Re-encode the lossy original?')
     expect(run).not.toHaveBeenCalled()
@@ -713,7 +717,10 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
   it('confirms a single convert with no picks when Settings declick is on', () => {
     const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
     const { flows, opened } = setup([mp3], {
-      settings: { overwriteOriginal: false, declick: { mode: 'standard', rumble: false } } as Settings,
+      settings: {
+        overwriteOriginal: false,
+        declick: { mode: 'standard', rumble: false, noise: 'off' },
+      } as Settings,
     })
     const run = vi.fn()
     flows.askConvertOne(run, { track: mp3, format: 'source' })
@@ -799,7 +806,11 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
   // Same for the click repair: it alters samples the same way, so the track's own
   // declick has to reach the check too.
   it('confirms an in-place mp3 whose declick was dialled on the track itself', () => {
-    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', declick: { mode: 'strong', rumble: false } })
+    const mp3 = track('a', {
+      inputPath: '/a.mp3',
+      fileName: 'a.mp3',
+      declick: { mode: 'strong', rumble: false, noise: 'off' },
+    })
     const { flows, opened } = setup([mp3])
 
     flows.askConvertAll([mp3], 'source')

@@ -781,12 +781,20 @@ describe('useTrackLibrary foreign tags', () => {
     const normalize = { mode: 'loudness' as const, targetLufs: -9, truePeakDb: -1, peakDb: -0.3 }
     await act(() =>
       result.current.addPaths(['/m/a.wav'], {
-        '/m/a.wav': { meta: { title: 'Restored' } as never, normalize, declick: { mode: 'strong', rumble: false } },
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          normalize,
+          declick: { mode: 'strong', rumble: false, noise: 'off' },
+        },
       }),
     )
 
     expect(result.current.tracks[0]?.normalize).toEqual(normalize)
-    expect(result.current.tracks[0]?.declick).toEqual({ mode: 'strong', rumble: false })
+    expect(result.current.tracks[0]?.declick).toEqual({
+      mode: 'strong',
+      rumble: false,
+      noise: 'off',
+    })
   })
 
   it('restores which library copy a track belongs to', async () => {

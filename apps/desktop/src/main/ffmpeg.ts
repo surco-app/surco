@@ -8,7 +8,7 @@ import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
 import { customTagName } from '../shared/customFields'
-import { DEFAULT_DECLICK, declickFilter } from '../shared/declick'
+import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
@@ -1270,9 +1270,7 @@ export async function normalizeFilter(
   // gets its own cache entry; the bare namespace stays untouched for plain conversions.
   const ns = (base: string): string => {
     const trimmed = trimAf ? `-trim-${trim?.startSec ?? 0}-${trim?.endSec ?? 'end'}` : ''
-    const declicked = declickAf
-      ? `-declick-${declick?.mode}${declick?.rumble ? '-rumble' : ''}`
-      : ''
+    const declicked = declickAf && declick ? declickCacheSuffix(declick) : ''
     return `${base}${trimmed}${declicked}`
   }
   // Centring the signal is a correction, not a property of how the gain is sized, so it

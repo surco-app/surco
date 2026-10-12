@@ -128,18 +128,24 @@ describe('declickForJob', () => {
   // Explicitly 'off' for the same reason normalize sends 'none': an absent config
   // would fall back to the Settings default in main and run the filter again.
   it('asks for no click repair when it is already baked into the in-place file', () => {
-    const t = exportedInPlace({ processedDeclick: { mode: 'standard', rumble: false } })
-    expect(declickForJob(t, { mode: 'standard', rumble: false })).toEqual({
+    const t = exportedInPlace({
+      processedDeclick: { mode: 'standard', rumble: false, noise: 'off' },
+    })
+    expect(declickForJob(t, { mode: 'standard', rumble: false, noise: 'off' })).toEqual({
       mode: 'off',
       rumble: false,
+      noise: 'off',
     })
   })
 
   it('re-applies when the user changed the intensity', () => {
-    const t = exportedInPlace({ processedDeclick: { mode: 'standard', rumble: false } })
-    expect(declickForJob(t, { mode: 'strong', rumble: false })).toEqual({
+    const t = exportedInPlace({
+      processedDeclick: { mode: 'standard', rumble: false, noise: 'off' },
+    })
+    expect(declickForJob(t, { mode: 'strong', rumble: false, noise: 'off' })).toEqual({
       mode: 'strong',
       rumble: false,
+      noise: 'off',
     })
   })
 
@@ -147,21 +153,29 @@ describe('declickForJob', () => {
     const t = track({ inputPath: '/music/orig.wav', outputPath: '/out/a.mp3' })
     expect(
       declickForJob(
-        { ...t, processedDeclick: { mode: 'standard', rumble: false } },
-        { mode: 'standard', rumble: false },
+        { ...t, processedDeclick: { mode: 'standard', rumble: false, noise: 'off' } },
+        { mode: 'standard', rumble: false, noise: 'off' },
       ),
-    ).toEqual({ mode: 'standard', rumble: false })
+    ).toEqual({ mode: 'standard', rumble: false, noise: 'off' })
   })
 
   // A highpass run twice is a steeper highpass: the in-place file already lost its rumble.
   it('asks for no rumble cut when it is already baked into the in-place file', () => {
-    const t = exportedInPlace({ processedDeclick: { mode: 'off', rumble: true } })
-    expect(declickForJob(t, { mode: 'off', rumble: true })).toEqual({ mode: 'off', rumble: false })
+    const t = exportedInPlace({ processedDeclick: { mode: 'off', rumble: true, noise: 'off' } })
+    expect(declickForJob(t, { mode: 'off', rumble: true, noise: 'off' })).toEqual({
+      mode: 'off',
+      rumble: false,
+      noise: 'off',
+    })
   })
 
   // 'off' means no filter ran, so it is never "already applied".
   it('passes off through untouched', () => {
-    const t = exportedInPlace({ processedDeclick: { mode: 'off', rumble: false } })
-    expect(declickForJob(t, { mode: 'off', rumble: false })).toEqual({ mode: 'off', rumble: false })
+    const t = exportedInPlace({ processedDeclick: { mode: 'off', rumble: false, noise: 'off' } })
+    expect(declickForJob(t, { mode: 'off', rumble: false, noise: 'off' })).toEqual({
+      mode: 'off',
+      rumble: false,
+      noise: 'off',
+    })
   })
 })

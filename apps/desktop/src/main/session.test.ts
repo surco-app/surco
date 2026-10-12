@@ -165,10 +165,12 @@ describe('session store', () => {
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     const normalize = { mode: 'peak' as const, targetLufs: -14, truePeakDb: -1, peakDb: -0.5 }
-    saveLastSession([kept], { [kept]: edit({ normalize, declick: { mode: 'soft', rumble: false } }) })
+    saveLastSession([kept], {
+      [kept]: edit({ normalize, declick: { mode: 'soft', rumble: false, noise: 'off' } }),
+    })
     const good = (await loadLastSession()).edits[kept]
     expect(good.normalize).toEqual(normalize)
-    expect(good.declick).toEqual({ mode: 'soft', rumble: false })
+    expect(good.declick).toEqual({ mode: 'soft', rumble: false, noise: 'off' })
     saveLastSession([kept], {
       [kept]: edit({ normalize: { mode: 'loud' } as never, declick: 'max' as never }),
     })
@@ -185,7 +187,7 @@ describe('session store', () => {
     writeFileSync(kept, 'x')
     saveLastSession([kept], { [kept]: edit({ declick: 'strong' as never }) })
     const restored = (await loadLastSession()).edits[kept]
-    expect(restored.declick).toEqual({ mode: 'strong', rumble: false })
+    expect(restored.declick).toEqual({ mode: 'strong', rumble: false, noise: 'off' })
   })
 
   // Sessions written before the beatgrid feature was removed still carry the

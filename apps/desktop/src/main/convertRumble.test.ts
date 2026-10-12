@@ -75,7 +75,7 @@ async function cut(src: string, out: string): Promise<void> {
     undefined,
     undefined,
     undefined,
-    { mode: 'off', rumble: true },
+    { mode: 'off', rumble: true, noise: 'off' },
   )
 }
 

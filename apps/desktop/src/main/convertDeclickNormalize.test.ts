@@ -165,7 +165,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', rumble: false },
+      { mode: 'standard', rumble: false, noise: 'off' },
     )
     // Clicks repaired, then the linear gain: the 0.9 impulses would have survived
     // as ~0.9×gain — anything near that means the chain ran out of order.
@@ -193,7 +193,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'strong', rumble: false },
+      { mode: 'strong', rumble: false, noise: 'off' },
     )
     expect(result.declickedSamples).toBeGreaterThan(0)
     // The limiter holds the ceiling (-1 dBFS ≈ 0.891) while the gain pushes toward
@@ -229,7 +229,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', rumble: false },
+      { mode: 'standard', rumble: false, noise: 'off' },
     )
     const [left, right] = channelStats(out)
     // Each channel lands its own peak on -1 dBFS (0.891), centered on zero — and
@@ -266,7 +266,7 @@ describe('convertAudio declick × normalize', () => {
         undefined,
         undefined,
         undefined,
-        { mode: 'standard', rumble: false },
+        { mode: 'standard', rumble: false, noise: 'off' },
       )
     }
     // Click-anchored: gain ≈ −1 dB, the sine stays near 0.22 and only the surviving
@@ -297,7 +297,7 @@ describe('convertAudio declick × normalize', () => {
         undefined,
         undefined,
         undefined,
-        { mode: 'standard', rumble },
+        { mode: 'standard', rumble, noise: 'off' },
       )
     }
     const kept = join(dir, 'rumble-kept.wav')
