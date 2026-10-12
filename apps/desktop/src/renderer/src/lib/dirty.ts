@@ -1,4 +1,5 @@
-import type { DeclickMode, NormalizeConfig } from '../../../shared/types'
+import { sameDeclick } from '../../../shared/declick'
+import type { DeclickConfig, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 type SignatureFields = Pick<
@@ -78,10 +79,10 @@ export function isNormalizeStale(track: TrackItem, current: NormalizeConfig): bo
 // The click-repair half of staleness, same contract as isNormalizeStale: switching
 // the intensity after an export must bring the Update button back, and a track
 // converted before the applied mode was recorded is treated as fresh.
-export function isDeclickStale(track: TrackItem, current: DeclickMode): boolean {
+export function isDeclickStale(track: TrackItem, current: DeclickConfig): boolean {
   return (
     track.status === 'done' &&
     track.processedDeclick !== undefined &&
-    track.processedDeclick !== current
+    !sameDeclick(track.processedDeclick, current)
   )
 }

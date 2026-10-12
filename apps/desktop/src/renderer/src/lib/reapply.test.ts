@@ -128,23 +128,28 @@ describe('declickForJob', () => {
   // Explicitly 'off' for the same reason normalize sends 'none': an absent config
   // would fall back to the Settings default in main and run the filter again.
   it('asks for no click repair when it is already baked into the in-place file', () => {
-    const t = exportedInPlace({ processedDeclick: 'standard' })
-    expect(declickForJob(t, 'standard')).toBe('off')
+    const t = exportedInPlace({ processedDeclick: { mode: 'standard', rumble: false } })
+    expect(declickForJob(t, { mode: 'standard', rumble: false })).toEqual({ mode: 'off', rumble: false })
   })
 
   it('re-applies when the user changed the intensity', () => {
-    const t = exportedInPlace({ processedDeclick: 'standard' })
-    expect(declickForJob(t, 'strong')).toBe('strong')
+    const t = exportedInPlace({ processedDeclick: { mode: 'standard', rumble: false } })
+    expect(declickForJob(t, { mode: 'strong', rumble: false })).toEqual({ mode: 'strong', rumble: false })
   })
 
   it('keeps the click repair when the export wrote a separate copy', () => {
     const t = track({ inputPath: '/music/orig.wav', outputPath: '/out/a.mp3' })
-    expect(declickForJob({ ...t, processedDeclick: 'standard' }, 'standard')).toBe('standard')
+    expect(
+      declickForJob(
+        { ...t, processedDeclick: { mode: 'standard', rumble: false } },
+        { mode: 'standard', rumble: false },
+      ),
+    ).toEqual({ mode: 'standard', rumble: false })
   })
 
   // 'off' means no filter ran, so it is never "already applied".
   it('passes off through untouched', () => {
-    const t = exportedInPlace({ processedDeclick: 'off' })
-    expect(declickForJob(t, 'off')).toBe('off')
+    const t = exportedInPlace({ processedDeclick: { mode: 'off', rumble: false } })
+    expect(declickForJob(t, { mode: 'off', rumble: false })).toEqual({ mode: 'off', rumble: false })
   })
 })

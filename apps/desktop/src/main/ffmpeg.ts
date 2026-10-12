@@ -8,7 +8,7 @@ import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
 import { customTagName } from '../shared/customFields'
-import { declickFilter } from '../shared/declick'
+import { DEFAULT_DECLICK, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
@@ -18,7 +18,7 @@ import type {
   BpmResult,
   ConversionQuality,
   CoverRead,
-  DeclickMode,
+  DeclickConfig,
   ForeignTag,
   KeyResult,
   LoudnessResult,
@@ -1257,20 +1257,20 @@ export async function normalizeFilter(
   // every measurement so the gain is sized on the repaired audio — a full-scale click
   // would otherwise anchor the peak/true-peak reading and leave the track short of its
   // target. The measurement changes with it, so it also suffixes each cache namespace.
-  declick?: DeclickMode,
+  declick?: DeclickConfig,
   // The silence trim the conversion will run first, threaded in for the same reason:
   // a loud needle-drop in a trimmed-away head would otherwise anchor the reading.
   trim?: TrimRange,
 ): Promise<string | null> {
   if (cfg.mode === 'none') return null
   const trimAf = trimFilter(trim) ?? undefined
-  const declickAf = declickFilter(declick ?? 'off') ?? undefined
+  const declickAf = declickFilter(declick ?? DEFAULT_DECLICK) ?? undefined
   const prefilter = [trimAf, declickAf].filter(Boolean).join(',') || undefined
   // Trimmed or repaired audio is a different measurement input, so each combination
   // gets its own cache entry; the bare namespace stays untouched for plain conversions.
   const ns = (base: string): string => {
     const trimmed = trimAf ? `-trim-${trim?.startSec ?? 0}-${trim?.endSec ?? 'end'}` : ''
-    const declicked = declickAf ? `-declick-${declick}` : ''
+    const declicked = declickAf ? `-declick-${declick?.mode}` : ''
     return `${base}${trimmed}${declicked}`
   }
   // Centring the signal is a correction, not a property of how the gain is sized, so it
@@ -1879,7 +1879,7 @@ export async function convertAudio(
   finderCovers?: boolean,
   // Vinyl click repair, applied ahead of the normalize/dither stages so any gain
   // below is sized on the repaired audio. Forces a re-encode like normalize.
-  declick?: DeclickMode,
+  declick?: DeclickConfig,
   // Leading/trailing silence trim, the first filter stage: the seconds the user
   // confirmed in the editor, cut exactly. Forces a re-encode like normalize.
   trim?: TrimRange,
@@ -1903,7 +1903,7 @@ export async function convertAudio(
   // stream-copy shortcuts when normalizing.
   const normalizing = normalize !== undefined && normalize.mode !== 'none'
   const trimAf = trimFilter(trim) ?? undefined
-  const declickAf = declickFilter(declick ?? 'off') ?? undefined
+  const declickAf = declickFilter(declick ?? DEFAULT_DECLICK) ?? undefined
   // The loudnorm sampleRate read and planConversion's PCM-width read probe the same
   // file, so share one probe between them instead of spawning ffprobe twice per
   // normalized AIFF/WAV conversion.
@@ -2364,7 +2364,7 @@ export function previewWavArgs(input: string, output: string, codec: string): st
 export async function renderDeclickRepaired(
   input: string,
   output: string,
-  mode: DeclickMode,
+  mode: DeclickConfig,
   onProgress?: (done: number) => void,
   onChild?: (child: { kill: (signal: string) => void }) => void,
 ): Promise<{ path: string } | null> {

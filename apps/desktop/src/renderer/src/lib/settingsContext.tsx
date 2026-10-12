@@ -13,7 +13,7 @@ import {
 } from '../../../shared/editorSections'
 import type {
   CustomField,
-  DeclickMode,
+  DeclickConfig,
   FormatSetting,
   KeyNotation,
   MetaTextKey,
@@ -72,7 +72,7 @@ interface ResolvedSettings {
   showEditorHints: boolean
   keyNotation: KeyNotation
   normalize: NormalizeConfig
-  declick: DeclickMode
+  declick: DeclickConfig
   // Always complete and form-first, whatever an older settings.json stored.
   editorSections: EditorSectionPref[]
   // The results column's persisted width; null until the user first drags it.

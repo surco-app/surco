@@ -19,7 +19,7 @@ import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
-  DeclickMode,
+  DeclickConfig,
   FormatSetting,
   LibraryTagUpdate,
   MetaTextKey,
@@ -1493,7 +1493,7 @@ export default function App(): React.JSX.Element {
       format?: FormatSetting,
       normalize?: NormalizeConfig,
       destination?: Destination,
-      declick?: DeclickMode,
+      declick?: DeclickConfig,
       // Runs the moment the conversion actually starts — immediately when it fires straight
       // through, or on confirm when an in-place overwrite asks first. process-current uses it
       // to advance the selection only once the run commits, so a cancelled confirm doesn't

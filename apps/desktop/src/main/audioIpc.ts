@@ -5,7 +5,7 @@ import log from 'electron-log/main'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import { yearFromDate } from '../shared/tagFields'
 import type {
-  DeclickMode,
+  DeclickConfig,
   ScanVerdict,
   SpectrumResult,
   SpectrumVerdict,
@@ -494,7 +494,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // would remove, served back through surco:// (hence the allowMedia). Not cached —
   // the render is a couple of seconds and the renderer replays the same temp WAV
   // until the track or the mode changes. 'high': the user is actively waiting on it.
-  ipcMain.handle('audio:declickPreview', async (e, inputPath: string, mode: DeclickMode) => {
+  ipcMain.handle('audio:declickPreview', async (e, inputPath: string, mode: DeclickConfig) => {
     // Only one preview render is ever in flight: a preset change supersedes the render
     // it invalidates rather than racing it, so the audio that lands always matches the
     // dials the user is looking at.

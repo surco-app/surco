@@ -118,6 +118,14 @@ export interface NormalizeConfig {
 // a re-encode, like normalization.
 export type DeclickMode = 'off' | 'soft' | 'standard' | 'strong'
 
+// The vinyl section's whole setting: the click-repair intensity plus the rumble cut,
+// carried as one value because they are one stage of the filter chain and one choice
+// in the editor — a track's override, the Settings default and a job all hold both.
+export interface DeclickConfig {
+  mode: DeclickMode
+  rumble: boolean
+}
+
 // Optional leading/trailing silence trim ("top and tail"), applied during
 // conversion ahead of click repair and normalization. Absolute seconds into the
 // source: audio before startSec and after endSec is cut. Either bound alone is
@@ -317,7 +325,7 @@ export interface Settings {
   normalize: NormalizeConfig
   // Default vinyl click repair applied to every conversion; 'off' (the default)
   // means conversions never touch the audio unless overridden per-track.
-  declick: DeclickMode
+  declick: DeclickConfig
   // The editor's sections in display order, each with its default fold state.
   // Read through normalizeEditorSections so files from older versions stay valid.
   editorSections: EditorSectionPref[]
@@ -498,7 +506,7 @@ export interface SessionEdit {
   // The loudness and click repair dialled for this track, which the batch honours per
   // track: without them a reopened session converted with the Settings defaults.
   normalize?: NormalizeConfig
-  declick?: DeclickMode
+  declick?: DeclickConfig
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
@@ -657,7 +665,7 @@ export interface ProcessJob {
   normalize?: NormalizeConfig
   // Per-track click-repair override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like normalize.
-  declick?: DeclickMode
+  declick?: DeclickConfig
   // The silence trim the user confirmed in the editor. No Settings fallback —
   // the exact seconds only exist per track, so it rides the job or not at all.
   trim?: TrimRange

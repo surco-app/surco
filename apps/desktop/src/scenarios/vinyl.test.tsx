@@ -46,7 +46,7 @@ describe('Digitise your vinyl', () => {
     makeTrack(join(rips, 'Track 03.wav'), { title: '', artist: '', lavfi: vinylSource(40) })
     surco = await openSurco({
       settings: {
-        declick: 'standard',
+        declick: { mode: 'standard', rumble: false },
         outputDir: output,
         normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
       },

@@ -8,10 +8,10 @@ describe('tagsOnly', () => {
   // that re-renders the samples turns a same-format export into a re-encode.
   it('is a tag update only in the same format with no filter staged', () => {
     expect(tagsOnly(true, {})).toBe(true)
-    expect(tagsOnly(true, { normalize: { ...loudness, mode: 'none' }, declick: 'off' })).toBe(true)
+    expect(tagsOnly(true, { normalize: { ...loudness, mode: 'none' }, declick: { mode: 'off', rumble: false } })).toBe(true)
     expect(tagsOnly(false, {})).toBe(false)
     expect(tagsOnly(true, { normalize: loudness })).toBe(false)
-    expect(tagsOnly(true, { declick: 'soft' })).toBe(false)
+    expect(tagsOnly(true, { declick: { mode: 'soft', rumble: false } })).toBe(false)
     expect(tagsOnly(true, { trim: { endSec: 90 } })).toBe(false)
   })
 

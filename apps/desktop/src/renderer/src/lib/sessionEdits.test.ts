@@ -73,11 +73,11 @@ describe('sessionEdits', () => {
       truePeakDb: -1,
       peakDb: -0.3,
     }
-    const clean = track({ normalize, declick: 'strong' })
+    const clean = track({ normalize, declick: { mode: 'strong', rumble: false } })
     clean.diskSignature = trackSignature(clean)
     const edits = sessionEdits([clean])
     expect(edits['/music/a.wav'].normalize).toEqual(normalize)
-    expect(edits['/music/a.wav'].declick).toBe('strong')
+    expect(edits['/music/a.wav'].declick).toEqual({ mode: 'strong', rumble: false })
   })
 
   it('skips tracks with no disk snapshot', () => {

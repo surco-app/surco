@@ -82,7 +82,7 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      'standard',
+      { mode: 'standard', rumble: false },
     )
     // The 0.9 impulses are gone, leaving the 0.25 sine as the true peak — and the
     // same-format source was re-encoded (a stream copy would have kept the clicks).
@@ -106,7 +106,7 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      'soft',
+      { mode: 'soft', rumble: false },
     )
     expect(peakOf(out)).toBeLessThan(0.3)
     expect(result.declickedSamples).toBeGreaterThan(0)
@@ -140,7 +140,7 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      'strong',
+      { mode: 'strong', rumble: false },
     )
     expect(peakOf(out)).toBeLessThan(0.3)
     expect(result.declickedSamples).toBeGreaterThan(0)
@@ -160,7 +160,7 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      'standard',
+      { mode: 'standard', rumble: false },
     )
     // Measured through the click (peak ~0 dB) the gain would be ~-1 dB and the sine
     // would land near 0.22; measured on the repaired audio (-12 dB) it boosts the
@@ -184,7 +184,7 @@ describe('convertAudio declick', () => {
 describe('renderDeclickRepaired', () => {
   it('renders the repaired track: clicks gone, music intact', async () => {
     const out = join(dir, 'repaired.wav')
-    const result = await renderDeclickRepaired(src, out, 'standard')
+    const result = await renderDeclickRepaired(src, out, { mode: 'standard', rumble: false })
     expect(result?.path).toBe(out)
     const raw = execFileSync(FF, ['-v', 'error', '-i', out, '-f', 'f32le', '-'], {
       maxBuffer: 1024 * 1024 * 64,
@@ -208,7 +208,7 @@ describe('renderDeclickRepaired', () => {
     // The 4 s fixture must come back 4 s long: a windowed render would leave most of the
     // click marks pointing at audio the preview never produced.
     const out = join(dir, 'whole.wav')
-    await renderDeclickRepaired(src, out, 'standard')
+    await renderDeclickRepaired(src, out, { mode: 'standard', rumble: false })
     const raw = execFileSync(
       FF,
       ['-v', 'error', '-i', out, '-f', 'f32le', '-ar', '44100', '-ac', '1', '-'],
@@ -219,7 +219,7 @@ describe('renderDeclickRepaired', () => {
 
   it('reports progress as it goes, so the wait is not a blind spinner', async () => {
     const seen: number[] = []
-    await renderDeclickRepaired(src, join(dir, 'progress.wav'), 'standard', (d) => seen.push(d))
+    await renderDeclickRepaired(src, join(dir, 'progress.wav'), { mode: 'standard', rumble: false }, (d) => seen.push(d))
     expect(seen.length).toBeGreaterThan(0)
     expect(seen.at(-1)).toBe(1)
     expect(seen.every((d) => d >= 0 && d <= 1)).toBe(true)
@@ -228,14 +228,14 @@ describe('renderDeclickRepaired', () => {
   it('resolves null when cancelled, rather than failing', async () => {
     // A preset change kills the render mid-write. That is the expected end of a
     // superseded render, not an error the UI should surface.
-    const pending = renderDeclickRepaired(src, join(dir, 'killed.wav'), 'strong', undefined, (c) =>
+    const pending = renderDeclickRepaired(src, join(dir, 'killed.wav'), { mode: 'strong', rumble: false }, undefined, (c) =>
       setTimeout(() => c.kill('SIGKILL'), 10),
     )
     expect(await pending).toBeNull()
   }, 60000)
 
   it('renders nothing when the mode is off', async () => {
-    expect(await renderDeclickRepaired(src, join(dir, 'no.wav'), 'off')).toBeNull()
+    expect(await renderDeclickRepaired(src, join(dir, 'no.wav'), { mode: 'off', rumble: false })).toBeNull()
   }, 30000)
 })
 

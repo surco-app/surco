@@ -57,7 +57,7 @@ const synced: SyncedDraft = {
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-  declick: 'off',
+  declick: { mode: 'off', rumble: false },
   shortcutOverrides: {},
   editorSections: DEFAULT_EDITOR_SECTIONS,
   discogsFormats: [],
@@ -81,7 +81,7 @@ describe('ProcessingTab', () => {
   it('stages the click-repair mode', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('declick-mode-standard'))
-    expect(patch).toHaveBeenCalledWith('declick', 'standard')
+    expect(patch).toHaveBeenCalledWith('declick', { mode: 'standard', rumble: false })
   })
 
   it('stages a loudness normalization mode', () => {

@@ -1,5 +1,6 @@
 import type { AudioProcessing } from '../../../shared/audioProcessing'
-import type { DeclickMode, NormalizeConfig, Settings } from '../../../shared/types'
+import { DEFAULT_DECLICK } from '../../../shared/declick'
+import type { DeclickConfig, NormalizeConfig, Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { isDeclickStale, isNormalizeStale } from './dirty'
 
@@ -58,9 +59,9 @@ export function normalizeFor(
 
 export function declickFor(
   track: TrackItem,
-  pick: DeclickMode | undefined,
-  fallback?: DeclickMode,
-): DeclickMode | undefined {
+  pick: DeclickConfig | undefined,
+  fallback?: DeclickConfig,
+): DeclickConfig | undefined {
   return track.declick ?? pick ?? fallback
 }
 
@@ -77,19 +78,19 @@ export function normalizeForJob(
 
 export function declickForJob(
   track: TrackItem,
-  current: DeclickMode | undefined,
-): DeclickMode | undefined {
+  current: DeclickConfig | undefined,
+): DeclickConfig | undefined {
   const applied = track.processedDeclick
-  if (!applied || applied === 'off') return current
+  if (!applied || applied.mode === 'off') return current
   if (!readsItsOwnExport(track)) return current
   if (current && isDeclickStale(track, current)) return current
-  return 'off'
+  return DEFAULT_DECLICK
 }
 
 export function jobAudio(
   track: TrackItem,
   normalize: NormalizeConfig | undefined,
-  declick: DeclickMode | undefined,
+  declick: DeclickConfig | undefined,
   fallback: Pick<Settings, 'normalize' | 'declick'> | null,
 ): AudioProcessing {
   return {

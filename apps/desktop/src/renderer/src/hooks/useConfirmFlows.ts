@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { batchKeepMp3, reencodesLossyInPlace } from '../../../shared/format'
 import type {
-  DeclickMode,
+  DeclickConfig,
   FormatSetting,
   NormalizeConfig,
   Settings,
@@ -44,7 +44,7 @@ export function cleanupCount(offer: CleanupOffer): number {
 function hasActiveFilters(
   track: TrackItem,
   normalize: NormalizeConfig | undefined,
-  declick: DeclickMode | undefined,
+  declick: DeclickConfig | undefined,
   settings: Settings | null,
 ): boolean {
   return processesAudio(jobAudio(track, normalize, declick, settings))
@@ -59,7 +59,7 @@ function risksLossyReencode(
   format: FormatSetting | undefined,
   overwriteOriginal: boolean | undefined,
   normalize: NormalizeConfig | undefined,
-  declick: DeclickMode | undefined,
+  declick: DeclickConfig | undefined,
   settings: Settings | null,
   keepMp3: boolean,
   picked: FormatSetting | undefined,
@@ -120,7 +120,7 @@ interface Params {
     format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
@@ -154,7 +154,7 @@ interface ConfirmFlows {
     format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
   ) => void
   // The single-track counterpart of askConvertAll: it decides overwrite the same way,
   // then runs the conversion the caller wired (donate nudge, re-encode) rather than the
@@ -168,7 +168,7 @@ interface ConfirmFlows {
       track?: TrackItem
       format?: FormatSetting
       normalize?: NormalizeConfig
-      declick?: DeclickMode
+      declick?: DeclickConfig
     },
   ) => void
 }
@@ -450,7 +450,7 @@ export function useConfirmFlows({
     format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
   ): void {
     // The editor's one-shot destination pick decides whether this run rewrites
     // sources; only without one does the live setting. An override away from
@@ -534,7 +534,7 @@ export function useConfirmFlows({
       track?: TrackItem
       format?: FormatSetting
       normalize?: NormalizeConfig
-      declick?: DeclickMode
+      declick?: DeclickConfig
     } = {},
   ): void {
     const overwriting = opts.destination

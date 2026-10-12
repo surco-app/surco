@@ -5,7 +5,7 @@ import { errorWithKey } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { resolveJobFormat } from '../shared/format'
 import type {
-  DeclickMode,
+  DeclickConfig,
   NormalizeConfig,
   OutputFormat,
   ProcessJob,
@@ -49,7 +49,7 @@ export interface ProcessTrackDeps {
     removeCover?: boolean,
     onChild?: (child: { kill: (signal: string) => void }) => void,
     onTmp?: (path: string) => void,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
     trim?: TrimRange,
     clearExtras?: boolean,
     foreignRemoved?: string[],

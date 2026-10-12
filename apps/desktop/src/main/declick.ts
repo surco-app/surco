@@ -1,6 +1,6 @@
 import { declickFilter } from '../shared/declick'
 import { forcedInputArgs } from '../shared/inputFormat'
-import type { DeclickMode } from '../shared/types'
+import type { DeclickConfig } from '../shared/types'
 
 // The repaired track, rendered whole, for the A/B against the original. Whole and not
 // an excerpt because the point of the preview is to judge the repair *at the clicks* —
@@ -16,7 +16,7 @@ import type { DeclickMode } from '../shared/types'
 export function declickRepairedArgs(
   input: string,
   output: string,
-  mode: DeclickMode,
+  mode: DeclickConfig,
 ): string[] | null {
   const filter = declickFilter(mode)
   if (!filter) return null

@@ -85,7 +85,7 @@ describe('an AAC .m4a through an audio filter', () => {
       undefined,
       undefined,
       undefined,
-      'standard',
+      { mode: 'standard', rumble: false },
     )
     expect(codecOf(out)).toBe('aac')
   }, 120000)

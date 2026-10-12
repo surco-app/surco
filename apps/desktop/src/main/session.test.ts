@@ -165,16 +165,27 @@ describe('session store', () => {
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     const normalize = { mode: 'peak' as const, targetLufs: -14, truePeakDb: -1, peakDb: -0.5 }
-    saveLastSession([kept], { [kept]: edit({ normalize, declick: 'soft' }) })
+    saveLastSession([kept], { [kept]: edit({ normalize, declick: { mode: 'soft', rumble: false } }) })
     const good = (await loadLastSession()).edits[kept]
     expect(good.normalize).toEqual(normalize)
-    expect(good.declick).toBe('soft')
+    expect(good.declick).toEqual({ mode: 'soft', rumble: false })
     saveLastSession([kept], {
       [kept]: edit({ normalize: { mode: 'loud' } as never, declick: 'max' as never }),
     })
     const bad = (await loadLastSession()).edits[kept]
     expect(bad.normalize).toBeUndefined()
     expect(bad.declick).toBeUndefined()
+  })
+
+  // Every session saved before the rumble cut stores the repair as a bare mode string;
+  // reopening one must keep the intensity the user dialled, not reset the track.
+  it('upgrades a click repair saved as a bare mode by an older version', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    saveLastSession([kept], { [kept]: edit({ declick: 'strong' as never }) })
+    const restored = (await loadLastSession()).edits[kept]
+    expect(restored.declick).toEqual({ mode: 'strong', rumble: false })
   })
 
   // Sessions written before the beatgrid feature was removed still carry the

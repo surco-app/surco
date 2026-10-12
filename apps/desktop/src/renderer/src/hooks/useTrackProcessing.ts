@@ -5,7 +5,7 @@ import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
-import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -95,7 +95,7 @@ interface TrackProcessing {
     normalizeOverride?: NormalizeConfig,
     overwriteOverride?: boolean,
     destinationOverride?: Destination,
-    declickOverride?: DeclickMode,
+    declickOverride?: DeclickConfig,
     keepMp3?: boolean,
   ) => Promise<BatchOutcome>
   processAll: (
@@ -103,7 +103,7 @@ interface TrackProcessing {
     formatOverride?: FormatSetting,
     normalizeOverride?: NormalizeConfig,
     destinationOverride?: Destination,
-    declickOverride?: DeclickMode,
+    declickOverride?: DeclickConfig,
   ) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
   addAllToAppleMusic: (ids: string[]) => Promise<void>
@@ -176,7 +176,7 @@ export function useTrackProcessing({
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
       destinationOverride?: Destination,
-      declickOverride?: DeclickMode,
+      declickOverride?: DeclickConfig,
       keepMp3?: boolean,
       formatChosen?: boolean,
     ): Promise<BatchOutcome> => {
@@ -415,7 +415,7 @@ export function useTrackProcessing({
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
       destinationOverride?: Destination,
-      declickOverride?: DeclickMode,
+      declickOverride?: DeclickConfig,
       keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
       window.api.beginConversionBatch()
@@ -525,7 +525,7 @@ export function useTrackProcessing({
       formatOverride?: FormatSetting,
       normalizeOverride?: NormalizeConfig,
       destinationOverride?: Destination,
-      declickOverride?: DeclickMode,
+      declickOverride?: DeclickConfig,
     ): Promise<void> => {
       if (batching) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and

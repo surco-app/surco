@@ -2,9 +2,9 @@ import { existsSync, renameSync, writeFileSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
+import { parseDeclick } from '../shared/declick'
 import { normalizeTrim } from '../shared/trim'
 import type {
-  DeclickMode,
   NormalizeConfig,
   NormalizeMode,
   SessionData,
@@ -68,7 +68,6 @@ function previewOf(entry: CoverEntry, path: string): string | undefined {
   return entry.preview
 }
 
-const DECLICK_MODES: DeclickMode[] = ['off', 'soft', 'standard', 'strong']
 const NORMALIZE_MODES: NormalizeMode[] = ['none', 'loudness', 'peak']
 
 function isNormalizeConfig(raw: unknown): raw is NormalizeConfig {
@@ -112,7 +111,9 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
   // The dials feed the next conversion's filters directly, so a hand-edited value that
   // is not a known shape reads as "never dialled" and the Settings default applies.
   if (!isNormalizeConfig(edit.normalize)) delete edit.normalize
-  if (!DECLICK_MODES.includes(edit.declick as DeclickMode)) delete edit.declick
+  const declick = parseDeclick(edit.declick)
+  if (declick) edit.declick = declick
+  else delete edit.declick
   // Sessions written before the beatgrid feature was removed still carry a
   // beatgrid key; drop it so the stale grid never rides the restore.
   delete (edit as Record<string, unknown>).beatgrid

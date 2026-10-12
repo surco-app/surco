@@ -3,7 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { losesTraktorCues } from '../../../shared/outputFormats'
-import type { DeclickMode, OutputFormat, TrimRange } from '../../../shared/types'
+import type { DeclickConfig, OutputFormat, TrimRange } from '../../../shared/types'
 import { useClicks } from '../hooks/useClicks'
 import { useDeclickAb } from '../hooks/useDeclickAb'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
@@ -31,10 +31,10 @@ const PAN_SLOP_PX = 4
 const FOLLOW_LEAD = 0.15
 
 interface Props {
-  value: DeclickMode
+  value: DeclickConfig
   open: boolean
   onToggle: () => void
-  onChange: (config: DeclickMode) => void
+  onChange: (config: DeclickConfig) => void
   // The track the wave and the preview render from; both hide in multi-select, where
   // the anchor track's clicks would misrepresent the rest of the selection.
   inputPath: string
@@ -113,7 +113,7 @@ export function DeclickSection({
   // A preset change (or a new track) invalidates the render: the audio no longer matches
   // the dials, and playing on would tell the user Gentle sounds exactly like Strong. Kills
   // an in-flight render too — nobody should wait on audio they no longer asked for.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is deliberately the trigger — a mode change is what invalidates the render.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `value`'s fields are deliberately the trigger — a mode change is what invalidates the render.
   useEffect(() => {
     return () => {
       void window.api.cancelDeclickPreview()
@@ -124,7 +124,7 @@ export function DeclickSection({
       setProgress(0)
       setFailed(false)
     }
-  }, [value, inputPath])
+  }, [value.mode, value.rumble, inputPath])
 
   // On demand, never on open: this is a full-length encode (tens of seconds on a long
   // side), and most tracks are never auditioned at all.
@@ -182,7 +182,7 @@ export function DeclickSection({
   const spaceRef = useRef<() => void>(() => {})
   spaceRef.current = () => {
     if (preview || hearOriginal) return ab.playing ? ab.pause() : ab.play()
-    if (value === 'off') {
+    if (value.mode === 'off') {
       playOnLoadRef.current = true
       setHearOriginal(true)
       return
@@ -191,7 +191,7 @@ export function DeclickSection({
     if (!rendering) void render()
   }
   useEffect(() => {
-    if (!open || (value === 'off' && isMulti)) return
+    if (!open || (value.mode === 'off' && isMulti)) return
     return claimKeys({ play: () => spaceRef.current() })
   }, [open, value, isMulti])
 
@@ -256,9 +256,9 @@ export function DeclickSection({
         // clicks-found strip reads far better with the whole window to mark them in.
         sectionId="declick"
         maximizable
-        summary={tr(`declick.row.${value}`)}
+        summary={tr(`declick.row.${value.mode}`)}
         summaryTestId="declick-row-sentence"
-        summaryMuted={value === 'off'}
+        summaryMuted={value.mode === 'off'}
         right={
           estimate ? (
             <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
@@ -277,7 +277,10 @@ export function DeclickSection({
               {tr('declick.appliesToSelection', { count: selectedCount })}
             </p>
           )}
-          <DeclickControls value={value} onChange={onChange} />
+          <DeclickControls
+            value={value.mode}
+            onChange={(mode) => onChange({ ...value, mode })}
+          />
           {!isMulti && (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -435,7 +438,7 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value !== 'off' && !isMulti && (
+          {value.mode !== 'off' && !isMulti && (
             <div className="mt-3">
               {!preview && !rendering && (
                 <button
@@ -532,7 +535,7 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value !== 'off' && losesTraktorCues(format) && (
+          {value.mode !== 'off' && losesTraktorCues(format) && (
             <p data-testid="declick-cue-warning" className="mt-3 text-xs text-warn">
               {tr('declick.cueWarning')}
             </p>
