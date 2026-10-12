@@ -594,7 +594,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                       </span>
                                     )}
                                   </span>
-                                  <span className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
+                                  <span className="min-w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
                                     {t.duration}
                                   </span>
                                 </button>

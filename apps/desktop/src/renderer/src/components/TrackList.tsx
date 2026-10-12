@@ -626,7 +626,7 @@ const TrackRow = memo(function TrackRow({
                   {t.listLabel}
                 </span>
               </span>
-              <span data-testid="track-duration-slot" className={`w-[34px] ${ROW_TRAILING}`}>
+              <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
                 {t.duration !== undefined && (
                   <span data-testid="track-duration">{formatTime(t.duration)}</span>
                 )}
