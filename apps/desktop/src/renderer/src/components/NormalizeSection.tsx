@@ -84,10 +84,7 @@ export function NormalizeSection({
   // The plan card reads the same measurement the waveform legend uses (one shared
   // query, so no second decode) and only for a single selected track: in multi the
   // anchor's figures would masquerade as the batch's.
-  const { data: planLoudness } = useTrackLoudness(
-    item.inputPath,
-    !isMulti && showHints && value.mode !== 'none',
-  )
+  const { data: planLoudness } = useTrackLoudness(item.inputPath, !isMulti && value.mode !== 'none')
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   useEffect(() => {
@@ -153,12 +150,13 @@ export function NormalizeSection({
             showCueWarning={false}
             showHints={showHints}
           />
-          {!isMulti && showHints && (
+          {!isMulti && (
             <NormalizePlan
               normalize={value}
               loudness={planLoudness}
               format={format}
               onDismiss={onHideHints}
+              explain={showHints}
             />
           )}
           {!isMulti && !compare && (

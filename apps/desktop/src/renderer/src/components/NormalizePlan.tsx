@@ -12,6 +12,8 @@ interface Props {
   // Flips the SAME persisted setting as Settings > Editor's "Inline explanations":
   // the lever lives where the eyes are, the way back lives in Settings.
   onDismiss?: () => void
+  // Off once the explanations are hidden: the forecast figures stay, the sentences go.
+  explain?: boolean
 }
 
 // The sentence the prediction was always able to say and never did. predictNormalized
@@ -25,6 +27,7 @@ export function NormalizePlan({
   loudness,
   format,
   onDismiss,
+  explain = true,
 }: Props): React.JSX.Element | null {
   const { t: tr, i18n } = useTranslation()
   const predicted = loudness ? predictNormalized(normalize, loudness) : null
@@ -52,6 +55,18 @@ export function NormalizePlan({
   const subKey = kind === 'limited' && overshoot <= LIGHT_TRIM_DB ? 'limitedSubLight' : `${kind}Sub`
   const roundsToZero = Math.round(Math.max(0, overshoot) * 10) === 0
   const headKey = kind === 'limited' && roundsToZero ? 'limitedTouch' : kind
+  if (!explain) {
+    return (
+      <p data-testid="normalize-plan-figures" className="mt-3 text-xs text-fg-muted tabular-nums">
+        {normalize.mode === 'peak'
+          ? tr('normalize.plan.figuresPeak', values)
+          : tr('normalize.plan.figures', {
+              ...values,
+              now: formatDb(loudness.integratedLufs, i18n.language),
+            })}
+      </p>
+    )
+  }
   return (
     <div
       data-testid="normalize-plan"

@@ -560,6 +560,21 @@ describe('NormalizeSection with hints off', () => {
     expect(screen.queryByTestId('normalize-mode-line')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-ceiling-caption')).not.toBeInTheDocument()
   })
+
+  // The X quiets the explanations, but the forecast is the figure the choice is made on,
+  // not an explanation: hints off kept nothing of what this track would become.
+  it('keeps the forecast figures without the explanation', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 }, false)
+    const figures = await screen.findByTestId('normalize-plan-figures')
+    expect(figures).toHaveTextContent('-16.3 → -13.0 LUFS · +3.3 dB · -1.0 dBTP')
+    expect(screen.queryByTestId('normalize-plan-dismiss')).not.toBeInTheDocument()
+  })
+
+  it('keeps the peak mode figures without the explanation', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'peak' }, false)
+    const figures = await screen.findByTestId('normalize-plan-figures')
+    expect(figures).toHaveTextContent('+2.3 dB · -1.0 dBFS')
+  })
 })
 
 describe('NormalizeSection plan dismissal', () => {

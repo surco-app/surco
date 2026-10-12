@@ -861,7 +861,9 @@
       "peak": "It will move {{gain}} dB: its loudest sample will sit exactly at {{peak}} dBFS.",
       "peakSub": "One constant gain, no limiter. It will play at about {{lufs}} LUFS.",
       "mp3Ceiling": "MP3 encoding pushes peaks up a little, so Surco measures the MP3 and, if it crosses {{ceiling}} dBTP, encodes it again with the peaks held lower, which can leave it a little under {{lufs}} LUFS.",
-      "limiterCeiling": "The limiter holds the peaks sample by sample and they can still land a little higher between samples, so Surco measures the file and, if it crosses {{ceiling}} dBTP, renders it again with the peaks held lower, which can leave it a little under {{lufs}} LUFS."
+      "limiterCeiling": "The limiter holds the peaks sample by sample and they can still land a little higher between samples, so Surco measures the file and, if it crosses {{ceiling}} dBTP, renders it again with the peaks held lower, which can leave it a little under {{lufs}} LUFS.",
+      "figures": "{{now}} → {{lufs}} LUFS · {{gain}} dB · {{peak}} dBTP",
+      "figuresPeak": "{{gain}} dB · {{peak}} dBFS"
     },
     "hideHints": "Hide these explanations (bring them back in Settings → Editor)",
     "row": {
