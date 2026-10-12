@@ -854,6 +854,20 @@ describe('TrimSection', () => {
     }
   })
 
+  // Space is the player's key everywhere. Pressed while a cut was being auditioned, it
+  // started the mini-player too, and the two audios played over each other. While the
+  // audition runs, Space stops it instead.
+  it('stops the audition on Space instead of starting the player over it', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    fireEvent.click(await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 }))
+    let claimed = false
+    act(() => {
+      claimed = runKeyClaim('play', {})
+    })
+    expect(claimed).toBe(true)
+    expect(pause).toHaveBeenCalledOnce()
+  })
+
   // The arrows give the precision a drag on the coarse strip can't: tenths of a
   // second, a whole second with Shift.
   it('nudges the focused handle with the arrow keys', async () => {

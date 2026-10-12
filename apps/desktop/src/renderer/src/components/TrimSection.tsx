@@ -804,6 +804,14 @@ export function TrimSection({
       setAuditing(null)
     }
   }, [value])
+  // While a cut is being heard, Space stops it: left to the global binding it started the
+  // mini-player over the audition, two audios at once.
+  const stopRef = useRef(stopAudition)
+  stopRef.current = stopAudition
+  useEffect(() => {
+    if (auditing === null) return
+    return claimKeys({ play: () => stopRef.current() })
+  }, [auditing])
   function audition(which: Side): void {
     if (auditing === which) {
       stopAudition()
