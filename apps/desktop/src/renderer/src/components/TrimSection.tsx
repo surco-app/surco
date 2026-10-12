@@ -159,6 +159,7 @@ function Lane({
   auditing,
   onContextChange,
   contextIndex,
+  panned,
   contextSec,
   contextCount,
   fineStepSec,
@@ -188,6 +189,8 @@ function Lane({
   auditing: boolean
   onContextChange: (index: number) => void
   contextIndex: number
+  // The view slid off its frame by a pan, which the reset brings back.
+  panned: boolean
   contextSec: number
   contextCount: number
   fineStepSec: number
@@ -411,7 +414,7 @@ function Lane({
           onReset={() => onContextChange(DEFAULT_CONTEXT_INDEX)}
           outDisabled={contextIndex >= contextCount - 1}
           inDisabled={contextIndex <= 0}
-          resetDisabled={contextIndex === DEFAULT_CONTEXT_INDEX}
+          resetDisabled={contextIndex === DEFAULT_CONTEXT_INDEX && !panned}
           labels={{
             out: tr('trim.contextWiden'),
             in: tr('trim.contextNarrow'),
@@ -702,8 +705,17 @@ export function TrimSection({
   // share of the visible span, so one swipe covers the same fraction of the lane at
   // every zoom instead of flying across a tight window and crawling across a wide one.
   function panBy(which: Side, deltaX: number): void {
-    const span = (which === 'start' ? startContextSec : endContextSec) * 2
-    setPanSec((p) => ({ ...p, [which]: p[which] + (deltaX / 400) * span }))
+    const context = which === 'start' ? startContextSec : endContextSec
+    const span = context * 2
+    const focusSec = (which === 'start' ? focus.current?.start : focus.current?.end) ?? 0
+    // Held to the stretch a lane can show: an offset past the track's edge kept counting,
+    // and swiping back did nothing until all that overshoot was spent.
+    const least = Math.min(0, context - focusSec)
+    const most = Math.max(0, durationSec - context - focusSec)
+    setPanSec((p) => ({
+      ...p,
+      [which]: Math.min(most, Math.max(least, p[which] + (deltaX / 400) * span)),
+    }))
   }
   const startFocus = focus.current?.start ?? 0
   const endFocus = focus.current?.end ?? durationSec
@@ -1096,6 +1108,7 @@ export function TrimSection({
       onWheelPan: (deltaX: number) => panBy(which, deltaX),
       onContextChange: (index: number) => zoomTo(which, index),
       contextIndex: contextIndex[which],
+      panned: panSec[which] !== 0,
       contextSec: which === 'start' ? startContextSec : endContextSec,
       contextCount: CONTEXT_SEC.length,
       fineStepSec: FINE_STEP_SEC,

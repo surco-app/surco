@@ -366,6 +366,34 @@ describe('TrimSection', () => {
     expect(from).toBeGreaterThan(9.7)
   })
 
+  // Swiping past the end of the track kept counting, so coming back moved nothing until
+  // all of that overshoot was spent: a dead zone that read as a broken gesture.
+  it('turns back at once after a pan runs past the end of the track', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    const lane = screen.getByTestId('trim-lane-start')
+    for (let i = 0; i < 200; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 400, deltaY: 0 })
+    }
+    const atEnd = lane.getAttribute('data-window')
+    fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: -400, deltaY: 0 })
+    expect(lane.getAttribute('data-window')).not.toBe(atEnd)
+  })
+
+  // After a pan the only way back to the cut was zooming in and out again: the reset sat
+  // disabled because the zoom itself had not changed.
+  it('offers the reset after a pan and brings the lane back onto the cut', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(screen.getByTestId('trim-context-start')).toBeDisabled()
+    for (let i = 0; i < 10; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 300, deltaY: 0 })
+    }
+    expect(screen.queryByTestId('trim-handle-start')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('trim-context-start'))
+    expect(screen.getByTestId('trim-handle-start')).toBeInTheDocument()
+  })
+
   // Un scroll vertical es la página desplazándose, no una intención de panear: el
   // panel de recorte vive en un editor con scroll y robarle la rueda vertical haría
   // que la onda se moviera sola mientras el usuario baja por la ficha.
