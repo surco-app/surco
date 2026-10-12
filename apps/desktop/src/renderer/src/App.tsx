@@ -1416,6 +1416,9 @@ export default function App(): React.JSX.Element {
   const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) =>
     updateTracksMeta(selectedIds, patch),
   )
+  const onChangeSelection = useStableCallback((patch: Partial<TrackItem>) =>
+    patchTracks(selectedIds, patch),
+  )
   // The multi-select "clear everything" flag pass: mark each cleared track so a
   // convert wipes its cover and rating, not just the text fields — and its own
   // foreign tags, which differ per track so a flat patchTracks patch can't carry them.
@@ -2263,6 +2266,7 @@ export default function App(): React.JSX.Element {
                           onProcessAll={onProcessAllSelected}
                           onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
                           onChangeAllMeta={onChangeAllMeta}
+                          onChangeSelection={onChangeSelection}
                           onApplyCoverAll={onApplyCoverAll}
                           onDeriveTags={deriveTracksUndoable}
                           onChangeTracksMeta={deriveTracksUndoable}

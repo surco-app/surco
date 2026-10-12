@@ -2116,6 +2116,34 @@ describe('App normalize peak preferences', () => {
     )
   })
 
+  // With several tracks selected the section says its dial applies to all of them. It
+  // was staged on the anchor alone, so a track carrying its own earlier mode converted
+  // with that one instead, with nothing on screen saying so.
+  it('applies the volume picked for a selection to every track in it', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/out/x.aiff',
+    } as Awaited<ReturnType<Api['processTrack']>>)
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings(normalizeOpen)),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    fireEvent.click(await screen.findByTestId('normalize-mode-peak'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
+    await screen.findByTestId('normalize-scope')
+    fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    expect(processTrack.mock.calls.map((c) => c[0].normalize?.mode)).toEqual([
+      'loudness',
+      'loudness',
+    ])
+  })
+
   // The per-track mode pick stays one-shot: switching to peak alone must not touch
   // Settings, or every editor visit would flip the global default.
   it('never writes Settings for a bare per-track mode switch', async () => {

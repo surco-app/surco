@@ -116,6 +116,9 @@ interface Props {
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
   onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
+  // Stages a per-track setting (the volume) on every selected track, so a multi-select
+  // pick reaches each of them and not only the anchor.
+  onChangeSelection?: (patch: Partial<TrackItem>) => void
   onApplyCoverAll?: (coverUrl: string, coverPath?: string) => void
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
@@ -205,6 +208,7 @@ export const Editor = memo(function Editor({
   onProcessAll,
   onAddAllToAppleMusic,
   onChangeAllMeta,
+  onChangeSelection,
   onApplyCoverAll,
   onDeriveTags,
   onChangeTracksMeta,
@@ -1397,8 +1401,10 @@ export const Editor = memo(function Editor({
                             setNormalizeCfg(n)
                             onNormalizeChange?.(n)
                             // Stage it on the track so coming back to it finds the dial
-                            // as it was left, the way the silence trim already does.
-                            onChange({ normalize: n })
+                            // as it was left, the way the silence trim already does. In
+                            // multi-select the section speaks for every selected track.
+                            if (isMulti && onChangeSelection) onChangeSelection({ normalize: n })
+                            else onChange({ normalize: n })
                           }}
                           item={item}
                           selectedCount={selectedTracks?.length ?? 1}
