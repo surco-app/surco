@@ -75,12 +75,13 @@ async function cut(src: string, out: string): Promise<void> {
     undefined,
     undefined,
     undefined,
-    { mode: 'off', rumble: true, noise: 'off' },
+    { mode: 'off', noise: 'soft' },
   )
 }
 
-// End-to-end through the real pipeline: what the checkbox promises is said in the
-// samples ffmpeg writes, not in the filter string.
+// End-to-end through the real pipeline: the rumble cut every background-noise step brings
+// is said in the samples ffmpeg writes, not in the filter string. The gentlest step, so
+// any change at 50 Hz is the cut's and not the denoiser's.
 describe('convertAudio rumble cut', () => {
   it('takes the subsonic rumble out of the file', async () => {
     const src = sineFile('in-10hz.wav', 10)

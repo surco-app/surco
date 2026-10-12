@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import type { DeclickMode, NoiseMode } from '../../../shared/types'
 import { SectionSubhead } from './SectionSubhead'
 import { SegmentedControl } from './SegmentedControl'
-import { CheckboxRow } from './settings/CheckboxRow'
 
 interface Props {
   value: DeclickMode
@@ -35,30 +34,6 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
           {tr(`declick.modeHint.${value}`)}
         </p>
       )}
-    </div>
-  )
-}
-
-// The rumble cut, beside the ladder rather than on it: it is not a stronger click repair
-// but a different fault, so it pairs with any intensity, Off included. Shared by Settings
-// and the editor like the ladder above.
-export function RumbleToggle({
-  value,
-  onChange,
-}: {
-  value: boolean
-  onChange: (next: boolean) => void
-}): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  return (
-    <div>
-      <CheckboxRow
-        testid="declick-rumble"
-        checked={value}
-        onChange={onChange}
-        label={tr('declick.rumble')}
-      />
-      <p className="mt-1 pl-7 text-xs text-fg-dim">{tr('declick.rumbleHint')}</p>
     </div>
   )
 }

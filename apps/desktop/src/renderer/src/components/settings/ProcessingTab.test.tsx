@@ -57,7 +57,7 @@ const synced: SyncedDraft = {
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-  declick: { mode: 'off', rumble: false, noise: 'off' },
+  declick: { mode: 'off', noise: 'off' },
   shortcutOverrides: {},
   editorSections: DEFAULT_EDITOR_SECTIONS,
   discogsFormats: [],
@@ -81,19 +81,13 @@ describe('ProcessingTab', () => {
   it('stages the click-repair mode', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('declick-mode-standard'))
-    expect(patch).toHaveBeenCalledWith('declick', { mode: 'standard', rumble: false, noise: 'off' })
-  })
-
-  it('stages the rumble cut as the default for every conversion', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('declick-rumble'))
-    expect(patch).toHaveBeenCalledWith('declick', { mode: 'off', rumble: true, noise: 'off' })
+    expect(patch).toHaveBeenCalledWith('declick', { mode: 'standard', noise: 'off' })
   })
 
   it('stages a background-noise step as the default for every conversion', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('declick-noise-medium'))
-    expect(patch).toHaveBeenCalledWith('declick', { mode: 'off', rumble: false, noise: 'medium' })
+    expect(patch).toHaveBeenCalledWith('declick', { mode: 'off', noise: 'medium' })
   })
 
   it('stages a loudness normalization mode', () => {

@@ -156,7 +156,7 @@ describe('convertAudio with "Same as source" under a filter', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', rumble: false, noise: 'off' },
+      { mode: 'standard', noise: 'off' },
     )
     expect(extname(out)).toBe('.flac')
     expect(probe(out).codec).toBe('flac')

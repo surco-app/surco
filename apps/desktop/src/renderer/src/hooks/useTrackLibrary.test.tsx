@@ -784,7 +784,7 @@ describe('useTrackLibrary foreign tags', () => {
         '/m/a.wav': {
           meta: { title: 'Restored' } as never,
           normalize,
-          declick: { mode: 'strong', rumble: false, noise: 'off' },
+          declick: { mode: 'strong', noise: 'off' },
         },
       }),
     )
@@ -792,7 +792,6 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0]?.normalize).toEqual(normalize)
     expect(result.current.tracks[0]?.declick).toEqual({
       mode: 'strong',
-      rumble: false,
       noise: 'off',
     })
   })

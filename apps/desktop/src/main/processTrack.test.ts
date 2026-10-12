@@ -15,7 +15,7 @@ function settings(overrides: Partial<Settings> = {}): Settings {
     addToAppleMusic: false,
     keepOutputCopy: true,
     normalize: { mode: 'none' },
-    declick: { mode: 'off', rumble: false, noise: 'off' },
+    declick: { mode: 'off', noise: 'off' },
     ...overrides,
   } as Settings
 }
@@ -88,7 +88,7 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -117,11 +117,11 @@ describe('runProcessTrack — plain conversion', () => {
 
   it('prefers the job’s click-repair override over the settings default', async () => {
     const deps = makeDeps({
-      settings: settings({ declick: { mode: 'standard', rumble: false, noise: 'off' } }),
+      settings: settings({ declick: { mode: 'standard', noise: 'off' } }),
     })
-    await runProcessTrack(job({ declick: { mode: 'strong', rumble: false, noise: 'off' } }), deps)
+    await runProcessTrack(job({ declick: { mode: 'strong', noise: 'off' } }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
-    expect(call[9]).toEqual({ mode: 'strong', rumble: false, noise: 'off' })
+    expect(call[9]).toEqual({ mode: 'strong', noise: 'off' })
   })
 
   // Unlike declick, trim has no settings default — it only exists as the per-track
@@ -218,7 +218,7 @@ describe('runProcessTrack — cover handling', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -305,7 +305,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -329,7 +329,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -660,7 +660,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -692,7 +692,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -754,7 +754,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -853,7 +853,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,
@@ -1145,7 +1145,7 @@ describe('runProcessTrack — Apple Music only', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      { mode: 'off', rumble: false, noise: 'off' },
+      { mode: 'off', noise: 'off' },
       undefined,
       undefined,
       undefined,

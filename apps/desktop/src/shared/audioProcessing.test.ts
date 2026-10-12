@@ -11,12 +11,12 @@ describe('tagsOnly', () => {
     expect(
       tagsOnly(true, {
         normalize: { ...loudness, mode: 'none' },
-        declick: { mode: 'off', rumble: false, noise: 'off' },
+        declick: { mode: 'off', noise: 'off' },
       }),
     ).toBe(true)
     expect(tagsOnly(false, {})).toBe(false)
     expect(tagsOnly(true, { normalize: loudness })).toBe(false)
-    expect(tagsOnly(true, { declick: { mode: 'soft', rumble: false, noise: 'off' } })).toBe(false)
+    expect(tagsOnly(true, { declick: { mode: 'soft', noise: 'off' } })).toBe(false)
     expect(tagsOnly(true, { trim: { endSec: 90 } })).toBe(false)
   })
 

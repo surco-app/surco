@@ -747,8 +747,6 @@
       "standard": "Repariert kurze Nadel-Klicks.",
       "strong": "Erfasst auch lange Knackser; kann harte Transienten abschwächen."
     },
-    "rumble": "Rumpeln entfernen",
-    "rumbleHint": "Entfernt Plattenspieler-Rumpeln unter 20 Hz. Der Bassdrum (50 Hz) nimmt es 0,2 dB.",
     "noiseLabel": "Hintergrundrauschen",
     "noiseMode": {
       "off": "Aus",
@@ -757,10 +755,10 @@
       "strong": "Stark"
     },
     "noiseHint": {
-      "off": "Das gleichmäßige Rauschen der Platte, am deutlichsten in den Breaks.",
-      "soft": "Der leichteste Eingriff.",
-      "medium": "Mehr Reduktion. Prüfe die Becken im A/B.",
-      "strong": "Nimmt am meisten weg. Prüfe die Becken im A/B."
+      "off": "Das gleichmäßige Rauschen der Platte und das Rumpeln des Plattentellers. Am deutlichsten in den Breaks.",
+      "soft": "Senkt das Rauschen ein wenig. Für fast saubere Platten.",
+      "medium": "Senkt das Rauschen deutlich. Für die meisten gebrauchten Platten.",
+      "strong": "Senkt es am stärksten. Für stark abgenutzte Platten."
     },
     "estimatePill": "~{{count}} Klicks",
     "estimateNonePill": "Keine Klicks",
@@ -790,8 +788,7 @@
       "soft": "sanfte Rauschminderung",
       "medium": "mittlere Rauschminderung",
       "strong": "starke Rauschminderung"
-    },
-    "rowRumble": "ohne Rumpeln"
+    }
   },
   "trim": {
     "waveFailed": "Die Wellenform dieses Titels konnte nicht gelesen werden, daher kann er hier nicht gekürzt werden.",

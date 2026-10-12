@@ -12,7 +12,7 @@ import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
 import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
-import { DeclickControls, NoiseControls, RumbleToggle } from './DeclickControls'
+import { DeclickControls, NoiseControls } from './DeclickControls'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -72,8 +72,8 @@ export function DeclickSection({
   const { t: tr, i18n } = useTranslation()
   const waveColor = useWaveColors().after
   const isMulti = selectedCount > 1
-  // Whether the setting changes the audio at all — a click mode, the rumble cut, or both.
-  // Off with the rumble cut on still has a result to render and hear.
+  // Whether the setting changes the audio at all — a click mode, the noise reduction, or
+  // both. Clicks off with the noise on still has a result to render and hear.
   const repairs = declickFilter(value) !== null
   const solo = open && !isMulti
   useDiskCacheSeed('clicks', inputPath, open && !isMulti)
@@ -128,7 +128,7 @@ export function DeclickSection({
       setProgress(0)
       setFailed(false)
     }
-  }, [value.mode, value.rumble, inputPath])
+  }, [value.mode, value.noise, inputPath])
 
   // On demand, never on open: this is a full-length encode (tens of seconds on a long
   // side), and most tracks are never auditioned at all.
@@ -243,7 +243,6 @@ export function DeclickSection({
   const rowParts = [
     value.mode !== 'off' ? tr(`declick.row.${value.mode}`) : null,
     value.noise !== 'off' ? tr(`declick.rowNoise.${value.noise}`) : null,
-    value.rumble ? tr('declick.rowRumble') : null,
   ].filter((p): p is string => p !== null)
   const rowSentence =
     rowParts.length === 0
@@ -455,12 +454,6 @@ export function DeclickSection({
             <NoiseControls
               value={value.noise}
               onChange={(noise) => onChange({ ...value, noise })}
-            />
-          </div>
-          <div className="mt-4">
-            <RumbleToggle
-              value={value.rumble}
-              onChange={(rumble) => onChange({ ...value, rumble })}
             />
           </div>
           {repairs && !isMulti && (

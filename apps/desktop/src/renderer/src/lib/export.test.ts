@@ -45,10 +45,9 @@ describe('exportedPatch', () => {
   it('records the click repair the export applied', () => {
     const patch = exportedPatch(track(), { outputPath: '/out/a.aiff', inPlace: false }, undefined, {
       mode: 'standard',
-      rumble: false,
       noise: 'off',
     })
-    expect(patch.processedDeclick).toEqual({ mode: 'standard', rumble: false, noise: 'off' })
+    expect(patch.processedDeclick).toEqual({ mode: 'standard', noise: 'off' })
   })
 
   it('repoints the track at the new file after an in-place export', () => {

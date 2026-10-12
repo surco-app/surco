@@ -747,8 +747,6 @@
       "standard": "Repara os clicks curtos da agulha.",
       "strong": "Captura também estalos longos; pode suavizar transientes."
     },
-    "rumble": "Remover o rumble",
-    "rumbleHint": "Corta o ronco do toca-discos abaixo de 20 Hz. Tira 0,2 dB do bumbo (50 Hz).",
     "noiseLabel": "Ruído de fundo",
     "noiseMode": {
       "off": "Não",
@@ -757,10 +755,10 @@
       "strong": "Forte"
     },
     "noiseHint": {
-      "off": "O chiado contínuo do disco, mais audível nas pausas.",
-      "soft": "O toque mínimo.",
-      "medium": "Mais redução. Compare os pratos no A/B.",
-      "strong": "A que mais remove. Compare os pratos no A/B."
+      "off": "O chiado contínuo do disco e o ronco do prato. Ouve-se mais nas pausas.",
+      "soft": "Baixa um pouco o chiado. Para discos quase limpos.",
+      "medium": "Baixa o chiado com clareza. Para a maioria dos discos usados.",
+      "strong": "Baixa ao máximo. Para discos muito gastos."
     },
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sem clicks",
@@ -790,8 +788,7 @@
       "soft": "redução de ruído suave",
       "medium": "redução de ruído média",
       "strong": "redução de ruído forte"
-    },
-    "rowRumble": "sem rumble"
+    }
   },
   "trim": {
     "waveFailed": "Não foi possível ler a forma de onda desta faixa, então ela não pode ser cortada aqui.",

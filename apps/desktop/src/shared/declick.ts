@@ -3,7 +3,7 @@
 // stored settings with it and the renderer resolves the settings context through it.
 import type { DeclickConfig, DeclickMode, NoiseMode } from './types'
 
-export const DEFAULT_DECLICK: DeclickConfig = { mode: 'off', rumble: false, noise: 'off' }
+export const DEFAULT_DECLICK: DeclickConfig = { mode: 'off', noise: 'off' }
 
 const MODES = ['off', 'soft', 'standard', 'strong'] as const
 
@@ -18,15 +18,13 @@ function isNoiseMode(value: unknown): value is NoiseMode {
 }
 
 // Reads a stored value as a config, or undefined when it is not one: every file before
-// the rumble cut holds a bare mode string (which keeps its mode, the rest off), one from
-// before the noise ladder has no noise key (none was applied), and a short-lived dev
-// shape stored {mode, sensitivity} — its mode survives.
+// the noise ladder holds a bare mode string (which keeps its mode, no noise reduction),
+// and a short-lived dev shape stored {mode, sensitivity} — its mode survives.
 export function parseDeclick(value: unknown): DeclickConfig | undefined {
-  if (isMode(value)) return { mode: value, rumble: false, noise: 'off' }
+  if (isMode(value)) return { mode: value, noise: 'off' }
   if (typeof value === 'object' && value !== null) {
-    const { mode, rumble, noise } = value as { mode?: unknown; rumble?: unknown; noise?: unknown }
-    if (isMode(mode))
-      return { mode, rumble: rumble === true, noise: isNoiseMode(noise) ? noise : 'off' }
+    const { mode, noise } = value as { mode?: unknown; noise?: unknown }
+    if (isMode(mode)) return { mode, noise: isNoiseMode(noise) ? noise : 'off' }
   }
   return undefined
 }
@@ -37,14 +35,14 @@ export function normalizeDeclick(value: unknown): DeclickConfig {
 }
 
 export function sameDeclick(a: DeclickConfig, b: DeclickConfig): boolean {
-  return a.mode === b.mode && a.rumble === b.rumble && a.noise === b.noise
+  return a.mode === b.mode && a.noise === b.noise
 }
 
 // The loudness-measurement cache namespace for a filter chain. Click-only chains keep the
-// name they had before the rumble and noise existed, so entries already on disk for the
-// same audio stay valid.
-export function declickCacheSuffix({ mode, rumble, noise }: DeclickConfig): string {
-  return `-declick-${mode}${rumble ? '-rumble' : ''}${noise !== 'off' ? `-noise-${noise}` : ''}`
+// name they had before the noise ladder existed, so entries already on disk for the same
+// audio stay valid.
+export function declickCacheSuffix({ mode, noise }: DeclickConfig): string {
+  return `-declick-${mode}${noise !== 'off' ? `-noise-${noise}` : ''}`
 }
 
 // The -af stage for each intensity, one calibrated step apart:
@@ -65,11 +63,13 @@ function clickFilter(mode: DeclickMode): string | null {
   return null
 }
 
-// The rumble cut: two second-order Butterworth highpasses at 20 Hz, a fourth-order slope
-// measured on sines at −25 dB at 10 Hz and −49 dB at 5 Hz (turntable rumble) against
-// −0.5 dB at 40 Hz and −0.2 dB at 50 Hz (sub and kick). A 25 Hz corner took 1.2 dB off
-// 40 Hz, real music in a club track. Ahead of the click repair, so adeclick models the
-// signal without the subsonic swing under it.
+// The platter rumble every noise step also cuts: two second-order Butterworth highpasses
+// at 20 Hz, a fourth-order slope measured on sines at −25 dB at 10 Hz and −49 dB at 5 Hz
+// (turntable rumble) against −0.5 dB at 40 Hz and −0.2 dB at 50 Hz (sub and kick). A
+// 25 Hz corner took 1.2 dB off 40 Hz, real music in a club track. It rides the noise
+// ladder instead of a switch of its own: to the listener it is the same fault, noise the
+// record adds, and it costs nothing worth choosing against. Ahead of the click repair, so
+// adeclick models the signal without the subsonic swing under it.
 const RUMBLE_FILTER = 'highpass=f=20,highpass=f=20'
 
 // The background-noise ladder: ffmpeg's FFT denoiser tracking the track's own noise
@@ -85,10 +85,9 @@ function noiseFilter(noise: NoiseMode): string | null {
   return null
 }
 
-export function declickFilter({ mode, rumble, noise }: DeclickConfig): string | null {
+export function declickFilter({ mode, noise }: DeclickConfig): string | null {
+  const denoise = noiseFilter(noise)
   return (
-    [rumble ? RUMBLE_FILTER : null, clickFilter(mode), noiseFilter(noise)]
-      .filter(Boolean)
-      .join(',') || null
+    [denoise ? RUMBLE_FILTER : null, clickFilter(mode), denoise].filter(Boolean).join(',') || null
   )
 }

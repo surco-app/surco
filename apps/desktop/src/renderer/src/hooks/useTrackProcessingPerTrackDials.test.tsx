@@ -107,8 +107,8 @@ describe('batch convert honours each track’s own dials', () => {
       .fn<Api['processTrack']>()
       .mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
     setApi({ processTrack })
-    const dusty: DeclickConfig = { mode: 'strong', rumble: false, noise: 'off' }
-    const clean: DeclickConfig = { mode: 'off', rumble: false, noise: 'off' }
+    const dusty: DeclickConfig = { mode: 'strong', noise: 'off' }
+    const clean: DeclickConfig = { mode: 'off', noise: 'off' }
     const tracks = [track({ id: 'dusty', declick: dusty }), track({ id: 'clean', declick: clean })]
     const { result } = renderHook(
       () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),

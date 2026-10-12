@@ -644,7 +644,7 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     flows.askConvertOne(run, {
       track: mp3,
       format: 'mp3',
-      declick: { mode: 'standard', rumble: false, noise: 'off' },
+      declick: { mode: 'standard', noise: 'off' },
     })
     expect(opened[0].destructive).toBe(true)
     expect(opened[0].title).toBe('Re-encode the lossy original?')
@@ -719,7 +719,7 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     const { flows, opened } = setup([mp3], {
       settings: {
         overwriteOriginal: false,
-        declick: { mode: 'standard', rumble: false, noise: 'off' },
+        declick: { mode: 'standard', noise: 'off' },
       } as Settings,
     })
     const run = vi.fn()
@@ -809,7 +809,7 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     const mp3 = track('a', {
       inputPath: '/a.mp3',
       fileName: 'a.mp3',
-      declick: { mode: 'strong', rumble: false, noise: 'off' },
+      declick: { mode: 'strong', noise: 'off' },
     })
     const { flows, opened } = setup([mp3])
 

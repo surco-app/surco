@@ -9,7 +9,6 @@ describe('declickRepairedArgs', () => {
   it('renders the repaired track itself — what the user will actually hear', () => {
     const args = declickRepairedArgs('/in.wav', '/out.wav', {
       mode: 'strong',
-      rumble: false,
       noise: 'off',
     })
     expect(args?.join(' ')).toContain('-af adeclick=b=4')
@@ -25,7 +24,6 @@ describe('declickRepairedArgs', () => {
     // of them — a windowed render would have nothing to play at most of them.
     const args = declickRepairedArgs('/in.wav', '/out.wav', {
       mode: 'standard',
-      rumble: false,
       noise: 'off',
     })
     expect(args).not.toContain('-ss')
@@ -36,16 +34,13 @@ describe('declickRepairedArgs', () => {
     expect(
       declickRepairedArgs('/in.wav', '/out.wav', {
         mode: 'standard',
-        rumble: false,
         noise: 'off',
       })?.join(' '),
     ).toContain('-progress pipe:1')
   })
 
   it('has nothing to render when the repair is off', () => {
-    expect(
-      declickRepairedArgs('/in.wav', '/out.wav', { mode: 'off', rumble: false, noise: 'off' }),
-    ).toBeNull()
+    expect(declickRepairedArgs('/in.wav', '/out.wav', { mode: 'off', noise: 'off' })).toBeNull()
   })
 })
 

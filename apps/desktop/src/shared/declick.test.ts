@@ -9,7 +9,7 @@ import {
 
 describe('declickFilter', () => {
   it('returns no filter when off, so a plain conversion stays untouched', () => {
-    expect(declickFilter({ mode: 'off', rumble: false, noise: 'off' })).toBeNull()
+    expect(declickFilter({ mode: 'off', noise: 'off' })).toBeNull()
   })
 
   // One intensity ladder, each step calibrated: gentle raises the detection
@@ -19,25 +19,9 @@ describe('declickFilter', () => {
   // NOT on the ladder stay out for measured reasons: t below 2 and b above 4 both
   // explode the repair cost past realtime — the "hung conversion" reports, twice.
   it('maps each intensity step to its calibrated filter', () => {
-    expect(declickFilter({ mode: 'soft', rumble: false, noise: 'off' })).toBe('adeclick=t=4')
-    expect(declickFilter({ mode: 'standard', rumble: false, noise: 'off' })).toBe('adeclick')
-    expect(declickFilter({ mode: 'strong', rumble: false, noise: 'off' })).toBe('adeclick=b=4')
-  })
-
-  // A fourth-order cut at 20 Hz, measured on sines: −25 dB at 10 Hz and −49 dB at 5 Hz,
-  // where turntable rumble lives, but only −0.2 dB at 50 Hz, where a kick's fundamental
-  // sits. At 25 Hz the same slope already took 1.2 dB off real 40 Hz sub.
-  it('cuts the rumble below 20 Hz on its own, with no click repair', () => {
-    expect(declickFilter({ mode: 'off', rumble: true, noise: 'off' })).toBe(
-      'highpass=f=20,highpass=f=20',
-    )
-  })
-
-  // Ahead of the repair, so the subsonic swing is gone before adeclick models the signal.
-  it('cuts the rumble before repairing the clicks', () => {
-    expect(declickFilter({ mode: 'standard', rumble: true, noise: 'off' })).toBe(
-      'highpass=f=20,highpass=f=20,adeclick',
-    )
+    expect(declickFilter({ mode: 'soft', noise: 'off' })).toBe('adeclick=t=4')
+    expect(declickFilter({ mode: 'standard', noise: 'off' })).toBe('adeclick')
+    expect(declickFilter({ mode: 'strong', noise: 'off' })).toBe('adeclick=b=4')
   })
 })
 
@@ -45,22 +29,29 @@ describe('declickFilter', () => {
 // 2-3 dB more off the 8-16 kHz floor there (−3/−5/−7 dB) while the music loses 0.3 dB,
 // and on a clean digital master all three leave the audio as it was — tn=1 tracks the
 // track's own noise, so there is nothing to subtract when there is no noise.
+//
+// Every step also cuts the platter rumble: a fourth-order highpass at 20 Hz, measured on
+// sines at −25 dB at 10 Hz and −49 dB at 5 Hz, where turntable rumble lives, but only
+// −0.2 dB at 50 Hz, where a kick's fundamental sits (a 25 Hz corner already took 1.2 dB
+// off real 40 Hz sub). It is the same complaint to the listener — noise the record adds —
+// and costs nothing worth keeping a separate switch for.
 describe('declickFilter noise', () => {
-  it('maps each noise step to its calibrated reduction', () => {
-    expect(declickFilter({ mode: 'off', rumble: false, noise: 'soft' })).toBe(
-      'afftdn=nr=10:nf=-62:tn=1',
+  it('maps each noise step to its calibrated reduction, rumble cut included', () => {
+    expect(declickFilter({ mode: 'off', noise: 'soft' })).toBe(
+      'highpass=f=20,highpass=f=20,afftdn=nr=10:nf=-62:tn=1',
     )
-    expect(declickFilter({ mode: 'off', rumble: false, noise: 'medium' })).toBe(
-      'afftdn=nr=18:nf=-60:tn=1',
+    expect(declickFilter({ mode: 'off', noise: 'medium' })).toBe(
+      'highpass=f=20,highpass=f=20,afftdn=nr=18:nf=-60:tn=1',
     )
-    expect(declickFilter({ mode: 'off', rumble: false, noise: 'strong' })).toBe(
-      'afftdn=nr=26:nf=-58:tn=1',
+    expect(declickFilter({ mode: 'off', noise: 'strong' })).toBe(
+      'highpass=f=20,highpass=f=20,afftdn=nr=26:nf=-58:tn=1',
     )
   })
 
-  // Last, so the noise estimate is not thrown by the clicks and the subsonic swing.
-  it('reduces the noise after the rumble cut and the click repair', () => {
-    expect(declickFilter({ mode: 'strong', rumble: true, noise: 'medium' })).toBe(
+  // The rumble cut leads, so the subsonic swing is gone before adeclick models the signal;
+  // the denoiser trails, so neither the clicks nor that swing throw its noise estimate.
+  it('cuts the rumble first and reduces the hiss last, around the click repair', () => {
+    expect(declickFilter({ mode: 'strong', noise: 'medium' })).toBe(
       'highpass=f=20,highpass=f=20,adeclick=b=4,afftdn=nr=18:nf=-60:tn=1',
     )
   })
@@ -72,10 +63,10 @@ describe('normalizeDeclick', () => {
   })
 
   it('keeps a valid stored mode, including the 0.49-0.50 values', () => {
-    expect(normalizeDeclick('off')).toEqual({ mode: 'off', rumble: false, noise: 'off' })
-    expect(normalizeDeclick('soft')).toEqual({ mode: 'soft', rumble: false, noise: 'off' })
-    expect(normalizeDeclick('standard')).toEqual({ mode: 'standard', rumble: false, noise: 'off' })
-    expect(normalizeDeclick('strong')).toEqual({ mode: 'strong', rumble: false, noise: 'off' })
+    expect(normalizeDeclick('off')).toEqual({ mode: 'off', noise: 'off' })
+    expect(normalizeDeclick('soft')).toEqual({ mode: 'soft', noise: 'off' })
+    expect(normalizeDeclick('standard')).toEqual({ mode: 'standard', noise: 'off' })
+    expect(normalizeDeclick('strong')).toEqual({ mode: 'strong', noise: 'off' })
   })
 
   // A dev build briefly stored {mode, sensitivity}; its mode survives, the extra
@@ -83,31 +74,20 @@ describe('normalizeDeclick', () => {
   it('reads the short-lived config-object shape down to its mode', () => {
     expect(normalizeDeclick({ mode: 'strong', sensitivity: 3 })).toEqual({
       mode: 'strong',
-      rumble: false,
       noise: 'off',
     })
   })
 
   it('keeps a stored config as it was saved', () => {
-    expect(normalizeDeclick({ mode: 'soft', rumble: true, noise: 'off' })).toEqual({
+    expect(normalizeDeclick({ mode: 'soft', noise: 'medium' })).toEqual({
       mode: 'soft',
-      rumble: true,
-      noise: 'off',
-    })
-  })
-
-  // Saved before the noise ladder existed: no noise key, which means none was applied.
-  it('reads a config saved before the noise ladder as no noise reduction', () => {
-    expect(normalizeDeclick({ mode: 'soft', rumble: true })).toEqual({
-      mode: 'soft',
-      rumble: true,
-      noise: 'off',
+      noise: 'medium',
     })
   })
 
   it('keeps a saved noise step and drops an unknown one', () => {
-    expect(normalizeDeclick({ mode: 'off', rumble: false, noise: 'strong' }).noise).toBe('strong')
-    expect(normalizeDeclick({ mode: 'off', rumble: false, noise: 'max' }).noise).toBe('off')
+    expect(normalizeDeclick({ mode: 'off', noise: 'strong' }).noise).toBe('strong')
+    expect(normalizeDeclick({ mode: 'off', noise: 'max' }).noise).toBe('off')
   })
 
   it('repairs an unrecognized value to the default', () => {
@@ -121,30 +101,11 @@ describe('sameDeclick', () => {
   // Staleness compares the applied config to the dialled one; a reference check would
   // call two identical settings different and bring the Update button back for nothing.
   it('compares by value, not by reference', () => {
-    expect(
-      sameDeclick(
-        { mode: 'soft', rumble: false, noise: 'off' },
-        { mode: 'soft', rumble: false, noise: 'off' },
-      ),
-    ).toBe(true)
-    expect(
-      sameDeclick(
-        { mode: 'soft', rumble: false, noise: 'off' },
-        { mode: 'strong', rumble: false, noise: 'off' },
-      ),
-    ).toBe(false)
-    expect(
-      sameDeclick(
-        { mode: 'soft', rumble: false, noise: 'off' },
-        { mode: 'soft', rumble: true, noise: 'off' },
-      ),
-    ).toBe(false)
-    expect(
-      sameDeclick(
-        { mode: 'soft', rumble: false, noise: 'off' },
-        { mode: 'soft', rumble: false, noise: 'soft' },
-      ),
-    ).toBe(false)
+    expect(sameDeclick({ mode: 'soft', noise: 'off' }, { mode: 'soft', noise: 'off' })).toBe(true)
+    expect(sameDeclick({ mode: 'soft', noise: 'off' }, { mode: 'strong', noise: 'off' })).toBe(
+      false,
+    )
+    expect(sameDeclick({ mode: 'soft', noise: 'off' }, { mode: 'soft', noise: 'soft' })).toBe(false)
   })
 })
 
@@ -155,16 +116,13 @@ describe('declickCacheSuffix', () => {
   it('gives every distinct setting its own cache entry', () => {
     const suffixes = new Set<string>()
     for (const mode of ['soft', 'standard', 'strong'] as const)
-      for (const rumble of [false, true])
-        for (const noise of ['off', 'soft', 'medium', 'strong'] as const)
-          suffixes.add(declickCacheSuffix({ mode, rumble, noise }))
-    expect(suffixes.size).toBe(3 * 2 * 4)
+      for (const noise of ['off', 'soft', 'medium', 'strong'] as const)
+        suffixes.add(declickCacheSuffix({ mode, noise }))
+    expect(suffixes.size).toBe(3 * 4)
   })
 
-  // Entries measured before the rumble and noise existed stay valid for the same audio.
+  // Entries measured before the noise ladder existed stay valid for the same audio.
   it('keeps the click-only entries named as before', () => {
-    expect(declickCacheSuffix({ mode: 'standard', rumble: false, noise: 'off' })).toBe(
-      '-declick-standard',
-    )
+    expect(declickCacheSuffix({ mode: 'standard', noise: 'off' })).toBe('-declick-standard')
   })
 })

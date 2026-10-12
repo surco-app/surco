@@ -747,8 +747,6 @@
       "standard": "Repairs short stylus clicks.",
       "strong": "Also catches long pops; may soften sharp transients."
     },
-    "rumble": "Remove rumble",
-    "rumbleHint": "Cuts turntable rumble below 20 Hz. Takes 0.2 dB off a kick drum (50 Hz).",
     "noiseLabel": "Background noise",
     "noiseMode": {
       "off": "Off",
@@ -757,10 +755,10 @@
       "strong": "Strong"
     },
     "noiseHint": {
-      "off": "The steady hiss of the record, loudest in the breakdowns.",
-      "soft": "The lightest touch.",
-      "medium": "More reduction. Check the cymbals in the A/B.",
-      "strong": "Takes the most off. Check the cymbals in the A/B."
+      "off": "The record's steady hiss and the platter's rumble. You hear it most in the breakdowns.",
+      "soft": "Lowers the hiss a little. For records that are nearly clean.",
+      "medium": "Lowers the hiss clearly. For most used records.",
+      "strong": "Lowers it the most. For badly worn records."
     },
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "No clicks",
@@ -790,8 +788,7 @@
       "soft": "gentle noise reduction",
       "medium": "medium noise reduction",
       "strong": "strong noise reduction"
-    },
-    "rowRumble": "rumble cut"
+    }
   },
   "trim": {
     "waveFailed": "The waveform of this track could not be read, so it cannot be trimmed here.",

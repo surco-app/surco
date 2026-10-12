@@ -747,8 +747,6 @@
       "standard": "Repara los clicks cortos de la aguja.",
       "strong": "Atrapa también pops largos; puede suavizar transitorios."
     },
-    "rumble": "Quitar el rumble",
-    "rumbleHint": "Corta el retumbe del giradiscos por debajo de 20 Hz. Al bombo (50 Hz) le quita 0,2 dB.",
     "noiseLabel": "Ruido de fondo",
     "noiseMode": {
       "off": "No",
@@ -757,10 +755,10 @@
       "strong": "Fuerte"
     },
     "noiseHint": {
-      "off": "El soplido continuo del disco, el que más se oye en los parones.",
-      "soft": "El toque mínimo.",
-      "medium": "Más reducción. Compara los platos en el A/B.",
-      "strong": "La que más quita. Compara los platos en el A/B."
+      "off": "El soplido continuo del disco y el retumbe del plato. Se oye sobre todo en los parones.",
+      "soft": "Baja un poco el soplido. Para discos casi limpios.",
+      "medium": "Baja el soplido claramente. Para la mayoría de discos usados.",
+      "strong": "Lo baja al máximo. Para discos muy gastados."
     },
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sin clicks",
@@ -790,8 +788,7 @@
       "soft": "reducción de ruido suave",
       "medium": "reducción de ruido media",
       "strong": "reducción de ruido fuerte"
-    },
-    "rowRumble": "sin rumble"
+    }
   },
   "trim": {
     "waveFailed": "No se ha podido leer la onda de esta pista, así que no se puede recortar aquí.",

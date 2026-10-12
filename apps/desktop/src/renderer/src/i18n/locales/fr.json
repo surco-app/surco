@@ -747,8 +747,6 @@
       "standard": "Répare les clics courts de la pointe.",
       "strong": "Capte aussi les craquements longs ; peut adoucir les transitoires."
     },
-    "rumble": "Supprimer le rumble",
-    "rumbleHint": "Coupe le grondement de la platine sous 20 Hz. Retire 0,2 dB à la grosse caisse (50 Hz).",
     "noiseLabel": "Bruit de fond",
     "noiseMode": {
       "off": "Non",
@@ -757,10 +755,10 @@
       "strong": "Fort"
     },
     "noiseHint": {
-      "off": "Le souffle continu du disque, surtout audible dans les breaks.",
-      "soft": "La touche la plus légère.",
-      "medium": "Plus de réduction. Écoute les cymbales dans l’A/B.",
-      "strong": "Celle qui enlève le plus. Écoute les cymbales dans l’A/B."
+      "off": "Le souffle continu du disque et le grondement du plateau. Surtout audible dans les breaks.",
+      "soft": "Baisse un peu le souffle. Pour les disques presque propres.",
+      "medium": "Baisse nettement le souffle. Pour la plupart des disques usagés.",
+      "strong": "Le baisse au maximum. Pour les disques très usés."
     },
     "estimatePill": "~{{count}} clics",
     "estimateNonePill": "Aucun clic",
@@ -790,8 +788,7 @@
       "soft": "réduction de bruit douce",
       "medium": "réduction de bruit moyenne",
       "strong": "réduction de bruit forte"
-    },
-    "rowRumble": "sans rumble"
+    }
   },
   "trim": {
     "waveFailed": "La forme d'onde de ce morceau n'a pas pu être lue, il ne peut donc pas être coupé ici.",

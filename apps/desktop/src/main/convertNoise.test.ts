@@ -74,7 +74,7 @@ async function reduce(src: string, noise: NoiseMode): Promise<string> {
     undefined,
     undefined,
     undefined,
-    { mode: 'off', rumble: false, noise },
+    { mode: 'off', noise },
   )
   return out
 }

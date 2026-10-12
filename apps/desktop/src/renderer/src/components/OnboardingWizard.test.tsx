@@ -88,7 +88,7 @@ const settings: Settings = {
   continuousPlayback: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-  declick: { mode: 'off', rumble: false, noise: 'off' },
+  declick: { mode: 'off', noise: 'off' },
   shortcutOverrides: {},
   editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
