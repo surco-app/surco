@@ -7,6 +7,7 @@ import {
   type FilterSelection,
   filterWithSticky,
   formatBuckets,
+  holdOrder,
   matchesFilter,
   matchesSearch,
   outsideFilter,
@@ -655,5 +656,24 @@ describe('outsideFilter', () => {
     const rows = [r('a', false), r('b', true)]
     expect([...outsideFilter(rows, { ...EMPTY_FILTER, conversion: 'matchReview' })]).toEqual(['a'])
     expect(outsideFilter(rows, EMPTY_FILTER).size).toBe(0)
+  })
+})
+
+describe('holdOrder', () => {
+  const r = (id: string, artist = ''): TrackItem => ({ id, meta: { artist } }) as TrackItem
+  // The live objects in the shown order: the edit lands, the row does not move.
+  it('keeps the shown order with the live rows', () => {
+    const fresh = [r('b'), r('a', 'Zulu')]
+    const held = holdOrder([r('a'), r('b')], fresh)
+    expect(held.map((t) => t.id)).toEqual(['a', 'b'])
+    expect(held[0]).toBe(fresh[1])
+  })
+
+  // A new or vanished row has no shown place to keep, so the fresh order wins.
+  it('takes the fresh order when the set of rows changed', () => {
+    const fresh = [r('c'), r('a'), r('b')]
+    expect(holdOrder([r('a'), r('b')], fresh)).toBe(fresh)
+    const swapped = [r('a'), r('c')]
+    expect(holdOrder([r('a'), r('b')], swapped)).toBe(swapped)
   })
 })

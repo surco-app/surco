@@ -1051,6 +1051,34 @@ describe('App new-tracks offer', () => {
   })
 })
 
+describe('App list order while editing', () => {
+  // Sorted by artist, correcting the selected track's artist moved its row on every key,
+  // so the row the user was working on jumped away mid-word. The order holds while the
+  // track stays selected and catches up when the user moves on.
+  it('holds the sorted order while the selected track is edited and re-sorts on the next pick', async () => {
+    const tags: Record<string, { title: string; artist: string }> = {
+      '/music/a.wav': { title: 'First', artist: 'Alpha' },
+      '/music/b.wav': { title: 'Second', artist: 'Bravo' },
+    }
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
+      readMeta: vi.fn(async (path: string) => ({ tags: tags[path], duration: 180, cover: null })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+    const labels = () => screen.getAllByTestId('track-row').map((r) => r.textContent ?? '')
+    await waitFor(() => expect(labels()[0]).toContain('First'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.change(await screen.findByTestId('field-artist'), { target: { value: 'Zulu' } })
+    await waitFor(() => expect(labels()[0]).toContain('Zulu'))
+    expect(labels()[0]).toContain('First')
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(labels()[0]).toContain('Second'))
+  })
+})
+
 describe('App maximized section', () => {
   // Escape while a section fills the window must ONLY restore the section. The
   // global Escape (clear the selection) used to fire too, so the overlay closed

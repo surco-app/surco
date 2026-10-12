@@ -160,6 +160,21 @@ export function outsideFilter(tracks: TrackItem[], sel: FilterSelection): Set<st
   return new Set(tracks.filter((t) => !matchesFilter(t, sel)).map((t) => t.id))
 }
 
+// The fresh rows laid out in the order the list already shows, so a sort that would move
+// a row under the user waits. Falls back to the fresh order whenever the set of rows
+// changed (an import, a removal, a row the search no longer matches).
+export function holdOrder(shown: TrackItem[], fresh: TrackItem[]): TrackItem[] {
+  if (shown.length !== fresh.length) return fresh
+  const byId = new Map(fresh.map((t) => [t.id, t]))
+  const held: TrackItem[] = []
+  for (const t of shown) {
+    const live = byId.get(t.id)
+    if (!live) return fresh
+    held.push(live)
+  }
+  return held
+}
+
 // Free-text list search, applied on top of the quality filter. Matches what the user
 // can actually see or recognise the track by: the frozen list label and the source file
 // name (both available before tags are read), plus the core artist/title/album tags, so

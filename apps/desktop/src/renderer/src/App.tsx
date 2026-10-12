@@ -129,6 +129,7 @@ import {
   EMPTY_FILTER,
   filterWithSticky,
   formatBuckets,
+  holdOrder,
   outsideFilter,
   qualityCounts,
   searchMatcher,
@@ -1176,6 +1177,7 @@ export default function App(): React.JSX.Element {
   // on TrackList (whose comment claims to survive exactly that) for a render with nothing
   // to show. The rows themselves stay memoized either way; this drops the reconciliation.
   const prevVisibleTracks = useRef<TrackItem[]>([])
+  const heldOrderKey = useRef('')
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
@@ -1186,16 +1188,23 @@ export default function App(): React.JSX.Element {
       stickyFilter.current = key
       stickyIds.current = new Set()
     }
-    const next = sortTracks(
+    const sorted = sortTracks(
       filterWithSticky(tracksView, filterSelection, stickyIds.current).filter(
         searchMatcher(deferredSearch),
       ),
       sortBy,
       sortDir,
     )
+    // While the same track stays selected under the same view, edits re-sort nothing: the
+    // row the user is correcting (or one a background match rewrites) keeps its place, and
+    // the list catches up when the user picks another track or changes the sort.
+    const orderKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}|${selectedId ?? ''}`
+    const next =
+      heldOrderKey.current === orderKey ? holdOrder(prevVisibleTracks.current, sorted) : sorted
+    heldOrderKey.current = orderKey
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
-  }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir])
+  }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir, selectedId])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
