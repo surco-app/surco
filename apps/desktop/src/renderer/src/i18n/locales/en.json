@@ -733,7 +733,8 @@
   },
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",
-    "title": "Vinyl click repair",
+    "title": "Vinyl repair",
+    "clicksLabel": "Clicks",
     "hint": "Detects stylus clicks and pops and interpolates them away during conversion.",
     "mode": {
       "off": "Off",
@@ -745,6 +746,21 @@
       "soft": "The lightest touch, for delicate material.",
       "standard": "Repairs short stylus clicks.",
       "strong": "Also catches long pops; may soften sharp transients."
+    },
+    "rumble": "Remove rumble",
+    "rumbleHint": "Cuts turntable rumble below 20 Hz. Takes 0.2 dB off a kick drum (50 Hz).",
+    "noiseLabel": "Background noise",
+    "noiseMode": {
+      "off": "Off",
+      "soft": "Gentle",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "noiseHint": {
+      "off": "The steady hiss of the record, loudest in the breakdowns.",
+      "soft": "The lightest touch.",
+      "medium": "More reduction. Check the cymbals in the A/B.",
+      "strong": "Takes the most off. Check the cymbals in the A/B."
     },
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "No clicks",
@@ -769,7 +785,13 @@
       "soft": "Gentle repair",
       "standard": "Standard repair",
       "strong": "Strong repair"
-    }
+    },
+    "rowNoise": {
+      "soft": "gentle noise reduction",
+      "medium": "medium noise reduction",
+      "strong": "strong noise reduction"
+    },
+    "rowRumble": "rumble cut"
   },
   "trim": {
     "waveFailed": "The waveform of this track could not be read, so it cannot be trimmed here.",

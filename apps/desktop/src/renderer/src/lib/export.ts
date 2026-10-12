@@ -1,4 +1,4 @@
-import type { DeclickMode, NormalizeConfig, ProcessResult } from '../../../shared/types'
+import type { DeclickConfig, NormalizeConfig, ProcessResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { parseFileName } from './filename'
@@ -15,7 +15,7 @@ export function exportedPatch(
   track: TrackItem,
   result: ProcessResult,
   normalize?: NormalizeConfig,
-  declick?: DeclickMode,
+  declick?: DeclickConfig,
 ): Partial<TrackItem> {
   // "Apple Music only": no file was kept in the output folder, so the track records no
   // outputPath and is flagged added — the editor then shows the Apple-Music confirmation

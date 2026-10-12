@@ -165,7 +165,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      'standard',
+      { mode: 'standard', rumble: false, noise: 'off' },
     )
     // Clicks repaired, then the linear gain: the 0.9 impulses would have survived
     // as ~0.9×gain — anything near that means the chain ran out of order.
@@ -193,7 +193,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      'strong',
+      { mode: 'strong', rumble: false, noise: 'off' },
     )
     expect(result.declickedSamples).toBeGreaterThan(0)
     // The limiter holds the ceiling (-1 dBFS ≈ 0.891) while the gain pushes toward
@@ -229,7 +229,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      'standard',
+      { mode: 'standard', rumble: false, noise: 'off' },
     )
     const [left, right] = channelStats(out)
     // Each channel lands its own peak on -1 dBFS (0.891), centered on zero — and
@@ -266,7 +266,7 @@ describe('convertAudio declick × normalize', () => {
         undefined,
         undefined,
         undefined,
-        'standard',
+        { mode: 'standard', rumble: false, noise: 'off' },
       )
     }
     // Click-anchored: gain ≈ −1 dB, the sine stays near 0.22 and only the surviving
@@ -276,5 +276,34 @@ describe('convertAudio declick × normalize', () => {
     expect(loudShare(noDeclick)).toBeLessThan(0.001)
     expect(loudShare(declicked)).toBeGreaterThan(0.1)
     expect(loudShare(declickedAgain)).toBeCloseTo(loudShare(declicked), 3)
+  }, 60000)
+
+  // Subsonic rumble big enough to BE the peak: measured with it, the gain is sized to the
+  // rumble; with it cut, to the music. If the rumble cut shared the repair-only cache
+  // entry, the cut file would get the rumble's gain and land 12 dB short of its target.
+  it('keeps the rumble cut out of the repair-only measurement cache', async () => {
+    const src = makeSource('rumble-cache.wav', '0.2*sin(2*PI*440*t)+0.6*sin(2*PI*8*t)')
+    const peak = { mode: 'peak' as const, targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+    const run = async (out: string, rumble: boolean): Promise<void> => {
+      await convertAudio(
+        src,
+        out,
+        'wav',
+        meta,
+        undefined,
+        peak,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { mode: 'standard', rumble, noise: 'off' },
+      )
+    }
+    const kept = join(dir, 'rumble-kept.wav')
+    const cut = join(dir, 'rumble-cut.wav')
+    await run(kept, false)
+    await run(cut, true)
+    expect(loudShare(cut)).toBeGreaterThan(0.5)
   }, 60000)
 })

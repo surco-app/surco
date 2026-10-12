@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useRef } from 'react'
 import type {
-  DeclickMode,
+  DeclickConfig,
   FormatSetting,
   NormalizeConfig,
   OutputFormat,
@@ -22,11 +22,11 @@ interface EditorPicks {
   destinationRef: React.RefObject<Destination | null>
   destinationPickRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>
-  declickRef: React.RefObject<DeclickMode | null>
+  declickRef: React.RefObject<DeclickConfig | null>
   onFormatChange: (format: FormatSetting | null) => void
   onDestinationChange: (destination: Destination, byHand?: boolean) => void
   onNormalizeChange: (n: NormalizeConfig) => void
-  onDeclickChange: (d: DeclickMode) => void
+  onDeclickChange: (d: DeclickConfig) => void
   rememberedPick: (trackId: string) => RememberedPick | undefined
   // Called when the selection empties: the picks belong to the track that was open, and a
   // stale one would silently apply to whatever is opened next.
@@ -68,7 +68,7 @@ export function useEditorPicks(
   // against the open track alone (a FLAC pins it to the folder), so a batch reads this.
   const destinationPickRef = useRef<Destination | null>(null)
   const normalizeRef = useRef<NormalizeConfig | null>(null)
-  const declickRef = useRef<DeclickMode | null>(null)
+  const declickRef = useRef<DeclickConfig | null>(null)
 
   const onFormatChange = useStableCallback((format: FormatSetting | null) => {
     formatRef.current = format
@@ -110,7 +110,7 @@ export function useEditorPicks(
     )
       saveSettings({ normalize: next })
   })
-  const onDeclickChange = useStableCallback((d: DeclickMode) => {
+  const onDeclickChange = useStableCallback((d: DeclickConfig) => {
     declickRef.current = d
   })
 

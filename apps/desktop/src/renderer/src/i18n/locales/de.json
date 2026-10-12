@@ -733,7 +733,8 @@
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
-    "title": "Vinyl-Klick-Reparatur",
+    "title": "Vinyl-Reparatur",
+    "clicksLabel": "Knackser",
     "hint": "Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
     "mode": {
       "off": "Aus",
@@ -745,6 +746,21 @@
       "soft": "Der leichteste Eingriff, für empfindliches Material.",
       "standard": "Repariert kurze Nadel-Klicks.",
       "strong": "Erfasst auch lange Knackser; kann harte Transienten abschwächen."
+    },
+    "rumble": "Rumpeln entfernen",
+    "rumbleHint": "Entfernt Plattenspieler-Rumpeln unter 20 Hz. Der Bassdrum (50 Hz) nimmt es 0,2 dB.",
+    "noiseLabel": "Hintergrundrauschen",
+    "noiseMode": {
+      "off": "Aus",
+      "soft": "Sanft",
+      "medium": "Mittel",
+      "strong": "Stark"
+    },
+    "noiseHint": {
+      "off": "Das gleichmäßige Rauschen der Platte, am deutlichsten in den Breaks.",
+      "soft": "Der leichteste Eingriff.",
+      "medium": "Mehr Reduktion. Prüfe die Becken im A/B.",
+      "strong": "Nimmt am meisten weg. Prüfe die Becken im A/B."
     },
     "estimatePill": "~{{count}} Klicks",
     "estimateNonePill": "Keine Klicks",
@@ -769,7 +785,13 @@
       "soft": "Sanfte Reparatur",
       "standard": "Standardreparatur",
       "strong": "Starke Reparatur"
-    }
+    },
+    "rowNoise": {
+      "soft": "sanfte Rauschminderung",
+      "medium": "mittlere Rauschminderung",
+      "strong": "starke Rauschminderung"
+    },
+    "rowRumble": "ohne Rumpeln"
   },
   "trim": {
     "waveFailed": "Die Wellenform dieses Titels konnte nicht gelesen werden, daher kann er hier nicht gekürzt werden.",

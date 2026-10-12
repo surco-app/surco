@@ -183,20 +183,38 @@ describe('isNormalizeStale', () => {
 // the Update button back, without pretending to edit a tag first.
 describe('isDeclickStale', () => {
   it('is false right after conversion, when the pick still matches the file', () => {
-    expect(isDeclickStale(converted({ processedDeclick: 'standard' }), 'standard')).toBe(false)
+    expect(
+      isDeclickStale(
+        converted({ processedDeclick: { mode: 'standard', rumble: false, noise: 'off' } }),
+        { mode: 'standard', rumble: false, noise: 'off' },
+      ),
+    ).toBe(false)
   })
 
   it('is true once the intensity changes after conversion', () => {
-    expect(isDeclickStale(converted({ processedDeclick: 'off' }), 'standard')).toBe(true)
-    expect(isDeclickStale(converted({ processedDeclick: 'standard' }), 'soft')).toBe(true)
+    expect(
+      isDeclickStale(
+        converted({ processedDeclick: { mode: 'off', rumble: false, noise: 'off' } }),
+        { mode: 'standard', rumble: false, noise: 'off' },
+      ),
+    ).toBe(true)
+    expect(
+      isDeclickStale(
+        converted({ processedDeclick: { mode: 'standard', rumble: false, noise: 'off' } }),
+        { mode: 'soft', rumble: false, noise: 'off' },
+      ),
+    ).toBe(true)
   })
 
   it('is never stale before a track is done', () => {
-    const t = converted({ status: 'idle', processedDeclick: 'off' })
-    expect(isDeclickStale(t, 'strong')).toBe(false)
+    const t = converted({
+      status: 'idle',
+      processedDeclick: { mode: 'off', rumble: false, noise: 'off' },
+    })
+    expect(isDeclickStale(t, { mode: 'strong', rumble: false, noise: 'off' })).toBe(false)
   })
 
   it('treats a track converted before the mode was recorded as fresh', () => {
-    expect(isDeclickStale(converted(), 'strong')).toBe(false)
+    expect(isDeclickStale(converted(), { mode: 'strong', rumble: false, noise: 'off' })).toBe(false)
   })
 })

@@ -7,7 +7,11 @@ import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from
 
 describe('declickRepairedArgs', () => {
   it('renders the repaired track itself — what the user will actually hear', () => {
-    const args = declickRepairedArgs('/in.wav', '/out.wav', 'strong')
+    const args = declickRepairedArgs('/in.wav', '/out.wav', {
+      mode: 'strong',
+      rumble: false,
+      noise: 'off',
+    })
     expect(args?.join(' ')).toContain('-af adeclick=b=4')
     // No phase-inversion filtergraph: the old audition rendered the *removed* clicks,
     // and a preview that still did that would answer the wrong question.
@@ -19,19 +23,29 @@ describe('declickRepairedArgs', () => {
   it('renders the whole track, never an excerpt', () => {
     // The clicks sit wherever the stylus hit dust, and the marks invite a jump to any
     // of them — a windowed render would have nothing to play at most of them.
-    const args = declickRepairedArgs('/in.wav', '/out.wav', 'standard')
+    const args = declickRepairedArgs('/in.wav', '/out.wav', {
+      mode: 'standard',
+      rumble: false,
+      noise: 'off',
+    })
     expect(args).not.toContain('-ss')
     expect(args).not.toContain('-t')
   })
 
   it('asks ffmpeg for machine-readable progress, since the render is slow', () => {
-    expect(declickRepairedArgs('/in.wav', '/out.wav', 'standard')?.join(' ')).toContain(
-      '-progress pipe:1',
-    )
+    expect(
+      declickRepairedArgs('/in.wav', '/out.wav', {
+        mode: 'standard',
+        rumble: false,
+        noise: 'off',
+      })?.join(' '),
+    ).toContain('-progress pipe:1')
   })
 
   it('has nothing to render when the repair is off', () => {
-    expect(declickRepairedArgs('/in.wav', '/out.wav', 'off')).toBeNull()
+    expect(
+      declickRepairedArgs('/in.wav', '/out.wav', { mode: 'off', rumble: false, noise: 'off' }),
+    ).toBeNull()
   })
 })
 

@@ -4,7 +4,7 @@ import { act, renderHook } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import type { DeclickMode, NormalizeConfig, TrackMetadata } from '../../../shared/types'
+import type { DeclickConfig, NormalizeConfig, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import '../i18n'
 import { useTrackProcessing } from './useTrackProcessing'
@@ -107,8 +107,8 @@ describe('batch convert honours each track’s own dials', () => {
       .fn<Api['processTrack']>()
       .mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
     setApi({ processTrack })
-    const dusty: DeclickMode = 'strong'
-    const clean: DeclickMode = 'off'
+    const dusty: DeclickConfig = { mode: 'strong', rumble: false, noise: 'off' }
+    const clean: DeclickConfig = { mode: 'off', rumble: false, noise: 'off' }
     const tracks = [track({ id: 'dusty', declick: dusty }), track({ id: 'clean', declick: clean })]
     const { result } = renderHook(
       () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
@@ -119,7 +119,7 @@ describe('batch convert honours each track’s own dials', () => {
     })
 
     const byId = new Map(
-      processTrack.mock.calls.map(([job]) => [job.id, job.declick as DeclickMode | undefined]),
+      processTrack.mock.calls.map(([job]) => [job.id, job.declick as DeclickConfig | undefined]),
     )
     expect(byId.get('clean')).toEqual(clean)
     // The dusty rip was dialled to 'strong' on its own row; the batch repairs nothing.

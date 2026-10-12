@@ -14,7 +14,7 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
-  DeclickMode,
+  DeclickConfig,
   DockIconFrames,
   DuplicatePair,
   DuplicateReplaceOutcome,
@@ -293,7 +293,7 @@ export interface Api {
   // the user judges the repair at the clicks they can see, wherever they sit. Slow
   // (tens of seconds on a long side), hence the progress events and the cancel.
   // null when the mode is off, the render failed, or it was cancelled.
-  declickPreview: (path: string, mode: DeclickMode) => Promise<{ path: string } | null>
+  declickPreview: (path: string, mode: DeclickConfig) => Promise<{ path: string } | null>
   // Progress (0..1) for the running declickPreview render. Returns an unsubscribe.
   onDeclickPreviewProgress: (fn: (done: number) => void) => () => void
   // Abandons the running declickPreview render — a preset change invalidates it, and

@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { DeclickControls } from './DeclickControls'
+import { DeclickControls, NoiseControls } from './DeclickControls'
 
 afterEach(cleanup)
 
@@ -40,6 +40,12 @@ describe('DeclickControls', () => {
 describe('DeclickControls group name', () => {
   it('names the intensity ladder after the repair it sets', () => {
     render(<DeclickControls value="off" onChange={() => {}} />)
-    expect(screen.getByRole('group', { name: 'Vinyl click repair' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Clicks' })).toBeInTheDocument()
+  })
+
+  // Two ladders with the same four words now sit in one section; each needs its own name.
+  it('names the background-noise ladder apart from the click one', () => {
+    render(<NoiseControls value="off" onChange={() => {}} />)
+    expect(screen.getByRole('group', { name: 'Background noise' })).toBeInTheDocument()
   })
 })

@@ -136,7 +136,7 @@ function section(
   return (
     <QueryClientProvider client={client}>
       <DeclickSection
-        value="off"
+        value={{ mode: 'off', rumble: false, noise: 'off' }}
         open
         onToggle={() => {}}
         onChange={() => {}}
@@ -154,7 +154,7 @@ function section(
 async function withPreview(
   over: Partial<React.ComponentProps<typeof DeclickSection>> = {},
 ): Promise<void> {
-  render(section({ value: 'standard', ...over }))
+  render(section({ value: { mode: 'standard', rumble: false, noise: 'off' }, ...over }))
   await screen.findByTestId('declick-estimate-pill')
   await act(async () => {
     fireEvent.click(await screen.findByTestId('declick-render'))
@@ -164,9 +164,11 @@ async function withPreview(
 
 describe('DeclickSection', () => {
   it('reads the folded row as the repair mode in words', () => {
-    const { rerender } = render(section({ value: 'standard', open: false }))
+    const { rerender } = render(
+      section({ value: { mode: 'standard', rumble: false, noise: 'off' }, open: false }),
+    )
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Standard repair')
-    rerender(section({ value: 'off', open: false }))
+    rerender(section({ value: { mode: 'off', rumble: false, noise: 'off' }, open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off')
   })
 
@@ -174,12 +176,14 @@ describe('DeclickSection', () => {
   // pill. The pill joins the folded row only once the open section has measured it, and
   // the sentence stays the mode alone so the figure is said once.
   it('pills the click estimate on the folded row only once it has been measured', async () => {
-    const { rerender } = render(section({ value: 'off', open: false }))
+    const { rerender } = render(
+      section({ value: { mode: 'off', rumble: false, noise: 'off' }, open: false }),
+    )
     expect(screen.queryByTestId('declick-estimate-pill')).not.toBeInTheDocument()
     expect(window.api.clicks).not.toHaveBeenCalled()
-    rerender(section({ value: 'off', open: true }))
+    rerender(section({ value: { mode: 'off', rumble: false, noise: 'off' }, open: true }))
     await screen.findByTestId('declick-estimate-pill', undefined, { timeout: 3000 })
-    rerender(section({ value: 'off', open: false }))
+    rerender(section({ value: { mode: 'off', rumble: false, noise: 'off' }, open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(/^Off$/)
     expect(screen.getByTestId('declick-estimate-pill')).toHaveTextContent('~23 clicks')
   })
@@ -193,23 +197,94 @@ describe('DeclickSection', () => {
   // Traktor cues ride the re-encode into MP3, AIFF, FLAC and WAV; only ALAC has nowhere to
   // keep them. A warning on the formats that keep them teaches the DJ to ignore it.
   it('warns about dropped cues only when the format actually drops them', () => {
-    const { rerender } = render(section({ value: 'off', format: 'alac' }))
+    const { rerender } = render(
+      section({ value: { mode: 'off', rumble: false, noise: 'off' }, format: 'alac' }),
+    )
     expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
-    rerender(section({ value: 'strong', format: 'alac' }))
+    rerender(section({ value: { mode: 'strong', rumble: false, noise: 'off' }, format: 'alac' }))
     expect(screen.getByTestId('declick-cue-warning')).toHaveTextContent(
       i18n.t('declick.cueWarning'),
     )
     for (const format of ['mp3', 'aiff', 'flac', 'wav'] as const) {
-      rerender(section({ value: 'strong', format }))
+      rerender(section({ value: { mode: 'strong', rumble: false, noise: 'off' }, format }))
       expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
     }
+  })
+
+  it('reads the rumble cut on the folded row next to the repair mode', () => {
+    const { rerender } = render(
+      section({ value: { mode: 'standard', rumble: true, noise: 'off' }, open: false }),
+    )
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(
+      'Standard repair · rumble cut',
+    )
+    rerender(section({ value: { mode: 'off', rumble: true, noise: 'off' }, open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(/^Rumble cut$/)
+  })
+
+  it('reads every active fix on the folded row', () => {
+    const { rerender } = render(
+      section({ value: { mode: 'strong', rumble: true, noise: 'medium' }, open: false }),
+    )
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(
+      'Strong repair · medium noise reduction · rumble cut',
+    )
+    rerender(section({ value: { mode: 'off', rumble: false, noise: 'soft' }, open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(/^Gentle noise reduction$/)
+  })
+
+  it('reports a background-noise step up through onChange, keeping the rest', () => {
+    const onChange = vi.fn()
+    render(section({ value: { mode: 'soft', rumble: true, noise: 'off' }, onChange }))
+    fireEvent.click(screen.getByTestId('declick-noise-strong'))
+    expect(onChange).toHaveBeenCalledWith({ mode: 'soft', rumble: true, noise: 'strong' })
+  })
+
+  it('renders the noise reduction on its own when Space is pressed', async () => {
+    render(section({ value: { mode: 'off', rumble: false, noise: 'medium' } }))
+    await screen.findByTestId('declick-render')
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'off',
+      rumble: false,
+      noise: 'medium',
+    })
+  })
+
+  it('reports the rumble cut up through onChange, keeping the mode', () => {
+    const onChange = vi.fn()
+    render(section({ value: { mode: 'soft', rumble: false, noise: 'off' }, onChange }))
+    fireEvent.click(screen.getByTestId('declick-rumble'))
+    expect(onChange).toHaveBeenCalledWith({ mode: 'soft', rumble: true, noise: 'off' })
+  })
+
+  // With only the rumble cut on, there IS a result to hear, so the section offers the
+  // render and Space asks for it, exactly as a click mode does.
+  it('renders the rumble cut on its own when Space is pressed', async () => {
+    render(section({ value: { mode: 'off', rumble: true, noise: 'off' } }))
+    await screen.findByTestId('declick-render')
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'off',
+      rumble: true,
+      noise: 'off',
+    })
+  })
+
+  it('warns about dropped cues when only the rumble cut re-encodes', () => {
+    render(section({ value: { mode: 'off', rumble: true, noise: 'off' }, format: 'alac' }))
+    expect(screen.getByTestId('declick-cue-warning')).toBeInTheDocument()
   })
 
   it('reports mode picks up through onChange', () => {
     const onChange = vi.fn()
     render(section({ onChange }))
     fireEvent.click(screen.getByTestId('declick-mode-strong'))
-    expect(onChange).toHaveBeenCalledWith('strong')
+    expect(onChange).toHaveBeenCalledWith({ mode: 'strong', rumble: false, noise: 'off' })
   })
 
   it('never counts for a multi-selection — the anchor track would misrepresent it', () => {
@@ -257,12 +332,12 @@ describe('DeclickSection', () => {
   // The marks are the point of the wave: they say WHERE the damage is, which a count
   // alone never can.
   it('marks each detected click on the wave', async () => {
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     await waitFor(() => expect(screen.getAllByTestId('declick-mark')).toHaveLength(3))
   })
 
   it('draws no marks for a multi-selection', async () => {
-    render(section({ value: 'standard', selectedCount: 3 }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' }, selectedCount: 3 }))
     await waitFor(() => expect(screen.queryByTestId('declick-marks')).not.toBeInTheDocument())
   })
 
@@ -279,22 +354,28 @@ describe('DeclickSection', () => {
       peaks: [0.5],
       durationSec: 900,
     })
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     expect(await screen.findByTestId('declick-unscanned')).toHaveTextContent('first 8 minutes')
   })
 
   it('renders the preview only for an active mode on a single track', async () => {
-    const { rerender } = render(section({ value: 'off' }))
+    const { rerender } = render(section({ value: { mode: 'off', rumble: false, noise: 'off' } }))
     expect(screen.queryByTestId('declick-render')).not.toBeInTheDocument()
-    rerender(section({ value: 'standard' }))
+    rerender(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     expect(await screen.findByTestId('declick-render')).toBeInTheDocument()
-    rerender(section({ value: 'standard', selectedCount: 3 }))
+    rerender(
+      section({ value: { mode: 'standard', rumble: false, noise: 'off' }, selectedCount: 3 }),
+    )
     expect(screen.queryByTestId('declick-render')).not.toBeInTheDocument()
   })
 
   it('renders the repaired track for the picked mode', async () => {
-    await withPreview({ value: 'strong' })
-    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', 'strong')
+    await withPreview({ value: { mode: 'strong', rumble: false, noise: 'off' } })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'strong',
+      rumble: false,
+      noise: 'off',
+    })
   })
 
   // The A/B is the whole feature: BOTH legs must exist, so switching between them is a
@@ -355,20 +436,24 @@ describe('DeclickSection', () => {
   // existed was the mistake. The user is looking at THIS wave; Space means "play what I am
   // looking at", so the first press renders it and plays it.
   it('renders the preview when Space is pressed before anything exists', async () => {
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     await screen.findByTestId('declick-render')
     // Claimed even with no preview — otherwise the press falls through to the mini-player.
     await act(async () => {
       expect(runKeyClaim('play')).toBe(true)
     })
-    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', 'standard')
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'standard',
+      rumble: false,
+      noise: 'off',
+    })
     await screen.findByTestId('declick-ab')
   })
 
   // A render is tens of seconds; an impatient second press must not queue a second one.
   it('does not start a second render while one is already running', async () => {
     ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}))
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     await screen.findByTestId('declick-render')
     await act(async () => {
       runKeyClaim('play')
@@ -383,7 +468,7 @@ describe('DeclickSection', () => {
   // mode — "play what I am looking at" — instead of jumping to the mini-player. With
   // nothing repaired, what plays is the original.
   it('plays the original on this wave when Space is pressed with the repair off', async () => {
-    render(section({ value: 'off' }))
+    render(section({ value: { mode: 'off', rumble: false, noise: 'off' } }))
     await act(async () => {
       expect(runKeyClaim('play')).toBe(true)
     })
@@ -395,7 +480,7 @@ describe('DeclickSection', () => {
   })
 
   it('plays the original from wherever the cursor was put with the repair off', async () => {
-    render(section({ value: 'off' }))
+    render(section({ value: { mode: 'off', rumble: false, noise: 'off' } }))
     await screen.findByTestId('declick-playhead')
     const overlay = screen.getByTestId('declick-marks')
     stubWidth(overlay)
@@ -408,7 +493,7 @@ describe('DeclickSection', () => {
   })
 
   it('pauses the original on a second Space with the repair off', async () => {
-    render(section({ value: 'off' }))
+    render(section({ value: { mode: 'off', rumble: false, noise: 'off' } }))
     await act(async () => {
       runKeyClaim('play')
     })
@@ -422,21 +507,25 @@ describe('DeclickSection', () => {
   // Picking a mode after listening in Off must not leave Space on the bare original: the
   // user would hear an unrepaired track while the section says Standard.
   it('stops playing the original once a repair mode is picked', async () => {
-    const { rerender } = render(section({ value: 'off' }))
+    const { rerender } = render(section({ value: { mode: 'off', rumble: false, noise: 'off' } }))
     await act(async () => {
       runKeyClaim('play')
     })
     await act(async () => loadPair())
-    rerender(section({ value: 'standard' }))
+    rerender(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     await act(async () => {
       runKeyClaim('play')
     })
-    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', 'standard')
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', {
+      mode: 'standard',
+      rumble: false,
+      noise: 'off',
+    })
   })
 
   // A selection shows no wave, so there is nothing here for Space to play.
   it('leaves Space to the mini-player with the repair off on a selection', () => {
-    render(section({ value: 'off', selectedCount: 3 }))
+    render(section({ value: { mode: 'off', rumble: false, noise: 'off' }, selectedCount: 3 }))
     expect(runKeyClaim('play')).toBe(false)
   })
 
@@ -478,7 +567,7 @@ describe('DeclickSection', () => {
   })
 
   it('never claims Space while folded — the mini-player still owns it', () => {
-    render(section({ value: 'standard', open: false }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' }, open: false }))
     expect(runKeyClaim('play')).toBe(false)
   })
 
@@ -596,7 +685,7 @@ describe('DeclickSection', () => {
       peaks: [],
       durationSec: 0,
     })
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     const strip = await screen.findByTestId('declick-marks')
     strip.focus()
     fireEvent.keyDown(strip, { key: 'ArrowRight' })
@@ -686,7 +775,7 @@ describe('DeclickSection', () => {
   // is stuck watching audio they no longer want.
   it('can abandon a running render', async () => {
     ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}))
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     await act(async () => {
       fireEvent.click(await screen.findByTestId('declick-render'))
     })
@@ -699,12 +788,14 @@ describe('DeclickSection', () => {
   // A preset change invalidates the audio: playing on would tell the user that Gentle
   // sounds exactly like Strong, which is the one lie this feature cannot afford.
   it('drops the rendered preview when the preset changes', async () => {
-    const { rerender } = render(section({ value: 'standard' }))
+    const { rerender } = render(
+      section({ value: { mode: 'standard', rumble: false, noise: 'off' } }),
+    )
     await act(async () => {
       fireEvent.click(await screen.findByTestId('declick-render'))
     })
     expect(await screen.findByTestId('declick-ab')).toBeInTheDocument()
-    rerender(section({ value: 'strong' }))
+    rerender(section({ value: { mode: 'strong', rumble: false, noise: 'off' } }))
     await waitFor(() => expect(screen.queryByTestId('declick-ab')).not.toBeInTheDocument())
     expect(window.api.cancelDeclickPreview).toHaveBeenCalled()
     expect(screen.getByTestId('declick-render')).toBeInTheDocument()
@@ -712,7 +803,7 @@ describe('DeclickSection', () => {
 
   it('surfaces a failed render instead of staying silent', async () => {
     ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockResolvedValue(null)
-    render(section({ value: 'standard' }))
+    render(section({ value: { mode: 'standard', rumble: false, noise: 'off' } }))
     await act(async () => {
       fireEvent.click(await screen.findByTestId('declick-render'))
     })

@@ -19,7 +19,7 @@ import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
-  DeclickMode,
+  DeclickConfig,
   FormatSetting,
   NormalizeConfig,
   OutputFormat,
@@ -164,7 +164,7 @@ interface Props {
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
   // Reports the per-track click-repair override, mirroring onNormalizeChange.
-  onDeclickChange?: (declick: DeclickMode) => void
+  onDeclickChange?: (declick: DeclickConfig) => void
   onAddToAppleMusic: () => void
   // Offers the files a conversion left behind (the original, the files a replacement
   // superseded, the old Apple Music copy) for the Trash in one confirmed step. Confirmation

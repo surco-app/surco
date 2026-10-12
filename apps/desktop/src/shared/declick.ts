@@ -1,22 +1,50 @@
 // The click-repair intensity ladder and its one translation into an ffmpeg filter.
 // Lives in shared next to normalizeDeclick, which both processes read: main repairs
 // stored settings with it and the renderer resolves the settings context through it.
-import type { DeclickMode } from './types'
+import type { DeclickConfig, DeclickMode, NoiseMode } from './types'
 
-export const DEFAULT_DECLICK: DeclickMode = 'off'
+export const DEFAULT_DECLICK: DeclickConfig = { mode: 'off', rumble: false, noise: 'off' }
 
 const MODES = ['off', 'soft', 'standard', 'strong'] as const
 
-// Repairs any stored value into a valid mode: 0.49-0.50 files hold one of the
-// original strings, and a short-lived dev shape stored {mode, sensitivity} — its
-// mode survives, anything else falls back to off.
-export function normalizeDeclick(value: unknown): DeclickMode {
-  if (typeof value === 'string' && MODES.includes(value as DeclickMode)) return value as DeclickMode
+function isMode(value: unknown): value is DeclickMode {
+  return typeof value === 'string' && MODES.includes(value as DeclickMode)
+}
+
+const NOISE_MODES = ['off', 'soft', 'medium', 'strong'] as const
+
+function isNoiseMode(value: unknown): value is NoiseMode {
+  return typeof value === 'string' && NOISE_MODES.includes(value as NoiseMode)
+}
+
+// Reads a stored value as a config, or undefined when it is not one: every file before
+// the rumble cut holds a bare mode string (which keeps its mode, the rest off), one from
+// before the noise ladder has no noise key (none was applied), and a short-lived dev
+// shape stored {mode, sensitivity} — its mode survives.
+export function parseDeclick(value: unknown): DeclickConfig | undefined {
+  if (isMode(value)) return { mode: value, rumble: false, noise: 'off' }
   if (typeof value === 'object' && value !== null) {
-    const mode = (value as { mode?: unknown }).mode
-    if (typeof mode === 'string' && MODES.includes(mode as DeclickMode)) return mode as DeclickMode
+    const { mode, rumble, noise } = value as { mode?: unknown; rumble?: unknown; noise?: unknown }
+    if (isMode(mode))
+      return { mode, rumble: rumble === true, noise: isNoiseMode(noise) ? noise : 'off' }
   }
-  return DEFAULT_DECLICK
+  return undefined
+}
+
+// The Settings read: anything unreadable falls back to off.
+export function normalizeDeclick(value: unknown): DeclickConfig {
+  return parseDeclick(value) ?? DEFAULT_DECLICK
+}
+
+export function sameDeclick(a: DeclickConfig, b: DeclickConfig): boolean {
+  return a.mode === b.mode && a.rumble === b.rumble && a.noise === b.noise
+}
+
+// The loudness-measurement cache namespace for a filter chain. Click-only chains keep the
+// name they had before the rumble and noise existed, so entries already on disk for the
+// same audio stay valid.
+export function declickCacheSuffix({ mode, rumble, noise }: DeclickConfig): string {
+  return `-declick-${mode}${rumble ? '-rumble' : ''}${noise !== 'off' ? `-noise-${noise}` : ''}`
 }
 
 // The -af stage for each intensity, one calibrated step apart:
@@ -30,9 +58,37 @@ export function normalizeDeclick(value: unknown): DeclickMode {
 // Two directions are deliberately unreachable, both measured hang zones: t below
 // 2 and b above 4 explode the AR interpolation cost past realtime on dense music
 // ("hung conversion" reports, twice). The window stays default (w=20 repairs worse).
-export function declickFilter(mode: DeclickMode): string | null {
+function clickFilter(mode: DeclickMode): string | null {
   if (mode === 'soft') return 'adeclick=t=4'
   if (mode === 'standard') return 'adeclick'
   if (mode === 'strong') return 'adeclick=b=4'
   return null
+}
+
+// The rumble cut: two second-order Butterworth highpasses at 20 Hz, a fourth-order slope
+// measured on sines at −25 dB at 10 Hz and −49 dB at 5 Hz (turntable rumble) against
+// −0.5 dB at 40 Hz and −0.2 dB at 50 Hz (sub and kick). A 25 Hz corner took 1.2 dB off
+// 40 Hz, real music in a club track. Ahead of the click repair, so adeclick models the
+// signal without the subsonic swing under it.
+const RUMBLE_FILTER = 'highpass=f=20,highpass=f=20'
+
+// The background-noise ladder: ffmpeg's FFT denoiser tracking the track's own noise
+// floor (tn=1), three steps picked by ear on a real rip's breakdown. Measured there, each
+// takes 2-3 dB more off the 8-16 kHz floor (−3/−5/−7 dB) while the music loses 0.3 dB;
+// on a clean digital master all three leave the audio as it was, since the tracked floor
+// holds nothing to subtract. Last in the chain, so clicks and the subsonic swing do not
+// throw the noise estimate.
+function noiseFilter(noise: NoiseMode): string | null {
+  if (noise === 'soft') return 'afftdn=nr=10:nf=-62:tn=1'
+  if (noise === 'medium') return 'afftdn=nr=18:nf=-60:tn=1'
+  if (noise === 'strong') return 'afftdn=nr=26:nf=-58:tn=1'
+  return null
+}
+
+export function declickFilter({ mode, rumble, noise }: DeclickConfig): string | null {
+  return (
+    [rumble ? RUMBLE_FILTER : null, clickFilter(mode), noiseFilter(noise)]
+      .filter(Boolean)
+      .join(',') || null
+  )
 }

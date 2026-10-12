@@ -1,6 +1,6 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { resolveJobFormat } from '../../../shared/format'
-import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
@@ -146,7 +146,7 @@ export interface CommandDeps {
   editorDestinationRef: { readonly current: Destination | null }
   editorDestinationPickRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
-  editorDeclickRef: { readonly current: DeclickMode | null }
+  editorDeclickRef: { readonly current: DeclickConfig | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
@@ -179,7 +179,7 @@ export interface CommandDeps {
     format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
     // Fires when the conversion actually starts (after an overwrite confirm, if any), so
     // convert-and-advance only steps the selection once the run commits.
     onStarted?: () => void,
@@ -189,7 +189,7 @@ export interface CommandDeps {
     format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
   ) => void
   cancelAnalysis: () => void
   analyzeAllQuality: () => void

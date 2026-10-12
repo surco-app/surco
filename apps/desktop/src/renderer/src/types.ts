@@ -1,5 +1,5 @@
 import type {
-  DeclickMode,
+  DeclickConfig,
   ForeignTag,
   MusicReviewField,
   NormalizeConfig,
@@ -154,7 +154,7 @@ export interface TrackItem {
   // The click repair dialled for THIS track, same contract as normalize above: a dusty
   // rip keeps the level it was given instead of being re-seeded from the global default
   // every time the editor remounts on the way back to it.
-  declick?: DeclickMode
+  declick?: DeclickConfig
   status: TrackStatus
   stage?: ProcessStage
   // The format this track is being / was last converted to, captured when the
@@ -171,7 +171,7 @@ export interface TrackItem {
   processedNormalize?: NormalizeConfig
   // The click repair the last export actually applied, same staleness contract
   // as processedNormalize.
-  processedDeclick?: DeclickMode
+  processedDeclick?: DeclickConfig
   // Snapshot (via trackSignature) of the state some file already carries: stamped
   // from the pure file read when the import lands and re-stamped when a conversion
   // writes the tags out. The live state diverging from it means the user has staged
