@@ -867,17 +867,39 @@ describe('redraw cost', () => {
         </QueryClientProvider>
       )
     }
-    const { rerender } = render(<Parent tick={1} />)
-    await screen.findByTestId('waveform-solo')
-    const spy = drawWaveform as unknown as ReturnType<typeof vi.fn>
-    await waitFor(() => expect(spy).toHaveBeenCalled())
-    const afterFirstDraw = spy.mock.calls.length
+    const frames = new Map<number, FrameRequestCallback>()
+    let nextFrame = 1
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      const id = nextFrame++
+      frames.set(id, cb)
+      return id
+    })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      frames.delete(id)
+    })
+    const runFrames = (): Promise<void> =>
+      act(async () => {
+        const pending = [...frames.values()]
+        frames.clear()
+        for (const frame of pending) frame(0)
+      })
+    try {
+      vi.mocked(drawWaveform).mockClear()
+      const { rerender } = render(<Parent tick={1} />)
+      await screen.findByTestId('waveform-solo')
+      await waitFor(() => expect(client.isFetching()).toBe(0))
+      await runFrames()
+      const settledDraws = vi.mocked(drawWaveform).mock.calls.length
+      expect(settledDraws).toBeGreaterThan(0)
 
-    rerender(<Parent tick={2} />)
-    await new Promise((r) => setTimeout(r, 0))
+      rerender(<Parent tick={2} />)
+      await runFrames()
 
-    expect(screen.getByTestId('tick')).toHaveTextContent('2')
-    expect(spy.mock.calls.length).toBe(afterFirstDraw)
+      expect(screen.getByTestId('tick')).toHaveTextContent('2')
+      expect(vi.mocked(drawWaveform).mock.calls.length).toBe(settledDraws)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   // A trackpad pinch fires wheel events far faster than the screen repaints, and each
