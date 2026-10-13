@@ -3,11 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-
-// Breathing room between the trigger and its menu, and the height below which dropping
-// down is not worth it and the menu flips above instead.
-const GAP = 4
-const MIN_MENU_HEIGHT = 160
+import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
   value: string
@@ -43,6 +39,10 @@ interface Props {
   // Text and a chevron with no box, for a filter or sort in a column header, where the
   // header is chrome around the list rather than a form. The hover tint shows it is a control.
   bare?: boolean
+  // Portal the menu and its backdrop to the body like a full-width one, without stretching
+  // the trigger, for a select inside a layered container (the track list's sticky header)
+  // that would otherwise trap both below the controls around it.
+  portal?: boolean
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -60,19 +60,12 @@ export function Select({
   compact = false,
   heading = false,
   bare = false,
+  portal = false,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   // Where the portaled (full-width) menu sits, measured from the trigger when it opens.
-  // It anchors by `top` when it drops below the trigger and by `bottom` when it flips
-  // above, so the menu grows away from the viewport edge either way.
-  const [pos, setPos] = useState<{
-    top?: number
-    bottom?: number
-    left: number
-    width: number
-    maxHeight: number
-  } | null>(null)
+  const [pos, setPos] = useState<MenuPlacement | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLButtonElement>(null)
@@ -82,6 +75,7 @@ export function Select({
   // column and type, instead of starting in the narrow label column, so it reads as part of
   // the same list.
   const hinted = options.some((o) => o.hint)
+  const portaled = fullWidth || portal
 
   // The focus lands on the chosen option once, when the menu opens: callers rebuild their
   // options on every render, and following them would yank the focus, and the list, back
@@ -93,25 +87,8 @@ export function Select({
     if (item) showOption(listRef.current, item)
   }, [open])
 
-  // The full-width menu's placement is measured once, at open. Anything that moves the
-  // trigger afterwards would strand it away from what it points at, so close instead of
-  // chasing the trigger every frame — the same thing a native select does. The scroll is
-  // caught on the way down, so the editor's own scrolling column counts, not just the
-  // window; the menu's own list scrolling moves nothing it points at. An inline menu hangs
-  // from its trigger and moves with it, so it has nothing to dismiss.
-  useEffect(() => {
-    if (!open || !fullWidth) return
-    const dismiss = (e: Event): void => {
-      if (e.target instanceof Node && listRef.current?.contains(e.target)) return
-      setOpen(false)
-    }
-    window.addEventListener('resize', dismiss)
-    window.addEventListener('scroll', dismiss, true)
-    return () => {
-      window.removeEventListener('resize', dismiss)
-      window.removeEventListener('scroll', dismiss, true)
-    }
-  }, [open, fullWidth])
+  // An inline menu hangs from its trigger and moves with it, so it has nothing to dismiss.
+  useCloseOnMove(open && portaled, listRef, setOpen)
 
   function toggle(): void {
     if (open) {
@@ -119,27 +96,14 @@ export function Select({
       return
     }
     // Anchor the portaled menu against the trigger before it opens, so it renders in place
-    // with no first-frame jump. The menu is fixed, so a trigger near the bottom of the
-    // window would push it past the edge where scrolling cannot reach it: flip it above
-    // the trigger when there is more room up there, and cap it to the room it has.
+    // with no first-frame jump.
     openIndex.current = Math.max(
       options.findIndex((o) => o.value === value),
       0,
     )
-    if (fullWidth) {
+    if (portaled) {
       const r = triggerRef.current?.getBoundingClientRect()
-      if (r) {
-        const below = window.innerHeight - r.bottom - GAP
-        const above = r.top - GAP
-        const flip = below < MIN_MENU_HEIGHT && above > below
-        setPos({
-          top: flip ? undefined : r.bottom + GAP,
-          bottom: flip ? window.innerHeight - r.top + GAP : undefined,
-          left: r.left,
-          width: r.width,
-          maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
-        })
-      }
+      if (r) setPos(placeMenu(r))
     }
     setOpen(true)
   }
@@ -202,21 +166,21 @@ export function Select({
         if (to === triggerRef.current || to === backdropRef.current) return
         setOpen(false)
       }}
-      // Full-width: fixed and body-portaled, sized to content (min the trigger width) and
+      // Portaled: fixed and in the body, sized to content (min the trigger width) and
       // capped to the room on the side it opens toward so a long tracklist scrolls.
       // Otherwise: absolute, right-aligned and at least the trigger width.
       className={`animate-pop-flat z-50 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
-        fullWidth
+        portaled
           ? `fixed max-w-[calc(100vw-1rem)] overflow-auto ${pos?.bottom !== undefined ? 'origin-bottom-left' : 'origin-top-left'}`
           : 'absolute right-0 mt-1 min-w-full origin-top-right'
       }`}
       style={
-        fullWidth && pos
+        portaled && pos
           ? {
               top: pos.top,
               bottom: pos.bottom,
               left: pos.left,
-              minWidth: pos.width,
+              minWidth: pos.minWidth,
               maxHeight: pos.maxHeight,
             }
           : undefined
@@ -258,6 +222,21 @@ export function Select({
     </div>
   )
 
+  // Out of the Tab order: a Shift+Tab from the first option landed on this invisible
+  // full-window button and kept the menu open behind it. In the body it sits beside any
+  // open dialog, so it takes the menu's own layer to stay over the dialog's overlay.
+  const backdrop = (
+    <button
+      ref={backdropRef}
+      type="button"
+      tabIndex={-1}
+      data-testid={`${testid}-backdrop`}
+      aria-label={tr('common.close')}
+      onClick={close}
+      className={`fixed inset-0 cursor-default ${portaled ? 'z-50' : 'z-40'}`}
+    />
+  )
+
   return (
     <div className={`relative min-w-0 ${fullWidth ? 'w-full' : ''}`}>
       <button
@@ -288,22 +267,22 @@ export function Select({
         )}
         <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
       </button>
-      {open && (
-        <>
-          {/* Out of the Tab order: a Shift+Tab from the first option landed on this
-              invisible full-window button and kept the menu open behind it. */}
-          <button
-            ref={backdropRef}
-            type="button"
-            tabIndex={-1}
-            data-testid={`${testid}-backdrop`}
-            aria-label={tr('common.close')}
-            onClick={close}
-            className="fixed inset-0 z-40 cursor-default"
-          />
-          {fullWidth ? pos && createPortal(list, document.body) : list}
-        </>
-      )}
+      {open &&
+        (portaled ? (
+          pos &&
+          createPortal(
+            <>
+              {backdrop}
+              {list}
+            </>,
+            document.body,
+          )
+        ) : (
+          <>
+            {backdrop}
+            {list}
+          </>
+        ))}
     </div>
   )
 }
