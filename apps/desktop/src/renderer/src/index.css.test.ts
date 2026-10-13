@@ -538,3 +538,54 @@ describe('hover fill', () => {
     })
   }
 })
+
+function mediaBlock(query: string): string {
+  const start = css.indexOf(`@media (${query})`)
+  if (start < 0) return ''
+  let depth = 0
+  for (let i = css.indexOf('{', start); i < css.length; i++) {
+    if (css[i] === '{') depth++
+    if (css[i] === '}' && --depth === 0) return css.slice(start, i + 1)
+  }
+  return ''
+}
+
+describe('macOS Increase contrast turns hairlines and faint greys into firm ones', () => {
+  const block = mediaBlock('prefers-contrast: more')
+
+  it('overrides both themes, not only the dark default', () => {
+    expect(block).toMatch(/:root\[data-theme\]\s*\{/)
+  })
+
+  it('draws separators and boundaries with the control border that already reaches 3:1', () => {
+    expect(block).toMatch(/--color-line:\s*var\(--color-input-border\)/)
+    expect(block).toMatch(/--color-line-strong:\s*var\(--color-input-border\)/)
+  })
+
+  it('lifts the dim and faint greys to the muted one', () => {
+    expect(block).toMatch(/--color-fg-faint:\s*var\(--color-fg-muted\)/)
+    expect(block).toMatch(/--color-fg-dim:\s*var\(--color-fg-muted\)/)
+  })
+})
+
+describe('macOS Reduce transparency keeps the dim behind a modal but drops the frosted blur', () => {
+  const block = mediaBlock('prefers-reduced-transparency: reduce')
+
+  it('turns off the blur behind modals and floating labels', () => {
+    expect(block).toMatch(/\.backdrop-blur-sm\s*\{[^}]*-webkit-backdrop-filter:\s*none/)
+    expect(block).toMatch(/\.backdrop-blur-sm\s*\{[^}]*[^-]backdrop-filter:\s*none/)
+  })
+
+  const root = fileURLToPath(new URL('.', import.meta.url))
+  const sources = (readdirSync(root, { recursive: true }) as string[]).filter(
+    (f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f),
+  )
+  for (const file of sources) {
+    const code = readFileSync(join(root, file), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+    it(`${file} only blurs with the class the setting turns off`, () => {
+      expect(code.match(/backdrop-blur(?!-sm\b)[\w-]*/g) ?? []).toEqual([])
+    })
+  }
+})

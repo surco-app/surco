@@ -123,6 +123,22 @@ textarea {
   user-select: text;
 }
 
+@media (prefers-contrast: more) {
+  :root[data-theme] {
+    --color-line: var(--color-input-border);
+    --color-line-strong: var(--color-input-border);
+    --color-fg-dim: var(--color-fg-muted);
+    --color-fg-faint: var(--color-fg-muted);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 @layer base {
   button:not(:disabled),
   a,
