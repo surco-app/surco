@@ -4,12 +4,7 @@ import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
 import { parseDeclick } from '../shared/declick'
 import { normalizeTrim } from '../shared/trim'
-import type {
-  NormalizeConfig,
-  NormalizeMode,
-  SessionData,
-  SessionEdit,
-} from '../shared/types'
+import type { NormalizeConfig, NormalizeMode, SessionData, SessionEdit } from '../shared/types'
 
 // The last-loaded track paths plus each track's staged (not yet converted) edits, so
 // a relaunch can offer to reopen where the user left off — edits included, because a
