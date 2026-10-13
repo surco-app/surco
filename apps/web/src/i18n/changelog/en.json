@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.8",
+    "date": "October 13, 2026",
+    "title": "Cleaner vinyl",
+    "items": [
+      {
+        "text": "Vinyl repair now also lowers the background noise, the steady hiss of the record you hear most in the breaks. It has three levels, Soft, Medium and Strong, and each also removes the turntable's rumble. Pick it per track in the editor, comparing it in the A/B, or as the default for every conversion.",
+        "in": "1.8.0"
+      },
+      {
+        "text": "An .m4a is graded by what it holds, so a healthy AAC no longer shows up as bad quality.",
+        "in": "1.8.0"
+      }
+    ]
+  },
+  {
     "version": "1.7",
     "date": "October 9, 2026",
     "title": "Put your library in order",

@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.8",
+    "date": "13 de octubre de 2026",
+    "title": "Vinilo más limpio",
+    "items": [
+      {
+        "text": "La reparación de vinilo ahora también baja el ruido de fondo, el soplido continuo del disco que más se oye en los parones. Tiene tres niveles, Suave, Medio y Fuerte, y cada uno quita además el retumbe del giradiscos. Lo eliges por pista en el editor, comparándolo en el A/B, o como ajuste por defecto para todas las conversiones.",
+        "in": "1.8.0"
+      },
+      {
+        "text": "Un .m4a se juzga por lo que lleva dentro, así que un AAC en buen estado ya no aparece como mala calidad.",
+        "in": "1.8.0"
+      }
+    ]
+  },
+  {
     "version": "1.7",
     "date": "9 de octubre de 2026",
     "title": "Ordena tu biblioteca",
