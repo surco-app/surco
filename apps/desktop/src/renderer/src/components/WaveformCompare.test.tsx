@@ -930,14 +930,25 @@ describe('redraw cost', () => {
     vi.stubGlobal('cancelAnimationFrame', (id: number) => {
       frames.delete(id)
     })
+    const runFrames = (): Promise<void> =>
+      act(async () => {
+        const pending = [...frames.values()]
+        frames.clear()
+        for (const frame of pending) frame(0)
+        await Promise.resolve()
+      })
     try {
+      vi.mocked(drawWaveform).mockClear()
       renderWithQuery(
         <WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />,
       )
       const strip = await screen.findByTestId('waveform-strip')
       const scroller = strip.parentElement as HTMLElement
       const spy = drawWaveform as unknown as ReturnType<typeof vi.fn>
-      await waitFor(() => expect(spy).toHaveBeenCalled())
+      await waitFor(() =>
+        expect(screen.queryByTestId('waveform-compare-loading')).not.toBeInTheDocument(),
+      )
+      await runFrames()
       const before = spy.mock.calls.length
 
       for (let i = 0; i < 6; i++) fireEvent.wheel(scroller, { deltaY: -20, ctrlKey: true })
@@ -945,17 +956,11 @@ describe('redraw cost', () => {
       expect(screen.getByTestId('waveform-zoom-reset')).toHaveTextContent('×3.3')
       const duringGesture = spy.mock.calls.length
 
-      await act(async () => {
-        const pending = [...frames.values()]
-        frames.clear()
-        for (const frame of pending) frame(0)
-        await Promise.resolve()
-      })
+      await runFrames()
 
       // Six events, at most one repaint when the frame ran — never six.
       expect(duringGesture).toBe(before)
-      expect(spy.mock.calls.length).toBeLessThanOrEqual(before + 2)
-      expect(spy.mock.calls.length).toBeGreaterThan(before)
+      expect(spy.mock.calls.length).toBe(before + 1)
     } finally {
       vi.unstubAllGlobals()
     }
