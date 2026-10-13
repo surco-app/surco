@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 9 de octubre de 2026** (v1.7.0). Levantado por primera vez el
+**Última revisión: 13 de octubre de 2026** (v1.8.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -467,9 +467,11 @@ la fila se alinee.
 
 El badge «Fuente con pérdidas» (`qualityTranscode`) exige cuatro cosas a la vez:
 contenedor lossless, rodilla confirmada, no procesado, y corte por debajo de
-19,5 kHz (`lib/quality.ts:71-80`). `.m4a` está excluido a propósito porque puede
-llevar ALAC o AAC — no aparece ni en la lista lossless ni en la lossy
-(`lib/quality.ts:48`, `:58`).
+19,5 kHz (`lib/quality.ts:81`). Un `.m4a` se gradúa por el códec que el análisis
+encontró dentro: con AAC cuenta como contenedor con pérdidas y con ALAC como
+lossless (`gradedExt`, `lib/quality.ts:65-72`). Solo un `.m4a` cuyo análisis en
+caché es anterior a guardar el códec sigue ambiguo, fuera de las dos listas y con
+la escala estricta, y se vuelve a medir para salir de ahí (`main/audioIpc.ts:85-90`).
 
 **Un contenedor con pérdidas no se gradúa nunca como defecto.** Un MP3 sale
 siempre `good` (`lib/quality.ts:39`): su corte es el formato, no una tara.
@@ -555,13 +557,25 @@ umbrales actuales fueron 6000 ficheros lossless.
 
 ---
 
-## 5. Reparación de clics
+## 5. Reparación de vinilo
 
-Cuatro niveles: off, suave, estándar, fuerte (`shared/declick.ts:23-46`).
+Dos escalas independientes, por pista en el editor y como valor por defecto en
+Ajustes → Procesado (`settings/ProcessingTab.tsx`).
 
+**Clics.** Cuatro niveles: off, suave, estándar, fuerte (`shared/declick.ts:47-64`).
 Los parámetros no son un deslizador abierto: dos zonas están vetadas porque
 **colgaban la conversión**, con dos reportes reales de «conversión colgada»
-(`declick.ts:37-42`).
+(`declick.ts:56-58`).
+
+**Ruido de fondo.** Cuatro niveles: no, suave, medio, fuerte
+(`declick.ts:75-86`). Es el denoiser FFT de ffmpeg siguiendo el suelo de ruido de
+la propia pista; medido en el parón de un rip real, cada paso baja 2-3 dB más el
+suelo de 8-16 kHz (−3/−5/−7 dB) mientras la música pierde 0,3 dB, y sobre un
+máster digital limpio los tres dejan el audio como estaba. **Cualquier paso de
+ruido quita también el rumble** del giradiscos: un pasoaltos de cuarto orden a
+20 Hz que mide −25 dB a 10 Hz frente a −0,2 dB a 50 Hz, el bombo
+(`declick.ts:66-73`). No hay un interruptor de rumble aparte. Orden de la cadena:
+rumble, clics, ruido (`declick.ts:88-93`).
 
 **Contador propio, no el de ffmpeg.** El detector de `adeclick` marca el 6–10% de
 cualquier mezcla densa; Surco usa su propia detección por segunda diferencia, con
