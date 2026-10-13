@@ -3,11 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-
-// Breathing room between the trigger and its menu, and the height below which dropping
-// down is not worth it and the menu flips above instead.
-const GAP = 4
-const MIN_MENU_HEIGHT = 160
+import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
   value: string
@@ -64,15 +60,7 @@ export function Select({
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   // Where the portaled (full-width) menu sits, measured from the trigger when it opens.
-  // It anchors by `top` when it drops below the trigger and by `bottom` when it flips
-  // above, so the menu grows away from the viewport edge either way.
-  const [pos, setPos] = useState<{
-    top?: number
-    bottom?: number
-    left: number
-    width: number
-    maxHeight: number
-  } | null>(null)
+  const [pos, setPos] = useState<MenuPlacement | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLButtonElement>(null)
@@ -93,25 +81,8 @@ export function Select({
     if (item) showOption(listRef.current, item)
   }, [open])
 
-  // The full-width menu's placement is measured once, at open. Anything that moves the
-  // trigger afterwards would strand it away from what it points at, so close instead of
-  // chasing the trigger every frame — the same thing a native select does. The scroll is
-  // caught on the way down, so the editor's own scrolling column counts, not just the
-  // window; the menu's own list scrolling moves nothing it points at. An inline menu hangs
-  // from its trigger and moves with it, so it has nothing to dismiss.
-  useEffect(() => {
-    if (!open || !fullWidth) return
-    const dismiss = (e: Event): void => {
-      if (e.target instanceof Node && listRef.current?.contains(e.target)) return
-      setOpen(false)
-    }
-    window.addEventListener('resize', dismiss)
-    window.addEventListener('scroll', dismiss, true)
-    return () => {
-      window.removeEventListener('resize', dismiss)
-      window.removeEventListener('scroll', dismiss, true)
-    }
-  }, [open, fullWidth])
+  // An inline menu hangs from its trigger and moves with it, so it has nothing to dismiss.
+  useCloseOnMove(open && fullWidth, listRef, setOpen)
 
   function toggle(): void {
     if (open) {
@@ -119,27 +90,14 @@ export function Select({
       return
     }
     // Anchor the portaled menu against the trigger before it opens, so it renders in place
-    // with no first-frame jump. The menu is fixed, so a trigger near the bottom of the
-    // window would push it past the edge where scrolling cannot reach it: flip it above
-    // the trigger when there is more room up there, and cap it to the room it has.
+    // with no first-frame jump.
     openIndex.current = Math.max(
       options.findIndex((o) => o.value === value),
       0,
     )
     if (fullWidth) {
       const r = triggerRef.current?.getBoundingClientRect()
-      if (r) {
-        const below = window.innerHeight - r.bottom - GAP
-        const above = r.top - GAP
-        const flip = below < MIN_MENU_HEIGHT && above > below
-        setPos({
-          top: flip ? undefined : r.bottom + GAP,
-          bottom: flip ? window.innerHeight - r.top + GAP : undefined,
-          left: r.left,
-          width: r.width,
-          maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
-        })
-      }
+      if (r) setPos(placeMenu(r))
     }
     setOpen(true)
   }
@@ -216,7 +174,7 @@ export function Select({
               top: pos.top,
               bottom: pos.bottom,
               left: pos.left,
-              minWidth: pos.width,
+              minWidth: pos.minWidth,
               maxHeight: pos.maxHeight,
             }
           : undefined
