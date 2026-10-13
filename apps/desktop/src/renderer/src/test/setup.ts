@@ -1,4 +1,5 @@
-import { vi } from 'vitest'
+import { cleanup } from '@testing-library/react'
+import { afterEach, vi } from 'vitest'
 
 // jsdom does not implement HTMLCanvasElement.prototype.getContext and throws a
 // noisy "Not implemented" error whenever a component mounts a canvas. Every
@@ -23,3 +24,9 @@ if (jsdomWindow?.localStorage) {
     configurable: true,
   })
 }
+
+// Testing Library unmounts after each test on its own only when afterEach is a global,
+// and this suite runs without globals. Without it a rendered tree outlives its test and
+// its file: a quality sweep still running when the file's jsdom is torn down sets state
+// on a window that no longer exists, and the run fails with no test red.
+afterEach(cleanup)
