@@ -453,3 +453,63 @@ describe('useQualityAnalysis renamed tracks', () => {
     expect(spectrogram).toHaveBeenCalledWith('/music/d-renamed.wav', expect.anything())
   })
 })
+
+describe('useQualityAnalysis after unmount', () => {
+  // The sweep outlives nothing: once the view that owns it is gone, a probe resolving late
+  // must neither start the next track's ffmpeg pass nor touch React state. Touching state
+  // after the window is torn down is what threw "window is not defined" out of the suite.
+  it('stops starting tracks once the owner unmounts', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((): Promise<SpectrumResult> => gate)
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
+    const { result, unmount } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(3))
+    unmount()
+    release(spectrum)
+    await gate
+    await new Promise((r) => setTimeout(r, 20))
+
+    expect(spectrogram).not.toHaveBeenCalledWith('/music/d.wav', expect.anything())
+  })
+
+  it('leaves React state alone when a probe lands after the owner unmounted', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((): Promise<SpectrumResult> => gate)
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a')] }
+    const onMeasured = vi.fn()
+    const { result, unmount } = renderHook(() => useQualityAnalysis({ targetsRef, onMeasured }), {
+      wrapper: wrapper(),
+    })
+    const rejections: unknown[] = []
+    const onRejection = (err: unknown): void => {
+      rejections.push(err)
+    }
+    process.on('unhandledRejection', onRejection)
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(spectrogram).toHaveBeenCalled())
+    unmount()
+    const event = vi.spyOn(window, 'event', 'get').mockImplementation(() => {
+      throw new ReferenceError('window is not defined')
+    })
+    release(spectrum)
+    await vi.waitFor(() => expect(onMeasured).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 20))
+    event.mockRestore()
+    process.off('unhandledRejection', onRejection)
+
+    expect(rejections).toEqual([])
+  })
+})

@@ -1,5 +1,5 @@
 import { isCancelledError, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { analysisOptions } from '../lib/analysisQueries'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { createFocusGate } from '../lib/focusGate'
@@ -99,6 +99,18 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   }, [])
 
   useWindowFocus((focused) => focusGate.current.set(focused))
+
+  // A probe can land after the owner unmounted (the window closing, a test tearing down its
+  // DOM): the sweep then starts no further track and leaves React state alone, since a
+  // setState once the window is gone throws instead of being dropped.
+  const mountedRef = useRef(true)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      analyzeCancel.current = true
+    }
+  }, [])
 
   // targetsRef.current plus whatever pendingRef still holds that targetsRef doesn't carry
   // yet — pendingRef entries are retired (see the per-track finally below) the moment
@@ -210,10 +222,11 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           done += 1
           if (!evicted) measuredRef.current.add(t.id)
           pendingRef.current.delete(t.id)
-          setAnalysis((a) => (a ? { ...a, done } : a))
+          if (mountedRef.current) setAnalysis((a) => (a ? { ...a, done } : a))
         }
       }).finally(() => {
         runningRef.current = false
+        if (!mountedRef.current) return
         if (failed.length > 0) onErrorsRef.current?.(failed)
         // A drop that landed mid-sweep added rows to targetsRef the running pass never saw;
         // re-evaluate (excluding what this run already measured, since targetsRef's own
