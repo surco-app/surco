@@ -68,7 +68,6 @@
     "cancelAnalyze": "Arrêter l'analyse : les morceaux déjà analysés gardent leur verdict"
   },
   "sidebar": {
-    "dropHint": "Dépose tes morceaux ici.",
     "fitHint": "Double-clique pour ajuster la largeur aux noms des morceaux",
     "filter": {
       "label": "Filtre",

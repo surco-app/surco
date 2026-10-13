@@ -391,6 +391,12 @@ describe('App sidebar divider', () => {
     }
   })
 
+  it('invites the first drop once, from the empty centre, and leaves the empty list column silent', async () => {
+    await renderApp()
+    expect(screen.getByTestId('empty-actions')).toBeInTheDocument()
+    expect(screen.getByTestId('track-list-scroll')).toBeEmptyDOMElement()
+  })
+
   it('offers the fit hint once the list has tracks', async () => {
     await renderApp()
     await addTwoTracks()

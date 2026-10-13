@@ -68,7 +68,6 @@
     "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
   },
   "sidebar": {
-    "dropHint": "Arrastra aquí tus pistas.",
     "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
     "filter": {
       "label": "Filtro",

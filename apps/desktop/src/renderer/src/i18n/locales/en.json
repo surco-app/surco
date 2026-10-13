@@ -68,7 +68,6 @@
     "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"
   },
   "sidebar": {
-    "dropHint": "Drag your tracks here.",
     "fitHint": "Double-click to fit the width to the track names",
     "filter": {
       "label": "Filter",

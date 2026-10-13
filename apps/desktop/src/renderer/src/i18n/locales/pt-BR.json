@@ -68,7 +68,6 @@
     "cancelAnalyze": "Parar a análise: as faixas já analisadas mantêm o veredito"
   },
   "sidebar": {
-    "dropHint": "Arraste suas faixas para cá.",
     "fitHint": "Clique duas vezes para ajustar a largura aos nomes das faixas",
     "filter": {
       "label": "Filtro",

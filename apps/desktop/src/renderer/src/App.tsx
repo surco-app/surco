@@ -2096,14 +2096,11 @@ export default function App(): React.JSX.Element {
                   >
                     {review !== null ? (
                       <MusicReviewColumn onClose={() => setReview(null)} busy={reviewBusy} />
-                    ) : tracks.length === 0 ? (
-                      // Deliberately empty. The way in lives in the centre panel now: a button here
-                      // as well meant two doors on one screen, and the smaller of the two sat in the
-                      // column that has nothing in it yet.
-                      <p className="p-6 text-center text-xs text-fg-faint">
-                        {tr('sidebar.dropHint')}
-                      </p>
-                    ) : (
+                    ) : tracks.length ===
+                      0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
+                    // as well meant two doors on one screen, and the smaller of the two sat in the
+                    // column that has nothing in it yet.
+                    null : (
                       <>
                         <TrackListHeader
                           tr={tr}
