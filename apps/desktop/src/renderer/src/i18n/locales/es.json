@@ -3,7 +3,6 @@
     "trackActions": "Acciones de la pista",
     "trackList": "Pistas",
     "cancel": "Cancelar",
-    "save": "Guardar",
     "change": "Cambiar",
     "close": "Cerrar",
     "copy": "Copiar"
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "¿Descartar los cambios?",
-    "discardMessage": "Lo que has cambiado en Ajustes todavía no está guardado.",
-    "discardConfirm": "Descartar",
     "tabs": {
       "general": "General",
       "search": "Búsqueda",

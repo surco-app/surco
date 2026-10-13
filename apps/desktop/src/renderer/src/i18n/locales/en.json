@@ -3,7 +3,6 @@
     "trackActions": "Track actions",
     "trackList": "Tracks",
     "cancel": "Cancel",
-    "save": "Save",
     "change": "Change",
     "close": "Close",
     "copy": "Copy"
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "Discard your changes?",
-    "discardMessage": "What you changed in Settings is not saved yet.",
-    "discardConfirm": "Discard",
     "tabs": {
       "general": "General",
       "search": "Search",

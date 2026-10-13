@@ -292,8 +292,9 @@ describe('SettingsModal Traktor collection', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    await waitFor(() => expect(screen.getByTestId('settings-save')).toBeInTheDocument())
-    fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
+    await waitFor(() => expect(screen.getByTestId('settings-close')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('settings-theme-dark'))
+    fireEvent.click(screen.getByTestId('settings-close'))
 
     expect(onSave).toHaveBeenCalled()
     expect(onSave.mock.calls[0][0]).not.toMatchObject({ traktorNmlPath: detected })
@@ -301,40 +302,54 @@ describe('SettingsModal Traktor collection', () => {
   })
 })
 
-describe('SettingsModal save', () => {
-  // The dialog is a form with a default Save button, so Enter from any field commits
-  // the settings instead of doing nothing.
-  it('saves when the form is submitted with Enter', () => {
-    const onSave = vi.fn()
+describe('SettingsModal applies changes as they are made', () => {
+  function renderModal(over: { onSave?: () => void; onClose?: () => void } = {}) {
     render(
       <SettingsModal
         settings={settings}
-        onClose={() => {}}
-        onSave={onSave}
+        onClose={over.onClose ?? (() => {})}
+        onSave={over.onSave ?? (() => {})}
         onPreviewTheme={() => {}}
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
-    expect(onSave).toHaveBeenCalled()
+  }
+
+  it('applies a choice on its own, as macOS System Settings does, with no Save to forget', async () => {
+    const onSave = vi.fn()
+    renderModal({ onSave })
+    fireEvent.click(screen.getByTestId('settings-language-es'))
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'es' })),
+    )
+    expect(screen.queryByTestId('settings-save')).not.toBeInTheDocument()
   })
 
-  // The UI language is now a persisted setting (General tab), not just the session-only
-  // ⌘⇧L toggle, so picking one and saving must carry it through.
-  it('saves the chosen UI language', () => {
+  it('keeps a change made just before closing even though saves are batched while typing', () => {
     const onSave = vi.fn()
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={onSave}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
+    const onClose = vi.fn()
+    renderModal({ onSave, onClose })
     fireEvent.click(screen.getByTestId('settings-language-es'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'es' }))
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('writes nothing when Settings is only looked at', () => {
+    const onSave = vi.fn()
+    renderModal({ onSave })
+    fireEvent.click(screen.getByTestId('settings-close'))
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('leaves on a backdrop click or Escape without asking, since nothing is ever held back', () => {
+    const onClose = vi.fn()
+    renderModal({ onClose })
+    fireEvent.click(screen.getByTestId('settings-theme-dark'))
+    fireEvent.click(screen.getByTestId('settings-backdrop'))
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(true)
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
   })
 })
 
@@ -368,7 +383,7 @@ describe('SettingsModal auto-match', () => {
     const onSave = vi.fn()
     openSearch(onSave)
     fireEvent.click(screen.getByTestId('settings-provider-bandcamp'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ searchProviders: ['discogs', 'bandcamp'] }),
     )
@@ -417,7 +432,7 @@ describe('SettingsModal auto-match', () => {
     openSearch(onSave)
     fireEvent.change(screen.getByTestId('settings-token'), { target: { value: 'tok' } })
     fireEvent.click(screen.getByTestId('settings-auto-match'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ discogsToken: 'tok', autoMatch: true }),
     )
@@ -429,7 +444,7 @@ describe('SettingsModal auto-match', () => {
     const onSave = vi.fn()
     openSearch(onSave)
     fireEvent.click(screen.getByTestId('settings-format-Vinyl'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ discogsFormats: ['Vinyl'] }))
   })
 })
@@ -453,7 +468,7 @@ describe('SettingsModal search by album first', () => {
     const toggle = screen.getByTestId('settings-search-album-first')
     expect(toggle).not.toBeChecked()
     fireEvent.click(toggle)
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ searchByAlbumFirst: true }))
   })
 })
@@ -482,7 +497,7 @@ describe('SettingsModal clean-up on load', () => {
     expect(casing).not.toBeChecked()
     fireEvent.click(spacing)
     fireEvent.click(casing)
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ autoCleanSpacing: true, autoCleanCase: true }),
     )
@@ -512,7 +527,7 @@ describe('SettingsModal destination', () => {
     const onSave = vi.fn()
     openDestination({}, onSave)
     fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
     )
@@ -545,7 +560,7 @@ describe('SettingsModal destination', () => {
     const onSave = vi.fn()
     openDestination({}, onSave)
     fireEvent.click(screen.getByTestId('settings-destination-overwrite'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ overwriteOriginal: true, addToAppleMusic: false }),
     )
@@ -651,75 +666,9 @@ describe('SettingsModal filename tokens', () => {
   })
 })
 
-describe('SettingsModal unsaved changes', () => {
-  function renderDirty(onClose = vi.fn(), onSave = vi.fn()): ReturnType<typeof vi.fn> {
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={onClose}
-        onSave={onSave}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('settings-theme-dark'))
-    return onClose
-  }
-
-  // A click that only meant to leave the window, or a stray Escape, threw away every
-  // change staged across the tabs with nothing asked.
-  it('stays open on a backdrop click while something is changed', () => {
-    const onClose = renderDirty()
-    fireEvent.click(screen.getByTestId('settings-backdrop'))
-    expect(onClose).not.toHaveBeenCalled()
-  })
-
-  it('asks before Escape discards the changes', () => {
-    const onClose = renderDirty()
-    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(false)
-    expect(onClose).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByTestId('confirm-ok'))
-    expect(onClose).toHaveBeenCalled()
-  })
-
-  // The question's own form sat inside the Settings form, so its submit bubbled up and
-  // Discard saved every change it promised to throw away.
-  it('discards without saving', () => {
-    const onSave = vi.fn()
-    const onClose = renderDirty(vi.fn(), onSave)
-    fireEvent.keyDown(document.body, { key: 'Escape' })
-    fireEvent.click(screen.getByTestId('confirm-ok'))
-    expect(onClose).toHaveBeenCalled()
-    expect(onSave).not.toHaveBeenCalled()
-  })
-
-  it('lets a second Escape take back the question and keep editing', () => {
-    const onClose = renderDirty()
-    fireEvent.keyDown(document.body, { key: 'Escape' })
-    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(false)
-    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
-    expect(onClose).not.toHaveBeenCalled()
-  })
-
-  it('leaves Escape to close Settings when nothing is changed', () => {
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    expect(fireEvent.keyDown(document.body, { key: 'Escape' })).toBe(true)
-    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
-  })
-})
-
 describe('SettingsModal theme preview', () => {
-  // Picking a theme should apply it live so the user sees the result before
-  // committing; the parent reverts the preview if they cancel instead of saving.
-  it('previews the chosen theme without saving', () => {
+  // The theme shows on the click itself, before the batched save lands.
+  it('shows the chosen theme at once and saves it', async () => {
     const onPreviewTheme = vi.fn()
     const onSave = vi.fn()
     render(
@@ -733,7 +682,9 @@ describe('SettingsModal theme preview', () => {
     )
     fireEvent.click(screen.getByTestId('settings-theme-dark'))
     expect(onPreviewTheme).toHaveBeenCalledWith('dark')
-    expect(onSave).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dark' })),
+    )
   })
 })
 
@@ -856,7 +807,7 @@ describe('SettingsModal shortcuts', () => {
     )
     fireEvent.click(screen.getByTestId('field-separator-genre'))
     fireEvent.click(screen.getByTestId('field-separator-genre-option-semicolon'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ genreSeparator: '; ' }))
   })
 
@@ -885,7 +836,7 @@ describe('SettingsModal shortcuts', () => {
     openShortcuts(onSave)
     record('add', { key: 'x', metaKey: true, shiftKey: true })
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧X')
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ shortcutOverrides: { add: ['mod', 'shift', 'x'] } }),
     )
@@ -904,26 +855,31 @@ describe('SettingsModal shortcuts', () => {
     record('add', { key: 'x', metaKey: true, shiftKey: true })
     fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))
   })
 
-  // Two commands on one chord is ambiguous, so the clash is surfaced and saving is
-  // blocked until it's resolved — no silently-broken binding gets persisted.
-  it('flags a conflict and disables save when two commands share a chord', () => {
-    openShortcuts()
+  // Two commands on one chord is ambiguous, so the clash is surfaced and kept out of the
+  // save until it is resolved, while every other change still applies.
+  it('saves everything but a clashing shortcut', () => {
+    const onSave = vi.fn()
+    openShortcuts(onSave)
     record('add', { key: 'r', metaKey: true }) // ⌘R already belongs to reveal
     expect(screen.getByTestId('shortcuts-conflict')).toBeInTheDocument()
-    expect(screen.getByTestId('settings-save')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('settings-tab-general'))
+    fireEvent.click(screen.getByTestId('settings-theme-dark'))
+    fireEvent.click(screen.getByTestId('settings-close'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dark' }))
+    expect(onSave.mock.calls.at(-1)?.[0]).not.toHaveProperty('shortcutOverrides')
   })
 
-  // From any other tab, Save just went grey with nothing saying why: the reason lived on
-  // the Shortcuts tab alone. The footer names it and leads back there.
-  it('says beside Save that a shortcut clash blocks it and opens the Shortcuts tab', () => {
+  // From any other tab the unsaved clash would be invisible, so it is named there too
+  // and leads back to the Shortcuts tab.
+  it('names an unsaved shortcut clash from any tab and leads to it', () => {
     openShortcuts()
     record('add', { key: 'r', metaKey: true })
     fireEvent.click(screen.getByTestId('settings-tab-general'))
-    fireEvent.click(screen.getByTestId('settings-save-blocked'))
+    fireEvent.click(screen.getByTestId('settings-shortcut-clash'))
     expect(screen.getByTestId('settings-tab-shortcuts')).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -933,8 +889,8 @@ describe('SettingsModal shortcuts', () => {
     const onSave = vi.fn()
     openShortcuts(onSave)
     record('add', { key: 'k', metaKey: true })
-    fireEvent.click(screen.getByTestId('settings-save'))
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))
+    fireEvent.click(screen.getByTestId('settings-close'))
+    expect(onSave).not.toHaveBeenCalled()
   })
 })
 
@@ -963,16 +919,15 @@ describe('SettingsModal key notation', () => {
       'true',
     )
     fireEvent.click(screen.getByTestId('settings-key-notation-musical'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ keyNotation: 'musical' }))
   })
 })
 
 describe('SettingsModal settings folder', () => {
   // Moving the settings folder is how preferences sync across Macs (point it at
-  // iCloud Drive/Dropbox). It applies immediately — no Save step — and the staged
-  // synced fields refresh from the adopted folder so a later Save can't clobber
-  // another machine's prefs with this modal's stale copies.
+  // iCloud Drive/Dropbox). The adopted prefs are never written back as if edited, and
+  // a later change carries them instead of this modal's stale copies.
   it('applies the picked folder immediately and refreshes synced prefs', async () => {
     const api = window.api as unknown as Record<string, unknown>
     api.getConfigDir = vi.fn(async () => null)
@@ -997,8 +952,13 @@ describe('SettingsModal settings folder', () => {
     expect(onSettingsReplaced).toHaveBeenCalledWith(
       expect.objectContaining({ keyNotation: 'musical' }),
     )
-    fireEvent.click(screen.getByTestId('settings-save'))
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ keyNotation: 'musical' }))
+    fireEvent.click(screen.getByTestId('settings-close'))
+    expect(onSave).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('settings-theme-dark'))
+    fireEvent.click(screen.getByTestId('settings-close'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ keyNotation: 'musical', theme: 'dark' }),
+    )
   })
 
   it('offers a reset back to the default folder only when a custom one is set', async () => {
@@ -1177,7 +1137,6 @@ describe('SettingsModal backup', () => {
     await Promise.resolve()
     expect(onSettingsReplaced).toHaveBeenCalledWith(imported)
     expect(onPreviewTheme).toHaveBeenCalledWith('dark')
-    fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSettingsReplaced).toHaveBeenCalledWith(
       expect.objectContaining({ keyNotation: 'musical' }),
     )

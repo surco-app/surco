@@ -3,7 +3,6 @@
     "trackActions": "Titelaktionen",
     "trackList": "Titel",
     "cancel": "Abbrechen",
-    "save": "Speichern",
     "change": "Ändern",
     "close": "Schließen",
     "copy": "Kopieren"
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "Änderungen verwerfen?",
-    "discardMessage": "Deine Änderungen in den Einstellungen sind noch nicht gespeichert.",
-    "discardConfirm": "Verwerfen",
     "tabs": {
       "general": "Allgemein",
       "search": "Suche",
