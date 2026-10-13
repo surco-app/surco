@@ -5,6 +5,9 @@ import { useEffect } from 'react'
 // down is not worth it and the menu flips above instead.
 const GAP = 4
 const MIN_MENU_HEIGHT = 160
+// What a capped menu keeps clear of the window edge it grows toward, so its last row and
+// border read as a menu that scrolls instead of one cut off by the edge.
+const EDGE = 8
 
 export interface MenuPlacement {
   top?: number
@@ -22,8 +25,8 @@ export interface MenuPlacement {
 // trigger when there is more room up there, and is capped to the room it has. An 'end'
 // menu lines its right edge up with the trigger's, for a trigger at the end of a row.
 export function placeMenu(r: DOMRect, align: 'start' | 'end' = 'start'): MenuPlacement {
-  const below = window.innerHeight - r.bottom - GAP
-  const above = r.top - GAP
+  const below = window.innerHeight - r.bottom - GAP - EDGE
+  const above = r.top - GAP - EDGE
   const flip = below < MIN_MENU_HEIGHT && above > below
   return {
     top: flip ? undefined : r.bottom + GAP,
