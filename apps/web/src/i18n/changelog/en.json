@@ -11,6 +11,10 @@
       {
         "text": "An .m4a is graded by what it holds, so a healthy AAC no longer shows up as bad quality.",
         "in": "1.8.0"
+      },
+      {
+        "text": "Dropdown menus open above everything again and show in full even in a short window. The search source menu, the list filter with the player open and the field insert menu in Settings were left underneath or cut off.",
+        "in": "1.8.1"
       }
     ]
   },

@@ -11,6 +11,10 @@
       {
         "text": "Un .m4a se juzga por lo que lleva dentro, así que un AAC en buen estado ya no aparece como mala calidad.",
         "in": "1.8.0"
+      },
+      {
+        "text": "Los menús desplegables vuelven a abrirse por encima de todo y se ven enteros aunque la ventana sea baja. El de fuente de la búsqueda, el de filtros de la lista con el reproductor abierto y el de insertar campo en Ajustes se quedaban debajo o cortados.",
+        "in": "1.8.1"
       }
     ]
   },
