@@ -15,6 +15,14 @@
       {
         "text": "Los menús desplegables vuelven a abrirse por encima de todo y se ven enteros aunque la ventana sea baja. El de fuente de la búsqueda, el de filtros de la lista con el reproductor abierto y el de insertar campo en Ajustes se quedaban debajo o cortados.",
         "in": "1.8.1"
+      },
+      {
+        "text": "Los Ajustes se aplican al momento, como en macOS. Cada cambio se guarda solo y ya no hay que pulsar Guardar, así que cerrar con Escape o con un clic fuera nunca pierde nada.",
+        "in": "1.8.2"
+      },
+      {
+        "text": "Surco sigue las opciones de accesibilidad de macOS «Aumentar contraste» y «Reducir transparencia». Con la primera, las líneas y los textos más suaves se ven más marcados. Con la segunda, los diálogos dejan de difuminar lo que hay detrás.",
+        "in": "1.8.2"
       }
     ]
   },

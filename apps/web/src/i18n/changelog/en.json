@@ -15,6 +15,14 @@
       {
         "text": "Dropdown menus open above everything again and show in full even in a short window. The search source menu, the list filter with the player open and the field insert menu in Settings were left underneath or cut off.",
         "in": "1.8.1"
+      },
+      {
+        "text": "Settings now apply as you change them, as on macOS. Every change saves itself and there is no Save button to press, so closing with Escape or a click outside never loses anything.",
+        "in": "1.8.2"
+      },
+      {
+        "text": "Surco follows the macOS accessibility settings Increase contrast and Reduce transparency. With the first, lines and the faintest text get firmer. With the second, dialogs stop blurring what is behind them.",
+        "in": "1.8.2"
       }
     ]
   },
