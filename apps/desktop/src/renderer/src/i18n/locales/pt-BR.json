@@ -41,6 +41,7 @@
     "revealSelected": "Ir para a faixa selecionada",
     "importingCount": "Lendo {{done}}/{{total}}",
     "analyzeQuality": "Analisar a qualidade de todas as faixas",
+    "analyzeQualityLabel": "Analisar",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "convertAll_one": "Converter 1 faixa",

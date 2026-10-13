@@ -284,20 +284,22 @@ export const Toolbar = memo(function Toolbar({
               onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
               disabled={!analysis && allAnalyzed}
               aria-label={analysis ? tr('header.cancelAnalyze') : tr('header.analyzeQuality')}
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-hover)] disabled:opacity-40 ${
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40 ${
                 analysis
                   ? 'min-w-[3.25rem] text-[var(--color-accent)]'
-                  : 'w-8 text-fg-muted hover:text-fg'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               <Activity
                 className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
                 aria-hidden="true"
               />
-              {analysis && (
+              {analysis ? (
                 <span data-testid="analyze-progress" className="text-xs tabular-nums">
                   {analysis.done}/{analysis.total}
                 </span>
+              ) : (
+                <span>{tr('header.analyzeQualityLabel')}</span>
               )}
               <Tooltip
                 label={

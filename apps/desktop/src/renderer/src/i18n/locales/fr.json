@@ -41,6 +41,7 @@
     "revealSelected": "Aller au morceau sélectionné",
     "importingCount": "Lecture {{done}}/{{total}}",
     "analyzeQuality": "Analyser la qualité de tous les morceaux",
+    "analyzeQualityLabel": "Analyser",
     "analyzingCount": "Analyse de la qualité… {{done}}/{{total}}",
     "convertingCount": "Conversion… {{done}}/{{total}}",
     "convertAll_one": "Convertir 1 piste",

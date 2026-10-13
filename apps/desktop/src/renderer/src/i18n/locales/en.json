@@ -41,6 +41,7 @@
     "revealSelected": "Scroll to the selected track",
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",
+    "analyzeQualityLabel": "Analyze",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
     "convertingCount": "Converting… {{done}}/{{total}}",
     "convertAll_one": "Convert 1 track",

@@ -129,6 +129,13 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('auto-match')).toHaveTextContent(i18n.t('header.autoMatchLabel'))
   })
 
+  it('names the quality sweep with a visible word, like its sibling auto-match', () => {
+    renderBar()
+    expect(screen.getByTestId('analyze-quality')).toHaveTextContent(
+      i18n.t('header.analyzeQualityLabel'),
+    )
+  })
+
   // Auto-match on but no usable token is a silent dead end: the sweep can't run and the
   // only hint was a tooltip on a greyed-out button. Surface it as a live "add a token"
   // affordance that isn't disabled and takes the user straight to where they fix it.
