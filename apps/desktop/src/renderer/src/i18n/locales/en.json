@@ -3,7 +3,6 @@
     "trackActions": "Track actions",
     "trackList": "Tracks",
     "cancel": "Cancel",
-    "save": "Save",
     "change": "Change",
     "close": "Close",
     "copy": "Copy"
@@ -41,6 +40,7 @@
     "revealSelected": "Scroll to the selected track",
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",
+    "analyzeQualityLabel": "Analyze",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
     "convertingCount": "Converting… {{done}}/{{total}}",
     "convertAll_one": "Convert 1 track",
@@ -68,7 +68,6 @@
     "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"
   },
   "sidebar": {
-    "dropHint": "Drag your tracks here.",
     "fitHint": "Double-click to fit the width to the track names",
     "filter": {
       "label": "Filter",
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "Discard your changes?",
-    "discardMessage": "What you changed in Settings is not saved yet.",
-    "discardConfirm": "Discard",
     "tabs": {
       "general": "General",
       "search": "Search",

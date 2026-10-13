@@ -3,7 +3,6 @@
     "trackActions": "Acciones de la pista",
     "trackList": "Pistas",
     "cancel": "Cancelar",
-    "save": "Guardar",
     "change": "Cambiar",
     "close": "Cerrar",
     "copy": "Copiar"
@@ -41,6 +40,7 @@
     "revealSelected": "Ir a la pista seleccionada",
     "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
+    "analyzeQualityLabel": "Analizar",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",
     "convertAll_one": "Convertir 1 pista",
@@ -68,7 +68,6 @@
     "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
   },
   "sidebar": {
-    "dropHint": "Arrastra aquí tus pistas.",
     "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
     "filter": {
       "label": "Filtro",
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "¿Descartar los cambios?",
-    "discardMessage": "Lo que has cambiado en Ajustes todavía no está guardado.",
-    "discardConfirm": "Descartar",
     "tabs": {
       "general": "General",
       "search": "Búsqueda",

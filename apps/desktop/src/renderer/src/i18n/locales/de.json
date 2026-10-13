@@ -3,7 +3,6 @@
     "trackActions": "Titelaktionen",
     "trackList": "Titel",
     "cancel": "Abbrechen",
-    "save": "Speichern",
     "change": "Ändern",
     "close": "Schließen",
     "copy": "Kopieren"
@@ -41,6 +40,7 @@
     "revealSelected": "Zum ausgewählten Track scrollen",
     "importingCount": "Lese {{done}}/{{total}}",
     "analyzeQuality": "Qualität aller Tracks analysieren",
+    "analyzeQualityLabel": "Analysieren",
     "analyzingCount": "Analysiere Qualität… {{done}}/{{total}}",
     "convertingCount": "Konvertiere… {{done}}/{{total}}",
     "convertAll_one": "1 Titel konvertieren",
@@ -68,7 +68,6 @@
     "cancelAnalyze": "Analyse stoppen: bereits analysierte Tracks behalten ihr Ergebnis"
   },
   "sidebar": {
-    "dropHint": "Zieh deine Tracks hierher.",
     "fitHint": "Doppelklick passt die Breite an die Tracknamen an",
     "filter": {
       "label": "Filter",
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "Änderungen verwerfen?",
-    "discardMessage": "Deine Änderungen in den Einstellungen sind noch nicht gespeichert.",
-    "discardConfirm": "Verwerfen",
     "tabs": {
       "general": "Allgemein",
       "search": "Suche",

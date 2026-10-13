@@ -391,6 +391,12 @@ describe('App sidebar divider', () => {
     }
   })
 
+  it('invites the first drop once, from the empty centre, and leaves the empty list column silent', async () => {
+    await renderApp()
+    expect(screen.getByTestId('empty-actions')).toBeInTheDocument()
+    expect(screen.getByTestId('track-list-scroll')).toBeEmptyDOMElement()
+  })
+
   it('offers the fit hint once the list has tracks', async () => {
     await renderApp()
     await addTwoTracks()
@@ -2004,7 +2010,7 @@ describe('App editor format/destination reseed', () => {
       platform: 'darwin',
       getSettings: vi.fn().mockResolvedValue(base),
       // Mirrors what main actually does: persist the patch and hand back the merged
-      // settings — the modal's Save button round-trips through this, same as the app.
+      // settings — the modal's saves round-trip through this, same as the app.
       saveSettings: vi.fn((patch) => Promise.resolve({ ...base, ...patch })),
       pickFiles: vi.fn().mockResolvedValue(['/music/a.flac']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -2019,7 +2025,7 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-conversion'))
     fireEvent.click(screen.getByTestId('settings-format-aiff'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
 
     await waitFor(() =>
       expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
@@ -2052,7 +2058,7 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-destination'))
     fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
-    fireEvent.click(screen.getByTestId('settings-save'))
+    fireEvent.click(screen.getByTestId('settings-close'))
 
     await waitFor(() =>
       expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
@@ -3917,9 +3923,9 @@ describe('App Music review', () => {
     runMenu('music-review')
     await screen.findByTestId('music-review-empty')
     fireEvent.click(screen.getByTestId('open-settings'))
-    await screen.findByTestId('settings-save')
+    await screen.findByTestId('settings-close')
     fireEvent.keyDown(document.body, { key: 'Escape' })
-    await waitFor(() => expect(screen.queryByTestId('settings-save')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByTestId('settings-close')).not.toBeInTheDocument())
     expect(screen.getByTestId('music-review')).toBeInTheDocument()
   })
 

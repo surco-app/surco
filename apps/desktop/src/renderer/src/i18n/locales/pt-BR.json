@@ -3,7 +3,6 @@
     "trackActions": "Ações da faixa",
     "trackList": "Faixas",
     "cancel": "Cancelar",
-    "save": "Salvar",
     "change": "Alterar",
     "close": "Fechar",
     "copy": "Copiar"
@@ -41,6 +40,7 @@
     "revealSelected": "Ir para a faixa selecionada",
     "importingCount": "Lendo {{done}}/{{total}}",
     "analyzeQuality": "Analisar a qualidade de todas as faixas",
+    "analyzeQualityLabel": "Analisar",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "convertAll_one": "Converter 1 faixa",
@@ -68,7 +68,6 @@
     "cancelAnalyze": "Parar a análise: as faixas já analisadas mantêm o veredito"
   },
   "sidebar": {
-    "dropHint": "Arraste suas faixas para cá.",
     "fitHint": "Clique duas vezes para ajustar a largura aos nomes das faixas",
     "filter": {
       "label": "Filtro",
@@ -896,9 +895,6 @@
     }
   },
   "settings": {
-    "discardTitle": "Descartar as alterações?",
-    "discardMessage": "O que você mudou nos Ajustes ainda não foi salvo.",
-    "discardConfirm": "Descartar",
     "tabs": {
       "general": "Geral",
       "search": "Busca",
