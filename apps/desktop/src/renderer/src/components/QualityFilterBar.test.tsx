@@ -5,6 +5,7 @@ import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
+import { ModalShell } from './ModalShell'
 import { QualityFilterBar } from './QualityFilterBar'
 
 afterEach(cleanup)
@@ -53,6 +54,23 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
 }
 
 describe('QualityFilterBar menu', () => {
+  // The review dialog has this filter too. Portaled out of it, a backdrop under the
+  // dialog's overlay let a click beside the menu land in the review instead of closing it.
+  it('keeps its backdrop over the dialog it opened from', () => {
+    const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
+    render(
+      <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
+        <p>review</p>
+      </ModalShell>,
+    )
+    renderBar()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const overlay = screen.getByTestId('shell-backdrop').parentElement as Element
+    expect(layer(screen.getByTestId('quality-filter-backdrop'))).toBeGreaterThanOrEqual(
+      layer(overlay),
+    )
+  })
+
   // In the app at 650 px tall, with 97 tracks and the player open, the last bucket sat
   // behind the player and the menu's own scroll could not reach it: it measured its room
   // to the window's floor from inside a list the player cuts short. Placed in the window

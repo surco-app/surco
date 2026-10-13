@@ -220,7 +220,7 @@ export function FieldInsertMenu({
               // A pointer-only click catcher: keyboard users close with Escape or Tab.
               tabIndex={-1}
               onClick={close}
-              className="fixed inset-0 z-40 cursor-default"
+              className="fixed inset-0 z-50 cursor-default"
             />
             <div
               ref={menuRef}

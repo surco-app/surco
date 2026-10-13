@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { Clock } from 'lucide-react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { ModalShell } from './ModalShell'
 import { Select } from './Select'
 
 afterEach(cleanup)
@@ -357,5 +358,26 @@ describe('Select portaled menu', () => {
     const header = screen.getByTestId('layered-header')
     expect(header).not.toContainElement(screen.getByTestId('sort-listbox'))
     expect(header).not.toContainElement(screen.getByTestId('sort-backdrop'))
+  })
+
+  // In the body it sits beside any open dialog rather than inside it, so its backdrop has
+  // to sit over the dialog's overlay or a click beside the menu lands in the dialog.
+  it('keeps its backdrop over a dialog it opens from', () => {
+    const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
+    render(
+      <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
+        <Select
+          value="import"
+          options={options}
+          onChange={vi.fn()}
+          label="Sort"
+          testid="sort"
+          portal
+        />
+      </ModalShell>,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    const overlay = screen.getByTestId('shell-backdrop').parentElement as Element
+    expect(layer(screen.getByTestId('sort-backdrop'))).toBeGreaterThanOrEqual(layer(overlay))
   })
 })

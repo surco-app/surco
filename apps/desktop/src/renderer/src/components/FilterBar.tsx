@@ -195,7 +195,7 @@ export function FilterBar({
                 data-testid={`${testid}-backdrop`}
                 aria-label={tr('common.close')}
                 onClick={close}
-                className="fixed inset-0 z-40 cursor-default"
+                className="fixed inset-0 z-50 cursor-default"
               />
               <div
                 ref={listRef}

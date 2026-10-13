@@ -223,7 +223,8 @@ export function Select({
   )
 
   // Out of the Tab order: a Shift+Tab from the first option landed on this invisible
-  // full-window button and kept the menu open behind it.
+  // full-window button and kept the menu open behind it. In the body it sits beside any
+  // open dialog, so it takes the menu's own layer to stay over the dialog's overlay.
   const backdrop = (
     <button
       ref={backdropRef}
@@ -232,7 +233,7 @@ export function Select({
       data-testid={`${testid}-backdrop`}
       aria-label={tr('common.close')}
       onClick={close}
-      className="fixed inset-0 z-40 cursor-default"
+      className={`fixed inset-0 cursor-default ${portaled ? 'z-50' : 'z-40'}`}
     />
   )
 

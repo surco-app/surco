@@ -6,6 +6,7 @@ import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
+import { ModalShell } from './ModalShell'
 
 afterEach(cleanup)
 
@@ -347,6 +348,23 @@ describe('FieldInsertMenu placement', () => {
     expect(screen.getByTestId('settings-pane')).not.toContainElement(menu)
     expect(screen.getByTestId('settings-pane')).not.toContainElement(
       screen.getByTestId('field-insert-backdrop'),
+    )
+  })
+
+  // Out of the pane it is also out of the Settings dialog: a backdrop under the dialog's
+  // overlay let a click beside the menu land on Settings instead of closing the menu, and a
+  // click on the dimmed edge close Settings with it.
+  it('keeps its backdrop over the dialog it opened from', () => {
+    const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
+    render(
+      <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
+        <Harness sources={many} />
+      </ModalShell>,
+    )
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    const overlay = screen.getByTestId('shell-backdrop').parentElement as Element
+    expect(layer(screen.getByTestId('field-insert-backdrop'))).toBeGreaterThanOrEqual(
+      layer(overlay),
     )
   })
 
