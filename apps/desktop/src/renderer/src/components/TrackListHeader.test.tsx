@@ -243,4 +243,21 @@ describe('TrackListHeader menus', () => {
     expect(header).not.toContainElement(screen.getByTestId('quality-filter-listbox'))
     expect(header).not.toContainElement(screen.getByTestId('quality-filter-backdrop'))
   })
+
+  it('opens the more-actions menu outside the header', () => {
+    renderHeader()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    expect(screen.getByTestId('track-list-header')).not.toContainElement(screen.getByRole('menu'))
+  })
+
+  // The menu closes on a press outside it. Out of the header it is no longer inside the
+  // wrapper that test looks in, and a real click starts with a press: the item would close
+  // the menu before its click could run.
+  it('runs an action pressed in the portaled menu', () => {
+    const handlers = renderHeader()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    fireEvent.mouseDown(screen.getByTestId('fill-all'))
+    fireEvent.click(screen.getByTestId('fill-all'))
+    expect(handlers.onFillAll).toHaveBeenCalledTimes(1)
+  })
 })

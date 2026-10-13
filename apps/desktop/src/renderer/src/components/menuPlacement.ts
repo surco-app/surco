@@ -9,7 +9,8 @@ const MIN_MENU_HEIGHT = 160
 export interface MenuPlacement {
   top?: number
   bottom?: number
-  left: number
+  left?: number
+  right?: number
   minWidth: number
   maxHeight: number
 }
@@ -18,15 +19,17 @@ export interface MenuPlacement {
 // anchors by `top` when it drops below the trigger and by `bottom` when it flips above, so
 // the menu grows away from the viewport edge either way. A fixed menu near the bottom of
 // the window would run past the edge where scrolling cannot reach it: it flips above the
-// trigger when there is more room up there, and is capped to the room it has.
-export function placeMenu(r: DOMRect): MenuPlacement {
+// trigger when there is more room up there, and is capped to the room it has. An 'end'
+// menu lines its right edge up with the trigger's, for a trigger at the end of a row.
+export function placeMenu(r: DOMRect, align: 'start' | 'end' = 'start'): MenuPlacement {
   const below = window.innerHeight - r.bottom - GAP
   const above = r.top - GAP
   const flip = below < MIN_MENU_HEIGHT && above > below
   return {
     top: flip ? undefined : r.bottom + GAP,
     bottom: flip ? window.innerHeight - r.top + GAP : undefined,
-    left: r.left,
+    left: align === 'start' ? r.left : undefined,
+    right: align === 'end' ? window.innerWidth - r.right : undefined,
     minWidth: r.width,
     maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
   }

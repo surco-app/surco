@@ -22,9 +22,12 @@ import {
   User,
 } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { LibrarySource } from '../lib/librarySource'
 import type { FilterSelection, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
+import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { QualityFilterBar } from './QualityFilterBar'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
@@ -151,6 +154,18 @@ export function TrackListHeader({
   onTrashSuspects,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
+  // Portaled out of the sticky header, whose layer would hold it under the activity panel
+  // and anything else layered over the list, and placed from its toggle in the window.
+  const [menuPos, setMenuPos] = useState<MenuPlacement | null>(null)
+  useCloseOnMove(open, menuRef, setOpen)
+
+  function toggleMenu(): void {
+    if (!open) {
+      const r = toggleRef.current?.getBoundingClientRect()
+      if (r) setMenuPos(placeMenu(r, 'end'))
+    }
+    setOpen(!open)
+  }
 
   function run(action: () => void): void {
     setOpen(false)
@@ -321,7 +336,7 @@ export function TrackListHeader({
                 type="button"
                 data-testid="list-actions-more"
                 ref={toggleRef}
-                onClick={() => setOpen((v) => !v)}
+                onClick={toggleMenu}
                 aria-label={tr('header.moreActions')}
                 aria-haspopup="menu"
                 aria-expanded={open}
@@ -330,54 +345,63 @@ export function TrackListHeader({
                 <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={tr('header.moreActions')} />
               </button>
-              {open && (
-                <div
-                  ref={menuRef}
-                  role="menu"
-                  aria-label={tr('header.moreActions')}
-                  onKeyDown={onMenuKeyDown}
-                  className="animate-pop-flat absolute top-full right-1.5 z-50 w-max max-w-[calc(100%-0.75rem)] origin-top-right rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
-                >
-                  <MenuAction
-                    testid="list-review-open"
-                    icon={SpellCheck}
-                    label={tr('header.menu.review')}
-                    hint={hintFor('list-review')}
-                    disabled={!canReviewList}
-                    onClick={() => run(onReviewList)}
-                  />
-                  <MenuAction
-                    testid="fill-all"
-                    icon={Tag}
-                    label={tr('header.menu.fill')}
-                    hint={hintFor('fill-all')}
-                    onClick={() => run(onFillAll)}
-                  />
-                  <MenuAction
-                    testid="open-find-replace"
-                    icon={Replace}
-                    label={tr('header.menu.findReplace')}
-                    hint={hintFor('find-replace')}
-                    onClick={() => run(onFindReplace)}
-                  />
-                  <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-                  <MenuAction
-                    testid="trash-selected"
-                    icon={Trash2}
-                    label={tr('header.menu.trash')}
-                    danger
-                    disabled={!selectedId && selectedIds.length === 0}
-                    onClick={() => run(onTrashSelected)}
-                  />
-                  <MenuAction
-                    testid="clear-all"
-                    icon={ListX}
-                    label={tr('header.menu.clear')}
-                    danger
-                    onClick={() => run(onClearAll)}
-                  />
-                </div>
-              )}
+              {open &&
+                menuPos &&
+                createPortal(
+                  <div
+                    ref={menuRef}
+                    role="menu"
+                    aria-label={tr('header.moreActions')}
+                    onKeyDown={onMenuKeyDown}
+                    style={{
+                      top: menuPos.top,
+                      bottom: menuPos.bottom,
+                      right: menuPos.right,
+                      maxHeight: menuPos.maxHeight,
+                    }}
+                    className={`animate-pop-flat fixed z-50 w-max max-w-[calc(100vw-1rem)] overflow-y-auto ${menuPos.bottom !== undefined ? 'origin-bottom-right' : 'origin-top-right'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]`}
+                  >
+                    <MenuAction
+                      testid="list-review-open"
+                      icon={SpellCheck}
+                      label={tr('header.menu.review')}
+                      hint={hintFor('list-review')}
+                      disabled={!canReviewList}
+                      onClick={() => run(onReviewList)}
+                    />
+                    <MenuAction
+                      testid="fill-all"
+                      icon={Tag}
+                      label={tr('header.menu.fill')}
+                      hint={hintFor('fill-all')}
+                      onClick={() => run(onFillAll)}
+                    />
+                    <MenuAction
+                      testid="open-find-replace"
+                      icon={Replace}
+                      label={tr('header.menu.findReplace')}
+                      hint={hintFor('find-replace')}
+                      onClick={() => run(onFindReplace)}
+                    />
+                    <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                    <MenuAction
+                      testid="trash-selected"
+                      icon={Trash2}
+                      label={tr('header.menu.trash')}
+                      danger
+                      disabled={!selectedId && selectedIds.length === 0}
+                      onClick={() => run(onTrashSelected)}
+                    />
+                    <MenuAction
+                      testid="clear-all"
+                      icon={ListX}
+                      label={tr('header.menu.clear')}
+                      danger
+                      onClick={() => run(onClearAll)}
+                    />
+                  </div>,
+                  document.body,
+                )}
             </div>
           </>
         )}
