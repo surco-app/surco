@@ -165,6 +165,7 @@ export function TrackListHeader({
     // header's real height at any window size.
     <div
       ref={qualityFilterRef}
+      data-testid="track-list-header"
       className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
@@ -207,6 +208,7 @@ export function TrackListHeader({
         <Select
           testid="track-sort"
           bare
+          portal
           value={sortBy}
           onChange={(v) => setSortBy(v as TrackSort)}
           label={tr('sidebar.sort.label')}

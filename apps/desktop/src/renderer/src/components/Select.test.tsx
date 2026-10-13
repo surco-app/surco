@@ -334,3 +334,28 @@ describe('Select full-width menu placement', () => {
     expect(screen.getByTestId('quiet')).toHaveAttribute('aria-expanded', 'false')
   })
 })
+
+// The track list's sort sits in its sticky header, which carries a layer of its own: a menu
+// and backdrop left inside it were trapped there, so the player's close button, the
+// column's resize handle and the trim controls stayed above the backdrop and took the click
+// that should have closed the menu. Portaled, both leave whatever layer the trigger is in.
+describe('Select portaled menu', () => {
+  it('renders its menu and backdrop outside the layer around the trigger', () => {
+    render(
+      <div data-testid="layered-header">
+        <Select
+          value="import"
+          options={options}
+          onChange={vi.fn()}
+          label="Sort"
+          testid="sort"
+          portal
+        />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    const header = screen.getByTestId('layered-header')
+    expect(header).not.toContainElement(screen.getByTestId('sort-listbox'))
+    expect(header).not.toContainElement(screen.getByTestId('sort-backdrop'))
+  })
+})

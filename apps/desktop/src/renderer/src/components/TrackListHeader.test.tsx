@@ -222,3 +222,17 @@ describe('TrackListHeader actions row', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 })
+
+// The header is sticky with a layer of its own, to stay over the rows it scrolls past. A
+// menu left inside it is trapped in that layer: with the player open its close button sat
+// above the filter menu's backdrop and took the click meant to close the menu, and a short
+// window cut the filter menu's last rows off behind the player. Every menu leaves it.
+describe('TrackListHeader menus', () => {
+  it('opens the sort menu outside the header', () => {
+    renderHeader()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    const header = screen.getByTestId('track-list-header')
+    expect(header).not.toContainElement(screen.getByTestId('track-sort-listbox'))
+    expect(header).not.toContainElement(screen.getByTestId('track-sort-backdrop'))
+  })
+})
