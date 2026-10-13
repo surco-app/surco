@@ -403,3 +403,16 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-btn')).not.toHaveTextContent('SOURCE')
   })
 })
+
+// Opened in the app with a track's end trim near the footer, the trim handle (z-10) and its
+// scissors (z-20) drew over Apple Music and Engine DJ and took the click meant for them: a
+// menu with no layer of its own loses to any positioned control with one.
+describe('ExportButton menu layer', () => {
+  const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
+
+  it('opens over the trim lane controls it can cover', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(layer(screen.getByRole('menu'))).toBeGreaterThan(20)
+  })
+})

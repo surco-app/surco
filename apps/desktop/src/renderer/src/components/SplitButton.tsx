@@ -16,7 +16,7 @@ export const SPLIT_TOGGLE_QUIET = 'border-[var(--color-line-strong)] text-fg-fai
 export const SPLIT_TOGGLE_READY =
   'border-on-scrim/20 text-[var(--color-on-accent)] disabled:opacity-50'
 export const SPLIT_MENU =
-  'animate-pop-flat absolute right-0 bottom-full mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+  'animate-pop-flat absolute right-0 bottom-full z-50 mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 export const SPLIT_ITEM =
   'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)]'
 
