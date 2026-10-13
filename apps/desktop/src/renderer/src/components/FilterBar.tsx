@@ -1,7 +1,9 @@
 import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
 import type React from 'react'
 import { useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
@@ -98,18 +100,27 @@ export function FilterBar({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // The menu hangs from the sticky header over the scrolling list, so focus never scrolls
-  // anything but the menu itself, and the menu stops at the window's bottom edge and
-  // scrolls inside instead of running past it with its last rows out of reach.
-  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined)
+  // The menu is portaled out of the sticky header, whose layer would trap it and its
+  // backdrop under the controls around the list, and placed in the window from the
+  // trigger, so it gets the room the window has under it instead of what the list leaves
+  // above the player. Focus never scrolls anything but the menu itself.
+  const [pos, setPos] = useState<MenuPlacement | null>(null)
+  useCloseOnMove(open, listRef, setOpen)
   useLayoutEffect(() => {
     if (!open) return
     const list = listRef.current
     if (!list) return
-    setMaxHeight(window.innerHeight - list.getBoundingClientRect().top - 8)
     const item = list.querySelector<HTMLElement>(`[data-testid="${focusTestId}"]`)
     if (item) showOption(list, item)
   }, [open, focusTestId])
+
+  function toggle(): void {
+    if (!open) {
+      const r = triggerRef.current?.getBoundingClientRect()
+      if (r) setPos(placeMenu(r))
+    }
+    setOpen(!open)
+  }
 
   function close(): void {
     setOpen(false)
@@ -160,7 +171,7 @@ export function FilterBar({
           // Carries the filter and count it shows: a fixed "Filter" hid which view the list
           // is in and didn't match the words on screen.
           aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggle}
           className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <span className="relative shrink-0">
@@ -175,29 +186,38 @@ export function FilterBar({
           <span className="shrink-0 tabular-nums opacity-70">{trigger.count}</span>
           <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
-        {open && (
-          <>
-            <button
-              type="button"
-              data-testid={`${testid}-backdrop`}
-              aria-label={tr('common.close')}
-              onClick={close}
-              className="fixed inset-0 z-40 cursor-default"
-            />
-            <div
-              ref={listRef}
-              role="listbox"
-              aria-multiselectable={multiselectable || undefined}
-              data-testid={`${testid}-listbox`}
-              aria-label={listLabel}
-              onKeyDown={onListKeyDown}
-              style={{ maxHeight }}
-              className="animate-pop-flat origin-top-left absolute left-0 z-50 mt-1 min-w-full overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
-            >
-              {options(close)}
-            </div>
-          </>
-        )}
+        {open &&
+          pos &&
+          createPortal(
+            <>
+              <button
+                type="button"
+                data-testid={`${testid}-backdrop`}
+                aria-label={tr('common.close')}
+                onClick={close}
+                className="fixed inset-0 z-40 cursor-default"
+              />
+              <div
+                ref={listRef}
+                role="listbox"
+                aria-multiselectable={multiselectable || undefined}
+                data-testid={`${testid}-listbox`}
+                aria-label={listLabel}
+                onKeyDown={onListKeyDown}
+                style={{
+                  top: pos.top,
+                  bottom: pos.bottom,
+                  left: pos.left,
+                  minWidth: pos.minWidth,
+                  maxHeight: pos.maxHeight,
+                }}
+                className={`animate-pop-flat fixed z-50 overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${pos.bottom !== undefined ? 'origin-bottom-left' : 'origin-top-left'}`}
+              >
+                {options(close)}
+              </div>
+            </>,
+            document.body,
+          )}
       </div>
       {children}
       {selectedCount > 1 ? (

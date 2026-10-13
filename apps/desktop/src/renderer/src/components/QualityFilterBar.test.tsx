@@ -53,6 +53,22 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
 }
 
 describe('QualityFilterBar menu', () => {
+  // In the app at 650 px tall, with 97 tracks and the player open, the last bucket sat
+  // behind the player and the menu's own scroll could not reach it: it measured its room
+  // to the window's floor from inside a list the player cuts short. Placed in the window
+  // from its trigger, it gets exactly the room under the trigger and scrolls inside it.
+  it('fits the menu in the window below its trigger', () => {
+    window.innerHeight = 650
+    renderBar({ tally: tally({ suspect: 3, good: 5, unanalyzed: 2 }) })
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    trigger.getBoundingClientRect = () =>
+      ({ top: 100, bottom: 132, left: 8, width: 200, height: 32 }) as DOMRect
+    fireEvent.click(trigger)
+    const style = screen.getByTestId('quality-filter-listbox').style
+    expect(Number.parseFloat(style.top)).toBeGreaterThanOrEqual(132)
+    expect(Number.parseFloat(style.maxHeight)).toBeLessThanOrEqual(650 - 132)
+  })
+
   // The menu hangs from the sticky header over a 500-row list. Focusing an option without
   // preventScroll let the browser scroll that list to reveal it, so walking the menu with
   // the arrows lost the user's place in the crate behind it.

@@ -235,4 +235,12 @@ describe('TrackListHeader menus', () => {
     expect(header).not.toContainElement(screen.getByTestId('track-sort-listbox'))
     expect(header).not.toContainElement(screen.getByTestId('track-sort-backdrop'))
   })
+
+  it('opens the filter menu outside the header', () => {
+    renderHeader()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const header = screen.getByTestId('track-list-header')
+    expect(header).not.toContainElement(screen.getByTestId('quality-filter-listbox'))
+    expect(header).not.toContainElement(screen.getByTestId('quality-filter-backdrop'))
+  })
 })
