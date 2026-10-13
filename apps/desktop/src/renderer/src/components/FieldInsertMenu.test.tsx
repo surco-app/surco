@@ -316,3 +316,43 @@ describe('FieldInsertMenu strip numbering', () => {
     expect(screen.queryByTestId('field-insert-option-strip-numbering')).toBeNull()
   })
 })
+
+// Settings > Naming offers 35 fields: about 1000 px of menu with no scroll of its own, cut
+// at 726 px by the Settings pane on a 900 px window, so half the fields were out of reach
+// unless the whole pane was scrolled under it. Out of the pane and placed in the window
+// under its field, it gets the room the window has and scrolls inside it.
+describe('FieldInsertMenu placement', () => {
+  const many: InsertSource[] = Array.from({ length: 35 }, (_, i) => ({
+    key: `f${i}`,
+    label: `Field ${i}`,
+    value: `v${i}`,
+  }))
+
+  function openIn900(): HTMLElement {
+    window.innerHeight = 900
+    render(
+      <div data-testid="settings-pane">
+        <Harness sources={many} />
+      </div>,
+    )
+    const field = screen.getByTestId('host').parentElement as HTMLElement
+    field.getBoundingClientRect = () =>
+      ({ top: 130, bottom: 166, left: 700, right: 1100, width: 400, height: 36 }) as DOMRect
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    return screen.getByTestId('field-insert-menu')
+  }
+
+  it('opens outside the pane that would clip it', () => {
+    const menu = openIn900()
+    expect(screen.getByTestId('settings-pane')).not.toContainElement(menu)
+    expect(screen.getByTestId('settings-pane')).not.toContainElement(
+      screen.getByTestId('field-insert-backdrop'),
+    )
+  })
+
+  it('fits the menu in the window under its field', () => {
+    const style = openIn900().style
+    expect(Number.parseFloat(style.top)).toBeGreaterThanOrEqual(166)
+    expect(Number.parseFloat(style.maxHeight)).toBeLessThanOrEqual(900 - 166)
+  })
+})

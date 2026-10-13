@@ -1,10 +1,12 @@
 import { Ellipsis } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { InsertSource } from '../lib/fieldSpecs'
 import { stripTitleNumberingLoose } from '../lib/hygiene'
 import { titleCase } from '../lib/textCase'
+import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { Tooltip } from './Tooltip'
 
 // Re-exported so Field.tsx keeps importing the shape from here while the definition
@@ -49,6 +51,11 @@ export function FieldInsertMenu({
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  // Portaled out of the field's scrolling pane, which clipped a long menu (Settings >
+  // Naming lists 35 fields), and placed in the window under the field, right-aligned to it.
+  const [pos, setPos] = useState<MenuPlacement | null>(null)
+  useCloseOnMove(open, menuRef, setOpen)
   const caretRef = useRef<{ start: number; end: number } | null>(null)
   const fromMouseRef = useRef(false)
 
@@ -174,6 +181,7 @@ export function FieldInsertMenu({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         data-testid={`field-insert-${fieldName}`}
         aria-haspopup="menu"
@@ -186,7 +194,11 @@ export function FieldInsertMenu({
         onClick={() => {
           if (!fromMouseRef.current) captureCaret()
           fromMouseRef.current = false
-          setOpen((v) => !v)
+          if (!open) {
+            const r = triggerRef.current?.parentElement?.getBoundingClientRect()
+            if (r) setPos(placeMenu(r, 'end'))
+          }
+          setOpen(!open)
         }}
         className={`absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-1 text-fg-faint transition-opacity hover:text-fg-dim focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 ${
           open ? 'opacity-100' : 'opacity-0'
@@ -197,57 +209,66 @@ export function FieldInsertMenu({
             items. */}
         {!open && <Tooltip label={tr('editor.fieldActions')} />}
       </button>
-      {open && (
-        <>
-          <button
-            type="button"
-            data-testid="field-insert-backdrop"
-            aria-label={tr('common.close')}
-            // A pointer-only click catcher: keyboard users close with Escape or Tab.
-            tabIndex={-1}
-            onClick={close}
-            className="fixed inset-0 z-40 cursor-default"
-          />
-          <div
-            ref={menuRef}
-            role="menu"
-            data-testid="field-insert-menu"
-            aria-label={tr('editor.fieldActions')}
-            onKeyDown={onMenuKeyDown}
-            className="animate-pop-flat origin-top-right absolute top-full right-0 z-50 mt-1 min-w-[220px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
-          >
-            {sources.map((s) => (
-              <button
-                key={s.key}
-                type="button"
-                role="menuitem"
-                data-testid={`field-insert-option-${s.key}`}
-                onClick={() => pick(s.value)}
-                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-hover)]"
-              >
-                <span className="shrink-0 text-fg">{s.label}</span>
-                <span className="max-w-[11rem] truncate text-fg-faint">{s.value}</span>
-              </button>
-            ))}
-            {sources.length > 0 && transforms.length > 0 && (
-              <div className="my-1 border-t border-[var(--color-line)]" />
-            )}
-            {transforms.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                role="menuitem"
-                data-testid={`field-insert-option-${t.key}`}
-                onClick={() => applyTransform(t.result)}
-                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-hover)]"
-              >
-                <span className="shrink-0 text-fg">{t.label}</span>
-                <span className="max-w-[11rem] truncate text-fg-faint">{t.result}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      {open &&
+        pos &&
+        createPortal(
+          <>
+            <button
+              type="button"
+              data-testid="field-insert-backdrop"
+              aria-label={tr('common.close')}
+              // A pointer-only click catcher: keyboard users close with Escape or Tab.
+              tabIndex={-1}
+              onClick={close}
+              className="fixed inset-0 z-40 cursor-default"
+            />
+            <div
+              ref={menuRef}
+              role="menu"
+              data-testid="field-insert-menu"
+              aria-label={tr('editor.fieldActions')}
+              onKeyDown={onMenuKeyDown}
+              style={{
+                top: pos.top,
+                bottom: pos.bottom,
+                right: pos.right,
+                maxHeight: pos.maxHeight,
+              }}
+              className={`animate-pop-flat fixed z-50 min-w-[220px] overflow-y-auto ${pos.bottom !== undefined ? 'origin-bottom-right' : 'origin-top-right'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]`}
+            >
+              {sources.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  role="menuitem"
+                  data-testid={`field-insert-option-${s.key}`}
+                  onClick={() => pick(s.value)}
+                  className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-hover)]"
+                >
+                  <span className="shrink-0 text-fg">{s.label}</span>
+                  <span className="max-w-[11rem] truncate text-fg-faint">{s.value}</span>
+                </button>
+              ))}
+              {sources.length > 0 && transforms.length > 0 && (
+                <div className="my-1 border-t border-[var(--color-line)]" />
+              )}
+              {transforms.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  role="menuitem"
+                  data-testid={`field-insert-option-${t.key}`}
+                  onClick={() => applyTransform(t.result)}
+                  className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-hover)]"
+                >
+                  <span className="shrink-0 text-fg">{t.label}</span>
+                  <span className="max-w-[11rem] truncate text-fg-faint">{t.result}</span>
+                </button>
+              ))}
+            </div>
+          </>,
+          document.body,
+        )}
     </>
   )
 }
