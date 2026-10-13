@@ -120,6 +120,30 @@ describe('smartDeriveTags', () => {
     })
   })
 
+  // A label's Bandcamp page puts the label first and the real artist inside the title. Read
+  // as the label, the track never matched its Apple Music copy filed under the artist, and
+  // fixing the title alone could not bring it back.
+  it('reads the artist a label page repeats in both the album and the title', () => {
+    expect(
+      smartDeriveTags('Eternity Trax Records - Tito Dj - I got It - 02 Tito Dj - I got It.wav'),
+    ).toEqual({
+      artist: 'Tito Dj',
+      albumArtist: 'Eternity Trax Records',
+      album: 'Tito Dj - I got It',
+      trackNumber: '02',
+      title: 'I got It',
+    })
+  })
+
+  it('keeps a dashed title whole when the album does not name it as an artist', () => {
+    expect(smartDeriveTags('Kolter - Hot Mess - 02 Hot Mess - Original Mix.wav')).toEqual({
+      artist: 'Kolter',
+      album: 'Hot Mess',
+      trackNumber: '02',
+      title: 'Hot Mess - Original Mix',
+    })
+  })
+
   // Bandcamp always pads to two digits; anything else after the last dash is part of a
   // title ("99 Luftballons", "1999"), not a track number.
   it('does not read a title that starts with a number as a Bandcamp track number', () => {

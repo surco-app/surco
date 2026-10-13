@@ -53,7 +53,9 @@ export function deriveTags(fileName: string, pattern: string): Partial<TrackMeta
 // name, letting it fall through to the plain one.
 // Bandcamp's own download naming. Its track number is always two digits, which is what
 // keeps a title that merely starts with a number ("Live - 1999 Mix") on the plain pattern.
-// Labels often upload the title as "Artist - Title" too, so that echo is dropped.
+// Labels often upload the title as "Artist - Title" too, so that echo is dropped. On a
+// label's page the leading name is the label and the title names the real artist; when the
+// album repeats that name too, it becomes the artist and the label the album artist.
 const BANDCAMP = '{artist} - {album} - {trackNumber} {title}'
 const TWO_DIGITS = /^\d{2}$/
 
@@ -99,6 +101,12 @@ export function smartDeriveTags(fileName: string): Partial<TrackMetadata> {
       const echo = `${tags.artist} - `
       if (tags.title?.startsWith(echo) && tags.title.length > echo.length)
         tags.title = tags.title.slice(echo.length)
+      const named = tags.title?.split(' - ')[0]
+      if (named && named !== tags.title && tags.album?.startsWith(`${named} - `)) {
+        tags.albumArtist = tags.artist
+        tags.artist = named
+        tags.title = tags.title?.slice(named.length + 3)
+      }
     }
     return tags
   }
