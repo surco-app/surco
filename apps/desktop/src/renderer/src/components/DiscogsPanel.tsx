@@ -512,7 +512,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
         style={{ width: discogs.width }}
         className="flex shrink-0 flex-col border-r border-[var(--color-line)]"
       >
-        <div className="relative isolate border-b border-[var(--color-line)] pb-2">
+        <div className="relative border-b border-[var(--color-line)] pb-2">
           {/* The divider fills as the catalogs answer, and slides while one catalog or the
               best match is still working. Opening a release is not a search. */}
           {busy && !loading && (

@@ -750,3 +750,31 @@ describe('DiscogsPanel last applied album', () => {
     expect(screen.queryByTestId('last-applied-label')).not.toBeInTheDocument()
   })
 })
+
+// artexjay on v1.8.0: the source menu opened under the result rows, so Discogs → MusicBrainz
+// could hardly be picked. The divider's progress line had made the header its own stacking
+// context, which traps the menu, and the backdrop that closes it, below the list and every
+// layered control in the window.
+describe('DiscogsPanel source menu stacking', () => {
+  const trapsLayers = (el: Element): boolean => /\b(isolate|z-\S+)/.test(el.className)
+
+  it('leaves the source menu free to layer over the result rows', () => {
+    renderPanel(
+      browser({
+        query: 'x',
+        results: [{ provider: 'discogs', id: 1, title: 'Album' }],
+        providerCounts: [
+          { provider: 'discogs', count: 1 },
+          { provider: 'musicbrainz', count: 1 },
+        ],
+      }),
+    )
+    fireEvent.click(screen.getByTestId('provider-filter'))
+    const column = screen.getByTestId('matches-column')
+    let el = screen.getByTestId('provider-filter-listbox').parentElement
+    while (el && el !== column) {
+      expect(trapsLayers(el)).toBe(false)
+      el = el.parentElement
+    }
+  })
+})
