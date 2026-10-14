@@ -23,6 +23,26 @@
       {
         "text": "Surco follows the macOS accessibility settings Increase contrast and Reduce transparency. With the first, lines and the faintest text get firmer. With the second, dialogs stop blurring what is behind them.",
         "in": "1.8.2"
+      },
+      {
+        "text": "The Loudness normalization wave and forecast follow the target again while you adjust it. The arrows change them instantly, and typing does as soon as you stop.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "Surco is better at marking which tracks you already have in Apple Music. When the title and length match, it counts as yours even if the artist is written differently or missing.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "Bandcamp downloads from a label's page take the artist named in the title, not the label.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "On Windows the Apple Music options no longer show, File Explorer is named instead of Finder, and the output folder shows even when the destination you bring from a Mac is Apple Music.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "Surco uses less memory with long lists.",
+        "in": "1.8.3"
       }
     ]
   },

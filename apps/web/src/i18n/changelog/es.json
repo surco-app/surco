@@ -23,6 +23,26 @@
       {
         "text": "Surco sigue las opciones de accesibilidad de macOS «Aumentar contraste» y «Reducir transparencia». Con la primera, las líneas y los textos más suaves se ven más marcados. Con la segunda, los diálogos dejan de difuminar lo que hay detrás.",
         "in": "1.8.2"
+      },
+      {
+        "text": "La onda y la previsión de Igualar volumen vuelven a seguir al objetivo mientras lo ajustas. Con las flechas cambian al momento, y al escribir, en cuanto dejas de teclear.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "Surco acierta más al marcar qué pistas ya tienes en Apple Music. Si el título y la duración coinciden, cuenta como tuya aunque el artista esté escrito de otra forma o no esté.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "Las descargas de Bandcamp desde la página de un sello toman como artista al que aparece en el título, no al sello.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "En Windows ya no aparecen las opciones de Apple Music, se nombra el Explorador de archivos en lugar del Finder y la carpeta de salida se ve aunque el destino que traes de un Mac sea Apple Music.",
+        "in": "1.8.3"
+      },
+      {
+        "text": "Surco ocupa menos memoria con listas largas.",
+        "in": "1.8.3"
       }
     ]
   },
