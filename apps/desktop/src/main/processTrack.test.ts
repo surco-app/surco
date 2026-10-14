@@ -418,6 +418,41 @@ describe('runProcessTrack — output conflict', () => {
     expect(outputs).toEqual(['/out/Artist - Title.aiff', '/out/Artist - Title (2).aiff'])
   })
 
+  // Overwrite on, and a folder holding Song.flac and Song.wav: both become Song.aiff in
+  // place of their own source. The check for a sibling's claim must come after the wait to
+  // learn whether the name is the source itself, or both jobs read the name as free before
+  // either claims it, both write it, and the folder ends with one recording of two.
+  it('never lets two in-place jobs of one run land on the same new name', async () => {
+    const reservations = createOutputReservations(false)
+    const release: Array<() => void> = []
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+      convertAudio: vi.fn(
+        () =>
+          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false })),
+          ),
+      ),
+    })
+
+    const first = runProcessTrack(
+      job({ id: 'a', inputPath: '/in/Song.flac', outputName: 'Song' }),
+      deps,
+    )
+    const second = runProcessTrack(
+      job({ id: 'b', inputPath: '/in/Song.wav', outputName: 'Song' }),
+      deps,
+    )
+    await vi.waitFor(() => expect(release).toHaveLength(2))
+    for (const done of release) done()
+    const outputs = [(await first).outputPath, (await second).outputPath]
+
+    expect(outputs).toEqual(['/in/Song.aiff', '/in/Song (2).aiff'])
+  })
+
   // The prompt is what the user consents on. A claim by another job in the run has no file
   // behind it yet, so a prompt reading "already exists in the destination folder" asked
   // about a file that was not there; the prompt is told which of the two it is facing.

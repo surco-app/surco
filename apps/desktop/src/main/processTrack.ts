@@ -236,6 +236,12 @@ export async function runProcessTrack(
       inPlace,
     )
     let target = outputPath
+    // Awaited before the conflict check reads the disk and the sibling claims, as the
+    // beside branch does: with the wait between that read and reservePath, two in-place
+    // jobs of one run (Song.flac and Song.wav, both becoming Song.aiff) each read the name
+    // as free, both wrote it, and the folder kept one recording of the two.
+    const outputIsInput =
+      !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
     // musicOnly writes to a private tmpDir unique per job (via mkdtemp below), so it
     // can't collide with another job and needs no reservation.
     if (musicOnly) {
@@ -259,7 +265,7 @@ export async function runProcessTrack(
         outputPath,
         job.previousOutputPath,
         deps.existsSync(outputPath) || deps.isPathReserved(outputPath),
-        inPlace && (await deps.isSameFile(job.inputPath, outputPath)),
+        outputIsInput,
         deps.isPathReserved(outputPath),
       )
     ) {
