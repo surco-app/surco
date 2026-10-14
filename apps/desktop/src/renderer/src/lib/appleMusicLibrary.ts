@@ -36,6 +36,10 @@ const LIBRARY_MATCH_THRESHOLD = 0.7
 // otherwise-equal versions, so it gets the smallest share.
 const LIBRARY_WEIGHTS = { title: 0.45, artist: 0.4, duration: 0.15 }
 
+// Two rips of one recording measured up to a second apart (a gap, a fade, an encoder's
+// padding), while the closest same-titled different song in a real library sat 1.3 s off.
+const SAME_RECORDING_SEC = 1
+
 // Collaborator separators, matched on the raw artist string (the split happens before
 // folding, which would turn a comma/ampersand into a space and lose the boundary): a comma
 // or ampersand joining co-artists, an inline feature clause, or a "presents"/"pres." credit.
@@ -239,6 +243,9 @@ function artistMatch(candidatePrimaryWords: string[], entryFoldedArtist: string)
 // (version-aware), artist (a near-gate, binary), and — when both sides carry a length —
 // duration proximity to separate same-base different-version cuts. Weights renormalise over
 // the signals present, so a missing duration just leaves title+artist deciding.
+// The artist gate yields to the recording itself: the same base title, no clashing version
+// and a length within SAME_RECORDING_SEC is the same track whatever its credit, or with
+// none. Only an exact base qualifies, never the tail match, which needs the artist to vouch.
 function libraryMatchScore(
   entry: LibraryEntry,
   candidate: {
@@ -249,6 +256,15 @@ function libraryMatchScore(
 ): number {
   const title = titleScore(candidate.parts, entry.parts)
   if (title === 0) return 0
+  if (
+    title === 1 &&
+    candidate.parts.base === entry.parts.base &&
+    candidate.durationSec !== undefined &&
+    entry.durationSec !== undefined &&
+    Math.abs(candidate.durationSec - entry.durationSec) <= SAME_RECORDING_SEC
+  )
+    return 1
+  if (candidate.primaryWords.length === 0) return 0
   const artist = artistMatch(candidate.primaryWords, entry.artist) ? 1 : 0
   let weighted = LIBRARY_WEIGHTS.title * title + LIBRARY_WEIGHTS.artist * artist
   let total = LIBRARY_WEIGHTS.title + LIBRARY_WEIGHTS.artist
@@ -262,7 +278,8 @@ function libraryMatchScore(
 
 // The candidate's scoring shape plus the library entries plausible enough to score against
 // it: the entries filed under any of its title keys, deduped by reference (one row is filed
-// under several keys). Null when the tags can't identify a song at all.
+// under several keys). Null when the tags can't identify a song at all. A missing artist
+// still gathers, leaving primaryWords empty so only the recording itself can match.
 function candidateEntries(
   index: AppleMusicIndex,
   candidate: { title: string; artist: string; durationSec?: number },
@@ -271,10 +288,13 @@ function candidateEntries(
   entries: Set<LibraryEntry>
 } | null {
   const primary = primaryArtist(candidate.artist)
-  if (!primary) return null
   const parts = titleParts(candidate.title, candidate.artist)
   if (!parts.base) return null
-  const cand = { parts, primaryWords: primary.split(' '), durationSec: candidate.durationSec }
+  const cand = {
+    parts,
+    primaryWords: primary ? primary.split(' ') : [],
+    durationSec: candidate.durationSec,
+  }
   const entries = new Set<LibraryEntry>()
   for (const key of bucketKeys(candidate.title, candidate.artist)) {
     for (const entry of index.get(key) ?? []) entries.add(entry)

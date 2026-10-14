@@ -481,7 +481,7 @@ export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
     let durationSec: number | undefined
     const dur = rest.match(TRAILING_DURATION)
     if (dur) {
-      const sec = Math.round(Number(dur[1].replace(',', '.')))
+      const sec = Number(dur[1].replace(',', '.'))
       if (Number.isFinite(sec) && sec > 0) durationSec = sec
       rest = rest.slice(0, dur.index)
     }

@@ -359,15 +359,17 @@ describe('parseLibraryDump', () => {
     ])
   })
 
-  it('parses a comma-decimal duration (an es-locale AppleScript serialises 486.55 as "486,55") and rounds to whole seconds', () => {
+  it('parses a comma-decimal duration (an es-locale AppleScript serialises 486.55 as "486,55")', () => {
     expect(parseLibraryDump('Funky Feelings\tHead Horny\t486,555999755859')).toEqual([
-      { title: 'Funky Feelings', artist: 'Head Horny', durationSec: 487 },
+      { title: 'Funky Feelings', artist: 'Head Horny', durationSec: 486.555999755859 },
     ])
   })
 
-  it('parses a dot-decimal duration and rounds to whole seconds', () => {
-    expect(parseLibraryDump('Track\tArtist\t367.2')).toEqual([
-      { title: 'Track', artist: 'Artist', durationSec: 367 },
+  // Measured 14/10 on a real library: rounded to whole seconds, Masquerade's "Touch Me"
+  // (305.39 s) sat within a second of a different "Touch Me" lasting 304.09 s.
+  it('keeps the fraction of a dot-decimal duration, so two songs over a second apart never round together', () => {
+    expect(parseLibraryDump('Touch Me\tMasquerade\t305.385986328125')).toEqual([
+      { title: 'Touch Me', artist: 'Masquerade', durationSec: 305.385986328125 },
     ])
   })
 
@@ -395,7 +397,7 @@ describe('parseLibraryDump', () => {
       {
         title: 'Funky Feelings',
         artist: 'Head Horny',
-        durationSec: 487,
+        durationSec: 486.55,
         persistentId: 'A0B1C2D3E4F56789',
       },
     ])

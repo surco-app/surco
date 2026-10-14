@@ -57,7 +57,7 @@ describe('the fake Music library answers like the real scripts', () => {
       {
         title: 'Plastic Dreams',
         artist: 'Jaydee',
-        durationSec: 487,
+        durationSec: 486.55,
         persistentId: own.persistentId,
       },
       expect.objectContaining({ title: 'Streamed', durationSec: 200 }),
