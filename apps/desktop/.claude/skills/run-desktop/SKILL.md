@@ -89,6 +89,27 @@ After `tone`, the player is **not** open yet — run `play` (or `click`/`eval` y
 double-click) to mount it; `eval document.querySelector('[data-testid=player]')!=null`
 confirms.
 
+## Run as Windows (simulated)
+
+Most users are on Windows, where there is no Apple Music. Set `SURCO_SIMULATE_PLATFORM`
+and the driver launches through `simulate-platform.mjs` instead of the main entry:
+
+```bash
+cd apps/desktop/.claude/skills/run-desktop
+printf 'launch\ntone 5\nss win\nquit\n' | SURCO_SIMULATE_PLATFORM=win32 node driver.mjs repl
+```
+
+- Both halves see `win32`: the main process (`process.platform` is redefined before the
+  app loads) and the renderer (`window.api.platform`, read by the preload from the env).
+- Its own profile: `~/Library/Application Support/Electron-win32`, so a first run shows
+  the Windows wizard and never touches the normal driver profile. Delete it to start over;
+  write Mac-synced settings into it with `window.api.saveSettings` to test that case.
+- `simulate-bin/` goes first on `PATH`: `osascript` exits 127 like a missing binary and
+  logs every call to `Electron-win32/simulated-calls.log` (any line there is an Apple
+  Music path reached on Windows); `tasklist`/`taskkill` answer as if no DJ app runs.
+- What it does NOT simulate: Windows paths and drive letters, `EPERM`/`EBUSY` on rename,
+  the Recycle Bin, the title bar and menu bar. Those still need a real Windows.
+
 ## Run (human path)
 
 `electron-vite dev` opens a live window with HMR. Useful for hand-testing, useless for

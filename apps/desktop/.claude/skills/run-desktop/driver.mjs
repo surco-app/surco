@@ -64,7 +64,10 @@ async function launch() {
     // Pin the scale factor: on a Retina display the window renders at DPR 2 and every
     // screenshot comes out at twice the guide's 1440x895, which silently forks the
     // capture set into two resolutions.
-    args: [mainEntry, '--force-device-scale-factor=1'],
+    args: [
+      process.env.SURCO_SIMULATE_PLATFORM ? resolve(here, 'simulate-platform.mjs') : mainEntry,
+      '--force-device-scale-factor=1',
+    ],
     // Headed on macOS shows a real window; that's fine and lets screenshots capture it.
     env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
   })
