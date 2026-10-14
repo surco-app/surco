@@ -325,6 +325,60 @@ describe('isInLibrary — version-aware scoring with duration', () => {
   })
 })
 
+// Measured 14/10 sweeping a real NAS against its library: 18 of 357 files whose very audio
+// was in Apple Music read "not in Apple Music", almost all with the right title but a
+// different or missing artist (a credit Music files elsewhere, a garbage tag, a file whose
+// artist lives only in its folder name). The same title at the same length is the same
+// recording, whoever it is credited to.
+describe('isInLibrary — same title and length under another artist', () => {
+  it('matches the same title within a second of length though Music credits someone else', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Save Me', artist: 'DJ Charly & Garlic', durationSec: 287.412 },
+    ])
+    expect(isInLibrary(idx, { title: 'Save Me', artist: 'DJ Josh', durationSec: 287.41 })).toBe(
+      true,
+    )
+  })
+
+  it('matches a file with no artist tag by its title and length', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Drop The Bass', artist: 'Committee', durationSec: 395.2 },
+    ])
+    expect(isInLibrary(idx, { title: 'Drop The Bass', artist: '', durationSec: 395.9 })).toBe(true)
+  })
+
+  it('misses a same-titled song by another artist over a second longer', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Touch Me', artist: 'Masquerade', durationSec: 305.385986328125 },
+    ])
+    expect(
+      isInLibrary(idx, { title: 'Touch Me', artist: 'Mike Humanoid', durationSec: 304.087 }),
+    ).toBe(false)
+  })
+
+  // The tail match exists for a title field holding the whole file name; without the artist
+  // to vouch for it, a one-word library title would claim every title ending in that word.
+  it('does not let a short library title claim a longer one by its last word', () => {
+    const idx = buildLibraryIndex([{ title: 'Love', artist: 'Tito Dj', durationSec: 342.5 }])
+    expect(
+      isInLibrary(idx, {
+        title: 'Your Love (Get Far Remix)',
+        artist: 'Fargetta Feat. Lorna',
+        durationSec: 342.16,
+      }),
+    ).toBe(false)
+  })
+
+  it('does not match two named versions of a title by another artist', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Forever (Radio Edit)', artist: 'Dee Dee', durationSec: 210 },
+    ])
+    expect(
+      isInLibrary(idx, { title: 'Forever (Club Mix)', artist: 'Someone Else', durationSec: 210 }),
+    ).toBe(false)
+  })
+})
+
 describe('staleLibraryCopy', () => {
   // The replace flow: Surco converted the FLAC to AIFF and added it to Apple Music, but
   // the library still holds the old MP3 rip of the same song. The matcher must name THAT
