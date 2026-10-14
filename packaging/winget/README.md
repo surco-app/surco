@@ -1,9 +1,8 @@
 # winget manifests
 
-Manifest trio for [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs), kept here
-until the Windows installer is code-signed — submitting an unsigned installer works, but
-SmartScreen still fires on first launch and reviews flag it, so the listing lands better
-once signing ships.
+Manifest trio for [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs), first
+submitted with v1.8.2 while the Windows installer is still unsigned. winget-pkgs only accepts
+schema 1.10.0 or 1.12.0.
 
 To submit (from any machine with [komac](https://github.com/russellbanks/Komac)):
 
