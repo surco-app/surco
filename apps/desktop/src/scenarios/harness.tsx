@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
 import { app } from 'electron'
 import type React from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { expect } from 'vitest'
 import { activity } from '../main/activity'
 import { registerAppleMusicIpc } from '../main/appleMusicIpc'
@@ -45,6 +45,7 @@ import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
+import { NormalizeSection } from '../renderer/src/components/NormalizeSection'
 import { useAppleMusicFill } from '../renderer/src/hooks/useAppleMusicFill'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import { useLibraryVerdict } from '../renderer/src/hooks/useLibraryVerdict'
@@ -84,6 +85,7 @@ import { normalizeImportFields } from '../shared/defaults'
 import { resolveJobFormat } from '../shared/format'
 import type {
   FormatSetting,
+  NormalizeConfig,
   ProcessJob,
   ProcessResult,
   Release,
@@ -304,6 +306,7 @@ function scenarioApi(
     readMeta: (path) => invokeMain('audio:meta', path),
     spectrogram: (path, priority) => invokeMain('audio:spectrogram', path, priority),
     loudness: (path, priority) => invokeMain('audio:loudness', path, priority),
+    peekAnalysis: (family, path) => invokeMain('audio:peek', family, path),
     bpm: (path, priority) => invokeMain('audio:bpm', path, priority),
     key: (path, priority) => invokeMain('audio:key', path, priority),
     clicks: (path, priority) => invokeMain('audio:clicks', path, priority),
@@ -377,6 +380,17 @@ function searchResultOf(release: Release): SearchResult {
   return { provider: release.provider, id: release.id, title: release.title }
 }
 
+// The editor's volume section over a real, measured track: the dials as the user touches
+// them, and the wave's preview legend as the user reads it.
+export interface LoudnessSection {
+  stepTarget: (value: string) => void
+  typeTarget: (value: string) => void
+  preview: () => string
+  targetLufs: () => number
+  gainDb: () => number
+  staged: () => NormalizeConfig | undefined
+}
+
 export interface Scenario {
   tracks: () => TrackItem[]
   drop: (...paths: string[]) => Promise<void>
@@ -391,6 +405,7 @@ export interface Scenario {
   acceptMatch: (fileName: string, release: Release, position: string) => void
   findAndReplace: (find: string, replace: string, options?: { regex?: boolean }) => string
   applyAlbum: (release: Release) => void
+  openLoudness: (fileName: string) => Promise<LoudnessSection>
   trimDetectedSilence: () => Promise<void>
   rows: () => TrackItem[]
   summary: () => BatchSummary | null
@@ -758,6 +773,60 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       )
       act(() => clickEnabled(rows.getByTestId('match-apply')))
       rows.unmount()
+    },
+    openLoudness: async (fileName) => {
+      const id = trackNamed(fileName).id
+      const item = () => tracks().find((t) => t.id === id) as TrackItem
+      const format = resolveJobFormat(
+        settings.outputFormat,
+        item().inputPath,
+        'aiff',
+        settings.keepMp3Sources,
+        item().fromAppleMusic,
+      )
+      function Section(): React.JSX.Element {
+        const [value, setValue] = useState(item().normalize ?? settings.normalize)
+        return (
+          <NormalizeSection
+            value={value}
+            open
+            onToggle={() => {}}
+            onChange={(n) => {
+              setValue(n)
+              result.current.library.updateTrack(id, { normalize: n })
+            }}
+            item={item()}
+            selectedCount={1}
+            format={format}
+          />
+        )
+      }
+      const view = render(
+        <QueryClientProvider client={queryClient}>
+          <Section />
+        </QueryClientProvider>,
+      )
+      const field = () => view.getByTestId('normalize-target-lufs') as HTMLInputElement
+      await waitFor(() => view.getByTestId('waveform-preview'), { timeout: 30_000 })
+      return {
+        stepTarget: (value) => {
+          fireEvent.change(field(), { target: { value } })
+        },
+        typeTarget: (value) => {
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
+            field(),
+            value,
+          )
+          fireEvent(field(), new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
+        },
+        preview: () => view.getByTestId('waveform-preview').textContent ?? '',
+        targetLufs: () => Number.parseFloat(field().value),
+        gainDb: () =>
+          Number.parseFloat(
+            (view.getByTestId('waveform-gain-delta').textContent ?? '').replace('−', '-'),
+          ),
+        staged: () => item().normalize,
+      }
     },
     trimDetectedSilence: async () => {
       for (const t of tracks().filter((track) => !track.trim)) {
