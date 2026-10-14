@@ -23,6 +23,7 @@ import { bootMain, closeMain, invokeMain, listen, type ScenarioOptions } from '.
 export interface AppScenario {
   drop: (...paths: string[]) => Promise<void>
   select: (title: string) => Promise<void>
+  convertAll: () => Promise<void>
   errors: string[]
   close: () => void
 }
@@ -88,7 +89,10 @@ function stubBrowser(): void {
 }
 
 export async function openApp(options: ScenarioOptions): Promise<AppScenario> {
-  const { errors, api } = bootMain(options)
+  const { errors, api } = bootMain({
+    ...options,
+    settings: { hasSeenOnboarding: true, ...options.settings },
+  })
   const openFiles: { current?: (paths: string[]) => void } = {}
   const shell = shellApi(errors, openFiles)
   ;(window as unknown as { api: Api }).api = new Proxy(api, {
@@ -119,6 +123,8 @@ export async function openApp(options: ScenarioOptions): Promise<AppScenario> {
         () => {
           if (screen.queryAllByTestId('track-row').length <= before)
             throw new Error('scenario: the dropped files never reached the list')
+          if (screen.queryAllByTestId('track-loading').length > 0)
+            throw new Error('scenario: the dropped files were never read')
         },
         { timeout: 30_000 },
       )
@@ -134,6 +140,16 @@ export async function openApp(options: ScenarioOptions): Promise<AppScenario> {
         },
         { timeout: 30_000 },
       )
+    },
+    convertAll: async () => {
+      const button = () => screen.getByTestId('convert-all') as HTMLButtonElement
+      await waitFor(
+        () => {
+          if (button().disabled) throw new Error('scenario: Convert all never became available')
+        },
+        { timeout: 30_000 },
+      )
+      fireEvent.click(button())
     },
     errors,
     close: () => {
