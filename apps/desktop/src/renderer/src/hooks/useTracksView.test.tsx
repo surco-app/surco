@@ -305,6 +305,28 @@ describe('useTracksView', () => {
     vi.useRealTimers()
   })
 
+  it('keeps a silence flag on the list after its waveform is collected', async () => {
+    vi.useFakeTimers()
+    const client = createQueryClient()
+    const { result } = setup([track('a')], client)
+    const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 ? 0.5 : 0.0005))
+    ;(window as unknown as { api: { waveform: () => Promise<unknown> } }).api = {
+      ...(window as unknown as { api: object }).api,
+      waveform: async () => ({ peaks, durationSec: 100 }),
+    }
+    await act(async () => {
+      await client.fetchQuery(waveformOptions('/music/a.wav'))
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(HEAVY_PROBE_GC_MS + 1_000)
+    })
+
+    expect(client.getQueryData(['waveform', '/music/a.wav'])).toBeUndefined()
+    expect(result.current.tracksView[0].audioIssues?.silence).toBe(true)
+    vi.useRealTimers()
+  })
+
   it('shows a hydrated clipping verdict that carries no channel lanes', () => {
     const client = new QueryClient()
     client.setQueryData(['scanVerdict', '/music/a.wav'], { clipping: true })

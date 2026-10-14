@@ -157,6 +157,7 @@ describe('removeAnalysisQueries', () => {
       'bpm',
       'key',
       'waveform',
+      'waveVerdict',
       'waveformScan',
       'scanVerdict',
     ]

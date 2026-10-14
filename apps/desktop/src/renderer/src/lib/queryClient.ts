@@ -1,7 +1,8 @@
 import { QueryClient } from '@tanstack/react-query'
-import type { SpectrumResult, WaveformScan } from '../../../shared/types'
+import type { SpectrumResult, WaveformResult, WaveformScan } from '../../../shared/types'
 import { spectrumVerdictKey } from '../hooks/useSpectrogram'
-import { scanVerdictKey } from '../hooks/useWaveform'
+import { scanVerdictKey, waveVerdictKey } from '../hooks/useWaveform'
+import { detectTrim } from './trim'
 
 // The app's only async source is the main process over IPC: file probes (ffprobe,
 // taglib) and Discogs lookups. A given input path probes to the same facts for the
@@ -38,6 +39,10 @@ export function createQueryClient(): QueryClient {
       const data = event.query.state.data as WaveformScan | null | undefined
       if (!data) return
       client.setQueryData(scanVerdictKey(path), { clipping: data.clipped.some(Boolean) })
+    } else if (name === 'waveform') {
+      const data = event.query.state.data as WaveformResult | null | undefined
+      if (!data) return
+      client.setQueryData(waveVerdictKey(path), { silence: detectTrim(data) !== undefined })
     }
   })
   return client

@@ -60,6 +60,7 @@ const ANALYSIS_QUERY_KEYS = [
   'bpm',
   'key',
   'waveform',
+  'waveVerdict',
   'waveformScan',
   'scanVerdict',
   'clicks',

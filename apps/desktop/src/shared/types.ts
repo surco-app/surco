@@ -1132,6 +1132,10 @@ export interface ScanVerdict {
   clipping: boolean
 }
 
+export interface WaveVerdict {
+  silence: boolean
+}
+
 export interface SpectrumResult {
   image: string
   // null when the cutoff analysis failed (e.g. ffmpeg errored) but the image
