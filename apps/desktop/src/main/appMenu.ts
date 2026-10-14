@@ -8,6 +8,7 @@ interface Params {
   run: (id: string) => void
   checkForUpdates: () => void
   mac: boolean
+  windows: boolean
 }
 
 export function appMenuTemplate({
@@ -17,6 +18,7 @@ export function appMenuTemplate({
   run,
   checkForUpdates,
   mac,
+  windows,
 }: Params): Electron.MenuItemConstructorOptions[] {
   const keymapItem = (label: string, id: string): Electron.MenuItemConstructorOptions => ({
     label,
@@ -49,7 +51,7 @@ export function appMenuTemplate({
         keymapItem(t('info'), 'info'),
         // Reveal is renderer-owned like the others now (it used to register ⌘R itself):
         // its chord is configurable, so the keystroke must reach the keymap, not the menu.
-        keymapItem(t('reveal'), 'reveal'),
+        keymapItem(t(windows ? 'revealWin' : 'reveal'), 'reveal'),
         keymapItem(t('rename'), 'rename'),
         keymapItem(t('findReplace'), 'find-replace'),
         ...(mac

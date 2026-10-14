@@ -3,6 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackProperties } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
+import { revealCommandKey } from '../lib/platform'
 import { fileExtension, formatFileSize } from '../lib/properties'
 import { formatKHz } from '../lib/quality'
 import { SectionSubhead } from './SectionSubhead'
@@ -138,7 +139,7 @@ export function PropertiesReadout({
                         type="button"
                         data-testid="property-reveal"
                         onClick={() => window.api.reveal(inputPath)}
-                        aria-label={`${tr('commands.reveal')}: ${r.value}`}
+                        aria-label={`${tr(revealCommandKey())}: ${r.value}`}
                         className="press inline-flex max-w-full items-center gap-1.5 align-middle text-[var(--color-accent)] hover:underline"
                       >
                         <Folder className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

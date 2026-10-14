@@ -4,7 +4,7 @@ import { createMenuT } from './i18n'
 
 type Item = Electron.MenuItemConstructorOptions
 
-function build(locale = 'en', mac = true) {
+function build(locale = 'en', mac = true, windows = false) {
   const run = vi.fn()
   const template = appMenuTemplate({
     appName: 'Surco',
@@ -13,6 +13,7 @@ function build(locale = 'en', mac = true) {
     run,
     checkForUpdates: vi.fn(),
     mac,
+    windows,
   })
   return { template, run }
 }
@@ -57,6 +58,14 @@ describe('appMenuTemplate', () => {
   it('has no Music review where there is no Music to script', () => {
     const file = menu(build('en', false).template, 'File')
     expect(file.find((i) => i.label === 'Review metadata in Apple Music…')).toBeUndefined()
+  })
+
+  it('reveals in File Explorer on Windows, where there is no Finder', () => {
+    const { template, run } = build('en', false, true)
+    const file = menu(template, 'File')
+    expect(file.find((i) => i.label === 'Reveal in Finder')).toBeUndefined()
+    click(itemFor(file, 'Show in File Explorer'))
+    expect(run).toHaveBeenCalledWith('reveal')
   })
 
   it('has no Add to Apple Music where there is no Music to add to', () => {

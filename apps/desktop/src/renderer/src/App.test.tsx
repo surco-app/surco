@@ -2218,6 +2218,15 @@ describe('App on Windows', () => {
     expect((await paletteTitles()).filter((title) => title.includes('Apple Music'))).toEqual([])
   })
 
+  it('names File Explorer in the palette, the place a Windows user actually lands', async () => {
+    await renderApp()
+    await addTwoTracks()
+
+    const titles = await paletteTitles()
+    expect(titles.filter((title) => title.includes('Finder'))).toEqual([])
+    expect(titles.some((title) => title.startsWith('Show in File Explorer'))).toBe(true)
+  })
+
   async function shortcutTitles(): Promise<string[]> {
     fireEvent.click(await screen.findByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-shortcuts'))
@@ -2230,6 +2239,14 @@ describe('App on Windows', () => {
     await renderApp()
 
     expect((await shortcutTitles()).filter((title) => title.includes('Apple Music'))).toEqual([])
+  })
+
+  it('names File Explorer in the shortcuts, not Finder', async () => {
+    await renderApp()
+
+    const titles = await shortcutTitles()
+    expect(titles.filter((title) => title.includes('Finder'))).toEqual([])
+    expect(titles).toContain('Show in File Explorer')
   })
 
   describe('with an Apple Music destination synced from a Mac', () => {

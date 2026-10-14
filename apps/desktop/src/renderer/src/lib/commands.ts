@@ -735,7 +735,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // nothing reads as a broken key rather than as "convert it first".
       id: 'reveal',
       group: 'library',
-      title: tr('commands.reveal'),
+      title: tr(platform === 'win32' ? 'commands.revealWin' : 'commands.reveal'),
       hint: hintFor('reveal'),
       enabled: !!(selected?.outputPath ?? selected?.inputPath),
       run: () => {

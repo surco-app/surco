@@ -9,3 +9,7 @@ export function isMacOS(): boolean {
 export function isWindows(): boolean {
   return window.api.platform === 'win32'
 }
+
+export function revealCommandKey(): string {
+  return isWindows() ? 'commands.revealWin' : 'commands.reveal'
+}
