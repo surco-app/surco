@@ -23,7 +23,7 @@ export default function Footer() {
           <p className="mt-5 inline-flex rounded-full border border-line bg-surface/40 px-3 py-1 font-mono text-xs text-muted">
             {t('available')}
           </p>
-          <p className="mt-4 max-w-xs text-xs leading-relaxed text-faint">{t('betaNote')}</p>
+          <p className="mt-4 max-w-xs text-xs leading-relaxed text-faint">{t('footerNote')}</p>
         </div>
 
         <div>
