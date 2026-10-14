@@ -792,26 +792,30 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: !!selected,
       run: trimDetected,
     },
-    {
-      id: 'add-apple-music',
-      group: 'convert',
-      title: tr('commands.addAppleMusic'),
-      hint: hintFor('add-apple-music'),
-      enabled:
-        !!selected &&
-        canAddToAppleMusic(
-          selected,
-          platform,
-          resolveJobFormat(
-            settings?.outputFormat ?? 'aiff',
-            selected.inputPath,
-            'aiff',
-            settings?.keepMp3Sources ?? false,
-            selected.fromAppleMusic,
-          ),
-        ),
-      run: () => selected && addTrackToAppleMusic(selected.id),
-    },
+    ...(platform === 'darwin'
+      ? [
+          {
+            id: 'add-apple-music',
+            group: 'convert' as const,
+            title: tr('commands.addAppleMusic'),
+            hint: hintFor('add-apple-music'),
+            enabled:
+              !!selected &&
+              canAddToAppleMusic(
+                selected,
+                platform,
+                resolveJobFormat(
+                  settings?.outputFormat ?? 'aiff',
+                  selected.inputPath,
+                  'aiff',
+                  settings?.keepMp3Sources ?? false,
+                  selected.fromAppleMusic,
+                ),
+              ),
+            run: () => selected && addTrackToAppleMusic(selected.id),
+          },
+        ]
+      : []),
     {
       id: 'remove',
       group: 'library',

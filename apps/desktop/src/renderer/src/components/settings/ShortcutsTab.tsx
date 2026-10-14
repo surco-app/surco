@@ -153,7 +153,9 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
             <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
             <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'Hint'))}</span>
           </div>
-          {SHORTCUT_DEFAULTS.filter((d) => sectionOf(d) === scope).map(renderRow)}
+          {SHORTCUT_DEFAULTS.filter((d) => sectionOf(d) === scope && (!d.macOnly || isMacOS())).map(
+            renderRow,
+          )}
         </div>
       ))}
       {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page

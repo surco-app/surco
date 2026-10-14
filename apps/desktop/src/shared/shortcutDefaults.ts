@@ -19,6 +19,7 @@ export interface ShortcutDef {
   // que acaben divergiendo; este campo solo hace falta cuando el comando no vive en el
   // registro —lo ejecuta un componente— y por tanto no tiene grupo del que heredar.
   group?: string
+  macOnly?: boolean
 }
 
 export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
@@ -29,7 +30,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'rename', chord: ['mod', 'shift', 'r'] },
   { id: 'reveal', chord: ['mod', 'r'] },
   { id: 'info', chord: ['mod', 'i'] },
-  { id: 'add-apple-music', chord: ['mod', 'shift', 'm'] },
+  { id: 'add-apple-music', chord: ['mod', 'shift', 'm'], macOnly: true },
   { id: 'remove', chord: ['mod', 'backspace'], suppressWhileTyping: true },
   { id: 'settings', chord: ['mod', ','] },
   { id: 'shortcuts', chord: ['?'] },

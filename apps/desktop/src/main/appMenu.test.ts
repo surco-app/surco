@@ -59,6 +59,11 @@ describe('appMenuTemplate', () => {
     expect(file.find((i) => i.label === 'Review metadata in Apple Music…')).toBeUndefined()
   })
 
+  it('has no Add to Apple Music where there is no Music to add to', () => {
+    const file = menu(build('en', false).template, 'File')
+    expect(file.find((i) => i.label === 'Add to Apple Music')).toBeUndefined()
+  })
+
   // The toolbar gave up its Stats and Activity buttons and the palette button: the View
   // menu is where they are now, each with the shortcut the keymap owns.
   it('opens the palette, stats and activity from the View menu', () => {

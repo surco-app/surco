@@ -52,9 +52,9 @@ export function appMenuTemplate({
         keymapItem(t('reveal'), 'reveal'),
         keymapItem(t('rename'), 'rename'),
         keymapItem(t('findReplace'), 'find-replace'),
-        keymapItem(t('addAppleMusic'), 'add-apple-music'),
         ...(mac
           ? [
+              keymapItem(t('addAppleMusic'), 'add-apple-music'),
               keymapItem(t('reviewMusic'), 'music-review'),
               keymapItem(t('musicDuplicates'), 'music-duplicates'),
             ]

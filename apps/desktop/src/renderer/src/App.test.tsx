@@ -2205,6 +2205,33 @@ describe('App command palette', () => {
 })
 
 describe('App on Windows', () => {
+  async function paletteTitles(): Promise<string[]> {
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    return screen.getAllByTestId('palette-item').map((item) => item.textContent ?? '')
+  }
+
+  it('offers no Apple Music command in the palette, since Windows has no Music to add to', async () => {
+    await renderApp()
+    await addTwoTracks()
+
+    expect((await paletteTitles()).filter((title) => title.includes('Apple Music'))).toEqual([])
+  })
+
+  async function shortcutTitles(): Promise<string[]> {
+    fireEvent.click(await screen.findByTestId('open-settings'))
+    fireEvent.click(await screen.findByTestId('settings-tab-shortcuts'))
+    return screen
+      .getAllByTestId(/^shortcut-row-/)
+      .map((row) => row.querySelector('span')?.textContent ?? '')
+  }
+
+  it('lists no Apple Music shortcut a Windows user could never trigger', async () => {
+    await renderApp()
+
+    expect((await shortcutTitles()).filter((title) => title.includes('Apple Music'))).toEqual([])
+  })
+
   describe('with an Apple Music destination synced from a Mac', () => {
     const synced = settings({ addToAppleMusic: true, keepOutputCopy: false, outputDir: '/out' })
 

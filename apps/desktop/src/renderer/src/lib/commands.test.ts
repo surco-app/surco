@@ -464,9 +464,9 @@ describe('buildCommands platform-gated entries', () => {
     expect(commandById(deps, 'add-apple-music').enabled).toBe(true)
   })
 
-  it('disables "add to Apple Music" off macOS even for the same track', () => {
+  it('leaves "add to Apple Music" out off macOS even for the same track', () => {
     const deps = makeDeps({ platform: 'win32', selected: track() })
-    expect(commandById(deps, 'add-apple-music').enabled).toBe(false)
+    expect(buildCommands(deps).find((c) => c.id === 'add-apple-music')).toBeUndefined()
   })
 
   // Reveal-in-finder prefers the converted file, and running it hands that exact path to
