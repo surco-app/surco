@@ -21,5 +21,7 @@ export const INDEXABLE_PATHS: readonly string[] = [
   '/en/changelog',
   '/convertir/flac-a-aiff',
   '/en/convert/flac-to-aiff',
+  '/firma-de-codigo',
+  '/en/code-signing',
   ...recipePages().map((page) => page.path),
 ]

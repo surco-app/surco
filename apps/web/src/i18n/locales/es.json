@@ -465,7 +465,8 @@
     "copyright": "© 2026 Surco · getsurco.app",
     "slogan": "tu música, en orden",
     "convertHeading": "Convertir",
-    "flacToAiff": "FLAC a AIFF"
+    "flacToAiff": "FLAC a AIFF",
+    "codeSigning": "Firma de código y privacidad"
   },
   "install": {
     "kicker": "Instalar",
@@ -2354,6 +2355,91 @@
             "anchor": "nombres"
           }
         ]
+      }
+    ]
+  },
+  "codeSigning": {
+    "metaTitle": "Política de firma de código y privacidad · Surco",
+    "metaDescription": "Cómo se firman los instaladores de Surco, quién aprueba cada versión y qué datos salen de tu ordenador cuando usas la app.",
+    "kicker": "Firma y privacidad",
+    "title": "Política de firma de código",
+    "lede": "Cómo se firman los instaladores de Surco, quién decide qué se firma y qué datos salen de tu ordenador.",
+    "signingHeading": "Firma",
+    "attribution": "Firma de código gratuita proporcionada por SignPath.io, con certificado de SignPath Foundation.",
+    "signingBody": [
+      "La firma demuestra que el instalador lo ha publicado Surco y que nadie lo ha modificado después.",
+      "Solo se firman instaladores compilados desde el código público de Surco por su proceso de publicación en GitHub Actions, y cada versión se aprueba a mano antes de firmarla.",
+      "En macOS, Surco está firmado y notarizado por Apple."
+    ],
+    "pending": "La primera versión de Windows firmada todavía no ha salido. Hasta entonces el instalador de Windows se publica sin firma.",
+    "teamHeading": "Equipo",
+    "teamLede": "Surco lo desarrolla y mantiene una sola persona, que ocupa los tres papeles.",
+    "roles": [
+      {
+        "role": "Autor",
+        "desc": "Puede cambiar el código sin revisión adicional."
+      },
+      {
+        "role": "Revisor",
+        "desc": "Revisa cada cambio que llega de fuera del equipo."
+      },
+      {
+        "role": "Aprobador",
+        "desc": "Aprueba cada solicitud de firma y decide qué versiones se firman."
+      }
+    ],
+    "member": "Vicent Gozalbes",
+    "sourceLabel": "Código fuente",
+    "privacyHeading": "Privacidad",
+    "privacyLede": "Surco no tiene cuenta ni telemetría, y no envía nada a ningún servidor de Surco. La app solo se conecta a otros servicios en estos casos.",
+    "privacyItems": [
+      "Cuando buscas una pista, a mano o con la búsqueda automática, envía el título, el artista y otros datos de búsqueda a las fuentes que tengas activadas. Pueden ser Discogs, Bandcamp, Deezer, Beatport y MusicBrainz. Las carátulas se descargan de sus servidores y de Cover Art Archive.",
+      "Si conectas tu cuenta de Beatport, el usuario y la contraseña solo viajan a Beatport. La contraseña se guarda cifrada en tu ordenador.",
+      "Para saber si hay una versión nueva, consulta las versiones publicadas en GitHub y descarga de ahí la actualización.",
+      "Si informas de un error, abre en tu navegador un formulario de GitHub con la versión, el sistema y las últimas líneas de error, sin rutas de carpetas. No se envía nada hasta que lo publicas tú."
+    ],
+    "policiesLabel": "Cada servicio tiene su propia política de privacidad",
+    "webHeading": "Esta web",
+    "webBody": "getsurco.app usa Google Analytics y Vercel Analytics para contar visitas y descargas. La app de escritorio no usa ninguno de los dos.",
+    "webPolicies": "Políticas de Google y Vercel",
+    "policies": [
+      {
+        "name": "Discogs",
+        "url": "https://www.discogs.com/help/doc/privacy-policy"
+      },
+      {
+        "name": "Bandcamp",
+        "url": "https://bandcamp.com/privacy"
+      },
+      {
+        "name": "Deezer",
+        "url": "https://www.deezer.com/legal/personal-datas"
+      },
+      {
+        "name": "Beatport",
+        "url": "https://support.beatport.com/hc/en-us/articles/4412316093588"
+      },
+      {
+        "name": "MusicBrainz",
+        "url": "https://metabrainz.org/privacy"
+      },
+      {
+        "name": "Cover Art Archive",
+        "url": "https://archive.org/about/terms"
+      },
+      {
+        "name": "GitHub",
+        "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+      }
+    ],
+    "webPolicyLinks": [
+      {
+        "name": "Google",
+        "url": "https://policies.google.com/privacy"
+      },
+      {
+        "name": "Vercel",
+        "url": "https://vercel.com/legal/privacy-notice"
       }
     ]
   }

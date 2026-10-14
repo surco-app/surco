@@ -9,6 +9,7 @@ export default function Footer() {
   const useCasesHref = PAGES.useCases[lang]
   const changelogHref = PAGES.changelog[lang]
   const flacToAiffHref = PAGES.flacToAiff[lang]
+  const codeSigningHref = PAGES.codeSigning[lang]
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
@@ -111,6 +112,13 @@ export default function Footer() {
       <div className="border-t border-line/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-faint sm:flex-row">
           <span>{t('footer.copyright')}</span>
+          <a
+            href={codeSigningHref}
+            data-testid="footer-code-signing"
+            className="transition-colors hover:text-fg"
+          >
+            {t('footer.codeSigning')}
+          </a>
           <span>{t('footer.slogan')}</span>
         </div>
       </div>
