@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, configure, fireEvent, screen, waitFor } from '@testing-library/react'
 import { createRoot } from 'react-dom/client'
 import { vi } from 'vitest'
 import { saveLastSession } from '../main/session'
@@ -89,6 +89,7 @@ function stubBrowser(): void {
 }
 
 export async function openApp(options: ScenarioOptions): Promise<AppScenario> {
+  configure({ getElementError: (message) => new Error(message ?? '') })
   const { errors, api } = bootMain({
     ...options,
     settings: { hasSeenOnboarding: true, ...options.settings },
