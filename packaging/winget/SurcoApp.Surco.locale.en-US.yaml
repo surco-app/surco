@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 PackageIdentifier: SurcoApp.Surco
-PackageVersion: 0.36.1
+PackageVersion: 1.8.2
 PackageLocale: en-US
 Publisher: Surco App
 PublisherUrl: https://www.getsurco.app/
@@ -11,7 +11,8 @@ License: GPL-3.0
 LicenseUrl: https://github.com/surco-app/surco/blob/main/LICENSE
 ShortDescription: Free, open-source track organizer for DJs
 Description: |-
-  Surco finds the right metadata for your tracks on Discogs and Bandcamp,
+  Surco finds the right metadata for your tracks on Discogs, Bandcamp, Deezer,
+  Beatport and MusicBrainz,
   checks that files really are lossless, detects BPM and musical key,
   converts between formats and exports to DJ software or Apple Music.
 Moniker: surco

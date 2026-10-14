@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
 PackageIdentifier: SurcoApp.Surco
-PackageVersion: 0.36.1
+PackageVersion: 1.8.2
 InstallerLocale: en-US
 InstallerType: nullsoft
 Scope: user
 UpgradeBehavior: install
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/surco-app/surco-releases/releases/download/v0.36.1/Surco-0.36.1-Setup.exe
-    InstallerSha256: CFD4AAD8863709D9D43A7676FC87765D0665E15DC2BF897E90D1671319A1B776
+    InstallerUrl: https://github.com/surco-app/surco-releases/releases/download/v1.8.2/Surco-1.8.2-Setup.exe
+    InstallerSha256: 00D90CA8D9020503ED8EF399E8EE4C9A8A11A192AA8C1B9C7C5F7DB910329E72
 ManifestType: installer
 ManifestVersion: 1.6.0
