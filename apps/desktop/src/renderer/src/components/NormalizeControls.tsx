@@ -30,6 +30,8 @@ const PEAK_PRESETS = [
   { id: 'hot', peak: -0.1 },
 ]
 
+const TYPING_PAUSE_MS = 400
+
 function NumberField({
   testid,
   label,
@@ -51,14 +53,19 @@ function NumberField({
 }): React.JSX.Element {
   // The field edits a text draft, not the number: every meaningful value here is
   // negative (-14 LUFS, -1 dBTP), so intermediate states ('', '-', '-0.') must
-  // survive typing instead of snapping back to the last committed figure. The draft
-  // commits on Enter or blur: typing -10 passes through -1, and a per-keystroke commit
-  // sent that -1 to the plan (and to the saved default) on the way.
+  // survive typing instead of snapping back to the last committed figure. A step of
+  // the arrows is always a whole number and lands at once, so the wave preview follows
+  // it; typing lands after a short pause, or on Enter or blur: typing -10 passes
+  // through -1, and a per-keystroke commit sent that -1 to the plan (and to the saved
+  // default) on the way.
   const [draft, setDraft] = useState(String(value))
   useEffect(() => {
-    setDraft(String(value))
+    setDraft((d) => (Number.parseFloat(d) === value ? d : String(value)))
   }, [value])
+  const pause = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(pause.current), [])
   function commit(): void {
+    clearTimeout(pause.current)
     const n = Number.parseFloat(draft)
     if (!Number.isFinite(n)) {
       setDraft(String(value))
@@ -67,6 +74,22 @@ function NumberField({
     const clamped = Math.min(max ?? n, Math.max(min ?? n, n))
     setDraft(String(clamped))
     if (clamped !== value) onChange(clamped)
+  }
+  // Mid-typing, only a finished in-range figure lands: an out-of-range -4 on the way to
+  // -45 waits for Enter or blur instead of turning into -5 under the user's fingers.
+  function edit(e: React.ChangeEvent<HTMLInputElement>): void {
+    const text = e.target.value
+    setDraft(text)
+    clearTimeout(pause.current)
+    const n = Number.parseFloat(text)
+    if (!Number.isFinite(n) || n < (min ?? n) || n > (max ?? n)) return
+    if (!(e.nativeEvent instanceof InputEvent)) {
+      if (n !== value) onChange(n)
+      return
+    }
+    pause.current = setTimeout(() => {
+      if (n !== value) onChange(n)
+    }, TYPING_PAUSE_MS)
   }
   return (
     <label className="flex flex-col gap-1 text-xs text-fg-muted">
@@ -79,7 +102,7 @@ function NumberField({
         step={0.1}
         min={min}
         max={max}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={edit}
         // Enter commits here and stops: inside the Settings form it would otherwise also
         // submit, before the committed value had reached the draft being saved.
         onKeyDown={(e) => {

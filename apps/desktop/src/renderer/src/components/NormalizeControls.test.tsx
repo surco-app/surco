@@ -22,6 +22,19 @@ function Harness({ initial }: { initial: NormalizeConfig }): React.JSX.Element {
   return <NormalizeControls value={value} onChange={setValue} />
 }
 
+// Chromium tells the two ways a number field changes apart by the event it fires: a
+// keystroke arrives as an InputEvent with an inputType, a step of the arrows (spinner,
+// arrow keys, wheel) as a plain Event. fireEvent.change only ever sends the plain one.
+function typeInto(input: HTMLInputElement, value: string): void {
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  setValue?.call(input, value)
+  fireEvent(input, new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
+}
+
+function stepTo(input: HTMLInputElement, value: string): void {
+  fireEvent.change(input, { target: { value } })
+}
+
 describe('NormalizeControls reveal', () => {
   // Switching the mode on reveals the target fields BELOW the segmented control — at
   // the bottom of a scrolling Settings tab they land under the fold, so the scrollbar
@@ -60,6 +73,10 @@ describe('NormalizeControls reveal', () => {
 })
 
 describe('NormalizeControls number input', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   // Every meaningful value here is negative (-14 LUFS, -1 dBTP). A controlled number
   // input that only commits finite parses snaps back on clear, so the user literally
   // cannot delete-and-retype — the draft must live in the field until it parses.
@@ -68,27 +85,100 @@ describe('NormalizeControls number input', () => {
     render(<NormalizeControls value={loudness} onChange={onChange} />)
     const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
 
-    fireEvent.change(input, { target: { value: '' } })
+    typeInto(input, '')
     expect(input.value).toBe('')
 
-    fireEvent.change(input, { target: { value: '-9' } })
+    typeInto(input, '-9')
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -9 })
   })
 
-  // Typing -10 passes through -1. Committed per keystroke, that -1 reached the plan card
-  // (and, from the editor, the Settings default) for a moment; the value now lands when
-  // the user is done with it, on Enter or on leaving the field.
-  it('commits the typed value on Enter or blur, not on every keystroke', () => {
+  // The wave preview, the plan and the loudness table are how the user tunes the target:
+  // djotas reported they stopped following the field once it waited for Enter or blur.
+  // Each step of the arrows is a whole number, so it lands at once.
+  it('applies each step of the arrows at once', () => {
     const onChange = vi.fn()
     render(<NormalizeControls value={loudness} onChange={onChange} />)
     const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
-    fireEvent.change(input, { target: { value: '-1' } })
-    fireEvent.change(input, { target: { value: '-10' } })
+
+    stepTo(input, '-13.9')
+
+    expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -13.9 })
+  })
+
+  // Typing -10 passes through -1. Committed per keystroke, that -1 reached the plan card
+  // (and, from the editor, the Settings default) for a moment; a typed value lands once
+  // the user pauses, so the preview still follows without the figures on the way.
+  it('applies a typed value after a short pause, not on every keystroke', () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    render(<NormalizeControls value={loudness} onChange={onChange} />)
+    const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
+
+    typeInto(input, '-1')
+    act(() => vi.advanceTimersByTime(150))
+    typeInto(input, '-10')
+    act(() => vi.advanceTimersByTime(150))
     expect(onChange).not.toHaveBeenCalled()
-    fireEvent.blur(input)
+
+    act(() => vi.advanceTimersByTime(400))
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -10 })
+  })
+
+  // A pause mid-number must not rewrite what the user is typing: -10.0 applied as -10 and
+  // echoed back would turn the next key of -10.05 into -105.
+  it('keeps the draft as typed while its value is applied during a pause', () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    function Spy(): React.JSX.Element {
+      const [value, setValue] = useState(loudness)
+      return (
+        <NormalizeControls
+          value={value}
+          onChange={(v) => {
+            onChange(v)
+            setValue(v)
+          }}
+        />
+      )
+    }
+    render(<Spy />)
+    const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
+
+    typeInto(input, '-10.0')
+    act(() => vi.advanceTimersByTime(400))
+    expect(onChange).toHaveBeenLastCalledWith({ ...loudness, targetLufs: -10 })
+    expect(input.value).toBe('-10.0')
+  })
+
+  // -4 is on the way to -45. Brought into range during a pause it would turn into -5
+  // under the user's fingers and the next key would make -55.
+  it('leaves an out-of-range draft alone during a pause', () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    render(<NormalizeControls value={loudness} onChange={onChange} />)
+    const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
+
+    typeInto(input, '-4')
+    act(() => vi.advanceTimersByTime(400))
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(input.value).toBe('-4')
+  })
+
+  // Enter already applied the value; the pending pause must not send it a second time.
+  it('applies a typed value once when Enter comes before the pause ends', () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    render(<NormalizeControls value={loudness} onChange={onChange} />)
+    const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
+
+    typeInto(input, '-12')
+    fireEvent.keyDown(input, { key: 'Enter' })
+    act(() => vi.advanceTimersByTime(400))
+
+    expect(onChange).toHaveBeenCalledTimes(1)
   })
 
   // ffmpeg takes a loudness target between -70 and -5 LUFS. A -4 kept showing -4 while the
@@ -97,7 +187,7 @@ describe('NormalizeControls number input', () => {
     const onChange = vi.fn()
     render(<NormalizeControls value={loudness} onChange={onChange} />)
     const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
-    fireEvent.change(input, { target: { value: '-4' } })
+    typeInto(input, '-4')
     fireEvent.blur(input)
     expect(onChange).toHaveBeenCalledWith({ ...loudness, targetLufs: -5 })
     expect(input.value).toBe('-5')
@@ -110,7 +200,7 @@ describe('NormalizeControls number input', () => {
     render(<NormalizeControls value={loudness} onChange={onChange} />)
     const input = screen.getByTestId('normalize-target-lufs') as HTMLInputElement
 
-    fireEvent.change(input, { target: { value: '' } })
+    typeInto(input, '')
     fireEvent.blur(input)
 
     expect(input.value).toBe('-14')
