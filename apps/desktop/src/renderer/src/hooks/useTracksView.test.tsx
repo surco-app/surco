@@ -284,6 +284,21 @@ describe('useTracksView', () => {
     vi.useRealTimers()
   })
 
+  it('does not hold the spectrogram image while the list shows its verdict', async () => {
+    const client = createQueryClient()
+    const { result } = setup([track('a')], client)
+    ;(window as unknown as { api: { spectrogram: () => Promise<unknown> } }).api = {
+      ...(window as unknown as { api: object }).api,
+      spectrogram: async () => spectrum,
+    }
+    await act(async () => {
+      await client.fetchQuery(spectrogramOptions('/music/a.wav'))
+    })
+
+    expect(result.current.tracksView[0].spectrum?.cutoffHz).toBe(spectrum.cutoffHz)
+    expect(result.current.tracksView[0].spectrum).not.toHaveProperty('image')
+  })
+
   it('keeps a clipping flag on the list after its channel scan is collected', async () => {
     vi.useFakeTimers()
     const client = createQueryClient()

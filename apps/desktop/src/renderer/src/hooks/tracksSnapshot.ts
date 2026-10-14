@@ -38,9 +38,7 @@ export function cacheLookup(client: QueryClient): (key: readonly unknown[]) => Q
 // N, a probe patch reads 1 — the assertion that a sweep tick doesn't walk the whole list.
 function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | undefined) {
   const q = at(spectrogramOptions(inputPath).queryKey)
-  // The full entry while it lives, the verdict once the image has been collected (or
-  // when all a reopened library hydrated was the verdict).
-  const data = (q?.state.data ?? at(spectrumVerdictKey(inputPath))?.state.data) as
+  const data = (at(spectrumVerdictKey(inputPath))?.state.data ?? q?.state.data) as
     | SpectrumVerdict
     | undefined
   return {
