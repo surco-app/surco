@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
 import { app } from 'electron'
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { expect } from 'vitest'
 import { activity } from '../main/activity'
 import { registerAppleMusicIpc } from '../main/appleMusicIpc'
@@ -45,7 +45,6 @@ import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
-import { NormalizeSection } from '../renderer/src/components/NormalizeSection'
 import { useAppleMusicFill } from '../renderer/src/hooks/useAppleMusicFill'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import { useLibraryVerdict } from '../renderer/src/hooks/useLibraryVerdict'
@@ -85,7 +84,6 @@ import { normalizeImportFields } from '../shared/defaults'
 import { resolveJobFormat } from '../shared/format'
 import type {
   FormatSetting,
-  NormalizeConfig,
   ProcessJob,
   ProcessResult,
   Release,
@@ -120,14 +118,14 @@ const sender = {
 }
 const mediaAccess = createMediaAccess()
 
-function listen(channel: string, listener: (...args: never[]) => void): () => void {
+export function listen(channel: string, listener: (...args: never[]) => void): () => void {
   const set = rendererListeners.get(channel) ?? new Set()
   rendererListeners.set(channel, set)
   set.add(listener)
   return () => set.delete(listener)
 }
 
-function invokeMain<T>(channel: string, ...args: unknown[]): Promise<T> {
+export function invokeMain<T>(channel: string, ...args: unknown[]): Promise<T> {
   const handler = ipcHandlers.get(channel)
   if (!handler) throw new Error(`scenario: main never registered ${channel}`)
   return Promise.resolve(handler({ sender }, ...(args as never[]))) as Promise<T>
@@ -380,17 +378,6 @@ function searchResultOf(release: Release): SearchResult {
   return { provider: release.provider, id: release.id, title: release.title }
 }
 
-// The editor's volume section over a real, measured track: the dials as the user touches
-// them, and the wave's preview legend as the user reads it.
-export interface LoudnessSection {
-  stepTarget: (value: string) => void
-  typeTarget: (value: string) => void
-  preview: () => string
-  targetLufs: () => number
-  gainDb: () => number
-  staged: () => NormalizeConfig | undefined
-}
-
 export interface Scenario {
   tracks: () => TrackItem[]
   drop: (...paths: string[]) => Promise<void>
@@ -405,7 +392,6 @@ export interface Scenario {
   acceptMatch: (fileName: string, release: Release, position: string) => void
   findAndReplace: (find: string, replace: string, options?: { regex?: boolean }) => string
   applyAlbum: (release: Release) => void
-  openLoudness: (fileName: string) => Promise<LoudnessSection>
   trimDetectedSilence: () => Promise<void>
   rows: () => TrackItem[]
   summary: () => BatchSummary | null
@@ -426,7 +412,19 @@ export interface Scenario {
   sentToAppleMusic: string[]
 }
 
-export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
+// The main process every scenario runs against: settings, the backup store, the real IPC
+// handlers, and the window.api bridge wired to them. Shared by the hook-level harness and
+// the whole-app one, so both drive the same main.
+export interface MainBoot {
+  settings: Settings
+  trash: SurcoTrash
+  errors: string[]
+  sentToAppleMusic: string[]
+  flushes: Promise<void>[]
+  api: Api
+}
+
+export function bootMain(options: ScenarioOptions): MainBoot {
   const settings = replaceSettings({
     ...options.settings,
     ...(options.destination && fromDestination(options.destination)),
@@ -453,12 +451,22 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   }
   const errors: string[] = []
   const sentToAppleMusic: string[] = []
-  const prompts: ConfirmModal[] = []
   const flushes: Promise<void>[] = []
+  const api = scenarioApi(options, errors, sentToAppleMusic, flushes)
+  return { settings, trash, errors, sentToAppleMusic, flushes, api }
+}
+
+export function closeMain(): void {
+  watcher?.close()
+}
+
+export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
+  const { settings, trash, errors, sentToAppleMusic, flushes, api } = bootMain(options)
+  const prompts: ConfirmModal[] = []
   const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
   let playlistImported: { name: string; imported: number; missing: number } | undefined
   let running: Promise<void> | undefined
-  ;(window as unknown as { api: Api }).api = scenarioApi(options, errors, sentToAppleMusic, flushes)
+  ;(window as unknown as { api: Api }).api = api
 
   const queryClient = createQueryClient()
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -773,60 +781,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       )
       act(() => clickEnabled(rows.getByTestId('match-apply')))
       rows.unmount()
-    },
-    openLoudness: async (fileName) => {
-      const id = trackNamed(fileName).id
-      const item = () => tracks().find((t) => t.id === id) as TrackItem
-      const format = resolveJobFormat(
-        settings.outputFormat,
-        item().inputPath,
-        'aiff',
-        settings.keepMp3Sources,
-        item().fromAppleMusic,
-      )
-      function Section(): React.JSX.Element {
-        const [value, setValue] = useState(item().normalize ?? settings.normalize)
-        return (
-          <NormalizeSection
-            value={value}
-            open
-            onToggle={() => {}}
-            onChange={(n) => {
-              setValue(n)
-              result.current.library.updateTrack(id, { normalize: n })
-            }}
-            item={item()}
-            selectedCount={1}
-            format={format}
-          />
-        )
-      }
-      const view = render(
-        <QueryClientProvider client={queryClient}>
-          <Section />
-        </QueryClientProvider>,
-      )
-      const field = () => view.getByTestId('normalize-target-lufs') as HTMLInputElement
-      await waitFor(() => view.getByTestId('waveform-preview'), { timeout: 30_000 })
-      return {
-        stepTarget: (value) => {
-          fireEvent.change(field(), { target: { value } })
-        },
-        typeTarget: (value) => {
-          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
-            field(),
-            value,
-          )
-          fireEvent(field(), new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
-        },
-        preview: () => view.getByTestId('waveform-preview').textContent ?? '',
-        targetLufs: () => Number.parseFloat(field().value),
-        gainDb: () =>
-          Number.parseFloat(
-            (view.getByTestId('waveform-gain-delta').textContent ?? '').replace('−', '-'),
-          ),
-        staged: () => item().normalize,
-      }
     },
     trimDetectedSilence: async () => {
       for (const t of tracks().filter((track) => !track.trim)) {
