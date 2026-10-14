@@ -120,7 +120,7 @@ export function DestinationTab({
   // while it's the format. Otherwise the stored booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
   const destination = toDestination(
-    synced.addToAppleMusic,
+    synced.addToAppleMusic && isMacOS(),
     flacOnly,
     synced.overwriteOriginal,
     synced.addToEngineDj,

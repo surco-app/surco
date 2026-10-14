@@ -2204,6 +2204,29 @@ describe('App command palette', () => {
   })
 })
 
+describe('App on Windows', () => {
+  describe('with an Apple Music destination synced from a Mac', () => {
+    const synced = settings({ addToAppleMusic: true, keepOutputCopy: false, outputDir: '/out' })
+
+    it('names the output folder on the convert button, where the file really goes', async () => {
+      setApi({ getSettings: vi.fn().mockResolvedValue(synced) })
+      await renderApp()
+      fireEvent.click((await addTwoTracks())[0])
+
+      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF in out')
+    })
+
+    it('checks the output folder in Settings instead of leaving no destination picked', async () => {
+      setApi({ getSettings: vi.fn().mockResolvedValue(synced) })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('open-settings'))
+      fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+
+      expect(await screen.findByTestId('settings-destination-folder')).toBeChecked()
+    })
+  })
+})
+
 describe('App track numbering', () => {
   // Rips with no Discogs release carry no positions; numbering stamps the list order
   // as 1..N so the album still exports in the right sequence — and ⌘Z takes it back.
