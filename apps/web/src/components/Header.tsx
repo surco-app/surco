@@ -108,13 +108,14 @@ export default function Header({ page, alternate }: { page?: Page; alternate?: s
         style={{ transform: scrolled ? 'scale(0.92)' : 'scale(1)' }}
       >
         <a href={page ? home : '#top'} className="flex items-center gap-2">
-          {/* 128px source for a mark that never paints above 56: the 1024px PNG it replaced
-              was 313 KB on the critical path of every route, for ~80x the pixels drawn. */}
+          {/* The disc cropped to its rim, not the app icon: the icon keeps the margin macOS
+              asks of a Dock tile, which held the disc to 36 of these 48px, and its dark rim
+              melted into the page so only the blue label read. Here the rim is lifted. */}
           <img
-            src="/icon-128.webp"
+            src="/logo.svg"
             alt="Surco"
-            width={128}
-            height={128}
+            width={48}
+            height={48}
             className="h-10 w-10 sm:h-12 sm:w-12"
           />
           <span className="text-xl font-semibold leading-none tracking-tight">Surco</span>

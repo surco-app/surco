@@ -34,7 +34,7 @@
     }
   },
   "available": "macOS · Windows · Linux",
-  "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
+  "footerNote": "Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
   },

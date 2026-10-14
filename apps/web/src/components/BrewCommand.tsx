@@ -30,9 +30,9 @@ export default function BrewCommand({
     <div className={className}>
       <p className="font-mono text-xs tracking-wider text-faint uppercase">{t('install.or')}</p>
       <div className="inset-shadow-edge mt-3 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface2/50 px-4 py-4 transition-colors hover:border-blue/30">
-        {/* min-w-0 so the command scrolls inside its own box instead of pushing the
-            copy button out of a narrow container — it sits in a half-width card now. */}
-        <code className="min-w-0 overflow-x-auto font-mono text-sm whitespace-nowrap text-fg">
+        {/* Wraps at its spaces rather than scrolling: in the half-width card the box shows
+            209 of the command's 362px, so a scroller read as "brew install --cask sur". */}
+        <code className="min-w-0 font-mono text-sm break-words text-fg">
           <span className="select-none text-faint">$ </span>
           {COMMAND}
         </code>
