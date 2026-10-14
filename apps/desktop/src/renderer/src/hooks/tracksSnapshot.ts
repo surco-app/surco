@@ -1,15 +1,15 @@
 import { hashKey, type Query, type QueryClient } from '@tanstack/react-query'
-import type { ScanVerdict, SpectrumVerdict, WaveformResult } from '../../../shared/types'
+import type { ScanVerdict, SpectrumVerdict, WaveVerdict } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { spectrogramOptions, spectrumVerdictKey } from './useSpectrogram'
-import { scanVerdictKey, waveformOptions } from './useWaveform'
+import { scanVerdictKey, waveVerdictKey } from './useWaveform'
 
 // The three probe families the list reads, one entry per track, positionally aligned with
 // `tracks`. Spectrum carries `fetching` too: a row with an analysis in flight shows a
 // placeholder where its verdict dot will land, which the other two have no equivalent of.
 export interface CacheSnapshot {
   spectra: { data: SpectrumVerdict | undefined; fetching: boolean }[]
-  waves: (WaveformResult | null | undefined)[]
+  waves: (WaveVerdict | undefined)[]
   // The clip/channel scan lives in its own probe since the split, so the clipping
   // attention fact reads from here rather than off the peaks wave.
   scans: (ScanVerdict | undefined)[]
@@ -20,7 +20,7 @@ export interface CacheSnapshot {
 export const SNAPSHOT_FAMILIES = [
   'spectrogram',
   'spectrumVerdict',
-  'waveform',
+  'waveVerdict',
   'scanVerdict',
 ] as const
 
@@ -38,9 +38,7 @@ export function cacheLookup(client: QueryClient): (key: readonly unknown[]) => Q
 // N, a probe patch reads 1 — the assertion that a sweep tick doesn't walk the whole list.
 function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | undefined) {
   const q = at(spectrogramOptions(inputPath).queryKey)
-  // The full entry while it lives, the verdict once the image has been collected (or
-  // when all a reopened library hydrated was the verdict).
-  const data = (q?.state.data ?? at(spectrumVerdictKey(inputPath))?.state.data) as
+  const data = (at(spectrumVerdictKey(inputPath))?.state.data ?? q?.state.data) as
     | SpectrumVerdict
     | undefined
   return {
@@ -48,7 +46,7 @@ function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | un
       data,
       fetching: q?.state.fetchStatus === 'fetching',
     },
-    wave: at(waveformOptions(inputPath).queryKey)?.state.data as WaveformResult | null | undefined,
+    wave: at(waveVerdictKey(inputPath))?.state.data as WaveVerdict | undefined,
     scan: at(scanVerdictKey(inputPath))?.state.data as ScanVerdict | undefined,
   }
 }

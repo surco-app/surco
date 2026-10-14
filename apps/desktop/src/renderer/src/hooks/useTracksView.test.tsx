@@ -284,6 +284,21 @@ describe('useTracksView', () => {
     vi.useRealTimers()
   })
 
+  it('does not hold the spectrogram image while the list shows its verdict', async () => {
+    const client = createQueryClient()
+    const { result } = setup([track('a')], client)
+    ;(window as unknown as { api: { spectrogram: () => Promise<unknown> } }).api = {
+      ...(window as unknown as { api: object }).api,
+      spectrogram: async () => spectrum,
+    }
+    await act(async () => {
+      await client.fetchQuery(spectrogramOptions('/music/a.wav'))
+    })
+
+    expect(result.current.tracksView[0].spectrum?.cutoffHz).toBe(spectrum.cutoffHz)
+    expect(result.current.tracksView[0].spectrum).not.toHaveProperty('image')
+  })
+
   it('keeps a clipping flag on the list after its channel scan is collected', async () => {
     vi.useFakeTimers()
     const client = createQueryClient()
@@ -302,6 +317,28 @@ describe('useTracksView', () => {
 
     expect(client.getQueryData(['waveformScan', '/music/a.wav'])).toBeUndefined()
     expect(result.current.tracksView[0].audioIssues?.clipping).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('keeps a silence flag on the list after its waveform is collected', async () => {
+    vi.useFakeTimers()
+    const client = createQueryClient()
+    const { result } = setup([track('a')], client)
+    const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 ? 0.5 : 0.0005))
+    ;(window as unknown as { api: { waveform: () => Promise<unknown> } }).api = {
+      ...(window as unknown as { api: object }).api,
+      waveform: async () => ({ peaks, durationSec: 100 }),
+    }
+    await act(async () => {
+      await client.fetchQuery(waveformOptions('/music/a.wav'))
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(HEAVY_PROBE_GC_MS + 1_000)
+    })
+
+    expect(client.getQueryData(['waveform', '/music/a.wav'])).toBeUndefined()
+    expect(result.current.tracksView[0].audioIssues?.silence).toBe(true)
     vi.useRealTimers()
   })
 

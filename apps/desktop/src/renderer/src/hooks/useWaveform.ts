@@ -46,6 +46,10 @@ export function scanVerdictKey(inputPath: string) {
   return ['scanVerdict', inputPath] as const
 }
 
+export function waveVerdictKey(inputPath: string) {
+  return ['waveVerdict', inputPath] as const
+}
+
 export function useWaveformScan(
   inputPath: string,
   enabled: boolean,
