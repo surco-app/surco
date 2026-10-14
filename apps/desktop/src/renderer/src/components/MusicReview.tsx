@@ -103,6 +103,7 @@ function Confirm({
   const { t } = useTranslation()
   const copy = REVIEW_COPY[review.kind]
   const { tracks, byField, duplicates } = review.summary
+  const noMusic = review.kind === 'list' && review.musicConsulted === undefined
   const applyRef = useRef<HTMLButtonElement>(null)
   return (
     <Sheet
@@ -133,7 +134,8 @@ function Confirm({
       </dl>
       {duplicates > 0 && (
         <p className="text-xs text-fg-dim">
-          {t(copy.confirmPlaylists)}. {t(copy.confirmTrash)}.
+          {t(noMusic ? 'listReview.confirm.playlistsNoMusic' : copy.confirmPlaylists)}.{' '}
+          {t(noMusic ? 'listReview.confirm.trashNoMusic' : copy.confirmTrash)}.
         </p>
       )}
       {duplicates > 0 && <p className="text-xs text-fg-dim">{t('musicReview.removedNoUndo')}</p>}

@@ -2062,7 +2062,10 @@ describe('list review', () => {
   it('says before applying what happens to the list copies, Music included', () => {
     render(
       <MusicReview
-        review={listReview({ summary: { tracks: 0, byField: {}, duplicates: 1 } })}
+        review={listReview({
+          summary: { tracks: 0, byField: {}, duplicates: 1 },
+          musicConsulted: true,
+        })}
         {...columnProps}
         confirming
       />,
@@ -2076,6 +2079,24 @@ describe('list review', () => {
       'Their files go to the Trash, except those rekordbox, Engine DJ, Traktor or Apple Music still use.',
     )
     expect(sheet).not.toHaveTextContent('Copies removed from Apple Music')
+  })
+
+  it('leaves Apple Music out of what happens to the copies where there is no Music', () => {
+    render(
+      <MusicReview
+        review={listReview({ summary: { tracks: 0, byField: {}, duplicates: 1 } })}
+        {...columnProps}
+        confirming
+      />,
+    )
+    const sheet = screen.getByTestId('music-review-confirm')
+    expect(sheet).toHaveTextContent(
+      'Their rekordbox, Engine DJ and Traktor playlists move to the copy you keep.',
+    )
+    expect(sheet).toHaveTextContent(
+      'Their files go to the Trash, except those rekordbox, Engine DJ or Traktor still use.',
+    )
+    expect(sheet).not.toHaveTextContent('Apple Music')
   })
 
   // With Music left unasked at load, removing opens it and reads every file it holds,
