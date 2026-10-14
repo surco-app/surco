@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { Api } from '../../../preload/api'
 import type { TrackProperties } from '../../../shared/types'
 import '../i18n'
+import { stubApi } from '../test/api'
 import { PropertiesReadout } from './PropertiesReadout'
+
+beforeEach(() => {
+  ;(window as unknown as { api: Api }).api = stubApi()
+})
 
 afterEach(cleanup)
 
@@ -80,5 +86,22 @@ describe('PropertiesReadout two-column grid', () => {
       <PropertiesReadout properties={props} fileName="x" inputPath="/x/x.flac" duration={404} />,
     )
     expect(screen.getByTestId('property-duration').className).not.toContain('col-span-2')
+  })
+})
+
+describe('PropertiesReadout path', () => {
+  it('names File Explorer on Windows, the place the click actually opens', () => {
+    ;(window as unknown as { api: Api }).api = stubApi({ platform: 'win32' })
+    render(
+      <PropertiesReadout
+        properties={props}
+        fileName="Song"
+        inputPath={'C:\\Music\\Song.flac'}
+        duration={200}
+      />,
+    )
+    expect(screen.getByTestId('property-reveal')).toHaveAccessibleName(
+      'Show in File Explorer: Music',
+    )
   })
 })

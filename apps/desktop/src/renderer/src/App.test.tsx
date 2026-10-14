@@ -2204,6 +2204,73 @@ describe('App command palette', () => {
   })
 })
 
+describe('App on Windows', () => {
+  async function paletteTitles(): Promise<string[]> {
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    return screen.getAllByTestId('palette-item').map((item) => item.textContent ?? '')
+  }
+
+  it('offers no Apple Music command in the palette, since Windows has no Music to add to', async () => {
+    await renderApp()
+    await addTwoTracks()
+
+    expect((await paletteTitles()).filter((title) => title.includes('Apple Music'))).toEqual([])
+  })
+
+  it('names File Explorer in the palette, the place a Windows user actually lands', async () => {
+    await renderApp()
+    await addTwoTracks()
+
+    const titles = await paletteTitles()
+    expect(titles.filter((title) => title.includes('Finder'))).toEqual([])
+    expect(titles.some((title) => title.startsWith('Show in File Explorer'))).toBe(true)
+  })
+
+  async function shortcutTitles(): Promise<string[]> {
+    fireEvent.click(await screen.findByTestId('open-settings'))
+    fireEvent.click(await screen.findByTestId('settings-tab-shortcuts'))
+    return screen
+      .getAllByTestId(/^shortcut-row-/)
+      .map((row) => row.querySelector('span')?.textContent ?? '')
+  }
+
+  it('lists no Apple Music shortcut a Windows user could never trigger', async () => {
+    await renderApp()
+
+    expect((await shortcutTitles()).filter((title) => title.includes('Apple Music'))).toEqual([])
+  })
+
+  it('names File Explorer in the shortcuts, not Finder', async () => {
+    await renderApp()
+
+    const titles = await shortcutTitles()
+    expect(titles.filter((title) => title.includes('Finder'))).toEqual([])
+    expect(titles).toContain('Show in File Explorer')
+  })
+
+  describe('with an Apple Music destination synced from a Mac', () => {
+    const synced = settings({ addToAppleMusic: true, keepOutputCopy: false, outputDir: '/out' })
+
+    it('names the output folder on the convert button, where the file really goes', async () => {
+      setApi({ getSettings: vi.fn().mockResolvedValue(synced) })
+      await renderApp()
+      fireEvent.click((await addTwoTracks())[0])
+
+      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF in out')
+    })
+
+    it('checks the output folder in Settings instead of leaving no destination picked', async () => {
+      setApi({ getSettings: vi.fn().mockResolvedValue(synced) })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('open-settings'))
+      fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+
+      expect(await screen.findByTestId('settings-destination-folder')).toBeChecked()
+    })
+  })
+})
+
 describe('App track numbering', () => {
   // Rips with no Discogs release carry no positions; numbering stamps the list order
   // as 1..N so the album still exports in the right sequence — and ⌘Z takes it back.

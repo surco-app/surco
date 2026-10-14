@@ -380,6 +380,23 @@ describe('OnboardingWizard destination', () => {
       ;(window.api as unknown as { platform: string }).platform = 'darwin'
     }
   })
+
+  it('checks the output folder on Windows when the synced settings came from a Mac on Apple Music', () => {
+    ;(window.api as unknown as { platform: string }).platform = 'win32'
+    try {
+      render(
+        <OnboardingWizard
+          settings={{ ...settings, addToAppleMusic: true, keepOutputCopy: false }}
+          onFinish={() => {}}
+        />,
+      )
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(screen.getByTestId('onboarding-destination-folder')).toBeChecked()
+    } finally {
+      ;(window.api as unknown as { platform: string }).platform = 'darwin'
+    }
+  })
 })
 
 describe('OnboardingWizard audio intents', () => {

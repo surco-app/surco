@@ -13,6 +13,7 @@ interface MenuStrings {
   add: string
   info: string
   reveal: string
+  revealWin: string
   rename: string
   findReplace: string
   addAppleMusic: string
@@ -101,6 +102,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Añadir pistas…',
     info: 'Información',
     reveal: 'Mostrar en Finder',
+    revealWin: 'Mostrar en el Explorador',
     rename: 'Generar nombre del archivo…',
     findReplace: 'Buscar y reemplazar…',
     addAppleMusic: 'Añadir a Apple Music',
@@ -193,6 +195,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Add tracks…',
     info: 'Info',
     reveal: 'Reveal in Finder',
+    revealWin: 'Show in File Explorer',
     rename: 'Build file name…',
     findReplace: 'Find & Replace…',
     addAppleMusic: 'Add to Apple Music',
@@ -285,6 +288,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Tracks hinzufügen…',
     info: 'Informationen',
     reveal: 'Im Finder zeigen',
+    revealWin: 'Im Explorer zeigen',
     rename: 'Dateinamen erstellen…',
     findReplace: 'Suchen & Ersetzen…',
     addAppleMusic: 'Zu Apple Music hinzufügen',
@@ -377,6 +381,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Ajouter des morceaux…',
     info: 'Informations',
     reveal: 'Afficher dans le Finder',
+    revealWin: "Afficher dans l'Explorateur",
     rename: 'Composer le nom du fichier…',
     findReplace: 'Rechercher et remplacer…',
     addAppleMusic: 'Ajouter à Apple Music',
@@ -470,6 +475,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Adicionar faixas…',
     info: 'Informações',
     reveal: 'Mostrar no Finder',
+    revealWin: 'Mostrar no Explorador de Arquivos',
     rename: 'Gerar nome do arquivo…',
     findReplace: 'Localizar e substituir…',
     addAppleMusic: 'Adicionar ao Apple Music',

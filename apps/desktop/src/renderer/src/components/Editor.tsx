@@ -389,7 +389,7 @@ export const Editor = memo(function Editor({
     () =>
       rememberedDestination ??
       toDestination(
-        addToAppleMusic,
+        addToAppleMusic && isMacOS(),
         format === 'flac',
         overwriteOriginal,
         addToEngineDj,
@@ -442,7 +442,7 @@ export const Editor = memo(function Editor({
       onFormatChange?.(null)
     }
     const seededDestination = toDestination(
-      addToAppleMusic,
+      addToAppleMusic && isMacOS(),
       seededFormat === 'flac',
       overwriteOriginal,
       addToEngineDj,

@@ -3145,7 +3145,7 @@ describe('Editor properties panel', () => {
     const reveal = await screen.findByTestId('property-reveal')
     expect(reveal).toHaveTextContent('Vol 2')
     // The button reads as a path; its name must also say what activating it does.
-    expect(reveal).toHaveAccessibleName(/reveal/i)
+    expect(reveal).toHaveAccessibleName(/^Show in File Explorer/)
     fireEvent.click(reveal)
     expect(
       (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,

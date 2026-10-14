@@ -90,7 +90,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
   // it's the format. chooseDestination maps the single radio back onto the stored booleans.
   const destination = toDestination(
-    synced.addToAppleMusic,
+    synced.addToAppleMusic && isMac,
     synced.outputFormat === 'flac',
     synced.overwriteOriginal,
     synced.addToEngineDj,

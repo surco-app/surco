@@ -309,6 +309,7 @@
     "clearAll": "Liste leeren",
     "info": "Titelinformationen",
     "reveal": "Im Finder zeigen",
+    "revealWin": "Im Explorer zeigen",
     "addAppleMusic": "Zu Apple Music hinzufügen",
     "help": "Hilfe & FAQ",
     "feedback": "Feedback senden",
@@ -1852,6 +1853,8 @@
       "removed": "Entfernte Kopien",
       "playlists": "Ihre Playlists in rekordbox, Engine DJ und Traktor gehen an die behaltene Kopie, und ist sie in Apple Music, wird sie dort entfernt",
       "trash": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ, Traktor oder Apple Music noch nutzen",
+      "playlistsNoMusic": "Ihre Playlists in rekordbox, Engine DJ und Traktor gehen an die behaltene Kopie",
+      "trashNoMusic": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ oder Traktor noch nutzen",
       "musicCheck": "Beim Entfernen wird Apple Music geöffnet, um seine Dateien zu prüfen, und das kann eine Weile dauern."
     },
     "done": {

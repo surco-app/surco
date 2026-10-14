@@ -309,6 +309,7 @@
     "clearAll": "Limpar a lista",
     "info": "Informações da faixa",
     "reveal": "Mostrar no Finder",
+    "revealWin": "Mostrar no Explorador de Arquivos",
     "addAppleMusic": "Adicionar ao Apple Music",
     "help": "Ajuda e FAQ",
     "feedback": "Enviar feedback",
@@ -1852,6 +1853,8 @@
       "removed": "Cópias removidas",
       "playlists": "As playlists do rekordbox, Engine DJ e Traktor passam para a cópia que fica e, se estiver no Apple Music, ela sai do Music",
       "trash": "Os arquivos vão para o Lixo, exceto os que rekordbox, Engine DJ, Traktor ou Apple Music ainda usam",
+      "playlistsNoMusic": "As playlists do rekordbox, Engine DJ e Traktor passam para a cópia que fica",
+      "trashNoMusic": "Os arquivos vão para o Lixo, exceto os que rekordbox, Engine DJ ou Traktor ainda usam",
       "musicCheck": "Ao remover, o Apple Music será aberto para verificar seus arquivos, e isso pode demorar um pouco."
     },
     "done": {

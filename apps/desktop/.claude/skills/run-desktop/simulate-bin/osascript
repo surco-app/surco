@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "$(date +%T) osascript $*" | head -c 400 >> "$SURCO_SIMULATE_LOG"
+echo >> "$SURCO_SIMULATE_LOG"
+exit 127

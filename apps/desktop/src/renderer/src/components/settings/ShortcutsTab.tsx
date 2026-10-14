@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { SHORTCUT_DEFAULTS, type ShortcutDef } from '../../../../shared/shortcutDefaults'
 import { type Chord, chordEquals, eventToChord } from '../../../../shared/shortcuts'
 import { COMMAND_GROUP_ORDER, commandGroups } from '../../lib/commands'
-import { isMacOS } from '../../lib/platform'
+import { isMacOS, revealCommandKey } from '../../lib/platform'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { formatShortcut } from '../../lib/shortcuts'
@@ -56,7 +56,9 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
   // A command id is kebab-case ('find-replace'); its i18n title lives under the
   // camelCase key (commands.findReplace).
   const commandTitle = (id: string): string =>
-    tr(`commands.${id.replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}`)
+    id === 'reveal'
+      ? tr(revealCommandKey())
+      : tr(`commands.${id.replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}`)
 
   // Records the next keystroke as the binding for `id`. A lone modifier press is ignored
   // (wait for the full chord), Escape cancels, and ⌘K stays reserved for the palette.
@@ -153,7 +155,9 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
             <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
             <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'Hint'))}</span>
           </div>
-          {SHORTCUT_DEFAULTS.filter((d) => sectionOf(d) === scope).map(renderRow)}
+          {SHORTCUT_DEFAULTS.filter((d) => sectionOf(d) === scope && (!d.macOnly || isMacOS())).map(
+            renderRow,
+          )}
         </div>
       ))}
       {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page
