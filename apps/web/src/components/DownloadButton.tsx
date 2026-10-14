@@ -255,7 +255,7 @@ export default function DownloadButton({
               <>
                 {facts.length > 0 && (
                   <span data-testid="download-facts" className="font-mono text-faint tabular-nums">
-                    {facts.join(' · ')}
+                    {facts.map((fact) => fact.replaceAll(' ', '\u00a0')).join(' · ')}
                   </span>
                 )}
                 {showCount && <DownloadCount />}
