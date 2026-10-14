@@ -58,7 +58,7 @@ describe('Give each track of a folder its own loudness target, then convert them
   })
 
   it('converts every track of the folder to its own target', async () => {
-    fireEvent.click(screen.getByTestId('convert-all'))
+    await surco.convertAll()
     const opener = join(folder, 'Opener.aiff')
     const banger = join(folder, 'Banger.aiff')
     await waitFor(() => expect(existsSync(opener) && existsSync(banger)).toBe(true), {
