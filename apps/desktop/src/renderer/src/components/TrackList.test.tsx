@@ -1751,6 +1751,18 @@ describe('TrackList reorder', () => {
     expect(reorder.onRemoveSeparator).toHaveBeenCalledWith('s1')
   })
 
+  // A listbox holds options only: a focusable button inside it is announced as part of the
+  // list and stops Tab inside it. The line and its ✕ stay out of the accessibility tree,
+  // and the keyboard removes a separator from the row menu instead.
+  it('keeps the separator line and its remove button out of the listbox semantics', () => {
+    renderList(abc(), null, [], {
+      reorder: reorderSpy(),
+      separatorBefore: new Map([['b', ['s1']]]),
+    })
+    expect(screen.getByTestId('track-separator-s1')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByTestId('separator-remove-s1')).toHaveAttribute('tabindex', '-1')
+  })
+
   it('draws the separators after the last row', () => {
     renderList(abc(), null, [], { trailingSeparators: ['s9'] })
     expect(

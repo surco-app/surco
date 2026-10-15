@@ -1749,7 +1749,8 @@
     "menu": {
       "addTo": "Adicionar à playlist",
       "insertSeparator": "Inserir separador acima",
-      "removeFrom": "Remover de “{{name}}” no rekordbox"
+      "removeFrom": "Remover de “{{name}}” no rekordbox",
+      "removeSeparatorAbove": "Remover o separador acima"
     }
   },
   "engineIssue": {

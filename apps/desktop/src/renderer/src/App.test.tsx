@@ -1661,6 +1661,20 @@ describe('App source playlists', () => {
     expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l2'] })
   })
 
+  // The separator line's ✕ is mouse-only; the row menu is the keyboard's way to remove the
+  // separator above a row, and a row with none above offers nothing.
+  it('removes the separator above a row from its menu', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit })
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('track-menu-remove-from')
+    expect(screen.queryByTestId('track-menu-remove-separator')).not.toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+    fireEvent.click(await screen.findByTestId('track-menu-remove-separator'))
+    expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['s1'] })
+  })
+
   // The separator lands above the right-clicked row, so the edit names that row's link.
   it('inserts a separator above the right-clicked row', async () => {
     const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })

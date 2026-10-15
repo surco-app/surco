@@ -13,6 +13,8 @@ export interface TrackPlaylistMenu {
   canInsertSeparator: boolean
   onAddTo: (node: SourceNode) => void
   onInsertSeparator: () => void
+  // Only for a row with a separator right above it.
+  onRemoveSeparatorAbove?: () => void
   onRemove: () => void
 }
 
@@ -285,6 +287,13 @@ export function TrackContextMenu({
                   playlist.canInsertSeparator ? undefined : tr('sources.edit.refused.noSeparator')
                 }
                 onClick={() => run(playlist.onInsertSeparator)}
+              />
+            )}
+            {playlist.openName !== null && playlist.onRemoveSeparatorAbove && (
+              <MenuItem
+                testid="track-menu-remove-separator"
+                label={tr('sources.menu.removeSeparatorAbove')}
+                onClick={() => run(() => playlist.onRemoveSeparatorAbove?.())}
               />
             )}
           </>

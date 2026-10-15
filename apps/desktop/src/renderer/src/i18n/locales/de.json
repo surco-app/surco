@@ -1749,7 +1749,8 @@
     "menu": {
       "addTo": "Zu Playlist hinzufügen",
       "insertSeparator": "Trenner darüber einfügen",
-      "removeFrom": "In rekordbox aus „{{name}}“ entfernen"
+      "removeFrom": "In rekordbox aus „{{name}}“ entfernen",
+      "removeSeparatorAbove": "Trenner darüber entfernen"
     }
   },
   "engineIssue": {

@@ -1921,6 +1921,12 @@ export default function App(): React.JSX.Element {
       },
       // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
       // remove does, and several ask first, naming the playlist they leave.
+      onRemoveSeparatorAbove: playlistScope?.separatorBefore.get(track.id)?.length
+        ? () => {
+            const above = playlistScope.separatorBefore.get(track.id)
+            if (above?.length) removeSeparator(above[above.length - 1])
+          }
+        : undefined,
       onRemove: () => {
         const targets = menuTargets(track.id)
         const remove = () =>

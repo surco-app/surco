@@ -1030,7 +1030,7 @@ export const TrackList = memo(function TrackList({
       <div
         data-testid={`track-separator-${key}`}
         data-reorder-key={key}
-        aria-hidden={reorder ? undefined : 'true'}
+        aria-hidden="true"
         draggable={!!reorder}
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
@@ -1043,6 +1043,9 @@ export const TrackList = memo(function TrackList({
           <button
             type="button"
             data-testid={`separator-remove-${key}`}
+            // A listbox holds options only, so the line stays out of the accessibility tree
+            // and this ✕ out of the Tab order; the row menu removes it from the keyboard.
+            tabIndex={-1}
             aria-label={tr('sources.reorder.removeSeparator')}
             onClick={() => reorder.onRemoveSeparator(key)}
             className="rounded opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
