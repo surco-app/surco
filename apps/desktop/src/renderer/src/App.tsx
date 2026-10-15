@@ -598,6 +598,24 @@ export default function App(): React.JSX.Element {
     if (browser.entries && browser.source)
       void openSourcePlaylistStable(browser.entries, browser.source)
   }, [browser.entries, browser.source, openSourcePlaylistStable])
+  // Told once per opened playlist, so the gap between Music's count and the rows here has a
+  // reason; a refocus re-read of the same playlist is not a new opening.
+  const noticedPlaylist = useRef<string | null>(null)
+  useEffect(() => {
+    if (!browser.entries || !browser.source || !browser.playlist) return
+    const opened = `${browser.source}:${browser.playlist.id}`
+    if (noticedPlaylist.current === opened) return
+    noticedPlaylist.current = opened
+    const missing = browser.entries.filter((e) => !e.separator && e.path === null).length
+    if (missing === 0) return
+    pushToast(store, {
+      key: 'source-missing-files',
+      tone: 'neutral',
+      message: tr('sources.missing', { count: missing, name: browser.playlist.name }),
+      duration: 4000,
+      testid: 'app-notice',
+    })
+  }, [browser.entries, browser.source, browser.playlist, store, tr])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
@@ -2174,7 +2192,9 @@ export default function App(): React.JSX.Element {
                           selectedIds={selectedIds}
                           selectedPosition={selectedPosition}
                           onAdd={onAdd}
-                          onImportApplePlaylist={isMac ? () => browser.selectSource('appleMusic') : undefined}
+                          onImportApplePlaylist={
+                            isMac ? () => browser.selectSource('appleMusic') : undefined
+                          }
                           onSelectAllTracks={onSelectAllTracks}
                           scrollToSelected={scrollToSelected}
                           onFillAll={onFillAll}
@@ -2381,7 +2401,9 @@ export default function App(): React.JSX.Element {
                           <EmptyActions
                             onAdd={onAdd}
                             addShortcut={hintFor('add')}
-                            onImportPlaylist={isMac ? () => browser.selectSource('appleMusic') : undefined}
+                            onImportPlaylist={
+                              isMac ? () => browser.selectSource('appleMusic') : undefined
+                            }
                             onReviewMusic={
                               isMac
                                 ? () => setReview({ source: 'music', filter: 'all' })

@@ -262,7 +262,13 @@ describe('opening a source playlist', () => {
     const { result } = setup({ readMeta: musicReadMeta({}) })
     await act(async () => {
       await result.current.openSourcePlaylist(
-        [{ path: '/m/a.wav', separator: false, meta: { grouping: 'Bases, Chocolate', year: '2020' } }],
+        [
+          {
+            path: '/m/a.wav',
+            separator: false,
+            meta: { grouping: 'Bases, Chocolate', year: '2020' },
+          },
+        ],
         'appleMusic',
       )
     })

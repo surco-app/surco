@@ -68,8 +68,6 @@ interface Props {
   deriveTracksUndoable: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   revealSelection: (id: string) => void
-  // Loads an Apple Music playlist as a crate. macOS only; App passes it undefined
-  // elsewhere, and the overlay is never raised there.
 }
 
 // Every overlay the app can raise, and the one place that decides which is up. Split out of

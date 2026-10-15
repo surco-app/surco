@@ -1682,7 +1682,9 @@
     "failed": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds.",
     "empty": "No playlists.",
     "noMatch": "No playlist matches.",
-    "separator": "separator"
+    "separator": "separator",
+    "missing_one": "{{count}} track from “{{name}}” has no file on disk",
+    "missing_other": "{{count}} tracks from “{{name}}” have no file on disk"
   },
   "engineIssue": {
     "unreadable": "Engine DJ's library wasn't updated: Surco couldn't read it.",

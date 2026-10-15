@@ -4770,6 +4770,75 @@ describe('App empty screen offers a single way in', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  describe('Music playlist rows without a file', () => {
+    const reply = (rows: { path: string | null }[]) => ({
+      paths: rows.filter((r) => r.path).map((r) => r.path),
+      persistentIds: {},
+      meta: {},
+      missing: rows.filter((r) => !r.path).length,
+    })
+    const openMusic = async (
+      rows: { path: string | null }[],
+      onFocus?: (cb: () => void) => void,
+      later = rows,
+    ) => {
+      vi.resetModules()
+      const focusListeners: ((focused: boolean) => void)[] = []
+      reviewApi({
+        loadAppleMusicPlaylists: vi
+          .fn()
+          .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', folder: null, count: 3 }]),
+        loadAppleMusicPlaylistTracks: vi
+          .fn()
+          .mockResolvedValueOnce(reply(rows))
+          .mockResolvedValue(reply(later)),
+        onWindowFocus: (cb: (focused: boolean) => void) => {
+          focusListeners.push(cb)
+          return () => {}
+        },
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+      fireEvent.click(await screen.findByTestId('source-node-P1'))
+      onFocus?.(() =>
+        act(() => {
+          for (const cb of focusListeners) cb(true)
+        }),
+      )
+    }
+
+    it('tells the user how many tracks of the opened playlist have no file', async () => {
+      await openMusic([{ path: '/m/a.wav' }, { path: null }, { path: null }])
+      expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+        '2 tracks from “Friday” have no file on disk',
+      )
+    })
+
+    it('says it once per opened playlist, not again when a refocus re-reads it', async () => {
+      let refocus = () => {}
+      await openMusic(
+        [{ path: '/m/a.wav' }, { path: null }],
+        (fn) => {
+          refocus = fn
+        },
+        [{ path: '/m/a.wav' }, { path: null }, { path: null }],
+      )
+      const notice = await screen.findByTestId('app-notice')
+      fireEvent.click(within(notice).getByTestId('app-notice-dismiss'))
+      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
+      refocus()
+      await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalledTimes(2))
+      await act(async () => {})
+      expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument()
+    })
+
+    it('stays quiet when every track has its file', async () => {
+      await openMusic([{ path: '/m/a.wav' }])
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument()
+    })
+  })
+
   it('opens the review on all groups from its row', async () => {
     vi.resetModules()
     reviewApi()

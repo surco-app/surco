@@ -45,7 +45,6 @@ import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
-import { musicEntries } from '../renderer/src/lib/appleMusicSource'
 import { useAppleMusicFill } from '../renderer/src/hooks/useAppleMusicFill'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import { useLibraryVerdict } from '../renderer/src/hooks/useLibraryVerdict'
@@ -67,6 +66,7 @@ import {
   type ReplaceCandidate,
   type StaleLibraryCopy,
 } from '../renderer/src/lib/appleMusicLibrary'
+import { musicEntries } from '../renderer/src/lib/appleMusicSource'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import type { BatchSummary } from '../renderer/src/lib/batch'
 import { type Destination, fromDestination, toDestination } from '../renderer/src/lib/destination'

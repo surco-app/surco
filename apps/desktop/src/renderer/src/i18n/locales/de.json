@@ -1682,7 +1682,9 @@
     "failed": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
-    "separator": "Trenner"
+    "separator": "Trenner",
+    "missing_one": "{{count}} Titel aus „{{name}}“ hat keine Datei auf dem Datenträger",
+    "missing_other": "{{count}} Titel aus „{{name}}“ haben keine Datei auf dem Datenträger"
   },
   "engineIssue": {
     "unreadable": "Die Engine-DJ-Bibliothek wurde nicht aktualisiert: Surco konnte sie nicht lesen.",

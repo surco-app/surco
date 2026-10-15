@@ -133,8 +133,6 @@ interface TrackLibrary {
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   pickFiles: () => Promise<void>
-  // Loads the files one Apple Music playlist references. macOS only; the renderer does
-  // not offer it elsewhere.
   openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void

@@ -1682,7 +1682,9 @@
     "failed": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
     "empty": "Aucune playlist.",
     "noMatch": "Aucune playlist ne correspond.",
-    "separator": "séparateur"
+    "separator": "séparateur",
+    "missing_one": "{{count}} piste de « {{name}} » n’a pas de fichier sur le disque",
+    "missing_other": "{{count}} pistes de « {{name}} » n’ont pas de fichier sur le disque"
   },
   "engineIssue": {
     "unreadable": "La bibliothèque Engine DJ n'a pas été mise à jour : Surco n'a pas pu la lire.",
