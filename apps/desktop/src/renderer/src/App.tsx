@@ -2421,6 +2421,16 @@ export default function App(): React.JSX.Element {
                         >
                           {tr('sources.loadingPlaylist')}
                         </p>
+                      ) : browser.entriesFailed && browser.source ? (
+                        // A failed read is not an empty playlist either. The tree's own failure
+                        // line says why, and it holds for one playlist as for the library.
+                        <p
+                          data-testid="source-playlist-failed"
+                          role="alert"
+                          className="p-4 text-xs text-fg-faint"
+                        >
+                          {tr(`sources.failed.${browser.source}`)}
+                        </p>
                       ) : tracks.length ===
                         0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the

@@ -12,6 +12,7 @@ export interface SourceBrowser {
   treeFailed: boolean
   entries: SourcePlaylistEntry[] | undefined
   entriesLoading: boolean
+  entriesFailed: boolean
   canInsertSeparator: boolean
   selectSource: (source: PlaylistSource | null) => void
   selectPlaylist: (node: SourceNode, folders: string[]) => void
@@ -111,6 +112,7 @@ export function useSourceBrowser({
     treeFailed: tree.isError,
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,
+    entriesFailed: source !== null && playlist !== null && entries.isError,
     canInsertSeparator: separator.data ?? false,
     selectSource: setSource,
     selectPlaylist: (node, folders) => {

@@ -979,6 +979,24 @@ describe('App source rail', () => {
     )
     expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
   })
+
+  // A read that failed is not an empty playlist either: it says why, as the tree does.
+  it('says the playlist could not be read when reading its entries fails', async () => {
+    rekordboxWithFactory({
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockRejectedValue(new Error('database is locked')),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    expect(await screen.findByTestId('source-playlist-failed')).toHaveTextContent(
+      "Couldn't read the collection.",
+    )
+    expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+  })
 })
 
 describe('App source playlists', () => {
