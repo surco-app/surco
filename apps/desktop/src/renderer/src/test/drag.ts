@@ -12,7 +12,7 @@ export function fakeDataTransfer(files: File[] = []) {
     effectAllowed: '',
     types: (files.length ? ['Files'] : []) as string[],
     files,
-    items: { length: files.length },
+    items: files.map(() => ({ kind: 'file' })),
     setData(type: string, value: string) {
       data[type] = value
       this.types.push(type)

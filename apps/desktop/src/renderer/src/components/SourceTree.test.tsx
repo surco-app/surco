@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
 import '../i18n'
 import { clearDraggedRows, setDraggedRows } from '../lib/reorderDrag'
-import { fakeDataTransfer } from '../test/drag'
+import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { SourceTree } from './SourceTree'
 
+beforeAll(installDragEvent)
 afterEach(cleanup)
 afterEach(clearDraggedRows)
 
@@ -233,5 +234,64 @@ describe('SourceTree organising', () => {
     expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
     fireEvent.contextMenu(screen.getByTestId('source-node-bases'))
     expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+  })
+
+  // Cmd-Tab or a click on rekordbox blurs the field without the user having finished typing;
+  // committing there would write a half-typed name into the real collection.
+  it('keeps the name field open when the window itself loses focus', () => {
+    const { edit } = setup(null, true)
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bo' } })
+    const hasFocus = vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+    fireEvent.blur(screen.getByTestId('source-tree-name'))
+    hasFocus.mockRestore()
+    expect(edit.onCreate).not.toHaveBeenCalled()
+    expect(screen.getByTestId('source-tree-name')).toBeInTheDocument()
+  })
+
+  it('creates once when Enter is followed by the blur of the removed field', () => {
+    const { edit } = setup(null, true)
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    const field = screen.getByTestId('source-tree-name')
+    fireEvent.change(field, { target: { value: 'Bolo' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    fireEvent.blur(field)
+    expect(edit.onCreate).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the highlight while the pointer moves between a playlist and its own children', () => {
+    setup(null, true)
+    const house = screen.getByTestId('source-node-house')
+    const dt = files('a.wav')
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    fireEvent.dragLeave(house, { relatedTarget: house.querySelector('span') })
+    expect(house).toHaveAttribute('data-drop-target')
+    fireEvent.dragLeave(house, { relatedTarget: document.body })
+    expect(house).not.toHaveAttribute('data-drop-target')
+  })
+
+  it('keeps a drop on the title or the search box from reaching the window import', () => {
+    const { edit, onOuterDrop } = setup(null, true)
+    fireEvent.drop(screen.getByTestId('source-tree-search'), { dataTransfer: files('a.wav') })
+    fireEvent.drop(screen.getByText('rekordbox'), { dataTransfer: files('a.wav') })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
+
+  it('clears an active search when a playlist is created, so the new field is visible', () => {
+    setup(null, true)
+    fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'house' } })
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    expect(screen.getByTestId('source-tree-search')).toHaveValue('')
+    expect(screen.getByTestId('source-tree-name')).toBeInTheDocument()
+  })
+
+  it('counts only files of a Finder drag, not the text or links that ride along', () => {
+    setup(null, true)
+    const house = screen.getByTestId('source-node-house')
+    const dt = files('a.wav', 'b.wav')
+    dt.items = [{ kind: 'file' }, { kind: 'file' }, { kind: 'string' }]
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
   })
 })

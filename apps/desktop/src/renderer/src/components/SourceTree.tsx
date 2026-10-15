@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { draggedRows } from '../lib/reorderDrag'
@@ -86,14 +86,26 @@ export function SourceTree({
   // The name field for a playlist or folder being created, and where it goes. Enter and
   // leaving the field both keep the name (Finder's rule); Escape and an empty name drop it.
   const [creating, setCreating] = useState<{ parentId: string; folder: boolean } | null>(null)
-  const startCreating = (parentId: string, folder: boolean): void =>
-    setCreating({ parentId, folder })
+  // Enter removes the field and a browser may still blur it on the way out; the ref makes the
+  // second commit of the same field find nothing to create.
+  const pending = useRef<{ parentId: string; folder: boolean } | null>(null)
+  const startCreating = (parentId: string, folder: boolean): void => {
+    pending.current = { parentId, folder }
+    setCreating(pending.current)
+    // A search shows only its hits, which would hide the field being typed in.
+    setQuery('')
+  }
   const commit = (value: string): void => {
+    const target = pending.current
+    pending.current = null
     setCreating(null)
     const name = value.trim()
-    if (creating && name) edit?.onCreate(creating.parentId, name, creating.folder)
+    if (target && name) edit?.onCreate(target.parentId, name, target.folder)
   }
-  const cancel = (): void => setCreating(null)
+  const cancel = (): void => {
+    pending.current = null
+    setCreating(null)
+  }
   const focusField = useCallback((el: HTMLInputElement | null) => el?.focus(), [])
   const [menu, setMenu] = useState<{ node: SourceNode; x: number; y: number } | null>(null)
   const createInside = (node: SourceNode, folder: boolean): void => {
@@ -119,7 +131,12 @@ export function SourceTree({
             if (e.key === 'Enter') commit(e.currentTarget.value)
             if (e.key === 'Escape') cancel()
           }}
-          onBlur={(e) => commit(e.currentTarget.value)}
+          onBlur={(e) => {
+            // Cmd-Tab or a click on another app blurs the field with the user mid-name; the
+            // field stays open for when they come back instead of writing half a name.
+            if (!document.hasFocus()) return
+            commit(e.currentTarget.value)
+          }}
           className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
         />
       </li>
@@ -152,9 +169,18 @@ export function SourceTree({
           onDragOver={(e) => {
             if (!edit || isFolder || !carriesTracks(e)) return
             e.preventDefault()
-            setDropOn({ id: node.id, count: draggedRows()?.length ?? e.dataTransfer.items.length })
+            setDropOn({
+              id: node.id,
+              count:
+                draggedRows()?.length ??
+                Array.from(e.dataTransfer.items).filter((i) => i.kind === 'file').length,
+            })
           }}
-          onDragLeave={() => setDropOn((d) => (d?.id === node.id ? null : d))}
+          onDragLeave={(e) => {
+            // Moving onto the row's own name or count fires a leave on the row itself.
+            if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+            setDropOn((d) => (d?.id === node.id ? null : d))
+          }}
           onDrop={(e) => {
             if (!edit || isFolder || !carriesTracks(e)) return
             e.preventDefault()
@@ -220,8 +246,17 @@ export function SourceTree({
     )
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: swallows drops that miss a playlist; nothing to operate here
     <div
       data-testid="source-tree"
+      onDrop={(e) => {
+        // A drop that misses a playlist (a folder, the gaps, the title, the search box) must
+        // not fall through to the window, whose drop imports the files into the list.
+        if (!edit) return
+        e.preventDefault()
+        e.stopPropagation()
+        setDropOn(null)
+      }}
       className="flex w-[236px] shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1 px-3 pt-3 pb-2">
@@ -260,20 +295,7 @@ export function SourceTree({
           className="min-w-0 flex-1 bg-transparent outline-none"
         />
       </label>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: swallows drops that miss a playlist; nothing to operate here */}
-      <div
-        className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2"
-        onDrop={(e) => {
-          // A drop that misses a playlist (a folder, the gaps) must not fall through to the
-          // window, whose drop imports the files into the list.
-          if (!edit) return
-          e.preventDefault()
-          e.stopPropagation()
-          setDropOn(null)
-        }}
-      >
-        {body}
-      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">{body}</div>
       {menu && (
         <div className="fixed inset-0 z-50">
           <button
