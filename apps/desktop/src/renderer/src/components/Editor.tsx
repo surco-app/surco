@@ -90,6 +90,7 @@ import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
+import { LimiterGlimpse } from './LimiterGlimpse'
 import { MetadataForm } from './MetadataForm'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
@@ -1183,6 +1184,11 @@ export const Editor = memo(function Editor({
     warn: 'var(--color-warn)',
     neutral: 'var(--color-line-strong)',
   }
+  // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
+  const limitedRate =
+    copyVerdict && 'reason' in copyVerdict && copyVerdict.reason === 'peakCount'
+      ? (copyVerdict.winner === 'a' ? libraryFacts : hereFacts)?.sampleRateHz
+      : undefined
   const copyLine =
     !isMulti && inLibrary === 'yes' && copyState ? (
       <>
@@ -1219,6 +1225,25 @@ export const Editor = memo(function Editor({
             library={libraryFacts}
             hereLabel={hereFacts.ext}
             libraryLabel={libraryFacts.ext}
+            glimpse={
+              limitedRate ? (
+                <LimiterGlimpse
+                  worsePath={copyVerdict.winner === 'a' ? comparedCopyPath : item.inputPath}
+                  betterPath={copyVerdict.winner === 'a' ? item.inputPath : comparedCopyPath}
+                  sampleRate={limitedRate}
+                  layers={[
+                    {
+                      side: copyVerdict.winner === 'a' ? 'better' : 'worse',
+                      label: `${tr('editor.copyThisFile')} · ${hereFacts.ext}`,
+                    },
+                    {
+                      side: copyVerdict.winner === 'a' ? 'worse' : 'better',
+                      label: `${libraryName} · ${libraryFacts.ext}`,
+                    },
+                  ]}
+                />
+              ) : undefined
+            }
           />
         )}
       </>

@@ -60,6 +60,7 @@ export function CopyComparison({
   library,
   hereLabel,
   libraryLabel,
+  glimpse,
 }: {
   id?: string
   // A tie opens no card: the pill does not show for one.
@@ -68,6 +69,8 @@ export function CopyComparison({
   library: CopyFacts
   hereLabel: string
   libraryLabel: string
+  // The waves behind the sentence, set between it and the table.
+  glimpse?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lang = i18n.language
@@ -168,6 +171,7 @@ export function CopyComparison({
       <p data-testid="copy-sentence" className="text-fg-dim">
         {sentence()}
       </p>
+      {glimpse}
       {/* Same audio means either copy will do: a table of matching figures would only send
           the reader hunting for a difference that is not there. */}
       {verdict.winner !== 'same' && (

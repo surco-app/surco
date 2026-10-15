@@ -3560,6 +3560,61 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
   })
 
+  // "Pinned at its ceiling" is a claim the user has to take on trust; the glimpse shows it.
+  // The limited copy picks the stretch, so it is always the worse one whichever side it is.
+  describe('shows the limiter on the waves when it decided the verdict', () => {
+    const glimpse = { worse: [-0.5, 0.5], better: [-0.6, 0.6] }
+
+    it('draws the Apple Music copy as the limited one when this file is better', async () => {
+      const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+      api.limiterGlimpse = vi.fn(async () => glimpse)
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
+      expect(api.limiterGlimpse).toHaveBeenCalledWith(
+        '/Music/Strobe.wav',
+        '/music/Strobe.aif',
+        44100,
+      )
+      expect(screen.getByTestId('glimpse-toggle-better')).toHaveTextContent('This file · AIF')
+    })
+
+    it('draws this file as the limited one when Apple Music is better', async () => {
+      const { api } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+      api.limiterGlimpse = vi.fn(async () => glimpse)
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
+      expect(api.limiterGlimpse).toHaveBeenCalledWith(
+        '/music/Strobe.aif',
+        '/Music/Strobe.wav',
+        44100,
+      )
+    })
+
+    // A lossy copy is told apart by its spectrum, not by peaks; waves of two different
+    // sources would show differences that have nothing to do with the verdict.
+    it('draws nothing when the verdict rests on something else', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        libraryLossy: true,
+      })
+      api.limiterGlimpse = vi.fn(async () => glimpse)
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
+      expect(screen.queryByTestId('limiter-glimpse')).toBeNull()
+      expect(api.limiterGlimpse).not.toHaveBeenCalled()
+    })
+  })
+
   // Until the measured verdict lands, the quick format-and-cutoff check is the only warning
   // there is, so it keeps speaking beside "Comparing…".
   it('keeps the quick warning while the copies are still being measured', async () => {

@@ -24,6 +24,7 @@ import type {
   LibraryTagSyncReport,
   LibraryTagUpdate,
   LifetimeStats,
+  LimiterGlimpse,
   ListFixRequest,
   ListRemoval,
   LoudnessResult,
@@ -277,6 +278,11 @@ export interface Api {
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
   comparePair: (a: string, b: string) => Promise<PairFacts | null>
+  limiterGlimpse: (
+    worse: string,
+    better: string,
+    sampleRate: number,
+  ) => Promise<LimiterGlimpse | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>

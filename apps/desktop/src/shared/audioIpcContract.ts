@@ -1,6 +1,7 @@
 import type {
   BpmResult,
   KeyResult,
+  LimiterGlimpse,
   LoudnessResult,
   PairFacts,
   ScanVerdict,
@@ -54,6 +55,10 @@ export interface AudioAnalysisIpc {
   'audio:pair': {
     args: [a: string, b: string]
     result: PairFacts | null
+  }
+  'audio:limiterGlimpse': {
+    args: [worse: string, better: string, sampleRate: number]
+    result: LimiterGlimpse | null
   }
   'audio:clicks': {
     args: [inputPath: string, priority?: 'high' | 'low']
