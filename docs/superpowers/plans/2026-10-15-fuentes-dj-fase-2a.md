@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-15-fuentes-dj-playlists-design.md` (section "Fase 2: organizar"), plus the phase 1 plan `docs/superpowers/plans/2026-10-15-fuentes-dj-fase-1.md` it builds on.
 
+**XML risk, contained:** creating a playlist or folder is the only operation that touches `masterPlaylists6.xml`. If Vicent's check in real rekordbox (Task 11, Q1/Q2) shows rekordbox mishandling the created node, creation is disabled (the two tree buttons and the folder menu hidden) and everything else in 2a stays.
+
 **Out of scope (phase 2b or later):** the persistent pending queue with "Aplicar ahora" and pending dots; conflict detection by `updated_at`; deleting playlists and folders; generating a separator MP3 when the collection has none; renaming; Apple Music writes (Music stays read-only); rating (dropped from phase 2 entirely, Surco never writes it to rekordbox).
 
 ## Global Constraints
@@ -26,7 +28,7 @@
 - rekordbox only. The Music tree gets no editing controls.
 - UI text in the 5 locales (`es`, `en`, `de`, `fr`, `pt-BR`); no em dash and no explanatory colons in any UI text.
 - Test selectors: `data-testid` always.
-- Comments: the repo documents the WHY in comments on nearly every block (see `rekordboxLibrary.ts`, `rekordboxPlaylists.ts`). Follow that repo convention, which conflicts with the global "zero comments" rule: conformance with the existing code wins, flagged here so nobody "fixes" it.
+- Comments: the repo documents the WHY in comments on nearly every block (see `rekordboxLibrary.ts`, `rekordboxPlaylists.ts`). Follow that repo convention, which conflicts with the global "zero comments" rule: conformance with the existing code wins (ruled by the coordinator on 15/10, it stays), flagged here so nobody "fixes" it.
 - Tests from `apps/desktop` of the worktree: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run <path>` (the worktree has no `node_modules` of its own; never filter from the repo root, it skips the setup). Types from the worktree root: `npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit` and `npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit` (bare `tsc` checks nothing). Lint and format: `npm exec --workspace apps/desktop -- biome check --write src`.
 - Locale strings are merged with this helper (run from `apps/desktop`; `$SCRATCH` is the session scratchpad). Write it once:
 
@@ -66,7 +68,8 @@ EOF
 7. **A separator line gets a ✕ to remove it** (not in the sketch, whose menu is per row): without it a separator inserted by mistake could not be undone from Surco.
 8. **The WAL is checkpointed before the backup.** The collection is in WAL mode (measured `journal_mode = wal`, a 329 KB `master.db-wal` while rekordbox runs). Copying only `master.db` with committed frames still in the WAL gives a backup that is missing them, and restoring such a copy loses data. The existing repoint has the same exposure; it is flagged, not changed here.
 9. **The "rekordbox está abierto" dialog gets its own detail text for playlists**: today's text talks about pointing the collection at a converted file and waiting for the conversion.
-10. **Links are hard-deleted**, as pyrekordbox does (measured: 0 soft-deleted links among 9432, so rekordbox with cloud sync off deletes them too). Task 11 confirms it in real rekordbox.
+10. **Dropping list rows on the tree does not rest on the OS drag bringing files back.** The list records the dragged rows when the drag starts (`lib/reorderDrag`), the tree's drop reads that record (rows keep their rekordbox entry), and only a Finder drop goes by `getPathForFile`.
+11. **Links are hard-deleted**, as pyrekordbox does (measured: 0 soft-deleted links among 9432, so rekordbox with cloud sync off deletes them too). Task 11 confirms it in real rekordbox.
 
 ## Review Focus
 
@@ -97,7 +100,8 @@ EOF
 | `src/renderer/src/lib/playlistEdits.ts` (new) | optimistic reorder of entries, the notice text for a result |
 | `src/renderer/src/hooks/useRekordboxEdits.ts` (new) | send an edit, re-read, notify |
 | `src/renderer/src/hooks/useSourceBrowser.ts` (mod) | `canInsertSeparator` |
-| `src/renderer/src/lib/reorderDrag.ts` (new) | the reorder drag's data type |
+| `src/renderer/src/lib/reorderDrag.ts` (new) | the rows a drag out of the list carries (read by the tree's drop), and the reorder drag's data type |
+| `src/renderer/src/test/drag.ts` (new) | the one DragEvent polyfill and fake DataTransfer for drag tests |
 | `src/renderer/src/lib/playlistView.ts` (mod) | separators per link, trailing ones, row link and content ids |
 | `src/renderer/src/components/SourceTree.tsx` (mod) | create buttons, inline name, folder menu, drop target |
 | `src/renderer/src/components/TrackList.tsx` (mod) | grip, insertion line, draggable separators |
@@ -161,6 +165,10 @@ out.playlistsWhereLinksShareOneUsn = one(`SELECT count(DISTINCT PlaylistID) AS n
 out.playlistsOlderThanTheirLinks = one(`SELECT count(*) AS n FROM djmdPlaylist p WHERE p.updated_at <
   (SELECT max(s.updated_at) FROM djmdSongPlaylist s WHERE s.PlaylistID = p.ID)`).n
 out.localUpdateCount = one(`SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`).int_1
+// What a playlist edit must never change: the collection entries and their cues.
+out.contentRows = one('SELECT count(*) AS n FROM djmdContent').n
+out.cueRows = one('SELECT count(*) AS n FROM djmdCue').n
+out.linkRows = one('SELECT count(*) AS n FROM djmdSongPlaylist').n
 const xml = fs.readFileSync(path.join(dir, 'masterPlaylists6.xml'), 'utf8')
 const nodes = [...xml.matchAll(/<NODE ([^>]*)\/>/g)].map((m) =>
   Object.fromEntries([...m[1].matchAll(/(\w+)="([^"]*)"/g)].map((a) => [a[1], a[2]])))
@@ -244,7 +252,7 @@ Medido el 15/10 sobre una copia de la colección de Vicent (rekordbox 7.2.19, `m
 - Q2. Si la base y el XML no cuadran (falta un nodo, sobra uno), ¿qué hace rekordbox al abrir?
 - Q3. Con rekordbox cerrado, ¿queda `master.db-wal` con datos? (medido al copiar: VALOR DEL PASO 1)
 - Q4. ¿Acepta rekordbox los enlaces borrados de verdad (sin `rb_local_deleted`)? La medida dice que sí.
-- Q5. ¿El arrastre nativo de una fila (webContents.startDrag) llega como `drop` con ficheros a la propia ventana de Surco? El árbol depende de ello.
+- Q5. Durante el arrastre nativo de una fila (webContents.startDrag), ¿recibe la propia ventana de Surco los eventos de arrastre sobre el árbol? El árbol ya no depende de que lleguen ficheros (lee las filas que la lista apuntó al empezar), pero sí de que lleguen esos eventos.
 - Q6. ¿Los 2 nodos sobrantes son restos que rekordbox tolera? Se repite la medida con una copia tomada con rekordbox cerrado.
 ```
 
@@ -264,7 +272,10 @@ git commit -m "Record how rekordbox stores playlists before writing them"
 - Test: `src/main/rekordboxRows.test.ts`
 - Modify: `src/main/rekordboxMetadata.ts` (helpers at lines 45-47, 61-63 and the `nextUsn`/`unusedId` closures at 74-92)
 - Modify: `src/main/rekordboxPlaylistsFixture.ts` (rewrite)
-- Modify: `src/main/rekordboxPlaylists.ts` (constants, `EntryRow`, `readRekordboxPlaylist`)
+- Create: `src/main/rekordboxMasterXml.ts` (only `hexId` here; Task 4 adds the rest)
+- Test: `src/main/rekordboxMasterXml.test.ts`
+- Modify: `src/main/rekordboxDb.ts` (export `STREAMING_FILE_TYPE`, line 61)
+- Modify: `src/main/rekordboxPlaylists.ts` (drop its own streaming constant, export `IS_SEPARATOR`, `EntryRow`, `readRekordboxPlaylist`)
 - Modify: `src/shared/types.ts` (`SourcePlaylistEntry`, ~line 1021)
 - Test: `src/main/rekordboxPlaylists.test.ts`
 
@@ -275,7 +286,9 @@ git commit -m "Record how rekordbox stores playlists before writing them"
   - `takeLocalUsn(db: Db, stamp: string): number`
   - `unusedRowId(db: Db, table: string, next: () => string): string`
   - `SourcePlaylistEntry.linkId?: string`, `SourcePlaylistEntry.contentId?: string`
-  - `export const IS_SEPARATOR`, `export const STREAMING_FILE_TYPE` in `rekordboxPlaylists.ts`
+  - `export const IS_SEPARATOR` in `rekordboxPlaylists.ts`; `export const STREAMING_FILE_TYPE` in `rekordboxDb.ts` (the one constant both modules use; `rekordboxPlaylists.ts` imports it instead of keeping a copy)
+  - `hexId(id: string): string` in `rekordboxMasterXml.ts` (`'root'` → `'0'`, else uppercase hex), used by the fixture and by Task 4
+  - `FixtureContent.FileSize?: number` (default 0; `findTrackByPath` reads the column)
   - `writeRekordboxPlaylistFixture(path, data)` with `FixtureLink.ID?`, `PlaylistFixture.usn?`, `.xml?`, `.wal?`
   - `ORGANISE_FIXTURE: PlaylistFixture` (numeric playlist IDs, links `f1..f7`, `h1..h2`, twins `201`/`202`, separators `109`/`110`, `usn` 500)
 
@@ -341,6 +354,7 @@ import { writeFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { REKORDBOX_KEY } from './rekordboxDb'
+import { hexId } from './rekordboxMasterXml'
 
 // A miniature master.db with the tables and columns the playlist reader and writer touch,
 // encrypted like the real one. The column names come from a live rekordbox 7 collection;
@@ -357,6 +371,8 @@ export interface FixtureContent {
   BPM?: number
   Rating?: number
   KeyID?: string
+  // findTrackByPath reads it; 0 unless a test cares.
+  FileSize?: number
   deleted?: boolean
 }
 
@@ -405,7 +421,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   if (data.wal) db.pragma('journal_mode = WAL')
   db.exec(`
     CREATE TABLE djmdContent (ID VARCHAR(255) PRIMARY KEY, FolderPath VARCHAR(255),
-      FileNameL VARCHAR(255), FileType INTEGER, Title VARCHAR(255), Length INTEGER,
+      FileNameL VARCHAR(255), FileType INTEGER, FileSize INTEGER, Title VARCHAR(255), Length INTEGER,
       BPM INTEGER, Rating INTEGER, KeyID VARCHAR(255), rb_local_deleted INTEGER DEFAULT 0);
     CREATE TABLE djmdKey (ID VARCHAR(255) PRIMARY KEY, ScaleName VARCHAR(255));
     CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
@@ -426,8 +442,8 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
      VALUES ('localUpdateCount', ?, ?, ?)`,
   ).run(data.usn ?? 1, FIXTURE_STAMP, FIXTURE_STAMP)
   const content = db.prepare(
-    `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, Title, Length, BPM, Rating,
-       KeyID, rb_local_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, Length, BPM,
+       Rating, KeyID, rb_local_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   for (const c of data.content) {
     content.run(
@@ -435,6 +451,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       c.FolderPath,
       basename(c.FolderPath),
       c.FileType,
+      c.FileSize ?? 0,
       c.Title,
       c.Length,
       c.BPM ?? 0,
@@ -484,12 +501,11 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
 }
 
 function fixtureXml(data: PlaylistFixture): string {
-  const hex = (id: string): string => (id === 'root' ? '0' : BigInt(id).toString(16).toUpperCase())
   const nodes = data.playlists
     .filter((p) => !p.deleted)
     .map(
       (p) =>
-        `    <NODE Id="${hex(p.ID)}" ParentId="${hex(p.ParentID)}" Attribute="${p.Attribute}" Timestamp="1767225600000" Lib_Type="0" CheckType="0"/>`,
+        `    <NODE Id="${hexId(p.ID)}" ParentId="${hexId(p.ParentID)}" Attribute="${p.Attribute}" Timestamp="1767225600000" Lib_Type="0" CheckType="0"/>`,
     )
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -647,9 +663,39 @@ export function unusedRowId(db: Db, table: string, next: () => string): string {
 }
 ```
 
+Create `src/main/rekordboxMasterXml.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { hexId } from './rekordboxMasterXml'
+
+describe('masterPlaylists6.xml ids', () => {
+  // Measured: Id is the decimal ID in uppercase hex without leading zeros (30D40 is
+  // 200000), and the root is ParentId "0". A node spelt otherwise names no playlist.
+  it('spells IDs in uppercase hex and the root as 0', () => {
+    expect(hexId('200000')).toBe('30D40')
+    expect(hexId('4097321833')).toBe('F4382B69')
+    expect(hexId('root')).toBe('0')
+  })
+})
+```
+
+and `src/main/rekordboxMasterXml.ts`:
+
+```ts
+// rekordbox 6 and 7 keep every playlist and folder twice: as a row in master.db and as a
+// NODE in masterPlaylists6.xml beside it, where the row ID is written in hex.
+
+// The decimal row ID in uppercase hex without leading zeros, and the root as "0" (measured
+// on the real file: 30D40 is 200000).
+export function hexId(id: string): string {
+  return id === 'root' ? '0' : BigInt(id).toString(16).toUpperCase()
+}
+```
+
 - [ ] **Step 5: Run the helper test**
 
-Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxRows.test.ts src/main/rekordboxPlaylists.test.ts src/main/rekordboxPlaylistsIpc.test.ts`
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxRows.test.ts src/main/rekordboxMasterXml.test.ts src/main/rekordboxPlaylists.test.ts src/main/rekordboxPlaylistsIpc.test.ts`
 Expected: PASS (the phase 1 reader tests still pass on the rewritten fixture).
 
 - [ ] **Step 6: Point the metadata writer at the helpers (behaviour-preserving)**
@@ -667,7 +713,7 @@ Expected: PASS, unchanged.
 - [ ] **Step 7: Commit the refactor and the fixture**
 
 ```bash
-git add src/main/rekordboxRows.ts src/main/rekordboxRows.test.ts src/main/rekordboxMetadata.ts src/main/rekordboxPlaylistsFixture.ts
+git add src/main/rekordboxRows.ts src/main/rekordboxRows.test.ts src/main/rekordboxMetadata.ts src/main/rekordboxPlaylistsFixture.ts src/main/rekordboxMasterXml.ts src/main/rekordboxMasterXml.test.ts
 git commit -m "Share rekordbox row helpers and give the playlist fixture the columns a write needs"
 ```
 
@@ -706,7 +752,7 @@ In `src/shared/types.ts`, inside `SourcePlaylistEntry` after `musicPersistentId?
 ```
 
 In `src/main/rekordboxPlaylists.ts`:
-- `const STREAMING_FILE_TYPE = 25` becomes `export const STREAMING_FILE_TYPE = 25`.
+- Delete its `const STREAMING_FILE_TYPE = 25` (and the comment above it) and import the one from `rekordboxDb.ts` instead: `import { STREAMING_FILE_TYPE, type openRekordboxDb } from './rekordboxDb'`. In `src/main/rekordboxDb.ts`, `const STREAMING_FILE_TYPE = 25` (line 61) becomes `export const STREAMING_FILE_TYPE = 25`.
 - `const IS_SEPARATOR = ...` becomes `export const IS_SEPARATOR = ...`.
 - In `interface EntryRow` add `linkId: string` and `contentId: string` as the first two fields.
 - In `readRekordboxPlaylist`, the SELECT becomes `SELECT s.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, k.ScaleName, ${IS_SEPARATOR} AS sep` and the mapping becomes:
@@ -728,7 +774,7 @@ Expected: PASS.
 Run both `tsc` commands from Global Constraints. Expected: no errors.
 
 ```bash
-git add src/shared/types.ts src/main/rekordboxPlaylists.ts src/main/rekordboxPlaylists.test.ts
+git add src/shared/types.ts src/main/rekordboxDb.ts src/main/rekordboxPlaylists.ts src/main/rekordboxPlaylists.test.ts
 git commit -m "Give each rekordbox playlist row its link and content id"
 ```
 
@@ -742,7 +788,7 @@ git commit -m "Give each rekordbox playlist row its link and content id"
 - Test: `src/main/rekordboxPlaylistEdit.test.ts`
 
 **Interfaces:**
-- Consumes: `rekordboxStamp`, `takeLocalUsn`, `unusedRowId` (Task 2); `IS_SEPARATOR`, `STREAMING_FILE_TYPE` (Task 2); `findTrackByPath`, `isAmbiguous`, `FindOptions` from `rekordboxDb.ts`; `ORGANISE_FIXTURE`, `TWIN_PATHS`, `FIXTURE_STAMP` (Task 2).
+- Consumes: `rekordboxStamp`, `takeLocalUsn`, `unusedRowId` (Task 2); `IS_SEPARATOR` from `rekordboxPlaylists.ts`, `STREAMING_FILE_TYPE` from `rekordboxDb.ts` (Task 2); `findTrackByPath`, `isAmbiguous`, `FindOptions` from `rekordboxDb.ts`; `ORGANISE_FIXTURE`, `TWIN_PATHS`, `FIXTURE_STAMP` (Task 2).
 - Produces (types in `shared/types.ts`):
   - `interface PlaylistTrackRef { contentId?: string; paths: string[] }`
   - `type RekordboxPlaylistEdit = { kind: 'add'; playlistId: string; tracks: PlaylistTrackRef[] } | { kind: 'move'; playlistId: string; linkIds: string[]; beforeLinkId: string | null } | { kind: 'remove'; playlistId: string; linkIds: string[] } | { kind: 'insertSeparator'; playlistId: string; beforeLinkId: string } | { kind: 'create'; parentId: string; name: string; folder: boolean }`
@@ -1114,6 +1160,19 @@ describe('editProblem', () => {
     expect(editProblem(db, { kind: 'create', parentId: 'root', name: 'x', folder: true })).toBeNull()
     expect(editProblem(db, { kind: 'insertSeparator', playlistId: '2000', beforeLinkId: 'f1' })).toBeNull()
   })
+
+  // Without a separator to copy, asking rekordbox to close would cost the user for nothing.
+  it('flags a separator insert when the collection has none to copy', async () => {
+    db.close()
+    db = await openFixture({
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.filter((c) => c.ID !== '109' && c.ID !== '110'),
+      links: ORGANISE_FIXTURE.links.filter((l) => l.ContentID !== '109' && l.ContentID !== '110'),
+    })
+    expect(editProblem(db, { kind: 'insertSeparator', playlistId: '2000', beforeLinkId: 'f1' })).toBe(
+      'no-separator',
+    )
+  })
 })
 ```
 
@@ -1130,8 +1189,8 @@ Create `src/main/rekordboxPlaylistEdit.ts`:
 import { randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { PlaylistTrackRef, RekordboxPlaylistEdit } from '../shared/types'
-import { type FindOptions, findTrackByPath, isAmbiguous } from './rekordboxDb'
-import { IS_SEPARATOR, STREAMING_FILE_TYPE } from './rekordboxPlaylists'
+import { type FindOptions, findTrackByPath, isAmbiguous, STREAMING_FILE_TYPE } from './rekordboxDb'
+import { IS_SEPARATOR } from './rekordboxPlaylists'
 import { rekordboxStamp, takeLocalUsn } from './rekordboxRows'
 
 // The organising edits, each on a collection already opened read-write and inside the
@@ -1423,6 +1482,8 @@ One at a time, break and re-run the file; each must turn a test red, then restor
 2. In `writeOrder`, use `takeLocalUsn` per row instead of once → "stamps the rows whose place changed with one change number" fails.
 3. In `resolveTracks`, replace `twins = true; continue` with `id = match.ambiguous[0]; break` → "refuses to guess" fails.
 4. In `addToPlaylist`, remove the `present.has(id)` branch → "skips a track the playlist already holds" fails.
+5. In `removeFromPlaylist`, delete the `writeOrder(...)` call (the renumbering) → "removes every occurrence of the track the row stands for" fails on `trackNos('2000')` (it reads `[1, 2, 4, 5, 6]`, not 1..5). This is the contiguity rule the spec asks to mutate.
+6. In `editProblem`, delete the `no-separator` line → "flags a separator insert when the collection has none to copy" fails.
 
 - [ ] **Step 7: Typecheck, lint, commit**
 
@@ -1439,16 +1500,15 @@ git commit -m "Add, remove, move and separate tracks in a rekordbox playlist"
 
 **Files:**
 - Modify: `src/main/rekordboxPlaylistEdit.ts` (append `createNode`, `randomPlaylistId`)
-- Create: `src/main/rekordboxMasterXml.ts`
-- Test: `src/main/rekordboxPlaylistEdit.test.ts` (append), `src/main/rekordboxMasterXml.test.ts`
+- Modify: `src/main/rekordboxMasterXml.ts` (Task 2 created it with `hexId`)
+- Test: `src/main/rekordboxPlaylistEdit.test.ts` (append), `src/main/rekordboxMasterXml.test.ts` (append)
 
 **Interfaces:**
-- Consumes: `EditRefused`, `EditContext`, `nodeAttribute` (Task 3); `rekordboxStamp`, `takeLocalUsn`, `unusedRowId` (Task 2).
+- Consumes: `EditRefused`, `EditContext`, `nodeAttribute` (Task 3); `rekordboxStamp`, `takeLocalUsn`, `unusedRowId`, `hexId` (Task 2).
 - Produces:
   - `randomPlaylistId(): string` (decimal of a random integer in [100, 2^28))
   - `createNode(db, parentId: string, name: string, folder: boolean, ctx: EditContext): { id: string; attribute: 0 | 1 }`
   - `playlistXmlPath(collectionPath: string): string`
-  - `hexId(id: string): string` (`'root'` → `'0'`)
   - `withPlaylistNode(xml: string, node: { id: string; parentId: string; attribute: 0 | 1; timestamp: number }): string`
   - `xmlNodeIds(xml: string): Set<string>` (hex Ids)
 
@@ -1514,11 +1574,9 @@ describe('createNode', () => {
 
 - [ ] **Step 2: Failing tests for the XML side**
 
-Create `src/main/rekordboxMasterXml.test.ts`:
+In `src/main/rekordboxMasterXml.test.ts` (Task 2 wrote it with the `hexId` test), change the import to `import { hexId, playlistXmlPath, withPlaylistNode, xmlNodeIds } from './rekordboxMasterXml'` and append:
 
 ```ts
-import { describe, expect, it } from 'vitest'
-import { hexId, playlistXmlPath, withPlaylistNode, xmlNodeIds } from './rekordboxMasterXml'
 
 const XML = [
   '<?xml version="1.0" encoding="UTF-8"?>',
@@ -1537,14 +1595,6 @@ describe('masterPlaylists6.xml', () => {
     expect(playlistXmlPath('/Users/dj/Library/Pioneer/rekordbox/master.db')).toBe(
       '/Users/dj/Library/Pioneer/rekordbox/masterPlaylists6.xml',
     )
-  })
-
-  // Measured: Id is the decimal ID in uppercase hex without leading zeros (30D40 is
-  // 200000), and the root is ParentId "0".
-  it('spells IDs in uppercase hex and the root as 0', () => {
-    expect(hexId('200000')).toBe('30D40')
-    expect(hexId('4097321833')).toBe('F4382B69')
-    expect(hexId('root')).toBe('0')
   })
 
   // rekordbox appends new nodes at the end whatever their folder, with CRLF line ends;
@@ -1643,26 +1693,17 @@ export function createNode(
 
 - [ ] **Step 5: Implement the XML side**
 
-Create `src/main/rekordboxMasterXml.ts`:
+In `src/main/rekordboxMasterXml.ts` add `import { dirname, join } from 'node:path'` at the top, extend the header comment with the paragraph below, and append the three functions (`hexId` stays as Task 2 wrote it, and is the only one):
 
 ```ts
-import { dirname, join } from 'node:path'
-
-// rekordbox 6 and 7 keep every playlist and folder twice: as a row in master.db and as a
-// NODE in masterPlaylists6.xml beside it. Creating one means adding both, as pyrekordbox
-// does; moving tracks never touches this file (measured: link edits do not even change the
-// playlist row). The file is edited as text, not reparsed and reserialised, so everything
-// rekordbox wrote (its CRLF line ends, the iTunes nodes, nodes the database no longer has)
-// stays byte for byte.
+// Creating a playlist or folder means adding both, as pyrekordbox does; moving tracks
+// never touches this file (measured: link edits do not even change the playlist row). The
+// file is edited as text, not reparsed and reserialised, so everything rekordbox wrote
+// (its CRLF line ends, the iTunes nodes, nodes the database no longer has) stays byte for
+// byte.
 
 export function playlistXmlPath(collectionPath: string): string {
   return join(dirname(collectionPath), 'masterPlaylists6.xml')
-}
-
-// The decimal row ID in uppercase hex without leading zeros, and the root as "0" (measured
-// on the real file: 30D40 is 200000).
-export function hexId(id: string): string {
-  return id === 'root' ? '0' : BigInt(id).toString(16).toUpperCase()
 }
 
 export function withPlaylistNode(
@@ -1692,6 +1733,8 @@ Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/
 Expected: PASS.
 
 - [ ] **Step 7: Typecheck, lint, commit**
+
+Run the two `tsc` commands and `biome check --write src` from Global Constraints. Expected: clean.
 
 ```bash
 git add src/main/rekordboxPlaylistEdit.ts src/main/rekordboxPlaylistEdit.test.ts src/main/rekordboxMasterXml.ts src/main/rekordboxMasterXml.test.ts
@@ -1879,6 +1922,19 @@ describe('editRekordboxPlaylist', () => {
     expect(d.sessionBackup).toHaveBeenCalledWith(path)
     expect(linkIds(`${path}.surco-backup`, '2000')).toEqual(FACTORY)
     expect(linkIds(path, '2000')).toEqual(['f6', 'f1', 'f2', 'f3', 'f4', 'f5', 'f7'])
+  })
+
+  // No backup, no write: a session copy that cannot be made stops the edit before
+  // rekordbox's file is touched.
+  it('writes nothing when the session copy cannot be made', async () => {
+    const path = await collection()
+    const result = await editRekordboxPlaylist(
+      path,
+      MOVE,
+      deps({ sessionBackup: vi.fn(async () => Promise.reject(new Error('disk full'))) }),
+    )
+    expect(result).toEqual({ applied: false, reason: 'backup-failed' })
+    expect(linkIds(path, '2000')).toEqual(FACTORY)
   })
 
   // The seam runs after the edit's statements, so the rollback below is undoing a real
@@ -2191,6 +2247,7 @@ One at a time, each must turn a test red, then restore:
 2. Remove `checkpoint(collectionPath)` → "backs up changes still sitting in the WAL" fails.
 3. Remove `await restore(touched)` in the XML catch → "puts both files back when the XML cannot be written" fails.
 4. Move `if (!(await deps.ensureClosed()))` above the probe → "asks nothing and writes nothing when none of the tracks can be added" fails.
+5. Wrap `await deps.sessionBackup(path)` in its own `try { ... } catch {}` (a backup failure swallowed) → "writes nothing when the session copy cannot be made" fails.
 
 - [ ] **Step 6: Typecheck, lint, commit**
 
@@ -2430,6 +2487,7 @@ git commit -m "Expose rekordbox playlist edits to the renderer with their own qu
 **Interfaces:**
 - Consumes: `Api.editRekordboxPlaylist`, `Api.rekordboxHasSeparator` (Task 6); the types of Task 3.
 - Produces:
+  - `moveBefore<T>(items: readonly T[], keyOf: (item: T) => string | undefined, moving: ReadonlySet<string>, before: string | null): T[] | null` (the renderer's one copy of the move rule; null when `before` is not among the items left. Task 9's list uses it too)
   - `movedEntries(entries: SourcePlaylistEntry[], linkIds: string[], beforeLinkId: string | null): SourcePlaylistEntry[]`
   - `editMessage(tr: TFunction, edit: RekordboxPlaylistEdit, result: RekordboxEditResult, playlistName: string): { text: string; tone: 'neutral' | 'danger' } | null`
   - `useRekordboxEdits(notify: (text: string, tone: 'neutral' | 'danger') => void): (edit: RekordboxPlaylistEdit, playlistName: string) => Promise<RekordboxEditResult>`
@@ -2555,7 +2613,7 @@ Create `src/renderer/src/lib/playlistEdits.test.ts`:
 import { describe, expect, it } from 'vitest'
 import type { RekordboxPlaylistEdit, SourcePlaylistEntry } from '../../../shared/types'
 import i18n from '../i18n'
-import { editMessage, movedEntries } from './playlistEdits'
+import { editMessage, moveBefore, movedEntries } from './playlistEdits'
 
 const row = (linkId: string): SourcePlaylistEntry => ({
   path: `/m/${linkId}.wav`,
@@ -2565,6 +2623,30 @@ const row = (linkId: string): SourcePlaylistEntry => ({
 })
 const ENTRIES = ['a', 'b', 'c', 'd'].map(row)
 const tr = i18n.getFixedT('en')
+
+describe('moveBefore', () => {
+  const same = (k: string): string => k
+  // The writer's rule (rekordboxPlaylistEdit.moveInPlaylist), written once for the
+  // renderer: the moved items keep their own order and land right before the target, every
+  // other item keeps its place.
+  it('lands the moved items before the target in their own order', () => {
+    expect(moveBefore(['a', 'b', 'c', 'd'], same, new Set(['d', 'b']), 'a')).toEqual([
+      'b',
+      'd',
+      'a',
+      'c',
+    ])
+  })
+
+  it('lands them at the end for a null target', () => {
+    expect(moveBefore(['a', 'b', 'c'], same, new Set(['a']), null)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('has no answer for a target that is gone or is itself moving', () => {
+    expect(moveBefore(['a', 'b'], same, new Set(['a']), 'zz')).toBeNull()
+    expect(moveBefore(['a', 'b'], same, new Set(['a']), 'a')).toBeNull()
+  })
+})
 
 describe('movedEntries', () => {
   // The same rule the writer applies, so the row the user dropped stays where it landed
@@ -2649,21 +2731,34 @@ import type {
   SourcePlaylistEntry,
 } from '../../../shared/types'
 
-// The playlist as it will read once a move is written, with the writer's own rule
-// (rekordboxPlaylistEdit.moveInPlaylist): the moved rows keep their order and land before
-// the target, every other row keeps its place.
+// The move rule of the writer (rekordboxPlaylistEdit.moveInPlaylist, which applies it in
+// SQL in main), written once for the renderer: the moved items keep their order and land
+// before the target, every other item keeps its place. The optimistic reorder below and
+// the list's drop (TrackList) both use it, so what the list draws is what main writes.
+export function moveBefore<T>(
+  items: readonly T[],
+  keyOf: (item: T) => string | undefined,
+  moving: ReadonlySet<string>,
+  before: string | null,
+): T[] | null {
+  const isMoving = (item: T): boolean => {
+    const key = keyOf(item)
+    return key !== undefined && moving.has(key)
+  }
+  const moved = items.filter(isMoving)
+  const rest = items.filter((item) => !isMoving(item))
+  const at = before === null ? rest.length : rest.findIndex((item) => keyOf(item) === before)
+  if (at === -1) return null
+  return [...rest.slice(0, at), ...moved, ...rest.slice(at)]
+}
+
+// The playlist as it will read once a move is written.
 export function movedEntries(
   entries: SourcePlaylistEntry[],
   linkIds: string[],
   beforeLinkId: string | null,
 ): SourcePlaylistEntry[] {
-  const moving = new Set(linkIds)
-  const isMoving = (e: SourcePlaylistEntry): boolean => !!e.linkId && moving.has(e.linkId)
-  const moved = entries.filter(isMoving)
-  const rest = entries.filter((e) => !isMoving(e))
-  const at = beforeLinkId === null ? rest.length : rest.findIndex((e) => e.linkId === beforeLinkId)
-  if (at === -1) return entries
-  return [...rest.slice(0, at), ...moved, ...rest.slice(at)]
+  return moveBefore(entries, (e) => e.linkId, new Set(linkIds), beforeLinkId) ?? entries
 }
 
 const REFUSED: Record<Exclude<RekordboxEditRefusal, 'nothing-to-add'>, string> = {
@@ -2902,9 +2997,11 @@ In `src/renderer/src/App.test.tsx` `setApi`, after `rekordboxAvailable: ...`, ad
 ```
 
 Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/hooks src/renderer/src/lib/playlistEdits.test.ts src/renderer/src/i18n`
-Expected: PASS except `usedKeys.test.ts`, which still flags nothing new (the keys are used by `playlistEdits.ts`). If it flags anything, a key name in the JSON does not match the code: fix the JSON.
+Expected: PASS, `usedKeys.test.ts` included (every `sources.edit` key is referenced in `playlistEdits.ts`). If `usedKeys` flags a key, its name in the JSON does not match the code: fix the JSON.
 
 - [ ] **Step 7: Typecheck, lint, commit**
+
+Run the two `tsc` commands and `biome check --write src` from Global Constraints. Expected: clean.
 
 ```bash
 git add src/renderer/src/lib/playlistEdits.ts src/renderer/src/lib/playlistEdits.test.ts src/renderer/src/hooks/useRekordboxEdits.ts src/renderer/src/hooks/useRekordboxEdits.test.tsx src/renderer/src/hooks/useSourceBrowser.ts src/renderer/src/hooks/useSourceBrowser.test.tsx src/renderer/src/App.test.tsx src/renderer/src/i18n/locales
@@ -2916,6 +3013,9 @@ git commit -m "Send rekordbox playlist edits from the renderer and report what t
 ### Task 8: Create, name and drop onto playlists in the tree
 
 **Files:**
+- Create: `src/renderer/src/lib/reorderDrag.ts` (the dragged-rows holder; Task 9 adds the reorder type to it)
+- Test: `src/renderer/src/lib/reorderDrag.test.ts`
+- Create: `src/renderer/src/test/drag.ts` (the one DragEvent polyfill and fake DataTransfer every drag test uses)
 - Modify: `src/renderer/src/components/SourceTree.tsx`
 - Test: `src/renderer/src/components/SourceTree.test.tsx`
 - Modify: locales (`sources.tree`)
@@ -2923,7 +3023,9 @@ git commit -m "Send rekordbox playlist edits from the renderer and report what t
 **Interfaces:**
 - Consumes: `SourceNode` (phase 1).
 - Produces:
-  - `SourceTree` prop `edit?: { onCreate: (parentId: string, name: string, folder: boolean) => void; onDropFiles: (node: SourceNode, files: File[]) => void }`
+  - `setDraggedRows(ids: string[]): void`, `draggedRows(): string[] | null`, `clearDraggedRows(): void` in `lib/reorderDrag.ts`: the track ids a drag out of the list carries, recorded at its start (Task 9) and read by the tree's drop (Task 10), so dropping rows on the tree does not depend on the native drag delivering files to Surco's own window (Q5)
+  - `installDragEvent(): void`, `fakeDataTransfer(files?: File[])` in `src/renderer/src/test/drag.ts`
+  - `SourceTree` prop `edit?: { onCreate: (parentId: string, name: string, folder: boolean) => void; onDropTracks: (node: SourceNode, files: File[]) => void }` (`files` is empty when the drag carried list rows and no files)
   - `export function flattenPlaylists(nodes: SourceNode[], folders?: string[]): { node: SourceNode; folders: string[] }[]` (the phase 1 `flatten`, renamed and exported)
   - testids: `source-tree-new-playlist`, `source-tree-new-folder`, `source-tree-name`, `source-tree-menu`, `source-tree-new-playlist-inside`, `source-tree-new-folder-inside`, `source-drop-count`; attribute `data-drop-target` on the hovered playlist
 
@@ -2942,14 +3044,90 @@ EOF
 node "$SCRATCH/merge-locale.cjs" "$SCRATCH/i18n-task8.json"
 ```
 
-- [ ] **Step 2: Failing tests**
+- [ ] **Step 2: The shared drag test utility and the holder**
+
+Create `src/renderer/src/test/drag.ts`:
+
+```ts
+// jsdom has no DragEvent, and a drag event built as a plain Event drops its pointer
+// position, which is what decides above or below a row. Call in beforeAll.
+export function installDragEvent(): void {
+  if (!('DragEvent' in window)) Object.assign(window, { DragEvent: class extends MouseEvent {} })
+}
+
+// What fireEvent needs as a drag's dataTransfer. setData records its type the way a browser
+// does; files arrive under the 'Files' type, as a drop from Finder does.
+export function fakeDataTransfer(files: File[] = []) {
+  const data: Record<string, string> = {}
+  return {
+    effectAllowed: '',
+    types: (files.length ? ['Files'] : []) as string[],
+    files,
+    items: { length: files.length },
+    setData(type: string, value: string) {
+      data[type] = value
+      this.types.push(type)
+    },
+    getData: (type: string) => data[type] ?? '',
+  }
+}
+```
+
+Failing test, `src/renderer/src/lib/reorderDrag.test.ts`:
+
+```ts
+import { afterEach, describe, expect, it } from 'vitest'
+import { clearDraggedRows, draggedRows, setDraggedRows } from './reorderDrag'
+
+afterEach(clearDraggedRows)
+
+describe('dragged rows', () => {
+  // The tree learns what the list is dragging from here, not from the files the OS drag
+  // may or may not bring back into Surco's own window.
+  it('holds the rows of the drag in progress until it is cleared', () => {
+    expect(draggedRows()).toBeNull()
+    setDraggedRows(['a', 'b'])
+    expect(draggedRows()).toEqual(['a', 'b'])
+    clearDraggedRows()
+    expect(draggedRows()).toBeNull()
+  })
+})
+```
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/reorderDrag.test.ts`
+Expected: FAIL, module not found. Create `src/renderer/src/lib/reorderDrag.ts`:
+
+```ts
+// The rows a drag out of the list carries, recorded by the list when the drag starts. That
+// drag hands the OS the files (so a row lands in Spek or Finder), and whether the OS then
+// also delivers them as files to Surco's own window is not something to build on: the tree
+// reads the rows from here instead. Module state, because the list and the tree share no
+// component, and a drag is one at a time.
+let draggedRowIds: string[] | null = null
+
+export function setDraggedRows(ids: string[]): void {
+  draggedRowIds = ids
+}
+
+export function draggedRows(): string[] | null {
+  return draggedRowIds
+}
+
+export function clearDraggedRows(): void {
+  draggedRowIds = null
+}
+```
+
+Run it again. Expected: PASS.
+
+- [ ] **Step 3: Failing tests for the tree**
 
 In `src/renderer/src/components/SourceTree.test.tsx`, replace `setup` with:
 
 ```tsx
 function setup(selectedId: string | null = null, editable = false) {
   const onSelect = vi.fn()
-  const edit = { onCreate: vi.fn(), onDropFiles: vi.fn() }
+  const edit = { onCreate: vi.fn(), onDropTracks: vi.fn() }
   const onOuterDrop = vi.fn()
   render(
     // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the window's own file drop
@@ -2968,11 +3146,10 @@ function setup(selectedId: string | null = null, editable = false) {
   return Object.assign(onSelect, { edit, onOuterDrop })
 }
 
-function files(...names: string[]) {
-  const list = names.map((n) => new File([''], n))
-  return { types: ['Files'], items: { length: list.length }, files: list }
-}
+const files = (...names: string[]) => fakeDataTransfer(names.map((n) => new File([''], n)))
 ```
+
+add to its imports `import { clearDraggedRows, setDraggedRows } from '../lib/reorderDrag'` and `import { fakeDataTransfer } from '../test/drag'`, and `afterEach(clearDraggedRows)` under `afterEach(cleanup)`.
 
 and append:
 
@@ -3007,15 +3184,15 @@ describe('SourceTree organising', () => {
     expect(edit.onCreate).not.toHaveBeenCalled()
   })
 
-  // Enter removes the field, and a field that loses focus as it goes would commit a second
-  // time: one name typed must make one playlist.
-  it('creates once when the field blurs right after Enter', () => {
+  // Finder's rule: clicking away keeps what was typed, and an empty name is no playlist.
+  it('creates with the typed name when the field loses focus, and nothing when it is empty', () => {
     const { edit } = setup(null, true)
     fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
-    const field = screen.getByTestId('source-tree-name')
-    fireEvent.change(field, { target: { value: 'Bolo' } })
-    fireEvent.keyDown(field, { key: 'Enter' })
-    fireEvent.blur(field)
+    fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
+    fireEvent.blur(screen.getByTestId('source-tree-name'))
+    expect(edit.onCreate).toHaveBeenCalledWith('root', 'Bolo', false)
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    fireEvent.blur(screen.getByTestId('source-tree-name'))
     expect(edit.onCreate).toHaveBeenCalledTimes(1)
   })
 
@@ -3027,8 +3204,21 @@ describe('SourceTree organising', () => {
     expect(house).toHaveAttribute('data-drop-target')
     expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
     fireEvent.drop(house, { dataTransfer: dt })
-    expect(edit.onDropFiles).toHaveBeenCalledWith(NODES[2], dt.files)
+    expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], dt.files)
     expect(house).not.toHaveAttribute('data-drop-target')
+  })
+
+  // Rows dragged out of the list are known from the holder; the drop must take them even
+  // when the OS drag brings no files into Surco's own window.
+  it('takes rows dragged from the list when no files arrive', () => {
+    const { edit } = setup(null, true)
+    setDraggedRows(['a', 'b', 'c'])
+    const house = screen.getByTestId('source-node-house')
+    const dt = fakeDataTransfer()
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+3 on drop')
+    fireEvent.drop(house, { dataTransfer: dt })
+    expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], [])
   })
 
   // A folder holds playlists, not tracks; a drop there must neither write anything nor
@@ -3040,7 +3230,7 @@ describe('SourceTree organising', () => {
     fireEvent.dragOver(bases, { dataTransfer: dt })
     expect(bases).not.toHaveAttribute('data-drop-target')
     fireEvent.drop(bases, { dataTransfer: dt })
-    expect(edit.onDropFiles).not.toHaveBeenCalled()
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
     expect(onOuterDrop).not.toHaveBeenCalled()
   })
 
@@ -3056,7 +3246,7 @@ describe('SourceTree organising', () => {
 Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/SourceTree.test.tsx`
 Expected: FAIL on the new describe (no `source-tree-new-playlist`).
 
-- [ ] **Step 3: Implement**
+- [ ] **Step 4: Implement**
 
 In `src/renderer/src/components/SourceTree.tsx`:
 
@@ -3065,7 +3255,7 @@ Imports become:
 ```tsx
 import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 ```
 
 Rename `function flatten(` to `export function flattenPlaylists(` and its two uses (`flatten(n.children ?? [], ...)` inside it and `flatten(nodes)` in `hits`).
@@ -3074,36 +3264,28 @@ Props: add after `onSelect`:
 
 ```tsx
   // Organising, offered only where the source can be written (rekordbox): creating playlists
-  // and folders, and taking files dropped on a playlist. Without it the tree only browses.
+  // and folders, and taking tracks dropped on a playlist (rows dragged from the list, known
+  // from lib/reorderDrag, or files from Finder). Without it the tree only browses.
   edit?: {
     onCreate: (parentId: string, name: string, folder: boolean) => void
-    onDropFiles: (node: SourceNode, files: File[]) => void
+    onDropTracks: (node: SourceNode, files: File[]) => void
   }
 ```
 
-and `edit,` to the destructured props. After the `toggle` function add:
+and `edit,` to the destructured props, and `import { draggedRows } from '../lib/reorderDrag'` to the imports. After the `toggle` function add:
 
 ```tsx
-  // The name field for a playlist or folder being created, and where it goes. Kept in a ref
-  // as well, so the commit that Enter makes and the blur that follows when the field goes
-  // away create one playlist, not two.
+  // The name field for a playlist or folder being created, and where it goes. Enter and
+  // leaving the field both keep the name (Finder's rule); Escape and an empty name drop it.
   const [creating, setCreating] = useState<{ parentId: string; folder: boolean } | null>(null)
-  const pending = useRef<{ parentId: string; folder: boolean } | null>(null)
-  const startCreating = (parentId: string, folder: boolean): void => {
-    pending.current = { parentId, folder }
+  const startCreating = (parentId: string, folder: boolean): void =>
     setCreating({ parentId, folder })
-  }
   const commit = (value: string): void => {
-    const target = pending.current
-    pending.current = null
     setCreating(null)
     const name = value.trim()
-    if (target && name) edit?.onCreate(target.parentId, name, target.folder)
+    if (creating && name) edit?.onCreate(creating.parentId, name, creating.folder)
   }
-  const cancel = (): void => {
-    pending.current = null
-    setCreating(null)
-  }
+  const cancel = (): void => setCreating(null)
   const focusField = useCallback((el: HTMLInputElement | null) => el?.focus(), [])
   const [menu, setMenu] = useState<{ node: SourceNode; x: number; y: number } | null>(null)
   const createInside = (node: SourceNode, folder: boolean): void => {
@@ -3111,9 +3293,11 @@ and `edit,` to the destructured props. After the `toggle` function add:
     setOpened((prev) => new Set([...prev, node.id]))
     startCreating(node.id, folder)
   }
-  // Which playlist a file drag is over, and how many files it carries.
+  // Which playlist a drag of tracks is over, and how many it carries: the list's own rows
+  // when a drag from the list is in progress, otherwise the files of a drag from Finder.
   const [dropOn, setDropOn] = useState<{ id: string; count: number } | null>(null)
-  const carriesFiles = (e: React.DragEvent): boolean => e.dataTransfer.types.includes('Files')
+  const carriesTracks = (e: React.DragEvent): boolean =>
+    draggedRows() !== null || e.dataTransfer.types.includes('Files')
 
   const nameField = (parentId: string, depth: number): React.ReactNode =>
     creating?.parentId === parentId && (
@@ -3144,17 +3328,17 @@ In `row`, the `<button>` gains these props (after `onClick`):
           }}
           data-drop-target={dropOn?.id === node.id || undefined}
           onDragOver={(e) => {
-            if (!edit || isFolder || !carriesFiles(e)) return
+            if (!edit || isFolder || !carriesTracks(e)) return
             e.preventDefault()
-            setDropOn({ id: node.id, count: e.dataTransfer.items.length })
+            setDropOn({ id: node.id, count: draggedRows()?.length ?? e.dataTransfer.items.length })
           }}
           onDragLeave={() => setDropOn((d) => (d?.id === node.id ? null : d))}
           onDrop={(e) => {
-            if (!edit || isFolder || !carriesFiles(e)) return
+            if (!edit || isFolder || !carriesTracks(e)) return
             e.preventDefault()
             e.stopPropagation()
             setDropOn(null)
-            edit.onDropFiles(node, Array.from(e.dataTransfer.files))
+            edit.onDropTracks(node, Array.from(e.dataTransfer.files))
           }}
 ```
 
@@ -3272,14 +3456,14 @@ the scroll `div` becomes
       )}
 ```
 
-- [ ] **Step 4: Run, lint, commit**
+- [ ] **Step 5: Run, lint, commit**
 
-Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/SourceTree.test.tsx src/renderer/src/i18n`
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/SourceTree.test.tsx src/renderer/src/lib/reorderDrag.test.ts src/renderer/src/i18n`
 Expected: PASS. (`usedKeys` passes once Task 8's keys are all referenced, which they are above.)
 Run `tsc` (web) and `biome check --write src`.
 
 ```bash
-git add src/renderer/src/components/SourceTree.tsx src/renderer/src/components/SourceTree.test.tsx src/renderer/src/i18n/locales
+git add src/renderer/src/lib/reorderDrag.ts src/renderer/src/lib/reorderDrag.test.ts src/renderer/src/test/drag.ts src/renderer/src/components/SourceTree.tsx src/renderer/src/components/SourceTree.test.tsx src/renderer/src/i18n/locales
 git commit -m "Create playlists and folders and take dropped tracks in the rekordbox tree"
 ```
 
@@ -3288,19 +3472,20 @@ git commit -m "Create playlists and folders and take dropped tracks in the rekor
 ### Task 9: Reorder by hand: per-link separators, grips and the insertion line
 
 **Files:**
-- Create: `src/renderer/src/lib/reorderDrag.ts`
+- Modify: `src/renderer/src/lib/reorderDrag.ts` (Task 8 created it with the dragged-rows holder)
 - Modify: `src/renderer/src/lib/playlistView.ts`, `src/renderer/src/lib/playlistView.test.ts`
 - Modify: `src/renderer/src/components/TrackList.tsx`, `src/renderer/src/components/TrackList.test.tsx`
-- Modify: `src/renderer/src/App.tsx` (only the `separatorBefore` prop, so it keeps compiling)
+- Modify: `src/renderer/src/App.tsx` (only the `<TrackList>` props: `separatorBefore` now passes a Map, and `trailingSeparators` is added)
 - Modify: locales (`sources.reorder.removeSeparator`)
 
 **Interfaces:**
-- Consumes: `SourcePlaylistEntry.linkId/contentId` (Task 2).
+- Consumes: `SourcePlaylistEntry.linkId/contentId` (Task 2); `moveBefore` (Task 7); `setDraggedRows`, `clearDraggedRows`, `installDragEvent`, `fakeDataTransfer` (Task 8).
 - Produces:
   - `REORDER_TYPE = 'application/x-surco-reorder'`, `isReorderDrag(e: { dataTransfer?: DataTransfer | null }): boolean`
   - `playlistView(tracks, entries): PlaylistScope` with `interface PlaylistScope { tracks: TrackItem[]; separatorBefore: ReadonlyMap<string, readonly string[]>; trailingSeparators: readonly string[]; linkOf: ReadonlyMap<string, string>; contentOf: ReadonlyMap<string, string> }` (separator key = its `linkId`, or `sep-<index>` without one)
   - `TrackList` props: `separatorBefore?: ReadonlyMap<string, readonly string[]>`, `trailingSeparators?: readonly string[]`, `reorder?: { onMove: (keys: string[], beforeKey: string | null) => void; onRemoveSeparator: (key: string) => void }`
-  - testids: `track-grip-<key>`, `reorder-line`, `track-separator-<key>`, `separator-remove-<key>`; attribute `data-reorder-key` on every row wrapper and separator line
+  - testids: `track-drag-<id>` on every row wrapper (the element that carries the drag), `track-grip-<key>`, `reorder-line`, `track-separator-<key>`, `separator-remove-<key>`; the attribute `data-reorder-key` on wrappers and separator lines is for the list's own drop logic, never for tests
+  - a drag-out records the dragged track ids with `setDraggedRows`; the list clears them on the window's `dragend` and on the next `pointerdown`, and drops a pressed grip on the window's `mouseup`
 
 - [ ] **Step 1: Locale string**
 
@@ -3389,6 +3574,19 @@ and replace the test `'collapses runs of separators and drops a trailing one: a 
 
 Any other test in the file that reads `view.separatorBefore` as a Set: change `[...view.separatorBefore]` to `[...view.separatorBefore.keys()]`.
 
+Replace the phase 1 test `'is empty for a playlist of only separators, with no orphan break'` (its name no longer holds: those separators are now kept) with:
+
+```ts
+  // No row to draw a break above, but the separators are still the playlist's: they stay as
+  // trailing lines so they can be dragged or removed.
+  it('shows no rows for a playlist of only separators, keeping them as trailing lines', () => {
+    const view = playlistView([A], [entry(SEP, true, 's1'), entry(SEP, true, 's2')])
+    expect(view.tracks).toEqual([])
+    expect(view.separatorBefore.size).toBe(0)
+    expect(view.trailingSeparators).toEqual(['s1', 's2'])
+  })
+```
+
 Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/playlistView.test.ts`
 Expected: FAIL.
 
@@ -3442,7 +3640,7 @@ Expected: PASS.
 
 - [ ] **Step 4: The drag type**
 
-Create `src/renderer/src/lib/reorderDrag.ts`:
+Append to `src/renderer/src/lib/reorderDrag.ts`:
 
 ```ts
 // A drag that reorders the open playlist inside the list. It carries this type instead of
@@ -3459,37 +3657,19 @@ export function isReorderDrag(e: { dataTransfer?: DataTransfer | null }): boolea
 
 In `src/renderer/src/components/TrackList.test.tsx`:
 - In `renderList`'s options type change `separatorBefore?: ReadonlySet<string>` to `separatorBefore?: ReadonlyMap<string, readonly string[]>`, add `trailingSeparators?: readonly string[]` and `reorder?: { onMove: (keys: string[], beforeKey: string | null) => void; onRemoveSeparator: (key: string) => void }` to the options and destructuring, and pass `trailingSeparators={trailingSeparators}` and `reorder={reorder}` to `<TrackList>`.
-- Add `beforeAll` to the vitest import and, after the `afterEach(cleanup)` line:
+- Add `beforeAll` to the vitest import, `import { clearDraggedRows, draggedRows } from '../lib/reorderDrag'` and `import { fakeDataTransfer, installDragEvent } from '../test/drag'` to the imports, and after the `afterEach(cleanup)` line:
 
 ```ts
-// jsdom has no DragEvent, and a drag built as a plain Event loses its pointer position,
-// which is what decides above or below a row.
-beforeAll(() => {
-  if (!('DragEvent' in window)) Object.assign(window, { DragEvent: class extends MouseEvent {} })
-})
+beforeAll(installDragEvent)
+afterEach(clearDraggedRows)
 
-function dataTransfer() {
-  const data: Record<string, string> = {}
-  return {
-    effectAllowed: '',
-    types: [] as string[],
-    setData(type: string, value: string) {
-      data[type] = value
-      this.types.push(type)
-    },
-    getData: (type: string) => data[type] ?? '',
-  }
-}
-
-const wrapperOf = (key: string): HTMLElement => {
-  const el = document.querySelector<HTMLElement>(`[data-reorder-key="${key}"]`)
-  if (!el) throw new Error(`no row ${key}`)
-  return el
-}
+// A track row's draggable wrapper, or a separator line, by its test id.
+const wrapperOf = (key: string): HTMLElement =>
+  screen.queryByTestId(`track-drag-${key}`) ?? screen.getByTestId(`track-separator-${key}`)
 
 // Grip, drag start, hover over the target (upper half when above), drop.
 function drag(from: string, onto: string, above: boolean) {
-  const dt = dataTransfer()
+  const dt = fakeDataTransfer()
   fireEvent.mouseDown(screen.getByTestId(`track-grip-${from}`))
   fireEvent.dragStart(wrapperOf(from), { dataTransfer: dt })
   fireEvent.dragOver(wrapperOf(onto), { dataTransfer: dt, clientY: above ? -1 : 1 })
@@ -3525,7 +3705,7 @@ describe('TrackList reorder', () => {
   it('moves a row before the one it is dropped on, with a line where it will land', () => {
     const reorder = reorderSpy()
     renderList(abc(), null, [], { reorder })
-    const dt = dataTransfer()
+    const dt = fakeDataTransfer()
     fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
     fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
     fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
@@ -3569,7 +3749,7 @@ describe('TrackList reorder', () => {
   it('keeps the drag-out to other apps when the grip was not pressed', () => {
     const reorder = reorderSpy()
     renderList(abc(), null, [], { reorder })
-    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: dataTransfer() })
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
     expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/b.wav'], undefined)
   })
 
@@ -3583,6 +3763,29 @@ describe('TrackList reorder', () => {
   it('draws the separators after the last row', () => {
     renderList(abc(), null, [], { trailingSeparators: ['s9'] })
     expect(wrapperOf('c').compareDocumentPosition(wrapperOf('s9')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  // A grip pressed and released without dragging, even outside the list, must not turn
+  // the next plain drag of that row into a reorder: that drag belongs to other apps.
+  it('lets go of a pressed grip when the mouse is released anywhere', () => {
+    renderList(abc(), null, [], { reorder: reorderSpy() })
+    fireEvent.mouseDown(screen.getByTestId('track-grip-b'))
+    fireEvent.mouseUp(window)
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
+    expect(api.startTrackDrag).toHaveBeenCalled()
+  })
+
+  // The tree reads what the list is dragging from this record, not from files the OS may
+  // or may not bring back into Surco's window; a finished drag must not leave it behind.
+  it('records the rows of a drag-out and forgets them when the drag ends', () => {
+    renderList(abc(), 'c', ['a', 'c'])
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: fakeDataTransfer() })
+    expect(draggedRows()).toEqual(['a', 'c'])
+    fireEvent.dragEnd(window)
+    expect(draggedRows()).toBeNull()
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
+    fireEvent.pointerDown(window)
+    expect(draggedRows()).toBeNull()
   })
 
   // The tree and the open playlist are re-read on focus; a re-read landing mid-drag brings
@@ -3605,7 +3808,7 @@ describe('TrackList reorder', () => {
       reorder,
     })
     const { rerender } = render(<TrackList {...props(abc())} />)
-    const dt = dataTransfer()
+    const dt = fakeDataTransfer()
     fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
     fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
     rerender(<TrackList {...props(abc())} />)
@@ -3623,7 +3826,17 @@ Expected: FAIL (no grips, separator testid by key).
 
 In `src/renderer/src/components/TrackList.tsx`:
 
-1. Add `GripVertical,` to the lucide import (after `CopyMinus,`), `useMemo,` to the react import (after `useLayoutEffect,`), and `import { REORDER_TYPE } from '../lib/reorderDrag'` after the `../lib/progress` import.
+1. Add `GripVertical,` to the lucide import (after `CopyMinus,`), `useMemo,` to the react import (after `useLayoutEffect,`), `import { moveBefore } from '../lib/playlistEdits'` and `import { clearDraggedRows, REORDER_TYPE, setDraggedRows } from '../lib/reorderDrag'` after the `../lib/progress` import.
+   In `startDragOut`, right after the `paths` constant, record the rows for the tree:
+
+```tsx
+    // The tree's drop reads these (lib/reorderDrag): the OS drag below carries files for
+    // other apps, and is not relied on to bring them back into this window.
+    setDraggedRows(
+      selectedIds.has(track.id) ? tracks.filter((t) => selectedIds.has(t.id)).map((t) => t.id) : [track.id],
+    )
+```
+
 
 2. In `Props`, replace the `separatorBefore` comment and line with:
 
@@ -3655,7 +3868,7 @@ In `src/renderer/src/components/TrackList.tsx`:
 
 and add `reorderable, armed, onArmReorder,` to `TrackRow`'s destructuring after `outsideFilter,`.
 
-4. On the row wrapper `div` (the one with `ref={rowRef}`), add `data-reorder-key={t.id}` after `role="presentation"`, and replace its `onDragStart` with:
+4. On the row wrapper `div` (the one with `ref={rowRef}`), add ``data-testid={`track-drag-${t.id}`}`` and `data-reorder-key={t.id}` after `role="presentation"`, and replace its `onDragStart` with:
 
 ```tsx
         onDragStart={(e) => {
@@ -3706,6 +3919,20 @@ and add `reorderable, armed, onArmReorder,` to `TrackRow`'s destructuring after 
     setArmed(null)
     setDropBefore(undefined)
   }
+  // A grip released anywhere (outside the list too) is no longer pressed. The rows a
+  // drag-out recorded for the tree are forgotten when that drag ends, and at the next press
+  // in the window in case the OS drag ended without telling this window.
+  useEffect(() => {
+    const release = (): void => setArmed(null)
+    window.addEventListener('mouseup', release)
+    window.addEventListener('dragend', clearDraggedRows, true)
+    window.addEventListener('pointerdown', clearDraggedRows, true)
+    return () => {
+      window.removeEventListener('mouseup', release)
+      window.removeEventListener('dragend', clearDraggedRows, true)
+      window.removeEventListener('pointerdown', clearDraggedRows, true)
+    }
+  }, [])
   const onReorderOver = (e: React.DragEvent): void => {
     if (!reorder || !e.dataTransfer.types.includes(REORDER_TYPE)) return
     e.preventDefault()
@@ -3727,11 +3954,9 @@ and add `reorderable, armed, onArmReorder,` to `TrackRow`'s destructuring after 
     const target = dropBefore
     endReorder()
     if (target === undefined) return
-    const rest = orderKeys.filter((k) => !moved.includes(k))
-    const at = target === null ? rest.length : rest.indexOf(target)
-    if (at === -1) return
-    const next = [...rest.slice(0, at), ...moved, ...rest.slice(at)]
-    if (next.join('\n') !== orderKeys.join('\n')) reorder.onMove(moved, target)
+    // The same rule main writes and the optimistic re-read draws (lib/playlistEdits).
+    const next = moveBefore(orderKeys, (k) => k, new Set(moved), target)
+    if (next && next.join('\n') !== orderKeys.join('\n')) reorder.onMove(moved, target)
   }
   const insertionLine = (
     <div data-testid="reorder-line" className="mx-2 h-0.5 rounded-full bg-[var(--color-accent)]" />
@@ -3844,7 +4069,7 @@ git commit -m "Reorder the open playlist by dragging rows and separators in the 
 - Modify: locales (`sources.menu`, `sources.reorder.hint`)
 
 **Interfaces:**
-- Consumes: `useRekordboxEdits` (Task 7), `browser.canInsertSeparator` (Task 7), `SourceTree.edit` and `flattenPlaylists` (Task 8), `PlaylistScope`, `TrackList.reorder`, `isReorderDrag` (Task 9).
+- Consumes: `useRekordboxEdits` (Task 7), `browser.canInsertSeparator` (Task 7), `SourceTree.edit` (`onCreate`, `onDropTracks`), `flattenPlaylists`, `draggedRows`, `clearDraggedRows`, `installDragEvent`, `fakeDataTransfer` (Task 8), `PlaylistScope`, `TrackList.reorder`, `isReorderDrag` (Task 9); App's existing `menuTargets` (`useStableCallback((id: string) => TrackItem[])`, App.tsx ~925), reused as is.
 - Produces:
   - `export interface TrackPlaylistMenu { targets: { node: SourceNode; folders: string[] }[]; openName: string | null; canInsertSeparator: boolean; onAddTo: (node: SourceNode) => void; onInsertSeparator: () => void; onRemove: () => void }` and the `playlist?: TrackPlaylistMenu` prop on `TrackContextMenu`
   - testids: `track-menu-add-to`, `track-menu-playlists`, `track-menu-playlist-<id>`, `track-menu-insert-separator`, `track-menu-remove-from`, `reorder-hint`, `rekordbox-edit-notice`
@@ -4049,32 +4274,14 @@ Expected: PASS (the order test is unchanged without `playlist`).
 
 - [ ] **Step 4: Failing App tests**
 
-In `src/renderer/src/App.test.tsx`, add `beforeAll` to the vitest import, and above `describe('App source playlists'`:
+In `src/renderer/src/App.test.tsx`, add `beforeAll` to the vitest import, `import { clearDraggedRows } from './lib/reorderDrag'` and `import { fakeDataTransfer, installDragEvent } from './test/drag'` to the imports, and above `describe('App source playlists'`:
 
 ```tsx
-// jsdom has no DragEvent; a drag built as a plain Event loses its pointer position.
-beforeAll(() => {
-  if (!('DragEvent' in window)) Object.assign(window, { DragEvent: class extends MouseEvent {} })
-})
+beforeAll(installDragEvent)
+afterEach(clearDraggedRows)
 
-function reorderTransfer() {
-  const data: Record<string, string> = {}
-  return {
-    effectAllowed: '',
-    types: [] as string[],
-    setData(type: string, value: string) {
-      data[type] = value
-      this.types.push(type)
-    },
-    getData: (type: string) => data[type] ?? '',
-  }
-}
-
-const rowWrapper = (row: HTMLElement): HTMLElement => {
-  const el = row.closest<HTMLElement>('[data-reorder-key]')
-  if (!el) throw new Error('row has no wrapper')
-  return el
-}
+// The draggable wrapper of the row at this position in the list.
+const rowWrapper = (index: number): HTMLElement => screen.getAllByTestId(/^track-drag-/)[index]
 ```
 
 Inside `describe('App source playlists', ...)` append:
@@ -4128,12 +4335,12 @@ Inside `describe('App source playlists', ...)` append:
     await openFactory({ editRekordboxPlaylist: edit, loadRekordboxPlaylist: load })
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[2])
-    const charlie = rowWrapper(rows[2])
-    const dt = reorderTransfer()
+    const charlie = rowWrapper(2)
+    const dt = fakeDataTransfer()
     fireEvent.mouseDown(within(charlie).getByTestId(/^track-grip-/))
     fireEvent.dragStart(charlie, { dataTransfer: dt })
-    fireEvent.dragOver(rowWrapper(rows[0]), { dataTransfer: dt, clientY: -1 })
-    fireEvent.drop(rowWrapper(rows[0]), { dataTransfer: dt })
+    fireEvent.dragOver(rowWrapper(0), { dataTransfer: dt, clientY: -1 })
+    fireEvent.drop(rowWrapper(0), { dataTransfer: dt })
     expect(edit).toHaveBeenCalledWith({
       kind: 'move',
       playlistId: 'f',
@@ -4198,15 +4405,59 @@ Inside `describe('App source playlists', ...)` append:
     expect(load.mock.calls.length).toBeGreaterThan(before)
   })
 
+  // Rows dragged out of the list onto a tree playlist are known from the list's own record,
+  // so they are added (by their rekordbox entry) even if the OS drag brings no files back
+  // into Surco's window.
+  it('adds rows dragged from the list onto a playlist in the tree, with or without files', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit, startTrackDrag: vi.fn() })
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+    const house = screen.getByTestId('source-node-h')
+    fireEvent.dragOver(house, { dataTransfer: fakeDataTransfer() })
+    fireEvent.drop(house, { dataTransfer: fakeDataTransfer() })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'add',
+      playlistId: 'h',
+      tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+    })
+  })
+
+  // A drop from Finder is files the list never dragged: they go by their paths.
+  it('adds files dropped from Finder onto a playlist by their paths', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      editRekordboxPlaylist: edit,
+      getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
+    })
+    const house = screen.getByTestId('source-node-h')
+    const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    fireEvent.drop(house, { dataTransfer: dt })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'add',
+      playlistId: 'h',
+      tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+    })
+  })
+
+  it('creates a playlist named in the tree', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit })
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
+    fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
+    expect(edit).toHaveBeenCalledWith({ kind: 'create', parentId: 'root', name: 'Bolo', folder: false })
+  })
+
   // A reorder is not files arriving; lighting the import overlay would invite a drop that
   // means something else.
   it('does not light the file-drop overlay while reordering', async () => {
     await openFactory()
     const rows = screen.getAllByTestId('track-row')
-    const dt = reorderTransfer()
-    fireEvent.mouseDown(within(rowWrapper(rows[2])).getByTestId(/^track-grip-/))
-    fireEvent.dragStart(rowWrapper(rows[2]), { dataTransfer: dt })
-    fireEvent.dragEnter(rowWrapper(rows[0]), { dataTransfer: dt })
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(within(rowWrapper(2)).getByTestId(/^track-grip-/))
+    fireEvent.dragStart(rowWrapper(2), { dataTransfer: dt })
+    fireEvent.dragEnter(rowWrapper(0), { dataTransfer: dt })
     expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over')
   })
 ```
@@ -4218,7 +4469,7 @@ Expected: FAIL on the five new tests.
 
 In `src/renderer/src/App.tsx`:
 
-1. Imports: `import { SourceTree } from './components/SourceTree'` becomes `import { flattenPlaylists, SourceTree } from './components/SourceTree'`; `import { TrackContextMenu } from './components/TrackContextMenu'` becomes `import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackContextMenu'`; add `import { useRekordboxEdits } from './hooks/useRekordboxEdits'` after the `useSourceBrowser` import; add `import { isReorderDrag } from './lib/reorderDrag'` in the `./lib/` imports; add `PlaylistTrackRef` and `SourceNode` to the `../../shared/types` type import (create one if App has none: `import type { PlaylistTrackRef, SourceNode } from '../../shared/types'`).
+1. Imports: `import { SourceTree } from './components/SourceTree'` becomes `import { flattenPlaylists, SourceTree } from './components/SourceTree'`; `import { TrackContextMenu } from './components/TrackContextMenu'` becomes `import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackContextMenu'`; add `import { useRekordboxEdits } from './hooks/useRekordboxEdits'` after the `useSourceBrowser` import; add `import { clearDraggedRows, draggedRows, isReorderDrag } from './lib/reorderDrag'` in the `./lib/` imports; add `PlaylistTrackRef` and `SourceNode` to the `../../shared/types` type import (create one if App has none: `import type { PlaylistTrackRef, SourceNode } from '../../shared/types'`).
 
 2. Right after the `const browser = useSourceBrowser({ ... })` statement:
 
@@ -4297,22 +4548,35 @@ change `const viewKey = \`${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPl
   const addToRekordbox = useStableCallback((node: SourceNode, targets: TrackItem[]) => {
     void editRekordbox({ kind: 'add', playlistId: node.id, tracks: targets.map(trackRef) }, node.name)
   })
-  // Files dropped on a playlist in the tree: the rows dragged out of the list (matched back
-  // to their tracks so they carry their entry) or files from Finder.
+  // Tracks dropped on a playlist in the tree: the rows a drag out of the list recorded
+  // (lib/reorderDrag), which carry their rekordbox entry, or files from Finder. The record
+  // is used whenever the drop brought no files or only those rows' files, so it does not
+  // matter whether the OS drag delivers files back to this window; a Finder drop that finds
+  // a stale record goes by its own files.
   const dropOnRekordbox = useStableCallback((node: SourceNode, files: File[]) => {
-    const byPath = new Map(tracksRef.current.map((t) => [t.inputPath.normalize('NFC'), t]))
-    const tracks = files.map((f) => {
-      const path = window.api.getPathForFile(f)
-      const t = byPath.get(path.normalize('NFC'))
-      return t ? trackRef(t) : { paths: [path] }
+    const paths = files.map((f) => window.api.getPathForFile(f).normalize('NFC'))
+    const held = (draggedRows() ?? []).flatMap((id) => {
+      const t = tracksRef.current.find((x) => x.id === id)
+      return t ? [t] : []
     })
-    void editRekordbox({ kind: 'add', playlistId: node.id, tracks }, node.name)
+    clearDraggedRows()
+    const heldPaths = new Set(held.map((t) => t.inputPath.normalize('NFC')))
+    const fromList = held.length > 0 && paths.every((p) => heldPaths.has(p))
+    const byPath = new Map(tracksRef.current.map((t) => [t.inputPath.normalize('NFC'), t]))
+    const tracks = fromList
+      ? held.map(trackRef)
+      : paths.map((p) => {
+          const t = byPath.get(p)
+          return t ? trackRef(t) : { paths: [p] }
+        })
+    if (tracks.length > 0)
+      void editRekordbox({ kind: 'add', playlistId: node.id, tracks }, node.name)
   })
   const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
     void editRekordbox({ kind: 'create', parentId, name, folder }, name)
   })
   const treeEdit = useMemo(
-    () => ({ onCreate: createInRekordbox, onDropFiles: dropOnRekordbox }),
+    () => ({ onCreate: createInRekordbox, onDropTracks: dropOnRekordbox }),
     [createInRekordbox, dropOnRekordbox],
   )
   const linkFor = (key: string): string => playlistScope?.linkOf.get(key) ?? key
@@ -4344,9 +4608,9 @@ change `const viewKey = \`${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPl
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
     [reorderEnabled, moveInRekordbox, removeSeparator],
   )
-  // The right-clicked row acts with the selection it belongs to, as the drag does.
-  const menuTargets = (track: TrackItem): TrackItem[] =>
-    selectedIdSet.has(track.id) ? visibleTracks.filter((t) => selectedIdSet.has(t.id)) : [track]
+  // The right-clicked row acts with the selection it belongs to through App's existing
+  // menuTargets (the one remove and trash use). Added tracks therefore go in working-list
+  // order, which is the order they were loaded in.
   const trackMenuPlaylist = (track: TrackItem): TrackPlaylistMenu | undefined => {
     if (browser.source !== 'rekordbox' || !browser.tree) return undefined
     const playlist = browser.playlist
@@ -4354,7 +4618,7 @@ change `const viewKey = \`${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPl
       targets: flattenPlaylists(browser.tree).filter((h) => h.node.id !== playlist?.id),
       openName: rekordboxOpen && playlist ? playlist.name : null,
       canInsertSeparator: browser.canInsertSeparator,
-      onAddTo: (node) => addToRekordbox(node, menuTargets(track)),
+      onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
       onInsertSeparator: () => {
         const beforeLinkId = playlistScope?.linkOf.get(track.id)
         if (!playlist || !beforeLinkId) return
@@ -4365,7 +4629,7 @@ change `const viewKey = \`${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPl
       },
       onRemove: () =>
         removeFromRekordbox(
-          menuTargets(track).flatMap((t) => {
+          menuTargets(track.id).flatMap((t) => {
             const link = playlistScope?.linkOf.get(t.id)
             return link ? [link] : []
           }),
@@ -4441,9 +4705,10 @@ cp ~/Library/Pioneer/rekordbox/master.db "$SCRATCH/rb-2a/master.db"
 [ -f ~/Library/Pioneer/rekordbox/master.db-wal ] && cp ~/Library/Pioneer/rekordbox/master.db-wal "$SCRATCH/rb-2a/master.db-wal"
 cp ~/Library/Pioneer/rekordbox/masterPlaylists6.xml "$SCRATCH/rb-2a/masterPlaylists6.xml"
 cp "$SCRATCH/rb-2a/masterPlaylists6.xml" "$SCRATCH/rb-2a/masterPlaylists6.before.xml"
+node "$SCRATCH/rb-spike/measure.cjs" "$SCRATCH/rb-2a" > "$SCRATCH/rb-2a/measure.before.json"
 ```
 
-Do NOT `chmod 444` the copy: Surco writes to it in this task.
+Do NOT `chmod 444` the copy: Surco writes to it in this task. The "before" measurement is taken on this same copy, so the comparison in Step 4 isolates what Surco wrote.
 
 - [ ] **Step 2: Point the driver's app at the copy**
 
@@ -4467,13 +4732,34 @@ Open and look at every screenshot.
 
 - [ ] **Step 4: Read the copy back**
 
-Run: `node "$SCRATCH/rb-spike/measure.cjs" "$SCRATCH/rb-2a"` and confirm: `playlistsWithTrackNoGaps` 0; `xml.liveRowsWithoutNode` empty; `xml.lastNode.Id` is the hex of the new playlist's ID; `xml.parentMismatches` 0. Then:
-
 ```bash
+node "$SCRATCH/rb-spike/measure.cjs" "$SCRATCH/rb-2a" > "$SCRATCH/rb-2a/measure.after.json"
+diff "$SCRATCH/rb-2a/measure.before.json" "$SCRATCH/rb-2a/measure.after.json"
 diff <(tr -d '\r' < "$SCRATCH/rb-2a/masterPlaylists6.before.xml") <(tr -d '\r' < "$SCRATCH/rb-2a/masterPlaylists6.xml")
 ```
 
-Expected: exactly one added `NODE` line (ParentId `0`, Attribute `0`, Lib_Type `0`). Query the new rows next to a row rekordbox made (adapt `$SCRATCH/plan2a`-style script: `SELECT * FROM djmdPlaylist WHERE Name = 'Surco prueba 2a'` and its `djmdSongPlaylist` rows, beside one Factory row) and confirm the same columns are filled the same way (UUID shapes, timestamps format, `rb_local_usn` above the old counter, `rb_local_synced` 0). Confirm `djmdContent` count and the cues of one added track (`SELECT count(*) FROM djmdCue WHERE ContentID = ?`) are unchanged against `measure.cjs` run on `$SCRATCH/rb-spike`. Confirm `master.db.surco-session` and `master.db.surco-backup` exist beside the copy.
+Expected in the measurement diff: `contentRows` and `cueRows` unchanged; `linkRows` up by the tracks added plus the separator minus the row removed; `localUpdateCount` higher; `playlistsWithTrackNoGaps` still 0; `xml.nodes` up by one, `xml.liveRowsWithoutNode` still empty, `xml.lastNode.Id` the hex of the new playlist's ID, `xml.parentMismatches` 0. Expected in the XML diff: exactly one added `NODE` line (ParentId `0`, Attribute `0`, Lib_Type `0`).
+
+Then put the new rows next to rows rekordbox made:
+
+```bash
+cat > "$SCRATCH/rb-2a/rows.cjs" <<'EOF'
+const Database = require('/Users/vicent/code/surco/node_modules/better-sqlite3-multiple-ciphers')
+const db = new Database(`${process.argv[2]}/master.db`, { readonly: true, fileMustExist: true })
+db.pragma(`cipher='sqlcipher'`)
+db.pragma('legacy=4')
+db.pragma(`key='402fd482c38817c35ffa8ffb8c7d93143b749e7d315df7a81732a1ff43608497'`)
+const mine = db.prepare(`SELECT * FROM djmdPlaylist WHERE Name = 'Surco prueba 2a'`).get()
+const theirs = db.prepare(`SELECT * FROM djmdPlaylist WHERE Name = 'Factory'`).get()
+console.log({ mine, theirs })
+console.log(db.prepare('SELECT * FROM djmdSongPlaylist WHERE PlaylistID = ? ORDER BY TrackNo').all(mine.ID))
+console.log(db.prepare('SELECT * FROM djmdSongPlaylist WHERE PlaylistID = ? ORDER BY TrackNo LIMIT 2').all(theirs.ID))
+EOF
+node "$SCRATCH/rb-2a/rows.cjs" "$SCRATCH/rb-2a"
+ls -la "$SCRATCH/rb-2a"/*.surco-*
+```
+
+Confirm the new rows fill the same columns the same way as rekordbox's (UUID shapes, timestamp format, `rb_local_usn` above the "before" `localUpdateCount`, `rb_local_synced` 0, `TrackNo` 1..N in the new playlist with the separator where it was inserted), and that `master.db.surco-session`, `master.db.surco-backup`, `masterPlaylists6.xml.surco-session` and `masterPlaylists6.xml.surco-backup` exist beside the copy.
 
 - [ ] **Step 5: Cancel path on the copy**
 
@@ -4491,13 +4777,14 @@ and confirm `rekordboxDbPath` is back to its previous value.
 
 Hand him this, in Spanish, in the final summary:
 
-1. Cierra rekordbox. Comprueba con `ls -la ~/Library/Pioneer/rekordbox/master.db-wal` si queda un `-wal` con tamaño (Q3).
+0. Antes de nada, con rekordbox cerrado, haz tu propia copia, que es la que sirve para volver atrás: `cp ~/Library/Pioneer/rekordbox/master.db ~/Library/Pioneer/rekordbox/master.db.antes-2a` y `cp ~/Library/Pioneer/rekordbox/masterPlaylists6.xml ~/Library/Pioneer/rekordbox/masterPlaylists6.xml.antes-2a`.
+1. Con rekordbox cerrado, comprueba con `ls -la ~/Library/Pioneer/rekordbox/master.db-wal` si queda un `-wal` con tamaño (Q3).
 2. En Surco, carril rekordbox: crea la playlist "Surco prueba" en la raíz y la carpeta "Surco carpeta" con una playlist "Surco dentro" (menú contextual de la carpeta).
-3. Arrastra 3 filas de Factory sobre "Surco prueba" en el árbol (Q5: ¿se ilumina con «+3 al soltar» y entran?). Ábrela, reordénalas con el asa, inserta un separador encima de la segunda y quita una.
+3. Arrastra 3 filas de Factory sobre "Surco prueba" en el árbol (Q5: ¿se ilumina con «+3 al soltar» y entran?). Arrastra también un fichero desde Finder que ya esté en la colección. Ábrela, reordénalas con el asa, inserta un separador encima de la segunda y quita una.
 4. Abre rekordbox (Q1): ¿están las dos playlists y la carpeta, al final de su sitio, con las pistas en ese orden, el separador en su sitio y los cues intactos? Cierra y abre rekordbox otra vez y vuelve a mirar.
 5. ¿Avisa rekordbox de algo raro al abrir (Q2, Q4)? Si quieres, borra las playlists de prueba desde rekordbox.
 
-Volver atrás si algo sale mal: cierra rekordbox; si `master.db-wal` existe y no está vacío, para y avísame; si no, `cp ~/Library/Pioneer/rekordbox/master.db.surco-session ~/Library/Pioneer/rekordbox/master.db` y `cp ~/Library/Pioneer/rekordbox/masterPlaylists6.xml.surco-session ~/Library/Pioneer/rekordbox/masterPlaylists6.xml` (el estado antes del primer cambio de Surco en esta sesión). `.surco-backup` es el estado antes del último cambio. rekordbox guarda además sus copias `master.backup.AAAAMMDD.db`.
+Volver atrás si algo sale mal: cierra rekordbox; si `master.db-wal` existe y no está vacío, para y avísame; si no, restaura tu copia del paso 0: `cp ~/Library/Pioneer/rekordbox/master.db.antes-2a ~/Library/Pioneer/rekordbox/master.db` y `cp ~/Library/Pioneer/rekordbox/masterPlaylists6.xml.antes-2a ~/Library/Pioneer/rekordbox/masterPlaylists6.xml`. Las copias de Surco no sirven para esto con seguridad: `.surco-session` se vuelve a tomar en cada tanda de conversión y cada vez que abres Surco, así que puede ser posterior a la prueba, y `.surco-backup` es solo el estado antes del último cambio. rekordbox guarda además sus copias fechadas `master.backup.AAAAMMDD.db` en la misma carpeta, como último recurso.
 
 - [ ] **Step 8: Report**
 

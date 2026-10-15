@@ -24,7 +24,7 @@ Cada fase es su propio plan; esta spec cubre la 1 y la 2.
 | Fase | Qué | Riesgo |
 |---|---|---|
 | 1 | Navegar rekordbox (solo lectura), variante A del boceto | bajo |
-| 2 | Organizar en rekordbox: crear playlists, añadir/mover/quitar pistas, separadores, rating | medio: inserta filas |
+| 2 | Organizar en rekordbox: crear playlists, añadir/mover/quitar pistas, separadores | medio: inserta filas |
 | 3 | Engine DJ y Traktor con el mismo contrato | spec propia |
 | aparte | Exportar a USB para CDJ (export.pdb + ANLZ + exportLibrary.db) | spike de viabilidad antes de nada |
 
@@ -122,11 +122,7 @@ que el fichero deja y nunca pisa lo que el fichero tiene.**
 |---|---|---|---|
 | Título, artista, álbum, género, sello, comentario, año, nº | sí | sí (como hoy) | sí, sync de datos que ya existe |
 | BPM, tono | sí, rellenando huecos | sí | **nunca** (análisis, rejilla y cues) |
-| Rating | sí | sí (POPM, como hoy) | **sí, fase 2**, por la cola |
 | Cues, color, My Tags | no | no | nunca |
-
-Rating: rekordbox guarda 0..5 en `djmdContent.Rating`, Surco "1".."5" o vacío. Mapeo directo.
-Decisión de Vicent: en los dos sentidos.
 
 ## Fase 2: organizar
 
@@ -152,9 +148,7 @@ El rating sale de la fase 2 por decisión de Vicent: Surco no lo escribe en reko
    colección no tiene ninguno, Surco genera uno (MP3 de 1 s de silencio, título " ") en
    la carpeta de datos de Surco y lo da de alta una vez. **No 0 s**: rekordbox y los CDJ
    necesitan un fichero que analizar y cargar.
-6. Cambiar rating.
-
-7. Borrar playlists y carpetas (pedido por Vicent el 15/10), siempre con confirmación. El
+6. Borrar playlists y carpetas (pedido por Vicent el 15/10), siempre con confirmación. El
    diálogo nombra lo que se borra y, en una carpeta, cuántas playlists y carpetas lleva
    dentro. Borra las filas de `djmdPlaylist` y sus enlaces de `djmdSongPlaylist`; nunca
    una pista de `djmdContent` ni un fichero. Es la operación que más pierde si sale mal:
