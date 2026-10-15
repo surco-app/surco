@@ -116,6 +116,106 @@ describe('compareCopies', () => {
   })
 })
 
+describe('compareCopies, every branch and both directions', () => {
+  const lossless = { ...netzwerkAif, fingerprint: 'l' }
+  const transcoded = { ...netzwerkWav, cutoffHz: 16000, hasKnee: true, fingerprint: 't' }
+  const level = (peakCount: number, crestDb: number): CopyFacts => ({
+    ...netzwerkAif,
+    fingerprint: `${peakCount}/${crestDb}`,
+    peakCount,
+    crestDb,
+  })
+
+  // A WAV built from an MP3 looks lossless by its extension; its knee gives it away, and
+  // either side of the comparison can be the one holding it.
+  it('prefers the true lossless copy over a lossy source in a lossless container', () => {
+    expect(compareCopies(transcoded, lossless, otherMaster)).toEqual({
+      winner: 'b',
+      reason: 'transcode',
+    })
+    expect(compareCopies(lossless, transcoded, otherMaster)).toEqual({
+      winner: 'a',
+      reason: 'transcode',
+    })
+  })
+
+  it('prefers the copy at its native rate over an upsampled one, in either order', () => {
+    const up = { ...lossless, fingerprint: 'u', upsampled: true }
+    expect(compareCopies(up, lossless)).toEqual({ winner: 'b', reason: 'upsampled' })
+    expect(compareCopies(lossless, up)).toEqual({ winner: 'a', reason: 'upsampled' })
+  })
+
+  it('names reprocessing before upsampling when a copy carries both', () => {
+    const both = { ...lossless, fingerprint: 'x', processed: true, upsampled: true }
+    expect(compareCopies(lossless, both)).toEqual({ winner: 'a', reason: 'processed' })
+  })
+
+  it('lets this side win on the level criteria too', () => {
+    expect(compareCopies(netzwerkAif, netzwerkWav, sameMaster)).toEqual({
+      winner: 'a',
+      reason: 'peakCount',
+    })
+    expect(compareCopies(level(465, 13.2), level(1343.5, 9.4), sameMaster)).toEqual({
+      winner: 'a',
+      reason: 'crest',
+    })
+  })
+
+  // The margins are where the 26 measured pairs drew the line; one step either side of
+  // each must land on its own side of it.
+  it('decides on a peak count ratio of exactly 10 and not just under it', () => {
+    expect(compareCopies(level(9, 12), level(99, 12), sameMaster)).toEqual({
+      winner: 'a',
+      reason: 'peakCount',
+    })
+    expect(compareCopies(level(9, 12), level(98, 12), sameMaster)).toEqual({ winner: 'tie' })
+  })
+
+  it('decides on a crest gap of exactly 1.5 dB and not just under it', () => {
+    expect(compareCopies(level(10, 12), level(10, 13.5), sameMaster)).toEqual({
+      winner: 'b',
+      reason: 'crest',
+    })
+    expect(compareCopies(level(10, 12), level(10, 13.49), sameMaster)).toEqual({ winner: 'tie' })
+  })
+
+  it('reads a correlation of exactly 0.98 as one master and just under it as two', () => {
+    const at = (correlation: number) => ({ correlation, residualDb: -20, gainDb: -1 })
+    expect(compareCopies(netzwerkWav, netzwerkAif, at(0.98))).toEqual({
+      winner: 'b',
+      reason: 'peakCount',
+    })
+    expect(compareCopies(netzwerkWav, netzwerkAif, at(0.979))).toEqual({ winner: 'tie' })
+  })
+
+  it('calls a residual of -60 dB the same audio and -59.9 dB not', () => {
+    const b = { ...lossless, fingerprint: 'other' }
+    expect(compareCopies(lossless, b, { correlation: 1, residualDb: -60, gainDb: 0 })).toEqual({
+      winner: 'same',
+    })
+    expect(compareCopies(lossless, b, { correlation: 1, residualDb: -59.9, gainDb: 0 })).toEqual({
+      winner: 'tie',
+    })
+  })
+
+  // The same audio means the same gain, whichever copy is the louder one.
+  it('calls a gain of 0.009 dB the same audio and 0.01 dB not, either sign', () => {
+    const b = { ...lossless, fingerprint: 'other' }
+    const pair = (gainDb: number) => ({ correlation: 1, residualDb: -80, gainDb })
+    expect(compareCopies(lossless, b, pair(0.009))).toEqual({ winner: 'same' })
+    expect(compareCopies(lossless, b, pair(-0.009))).toEqual({ winner: 'same' })
+    expect(compareCopies(lossless, b, pair(0.01))).toEqual({ winner: 'tie' })
+    expect(compareCopies(lossless, b, pair(-0.01))).toEqual({ winner: 'tie' })
+  })
+
+  // Two files that both failed to fingerprint share no MD5; null must not equal null.
+  it('never reads two missing fingerprints as the same audio', () => {
+    expect(
+      compareCopies({ ...lossless, fingerprint: null }, { ...lossless, fingerprint: null }),
+    ).toEqual({ winner: 'tie' })
+  })
+})
+
 // The fingerprint decodes both copies to 16-bit 44.1 kHz, which flattens exactly the
 // differences a hi-res or a real 24-bit copy is kept for. "Same audio" tells the user either
 // copy will do, so it also needs the same rate and the same bits really in use.
