@@ -241,6 +241,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     peekAnalysis: async () => null,
     loudness: async () => null,
     fingerprint: async () => null,
+    comparePair: async () => null,
     properties: async () => null,
     bpm: async () => null,
     key: async () => null,

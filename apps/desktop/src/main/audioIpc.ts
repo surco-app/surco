@@ -28,6 +28,7 @@ import {
   audioFingerprint,
   buildSpectrum,
   cacheableSpectrum,
+  comparePair,
   detectTrackClicks,
   extractCover,
   extractCoverDataUrl,
@@ -318,6 +319,19 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       }
     },
   )
+
+  // Not cached on disk: pairs are few, and the answer changes when either file does. The
+  // renderer keeps it for the session instead.
+  handleAudio('audio:pair', async (_e, a: string, b: string) => {
+    try {
+      return await cancellable(a, 'low', (signal) =>
+        analysisLimiter.run(() => comparePair(a, b, signal), 'low', signal),
+      )
+    } catch (err) {
+      if (!isAbortError(err)) log.error('audio:pair failed', err)
+      return null
+    }
+  })
 
   // The repair section's clicks: the count for the header pill, and the marks the wave
   // draws (and "jump to the next click" seeks to) — one detector pass, one cache entry,

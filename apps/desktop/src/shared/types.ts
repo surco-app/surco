@@ -1206,6 +1206,16 @@ export type SpectrumVerdict = Omit<SpectrumResult, 'image'>
 // One track in an Engine DJ export request. The renderer ships this serializable shape
 // across IPC; the main process resolves it to an absolute path on disk (for the relative
 // path Engine stores and the file size) before writing the SQLite library.
+// Whether two copies come from the same master: both aligned on the lag that best matches
+// them, then compared sample by sample. Peak count and crest only rank copies inside one
+// master, so the best-copy verdict reads this first. residualDb is what is left of a once b
+// is scaled by gainDb (-Infinity when nothing is left).
+export interface PairFacts {
+  correlation: number
+  residualDb: number
+  gainDb: number
+}
+
 // Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass
 // (astats + ebur128). Integrated loudness and true peak can read -Infinity for
 // digital silence, which the UI renders as "−∞" rather than a misleading number.

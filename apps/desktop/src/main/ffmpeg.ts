@@ -28,6 +28,7 @@ import type {
   MusicReviewField,
   NormalizeConfig,
   OutputFormat,
+  PairFacts,
   ReviewRawFields,
   TrackMetadata,
   TrackProperties,
@@ -60,6 +61,7 @@ import {
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
+import { fft } from './fft'
 import { measureBands } from './fftBands'
 import {
   detectFftKnee,
@@ -2894,6 +2896,118 @@ export async function audioFingerprint(
   } catch (err) {
     if (isAbortError(err)) throw err
     return null
+  }
+}
+
+// Same-master probe at the tempo rate: alignment and correlation live in the body of the
+// mix, so 11025 Hz mono is enough. Ten minutes bounds the buffer (~26 MB each) and is
+// more than a track needs to show whether two copies share a master.
+const PAIR_SAMPLE_RATE = 11025
+const PAIR_MAX_SECONDS = 600
+const PAIR_MIN_SECONDS = 10
+
+// The lag (in samples, a[i] lines up with b[i + lag]) within one second either way that
+// best matches a 5 s window of a, by normalised cross-correlation at full rate. Done
+// through the FFT: the direct sum is ~1.2e9 multiply-adds, and a coarse search on a
+// decimated grid steps over the peak, which on bright tonal material is one sample wide.
+function bestLag(a: Float32Array, b: Float32Array): number {
+  const rate = PAIR_SAMPLE_RATE
+  const from = a.length >= 40 * rate ? 30 * rate : 0
+  const width = Math.min(a.length, from + 5 * rate) - from
+  const span = width + 2 * rate
+  let n = 1
+  while (n < span) n <<= 1
+  const wRe = new Float64Array(n)
+  const wIm = new Float64Array(n)
+  const sRe = new Float64Array(n)
+  const sIm = new Float64Array(n)
+  for (let i = 0; i < width; i++) wRe[i] = a[from + i]
+  for (let k = 0; k < span; k++) {
+    const j = from - rate + k
+    if (j >= 0 && j < b.length) sRe[k] = b[j]
+  }
+  const energy = new Float64Array(span + 1)
+  for (let k = 0; k < span; k++) energy[k + 1] = energy[k] + sRe[k] * sRe[k]
+  fft(wRe, wIm)
+  fft(sRe, sIm)
+  for (let k = 0; k < n; k++) {
+    const re = wRe[k] * sRe[k] + wIm[k] * sIm[k]
+    const im = wRe[k] * sIm[k] - wIm[k] * sRe[k]
+    sRe[k] = re
+    sIm[k] = -im
+  }
+  fft(sRe, sIm)
+  let best = 0
+  let bestScore = -Infinity
+  for (let k = 0; k <= 2 * rate; k++) {
+    const e = energy[k + width] - energy[k]
+    if (e <= 0) continue
+    const score = sRe[k] / Math.sqrt(e)
+    if (score > bestScore) {
+      bestScore = score
+      best = k - rate
+    }
+  }
+  return best
+}
+
+// Aligns two copies and says how alike they are over the stretch they share. Calibrated
+// on 26 real pairs: the same master correlates 0.992 to 0.9999, a different source 0.38 to
+// 0.86. Null when either file cannot be decoded, is under 10 s, or is silent where they
+// overlap, since a verdict on that would be a guess.
+export async function comparePair(
+  a: string,
+  b: string,
+  signal?: AbortSignal,
+): Promise<PairFacts | null> {
+  const decode = (input: string): Promise<Float32Array> =>
+    decodePcm(input, {
+      sampleRate: PAIR_SAMPLE_RATE,
+      seconds: PAIR_MAX_SECONDS,
+      maxBufferMb: 32,
+      signal,
+    })
+  let pa: Float32Array
+  let pb: Float32Array
+  try {
+    ;[pa, pb] = await Promise.all([decode(a), decode(b)])
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return null
+  }
+  const minSamples = PAIR_MIN_SECONDS * PAIR_SAMPLE_RATE
+  if (pa.length < minSamples || pb.length < minSamples) return null
+  const lag = bestLag(pa, pb)
+  const start = Math.max(0, -lag)
+  const end = Math.min(pa.length, pb.length - lag)
+  const n = end - start
+  let sa = 0
+  let sb = 0
+  let saa = 0
+  let sbb = 0
+  let sab = 0
+  for (let i = start; i < end; i++) {
+    const x = pa[i]
+    const y = pb[i + lag]
+    sa += x
+    sb += y
+    saa += x * x
+    sbb += y * y
+    sab += x * y
+  }
+  const varA = n * saa - sa * sa
+  const varB = n * sbb - sb * sb
+  if (saa === 0 || sbb === 0 || varA <= 0 || varB <= 0) return null
+  const gain = sab / sbb
+  let residual = 0
+  for (let i = start; i < end; i++) {
+    const d = pa[i] - gain * pb[i + lag]
+    residual += d * d
+  }
+  return {
+    correlation: (n * sab - sa * sb) / Math.sqrt(varA * varB),
+    residualDb: residual === 0 ? -Infinity : 10 * Math.log10(residual / saa),
+    gainDb: 20 * Math.log10(gain),
   }
 }
 
