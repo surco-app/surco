@@ -1,9 +1,9 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, posix, win32 } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { openRekordboxDb } from './rekordboxDb'
-import { readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
+import { entryPath, readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
 import { writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
 // Shapes measured on a real 2067-track collection (15/10): folders nested two deep whose
@@ -163,5 +163,21 @@ describe('readRekordboxPlaylist', () => {
 
   it('returns nothing for a playlist that is not there, rather than throwing', () => {
     expect(readRekordboxPlaylist(db, 'missing')).toEqual([])
+  })
+})
+
+describe('entryPath', () => {
+  // rekordbox on Windows stores C:/... while a file dropped on Surco arrives as C:\...;
+  // spelt differently, one file would load as two rows.
+  it('gives a Windows path the separators a dropped file has', () => {
+    expect(entryPath('C:/Users/dj/Music/a.wav', win32)).toBe('C:\\Users\\dj\\Music\\a.wav')
+  })
+
+  it('leaves a macOS path as rekordbox stored it', () => {
+    expect(entryPath('/Volumes/Public/Music/a.wav', posix)).toBe('/Volumes/Public/Music/a.wav')
+  })
+
+  it('keeps an empty path empty instead of turning it into the current folder', () => {
+    expect(entryPath('', posix)).toBe('')
   })
 })

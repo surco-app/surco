@@ -107,6 +107,24 @@ describe('opening a source playlist', () => {
     expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff', '/m/b.aiff'])
   })
 
+  // The NAS stores names decomposed while a drop hands Surco the composed spelling: the
+  // same file under both must stay one row, or the user's edits sit on the row the
+  // playlist no longer shows and the crate converts the file twice.
+  it('treats a decomposed playlist path as the composed track already loaded', async () => {
+    const composed = '/m/Canci\u00f3n.wav'
+    const decomposed = '/m/Cancio\u0301n.wav'
+    const { result, expandPaths } = setup()
+    await act(async () => {
+      await result.current.addPaths([composed])
+    })
+    expandPaths.mockClear()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries([decomposed]), 'rekordbox')
+    })
+    expect(expandPaths).not.toHaveBeenCalled()
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual([composed])
+  })
+
   it('fills bpm and key from rekordbox when the file has none', async () => {
     const { result } = setup({
       readMeta: vi.fn().mockResolvedValue({

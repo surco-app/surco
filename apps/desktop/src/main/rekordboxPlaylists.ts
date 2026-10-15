@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { AppleMusicTrackMeta, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import type { openRekordboxDb } from './rekordboxDb'
 
@@ -82,6 +83,16 @@ function metaOf(row: EntryRow): AppleMusicTrackMeta {
   return meta
 }
 
+// The spelling a file dropped on Surco has on this platform: rekordbox on Windows stores
+// C:/... and a drop arrives as C:\..., and the crate must see one file, not two. Composed
+// vs decomposed names are left to the renderer's comparison, since NTFS, unlike macOS,
+// would not open a decomposed name under its composed spelling. An empty path stays empty:
+// normalised it becomes ".", the current folder, which the expand would walk. Symlinked
+// prefixes are not resolved here, so a link and its target still read as two files.
+export function entryPath(stored: string, impl: typeof path = path): string {
+  return stored ? impl.normalize(stored) : stored
+}
+
 export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlaylistEntry[] {
   const rows = db
     .prepare(
@@ -94,8 +105,8 @@ export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlayli
     )
     .all(id) as EntryRow[]
   return rows.map((row) => {
-    if (row.sep) return { path: row.FolderPath, separator: true, meta: {} }
+    if (row.sep) return { path: entryPath(row.FolderPath), separator: true, meta: {} }
     if (row.FileType === STREAMING_FILE_TYPE) return { path: null, separator: false, meta: {} }
-    return { path: row.FolderPath, separator: false, meta: metaOf(row) }
+    return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row) }
   })
 }

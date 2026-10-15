@@ -698,10 +698,14 @@ export function useTrackLibrary({
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
   ): Promise<number> {
-    const loaded = new Set(tracksRef.current.map((t) => t.inputPath))
+    // Compared composed: the NAS stores names decomposed while a drop is composed, and one
+    // file under both spellings must stay the one row that holds the user's edits.
+    const same = (p: string): string => p.normalize('NFC')
+    const loadedNow = (): Set<string> => new Set(tracksRef.current.map((t) => same(t.inputPath)))
+    const loaded = loadedNow()
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
-        !e.separator && e.path !== null && !loaded.has(e.path),
+        !e.separator && e.path !== null && !loaded.has(same(e.path)),
     )
     if (fresh.length === 0) return 0
     // Staged BEFORE expanding: the expand stream can create the rows before the awaited
@@ -715,20 +719,20 @@ export function useTrackLibrary({
         })
       }
     }
-    const freshPaths = [...new Set(fresh.map((e) => e.path))]
+    const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
     const expanded = await window.api.expandPaths(freshPaths)
-    const onDisk = new Set(expanded)
-    const dropped = freshPaths.filter((p) => !onDisk.has(p)).length
+    const onDisk = new Set(expanded.map(same))
+    const dropped = freshPaths.filter((p) => !onDisk.has(same(p))).length
     // Checked again after the await: an overlapping open of the same playlist (a focus
     // refetch while the first expand is still running) may have added these meanwhile,
     // and passing them on would report them as skipped duplicates.
-    const stillLoaded = new Set(tracksRef.current.map((t) => t.inputPath))
-    const toAdd = expanded.filter((p) => !stillLoaded.has(p))
+    const stillLoaded = loadedNow()
+    const toAdd = expanded.filter((p) => !stillLoaded.has(same(p)))
     // A staged path that expandPaths dropped never gets a row to consume its entries, and
     // would leak into a later unrelated load of that same file.
-    const consumed = new Set([...toAdd, ...stillLoaded])
+    const consumed = new Set([...toAdd.map(same), ...stillLoaded])
     for (const e of fresh) {
-      if (consumed.has(e.path)) continue
+      if (consumed.has(same(e.path))) continue
       appleMusicMeta.current.delete(e.path)
       pendingSeed.current.delete(e.path)
     }
