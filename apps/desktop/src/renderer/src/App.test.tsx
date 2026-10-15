@@ -1447,6 +1447,7 @@ describe('App source playlists', () => {
       loadRekordboxPlaylist: vi
         .fn<Api['loadRekordboxPlaylist']>()
         .mockResolvedValue(FACTORY_ENTRIES),
+      startTrackDrag: vi.fn(),
       ...over,
     })
     await renderApp()
@@ -1579,6 +1580,7 @@ describe('App source playlists', () => {
       loadRekordboxPlaylist: vi
         .fn<Api['loadRekordboxPlaylist']>()
         .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/d.mp3', 'l4')]),
+      startTrackDrag: vi.fn(),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
