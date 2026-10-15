@@ -1230,6 +1230,9 @@ export interface LoudnessResult {
   crestDb: number | null
   // Estimated noise floor in dB; lower is cleaner.
   noiseFloorDb: number | null
+  // Samples sitting at the file's own peak: a limiter pins many to its ceiling, an open
+  // master touches it a few times. Optional because entries cached before it existed lack it.
+  peakCount?: number | null
 }
 
 // Tempo detected from the audio itself (onset-envelope autocorrelation in

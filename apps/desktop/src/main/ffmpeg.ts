@@ -2798,6 +2798,7 @@ export interface AstatsResult {
   dcOffset: number | null
   crestDb: number | null
   noiseFloorDb: number | null
+  peakCount: number | null
 }
 
 // Pulls the channel checks out of astats' summary. Every line carries a
@@ -2813,7 +2814,7 @@ export function parseAstats(stderr: string): AstatsResult | null {
     return Number.isFinite(n) ? n : null
   }
   const channelRms: number[] = []
-  const overall: { peak?: number; rms?: number; dc?: number; noise?: number } = {}
+  const overall: { peak?: number; rms?: number; dc?: number; noise?: number; count?: number } = {}
   let section: 'channel' | 'overall' | null = null
   let seen = false
   for (const raw of stderr.split('\n')) {
@@ -2842,6 +2843,8 @@ export function parseAstats(stderr: string): AstatsResult | null {
       }
       const noise = line.match(/^Noise floor dB:\s*(\S+)/)
       if (noise) overall.noise = finite(noise[1]) ?? undefined
+      const count = line.match(/^Peak count:\s*(\S+)/)
+      if (count) overall.count = finite(count[1]) ?? undefined
     }
   }
   if (!seen) return null
@@ -2852,6 +2855,7 @@ export function parseAstats(stderr: string): AstatsResult | null {
     crestDb:
       overall.peak !== undefined && overall.rms !== undefined ? overall.peak - overall.rms : null,
     noiseFloorDb: overall.noise ?? null,
+    peakCount: overall.count ?? null,
   }
 }
 
@@ -2904,6 +2908,7 @@ export async function measureLoudness(
     dcOffset: stats?.dcOffset ?? null,
     crestDb: stats?.crestDb ?? null,
     noiseFloorDb: stats?.noiseFloorDb ?? null,
+    peakCount: stats?.peakCount ?? null,
   }
 }
 

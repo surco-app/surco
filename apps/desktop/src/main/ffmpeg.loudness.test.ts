@@ -95,6 +95,7 @@ describe('measureLoudness', () => {
       // line: −0.210072 − (−10.587320).
       crestDb: 10.377248,
       noiseFloorDb: -60.1,
+      peakCount: null,
     })
   })
 })
