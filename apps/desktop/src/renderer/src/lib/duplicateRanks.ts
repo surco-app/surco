@@ -53,9 +53,14 @@ export function rankGroup(
       return null
     })
     const undefeated = all.flatMap((_, i) => (lossTo[i] ? [] : [i]))
-    const identical = undefeated.every((i) =>
-      undefeated.every((j) => i === j || isSameAudio(all[i], all[j], pair(i, j))),
-    )
+    // Verdicts are not transitive, so a lone undefeated row can be left over (it tied a copy
+    // that lost elsewhere): with no other undefeated row to match, it is the same audio as
+    // nothing, and only "no measured difference" stays true of it.
+    const identical =
+      undefeated.length > 1 &&
+      undefeated.every((i) =>
+        undefeated.every((j) => i === j || isSameAudio(all[i], all[j], pair(i, j))),
+      )
     return lossTo.map(
       (reason): DuplicateRank =>
         reason

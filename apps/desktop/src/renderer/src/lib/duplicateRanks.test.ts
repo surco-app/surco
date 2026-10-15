@@ -86,6 +86,24 @@ describe('rankGroup', () => {
     ])
   })
 
+  // Comparisons are not transitive: A ties B (different masters), C beats B and A beats C
+  // (both on clipped samples). A is the only undefeated row, and "same audio as another
+  // copy" would be read off a single row compared with nothing.
+  it('never calls a lone undefeated copy the same audio as another', () => {
+    const a = { ...open, fingerprint: 'a', peakCount: 1 }
+    const b = { ...open, fingerprint: 'b', peakCount: 5000 }
+    const c = { ...open, fingerprint: 'c', peakCount: 50 }
+    const otherMaster = { correlation: 0.86, residualDb: -6, gainDb: 0.4 }
+    const sameMaster = { correlation: 0.995, residualDb: -20, gainDb: -2 }
+    expect(rankGroup([a, b, c], (i, j) => (i === 0 && j === 1 ? otherMaster : sameMaster))).toEqual(
+      [
+        { rank: 'same', count: 3, identical: false },
+        { rank: 'worse', count: 3, identical: false, reason: 'peakCount' },
+        { rank: 'worse', count: 3, identical: false, reason: 'peakCount' },
+      ],
+    )
+  })
+
   it('keeps the pair still being compared out of any verdict', () => {
     expect(rankGroup([limited, open], () => undefined)).toBeNull()
   })
