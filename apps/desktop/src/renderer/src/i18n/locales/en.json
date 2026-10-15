@@ -377,7 +377,8 @@
     "copyNoDifference": "No measured difference from another copy in the list",
     "copyReason": {
       "lossless": "lossless",
-      "transcode": "no lossy source",
+      "transcode": "the other one comes from a lossy source",
+      "transcodeMany": "another copy comes from a lossy source",
       "cutoff": "higher cutoff",
       "processed": "no sign of reprocessing",
       "upsampled": "not upsampled",

@@ -363,7 +363,12 @@ const TrackRow = memo(function TrackRow({
     : duplicate.rank === 'best'
       ? tr('trackList.copyBest', {
           count: duplicate.count,
-          reason: tr(`trackList.copyReason.${duplicate.reason}`),
+          // The best row describes the copy that lost, and "the other" only fits a pair.
+          reason: tr(
+            duplicate.reason === 'transcode' && duplicate.count > 2
+              ? 'trackList.copyReason.transcodeMany'
+              : `trackList.copyReason.${duplicate.reason}`,
+          ),
         })
       : duplicate.rank === 'worse'
         ? tr('trackList.copyWorse', {

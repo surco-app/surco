@@ -1420,8 +1420,18 @@ describe('TrackList duplicate mark', () => {
   it.each([
     ['en', 'processed', 'this one may be reprocessed', 'no sign of reprocessing'],
     ['es', 'processed', 'esta puede estar reprocesada', 'sin reprocesado aparente'],
-    ['en', 'transcode', 'this one comes from a lossy source', 'no lossy source'],
-    ['es', 'transcode', 'esta viene de una fuente con pérdidas', 'sin fuente con pérdidas'],
+    [
+      'en',
+      'transcode',
+      'this one comes from a lossy source',
+      'the other one comes from a lossy source',
+    ],
+    [
+      'es',
+      'transcode',
+      'esta viene de una fuente con pérdidas',
+      'la otra viene de una fuente con pérdidas',
+    ],
   ] as const)(
     'words a %s %s reason the way Audio quality does',
     async (lang, reason, worse, best) => {
@@ -1436,6 +1446,31 @@ describe('TrackList duplicate mark', () => {
         const [rowA, rowB] = screen.getAllByTestId('track-row')
         expect(within(rowA).getByTestId('track-duplicate').textContent).toContain(best)
         expect(within(rowB).getByTestId('track-duplicate').textContent).toContain(worse)
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    },
+  )
+
+  // An M4A best copy can itself be AAC, so the best row must not claim it has no lossy
+  // source; it describes the copy that lost instead, and among three copies "the other"
+  // would point at a single copy that is not there.
+  it.each([
+    ['en', 2, 'Best of 2 copies · the other one comes from a lossy source'],
+    ['en', 3, 'Best of 3 copies · another copy comes from a lossy source'],
+    ['es', 2, 'Mejor copia de 2 · la otra viene de una fuente con pérdidas'],
+    ['es', 3, 'Mejor copia de 3 · otra copia viene de una fuente con pérdidas'],
+  ] as const)(
+    'words a %s transcode win over %i copies by the copy that lost',
+    async (lang, count, text) => {
+      await i18n.changeLanguage(lang)
+      try {
+        renderList([track({ id: 'a' })], null, [], {
+          duplicateRankById: new Map<string, DuplicateRank>([
+            ['a', { rank: 'best', count, identical: false, reason: 'transcode' }],
+          ]),
+        })
+        expect(screen.getByTestId('track-duplicate')).toHaveTextContent(text)
       } finally {
         await i18n.changeLanguage('en')
       }

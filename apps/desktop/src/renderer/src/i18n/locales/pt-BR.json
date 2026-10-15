@@ -377,7 +377,8 @@
     "copyNoDifference": "Nenhuma diferença medida com outra cópia da lista",
     "copyReason": {
       "lossless": "sem perdas",
-      "transcode": "sem fonte com perdas",
+      "transcode": "a outra vem de uma fonte com perdas",
+      "transcodeMany": "outra cópia vem de uma fonte com perdas",
       "cutoff": "corte mais alto",
       "processed": "sem reprocessamento aparente",
       "upsampled": "sem reamostrar",

@@ -377,7 +377,8 @@
     "copyNoDifference": "Kein messbarer Unterschied zu einer anderen Kopie in der Liste",
     "copyReason": {
       "lossless": "verlustfrei",
-      "transcode": "keine verlustbehaftete Quelle",
+      "transcode": "die andere stammt aus einer verlustbehafteten Quelle",
+      "transcodeMany": "eine andere Kopie stammt aus einer verlustbehafteten Quelle",
       "cutoff": "höhere Grenzfrequenz",
       "processed": "keine Anzeichen von Nachbearbeitung",
       "upsampled": "nicht hochgerechnet",
