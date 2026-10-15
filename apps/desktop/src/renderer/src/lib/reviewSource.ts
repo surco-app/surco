@@ -10,6 +10,7 @@ import type {
   ReviewOutcome,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { recordingKey } from './duplicates'
 
 export interface ReviewLoad {
   entries: ReviewEntry[]
@@ -181,4 +182,42 @@ export const musicSource: ReviewSource = {
     return { ...run, replaced, replaceFailed }
   },
   revertMusic: (_outcome, fix) => window.api.setMusicField(fix.id, fix.field, fix.to, fix.from),
+}
+
+// What a review opened from a Music playlist reads. 'tracks' is the playlist's own entries;
+// 'duplicates' adds every library entry of the same recording as one of them, because the
+// copy to delete usually sits outside the playlist. A recording is kept whole, never part
+// of it, so each group comes out with the members, and so the key, the whole library gives
+// it: a group ignored there stays ignored here.
+export type MusicScopeMode = 'tracks' | 'duplicates'
+
+export function scopeMusicEntries(
+  entries: ReviewEntry[],
+  ids: ReadonlySet<string>,
+  mode: MusicScopeMode,
+): ReviewEntry[] {
+  if (mode === 'tracks') return entries.filter((e) => ids.has(e.id))
+  const keys = new Set<string>()
+  for (const e of entries) {
+    const key = ids.has(e.id) ? recordingKey(e.artist, e.title) : null
+    if (key) keys.add(key)
+  }
+  return entries.filter((e) => {
+    if (ids.has(e.id)) return true
+    const key = recordingKey(e.artist, e.title)
+    return key !== null && keys.has(key)
+  })
+}
+
+// Music answers for the whole library in one bulk dump, and the duplicates of a playlist
+// need that whole library anyway, so the dump is read as before and narrowed here instead of
+// a second AppleScript that reads one playlist. Everything else is the library review.
+export function scopedMusicSource(ids: ReadonlySet<string>, mode: MusicScopeMode): ReviewSource {
+  return {
+    ...musicSource,
+    load: async () => {
+      const loaded = await musicSource.load()
+      return { ...loaded, entries: scopeMusicEntries(loaded.entries, ids, mode) }
+    },
+  }
 }

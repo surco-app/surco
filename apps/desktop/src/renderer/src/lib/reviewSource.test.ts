@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import { musicSource } from './reviewSource'
+import type { ReviewEntry } from '../../../shared/types'
+import { duplicateGroups } from './duplicates'
+import { musicSource, scopedMusicSource, scopeMusicEntries } from './reviewSource'
 
 function setApi(over: Partial<Record<keyof Api, unknown>>) {
   ;(window as unknown as { api: unknown }).api = over
@@ -99,5 +101,85 @@ describe('musicSource', () => {
     })
     expect(replaceDuplicatesInLibraries).not.toHaveBeenCalled()
     expect(run.librariesUntouched).toBe(true)
+  })
+})
+
+const entry = (id: string, artist: string, title: string, durationSec?: number): ReviewEntry => ({
+  id,
+  artist,
+  title,
+  albumArtist: '',
+  album: '',
+  genre: '',
+  ...(durationSec !== undefined && { durationSec }),
+})
+const library = [
+  entry('01', 'DJ Lara', 'Gold', 300),
+  entry('02', 'DJ Lara', 'Gold', 301),
+  entry('03', 'DJ Lara', 'Gold', 420),
+  entry('04', 'Dj Lara', 'Iron'),
+  entry('05', 'Ana', 'Copper'),
+  entry('06', 'Bo', 'Lead'),
+  entry('07', 'Bo', 'Lead'),
+]
+const playlist = new Set(['01', '05'])
+const toItem = (e: ReviewEntry) => ({
+  id: e.id,
+  artist: e.artist,
+  title: e.title,
+  durationSec: e.durationSec,
+})
+
+describe('scopeMusicEntries', () => {
+  // Reviewing a playlist is about that playlist: a misspelling elsewhere in the library is
+  // not what the DJ opened it for, and fixing it would touch tracks they did not pick.
+  it('keeps only the playlist tracks when reviewing its metadata', () => {
+    expect(scopeMusicEntries(library, playlist, 'tracks').map((e) => e.id)).toEqual(['01', '05'])
+  })
+
+  // The copy worth deleting usually sits outside the playlist, so a playlist's duplicates
+  // are looked for in the whole library; the playlist's own tracks stay so a playlist
+  // without copies opens on "all clear", not on "your library is empty".
+  it('adds every library entry of the same recording as a playlist track when showing duplicates', () => {
+    expect(scopeMusicEntries(library, playlist, 'duplicates').map((e) => e.id)).toEqual([
+      '01',
+      '02',
+      '03',
+      '05',
+    ])
+  })
+
+  // A group the user ignored in a whole-library review is remembered by a key built from its
+  // members; cutting a recording short would give the group a new key and bring it back.
+  it('builds for the playlist tracks the same duplicate groups, keys included, as the whole library', () => {
+    const whole = duplicateGroups(library.map(toItem))
+    const scoped = duplicateGroups(scopeMusicEntries(library, playlist, 'duplicates').map(toItem))
+    expect(scoped).toEqual(whole.filter((g) => g.ids.some((id) => playlist.has(id))))
+    expect(scoped.flatMap((g) => g.ids)).not.toContain('06')
+  })
+})
+
+describe('scopedMusicSource', () => {
+  // One dump of the library, as the whole-library review reads it, then narrowed here: no
+  // second AppleScript to keep in step.
+  it('reads the library once and hands the review only the scoped entries', async () => {
+    const loadMusicReview = vi
+      .fn()
+      .mockResolvedValue(library.map(({ id, ...rest }) => ({ persistentId: id, ...rest })))
+    setApi({ loadMusicReview })
+    const source = scopedMusicSource(playlist, 'tracks')
+    const loaded = await source.load()
+    expect(loaded.entries.map((e) => e.id)).toEqual(['01', '05'])
+    expect(loadMusicReview).toHaveBeenCalledTimes(1)
+    expect(loadMusicReview).toHaveBeenCalledWith()
+  })
+
+  // Everything but the read is the Music review as it was: the fixes still go to Music.
+  it('writes to Music exactly as the whole-library review does', () => {
+    const source = scopedMusicSource(playlist, 'duplicates')
+    expect(source.kind).toBe('music')
+    expect(source.applyFixes).toBe(musicSource.applyFixes)
+    expect(source.removeCopies).toBe(musicSource.removeCopies)
+    expect(source.revertMusic).toBe(musicSource.revertMusic)
   })
 })
