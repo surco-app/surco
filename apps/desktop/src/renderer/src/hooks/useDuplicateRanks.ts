@@ -1,5 +1,5 @@
 import { type QueryObserverResult, useQueries } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { LoudnessResult, PairFacts, SpectrumVerdict } from '../../../shared/types'
 import { type DuplicateRank, rankGroup } from '../lib/duplicateRanks'
 import { duplicateGroups } from '../lib/duplicates'
@@ -81,11 +81,21 @@ export function useDuplicateRanks(tracks: TrackItem[]): DuplicateRanks {
   }, [signature])
   const duplicateIds = useMemo(() => new Set(allGroups.flatMap((g) => g.ids)), [allGroups])
   const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set())
-  // Only a duplicate's row is recorded: any other row showing would re-render App for nothing.
+  // Every row reported is remembered, yet only a duplicate's row reaches state: any other
+  // row showing would re-render App for nothing. The rest wait here because a row shows
+  // with its title parsed from the file name, and the real tags that make it a duplicate
+  // arrive after its one report.
+  const reported = useRef(new Set<string>())
   const onRowVisible = useStableCallback((id: string, visible: boolean): void => {
-    if (!visible || !duplicateIds.has(id)) return
+    if (!visible) return
+    reported.current.add(id)
+    if (!duplicateIds.has(id)) return
     setSeen((prev) => (prev.has(id) ? prev : new Set(prev).add(id)))
   })
+  useEffect(() => {
+    const shown = [...duplicateIds].filter((id) => reported.current.has(id))
+    setSeen((prev) => (shown.every((id) => prev.has(id)) ? prev : new Set([...prev, ...shown])))
+  }, [duplicateIds])
   const groups = useMemo(
     () => allGroups.filter((g) => g.ids.every((id) => seen.has(id))),
     [allGroups, seen],

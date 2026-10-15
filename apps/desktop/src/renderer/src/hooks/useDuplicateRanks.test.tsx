@@ -112,6 +112,25 @@ describe('useDuplicateRanks', () => {
     expect(api.comparePair).toHaveBeenCalledTimes(1)
   })
 
+  // Rows first show with artist and title parsed from the file name; the real tags arrive
+  // later and only then make two differently named files one group. A short list never
+  // scrolls, so no row reports again: the earlier reports must still count.
+  it('measures a group formed by tags that arrived after its rows were on screen', async () => {
+    setApi()
+    const { result, rerender } = renderHook(({ tracks }) => useDuplicateRanks(tracks), {
+      wrapper: wrapper(),
+      initialProps: {
+        tracks: [track('a.wav', 'Memories (Extended 12_ Mix)'), track('b.aif', '1032. Memories')],
+      },
+    })
+    act(() => {
+      result.current.onRowVisible('a.wav', true)
+      result.current.onRowVisible('b.aif', true)
+    })
+    rerender({ tracks: [track('a.wav', 'Memories'), track('b.aif', 'Memories')] })
+    await waitFor(() => expect(result.current.ranks.size).toBe(2))
+  })
+
   // A copy that could not be measured hides its whole group: ranking the rest would call
   // one of them best against a copy nobody looked at.
   it('ranks no member of a group whose copy failed to measure', async () => {
