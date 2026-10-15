@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import { openRekordboxDb } from './rekordboxDb'
@@ -26,10 +27,18 @@ export function withCollection<T>(
   }
 }
 
+// Whether to offer rekordbox in the rail. Asked on every focus, so it only looks for the
+// file: decrypting it runs the SQLCipher key derivation in the main process, for every
+// user with rekordbox installed, each time Surco comes back. A file that is there but
+// does not read is offered anyway, and its tree says it could not be read.
+export function collectionAvailable(path: string): boolean {
+  return path !== '' && existsSync(path)
+}
+
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
 export function registerRekordboxPlaylistsIpc(collection: () => string): void {
-  ipcMain.handle('rekordbox:available', () => withCollection(collection(), () => true, false))
+  ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
   ipcMain.handle('rekordbox:tree', () => withCollection(collection(), readRekordboxTree, []))
   ipcMain.handle('rekordbox:playlist', (_e, id: string) =>
     withCollection(collection(), (db) => readRekordboxPlaylist(db, id), []),

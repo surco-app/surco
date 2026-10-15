@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
 import { writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
-import { withCollection } from './rekordboxPlaylistsIpc'
+import { collectionAvailable, withCollection } from './rekordboxPlaylistsIpc'
 
 describe('withCollection', () => {
   it('falls back when there is no collection, the normal case for a user without rekordbox', () => {
@@ -37,5 +37,21 @@ describe('withCollection', () => {
         'none',
       ),
     ).toBe('none')
+  })
+})
+
+// Asked on every focus for the rail: decrypting the whole collection for a yes/no would
+// run the SQLCipher key derivation in the main process each time Surco comes back, for
+// every user with rekordbox installed. Whether it reads is what the tree reports.
+describe('collectionAvailable', () => {
+  it('answers from the file being there, without decrypting it', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    await writeFile(path, 'not a database')
+    expect(collectionAvailable(path)).toBe(true)
+  })
+
+  it('is false with no collection, or one that is gone', async () => {
+    expect(collectionAvailable('')).toBe(false)
+    expect(collectionAvailable(join(tmpdir(), 'surco-no-such', 'master.db'))).toBe(false)
   })
 })
