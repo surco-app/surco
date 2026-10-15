@@ -197,6 +197,8 @@ están calibrados.
 - Una de las dos copias sin analizar o con análisis fallido: sin icono / sin pastilla.
   Nunca se decide con datos a medias.
 - Cachés de análisis antiguas sin `peakCount`: se tratan como "no medido" y se re-mide.
+- Un fichero que desaparece conserva sus últimos datos hasta que se desalojan sus análisis; la
+  comparación de un par (`['pair', a, b]`) se desaloja con cualquiera de las dos rutas.
 
 ## Pruebas
 
