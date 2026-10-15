@@ -2,14 +2,13 @@ import { ListMusic } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
-import appleMusicIcon from '../assets/sources/apple-music.png'
-import rekordboxIcon from '../assets/sources/rekordbox.png'
+import { AppleMusicIcon, RekordboxIcon } from './SourceIcons'
 
-// Each program's own app icon, the thing a DJ already recognises from the Dock, so the
-// rail needs no words under it.
-const ICON: Record<PlaylistSource, string> = {
-  appleMusic: appleMusicIcon,
-  rekordbox: rekordboxIcon,
+// Each program's own mark, the thing a DJ already recognises from the Dock, so the rail
+// needs no words under it. Drawn in the rail's colour, not the apps' own.
+const ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
+  appleMusic: AppleMusicIcon,
+  rekordbox: RekordboxIcon,
 }
 
 // The column of places tracks come from, as rekordbox's own side panel has it. The first
@@ -61,21 +60,16 @@ export function SourceRail({
         active === null,
         () => onSelect(null),
       )}
-      {sources.map((s) =>
-        item(
+      {sources.map((s) => {
+        const Icon = ICON[s]
+        return item(
           s,
           tr(`sources.${s}`),
-          <img
-            data-testid={`source-rail-icon-${s}`}
-            src={ICON[s]}
-            alt=""
-            draggable={false}
-            className="size-7"
-          />,
+          <Icon size={22} data-testid={`source-rail-icon-${s}`} />,
           active === s,
           () => onSelect(s),
-        ),
-      )}
+        )
+      })}
     </nav>
   )
 }

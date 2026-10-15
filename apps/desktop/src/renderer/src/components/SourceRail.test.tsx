@@ -15,20 +15,21 @@ describe('SourceRail', () => {
     expect(screen.queryByTestId('source-rail-appleMusic')).not.toBeInTheDocument()
   })
 
-  // Each program's own icon is what a DJ recognises at a glance, so the rail drops the
-  // words; the name stays as the button's accessible name and hover title.
-  it('shows each source by its own icon, naming it only for screen readers and on hover', () => {
+  // Each program's own mark is what a DJ recognises at a glance, so the rail drops the
+  // words; the name stays as the button's accessible name and hover title. The marks are
+  // drawn in the text colour like the list icon beside them, not in the apps' own colours,
+  // so the rail reads as Surco's and the pressed state shows the same way on all three.
+  it('shows each source by its own mark in the rail colour, named only for screen readers and on hover', () => {
     render(<SourceRail sources={['appleMusic', 'rekordbox']} active={null} onSelect={vi.fn()} />)
     const rekordbox = screen.getByTestId('source-rail-rekordbox')
     expect(rekordbox).toHaveTextContent('')
     expect(rekordbox).toHaveAccessibleName('rekordbox')
     expect(rekordbox).toHaveAttribute('title', 'rekordbox')
-    expect(screen.getByTestId('source-rail-icon-rekordbox').getAttribute('src')).toMatch(
-      /rekordbox/,
-    )
-    expect(screen.getByTestId('source-rail-icon-appleMusic').getAttribute('src')).toMatch(
-      /apple-music/,
-    )
+    for (const s of ['rekordbox', 'appleMusic']) {
+      const icon = screen.getByTestId(`source-rail-icon-${s}`)
+      expect(icon.tagName.toLowerCase()).toBe('svg')
+      expect(icon.querySelector('[fill="currentColor"]')).not.toBeNull()
+    }
     expect(screen.getByTestId('source-rail-tracks')).toHaveAccessibleName('Tracks')
     expect(screen.getByTestId('source-rail-tracks')).toHaveTextContent('')
   })
