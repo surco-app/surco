@@ -125,6 +125,24 @@ describe('opening a source playlist', () => {
     expect(result.current.tracks.map((t) => t.inputPath)).toEqual([composed])
   })
 
+  // After a conversion that is not in place, rekordbox's row names the output; the next
+  // refocus must not load that output as a new, unconverted copy of the same track.
+  it('treats the output of a converted track as loaded', async () => {
+    const { result, expandPaths } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.wav'])
+    })
+    act(() =>
+      result.current.updateTrack(result.current.tracks[0].id, { outputPath: '/out/a.aiff' }),
+    )
+    expandPaths.mockClear()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/out/a.aiff']), 'rekordbox')
+    })
+    expect(expandPaths).not.toHaveBeenCalled()
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.wav'])
+  })
+
   it('fills bpm and key from rekordbox when the file has none', async () => {
     const { result } = setup({
       readMeta: vi.fn().mockResolvedValue({

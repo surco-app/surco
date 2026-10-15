@@ -65,4 +65,18 @@ describe('playlistView', () => {
     const view = playlistView([B], [entry('/m/A.wav'), entry('/m/B.wav'), entry(null)])
     expect(view.tracks.map((t) => t.id)).toEqual(['b'])
   })
+
+  // A conversion that is not in place leaves the input where it was and repoints the
+  // rekordbox row at the output, so the re-read playlist names the converted file.
+  it('shows a converted track where the playlist now names its output', () => {
+    const converted = { ...track('a', '/m/A.wav'), outputPath: '/out/A.aiff' } as TrackItem
+    const view = playlistView([converted, B], [entry('/out/A.aiff'), entry('/m/B.wav')])
+    expect(view.tracks.map((t) => t.id)).toEqual(['a', 'b'])
+  })
+
+  it('prefers the track loaded from a file over one that converted into it', () => {
+    const converted = { ...track('a', '/m/A.wav'), outputPath: '/m/B.wav' } as TrackItem
+    const view = playlistView([converted, B], [entry('/m/B.wav')])
+    expect(view.tracks.map((t) => t.id)).toEqual(['b'])
+  })
 })

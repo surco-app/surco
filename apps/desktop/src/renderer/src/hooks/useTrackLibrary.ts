@@ -699,9 +699,17 @@ export function useTrackLibrary({
     source: PlaylistSource,
   ): Promise<number> {
     // Compared composed: the NAS stores names decomposed while a drop is composed, and one
-    // file under both spellings must stay the one row that holds the user's edits.
+    // file under both spellings must stay the one row that holds the user's edits. Outputs
+    // count as loaded too, as for the folder watcher: a conversion that is not in place
+    // repoints the rekordbox row at the output, and the next re-read must not offer it
+    // back as a new, unconverted track.
     const same = (p: string): string => p.normalize('NFC')
-    const loadedNow = (): Set<string> => new Set(tracksRef.current.map((t) => same(t.inputPath)))
+    const loadedNow = (): Set<string> =>
+      new Set(
+        tracksRef.current.flatMap((t) =>
+          t.outputPath ? [same(t.inputPath), same(t.outputPath)] : [same(t.inputPath)],
+        ),
+      )
     const loaded = loadedNow()
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
