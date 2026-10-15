@@ -23,7 +23,7 @@ export type ReviewOpening =
     }
 
 // playlistTracks is the open playlist's rows once they are applied (App's playlistScope):
-// until then the list shows the working list, and a click acts on the rows shown.
+// until then workingCount is the rows shown, none in a source, and a click acts on them.
 export function reviewTarget({
   source,
   playlistName,

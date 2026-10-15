@@ -805,6 +805,95 @@ describe('App source rail', () => {
     fireEvent.click(screen.getByTestId('source-node-f'))
     expect(await screen.findByTestId('sidebar')).toBeInTheDocument()
   })
+
+  // Music with nothing picked is not the working list: a Tracks row left on screen there
+  // (and its editor beside it) read as that track being in Music. Nothing is lost by
+  // leaving, so Tracks comes back with the row the user had open.
+  it('shows none of the working list in Music until a playlist is picked, and gives Tracks back its selection', async () => {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 1 }]),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    expect(await screen.findByTestId('field-title')).toBeInTheDocument()
+
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    await screen.findByTestId('source-node-p1')
+    expect(screen.queryAllByTestId('track-row')).toHaveLength(0)
+    expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-pick-playlist')).toHaveTextContent(
+      'Pick a playlist to see its tracks',
+    )
+    runMenu('remove-all')
+    await act(async () => {})
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('field-title')).toBeInTheDocument()
+  })
+
+  // Going back and forth between the working list and a set is the DJ's everyday move:
+  // each side has to be where it was left, playlist and selected row included.
+  it('gives each source back its own open playlist and selected row', async () => {
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
+        artist: 'DJ',
+      })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([entry('/m/c.wav'), entry('/m/b.wav')]),
+    })
+    await renderApp()
+    const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent)
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() =>
+      expect(titles()).toEqual([
+        expect.stringContaining('Charlie'),
+        expect.stringContaining('Bravo'),
+      ]),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const selectedTitles = () =>
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent)
+    expect(selectedTitles()).toEqual([expect.stringContaining('Alpha')])
+    expect(screen.getByTestId('field-title')).toHaveValue('Alpha')
+
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await waitFor(() =>
+      expect(titles()).toEqual([
+        expect.stringContaining('Charlie'),
+        expect.stringContaining('Bravo'),
+      ]),
+    )
+    expect(screen.getByTestId('source-node-f')).toHaveAttribute('aria-current', 'true')
+    expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')])
+    expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+  })
 })
 
 describe('App source playlists', () => {
@@ -1100,12 +1189,30 @@ describe('App source playlists', () => {
 
       await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
     })
+
+    // Music with nothing picked shows no rows, so it has no work either: falling back to the
+    // whole working list there spent Discogs on sets the user was not looking at.
+    it('matches nothing while a source has no playlist open', async () => {
+      const { probed, release } = setupPlaylists()
+      Object.assign(window.api, { platform: 'darwin' })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+
+      fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
+      expect(await screen.findByTestId('source-pick-playlist')).toBeInTheDocument()
+      release()
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+
+      expect(probed).toEqual(['a1'])
+    })
   })
 
-  // While a picked playlist's entries have not arrived the list shows the whole working list,
-  // and that is what a click acts on: the playlist scope only holds back background work, so
-  // a playlist that never loads must not turn the toolbar buttons into silent no-ops.
-  it('runs the toolbar auto-match and analysis on the rows shown while a playlist loads', async () => {
+  // A picked playlist whose entries have not arrived is still that source's list, not the
+  // working list: the toolbar sweeps have nothing in view to act on, so they stay disabled
+  // instead of running over Tracks' rows from a rekordbox view.
+  it('leaves the toolbar sweeps nothing to run on while a playlist loads', async () => {
     const pending = () => new Promise(() => {})
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
@@ -1124,11 +1231,9 @@ describe('App source playlists', () => {
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await waitFor(() => expect(window.api.loadRekordboxPlaylist).toHaveBeenCalled())
 
-    fireEvent.click(screen.getByTestId('auto-match'))
-    fireEvent.click(screen.getByTestId('analyze-quality'))
-
-    expect(await screen.findByTestId('auto-match-progress')).toHaveTextContent('0/2')
-    expect(await screen.findByTestId('analyze-progress')).toHaveTextContent('0/2')
+    expect(screen.queryAllByTestId('track-row')).toHaveLength(0)
+    expect(screen.getByTestId('auto-match')).toBeDisabled()
+    expect(screen.getByTestId('analyze-quality')).toBeDisabled()
   })
 
   // The analysis sweep is ffmpeg passes per track: the same rule holds, or a playlist the

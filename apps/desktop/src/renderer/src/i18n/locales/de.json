@@ -1698,6 +1698,7 @@
     },
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
+    "pickPlaylist": "Wähle eine Playlist, um ihre Titel zu sehen",
     "separator": "Trenner",
     "gone": {
       "appleMusic": "„{{name}}“ ist nicht mehr in Music",

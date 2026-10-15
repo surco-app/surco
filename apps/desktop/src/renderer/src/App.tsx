@@ -24,6 +24,7 @@ import type {
   LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
+  PlaylistSource,
   PlaylistTrackRef,
   SearchHints,
   SearchProviderId,
@@ -621,6 +622,21 @@ export default function App(): React.JSX.Element {
     [store],
   )
   const editRekordbox = useRekordboxEdits(notifyEdit)
+  // Each source is its own list with its own selection: the row picked in Tracks is not in
+  // Music, and leaving it selected there kept its editor open beside a list without it.
+  // What is kept was picked before leaving, so rows removed meanwhile are left out.
+  const selectionBySource = useRef(new Map<PlaylistSource | null, Selection>())
+  const selectSource = useStableCallback((next: PlaylistSource | null) => {
+    if (next === browser.source) return
+    selectionBySource.current.set(browser.source, selection)
+    const kept = selectionBySource.current.get(next)
+    const alive = new Set(tracks.map((t) => t.id))
+    setSelection({
+      ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
+      anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
+    })
+    browser.selectSource(next)
+  })
   const openSourcePlaylistStable = useStableCallback(openSourcePlaylist)
   // Told once per opened playlist, so the gap between the source's count and the rows here
   // has a reason; a refocus re-read of the same playlist is not a new opening. Missing
@@ -1229,9 +1245,14 @@ export default function App(): React.JSX.Element {
     () => (browser.playlist && browser.entries ? playlistView(tracksView, browser.entries) : null),
     [browser.playlist, browser.entries, tracksView],
   )
-  const scopeTracks = playlistScope?.tracks ?? tracksView
+  // A source with no playlist applied yet (none picked, or its entries still loading) shows
+  // nothing: the working list's rows there read as tracks of that library.
+  const scopeTracks = useMemo(
+    () => playlistScope?.tracks ?? (browser.source ? [] : tracksView),
+    [playlistScope, browser.source, tracksView],
+  )
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
-  // entries load the list still shows the working list, and the order must follow on arrival.
+  // entries load the list is empty, and the order must follow on arrival.
   const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
   // The playlist's order, so a reorder (or a re-read bringing another order) is a new view:
   // the order held for the selected row would otherwise keep the old one on screen.
@@ -1243,11 +1264,11 @@ export default function App(): React.JSX.Element {
   // playlist passed through, and sweeping all of it spent Discogs and ffmpeg on sets the
   // user had left. Narrowed from the moment a playlist is picked, before its entries land
   // (nothing is its work yet), so the one left behind does not start more in the meantime.
-  // Only background work is held to it: a click acts on the rows shown, the whole working
-  // list while the entries load.
+  // A source with no playlist open shows no rows, so it has no work either.
   const sweepScope = useMemo(
-    () => (browser.playlist ? playlistMembership(browser.entries ?? []) : null),
-    [browser.playlist, browser.entries],
+    () =>
+      browser.source ? playlistMembership(browser.playlist ? (browser.entries ?? []) : []) : null,
+    [browser.source, browser.playlist, browser.entries],
   )
   useEffect(() => {
     scopeAutoMatch(sweepScope)
@@ -1264,9 +1285,9 @@ export default function App(): React.JSX.Element {
         playlistName,
         entries: browser.entries,
         playlistTracks: playlistScope?.tracks ?? null,
-        workingCount: tracksView.length,
+        workingCount: scopeTracks.length,
       }),
-    [browser.source, playlistName, browser.entries, playlistScope, tracksView.length],
+    [browser.source, playlistName, browser.entries, playlistScope, scopeTracks.length],
   )
   const openTargetReview = useStableCallback((filter: 'all' | 'duplicates') => {
     const next = reviewOpening(target, filter)
@@ -1423,7 +1444,8 @@ export default function App(): React.JSX.Element {
   // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
   // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
   // dead end. Only with tracks loaded — nothing to match on an empty list.
-  const needsToken = tracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
+  const needsToken =
+    scopeTracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -2048,7 +2070,7 @@ export default function App(): React.JSX.Element {
       tr,
       hintFor,
       platform: window.api.platform,
-      tracks,
+      tracks: scopeTracks,
       visibleTracks,
       selected,
       selectedTracksCount: selectedTracks.length,
@@ -2067,7 +2089,7 @@ export default function App(): React.JSX.Element {
       editorDeclickRef,
       trackSearchRef,
       pickFiles: () => void watchLoad(pickFiles),
-      openApplePlaylist: isMac ? () => browser.selectSource('appleMusic') : undefined,
+      openApplePlaylist: isMac ? () => selectSource('appleMusic') : undefined,
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview: () => openTargetReview('all'),
       selectAll,
@@ -2234,7 +2256,8 @@ export default function App(): React.JSX.Element {
   )
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
-  const showList = tracks.length > 0 || browser.playlist !== null || review !== null
+  const showList =
+    (browser.source ? browser.playlist !== null : tracks.length > 0) || review !== null
   const progress = topBarProgress(
     [analysis, matching, batchProgress, importProgress],
     anyLoadingMeta,
@@ -2337,7 +2360,7 @@ export default function App(): React.JSX.Element {
                   <SourceRail
                     sources={browser.sources}
                     active={browser.source}
-                    onSelect={browser.selectSource}
+                    onSelect={selectSource}
                   />
                 )}
                 {browser.source && (
@@ -2407,7 +2430,7 @@ export default function App(): React.JSX.Element {
                             selectedPosition={selectedPosition}
                             onAdd={onAdd}
                             onImportApplePlaylist={
-                              isMac ? () => browser.selectSource('appleMusic') : undefined
+                              isMac ? () => selectSource('appleMusic') : undefined
                             }
                             onSelectAllTracks={onSelectAllTracks}
                             scrollToSelected={scrollToSelected}
@@ -2605,37 +2628,51 @@ export default function App(): React.JSX.Element {
                         <div className="mb-4 flex justify-center">
                           <EmptyDisc />
                         </div>
-                        <p
-                          className="empty-copy-in text-base font-semibold tracking-[-0.01em] text-balance text-fg"
-                          style={{ animationDelay: '0.10s' }}
-                        >
-                          {tr('empty.title')}
-                        </p>
-                        <p
-                          className="empty-copy-in mt-1 text-sm text-pretty text-fg-dim"
-                          style={{ animationDelay: '0.16s' }}
-                        >
-                          {tr('empty.lead')}
-                        </p>
-                        <div className="empty-copy-in mt-5" style={{ animationDelay: '0.22s' }}>
-                          <EmptyActions
-                            onAdd={onAdd}
-                            addShortcut={hintFor('add')}
-                            onImportPlaylist={
-                              isMac ? () => browser.selectSource('appleMusic') : undefined
-                            }
-                            onReviewMusic={
-                              isMac
-                                ? () => setReview({ source: 'music', filter: 'all' })
-                                : undefined
-                            }
-                            onShowDuplicates={
-                              isMac
-                                ? () => setReview({ source: 'music', filter: 'duplicates' })
-                                : undefined
-                            }
-                          />
-                        </div>
+                        {/* A source with nothing picked has no rows and no editor; the one
+                          thing to do there is pick a playlist, so that is all it says. */}
+                        {browser.source && !browser.playlist ? (
+                          <p
+                            data-testid="source-pick-playlist"
+                            className="empty-copy-in text-sm text-pretty text-fg-dim"
+                            style={{ animationDelay: '0.10s' }}
+                          >
+                            {tr('sources.pickPlaylist')}
+                          </p>
+                        ) : (
+                          <>
+                            <p
+                              className="empty-copy-in text-base font-semibold tracking-[-0.01em] text-balance text-fg"
+                              style={{ animationDelay: '0.10s' }}
+                            >
+                              {tr('empty.title')}
+                            </p>
+                            <p
+                              className="empty-copy-in mt-1 text-sm text-pretty text-fg-dim"
+                              style={{ animationDelay: '0.16s' }}
+                            >
+                              {tr('empty.lead')}
+                            </p>
+                            <div className="empty-copy-in mt-5" style={{ animationDelay: '0.22s' }}>
+                              <EmptyActions
+                                onAdd={onAdd}
+                                addShortcut={hintFor('add')}
+                                onImportPlaylist={
+                                  isMac ? () => selectSource('appleMusic') : undefined
+                                }
+                                onReviewMusic={
+                                  isMac
+                                    ? () => setReview({ source: 'music', filter: 'all' })
+                                    : undefined
+                                }
+                                onShowDuplicates={
+                                  isMac
+                                    ? () => setReview({ source: 'music', filter: 'duplicates' })
+                                    : undefined
+                                }
+                              />
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

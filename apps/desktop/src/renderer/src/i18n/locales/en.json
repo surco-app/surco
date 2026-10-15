@@ -1698,6 +1698,7 @@
     },
     "empty": "No playlists.",
     "noMatch": "No playlist matches.",
+    "pickPlaylist": "Pick a playlist to see its tracks",
     "separator": "separator",
     "gone": {
       "appleMusic": "“{{name}}” is no longer in Music",

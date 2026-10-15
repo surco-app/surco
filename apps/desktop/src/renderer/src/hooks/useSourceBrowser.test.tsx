@@ -128,7 +128,9 @@ describe('useSourceBrowser', () => {
     expect(result.current.playlist?.id).toBe('house')
   })
 
-  it('closes the playlist when switching source, so another source never shows its rows', async () => {
+  // Each source is its own list: another source never shows this one's playlist, and coming
+  // back finds the set the DJ left open instead of making them dig it out of the tree again.
+  it('keeps each source’s open playlist apart and gives it back on return', async () => {
     const { result } = setup({})
     act(() => result.current.selectSource('rekordbox'))
     act(() =>
@@ -136,6 +138,10 @@ describe('useSourceBrowser', () => {
     )
     act(() => result.current.selectSource('appleMusic'))
     expect(result.current.playlist).toBeNull()
+    act(() => result.current.selectSource(null))
+    expect(result.current.playlist).toBeNull()
+    act(() => result.current.selectSource('rekordbox'))
+    expect(result.current.playlist?.id).toBe('house')
   })
 
   // "Insert separator" copies the collection's own separator; with none, the menu item says

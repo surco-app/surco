@@ -36,6 +36,8 @@ function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylis
 // single truth, so nothing here is kept beyond the session: the tree and the open playlist
 // are re-read whenever Surco gets the focus back, which is when a change made in rekordbox
 // can have happened. Null source is the working list every import has always used.
+// Each source keeps the playlist it had open, so leaving for another source and coming
+// back finds the set where the DJ left it.
 export function useSourceBrowser({
   onPlaylistGone,
 }: {
@@ -45,7 +47,10 @@ export function useSourceBrowser({
   const onPlaylistGoneRef = useRef(onPlaylistGone)
   onPlaylistGoneRef.current = onPlaylistGone
   const [source, setSource] = useState<PlaylistSource | null>(null)
-  const [playlist, setPlaylist] = useState<SourceBrowser['playlist']>(null)
+  const [playlists, setPlaylists] = useState<
+    Partial<Record<PlaylistSource, NonNullable<SourceBrowser['playlist']>>>
+  >({})
+  const playlist = source ? (playlists[source] ?? null) : null
   const isMac = window.api.platform === 'darwin'
 
   const { data: rekordbox = false } = useQuery({
@@ -85,7 +90,7 @@ export function useSourceBrowser({
   // re-read keeps the tree it had, so it never reads as a deletion.
   useEffect(() => {
     if (!playlist || !source || !tree.data || containsNode(tree.data, playlist.id)) return
-    setPlaylist(null)
+    setPlaylists(({ [source]: _, ...rest }) => rest)
     onPlaylistGoneRef.current(playlist.name, source)
   }, [playlist, source, tree.data])
 
@@ -105,10 +110,10 @@ export function useSourceBrowser({
     treeFailed: tree.isError,
     entries: entries.data,
     canInsertSeparator: separator.data ?? false,
-    selectSource: (next) => {
-      setSource(next)
-      setPlaylist(null)
+    selectSource: setSource,
+    selectPlaylist: (node, folders) => {
+      if (!source) return
+      setPlaylists((all) => ({ ...all, [source]: { id: node.id, name: node.name, folders } }))
     },
-    selectPlaylist: (node, folders) => setPlaylist({ id: node.id, name: node.name, folders }),
   }
 }
