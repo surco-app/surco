@@ -1166,26 +1166,32 @@ export const Editor = memo(function Editor({
         : copyVerdict.winner === 'b'
           ? 'library'
           : 'same'
+  // The pill takes the header's free width first, up to its whole label, and the title keeps
+  // the rest. Where the label does not fit it folds to the scale alone, so the header never
+  // wraps onto a second line for it; the sentence is still one click away.
   const copyVerdictPill =
     !isMulti && inLibrary === 'yes' && copyState ? (
-      <button
-        type="button"
-        data-testid="copy-verdict"
-        data-state={copyState}
-        aria-expanded={copyOpen}
-        aria-controls={copyCardId}
-        disabled={copyState === 'measuring'}
-        onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-        className="press rounded-md"
-      >
-        <SectionPill
-          tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
-          testid="copy-verdict-pill"
-          icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
+      <div className="flex min-w-3.5 max-w-max shrink grow-[9999] basis-0 justify-end">
+        <button
+          type="button"
+          data-testid="copy-verdict"
+          data-state={copyState}
+          aria-expanded={copyOpen}
+          aria-controls={copyCardId}
+          disabled={copyState === 'measuring'}
+          onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+          className="press flex min-w-0 max-w-full rounded-md"
         >
-          {tr(COPY_STATE_LABEL[copyState])}
-        </SectionPill>
-      </button>
+          <SectionPill
+            tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
+            testid="copy-verdict-pill"
+            icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
+            fold
+          >
+            {tr(COPY_STATE_LABEL[copyState])}
+          </SectionPill>
+        </button>
+      </div>
     ) : undefined
   const libraryMarks = (
     <>
