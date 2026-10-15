@@ -61,6 +61,16 @@ describe('filling a track with what Music knows', () => {
     const before = meta({ grouping: 'Bases' })
     expect(fillFromAppleMusic(before, { grouping: 'Otra cosa' })).toBe(before)
   })
+
+  it('fills the key from the source when the file has none, so the converted file carries it', () => {
+    // rekordbox keys every track (2067 of 2067 measured) while files often carry none, and
+    // Engine and Traktor read the key from the tag.
+    expect(fillFromAppleMusic({ ...emptyMetadata(), key: '' }, { key: '4B' }).key).toBe('4B')
+  })
+
+  it('keeps the file key over the source one: the file is what every other tool reads', () => {
+    expect(fillFromAppleMusic({ ...emptyMetadata(), key: '8A' }, { key: '4B' }).key).toBe('8A')
+  })
 })
 
 function track(over: Partial<TrackItem> = {}): TrackItem {

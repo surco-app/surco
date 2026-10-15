@@ -11,6 +11,7 @@ const FILLABLE = [
   'trackNumber',
   'discNumber',
   'bpm',
+  'key',
 ] as const satisfies readonly (MetaTextKey & keyof AppleMusicTrackMeta)[]
 
 // Music's 0-100 scale is Engine DJ's (see starsTagToEngineRating), 20 points per star.
