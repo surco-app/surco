@@ -145,8 +145,11 @@ Decisión de Vicent: en los dos sentidos.
    necesitan un fichero que analizar y cargar.
 6. Cambiar rating.
 
-No hay borrar playlists ni carpetas en esta fase: es la operación que más pierde si sale mal
-y no se ha pedido.
+7. Borrar playlists y carpetas (pedido por Vicent el 15/10), siempre con confirmación. El
+   diálogo nombra lo que se borra y, en una carpeta, cuántas playlists y carpetas lleva
+   dentro. Borra las filas de `djmdPlaylist` y sus enlaces de `djmdSongPlaylist`; nunca
+   una pista de `djmdContent` ni un fichero. Es la operación que más pierde si sale mal:
+   pasa por la misma cola, la misma copia de seguridad y la misma transacción que el resto.
 
 ### Escritura en `master.db`
 
@@ -156,6 +159,12 @@ y no se ha pedido.
 - `djmdSongPlaylist`: tras cada cambio, `TrackNo` vuelve a ser 1..N contiguo en la playlist
   tocada (como la medida en su colección).
 - `djmdPlaylist`: `Seq` al final del padre.
+- `masterPlaylists6.xml` (junto a `master.db`, 123 nodos en su colección, rekordbox 7.2.19):
+  rekordbox lleva ahí también cada playlist y carpeta (`NODE Id` en hexadecimal del ID,
+  `ParentId`, `Attribute`, `Timestamp`). Crear y borrar playlists o carpetas añade o quita
+  su nodo, como hace pyrekordbox; con copia propia y dentro del mismo lote. El plan
+  empieza por verificar sobre una copia qué pasa en rekordbox si la base y el XML no
+  cuadran, y si mover pistas o renombrar también lo tocan.
 - Todo un lote de la cola en **una transacción**; si algo falla, se restaura la copia.
 - Mismas garantías que el reapuntado: sin copia no se escribe (`.surco-session` por tanda y
   copia por escritura), nunca con rekordbox abierto, nunca se borra una fila de
@@ -206,5 +215,5 @@ pierde con Cancelar). Es la misma mejora y queda anotada para después.
 ## Fuera de alcance
 
 Engine y Traktor (fase 3), exportar a USB, playlists inteligentes, dar de alta pistas nuevas
-en la colección, borrar playlists o carpetas, color, My Tags, cues, escribir BPM o tono en
+en la colección, color, My Tags, cues, escribir BPM o tono en
 rekordbox.
