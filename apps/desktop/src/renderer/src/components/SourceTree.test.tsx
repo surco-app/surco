@@ -51,6 +51,27 @@ describe('SourceTree', () => {
     expect(screen.getByTestId('source-node-ct')).toHaveAttribute('aria-current', 'true')
   })
 
+  // Opening the way to the selection is a starting point, not a lock: a long folder the
+  // user wants out of the way must close on click like any other.
+  it('lets the user close a folder that was opened for the selected playlist', () => {
+    setup('ct')
+    fireEvent.click(screen.getByTestId('source-node-cant'))
+    expect(screen.queryByTestId('source-node-ct')).not.toBeInTheDocument()
+  })
+
+  it('keeps that folder closed when the tree is re-read on refocus', () => {
+    const props = {
+      title: 'rekordbox',
+      source: 'rekordbox' as const,
+      failed: false,
+      onSelect: vi.fn(),
+    }
+    const { rerender } = render(<SourceTree {...props} nodes={NODES} selectedId="ct" />)
+    fireEvent.click(screen.getByTestId('source-node-cant'))
+    rerender(<SourceTree {...props} nodes={[...NODES]} selectedId="ct" />)
+    expect(screen.queryByTestId('source-node-ct')).not.toBeInTheDocument()
+  })
+
   it('hands back the folder path with the playlist, the only thing telling two "Todas" apart', () => {
     const onSelect = setup()
     fireEvent.click(screen.getByTestId('source-node-bases'))

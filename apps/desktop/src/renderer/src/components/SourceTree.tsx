@@ -46,10 +46,17 @@ export function SourceTree({
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
-  const forced = useMemo(
-    () => new Set((selectedId && nodes ? pathTo(nodes, selectedId) : null)?.map((n) => n.id) ?? []),
-    [nodes, selectedId],
-  )
+  // The folders holding the selected playlist are opened once per selection, during render
+  // so the selection is never drawn hidden for a frame. Once, not on every render: the
+  // user can still close them, and a refocus re-read of the tree must not reopen them.
+  const [openedFor, setOpenedFor] = useState<string | null>(null)
+  if (selectedId && nodes && openedFor !== selectedId) {
+    const trail = pathTo(nodes, selectedId)
+    if (trail) {
+      setOpenedFor(selectedId)
+      setOpened((prev) => new Set([...prev, ...trail.map((n) => n.id)]))
+    }
+  }
   const hits = useMemo(() => {
     const q = query.trim().toLowerCase()
     return q && nodes ? flatten(nodes).filter((h) => h.node.name.toLowerCase().includes(q)) : null
@@ -70,7 +77,7 @@ export function SourceTree({
     trail?: string,
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
-    const open = opened.has(node.id) || forced.has(node.id)
+    const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
     return (
