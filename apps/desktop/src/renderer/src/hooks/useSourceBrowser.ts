@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
-import { musicEntries, musicTree } from '../lib/appleMusicSource'
+import { distinctTracks, musicEntries, musicTree, withReadCounts } from '../lib/appleMusicSource'
 import { useWindowFocus } from './useWindowFocus'
 
 export interface SourceBrowser {
@@ -108,7 +108,17 @@ export function useSourceBrowser({
     sources,
     source,
     playlist,
-    tree: tree.data,
+    tree:
+      source === 'appleMusic' && tree.data
+        ? withReadCounts(tree.data, (id) => {
+            const read = queryClient.getQueryData<SourcePlaylistEntry[]>([
+              'source-playlist',
+              'appleMusic',
+              id,
+            ])
+            return read && distinctTracks(read)
+          })
+        : tree.data,
     treeFailed: tree.isError,
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,

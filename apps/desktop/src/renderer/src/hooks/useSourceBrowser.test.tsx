@@ -50,6 +50,29 @@ describe('useSourceBrowser', () => {
     expect(result.current.sources).toEqual([])
   })
 
+  // Music only reports how many rows a playlist has, repeats included, while the list shows
+  // each file once: the tree said 3 beside a list of 2. Once the rows are read, the tree
+  // counts what the list will hold (a file-less row still counts, as rekordbox's does).
+  it('counts a read Music playlist by its distinct tracks, as the list shows them', async () => {
+    const { result } = setup({
+      loadAppleMusicPlaylists: vi
+        .fn()
+        .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 4 }]),
+      loadAppleMusicPlaylistTracks: vi.fn().mockResolvedValue({
+        paths: ['/m/a.wav', '/m/b.wav', '/m/a.wav'],
+        persistentIds: {},
+        meta: {},
+        missing: 1,
+      }),
+    })
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(4))
+    act(() =>
+      result.current.selectPlaylist({ id: 'P1', name: 'Friday', kind: 'playlist', count: 4 }, []),
+    )
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(3))
+  })
+
   it('loads the picked playlist rows', async () => {
     const { result } = setup({})
     act(() => result.current.selectSource('rekordbox'))

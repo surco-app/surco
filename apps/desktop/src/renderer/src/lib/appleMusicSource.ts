@@ -34,6 +34,25 @@ export function musicTree(lists: AppleMusicPlaylist[]): SourceNode[] {
   return [...root, ...grouped]
 }
 
+// Music counts a playlist's rows, repeats included, while the list shows each file once. A
+// playlist already read is counted the list's way instead: each file once, and each
+// file-less row (the open notice names those, as rekordbox's count keeps streaming rows).
+export function distinctTracks(entries: SourcePlaylistEntry[]): number {
+  const files = new Set(entries.flatMap((e) => (e.path ? [e.path.normalize('NFC')] : [])))
+  return files.size + entries.filter((e) => !e.path).length
+}
+
+export function withReadCounts(
+  nodes: SourceNode[],
+  countOf: (id: string) => number | undefined,
+): SourceNode[] {
+  return nodes.map((n) =>
+    n.children
+      ? { ...n, children: withReadCounts(n.children, countOf) }
+      : { ...n, count: countOf(n.id) ?? n.count },
+  )
+}
+
 // Music returns the files and, apart, how many rows had none; the shared shape keeps those
 // as file-less entries so the app can tell the user how many have no file. Music has no
 // separators.
