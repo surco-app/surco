@@ -1140,7 +1140,14 @@ export default function App(): React.JSX.Element {
   )
   // Ranked over the whole list, not the filtered view, so hiding a copy behind a filter
   // never turns the one left on screen into the best.
-  const duplicateRankById = useDuplicateRanks(tracks)
+  const { ranks: duplicateRankById, onRowVisible: onDuplicateRowVisible } =
+    useDuplicateRanks(tracks)
+  // One visibility report feeds both: auto-match runs the rows on screen first, and the
+  // duplicate ranks only measure groups whose rows have all been shown.
+  const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
+    onTrackVisible(id, visible)
+    onDuplicateRowVisible(id, visible)
+  })
   // A library that could not be read leaves every row without a verdict, the same blank a
   // check still loading shows; the notice is what tells the two apart. It goes away once
   // a refocus retries the read and it lands.
@@ -2177,7 +2184,7 @@ export default function App(): React.JSX.Element {
                             renderMenu={renderTrackMenu}
                             scrollRootRef={listScrollRef}
                             outsideFilter={outsideFilterIds}
-                            onVisible={onTrackVisible}
+                            onVisible={onListRowVisible}
                             rowRegistry={rowEls}
                             backupAtByPath={backupAtByPath}
                             onOpenBackup={onOpenBackup}

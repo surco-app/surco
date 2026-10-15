@@ -5,6 +5,7 @@ import { type DuplicateRank, rankGroup } from '../lib/duplicateRanks'
 import { duplicateGroups } from '../lib/duplicates'
 import type { TrackItem } from '../types'
 import { copyFactsQueries, pairOptions, toCopyFacts } from './useCopyFacts'
+import { useStableCallback } from './useStableCallback'
 
 // Only the data reaches the memo below: useQueries structurally shares what combine
 // returns, so a settled query that did not change keeps the same tuple.
@@ -41,30 +42,54 @@ function stabilize(
 
 const pairKey = (a: string, b: string): string => [a, b].sort().join('\0')
 
-type Row = [id: string, artist: string, title: string, duration: number | null, path: string]
+// The fields that decide the groups and the probes, joined per track. A cheap join
+// rather than JSON: it runs on every progress tick, and only has to change when they do.
+const FIELD = '\u0000'
+const ROW = '\u0001'
 
-export function useDuplicateRanks(tracks: TrackItem[]): ReadonlyMap<string, DuplicateRank> {
+export interface DuplicateRanks {
+  ranks: ReadonlyMap<string, DuplicateRank>
+  // The list's row-visibility report (TrackList's onVisible).
+  onRowVisible: (id: string, visible: boolean) => void
+}
+
+// Ranking decodes every copy and compares every pair, so only the groups whose rows have
+// all been on screen are measured: a big library's duplicates nobody scrolled to cost
+// nothing. A row seen once stays seen, so a measured group keeps its ranks when it scrolls
+// away.
+export function useDuplicateRanks(tracks: TrackItem[]): DuplicateRanks {
   // Every progress tick hands over a new tracks array; only these fields decide the groups
   // and the probes, so an unrelated change keeps every memo below.
-  const signature = JSON.stringify(
-    tracks.map(
-      (t): Row => [t.id, t.meta.artist ?? '', t.meta.title ?? '', t.duration ?? null, t.inputPath],
-    ),
-  )
-  const { groups, pathById } = useMemo(() => {
-    const rows = JSON.parse(signature) as Row[]
+  const signature = tracks
+    .map((t) =>
+      [t.id, t.meta.artist ?? '', t.meta.title ?? '', t.duration ?? '', t.inputPath].join(FIELD),
+    )
+    .join(ROW)
+  const { allGroups, pathById } = useMemo(() => {
+    const rows = signature ? signature.split(ROW).map((r) => r.split(FIELD)) : []
     return {
-      groups: duplicateGroups(
+      allGroups: duplicateGroups(
         rows.map(([id, artist, title, duration]) => ({
           id,
           artist,
           title,
-          durationSec: duration ?? undefined,
+          durationSec: duration === '' ? undefined : Number(duration),
         })),
       ).filter((g) => g.kind === 'duplicate'),
       pathById: new Map(rows.map(([id, , , , path]) => [id, path])),
     }
   }, [signature])
+  const duplicateIds = useMemo(() => new Set(allGroups.flatMap((g) => g.ids)), [allGroups])
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set())
+  // Only a duplicate's row is recorded: any other row showing would re-render App for nothing.
+  const onRowVisible = useStableCallback((id: string, visible: boolean): void => {
+    if (!visible || !duplicateIds.has(id)) return
+    setSeen((prev) => (prev.has(id) ? prev : new Set(prev).add(id)))
+  })
+  const groups = useMemo(
+    () => allGroups.filter((g) => g.ids.every((id) => seen.has(id))),
+    [allGroups, seen],
+  )
   const ids = useMemo(() => groups.flatMap((g) => g.ids), [groups])
   const pairIds = useMemo(
     () =>
@@ -113,5 +138,5 @@ export function useDuplicateRanks(tracks: TrackItem[]): ReadonlyMap<string, Dupl
   const [previous, setPrevious] = useState<ReadonlyMap<string, DuplicateRank>>(() => new Map())
   const stable = useMemo(() => stabilize(previous, computed), [previous, computed])
   if (stable !== previous) setPrevious(stable)
-  return stable
+  return useMemo(() => ({ ranks: stable, onRowVisible }), [stable, onRowVisible])
 }

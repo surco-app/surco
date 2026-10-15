@@ -1,11 +1,22 @@
 // @vitest-environment jsdom
 import { QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
+import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { useDuplicateRanks } from './useDuplicateRanks'
+
+// The list reports a row on screen through onRowVisible; these tests show every row
+// unless the test is about rows nobody scrolled to.
+function useShown(tracks: TrackItem[]): ReturnType<typeof useDuplicateRanks>['ranks'] {
+  const { ranks, onRowVisible } = useDuplicateRanks(tracks)
+  useEffect(() => {
+    for (const t of tracks) onRowVisible(t.id, true)
+  })
+  return ranks
+}
 
 function track(id: string, title: string): TrackItem {
   return {
@@ -55,7 +66,7 @@ describe('useDuplicateRanks', () => {
   it('ranks the copies of one recording once every fact and the pair are in', async () => {
     setApi()
     const tracks = [track('a.wav', 'Passion'), track('b.aif', 'Passion')]
-    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    const { result } = renderHook(() => useShown(tracks), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.size).toBe(2))
     expect(result.current.get('a.wav')).toMatchObject({ rank: 'worse', reason: 'peakCount' })
     expect(result.current.get('b.aif')).toMatchObject({ rank: 'best', reason: 'peakCount' })
@@ -65,9 +76,39 @@ describe('useDuplicateRanks', () => {
   it('measures only tracks that have another copy in the list', async () => {
     const api = setApi()
     const tracks = [track('a.wav', 'Passion'), track('b.aif', 'Passion'), track('c.aif', 'Other')]
-    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    const { result } = renderHook(() => useShown(tracks), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.size).toBe(2))
     expect(api.fingerprint).not.toHaveBeenCalledWith('/m/c.aif', 'low')
+    expect(api.comparePair).toHaveBeenCalledTimes(1)
+  })
+
+  // A big library can hold hundreds of duplicates; decoding all of them twice over for
+  // icons on rows nobody scrolled to would hold the analysis queue for minutes.
+  it('measures nothing for a group whose rows were never on screen', async () => {
+    const api = setApi()
+    const tracks = [track('a.wav', 'Passion'), track('b.aif', 'Passion')]
+    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    await new Promise((r) => setTimeout(r, 20))
+    expect(result.current.ranks.size).toBe(0)
+    expect(api.fingerprint).not.toHaveBeenCalled()
+    expect(api.comparePair).not.toHaveBeenCalled()
+  })
+
+  // Half a group cannot be ranked, so measuring it would decode for nothing; the group
+  // waits for its last copy to show, and keeps its ranks once that copy scrolls away.
+  it('measures a group once every copy has been on screen and keeps its ranks after', async () => {
+    const api = setApi()
+    const tracks = [track('a.wav', 'Passion'), track('b.aif', 'Passion')]
+    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    act(() => result.current.onRowVisible('a.wav', true))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(api.comparePair).not.toHaveBeenCalled()
+    act(() => {
+      result.current.onRowVisible('a.wav', false)
+      result.current.onRowVisible('b.aif', true)
+    })
+    act(() => result.current.onRowVisible('b.aif', false))
+    await waitFor(() => expect(result.current.ranks.size).toBe(2))
     expect(api.comparePair).toHaveBeenCalledTimes(1)
   })
 
@@ -84,7 +125,7 @@ describe('useDuplicateRanks', () => {
       track('c.wav', 'Other'),
       track('d.aif', 'Other'),
     ]
-    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    const { result } = renderHook(() => useShown(tracks), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.has('d.aif')).toBe(true))
     expect(result.current.has('a.wav')).toBe(false)
     expect(result.current.has('b.aif')).toBe(false)
@@ -101,7 +142,7 @@ describe('useDuplicateRanks', () => {
       track('c.wav', 'Other'),
       track('d.aif', 'Other'),
     ]
-    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    const { result } = renderHook(() => useShown(tracks), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.has('d.aif')).toBe(true))
     expect(result.current.has('a.wav')).toBe(false)
     expect(result.current.has('b.aif')).toBe(false)
@@ -111,7 +152,7 @@ describe('useDuplicateRanks', () => {
   // fresh rank object per tick would re-render every duplicate row for nothing.
   it('keeps the same rank objects while nothing about the copies changed', async () => {
     setApi()
-    const { result, rerender } = renderHook(({ tracks }) => useDuplicateRanks(tracks), {
+    const { result, rerender } = renderHook(({ tracks }) => useShown(tracks), {
       wrapper: wrapper(),
       initialProps: { tracks: [track('a.wav', 'Passion'), track('b.aif', 'Passion')] },
     })
@@ -126,7 +167,7 @@ describe('useDuplicateRanks', () => {
   // their verdict and so must keep their objects.
   it('keeps the same rank objects when an unrelated track joins the list', async () => {
     setApi()
-    const { result, rerender } = renderHook(({ tracks }) => useDuplicateRanks(tracks), {
+    const { result, rerender } = renderHook(({ tracks }) => useShown(tracks), {
       wrapper: wrapper(),
       initialProps: { tracks: [track('a.wav', 'Passion'), track('b.aif', 'Passion')] },
     })

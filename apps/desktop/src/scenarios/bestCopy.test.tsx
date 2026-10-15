@@ -93,6 +93,7 @@ describe.skipIf(process.platform !== 'darwin')(
       music.reset()
       surco = await openApp({ settings: {}, destination: 'beside' })
       await surco.drop(open, limited)
+      surco.showRows()
     }, 60_000)
 
     afterAll(() => {
