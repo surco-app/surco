@@ -207,6 +207,16 @@ export function removeFromPlaylist(
 
 // The moved rows keep their own relative order and land right before the target (or at the
 // end); every other row, shown in Surco or not, keeps its place relative to the rest.
+function movedOrder(order: Link[], linkIds: string[], beforeLinkId: string | null): Link[] {
+  const moving = new Set(linkIds)
+  if (beforeLinkId !== null && moving.has(beforeLinkId)) return order
+  const moved = order.filter((l) => moving.has(l.ID))
+  const rest = order.filter((l) => !moving.has(l.ID))
+  const at = beforeLinkId === null ? rest.length : rest.findIndex((l) => l.ID === beforeLinkId)
+  rest.splice(at, 0, ...moved)
+  return rest
+}
+
 export function moveInPlaylist(
   db: Db,
   playlistId: string,
@@ -217,13 +227,20 @@ export function moveInPlaylist(
   requirePlaylist(db, playlistId)
   const order = links(db, playlistId)
   requireLinks(order, beforeLinkId === null ? linkIds : [...linkIds, beforeLinkId])
-  const moving = new Set(linkIds)
-  if (beforeLinkId !== null && moving.has(beforeLinkId)) return
-  const moved = order.filter((l) => moving.has(l.ID))
-  const rest = order.filter((l) => !moving.has(l.ID))
-  const at = beforeLinkId === null ? rest.length : rest.findIndex((l) => l.ID === beforeLinkId)
-  rest.splice(at, 0, ...moved)
-  writeOrder(db, rest, rekordboxStamp(ctx.now))
+  if (beforeLinkId !== null && linkIds.includes(beforeLinkId)) return
+  writeOrder(db, movedOrder(order, linkIds, beforeLinkId), rekordboxStamp(ctx.now))
+}
+
+// A drop onto a row's own place leaves the order as it is; the writer checks this before
+// asking the user to close rekordbox, which would otherwise be a cost for no write.
+export function moveChangesOrder(
+  db: Db,
+  playlistId: string,
+  linkIds: string[],
+  beforeLinkId: string | null,
+): boolean {
+  const order = links(db, playlistId)
+  return movedOrder(order, linkIds, beforeLinkId).some((l, i) => l.ID !== order[i].ID)
 }
 
 // The DJ's own separator, found by what it is (a blank file of a second or two) and, among
