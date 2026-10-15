@@ -3466,7 +3466,9 @@ describe('Editor Apple Music library badge', () => {
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
     )
     const pill = screen.getByTestId('copy-verdict')
-    expect(pill).toHaveTextContent('This file is better')
+    // The row shows the swap the replace button offers; the verdict is the control's name.
+    expect(pill).toHaveTextContent('→ AIF')
+    expect(pill).toHaveAccessibleName('This file is better')
     expect(screen.queryByTestId('copy-sentence')).toBeNull()
     fireEvent.click(pill)
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
@@ -3542,7 +3544,7 @@ describe('Editor Apple Music library badge', () => {
     await waitFor(() =>
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
     )
-    expect(screen.getByTestId('copy-verdict')).toHaveTextContent('Apple Music has a better one')
+    expect(screen.getByTestId('copy-verdict')).toHaveAccessibleName('Apple Music has a better one')
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
   })
 
@@ -3580,7 +3582,7 @@ describe('Editor Apple Music library badge', () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, pair: new Promise(() => {}) })
     const pill = await screen.findByTestId('copy-verdict')
     expect(pill).toHaveAttribute('data-state', 'measuring')
-    expect(pill).toHaveTextContent('Comparing…')
+    expect(pill).toHaveAccessibleName('Comparing…')
   })
 
   // A copy that could not be measured gives no verdict at all; the pill that was there

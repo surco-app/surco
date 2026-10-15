@@ -1,10 +1,12 @@
 import {
+  CircleCheck,
+  CircleEqual,
   Copy,
   Eraser,
   Globe,
+  Loader2,
   Music,
   RefreshCw,
-  Scale,
   Scissors,
   Tag,
   TriangleAlert,
@@ -1166,32 +1168,39 @@ export const Editor = memo(function Editor({
         : copyVerdict.winner === 'b'
           ? 'library'
           : 'same'
-  // The pill takes the header's free width first, up to its whole label, and the title keeps
-  // the rest. Where the label does not fit it folds to the scale alone, so the header never
-  // wraps onto a second line for it; the sentence is still one click away.
+  // The verdict reads as the swap the replace button offers: the library copy, an arrow, this
+  // file's format, and the mark the library status already uses for "keep the library's".
+  // Its words are the button's name, for a screen reader and the tests alike.
+  const copyStateIcon = {
+    here: <CircleCheck className="h-3.5 w-3.5 text-[var(--color-good)]" aria-hidden="true" />,
+    library: <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />,
+    same: <CircleEqual className="h-3.5 w-3.5" aria-hidden="true" />,
+    measuring: (
+      <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+    ),
+  }
   const copyVerdictPill =
     !isMulti && inLibrary === 'yes' && copyState ? (
-      <div className="flex min-w-3.5 max-w-max shrink grow-[9999] basis-0 justify-end">
-        <button
-          type="button"
-          data-testid="copy-verdict"
-          data-state={copyState}
-          aria-expanded={copyOpen}
-          aria-controls={copyCardId}
-          disabled={copyState === 'measuring'}
-          onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-          className="press flex min-w-0 max-w-full rounded-md"
-        >
-          <SectionPill
-            tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
-            testid="copy-verdict-pill"
-            icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
-            fold
-          >
-            {tr(COPY_STATE_LABEL[copyState])}
-          </SectionPill>
-        </button>
-      </div>
+      <button
+        type="button"
+        data-testid="copy-verdict"
+        data-state={copyState}
+        aria-label={tr(COPY_STATE_LABEL[copyState])}
+        aria-expanded={copyOpen}
+        aria-controls={copyCardId}
+        disabled={copyState === 'measuring'}
+        onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+        className={`press -my-1 -ml-2 flex shrink-0 items-center gap-1.5 rounded-md px-1 py-1 text-xs font-medium whitespace-nowrap hover:bg-[var(--color-hover)] ${
+          copyState === 'library'
+            ? 'text-[var(--color-warn)]'
+            : copyState === 'here'
+              ? 'text-fg-muted'
+              : 'text-fg-dim'
+        }`}
+      >
+        <span aria-hidden="true">→ {fileExtension(item.inputPath)}</span>
+        {copyStateIcon[copyState]}
+      </button>
     ) : undefined
   const libraryMarks = (
     <>

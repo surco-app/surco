@@ -53,7 +53,6 @@ export function SectionPill({
   testid,
   numeric = false,
   icon,
-  fold = false,
   children,
 }: {
   tone: keyof typeof DOTS
@@ -64,9 +63,6 @@ export function SectionPill({
   // A leading glyph that carries the pill's subject in place of the dot, coloured by the
   // tone — the tone still means severity, the icon means what it's about.
   icon?: React.ReactNode
-  // The words drop below a one-line clip when the pill is narrower than them, leaving the
-  // icon alone, rather than showing half a sentence. They stay in the DOM for a screen reader.
-  fold?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
   // Green is "nothing to do here", and the dot already says it: the words beside it only
@@ -78,7 +74,7 @@ export function SectionPill({
       data-tone={tone}
       className={`group relative inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${TEXT[tone]} ${
         numeric ? 'tabular-nums' : ''
-      } ${fold ? 'h-4 max-w-full flex-wrap justify-end overflow-hidden' : ''}`}
+      }`}
     >
       {icon ? (
         <span className={`flex ${ICON[tone]}`}>{icon}</span>
