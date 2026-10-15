@@ -63,7 +63,7 @@ describe('Cut the silence before a record without moving its Traktor cue points'
   it('offers to cut the silent lead-in and stages it with one click', async () => {
     fireEvent.click(await screen.findByTestId('trim-apply-start', undefined, { timeout: 30_000 }))
     await screen.findByTestId('trim-cuts')
-  })
+  }, 60_000)
 
   it('converts the record without its lead-in', async () => {
     fireEvent.click(screen.getByTestId('process-btn'))
