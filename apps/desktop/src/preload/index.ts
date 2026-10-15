@@ -26,6 +26,8 @@ import type {
   SearchProviderId,
   SessionData,
   SessionEdit,
+  SourceNode,
+  SourcePlaylistEntry,
   SpectrumVerdict,
   TrackProperties,
   TrashEntry,
@@ -161,6 +163,10 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:playlists'),
   loadAppleMusicPlaylistTracks: (persistentId: string): Promise<AppleMusicPlaylistTracks> =>
     ipcRenderer.invoke('applemusic:playlistTracks', persistentId),
+  rekordboxAvailable: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:available'),
+  loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
+  loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
+    ipcRenderer.invoke('rekordbox:playlist', id),
   loadEngineLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('engine:library'),
   addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),

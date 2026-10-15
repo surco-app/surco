@@ -179,6 +179,9 @@ export function stubApi(over: Partial<Api> = {}): Api {
     onListRemovalPhase: unsubscribe,
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
+    rekordboxAvailable: async () => false,
+    loadRekordboxTree: async () => [],
+    loadRekordboxPlaylist: async () => [],
     loadAppleMusicPlaylistTracks: async () => ({
       paths: [],
       persistentIds: {},

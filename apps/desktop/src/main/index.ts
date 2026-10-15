@@ -104,6 +104,7 @@ import { createQuitGuard } from './quitGuard'
 import { trashRecoverably } from './recoverableTrash'
 import { beginRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
 import { findRekordboxCollection } from './rekordboxPath'
+import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { loadLastSession, saveLastSession } from './session'
@@ -843,6 +844,9 @@ function registerIpc(): void {
   )
 
   registerAppleMusicIpc({ trackTmp: tmpManifest.track, untrackTmp: tmpManifest.untrack })
+  registerRekordboxPlaylistsIpc(() =>
+    findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+  )
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
   // not yet started, so a stalled network mount would otherwise keep a batch (and

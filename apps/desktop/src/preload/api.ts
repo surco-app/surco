@@ -50,6 +50,8 @@ import type {
   SessionData,
   SessionEdit,
   Settings,
+  SourceNode,
+  SourcePlaylistEntry,
   SpectrumResult,
   SpectrumVerdict,
   TrackMetadata,
@@ -176,6 +178,13 @@ export interface Api {
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>
   // The files one playlist references, plus how many of its tracks have none.
   loadAppleMusicPlaylistTracks: (persistentId: string) => Promise<AppleMusicPlaylistTracks>
+  // Whether this machine has a rekordbox collection Surco can read. False for a user
+  // without rekordbox, the normal case: the source then simply is not offered.
+  rekordboxAvailable: () => Promise<boolean>
+  // The collection's folder and playlist tree, read-only. Empty when unreadable.
+  loadRekordboxTree: () => Promise<SourceNode[]>
+  // One playlist's rows in order, separators and file-less rows included.
+  loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // The Engine DJ library's rows in the same candidate shape, for the same membership
   // check when Engine DJ is the conversion destination. Empty when no library exists.
   loadEngineLibrary: () => Promise<AppleMusicLookupCandidate[]>
