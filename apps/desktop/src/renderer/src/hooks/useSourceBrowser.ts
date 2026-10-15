@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import { musicEntries, musicTree } from '../lib/appleMusicSource'
 import { useWindowFocus } from './useWindowFocus'
@@ -35,8 +35,14 @@ function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylis
 // single truth, so nothing here is kept beyond the session: the tree and the open playlist
 // are re-read whenever Surco gets the focus back, which is when a change made in rekordbox
 // can have happened. Null source is the working list every import has always used.
-export function useSourceBrowser(): SourceBrowser {
+export function useSourceBrowser({
+  onPlaylistGone,
+}: {
+  onPlaylistGone: (name: string, source: PlaylistSource) => void
+}): SourceBrowser {
   const queryClient = useQueryClient()
+  const onPlaylistGoneRef = useRef(onPlaylistGone)
+  onPlaylistGoneRef.current = onPlaylistGone
   const [source, setSource] = useState<PlaylistSource | null>(null)
   const [playlist, setPlaylist] = useState<SourceBrowser['playlist']>(null)
   const isMac = window.api.platform === 'darwin'
@@ -66,11 +72,14 @@ export function useSourceBrowser(): SourceBrowser {
 
   // A playlist deleted in rekordbox while it was open: once the re-read tree no longer
   // holds it, the list goes back to the tree instead of showing rows of a playlist that is
-  // gone. The tree stays open where it was, which is the "back to the folder" of the spec.
-  const openId = playlist?.id
+  // gone. The tree stays open where it was, which is the "back to the folder" of the spec,
+  // and the caller is told which playlist went, so the jump back has a reason. A failed
+  // re-read keeps the tree it had, so it never reads as a deletion.
   useEffect(() => {
-    if (openId && tree.data && !containsNode(tree.data, openId)) setPlaylist(null)
-  }, [openId, tree.data])
+    if (!playlist || !source || !tree.data || containsNode(tree.data, playlist.id)) return
+    setPlaylist(null)
+    onPlaylistGoneRef.current(playlist.name, source)
+  }, [playlist, source, tree.data])
 
   useWindowFocus((focused) => {
     if (!focused) return

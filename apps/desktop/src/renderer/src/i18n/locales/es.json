@@ -1686,6 +1686,10 @@
     "empty": "No hay playlists.",
     "noMatch": "Ninguna playlist coincide.",
     "separator": "separador",
+    "gone": {
+      "appleMusic": "«{{name}}» ya no está en Music",
+      "rekordbox": "«{{name}}» ya no está en rekordbox"
+    },
     "missing_one": "{{count}} pista de «{{name}}» no tiene fichero en el disco",
     "missing_other": "{{count}} pistas de «{{name}}» no tienen fichero en el disco"
   },

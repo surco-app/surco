@@ -830,6 +830,31 @@ describe('App source playlists', () => {
     )
   })
 
+  it('says which playlist went away when rekordbox deleted it while it was open', async () => {
+    const focusListeners: ((focused: boolean) => void)[] = []
+    setApi({
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        focusListeners.push(cb)
+        return () => {}
+      },
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValueOnce([{ id: 'f', name: 'Factory', kind: 'playlist', count: 0 }])
+        .mockResolvedValue([]),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    act(() => {
+      for (const cb of focusListeners) cb(true)
+    })
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      '“Factory” is no longer in rekordbox',
+    )
+  })
+
   // A collection repeats the same set across folders ("Todas", "Top") in another order.
   // Keeping the selected track's list still while it is edited must not keep the previous
   // playlist's order once another playlist is opened, or its breaks land between the wrong rows.

@@ -592,7 +592,16 @@ export default function App(): React.JSX.Element {
   // Which DJ library and playlist the list is narrowed to. The playlist's files join the
   // working list as they arrive, so its rows exist to be shown; a refocus re-read lands here
   // again and only loads what is new. Stable so that re-read, not every render, runs it.
-  const browser = useSourceBrowser()
+  const browser = useSourceBrowser({
+    onPlaylistGone: (name, source) =>
+      pushToast(store, {
+        key: 'source-playlist-gone',
+        tone: 'neutral',
+        message: tr(`sources.gone.${source}`, { name }),
+        duration: 4000,
+        testid: 'app-notice',
+      }),
+  })
   const openSourcePlaylistStable = useStableCallback(openSourcePlaylist)
   // Told once per opened playlist, so the gap between the source's count and the rows here
   // has a reason; a refocus re-read of the same playlist is not a new opening. Missing

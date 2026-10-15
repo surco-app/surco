@@ -7,7 +7,11 @@ import { useSourceBrowser } from './useSourceBrowser'
 
 afterEach(cleanup)
 
-function setup(api: Record<string, unknown>, platform = 'darwin') {
+function setup(
+  api: Record<string, unknown>,
+  platform = 'darwin',
+  onPlaylistGone: (name: string, source: string) => void = () => {},
+) {
   let focus: (focused: boolean) => void = () => {}
   ;(window as unknown as { api: unknown }).api = {
     platform,
@@ -30,7 +34,7 @@ function setup(api: Record<string, unknown>, platform = 'darwin') {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
-  const hook = renderHook(() => useSourceBrowser(), { wrapper })
+  const hook = renderHook(() => useSourceBrowser({ onPlaylistGone }), { wrapper })
   return { ...hook, focus: () => focus(true) }
 }
 
@@ -84,6 +88,26 @@ describe('useSourceBrowser', () => {
     )
     act(() => focus())
     await waitFor(() => expect(result.current.playlist).toBeNull())
+  })
+
+  // The list jumping back to the whole working list with no reason reads as Surco losing
+  // the playlist; naming it is what tells the user it went away in rekordbox.
+  it('names the playlist that was deleted in rekordbox while it was open', async () => {
+    const loadRekordboxTree = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
+      .mockResolvedValue([])
+    const onPlaylistGone = vi.fn()
+    const { result, focus } = setup({ loadRekordboxTree }, 'darwin', onPlaylistGone)
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    act(() =>
+      result.current.selectPlaylist({ id: 'house', name: 'House', kind: 'playlist', count: 1 }, []),
+    )
+    act(() => focus())
+    await waitFor(() => expect(result.current.playlist).toBeNull())
+    expect(onPlaylistGone).toHaveBeenCalledTimes(1)
+    expect(onPlaylistGone).toHaveBeenCalledWith('House', 'rekordbox')
   })
 
   // rekordbox mid-write fails one read; the playlist the user is looking at is still

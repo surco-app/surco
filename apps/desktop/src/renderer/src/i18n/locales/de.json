@@ -1686,6 +1686,10 @@
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
     "separator": "Trenner",
+    "gone": {
+      "appleMusic": "„{{name}}“ ist nicht mehr in Music",
+      "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox"
+    },
     "missing_one": "{{count}} Titel aus „{{name}}“ hat keine Datei auf dem Datenträger",
     "missing_other": "{{count}} Titel aus „{{name}}“ haben keine Datei auf dem Datenträger"
   },
