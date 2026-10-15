@@ -1,4 +1,4 @@
-import { ArrowUpRight, Disc3, FolderOpen, Music, SlidersVertical, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Music, SlidersVertical, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +11,7 @@ import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
+import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
 import { FOOTER_BAR } from './SplitButton'
 import { Tooltip } from './Tooltip'
@@ -181,7 +182,9 @@ export function ConvertFooter({
   useLayoutEffect(() => {
     if (!refocus.current) return
     refocus.current = false
-    footerRef.current?.querySelector<HTMLButtonElement>('[data-testid="process-btn"]')?.focus()
+    footerRef.current
+      ?.querySelector<HTMLButtonElement>('[data-testid="process-btn"], [data-testid="done-more"]')
+      ?.focus()
   })
   return (
     <div ref={footerRef} className={FOOTER_BAR}>
@@ -222,13 +225,12 @@ export function ConvertFooter({
         )}
         {showDone ? (
           // One line, always, ordered by what matters after an export. On the left, the
-          // outcome in words; then, as icons, the look-and-tidy links on it (reveal the file
-          // or the synced library copy, trash what was left behind); past the divider, what
-          // can still come next: a pending Apple Music add or update (the only tinted one),
-          // the DJ-app export and the re-export split-button. Each icon names itself in its
-          // tooltip and accessible label, so no translation can push the row onto two lines.
+          // outcome in words, which is also the way to the library copy; the clean-up of what
+          // was left behind, named while the row has room for it and an icon when it doesn't.
+          // On the right, the one step still pending (a Music add or update) as the only
+          // filled button, and "•••" for everything else, each named in full in its menu.
           <>
-            <div data-testid="done-row" className="flex min-w-0 items-center gap-1">
+            <div data-testid="done-row" className="@container flex min-w-0 items-center gap-1">
               <div data-testid="done-outcome" className="flex min-w-0 flex-1 items-center gap-1">
                 <p
                   data-testid="export-success"
@@ -270,83 +272,51 @@ export function ConvertFooter({
                     <Tooltip label={tr('editor.appleMusicShow')} />
                   </button>
                 )}
-                {revealPath && !addedToMusic && (
-                  <button
-                    type="button"
-                    data-testid="show-file"
-                    onClick={() => window.api.reveal(revealPath)}
-                    aria-label={tr('editor.showFile')}
-                    className={`${ICON_BUTTON} hover:text-fg`}
-                  >
-                    <FolderOpen className="h-3.5 w-3.5" aria-hidden="true" />
-                    <Tooltip label={tr('editor.showFile')} />
-                  </button>
-                )}
                 {cleanupFiles > 0 && (
                   <button
                     type="button"
                     data-testid="clean-up-previous"
                     onClick={() => onCleanUp?.(cleanup)}
                     aria-label={tr('editor.cleanUpPrevious', { count: cleanupFiles })}
-                    className={`${ICON_BUTTON} hover:text-danger`}
+                    className="press relative flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="hidden whitespace-nowrap @min-[34rem]:inline">
+                      {tr('editor.cleanUpPrevious', { count: cleanupFiles })}
+                    </span>
                     <Tooltip label={tr('editor.cleanUpPrevious', { count: cleanupFiles })} />
                   </button>
                 )}
               </div>
-              <span
-                aria-hidden="true"
-                className="mx-1 h-4 w-px shrink-0 bg-[var(--color-line-strong)]"
-              />
-              <div data-testid="done-actions" className="flex shrink-0 items-center gap-1">
+              <div data-testid="done-actions" className="flex shrink-0 items-center gap-2">
                 {isMacOS() &&
                   !showInMusic &&
+                  !musicAdded &&
                   (musicExt !== 'flac' || hasMusicCopy) &&
                   (!inMusicLibraryOnly || hasMusicCopy) && (
                     <button
                       type="button"
                       data-testid="add-apple-music"
                       onClick={onAddToAppleMusic}
-                      disabled={musicAdding || musicAdded}
-                      aria-label={musicLabel}
-                      className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:bg-[var(--color-row-selected)] disabled:opacity-60 disabled:hover:bg-[var(--color-accent-soft)]"
+                      disabled={musicAdding}
+                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
                     >
-                      <Music className="h-3.5 w-3.5" aria-hidden="true" />
-                      <Tooltip label={musicLabel} />
+                      {musicLabel}
                     </button>
                   )}
-                <button
-                  type="button"
-                  data-testid="export-collection"
-                  onClick={onExportCollection}
-                  aria-label={tr('editor.exportCollection')}
-                  className={`${ICON_BUTTON} hover:text-fg`}
-                >
-                  <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
-                  <Tooltip label={tr('editor.exportCollection')} />
-                </button>
-                <ExportButton
-                  quiet
-                  status={isMulti ? 'idle' : item.status}
-                  stale={false}
-                  done={false}
+                <DoneMenu
+                  multi={isMulti}
                   outputFormat={format}
                   exportedFormat={isMulti ? null : exportedFormat}
-                  withAppleMusic={false}
-                  withEngineDj={false}
-                  // A field emptied (or made required) after converting would send the
-                  // re-export into the same silently-empty batch the main button gates
-                  // against, so the quiet variant carries the identical block.
                   incomplete={incomplete}
                   incompleteReason={incompleteReason}
-                  inPlace={false}
                   destination={destination}
                   destinations={destinations}
-                  count={isMulti ? selectedCount : undefined}
+                  revealPath={addedToMusic ? null : revealPath}
                   onProcess={onProcess}
                   onSelectFormat={onSelectFormat}
                   onSelectDestination={onSelectDestination}
+                  onExportCollection={onExportCollection}
                 />
               </div>
             </div>

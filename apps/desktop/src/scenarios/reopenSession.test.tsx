@@ -84,7 +84,7 @@ describe('Come back to a crate the next day and find each track as it was left',
   it('converts it at that loudness', async () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     await vi.waitFor(() => expect(existsSync(out)).toBe(true), { timeout: 60_000, interval: 200 })
-    await waitFor(() => expect(screen.queryByTestId('process-btn')).not.toBeNull(), {
+    await waitFor(() => expect(screen.queryByTestId('done-more')).not.toBeNull(), {
       timeout: 60_000,
     })
     expect(Math.abs(loudness(out).integrated + 20)).toBeLessThanOrEqual(0.5)

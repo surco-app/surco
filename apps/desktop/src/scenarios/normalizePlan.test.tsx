@@ -48,7 +48,7 @@ async function planFor(surco: AppScenario, title: string, target: string): Promi
 async function convert(surco: AppScenario, out: string): Promise<void> {
   fireEvent.click(screen.getByTestId('process-btn'))
   await waitFor(() => expect(existsSync(out)).toBe(true), { timeout: 60_000 })
-  await waitFor(() => expect(screen.queryByTestId('process-btn')).not.toBeNull(), {
+  await waitFor(() => expect(screen.queryByTestId('done-more')).not.toBeNull(), {
     timeout: 60_000,
   })
   expect(surco.errors).toEqual([])

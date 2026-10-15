@@ -79,7 +79,7 @@ describe('Tune a track’s loudness target while watching its wave', () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     const out = join(folder, 'Loud.aiff')
     await waitFor(() => expect(existsSync(out)).toBe(true), { timeout: 60_000 })
-    await waitFor(() => expect(screen.queryByTestId('process-btn')).not.toBeNull(), {
+    await waitFor(() => expect(screen.queryByTestId('done-more')).not.toBeNull(), {
       timeout: 60_000,
     })
     expect(surco.errors).toEqual([])

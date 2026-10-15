@@ -583,6 +583,7 @@
     "addedToAppleMusic": "✓ Ajouté à Apple Music",
     "addedToAppleMusicCount_one": "✓ {{count}} morceau ajouté à Apple Music",
     "addedToAppleMusicCount_other": "✓ {{count}} morceaux ajoutés à Apple Music",
+    "moreActions": "Plus d'actions",
     "showFile": "Afficher le fichier",
     "reexport": "Convertir à nouveau",
     "reexportAs": "Convertir à nouveau en {{format}}",
