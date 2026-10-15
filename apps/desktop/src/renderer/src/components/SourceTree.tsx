@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
+import { draggedRows } from '../lib/reorderDrag'
 
 // The folders on the way to a node, so the tree can open them for the selected playlist.
 function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): SourceNode[] | null {
@@ -19,12 +20,14 @@ function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): Sour
 // Every playlist with the folder names above it. Search lists these flat: with names
 // repeated across folders (the measured collection has five "Todas"), the path is what
 // tells the hits apart.
-function flatten(
+export function flattenPlaylists(
   nodes: SourceNode[],
   folders: string[] = [],
 ): { node: SourceNode; folders: string[] }[] {
   return nodes.flatMap((n) =>
-    n.kind === 'folder' ? flatten(n.children ?? [], [...folders, n.name]) : [{ node: n, folders }],
+    n.kind === 'folder'
+      ? flattenPlaylists(n.children ?? [], [...folders, n.name])
+      : [{ node: n, folders }],
   )
 }
 
@@ -35,6 +38,7 @@ export function SourceTree({
   failed,
   selectedId,
   onSelect,
+  edit,
 }: {
   title: string
   source: PlaylistSource
@@ -42,6 +46,13 @@ export function SourceTree({
   failed: boolean
   selectedId: string | null
   onSelect: (node: SourceNode, folders: string[]) => void
+  // Organising, offered only where the source can be written (rekordbox): creating playlists
+  // and folders, and taking tracks dropped on a playlist (rows dragged from the list, known
+  // from lib/reorderDrag, or files from Finder). Without it the tree only browses.
+  edit?: {
+    onCreate: (parentId: string, name: string, folder: boolean) => void
+    onDropTracks: (node: SourceNode, files: File[]) => void
+  }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -59,7 +70,9 @@ export function SourceTree({
   }
   const hits = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return q && nodes ? flatten(nodes).filter((h) => h.node.name.toLowerCase().includes(q)) : null
+    return q && nodes
+      ? flattenPlaylists(nodes).filter((h) => h.node.name.toLowerCase().includes(q))
+      : null
   }, [nodes, query])
 
   const toggle = (id: string): void =>
@@ -69,6 +82,48 @@ export function SourceTree({
       else next.add(id)
       return next
     })
+
+  // The name field for a playlist or folder being created, and where it goes. Enter and
+  // leaving the field both keep the name (Finder's rule); Escape and an empty name drop it.
+  const [creating, setCreating] = useState<{ parentId: string; folder: boolean } | null>(null)
+  const startCreating = (parentId: string, folder: boolean): void =>
+    setCreating({ parentId, folder })
+  const commit = (value: string): void => {
+    setCreating(null)
+    const name = value.trim()
+    if (creating && name) edit?.onCreate(creating.parentId, name, creating.folder)
+  }
+  const cancel = (): void => setCreating(null)
+  const focusField = useCallback((el: HTMLInputElement | null) => el?.focus(), [])
+  const [menu, setMenu] = useState<{ node: SourceNode; x: number; y: number } | null>(null)
+  const createInside = (node: SourceNode, folder: boolean): void => {
+    setMenu(null)
+    setOpened((prev) => new Set([...prev, node.id]))
+    startCreating(node.id, folder)
+  }
+  // Which playlist a drag of tracks is over, and how many it carries: the list's own rows
+  // when a drag from the list is in progress, otherwise the files of a drag from Finder.
+  const [dropOn, setDropOn] = useState<{ id: string; count: number } | null>(null)
+  const carriesTracks = (e: React.DragEvent): boolean =>
+    draggedRows() !== null || e.dataTransfer.types.includes('Files')
+
+  const nameField = (parentId: string, depth: number): React.ReactNode =>
+    creating?.parentId === parentId && (
+      <li key="creating" style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
+        <input
+          ref={focusField}
+          data-testid="source-tree-name"
+          aria-label={tr('sources.tree.name')}
+          placeholder={tr('sources.tree.name')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commit(e.currentTarget.value)
+            if (e.key === 'Escape') cancel()
+          }}
+          onBlur={(e) => commit(e.currentTarget.value)}
+          className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
+        />
+      </li>
+    )
 
   const row = (
     node: SourceNode,
@@ -88,20 +143,55 @@ export function SourceTree({
           aria-expanded={isFolder ? open : undefined}
           aria-current={selected || undefined}
           onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
+          onContextMenu={(e) => {
+            if (!edit || !isFolder) return
+            e.preventDefault()
+            setMenu({ node, x: e.clientX, y: e.clientY })
+          }}
+          data-drop-target={dropOn?.id === node.id || undefined}
+          onDragOver={(e) => {
+            if (!edit || isFolder || !carriesTracks(e)) return
+            e.preventDefault()
+            setDropOn({ id: node.id, count: draggedRows()?.length ?? e.dataTransfer.items.length })
+          }}
+          onDragLeave={() => setDropOn((d) => (d?.id === node.id ? null : d))}
+          onDrop={(e) => {
+            if (!edit || isFolder || !carriesTracks(e)) return
+            e.preventDefault()
+            e.stopPropagation()
+            setDropOn(null)
+            edit.onDropTracks(node, Array.from(e.dataTransfer.files))
+          }}
           style={{ paddingLeft: 10 + depth * 18 }}
           className={`flex h-[27px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[11.5px] ${
             selected
               ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
               : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
-          } ${isFolder ? 'font-semibold' : ''}`}
+          } ${isFolder ? 'font-semibold' : ''} ${
+            dropOn?.id === node.id
+              ? 'outline-dashed outline-1 -outline-offset-1 outline-[var(--color-accent)]'
+              : ''
+          }`}
         >
           {isFolder && <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />}
           <span className="min-w-0 truncate">{node.name}</span>
           {trail && <span className="min-w-0 truncate text-[11px] text-fg-faint">{trail}</span>}
-          <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+          {dropOn?.id === node.id ? (
+            <span
+              data-testid="source-drop-count"
+              className="ml-auto text-[11px] text-[var(--color-accent)]"
+            >
+              {tr('sources.tree.dropCount', { count: dropOn.count })}
+            </span>
+          ) : (
+            <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+          )}
         </button>
         {isFolder && open && (
-          <ul>{(node.children ?? []).map((c) => row(c, depth + 1, [...folders, node.name]))}</ul>
+          <ul>
+            {(node.children ?? []).map((c) => row(c, depth + 1, [...folders, node.name]))}
+            {nameField(node.id, depth + 1)}
+          </ul>
         )}
       </li>
     )
@@ -116,19 +206,49 @@ export function SourceTree({
       </p>
     )
   else if (!nodes) body = <p className="px-3 text-xs text-fg-faint">{tr('sources.loading')}</p>
-  else if (nodes.length === 0)
+  else if (nodes.length === 0 && !creating)
     body = <p className="px-3 text-xs text-fg-faint">{tr('sources.empty')}</p>
   else if (hits && hits.length === 0)
     body = <p className="px-3 text-xs text-fg-faint">{tr('sources.noMatch')}</p>
   else if (hits) body = <ul>{hits.map((h) => row(h.node, 0, h.folders, h.folders.join(' › ')))}</ul>
-  else body = <ul>{nodes.map((n) => row(n, 0, []))}</ul>
+  else
+    body = (
+      <ul>
+        {nodes.map((n) => row(n, 0, []))}
+        {nameField('root', 0)}
+      </ul>
+    )
 
   return (
     <div
       data-testid="source-tree"
       className="flex w-[236px] shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]"
     >
-      <div className="px-3 pt-3 pb-2 font-semibold">{title}</div>
+      <div className="flex items-center gap-1 px-3 pt-3 pb-2">
+        <span className="font-semibold">{title}</span>
+        {edit && (
+          <span className="ml-auto flex gap-0.5">
+            <button
+              type="button"
+              data-testid="source-tree-new-playlist"
+              aria-label={tr('sources.tree.newPlaylist')}
+              onClick={() => startCreating('root', false)}
+              className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              <ListPlus size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              data-testid="source-tree-new-folder"
+              aria-label={tr('sources.tree.newFolder')}
+              onClick={() => startCreating('root', true)}
+              className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              <FolderPlus size={14} aria-hidden="true" />
+            </button>
+          </span>
+        )}
+      </div>
       <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
         <input
@@ -140,7 +260,60 @@ export function SourceTree({
           className="min-w-0 flex-1 bg-transparent outline-none"
         />
       </label>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">{body}</div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: swallows drops that miss a playlist; nothing to operate here */}
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2"
+        onDrop={(e) => {
+          // A drop that misses a playlist (a folder, the gaps) must not fall through to the
+          // window, whose drop imports the files into the list.
+          if (!edit) return
+          e.preventDefault()
+          e.stopPropagation()
+          setDropOn(null)
+        }}
+      >
+        {body}
+      </div>
+      {menu && (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label={tr('common.close')}
+            onClick={() => setMenu(null)}
+            className="absolute inset-0"
+          />
+          <div
+            ref={(el) => el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()}
+            role="menu"
+            aria-label={tr('sources.tree.folderMenu')}
+            data-testid="source-tree-menu"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setMenu(null)
+            }}
+            style={{ top: menu.y, left: menu.x }}
+            className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="source-tree-new-playlist-inside"
+              onClick={() => createInside(menu.node, false)}
+              className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+            >
+              {tr('sources.tree.newPlaylistInside')}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="source-tree-new-folder-inside"
+              onClick={() => createInside(menu.node, true)}
+              className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+            >
+              {tr('sources.tree.newFolderInside')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

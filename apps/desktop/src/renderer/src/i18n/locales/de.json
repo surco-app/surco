@@ -1712,6 +1712,15 @@
         "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren"
       }
+    },
+    "tree": {
+      "newPlaylist": "Neue Playlist",
+      "newFolder": "Neuer Ordner",
+      "newPlaylistInside": "Neue Playlist darin",
+      "newFolderInside": "Neuer Ordner darin",
+      "name": "Name",
+      "dropCount": "+{{count}} beim Loslassen",
+      "folderMenu": "Ordneraktionen"
     }
   },
   "engineIssue": {

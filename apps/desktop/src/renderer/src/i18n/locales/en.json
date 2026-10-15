@@ -1712,6 +1712,15 @@
         "stale": "The playlist changed in rekordbox. Check it and try again",
         "noSeparator": "Your collection has no separator to copy"
       }
+    },
+    "tree": {
+      "newPlaylist": "New playlist",
+      "newFolder": "New folder",
+      "newPlaylistInside": "New playlist inside",
+      "newFolderInside": "New folder inside",
+      "name": "Name",
+      "dropCount": "+{{count}} on drop",
+      "folderMenu": "Folder actions"
     }
   },
   "engineIssue": {
