@@ -130,6 +130,15 @@ Decisión de Vicent: en los dos sentidos.
 
 ## Fase 2: organizar
 
+**Partida en 2a y 2b (15/10), y sin rating.** La 2a (plan
+`docs/superpowers/plans/2026-10-15-fuentes-dj-fase-2a.md`) es lo fácil primero: reordenar
+arrastrando dentro de la playlist, añadir (arrastrando al árbol o desde el menú de la fila),
+quitar, crear playlist y carpeta, e insertar el separador que la colección ya tiene. Cada
+cambio se aplica al momento o tras el diálogo de hoy; con Cancelar no se aplica nada y la vista
+vuelve a lo que dice rekordbox. La 2b recoge la cola persistente con «Aplicar ahora», el
+conflicto por `updated_at`, borrar playlists y carpetas, generar el MP3 separador y renombrar.
+El rating sale de la fase 2 por decisión de Vicent: Surco no lo escribe en rekordbox.
+
 ### Operaciones
 
 1. Crear playlist (en la raíz o dentro de una carpeta) y crear carpeta.
