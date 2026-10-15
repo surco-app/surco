@@ -1200,7 +1200,7 @@ export const Editor = memo(function Editor({
             aria-controls={copyCardId}
             disabled={copyState === 'measuring'}
             onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-            className="press -mx-1 flex items-center gap-1 rounded px-1 text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg-muted disabled:hover:bg-transparent"
+            className="press flex items-center gap-1 rounded text-fg-dim hover:text-fg-muted"
           >
             {tr(COPY_STATE_LABEL[copyState], { library: libraryName })}
             {copyState !== 'measuring' && (
