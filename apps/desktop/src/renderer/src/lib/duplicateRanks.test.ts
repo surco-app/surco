@@ -73,6 +73,19 @@ describe('rankGroup', () => {
     ])
   })
 
+  // Two lossless masters nothing separates and an MP3 of the same record: no copy beats
+  // every other, yet the MP3 loses to both and must not be offered as just as good.
+  it('marks a copy that loses to any other as worse even when no copy is best', () => {
+    const otherMaster = { correlation: 0.86, residualDb: -6, gainDb: 0.4 }
+    const wav = { ...open, ext: 'wav', fingerprint: 'w' }
+    const aif = { ...open, ext: 'aif', fingerprint: 'a' }
+    expect(rankGroup([wav, aif, mp3], () => otherMaster)).toEqual([
+      { rank: 'same', count: 3, identical: false },
+      { rank: 'same', count: 3, identical: false },
+      { rank: 'worse', count: 3, identical: false, reason: 'lossless' },
+    ])
+  })
+
   it('keeps the pair still being compared out of any verdict', () => {
     expect(rankGroup([limited, open], () => undefined)).toBeNull()
   })
