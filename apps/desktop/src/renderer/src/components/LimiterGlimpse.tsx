@@ -7,10 +7,12 @@ import { useThemeRgb } from '../hooks/useThemeRgb'
 type Side = 'worse' | 'better'
 
 const HEIGHT = 96
+const WORSE_OVER_ALPHA = 0.6
 
-// The better copy goes underneath, so only what it has beyond the worse copy shows: the hits
-// the limiter took away. One scale for both whatever is shown, so hiding a copy never makes
-// the other look taller.
+// The better copy goes underneath and the worse one over it see-through, so both shapes read
+// at once and what the better copy has beyond the worse one stands clear: the hits the
+// limiter took away. One scale for both whatever is shown, so hiding a copy never makes the
+// other look taller.
 export function drawGlimpse(
   ctx: CanvasRenderingContext2D,
   glimpse: Glimpse,
@@ -30,12 +32,14 @@ export function drawGlimpse(
     const columns = pairs.length / 2
     const step = width / columns
     ctx.fillStyle = colors[side]
+    ctx.globalAlpha = side === 'worse' && show.better ? WORSE_OVER_ALPHA : 1
     for (let c = 0; c < columns; c++) {
       const lo = pairs[2 * c]
       const hi = pairs[2 * c + 1]
       ctx.fillRect(c * step, mid - hi * scale, Math.max(1, step), Math.max(1, (hi - lo) * scale))
     }
   }
+  ctx.globalAlpha = 1
   // The worse copy's ceiling, kept with that copy hidden so the better one reads against it.
   const ceiling = Math.max(...glimpse.worse.map(Math.abs)) * scale
   ctx.strokeStyle = colors.worse
@@ -59,7 +63,8 @@ export function LimiterGlimpse({
   worsePath: string
   betterPath: string
   sampleRate: number
-  // Legend order and names: this file first, as in the table below.
+  // Legend order and names: this file first, as in the table below. This file takes the
+  // accent and the other copy the faint ink, as in the before/after waveform compare.
   layers: readonly { side: Side; label: string }[]
 }): React.JSX.Element | null {
   const query = useQuery({
@@ -69,9 +74,12 @@ export function LimiterGlimpse({
   })
   const [show, setShow] = useState<Record<Side, boolean>>({ worse: true, better: true })
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const good = useThemeRgb('--color-good')
-  const warn = useThemeRgb('--color-warn')
-  const colors = { better: `rgb(${good})`, worse: `rgb(${warn})` }
+  const accent = useThemeRgb('--color-accent')
+  const faint = useThemeRgb('--color-fg-faint')
+  const hereSide = layers[0]?.side ?? 'better'
+  const betterColor = `rgb(${hereSide === 'better' ? accent : faint})`
+  const worseColor = `rgb(${hereSide === 'worse' ? accent : faint})`
+  const colors = { better: betterColor, worse: worseColor }
   const glimpse = query.data
 
   useLayoutEffect(() => {
@@ -85,21 +93,14 @@ export function LimiterGlimpse({
       canvas.width = width * dpr
       canvas.height = HEIGHT * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      drawGlimpse(
-        ctx,
-        glimpse,
-        show,
-        { better: `rgb(${good})`, worse: `rgb(${warn})` },
-        width,
-        HEIGHT,
-      )
+      drawGlimpse(ctx, glimpse, show, { better: betterColor, worse: worseColor }, width, HEIGHT)
     }
     paint()
     if (typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(paint)
     observer.observe(canvas)
     return () => observer.disconnect()
-  }, [glimpse, show, good, warn])
+  }, [glimpse, show, betterColor, worseColor])
 
   if (query.isPending) {
     return (

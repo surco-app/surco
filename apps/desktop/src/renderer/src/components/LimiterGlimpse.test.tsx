@@ -71,11 +71,14 @@ describe('LimiterGlimpse', () => {
 describe('drawGlimpse', () => {
   function recorder() {
     const fills: string[] = []
+    const alphas: number[] = []
     const ctx = {
       fillStyle: '',
+      globalAlpha: 1,
       clearRect: vi.fn(),
-      fillRect: vi.fn(function (this: { fillStyle: string }) {
+      fillRect: vi.fn(function (this: { fillStyle: string; globalAlpha: number }) {
         fills.push(this.fillStyle)
+        alphas.push(this.globalAlpha)
       }),
       strokeStyle: '',
       lineWidth: 1,
@@ -85,7 +88,7 @@ describe('drawGlimpse', () => {
       lineTo: vi.fn(),
       stroke: vi.fn(),
     }
-    return { ctx, fills }
+    return { ctx, fills, alphas }
   }
   const colors = { better: 'rgb(1, 1, 1)', worse: 'rgb(2, 2, 2)' }
 
@@ -163,5 +166,19 @@ describe('drawGlimpse', () => {
     expect(ys).toHaveLength(2)
     expect(ys[0]).toBeCloseTo(25 - 0.5 * scale)
     expect(ys[1]).toBeCloseTo(25 + 0.5 * scale)
+  })
+
+  // Drawn solid, the worse copy covered the better one everywhere but the hits, and the
+  // better copy looked missing. See-through, both shapes read at once; alone it is solid.
+  it('lets the better copy show through the worse one only while both are shown', () => {
+    const alphaOf = (show: { better: boolean; worse: boolean }, side: 'better' | 'worse') => {
+      const r = recorder()
+      drawGlimpse(r.ctx as unknown as CanvasRenderingContext2D, glimpse, show, colors, 100, 50)
+      return new Set(r.alphas.filter((_, i) => r.fills[i] === colors[side]))
+    }
+    const both = { better: true, worse: true }
+    expect([...alphaOf(both, 'worse')].every((a) => a < 1)).toBe(true)
+    expect(alphaOf(both, 'better')).toEqual(new Set([1]))
+    expect(alphaOf({ better: false, worse: true }, 'worse')).toEqual(new Set([1]))
   })
 })
