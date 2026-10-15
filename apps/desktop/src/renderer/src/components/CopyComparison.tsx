@@ -68,7 +68,8 @@ export function CopyComparison({
   libraryLabel,
 }: {
   id?: string
-  verdict: CopyVerdict
+  // A tie opens no card: the pill does not show for one.
+  verdict: Exclude<CopyVerdict, { winner: 'tie' }>
   here: CopyFacts
   library: CopyFacts
   hereLabel: string
@@ -82,7 +83,6 @@ export function CopyComparison({
 
   function sentence(): string {
     if (verdict.winner === 'same') return tr('editor.copySameAudio')
-    if (verdict.winner === 'tie') return tr('editor.copyNoDifference')
     const [loser, winner] = verdict.winner === 'a' ? [library, here] : [here, library]
     const keys = (verdict.winner === 'a' ? LIBRARY_LOSES : HERE_LOSES)[verdict.reason]
     const names = { loser: LIBRARY, winner: LIBRARY }
@@ -91,7 +91,10 @@ export function CopyComparison({
         return tr(keys.full, { ...names, format: loser.ext, otherFormat: winner.ext })
       case 'transcode':
       case 'cutoff':
-        if (loser.cutoffHz == null || winner.cutoffHz == null) return tr(keys.bare, names)
+        // A transcode is called on the loser's knee alone, so the winner can cut no higher;
+        // "reaches" a lower figure would argue against the verdict.
+        if (loser.cutoffHz == null || winner.cutoffHz == null || winner.cutoffHz <= loser.cutoffHz)
+          return tr(keys.bare, names)
         return tr(keys.full, {
           ...names,
           cutoff: num(loser.cutoffHz / 1000, 1),
@@ -166,38 +169,44 @@ export function CopyComparison({
       <p data-testid="copy-sentence" className="text-fg-dim">
         {sentence()}
       </p>
-      <table className="mt-2 tabular-nums text-fg-dim">
-        <thead>
-          <tr>
-            <th />
-            <th className="pl-4 text-right font-medium">
-              {tr('editor.copyThisFile')} · {hereLabel}
-            </th>
-            <th className="pl-4 text-right font-medium">
-              {LIBRARY} · {libraryLabel}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const decides = row.id === decidingRow
-            return (
-              <tr
-                key={row.id}
-                data-testid={`copy-row-${row.id}`}
-                data-decides={decides ? 'true' : undefined}
-                className={decides ? 'text-fg' : undefined}
-              >
-                <th scope="row" className="text-left font-normal">
-                  {row.label}
-                </th>
-                <td className={`pl-4 text-right ${decides ? cellTone('a') : ''}`}>{row.here}</td>
-                <td className={`pl-4 text-right ${decides ? cellTone('b') : ''}`}>{row.library}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+      {/* Same audio means either copy will do: a table of matching figures would only send
+          the reader hunting for a difference that is not there. */}
+      {verdict.winner !== 'same' && (
+        <table className="mt-2 tabular-nums text-fg-dim">
+          <thead>
+            <tr>
+              <th />
+              <th className="pl-4 text-right font-medium">
+                {tr('editor.copyThisFile')} · {hereLabel}
+              </th>
+              <th className="pl-4 text-right font-medium">
+                {LIBRARY} · {libraryLabel}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const decides = row.id === decidingRow
+              return (
+                <tr
+                  key={row.id}
+                  data-testid={`copy-row-${row.id}`}
+                  data-decides={decides ? 'true' : undefined}
+                  className={decides ? 'text-fg' : undefined}
+                >
+                  <th scope="row" className="text-left font-normal">
+                    {row.label}
+                  </th>
+                  <td className={`pl-4 text-right ${decides ? cellTone('a') : ''}`}>{row.here}</td>
+                  <td className={`pl-4 text-right ${decides ? cellTone('b') : ''}`}>
+                    {row.library}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }

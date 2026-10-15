@@ -193,8 +193,10 @@ describe('CopyComparison', () => {
     }
   })
 
-  it('says the two copies are the same audio and no difference on a tie', () => {
-    const { rerender } = render(
+  // Same audio means either copy will do; a table of matching figures under that sentence
+  // would only invite the reader to hunt for a difference that is not there.
+  it('says the two copies are the same audio in one sentence, with no table', () => {
+    render(
       <CopyComparison
         verdict={{ winner: 'same' }}
         here={aif}
@@ -204,19 +206,38 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'Same samples, same gain. Only the container differs.',
+      'Both copies hold the same samples at the same gain.',
     )
-    rerender(
+    expect(screen.queryByTestId('copy-row-cutoff')).toBeNull()
+    expect(screen.queryByRole('table')).toBeNull()
+  })
+
+  // A transcode is called on the losing copy's knee, so the winner may cut no higher (a
+  // knee-less 15 kHz WAV); "the Apple Music copy reaches 15 kHz" would then argue the
+  // opposite of the verdict.
+  it('only says how far the winner reaches when it reaches higher', () => {
+    const { rerender } = render(
       <CopyComparison
-        verdict={{ winner: 'tie' }}
-        here={aif}
-        library={wav}
-        hereLabel="AIF"
-        libraryLabel="WAV"
+        verdict={{ winner: 'b', reason: 'transcode' }}
+        here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
+        library={{ ...aif, cutoffHz: 15000, hasKnee: false }}
+        hereLabel="WAV"
+        libraryLabel="AIF"
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'No measured difference between the two copies.',
+      'This file was made from a lossy source.',
     )
+    expect(screen.getByTestId('copy-sentence').textContent).not.toContain('15')
+    rerender(
+      <CopyComparison
+        verdict={{ winner: 'b', reason: 'transcode' }}
+        here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
+        library={{ ...aif, cutoffHz: 22050, hasKnee: false }}
+        hereLabel="WAV"
+        libraryLabel="AIF"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence').textContent).toContain('reaches 22.1 kHz')
   })
 })
