@@ -1682,10 +1682,6 @@
     "failed": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
-    "tracks_one": "{{count}} Titel",
-    "tracks_other": "{{count}} Titel",
-    "separators_one": "{{count}} Trenner",
-    "separators_other": "{{count}} Trenner",
     "separator": "Trenner"
   },
   "applePlaylist": {

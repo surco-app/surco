@@ -1682,10 +1682,6 @@
     "failed": "No se pudo leer la colección. Si acabas de cambiar algo, vuelve a Surco en unos segundos.",
     "empty": "No hay playlists.",
     "noMatch": "Ninguna playlist coincide.",
-    "tracks_one": "{{count}} pista",
-    "tracks_other": "{{count}} pistas",
-    "separators_one": "{{count}} separador",
-    "separators_other": "{{count}} separadores",
     "separator": "separador"
   },
   "applePlaylist": {

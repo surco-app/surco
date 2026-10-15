@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { playlistCounts, playlistView } from './playlistView'
+import { playlistView } from './playlistView'
 
 function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
@@ -57,11 +57,5 @@ describe('playlistView', () => {
   it('skips rows not loaded yet instead of holding a gap', () => {
     const view = playlistView([B], [entry('/m/A.wav'), entry('/m/B.wav'), entry(null)])
     expect(view.tracks.map((t) => t.id)).toEqual(['b'])
-  })
-})
-
-describe('playlistCounts', () => {
-  it('counts real tracks apart from separators, file-less rows included as tracks', () => {
-    expect(playlistCounts([entry('/m/A.wav'), entry(SEP, true), entry(null)])).toEqual({ tracks: 2, separators: 1 })
   })
 })

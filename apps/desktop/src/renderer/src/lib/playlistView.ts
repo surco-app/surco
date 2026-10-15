@@ -30,8 +30,3 @@ export function playlistView(
   }
   return { tracks: shown, separatorBefore }
 }
-
-export function playlistCounts(entries: SourcePlaylistEntry[]): { tracks: number; separators: number } {
-  const separators = entries.filter((e) => e.separator).length
-  return { tracks: entries.length - separators, separators }
-}
