@@ -62,7 +62,19 @@
       "fill": "Remplir depuis le nom",
       "findReplace": "Rechercher et remplacer…",
       "trash": "Mettre à la corbeille",
-      "clear": "Vider la liste"
+      "clear": "Vider la liste",
+      "scope": {
+        "list_zero": "La liste est vide",
+        "list_one": "Le seul morceau de la liste. Modifie le fichier",
+        "list_other": "Les {{count}} morceaux de la liste. Modifie les fichiers",
+        "playlistFiles_zero": "« {{name}} » n'a aucun morceau à vérifier",
+        "playlistFiles_one": "Le seul morceau de « {{name}} ». Modifie le fichier",
+        "playlistFiles_other": "Les {{count}} morceaux de « {{name}} ». Modifie les fichiers",
+        "playlistMusic_zero": "« {{name}} » n'a aucun morceau à vérifier",
+        "playlistMusic_one": "Le seul morceau de « {{name}} ». Modifie Apple Music",
+        "playlistMusic_other": "Les {{count}} morceaux de « {{name}} ». Modifie Apple Music",
+        "duplicates": "De « {{name}} » dans toute ta bibliothèque Music"
+      }
     },
     "cancelAutoMatch": "Arrêter l'association automatique : les morceaux déjà associés gardent leurs tags",
     "cancelAnalyze": "Arrêter l'analyse : les morceaux déjà analysés gardent leur verdict"
@@ -126,7 +138,6 @@
     "libraryGroup": "Ranger la bibliothèque",
     "reviewMusic": "Vérifier les métadonnées dans Apple Music",
     "reviewMusicHint": "Fautes, majuscules et caractères invisibles",
-    "showDuplicates": "Afficher les doublons",
     "duplicatesHint": "Le même morceau enregistré deux fois"
   },
   "errors": {

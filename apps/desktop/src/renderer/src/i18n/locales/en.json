@@ -62,7 +62,19 @@
       "fill": "Fill from file name",
       "findReplace": "Find and replace…",
       "trash": "Move to Trash",
-      "clear": "Clear list"
+      "clear": "Clear list",
+      "scope": {
+        "list_zero": "The list is empty",
+        "list_one": "The only track in the list. Changes the file",
+        "list_other": "The {{count}} tracks in the list. Changes the files",
+        "playlistFiles_zero": "“{{name}}” has no tracks to review",
+        "playlistFiles_one": "The only track in “{{name}}”. Changes the file",
+        "playlistFiles_other": "The {{count}} tracks in “{{name}}”. Changes the files",
+        "playlistMusic_zero": "“{{name}}” has no tracks to review",
+        "playlistMusic_one": "The only track in “{{name}}”. Changes Apple Music",
+        "playlistMusic_other": "The {{count}} tracks in “{{name}}”. Changes Apple Music",
+        "duplicates": "From “{{name}}” across your whole Music library"
+      }
     },
     "cancelAutoMatch": "Stop auto-matching: tracks already matched keep their tags",
     "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"
@@ -126,7 +138,6 @@
     "libraryGroup": "Tidy the library",
     "reviewMusic": "Review metadata in Apple Music",
     "reviewMusicHint": "Typos, capitals and invisible characters",
-    "showDuplicates": "Show duplicates",
     "duplicatesHint": "The same track saved twice"
   },
   "errors": {

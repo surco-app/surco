@@ -62,7 +62,19 @@
       "fill": "Rellenar desde el nombre",
       "findReplace": "Buscar y reemplazar…",
       "trash": "Mover a la papelera",
-      "clear": "Vaciar la lista"
+      "clear": "Vaciar la lista",
+      "scope": {
+        "list_zero": "La lista está vacía",
+        "list_one": "La única pista de la lista. Cambia el fichero",
+        "list_other": "Las {{count}} pistas de la lista. Cambia los ficheros",
+        "playlistFiles_zero": "«{{name}}» no tiene pistas que revisar",
+        "playlistFiles_one": "La única pista de «{{name}}». Cambia el fichero",
+        "playlistFiles_other": "Las {{count}} pistas de «{{name}}». Cambia los ficheros",
+        "playlistMusic_zero": "«{{name}}» no tiene pistas que revisar",
+        "playlistMusic_one": "La única pista de «{{name}}». Cambia Apple Music",
+        "playlistMusic_other": "Las {{count}} pistas de «{{name}}». Cambia Apple Music",
+        "duplicates": "De «{{name}}» en toda tu biblioteca de Music"
+      }
     },
     "cancelAutoMatch": "Detener el emparejado: las pistas ya emparejadas conservan sus etiquetas",
     "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
@@ -126,7 +138,6 @@
     "libraryGroup": "Ordenar la biblioteca",
     "reviewMusic": "Revisar metadatos en Apple Music",
     "reviewMusicHint": "Erratas, mayúsculas y caracteres invisibles",
-    "showDuplicates": "Mostrar duplicados",
     "duplicatesHint": "La misma pista guardada dos veces"
   },
   "errors": {

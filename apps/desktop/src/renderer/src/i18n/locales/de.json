@@ -62,7 +62,19 @@
       "fill": "Aus Dateiname füllen",
       "findReplace": "Suchen und ersetzen…",
       "trash": "In den Papierkorb",
-      "clear": "Liste leeren"
+      "clear": "Liste leeren",
+      "scope": {
+        "list_zero": "Die Liste ist leer",
+        "list_one": "Der einzige Track der Liste. Ändert die Datei",
+        "list_other": "Die {{count}} Tracks der Liste. Ändert die Dateien",
+        "playlistFiles_zero": "„{{name}}“ hat keine Tracks zum Prüfen",
+        "playlistFiles_one": "Der einzige Track aus „{{name}}“. Ändert die Datei",
+        "playlistFiles_other": "Die {{count}} Tracks aus „{{name}}“. Ändert die Dateien",
+        "playlistMusic_zero": "„{{name}}“ hat keine Tracks zum Prüfen",
+        "playlistMusic_one": "Der einzige Track aus „{{name}}“. Ändert Apple Music",
+        "playlistMusic_other": "Die {{count}} Tracks aus „{{name}}“. Ändert Apple Music",
+        "duplicates": "Aus „{{name}}“ in deiner ganzen Music-Mediathek"
+      }
     },
     "cancelAutoMatch": "Automatisches Zuordnen stoppen: bereits zugeordnete Tracks behalten ihre Tags",
     "cancelAnalyze": "Analyse stoppen: bereits analysierte Tracks behalten ihr Ergebnis"
@@ -126,7 +138,6 @@
     "libraryGroup": "Bibliothek aufräumen",
     "reviewMusic": "Metadaten in Apple Music prüfen",
     "reviewMusicHint": "Tippfehler, Großschreibung, unsichtbare Zeichen",
-    "showDuplicates": "Duplikate anzeigen",
     "duplicatesHint": "Derselbe Track doppelt gespeichert"
   },
   "errors": {
