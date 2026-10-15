@@ -1218,12 +1218,15 @@ export default function App(): React.JSX.Element {
   // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
   // the crate gone single-format — fall back to every format so the user is never stranded
-  // on an empty, no-longer-offered refinement.
+  // on an empty, no-longer-offered refinement. Judged on the whole working list, not the
+  // open playlist: a playlist without that format, or one whose rows are still loading,
+  // is not the crate losing it, and must not throw the choice away for Tracks too.
+  const crateFormats = useMemo(() => formatBuckets(tracksView), [tracksView])
   useEffect(() => {
-    if (formatFilter && !formatTally.some((f) => f.format === formatFilter)) {
+    if (formatFilter && !crateFormats.some((f) => f.format === formatFilter)) {
       setFormatFilter(null)
     }
-  }, [formatTally, formatFilter, setFormatFilter])
+  }, [crateFormats, formatFilter, setFormatFilter])
   // Same identity guard as selectedTracks above, for the same reason: filtering and
   // sorting mint a new array on every tracks change, so an edit to one row handed the
   // list a fresh reference even when the visible rows were untouched — breaking the memo

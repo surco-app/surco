@@ -875,6 +875,37 @@ describe('App source playlists', () => {
     expect(screen.getByTestId('source-tree-search')).toHaveValue('')
   })
 
+  // The format filter is the user's choice for the working list; a playlist without that
+  // format (or one whose rows are still loading) must not throw it away for Tracks too.
+  it('keeps the format filter for the working list after opening a playlist without that format', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(window.api.loadRekordboxPlaylist).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 0))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+  })
+
   // A collection repeats the same set across folders ("Todas", "Top") in another order.
   // Keeping the selected track's list still while it is edited must not keep the previous
   // playlist's order once another playlist is opened, or its breaks land between the wrong rows.
