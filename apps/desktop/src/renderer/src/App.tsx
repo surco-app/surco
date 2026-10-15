@@ -1188,6 +1188,9 @@ export default function App(): React.JSX.Element {
     [browser.playlist, browser.entries, tracksView],
   )
   const scopeTracks = playlistScope?.tracks ?? tracksView
+  // Keyed on the playlist once its rows are applied, not when it is picked: while its
+  // entries load the list still shows the working list, and the order must follow on arrival.
+  const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
   tracksViewRef.current = tracksView
   settingsRef.current = settings
   // Feed the snapshot to the background sweep so it can re-check ownership against each
@@ -1236,7 +1239,9 @@ export default function App(): React.JSX.Element {
     // Picking another track releases the hold, but not while the pointer is still over the
     // list: a re-sort there slides rows under the cursor, and the second click of a
     // double-click lands on whatever slid into place. The order catches up when it leaves.
-    const viewKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}`
+    // The open playlist is part of the view: another playlist with the same tracks in its
+    // own order must show that order, or its separators land between the wrong rows.
+    const viewKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}`
     const hold =
       heldOrder.current.view === viewKey &&
       (heldOrder.current.selected === selectedId || listHovered)
@@ -1244,7 +1249,16 @@ export default function App(): React.JSX.Element {
     if (!hold) heldOrder.current = { view: viewKey, selected: selectedId }
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
-  }, [scopeTracks, filterSelection, deferredSearch, sortBy, sortDir, selectedId, listHovered])
+  }, [
+    scopeTracks,
+    filterSelection,
+    deferredSearch,
+    sortBy,
+    sortDir,
+    openPlaylistId,
+    selectedId,
+    listHovered,
+  ])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.

@@ -806,6 +806,55 @@ describe('App source playlists', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
     expect(screen.queryByTestId(/^track-separator-/)).not.toBeInTheDocument()
   })
+
+  // A collection repeats the same set across folders ("Todas", "Top") in another order.
+  // Keeping the selected track's list still while it is edited must not keep the previous
+  // playlist's order once another playlist is opened, or its breaks land between the wrong rows.
+  it('shows the next playlist in its own order even while a track stays selected', async () => {
+    const entry = (path: string | null, separator = false) => ({ path, separator, meta: {} })
+    const playlists: Record<string, ReturnType<typeof entry>[]> = {
+      f: [entry('/m/a.wav'), entry('/m/_.mp3', true), entry('/m/b.wav'), entry('/m/c.wav')],
+      g: [entry('/m/c.wav'), entry('/m/b.wav'), entry('/m/_.mp3', true), entry('/m/a.wav')],
+    }
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
+        artist: 'DJ',
+      })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
+        { id: 'f', name: 'Todas', kind: 'playlist', count: 3 },
+        { id: 'g', name: 'Top', kind: 'playlist', count: 3 },
+      ]),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) => playlists[id]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent)
+    await waitFor(() => expect(screen.queryByTestId(/^track-separator-/)).toBeInTheDocument())
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+
+    fireEvent.click(screen.getByTestId('source-node-g'))
+    await waitFor(() =>
+      expect(titles()).toEqual([
+        expect.stringContaining('Charlie'),
+        expect.stringContaining('Bravo'),
+        expect.stringContaining('Alpha'),
+      ]),
+    )
+    const [, rowBravo, rowAlpha] = screen.getAllByTestId('track-row')
+    const separator = screen.getByTestId(/^track-separator-/)
+    expect(
+      rowBravo.compareDocumentPosition(separator) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      separator.compareDocumentPosition(rowAlpha) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
 })
 
 describe('App track list label', () => {
