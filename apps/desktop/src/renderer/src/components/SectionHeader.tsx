@@ -40,10 +40,6 @@ interface SectionHeaderProps {
   // set right after the title on the same line, open or folded. It is described to a screen
   // reader rather than folded into the button's name, which stays the title alone.
   status?: React.ReactNode
-  // A control that belongs to the section's state (the metadata's copy verdict, which opens
-  // its numbers). It follows the status it qualifies, outside the fold button: nested there,
-  // a click on it folded the section and the keyboard could not reach it.
-  statusAction?: React.ReactNode
   // A section that has nothing to show for this selection keeps its place, folded and off.
   disabled?: boolean
 }
@@ -61,23 +57,12 @@ export function SectionHeader({
   maximizable,
   bodyId,
   status,
-  statusAction,
   disabled,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const statusId = useId()
   const { maximized, setMaximized } = useMaximizedSection()
   const isMaximized = sectionId !== undefined && maximized === sectionId
-  const summaryNode = !open && summary && (
-    <span
-      data-testid={summaryTestId}
-      className={`w-0 min-w-0 flex-1 truncate pl-3 text-right text-xs font-normal tabular-nums ${
-        summaryMuted ? 'text-fg-faint' : 'text-fg-dim'
-      }`}
-    >
-      {summary}
-    </span>
-  )
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
       {/* The button stretches across the free width (and pads a few px vertically)
@@ -89,7 +74,7 @@ export function SectionHeader({
           buttons don't fit beside it, the row wraps them onto a line of their own instead of
           letting them paint over the title. The folded summary is zero-width at rest and only
           grows into free space, so a long digest truncates rather than forcing that wrap. */}
-      <h3 className={`flex min-w-min ${statusAction ? 'shrink-0' : 'flex-1'}`}>
+      <h3 className="flex min-w-min flex-1">
         <button
           type="button"
           // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
@@ -113,26 +98,18 @@ export function SectionHeader({
               {status}
             </span>
           )}
-          {!statusAction && summaryNode}
+          {!open && summary && (
+            <span
+              data-testid={summaryTestId}
+              className={`w-0 min-w-0 flex-1 truncate pl-3 text-right text-xs font-normal tabular-nums ${
+                summaryMuted ? 'text-fg-faint' : 'text-fg-dim'
+              }`}
+            >
+              {summary}
+            </span>
+          )}
         </button>
       </h3>
-      {statusAction && (
-        <>
-          {statusAction}
-          {/* The rest of the row still folds the section for a pointer, as the one button
-              did before the state's own control split it; the keyboard has that button. */}
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-hidden="true"
-            onClick={onToggle}
-            disabled={disabled}
-            className="-my-1.5 -ml-3 flex min-w-0 flex-1 self-stretch py-1.5"
-          >
-            {summaryNode}
-          </button>
-        </>
-      )}
       {help && (
         <span
           data-testid="section-help"

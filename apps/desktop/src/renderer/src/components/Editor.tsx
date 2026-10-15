@@ -1,4 +1,5 @@
 import {
+  ChevronRight,
   CircleCheck,
   CircleEqual,
   Copy,
@@ -1168,9 +1169,10 @@ export const Editor = memo(function Editor({
         : copyVerdict.winner === 'b'
           ? 'library'
           : 'same'
-  // The verdict reads as the swap the replace button offers: the library copy, an arrow, this
-  // file's format, and the mark the library status already uses for "keep the library's".
-  // Its words are the button's name, for a screen reader and the tests alike.
+  // The comparison with the library's copy lives in Audio quality, under the spectrum: that
+  // section speaks of the open track, so "better" or "worse" needs no subject, and its
+  // numbers sit beside the spectrum they are read with. The Metadata header keeps only the
+  // library mark, which still turns to a warning when the library's copy is the better one.
   const copyStateIcon = {
     here: <CircleCheck className="h-3.5 w-3.5 text-[var(--color-good)]" aria-hidden="true" />,
     library: <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />,
@@ -1179,28 +1181,45 @@ export const Editor = memo(function Editor({
       <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
     ),
   }
-  const copyVerdictPill =
+  const copyLine =
     !isMulti && inLibrary === 'yes' && copyState ? (
-      <button
-        type="button"
-        data-testid="copy-verdict"
-        data-state={copyState}
-        aria-label={tr(COPY_STATE_LABEL[copyState])}
-        aria-expanded={copyOpen}
-        aria-controls={copyCardId}
-        disabled={copyState === 'measuring'}
-        onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-        className={`press -my-1 -ml-2 flex shrink-0 items-center gap-1.5 rounded-md px-1 py-1 text-xs font-medium whitespace-nowrap hover:bg-[var(--color-hover)] ${
-          copyState === 'library'
-            ? 'text-[var(--color-warn)]'
-            : copyState === 'here'
-              ? 'text-fg-muted'
-              : 'text-fg-dim'
-        }`}
-      >
-        <span aria-hidden="true">→ {fileExtension(item.inputPath)}</span>
-        {copyStateIcon[copyState]}
-      </button>
+      <>
+        <button
+          type="button"
+          data-testid="copy-verdict"
+          data-state={copyState}
+          aria-expanded={copyOpen}
+          aria-controls={copyCardId}
+          disabled={copyState === 'measuring'}
+          onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+          className={`press -mx-1 mt-2 flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs hover:bg-[var(--color-hover)] disabled:hover:bg-transparent ${
+            copyState === 'library'
+              ? 'text-[var(--color-warn)]'
+              : copyState === 'here'
+                ? 'text-fg-muted'
+                : 'text-fg-dim'
+          }`}
+        >
+          {copyStateIcon[copyState]}
+          {tr(COPY_STATE_LABEL[copyState], { library: libraryName })}
+          {copyState !== 'measuring' && (
+            <ChevronRight
+              className={`h-3 w-3 text-fg-dim transition-transform ${copyOpen ? 'rotate-90' : ''}`}
+              aria-hidden="true"
+            />
+          )}
+        </button>
+        {copyOpen && copyVerdict && hereFacts && libraryFacts && (
+          <CopyComparison
+            id={copyCardId}
+            verdict={copyVerdict}
+            here={hereFacts}
+            library={libraryFacts}
+            hereLabel={hereFacts.ext}
+            libraryLabel={libraryFacts.ext}
+          />
+        )}
+      </>
     ) : undefined
   const libraryMarks = (
     <>
@@ -1292,7 +1311,6 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             status={hasLibraryMarks ? libraryMarks : undefined}
-            statusAction={copyVerdictPill}
             right={
               // The two action groups (file: copy/search — tags: clear/fill/format) ride the
               // title line as bare toolbar glyphs, split by a divider.
@@ -1319,16 +1337,6 @@ export const Editor = memo(function Editor({
               </div>
             }
           />
-          {copyOpen && copyVerdict && hereFacts && libraryFacts && (
-            <CopyComparison
-              id={copyCardId}
-              verdict={copyVerdict}
-              here={hereFacts}
-              library={libraryFacts}
-              hereLabel={hereFacts.ext}
-              libraryLabel={libraryFacts.ext}
-            />
-          )}
           <SectionBody open={formOpen} id={formBodyId}>
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
@@ -1430,6 +1438,7 @@ export const Editor = memo(function Editor({
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             showHints={showEditorHints}
                             outputSampleRate={outputSampleRate}
+                            copyComparison={copyLine}
                           />
                         )
                       )
