@@ -304,6 +304,8 @@ function scenarioApi(
     readMeta: (path) => invokeMain('audio:meta', path),
     spectrogram: (path, priority) => invokeMain('audio:spectrogram', path, priority),
     loudness: (path, priority) => invokeMain('audio:loudness', path, priority),
+    fingerprint: (path, priority) => invokeMain('audio:fingerprint', path, priority),
+    comparePair: (a, b) => invokeMain('audio:pair', a, b),
     peekAnalysis: (family, path) => invokeMain('audio:peek', family, path),
     bpm: (path, priority) => invokeMain('audio:bpm', path, priority),
     key: (path, priority) => invokeMain('audio:key', path, priority),
