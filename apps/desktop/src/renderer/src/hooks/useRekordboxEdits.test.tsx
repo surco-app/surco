@@ -39,7 +39,7 @@ function setup(answer: Promise<RekordboxEditResult>) {
     }),
     { wrapper },
   )
-  return { ...hook, notify, loadRekordboxPlaylist }
+  return { ...hook, notify, loadRekordboxPlaylist, client }
 }
 
 describe('useRekordboxEdits', () => {
@@ -72,6 +72,36 @@ describe('useRekordboxEdits', () => {
       expect(result.current.entries?.map((e) => e.linkId)).toEqual(['a', 'b', 'c']),
     )
     expect(notify).toHaveBeenCalledWith('Nothing changed because rekordbox is still open', 'danger')
+  })
+
+  // A focus re-read already in flight when the row is dropped answers with the order from
+  // before the move; landing over the drawn move, it flashed the old order until the
+  // re-read after the write put the new one back.
+  it('keeps the drawn move over a re-read that started before it', async () => {
+    const { result, loadRekordboxPlaylist, client } = setup(new Promise(() => {}))
+    await waitFor(() => expect(result.current.entries).toHaveLength(3))
+    let stale: (rows: SourcePlaylistEntry[]) => void = () => {}
+    loadRekordboxPlaylist.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          stale = resolve
+        }),
+    )
+    act(() => {
+      void client.invalidateQueries({ queryKey: ['source-playlist'] })
+    })
+    await waitFor(() => expect(loadRekordboxPlaylist).toHaveBeenCalledTimes(2))
+    act(() => {
+      void result.current.edit(
+        { kind: 'move', playlistId: 'f', linkIds: ['c'], beforeLinkId: 'a' },
+        'Factory',
+      )
+    })
+    await act(async () => {
+      stale(ORDER)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.entries?.map((e) => e.linkId)).toEqual(['c', 'a', 'b'])
   })
 
   it('reports an add by what it did with each track', async () => {

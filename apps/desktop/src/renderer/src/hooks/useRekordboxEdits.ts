@@ -19,11 +19,16 @@ export function useRekordboxEdits(
   const { t: tr } = useTranslation()
   return useCallback(
     async (edit, playlistName) => {
-      if (edit.kind === 'move')
+      if (edit.kind === 'move') {
+        const key = ['source-playlist', 'rekordbox', edit.playlistId]
+        // A re-read already in flight (a refocus) carries the order from before the move
+        // and would land over it; it is dropped, and the re-read after the write replaces it.
+        void queryClient.cancelQueries({ queryKey: key })
         queryClient.setQueryData<SourcePlaylistEntry[]>(
-          ['source-playlist', 'rekordbox', edit.playlistId],
+          key,
           (prev) => prev && movedEntries(prev, edit.linkIds, edit.beforeLinkId),
         )
+      }
       let result: RekordboxEditResult
       try {
         result = await window.api.editRekordboxPlaylist(edit)
