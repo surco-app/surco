@@ -109,27 +109,3 @@ describe('editor heading outline', () => {
     expect(screen.getByRole('heading', { level: 4, name: 'Loudness' })).toBeInTheDocument()
   })
 })
-
-describe('SectionHeader with a control on its status', () => {
-  // The copy verdict sits right after the library status it qualifies, so it splits the
-  // header row; a click on the rest of the row must still fold the section as before, and
-  // the verdict stays out of the heading's name, which a screen reader lists headings by.
-  it('folds from the rest of the row and keeps the verdict out of the heading', () => {
-    const toggles: boolean[] = []
-    render(
-      <SectionHeader
-        title="Metadata"
-        open={false}
-        onToggle={() => toggles.push(true)}
-        status="Apple Music"
-        statusAction={<button type="button">This file is better</button>}
-        summary="Netzwerk — Memories"
-        summaryTestId="s"
-      />,
-    )
-    expect(screen.getByRole('heading', { level: 3 })).not.toHaveAccessibleName(/better/)
-    screen.getByTestId('s').click()
-    screen.getByRole('button', { name: 'This file is better' }).click()
-    expect(toggles).toHaveLength(1)
-  })
-})

@@ -3452,7 +3452,8 @@ describe('Editor Apple Music library badge', () => {
     const { onProcess } = renderEditor(
       { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
       'wav',
-      { libraryIndex: ownedWithId, showSpectrum },
+      // The comparison reads in Audio quality, so that section is mounted.
+      { libraryIndex: ownedWithId, showSpectrum, showLoudness: true },
     )
     return { api, onProcess }
   }
@@ -3467,8 +3468,7 @@ describe('Editor Apple Music library badge', () => {
     )
     const pill = screen.getByTestId('copy-verdict')
     // The row shows the swap the replace button offers; the verdict is the control's name.
-    expect(pill).toHaveTextContent('→ AIF')
-    expect(pill).toHaveAccessibleName('This file is better')
+    expect(pill).toHaveTextContent('Better copy than the Apple Music one')
     expect(screen.queryByTestId('copy-sentence')).toBeNull()
     fireEvent.click(pill)
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
@@ -3544,7 +3544,9 @@ describe('Editor Apple Music library badge', () => {
     await waitFor(() =>
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
     )
-    expect(screen.getByTestId('copy-verdict')).toHaveAccessibleName('Apple Music has a better one')
+    expect(screen.getByTestId('copy-verdict')).toHaveTextContent(
+      'Worse copy than the Apple Music one',
+    )
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
   })
 
@@ -3582,7 +3584,7 @@ describe('Editor Apple Music library badge', () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, pair: new Promise(() => {}) })
     const pill = await screen.findByTestId('copy-verdict')
     expect(pill).toHaveAttribute('data-state', 'measuring')
-    expect(pill).toHaveAccessibleName('Comparing…')
+    expect(pill).toHaveTextContent('Comparing with the Apple Music copy…')
   })
 
   // A copy that could not be measured gives no verdict at all; the pill that was there
