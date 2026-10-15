@@ -295,6 +295,27 @@ describe('opening a source playlist', () => {
     expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff', '/m/b.aiff'])
   })
 
+  it('does not report as skipped what an overlapping open of the same playlist just added', async () => {
+    const pending: Array<() => void> = []
+    const expandPaths = vi.fn(
+      (paths: string[]) => new Promise<string[]>((resolve) => pending.push(() => resolve(paths))),
+    )
+    const onDuplicatesSkipped = vi.fn()
+    const { result } = setup({ expandPaths }, { onDuplicatesSkipped })
+    let first: Promise<void> = Promise.resolve()
+    let second: Promise<void> = Promise.resolve()
+    act(() => {
+      first = result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
+      second = result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
+    })
+    await act(async () => {
+      for (const resolve of pending) resolve()
+      await Promise.all([first, second])
+    })
+    expect(onDuplicatesSkipped).not.toHaveBeenCalled()
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff', '/m/b.aiff'])
+  })
+
   it('fills bpm and key from rekordbox when the file has none', async () => {
     const { result } = setup({
       readMeta: vi.fn().mockResolvedValue({
