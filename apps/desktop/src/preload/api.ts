@@ -34,6 +34,7 @@ import type {
   MusicFixProgress,
   MusicReviewEntry,
   MusicReviewField,
+  PairFacts,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
@@ -274,6 +275,8 @@ export interface Api {
     path: string,
   ) => Promise<PeekableAnalyses[F] | null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
+  fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
+  comparePair: (a: string, b: string) => Promise<PairFacts | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>

@@ -28,6 +28,7 @@ import type {
   MusicReviewField,
   NormalizeConfig,
   OutputFormat,
+  PairFacts,
   ReviewRawFields,
   TrackMetadata,
   TrackProperties,
@@ -60,6 +61,7 @@ import {
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
+import { fft } from './fft'
 import { measureBands } from './fftBands'
 import {
   detectFftKnee,
@@ -2798,6 +2800,7 @@ export interface AstatsResult {
   dcOffset: number | null
   crestDb: number | null
   noiseFloorDb: number | null
+  peakCount: number | null
 }
 
 // Pulls the channel checks out of astats' summary. Every line carries a
@@ -2813,7 +2816,7 @@ export function parseAstats(stderr: string): AstatsResult | null {
     return Number.isFinite(n) ? n : null
   }
   const channelRms: number[] = []
-  const overall: { peak?: number; rms?: number; dc?: number; noise?: number } = {}
+  const overall: { peak?: number; rms?: number; dc?: number; noise?: number; count?: number } = {}
   let section: 'channel' | 'overall' | null = null
   let seen = false
   for (const raw of stderr.split('\n')) {
@@ -2842,6 +2845,8 @@ export function parseAstats(stderr: string): AstatsResult | null {
       }
       const noise = line.match(/^Noise floor dB:\s*(\S+)/)
       if (noise) overall.noise = finite(noise[1]) ?? undefined
+      const count = line.match(/^Peak count:\s*(\S+)/)
+      if (count) overall.count = finite(count[1]) ?? undefined
     }
   }
   if (!seen) return null
@@ -2852,6 +2857,169 @@ export function parseAstats(stderr: string): AstatsResult | null {
     crestDb:
       overall.peak !== undefined && overall.rms !== undefined ? overall.peak - overall.rms : null,
     noiseFloorDb: overall.noise ?? null,
+    peakCount: overall.count ?? null,
+  }
+}
+
+// An MD5 of the decode as 16-bit stereo 44.1 kHz, so two containers of the same samples
+// (a 24-bit AIFF whose low byte is empty and its 16-bit WAV) read as the same audio
+// whatever their headers declare. Null when the file cannot be decoded.
+export async function audioFingerprint(
+  input: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  try {
+    const { stdout } = await run(
+      ffmpegPath,
+      [
+        '-v',
+        'error',
+        ...forcedInputArgs(input),
+        '-i',
+        input,
+        '-map',
+        '0:a:0',
+        '-ac',
+        '2',
+        '-ar',
+        '44100',
+        '-c:a',
+        'pcm_s16le',
+        '-f',
+        'md5',
+        '-',
+      ],
+      { maxBuffer: 1024 * 64, timeout: ANALYSIS_TIMEOUT_MS, signal },
+    )
+    const match = String(stdout).match(/MD5=([0-9a-f]{32})/)
+    return match ? match[1] : null
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return null
+  }
+}
+
+// Same-master probe, at 44.1 kHz throughout. A lag found at a lower rate cannot settle a
+// 44.1 kHz offset that is not a multiple of the decimation, and on tonal or looped
+// material the true offset, falling between coarse samples, scores below a repeat a beat
+// away: the coarse search then hands the refinement the wrong neighbourhood. The first
+// 91 s of each copy (~16 MB) hold the 60 s compared plus the one second of reach.
+const PAIR_RATE = 44100
+const PAIR_DECODE_SECONDS = 91
+const PAIR_WINDOW_SECONDS = 60
+const PAIR_MIN_SECONDS = 10
+const PAIR_SILENT_RMS = 1e-6
+
+// The lag (in samples, a[i] lines up with b[i + lag]) within one second either way that
+// best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
+// Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
+// window is silent, since silence lines up with anything.
+function bestLag(a: Float32Array, b: Float32Array, from: number): number | null {
+  const reach = PAIR_RATE
+  const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
+  const silent = width * PAIR_SILENT_RMS ** 2
+  const span = width + 2 * reach
+  let n = 1
+  while (n < span) n <<= 1
+  const wRe = new Float64Array(n)
+  const wIm = new Float64Array(n)
+  const sRe = new Float64Array(n)
+  const sIm = new Float64Array(n)
+  let windowEnergy = 0
+  for (let i = 0; i < width; i++) {
+    wRe[i] = a[from + i]
+    windowEnergy += wRe[i] * wRe[i]
+  }
+  if (windowEnergy < silent) return null
+  for (let k = 0; k < span; k++) {
+    const j = from - reach + k
+    if (j >= 0 && j < b.length) sRe[k] = b[j]
+  }
+  const energy = new Float64Array(span + 1)
+  for (let k = 0; k < span; k++) energy[k + 1] = energy[k] + sRe[k] * sRe[k]
+  fft(wRe, wIm)
+  fft(sRe, sIm)
+  for (let k = 0; k < n; k++) {
+    const re = wRe[k] * sRe[k] + wIm[k] * sIm[k]
+    const im = wRe[k] * sIm[k] - wIm[k] * sRe[k]
+    sRe[k] = re
+    sIm[k] = -im
+  }
+  fft(sRe, sIm)
+  let best: number | null = null
+  let bestScore = -Infinity
+  for (let k = 0; k <= 2 * reach; k++) {
+    const e = energy[k + width] - energy[k]
+    if (e < silent) continue
+    const score = sRe[k] / Math.sqrt(e)
+    if (score > bestScore) {
+      bestScore = score
+      best = k - reach
+    }
+  }
+  return best
+}
+
+// Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
+// the start when a is under 90 s). Calibrated on 26 real pairs: the same master
+// correlates 0.992 to 0.9999, a different source 0.38 to 0.86. Null when either file
+// cannot be decoded or is under 10 s, when either side is silent where they meet or they
+// share under 10 s there, or when the best fit is inverted or unrelated (gain <= 0):
+// none of those supports a same-master claim either way.
+export async function comparePair(
+  a: string,
+  b: string,
+  signal?: AbortSignal,
+): Promise<PairFacts | null> {
+  const decode = (input: string): Promise<Float32Array> =>
+    decodePcm(input, {
+      sampleRate: PAIR_RATE,
+      seconds: PAIR_DECODE_SECONDS,
+      maxBufferMb: 16,
+      signal,
+    })
+  let pa: Float32Array
+  let pb: Float32Array
+  try {
+    ;[pa, pb] = await Promise.all([decode(a), decode(b)])
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return null
+  }
+  const minSamples = PAIR_MIN_SECONDS * PAIR_RATE
+  if (pa.length < minSamples || pb.length < minSamples) return null
+  const lag = bestLag(pa, pb, pa.length >= 40 * PAIR_RATE ? 30 * PAIR_RATE : 0)
+  if (lag === null) return null
+  const from = pa.length >= 90 * PAIR_RATE ? 30 * PAIR_RATE : 0
+  const start = Math.max(from, -lag)
+  const end = Math.min(from + PAIR_WINDOW_SECONDS * PAIR_RATE, pa.length, pb.length - lag)
+  const n = end - start
+  let sa = 0
+  let sb = 0
+  let saa = 0
+  let sbb = 0
+  let sab = 0
+  for (let i = start; i < end; i++) {
+    const x = pa[i]
+    const y = pb[i + lag]
+    sa += x
+    sb += y
+    saa += x * x
+    sbb += y * y
+    sab += x * y
+  }
+  const silent = n * PAIR_SILENT_RMS ** 2
+  if (n < minSamples || saa < silent || sbb < silent || sab <= 0) return null
+  const gain = sab / sbb
+  let residual = 0
+  for (let i = start; i < end; i++) {
+    const d = pa[i] - gain * pb[i + lag]
+    residual += d * d
+  }
+  return {
+    correlation: (n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb)),
+    residualDb: residual === 0 ? -Infinity : 10 * Math.log10(residual / saa),
+    gainDb: 20 * Math.log10(gain),
   }
 }
 
@@ -2904,6 +3072,7 @@ export async function measureLoudness(
     dcOffset: stats?.dcOffset ?? null,
     crestDb: stats?.crestDb ?? null,
     noiseFloorDb: stats?.noiseFloorDb ?? null,
+    peakCount: stats?.peakCount ?? null,
   }
 }
 

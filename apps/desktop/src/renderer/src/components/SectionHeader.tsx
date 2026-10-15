@@ -40,6 +40,10 @@ interface SectionHeaderProps {
   // set right after the title on the same line, open or folded. It is described to a screen
   // reader rather than folded into the button's name, which stays the title alone.
   status?: React.ReactNode
+  // A control that belongs to the section's state (the metadata's copy verdict, which opens
+  // its numbers). It sits right after the heading, outside the fold button: nested there, a
+  // click on it folded the section and the keyboard could not reach it.
+  statusAction?: React.ReactNode
   // A section that has nothing to show for this selection keeps its place, folded and off.
   disabled?: boolean
 }
@@ -57,6 +61,7 @@ export function SectionHeader({
   maximizable,
   bodyId,
   status,
+  statusAction,
   disabled,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -110,6 +115,7 @@ export function SectionHeader({
           )}
         </button>
       </h3>
+      {statusAction}
       {help && (
         <span
           data-testid="section-help"

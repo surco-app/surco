@@ -4,6 +4,7 @@ import {
   Globe,
   Music,
   RefreshCw,
+  Scale,
   Scissors,
   Tag,
   TriangleAlert,
@@ -30,6 +31,7 @@ import type {
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
+import { useCopyFacts, usePairFacts } from '../hooks/useCopyFacts'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import type { RememberedPick } from '../hooks/useEditorPicks'
@@ -45,6 +47,7 @@ import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { baseName } from '../lib/baseName'
+import { compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -80,6 +83,7 @@ import { supersededFile } from '../lib/supersededFile'
 import { stripParentheticals } from '../lib/textClean'
 import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
+import { CopyComparison } from './CopyComparison'
 import { DeclickSection } from './DeclickSection'
 import { DiscogsPanel } from './DiscogsPanel'
 import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
@@ -198,6 +202,13 @@ interface Props {
   onExportCollection: () => void
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
+
+const COPY_STATE_LABEL = {
+  here: 'editor.copyHereBetter',
+  library: 'editor.copyLibraryBetter',
+  same: 'editor.copySame',
+  measuring: 'editor.copyComparing',
+} as const
 
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
 // selectedTracks identity), so search keystrokes and progress ticks on other tracks
@@ -332,6 +343,7 @@ export const Editor = memo(function Editor({
   }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
   const formBodyId = useId()
+  const copyCardId = useId()
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
   const outputOpen = sectionOpen.output
@@ -613,20 +625,41 @@ export const Editor = memo(function Editor({
     : ''
   const spectrumInHand = useCachedSpectrum(item.inputPath)
   const replacedCopySpectrum = useCachedSpectrum(replacedCopyPath)
-  const libraryCopyBetter =
+  // The measured comparison of the two copies, 'a' this file and 'b' the library's. Until
+  // every fact is in, the format-and-cutoff check below still answers; a copy that could not
+  // be measured gives no verdict and leaves that check as the only answer. A pair that could
+  // not be lined up is not one master, so compareCopies skips the level criteria and the
+  // format and spectrum still decide.
+  const hereFacts = useCopyFacts(item.inputPath, !!replacedCopyPath, 'high')
+  const libraryFacts = useCopyFacts(replacedCopyPath, !!replacedCopyPath)
+  const copyPair = usePairFacts(item.inputPath, replacedCopyPath, !!replacedCopyPath)
+  const copyVerdict =
+    hereFacts && libraryFacts && copyPair !== undefined
+      ? compareCopies(hereFacts, libraryFacts, copyPair)
+      : null
+  const copyMeasuring =
     !!replacedCopyPath &&
-    replaceWarning(
-      {
-        ext: fileExtension(replacedCopyPath),
-        cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
-        hasKnee: replacedCopySpectrum?.hasKnee,
-      },
-      {
-        ext: fileExtension(item.inputPath),
-        cutoffHz: spectrumInHand?.cutoffHz ?? undefined,
-        hasKnee: spectrumInHand?.hasKnee,
-      },
-    ) !== null
+    (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
+  const [copyOpenFor, setCopyOpenFor] = useState('')
+  const copyOpen =
+    !!copyVerdict &&
+    copyVerdict.winner !== 'tie' &&
+    copyOpenFor === `${item.inputPath}\n${replacedCopyPath}`
+  const libraryCopyBetter = copyVerdict
+    ? copyVerdict.winner === 'b'
+    : !!replacedCopyPath &&
+      replaceWarning(
+        {
+          ext: fileExtension(replacedCopyPath),
+          cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
+          hasKnee: replacedCopySpectrum?.hasKnee,
+        },
+        {
+          ext: fileExtension(item.inputPath),
+          cutoffHz: spectrumInHand?.cutoffHz ?? undefined,
+          hasKnee: spectrumInHand?.hasKnee,
+        },
+      ) !== null
   // What Music holds for this file when it is in the library: grouping and artwork, which
   // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
   useAppleMusicFill({
@@ -1118,6 +1151,36 @@ export const Editor = memo(function Editor({
   // A note glyph and the library's name: a bare green dot beside "Metadata" read as "the
   // tags are fine", when what it reports is that the track is already in the library.
   const libraryName = librarySource === 'engineDj' ? 'Engine DJ' : 'Apple Music'
+  const copyState: keyof typeof COPY_STATE_LABEL | null = copyMeasuring
+    ? 'measuring'
+    : !copyVerdict || copyVerdict.winner === 'tie'
+      ? null
+      : copyVerdict.winner === 'a'
+        ? 'here'
+        : copyVerdict.winner === 'b'
+          ? 'library'
+          : 'same'
+  const copyVerdictPill =
+    !isMulti && inLibrary === 'yes' && copyState ? (
+      <button
+        type="button"
+        data-testid="copy-verdict"
+        data-state={copyState}
+        aria-expanded={copyOpen}
+        aria-controls={copyCardId}
+        disabled={copyState === 'measuring'}
+        onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+        className="press rounded-md"
+      >
+        <SectionPill
+          tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
+          testid="copy-verdict-pill"
+          icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
+        >
+          {tr(COPY_STATE_LABEL[copyState])}
+        </SectionPill>
+      </button>
+    ) : undefined
   const libraryMarks = (
     <>
       {!isMulti && inLibrary === 'yes' && (
@@ -1139,7 +1202,7 @@ export const Editor = memo(function Editor({
           {replacedCopyFormat && (
             <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
           )}
-          {libraryCopyBetter && (
+          {libraryCopyBetter && !copyVerdict && (
             <span data-testid="apple-music-copy-better">· {tr('editor.libraryCopyBetter')}</span>
           )}
         </SectionPill>
@@ -1208,6 +1271,7 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             status={hasLibraryMarks ? libraryMarks : undefined}
+            statusAction={copyVerdictPill}
             right={
               // The two action groups (file: copy/search — tags: clear/fill/format) ride the
               // title line as bare toolbar glyphs, split by a divider.
@@ -1234,6 +1298,16 @@ export const Editor = memo(function Editor({
               </div>
             }
           />
+          {copyOpen && copyVerdict && hereFacts && libraryFacts && (
+            <CopyComparison
+              id={copyCardId}
+              verdict={copyVerdict}
+              here={hereFacts}
+              library={libraryFacts}
+              hereLabel={hereFacts.ext}
+              libraryLabel={libraryFacts.ext}
+            />
+          )}
           <SectionBody open={formOpen} id={formBodyId}>
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
@@ -1533,6 +1607,7 @@ export const Editor = memo(function Editor({
           status={footerStatus}
           stale={stale}
           replaces={!!replaceTarget && !isAmbiguousCandidate(replaceTarget)}
+          libraryBetter={libraryCopyBetter}
           done={done}
           incomplete={incomplete}
           incompleteReason={incompleteReason}

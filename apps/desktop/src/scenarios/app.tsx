@@ -25,6 +25,9 @@ export interface AppScenario {
   drop: (...paths: string[]) => Promise<void>
   select: (title: string) => Promise<void>
   convertAll: () => Promise<void>
+  // jsdom lays nothing out, so no row ever intersects the list; this reports every row the
+  // list observes as on screen, the way scrolling through it would.
+  showRows: () => void
   errors: string[]
   close: () => void
 }
@@ -91,16 +94,41 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
   } satisfies Partial<Api>
 }
 
+type ObserverCallback = (entries: Partial<IntersectionObserverEntry>[]) => void
+
+// Every observer the app created, with the elements it watches, so showRows can report them.
+const observers = new Set<{ callback: ObserverCallback; elements: Set<Element> }>()
+
+function showRows(): void {
+  act(() => {
+    for (const { callback, elements } of observers) {
+      callback([...elements].map((target) => ({ target, isIntersecting: true })))
+    }
+  })
+}
+
 function stubBrowser(): void {
   window.matchMedia = vi.fn().mockReturnValue({
     matches: false,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }) as unknown as typeof window.matchMedia
+  observers.clear()
   globalThis.IntersectionObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
+    private readonly watched: { callback: ObserverCallback; elements: Set<Element> }
+    constructor(callback: ObserverCallback) {
+      this.watched = { callback, elements: new Set() }
+      observers.add(this.watched)
+    }
+    observe(el: Element): void {
+      this.watched.elements.add(el)
+    }
+    unobserve(el: Element): void {
+      this.watched.elements.delete(el)
+    }
+    disconnect(): void {
+      observers.delete(this.watched)
+    }
     takeRecords(): IntersectionObserverEntry[] {
       return []
     }
@@ -178,6 +206,7 @@ export async function openApp(
       )
       fireEvent.click(button())
     },
+    showRows,
     errors,
     close: () => {
       act(() => root.unmount())

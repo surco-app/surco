@@ -1202,6 +1202,21 @@ describe('parseAstats', () => {
   it('returns null when no astats block is present so the caller hides the checks', () => {
     expect(parseAstats('ffmpeg version 7.0\n')).toBeNull()
   })
+
+  it('reads how many samples sit at the peak, the trace a limiter leaves', () => {
+    const stderr = [
+      '[Parsed_astats_0 @ 0x1] Overall',
+      '[Parsed_astats_0 @ 0x1] Peak level dB: -0.940000',
+      '[Parsed_astats_0 @ 0x1] RMS level dB: -11.670050',
+      '[Parsed_astats_0 @ 0x1] Peak count: 1978.000000',
+    ].join('\n')
+    expect(parseAstats(stderr)?.peakCount).toBe(1978)
+  })
+
+  it('leaves the peak count unknown when astats does not print it', () => {
+    const stderr = '[Parsed_astats_0 @ 0x1] Overall\n[Parsed_astats_0 @ 0x1] RMS level dB: -12'
+    expect(parseAstats(stderr)?.peakCount).toBeNull()
+  })
 })
 
 describe('coverArgs', () => {

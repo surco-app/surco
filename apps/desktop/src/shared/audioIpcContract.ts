@@ -2,6 +2,7 @@ import type {
   BpmResult,
   KeyResult,
   LoudnessResult,
+  PairFacts,
   ScanVerdict,
   SpectrumResult,
   SpectrumVerdict,
@@ -45,6 +46,14 @@ export interface AudioAnalysisIpc {
   'audio:loudness': {
     args: [inputPath: string, priority?: 'high' | 'low']
     result: LoudnessResult | null
+  }
+  'audio:fingerprint': {
+    args: [inputPath: string, priority?: 'high' | 'low']
+    result: string | null
+  }
+  'audio:pair': {
+    args: [a: string, b: string]
+    result: PairFacts | null
   }
   'audio:clicks': {
     args: [inputPath: string, priority?: 'high' | 'low']

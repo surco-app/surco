@@ -29,6 +29,8 @@ interface ExportButtonProps {
   // The file would supersede a copy already in the library, so the button offers a
   // replacement instead of an add.
   replaces?: boolean
+  // The library's copy measured better, so the replace offer says so instead.
+  libraryBetter?: boolean
   done: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
@@ -92,6 +94,7 @@ export function ExportButton({
   status,
   stale,
   replaces,
+  libraryBetter,
   done,
   stage,
   outputFormat,
@@ -142,6 +145,7 @@ export function ExportButton({
     inMusic,
     stale,
     replaces,
+    libraryBetter,
     done,
     withAppleMusic,
     withEngineDj,

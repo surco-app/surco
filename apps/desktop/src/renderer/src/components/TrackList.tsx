@@ -1,4 +1,14 @@
-import { Check, CircleAlert, Play, TriangleAlert, Undo2, X } from 'lucide-react'
+import {
+  Check,
+  CircleAlert,
+  Copy,
+  CopyCheck,
+  CopyMinus,
+  Play,
+  TriangleAlert,
+  Undo2,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import {
   memo,
@@ -16,6 +26,7 @@ import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { activeCleanups } from '../lib/autoClean'
 import { isStale } from '../lib/dirty'
+import type { DuplicateRank } from '../lib/duplicateRanks'
 import { formatTime } from '../lib/duration'
 import { prefersReducedMotion } from '../lib/motion'
 import { isMacOS } from '../lib/platform'
@@ -75,6 +86,8 @@ interface Props {
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
   onOpenBackup?: (track: TrackItem) => void
+  // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
+  duplicateRankById?: ReadonlyMap<string, DuplicateRank>
   // Rows kept on screen after the active filter stopped matching them (filterWithSticky),
   // drawn dimmed so they read as handled until the next filter refresh drops them.
   outsideFilter?: ReadonlySet<string>
@@ -291,6 +304,8 @@ interface RowProps {
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
   backupAt?: number
   onOpenBackup?: (track: TrackItem) => void
+  // This row's own rank, not the map, so only the rows whose rank changed re-render.
+  duplicate?: DuplicateRank
   outsideFilter: boolean
 }
 
@@ -320,6 +335,7 @@ const TrackRow = memo(function TrackRow({
   rowRegistry,
   backupAt,
   onOpenBackup,
+  duplicate,
   outsideFilter,
 }: RowProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -342,6 +358,23 @@ const TrackRow = memo(function TrackRow({
             timeStyle: 'short',
           }).format(backupAt),
         })
+  const duplicateLabel = !duplicate
+    ? ''
+    : duplicate.rank === 'best'
+      ? tr('trackList.copyBest', {
+          count: duplicate.count,
+          // The best row describes the copy that lost, and "the other" only fits a pair.
+          reason: tr(
+            duplicate.reason === 'transcode' && duplicate.count > 2
+              ? 'trackList.copyReason.transcodeMany'
+              : `trackList.copyReason.${duplicate.reason}`,
+          ),
+        })
+      : duplicate.rank === 'worse'
+        ? tr('trackList.copyWorse', {
+            reason: tr(`trackList.copyReasonWorse.${duplicate.reason}`),
+          })
+        : tr(duplicate.identical ? 'trackList.copySame' : 'trackList.copyNoDifference')
   const rowRef = useRef<HTMLDivElement>(null)
   const [swipe, setSwipe] = useState(0)
   const [tracking, setTracking] = useState(false)
@@ -710,6 +743,23 @@ const TrackRow = memo(function TrackRow({
                     <span className="sr-only">{tr('trackList.cleaned')}</span>
                   </span>
                 )}
+                {duplicate && (
+                  <span
+                    data-testid="track-duplicate"
+                    data-rank={duplicate.rank}
+                    className={`group/dot relative flex shrink-0 items-center ${duplicate.rank === 'best' ? 'text-good' : 'text-fg-faint'}`}
+                  >
+                    {duplicate.rank === 'best' ? (
+                      <CopyCheck className="h-3 w-3" aria-hidden="true" />
+                    ) : duplicate.rank === 'worse' ? (
+                      <Copy className="h-3 w-3" aria-hidden="true" />
+                    ) : (
+                      <CopyMinus className="h-3 w-3" aria-hidden="true" />
+                    )}
+                    <Tooltip label={duplicateLabel} align="end" scope="dot" />
+                    <span className="sr-only">{duplicateLabel}</span>
+                  </span>
+                )}
                 {/* A fixed slot, right-aligned under the duration, so the two read as one
                     trailing column and the review sparkle's place never moves. Wide enough for
                     the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
@@ -846,6 +896,7 @@ export const TrackList = memo(function TrackList({
   rowRegistry,
   backupAtByPath,
   onOpenBackup,
+  duplicateRankById,
   outsideFilter,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
@@ -1000,6 +1051,7 @@ export const TrackList = memo(function TrackList({
             rowRegistry={rowRegistry}
             backupAt={backupAtByPath?.get(t.inputPath)}
             onOpenBackup={onOpenBackup}
+            duplicate={duplicateRankById?.get(t.id)}
             outsideFilter={outsideFilter?.has(t.id) ?? false}
           />
         ))}

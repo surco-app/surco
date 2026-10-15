@@ -17,6 +17,7 @@ import type {
   MusicFixProgress,
   MusicReviewEntry,
   MusicReviewField,
+  PairFacts,
   ProcessProgress,
   RekordboxSyncIssue,
   ScanVerdict,
@@ -208,6 +209,9 @@ const api: Api = {
     invokeAudio('audio:peek', family, path) as Promise<PeekableAnalyses[F] | null>,
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     invokeAudio('audio:loudness', path, priority),
+  fingerprint: (path: string, priority: 'high' | 'low' = 'low'): Promise<string | null> =>
+    invokeAudio('audio:fingerprint', path, priority),
+  comparePair: (a: string, b: string): Promise<PairFacts | null> => invokeAudio('audio:pair', a, b),
   properties: (path: string): Promise<TrackProperties | null> =>
     invokeAudio('audio:properties', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>

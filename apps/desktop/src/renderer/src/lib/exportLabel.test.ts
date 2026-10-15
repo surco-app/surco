@@ -74,6 +74,29 @@ describe('exportButtonLabel', () => {
     ).toEqual({ key: 'editor.replaceMusic', options: { format: 'AIFF' } })
   })
 
+  // Replacing a copy that measured better pushes the worse file into the library. The
+  // button still names what pressing it does, and the "anyway" says it goes against the
+  // verdict the pill shows.
+  it('offers the replace as a deliberate one when Apple Music has the better copy', () => {
+    expect(
+      exportButtonLabel({
+        ...base,
+        replaces: true,
+        libraryBetter: true,
+        withAppleMusic: true,
+        format: 'AIFF',
+      }),
+    ).toEqual({ key: 'editor.libraryHasBetter', options: { format: 'AIFF' } })
+  })
+
+  // The flag only speaks to the replace offer; with nothing to supersede the plain label
+  // stands.
+  it('ignores a better library copy when there is nothing to replace', () => {
+    expect(exportButtonLabel({ ...base, libraryBetter: true, withAppleMusic: true }).key).toBe(
+      'editor.convert',
+    )
+  })
+
   // An in-place edit is already an update of the file itself; it must keep saying so
   // rather than claiming to replace a library copy.
   it('keeps the in-place update label over the replace offer', () => {

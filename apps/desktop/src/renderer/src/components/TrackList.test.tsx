@@ -20,6 +20,7 @@ import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
 import { trackSignature } from '../lib/dirty'
+import type { DuplicateRank } from '../lib/duplicateRanks'
 import * as triage from '../lib/triage'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
@@ -75,7 +76,12 @@ function renderList(
   {
     canPasteMeta = false,
     bindings: overrideBindings = bindings,
-  }: { canPasteMeta?: boolean; bindings?: Map<string, Chord> } = {},
+    duplicateRankById,
+  }: {
+    canPasteMeta?: boolean
+    bindings?: Map<string, Chord>
+    duplicateRankById?: ReadonlyMap<string, DuplicateRank>
+  } = {},
 ) {
   const onSelect = vi.fn()
   const onActivate = vi.fn()
@@ -103,6 +109,7 @@ function renderList(
       onSwipeRemove={onSwipeRemove}
       onAcceptReview={onAcceptReview}
       onPrefetch={onPrefetch}
+      duplicateRankById={duplicateRankById}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -1367,6 +1374,114 @@ describe('TrackList backup mark', () => {
     fireEvent.click(screen.getByTestId('track-backup'))
     expect(onOpenBackup).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }))
     expect(onSelect).not.toHaveBeenCalled()
+  })
+})
+
+describe('TrackList duplicate mark', () => {
+  it('marks the best copy and the worse one with the same duplicate icon in two shapes', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+      duplicateRankById: new Map<string, DuplicateRank>([
+        ['a', { rank: 'best', count: 2, identical: false, reason: 'peakCount' }],
+        ['b', { rank: 'worse', count: 2, identical: false, reason: 'peakCount' }],
+      ]),
+    })
+    const [rowA, rowB] = screen.getAllByTestId('track-row')
+    expect(within(rowA).getByTestId('track-duplicate')).toHaveAttribute('data-rank', 'best')
+    expect(within(rowA).getByTestId('track-duplicate')).toHaveTextContent(
+      'Best of 2 copies · less limited',
+    )
+    expect(within(rowB).getByTestId('track-duplicate')).toHaveAttribute('data-rank', 'worse')
+    expect(within(rowB).getByTestId('track-duplicate')).toHaveTextContent(
+      'There is a better copy in the list · this one is more limited',
+    )
+  })
+
+  // Two masters nothing separates are not the same audio; saying so would invite the
+  // user to delete a copy that differs.
+  it('says same audio only for identical copies', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+      duplicateRankById: new Map<string, DuplicateRank>([
+        ['a', { rank: 'same', count: 2, identical: true }],
+        ['b', { rank: 'same', count: 2, identical: false }],
+      ]),
+    })
+    const [rowA, rowB] = screen.getAllByTestId('track-row')
+    expect(within(rowA).getByTestId('track-duplicate')).toHaveTextContent(
+      'Same audio as another copy in the list',
+    )
+    expect(within(rowB).getByTestId('track-duplicate')).toHaveTextContent(
+      'No measured difference from another copy in the list',
+    )
+  })
+
+  // The list must speak the Audio quality section's language: reprocessing is a suspicion
+  // there ("Possibly reprocessed"), a transcode is a lossy source, and the duplicate mark
+  // must not state either more firmly than the section that measured it.
+  it.each([
+    ['en', 'processed', 'this one may be reprocessed', 'no sign of reprocessing'],
+    ['es', 'processed', 'esta puede estar reprocesada', 'sin reprocesado aparente'],
+    ['en', 'upsampled', 'this one is probably upsampled', 'not upsampled'],
+    ['es', 'upsampled', 'esta probablemente está reescalada', 'sin reescalar'],
+    [
+      'en',
+      'transcode',
+      'this one comes from a lossy source',
+      'the other one comes from a lossy source',
+    ],
+    [
+      'es',
+      'transcode',
+      'esta viene de una fuente con pérdidas',
+      'la otra viene de una fuente con pérdidas',
+    ],
+  ] as const)(
+    'words a %s %s reason the way Audio quality does',
+    async (lang, reason, worse, best) => {
+      await i18n.changeLanguage(lang)
+      try {
+        renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+          duplicateRankById: new Map<string, DuplicateRank>([
+            ['a', { rank: 'best', count: 2, identical: false, reason }],
+            ['b', { rank: 'worse', count: 2, identical: false, reason }],
+          ]),
+        })
+        const [rowA, rowB] = screen.getAllByTestId('track-row')
+        expect(within(rowA).getByTestId('track-duplicate').textContent).toContain(best)
+        expect(within(rowB).getByTestId('track-duplicate').textContent).toContain(worse)
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    },
+  )
+
+  // An M4A best copy can itself be AAC, so the best row must not claim it has no lossy
+  // source; it describes the copy that lost instead, and among three copies "the other"
+  // would point at a single copy that is not there.
+  it.each([
+    ['en', 2, 'Best of 2 copies · the other one comes from a lossy source'],
+    ['en', 3, 'Best of 3 copies · another copy comes from a lossy source'],
+    ['es', 2, 'Mejor copia de 2 · la otra viene de una fuente con pérdidas'],
+    ['es', 3, 'Mejor copia de 3 · otra copia viene de una fuente con pérdidas'],
+  ] as const)(
+    'words a %s transcode win over %i copies by the copy that lost',
+    async (lang, count, text) => {
+      await i18n.changeLanguage(lang)
+      try {
+        renderList([track({ id: 'a' })], null, [], {
+          duplicateRankById: new Map<string, DuplicateRank>([
+            ['a', { rank: 'best', count, identical: false, reason: 'transcode' }],
+          ]),
+        })
+        expect(screen.getByTestId('track-duplicate')).toHaveTextContent(text)
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    },
+  )
+
+  it('draws no duplicate icon on a track with no ranked copy', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-duplicate')).toBeNull()
   })
 })
 
