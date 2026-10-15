@@ -3469,6 +3469,7 @@ describe('Editor Apple Music library badge', () => {
     const pill = screen.getByTestId('copy-verdict')
     // The row shows the swap the replace button offers; the verdict is the control's name.
     expect(pill).toHaveTextContent('Better copy than the Apple Music one')
+    expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'good')
     expect(screen.queryByTestId('copy-sentence')).toBeNull()
     fireEvent.click(pill)
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
@@ -3547,6 +3548,7 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('copy-verdict')).toHaveTextContent(
       'Worse copy than the Apple Music one',
     )
+    expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'warn')
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
   })
 
