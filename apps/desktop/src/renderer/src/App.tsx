@@ -24,9 +24,11 @@ import type {
   LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
+  PlaylistTrackRef,
   SearchHints,
   SearchProviderId,
   Settings,
+  SourceNode,
   ThemePref,
   TrackMetadata,
   TrashEntry,
@@ -47,11 +49,11 @@ import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SourceRail } from './components/SourceRail'
-import { SourceTree } from './components/SourceTree'
+import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
-import { TrackContextMenu } from './components/TrackContextMenu'
+import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackContextMenu'
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
 import { TrashPanel } from './components/TrashPanel'
@@ -73,6 +75,7 @@ import type { ReviewFilter } from './hooks/useMusicReview'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
+import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -115,6 +118,7 @@ import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
+import { clearDraggedRows, draggedRows, isReorderDrag } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
 import { sameTracks } from './lib/sameTracks'
 import {
@@ -602,6 +606,20 @@ export default function App(): React.JSX.Element {
         testid: 'app-notice',
       }),
   })
+  // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
+  // edits leaves the latest answer, not a stack.
+  const notifyEdit = useCallback(
+    (text: string, tone: 'neutral' | 'danger') =>
+      pushToast(store, {
+        key: 'rekordbox-edit',
+        tone,
+        message: text,
+        duration: 5000,
+        testid: 'rekordbox-edit-notice',
+      }),
+    [store],
+  )
+  const editRekordbox = useRekordboxEdits(notifyEdit)
   const openSourcePlaylistStable = useStableCallback(openSourcePlaylist)
   // Told once per opened playlist, so the gap between the source's count and the rows here
   // has a reason; a refocus re-read of the same playlist is not a new opening. Missing
@@ -768,6 +786,8 @@ export default function App(): React.JSX.Element {
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
+    // A reorder let go outside the list carries no files; it is not an import.
+    if (isReorderDrag(e)) return
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
     await watchLoad(async () => addPaths(await window.api.expandPaths(dropped)))
   }
@@ -1209,6 +1229,12 @@ export default function App(): React.JSX.Element {
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
   // entries load the list still shows the working list, and the order must follow on arrival.
   const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
+  // The playlist's order, so a reorder (or a re-read bringing another order) is a new view:
+  // the order held for the selected row would otherwise keep the old one on screen.
+  const playlistOrder = useMemo(
+    () => playlistScope?.tracks.map((t) => t.id).join('\n') ?? '',
+    [playlistScope],
+  )
   // The background sweeps work on the open playlist only: the working list keeps every
   // playlist passed through, and sweeping all of it spent Discogs and ffmpeg on sets the
   // user had left. Narrowed from the moment a playlist is picked, before its entries land
@@ -1276,7 +1302,7 @@ export default function App(): React.JSX.Element {
     // double-click lands on whatever slid into place. The order catches up when it leaves.
     // The open playlist is part of the view: another playlist with the same tracks in its
     // own order must show that order, or its separators land between the wrong rows.
-    const viewKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}`
+    const viewKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
     const hold =
       heldOrder.current.view === viewKey &&
       (heldOrder.current.selected === selectedId || listHovered)
@@ -1291,6 +1317,7 @@ export default function App(): React.JSX.Element {
     sortBy,
     sortDir,
     openPlaylistId,
+    playlistOrder,
     selectedId,
     listHovered,
   ])
@@ -1706,6 +1733,115 @@ export default function App(): React.JSX.Element {
   const onSearchWeb = useStableCallback(() => {
     if (selected) searchTrackWeb(selected)
   })
+  // Organising the open rekordbox crate. Every action sends one edit; what rekordbox holds
+  // afterwards is re-read and shown (useRekordboxEdits).
+  const rekordboxOpen =
+    browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
+  // A row read from an open rekordbox playlist names its collection entry; any other track
+  // is looked up by its file, and by its converted file when a conversion moved the entry.
+  const trackRef = (t: TrackItem): PlaylistTrackRef => ({
+    contentId: rekordboxOpen ? playlistScope?.contentOf.get(t.id) : undefined,
+    paths:
+      t.outputPath && t.outputPath !== t.inputPath ? [t.inputPath, t.outputPath] : [t.inputPath],
+  })
+  const addToRekordbox = useStableCallback((node: SourceNode, targets: TrackItem[]) => {
+    void editRekordbox(
+      { kind: 'add', playlistId: node.id, tracks: targets.map(trackRef) },
+      node.name,
+    )
+  })
+  // Tracks dropped on a playlist in the tree: the rows a drag out of the list recorded
+  // (lib/reorderDrag), which carry their rekordbox entry, or files from Finder. The record
+  // is used whenever the drop brought no files or only those rows' files, so it does not
+  // matter whether the OS drag delivers files back to this window; a Finder drop that finds
+  // a stale record goes by its own files.
+  const dropOnRekordbox = useStableCallback((node: SourceNode, files: File[]) => {
+    const paths = files.map((f) => window.api.getPathForFile(f).normalize('NFC'))
+    const held = (draggedRows() ?? []).flatMap((id) => {
+      const t = tracksRef.current.find((x) => x.id === id)
+      return t ? [t] : []
+    })
+    clearDraggedRows()
+    const heldPaths = new Set(held.map((t) => t.inputPath.normalize('NFC')))
+    const fromList = held.length > 0 && paths.every((p) => heldPaths.has(p))
+    const byPath = new Map(tracksRef.current.map((t) => [t.inputPath.normalize('NFC'), t]))
+    const tracks = fromList
+      ? held.map(trackRef)
+      : paths.map((p) => {
+          const t = byPath.get(p)
+          return t ? trackRef(t) : { paths: [p] }
+        })
+    if (tracks.length > 0)
+      void editRekordbox({ kind: 'add', playlistId: node.id, tracks }, node.name)
+  })
+  const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
+    void editRekordbox({ kind: 'create', parentId, name, folder }, name)
+  })
+  const treeEdit = useMemo(
+    () => ({ onCreate: createInRekordbox, onDropTracks: dropOnRekordbox }),
+    [createInRekordbox, dropOnRekordbox],
+  )
+  // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
+  // row stands for every row it has in the playlist (the list shows it once), so all of them
+  // move together; a separator key is its own link.
+  const linksFor = (key: string): readonly string[] => playlistScope?.linksOf.get(key) ?? [key]
+  const moveInRekordbox = useStableCallback((keys: string[], beforeKey: string | null) => {
+    if (!browser.playlist) return
+    void editRekordbox(
+      {
+        kind: 'move',
+        playlistId: browser.playlist.id,
+        linkIds: keys.flatMap(linksFor),
+        beforeLinkId:
+          beforeKey === null ? null : (playlistScope?.linkOf.get(beforeKey) ?? beforeKey),
+      },
+      browser.playlist.name,
+    )
+  })
+  const removeFromRekordbox = useStableCallback((linkIds: string[]) => {
+    if (!browser.playlist || linkIds.length === 0) return
+    void editRekordbox(
+      { kind: 'remove', playlistId: browser.playlist.id, linkIds },
+      browser.playlist.name,
+    )
+  })
+  const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
+  // Reordering only means something in the playlist's own order with nothing hidden: under
+  // another sort, a search or a filter, a drop would land among rows the user cannot see.
+  const reorderEnabled = rekordboxOpen && sortBy === 'import' && !search && !filterActive
+  const reorder = useMemo(
+    () =>
+      reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
+    [reorderEnabled, moveInRekordbox, removeSeparator],
+  )
+  // The right-clicked row acts with the selection it belongs to through App's existing
+  // menuTargets (the one remove and trash use). Added tracks therefore go in working-list
+  // order, which is the order they were loaded in.
+  const trackMenuPlaylist = (track: TrackItem): TrackPlaylistMenu | undefined => {
+    if (browser.source !== 'rekordbox' || !browser.tree) return undefined
+    const playlist = browser.playlist
+    return {
+      targets: flattenPlaylists(browser.tree).filter((h) => h.node.id !== playlist?.id),
+      openName: rekordboxOpen && playlist ? playlist.name : null,
+      canInsertSeparator: browser.canInsertSeparator,
+      onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
+      onInsertSeparator: () => {
+        const beforeLinkId = playlistScope?.linkOf.get(track.id)
+        if (!playlist || !beforeLinkId) return
+        void editRekordbox(
+          { kind: 'insertSeparator', playlistId: playlist.id, beforeLinkId },
+          playlist.name,
+        )
+      },
+      onRemove: () =>
+        removeFromRekordbox(
+          menuTargets(track.id).flatMap((t) => {
+            const link = playlistScope?.linkOf.get(t.id)
+            return link ? [link] : []
+          }),
+        ),
+    }
+  }
   // What the right-click menu offers is App's decision (its actions route through the
   // confirm dialog, the toasts and the clipboard state up here); when and where it opens
   // stays TrackList's. Stable so the memoized list never re-renders for a handler change.
@@ -1728,6 +1864,7 @@ export default function App(): React.JSX.Element {
         onInfo={overlays.openInfo}
         hasBackup={backupAtByPath.has(menu.track.inputPath)}
         onOpenBackup={onOpenBackup}
+        playlist={trackMenuPlaylist(menu.track)}
       />
     ),
   )
@@ -2083,12 +2220,20 @@ export default function App(): React.JSX.Element {
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
             className="relative flex h-screen flex-col overflow-clip"
-            onDragEnterCapture={() => setDragging(dragDepth.current.enter())}
+            onDragEnterCapture={(e) => {
+              // A reorder inside the list is not files arriving, and rows dragged out of the
+              // list (toward a playlist in the tree) are already in it: no import overlay.
+              if (!isReorderDrag(e) && draggedRows() === null)
+                setDragging(dragDepth.current.enter())
+            }}
             onDragOver={(e) => {
               // Only to keep the drop allowed; the hint is driven by enter/leave counting.
               e.preventDefault()
             }}
-            onDragLeaveCapture={() => setDragging(dragDepth.current.leave())}
+            onDragLeaveCapture={(e) => {
+              if (!isReorderDrag(e) && draggedRows() === null)
+                setDragging(dragDepth.current.leave())
+            }}
             onDropCapture={() => setDragging(dragDepth.current.reset())}
             onDrop={onDrop}
           >
@@ -2175,6 +2320,7 @@ export default function App(): React.JSX.Element {
                     failed={browser.treeFailed}
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={browser.selectPlaylist}
+                    edit={browser.source === 'rekordbox' ? treeEdit : undefined}
                   />
                 )}
                 <aside
@@ -2241,6 +2387,14 @@ export default function App(): React.JSX.Element {
                           onTrashSelected={onTrashSelected}
                           onTrashSuspects={onTrashSuspects}
                         />
+                        {rekordboxOpen && !reorderEnabled && (
+                          <p
+                            data-testid="reorder-hint"
+                            className="px-4 pt-1 text-[11px] text-fg-faint"
+                          >
+                            {tr('sources.reorder.hint')}
+                          </p>
+                        )}
                         {visibleTracks.length === 0 ? (
                           <div className="flex flex-col items-center gap-3 p-6 text-center">
                             <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
@@ -2287,6 +2441,7 @@ export default function App(): React.JSX.Element {
                                 ? playlistScope.trailingSeparators
                                 : undefined
                             }
+                            reorder={reorder}
                             outsideFilter={outsideFilterIds}
                             onVisible={onListRowVisible}
                             rowRegistry={rowEls}

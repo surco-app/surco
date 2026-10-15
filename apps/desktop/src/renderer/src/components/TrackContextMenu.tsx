@@ -1,8 +1,20 @@
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SourceNode } from '../../../shared/types'
 import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
+
+// What the menu offers for the open rekordbox crate. Present only while rekordbox is the
+// source; openName is the playlist on screen, null when the list is not one.
+export interface TrackPlaylistMenu {
+  targets: { node: SourceNode; folders: string[] }[]
+  openName: string | null
+  canInsertSeparator: boolean
+  onAddTo: (node: SourceNode) => void
+  onInsertSeparator: () => void
+  onRemove: () => void
+}
 
 interface Props {
   track: TrackItem
@@ -25,17 +37,24 @@ interface Props {
   // shows for a track that has one: the keyboard's way to the row's backup mark.
   hasBackup?: boolean
   onOpenBackup?: (track: TrackItem) => void
+  playlist?: TrackPlaylistMenu
 }
 
 function MenuItem({
   label,
   testid,
   danger,
+  disabled,
+  hint,
   onClick,
 }: {
   label: string
   testid: string
   danger?: boolean
+  disabled?: boolean
+  // Why the item cannot be used, in words under it: a greyed item with no reason reads as
+  // broken.
+  hint?: string
   onClick: () => void
 }): React.JSX.Element {
   return (
@@ -45,12 +64,14 @@ function MenuItem({
       // One Tab stop for the whole menu: the arrows move between items, Tab leaves.
       tabIndex={-1}
       data-testid={testid}
+      disabled={disabled}
       onClick={onClick}
-      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] ${
+      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] disabled:opacity-60 disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
       {label}
+      {hint && <span className="block text-[11px] text-fg-faint">{hint}</span>}
     </button>
   )
 }
@@ -78,11 +99,13 @@ export function TrackContextMenu({
   onInfo,
   hasBackup = false,
   onOpenBackup,
+  playlist,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x, y })
   const isWin = isWindows()
+  const [picking, setPicking] = useState(false)
 
   // Keep the menu fully on screen — flip it back inside the viewport once we know its size.
   useLayoutEffect(() => {
@@ -197,6 +220,44 @@ export function TrackContextMenu({
           label={tr('trackList.context.startOver')}
           onClick={() => run(() => onStartOver(track))}
         />
+        {playlist && (
+          <>
+            <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+            <div className="relative">
+              <MenuItem
+                testid="track-menu-add-to"
+                label={`${tr('sources.menu.addTo')} ›`}
+                onClick={() => setPicking((p) => !p)}
+              />
+              {picking && (
+                <div
+                  data-testid="track-menu-playlists"
+                  className="absolute top-0 left-full ml-1 max-h-[60vh] min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+                >
+                  {playlist.targets.map(({ node, folders }) => (
+                    <MenuItem
+                      key={node.id}
+                      testid={`track-menu-playlist-${node.id}`}
+                      label={[...folders, node.name].join(' › ')}
+                      onClick={() => run(() => playlist.onAddTo(node))}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            {playlist.openName !== null && (
+              <MenuItem
+                testid="track-menu-insert-separator"
+                label={tr('sources.menu.insertSeparator')}
+                disabled={!playlist.canInsertSeparator}
+                hint={
+                  playlist.canInsertSeparator ? undefined : tr('sources.edit.refused.noSeparator')
+                }
+                onClick={() => run(playlist.onInsertSeparator)}
+              />
+            )}
+          </>
+        )}
         <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
         <MenuItem
           testid="track-menu-info"
@@ -228,6 +289,14 @@ export function TrackContextMenu({
             />
             <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
           </>
+        )}
+        {playlist && playlist.openName !== null && (
+          <MenuItem
+            testid="track-menu-remove-from"
+            danger
+            label={tr('sources.menu.removeFrom', { name: playlist.openName })}
+            onClick={() => run(playlist.onRemove)}
+          />
         )}
         <MenuItem
           testid="track-menu-remove"

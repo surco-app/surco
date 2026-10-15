@@ -1723,7 +1723,13 @@
       "folderMenu": "Ações da pasta"
     },
     "reorder": {
-      "removeSeparator": "Remover separador"
+      "removeSeparator": "Remover separador",
+      "hint": "Para reordenar, ordene por “Padrão” e limpe a busca e os filtros"
+    },
+    "menu": {
+      "addTo": "Adicionar à playlist",
+      "insertSeparator": "Inserir separador acima",
+      "removeFrom": "Remover de “{{name}}”"
     }
   },
   "engineIssue": {

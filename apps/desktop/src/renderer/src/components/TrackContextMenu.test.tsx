@@ -188,3 +188,57 @@ describe('TrackContextMenu backup entry', () => {
     expect(screen.queryByTestId('track-menu-backup')).toBeNull()
   })
 })
+
+describe('TrackContextMenu playlist actions', () => {
+  const FACTORY = { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 3 }
+  const HOUSE = { id: 'h', name: 'House', kind: 'playlist' as const, count: 2 }
+  function playlist(over: Record<string, unknown> = {}) {
+    return {
+      targets: [
+        { node: FACTORY, folders: ['COMBOS'] },
+        { node: HOUSE, folders: [] },
+      ],
+      openName: 'Todas',
+      canInsertSeparator: true,
+      onAddTo: vi.fn(),
+      onInsertSeparator: vi.fn(),
+      onRemove: vi.fn(),
+      ...over,
+    }
+  }
+
+  // The same "Todas" or "Fijas" sits under several folders in the measured collection;
+  // the folder path is what tells the targets apart.
+  it('offers the other playlists with their folders and adds to the one picked', () => {
+    const p = playlist()
+    const props = renderMenu({ playlist: p })
+    fireEvent.click(screen.getByTestId('track-menu-add-to'))
+    expect(screen.getByTestId('track-menu-playlist-f')).toHaveTextContent('COMBOS › Factory')
+    fireEvent.click(screen.getByTestId('track-menu-playlist-f'))
+    expect(p.onAddTo).toHaveBeenCalledWith(FACTORY)
+    expect(props.onClose).toHaveBeenCalled()
+  })
+
+  it('disables inserting a separator when the collection has none, and says why', () => {
+    renderMenu({ playlist: playlist({ canInsertSeparator: false }) })
+    expect(screen.getByTestId('track-menu-insert-separator')).toBeDisabled()
+    expect(screen.getByTestId('track-menu-insert-separator')).toHaveTextContent(
+      'Your collection has no separator to copy',
+    )
+  })
+
+  it('names the playlist a row is removed from', () => {
+    const p = playlist()
+    renderMenu({ playlist: p })
+    expect(screen.getByTestId('track-menu-remove-from')).toHaveTextContent('Remove from “Todas”')
+    fireEvent.click(screen.getByTestId('track-menu-remove-from'))
+    expect(p.onRemove).toHaveBeenCalled()
+  })
+
+  it('offers only adding while no playlist is open', () => {
+    renderMenu({ playlist: playlist({ openName: null }) })
+    expect(screen.getByTestId('track-menu-add-to')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+  })
+})

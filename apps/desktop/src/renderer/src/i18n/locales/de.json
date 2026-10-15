@@ -1723,7 +1723,13 @@
       "folderMenu": "Ordneraktionen"
     },
     "reorder": {
-      "removeSeparator": "Trenner entfernen"
+      "removeSeparator": "Trenner entfernen",
+      "hint": "Zum Umsortieren nach „Standard“ sortieren und Suche und Filter leeren"
+    },
+    "menu": {
+      "addTo": "Zu Playlist hinzufügen",
+      "insertSeparator": "Trenner darüber einfügen",
+      "removeFrom": "Aus „{{name}}“ entfernen"
     }
   },
   "engineIssue": {

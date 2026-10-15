@@ -1723,7 +1723,13 @@
       "folderMenu": "Folder actions"
     },
     "reorder": {
-      "removeSeparator": "Remove separator"
+      "removeSeparator": "Remove separator",
+      "hint": "To reorder, sort by “Default” and clear the search and filters"
+    },
+    "menu": {
+      "addTo": "Add to playlist",
+      "insertSeparator": "Insert separator above",
+      "removeFrom": "Remove from “{{name}}”"
     }
   },
   "engineIssue": {

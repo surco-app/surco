@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
@@ -14,6 +14,8 @@ import i18n from './i18n'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
+import { clearDraggedRows, draggedRows } from './lib/reorderDrag'
+import { fakeDataTransfer, installDragEvent } from './test/drag'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
 // assert renders without track changes skip the whole filter+sort pipeline.
@@ -756,6 +758,12 @@ describe('App auto-match', () => {
   })
 })
 
+beforeAll(installDragEvent)
+afterEach(clearDraggedRows)
+
+// The draggable wrapper of the row at this position in the list.
+const rowWrapper = (index: number): HTMLElement => screen.getAllByTestId(/^track-drag-/)[index]
+
 describe('App source playlists', () => {
   // Browsing a rekordbox playlist must show the set as the DJ built it: only its tracks, in
   // its order, with its breaks drawn, loading the ones not in the list yet. Going back to
@@ -1147,6 +1155,280 @@ describe('App source playlists', () => {
       await waitFor(() =>
         expect(analyzed).toEqual(expect.arrayContaining(playlists.a.map((e) => e.path))),
       )
+    })
+  })
+
+  const linked = (path: string, linkId: string, separator = false) => ({
+    path,
+    separator,
+    meta: {},
+    linkId,
+    contentId: `c-${linkId}`,
+  })
+  const FACTORY_ENTRIES = [
+    linked('/m/a.wav', 'l1'),
+    linked('/m/_.mp3', 's1', true),
+    linked('/m/b.wav', 'l2'),
+    linked('/m/c.wav', 'l3'),
+  ]
+  const TITLES: Record<string, string> = {
+    '/m/a.wav': 'Alpha',
+    '/m/b.wav': 'Bravo',
+    '/m/c.wav': 'Charlie',
+  }
+  const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent ?? '')
+
+  async function openFactory(over: Record<string, unknown> = {}) {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
+      readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
+        { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+        { id: 'h', name: 'House', kind: 'playlist', count: 0 },
+      ]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue(FACTORY_ENTRIES),
+      ...over,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await screen.findByTestId('track-separator-s1')
+  }
+
+  // The DJ's own request: put the set in order by dragging. The list must show the new
+  // order at once and keep it after rekordbox answers, even with the dragged row selected
+  // (a held selection otherwise freezes the order on screen).
+  it('reorders an open rekordbox playlist by dragging a row onto another', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const load = vi
+      .fn<Api['loadRekordboxPlaylist']>()
+      .mockResolvedValueOnce(FACTORY_ENTRIES)
+      .mockResolvedValue([
+        FACTORY_ENTRIES[3],
+        FACTORY_ENTRIES[0],
+        FACTORY_ENTRIES[1],
+        FACTORY_ENTRIES[2],
+      ])
+    await openFactory({ editRekordboxPlaylist: edit, loadRekordboxPlaylist: load })
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[2])
+    const charlie = rowWrapper(2)
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(within(charlie).getByTestId(/^track-grip-/))
+    fireEvent.dragStart(charlie, { dataTransfer: dt })
+    fireEvent.dragOver(rowWrapper(0), { dataTransfer: dt, clientY: -1 })
+    fireEvent.drop(rowWrapper(0), { dataTransfer: dt })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'move',
+      playlistId: 'f',
+      linkIds: ['l3'],
+      beforeLinkId: 'l1',
+    })
+    await waitFor(() =>
+      expect(titles()).toEqual([
+        expect.stringContaining('Charlie'),
+        expect.stringContaining('Alpha'),
+        expect.stringContaining('Bravo'),
+      ]),
+    )
+  })
+
+  // Sorted by artist, a drop between two rows means nothing in the playlist's own order.
+  it('hides the grips and says why when the list is not in playlist order', async () => {
+    await openFactory()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+    await waitFor(() => expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument())
+    expect(screen.getByTestId('reorder-hint')).toHaveTextContent(
+      'To reorder, sort by “Default” and clear the search and filters',
+    )
+  })
+
+  // Copying between playlists names the exact rekordbox entry of a row read from a
+  // playlist, so the symlinked twins copy instead of being refused.
+  it('adds a row to another playlist from its menu, naming its rekordbox entry', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+      applied: true,
+      report: { added: 1, already: 0, notInCollection: 0, ambiguous: 0 },
+    })
+    await openFactory({ editRekordboxPlaylist: edit })
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+    fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'add',
+      playlistId: 'h',
+      tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+    })
+    expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
+      '1 track added to “House”',
+    )
+  })
+
+  it('says nothing changed and re-reads the playlist when rekordbox stays open', async () => {
+    const load = vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(FACTORY_ENTRIES)
+    await openFactory({
+      loadRekordboxPlaylist: load,
+      editRekordboxPlaylist: vi
+        .fn<Api['editRekordboxPlaylist']>()
+        .mockResolvedValue({ applied: false, reason: 'cancelled' }),
+    })
+    const before = load.mock.calls.length
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+    fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
+    expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
+      'Nothing changed because rekordbox is still open',
+    )
+    expect(load.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  // Rows dragged out of the list onto a tree playlist are known from the list's own record,
+  // so they are added (by their rekordbox entry) even if the OS drag brings no files back
+  // into Surco's window.
+  it('adds rows dragged from the list onto a playlist in the tree, with or without files', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit, startTrackDrag: vi.fn() })
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+    const house = screen.getByTestId('source-node-h')
+    fireEvent.dragOver(house, { dataTransfer: fakeDataTransfer() })
+    fireEvent.drop(house, { dataTransfer: fakeDataTransfer() })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'add',
+      playlistId: 'h',
+      tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+    })
+  })
+
+  // A record left behind would add these rows again on the next drop that brings no files.
+  it('forgets the dragged rows once they are dropped on the tree', async () => {
+    await openFactory({ startTrackDrag: vi.fn() })
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+    fireEvent.drop(screen.getByTestId('source-node-h'), { dataTransfer: fakeDataTransfer() })
+    expect(draggedRows()).toBeNull()
+  })
+
+  // A drop from Finder is files the list never dragged: they go by their paths.
+  it('adds files dropped from Finder onto a playlist by their paths', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      editRekordboxPlaylist: edit,
+      getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
+    })
+    const house = screen.getByTestId('source-node-h')
+    const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    fireEvent.drop(house, { dataTransfer: dt })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'add',
+      playlistId: 'h',
+      tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+    })
+  })
+
+  it('creates a playlist named in the tree', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit })
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
+    fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'create',
+      parentId: 'root',
+      name: 'Bolo',
+      folder: false,
+    })
+  })
+
+  // A reorder is not files arriving; lighting the import overlay would invite a drop that
+  // means something else.
+  it('does not light the file-drop overlay while reordering', async () => {
+    await openFactory()
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(within(rowWrapper(2)).getByTestId(/^track-grip-/))
+    fireEvent.dragStart(rowWrapper(2), { dataTransfer: dt })
+    fireEvent.dragEnter(rowWrapper(0), { dataTransfer: dt })
+    expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over')
+  })
+
+  // A reorder let go outside the list (on its header, say) carries no files: the window's
+  // import must not take it as a drop of nothing.
+  it('does not import anything when a reorder is dropped outside the list', async () => {
+    await openFactory()
+    vi.mocked(window.api.expandPaths).mockClear()
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(within(rowWrapper(2)).getByTestId(/^track-grip-/))
+    fireEvent.dragStart(rowWrapper(2), { dataTransfer: dt })
+    fireEvent.drop(screen.getByTestId('sidebar'), { dataTransfer: dt })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(window.api.expandPaths).not.toHaveBeenCalled()
+  })
+
+  // Rows dragged out of the list toward a playlist in the tree are already in the list;
+  // lighting the column as an import target would offer to add them a second time.
+  it('does not light the list as an import target while its rows are dragged to the tree', async () => {
+    await openFactory({ startTrackDrag: vi.fn() })
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+    const files = fakeDataTransfer([new File([''], 'a.wav')])
+    fireEvent.dragEnter(screen.getByTestId('source-node-h'), { dataTransfer: files })
+    fireEvent.dragOver(screen.getByTestId('source-node-h'), { dataTransfer: files })
+    expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over')
+  })
+
+  // With a search typed, rows between the visible ones are hidden; a drop would land among
+  // them, so no reordering until the search is cleared.
+  it('hides the grips while a search narrows the playlist', async () => {
+    await openFactory()
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'Alpha' } })
+    await waitFor(() => expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument())
+    expect(screen.getByTestId('reorder-hint')).toBeInTheDocument()
+  })
+
+  // A track the playlist holds twice is one row: dragging it moves both of its rekordbox
+  // rows, or the one left behind would decide where the row is shown after the re-read.
+  it('moves every row of a track the playlist holds twice', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      editRekordboxPlaylist: edit,
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
+    })
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(within(rowWrapper(0)).getByTestId(/^track-grip-/))
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: dt })
+    fireEvent.dragOver(rowWrapper(2), { dataTransfer: dt, clientY: 1 })
+    fireEvent.drop(rowWrapper(2), { dataTransfer: dt })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'move',
+      playlistId: 'f',
+      linkIds: ['l1', 'l4'],
+      beforeLinkId: null,
+    })
+  })
+
+  // The record of a drag-out can outlive it (an OS drag that ended elsewhere tells this
+  // window nothing). A Finder drop that finds it must still add its own files.
+  it('adds the dropped Finder files, not rows left from an earlier drag-out', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      editRekordboxPlaylist: edit,
+      startTrackDrag: vi.fn(),
+      getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
+    })
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+    const house = screen.getByTestId('source-node-h')
+    const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    fireEvent.drop(house, { dataTransfer: dt })
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'add',
+      playlistId: 'h',
+      tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
     })
   })
 })
