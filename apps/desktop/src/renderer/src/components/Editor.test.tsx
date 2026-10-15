@@ -3422,6 +3422,10 @@ describe('Editor Apple Music library badge', () => {
     libraryLossy = false,
     hereLossy = false,
     herePath = '/music/Strobe.aif',
+    platform = 'darwin',
+    music = true,
+    index = ownedWithId,
+    location = '/Music/Strobe.wav',
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -3430,10 +3434,14 @@ describe('Editor Apple Music library badge', () => {
     libraryLossy?: boolean
     hereLossy?: boolean
     herePath?: string
+    platform?: string
+    music?: boolean
+    index?: AppleMusicIndex
+    location?: string
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
-    setApi('darwin')
+    setApi(platform)
     const api = window.api as unknown as Record<string, unknown>
-    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.wav')
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue(location)
     api.peekAnalysis = vi.fn().mockResolvedValue(null)
     // A lossy source shows as a 16 kHz cutoff with a knee, the mark a transcode leaves.
     api.spectrogram = vi.fn(async (path: string) => {
@@ -3453,7 +3461,7 @@ describe('Editor Apple Music library badge', () => {
       { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
       'wav',
       // The comparison reads in Audio quality, so that section is mounted.
-      { libraryIndex: ownedWithId, showSpectrum, showLoudness: true },
+      { libraryIndex: index, showSpectrum, showLoudness: true, addToAppleMusic: music },
     )
     return { api, onProcess }
   }
@@ -3612,6 +3620,73 @@ describe('Editor Apple Music library badge', () => {
     await waitFor(() =>
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
     )
+  })
+
+  // The comparison is with the library's own copy of this track, so it only shows when there
+  // is one to measure: Apple Music on, the track found in it, and a file behind the entry.
+  // Each case below is the measured verdict's own fixture with one of those taken away.
+  describe('only compares when the library holds a copy with a file', () => {
+    const settle = () => new Promise((r) => setTimeout(r, 50))
+
+    it('compares when all of them hold', async () => {
+      const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      expect(api.comparePair).toHaveBeenCalled()
+    })
+
+    it('says nothing when adding to Apple Music is off', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        music: false,
+      })
+      await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high'))
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says nothing when the track is not in Apple Music', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        index: buildLibraryIndex([
+          { title: 'Other', artist: 'Someone', persistentId: 'FEDCBA9876543210' },
+        ]),
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music'),
+      )
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says nothing when the Apple Music entry has no file on disk', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        location: '',
+      })
+      await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says nothing off macOS, where there is no Apple Music', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        platform: 'win32',
+      })
+      await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high'))
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
   })
 
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than
