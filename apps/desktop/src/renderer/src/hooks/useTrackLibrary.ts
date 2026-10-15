@@ -732,16 +732,9 @@ export function useTrackLibrary({
         !e.separator && e.path !== null && !loaded.has(e.path),
     )
     if (fresh.length === 0) return
-    const expanded = await window.api.expandPaths([...new Set(fresh.map((e) => e.path))])
-    // Checked again after the await: an overlapping open of the same playlist (a focus
-    // refetch while the first expand is still running) may have added these meanwhile,
-    // and passing them on would report them as skipped duplicates.
-    const stillLoaded = new Set(tracksRef.current.map((t) => t.inputPath))
-    const toAdd = expanded.filter((p) => !stillLoaded.has(p))
-    if (toAdd.length === 0) return
-    const wanted = new Set(toAdd)
+    // Staged BEFORE expanding, like importApplePlaylist: the expand stream can create the
+    // rows before the awaited call returns, and they must find the stamp waiting.
     for (const e of fresh) {
-      if (!wanted.has(e.path)) continue
       appleMusicMeta.current.set(e.path, e.meta)
       if (source === 'appleMusic') {
         pendingSeed.current.set(e.path, {
@@ -750,6 +743,21 @@ export function useTrackLibrary({
         })
       }
     }
+    const expanded = await window.api.expandPaths([...new Set(fresh.map((e) => e.path))])
+    // Checked again after the await: an overlapping open of the same playlist (a focus
+    // refetch while the first expand is still running) may have added these meanwhile,
+    // and passing them on would report them as skipped duplicates.
+    const stillLoaded = new Set(tracksRef.current.map((t) => t.inputPath))
+    const toAdd = expanded.filter((p) => !stillLoaded.has(p))
+    // A staged path that expandPaths dropped never gets a row to consume its entries, and
+    // would leak into a later unrelated load of that same file.
+    const consumed = new Set([...toAdd, ...stillLoaded])
+    for (const e of fresh) {
+      if (consumed.has(e.path)) continue
+      appleMusicMeta.current.delete(e.path)
+      pendingSeed.current.delete(e.path)
+    }
+    if (toAdd.length === 0) return
     await addPaths(toAdd)
   }
 

@@ -335,6 +335,62 @@ describe('opening a source playlist', () => {
     expect(result.current.tracks[0].meta.bpm).toBe('150')
   })
 
+  it('still fills bpm and key when the expand stream creates the row before expandPaths returns', async () => {
+    let streamed: (paths: string[]) => void = () => {}
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'Night Train' }),
+      duration: 256,
+      cover: null,
+      foreignTags: [],
+    })
+    const { result } = setup({
+      onExpandedBatch: vi.fn((cb: (paths: string[]) => void) => {
+        streamed = cb
+        return () => {}
+      }),
+      expandPaths: vi.fn(async (paths: string[]) => {
+        streamed(paths)
+        await Promise.resolve()
+        return paths
+      }),
+      readMeta,
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '150', key: '4B' } }],
+        'rekordbox',
+      )
+    })
+    await waitFor(() => expect(result.current.tracks[0].meta.key).toBe('4B'))
+    expect(result.current.tracks[0].meta.bpm).toBe('150')
+  })
+
+  it('does not leak the playlist bpm and key into a later plain load of a path expandPaths dropped', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'Night Train' }),
+      duration: 256,
+      cover: null,
+      foreignTags: [],
+    })
+    const expandPaths = vi
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockImplementation((paths: string[]) => Promise.resolve(paths))
+    const { result } = setup({ expandPaths, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '150', key: '4B' } }],
+        'rekordbox',
+      )
+    })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks).toHaveLength(1))
+    await waitFor(() => expect(readMeta).toHaveBeenCalled())
+    expect(result.current.tracks[0].meta.key).not.toBe('4B')
+  })
+
   it('stamps a Music row with its library identity, so converting updates that copy', async () => {
     const { result } = setup()
     await act(async () => {
