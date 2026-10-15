@@ -489,6 +489,22 @@ export const Editor = memo(function Editor({
     onNormalizeChange?.(normalizeCfg)
     onDeclickChange?.(declickCfg)
   }, [])
+  // A reopened session restores each track's dials with its metadata read, and the row is
+  // editable while that read runs: an editor opened on it first seeded from Settings and
+  // kept that, showing a target the conversion (which reads the track) would not use. The
+  // dials the track brings later are adopted and reported like a pick of the user's own.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the track's own dial is the trigger; the report handlers are stable.
+  useEffect(() => {
+    if (!item.normalize) return
+    setNormalizeCfg(item.normalize)
+    onNormalizeChange?.(item.normalize)
+  }, [item.normalize])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: same contract as the normalization above.
+  useEffect(() => {
+    if (!item.declick) return
+    setDeclickCfg(item.declick)
+    onDeclickChange?.(item.declick)
+  }, [item.declick])
   // Natural pixel size of the shown artwork, read on load, so the user can tell
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.
