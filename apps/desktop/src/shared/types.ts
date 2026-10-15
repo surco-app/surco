@@ -1032,6 +1032,50 @@ export interface SourcePlaylistEntry {
   contentId?: string
 }
 
+// A track to put in a rekordbox playlist: the collection entry when Surco already knows it
+// (a row read from an open rekordbox playlist), and the paths to look it up by otherwise
+// (the source file, and the converted one when a conversion moved the collection entry).
+export interface PlaylistTrackRef {
+  contentId?: string
+  paths: string[]
+}
+
+// One organising action on rekordbox, as the user made it: one drop, one menu choice, one
+// name typed. Each is written on its own, so the dialog asking to close rekordbox comes at
+// most once per gesture and every gesture has its own backup.
+export type RekordboxPlaylistEdit =
+  | { kind: 'add'; playlistId: string; tracks: PlaylistTrackRef[] }
+  // beforeLinkId null moves the rows to the end.
+  | { kind: 'move'; playlistId: string; linkIds: string[]; beforeLinkId: string | null }
+  | { kind: 'remove'; playlistId: string; linkIds: string[] }
+  | { kind: 'insertSeparator'; playlistId: string; beforeLinkId: string }
+  // parentId 'root' is the top of the tree, as rekordbox spells it.
+  | { kind: 'create'; parentId: string; name: string; folder: boolean }
+
+// Why an edit was not written. Every one leaves the collection exactly as it was.
+export type RekordboxEditRefusal =
+  | 'cancelled'
+  | 'rekordbox-running'
+  | 'unreadable'
+  | 'backup-failed'
+  | 'write-failed'
+  | 'read-only'
+  | 'stale'
+  | 'no-separator'
+  | 'nothing-to-add'
+
+// What an add did with each track it was given.
+export interface PlaylistAddReport {
+  added: number
+  already: number
+  notInCollection: number
+  ambiguous: number
+}
+
+export type RekordboxEditResult =
+  | { applied: true; createdId?: string; report?: PlaylistAddReport }
+  | { applied: false; reason: RekordboxEditRefusal; report?: PlaylistAddReport }
+
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
 
 export interface ProcessProgress {
