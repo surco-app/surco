@@ -7,6 +7,8 @@ export interface CopyFacts {
   hasKnee?: boolean
   processed?: boolean
   upsampled?: boolean
+  sampleRateHz?: number
+  bitsUsage?: 'full' | 'padded16' | 'unknown'
   fingerprint?: string | null
   peakCount?: number | null
   crestDb?: number | null
@@ -78,11 +80,24 @@ const REASON = {
   'lower-cutoff': 'cutoff',
 } as const
 
+// The bits a copy really carries: a 24-bit file whose low byte is empty holds 16-bit audio,
+// and a file the bit scan does not apply to (16-bit, lossy) has no third byte to carry. A
+// 24-bit file the scan could not call may be real 24-bit, so it matches nothing.
+function bitsClass(f: CopyFacts): '16' | 'full' | null {
+  if (f.bitsUsage === 'unknown') return null
+  return f.bitsUsage === 'full' ? 'full' : '16'
+}
+
+// The fingerprint and the pair probe both work on a 16-bit 44.1 kHz decode, which flattens
+// the very rate and depth a hi-res copy is kept for, so those must match on their own.
 export function isSameAudio(
   a: CopyFacts,
   b: CopyFacts,
   pair: PairFacts | null | undefined,
 ): boolean {
+  if (a.sampleRateHz !== b.sampleRateHz) return false
+  const bits = bitsClass(a)
+  if (bits === null || bits !== bitsClass(b)) return false
   if (a.fingerprint && a.fingerprint === b.fingerprint) return true
   return (
     !!pair && pair.residualDb <= IDENTICAL_RESIDUAL_DB && Math.abs(pair.gainDb) < IDENTICAL_GAIN_DB

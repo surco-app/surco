@@ -56,6 +56,8 @@ export function toCopyFacts(
     hasKnee: spectrum.hasKnee,
     processed: spectrum.processed,
     upsampled: spectrum.upsampled,
+    sampleRateHz: spectrum.sampleRateHz,
+    bitsUsage: spectrum.bitsUsage,
     fingerprint,
     peakCount: loud.peakCount ?? null,
     crestDb: loud.crestDb,

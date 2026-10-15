@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type CopyFacts, compareCopies } from './bestCopy'
+import { type CopyFacts, compareCopies, isSameAudio } from './bestCopy'
 
 const sameMaster = { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 }
 const otherMaster = { correlation: 0.8618, residualDb: -5.9, gainDb: 0.4 }
@@ -113,5 +113,41 @@ describe('compareCopies', () => {
     expect(
       compareCopies({ ...netzwerkWav, peakCount: null, crestDb: null }, netzwerkAif, sameMaster),
     ).toEqual({ winner: 'tie' })
+  })
+})
+
+// The fingerprint decodes both copies to 16-bit 44.1 kHz, which flattens exactly the
+// differences a hi-res or a real 24-bit copy is kept for. "Same audio" tells the user either
+// copy will do, so it also needs the same rate and the same bits really in use.
+describe('isSameAudio', () => {
+  const at = (sampleRateHz: number, bitsUsage?: CopyFacts['bitsUsage']): CopyFacts => ({
+    ...netzwerkAif,
+    fingerprint: 'x',
+    sampleRateHz,
+    bitsUsage,
+  })
+  const shifted = { correlation: 1, residualDb: -85, gainDb: 0 }
+
+  it('never calls a real 24-bit copy the same as a 16-bit one with the same MD5', () => {
+    expect(isSameAudio(at(44100, 'full'), at(44100), null)).toBe(false)
+  })
+
+  it('never calls a 96 kHz copy the same as a 44.1 kHz one, however close the residual', () => {
+    expect(isSameAudio(at(96000), { ...at(44100), fingerprint: 'y' }, shifted)).toBe(false)
+  })
+
+  // A 24-bit AIFF whose low byte is empty holds 16-bit audio: the container is all that differs.
+  it('reads a padded 24-bit AIFF and its 16-bit WAV as the same audio', () => {
+    expect(isSameAudio(at(44100, 'padded16'), { ...at(44100), ext: 'wav' }, null)).toBe(true)
+  })
+
+  // The scan could not tell whether the low byte carries signal, so the copy may be a real
+  // 24-bit one; claiming it equals the 16-bit copy could send the user to delete it.
+  it('never calls a 24-bit copy of unknown depth the same as a 16-bit one', () => {
+    expect(isSameAudio(at(44100, 'unknown'), at(44100), null)).toBe(false)
+  })
+
+  it('reads two real 24-bit copies at one rate with the same MD5 as the same audio', () => {
+    expect(isSameAudio(at(48000, 'full'), at(48000, 'full'), null)).toBe(true)
   })
 })

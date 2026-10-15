@@ -50,6 +50,8 @@ describe('useCopyFacts', () => {
       hasKnee: false,
       processed: false,
       upsampled: undefined,
+      sampleRateHz: 44100,
+      bitsUsage: undefined,
       fingerprint: 'abc',
       peakCount: 1,
       crestDb: 13.2,
@@ -69,21 +71,29 @@ describe('useCopyFacts', () => {
     await waitFor(() => expect(result.current).toBeNull())
   })
 
-  it('passes processed and upsampled through', async () => {
+  it('passes processed, upsampled, rate and bits in use through', async () => {
     setApi({
       spectrogram: vi.fn().mockResolvedValue({
         image: '',
         cutoffHz: 20000,
+        sampleRateHz: 96000,
         processed: true,
         hasKnee: true,
         upsampled: true,
+        bitsUsage: 'padded16',
       }),
       loudness: vi.fn().mockResolvedValue(loudness),
       fingerprint: vi.fn().mockResolvedValue('abc'),
     })
     const { result } = renderHook(() => useCopyFacts('/m/a.wav', true), { wrapper: wrapper() })
     await waitFor(() => expect(result.current).not.toBeUndefined())
-    expect(result.current).toMatchObject({ processed: true, upsampled: true, hasKnee: true })
+    expect(result.current).toMatchObject({
+      processed: true,
+      upsampled: true,
+      hasKnee: true,
+      sampleRateHz: 96000,
+      bitsUsage: 'padded16',
+    })
   })
 
   it('has no facts when the spectrum found no cutoff', async () => {
