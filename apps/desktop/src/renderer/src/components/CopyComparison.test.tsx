@@ -66,7 +66,25 @@ describe('CopyComparison', () => {
     )
   })
 
-  it('names the lossy side and both cutoffs when the lossless copy wins', () => {
+  // Lossy against lossless is a fact about the formats, not the cutoffs: a knee-less 16 kHz
+  // WAV still beats a 20 kHz MP3, and quoting the cutoffs would argue the opposite.
+  it('names the formats when a knee-less 16 kHz WAV beats a 20 kHz MP3', () => {
+    render(
+      <CopyComparison
+        verdict={{ winner: 'a', reason: 'lossless' }}
+        here={{ ...wav, cutoffHz: 16000 }}
+        library={{ ...aif, ext: 'MP3', cutoffHz: 20000 }}
+        hereLabel="WAV"
+        libraryLabel="MP3"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'The Apple Music copy is lossy (MP3). This file is lossless (WAV).',
+    )
+    expect(screen.getByTestId('copy-row-cutoff')).not.toHaveAttribute('data-decides')
+  })
+
+  it('names the formats when this file is the lossy one', () => {
     render(
       <CopyComparison
         verdict={{ winner: 'b', reason: 'lossless' }}
@@ -77,10 +95,74 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'This file is lossy with its cutoff at 16 kHz. The Apple Music copy reaches 22.1 kHz.',
+      'This file is lossy (MP3). The Apple Music copy is lossless (WAV).',
+    )
+  })
+
+  it('colours the cutoff row when the cutoff decided', () => {
+    render(
+      <CopyComparison
+        verdict={{ winner: 'b', reason: 'cutoff' }}
+        here={{ ...aif, ext: 'MP3', cutoffHz: 16000 }}
+        library={{ ...wav, ext: 'MP3', cutoffHz: 19500 }}
+        hereLabel="MP3"
+        libraryLabel="MP3"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'This file is cut at 16 kHz. The Apple Music copy reaches 19.5 kHz.',
     )
     expect(screen.getByTestId('copy-row-cutoff')).toHaveAttribute('data-decides', 'true')
   })
+
+  // A transcode is called on the losing copy's knee alone, so the other copy's cutoff can be
+  // unknown; the sentence drops the number instead of printing a placeholder.
+  it('drops a cutoff it does not have instead of printing a placeholder', () => {
+    render(
+      <CopyComparison
+        verdict={{ winner: 'b', reason: 'transcode' }}
+        here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
+        library={{ ...aif, cutoffHz: undefined }}
+        hereLabel="WAV"
+        libraryLabel="AIF"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'This file was made from a lossy source.',
+    )
+    expect(screen.getByTestId('copy-sentence').textContent).not.toContain('—')
+  })
+
+  it.each([
+    'lossless',
+    'transcode',
+    'cutoff',
+    'processed',
+    'upsampled',
+    'peakCount',
+    'crest',
+  ] as const)(
+    'never prints a placeholder in the %s sentence when figures are missing',
+    (reason) => {
+      const bare = (f: CopyFacts): CopyFacts => ({ ext: f.ext })
+      for (const winner of ['a', 'b'] as const) {
+        render(
+          <CopyComparison
+            verdict={{ winner, reason }}
+            here={bare(aif)}
+            library={bare(wav)}
+            hereLabel="AIF"
+            libraryLabel="WAV"
+          />,
+        )
+        const sentence = screen.getByTestId('copy-sentence').textContent ?? ''
+        expect(sentence).not.toBe('')
+        expect(sentence).not.toContain('—')
+        expect(sentence).not.toContain('{{')
+        cleanup()
+      }
+    },
+  )
 
   // Every reason the comparison can return has to say something; a blank sentence under a
   // verdict would leave the user with a claim and no argument.

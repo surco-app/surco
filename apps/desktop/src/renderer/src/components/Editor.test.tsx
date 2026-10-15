@@ -3418,21 +3418,31 @@ describe('Editor Apple Music library badge', () => {
     here,
     library,
     pair = Promise.resolve({ correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 }),
+    showSpectrum = false,
+    libraryLossy = false,
+    hereLossy = false,
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
     pair?: Promise<unknown>
+    showSpectrum?: boolean
+    libraryLossy?: boolean
+    hereLossy?: boolean
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
     api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.wav')
     api.peekAnalysis = vi.fn().mockResolvedValue(null)
-    api.spectrogram = vi.fn().mockResolvedValue({
-      image: '',
-      cutoffHz: 22050,
-      sampleRateHz: 44100,
-      processed: false,
-      hasKnee: false,
+    // A lossy source shows as a 16 kHz cutoff with a knee, the mark a transcode leaves.
+    api.spectrogram = vi.fn(async (path: string) => {
+      const lossy = path === '/Music/Strobe.wav' ? libraryLossy : hereLossy
+      return {
+        image: '',
+        cutoffHz: lossy ? 16000 : 22050,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: lossy,
+      }
     })
     api.loudness = vi.fn(async (path: string) => (path === '/Music/Strobe.wav' ? library : here))
     api.fingerprint = vi.fn(async (path: string) => path)
@@ -3440,7 +3450,7 @@ describe('Editor Apple Music library badge', () => {
     const { onProcess } = renderEditor(
       { id: 'a', inputPath: '/music/Strobe.aif', meta: { title: 'Strobe', artist: 'deadmau5' } },
       'wav',
-      { libraryIndex: ownedWithId },
+      { libraryIndex: ownedWithId, showSpectrum },
     )
     return { api, onProcess }
   }
@@ -3469,7 +3479,25 @@ describe('Editor Apple Music library badge', () => {
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
     )
     expect(screen.getByTestId('copy-verdict')).toHaveTextContent('Apple Music has a better one')
-    expect(screen.getByTestId('apple-music-copy-better')).toBeInTheDocument()
+    expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+  })
+
+  // Until the measured verdict lands, the quick format-and-cutoff check is the only warning
+  // there is, so it keeps speaking beside "Comparing…".
+  it('keeps the quick warning while the copies are still being measured', async () => {
+    renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      pair: new Promise(() => {}),
+      showSpectrum: true,
+      hereLossy: true,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('apple-music-copy-better')).toHaveTextContent(
+        'better than this one',
+      ),
+    )
+    expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'measuring')
   })
 
   // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
@@ -3502,24 +3530,19 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('apple-music-status')).toBeInTheDocument()
   })
 
-  it('shows no verdict when the two copies could not be lined up', async () => {
+  // Two copies that cannot be lined up are not the same master, so the level criteria are
+  // skipped; a lossy source still decides on its own.
+  it('still gives a verdict when the two copies could not be lined up', async () => {
     const { api } = renderWithLibraryCopy({
       here: aifLoudness,
       library: wavLoudness,
       pair: Promise.resolve(null),
+      libraryLossy: true,
     })
-    // A cutoff gap the comparison could decide on its own, so only the missing pair
-    // keeps the pill away.
-    api.spectrogram = vi.fn(async (path: string) => ({
-      image: '',
-      cutoffHz: path === '/Music/Strobe.wav' ? 16000 : 22050,
-      sampleRateHz: 44100,
-      processed: false,
-      hasKnee: path === '/Music/Strobe.wav',
-    }))
-    await screen.findByTestId('copy-verdict')
     await waitFor(() => expect(api.comparePair).toHaveBeenCalled())
-    await waitFor(() => expect(screen.queryByTestId('copy-verdict')).toBeNull())
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
   })
 
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than

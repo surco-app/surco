@@ -626,17 +626,24 @@ export const Editor = memo(function Editor({
   const replacedCopySpectrum = useCachedSpectrum(replacedCopyPath)
   // The measured comparison of the two copies, 'a' this file and 'b' the library's. Until
   // every fact is in, the format-and-cutoff check below still answers; a copy that could not
-  // be measured gives no verdict and leaves that check as the only answer.
+  // be measured gives no verdict and leaves that check as the only answer. A pair that could
+  // not be lined up is not one master, so compareCopies skips the level criteria and the
+  // format and spectrum still decide.
   const hereFacts = useCopyFacts(item.inputPath, !!replacedCopyPath)
   const libraryFacts = useCopyFacts(replacedCopyPath, !!replacedCopyPath)
   const copyPair = usePairFacts(item.inputPath, replacedCopyPath, !!replacedCopyPath)
   const copyVerdict =
-    hereFacts && libraryFacts && copyPair ? compareCopies(hereFacts, libraryFacts, copyPair) : null
+    hereFacts && libraryFacts && copyPair !== undefined
+      ? compareCopies(hereFacts, libraryFacts, copyPair)
+      : null
   const copyMeasuring =
     !!replacedCopyPath &&
     (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
   const [copyOpenFor, setCopyOpenFor] = useState('')
-  const copyOpen = !!copyVerdict && copyOpenFor === `${item.inputPath}\n${replacedCopyPath}`
+  const copyOpen =
+    !!copyVerdict &&
+    copyVerdict.winner !== 'tie' &&
+    copyOpenFor === `${item.inputPath}\n${replacedCopyPath}`
   const libraryCopyBetter = copyVerdict
     ? copyVerdict.winner === 'b'
     : !!replacedCopyPath &&
@@ -1173,13 +1180,12 @@ export const Editor = memo(function Editor({
           {replacedCopyFormat && (
             <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
           )}
-          {libraryCopyBetter && (
+          {libraryCopyBetter && !copyVerdict && (
             <span data-testid="apple-music-copy-better">· {tr('editor.libraryCopyBetter')}</span>
           )}
         </SectionPill>
       )}
       {!isMulti && inLibrary === 'yes' && copyState && (
-        // A tie has nothing to say on the title line; its card still says so if it was open.
         <button
           type="button"
           data-testid="copy-verdict"
