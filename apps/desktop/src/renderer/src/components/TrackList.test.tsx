@@ -10,6 +10,7 @@ const api = {
   openFile: vi.fn(),
   copyText: vi.fn(),
   startTrackDrag: vi.fn(),
+  getPathForFile: vi.fn((f: File) => `/music/${f.name}`),
 }
 vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {}
@@ -43,10 +44,9 @@ afterEach(clearDraggedRows)
 const wrapperOf = (key: string): HTMLElement =>
   screen.queryByTestId(`track-drag-${key}`) ?? screen.getByTestId(`track-separator-${key}`)
 
-// Grip, drag start, hover over the target (upper half when above), drop.
+// Drag start, hover over the target (upper half when above), drop.
 function drag(from: string, onto: string, above: boolean) {
   const dt = fakeDataTransfer()
-  fireEvent.mouseDown(screen.getByTestId(`track-grip-${from}`))
   fireEvent.dragStart(wrapperOf(from), { dataTransfer: dt })
   fireEvent.dragOver(wrapperOf(onto), { dataTransfer: dt, clientY: above ? -1 : 1 })
   fireEvent.drop(wrapperOf(onto), { dataTransfer: dt })
@@ -1630,22 +1630,39 @@ describe('TrackList reorder', () => {
   const abc = () => [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })]
   const reorderSpy = () => ({ onMove: vi.fn(), onRemoveSeparator: vi.fn() })
 
-  it('has no grips unless the playlist can be reordered', () => {
-    renderList(abc())
+  // One gesture, no handle: where the row is let go decides what the drag does.
+  it('draws no grip on rows or separators', () => {
+    renderList(abc(), null, [], {
+      reorder: reorderSpy(),
+      separatorBefore: new Map([['b', ['s1']]]),
+    })
     expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument()
   })
 
-  it('moves a row before the one it is dropped on, with a line where it will land', () => {
+  // The same drag that hands the file to other apps reorders when it comes back down on
+  // the list, with a line where it will land.
+  it('moves a row dropped back on the list, with a line where it will land', () => {
     const reorder = reorderSpy()
     renderList(abc(), null, [], { reorder })
-    const dt = fakeDataTransfer()
-    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
-    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
-    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: fakeDataTransfer() })
+    expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/c.wav'], undefined)
+    const back = fakeDataTransfer([new File([''], 'c.wav')])
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: back, clientY: -1 })
     expect(screen.getByTestId('reorder-line')).toBeInTheDocument()
-    fireEvent.drop(wrapperOf('a'), { dataTransfer: dt })
+    fireEvent.drop(wrapperOf('a'), { dataTransfer: back })
     expect(reorder.onMove).toHaveBeenCalledWith(['c'], 'a')
     expect(screen.queryByTestId('reorder-line')).not.toBeInTheDocument()
+    expect(draggedRows()).toBeNull()
+  })
+
+  // The window's own drop would take the files as an import; a reorder is not one.
+  it('keeps a reorder drop from reaching the window', () => {
+    const windowDrop = vi.fn()
+    window.addEventListener('drop', windowDrop)
+    renderList(abc(), null, [], { reorder: reorderSpy() })
+    drag('c', 'a', true)
+    window.removeEventListener('drop', windowDrop)
+    expect(windowDrop).not.toHaveBeenCalled()
   })
 
   // Finder's convention, already used by the drag-out: a dragged row that is part of the
@@ -1657,6 +1674,7 @@ describe('TrackList reorder', () => {
     expect(reorder.onMove).toHaveBeenCalledWith(['a', 'c'], null)
   })
 
+  // A separator has no file for other apps: it is a plain drag inside the list.
   it('moves a separator like a row, next to another one if dropped there', () => {
     const reorder = reorderSpy()
     renderList(abc(), null, [], {
@@ -1668,6 +1686,7 @@ describe('TrackList reorder', () => {
     })
     drag('s2', 'b', true)
     expect(reorder.onMove).toHaveBeenCalledWith(['s2'], 'b')
+    expect(api.startTrackDrag).not.toHaveBeenCalled()
   })
 
   it('sends nothing for a drop that leaves the order as it was', () => {
@@ -1677,22 +1696,26 @@ describe('TrackList reorder', () => {
     expect(reorder.onMove).not.toHaveBeenCalled()
   })
 
-  // The grip is what makes a drag a reorder; dragging anywhere else on the row still hands
-  // the files to the OS (and to the tree), as before.
-  it('keeps the drag-out to other apps when the grip was not pressed', () => {
-    const reorder = reorderSpy()
-    renderList(abc(), null, [], { reorder })
-    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
-    expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/b.wav'], undefined)
+  // Outside a rekordbox playlist in its own order there is nothing to reorder: the drag
+  // is only the drag-out, and letting it go on the list does nothing.
+  it('neither reorders nor draws a line when the list cannot be reordered', () => {
+    renderList(abc())
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: fakeDataTransfer() })
+    expect(api.startTrackDrag).toHaveBeenCalled()
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: fakeDataTransfer(), clientY: -1 })
+    expect(screen.queryByTestId('reorder-line')).not.toBeInTheDocument()
   })
 
-  // A grip drag stays inside the list: handing the files to the OS as well would start a
-  // second, native drag that lands the rows in Finder or Spek instead of moving them.
-  it('does not hand the files to the OS when the drag starts on the grip', () => {
-    renderList(abc(), null, [], { reorder: reorderSpy() })
-    fireEvent.mouseDown(screen.getByTestId('track-grip-b'))
-    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
-    expect(api.startTrackDrag).not.toHaveBeenCalled()
+  // A record left by a drag-out that ended outside the window is not this drop: files from
+  // Finder let go on the list are not rows to move.
+  it('does not move rows for a drop whose files are not the dragged rows', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), null, [], { reorder })
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: fakeDataTransfer() })
+    const finder = fakeDataTransfer([new File([''], 'elsewhere.wav')])
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: finder, clientY: -1 })
+    fireEvent.drop(wrapperOf('a'), { dataTransfer: finder })
+    expect(reorder.onMove).not.toHaveBeenCalled()
   })
 
   // The line promises where a drop lands; left behind after the drag leaves the list, it
@@ -1700,7 +1723,6 @@ describe('TrackList reorder', () => {
   it('takes the insertion line away when the drag leaves the list', () => {
     renderList(abc(), null, [], { reorder: reorderSpy() })
     const dt = fakeDataTransfer()
-    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
     fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
     fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
     expect(screen.getByTestId('reorder-line')).toBeInTheDocument()
@@ -1715,7 +1737,6 @@ describe('TrackList reorder', () => {
   it('keeps the insertion line while the drag moves between rows', () => {
     renderList(abc(), null, [], { reorder: reorderSpy() })
     const dt = fakeDataTransfer()
-    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
     fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
     fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
     fireEvent.dragLeave(wrapperOf('a'), { dataTransfer: dt, relatedTarget: wrapperOf('b') })
@@ -1734,16 +1755,6 @@ describe('TrackList reorder', () => {
     expect(
       wrapperOf('c').compareDocumentPosition(wrapperOf('s9')) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
-  })
-
-  // A grip pressed and released without dragging, even outside the list, must not turn
-  // the next plain drag of that row into a reorder: that drag belongs to other apps.
-  it('lets go of a pressed grip when the mouse is released anywhere', () => {
-    renderList(abc(), null, [], { reorder: reorderSpy() })
-    fireEvent.mouseDown(screen.getByTestId('track-grip-b'))
-    fireEvent.mouseUp(window)
-    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
-    expect(api.startTrackDrag).toHaveBeenCalled()
   })
 
   // The tree reads what the list is dragging from this record, not from files the OS may
@@ -1780,7 +1791,6 @@ describe('TrackList reorder', () => {
     })
     const { rerender } = render(<TrackList {...props(abc())} />)
     const dt = fakeDataTransfer()
-    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
     fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
     rerender(<TrackList {...props(abc())} />)
     fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })

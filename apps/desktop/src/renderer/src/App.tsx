@@ -118,7 +118,7 @@ import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
-import { clearDraggedRows, draggedRows, isReorderDrag } from './lib/reorderDrag'
+import { clearDraggedRows, draggedRows, isReorderDrag, ownRowsDropped } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
 import { scopedMusicSource } from './lib/reviewSource'
 import {
@@ -813,11 +813,14 @@ export default function App(): React.JSX.Element {
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
+    // Rows dragged from the list and let go here (anywhere the list or the tree did not
+    // take them) come back as their own files: that is not an import, wherever it lands.
+    const own = ownRowsDropped(e, (id) => tracksRef.current.find((t) => t.id === id)?.inputPath)
     // A drop the tree did not take ends a drag-out from the list: its record goes with it.
     // Bubble phase on purpose, after the tree's own drop has read the record.
     clearDraggedRows()
-    // A reorder let go outside the list carries no files; it is not an import.
-    if (isReorderDrag(e)) return
+    // A separator let go outside the list carries no files; it is not an import either.
+    if (own || isReorderDrag(e)) return
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
     await watchLoad(() => addToWorkingList(dropped))
   }

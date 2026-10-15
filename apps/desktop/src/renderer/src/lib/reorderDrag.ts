@@ -17,9 +17,23 @@ export function clearDraggedRows(): void {
   draggedRowIds = null
 }
 
-// A drag that reorders the open playlist inside the list. It carries this type instead of
-// files, so the window's import does not treat it as files arriving and the tree does not
-// take it as tracks to add.
+// The dragged rows when this drop is that drag coming back down in Surco's window: every
+// file it carries is one of theirs. A record left by a drag-out that ended outside the
+// window tells this window nothing, so Finder files dropped later are not taken for it.
+export function ownRowsDropped(
+  e: { dataTransfer?: DataTransfer | null },
+  pathOf: (id: string) => string | undefined,
+): string[] | null {
+  const ids = draggedRowIds
+  if (!ids) return null
+  const held = new Set(ids.flatMap((id) => pathOf(id)?.normalize('NFC') ?? []))
+  const files = Array.from(e.dataTransfer?.files ?? [])
+  return files.every((f) => held.has(window.api.getPathForFile(f).normalize('NFC'))) ? ids : null
+}
+
+// A separator dragged to reorder the open playlist. It has no file to hand the OS, so it is
+// a plain drag inside the list carrying this type, which the window's import does not
+// treat as files arriving and the tree does not take as tracks to add.
 export const REORDER_TYPE = 'application/x-surco-reorder'
 
 export function isReorderDrag(e: { dataTransfer?: DataTransfer | null }): boolean {

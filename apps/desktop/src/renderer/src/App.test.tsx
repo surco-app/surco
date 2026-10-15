@@ -1428,6 +1428,12 @@ describe('App source playlists', () => {
     '/m/c.wav': 'Charlie',
   }
   const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent ?? '')
+  const expectNoReorderLine = () => {
+    const [row] = screen.getAllByTestId(/^track-drag-/)
+    fireEvent.dragStart(row, { dataTransfer: fakeDataTransfer() })
+    fireEvent.dragOver(row, { dataTransfer: fakeDataTransfer(), clientY: -1 })
+    expect(screen.queryByTestId('reorder-line')).not.toBeInTheDocument()
+  }
 
   async function openFactory(over: Record<string, unknown> = {}) {
     setApi({
@@ -1465,15 +1471,22 @@ describe('App source playlists', () => {
         FACTORY_ENTRIES[1],
         FACTORY_ENTRIES[2],
       ])
-    await openFactory({ editRekordboxPlaylist: edit, loadRekordboxPlaylist: load })
+    await openFactory({
+      editRekordboxPlaylist: edit,
+      loadRekordboxPlaylist: load,
+      startTrackDrag: vi.fn(),
+      getPathForFile: vi.fn((f: File) => `/m/${f.name}`),
+    })
+    vi.mocked(window.api.expandPaths).mockClear()
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[2])
     const charlie = rowWrapper(2)
-    const dt = fakeDataTransfer()
-    fireEvent.mouseDown(within(charlie).getByTestId(/^track-grip-/))
-    fireEvent.dragStart(charlie, { dataTransfer: dt })
-    fireEvent.dragOver(rowWrapper(0), { dataTransfer: dt, clientY: -1 })
-    fireEvent.drop(rowWrapper(0), { dataTransfer: dt })
+    fireEvent.dragStart(charlie, { dataTransfer: fakeDataTransfer() })
+    expect(window.api.startTrackDrag).toHaveBeenCalledWith(['/m/c.wav'], undefined)
+    const back = fakeDataTransfer([new File([''], 'c.wav')])
+    fireEvent.dragOver(rowWrapper(0), { dataTransfer: back, clientY: -1 })
+    fireEvent.drop(rowWrapper(0), { dataTransfer: back })
+    expect(window.api.expandPaths).not.toHaveBeenCalledWith(['/m/c.wav'])
     expect(edit).toHaveBeenCalledWith({
       kind: 'move',
       playlistId: 'f',
@@ -1490,11 +1503,12 @@ describe('App source playlists', () => {
   })
 
   // Sorted by artist, a drop between two rows means nothing in the playlist's own order.
-  it('hides the grips and says why when the list is not in playlist order', async () => {
+  it('does not reorder and says why when the list is not in playlist order', async () => {
     await openFactory()
     fireEvent.click(screen.getByTestId('track-sort'))
     fireEvent.click(screen.getByTestId('track-sort-option-artist'))
-    await waitFor(() => expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument())
+    await screen.findByTestId('reorder-hint')
+    expectNoReorderLine()
     expect(screen.getByTestId('reorder-hint')).toHaveTextContent(
       'To reorder, sort by “Default” and clear the search and filters',
     )
@@ -1554,7 +1568,7 @@ describe('App source playlists', () => {
   })
 
   // With a filter on, rows between the visible ones are hidden; a drop would land among them.
-  it('hides the grips while a filter narrows the playlist', async () => {
+  it('does not reorder while a filter narrows the playlist', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.mp3']),
       readTags: vi.fn(async (path: string) => ({ title: TITLES[path] ?? 'Delta', artist: 'DJ' })),
@@ -1572,11 +1586,11 @@ describe('App source playlists', () => {
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await screen.findByTestId('track-separator-s1')
-    expect(screen.queryAllByTestId(/^track-grip-/).length).toBeGreaterThan(0)
+    expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
-    await waitFor(() => expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument())
-    expect(screen.getByTestId('reorder-hint')).toBeInTheDocument()
+    await screen.findByTestId('reorder-hint')
+    expectNoReorderLine()
   })
 
   // Music is read-only: its rows offer no playlist edits and its tree no create buttons,
@@ -1686,24 +1700,72 @@ describe('App source playlists', () => {
   // means something else.
   it('does not light the file-drop overlay while reordering', async () => {
     await openFactory()
-    const dt = fakeDataTransfer()
-    fireEvent.mouseDown(within(rowWrapper(2)).getByTestId(/^track-grip-/))
-    fireEvent.dragStart(rowWrapper(2), { dataTransfer: dt })
+    fireEvent.dragStart(rowWrapper(2), { dataTransfer: fakeDataTransfer() })
+    const dt = fakeDataTransfer([new File([''], 'c.wav')])
     fireEvent.dragEnter(rowWrapper(0), { dataTransfer: dt })
     expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over')
   })
 
-  // A reorder let go outside the list (on its header, say) carries no files: the window's
-  // import must not take it as a drop of nothing.
-  it('does not import anything when a reorder is dropped outside the list', async () => {
-    await openFactory()
+  // A row let go in the window outside the list (on its header, say) comes back with its
+  // own files: the window's import must not take them as files arriving.
+  it('does not import a row dragged from the list and dropped elsewhere in the window', async () => {
+    await openFactory({ getPathForFile: vi.fn((f: File) => `/m/${f.name}`) })
     vi.mocked(window.api.expandPaths).mockClear()
-    const dt = fakeDataTransfer()
-    fireEvent.mouseDown(within(rowWrapper(2)).getByTestId(/^track-grip-/))
-    fireEvent.dragStart(rowWrapper(2), { dataTransfer: dt })
-    fireEvent.drop(screen.getByTestId('sidebar'), { dataTransfer: dt })
+    fireEvent.dragStart(rowWrapper(2), { dataTransfer: fakeDataTransfer() })
+    fireEvent.drop(screen.getByTestId('sidebar'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'c.wav')]),
+    })
     await new Promise((r) => setTimeout(r, 0))
     expect(window.api.expandPaths).not.toHaveBeenCalled()
+    expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // Vicent's report: a row of a Music playlist let go on the list was imported, and the rail
+  // jumped to Tracks to show it. A Music playlist has no order to edit, so the drop is nothing.
+  it('does nothing when a row of a Music playlist is dropped back on the list', async () => {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
+      startTrackDrag: vi.fn(),
+      getPathForFile: vi.fn((f: File) => `/m/${f.name}`),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 2 }]),
+      loadAppleMusicPlaylistTracks: vi.fn<Api['loadAppleMusicPlaylistTracks']>().mockResolvedValue({
+        paths: ['/m/a.wav', '/m/b.wav'],
+        persistentIds: {},
+        meta: {},
+        missing: 0,
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    vi.mocked(window.api.expandPaths).mockClear()
+
+    fireEvent.dragStart(rowWrapper(1), { dataTransfer: fakeDataTransfer() })
+    expect(window.api.startTrackDrag).toHaveBeenCalledWith(['/m/b.wav'], undefined)
+    const back = fakeDataTransfer([new File([''], 'b.wav')])
+    fireEvent.dragOver(rowWrapper(0), { dataTransfer: back, clientY: -1 })
+    fireEvent.drop(rowWrapper(0), { dataTransfer: back })
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(window.api.expandPaths).not.toHaveBeenCalled()
+    expect(screen.getByTestId('source-rail-appleMusic')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+  })
+
+  // The record of a drag-out can outlive it; Finder files let go in the window are still an
+  // import, not rows of that earlier drag.
+  it('still imports Finder files dropped in the window after a drag-out', async () => {
+    await openFactory({ getPathForFile: vi.fn((f: File) => `/Finder/${f.name}`) })
+    vi.mocked(window.api.expandPaths).mockClear()
+    fireEvent.dragStart(rowWrapper(2), { dataTransfer: fakeDataTransfer() })
+    fireEvent.drop(screen.getByTestId('sidebar'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'new.wav')]),
+    })
+    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav']))
   })
 
   // Rows dragged out of the list toward a playlist in the tree are already in the list;
@@ -1719,11 +1781,11 @@ describe('App source playlists', () => {
 
   // With a search typed, rows between the visible ones are hidden; a drop would land among
   // them, so no reordering until the search is cleared.
-  it('hides the grips while a search narrows the playlist', async () => {
+  it('does not reorder while a search narrows the playlist', async () => {
     await openFactory()
     fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'Alpha' } })
-    await waitFor(() => expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument())
-    expect(screen.getByTestId('reorder-hint')).toBeInTheDocument()
+    await screen.findByTestId('reorder-hint')
+    expectNoReorderLine()
   })
 
   // A track the playlist holds twice is one row: dragging it moves both of its rekordbox
@@ -1737,7 +1799,6 @@ describe('App source playlists', () => {
         .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
     })
     const dt = fakeDataTransfer()
-    fireEvent.mouseDown(within(rowWrapper(0)).getByTestId(/^track-grip-/))
     fireEvent.dragStart(rowWrapper(0), { dataTransfer: dt })
     fireEvent.dragOver(rowWrapper(2), { dataTransfer: dt, clientY: 1 })
     fireEvent.drop(rowWrapper(2), { dataTransfer: dt })

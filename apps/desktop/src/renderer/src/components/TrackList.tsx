@@ -4,7 +4,6 @@ import {
   Copy,
   CopyCheck,
   CopyMinus,
-  GripVertical,
   Play,
   TriangleAlert,
   Undo2,
@@ -35,7 +34,14 @@ import { prefersReducedMotion } from '../lib/motion'
 import { isMacOS } from '../lib/platform'
 import { moveBefore } from '../lib/playlistEdits'
 import { STAGE_PROGRESS } from '../lib/progress'
-import { clearDraggedRows, REORDER_TYPE, setDraggedRows } from '../lib/reorderDrag'
+import {
+  clearDraggedRows,
+  draggedRows,
+  isReorderDrag,
+  ownRowsDropped,
+  REORDER_TYPE,
+  setDraggedRows,
+} from '../lib/reorderDrag'
 import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
@@ -102,8 +108,8 @@ interface Props {
   separatorBefore?: ReadonlyMap<string, readonly string[]>
   // Separators after the last row, drawn under it.
   trailingSeparators?: readonly string[]
-  // Reordering the open rekordbox playlist by hand: a grip on every row and separator, an
-  // insertion line, and a ✕ on each separator. Only passed while the list shows the
+  // Reordering the open rekordbox playlist by hand: a row or separator dragged and let go
+  // on the list moves there, with an insertion line, and each separator has a ✕. Only passed while the list shows the
   // playlist in its own order with nothing hidden; keys are track ids and separator keys.
   reorder?: {
     onMove: (keys: string[], beforeKey: string | null) => void
@@ -325,11 +331,6 @@ interface RowProps {
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
   outsideFilter: boolean
-  // Whether the row shows a grip, whether the grip was pressed (so the next drag reorders
-  // instead of handing the file to the OS), and the press itself.
-  reorderable: boolean
-  armed: boolean
-  onArmReorder: (key: string) => void
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -360,9 +361,6 @@ const TrackRow = memo(function TrackRow({
   onOpenBackup,
   duplicate,
   outsideFilter,
-  reorderable,
-  armed,
-  onArmReorder,
 }: RowProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const quality = trackQuality(t)
@@ -528,14 +526,9 @@ const TrackRow = memo(function TrackRow({
         onWheel={onSwipeWheel}
         onMouseLeave={closeSwipe}
         onDragStart={(e) => {
-          // Pressed on the grip, the drag reorders the playlist inside the list.
-          if (armed) {
-            e.dataTransfer.effectAllowed = 'move'
-            e.dataTransfer.setData(REORDER_TYPE, t.id)
-            return
-          }
-          // Otherwise hand the OS the untouched source file(s) so the row can be dropped
-          // onto Spek, any app, or a rekordbox playlist in the tree. An actual drag
+          // Hand the OS the untouched source file(s) so the row can be dropped onto Spek,
+          // any app, or a rekordbox playlist in the tree; let go back on a reorderable list
+          // it moves there instead (where it lands decides, see onReorderDrop). An actual drag
           // suppresses the click, so select and drag-out don't fight (same arrangement the
           // cover uses). The cover rides along so the OS drag thumbnail is the track's own
           // art, not a generic app icon.
@@ -543,14 +536,6 @@ const TrackRow = memo(function TrackRow({
           onDragOut(t)
         }}
       >
-        {reorderable && (
-          <GripVertical
-            data-testid={`track-grip-${t.id}`}
-            aria-hidden="true"
-            onMouseDown={() => onArmReorder(t.id)}
-            className="absolute top-1/2 left-0.5 z-10 h-3 w-3 -translate-y-1/2 cursor-grab text-fg-faint opacity-0 group-hover:opacity-100"
-          />
-        )}
         <button
           type="button"
           ref={(el) => {
@@ -981,9 +966,8 @@ export const TrackList = memo(function TrackList({
   )
   const closeMenu = useCallback(() => setMenu(null), [])
   const { t: tr } = useTranslation()
-  // The reorder drag: the key whose grip was pressed, and where the drop would land (before
-  // this key, null for the end, undefined while no reorder drag is over the list).
-  const [armed, setArmed] = useState<string | null>(null)
+  // Where a reorder drop would land: before this key, null for the end, undefined while no
+  // reorder drag is over the list.
   const [dropBefore, setDropBefore] = useState<string | null | undefined>(undefined)
   const orderKeys = useMemo(
     () => [
@@ -992,26 +976,21 @@ export const TrackList = memo(function TrackList({
     ],
     [tracks, separatorBefore, trailingSeparators],
   )
-  const endReorder = (): void => {
-    setArmed(null)
-    setDropBefore(undefined)
-  }
-  // A grip released anywhere (outside the list too) is no longer pressed. The rows a
-  // drag-out recorded for the tree are forgotten when that drag ends, and at the next press
+  const endReorder = (): void => setDropBefore(undefined)
+  // The rows a drag-out recorded are forgotten when that drag ends, and at the next press
   // in the window in case the OS drag ended without telling this window.
   useEffect(() => {
-    const release = (): void => setArmed(null)
-    window.addEventListener('mouseup', release)
     window.addEventListener('dragend', clearDraggedRows, true)
     window.addEventListener('pointerdown', clearDraggedRows, true)
     return () => {
-      window.removeEventListener('mouseup', release)
       window.removeEventListener('dragend', clearDraggedRows, true)
       window.removeEventListener('pointerdown', clearDraggedRows, true)
     }
   }, [])
+  // A row's drag is the OS drag-out, so over the list it is known by the recorded rows (a
+  // dragover cannot read its files yet); a separator's carries REORDER_TYPE.
   const onReorderOver = (e: React.DragEvent): void => {
-    if (!reorder || !e.dataTransfer.types.includes(REORDER_TYPE)) return
+    if (!reorder || (!isReorderDrag(e) && draggedRows() === null)) return
     e.preventDefault()
     const el = (e.target as Element).closest<HTMLElement>('[data-reorder-key]')
     const key = el?.dataset.reorderKey
@@ -1022,14 +1001,21 @@ export const TrackList = memo(function TrackList({
     )
   }
   const onReorderDrop = (e: React.DragEvent): void => {
-    if (!reorder || !e.dataTransfer.types.includes(REORDER_TYPE)) return
+    if (!reorder) return
+    const separator = isReorderDrag(e) ? e.dataTransfer.getData(REORDER_TYPE) : null
+    // Only the dragged rows coming back count: Finder files let go here after a drag-out
+    // that ended elsewhere are an import, left to the window.
+    const rows = separator
+      ? null
+      : ownRowsDropped(e, (id) => tracks.find((t) => t.id === id)?.inputPath)
+    const target = dropBefore
+    endReorder()
+    if (!separator && !rows) return
     e.preventDefault()
     // The window's own drop imports files; a reorder is not an import.
     e.stopPropagation()
-    const dragged = e.dataTransfer.getData(REORDER_TYPE)
-    const moved = selectedIds.has(dragged) ? orderKeys.filter((k) => selectedIds.has(k)) : [dragged]
-    const target = dropBefore
-    endReorder()
+    clearDraggedRows()
+    const moved = separator ? [separator] : orderKeys.filter((k) => rows?.includes(k))
     if (target === undefined) return
     // The same rule main writes and the optimistic re-read draws (lib/playlistEdits).
     const next = moveBefore(orderKeys, (k) => k, new Set(moved), target)
@@ -1045,21 +1031,13 @@ export const TrackList = memo(function TrackList({
         data-testid={`track-separator-${key}`}
         data-reorder-key={key}
         aria-hidden={reorder ? undefined : 'true'}
-        draggable={armed === key}
+        draggable={!!reorder}
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData(REORDER_TYPE, key)
         }}
         className="group mx-4 flex h-[22px] items-center gap-2 text-[10.5px] text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
       >
-        {reorder && (
-          <GripVertical
-            data-testid={`track-grip-${key}`}
-            aria-hidden="true"
-            onMouseDown={() => setArmed(key)}
-            className="h-3 w-3 cursor-grab opacity-0 group-hover:opacity-100"
-          />
-        )}
         {tr('sources.separator')}
         {reorder && (
           <button
@@ -1172,7 +1150,6 @@ export const TrackList = memo(function TrackList({
           if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropBefore(undefined)
         }}
         onDragEnd={endReorder}
-        onMouseUp={() => setArmed(null)}
         onWheelCapture={(e) => {
           if (!swallowingSwipeTail.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
           e.stopPropagation()
@@ -1210,9 +1187,6 @@ export const TrackList = memo(function TrackList({
               onOpenBackup={onOpenBackup}
               duplicate={duplicateRankById?.get(t.id)}
               outsideFilter={outsideFilter?.has(t.id) ?? false}
-              reorderable={!!reorder}
-              armed={armed === t.id}
-              onArmReorder={setArmed}
             />
           </Fragment>
         ))}
