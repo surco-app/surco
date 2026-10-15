@@ -70,12 +70,16 @@ const ANALYSIS_QUERY_KEYS = [
 ] as const
 
 // One predicate pass for the whole batch: every removeQueries call scans the entire cache,
-// so evicting per family and per path made clearing a big list quadratic.
+// so evicting per family and per path made clearing a big list quadratic. A copy comparison
+// (['pair', a, b]) carries two paths and goes with either of them.
 export function removeAnalysisQueries(client: QueryClient, inputPaths: readonly string[]): void {
   const families = new Set<unknown>(ANALYSIS_QUERY_KEYS)
   const paths = new Set<unknown>(inputPaths)
   client.removeQueries({
-    predicate: ({ queryKey }) => families.has(queryKey[0]) && paths.has(queryKey[1]),
+    predicate: ({ queryKey }) =>
+      queryKey[0] === 'pair'
+        ? paths.has(queryKey[1]) || paths.has(queryKey[2])
+        : families.has(queryKey[0]) && paths.has(queryKey[1]),
   })
 }
 

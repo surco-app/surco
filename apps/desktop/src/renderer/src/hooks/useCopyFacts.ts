@@ -5,8 +5,7 @@ import type { CopyFacts } from '../lib/bestCopy'
 import { fileExtension } from '../lib/properties'
 
 // Not an ANALYSIS_QUERY_KEYS family: that eviction matches [family, path], and a pair key
-// carries two paths, so it would only ever match the first. The pair result stays for the
-// session; it is a few numbers.
+// carries two paths, so removeAnalysisQueries evicts it on its own when either path goes.
 // Both directions share one entry, called in sorted order. gainDb is relative to the first
 // path of the sorted pair; only |gainDb| is consumed, so the direction does not matter.
 export function pairOptions(a: string, b: string) {

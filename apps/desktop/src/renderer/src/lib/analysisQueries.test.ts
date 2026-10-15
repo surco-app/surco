@@ -184,6 +184,23 @@ describe('removeAnalysisQueries', () => {
     expect(client.getQueryData(['coverFull', '/m/a.wav'])).toBeUndefined()
     expect(client.getQueryData(['coverFull', '/m/b.wav'])).toBe('data:image/jpeg;base64,OTHER')
   })
+  // A pair compares two files; rewriting or removing either one leaves the comparison
+  // describing audio that is no longer there, whichever side of the key the path sits on.
+  it('drops every copy comparison that involves an evicted path', () => {
+    const client = new QueryClient()
+    client.setQueryData(['pair', '/m/a.wav', '/m/b.wav'], { residualDb: -20 })
+    client.setQueryData(['pair', '/m/0.wav', '/m/a.wav'], { residualDb: -20 })
+    client.setQueryData(['pair', '/m/b.wav', '/m/c.wav'], { residualDb: -20 })
+    const findAllSpy = vi.spyOn(client.getQueryCache(), 'findAll')
+
+    removeAnalysisQueries(client, ['/m/a.wav'])
+
+    expect(findAllSpy).toHaveBeenCalledTimes(1)
+    expect(client.getQueryData(['pair', '/m/a.wav', '/m/b.wav'])).toBeUndefined()
+    expect(client.getQueryData(['pair', '/m/0.wav', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['pair', '/m/b.wav', '/m/c.wav'])).toEqual({ residualDb: -20 })
+  })
+
   // Clearing a big list evicts thousands of paths at once. Each removeQueries call scans
   // the whole cache, so evicting family by family and path by path is quadratic and
   // freezes the window; the whole removal must cost a single pass.
