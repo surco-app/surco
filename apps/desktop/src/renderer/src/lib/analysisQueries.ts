@@ -58,6 +58,7 @@ const ANALYSIS_QUERY_KEYS = [
   'fingerprint',
   'spectrogram',
   'spectrumVerdict',
+  'copySpectrum',
   'bpm',
   'key',
   'waveform',

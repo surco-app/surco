@@ -3,7 +3,6 @@ import type { LoudnessResult, PairFacts, SpectrumVerdict } from '../../../shared
 import { analysisOptions } from '../lib/analysisQueries'
 import type { CopyFacts } from '../lib/bestCopy'
 import { fileExtension } from '../lib/properties'
-import { spectrogramOptions } from './useSpectrogram'
 
 // Not an ANALYSIS_QUERY_KEYS family: that eviction matches [family, path], and a pair key
 // carries two paths, so it would only ever match the first. The pair result stays for the
@@ -24,9 +23,19 @@ export function usePairFacts(a: string, b: string, enabled: boolean): PairFacts 
   return query.isPending ? undefined : (query.data ?? null)
 }
 
+// The comparison needs the verdict, never the ~0.5 MB image the spectrogram probe also
+// returns. Observing the 'spectrogram' entry from every duplicate row would keep each image
+// alive for as long as the row is mounted, so the verdict gets its own image-less entry.
+export function copySpectrumOptions(path: string) {
+  return analysisOptions('copySpectrum', path, async (): Promise<SpectrumVerdict> => {
+    const { image: _image, ...verdict } = await window.api.spectrogram(path, 'low')
+    return verdict
+  })
+}
+
 export function copyFactsQueries(path: string) {
   return [
-    spectrogramOptions(path, 'low'),
+    copySpectrumOptions(path),
     analysisOptions('loudness', path, () => window.api.loudness(path, 'low')),
     analysisOptions('fingerprint', path, () => window.api.fingerprint(path, 'low')),
   ] as const
@@ -55,14 +64,15 @@ export function toCopyFacts(
 }
 
 export function useCopyFacts(path: string, enabled: boolean): CopyFacts | null | undefined {
+  const [spectrumQuery, loudQuery, fpQuery] = copyFactsQueries(path)
+  const on = enabled && !!path
   const [spectrum, loud, fp] = useQueries({
-    queries: copyFactsQueries(path).map((q) => ({ ...q, enabled: enabled && !!path })),
+    queries: [
+      { ...spectrumQuery, enabled: on },
+      { ...loudQuery, enabled: on },
+      { ...fpQuery, enabled: on },
+    ],
   })
   if (!enabled || !path || spectrum.isPending || loud.isPending || fp.isPending) return undefined
-  return toCopyFacts(
-    path,
-    spectrum.data as SpectrumVerdict | undefined,
-    loud.data as LoudnessResult | null | undefined,
-    fp.data as string | null | undefined,
-  )
+  return toCopyFacts(path, spectrum.data, loud.data, fp.data)
 }

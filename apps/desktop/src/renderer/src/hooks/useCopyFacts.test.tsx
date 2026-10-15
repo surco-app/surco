@@ -21,8 +21,9 @@ function setApi(api: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = api
 }
 
-function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = createQueryClient()
+function wrapper(
+  client = createQueryClient(),
+): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
@@ -68,6 +69,51 @@ describe('useCopyFacts', () => {
     await waitFor(() => expect(result.current).toBeNull())
   })
 
+  it('passes processed and upsampled through', async () => {
+    setApi({
+      spectrogram: vi.fn().mockResolvedValue({
+        image: '',
+        cutoffHz: 20000,
+        processed: true,
+        hasKnee: true,
+        upsampled: true,
+      }),
+      loudness: vi.fn().mockResolvedValue(loudness),
+      fingerprint: vi.fn().mockResolvedValue('abc'),
+    })
+    const { result } = renderHook(() => useCopyFacts('/m/a.wav', true), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current).not.toBeUndefined())
+    expect(result.current).toMatchObject({ processed: true, upsampled: true, hasKnee: true })
+  })
+
+  it('has no facts when the spectrum found no cutoff', async () => {
+    setApi({
+      spectrogram: vi.fn().mockResolvedValue({ image: '', cutoffHz: null }),
+      loudness: vi.fn().mockResolvedValue(loudness),
+      fingerprint: vi.fn().mockResolvedValue('abc'),
+    })
+    const { result } = renderHook(() => useCopyFacts('/m/a.wav', true), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current).toBeNull())
+  })
+
+  // Task 6 mounts this for every duplicate row; an observer on the image-bearing entry
+  // would keep ~0.5 MB per track alive for as long as the rows are shown.
+  it('never holds an observer on the image-bearing spectrogram entry', async () => {
+    const client = createQueryClient()
+    setApi({
+      spectrogram: vi.fn().mockResolvedValue({ image: 'PNG', cutoffHz: 22050 }),
+      loudness: vi.fn().mockResolvedValue(loudness),
+      fingerprint: vi.fn().mockResolvedValue('abc'),
+    })
+    const { result } = renderHook(() => useCopyFacts('/m/a.wav', true), {
+      wrapper: wrapper(client),
+    })
+    await waitFor(() => expect(result.current).not.toBeUndefined())
+    const held = client.getQueryCache().find({ queryKey: ['spectrogram', '/m/a.wav'] })
+    expect(held?.getObserversCount() ?? 0).toBe(0)
+    expect(client.getQueryData(['copySpectrum', '/m/a.wav'])).not.toHaveProperty('image')
+  })
+
   it('is still measuring while a probe is pending', () => {
     setApi({
       spectrogram: vi.fn().mockResolvedValue({ image: '', cutoffHz: 22050 }),
@@ -104,6 +150,13 @@ describe('usePairFacts', () => {
     )
     expect(comparePair).toHaveBeenCalledTimes(1)
     expect(comparePair).toHaveBeenCalledWith('/a', '/b')
+  })
+
+  it('has no pair facts when the comparison fails', async () => {
+    const comparePair = vi.fn().mockRejectedValue(new Error('decode'))
+    setApi({ comparePair })
+    const { result } = renderHook(() => usePairFacts('/a', '/b', true), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current).toBeNull())
   })
 
   it('does not compare while disabled or when a path is empty', () => {
