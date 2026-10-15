@@ -1919,13 +1919,29 @@ export default function App(): React.JSX.Element {
           playlist.name,
         )
       },
-      onRemove: () =>
-        removeFromRekordbox(
-          menuTargets(track.id).flatMap((t) => {
-            const link = playlistScope?.linkOf.get(t.id)
-            return link ? [link] : []
+      // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
+      // remove does, and several ask first, naming the playlist they leave.
+      onRemove: () => {
+        const targets = menuTargets(track.id)
+        const remove = () =>
+          removeFromRekordbox(
+            targets.flatMap((t) => {
+              const link = playlistScope?.linkOf.get(t.id)
+              return link ? [link] : []
+            }),
+          )
+        if (targets.length <= 1 || !playlist) return remove()
+        overlays.openConfirm({
+          title: tr('confirm.removeFromPlaylistTitle', {
+            count: targets.length,
+            name: playlist.name,
           }),
-        ),
+          message: tr('confirm.removeFromPlaylistMessage'),
+          confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
+          destructive: true,
+          onConfirm: remove,
+        })
+      },
     }
   }
   // What the right-click menu offers is App's decision (its actions route through the

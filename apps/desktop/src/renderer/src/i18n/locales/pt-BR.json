@@ -1523,7 +1523,11 @@
     "trashMessageMixedPermanent_other": "Isso remove {{count}} arquivos da lista. Os que estão em um disco com lixeira vão para ela. O resto é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperá-los.",
     "trashConfirmMixedPermanent": "Mover e apagar",
     "cleanUpMessageMixedPermanent_one": "Seu arquivo convertido fica onde está. O item abaixo vai para a Lixeira se o disco dele tiver uma. Se não, é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperá-lo.",
-    "cleanUpMessageMixedPermanent_other": "Seu arquivo convertido fica onde está. O que está em um disco com lixeira vai para ela. O resto é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperar nada disso."
+    "cleanUpMessageMixedPermanent_other": "Seu arquivo convertido fica onde está. O que está em um disco com lixeira vai para ela. O resto é apagado para sempre porque Cópias de segurança está em “Nunca”, e você não poderá recuperar nada disso.",
+    "removeFromPlaylistTitle_one": "Remover esta faixa de “{{name}}”?",
+    "removeFromPlaylistTitle_other": "Remover {{count}} faixas de “{{name}}”?",
+    "removeFromPlaylistMessage": "Elas são removidas da playlist no rekordbox. Os arquivos e o resto da coleção não mudam.",
+    "removeFromPlaylistConfirm": "Remover"
   },
   "activity": {
     "title": "Atividade",
@@ -1744,7 +1748,7 @@
     "menu": {
       "addTo": "Adicionar à playlist",
       "insertSeparator": "Inserir separador acima",
-      "removeFrom": "Remover de “{{name}}”"
+      "removeFrom": "Remover de “{{name}}” no rekordbox"
     }
   },
   "engineIssue": {

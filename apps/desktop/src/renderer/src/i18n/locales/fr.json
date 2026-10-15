@@ -1523,7 +1523,11 @@
     "trashMessageMixedPermanent_other": "Retire {{count}} fichiers de la liste. Ceux d'un disque avec corbeille y vont. Les autres sont supprimés définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas les récupérer.",
     "trashConfirmMixedPermanent": "Déplacer et supprimer",
     "cleanUpMessageMixedPermanent_one": "Ton fichier converti reste où il est. L'élément ci-dessous va à la corbeille si son disque en a une. Sinon il est supprimé définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas le récupérer.",
-    "cleanUpMessageMixedPermanent_other": "Ton fichier converti reste où il est. Ce qui est sur un disque avec corbeille y va. Le reste est supprimé définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas le récupérer."
+    "cleanUpMessageMixedPermanent_other": "Ton fichier converti reste où il est. Ce qui est sur un disque avec corbeille y va. Le reste est supprimé définitivement car les copies de sauvegarde sont sur « Jamais », et tu ne pourras pas le récupérer.",
+    "removeFromPlaylistTitle_one": "Retirer ce morceau de « {{name}} » ?",
+    "removeFromPlaylistTitle_other": "Retirer {{count}} morceaux de « {{name}} » ?",
+    "removeFromPlaylistMessage": "Ils sont retirés de la playlist dans rekordbox. Les fichiers et le reste de la collection ne changent pas.",
+    "removeFromPlaylistConfirm": "Retirer"
   },
   "activity": {
     "title": "Activité",
@@ -1744,7 +1748,7 @@
     "menu": {
       "addTo": "Ajouter à une playlist",
       "insertSeparator": "Insérer un séparateur au-dessus",
-      "removeFrom": "Retirer de « {{name}} »"
+      "removeFrom": "Retirer de « {{name}} » dans rekordbox"
     }
   },
   "engineIssue": {

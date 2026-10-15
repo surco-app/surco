@@ -1523,7 +1523,11 @@
     "trashMessageMixedPermanent_other": "Entfernt {{count}} Dateien aus der Liste. Dateien auf einem Laufwerk mit Papierkorb kommen dorthin. Der Rest wird endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst ihn nicht wiederherstellen.",
     "trashConfirmMixedPermanent": "Verschieben und löschen",
     "cleanUpMessageMixedPermanent_one": "Deine konvertierte Datei bleibt, wo sie ist. Das Folgende kommt in den Papierkorb, wenn sein Laufwerk einen hat. Sonst wird es endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst es nicht wiederherstellen.",
-    "cleanUpMessageMixedPermanent_other": "Deine konvertierte Datei bleibt, wo sie ist. Was auf einem Laufwerk mit Papierkorb liegt, kommt dorthin. Der Rest wird endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst ihn nicht wiederherstellen."
+    "cleanUpMessageMixedPermanent_other": "Deine konvertierte Datei bleibt, wo sie ist. Was auf einem Laufwerk mit Papierkorb liegt, kommt dorthin. Der Rest wird endgültig gelöscht, weil Sicherungskopien auf „Nie“ steht, und du kannst ihn nicht wiederherstellen.",
+    "removeFromPlaylistTitle_one": "Diesen Titel aus „{{name}}“ entfernen?",
+    "removeFromPlaylistTitle_other": "{{count}} Titel aus „{{name}}“ entfernen?",
+    "removeFromPlaylistMessage": "Sie werden in rekordbox aus der Playlist entfernt. Die Dateien und der Rest der Sammlung bleiben unverändert.",
+    "removeFromPlaylistConfirm": "Entfernen"
   },
   "activity": {
     "title": "Aktivität",
@@ -1744,7 +1748,7 @@
     "menu": {
       "addTo": "Zu Playlist hinzufügen",
       "insertSeparator": "Trenner darüber einfügen",
-      "removeFrom": "Aus „{{name}}“ entfernen"
+      "removeFrom": "In rekordbox aus „{{name}}“ entfernen"
     }
   },
   "engineIssue": {

@@ -1523,7 +1523,11 @@
     "trashMessageMixedPermanent_other": "This removes {{count}} files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.",
     "trashConfirmMixedPermanent": "Move and delete",
     "cleanUpMessageMixedPermanent_one": "Your converted file stays where it is. The item below goes to the Trash if its disk has one. Otherwise it is deleted for good because Backups is set to Never, and you won’t be able to get it back.",
-    "cleanUpMessageMixedPermanent_other": "Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back."
+    "cleanUpMessageMixedPermanent_other": "Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.",
+    "removeFromPlaylistTitle_one": "Remove this track from “{{name}}”?",
+    "removeFromPlaylistTitle_other": "Remove {{count}} tracks from “{{name}}”?",
+    "removeFromPlaylistMessage": "They are removed from the playlist in rekordbox. The files and the rest of the collection stay as they are.",
+    "removeFromPlaylistConfirm": "Remove"
   },
   "activity": {
     "title": "Activity",
@@ -1744,7 +1748,7 @@
     "menu": {
       "addTo": "Add to playlist",
       "insertSeparator": "Insert separator above",
-      "removeFrom": "Remove from “{{name}}”"
+      "removeFrom": "Remove from “{{name}}” in rekordbox"
     }
   },
   "engineIssue": {

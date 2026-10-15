@@ -1642,6 +1642,25 @@ describe('App source playlists', () => {
     expect(load.mock.calls.length).toBeGreaterThan(before)
   })
 
+  // Removing from the DJ's real playlist has no undo in Surco: one row goes in one click
+  // like the list's own remove, several ask first and name the playlist they leave.
+  it('asks before removing several rows from the rekordbox playlist', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit })
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.contextMenu(rows[1])
+    expect(await screen.findByTestId('track-menu-remove-from')).toHaveTextContent(
+      'Remove from “Factory” in rekordbox',
+    )
+    fireEvent.click(screen.getByTestId('track-menu-remove-from'))
+    expect(edit).not.toHaveBeenCalled()
+    expect(await screen.findByText('Remove 2 tracks from “Factory”?')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l2'] })
+  })
+
   // The separator lands above the right-clicked row, so the edit names that row's link.
   it('inserts a separator above the right-clicked row', async () => {
     const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
