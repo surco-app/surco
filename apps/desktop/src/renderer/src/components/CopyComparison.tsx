@@ -171,40 +171,53 @@ export function CopyComparison({
       {/* Same audio means either copy will do: a table of matching figures would only send
           the reader hunting for a difference that is not there. */}
       {verdict.winner !== 'same' && (
-        <table className="mt-2 tabular-nums text-fg-dim">
-          <thead>
-            <tr>
-              <th />
-              <th className="pl-4 text-right font-medium">
-                {tr('editor.copyThisFile')} · {hereLabel}
-              </th>
-              <th className="pl-4 text-right font-medium">
-                {LIBRARY} · {libraryLabel}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const decides = row.id === decidingRow
-              return (
-                <tr
-                  key={row.id}
-                  data-testid={`copy-row-${row.id}`}
-                  data-decides={decides ? 'true' : undefined}
-                  className={decides ? 'text-fg' : undefined}
-                >
-                  <th scope="row" className="text-left font-normal">
-                    {row.label}
-                  </th>
-                  <td className={`pl-4 text-right ${decides ? cellTone('a') : ''}`}>{row.here}</td>
-                  <td className={`pl-4 text-right ${decides ? cellTone('b') : ''}`}>
-                    {row.library}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        // The Properties readout's table: rows on the field colour, split by hairlines, labels
+        // small and dim, figures at reading size.
+        <div className="mt-2 overflow-hidden rounded-lg bg-[var(--color-field)]">
+          <table className="w-full border-collapse tabular-nums">
+            <thead>
+              <tr>
+                <th />
+                <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
+                  {tr('editor.copyThisFile')} · {hereLabel}
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
+                  {LIBRARY} · {libraryLabel}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const decides = row.id === decidingRow
+                return (
+                  <tr
+                    key={row.id}
+                    data-testid={`copy-row-${row.id}`}
+                    data-decides={decides ? 'true' : undefined}
+                    className="border-t border-[var(--color-line)]"
+                  >
+                    <th
+                      scope="row"
+                      className={`px-3 py-2 text-left text-xs font-normal ${decides ? 'text-fg' : 'text-fg-dim'}`}
+                    >
+                      {row.label}
+                    </th>
+                    <td
+                      className={`px-3 py-2 text-right text-sm font-medium ${decides ? cellTone('a') : ''}`}
+                    >
+                      {row.here}
+                    </td>
+                    <td
+                      className={`px-3 py-2 text-right text-sm font-medium ${decides ? cellTone('b') : ''}`}
+                    >
+                      {row.library}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
