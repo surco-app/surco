@@ -1420,6 +1420,8 @@ describe('TrackList duplicate mark', () => {
   it.each([
     ['en', 'processed', 'this one may be reprocessed', 'no sign of reprocessing'],
     ['es', 'processed', 'esta puede estar reprocesada', 'sin reprocesado aparente'],
+    ['en', 'upsampled', 'this one is probably upsampled', 'not upsampled'],
+    ['es', 'upsampled', 'esta probablemente está reescalada', 'sin reescalar'],
     [
       'en',
       'transcode',

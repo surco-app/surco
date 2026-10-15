@@ -273,9 +273,9 @@ describe('CopyComparison', () => {
     )
   })
 
-  // Audio quality calls a file with nothing above 22 kHz "reescalado" (upsampled); the card
-  // uses the same word so the two sections never seem to describe different defects.
-  it('calls an upsampled copy reescalada, the word Audio quality uses', async () => {
+  // Audio quality calls a file with nothing above 22 kHz "probablemente reescalado"; the card
+  // uses the same word and the same doubt so the two sections never seem to disagree.
+  it('calls an upsampled copy probably reescalada, as Audio quality does', async () => {
     await i18n.changeLanguage('es')
     render(
       <CopyComparison
@@ -287,7 +287,7 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'La copia de Apple Music está reescalada desde una frecuencia más baja. Este fichero no.',
+      'La copia de Apple Music probablemente está reescalada desde una frecuencia más baja. Este fichero no.',
     )
   })
 })
