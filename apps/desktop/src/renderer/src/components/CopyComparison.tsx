@@ -92,8 +92,14 @@ export function CopyComparison({
       case 'transcode':
       case 'cutoff':
         // A transcode is called on the loser's knee alone, so the winner can cut no higher;
-        // "reaches" a lower figure would argue against the verdict.
-        if (loser.cutoffHz == null || winner.cutoffHz == null || winner.cutoffHz <= loser.cutoffHz)
+        // "reaches" a lower figure would argue against the verdict. The figures are compared
+        // as printed (tenths of a kHz): two that print alike would argue a difference the
+        // reader cannot see.
+        if (
+          loser.cutoffHz == null ||
+          winner.cutoffHz == null ||
+          Math.round(winner.cutoffHz / 100) <= Math.round(loser.cutoffHz / 100)
+        )
           return tr(keys.bare, names)
         return tr(keys.full, {
           ...names,

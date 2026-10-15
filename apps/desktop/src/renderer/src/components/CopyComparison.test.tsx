@@ -241,6 +241,23 @@ describe('CopyComparison', () => {
     expect(screen.getByTestId('copy-sentence').textContent).toContain('reaches 22.1 kHz')
   })
 
+  // 16 000 and 16 040 Hz both print as 16 kHz; "cut at 16 kHz, reaches 16 kHz" would argue
+  // a difference the reader cannot see, so the figures drop.
+  it('drops the cutoffs when they print as the same figure', () => {
+    render(
+      <CopyComparison
+        verdict={{ winner: 'b', reason: 'transcode' }}
+        here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
+        library={{ ...aif, cutoffHz: 16040, hasKnee: false }}
+        hereLabel="WAV"
+        libraryLabel="AIF"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'This file comes from a lossy source.',
+    )
+  })
+
   // Audio quality calls a file with nothing above 22 kHz "reescalado" (upsampled); the card
   // uses the same word so the two sections never seem to describe different defects.
   it('calls an upsampled copy reescalada, the word Audio quality uses', async () => {
