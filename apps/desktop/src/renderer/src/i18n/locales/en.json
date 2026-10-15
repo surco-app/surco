@@ -1684,19 +1684,6 @@
     "noMatch": "No playlist matches.",
     "separator": "separator"
   },
-  "applePlaylist": {
-    "title": "Import from Apple Music",
-    "subtitle": "Surco loads the files the playlist has on your disk.",
-    "search": "Search playlists",
-    "import": "Import",
-    "none": "There are no playlists in your Apple Music library.",
-    "failed": "Couldn't read your playlists. Check that Apple Music is open and that Surco is allowed to control it.",
-    "imported_one": "{{count}} track from “{{name}}”",
-    "imported_other": "{{count}} tracks from “{{name}}”",
-    "missing_one": "{{count}} with no file",
-    "missing_other": "{{count}} with no file",
-    "reading": "Reading the playlist…"
-  },
   "engineIssue": {
     "unreadable": "Engine DJ's library wasn't updated: Surco couldn't read it.",
     "write-failed": "Engine DJ's library wasn't updated: writing it failed, so it was left as it was.",

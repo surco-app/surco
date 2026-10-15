@@ -4753,13 +4753,21 @@ describe('App empty screen offers a single way in', () => {
     await waitFor(() => expect(window.api.pickFiles).toHaveBeenCalled())
   })
 
-  it('opens the playlist picker from importing', async () => {
+  it('opens Music in the rail from importing, where the dialog used to open', async () => {
     vi.resetModules()
-    reviewApi({ loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]) })
+    reviewApi({
+      loadAppleMusicPlaylists: vi
+        .fn()
+        .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', folder: null, count: 3 }]),
+    })
     await renderApp()
 
     fireEvent.click(await screen.findByTestId('empty-import-playlist'))
-    expect(await screen.findByTestId('apple-playlist-modal')).toBeInTheDocument()
+    expect(await screen.findByTestId('source-rail-appleMusic')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('opens the review on all groups from its row', async () => {

@@ -29,7 +29,6 @@ export type ActiveModal =
   | { type: 'rename' }
   | { type: 'info'; track: TrackItem }
   | { type: 'export' }
-  | { type: 'applePlaylist' }
   | { type: 'palette' }
   | { type: 'confirm'; confirm: ConfirmModal }
   | null
@@ -47,7 +46,6 @@ export interface Overlays {
   openRename: () => void
   openInfo: (track: TrackItem) => void
   openExport: () => void
-  openApplePlaylist: () => void
   openPalette: () => void
   // ⌘K from the keyboard toggles rather than opens, so a second press dismisses it.
   togglePalette: () => void
@@ -81,7 +79,6 @@ export function useOverlays(): Overlays {
   const openRename = useCallback(() => setActiveModal({ type: 'rename' }), [])
   const openInfo = useCallback((track: TrackItem) => setActiveModal({ type: 'info', track }), [])
   const openExport = useCallback(() => setActiveModal({ type: 'export' }), [])
-  const openApplePlaylist = useCallback(() => setActiveModal({ type: 'applePlaylist' }), [])
   const openPalette = useCallback(() => setActiveModal({ type: 'palette' }), [])
   const togglePalette = useCallback(
     () => setActiveModal((m) => (m?.type === 'palette' ? null : { type: 'palette' })),
@@ -109,7 +106,6 @@ export function useOverlays(): Overlays {
     openRename,
     openInfo,
     openExport,
-    openApplePlaylist,
     openPalette,
     togglePalette,
     openConfirm,

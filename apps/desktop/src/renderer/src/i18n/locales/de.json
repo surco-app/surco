@@ -1684,19 +1684,6 @@
     "noMatch": "Keine Playlist passt.",
     "separator": "Trenner"
   },
-  "applePlaylist": {
-    "title": "Aus Apple Music importieren",
-    "subtitle": "Surco lädt die Dateien, die die Playlist auf deiner Festplatte hat.",
-    "search": "Playlists suchen",
-    "import": "Importieren",
-    "none": "In deiner Apple-Music-Mediathek gibt es keine Playlists.",
-    "failed": "Deine Playlists konnten nicht gelesen werden. Prüfe, ob Apple Music geöffnet ist und Surco es steuern darf.",
-    "imported_one": "{{count}} Titel aus „{{name}}“",
-    "imported_other": "{{count}} Titel aus „{{name}}“",
-    "missing_one": "{{count}} ohne Datei",
-    "missing_other": "{{count}} ohne Datei",
-    "reading": "Playlist wird gelesen…"
-  },
   "engineIssue": {
     "unreadable": "Die Engine-DJ-Bibliothek wurde nicht aktualisiert: Surco konnte sie nicht lesen.",
     "write-failed": "Die Engine-DJ-Bibliothek wurde nicht aktualisiert: Das Schreiben ist fehlgeschlagen, sie bleibt unverändert.",

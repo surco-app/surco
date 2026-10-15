@@ -1684,19 +1684,6 @@
     "noMatch": "Nenhuma playlist corresponde.",
     "separator": "separador"
   },
-  "applePlaylist": {
-    "title": "Importar do Apple Music",
-    "subtitle": "O Surco carrega os arquivos que a playlist tem no seu disco.",
-    "search": "Buscar playlist",
-    "import": "Importar",
-    "none": "Não há playlists na sua biblioteca do Apple Music.",
-    "failed": "Não foi possível ler suas playlists. Verifique se o Apple Music está aberto e se o Surco tem permissão para controlá-lo.",
-    "imported_one": "{{count}} faixa de “{{name}}”",
-    "imported_other": "{{count}} faixas de “{{name}}”",
-    "missing_one": "{{count}} sem arquivo",
-    "missing_other": "{{count}} sem arquivo",
-    "reading": "Lendo a playlist…"
-  },
   "engineIssue": {
     "unreadable": "A biblioteca do Engine DJ não foi atualizada: o Surco não conseguiu lê-la.",
     "write-failed": "A biblioteca do Engine DJ não foi atualizada: a gravação falhou e ela ficou como estava.",

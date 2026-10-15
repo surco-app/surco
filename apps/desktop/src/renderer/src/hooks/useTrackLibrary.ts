@@ -87,12 +87,6 @@ interface Params {
   // to zero paths in expand.ts — leaving "there is nothing here" indistinguishable from
   // "I could not read it".
   onNoAudioFound: () => void
-  // What an Apple Music playlist import yielded: the playlist's name, how many rows it
-  // added, and how many of its tracks had no file on disk (streaming rows, undownloaded
-  // iCloud tracks). The missing count is reported rather than swallowed — a user who
-  // counts 128 in Music and sees 122 rows here has no way to tell which are absent or
-  // why, and that gap arrives later as a bug report nobody can reproduce.
-  onPlaylistImported?: (result: { name: string; imported: number; missing: number }) => void
   // How many files in a finished import batch failed their metadata read, so App can
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
@@ -141,7 +135,6 @@ interface TrackLibrary {
   pickFiles: () => Promise<void>
   // Loads the files one Apple Music playlist references. macOS only; the renderer does
   // not offer it elsewhere.
-  importApplePlaylist: (persistentId: string, name: string) => Promise<void>
   openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void
@@ -177,7 +170,6 @@ export function useTrackLibrary({
   onMetaLoaded,
   onDuplicatesSkipped,
   onNoAudioFound,
-  onPlaylistImported,
   onMetaReadFailed,
   onPathsAdded,
 }: Params): TrackLibrary {
@@ -695,28 +687,6 @@ export function useTrackLibrary({
     addPaths(await window.api.expandPaths(await window.api.pickFiles()))
   }
 
-  // An Apple Music playlist is just another way to name a set of files: once read, the
-  // paths go through the very same expand-and-add path a drop or a picked folder takes,
-  // so every filter, dedupe and analysis behaves identically. Nothing downstream knows
-  // where the crate came from.
-  async function importApplePlaylist(persistentId: string, name: string): Promise<void> {
-    const { paths, persistentIds, meta, missing } =
-      await window.api.loadAppleMusicPlaylistTracks(persistentId)
-    for (const [path, entry] of Object.entries(meta ?? {})) {
-      appleMusicMeta.current.set(path, entry)
-    }
-    // Recorded BEFORE expanding: the expand stream can create the rows before the awaited
-    // call returns, and whichever gets there first must find the stamp waiting.
-    for (const path of paths) {
-      pendingSeed.current.set(path, {
-        fromAppleMusic: true,
-        ...(persistentIds?.[path] ? { musicPersistentId: persistentIds[path] } : {}),
-      })
-    }
-    await addPaths(await window.api.expandPaths(paths))
-    onPlaylistImported?.({ name, imported: paths.length, missing })
-  }
-
   // A playlist opened from a source is browsing, not importing: the files go through the
   // same expand-and-add path as a drop so every filter and analysis behaves alike, but only
   // the ones not already in the crate are passed on. That keeps a track loaded from another
@@ -732,8 +702,8 @@ export function useTrackLibrary({
         !e.separator && e.path !== null && !loaded.has(e.path),
     )
     if (fresh.length === 0) return
-    // Staged BEFORE expanding, like importApplePlaylist: the expand stream can create the
-    // rows before the awaited call returns, and they must find the stamp waiting.
+    // Staged BEFORE expanding: the expand stream can create the rows before the awaited
+    // call returns, and they must find the stamp waiting.
     for (const e of fresh) {
       appleMusicMeta.current.set(e.path, e.meta)
       if (source === 'appleMusic') {
@@ -902,7 +872,6 @@ export function useTrackLibrary({
     addPaths,
     seedRestoredEdits,
     pickFiles,
-    importApplePlaylist,
     openSourcePlaylist,
     updateTrack,
     mapTracks,

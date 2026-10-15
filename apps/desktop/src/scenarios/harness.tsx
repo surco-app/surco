@@ -45,6 +45,7 @@ import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
+import { musicEntries } from '../renderer/src/lib/appleMusicSource'
 import { useAppleMusicFill } from '../renderer/src/hooks/useAppleMusicFill'
 import { useConfirmFlows } from '../renderer/src/hooks/useConfirmFlows'
 import { useLibraryVerdict } from '../renderer/src/hooks/useLibraryVerdict'
@@ -387,7 +388,7 @@ export interface Scenario {
   importPlaylist: (
     persistentId: string,
     name: string,
-  ) => Promise<{ name: string; imported: number; missing: number } | undefined>
+  ) => Promise<{ name: string; imported: number; missing: number }>
   prompts: Pick<ConfirmModal, 'title' | 'message'>[]
   patchTrack: (fileName: string, patch: Partial<TrackItem>) => void
   editMeta: (fileName: string, patch: Partial<TrackItem['meta']>) => void
@@ -466,7 +467,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   const { settings, trash, errors, sentToAppleMusic, flushes, api } = bootMain(options)
   const prompts: ConfirmModal[] = []
   const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
-  let playlistImported: { name: string; imported: number; missing: number } | undefined
   let running: Promise<void> | undefined
   ;(window as unknown as { api: Api }).api = api
 
@@ -496,9 +496,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         onDuplicatesSkipped: () => {},
         onNoAudioFound: () => errors.push('no audio found in the drop'),
         onMetaReadFailed: (count) => errors.push(`${count} metadata reads failed`),
-        onPlaylistImported: (imported) => {
-          playlistImported = imported
-        },
       })
       const processing = useTrackProcessing({
         tracks: library.tracks,
@@ -792,14 +789,19 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       }
     },
     importPlaylist: async (persistentId, name) => {
-      playlistImported = undefined
+      const before = tracks().length
+      const entries = musicEntries(await window.api.loadAppleMusicPlaylistTracks(persistentId))
       await act(async () => {
-        await result.current.library.importApplePlaylist(persistentId, name)
+        await result.current.library.openSourcePlaylist(entries, 'appleMusic')
       })
       await waitFor(() => expect(tracks().some((t) => t.loadingMeta)).toBe(false), {
         timeout: 20_000,
       })
-      return playlistImported
+      return {
+        name,
+        imported: tracks().length - before,
+        missing: entries.filter((e) => e.path === null).length,
+      }
     },
     convertAll: async (answer = 'confirm', format) => {
       running = undefined

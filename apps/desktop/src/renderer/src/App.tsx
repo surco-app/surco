@@ -492,7 +492,6 @@ export default function App(): React.JSX.Element {
     addPaths,
     seedRestoredEdits,
     pickFiles,
-    importApplePlaylist,
     openSourcePlaylist,
     updateTrack,
     mapTracks,
@@ -578,18 +577,6 @@ export default function App(): React.JSX.Element {
     // Same keying: a drop of several folders resolves one call per folder, and the user
     // needs one card saying "nothing came in", not one per directory.
     onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
-    // What the playlist actually yielded. The missing count is said out loud rather than
-    // swallowed: a user who counts 128 tracks in Music and sees 122 rows here cannot tell
-    // which are absent or why, and that gap is what arrives later as a bug report with no
-    // way to reproduce it. Keyed, so importing several playlists leaves one card.
-    onPlaylistImported: ({ name, imported, missing }) =>
-      pushImportNotice(
-        store,
-        'playlist-imported',
-        missing > 0
-          ? `${tr('applePlaylist.imported', { count: imported, name })} · ${tr('applePlaylist.missing', { count: missing })}`
-          : tr('applePlaylist.imported', { count: imported, name }),
-      ),
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
@@ -1871,7 +1858,7 @@ export default function App(): React.JSX.Element {
       editorDeclickRef,
       trackSearchRef,
       pickFiles: () => void watchLoad(pickFiles),
-      openApplePlaylist: isMac ? overlays.openApplePlaylist : undefined,
+      openApplePlaylist: isMac ? () => browser.selectSource('appleMusic') : undefined,
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview,
       selectAll,
@@ -2187,7 +2174,7 @@ export default function App(): React.JSX.Element {
                           selectedIds={selectedIds}
                           selectedPosition={selectedPosition}
                           onAdd={onAdd}
-                          onImportApplePlaylist={isMac ? overlays.openApplePlaylist : undefined}
+                          onImportApplePlaylist={isMac ? () => browser.selectSource('appleMusic') : undefined}
                           onSelectAllTracks={onSelectAllTracks}
                           scrollToSelected={scrollToSelected}
                           onFillAll={onFillAll}
@@ -2394,7 +2381,7 @@ export default function App(): React.JSX.Element {
                           <EmptyActions
                             onAdd={onAdd}
                             addShortcut={hintFor('add')}
-                            onImportPlaylist={isMac ? overlays.openApplePlaylist : undefined}
+                            onImportPlaylist={isMac ? () => browser.selectSource('appleMusic') : undefined}
                             onReviewMusic={
                               isMac
                                 ? () => setReview({ source: 'music', filter: 'all' })
@@ -2434,7 +2421,6 @@ export default function App(): React.JSX.Element {
               deriveTracksUndoable={deriveTracksUndoable}
               updateTrack={updateTrack}
               revealSelection={revealSelection}
-              importApplePlaylist={isMac ? importApplePlaylist : undefined}
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
