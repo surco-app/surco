@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
@@ -9,7 +9,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 import { toNmlLocation } from '../main/ffmpeg'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { findEntries } from '../main/traktorNml'
-import { type AppScenario, openApp } from './app'
+import { type AppScenario, openApp, openSection } from './app'
 import { DROP_MS, makeTrack, scenarioDir } from './fixtures'
 
 const COLLECTION_CUE_MS = 30_000
@@ -65,8 +65,7 @@ describe('Replace a record kept in Traktor and find it still there, cues and all
     })
     await surco.drop(folder)
     await surco.select('Record')
-    const toggle = within(screen.getByTestId('editor-trim')).getAllByRole('button')[0]
-    if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
+    await openSection('editor-trim')
     fireEvent.click(await screen.findByTestId('trim-apply-start', undefined, { timeout: 30_000 }))
     await screen.findByTestId('trim-cuts')
     fireEvent.click(screen.getByTestId('process-btn'))
