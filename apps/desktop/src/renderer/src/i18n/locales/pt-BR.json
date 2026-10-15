@@ -139,6 +139,7 @@
     "libraryGroup": "Organizar a biblioteca",
     "reviewMusic": "Revisar metadados no Apple Music",
     "reviewMusicHint": "Erros, maiúsculas e caracteres invisíveis",
+    "showDuplicates": "Mostrar duplicados",
     "duplicatesHint": "A mesma faixa salva duas vezes"
   },
   "errors": {

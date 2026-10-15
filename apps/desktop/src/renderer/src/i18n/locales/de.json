@@ -139,6 +139,7 @@
     "libraryGroup": "Bibliothek aufräumen",
     "reviewMusic": "Metadaten in Apple Music prüfen",
     "reviewMusicHint": "Tippfehler, Großschreibung, unsichtbare Zeichen",
+    "showDuplicates": "Duplikate anzeigen",
     "duplicatesHint": "Derselbe Track doppelt gespeichert"
   },
   "errors": {

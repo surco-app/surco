@@ -139,6 +139,7 @@
     "libraryGroup": "Tidy the library",
     "reviewMusic": "Review metadata in Apple Music",
     "reviewMusicHint": "Typos, capitals and invisible characters",
+    "showDuplicates": "Show duplicates",
     "duplicatesHint": "The same track saved twice"
   },
   "errors": {
