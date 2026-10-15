@@ -182,6 +182,8 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxAvailable: async () => false,
     loadRekordboxTree: async () => [],
     loadRekordboxPlaylist: async () => [],
+    rekordboxHasSeparator: async () => false,
+    editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     loadAppleMusicPlaylistTracks: async () => ({
       paths: [],
       persistentIds: {},

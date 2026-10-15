@@ -1,8 +1,12 @@
-import { existsSync } from 'node:fs'
-import { ipcMain } from 'electron'
+import { existsSync, realpathSync } from 'node:fs'
+import { BrowserWindow, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import type { RekordboxPlaylistEdit } from '../shared/types'
+import { serialLibraryFlush } from './libraryTagSync'
 import { openRekordboxDb } from './rekordboxDb'
+import { separatorContent } from './rekordboxPlaylistEdit'
 import { readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
+import { editRekordboxPlaylist } from './rekordboxPlaylistWrite'
 
 // Opens the collection read-only for one read and always closes it: rekordbox may be
 // running, and a handle left open is a lock it never asked for. No collection on this
@@ -36,12 +40,36 @@ export function collectionAvailable(path: string): boolean {
   return path !== '' && existsSync(path)
 }
 
+export interface PlaylistEditHost {
+  // The "rekordbox is open" dialog, over the window the edit came from.
+  ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
+  sessionBackup: (path: string) => Promise<void>
+}
+
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
-export function registerRekordboxPlaylistsIpc(collection: () => string): void {
+export function registerRekordboxPlaylistsIpc(
+  collection: () => string,
+  host: PlaylistEditHost,
+): void {
   ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
   ipcMain.handle('rekordbox:tree', () => withCollection(collection(), readRekordboxTree, []))
   ipcMain.handle('rekordbox:playlist', (_e, id: string) =>
     withCollection(collection(), (db) => readRekordboxPlaylist(db, id), []),
+  )
+  ipcMain.handle('rekordbox:hasSeparator', () =>
+    withCollection(collection(), (db) => separatorContent(db) !== null, false),
+  )
+  // Queued behind any other library write (a conversion's repoint, a review's sync): they
+  // touch the same master.db, and the write's transaction spans an await, so two at once
+  // would block each other on SQLite's busy timeout.
+  ipcMain.handle('rekordbox:edit', (e, edit: RekordboxPlaylistEdit) =>
+    serialLibraryFlush(() =>
+      editRekordboxPlaylist(collection(), edit, {
+        ensureClosed: () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+        sessionBackup: host.sessionBackup,
+        realPath: (p: string) => realpathSync(p),
+      }),
+    ),
   )
 }

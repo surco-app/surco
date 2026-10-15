@@ -68,6 +68,7 @@ interface MenuStrings {
   traktorSyncBlocked: string
   rekordboxQuitMessage: string
   rekordboxQuitDetail: string
+  rekordboxQuitDetailPlaylists: string
   rekordboxQuitConfirm: string
   rekordboxQuitCancel: string
   rekordboxSyncBlocked: string
@@ -160,6 +161,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox está abierto',
     rekordboxQuitDetail:
       'Surco necesita cerrarlo para actualizar tu colección y que apunte al archivo nuevo. rekordbox se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+    rekordboxQuitDetailPlaylists:
+      'Surco necesita cerrarlo para guardar el cambio en tus playlists. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     rekordboxQuitConfirm: 'Cerrar rekordbox',
     rekordboxQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
@@ -253,6 +256,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox is open',
     rekordboxQuitDetail:
       'Surco needs to close it to update your collection so it points at the new file. rekordbox will be closed safely; you can reopen it once the conversion finishes.',
+    rekordboxQuitDetailPlaylists:
+      'Surco needs to close it to save the change to your playlists. rekordbox will be closed safely and you can reopen it right away.',
     rekordboxQuitConfirm: 'Close rekordbox',
     rekordboxQuitCancel: 'Cancel',
     rekordboxSyncBlocked:
@@ -346,6 +351,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox ist geöffnet',
     rekordboxQuitDetail:
       'Surco muss es schließen, um deine Sammlung zu aktualisieren, damit sie auf die neue Datei zeigt. rekordbox wird sicher geschlossen; du kannst es nach der Konvertierung wieder öffnen.',
+    rekordboxQuitDetailPlaylists:
+      'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. rekordbox wird sicher geschlossen und du kannst es gleich wieder öffnen.',
     rekordboxQuitConfirm: 'rekordbox schließen',
     rekordboxQuitCancel: 'Abbrechen',
     rekordboxSyncBlocked:
@@ -440,6 +447,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox est ouvert',
     rekordboxQuitDetail:
       'Surco doit le fermer pour mettre à jour ta collection et la faire pointer vers le nouveau fichier. rekordbox sera fermé proprement ; tu pourras le rouvrir une fois la conversion terminée.',
+    rekordboxQuitDetailPlaylists:
+      'Surco doit le fermer pour enregistrer la modification de tes playlists. rekordbox sera fermé proprement et tu pourras le rouvrir tout de suite.',
     rekordboxQuitConfirm: 'Fermer rekordbox',
     rekordboxQuitCancel: 'Annuler',
     rekordboxSyncBlocked:
@@ -533,6 +542,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'O rekordbox está aberto',
     rekordboxQuitDetail:
       'O Surco precisa fechá-lo para atualizar a sua coleção e apontar para o arquivo novo. O rekordbox será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    rekordboxQuitDetailPlaylists:
+      'O Surco precisa fechá-lo para salvar a mudança nas suas playlists. O rekordbox será fechado com segurança e você pode reabri-lo em seguida.',
     rekordboxQuitConfirm: 'Fechar o rekordbox',
     rekordboxQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:

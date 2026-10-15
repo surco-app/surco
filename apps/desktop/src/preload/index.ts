@@ -19,6 +19,8 @@ import type {
   MusicReviewField,
   PairFacts,
   ProcessProgress,
+  RekordboxEditResult,
+  RekordboxPlaylistEdit,
   RekordboxSyncIssue,
   ScanVerdict,
   SearchHints,
@@ -167,6 +169,9 @@ const api: Api = {
   loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
   loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('rekordbox:playlist', id),
+  editRekordboxPlaylist: (edit: RekordboxPlaylistEdit): Promise<RekordboxEditResult> =>
+    ipcRenderer.invoke('rekordbox:edit', edit),
+  rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
   loadEngineLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('engine:library'),
   addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),

@@ -285,6 +285,8 @@ function scenarioApi(
     rekordboxAvailable: async () => false,
     loadRekordboxTree: async () => [],
     loadRekordboxPlaylist: async () => [],
+    rekordboxHasSeparator: async () => false,
+    editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     expandPaths: async (paths) => {
       const expanded = await expandPaths(paths, (batch) => {
         mediaAccess.allowAll(batch)

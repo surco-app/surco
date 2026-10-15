@@ -38,6 +38,8 @@ import type {
   ProcessJob,
   ProcessProgress,
   ProcessResult,
+  RekordboxEditResult,
+  RekordboxPlaylistEdit,
   RekordboxSyncIssue,
   Release,
   RemoveCopyResult,
@@ -185,6 +187,11 @@ export interface Api {
   loadRekordboxTree: () => Promise<SourceNode[]>
   // One playlist's rows in order, separators and file-less rows included.
   loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
+  // open; the result says whether the edit was written, and why not.
+  editRekordboxPlaylist: (edit: RekordboxPlaylistEdit) => Promise<RekordboxEditResult>
+  // Whether the collection has a separator track that can be copied into a playlist.
+  rekordboxHasSeparator: () => Promise<boolean>
   // The Engine DJ library's rows in the same candidate shape, for the same membership
   // check when Engine DJ is the conversion destination. Empty when no library exists.
   loadEngineLibrary: () => Promise<AppleMusicLookupCandidate[]>

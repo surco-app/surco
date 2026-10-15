@@ -303,14 +303,18 @@ let rekordboxQuitPrompt: Promise<boolean> | null = null
 // Asked before the collection is written rather than reported afterwards: by the time a
 // flush fails, the conversion has finished and the repoint is lost, so the user has to
 // convert the whole track again to get another attempt.
-async function ensureRekordboxClosed(win: BrowserWindow | null): Promise<boolean> {
+async function ensureRekordboxClosed(
+  win: BrowserWindow | null,
+  // The conversion's wording by default; a playlist edit has nothing to do with a new file.
+  detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' = 'rekordboxQuitDetail',
+): Promise<boolean> {
   if (!(await isRekordboxRunning())) return true
   rekordboxQuitPrompt ??= (async () => {
     const t = createMenuT(menuLocale())
     const opts = {
       type: 'warning' as const,
       message: t('rekordboxQuitMessage'),
-      detail: t('rekordboxQuitDetail'),
+      detail: t(detail),
       buttons: [t('rekordboxQuitConfirm'), t('rekordboxQuitCancel')],
       defaultId: 0,
       cancelId: 1,
@@ -844,8 +848,14 @@ function registerIpc(): void {
   )
 
   registerAppleMusicIpc({ trackTmp: tmpManifest.track, untrackTmp: tmpManifest.untrack })
-  registerRekordboxPlaylistsIpc(() =>
-    findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+  registerRekordboxPlaylistsIpc(
+    () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+    {
+      ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+      // The same per-session copy the conversion run uses: until the next run starts, it
+      // holds the collection as it was before Surco's first write of the session.
+      sessionBackup: (path) => sessions.rekordbox.ensure(path),
+    },
   )
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
