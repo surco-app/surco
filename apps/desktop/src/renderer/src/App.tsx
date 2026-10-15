@@ -2282,6 +2282,11 @@ export default function App(): React.JSX.Element {
                                 ? playlistScope.separatorBefore
                                 : undefined
                             }
+                            trailingSeparators={
+                              playlistScope && sortBy === 'import'
+                                ? playlistScope.trailingSeparators
+                                : undefined
+                            }
                             outsideFilter={outsideFilterIds}
                             onVisible={onListRowVisible}
                             rowRegistry={rowEls}

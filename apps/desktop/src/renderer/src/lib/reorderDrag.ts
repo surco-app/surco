@@ -16,3 +16,12 @@ export function draggedRows(): string[] | null {
 export function clearDraggedRows(): void {
   draggedRowIds = null
 }
+
+// A drag that reorders the open playlist inside the list. It carries this type instead of
+// files, so the window's import does not treat it as files arriving and the tree does not
+// take it as tracks to add.
+export const REORDER_TYPE = 'application/x-surco-reorder'
+
+export function isReorderDrag(e: { dataTransfer?: DataTransfer | null }): boolean {
+  return e.dataTransfer?.types?.includes(REORDER_TYPE) ?? false
+}

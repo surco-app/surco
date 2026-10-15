@@ -10,30 +10,44 @@ import type { TrackItem } from '../types'
 // conversion that is not in place repoints the rekordbox row at the new file. A track
 // loaded from a path wins over one that converted into it, so outputs go in first and
 // inputs overwrite them.
-export function playlistView(
-  tracks: TrackItem[],
-  entries: SourcePlaylistEntry[],
-): { tracks: TrackItem[]; separatorBefore: ReadonlySet<string> } {
+//
+// Separators are kept one by one, each under its own key (its playlist row), so each can be
+// dragged and removed; one in a run or after the last row is not folded away. Each shown
+// track also knows its first row in the playlist and its collection entry: a drag moves
+// that row, a copy links that entry.
+export interface PlaylistScope {
+  tracks: TrackItem[]
+  separatorBefore: ReadonlyMap<string, readonly string[]>
+  trailingSeparators: readonly string[]
+  linkOf: ReadonlyMap<string, string>
+  contentOf: ReadonlyMap<string, string>
+}
+
+export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]): PlaylistScope {
   const byPath = new Map<string, TrackItem>()
   for (const t of tracks) if (t.outputPath) byPath.set(t.outputPath.normalize('NFC'), t)
   for (const t of tracks) byPath.set(t.inputPath.normalize('NFC'), t)
   const shown: TrackItem[] = []
   const seen = new Set<string>()
-  const separatorBefore = new Set<string>()
-  let pendingBreak = false
-  for (const e of entries) {
+  const separatorBefore = new Map<string, string[]>()
+  const linkOf = new Map<string, string>()
+  const contentOf = new Map<string, string>()
+  let pending: string[] = []
+  entries.forEach((e, i) => {
     if (e.separator) {
-      pendingBreak = true
-      continue
+      pending.push(e.linkId ?? `sep-${i}`)
+      return
     }
     const t = e.path ? byPath.get(e.path.normalize('NFC')) : undefined
-    if (!t || seen.has(t.id)) continue
+    if (!t || seen.has(t.id)) return
     seen.add(t.id)
     shown.push(t)
-    if (pendingBreak) separatorBefore.add(t.id)
-    pendingBreak = false
-  }
-  return { tracks: shown, separatorBefore }
+    if (e.linkId) linkOf.set(t.id, e.linkId)
+    if (e.contentId) contentOf.set(t.id, e.contentId)
+    if (pending.length) separatorBefore.set(t.id, pending)
+    pending = []
+  })
+  return { tracks: shown, separatorBefore, trailingSeparators: pending, linkOf, contentOf }
 }
 
 // Whether a track belongs to the open playlist, by the same path rules as playlistView, for

@@ -1721,6 +1721,9 @@
       "name": "Nome",
       "dropCount": "+{{count}} ao soltar",
       "folderMenu": "Ações da pasta"
+    },
+    "reorder": {
+      "removeSeparator": "Remover separador"
     }
   },
   "engineIssue": {

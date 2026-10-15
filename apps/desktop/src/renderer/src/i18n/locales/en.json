@@ -1721,6 +1721,9 @@
       "name": "Name",
       "dropCount": "+{{count}} on drop",
       "folderMenu": "Folder actions"
+    },
+    "reorder": {
+      "removeSeparator": "Remove separator"
     }
   },
   "engineIssue": {

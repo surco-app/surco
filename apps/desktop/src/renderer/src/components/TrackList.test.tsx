@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // TrackContextMenu reads window.api at render; install a stub before importing it.
 const api = {
@@ -21,7 +21,9 @@ import type { TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
 import { trackSignature } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
+import { clearDraggedRows, draggedRows } from '../lib/reorderDrag'
 import * as triage from '../lib/triage'
+import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 import { TrackList } from './TrackList'
@@ -34,6 +36,22 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 afterEach(cleanup)
+beforeAll(installDragEvent)
+afterEach(clearDraggedRows)
+
+// A track row's draggable wrapper, or a separator line, by its test id.
+const wrapperOf = (key: string): HTMLElement =>
+  screen.queryByTestId(`track-drag-${key}`) ?? screen.getByTestId(`track-separator-${key}`)
+
+// Grip, drag start, hover over the target (upper half when above), drop.
+function drag(from: string, onto: string, above: boolean) {
+  const dt = fakeDataTransfer()
+  fireEvent.mouseDown(screen.getByTestId(`track-grip-${from}`))
+  fireEvent.dragStart(wrapperOf(from), { dataTransfer: dt })
+  fireEvent.dragOver(wrapperOf(onto), { dataTransfer: dt, clientY: above ? -1 : 1 })
+  fireEvent.drop(wrapperOf(onto), { dataTransfer: dt })
+  return dt
+}
 
 // A full TrackItem so the list renders exactly as it does in the app; callers
 // override only the fields the assertion cares about.
@@ -78,11 +96,18 @@ function renderList(
     bindings: overrideBindings = bindings,
     duplicateRankById,
     separatorBefore,
+    trailingSeparators,
+    reorder,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
     duplicateRankById?: ReadonlyMap<string, DuplicateRank>
-    separatorBefore?: ReadonlySet<string>
+    separatorBefore?: ReadonlyMap<string, readonly string[]>
+    trailingSeparators?: readonly string[]
+    reorder?: {
+      onMove: (keys: string[], beforeKey: string | null) => void
+      onRemoveSeparator: (key: string) => void
+    }
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -113,6 +138,8 @@ function renderList(
       onPrefetch={onPrefetch}
       duplicateRankById={duplicateRankById}
       separatorBefore={separatorBefore}
+      trailingSeparators={trailingSeparators}
+      reorder={reorder}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -162,10 +189,12 @@ describe('TrackList', () => {
   // where it falls keeps the sections the DJ built readable in Surco's list.
   it('draws a separator line above the rows a playlist breaks before', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
-      separatorBefore: new Set(['b']),
+      separatorBefore: new Map([['b', ['s1']]]),
     })
-    expect(screen.getByTestId('track-separator-b')).toBeInTheDocument()
-    expect(screen.queryByTestId('track-separator-a')).not.toBeInTheDocument()
+    expect(screen.getByTestId('track-separator-s1')).toBeInTheDocument()
+    expect(
+      wrapperOf('s1').compareDocumentPosition(wrapperOf('b')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('shows the track title and artist', () => {
@@ -1594,5 +1623,132 @@ describe('TrackList rows the filter no longer matches', () => {
     const [a, b] = screen.getAllByTestId('track-row')
     expect(a).toHaveAttribute('data-outside-filter', 'true')
     expect(b).not.toHaveAttribute('data-outside-filter')
+  })
+})
+
+describe('TrackList reorder', () => {
+  const abc = () => [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })]
+  const reorderSpy = () => ({ onMove: vi.fn(), onRemoveSeparator: vi.fn() })
+
+  it('has no grips unless the playlist can be reordered', () => {
+    renderList(abc())
+    expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument()
+  })
+
+  it('moves a row before the one it is dropped on, with a line where it will land', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), null, [], { reorder })
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
+    expect(screen.getByTestId('reorder-line')).toBeInTheDocument()
+    fireEvent.drop(wrapperOf('a'), { dataTransfer: dt })
+    expect(reorder.onMove).toHaveBeenCalledWith(['c'], 'a')
+    expect(screen.queryByTestId('reorder-line')).not.toBeInTheDocument()
+  })
+
+  // Finder's convention, already used by the drag-out: a dragged row that is part of the
+  // selection takes the whole selection with it, in list order.
+  it('moves the whole selection when the dragged row is part of it', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), 'c', ['a', 'c'], { reorder })
+    drag('a', 'c', false)
+    expect(reorder.onMove).toHaveBeenCalledWith(['a', 'c'], null)
+  })
+
+  it('moves a separator like a row, next to another one if dropped there', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), null, [], {
+      reorder,
+      separatorBefore: new Map([
+        ['b', ['s1']],
+        ['c', ['s2']],
+      ]),
+    })
+    drag('s2', 'b', true)
+    expect(reorder.onMove).toHaveBeenCalledWith(['s2'], 'b')
+  })
+
+  it('sends nothing for a drop that leaves the order as it was', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), null, [], { reorder })
+    drag('a', 'a', false)
+    expect(reorder.onMove).not.toHaveBeenCalled()
+  })
+
+  // The grip is what makes a drag a reorder; dragging anywhere else on the row still hands
+  // the files to the OS (and to the tree), as before.
+  it('keeps the drag-out to other apps when the grip was not pressed', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), null, [], { reorder })
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
+    expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/b.wav'], undefined)
+  })
+
+  it('removes a separator from its own line', () => {
+    const reorder = reorderSpy()
+    renderList(abc(), null, [], { reorder, separatorBefore: new Map([['b', ['s1']]]) })
+    fireEvent.click(screen.getByTestId('separator-remove-s1'))
+    expect(reorder.onRemoveSeparator).toHaveBeenCalledWith('s1')
+  })
+
+  it('draws the separators after the last row', () => {
+    renderList(abc(), null, [], { trailingSeparators: ['s9'] })
+    expect(
+      wrapperOf('c').compareDocumentPosition(wrapperOf('s9')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  // A grip pressed and released without dragging, even outside the list, must not turn
+  // the next plain drag of that row into a reorder: that drag belongs to other apps.
+  it('lets go of a pressed grip when the mouse is released anywhere', () => {
+    renderList(abc(), null, [], { reorder: reorderSpy() })
+    fireEvent.mouseDown(screen.getByTestId('track-grip-b'))
+    fireEvent.mouseUp(window)
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
+    expect(api.startTrackDrag).toHaveBeenCalled()
+  })
+
+  // The tree reads what the list is dragging from this record, not from files the OS may
+  // or may not bring back into Surco's window; a finished drag must not leave it behind.
+  it('records the rows of a drag-out and forgets them when the drag ends', () => {
+    renderList(abc(), 'c', ['a', 'c'])
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: fakeDataTransfer() })
+    expect(draggedRows()).toEqual(['a', 'c'])
+    fireEvent.dragEnd(window)
+    expect(draggedRows()).toBeNull()
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
+    fireEvent.pointerDown(window)
+    expect(draggedRows()).toBeNull()
+  })
+
+  // The tree and the open playlist are re-read on focus; a re-read landing mid-drag brings
+  // new row objects for the same tracks, and the drop must still move the dragged row.
+  it('still drops the dragged row when the list re-renders mid-drag', () => {
+    const reorder = reorderSpy()
+    const props = (tracks: TrackItem[]) => ({
+      tracks,
+      selectedId: null,
+      selectedIds: new Set<string>(),
+      outputFormat: 'aiff' as const,
+      bindings,
+      onSelect: vi.fn(),
+      onActivate: vi.fn(),
+      onRemove: vi.fn(),
+      onSwipeRemove: vi.fn(),
+      onAcceptReview: vi.fn(),
+      onPrefetch: vi.fn(),
+      renderMenu: () => null,
+      reorder,
+    })
+    const { rerender } = render(<TrackList {...props(abc())} />)
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+    rerender(<TrackList {...props(abc())} />)
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
+    fireEvent.drop(wrapperOf('a'), { dataTransfer: dt })
+    expect(reorder.onMove).toHaveBeenCalledWith(['c'], 'a')
   })
 })

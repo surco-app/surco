@@ -7,8 +7,8 @@ function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
 }
 
-function entry(path: string | null, separator = false): SourcePlaylistEntry {
-  return { path, separator, meta: {} }
+function entry(path: string | null, separator = false, linkId?: string): SourcePlaylistEntry {
+  return { path, separator, meta: {}, linkId, contentId: linkId && `c-${linkId}` }
 }
 
 const A = track('a', '/m/A.wav')
@@ -23,23 +23,59 @@ describe('playlistView', () => {
   })
 
   it('marks the track after each separator, so the list can draw the break', () => {
-    const view = playlistView([A, B], [entry('/m/A.wav'), entry(SEP, true), entry('/m/B.wav')])
-    expect([...view.separatorBefore]).toEqual(['b'])
+    const view = playlistView(
+      [A, B],
+      [entry('/m/A.wav', false, 'l1'), entry(SEP, true, 's1'), entry('/m/B.wav', false, 'l2')],
+    )
+    expect([...view.separatorBefore]).toEqual([['b', ['s1']]])
   })
 
-  it('collapses runs of separators and drops a trailing one: a break is a break', () => {
+  // Separators can be moved and removed now; one hidden in a collapsed run, or one after the
+  // last row, could never be reached. Each stays its own line.
+  it('keeps every separator as its own line, side by side and after the last row', () => {
     const view = playlistView(
       [A, B],
       [
-        entry(SEP, true),
-        entry('/m/A.wav'),
-        entry(SEP, true),
-        entry(SEP, true),
-        entry('/m/B.wav'),
-        entry(SEP, true),
+        entry(SEP, true, 's0'),
+        entry('/m/A.wav', false, 'l1'),
+        entry(SEP, true, 's1'),
+        entry(SEP, true, 's2'),
+        entry('/m/B.wav', false, 'l2'),
+        entry(SEP, true, 's3'),
       ],
     )
-    expect([...view.separatorBefore].sort()).toEqual(['a', 'b'])
+    expect(Object.fromEntries(view.separatorBefore)).toEqual({ a: ['s0'], b: ['s1', 's2'] })
+    expect(view.trailingSeparators).toEqual(['s3'])
+  })
+
+  // A track shown once stands for its first row in the playlist: that is the row a drag
+  // moves, and the entry another playlist links to when it is copied.
+  it('gives each shown track the link of its first row and its collection entry', () => {
+    const view = playlistView(
+      [A, B],
+      [
+        entry('/m/A.wav', false, 'l1'),
+        entry('/m/B.wav', false, 'l2'),
+        entry('/m/A.wav', false, 'l3'),
+      ],
+    )
+    expect(Object.fromEntries(view.linkOf)).toEqual({ a: 'l1', b: 'l2' })
+    expect(Object.fromEntries(view.contentOf)).toEqual({ a: 'c-l1', b: 'c-l2' })
+  })
+
+  // A separator before a row Surco does not show (a missing file) still breaks the set; it
+  // is drawn above the next row that is shown.
+  it('carries a separator over a row the list does not show', () => {
+    const view = playlistView(
+      [A, B],
+      [
+        entry('/m/A.wav', false, 'l1'),
+        entry(SEP, true, 's1'),
+        entry('/m/gone.wav', false, 'l2'),
+        entry('/m/B.wav', false, 'l3'),
+      ],
+    )
+    expect(Object.fromEntries(view.separatorBefore)).toEqual({ b: ['s1'] })
   })
 
   it('shows a track the playlist holds twice only once, at its first place', () => {
@@ -55,10 +91,13 @@ describe('playlistView', () => {
     expect(view.tracks.map((t) => t.id)).toEqual(['n', 'm'])
   })
 
-  it('is empty for a playlist of only separators, with no orphan break', () => {
-    const view = playlistView([A], [entry(SEP, true), entry(SEP, true)])
+  // No row to draw a break above, but the separators are still the playlist's: they stay as
+  // trailing lines so they can be dragged or removed.
+  it('shows no rows for a playlist of only separators, keeping them as trailing lines', () => {
+    const view = playlistView([A], [entry(SEP, true, 's1'), entry(SEP, true, 's2')])
     expect(view.tracks).toEqual([])
     expect(view.separatorBefore.size).toBe(0)
+    expect(view.trailingSeparators).toEqual(['s1', 's2'])
   })
 
   it('skips rows not loaded yet instead of holding a gap', () => {
