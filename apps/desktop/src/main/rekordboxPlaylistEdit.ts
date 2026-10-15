@@ -135,6 +135,7 @@ export function resolveTracks(
         twins = true
         continue
       }
+      if (!known.get(match.id, STREAMING_FILE_TYPE)) continue
       id = match.id
       break
     }

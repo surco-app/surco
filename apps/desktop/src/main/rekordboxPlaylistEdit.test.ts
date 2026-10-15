@@ -107,6 +107,18 @@ describe('resolveTracks', () => {
     })
   })
 
+  // A row copied from a playlist carries its path too: when the entry check refuses the
+  // separator, the path fallback must not bring the same blank file back as a track.
+  it('never takes the separator file as a track, even found by its path', () => {
+    expect(
+      resolveTracks(
+        db,
+        [{ contentId: '109', paths: ['/Users/dj/Music/PioneerDJ/Blank Audio/_.mp3'] }],
+        TWIN_PATHS,
+      ),
+    ).toEqual({ contentIds: [], notInCollection: 1, ambiguous: 0 })
+  })
+
   it('never takes the separator file as a track', () => {
     expect(resolveTracks(db, [{ contentId: '109', paths: [] }], TWIN_PATHS).notInCollection).toBe(1)
   })
@@ -175,6 +187,32 @@ describe('addToPlaylist', () => {
   })
 })
 
+describe('links the list does not show', () => {
+  // A soft-deleted link is gone for rekordbox: it neither blocks adding the track again
+  // nor takes a number. A link whose content row is missing is still in the order, so the new
+  // row is numbered after it instead of colliding.
+  it('leaves a soft-deleted link out and numbers the dangling one into the order', async () => {
+    db.close()
+    db = await openFixture({
+      ...ORGANISE_FIXTURE,
+      links: [
+        ...ORGANISE_FIXTURE.links,
+        { ID: 'hd', PlaylistID: '3000', ContentID: '101', TrackNo: 3, deleted: true },
+        { ID: 'hx', PlaylistID: '3000', ContentID: 'missing', TrackNo: 4 },
+      ],
+    })
+    expect(addToPlaylist(db, '3000', ['101'], ctx)).toEqual({ added: 1, already: 0 })
+    const byId = Object.fromEntries(rows('3000').map((r) => [r.ID, r]))
+    expect(byId.hd).toMatchObject({ TrackNo: 3, usn: 1, updated_at: FIXTURE_STAMP })
+    expect(byId.hx.TrackNo).toBe(3)
+    expect(
+      rows('3000')
+        .filter((r) => r.ContentID === '101' && r.ID !== 'hd')
+        .map((r) => r.TrackNo),
+    ).toEqual([4])
+  })
+})
+
 describe('removeFromPlaylist', () => {
   // The list shows a track once; removing that row must take every link of the track, or
   // the hidden one brings the row straight back on the re-read.
@@ -199,6 +237,7 @@ describe('removeFromPlaylist', () => {
   it('refuses a row that is no longer there', () => {
     expect(() => removeFromPlaylist(db, '2000', ['gone'], ctx)).toThrow(EditRefused)
     expect(ids('2000')).toEqual(['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7'])
+    expect(counter()).toBe(500)
   })
 })
 
@@ -245,7 +284,10 @@ describe('moveInPlaylist', () => {
   })
 
   it('refuses a target row that is gone', () => {
+    const before = ids('2000')
     expect(() => moveInPlaylist(db, '2000', ['f1'], 'gone', ctx)).toThrow(EditRefused)
+    expect(ids('2000')).toEqual(before)
+    expect(counter()).toBe(500)
   })
 })
 
@@ -263,6 +305,13 @@ describe('insertSeparator', () => {
   it('uses the separator the collection links most', () => {
     insertSeparator(db, '3000', 'h1', ctx)
     expect(contents('3000')).toEqual(['109', '102', '110'])
+  })
+
+  it('refuses a row that is gone, writing nothing', () => {
+    const before = ids('2000')
+    expect(() => insertSeparator(db, '2000', 'gone', ctx)).toThrow(EditRefused)
+    expect(ids('2000')).toEqual(before)
+    expect(counter()).toBe(500)
   })
 
   it('refuses when the collection has no separator to copy', async () => {
