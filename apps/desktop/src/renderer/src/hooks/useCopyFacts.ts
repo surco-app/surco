@@ -1,6 +1,6 @@
 import { queryOptions, useQueries, useQuery } from '@tanstack/react-query'
 import type { LoudnessResult, PairFacts, SpectrumVerdict } from '../../../shared/types'
-import { analysisOptions } from '../lib/analysisQueries'
+import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 import type { CopyFacts } from '../lib/bestCopy'
 import { fileExtension } from '../lib/properties'
 
@@ -32,10 +32,15 @@ export function copySpectrumOptions(path: string) {
   })
 }
 
-export function copyFactsQueries(path: string) {
+// The loudness entry is the one useTrackLoudness reads for the open track at 'high',
+// cancellably. The editor asks for its own track at that priority so the readout never
+// joins a 'low' fetch the comparison started; the list's background rows stay 'low'.
+export function copyFactsQueries(path: string, priority: 'low' | 'high' = 'low') {
   return [
     copySpectrumOptions(path),
-    analysisOptions('loudness', path, () => window.api.loudness(path, 'low')),
+    priority === 'high'
+      ? cancellableAnalysisOptions('loudness', path, () => window.api.loudness(path, 'high'))
+      : analysisOptions('loudness', path, () => window.api.loudness(path, 'low')),
     analysisOptions('fingerprint', path, () => window.api.fingerprint(path, 'low')),
   ] as const
 }
@@ -64,8 +69,12 @@ export function toCopyFacts(
   }
 }
 
-export function useCopyFacts(path: string, enabled: boolean): CopyFacts | null | undefined {
-  const [spectrumQuery, loudQuery, fpQuery] = copyFactsQueries(path)
+export function useCopyFacts(
+  path: string,
+  enabled: boolean,
+  priority: 'low' | 'high' = 'low',
+): CopyFacts | null | undefined {
+  const [spectrumQuery, loudQuery, fpQuery] = copyFactsQueries(path, priority)
   const on = enabled && !!path
   const [spectrum, loud, fp] = useQueries({
     queries: [

@@ -3509,6 +3509,18 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
   })
 
+  // The loudness entry is shared with the Quality section's readout, which measures the
+  // open track at 'high' and cancels it when the user browses away. Started at 'low' by the
+  // comparison, that readout would join a fetch stuck behind a background sweep.
+  it('measures the open track at the editor priority, not the background one', async () => {
+    const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high')
+    expect(api.loudness).not.toHaveBeenCalledWith('/music/Strobe.aif', 'low')
+  })
+
   it('says Apple Music has the better copy when this file is the limited one', async () => {
     renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
     await waitFor(() =>

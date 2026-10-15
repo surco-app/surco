@@ -630,7 +630,7 @@ export const Editor = memo(function Editor({
   // be measured gives no verdict and leaves that check as the only answer. A pair that could
   // not be lined up is not one master, so compareCopies skips the level criteria and the
   // format and spectrum still decide.
-  const hereFacts = useCopyFacts(item.inputPath, !!replacedCopyPath)
+  const hereFacts = useCopyFacts(item.inputPath, !!replacedCopyPath, 'high')
   const libraryFacts = useCopyFacts(replacedCopyPath, !!replacedCopyPath)
   const copyPair = usePairFacts(item.inputPath, replacedCopyPath, !!replacedCopyPath)
   const copyVerdict =

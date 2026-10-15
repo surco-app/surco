@@ -124,6 +124,26 @@ describe('useCopyFacts', () => {
     expect(client.getQueryData(['copySpectrum', '/m/a.wav'])).not.toHaveProperty('image')
   })
 
+  // The list measures every duplicate in the background at 'low'; the editor's own track
+  // is the one the user waits on, and shares its loudness entry with the readout at 'high'.
+  it('measures loudness at the priority it is given, low by default', async () => {
+    const low = vi.fn().mockResolvedValue(loudness)
+    setApi({
+      spectrogram: vi.fn().mockResolvedValue({ image: '', cutoffHz: 22050 }),
+      loudness: low,
+      fingerprint: vi.fn().mockResolvedValue('abc'),
+      cancelAnalysis: vi.fn(),
+    })
+    const list = renderHook(() => useCopyFacts('/m/a.aif', true), { wrapper: wrapper() })
+    await waitFor(() => expect(list.result.current).not.toBeUndefined())
+    expect(low).toHaveBeenCalledWith('/m/a.aif', 'low')
+    const editor = renderHook(() => useCopyFacts('/m/b.aif', true, 'high'), {
+      wrapper: wrapper(),
+    })
+    await waitFor(() => expect(editor.result.current).not.toBeUndefined())
+    expect(low).toHaveBeenCalledWith('/m/b.aif', 'high')
+  })
+
   it('is still measuring while a probe is pending', () => {
     setApi({
       spectrogram: vi.fn().mockResolvedValue({ image: '', cutoffHz: 22050 }),
