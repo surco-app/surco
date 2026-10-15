@@ -855,6 +855,26 @@ describe('App source playlists', () => {
     )
   })
 
+  // Each library has its own folders and names: a search typed for Music would filter
+  // rekordbox's tree down to nothing the user asked for there.
+  it('starts the rekordbox tree fresh after browsing Music', async () => {
+    setApi({
+      platform: 'darwin',
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 0 }]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.change(await screen.findByTestId('source-tree-search'), {
+      target: { value: 'house' },
+    })
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    expect(await screen.findByTestId('source-node-f')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-search')).toHaveValue('')
+  })
+
   // A collection repeats the same set across folders ("Todas", "Top") in another order.
   // Keeping the selected track's list still while it is edited must not keep the previous
   // playlist's order once another playlist is opened, or its breaks land between the wrong rows.

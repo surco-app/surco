@@ -2146,6 +2146,7 @@ export default function App(): React.JSX.Element {
                 )}
                 {browser.source && (
                   <SourceTree
+                    key={browser.source}
                     title={tr(`sources.${browser.source}`)}
                     source={browser.source}
                     nodes={browser.tree}
