@@ -1,6 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { TrackMetadata } from '../shared/types'
+import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 type Db = InstanceType<typeof Database>
 
@@ -42,10 +43,6 @@ export function rekordboxMetaFrom(meta: TrackMetadata): RekordboxMeta {
   }
 }
 
-function timestamp(now: Date): string {
-  return `${now.toISOString().replace('T', ' ').replace('Z', '')} +00:00`
-}
-
 function leadingNumber(value: string): number | null {
   const match = /^\s*(\d+)\s*(?:\/\s*\d+\s*)?$/.exec(value)
   return match ? Number(match[1]) : null
@@ -66,27 +63,12 @@ export function applyRekordboxMeta(
   meta: RekordboxMeta,
   options: ApplyOptions = {},
 ): void {
-  const stamp = timestamp(options.now ?? new Date())
+  const stamp = rekordboxStamp(options.now ?? new Date())
   const nextId = options.newId ?? randomRowId
 
-  const nextUsn = (): number => {
-    const { int_1 } = db
-      .prepare(`SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`)
-      .get() as { int_1: number }
-    const usn = Number(int_1) + 1
-    db.prepare(
-      `UPDATE agentRegistry SET int_1 = ?, updated_at = ? WHERE registry_id = 'localUpdateCount'`,
-    ).run(usn, stamp)
-    return usn
-  }
+  const nextUsn = (): number => takeLocalUsn(db, stamp)
 
-  const unusedId = (table: string): string => {
-    const taken = db.prepare(`SELECT 1 FROM ${table} WHERE ID = ?`)
-    for (;;) {
-      const id = nextId()
-      if (!taken.get(id)) return id
-    }
-  }
+  const unusedId = (table: string): string => unusedRowId(db, table, nextId)
 
   const insertRow = (table: string, columns: Record<string, string | null>): string => {
     const id = unusedId(table)
