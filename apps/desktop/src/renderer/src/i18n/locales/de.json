@@ -1679,7 +1679,10 @@
     "rekordbox": "rekordbox",
     "search": "Playlist suchen",
     "loading": "Playlists werden gelesen…",
-    "failed": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
+    "failed": {
+      "appleMusic": "Deine Playlists konnten nicht gelesen werden. Prüfe, ob Apple Music geöffnet ist und Surco es steuern darf.",
+      "rekordbox": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück."
+    },
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
     "separator": "Trenner",

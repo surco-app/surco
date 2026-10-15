@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SourceNode } from '../../../shared/types'
+import type { PlaylistSource, SourceNode } from '../../../shared/types'
 
 // The folders on the way to a node, so the tree can open them for the selected playlist.
 function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): SourceNode[] | null {
@@ -30,12 +30,14 @@ function flatten(
 
 export function SourceTree({
   title,
+  source,
   nodes,
   failed,
   selectedId,
   onSelect,
 }: {
   title: string
+  source: PlaylistSource
   nodes: SourceNode[] | undefined
   failed: boolean
   selectedId: string | null
@@ -102,7 +104,7 @@ export function SourceTree({
   if (failed)
     body = (
       <p data-testid="source-tree-failed" className="px-3 text-xs text-fg-faint">
-        {tr('sources.failed')}
+        {tr(`sources.failed.${source}`)}
       </p>
     )
   else if (!nodes) body = <p className="px-3 text-xs text-fg-faint">{tr('sources.loading')}</p>

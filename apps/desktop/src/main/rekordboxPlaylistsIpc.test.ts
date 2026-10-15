@@ -13,10 +13,12 @@ describe('withCollection', () => {
     expect(withCollection('', () => 'read', 'none')).toBe('none')
   })
 
-  it('falls back when the file is not a rekordbox database instead of throwing at the renderer', async () => {
+  // A collection that is there but does not read is not an empty one: answering empty
+  // would show "no playlists" and close the open playlist as if it had been deleted.
+  it('fails when the file is not a rekordbox database, so the renderer can say it could not read it', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     await writeFile(path, 'not a database')
-    expect(withCollection(path, () => 'read', 'none')).toBe('none')
+    expect(() => withCollection(path, () => 'read', 'none')).toThrow()
   })
 
   it('reads a real collection', async () => {
@@ -25,10 +27,10 @@ describe('withCollection', () => {
     expect(withCollection(path, () => 'read', 'none')).toBe('read')
   })
 
-  it('falls back when the read itself fails, so a schema rekordbox changed does not crash the tree', async () => {
+  it('fails when the read itself fails, rekordbox mid-write or a renamed column, rather than answering empty', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, { content: [], keys: [], playlists: [], links: [] })
-    expect(
+    expect(() =>
       withCollection(
         path,
         () => {
@@ -36,7 +38,7 @@ describe('withCollection', () => {
         },
         'none',
       ),
-    ).toBe('none')
+    ).toThrow('no such column')
   })
 })
 

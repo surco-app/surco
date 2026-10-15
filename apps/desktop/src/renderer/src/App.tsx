@@ -2138,6 +2138,7 @@ export default function App(): React.JSX.Element {
                 {browser.source && (
                   <SourceTree
                     title={tr(`sources.${browser.source}`)}
+                    source={browser.source}
                     nodes={browser.tree}
                     failed={browser.treeFailed}
                     selectedId={browser.playlist?.id ?? null}

@@ -1679,7 +1679,10 @@
     "rekordbox": "rekordbox",
     "search": "Buscar playlist",
     "loading": "Lendo playlists…",
-    "failed": "Não foi possível ler a coleção. Se você acabou de mudar algo, volte ao Surco em alguns segundos.",
+    "failed": {
+      "appleMusic": "Não foi possível ler suas playlists. Verifique se o Apple Music está aberto e se o Surco tem permissão para controlá-lo.",
+      "rekordbox": "Não foi possível ler a coleção. Se você acabou de mudar algo, volte ao Surco em alguns segundos."
+    },
     "empty": "Nenhuma playlist.",
     "noMatch": "Nenhuma playlist corresponde.",
     "separator": "separador",

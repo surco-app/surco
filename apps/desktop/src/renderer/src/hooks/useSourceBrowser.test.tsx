@@ -86,6 +86,24 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.playlist).toBeNull())
   })
 
+  // rekordbox mid-write fails one read; the playlist the user is looking at is still
+  // there, and closing it would read as a deletion that never happened.
+  it('keeps the open playlist when a refocus read of the tree fails', async () => {
+    const loadRekordboxTree = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
+      .mockRejectedValue(new Error('database is locked'))
+    const { result, focus } = setup({ loadRekordboxTree })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    act(() =>
+      result.current.selectPlaylist({ id: 'house', name: 'House', kind: 'playlist', count: 1 }, []),
+    )
+    act(() => focus())
+    await waitFor(() => expect(result.current.treeFailed).toBe(true))
+    expect(result.current.playlist?.id).toBe('house')
+  })
+
   it('closes the playlist when switching source, so another source never shows its rows', async () => {
     const { result } = setup({})
     act(() => result.current.selectSource('rekordbox'))

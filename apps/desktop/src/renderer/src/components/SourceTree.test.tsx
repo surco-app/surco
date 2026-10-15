@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
+import '../i18n'
 import { SourceTree } from './SourceTree'
 
 afterEach(cleanup)
@@ -26,6 +27,7 @@ function setup(selectedId: string | null = null) {
   render(
     <SourceTree
       title="rekordbox"
+      source="rekordbox"
       nodes={NODES}
       failed={false}
       selectedId={selectedId}
@@ -68,12 +70,31 @@ describe('SourceTree', () => {
     render(
       <SourceTree
         title="rekordbox"
+        source="rekordbox"
         nodes={undefined}
         failed
         selectedId={null}
         onSelect={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('source-tree-failed')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-failed')).toHaveTextContent('read the collection')
+  })
+
+  // Music fails when it is closed or Surco was denied control of it; only saying so tells
+  // the user there is something to fix, and "collection" is rekordbox's word, not Music's.
+  it('points a Music failure at Music being open and Surco being allowed to control it', () => {
+    render(
+      <SourceTree
+        title="Music"
+        source="appleMusic"
+        nodes={undefined}
+        failed
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('source-tree-failed')).toHaveTextContent(
+      'Surco is allowed to control it',
+    )
   })
 })
