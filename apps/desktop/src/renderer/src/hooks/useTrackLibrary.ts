@@ -132,7 +132,6 @@ interface TrackLibrary {
   // every row already exists and none is "fresh" — a reopened session restored one of four
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
-  pickFiles: () => Promise<void>
   openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<number>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void
@@ -679,12 +678,6 @@ export function useTrackLibrary({
     })
   }, [])
 
-  async function pickFiles(): Promise<void> {
-    // Expand the picker's result the same way a drop does: a folder picked on macOS walks
-    // to its audio files, and ._ AppleDouble and hidden entries are filtered out either way.
-    addPaths(await window.api.expandPaths(await window.api.pickFiles()))
-  }
-
   // A playlist opened from a source is browsing, not importing: the files go through the
   // same expand-and-add path as a drop so every filter and analysis behaves alike, but only
   // the ones not already in the crate are passed on. That keeps a track loaded from another
@@ -888,7 +881,6 @@ export function useTrackLibrary({
     tracksRef,
     addPaths,
     seedRestoredEdits,
-    pickFiles,
     openSourcePlaylist,
     updateTrack,
     mapTracks,

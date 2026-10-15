@@ -894,6 +894,91 @@ describe('App source rail', () => {
     expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')])
     expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
   })
+
+  function rekordboxWithFactory(over: Record<string, unknown> = {}): void {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      ...over,
+    })
+  }
+
+  // Files dropped while rekordbox is on screen land in the working list, which rekordbox
+  // does not show: staying there read as the drop doing nothing.
+  it('switches to Tracks when files are dropped while a source is on screen', async () => {
+    rekordboxWithFactory({ getPathForFile: vi.fn(() => '/m/a.wav') })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('source-node-f')
+
+    fireEvent.drop(screen.getByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'a.wav')]),
+    })
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByTestId('source-tree')).not.toBeInTheDocument()
+  })
+
+  // Same for the file picker: what was picked goes to Tracks, so Tracks is where it shows.
+  // A cancelled picker added nothing, so the user stays where they were.
+  it('switches to Tracks after picking files while a source is on screen, not after a cancel', async () => {
+    const pickFiles = vi
+      .fn<Api['pickFiles']>()
+      .mockResolvedValueOnce([])
+      .mockResolvedValue(['/m/a.wav'])
+    rekordboxWithFactory({ pickFiles })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('source-node-f')
+
+    runMenu('add')
+    await waitFor(() => expect(pickFiles).toHaveBeenCalledTimes(1))
+    await act(async () => {})
+    expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
+
+    runMenu('add')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The filter's "All" count is the size of the list on screen: inside a playlist that is
+  // its rows, not every track the working list has gathered.
+  it('counts the open playlist’s rows in the list header, not the whole working list', async () => {
+    rekordboxWithFactory({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(/^All1$/)
+  })
+
+  // A playlist still being read is not an empty result: "No tracks match" there read as
+  // the playlist having nothing in it.
+  it('says the playlist is loading while its entries are read', async () => {
+    rekordboxWithFactory({
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    expect(await screen.findByTestId('source-playlist-loading')).toHaveTextContent(
+      'Reading the playlist…',
+    )
+    expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+  })
 })
 
 describe('App source playlists', () => {
@@ -1562,6 +1647,7 @@ describe('App source playlists', () => {
       playlistId: 'h',
       tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
     })
+    expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('creates a playlist named in the tree', async () => {

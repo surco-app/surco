@@ -1699,6 +1699,7 @@
     "empty": "Aucune playlist.",
     "noMatch": "Aucune playlist ne correspond.",
     "pickPlaylist": "Choisis une playlist pour voir ses morceaux",
+    "loadingPlaylist": "Lecture de la playlist…",
     "separator": "séparateur",
     "gone": {
       "appleMusic": "« {{name}} » n’est plus dans Music",

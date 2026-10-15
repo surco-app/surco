@@ -497,7 +497,6 @@ export default function App(): React.JSX.Element {
     tracksRef,
     addPaths,
     seedRestoredEdits,
-    pickFiles,
     openSourcePlaylist,
     updateTrack,
     mapTracks,
@@ -637,6 +636,17 @@ export default function App(): React.JSX.Element {
     })
     browser.selectSource(next)
   })
+  // Files the user adds go to the working list, which a source does not show, so Tracks
+  // comes forward with them on screen; a cancelled picker added nothing and stays. A drop on
+  // a tree playlist never reaches here. Picked and dropped paths expand alike: a folder
+  // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
+  const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
+    if (paths.length > 0) selectSource(null)
+    await addPaths(await window.api.expandPaths(paths))
+  })
+  const pickFiles = useStableCallback(
+    async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
+  )
   const openSourcePlaylistStable = useStableCallback(openSourcePlaylist)
   // Told once per opened playlist, so the gap between the source's count and the rows here
   // has a reason; a refocus re-read of the same playlist is not a new opening. Missing
@@ -809,7 +819,7 @@ export default function App(): React.JSX.Element {
     // A reorder let go outside the list carries no files; it is not an import.
     if (isReorderDrag(e)) return
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
-    await watchLoad(async () => addPaths(await window.api.expandPaths(dropped)))
+    await watchLoad(() => addToWorkingList(dropped))
   }
 
   // Warms a hovered track's spectrum and waveform so opening it is instant. Debounced
@@ -2401,6 +2411,16 @@ export default function App(): React.JSX.Element {
                     >
                       {review !== null ? (
                         <MusicReviewColumn onClose={() => setReview(null)} busy={reviewBusy} />
+                      ) : browser.entriesLoading ? (
+                        // A playlist still being read is not an empty result: "No tracks
+                        // match" here read as the playlist having nothing in it.
+                        <p
+                          data-testid="source-playlist-loading"
+                          aria-live="polite"
+                          className="p-4 text-xs text-fg-faint"
+                        >
+                          {tr('sources.loadingPlaylist')}
+                        </p>
                       ) : tracks.length ===
                         0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the
@@ -2423,7 +2443,7 @@ export default function App(): React.JSX.Element {
                             setSortBy={setSortBy}
                             sortDir={sortDir}
                             toggleSortDir={toggleSortDir}
-                            tracks={tracks}
+                            tracks={scopeTracks}
                             visibleTracks={visibleTracks}
                             selectedId={selectedId}
                             selectedIds={selectedIds}
