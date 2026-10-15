@@ -1672,6 +1672,22 @@
     "listReviewDuplicateUnchecked": "Sin quitar. No se pudo comprobar Apple Music",
     "reviewDuplicateFileUnchecked": "Se queda en disco porque no se pudo comprobar Apple Music"
   },
+  "sources": {
+    "rail": "Fuentes",
+    "workingList": "Pistas",
+    "appleMusic": "Music",
+    "rekordbox": "rekordbox",
+    "search": "Buscar playlist",
+    "loading": "Leyendo playlists…",
+    "failed": "No se pudo leer la colección. Si acabas de cambiar algo, vuelve a Surco en unos segundos.",
+    "empty": "No hay playlists.",
+    "noMatch": "Ninguna playlist coincide.",
+    "tracks_one": "{{count}} pista",
+    "tracks_other": "{{count}} pistas",
+    "separators_one": "{{count}} separador",
+    "separators_other": "{{count}} separadores",
+    "separator": "separador"
+  },
   "applePlaylist": {
     "title": "Importar de Apple Music",
     "subtitle": "Surco carga los ficheros que la playlist tiene en tu disco.",

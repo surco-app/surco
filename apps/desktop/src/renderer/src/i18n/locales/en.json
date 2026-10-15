@@ -1672,6 +1672,22 @@
     "listReviewDuplicateUnchecked": "Not removed. Apple Music couldn't be checked",
     "reviewDuplicateFileUnchecked": "Stays on disk because Apple Music couldn't be checked"
   },
+  "sources": {
+    "rail": "Sources",
+    "workingList": "Tracks",
+    "appleMusic": "Music",
+    "rekordbox": "rekordbox",
+    "search": "Search playlists",
+    "loading": "Reading playlists…",
+    "failed": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds.",
+    "empty": "No playlists.",
+    "noMatch": "No playlist matches.",
+    "tracks_one": "{{count}} track",
+    "tracks_other": "{{count}} tracks",
+    "separators_one": "{{count}} separator",
+    "separators_other": "{{count}} separators",
+    "separator": "separator"
+  },
   "applePlaylist": {
     "title": "Import from Apple Music",
     "subtitle": "Surco loads the files the playlist has on your disk.",

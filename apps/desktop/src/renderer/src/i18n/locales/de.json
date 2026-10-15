@@ -1672,6 +1672,22 @@
     "listReviewDuplicateUnchecked": "Nicht entfernt. Apple Music konnte nicht geprüft werden",
     "reviewDuplicateFileUnchecked": "Bleibt auf der Festplatte, weil Apple Music nicht geprüft werden konnte"
   },
+  "sources": {
+    "rail": "Quellen",
+    "workingList": "Titel",
+    "appleMusic": "Music",
+    "rekordbox": "rekordbox",
+    "search": "Playlist suchen",
+    "loading": "Playlists werden gelesen…",
+    "failed": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
+    "empty": "Keine Playlists.",
+    "noMatch": "Keine Playlist passt.",
+    "tracks_one": "{{count}} Titel",
+    "tracks_other": "{{count}} Titel",
+    "separators_one": "{{count}} Trenner",
+    "separators_other": "{{count}} Trenner",
+    "separator": "Trenner"
+  },
   "applePlaylist": {
     "title": "Aus Apple Music importieren",
     "subtitle": "Surco lädt die Dateien, die die Playlist auf deiner Festplatte hat.",

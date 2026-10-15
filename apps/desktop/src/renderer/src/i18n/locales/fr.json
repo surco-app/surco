@@ -1672,6 +1672,22 @@
     "listReviewDuplicateUnchecked": "Non retirée. Apple Music n'a pas pu être vérifié",
     "reviewDuplicateFileUnchecked": "Reste sur le disque car Apple Music n'a pas pu être vérifié"
   },
+  "sources": {
+    "rail": "Sources",
+    "workingList": "Morceaux",
+    "appleMusic": "Music",
+    "rekordbox": "rekordbox",
+    "search": "Rechercher une playlist",
+    "loading": "Lecture des playlists…",
+    "failed": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
+    "empty": "Aucune playlist.",
+    "noMatch": "Aucune playlist ne correspond.",
+    "tracks_one": "{{count}} morceau",
+    "tracks_other": "{{count}} morceaux",
+    "separators_one": "{{count}} séparateur",
+    "separators_other": "{{count}} séparateurs",
+    "separator": "séparateur"
+  },
   "applePlaylist": {
     "title": "Importer depuis Apple Music",
     "subtitle": "Surco charge les fichiers que la playlist a sur ton disque.",
