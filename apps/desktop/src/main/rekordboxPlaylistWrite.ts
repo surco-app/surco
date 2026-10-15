@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { copyFile, readFile, rename, stat, writeFile } from 'node:fs/promises'
+import { copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import type {
   PlaylistAddReport,
@@ -49,10 +49,16 @@ export interface PlaylistWriteDeps extends FindOptions {
 }
 
 // Written beside and renamed over, so rekordbox never finds a half-written file.
-async function replaceFile(path: string, text: string): Promise<void> {
+export async function replaceFile(path: string, text: string): Promise<void> {
   const temp = `${path}.surco-tmp`
-  await writeFile(temp, text, 'utf8')
-  await rename(temp, path)
+  try {
+    await writeFile(temp, text, 'utf8')
+    await rename(temp, path)
+  } catch (err) {
+    // A half step left in rekordbox's folder would stay there for good.
+    await rm(temp, { force: true })
+    throw err
+  }
 }
 
 // The collection is in WAL mode (measured), so committed changes can still sit in
@@ -65,6 +71,9 @@ function checkpoint(collectionPath: string): void {
   const db = openRekordboxDb(collectionPath)
   if (!db) throw new Error('rekordbox collection could not be opened')
   try {
+    // Synchronous in the main process: a reader that blocks the fold must answer quickly
+    // instead of freezing the window for the default 5 s busy wait.
+    db.pragma('busy_timeout = 250')
     const [result] = db.pragma('wal_checkpoint(TRUNCATE)') as {
       busy: number
       log: number

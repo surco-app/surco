@@ -1,5 +1,5 @@
 import { existsSync, rmSync, writeFileSync } from 'node:fs'
-import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -24,7 +24,7 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
 })
 
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
-import { editRekordboxPlaylist, restoreCollection } from './rekordboxPlaylistWrite'
+import { editRekordboxPlaylist, replaceFile, restoreCollection } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 const NOW = new Date('2026-10-15T18:00:00.000Z')
@@ -464,6 +464,32 @@ describe('editRekordboxPlaylist', () => {
     expect(linkIds(path, '2000')).toEqual(FACTORY)
   }, 30_000)
 
+  // The fold runs in the main process: waiting out SQLite's 5 s busy timeout froze the
+  // whole window for an answer that a short wait gives as well.
+  it('answers a blocked fold without waiting out the busy timeout', async () => {
+    const path = await collection({ wal: true })
+    const writer = openRekordboxDb(path)
+    const reader = openRekordboxDb(path, { readonly: true })
+    if (!writer || !reader) throw new Error('did not open')
+    reader.prepare('BEGIN').run()
+    reader.prepare('SELECT count(*) FROM djmdPlaylist').get()
+    writer
+      .prepare(
+        `INSERT INTO djmdSongPlaylist (ID, PlaylistID, ContentID, TrackNo, created_at, updated_at)
+         VALUES ('w1', '3000', '104', 3, 'x', 'x')`,
+      )
+      .run()
+    const started = Date.now()
+    try {
+      await editRekordboxPlaylist(path, MOVE, deps())
+    } finally {
+      reader.prepare('COMMIT').run()
+      reader.close()
+      writer.close()
+    }
+    expect(Date.now() - started).toBeLessThan(2000)
+  }, 30_000)
+
   // A collection the process cannot write to is the user's to fix; "write failed" does not
   // say that.
   it('says the collection is read-only instead of a generic failure', async () => {
@@ -482,6 +508,19 @@ describe('editRekordboxPlaylist', () => {
       reason: 'unreadable',
     })
     expect(d.ensureClosed).not.toHaveBeenCalled()
+  })
+})
+
+// The XML is written beside and renamed over. A rename that fails left the half-step file
+// in rekordbox's folder for good.
+describe('replaceFile', () => {
+  it('leaves no temporary file behind when the rename fails', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbreplace-'))
+    const target = join(dir, 'masterPlaylists6.xml')
+    await mkdir(target)
+    await writeFile(join(target, 'keep'), 'x')
+    await expect(replaceFile(target, '<xml/>')).rejects.toThrow()
+    expect(existsSync(`${target}.surco-tmp`)).toBe(false)
   })
 })
 
