@@ -3,7 +3,7 @@ import type React from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
-import { draggedRows } from '../lib/reorderDrag'
+import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
 
 // The folders on the way to a node, so the tree can open them for the selected playlist.
 function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): SourceNode[] | null {
@@ -117,7 +117,12 @@ export function SourceTree({
   // when a drag from the list is in progress, otherwise the files of a drag from Finder.
   const [dropOn, setDropOn] = useState<{ id: string; count: number } | null>(null)
   const carriesTracks = (e: React.DragEvent): boolean =>
-    draggedRows() !== null || e.dataTransfer.types.includes('Files')
+    e.dataTransfer.types.includes('Files') || (draggedRows() !== null && carriesOnlyFiles(e))
+  // Files the drag shows are what lands, so a stale record never inflates the count; the
+  // record counts only when the OS brings no files back.
+  const dropCount = (e: React.DragEvent): number =>
+    Array.from(e.dataTransfer.items).filter((i) => i.kind === 'file').length ||
+    (draggedRows()?.length ?? 0)
 
   const nameField = (parentId: string, depth: number): React.ReactNode =>
     creating?.parentId === parentId && (
@@ -169,12 +174,7 @@ export function SourceTree({
           onDragOver={(e) => {
             if (!edit || isFolder || !carriesTracks(e)) return
             e.preventDefault()
-            setDropOn({
-              id: node.id,
-              count:
-                draggedRows()?.length ??
-                Array.from(e.dataTransfer.items).filter((i) => i.kind === 'file').length,
-            })
+            setDropOn({ id: node.id, count: dropCount(e) })
           }}
           onDragLeave={(e) => {
             // Moving onto the row's own name or count fires a leave on the row itself.

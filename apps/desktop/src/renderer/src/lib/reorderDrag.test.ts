@@ -80,3 +80,20 @@ describe('ownRowsDropped', () => {
     expect(ownRowsDropped(drop([PATHS.a, '/elsewhere/x.wav']), pathOf)).toBeNull()
   })
 })
+
+describe('ownRowsDropped without files', () => {
+  const drop = (types: string[]) => ({
+    dataTransfer: { files: [], types } as unknown as DataTransfer,
+  })
+  // The OS drag may bring no files back into the window; the rows are still the drop.
+  it('takes a drop with no files and no other data as the dragged rows', () => {
+    setDraggedRows(['a'])
+    expect(ownRowsDropped(drop([]), () => undefined)).toEqual(['a'])
+  })
+
+  // A link or text from a browser carries no files either, and is not those rows.
+  it('does not take a link or text drag as the dragged rows', () => {
+    setDraggedRows(['a'])
+    expect(ownRowsDropped(drop(['text/uri-list', 'text/plain']), () => undefined)).toBeNull()
+  })
+})

@@ -216,6 +216,28 @@ describe('SourceTree organising', () => {
     expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], [])
   })
 
+  // A record outlives a drag-out that ended in Finder. A link or text dragged from a browser
+  // afterwards is not those rows: taking it would write them into the DJ's playlist unasked.
+  it('takes no link or text drag for the rows of an earlier drag-out', () => {
+    const { edit } = setup(null, true)
+    setDraggedRows(['a', 'b', 'c'])
+    const house = screen.getByTestId('source-node-house')
+    const dt = fakeDataTransfer()
+    dt.setData('text/uri-list', 'https://example.com')
+    fireEvent.dragOver(house, { dataTransfer: dt })
+    expect(house).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(house, { dataTransfer: dt })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+  })
+
+  // The count is what the drop will add: Finder's files, not the rows of a stale record.
+  it('counts the files of a Finder drag, not the rows of an earlier drag-out', () => {
+    setup(null, true)
+    setDraggedRows(['a', 'b', 'c'])
+    fireEvent.dragOver(screen.getByTestId('source-node-house'), { dataTransfer: files('x.wav') })
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+1 on drop')
+  })
+
   // A folder holds playlists, not tracks; a drop there must neither write anything nor
   // fall through to the window, which would import the files into the list.
   it('takes no drop on a folder and keeps it from reaching the window import', () => {

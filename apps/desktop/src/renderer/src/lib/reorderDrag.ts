@@ -30,6 +30,12 @@ export function isDraggedPath(path: string): boolean {
   return dragged?.aliases.has(path.normalize('NFC')) ?? false
 }
 
+// A drag of the list's rows carries files or nothing. One that brings no files but a link
+// or text (from a browser) is another app's drag, even while a stale record is held.
+export function carriesOnlyFiles(e: { dataTransfer?: DataTransfer | null }): boolean {
+  return Array.from(e.dataTransfer?.types ?? []).every((t) => t === 'Files')
+}
+
 // The dragged rows when this drop is that drag coming back down in Surco's window: every
 // file it carries is one of theirs. A record left by a drag-out that ended outside the
 // window tells this window nothing, so Finder files dropped later are not taken for it.
@@ -41,6 +47,7 @@ export function ownRowsDropped(
   const { ids, aliases } = dragged
   const held = new Set([...aliases, ...ids.flatMap((id) => pathOf(id)?.normalize('NFC') ?? [])])
   const files = Array.from(e.dataTransfer?.files ?? [])
+  if (files.length === 0 && !carriesOnlyFiles(e)) return null
   return files.every((f) => held.has(window.api.getPathForFile(f).normalize('NFC'))) ? ids : null
 }
 
