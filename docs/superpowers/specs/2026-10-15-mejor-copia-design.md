@@ -1,6 +1,8 @@
 # Mejor copia entre duplicados
 
-Estado: **diseño aprobado en conversación (15/10)**, sin código. Boceto en
+Estado: **implementado en `worktree-mejor-copia` (15/10)**, pendiente del visto bueno de los
+textos y del merge. Lo que cambió respecto al diseño durante la implementación está en
+"Decisiones tomadas al implementar", al final. Boceto en
 https://claude.ai/artifact/B7Kds6RTkHoR1YBJR34T3D (variante C en la lista, parte 2 en el
 editor).
 
@@ -61,7 +63,8 @@ tabla comparativa (mismo patrón visual que `quality-evidence`).
 |---|---|---|---|
 | Este fichero gana | Este fichero es mejor (good) | frase + tabla | sin cambios ("Replace with…") |
 | Apple Music gana | Apple Music tiene una mejor (warn) | frase + tabla | botón principal "Apple Music ya tiene una copia mejor"; sustituir sigue en el menú |
-| Empate / mismo audio | Mismo audio (neutro) | una frase, sin tabla | sin cambios |
+| Mismo audio | Mismo audio (neutro) | una frase, sin tabla | sin cambios |
+| Empate | nada | nada | sin cambios |
 | Midiendo | Comparando… (neutro) | nada | sin cambios |
 | No se pudo leer | nada (como hoy) | nada | sin cambios |
 
@@ -88,11 +91,10 @@ es y en a la vez.
 
 ### Quién es duplicado de quién
 
-- **Lista**: las pistas cargadas se agrupan con el emparejador de la biblioteca
-  (`libraryMatchScore` ≥ `LIBRARY_MATCH_THRESHOLD`, `appleMusicLibrary.ts:249`), que compara
-  título, artista y duración. Se exporta tal cual; no hay un criterio nuevo.
-- Solo grupos sin ambigüedad: si una pista encaja con dos grupos que no encajan entre sí, no
-  se marca ninguna de ellas.
+- **Lista**: las pistas cargadas se agrupan con `duplicateGroups` (`lib/duplicates.ts`), el
+  mismo que ya alimenta el filtro de duplicados: misma clave de artista y título y duración
+  a 5 s o menos. Solo cuentan los grupos `duplicate`; los `version` (otra duración) no se
+  comparan. No hay un criterio nuevo.
 - **Apple Music**: la entrada que ya devuelve `replaceCandidate`. Si es `ambiguous`, no se
   compara.
 
@@ -105,27 +107,35 @@ es y en a la vez.
 | Cresta | existe | `measureLoudness` → `crestDb` (astats) |
 | Loudness integrado | existe | `measureLoudness` |
 | Muestras en el pico | **nuevo** | `Peak count` del mismo pase `astats` de `measureLoudness` (`ffmpeg.ts` ~2896); solo hay que leerlo en `parseAstats` |
-| Huella del audio | **nuevo** | MD5 del PCM decodificado a s16 estéreo (`-f md5`); un pase de decodificación extra, ~0,05 s en local |
+| Huella del audio | **nuevo** | MD5 del PCM decodificado a s16 estéreo 44,1 kHz (`-f md5`); un pase de decodificación extra, ~0,05 s en local |
+| Mismo master | **nuevo** | `comparePair(a, b)`: las dos copias a 44,1 kHz mono, desfase buscado en los primeros 91 s, correlación, residuo y ganancia sobre 60 s alineados desde el segundo 30 (desde 0 si la pista dura menos de 90 s; menos de 10 s no se compara) |
 
 La huella demuestra "mismo audio" en el caso padded16 frente a 16 bits reales: si el byte
 bajo está vacío, decodificar a s16 da las mismas muestras. Si la ganancia difiere un solo
 bit, la huella difiere y se pasa a comparar medidas.
 
-Cambiar `LoudnessResult` obliga a subir el namespace de su caché. La huella va en caché
-propia por ruta + mtime.
+Cambiar `LoudnessResult` obliga a subir el namespace de su caché: `loudness` pasa a
+`loudness-v2`. La huella va en caché propia (`fingerprint`) por ruta + mtime. El par no se
+guarda en disco: son pocos y la respuesta cambia si cambia cualquiera de los dos ficheros.
 
 ### Orden de decisión
 
-Para cada par se aplica en orden y gana el primer criterio que separa:
+Para cada par se aplica en orden y gana el primer criterio que separa (`compareCopies`,
+`lib/bestCopy.ts`):
 
-1. **Huella igual** → mismo audio. Fin.
-2. **Sin pérdidas frente a con pérdidas** (veredicto de espectro) → gana sin pérdidas.
-3. **Processed o upsampled** frente a limpio → gana el limpio.
-4. **Corte**: entre dos lossy, más corte gana si la diferencia supera `CUTOFF_MARGIN_HZ`.
-5. **Muestras en el pico**: menos gana si la diferencia supera `PEAK_COUNT_MARGIN`.
-6. **Cresta**: más gana si la diferencia supera `CREST_MARGIN_DB`.
-7. Nada separa → empate ("mismo audio" en el texto solo si la huella coincide; si no, "sin
-   diferencia medida", texto pendiente).
+1. **Mismo audio** → fin. Huella igual, o el par alineado deja un residuo de −60 dB o menos
+   con una ganancia de menos de 0,01 dB.
+2. **Sin pérdidas frente a con pérdidas, transcodificado, corte**: se reutiliza tal cual
+   `replaceWarning` (`lib/replaceWarning.ts`), la misma regla que ya avisaba al sustituir en
+   Music. Así el pie del editor y la comparación nunca se contradicen.
+3. **Processed**, después **upsampled**, frente a limpio → gana el limpio.
+4. Solo si el par es **el mismo master** (correlación ≥ 0,98 tras alinear):
+   1. **Muestras en el pico**: menos gana si una copia tiene 10 veces más que la otra.
+   2. **Cresta**: más gana si la diferencia es de 1,5 dB o más.
+5. Nada separa → empate.
+
+Los criterios 2 y 3 valen entre masters distintos; los de nivel no, porque entre masters
+distintos la cresta y las muestras en el pico varían tanto como dentro de uno.
 
 El loudness se enseña pero **nunca decide**: más alto suele ser peor y no siempre.
 
@@ -135,8 +145,7 @@ merece la pena (con el corpus actual no hay pares así).
 
 ### Umbrales
 
-`CUTOFF_MARGIN_HZ`, `PEAK_COUNT_MARGIN` y `CREST_MARGIN_DB` **no se fijan a ojo**. Se
-calibran con pares reales:
+Los umbrales **no se fijan a ojo**. Se calibraron con pares reales:
 
 - Fuente: duplicados del pack de Soulseek de Vicent contra su biblioteca de Music (10-20
   pares), más versiones del corpus de espectro que compartan master.
@@ -146,21 +155,40 @@ calibran con pares reales:
 
 Sin calibración no se publica. Mientras tanto, empate.
 
+Resultado (`COPY_MARGINS`, fijado por `bestCopy.calibration.test.ts` con los 26 pares
+medidos):
+
+| Umbral | Valor | Por qué |
+|---|---|---|
+| Mismo master | correlación ≥ 0,98 | los pares del mismo master quedan por encima una vez alineados, salvo uno que deriva en el tiempo y queda en empate |
+| Muestras en el pico | razón ≥ 10 | los 8 pares que se separaban 1 LU o más iban de 25x a 36000x; los de menos de 0,4 LU, por debajo de 3x |
+| Cresta | ≥ 1,5 dB | el único par donde las dos medidas no coincidían tenía 1,18 dB |
+
+El corte no tiene margen propio: decide `replaceWarning` con el suyo.
+
+La calibración enseñó lo que obligó a añadir la sonda de mismo master: con 26 pares, ni la
+cresta ni las muestras en el pico separan masters distintos. Sin la sonda, un remaster más
+dinámico ganaría a otro master solo por ser distinto. Límites conocidos: 25 de los 26 pares
+salen de una misma carpeta de Soulseek y de un solo género, y los pares con pérdidas no
+están calibrados.
+
 ## Dónde vive
 
 - **main**: `parseAstats` lee `Peak count`; nueva `audioFingerprint(path)` en `ffmpeg.ts`;
   IPC para ambas siguiendo el patrón de `audioIpc.ts` (caché, namespace).
 - **renderer**:
-  - `lib/bestCopy.ts`: función pura `compareCopies(a, b): { winner: 'a' | 'b' | 'same', reason }`
-    con el orden de arriba. Es la pieza que más tests lleva.
-  - `lib/duplicateGroups.ts`: agrupa la lista con `libraryMatchScore`.
-  - `hooks/useDuplicateRank.ts`: por pista, su rango en el grupo. Mide solo las pistas que
+  - `lib/bestCopy.ts`: función pura `compareCopies(a, b, pair)` que devuelve
+    `{ winner: 'a' | 'b', reason } | { winner: 'same' } | { winner: 'tie' }` con el orden de
+    arriba, y `COPY_MARGINS`. Es la pieza que más tests lleva.
+  - `lib/duplicateRanks.ts`: `rankGroup`, el rango de cada copia de un grupo.
+  - `hooks/useCopyFacts.ts`: los datos de una copia (espectro sin la imagen, loudness,
+    huella) por las consultas de análisis, y `usePairFacts` para el par.
+  - `hooks/useDuplicateRanks.ts`: agrupa con `duplicateGroups` y mide solo las pistas que
     tienen duplicado; las demás no pagan nada.
-  - `hooks/useLibraryCopyVerdict.ts`: análisis del fichero de Music (ruta por
-    `appleMusicEntryLocation`), lanzado al abrir en el editor una pista con
-    `replaceTarget`. Caché por ruta + mtime para no releer el NAS.
-  - `TrackList.tsx`: el icono. `Editor.tsx` / cabecera de Metadata: pastilla + tarjeta.
-    `ConvertFooter.tsx`: el estado "Apple Music ya tiene una copia mejor".
+  - `TrackList.tsx`: el icono. `Editor.tsx` (cabecera de Metadata): pastilla, y
+    `CopyComparison.tsx`, la tarjeta. `ConvertFooter.tsx`: el estado "Apple Music ya tiene
+    una copia mejor".
+- **main**: además, `comparePair` en `ffmpeg.ts` y su IPC `audio:pair`.
 
 ## Errores
 
@@ -180,8 +208,10 @@ Sin calibración no se publica. Mientras tanto, empate.
   la misma huella; +0,1 dB de ganancia la cambia.
 - Componentes: icono por rango (`data-rank`), pastilla y pie por estado, sin pastilla si
   falla la lectura.
-- Escenario de app completa con Music falso (`scenarios/fakeMusic.ts`) para el flujo del
-  editor.
+- Escenario de app completa con Music falso (`scenarios/bestCopy.test.tsx`): un AIFF abierto
+  frente al mismo audio limitado en Music (pastilla "here", decide la fila de muestras en el
+  pico) y las dos copias en la lista (AIFF `best`, WAV `worse`).
+- `bestCopy.calibration.test.ts`: los 26 pares medidos con su veredicto esperado.
 - Mutation testing sobre `compareCopies`.
 
 ## Fuera de alcance
@@ -189,6 +219,39 @@ Sin calibración no se publica. Mientras tanto, empate.
 - Borrar o mover la copia peor. Sustituir en Music ya existe; en la lista, el usuario decide.
 - Comparar contra rekordbox o Engine DJ.
 - Duplicados fuera de la lista cargada (barrer carpetas o la biblioteca entera).
+
+## Decisiones tomadas al implementar
+
+- **Agrupar con `duplicateGroups`** y no con `libraryMatchScore`: ya decide qué es un
+  duplicado en el filtro de la lista, y dos criterios distintos marcarían grupos distintos.
+- **`replaceWarning` decide formato, transcodificado y corte**, para que la comparación y el
+  aviso de sustituir en Music digan lo mismo. Mientras se mide, el pie sigue la respuesta de
+  `replaceWarning`; es el mismo criterio entre masters, así que solo cambia si la medida lo
+  desmiente.
+- **Caché de loudness `loudness-v2`**, porque `LoudnessResult` gana `peakCount`.
+- **Sonda de mismo master** (`comparePair`): a 44,1 kHz y no a 11025 Hz, porque un desfase
+  impar entre dos copias idénticas cae entre muestras a la frecuencia baja y no se cancela,
+  y porque en material tonal la búsqueda gruesa se enganchaba a una repetición. Desfase en
+  los primeros 91 s, medida sobre 60 s desde el segundo 30, mismo master con correlación
+  ≥ 0,98. Coste: el veredicto mira los segundos 30 a 90, y un desfase de más de 1 s se lee
+  como copias sin relación.
+- **Mismo audio por huella o por el par**: residuo ≤ −60 dB y |ganancia| < 0,01 dB. Un par
+  real (Aquagen) desplazado 6 muestras rompía el MD5 siendo las mismas muestras.
+- **"Mismo audio" solo con prueba**: `DuplicateRank` lleva `identical`, cierto solo si todas
+  las copias del grupo son mismo audio entre sí. Un empate sin esa prueba usa
+  `trackList.copyNoDifference` ("Sin diferencia medida con otra copia de la lista").
+- **Cada fila con su razón**: una copia peor dice por qué pierde frente a la mejor, no la
+  razón con la que la mejor ganó al grupo; una copia que es mismo audio que la mejor se marca
+  `same`.
+- **El empate no se enseña en el editor**: ni pastilla ni tarjeta. `copyNoDifference` queda
+  para la lista.
+- **Un par que no se pudo alinear** (sin relación, invertido o ilegible) compara igual con
+  `pair = null`: los criterios de nivel no se aplican y formato, corte y espectro siguen
+  decidiendo. Solo una copia sin datos oculta la pastilla.
+- **La frase de sin pérdidas nombra los formatos** (el contenedor con pérdidas frente al sin
+  pérdidas), nunca los cortes. La fila de corte solo se colorea cuando la razón es el corte.
+- Con la pastilla visible, el antiguo "· mejor que esta" de la cabecera desaparece: un solo
+  mensaje.
 
 ## Contexto
 
