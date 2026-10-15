@@ -3421,6 +3421,7 @@ describe('Editor Apple Music library badge', () => {
     showSpectrum = false,
     libraryLossy = false,
     hereLossy = false,
+    herePath = '/music/Strobe.aif',
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -3428,6 +3429,7 @@ describe('Editor Apple Music library badge', () => {
     showSpectrum?: boolean
     libraryLossy?: boolean
     hereLossy?: boolean
+    herePath?: string
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
@@ -3448,7 +3450,7 @@ describe('Editor Apple Music library badge', () => {
     api.fingerprint = vi.fn(async (path: string) => path)
     api.comparePair = vi.fn(() => pair)
     const { onProcess } = renderEditor(
-      { id: 'a', inputPath: '/music/Strobe.aif', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
       'wav',
       { libraryIndex: ownedWithId, showSpectrum },
     )
@@ -3475,6 +3477,20 @@ describe('Editor Apple Music library badge', () => {
 
   // The pill sat inside the header's fold button: a click on it folded Metadata, and a
   // button nested in a button is out of reach for the keyboard and a screen reader.
+  // A track opened straight from the library's own folder is the library's copy: comparing
+  // it with itself measures twice to say "same audio" about one file.
+  it('shows no verdict when the file in hand is the library copy itself', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: wavLoudness,
+      herePath: '/music/strobe.wav'.normalize('NFD'),
+    })
+    // The library copy's properties are read in the same render the comparison would start.
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.wav'))
+    expect(screen.queryByTestId('copy-verdict')).toBeNull()
+    expect(api.comparePair).not.toHaveBeenCalled()
+  })
+
   it('opens the numbers from the pill without folding the Metadata section', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
