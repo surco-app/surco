@@ -786,6 +786,9 @@ export default function App(): React.JSX.Element {
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
+    // A drop the tree did not take ends a drag-out from the list: its record goes with it.
+    // Bubble phase on purpose, after the tree's own drop has read the record.
+    clearDraggedRows()
     // A reorder let go outside the list carries no files; it is not an import.
     if (isReorderDrag(e)) return
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
@@ -1757,8 +1760,9 @@ export default function App(): React.JSX.Element {
   // a stale record goes by its own files.
   const dropOnRekordbox = useStableCallback((node: SourceNode, files: File[]) => {
     const paths = files.map((f) => window.api.getPathForFile(f).normalize('NFC'))
+    const byId = new Map(tracksRef.current.map((t) => [t.id, t]))
     const held = (draggedRows() ?? []).flatMap((id) => {
-      const t = tracksRef.current.find((x) => x.id === id)
+      const t = byId.get(id)
       return t ? [t] : []
     })
     clearDraggedRows()

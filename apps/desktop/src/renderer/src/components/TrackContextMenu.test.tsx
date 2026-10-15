@@ -227,6 +227,18 @@ describe('TrackContextMenu playlist actions', () => {
     )
   })
 
+  // A disabled button cannot take focus: counted as a stop, it traps the arrows and the
+  // keyboard never reaches Info, Remove or Trash below it.
+  it('lets the arrow keys pass over a disabled item', () => {
+    renderMenu({ playlist: playlist({ canInsertSeparator: false }) })
+    const menu = screen.getByTestId('track-menu')
+    screen.getByTestId('track-menu-add-to').focus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('track-menu-info')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowUp' })
+    expect(screen.getByTestId('track-menu-add-to')).toHaveFocus()
+  })
+
   it('names the playlist a row is removed from', () => {
     const p = playlist()
     renderMenu({ playlist: p })

@@ -150,8 +150,9 @@ export function TrackContextMenu({
       onClose()
       return
     }
+    // A disabled item cannot take focus; counted as a stop, it would trap the arrows.
     const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [],
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)

@@ -1272,19 +1272,105 @@ describe('App source playlists', () => {
 
   it('says nothing changed and re-reads the playlist when rekordbox stays open', async () => {
     const load = vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(FACTORY_ENTRIES)
-    await openFactory({
-      loadRekordboxPlaylist: load,
-      editRekordboxPlaylist: vi
-        .fn<Api['editRekordboxPlaylist']>()
-        .mockResolvedValue({ applied: false, reason: 'cancelled' }),
-    })
+    const edit = vi
+      .fn<Api['editRekordboxPlaylist']>()
+      .mockResolvedValue({ applied: false, reason: 'cancelled' })
+    await openFactory({ loadRekordboxPlaylist: load, editRekordboxPlaylist: edit })
     const before = load.mock.calls.length
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
     fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
+    // Removing deletes rows of the DJ's real playlist: the link sent must be the clicked row's.
+    expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['l2'] })
     expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
       'Nothing changed because rekordbox is still open',
     )
     expect(load.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  // The separator lands above the right-clicked row, so the edit names that row's link.
+  it('inserts a separator above the right-clicked row', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit })
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+    const insert = await screen.findByTestId('track-menu-insert-separator')
+    await waitFor(() => expect(insert).toBeEnabled())
+    fireEvent.click(insert)
+    expect(edit).toHaveBeenCalledWith({
+      kind: 'insertSeparator',
+      playlistId: 'f',
+      beforeLinkId: 'l3',
+    })
+  })
+
+  // With a filter on, rows between the visible ones are hidden; a drop would land among them.
+  it('hides the grips while a filter narrows the playlist', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.mp3']),
+      readTags: vi.fn(async (path: string) => ({ title: TITLES[path] ?? 'Delta', artist: 'DJ' })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 4 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/d.mp3', 'l4')]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await screen.findByTestId('track-separator-s1')
+    expect(screen.queryAllByTestId(/^track-grip-/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.queryByTestId(/^track-grip-/)).not.toBeInTheDocument())
+    expect(screen.getByTestId('reorder-hint')).toBeInTheDocument()
+  })
+
+  // Music is read-only: its rows offer no playlist edits and its tree no create buttons,
+  // or a Music playlist id would be sent to rekordbox as an edit.
+  it('offers no playlist editing while Music is the source', async () => {
+    setApi({
+      platform: 'darwin',
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav']),
+      readTags: vi.fn(async () => ({ title: 'Alpha', artist: 'DJ' })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadAppleMusicPlaylists: vi.fn().mockResolvedValue([
+        { persistentId: 'P1', name: 'Friday', folder: null, count: 1 },
+        { persistentId: 'P2', name: 'Saturday', folder: null, count: 0 },
+      ]),
+      loadAppleMusicPlaylistTracks: vi
+        .fn()
+        .mockResolvedValue({ paths: ['/m/a.wav'], persistentIds: {}, meta: {}, missing: 0 }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-P1'))
+    await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalled())
+    await act(async () => {})
+    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('track-menu')
+    expect(screen.queryByTestId('track-menu-add-to')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+  })
+
+  // A drop the tree did not take ends the drag-out; its record must not outlive it and
+  // keep the next Finder drag from lighting the list.
+  it('forgets the dragged rows when the drop lands outside the tree', async () => {
+    await openFactory({ startTrackDrag: vi.fn(), getPathForFile: vi.fn(() => '/m/a.wav') })
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+    fireEvent.drop(screen.getByTestId('sidebar'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'a.wav')]),
+    })
+    expect(draggedRows()).toBeNull()
   })
 
   // Rows dragged out of the list onto a tree playlist are known from the list's own record,
