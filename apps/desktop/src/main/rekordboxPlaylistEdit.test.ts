@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { openRekordboxDb } from './rekordboxDb'
 import {
   addToPlaylist,
+  createNode,
   EditRefused,
   editProblem,
   insertSeparator,
   moveInPlaylist,
+  randomPlaylistId,
   removeFromPlaylist,
   resolveTracks,
   separatorContent,
@@ -362,5 +364,59 @@ describe('editProblem', () => {
     expect(
       editProblem(db, { kind: 'insertSeparator', playlistId: '2000', beforeLinkId: 'f1' }),
     ).toBe('no-separator')
+  })
+})
+
+describe('createNode', () => {
+  function node(id: string) {
+    return db.prepare('SELECT * FROM djmdPlaylist WHERE ID = ?').get(id) as Record<string, unknown>
+  }
+
+  // rekordbox lists siblings by Seq; a new playlist goes last, after every live sibling,
+  // the −128 rows included (rekordbox numbers "Acapellas" with the rest at the root).
+  it('creates a playlist at the end of the root', () => {
+    expect(
+      createNode(db, 'root', '  Bolo  ', false, { now: NOW, newPlaylistId: () => '777' }),
+    ).toEqual({ id: '777', attribute: 0 })
+    expect(node('777')).toMatchObject({
+      Seq: 4,
+      Name: 'Bolo',
+      Attribute: 0,
+      ParentID: 'root',
+      SmartList: null,
+      rb_local_usn: 501,
+      rb_local_deleted: 0,
+      rb_local_synced: 0,
+      created_at: STAMP,
+      updated_at: STAMP,
+    })
+    expect(node('777').UUID).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('creates a folder at the end of a folder', () => {
+    createNode(db, '1000', 'BASES', true, { now: NOW, newPlaylistId: () => '778' })
+    expect(node('778')).toMatchObject({ Seq: 2, Attribute: 1, ParentID: '1000' })
+  })
+
+  it('refuses a parent that is a playlist, not a folder', () => {
+    expect(() => createNode(db, '3000', 'x', false, { now: NOW })).toThrow(EditRefused)
+  })
+
+  it('draws another ID when the table already uses one', () => {
+    const draws = ['2000', '779']
+    expect(
+      createNode(db, 'root', 'x', false, { now: NOW, newPlaylistId: () => draws.shift() ?? '0' })
+        .id,
+    ).toBe('779')
+  })
+
+  // pyrekordbox keeps generated playlist IDs within 28 bits and away from rekordbox's own
+  // reserved low numbers (the CUE Analysis Playlist is 200000, the trial row 100000).
+  it('draws IDs the way pyrekordbox does', () => {
+    for (let i = 0; i < 200; i++) {
+      const id = Number(randomPlaylistId())
+      expect(id).toBeGreaterThanOrEqual(100)
+      expect(id).toBeLessThan(2 ** 28)
+    }
   })
 })

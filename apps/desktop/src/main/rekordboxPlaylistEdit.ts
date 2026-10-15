@@ -1,9 +1,9 @@
-import { randomUUID } from 'node:crypto'
+import { randomInt, randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { PlaylistTrackRef, RekordboxPlaylistEdit } from '../shared/types'
 import { type FindOptions, findTrackByPath, isAmbiguous, STREAMING_FILE_TYPE } from './rekordboxDb'
 import { IS_SEPARATOR } from './rekordboxPlaylists'
-import { rekordboxStamp, takeLocalUsn } from './rekordboxRows'
+import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 // The organising edits, each on a collection already opened read-write and inside the
 // caller's transaction (rekordboxPlaylistWrite.ts holds the guard, the backups and the
@@ -280,4 +280,46 @@ export function editProblem(db: Db, edit: RekordboxPlaylistEdit): 'stale' | 'no-
   if (named.some((id) => !known.has(id))) return 'stale'
   if (edit.kind === 'insertSeparator' && separatorContent(db) === null) return 'no-separator'
   return null
+}
+
+// pyrekordbox's rule for a new playlist ID: random, within 28 bits, never below 100.
+export function randomPlaylistId(): string {
+  return String(randomInt(100, 2 ** 28))
+}
+
+// A new playlist or folder goes last among its live siblings, which is where rekordbox puts
+// one created from its own menu.
+export function createNode(
+  db: Db,
+  parentId: string,
+  name: string,
+  folder: boolean,
+  ctx: EditContext,
+): { id: string; attribute: 0 | 1 } {
+  if (parentId !== 'root' && nodeAttribute(db, parentId) !== 1) throw new EditRefused('stale')
+  const stamp = rekordboxStamp(ctx.now)
+  const { last } = db
+    .prepare(
+      `SELECT coalesce(max(Seq), 0) AS last FROM djmdPlaylist
+        WHERE ParentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .get(parentId) as { last: number }
+  const id = unusedRowId(db, 'djmdPlaylist', ctx.newPlaylistId ?? randomPlaylistId)
+  const attribute = folder ? 1 : 0
+  db.prepare(
+    `INSERT INTO djmdPlaylist (ID, Seq, Name, ImagePath, Attribute, ParentID, SmartList, UUID,
+       rb_data_status, rb_local_data_status, rb_local_deleted, rb_local_synced, usn, rb_local_usn,
+       created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, NULL, ?, 0, 0, 0, 0, NULL, ?, ?, ?)`,
+  ).run(
+    id,
+    Number(last) + 1,
+    name.trim(),
+    attribute,
+    parentId,
+    randomUUID(),
+    takeLocalUsn(db, stamp),
+    stamp,
+    stamp,
+  )
+  return { id, attribute }
 }

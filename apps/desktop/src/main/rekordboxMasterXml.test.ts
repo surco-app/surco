@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hexId } from './rekordboxMasterXml'
+import { hexId, playlistXmlPath, withPlaylistNode, xmlNodeIds } from './rekordboxMasterXml'
 
 describe('masterPlaylists6.xml ids', () => {
   // Measured: Id is the decimal ID in uppercase hex without leading zeros (30D40 is
@@ -8,5 +8,68 @@ describe('masterPlaylists6.xml ids', () => {
     expect(hexId('200000')).toBe('30D40')
     expect(hexId('4097321833')).toBe('F4382B69')
     expect(hexId('root')).toBe('0')
+  })
+})
+
+const XML = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '',
+  '<MASTER_PLAYLIST Version="3.0.0" AutomaticSync="0">',
+  '  <PRODUCT Name="rekordbox" Version="7.2.19" Company="Pioneer DJ"/>',
+  '  <PLAYLISTS>',
+  '    <NODE Id="3E8" ParentId="0" Attribute="1" Timestamp="1767225600000" Lib_Type="0" CheckType="0"/>',
+  '  </PLAYLISTS>',
+  '</MASTER_PLAYLIST>',
+  '',
+].join('\r\n')
+
+describe('masterPlaylists6.xml', () => {
+  it('lives beside master.db', () => {
+    expect(playlistXmlPath('/Users/dj/Library/Pioneer/rekordbox/master.db')).toBe(
+      '/Users/dj/Library/Pioneer/rekordbox/masterPlaylists6.xml',
+    )
+  })
+
+  // rekordbox appends new nodes at the end whatever their folder, with CRLF line ends;
+  // everything already in the file stays byte for byte.
+  it('appends the node as the last playlist entry, keeping the file as it was', () => {
+    const next = withPlaylistNode(XML, {
+      id: '777',
+      parentId: '1000',
+      attribute: 0,
+      timestamp: 1792087200000,
+    })
+    expect(next).toBe(
+      XML.replace(
+        '  </PLAYLISTS>',
+        '    <NODE Id="309" ParentId="3E8" Attribute="0" Timestamp="1792087200000" Lib_Type="0" CheckType="0"/>\r\n  </PLAYLISTS>',
+      ),
+    )
+  })
+
+  // A collection with no playlist yet may write the element self-closed.
+  it('opens an empty playlist list to add the first node', () => {
+    const empty = XML.replace(/ {2}<PLAYLISTS>\r\n.*\r\n {2}<\/PLAYLISTS>/, '  <PLAYLISTS/>')
+    expect(
+      withPlaylistNode(empty, { id: '777', parentId: 'root', attribute: 1, timestamp: 1 }),
+    ).toContain(
+      '  <PLAYLISTS>\r\n    <NODE Id="309" ParentId="0" Attribute="1" Timestamp="1" Lib_Type="0" CheckType="0"/>\r\n  </PLAYLISTS>',
+    )
+  })
+
+  it('refuses a file without a playlist list rather than guessing where to write', () => {
+    expect(() =>
+      withPlaylistNode('<MASTER_PLAYLIST/>', {
+        id: '1',
+        parentId: 'root',
+        attribute: 0,
+        timestamp: 1,
+      }),
+    ).toThrow()
+  })
+
+  // The real file keeps nodes the database no longer has; a new ID must avoid those too.
+  it('lists the node IDs the file already holds', () => {
+    expect(xmlNodeIds(XML)).toEqual(new Set(['3E8']))
   })
 })
