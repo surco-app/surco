@@ -1064,15 +1064,14 @@ export const TrackList = memo(function TrackList({
     const { tracks, selectedIds } = dragState.current
     // Dragging a row that's part of the selection drags the whole selection (Finder's
     // convention); dragging an unselected row drags just that one. List order is kept.
-    const paths = selectedIds.has(track.id)
-      ? tracks.filter((t) => selectedIds.has(t.id)).map((t) => t.inputPath)
-      : [track.inputPath]
+    const dragged = selectedIds.has(track.id)
+      ? tracks.filter((t) => selectedIds.has(t.id))
+      : [track]
+    const paths = dragged.map((t) => t.inputPath)
     // The tree's drop reads these (lib/reorderDrag): the OS drag below carries files for
     // other apps, and is not relied on to bring them back into this window.
     setDraggedRows(
-      selectedIds.has(track.id)
-        ? tracks.filter((t) => selectedIds.has(t.id)).map((t) => t.id)
-        : [track.id],
+      dragged.map((t) => t.id),
       paths,
     )
     // The OS drag thumbnail is the file's own art, matching the row — never the cover

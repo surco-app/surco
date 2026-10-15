@@ -35,11 +35,18 @@ export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]
   const linksOf = new Map<string, string[]>()
   const contentOf = new Map<string, string>()
   let pending: string[] = []
-  entries.forEach((e, i) => {
+  // A separator with no row id of its own is keyed by the row it follows and its place in
+  // that run, so a row added elsewhere does not rename it.
+  let after = ''
+  const runs = new Map<string, number>()
+  entries.forEach((e) => {
     if (e.separator) {
-      pending.push(e.linkId ?? `sep-${i}`)
+      const n = runs.get(after) ?? 0
+      runs.set(after, n + 1)
+      pending.push(e.linkId ?? `sep-${after}-${n}`)
       return
     }
+    after = e.path ?? ''
     const t = e.path ? byPath.get(e.path.normalize('NFC')) : undefined
     if (t && e.linkId) linksOf.set(t.id, [...(linksOf.get(t.id) ?? []), e.linkId])
     if (!t || seen.has(t.id)) return

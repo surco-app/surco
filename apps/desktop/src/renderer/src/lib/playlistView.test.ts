@@ -30,6 +30,18 @@ describe('playlistView', () => {
     expect([...view.separatorBefore]).toEqual([['b', ['s1']]])
   })
 
+  // A separator with no playlist row of its own is keyed by where it sits, not by its index
+  // in the whole playlist: a row added higher up shifted every index below it and React
+  // redrew each separator line as new.
+  it('keys a separator without a row id the same after a row is added above it', () => {
+    const before = playlistView([A, B, C], [entry('/m/A.wav'), entry(SEP, true), entry('/m/B.wav')])
+    const after = playlistView(
+      [A, B, C],
+      [entry('/m/C.wav'), entry('/m/A.wav'), entry(SEP, true), entry('/m/B.wav')],
+    )
+    expect(after.separatorBefore.get('b')).toEqual(before.separatorBefore.get('b'))
+  })
+
   // Separators can be moved and removed now; one hidden in a collapsed run, or one after the
   // last row, could never be reached. Each stays its own line.
   it('keeps every separator as its own line, side by side and after the last row', () => {
