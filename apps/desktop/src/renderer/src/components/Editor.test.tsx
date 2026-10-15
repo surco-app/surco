@@ -3473,6 +3473,42 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
   })
 
+  // The pill sat inside the header's fold button: a click on it folded Metadata, and a
+  // button nested in a button is out of reach for the keyboard and a screen reader.
+  it('opens the numbers from the pill without folding the Metadata section', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    const pill = screen.getByTestId('copy-verdict')
+    fireEvent.click(pill)
+    expect(screen.getByRole('button', { name: 'Metadata' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    const card = screen.getByTestId('copy-comparison')
+    expect(pill).toHaveAttribute('aria-expanded', 'true')
+    expect(pill).toHaveAttribute('aria-controls', card.id)
+    expect(card.id).not.toBe('')
+  })
+
+  // jsdom does not turn Enter or Space on a button into a click (the browser does, for a
+  // native button with no interactive ancestor), so the test pins the two things that
+  // make the key work: the pill takes focus and no other button wraps it.
+  it('reaches the pill from the keyboard as a button of its own', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    const pill = screen.getByTestId('copy-verdict')
+    pill.focus()
+    expect(document.activeElement).toBe(pill)
+    expect(pill.tagName).toBe('BUTTON')
+    expect(pill.parentElement?.closest('button')).toBeNull()
+    fireEvent.click(pill)
+    expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
+  })
+
   it('says Apple Music has the better copy when this file is the limited one', async () => {
     renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
     await waitFor(() =>

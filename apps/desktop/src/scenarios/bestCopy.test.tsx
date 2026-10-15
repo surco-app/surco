@@ -73,6 +73,10 @@ describe.skipIf(process.platform !== 'darwin')(
 
     it('shows that the limiter, counted in peaks, is what decided', () => {
       fireEvent.click(verdict)
+      expect(screen.getByTestId('copy-comparison')).toBeTruthy()
+      expect(screen.getByRole('button', { name: 'Metadata' }).getAttribute('aria-expanded')).toBe(
+        'true',
+      )
       expect(screen.getByTestId('copy-row-peakCount').hasAttribute('data-decides')).toBe(true)
       expect(surco.errors).toEqual([])
     })

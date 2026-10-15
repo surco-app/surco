@@ -60,12 +60,14 @@ const BORDER = {
 } as const
 
 export function CopyComparison({
+  id,
   verdict,
   here,
   library,
   hereLabel,
   libraryLabel,
 }: {
+  id?: string
   verdict: CopyVerdict
   here: CopyFacts
   library: CopyFacts
@@ -155,6 +157,7 @@ export function CopyComparison({
 
   return (
     <div
+      id={id}
       data-testid="copy-comparison"
       data-tone={tone}
       className="mt-2 border-l-2 pl-2.5 text-xs"

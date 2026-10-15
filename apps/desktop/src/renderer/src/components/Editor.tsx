@@ -343,6 +343,7 @@ export const Editor = memo(function Editor({
   }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
   const formBodyId = useId()
+  const copyCardId = useId()
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
   const outputOpen = sectionOpen.output
@@ -1159,6 +1160,27 @@ export const Editor = memo(function Editor({
         : copyVerdict.winner === 'b'
           ? 'library'
           : 'same'
+  const copyVerdictPill =
+    !isMulti && inLibrary === 'yes' && copyState ? (
+      <button
+        type="button"
+        data-testid="copy-verdict"
+        data-state={copyState}
+        aria-expanded={copyOpen}
+        aria-controls={copyCardId}
+        disabled={copyState === 'measuring'}
+        onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+        className="press rounded-md"
+      >
+        <SectionPill
+          tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
+          testid="copy-verdict-pill"
+          icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
+        >
+          {tr(COPY_STATE_LABEL[copyState])}
+        </SectionPill>
+      </button>
+    ) : undefined
   const libraryMarks = (
     <>
       {!isMulti && inLibrary === 'yes' && (
@@ -1184,25 +1206,6 @@ export const Editor = memo(function Editor({
             <span data-testid="apple-music-copy-better">· {tr('editor.libraryCopyBetter')}</span>
           )}
         </SectionPill>
-      )}
-      {!isMulti && inLibrary === 'yes' && copyState && (
-        <button
-          type="button"
-          data-testid="copy-verdict"
-          data-state={copyState}
-          aria-expanded={copyOpen}
-          disabled={copyState === 'measuring'}
-          onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-          className="press rounded-md"
-        >
-          <SectionPill
-            tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
-            testid="copy-verdict-pill"
-            icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
-          >
-            {tr(COPY_STATE_LABEL[copyState])}
-          </SectionPill>
-        </button>
       )}
       {!isMulti && inLibrary === 'no' && (
         <SectionPill
@@ -1268,6 +1271,7 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             status={hasLibraryMarks ? libraryMarks : undefined}
+            statusAction={copyVerdictPill}
             right={
               // The two action groups (file: copy/search — tags: clear/fill/format) ride the
               // title line as bare toolbar glyphs, split by a divider.
@@ -1296,6 +1300,7 @@ export const Editor = memo(function Editor({
           />
           {copyOpen && copyVerdict && hereFacts && libraryFacts && (
             <CopyComparison
+              id={copyCardId}
               verdict={copyVerdict}
               here={hereFacts}
               library={libraryFacts}
