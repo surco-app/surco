@@ -82,11 +82,11 @@ export function SourceTree({
           aria-current={selected || undefined}
           onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
           style={{ paddingLeft: 10 + depth * 18 }}
-          className={`flex h-[27px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left ${
+          className={`flex h-[27px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[11.5px] ${
             selected
               ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
-              : 'text-fg-muted hover:bg-[var(--color-hover)]'
-          } ${isFolder ? 'text-[11.5px] font-semibold text-fg' : ''}`}
+              : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
+          } ${isFolder ? 'font-semibold' : ''}`}
         >
           {isFolder && <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />}
           <span className="min-w-0 truncate">{node.name}</span>
