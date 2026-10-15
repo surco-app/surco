@@ -529,11 +529,40 @@ describe('useQualityAnalysis after unmount', () => {
 
     act(() => result.current.analyzeAllQuality())
     await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(3))
+    targetsRef.current = [track('a')]
     act(() => result.current.scopeTo((t) => t.id === 'a'))
 
     expect(result.current.analysis).toEqual({ done: 0, total: 1 })
     release(spectrum)
     await waitFor(() => expect(result.current.analysis).toBeNull())
     expect(spectrogram).not.toHaveBeenCalledWith('/music/d.wav', expect.anything())
+  })
+
+  // A row removed from the list is out of every playlist for good: setting it aside on a
+  // switch would bring it back into a later sweep, counted as work over a file that is gone.
+  it('never sets aside a removed row for a later sweep', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((): Promise<SpectrumResult> => gate)
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(3))
+    act(() => result.current.forgetTracks(['d']))
+    targetsRef.current = [track('a'), track('b'), track('c')]
+    act(() => result.current.scopeTo((t) => t.id === 'a'))
+    release(spectrum)
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+    targetsRef.current = []
+
+    act(() => result.current.scopeTo(null))
+
+    expect(result.current.analysis).toBeNull()
   })
 })

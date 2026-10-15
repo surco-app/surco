@@ -561,14 +561,14 @@ export default function App(): React.JSX.Element {
     onMetaLoaded: (t) => {
       // With auto-match on, every imported track is probed whether or not its row is on
       // screen; already-matched ones are never re-probed.
-      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t])
+      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
       // Auto-analyze runs the full background sweep so a reopened crate has every heavy
       // analysis already on disk — the sweep reads bulkTracksRef (the visible rows) and
       // skips any already measured, so this stays a cheap re-trigger per import. Passing t
       // explicitly covers the track this call is for even before bulkTracksRef's render has
       // caught up with it (see analyzeAllQuality). Ignores the quality-section fold: this is
       // an explicit "always analyze my imports" setting.
-      if (settings?.autoAnalyze) analyzeAllQuality([t])
+      if (settings?.autoAnalyze) analyzeAllQuality([t], true)
     },
     // Keyed, unlike the plain notices above: a folder walk settles one batch per directory,
     // so an unkeyed card here stacks one per folder rather than one per import.
@@ -1213,6 +1213,8 @@ export default function App(): React.JSX.Element {
   // playlist passed through, and sweeping all of it spent Discogs and ffmpeg on sets the
   // user had left. Narrowed from the moment a playlist is picked, before its entries land
   // (nothing is its work yet), so the one left behind does not start more in the meantime.
+  // Only background work is held to it: a click acts on the rows shown, the whole working
+  // list while the entries load.
   const sweepScope = useMemo(
     () => (browser.playlist ? playlistMembership(browser.entries ?? []) : null),
     [browser.playlist, browser.entries],
@@ -2019,7 +2021,10 @@ export default function App(): React.JSX.Element {
     mapTracks(cleanupPatcher(tracksRef.current, fixes))
     const cleaned = new Set(fixes.map((f) => f.id))
     if (s.autoMatch && autoMatchAvailable(s))
-      enqueueAutoMatch(tracksRef.current.filter((t) => cleaned.has(t.id)))
+      enqueueAutoMatch(
+        tracksRef.current.filter((t) => cleaned.has(t.id)),
+        true,
+      )
   })
   const cleanedCount = useMemo(
     () => tracks.filter((t) => activeCleanups(t).length > 0).length,

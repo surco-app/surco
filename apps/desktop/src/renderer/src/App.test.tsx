@@ -1047,6 +1047,35 @@ describe('App source playlists', () => {
     })
   })
 
+  // While a picked playlist's entries have not arrived the list shows the whole working list,
+  // and that is what a click acts on: the playlist scope only holds back background work, so
+  // a playlist that never loads must not turn the toolbar buttons into silent no-ops.
+  it('runs the toolbar auto-match and analysis on the rows shown while a playlist loads', async () => {
+    const pending = () => new Promise(() => {})
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      search: vi.fn(pending),
+      spectrogram: vi.fn(pending),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(window.api.loadRekordboxPlaylist).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByTestId('auto-match'))
+    fireEvent.click(screen.getByTestId('analyze-quality'))
+
+    expect(await screen.findByTestId('auto-match-progress')).toHaveTextContent('0/2')
+    expect(await screen.findByTestId('analyze-progress')).toHaveTextContent('0/2')
+  })
+
   // The analysis sweep is ffmpeg passes per track: the same rule holds, or a playlist the
   // user only passed through keeps the CPU busy behind the one now open.
   describe('background analysis', () => {

@@ -69,7 +69,9 @@ interface Params {
 interface AutoMatchSweep {
   // Progress of the sweep (null when idle), for the toolbar pill and the top bar.
   matching: { done: number; total: number } | null
-  enqueueAutoMatch: (candidates: TrackItem[]) => void
+  // background marks work nobody asked for (an import, its auto-clean): only that is held to
+  // the open playlist. A click acts on the rows shown, which is all the scope is about.
+  enqueueAutoMatch: (candidates: TrackItem[], background?: boolean) => void
   onTrackVisible: (id: string, visible: boolean) => void
   cancelAutoMatch: () => void
   // Drops a removed (or rebuilt) track from the queue/visibility registries.
@@ -127,7 +129,9 @@ export function useAutoMatch({
   // Set aside rather than dropped: a track never matched is still a candidate, so going
   // back to its playlist queues it again.
   const scope = useRef<((t: TrackItem) => boolean) | null>(null)
-  const setAside = useRef<Set<string>>(new Set())
+  // Kept as tracks, not ids: an import's read lands before its row is in the list, and the
+  // user can go back to its playlist before the row exists.
+  const setAside = useRef<Map<string, TrackItem>>(new Map())
   // Auto-match is background work: it probes Discogs at low priority so the editor's own
   // search (high priority) always jumps ahead, and the main process paces every Discogs
   // call through one shared per-minute bucket so a big crate can't earn 429s. The focused
@@ -321,11 +325,11 @@ export function useAutoMatch({
 
   // Queues tracks for auto-match and kicks the drain.
   const enqueueAutoMatch = useCallback(
-    (candidates: TrackItem[]): void => {
+    (candidates: TrackItem[], background = false): void => {
       const before = sweepTotal.current.size
       for (const t of tracksToAutoMatch(candidates)) {
-        if (scope.current && !scope.current(t)) {
-          setAside.current.add(t.id)
+        if (background && scope.current && !scope.current(t)) {
+          setAside.current.set(t.id, t)
           continue
         }
         matchQueue.current.add(t.id)
@@ -413,7 +417,7 @@ export function useAutoMatch({
           if (!t || inScope(t)) continue
           sweepTotal.current.delete(id)
           sweepDone.current.delete(id)
-          if (matchQueue.current.delete(id)) setAside.current.add(id)
+          if (matchQueue.current.delete(id)) setAside.current.set(id, t)
         }
       }
       setMatching(
@@ -422,9 +426,9 @@ export function useAutoMatch({
           : null,
       )
       const back: TrackItem[] = []
-      for (const id of setAside.current) {
-        const t = live.get(id)
-        if (!t || (inScope && !inScope(t))) continue
+      for (const [id, held] of setAside.current) {
+        const t = live.get(id) ?? held
+        if (inScope && !inScope(t)) continue
         setAside.current.delete(id)
         back.push(t)
       }

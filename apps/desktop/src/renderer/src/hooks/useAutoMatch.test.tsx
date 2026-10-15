@@ -417,6 +417,32 @@ describe('useAutoMatch', () => {
     expect(calls[0]).toBe('query b')
   })
 
+  // An import's read lands before its row is in the list, so a playlist can set the track
+  // aside and the user go back before the row exists. Set aside is not dropped: the track
+  // was never matched, so once its row lands it still has to be probed.
+  it('still probes a track set aside before its row reached the list', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const a = track('a')
+    const late = { ...track('late'), query: 'the late row' }
+    const { result, tracksRef } = setup([a])
+
+    act(() => result.current.scopeTo((t) => t.id === 'a'))
+    act(() => result.current.enqueueAutoMatch([late], true))
+    act(() => result.current.scopeTo(null))
+    tracksRef.current = [a, late]
+    act(() => result.current.onTrackVisible('late', true))
+
+    await waitFor(() =>
+      expect(search).toHaveBeenCalledWith(
+        'the late row',
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+      ),
+    )
+  })
+
   // The whole point of the sweep re-checking the library: a file whose own messy tags don't
   // match the library ('Unknown DJ') but whose confident Discogs match resolves to the
   // canonical artist the library knows ('Artist') must be pinned owned, so the list/filter

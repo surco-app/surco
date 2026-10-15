@@ -33,7 +33,9 @@ interface QualityAnalysis {
   // tracks is folded into the sweep's targets alongside targetsRef, for a caller (an
   // import's onMetaLoaded) that fires before targetsRef's render has caught up with the
   // track it just added — mirroring enqueueAutoMatch's explicit candidates argument.
-  analyzeAllQuality: (tracks?: TrackItem[]) => void
+  // background marks a sweep nobody clicked (an import's): only that one is held to the open
+  // playlist. A click analyzes the rows shown, which is all the scope is about.
+  analyzeAllQuality: (tracks?: TrackItem[], background?: boolean) => void
   // Takes rows that left the list back out of the sweep's queue. Removal is the one way a
   // queued track can stop being worth measuring without ever being measured, and nothing
   // else retires it — see the pendingRef note below.
@@ -127,15 +129,18 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   // targetsRef.current plus whatever pendingRef still holds that targetsRef doesn't carry
   // yet — pendingRef entries are retired (see the per-track finally below) the moment
   // targetsRef genuinely reflects them, so this never re-adds a track tracksToAnalyze would
-  // otherwise have dropped.
+  // otherwise have dropped. What pendingRef holds for another playlist stays there either way;
+  // the rows shown are held to the playlist only for a background sweep.
   const sweepCandidates = useCallback(
-    (): TrackItem[] =>
-      [
-        ...targetsRef.current,
+    (background: boolean): TrackItem[] => {
+      const inScope = (t: TrackItem): boolean => !scopeRef.current || scopeRef.current(t)
+      return [
+        ...(background ? targetsRef.current.filter(inScope) : targetsRef.current),
         ...Array.from(pendingRef.current.values()).filter(
-          (t) => !targetsRef.current.some((existing) => existing.id === t.id),
+          (t) => inScope(t) && !targetsRef.current.some((existing) => existing.id === t.id),
         ),
-      ].filter((t) => !scopeRef.current || scopeRef.current(t)),
+      ]
+    },
     [targetsRef],
   )
 
@@ -151,7 +156,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   // this one call) because a second track landing while the first's sweep is still running
   // would otherwise be dropped by the runningRef guard below with no later call to pick it up.
   const analyzeAllQuality = useCallback(
-    (tracks?: TrackItem[]): void => {
+    (tracks?: TrackItem[], background = false): void => {
       for (const t of tracks ?? []) {
         // A re-import genuinely brings the row back (it is in the list again), so the
         // forgotten mark is lifted and the track queues normally; anything still absent
@@ -162,7 +167,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         }
         pendingRef.current.set(t.id, t)
       }
-      const targets = tracksToAnalyze(sweepCandidates(), measuredRef.current)
+      const targets = tracksToAnalyze(sweepCandidates(background), measuredRef.current)
       if (runningRef.current || targets.length === 0) return
       runningRef.current = true
       analyzeCancel.current = false
@@ -250,9 +255,9 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // it stays there (untouched by the guard above) until a relaunch actually measures it.
         if (
           !analyzeCancel.current &&
-          tracksToAnalyze(sweepCandidates(), measuredRef.current).length > 0
+          tracksToAnalyze(sweepCandidates(background), measuredRef.current).length > 0
         ) {
-          analyzeAllQuality()
+          analyzeAllQuality(undefined, background)
           return
         }
         measuredRef.current = new Set()
@@ -273,7 +278,8 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
 
   // A track already decoding finishes (the work is half done) but leaves the progress, which
   // counts only the open playlist's work; one not started yet goes back to pendingRef. Its
-  // playlist opened again starts the sweep over what waits there, as an import would.
+  // playlist opened again starts the sweep over what waits there, as an import would. A row
+  // removed from the list is no playlist's work: it leaves the pass without waiting anywhere.
   const scopeTo = useCallback(
     (inScope: ((t: TrackItem) => boolean) | null): void => {
       scopeRef.current = inScope
@@ -281,7 +287,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
       for (const [id, t] of runRef.current) {
         if (!inScope || inScope(t)) continue
         runRef.current.delete(id)
-        pendingRef.current.set(id, t)
+        if (!forgottenRef.current.has(id)) pendingRef.current.set(id, t)
         dropped += 1
       }
       if (dropped > 0) {
@@ -291,7 +297,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         !runningRef.current &&
         Array.from(pendingRef.current.values()).some((t) => !inScope || inScope(t))
       ) {
-        analyzeAllQuality()
+        analyzeAllQuality(undefined, true)
       }
     },
     [analyzeAllQuality],
