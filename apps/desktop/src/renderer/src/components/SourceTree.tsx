@@ -108,7 +108,8 @@ export function SourceTree({
   }
 
   let body: React.ReactNode
-  if (failed)
+  // Only a tree never read says it failed; a failed re-read keeps the one already shown.
+  if (failed && !nodes)
     body = (
       <p data-testid="source-tree-failed" className="px-3 text-xs text-fg-faint">
         {tr(`sources.failed.${source}`)}

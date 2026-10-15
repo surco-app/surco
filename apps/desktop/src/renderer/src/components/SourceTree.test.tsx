@@ -101,6 +101,23 @@ describe('SourceTree', () => {
     expect(screen.getByTestId('source-tree-failed')).toHaveTextContent('read the collection')
   })
 
+  // A refocus re-read can fail while rekordbox is mid-write; react-query keeps the last tree,
+  // and swapping it for the error would hide every playlist until the next focus.
+  it('keeps showing the tree it already read when a later re-read fails', () => {
+    render(
+      <SourceTree
+        title="rekordbox"
+        source="rekordbox"
+        nodes={NODES}
+        failed
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('source-node-cant')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-failed')).not.toBeInTheDocument()
+  })
+
   // Music fails when it is closed or Surco was denied control of it; only saying so tells
   // the user there is something to fix, and "collection" is rekordbox's word, not Music's.
   it('points a Music failure at Music being open and Surco being allowed to control it', () => {
