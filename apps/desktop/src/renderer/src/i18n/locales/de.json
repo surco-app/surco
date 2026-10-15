@@ -1729,7 +1729,8 @@
         "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Sammlung ist unverändert",
         "readOnly": "Die rekordbox-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
-        "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren"
+        "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Ersetze vor dem Öffnen von rekordbox master.db durch die Kopie master.db.surco-backup daneben"
       }
     },
     "tree": {

@@ -42,6 +42,7 @@ const REFUSED: Record<Exclude<RekordboxEditRefusal, 'nothing-to-add'>, string> =
   unreadable: 'sources.edit.refused.unreadable',
   'backup-failed': 'sources.edit.refused.backupFailed',
   'write-failed': 'sources.edit.refused.writeFailed',
+  'write-unknown': 'sources.edit.refused.writeUnknown',
   'read-only': 'sources.edit.refused.readOnly',
   stale: 'sources.edit.refused.stale',
   'no-separator': 'sources.edit.refused.noSeparator',

@@ -1729,7 +1729,8 @@
         "writeFailed": "Não foi possível salvar a mudança. A coleção continua como estava",
         "readOnly": "A coleção do rekordbox é somente leitura e nada mudou",
         "stale": "A playlist mudou no rekordbox. Confira e tente de novo",
-        "noSeparator": "Sua coleção não tem nenhum separador para copiar"
+        "noSeparator": "Sua coleção não tem nenhum separador para copiar",
+        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então a coleção pode ter mudado. Antes de abrir o rekordbox, substitua master.db pela cópia master.db.surco-backup ao lado dele"
       }
     },
     "tree": {

@@ -44,6 +44,7 @@ export interface PlaylistWriteDeps extends FindOptions {
   now?: () => Date
   // Seams for the tests to fail the write after it has really changed something.
   onWrite?: () => void
+  onRollback?: () => void
   writeXml?: (path: string, text: string) => Promise<void>
 }
 
@@ -128,8 +129,12 @@ export async function restoreCollection(collectionPath: string): Promise<boolean
 
 // Undoes the open transaction; false when even that failed, so the collection's state is
 // no longer known.
-function rollback(db: NonNullable<ReturnType<typeof openRekordboxDb>>): boolean {
+function rollback(
+  db: NonNullable<ReturnType<typeof openRekordboxDb>>,
+  onRollback?: () => void,
+): boolean {
   try {
+    onRollback?.()
     if (db.inTransaction) db.exec('ROLLBACK')
     return true
   } catch (err) {
@@ -245,10 +250,11 @@ export async function editRekordboxPlaylist(
     }
     db.exec('COMMIT')
   } catch (err) {
-    const known = rollback(db)
+    const known = rollback(db, deps.onRollback)
     db.close()
     if (xmlWritten) await restoreFile(xmlPath)
-    if (!known) await restoreCollection(collectionPath)
+    // Neither rolled back nor copied back: nothing can say the collection is as it was.
+    if (!known && !(await restoreCollection(collectionPath))) return refuse('write-unknown')
     // Refused inside the transaction: it rolled back, nothing was written.
     if (err instanceof EditRefused) return refuse(err.reason)
     if (isReadOnly(err)) return refuse('read-only')

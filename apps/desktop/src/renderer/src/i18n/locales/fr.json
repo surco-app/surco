@@ -1729,7 +1729,8 @@
         "writeFailed": "Impossible d’enregistrer la modification. La collection est restée telle quelle",
         "readOnly": "La collection rekordbox est en lecture seule, rien n’a changé",
         "stale": "La playlist a changé dans rekordbox. Vérifie-la et réessaie",
-        "noSeparator": "Ta collection n’a aucun séparateur à copier"
+        "noSeparator": "Ta collection n’a aucun séparateur à copier",
+        "writeUnknown": "Le changement n'a pu être ni enregistré ni annulé, la collection a donc pu changer. Avant d'ouvrir rekordbox, remplace master.db par la copie master.db.surco-backup qui se trouve à côté"
       }
     },
     "tree": {

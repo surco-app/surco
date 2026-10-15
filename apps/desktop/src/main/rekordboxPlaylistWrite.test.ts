@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'node:fs'
+import { existsSync, rmSync, writeFileSync } from 'node:fs'
 import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -230,6 +230,46 @@ describe('editRekordboxPlaylist', () => {
     )
     expect(result).toEqual({ applied: false, reason: 'write-failed' })
     expect(linkIds(path, '2000')).toEqual(FACTORY)
+  })
+
+  // A rollback that itself fails leaves the collection in a state nobody knows. Copied
+  // back from its backup it is as it was again, and saying so is true.
+  it('says the collection is as it was once a failed rollback is restored from its copy', async () => {
+    const path = await collection()
+    const result = await editRekordboxPlaylist(
+      path,
+      MOVE,
+      deps({
+        onWrite: () => {
+          throw new Error('disk gone')
+        },
+        onRollback: () => {
+          throw new Error('rollback failed')
+        },
+      }),
+    )
+    expect(result).toEqual({ applied: false, reason: 'write-failed' })
+    expect(linkIds(path, '2000')).toEqual(FACTORY)
+  })
+
+  // When the copy cannot go back either, "as it was" would be a lie about the DJ's only
+  // collection: the answer must say its state is unknown and that the copy is there.
+  it('says the state is unknown when a failed rollback cannot be restored', async () => {
+    const path = await collection()
+    const result = await editRekordboxPlaylist(
+      path,
+      MOVE,
+      deps({
+        onWrite: () => {
+          rmSync(`${path}.surco-backup`)
+          throw new Error('disk gone')
+        },
+        onRollback: () => {
+          throw new Error('rollback failed')
+        },
+      }),
+    )
+    expect(result).toEqual({ applied: false, reason: 'write-unknown' })
   })
 
   it('creates a playlist in the database and its node in the XML', async () => {

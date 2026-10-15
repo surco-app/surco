@@ -1059,6 +1059,9 @@ export type RekordboxEditRefusal =
   | 'unreadable'
   | 'backup-failed'
   | 'write-failed'
+  // The one exception to the line above: the write failed, its rollback too, and the
+  // backup could not be copied back, so the collection's state is not known.
+  | 'write-unknown'
   | 'read-only'
   | 'stale'
   | 'no-separator'
