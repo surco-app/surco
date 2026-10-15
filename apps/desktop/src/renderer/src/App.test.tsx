@@ -764,6 +764,33 @@ afterEach(clearDraggedRows)
 // The draggable wrapper of the row at this position in the list.
 const rowWrapper = (index: number): HTMLElement => screen.getAllByTestId(/^track-drag-/)[index]
 
+describe('App source rail', () => {
+  // A rail holding only "Tracks" offers nothing to switch to; drawn anyway it is a column
+  // of chrome beside the list that a Windows user without rekordbox can never use.
+  it('is not drawn when this machine has no source to pick', async () => {
+    await renderApp()
+    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await act(async () => {})
+    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+  })
+
+  // The rekordbox check is asynchronous: the window paints before it answers, and the
+  // rail has to show up the moment the collection is found rather than never.
+  it('appears once the rekordbox collection turns out to exist', async () => {
+    let answer: (found: boolean) => void = () => {}
+    setApi({
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>(
+        () => new Promise((resolve) => (answer = resolve)),
+      ),
+    })
+    await renderApp()
+    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    await act(async () => answer(true))
+    expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
+  })
+})
+
 describe('App source playlists', () => {
   // Browsing a rekordbox playlist must show the set as the DJ built it: only its tracks, in
   // its order, with its breaks drawn, loading the ones not in the list yet. Going back to
