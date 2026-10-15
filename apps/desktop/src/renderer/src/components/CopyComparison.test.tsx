@@ -128,7 +128,7 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'This file was made from a lossy source.',
+      'This file comes from a lossy source.',
     )
     expect(screen.getByTestId('copy-sentence').textContent).not.toContain('—')
   })
@@ -226,7 +226,7 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'This file was made from a lossy source.',
+      'This file comes from a lossy source.',
     )
     expect(screen.getByTestId('copy-sentence').textContent).not.toContain('15')
     rerender(
@@ -239,5 +239,23 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence').textContent).toContain('reaches 22.1 kHz')
+  })
+
+  // Audio quality calls a file with nothing above 22 kHz "reescalado" (upsampled); the card
+  // uses the same word so the two sections never seem to describe different defects.
+  it('calls an upsampled copy reescalada, the word Audio quality uses', async () => {
+    await i18n.changeLanguage('es')
+    render(
+      <CopyComparison
+        verdict={{ winner: 'a', reason: 'upsampled' }}
+        here={aif}
+        library={wav}
+        hereLabel="AIF"
+        libraryLabel="WAV"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'La copia de Apple Music está reescalada desde una frecuencia más baja. Este fichero no.',
+    )
   })
 })

@@ -1414,6 +1414,34 @@ describe('TrackList duplicate mark', () => {
     )
   })
 
+  // The list must speak the Audio quality section's language: reprocessing is a suspicion
+  // there ("Possibly reprocessed"), a transcode is a lossy source, and the duplicate mark
+  // must not state either more firmly than the section that measured it.
+  it.each([
+    ['en', 'processed', 'this one may be reprocessed', 'no sign of reprocessing'],
+    ['es', 'processed', 'esta puede estar reprocesada', 'sin reprocesado aparente'],
+    ['en', 'transcode', 'this one comes from a lossy source', 'no lossy source'],
+    ['es', 'transcode', 'esta viene de una fuente con pérdidas', 'sin fuente con pérdidas'],
+  ] as const)(
+    'words a %s %s reason the way Audio quality does',
+    async (lang, reason, worse, best) => {
+      await i18n.changeLanguage(lang)
+      try {
+        renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+          duplicateRankById: new Map<string, DuplicateRank>([
+            ['a', { rank: 'best', count: 2, identical: false, reason }],
+            ['b', { rank: 'worse', count: 2, identical: false, reason }],
+          ]),
+        })
+        const [rowA, rowB] = screen.getAllByTestId('track-row')
+        expect(within(rowA).getByTestId('track-duplicate').textContent).toContain(best)
+        expect(within(rowB).getByTestId('track-duplicate').textContent).toContain(worse)
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    },
+  )
+
   it('draws no duplicate icon on a track with no ranked copy', () => {
     renderList([track({ id: 'a' })])
     expect(screen.queryByTestId('track-duplicate')).toBeNull()
