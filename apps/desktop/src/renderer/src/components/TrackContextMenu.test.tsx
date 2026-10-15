@@ -254,3 +254,64 @@ describe('TrackContextMenu playlist actions', () => {
     expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
   })
 })
+
+// The submenu hangs off its row, so opened from a row low in the list it ran past the
+// bottom of the window (y=923 in an 882 px window) and the last playlists were out of reach.
+describe('TrackContextMenu playlist submenu placement', () => {
+  const playlist = {
+    targets: [
+      { node: { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 3 }, folders: [] },
+    ],
+    openName: null,
+    canInsertSeparator: true,
+    onAddTo: vi.fn(),
+    onInsertSeparator: vi.fn(),
+    onRemove: vi.fn(),
+  }
+  const size = { width: window.innerWidth, height: window.innerHeight }
+
+  function openAt(rect: { top: number; left: number; width: number; height: number }) {
+    Object.assign(window, { innerWidth: 1200, innerHeight: 882 })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.dataset.testid !== 'track-menu-playlists') return new DOMRect(0, 0, 0, 0)
+      return new DOMRect(rect.left, rect.top, rect.width, rect.height)
+    })
+    renderMenu({ playlist })
+    fireEvent.click(screen.getByTestId('track-menu-add-to'))
+    const sub = screen.getByTestId('track-menu-playlists')
+    const top = rect.top + Number.parseFloat(sub.style.top || '0')
+    const maxHeight = Number.parseFloat(sub.style.maxHeight)
+    return { sub, top, bottom: top + Math.min(rect.height, maxHeight) }
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+  })
+
+  it('moves up to end inside the window when it would run past the bottom', () => {
+    const { top, bottom } = openAt({ top: 500, left: 400, width: 220, height: 420 })
+    expect(bottom).toBeLessThanOrEqual(882)
+    expect(top).toBeGreaterThanOrEqual(0)
+  })
+
+  it('scrolls inside a window-high box when the list is taller than the window', () => {
+    const { sub, top, bottom } = openAt({ top: 500, left: 400, width: 220, height: 1500 })
+    expect(Number.parseFloat(sub.style.maxHeight)).toBeLessThanOrEqual(882)
+    expect(top).toBeGreaterThanOrEqual(0)
+    expect(bottom).toBeLessThanOrEqual(882)
+  })
+
+  it('stays where it is when it already fits', () => {
+    const { sub } = openAt({ top: 100, left: 400, width: 220, height: 200 })
+    expect(Number.parseFloat(sub.style.top || '0')).toBe(0)
+    expect(sub).toHaveAttribute('data-side', 'right')
+  })
+
+  it('opens on the left of the menu when the right edge has no room', () => {
+    const { sub } = openAt({ top: 100, left: 1100, width: 220, height: 200 })
+    expect(sub).toHaveAttribute('data-side', 'left')
+  })
+})

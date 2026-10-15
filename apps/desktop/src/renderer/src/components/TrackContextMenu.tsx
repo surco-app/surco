@@ -40,6 +40,11 @@ interface Props {
   playlist?: TrackPlaylistMenu
 }
 
+// Where the playlist submenu sits against its row: shifted up by top (px, never down) and
+// on the side of the menu that has room. Measured from this resting place once it opens.
+const SUBMENU_REST = { top: 0, side: 'right' as 'right' | 'left' }
+const EDGE = 8
+
 function MenuItem({
   label,
   testid,
@@ -106,6 +111,8 @@ export function TrackContextMenu({
   const [pos, setPos] = useState({ x, y })
   const isWin = isWindows()
   const [picking, setPicking] = useState(false)
+  const subRef = useRef<HTMLDivElement>(null)
+  const [sub, setSub] = useState(SUBMENU_REST)
 
   // Keep the menu fully on screen — flip it back inside the viewport once we know its size.
   useLayoutEffect(() => {
@@ -117,6 +124,21 @@ export function TrackContextMenu({
       y: Math.min(y, window.innerHeight - height - 8),
     })
   }, [x, y])
+
+  // The submenu hangs off its row, so from a row low in the list it ran past the bottom
+  // of the window and its last playlists could not be reached. It moves up until it ends
+  // inside, scrolls within a window-high box when the list is taller than the window, and
+  // opens on the menu's left when the right edge has no room.
+  useLayoutEffect(() => {
+    const el = subRef.current
+    if (!picking || !el) return
+    const rect = el.getBoundingClientRect()
+    const height = Math.min(rect.height, window.innerHeight - 2 * EDGE)
+    setSub({
+      top: Math.max(Math.min(0, window.innerHeight - EDGE - height - rect.top), EDGE - rect.top),
+      side: rect.right > window.innerWidth - EDGE ? 'left' : 'right',
+    })
+  }, [picking])
 
   // The menu can be opened from the keyboard (Shift+F10 / the context-menu key), so move
   // focus to the first item on open and hand it back to the opener once it closes.
@@ -228,12 +250,20 @@ export function TrackContextMenu({
               <MenuItem
                 testid="track-menu-add-to"
                 label={`${tr('sources.menu.addTo')} ›`}
-                onClick={() => setPicking((p) => !p)}
+                onClick={() => {
+                  setSub(SUBMENU_REST)
+                  setPicking((p) => !p)
+                }}
               />
               {picking && (
                 <div
+                  ref={subRef}
                   data-testid="track-menu-playlists"
-                  className="absolute top-0 left-full ml-1 max-h-[60vh] min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+                  data-side={sub.side}
+                  style={{ top: sub.top, maxHeight: window.innerHeight - 2 * EDGE }}
+                  className={`absolute min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
+                    sub.side === 'right' ? 'left-full ml-1' : 'right-full mr-1'
+                  }`}
                 >
                   {playlist.targets.map(({ node, folders }) => (
                     <MenuItem
