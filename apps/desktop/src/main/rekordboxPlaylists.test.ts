@@ -164,6 +164,19 @@ describe('readRekordboxPlaylist', () => {
   it('returns nothing for a playlist that is not there, rather than throwing', () => {
     expect(readRekordboxPlaylist(db, 'missing')).toEqual([])
   })
+
+  // Editing a playlist addresses its rows, not its files: a file can sit in a playlist twice
+  // and the separator file sits there dozens of times, so only the link row says which one
+  // the user dragged, and the content row is what another playlist links to.
+  it('gives every row its link and content id, so an edit can name the exact row', () => {
+    const rows = readRekordboxPlaylist(db, 'factory')
+    expect(rows.map((r) => [r.linkId, r.contentId])).toEqual([
+      ['link-0', 'c1'],
+      ['link-1', 'sep'],
+      ['link-2', 'c2'],
+      ['link-3', 'c3'],
+    ])
+  })
 })
 
 describe('entryPath', () => {

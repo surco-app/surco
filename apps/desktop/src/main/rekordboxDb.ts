@@ -58,7 +58,7 @@ export const FILE_TYPES: Record<string, number> = {
 // carry an identifier where the path goes and a size of zero. They have no file to
 // repoint, so every lookup here excludes them rather than leaving each caller to
 // remember.
-const STREAMING_FILE_TYPE = 25
+export const STREAMING_FILE_TYPE = 25
 
 type RekordboxDb = InstanceType<typeof Database>
 

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { AppleMusicTrackMeta, SourceNode, SourcePlaylistEntry } from '../shared/types'
-import type { openRekordboxDb } from './rekordboxDb'
+import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
 
 // Reads the user's rekordbox playlists as a source of tracks: the folder tree and one
 // playlist's rows. Read-only by construction — every caller opens the collection with
@@ -8,13 +8,10 @@ import type { openRekordboxDb } from './rekordboxDb'
 
 type RekordboxDb = NonNullable<ReturnType<typeof openRekordboxDb>>
 
-// Same streaming marker rekordboxDb.ts excludes from lookups.
-const STREAMING_FILE_TYPE = 25
-
 // A separator is recognised by what it is, not where it lives: the user's is a blank
 // 1 s MP3 under PioneerDJ/Imported from Device, linked 345 times, and another DJ's will
 // sit anywhere. Length is in whole seconds.
-const IS_SEPARATOR = `(c.Length <= 2 AND trim(coalesce(c.Title, '')) = '')`
+export const IS_SEPARATOR = `(c.Length <= 2 AND trim(coalesce(c.Title, '')) = '')`
 const LIVE_LINK = `coalesce(s.rb_local_deleted, 0) = 0 AND coalesce(c.rb_local_deleted, 0) = 0`
 
 interface PlaylistRow {
@@ -57,7 +54,9 @@ export function readRekordboxTree(db: RekordboxDb): SourceNode[] {
   return build('root')
 }
 
-interface EntryRow {
+export interface EntryRow {
+  linkId: string
+  contentId: string
   FolderPath: string
   FileType: number
   BPM: number | null
@@ -96,7 +95,7 @@ export function entryPath(stored: string, impl: typeof path = path): string {
 export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlaylistEntry[] {
   const rows = db
     .prepare(
-      `SELECT c.FolderPath, c.FileType, c.BPM, c.Rating, k.ScaleName, ${IS_SEPARATOR} AS sep
+      `SELECT s.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, k.ScaleName, ${IS_SEPARATOR} AS sep
          FROM djmdSongPlaylist s
          JOIN djmdContent c ON c.ID = s.ContentID
          LEFT JOIN djmdKey k ON k.ID = c.KeyID
@@ -105,8 +104,10 @@ export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlayli
     )
     .all(id) as EntryRow[]
   return rows.map((row) => {
-    if (row.sep) return { path: entryPath(row.FolderPath), separator: true, meta: {} }
-    if (row.FileType === STREAMING_FILE_TYPE) return { path: null, separator: false, meta: {} }
-    return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row) }
+    const ids = { linkId: String(row.linkId), contentId: String(row.contentId) }
+    if (row.sep) return { path: entryPath(row.FolderPath), separator: true, meta: {}, ...ids }
+    if (row.FileType === STREAMING_FILE_TYPE)
+      return { path: null, separator: false, meta: {}, ...ids }
+    return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row), ...ids }
   })
 }
