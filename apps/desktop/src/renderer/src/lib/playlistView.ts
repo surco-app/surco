@@ -13,13 +13,14 @@ import type { TrackItem } from '../types'
 //
 // Separators are kept one by one, each under its own key (its playlist row), so each can be
 // dragged and removed; one in a run or after the last row is not folded away. Each shown
-// track also knows its first row in the playlist and its collection entry: a drag moves
-// that row, a copy links that entry.
+// track also knows its first row in the playlist, every row it has there, and its
+// collection entry: a drag moves all its rows, a copy links that entry.
 export interface PlaylistScope {
   tracks: TrackItem[]
   separatorBefore: ReadonlyMap<string, readonly string[]>
   trailingSeparators: readonly string[]
   linkOf: ReadonlyMap<string, string>
+  linksOf: ReadonlyMap<string, readonly string[]>
   contentOf: ReadonlyMap<string, string>
 }
 
@@ -31,6 +32,7 @@ export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]
   const seen = new Set<string>()
   const separatorBefore = new Map<string, string[]>()
   const linkOf = new Map<string, string>()
+  const linksOf = new Map<string, string[]>()
   const contentOf = new Map<string, string>()
   let pending: string[] = []
   entries.forEach((e, i) => {
@@ -39,6 +41,7 @@ export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]
       return
     }
     const t = e.path ? byPath.get(e.path.normalize('NFC')) : undefined
+    if (t && e.linkId) linksOf.set(t.id, [...(linksOf.get(t.id) ?? []), e.linkId])
     if (!t || seen.has(t.id)) return
     seen.add(t.id)
     shown.push(t)
@@ -47,7 +50,7 @@ export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]
     if (pending.length) separatorBefore.set(t.id, pending)
     pending = []
   })
-  return { tracks: shown, separatorBefore, trailingSeparators: pending, linkOf, contentOf }
+  return { tracks: shown, separatorBefore, trailingSeparators: pending, linkOf, linksOf, contentOf }
 }
 
 // Whether a track belongs to the open playlist, by the same path rules as playlistView, for

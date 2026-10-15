@@ -63,6 +63,21 @@ describe('playlistView', () => {
     expect(Object.fromEntries(view.contentOf)).toEqual({ a: 'c-l1', b: 'c-l2' })
   })
 
+  // A drag moves every row of a track the playlist holds twice: moving only the first would
+  // leave the second in place, and when it then came first the list would show the track
+  // there, not where it was dropped.
+  it('gives each shown track every link it has in the playlist, in order', () => {
+    const view = playlistView(
+      [A, B],
+      [
+        entry('/m/A.wav', false, 'l1'),
+        entry('/m/B.wav', false, 'l2'),
+        entry('/m/A.wav', false, 'l3'),
+      ],
+    )
+    expect(Object.fromEntries(view.linksOf)).toEqual({ a: ['l1', 'l3'], b: ['l2'] })
+  })
+
   // A separator before a row Surco does not show (a missing file) still breaks the set; it
   // is drawn above the next row that is shown.
   it('carries a separator over a row the list does not show', () => {
