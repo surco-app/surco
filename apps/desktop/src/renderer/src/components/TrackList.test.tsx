@@ -20,6 +20,7 @@ import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
 import { trackSignature } from '../lib/dirty'
+import type { DuplicateRank } from '../lib/duplicateRanks'
 import * as triage from '../lib/triage'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
@@ -75,7 +76,12 @@ function renderList(
   {
     canPasteMeta = false,
     bindings: overrideBindings = bindings,
-  }: { canPasteMeta?: boolean; bindings?: Map<string, Chord> } = {},
+    duplicateRankById,
+  }: {
+    canPasteMeta?: boolean
+    bindings?: Map<string, Chord>
+    duplicateRankById?: ReadonlyMap<string, DuplicateRank>
+  } = {},
 ) {
   const onSelect = vi.fn()
   const onActivate = vi.fn()
@@ -103,6 +109,7 @@ function renderList(
       onSwipeRemove={onSwipeRemove}
       onAcceptReview={onAcceptReview}
       onPrefetch={onPrefetch}
+      duplicateRankById={duplicateRankById}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -1367,6 +1374,49 @@ describe('TrackList backup mark', () => {
     fireEvent.click(screen.getByTestId('track-backup'))
     expect(onOpenBackup).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }))
     expect(onSelect).not.toHaveBeenCalled()
+  })
+})
+
+describe('TrackList duplicate mark', () => {
+  it('marks the best copy and the worse one with the same duplicate icon in two shapes', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+      duplicateRankById: new Map<string, DuplicateRank>([
+        ['a', { rank: 'best', count: 2, identical: false, reason: 'peakCount' }],
+        ['b', { rank: 'worse', count: 2, identical: false, reason: 'peakCount' }],
+      ]),
+    })
+    const [rowA, rowB] = screen.getAllByTestId('track-row')
+    expect(within(rowA).getByTestId('track-duplicate')).toHaveAttribute('data-rank', 'best')
+    expect(within(rowA).getByTestId('track-duplicate')).toHaveTextContent(
+      'Best of 2 copies · less limited',
+    )
+    expect(within(rowB).getByTestId('track-duplicate')).toHaveAttribute('data-rank', 'worse')
+    expect(within(rowB).getByTestId('track-duplicate')).toHaveTextContent(
+      'There is a better copy in the list · this one is more limited',
+    )
+  })
+
+  // Two masters nothing separates are not the same audio; saying so would invite the
+  // user to delete a copy that differs.
+  it('says same audio only for identical copies', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+      duplicateRankById: new Map<string, DuplicateRank>([
+        ['a', { rank: 'same', count: 2, identical: true }],
+        ['b', { rank: 'same', count: 2, identical: false }],
+      ]),
+    })
+    const [rowA, rowB] = screen.getAllByTestId('track-row')
+    expect(within(rowA).getByTestId('track-duplicate')).toHaveTextContent(
+      'Same audio as another copy in the list',
+    )
+    expect(within(rowB).getByTestId('track-duplicate')).toHaveTextContent(
+      'No measured difference from another copy in the list',
+    )
+  })
+
+  it('draws no duplicate icon on a track with no ranked copy', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-duplicate')).toBeNull()
   })
 })
 

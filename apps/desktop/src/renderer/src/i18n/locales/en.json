@@ -371,6 +371,28 @@
     "autoMatched": "Auto-matched",
     "autoMatchedFrom": "Auto-matched from {{source}}",
     "cleaned": "Cleaned on load, waiting to convert or update",
+    "copyBest": "Best of {{count}} copies · {{reason}}",
+    "copyWorse": "There is a better copy in the list · {{reason}}",
+    "copySame": "Same audio as another copy in the list",
+    "copyNoDifference": "No measured difference from another copy in the list",
+    "copyReason": {
+      "lossless": "lossless",
+      "transcode": "not a transcode",
+      "cutoff": "higher cutoff",
+      "processed": "not reprocessed",
+      "upsampled": "not upsampled",
+      "peakCount": "less limited",
+      "crest": "more dynamic"
+    },
+    "copyReasonWorse": {
+      "lossless": "this one is lossy",
+      "transcode": "this one is a transcode",
+      "cutoff": "this one cuts lower",
+      "processed": "this one is reprocessed",
+      "upsampled": "this one is upsampled",
+      "peakCount": "this one is more limited",
+      "crest": "this one is less dynamic"
+    },
     "matchReview": "Match to confirm",
     "metaReadFailed": "Couldn't read this file's tags — showing file name data only",
     "remove": "Remove",

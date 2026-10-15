@@ -57,6 +57,7 @@ import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
+import { useDuplicateRanks } from './hooks/useDuplicateRanks'
 import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useExitPresence } from './hooks/useExitPresence'
@@ -1137,6 +1138,9 @@ export default function App(): React.JSX.Element {
     viewCache,
     librarySource,
   )
+  // Ranked over the whole list, not the filtered view, so hiding a copy behind a filter
+  // never turns the one left on screen into the best.
+  const duplicateRankById = useDuplicateRanks(tracks)
   // A library that could not be read leaves every row without a verdict, the same blank a
   // check still loading shows; the notice is what tells the two apart. It goes away once
   // a refocus retries the read and it lands.
@@ -2177,6 +2181,7 @@ export default function App(): React.JSX.Element {
                             rowRegistry={rowEls}
                             backupAtByPath={backupAtByPath}
                             onOpenBackup={onOpenBackup}
+                            duplicateRankById={duplicateRankById}
                           />
                         )}
                       </>

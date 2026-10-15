@@ -371,6 +371,28 @@
     "autoMatched": "Auto-associé",
     "autoMatchedFrom": "Auto-associé depuis {{source}}",
     "cleaned": "Nettoyé au chargement, en attente de conversion ou de mise à jour",
+    "copyBest": "Meilleure des {{count}} copies · {{reason}}",
+    "copyWorse": "Il y a une meilleure copie dans la liste · {{reason}}",
+    "copySame": "Même audio qu'une autre copie de la liste",
+    "copyNoDifference": "Aucune différence mesurée avec une autre copie de la liste",
+    "copyReason": {
+      "lossless": "sans perte",
+      "transcode": "pas un transcodage",
+      "cutoff": "coupure plus haute",
+      "processed": "non retraitée",
+      "upsampled": "non suréchantillonnée",
+      "peakCount": "moins limitée",
+      "crest": "plus dynamique"
+    },
+    "copyReasonWorse": {
+      "lossless": "celle-ci est avec perte",
+      "transcode": "celle-ci est un transcodage",
+      "cutoff": "celle-ci coupe plus bas",
+      "processed": "celle-ci est retraitée",
+      "upsampled": "celle-ci est suréchantillonnée",
+      "peakCount": "celle-ci est plus limitée",
+      "crest": "celle-ci est moins dynamique"
+    },
     "matchReview": "Correspondance à confirmer",
     "metaReadFailed": "Impossible de lire les tags de ce fichier — seules les données du nom sont affichées",
     "remove": "Retirer",

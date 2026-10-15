@@ -371,6 +371,28 @@
     "autoMatched": "Automatisch abgeglichen",
     "autoMatchedFrom": "Automatisch mit {{source}} abgeglichen",
     "cleaned": "Beim Laden bereinigt, wartet auf Konvertieren oder Aktualisieren",
+    "copyBest": "Beste von {{count}} Kopien · {{reason}}",
+    "copyWorse": "Es gibt eine bessere Kopie in der Liste · {{reason}}",
+    "copySame": "Gleiches Audio wie eine andere Kopie in der Liste",
+    "copyNoDifference": "Kein messbarer Unterschied zu einer anderen Kopie in der Liste",
+    "copyReason": {
+      "lossless": "verlustfrei",
+      "transcode": "keine Transkodierung",
+      "cutoff": "höhere Grenzfrequenz",
+      "processed": "nicht nachbearbeitet",
+      "upsampled": "nicht hochgerechnet",
+      "peakCount": "weniger limitiert",
+      "crest": "dynamischer"
+    },
+    "copyReasonWorse": {
+      "lossless": "diese ist verlustbehaftet",
+      "transcode": "diese ist eine Transkodierung",
+      "cutoff": "diese schneidet tiefer ab",
+      "processed": "diese ist nachbearbeitet",
+      "upsampled": "diese ist hochgerechnet",
+      "peakCount": "diese ist stärker limitiert",
+      "crest": "diese ist weniger dynamisch"
+    },
     "matchReview": "Treffer zu bestätigen",
     "metaReadFailed": "Die Tags dieser Datei konnten nicht gelesen werden — es werden nur Daten aus dem Dateinamen angezeigt",
     "remove": "Entfernen",
