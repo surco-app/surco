@@ -123,6 +123,7 @@ import {
   setConfigDir,
   settingsForRenderer,
 } from './settings'
+import { sharedPrompt } from './sharedPrompt'
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
@@ -293,9 +294,10 @@ async function ensureTraktorClosed(win: BrowserWindow | null): Promise<boolean> 
 }
 
 // Twin of traktorQuitPrompt above, for the same reason: one flush must raise at most one
-// dialog, never one per repointed track.
-let rekordboxQuitPrompt: Promise<boolean> | null = null
-
+// dialog, never one per repointed track. Keyed by its wording: a playlist edit arriving
+// while the conversion's dialog is up waits for it and then asks in its own words (the
+// running check is inside, so it asks nothing if the user closed rekordbox meanwhile).
+//
 // True when rekordbox is not running (possibly because the user just accepted closing it
 // here); false when it is running and the user declined — the caller then refuses to touch
 // master.db, which rekordbox holds open through SQLCipher.
@@ -303,13 +305,12 @@ let rekordboxQuitPrompt: Promise<boolean> | null = null
 // Asked before the collection is written rather than reported afterwards: by the time a
 // flush fails, the conversion has finished and the repoint is lost, so the user has to
 // convert the whole track again to get another attempt.
-async function ensureRekordboxClosed(
-  win: BrowserWindow | null,
-  // The conversion's wording by default; a playlist edit has nothing to do with a new file.
-  detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' = 'rekordboxQuitDetail',
-): Promise<boolean> {
-  if (!(await isRekordboxRunning())) return true
-  rekordboxQuitPrompt ??= (async () => {
+const rekordboxQuitPrompt = sharedPrompt(
+  async (
+    detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists',
+    win: BrowserWindow | null,
+  ): Promise<boolean> => {
+    if (!(await isRekordboxRunning())) return true
     const t = createMenuT(menuLocale())
     const opts = {
       type: 'warning' as const,
@@ -324,10 +325,15 @@ async function ensureRekordboxClosed(
       : await dialog.showMessageBox(opts)
     if (response !== 0) return false
     return quitRekordbox()
-  })().finally(() => {
-    rekordboxQuitPrompt = null
-  })
-  return rekordboxQuitPrompt
+  },
+)
+
+function ensureRekordboxClosed(
+  win: BrowserWindow | null,
+  // The conversion's wording by default; a playlist edit has nothing to do with a new file.
+  detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' = 'rekordboxQuitDetail',
+): Promise<boolean> {
+  return rekordboxQuitPrompt(detail, win)
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
