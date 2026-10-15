@@ -3,8 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppleMusicTrackMeta,
   LibraryTagUpdate,
+  PlaylistSource,
   ReviewRawFields,
   SessionEdit,
+  SourcePlaylistEntry,
   TrackMetadata,
 } from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
@@ -140,6 +142,7 @@ interface TrackLibrary {
   // Loads the files one Apple Music playlist references. macOS only; the renderer does
   // not offer it elsewhere.
   importApplePlaylist: (persistentId: string, name: string) => Promise<void>
+  openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
@@ -714,6 +717,33 @@ export function useTrackLibrary({
     onPlaylistImported?.({ name, imported: paths.length, missing })
   }
 
+  // A playlist opened from a source is browsing, not importing: the files go through the
+  // same expand-and-add path as a drop so every filter and analysis behaves alike, but only
+  // the ones not already in the crate are passed on. That keeps a track loaded from another
+  // playlist with its edits, and keeps addPaths from reporting it as a skipped duplicate —
+  // going back to a playlist is not something the user did twice.
+  async function openSourcePlaylist(
+    entries: SourcePlaylistEntry[],
+    source: PlaylistSource,
+  ): Promise<void> {
+    const loaded = new Set(tracksRef.current.map((t) => t.inputPath))
+    const fresh = entries.filter(
+      (e): e is SourcePlaylistEntry & { path: string } =>
+        !e.separator && e.path !== null && !loaded.has(e.path),
+    )
+    for (const e of fresh) {
+      appleMusicMeta.current.set(e.path, e.meta)
+      if (source === 'appleMusic') {
+        pendingSeed.current.set(e.path, {
+          fromAppleMusic: true,
+          ...(e.musicPersistentId ? { musicPersistentId: e.musicPersistentId } : {}),
+        })
+      }
+    }
+    if (fresh.length === 0) return
+    await addPaths(await window.api.expandPaths([...new Set(fresh.map((e) => e.path))]))
+  }
+
   // Publishes to the live crate as well as to state, for the same reason the import
   // batches do above: a caller that patches a track and then acts on it in the same tick
   // reads tracksRef, which the render-time assignment does not refresh until React
@@ -856,6 +886,7 @@ export function useTrackLibrary({
     seedRestoredEdits,
     pickFiles,
     importApplePlaylist,
+    openSourcePlaylist,
     updateTrack,
     mapTracks,
     updateTracksMeta,

@@ -17,7 +17,10 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function setup(over: Record<string, unknown> = {}): {
+function setup(
+  over: Record<string, unknown> = {},
+  opts: Record<string, unknown> = {},
+): {
   result: { current: ReturnType<typeof useTrackLibrary> }
   onPlaylistImported: ReturnType<typeof vi.fn>
   expandPaths: ReturnType<typeof vi.fn>
@@ -49,6 +52,7 @@ function setup(over: Record<string, unknown> = {}): {
       onNoAudioFound: vi.fn(),
       onMetaReadFailed: vi.fn(),
       onPlaylistImported,
+      ...opts,
     }),
   )
   return { result, onPlaylistImported, expandPaths }
@@ -256,6 +260,78 @@ describe('importing an Apple Music playlist', () => {
       name: 'Solo streaming',
       imported: 0,
       missing: 12,
+    })
+  })
+})
+
+describe('opening a source playlist', () => {
+  const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
+
+  it('loads the playlist files and leaves separators and file-less rows out', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [
+          ...entries(['/m/a.aiff']),
+          { path: '/m/_.mp3', separator: true, meta: {} },
+          { path: null, separator: false, meta: {} },
+        ],
+        'rekordbox',
+      )
+    })
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff'])
+  })
+
+  it('does not report already-loaded tracks as skipped: browsing back to a playlist is not a re-import', async () => {
+    const onDuplicatesSkipped = vi.fn()
+    const { result } = setup({}, { onDuplicatesSkipped })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
+    })
+    expect(onDuplicatesSkipped).not.toHaveBeenCalled()
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff', '/m/b.aiff'])
+  })
+
+  it('fills bpm and key from rekordbox when the file has none', async () => {
+    const { result } = setup({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: tags({ title: 'Night Train' }),
+        duration: 256,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '150', key: '4B' } }],
+        'rekordbox',
+      )
+    })
+    await waitFor(() => expect(result.current.tracks[0].meta.key).toBe('4B'))
+    expect(result.current.tracks[0].meta.bpm).toBe('150')
+  })
+
+  it('stamps a Music row with its library identity, so converting updates that copy', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [
+          {
+            path: '/m/a.aiff',
+            separator: false,
+            meta: {},
+            musicPersistentId: 'PID0000000000001',
+          },
+        ],
+        'appleMusic',
+      )
+    })
+    expect(result.current.tracks[0]).toMatchObject({
+      fromAppleMusic: true,
+      musicPersistentId: 'PID0000000000001',
     })
   })
 })
