@@ -32,6 +32,19 @@ describe('rekordbox row helpers', () => {
     db.close()
   })
 
+  // rekordbox stamps the counter's row when it moves it; a counter moved with an old stamp
+  // reads as a change rekordbox never made.
+  it('stamps the counter row with the time of the change', async () => {
+    const db = await open()
+    takeLocalUsn(db, '2026-10-15 18:00:00.000 +00:00')
+    expect(
+      db
+        .prepare(`SELECT updated_at FROM agentRegistry WHERE registry_id = 'localUpdateCount'`)
+        .get(),
+    ).toEqual({ updated_at: '2026-10-15 18:00:00.000 +00:00' })
+    db.close()
+  })
+
   it('never hands out an ID the table already uses', async () => {
     const db = await open()
     const ids = ['2000', '2000', '777']
