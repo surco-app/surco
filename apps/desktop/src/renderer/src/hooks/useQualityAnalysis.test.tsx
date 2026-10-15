@@ -512,4 +512,28 @@ describe('useQualityAnalysis after unmount', () => {
 
     expect(rejections).toEqual([])
   })
+
+  // The progress sits beside the open playlist and is read against it: tracks of a playlist
+  // the user left, decoding or not, are not its work, and one still waiting is not started.
+  it('counts only the open playlist once the scope narrows, and skips what has not started', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((): Promise<SpectrumResult> => gate)
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(3))
+    act(() => result.current.scopeTo((t) => t.id === 'a'))
+
+    expect(result.current.analysis).toEqual({ done: 0, total: 1 })
+    release(spectrum)
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+    expect(spectrogram).not.toHaveBeenCalledWith('/music/d.wav', expect.anything())
+  })
 })

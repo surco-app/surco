@@ -111,7 +111,7 @@ import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { isMacOS } from './lib/platform'
-import { playlistView } from './lib/playlistView'
+import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
@@ -827,6 +827,7 @@ export default function App(): React.JSX.Element {
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks: forgetAnalysisTracks,
+    scopeTo: scopeAnalysis,
   } = useQualityAnalysis({
     // The bulk scope: a deliberate multi-selection when there is one, else the visible
     // (filtered) rows. Already-measured tracks are skipped, so widening the scope never
@@ -854,6 +855,7 @@ export default function App(): React.JSX.Element {
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
     focusTrack: focusAutoMatch,
+    scopeTo: scopeAutoMatch,
   } = useAutoMatch({
     tracksRef,
     updateTrack,
@@ -1198,7 +1200,7 @@ export default function App(): React.JSX.Element {
     return () => dismissToast(store, id)
   }, [libraryFailed, librarySource, store])
   // The list narrowed to the open playlist, in its order. Only what the list shows and
-  // counts reads it: the whole working list is still what is analyzed and persisted.
+  // counts reads it: the whole working list is still what is persisted.
   const playlistScope = useMemo(
     () => (browser.playlist && browser.entries ? playlistView(tracksView, browser.entries) : null),
     [browser.playlist, browser.entries, tracksView],
@@ -1207,6 +1209,18 @@ export default function App(): React.JSX.Element {
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
   // entries load the list still shows the working list, and the order must follow on arrival.
   const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
+  // The background sweeps work on the open playlist only: the working list keeps every
+  // playlist passed through, and sweeping all of it spent Discogs and ffmpeg on sets the
+  // user had left. Narrowed from the moment a playlist is picked, before its entries land
+  // (nothing is its work yet), so the one left behind does not start more in the meantime.
+  const sweepScope = useMemo(
+    () => (browser.playlist ? playlistMembership(browser.entries ?? []) : null),
+    [browser.playlist, browser.entries],
+  )
+  useEffect(() => {
+    scopeAutoMatch(sweepScope)
+    scopeAnalysis(sweepScope)
+  }, [sweepScope, scopeAutoMatch, scopeAnalysis])
   tracksViewRef.current = tracksView
   settingsRef.current = settings
   // Feed the snapshot to the background sweep so it can re-check ownership against each

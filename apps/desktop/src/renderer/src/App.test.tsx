@@ -954,6 +954,168 @@ describe('App source playlists', () => {
       separator.compareDocumentPosition(rowAlpha) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
   })
+
+  // Every playlist passed through adds its files to the working list, and the auto-match
+  // sweep used to keep all of them queued: the pill grew with each playlist and Discogs kept
+  // being spent on sets the user had already left. The open playlist is the work; what was
+  // still waiting from the one left behind waits for the user to come back to it.
+  describe('background auto-match', () => {
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    const playlists: Record<string, ReturnType<typeof entry>[]> = {
+      a: [entry('/m/a1.wav'), entry('/m/a2.wav'), entry('/m/a3.wav')],
+      b: [entry('/m/b1.wav'), entry('/m/b2.wav')],
+    }
+    function setupPlaylists(): { probed: string[]; release: () => void } {
+      const probed: string[] = []
+      let release: () => void = () => {}
+      const gate = new Promise<void>((r) => {
+        release = r
+      })
+      setApi({
+        getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
+        readTags: vi.fn(async (path: string) => ({
+          title: path.replace(/^\/m\/|\.wav$/g, ''),
+          artist: 'DJ',
+        })),
+        search: vi.fn(async (_q: string, _p: unknown, _pr: unknown, hints?: { title?: string }) => {
+          if (hints?.title && !probed.includes(hints.title)) probed.push(hints.title)
+          await gate
+          return []
+        }),
+        rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+        loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
+          { id: 'a', name: 'Warm up', kind: 'playlist', count: 3 },
+          { id: 'b', name: 'Peak', kind: 'playlist', count: 2 },
+        ]),
+        loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) => playlists[id]),
+      })
+      return { probed, release: () => release() }
+    }
+
+    it('drops the left playlist’s waiting tracks and counts only the open one', async () => {
+      const { probed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      await waitFor(() =>
+        expect(screen.getByTestId('auto-match-progress')).toHaveTextContent('0/2'),
+      )
+      release()
+      await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['b1', 'b2'])))
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+
+      expect(probed).not.toContain('a2')
+      expect(probed).not.toContain('a3')
+    })
+
+    it('picks the left playlist’s waiting tracks back up when it is opened again', async () => {
+      const { probed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      release()
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+
+      fireEvent.click(screen.getByTestId('source-node-a'))
+
+      await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
+    })
+
+    // Tracks is the whole working list, as before playlists existed: every import there
+    // gets matched, the ones a playlist set aside included.
+    it('matches what a playlist set aside once the whole list is back on screen', async () => {
+      const { probed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      release()
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+
+      await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
+    })
+  })
+
+  // The analysis sweep is ffmpeg passes per track: the same rule holds, or a playlist the
+  // user only passed through keeps the CPU busy behind the one now open.
+  describe('background analysis', () => {
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    const playlists: Record<string, ReturnType<typeof entry>[]> = {
+      a: ['/m/a1.wav', '/m/a2.wav', '/m/a3.wav', '/m/a4.wav', '/m/a5.wav'].map(entry),
+      b: [entry('/m/b1.wav')],
+    }
+    function setupPlaylists(): { analyzed: string[]; release: () => void } {
+      const analyzed: string[] = []
+      let release: () => void = () => {}
+      const gate = new Promise<void>((r) => {
+        release = r
+      })
+      setApi({
+        getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+        readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+        spectrogram: vi.fn(async (path: string) => {
+          analyzed.push(path)
+          await gate
+          return spectrum
+        }),
+        rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+        loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
+          { id: 'a', name: 'Warm up', kind: 'playlist', count: 5 },
+          { id: 'b', name: 'Peak', kind: 'playlist', count: 1 },
+        ]),
+        loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) => playlists[id]),
+      })
+      return { analyzed, release: () => release() }
+    }
+
+    it('never analyzes the left playlist’s waiting tracks behind the open one', async () => {
+      const { analyzed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
+      await waitFor(() => expect(analyzed.length).toBeGreaterThan(0))
+      const startedInA = analyzed.length
+
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      release()
+      await waitFor(() => expect(analyzed).toContain('/m/b1.wav'), { timeout: 4000 })
+      await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+
+      expect(analyzed.filter((p) => p.startsWith('/m/a'))).toHaveLength(startedInA)
+    })
+
+    it('analyzes the left playlist’s waiting tracks once it is opened again', async () => {
+      const { analyzed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
+      await waitFor(() => expect(analyzed.length).toBeGreaterThan(0))
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      release()
+      await waitFor(() => expect(analyzed).toContain('/m/b1.wav'), { timeout: 4000 })
+
+      fireEvent.click(screen.getByTestId('source-node-a'))
+
+      await waitFor(() =>
+        expect(analyzed).toEqual(expect.arrayContaining(playlists.a.map((e) => e.path))),
+      )
+    })
+  })
 })
 
 describe('App track list label', () => {

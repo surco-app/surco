@@ -78,6 +78,9 @@ interface AutoMatchSweep {
   reset: () => void
   // Marks the selected track so the sweep probes it next and at high priority; null clears it.
   focusTrack: (id: string | null) => void
+  // Narrows the sweep to the open playlist (null: the whole working list). Queued tracks
+  // outside it are set aside, and those set aside that it holds are queued again.
+  scopeTo: (inScope: ((t: TrackItem) => boolean) | null) => void
 }
 
 // The Discogs auto-match sweep. An import and the toolbar sweep both enqueue every
@@ -118,6 +121,13 @@ export function useAutoMatch({
   // first) and at high priority, so the row in front of you resolves now instead of
   // waiting its turn behind a folder's worth of background matches.
   const focusedId = useRef<string | null>(null)
+  // The open playlist, and the tracks enqueued while outside it. Every playlist the user
+  // opens adds its files to the working list, and with all of them queued the sweep kept
+  // spending Discogs on sets the user had already left while the pill grew with each one.
+  // Set aside rather than dropped: a track never matched is still a candidate, so going
+  // back to its playlist queues it again.
+  const scope = useRef<((t: TrackItem) => boolean) | null>(null)
+  const setAside = useRef<Set<string>>(new Set())
   // Auto-match is background work: it probes Discogs at low priority so the editor's own
   // search (high priority) always jumps ahead, and the main process paces every Discogs
   // call through one shared per-minute bucket so a big crate can't earn 429s. The focused
@@ -276,8 +286,9 @@ export function useAutoMatch({
             // whole sweep as an unhandled rejection (mirroring the analyze sweep).
           } finally {
             // A cancel mid-probe tears the sweep down, so don't resurrect the pill by
-            // bumping progress after it was cleared.
-            if (!matchCancel.current) {
+            // bumping progress after it was cleared; nor count a track the pill no longer
+            // does (forgotten, or of a playlist the user left while it was in flight).
+            if (!matchCancel.current && sweepTotal.current.has(t.id)) {
               sweepDone.current.add(t.id)
               setMatching({ done: sweepDone.current.size, total: sweepTotal.current.size })
             }
@@ -313,6 +324,10 @@ export function useAutoMatch({
     (candidates: TrackItem[]): void => {
       const before = sweepTotal.current.size
       for (const t of tracksToAutoMatch(candidates)) {
+        if (scope.current && !scope.current(t)) {
+          setAside.current.add(t.id)
+          continue
+        }
         matchQueue.current.add(t.id)
         sweepTotal.current.add(t.id)
       }
@@ -353,11 +368,13 @@ export function useAutoMatch({
   const cancelAutoMatch = useCallback((): void => {
     matchCancel.current = true
     matchQueue.current.clear()
+    setAside.current.clear()
     resetProgress()
   }, [resetProgress])
 
   const forgetTrack = useCallback((id: string): void => {
     matchQueue.current.delete(id)
+    setAside.current.delete(id)
     visibleIds.current.delete(id)
     if (!sweepTotal.current.delete(id)) return
     sweepDone.current.delete(id)
@@ -367,6 +384,7 @@ export function useAutoMatch({
   const reset = useCallback((): void => {
     matchCancel.current = true
     matchQueue.current.clear()
+    setAside.current.clear()
     visibleIds.current.clear()
     focusedId.current = null
     resetProgress()
@@ -382,7 +400,41 @@ export function useAutoMatch({
     [pumpAutoMatch],
   )
 
+  // A probe already in flight finishes (its answer is as good as any) but leaves the pill,
+  // which counts only the open playlist's work. Read against the live list: the queue holds
+  // ids, and a track not committed yet stays where it is.
+  const scopeTo = useCallback(
+    (inScope: ((t: TrackItem) => boolean) | null): void => {
+      scope.current = inScope
+      const live = new Map(tracksRef.current.map((t) => [t.id, t]))
+      if (inScope) {
+        for (const id of [...sweepTotal.current]) {
+          const t = live.get(id)
+          if (!t || inScope(t)) continue
+          sweepTotal.current.delete(id)
+          sweepDone.current.delete(id)
+          if (matchQueue.current.delete(id)) setAside.current.add(id)
+        }
+      }
+      setMatching(
+        sweepTotal.current.size > 0
+          ? { done: sweepDone.current.size, total: sweepTotal.current.size }
+          : null,
+      )
+      const back: TrackItem[] = []
+      for (const id of setAside.current) {
+        const t = live.get(id)
+        if (!t || (inScope && !inScope(t))) continue
+        setAside.current.delete(id)
+        back.push(t)
+      }
+      if (back.length > 0) enqueueAutoMatch(back)
+    },
+    [tracksRef, enqueueAutoMatch],
+  )
+
   return {
+    scopeTo,
     matching,
     enqueueAutoMatch,
     onTrackVisible,

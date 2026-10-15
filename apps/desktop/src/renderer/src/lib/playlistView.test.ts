@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { playlistView } from './playlistView'
+import { playlistMembership, playlistView } from './playlistView'
 
 function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
@@ -78,5 +78,22 @@ describe('playlistView', () => {
     const converted = { ...track('a', '/m/A.wav'), outputPath: '/m/B.wav' } as TrackItem
     const view = playlistView([converted, B], [entry('/m/B.wav')])
     expect(view.tracks.map((t) => t.id)).toEqual(['b'])
+  })
+})
+
+describe('playlistMembership', () => {
+  // The background sweeps keep the open playlist's work and set the rest aside: a track the
+  // playlist reaches through its converted file, or under the NAS's decomposed spelling, is
+  // still that playlist's work and must not be set aside.
+  it('finds a track by its input or its output, whatever the spelling', () => {
+    const inPlaylist = playlistMembership([entry('/m/Niña.wav'), entry('/out/A.aiff')])
+    expect(inPlaylist(track('n', '/m/Niña.wav'))).toBe(true)
+    expect(inPlaylist({ ...track('a', '/m/A.wav'), outputPath: '/out/A.aiff' })).toBe(true)
+    expect(inPlaylist(B)).toBe(false)
+  })
+
+  // A separator is rekordbox's blank-audio file, not a track of the set.
+  it('leaves the separator file out', () => {
+    expect(playlistMembership([entry(SEP, true)])(track('s', SEP))).toBe(false)
   })
 })

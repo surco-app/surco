@@ -35,3 +35,17 @@ export function playlistView(
   }
   return { tracks: shown, separatorBefore }
 }
+
+// Whether a track belongs to the open playlist, by the same path rules as playlistView, for
+// the background sweeps: they work on the playlist on screen, not on every playlist the
+// working list has gathered on the way.
+export function playlistMembership(
+  entries: readonly SourcePlaylistEntry[],
+): (track: TrackItem) => boolean {
+  const paths = new Set(
+    entries.flatMap((e) => (e.path && !e.separator ? [e.path.normalize('NFC')] : [])),
+  )
+  return (t) =>
+    paths.has(t.inputPath.normalize('NFC')) ||
+    (!!t.outputPath && paths.has(t.outputPath.normalize('NFC')))
+}
