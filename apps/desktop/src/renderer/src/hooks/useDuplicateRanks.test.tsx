@@ -71,6 +71,42 @@ describe('useDuplicateRanks', () => {
     expect(api.comparePair).toHaveBeenCalledTimes(1)
   })
 
+  // A copy that could not be measured hides its whole group: ranking the rest would call
+  // one of them best against a copy nobody looked at.
+  it('ranks no member of a group whose copy failed to measure', async () => {
+    const api = setApi()
+    api.loudness.mockImplementation((path: string) =>
+      path === '/m/a.wav' ? Promise.reject(new Error('ENOENT')) : Promise.resolve(loudness(1, 13)),
+    )
+    const tracks = [
+      track('a.wav', 'Passion'),
+      track('b.aif', 'Passion'),
+      track('c.wav', 'Other'),
+      track('d.aif', 'Other'),
+    ]
+    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.has('d.aif')).toBe(true))
+    expect(result.current.has('a.wav')).toBe(false)
+    expect(result.current.has('b.aif')).toBe(false)
+  })
+
+  it('ranks no member of a group while one copy is still being measured', async () => {
+    const api = setApi()
+    api.fingerprint.mockImplementation((path: string) =>
+      path === '/m/a.wav' ? new Promise(() => {}) : Promise.resolve(path),
+    )
+    const tracks = [
+      track('a.wav', 'Passion'),
+      track('b.aif', 'Passion'),
+      track('c.wav', 'Other'),
+      track('d.aif', 'Other'),
+    ]
+    const { result } = renderHook(() => useDuplicateRanks(tracks), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.has('d.aif')).toBe(true))
+    expect(result.current.has('a.wav')).toBe(false)
+    expect(result.current.has('b.aif')).toBe(false)
+  })
+
   // Every progress tick hands the list a new tracks array; the rows are memoized, so a
   // fresh rank object per tick would re-render every duplicate row for nothing.
   it('keeps the same rank objects while nothing about the copies changed', async () => {
@@ -82,6 +118,23 @@ describe('useDuplicateRanks', () => {
     await waitFor(() => expect(result.current.size).toBe(2))
     const before = result.current
     rerender({ tracks: [track('a.wav', 'Passion'), track('b.aif', 'Passion')] })
+    expect(result.current).toBe(before)
+    expect(result.current.get('b.aif')).toBe(before.get('b.aif'))
+  })
+
+  // A track joining the list regroups everything, yet the copies already ranked keep
+  // their verdict and so must keep their objects.
+  it('keeps the same rank objects when an unrelated track joins the list', async () => {
+    setApi()
+    const { result, rerender } = renderHook(({ tracks }) => useDuplicateRanks(tracks), {
+      wrapper: wrapper(),
+      initialProps: { tracks: [track('a.wav', 'Passion'), track('b.aif', 'Passion')] },
+    })
+    await waitFor(() => expect(result.current.size).toBe(2))
+    const before = result.current
+    rerender({
+      tracks: [track('a.wav', 'Passion'), track('b.aif', 'Passion'), track('c.aif', 'Other')],
+    })
     expect(result.current).toBe(before)
     expect(result.current.get('b.aif')).toBe(before.get('b.aif'))
   })

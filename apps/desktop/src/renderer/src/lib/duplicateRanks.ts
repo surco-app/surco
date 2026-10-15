@@ -17,7 +17,8 @@ export interface DuplicateRank {
 
 // A copy is best only when it wins or matches against every other copy and wins at least
 // once; a tie against any copy disqualifies it, so "same" is only claimed when nothing
-// separates them. pairAt is asked with i < j and must answer either direction.
+// separates them. Each other row reads its own verdict against the best: why it lost, or
+// that it matches the best. pairAt is asked with i < j and must answer either direction.
 export function rankGroup(
   facts: (CopyFacts | null | undefined)[],
   pairAt: (i: number, j: number) => PairFacts | null | undefined,
@@ -44,16 +45,18 @@ export function rankGroup(
     return won
   })
   if (best === -1) return all.map(() => ({ rank: 'same', count, identical }))
-  let reason: CopyReason | undefined
-  for (let j = 0; j < count && !reason; j++) {
-    if (j === best) continue
-    const v = verdict(best, j)
-    if (v.winner === 'a') reason = v.reason
-  }
-  return all.map((_, i) => ({
-    rank: i === best ? 'best' : 'worse',
-    count,
-    identical: false,
-    reason,
-  }))
+  const verdicts = all.map((_, i) => (i === best ? null : verdict(best, i)))
+  const firstWin = verdicts.find((v) => v?.winner === 'a')
+  return verdicts.map((v, i): DuplicateRank => {
+    if (!v) {
+      return {
+        rank: 'best',
+        count,
+        identical: false,
+        reason: firstWin?.winner === 'a' ? firstWin.reason : undefined,
+      }
+    }
+    if (v.winner === 'a') return { rank: 'worse', count, identical: false, reason: v.reason }
+    return { rank: 'same', count, identical: isSameAudio(all[best], all[i], pair(best, i)) }
+  })
 }

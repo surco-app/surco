@@ -36,6 +36,26 @@ describe('rankGroup', () => {
     expect(ranks?.[2].rank).toBe('best')
   })
 
+  // Each worse row says why it lost to the best, not why the best beat some other copy:
+  // the limited WAV is not lossy, it is more limited.
+  it('gives each worse copy the reason it lost to the best', () => {
+    expect(rankGroup([mp3, limited, open], all)).toEqual([
+      { rank: 'worse', count: 3, identical: false, reason: 'lossless' },
+      { rank: 'worse', count: 3, identical: false, reason: 'peakCount' },
+      { rank: 'best', count: 3, identical: false, reason: 'lossless' },
+    ])
+  })
+
+  // A copy holding the very audio of the best is just as good to keep; calling it worse
+  // would send the user to delete a perfect copy.
+  it('marks a copy identical to the best as the same, not worse', () => {
+    expect(rankGroup([open, { ...open }, mp3], all)).toEqual([
+      { rank: 'best', count: 3, identical: false, reason: 'lossless' },
+      { rank: 'same', count: 3, identical: true },
+      { rank: 'worse', count: 3, identical: false, reason: 'lossless' },
+    ])
+  })
+
   it('marks every copy the same when none beats the others', () => {
     expect(rankGroup([open, { ...open }], all)).toEqual([
       { rank: 'same', count: 2, identical: true },
