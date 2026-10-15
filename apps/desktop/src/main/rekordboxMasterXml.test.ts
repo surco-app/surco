@@ -65,7 +65,19 @@ describe('masterPlaylists6.xml', () => {
         attribute: 0,
         timestamp: 1,
       }),
-    ).toThrow()
+    ).toThrow('masterPlaylists6.xml has no PLAYLISTS element')
+  })
+
+  // Writing the node before an inline close tag would put it outside the element, and the
+  // write would still look like it worked; failing lets the caller restore the backups.
+  it('refuses a close tag that does not start its own line', () => {
+    const inline = XML.replace(
+      / {2}<PLAYLISTS>\r\n.*\r\n {2}<\/PLAYLISTS>/,
+      '  <PLAYLISTS></PLAYLISTS>',
+    )
+    expect(() =>
+      withPlaylistNode(inline, { id: '777', parentId: 'root', attribute: 0, timestamp: 1 }),
+    ).toThrow('masterPlaylists6.xml PLAYLISTS is not laid out one node per line')
   })
 
   // The real file keeps nodes the database no longer has; a new ID must avoid those too.

@@ -265,8 +265,10 @@ export function insertSeparator(
 // before rekordbox is asked to close: an edit that cannot apply must not cost the user a
 // closed rekordbox.
 export function editProblem(db: Db, edit: RekordboxPlaylistEdit): 'stale' | 'no-separator' | null {
-  if (edit.kind === 'create')
+  if (edit.kind === 'create') {
+    if (edit.name.trim() === '') return 'stale'
     return edit.parentId === 'root' || nodeAttribute(db, edit.parentId) === 1 ? null : 'stale'
+  }
   if (nodeAttribute(db, edit.playlistId) !== 0) return 'stale'
   const known = new Set(links(db, edit.playlistId).map((l) => l.ID))
   const named =

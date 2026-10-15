@@ -27,6 +27,9 @@ export function withPlaylistNode(
   const close = xml.lastIndexOf('</PLAYLISTS>')
   if (close !== -1) {
     const lineStart = xml.lastIndexOf('\n', close) + 1
+    if (xml.slice(lineStart, close).trim() !== '') {
+      throw new Error('masterPlaylists6.xml PLAYLISTS is not laid out one node per line')
+    }
     return `${xml.slice(0, lineStart)}${line}${eol}${xml.slice(lineStart)}`
   }
   const empty = xml.indexOf('<PLAYLISTS/>')

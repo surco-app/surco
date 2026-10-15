@@ -341,6 +341,14 @@ describe('editProblem', () => {
     )
   })
 
+  // A nameless playlist is not something rekordbox can show; the renderer drops empty
+  // names, but the boundary must not rely on that.
+  it('flags a create without a name', () => {
+    expect(editProblem(db, { kind: 'create', parentId: 'root', name: '   ', folder: false })).toBe(
+      'stale',
+    )
+  })
+
   it('passes an edit that can apply', () => {
     expect(
       editProblem(db, { kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' }),
@@ -400,6 +408,35 @@ describe('createNode', () => {
 
   it('refuses a parent that is a playlist, not a folder', () => {
     expect(() => createNode(db, '3000', 'x', false, { now: NOW })).toThrow(EditRefused)
+  })
+
+  // A sibling rekordbox deleted no longer shows, so it must not push the new row's Seq.
+  it('numbers after live siblings only, not a deleted one', async () => {
+    db.close()
+    db = await openFixture({
+      ...ORGANISE_FIXTURE,
+      playlists: [
+        ...ORGANISE_FIXTURE.playlists,
+        { ID: '5000', Name: 'Gone', Attribute: 0, ParentID: 'root', Seq: 9, deleted: true },
+      ],
+    })
+    createNode(db, 'root', 'x', false, { now: NOW, newPlaylistId: () => '780' })
+    expect(node('780')).toMatchObject({ Seq: 4 })
+  })
+
+  it('refuses a parent that is deleted, unknown or a smart list', async () => {
+    db.close()
+    db = await openFixture({
+      ...ORGANISE_FIXTURE,
+      playlists: [
+        ...ORGANISE_FIXTURE.playlists,
+        { ID: '5000', Name: 'Gone', Attribute: 1, ParentID: 'root', Seq: 9, deleted: true },
+        { ID: '6000', Name: 'Smart', Attribute: 4, ParentID: 'root', Seq: 10 },
+      ],
+    })
+    for (const parent of ['5000', 'nope', '6000']) {
+      expect(() => createNode(db, parent, 'x', false, { now: NOW })).toThrow(EditRefused)
+    }
   })
 
   it('draws another ID when the table already uses one', () => {
