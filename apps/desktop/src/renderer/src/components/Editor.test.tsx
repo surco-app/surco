@@ -3395,6 +3395,133 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
+  // Netzwerk, measured: the AIFF and the library's WAV are one master, and the WAV went
+  // through a limiter that pinned 1978 samples at its ceiling.
+  const aifLoudness: LoudnessResult = {
+    integratedLufs: -12.2,
+    truePeakDb: -0.5,
+    lra: 6,
+    channelBalanceDb: null,
+    dcOffset: null,
+    crestDb: 13.2,
+    noiseFloorDb: null,
+    peakCount: 2,
+  }
+  const wavLoudness: LoudnessResult = {
+    ...aifLoudness,
+    integratedLufs: -10,
+    crestDb: 10.7,
+    peakCount: 1978,
+  }
+
+  function renderWithLibraryCopy({
+    here,
+    library,
+    pair = Promise.resolve({ correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 }),
+  }: {
+    here: LoudnessResult | null
+    library: LoudnessResult | null
+    pair?: Promise<unknown>
+  }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
+    setApi('darwin')
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.wav')
+    api.peekAnalysis = vi.fn().mockResolvedValue(null)
+    api.spectrogram = vi.fn().mockResolvedValue({
+      image: '',
+      cutoffHz: 22050,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+    })
+    api.loudness = vi.fn(async (path: string) => (path === '/Music/Strobe.wav' ? library : here))
+    api.fingerprint = vi.fn(async (path: string) => path)
+    api.comparePair = vi.fn(() => pair)
+    const { onProcess } = renderEditor(
+      { id: 'a', inputPath: '/music/Strobe.aif', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      { libraryIndex: ownedWithId },
+    )
+    return { api, onProcess }
+  }
+
+  // The swap is only worth making if the file in hand is the better copy, and the old
+  // format-and-cutoff check calls a limited WAV and a clean AIFF even. The measured verdict
+  // says which copy to keep, and the numbers behind it are one click away.
+  it('says this file is better than the Apple Music copy and opens the numbers', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    const pill = screen.getByTestId('copy-verdict')
+    expect(pill).toHaveTextContent('This file is better')
+    expect(screen.queryByTestId('copy-sentence')).toBeNull()
+    fireEvent.click(pill)
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'The Apple Music copy is 2.2 dB louder and went through a limiter',
+    )
+    expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+  })
+
+  it('says Apple Music has the better copy when this file is the limited one', async () => {
+    renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+    )
+    expect(screen.getByTestId('copy-verdict')).toHaveTextContent('Apple Music has a better one')
+    expect(screen.getByTestId('apple-music-copy-better')).toBeInTheDocument()
+  })
+
+  // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
+  // so the button stops offering it; the press still converts, one deliberate click away.
+  it('stops offering the replace when Apple Music has the better copy', async () => {
+    const { onProcess } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(
+        'Apple Music already has a better copy',
+      ),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalled()
+  })
+
+  it('says it is still comparing while the copies are being measured', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, pair: new Promise(() => {}) })
+    const pill = await screen.findByTestId('copy-verdict')
+    expect(pill).toHaveAttribute('data-state', 'measuring')
+    expect(pill).toHaveTextContent('Comparing…')
+  })
+
+  // A copy that could not be measured gives no verdict at all; the pill that was there
+  // before the comparison existed stays as it was.
+  it('shows no verdict when the library copy cannot be read', async () => {
+    const { api } = renderWithLibraryCopy({ here: aifLoudness, library: null })
+    await screen.findByTestId('copy-verdict')
+    await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/Music/Strobe.wav', 'low'))
+    await waitFor(() => expect(screen.queryByTestId('copy-verdict')).toBeNull())
+    expect(screen.getByTestId('apple-music-status')).toBeInTheDocument()
+  })
+
+  it('shows no verdict when the two copies could not be lined up', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      pair: Promise.resolve(null),
+    })
+    // A cutoff gap the comparison could decide on its own, so only the missing pair
+    // keeps the pill away.
+    api.spectrogram = vi.fn(async (path: string) => ({
+      image: '',
+      cutoffHz: path === '/Music/Strobe.wav' ? 16000 : 22050,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: path === '/Music/Strobe.wav',
+    }))
+    await screen.findByTestId('copy-verdict')
+    await waitFor(() => expect(api.comparePair).toHaveBeenCalled())
+    await waitFor(() => expect(screen.queryByTestId('copy-verdict')).toBeNull())
+  })
+
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than
   // making a promise the platform can't keep.
   it('never shows the badge off macOS', () => {

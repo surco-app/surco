@@ -29,6 +29,8 @@ interface ConvertFooterProps {
   stale: boolean
   // Whether this track would supersede a copy already in the library.
   replaces?: boolean
+  // The library's copy measured better than this file.
+  libraryBetter?: boolean
   done: boolean
   incomplete: boolean
   // Why the convert is blocked (the empty required fields), surfaced as the button's
@@ -90,6 +92,7 @@ export function ConvertFooter({
   status,
   stale,
   replaces,
+  libraryBetter,
   done,
   incomplete,
   incompleteReason,
@@ -332,6 +335,7 @@ export function ConvertFooter({
             stage={isMulti ? undefined : item.stage}
             stale={!isMulti && stale}
             replaces={!isMulti && replaces}
+            libraryBetter={!isMulti && libraryBetter}
             done={!isMulti && done}
             outputFormat={format}
             exportedFormat={isMulti ? null : exportedFormat}
