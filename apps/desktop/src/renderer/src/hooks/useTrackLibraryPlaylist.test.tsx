@@ -58,6 +58,40 @@ function setup(
 describe('opening a source playlist', () => {
   const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
 
+  // A file loaded before its rekordbox playlist was opened got nothing from rekordbox, while
+  // the same file opened fresh got its BPM, key and stars: the gaps are filled for it too,
+  // and whatever the row already holds wins.
+  it('fills the BPM, key and rating gaps of a row already loaded from its rekordbox entry', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A', key: '8A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+    const { result } = setup({ readMeta })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [
+          {
+            path: '/m/a.aiff',
+            separator: false,
+            meta: { bpm: '124', key: '5A', rating: 80, grouping: 'Peak' },
+          },
+        ],
+        'rekordbox',
+      )
+    })
+    const meta = result.current.tracks[0].meta
+    expect(meta.bpm).toBe('124')
+    expect(meta.key).toBe('8A')
+    expect(meta.rating).toBe('4')
+    expect(meta.grouping).toBe('')
+  })
+
   it('loads the playlist files and leaves separators and file-less rows out', async () => {
     const { result } = setup()
     await act(async () => {

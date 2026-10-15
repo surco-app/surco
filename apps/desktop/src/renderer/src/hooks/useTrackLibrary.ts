@@ -708,6 +708,26 @@ export function useTrackLibrary({
       (e): e is SourcePlaylistEntry & { path: string } =>
         !e.separator && e.path !== null && !loaded.has(same(e.path)),
     )
+    // A row loaded before its rekordbox playlist was opened gets the BPM, key and stars the
+    // entry holds, as a fresh one does; only its empty fields, so what it holds wins. Rows
+    // still reading their tags are left to that read.
+    if (source === 'rekordbox') {
+      const fromEntry = new Map(
+        entries.flatMap((e) => (e.path && !e.separator ? [[same(e.path), e.meta] as const] : [])),
+      )
+      const filled = new Map<string, TrackMetadata>()
+      for (const t of tracksRef.current) {
+        const from = fromEntry.get(same(t.inputPath))
+        if (!from || t.loadingMeta) continue
+        const meta = fillFromAppleMusic(t.meta, {
+          bpm: from.bpm,
+          key: from.key,
+          rating: from.rating,
+        })
+        if (meta !== t.meta) filled.set(t.id, meta)
+      }
+      for (const [id, meta] of filled) updateTrack(id, { meta })
+    }
     if (fresh.length === 0) return 0
     // Staged BEFORE expanding: the expand stream can create the rows before the awaited
     // call returns, and they must find the stamp waiting.
