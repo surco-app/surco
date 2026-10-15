@@ -86,7 +86,7 @@ describe('Pick a click repair by ear and get exactly that in the file', () => {
   it('writes the file the A/B played', async () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(existsSync(out)).toBe(true), { timeout: 60_000 })
-    await waitFor(() => expect(screen.queryByTestId('process-btn')).not.toBeNull(), {
+    await waitFor(() => expect(screen.queryByTestId('done-more')).not.toBeNull(), {
       timeout: 60_000,
     })
     expect(surco.errors).toEqual([])

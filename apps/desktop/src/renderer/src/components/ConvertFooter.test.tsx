@@ -78,12 +78,12 @@ describe('ConvertFooter state swap', () => {
 
   // The swap replaces the button the keyboard user pressed, so focus fell to <body> the
   // moment the conversion finished and the next Tab started over from the window's top.
-  // It has to land on the new state's convert button instead.
+  // It has to land on the new state's "•••" instead, the menu that holds Convert again.
   it('keeps keyboard focus in the footer when convert flips to done', () => {
     const { rerender } = render(footer(false))
     screen.getByTestId('process-btn').focus()
     rerender(footer(true))
-    expect(screen.getByTestId('process-btn')).toHaveFocus()
+    expect(screen.getByTestId('done-more')).toHaveFocus()
   })
 
   // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
@@ -169,26 +169,52 @@ describe('ConvertFooter done footer stays on one line', () => {
     expect(screen.getByTestId('done-row').className).not.toContain('flex-wrap')
   })
 
-  it('names the follow-up actions without spending width on their text', () => {
+  // Redesigned 15/10 after macOS: a bare ↻ read as "reload" and a disc as nothing at all,
+  // so the follow-ups moved into a menu where each one is a full phrase. The row keeps one
+  // icon for all of them, and no translation can widen it.
+  it('gathers the follow-up actions in one menu where each says what it does', () => {
     render(footer(true))
-    for (const [id, name] of [
-      ['export-collection', 'Export to DJ app…'],
-      ['process-btn', 'Convert again'],
-    ]) {
-      expect(screen.getByTestId(id)).toHaveAccessibleName(name)
-      expect(screen.getByTestId(id)).toHaveTextContent(/^$/)
-    }
+    const more = screen.getByTestId('done-more')
+    expect(more).toHaveAccessibleName('More actions')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    fireEvent.click(more)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert again')
+    expect(screen.getByTestId('export-collection')).toHaveTextContent('Export to DJ app…')
   })
 
-  it('names the file links without spending width on their text', () => {
+  it('offers the file from the menu by name', () => {
     render(
       <ConvertFooter
         {...footer(true).props}
         status={{ ...status(true), revealPath: '/crate/a.aiff' }}
       />,
     )
-    expect(screen.getByTestId('show-file')).toHaveAccessibleName('Show file')
-    expect(screen.getByTestId('show-file')).toHaveTextContent(/^$/)
+    expect(screen.queryByTestId('show-file')).toBeNull()
+    fireEvent.click(screen.getByTestId('done-more'))
+    expect(screen.getByTestId('show-file')).toHaveTextContent('Show file')
+  })
+
+  // Picking a format only relabels "Convert again", so the menu has to stay open for the
+  // user to see that and press it; closing on the pick hid the one place it shows.
+  it('keeps the menu open while a format is picked', () => {
+    const onSelectFormat = vi.fn()
+    render(<ConvertFooter {...footer(true).props} onSelectFormat={onSelectFormat} />)
+    fireEvent.click(screen.getByTestId('done-more'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(onSelectFormat).toHaveBeenCalledWith('mp3')
+    expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+  })
+
+  // A file left behind is the step most often forgotten after a replace, so its button says
+  // what it removes instead of hiding behind a trash can.
+  it('names the clean-up of the previous file on its button', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        status={{ ...status(true), canDeleteOriginal: true }}
+      />,
+    )
+    expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('Clean up the previous file')
   })
 })
 
@@ -301,14 +327,31 @@ describe('ConvertFooter done layout', () => {
   it('still shows the file when the destination is a folder', () => {
     render(sentToMusic('folder'))
     expect(screen.getByRole('status')).toHaveTextContent('Exported as AIFF')
+    fireEvent.click(screen.getByTestId('done-more'))
     expect(screen.getByTestId('show-file')).toBeInTheDocument()
   })
 
-  it('keeps an update that is still pending among the actions', () => {
+  // The one step still left is the only filled button, and it wears its name: a tinted
+  // music note said "update" only to whoever hovered it.
+  it('makes an update that is still pending the named main action', () => {
     render(inMusic(false, false))
     expect(
       within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
-    ).toHaveAccessibleName('Update in Apple Music')
+    ).toHaveTextContent('Update in Apple Music')
+  })
+
+  // A finished add leaves nothing to do: the green line already says so and leads there.
+  it('drops the Apple Music button once the selection was added', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        isMulti
+        selectedCount={3}
+        musicExt="aiff"
+        status={{ ...status(true), musicAdded: true, superseded: [] }}
+      />,
+    )
+    expect(within(screen.getByTestId('done-actions')).queryByTestId('add-apple-music')).toBeNull()
   })
 })
 

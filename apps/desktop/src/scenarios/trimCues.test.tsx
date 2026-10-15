@@ -73,7 +73,7 @@ describe('Cut the silence before a record without moving its Traktor cue points'
   it('converts the record without its lead-in', async () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(existsSync(out)).toBe(true), { timeout: 60_000 })
-    await waitFor(() => expect(screen.queryByTestId('process-btn')).not.toBeNull(), {
+    await waitFor(() => expect(screen.queryByTestId('done-more')).not.toBeNull(), {
       timeout: 60_000,
     })
     expect(surco.errors).toEqual([])

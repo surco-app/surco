@@ -1588,6 +1588,7 @@ describe('Editor multi-select', () => {
   // re-runs the whole batch in the chosen format.
   it('re-exports the whole selection from the quiet button', () => {
     const { onProcessAll } = renderMulti({ done: true })
+    fireEvent.click(screen.getByTestId('done-more'))
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcessAll).toHaveBeenCalledWith('aiff')
   })
@@ -1602,6 +1603,7 @@ describe('Editor multi-select', () => {
       requiredFields: ['artist'],
       metaA: { artist: 'Kumara' },
     })
+    fireEvent.click(screen.getByTestId('done-more'))
     const btn = screen.getByTestId('process-btn')
     expect(btn).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(btn)
@@ -1655,7 +1657,7 @@ describe('Editor export control', () => {
       status: 'done',
       outputPath: '/out/a.wav',
     })
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('done-more'))
     fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onFormatChange).toHaveBeenCalledWith('mp3')
     fireEvent.click(screen.getByTestId('process-btn'))
@@ -1668,6 +1670,7 @@ describe('Editor export control', () => {
   it('confirms the export outcome and reveals the file from its inline link', () => {
     renderEditor({ id: 'a', status: 'done', inputPath: '/music/a.flac', outputPath: '/out/a.wav' })
     expect(screen.getByTestId('export-success')).toHaveTextContent('WAV')
+    fireEvent.click(screen.getByTestId('done-more'))
     fireEvent.click(screen.getByTestId('show-file'))
     expect(
       (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,
@@ -1683,6 +1686,7 @@ describe('Editor export control', () => {
       status: 'done',
       outputPath: '/out/a.wav',
     })
+    fireEvent.click(screen.getByTestId('done-more'))
     fireEvent.click(screen.getByTestId('export-collection'))
     expect(onExportCollection).toHaveBeenCalled()
   })
