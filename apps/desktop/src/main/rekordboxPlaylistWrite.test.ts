@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -24,7 +24,7 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
 })
 
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
-import { editRekordboxPlaylist } from './rekordboxPlaylistWrite'
+import { editRekordboxPlaylist, restoreCollection } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 const NOW = new Date('2026-10-15T18:00:00.000Z')
@@ -87,6 +87,14 @@ function playlistNamed(path: string, name: string): unknown {
 }
 
 const FACTORY = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7']
+
+// Turns this write's copies into garbage, so a test can tell whether a failure was undone
+// by SQLite or by copying a file back over the user's collection.
+function spoilBackups(path: string): void {
+  for (const file of [path, join(path, '..', 'masterPlaylists6.xml')]) {
+    if (existsSync(`${file}.surco-backup`)) writeFileSync(`${file}.surco-backup`, 'spoiled')
+  }
+}
 
 describe('editRekordboxPlaylist', () => {
   it('adds what the collection has and reports the rest by reason', async () => {
@@ -205,14 +213,17 @@ describe('editRekordboxPlaylist', () => {
   })
 
   // The seam runs after the edit's statements, so the rollback below is undoing a real
-  // change; a failure before the write would prove nothing.
-  it('puts the collection back when the write dies halfway', async () => {
+  // change; a failure before the write would prove nothing. The backups are spoiled first:
+  // SQLite's own rollback is what undoes it, and copying a file over the live collection
+  // would be a second, non-atomic write for nothing.
+  it('rolls the collection back without copying a backup over it when the write dies halfway', async () => {
     const path = await collection()
     const result = await editRekordboxPlaylist(
       path,
       MOVE,
       deps({
         onWrite: () => {
+          spoilBackups(path)
           throw new Error('disk gone')
         },
       }),
@@ -258,38 +269,96 @@ describe('editRekordboxPlaylist', () => {
     expect(playlistNamed(path, 'Bolo')).toEqual({ ID: '600' })
   })
 
-  // The database row committed and the XML failed: rekordbox would find a playlist with no
-  // node, so both go back.
-  it('puts both files back when the XML cannot be written', async () => {
+  // A playlist row with no XML node is what rekordbox must never find. The XML is written
+  // before the row commits, so its failure is a rollback, and no backup is copied back.
+  it('writes neither file when the XML cannot be written', async () => {
     const path = await collection()
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
     const before = await readFile(xmlPath, 'utf8')
     const result = await editRekordboxPlaylist(
       path,
       CREATE,
-      deps({ writeXml: vi.fn(async () => Promise.reject(new Error('locked'))) }),
+      deps({
+        writeXml: vi.fn(async () => {
+          spoilBackups(path)
+          throw new Error('locked')
+        }),
+      }),
     )
     expect(result).toEqual({ applied: false, reason: 'write-failed' })
     expect(playlistNamed(path, 'Bolo')).toBeUndefined()
     expect(await readFile(xmlPath, 'utf8')).toBe(before)
   })
 
-  // A layout the text edit refuses to guess at is a failed write like any other: the
-  // playlist row already committed must not stay behind without its node.
-  it('puts both files back when the XML is not laid out one node per line', async () => {
+  // Another process with the collection open (rekordboxAgent can outlive the app) keeps
+  // Surco's close from folding the WAL; a row committed before the XML failed would then
+  // survive a copied-back master.db, replayed from the -wal. Nothing may commit first.
+  it('leaves no playlist row behind a failed XML while another connection is open', async () => {
+    const path = await collection({ wal: true })
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
+    const other = openRekordboxDb(path, { readonly: true })
+    if (!other) throw new Error('did not open')
+    other.prepare('SELECT count(*) FROM djmdPlaylist').get()
+    try {
+      const result = await editRekordboxPlaylist(
+        path,
+        CREATE,
+        deps({ writeXml: vi.fn(async () => Promise.reject(new Error('locked'))) }),
+      )
+      expect(result).toEqual({ applied: false, reason: 'write-failed' })
+    } finally {
+      other.close()
+    }
+    expect(playlistNamed(path, 'Bolo')).toBeUndefined()
+    expect(await readFile(xmlPath, 'utf8')).toBe(before)
+  })
+
+  // The XML node is already in place when the commit fails: the row rolls back, so the
+  // node goes back too, from its copy. A reader holding the file is what blocks the commit.
+  it('puts the XML back when the database cannot commit after the node was written', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
+    let reader: ReturnType<typeof openRekordboxDb> = null
+    try {
+      const result = await editRekordboxPlaylist(
+        path,
+        CREATE,
+        deps({
+          writeXml: vi.fn(async (p: string, text: string) => {
+            await writeFile(p, text)
+            reader = openRekordboxDb(path, { readonly: true })
+            reader?.prepare('BEGIN').run()
+            reader?.prepare('SELECT count(*) FROM djmdPlaylist').get()
+          }),
+        }),
+      )
+      expect(result).toEqual({ applied: false, reason: 'write-failed' })
+    } finally {
+      ;(reader as ReturnType<typeof openRekordboxDb>)?.close()
+    }
+    expect(playlistNamed(path, 'Bolo')).toBeUndefined()
+    expect(await readFile(xmlPath, 'utf8')).toBe(before)
+  }, 30_000)
+
+  // A layout the text edit refuses to guess at is known before rekordbox is asked to close:
+  // the user must not lose a running rekordbox for a creation that cannot land.
+  it('refuses a creation the XML cannot take without asking anything', async () => {
     const path = await collection()
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
     await writeFile(
       xmlPath,
       (await readFile(xmlPath, 'utf8')).replace('\r\n  </PLAYLISTS>', '</PLAYLISTS>'),
     )
-    const before = await readFile(xmlPath, 'utf8')
-    expect(await editRekordboxPlaylist(path, CREATE, deps())).toEqual({
+    const d = deps()
+    expect(await editRekordboxPlaylist(path, CREATE, d)).toEqual({
       applied: false,
-      reason: 'write-failed',
+      reason: 'unreadable',
     })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+    expect(existsSync(`${path}.surco-backup`)).toBe(false)
     expect(playlistNamed(path, 'Bolo')).toBeUndefined()
-    expect(await readFile(xmlPath, 'utf8')).toBe(before)
   })
 
   it('leaves the XML alone for an edit of tracks', async () => {
@@ -323,6 +392,38 @@ describe('editRekordboxPlaylist', () => {
     expect(linkIds(`${path}.surco-backup`, '3000')).toEqual(['h1', 'h2', 'w1'])
   })
 
+  // A reader holding an older snapshot keeps the checkpoint from folding the WAL, and
+  // SQLite says so only in the result, without throwing. A copy taken then would lack
+  // committed rows: no complete backup, no write.
+  it('writes nothing when a reader keeps the WAL from folding into the backup', async () => {
+    const path = await collection({ wal: true })
+    const writer = openRekordboxDb(path)
+    const reader = openRekordboxDb(path, { readonly: true })
+    if (!writer || !reader) throw new Error('did not open')
+    reader.prepare('BEGIN').run()
+    reader.prepare('SELECT count(*) FROM djmdPlaylist').get()
+    writer
+      .prepare(
+        `INSERT INTO djmdSongPlaylist (ID, PlaylistID, ContentID, TrackNo, created_at, updated_at)
+         VALUES ('w1', '3000', '104', 3, 'x', 'x')`,
+      )
+      .run()
+    const d = deps()
+    try {
+      expect(await editRekordboxPlaylist(path, MOVE, d)).toEqual({
+        applied: false,
+        reason: 'backup-failed',
+      })
+    } finally {
+      reader.prepare('COMMIT').run()
+      reader.close()
+      writer.close()
+    }
+    expect(d.sessionBackup).not.toHaveBeenCalled()
+    expect(existsSync(`${path}.surco-backup`)).toBe(false)
+    expect(linkIds(path, '2000')).toEqual(FACTORY)
+  }, 30_000)
+
   // A collection the process cannot write to is the user's to fix; "write failed" does not
   // say that.
   it('says the collection is read-only instead of a generic failure', async () => {
@@ -341,5 +442,37 @@ describe('editRekordboxPlaylist', () => {
       reason: 'unreadable',
     })
     expect(d.ensureClosed).not.toHaveBeenCalled()
+  })
+})
+
+// The last resort, for a database whose state after a failure is unknown. Copying
+// master.db back while committed frames still sit in a -wal beside it would have SQLite
+// replay them over the copy; then the copies stay where they are for the user instead.
+describe('restoreCollection', () => {
+  async function files(wal?: string): Promise<string> {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbrestore-')), 'master.db')
+    await writeFile(path, 'live')
+    await writeFile(`${path}.surco-backup`, 'copy')
+    if (wal !== undefined) await writeFile(`${path}-wal`, wal)
+    return path
+  }
+
+  it('copies the backup back when no WAL is left beside the collection', async () => {
+    const path = await files()
+    expect(await restoreCollection(path)).toBe(true)
+    expect(await readFile(path, 'utf8')).toBe('copy')
+  })
+
+  it('copies the backup back over an empty WAL', async () => {
+    const path = await files('')
+    expect(await restoreCollection(path)).toBe(true)
+    expect(await readFile(path, 'utf8')).toBe('copy')
+  })
+
+  it('leaves the collection alone while the WAL still holds frames', async () => {
+    const path = await files('frames')
+    expect(await restoreCollection(path)).toBe(false)
+    expect(await readFile(path, 'utf8')).toBe('live')
+    expect(await readFile(`${path}.surco-backup`, 'utf8')).toBe('copy')
   })
 })
