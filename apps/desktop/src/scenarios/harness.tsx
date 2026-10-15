@@ -280,6 +280,11 @@ function scenarioApi(
   )
   const wired: Partial<Api> = {
     platform: process.platform,
+    // No scenario has a rekordbox collection: the source rail stays without it, and the
+    // queries App mounts get an answer instead of the proxy's "not wired" throw.
+    rekordboxAvailable: async () => false,
+    loadRekordboxTree: async () => [],
+    loadRekordboxPlaylist: async () => [],
     expandPaths: async (paths) => {
       const expanded = await expandPaths(paths, (batch) => {
         mediaAccess.allowAll(batch)
