@@ -68,9 +68,14 @@ function requireLinks(all: Link[], ids: string[]): void {
 // Numbers the playlist 1..N in the order given. Rows whose number changes share one change
 // number, as rekordbox stamps a reorder (measured: Factory's rows carry one usn after a
 // move); rows that keep their place are left alone.
-function writeOrder(db: Db, order: Link[], stamp: string): void {
+function writeOrder(
+  db: Db,
+  order: Link[],
+  stamp: string,
+  usnOf = () => takeLocalUsn(db, stamp),
+): void {
   if (order.every((l, i) => l.TrackNo === i + 1)) return
-  const usn = takeLocalUsn(db, stamp)
+  const usn = usnOf()
   const update = db.prepare(
     `UPDATE djmdSongPlaylist SET TrackNo = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?`,
   )
@@ -87,13 +92,14 @@ function insertLink(
   contentId: string,
   trackNo: number,
   stamp: string,
+  usn = takeLocalUsn(db, stamp),
 ): Link {
   const id = randomUUID()
   db.prepare(
     `INSERT INTO djmdSongPlaylist (ID, PlaylistID, ContentID, TrackNo, UUID, rb_data_status,
        rb_local_data_status, rb_local_deleted, rb_local_synced, usn, rb_local_usn, created_at,
        updated_at) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, NULL, ?, ?, ?)`,
-  ).run(id, playlistId, contentId, trackNo, randomUUID(), takeLocalUsn(db, stamp), stamp, stamp)
+  ).run(id, playlistId, contentId, trackNo, randomUUID(), usn, stamp, stamp)
   return { ID: id, ContentID: contentId, TrackNo: trackNo, sep: 0 }
 }
 
@@ -269,13 +275,15 @@ export function insertSeparator(
   const order = links(db, playlistId)
   requireLinks(order, [beforeLinkId])
   const stamp = rekordboxStamp(ctx.now)
-  const link = insertLink(db, playlistId, separator, lastTrackNo(order) + 1, stamp)
+  // One gesture, one change number: the new row and the rows it renumbers share it.
+  const usn = takeLocalUsn(db, stamp)
+  const link = insertLink(db, playlistId, separator, lastTrackNo(order) + 1, stamp, usn)
   order.splice(
     order.findIndex((l) => l.ID === beforeLinkId),
     0,
     link,
   )
-  writeOrder(db, order, stamp)
+  writeOrder(db, order, stamp, () => usn)
 }
 
 // Whether an edit can apply to the collection as it is now, checked on a read-only handle

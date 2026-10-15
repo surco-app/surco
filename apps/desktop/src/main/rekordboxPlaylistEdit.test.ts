@@ -309,6 +309,19 @@ describe('insertSeparator', () => {
     expect(contents('3000')).toEqual(['109', '102', '110'])
   })
 
+  // One gesture is one change, as rekordbox stamps a reorder: the new row and the rows it
+  // renumbers share one change number, and the counter moves on once.
+  it('spends one change number on the new row and the rows it renumbers', () => {
+    const before = rows('2000')
+    insertSeparator(db, '2000', 'f6', ctx)
+    expect(counter()).toBe(501)
+    const changed = rows('2000').filter(
+      (r) => !before.some((b) => b.ID === r.ID && b.TrackNo === r.TrackNo),
+    )
+    expect(changed.length).toBeGreaterThan(1)
+    expect(new Set(changed.map((r) => r.usn))).toEqual(new Set([501]))
+  })
+
   it('refuses a row that is gone, writing nothing', () => {
     const before = ids('2000')
     expect(() => insertSeparator(db, '2000', 'gone', ctx)).toThrow(EditRefused)
