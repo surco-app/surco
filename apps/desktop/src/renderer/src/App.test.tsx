@@ -245,6 +245,10 @@ function setApi(over: Record<string, unknown> = {}): void {
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
+    rekordboxHasSeparator: vi.fn<Api['rekordboxHasSeparator']>().mockResolvedValue(true),
+    editRekordboxPlaylist: vi
+      .fn<Api['editRekordboxPlaylist']>()
+      .mockResolvedValue({ applied: true }),
     onWindowFocus: () => () => {},
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),

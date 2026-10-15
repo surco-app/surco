@@ -1691,7 +1691,28 @@
       "rekordbox": "“{{name}}” não está mais no rekordbox"
     },
     "missing_one": "{{count}} faixa de “{{name}}” não tem arquivo no disco",
-    "missing_other": "{{count}} faixas de “{{name}}” não têm arquivo no disco"
+    "missing_other": "{{count}} faixas de “{{name}}” não têm arquivo no disco",
+    "edit": {
+      "added_one": "{{count}} faixa adicionada a “{{name}}”",
+      "added_other": "{{count}} faixas adicionadas a “{{name}}”",
+      "noneAdded": "Nenhuma faixa adicionada a “{{name}}”",
+      "already_one": "{{count}} já estava na playlist",
+      "already_other": "{{count}} já estavam na playlist",
+      "notInCollection_one": "{{count}} não está na coleção do rekordbox",
+      "notInCollection_other": "{{count}} não estão na coleção do rekordbox",
+      "ambiguous_one": "{{count}} está duas vezes na coleção e o Surco não sabe qual usar",
+      "ambiguous_other": "{{count}} estão duas vezes na coleção e o Surco não sabe quais usar",
+      "refused": {
+        "cancelled": "Nada mudou porque o rekordbox continua aberto",
+        "running": "O rekordbox abriu antes de salvar e nada mudou",
+        "unreadable": "O Surco não consegue alterar os arquivos da coleção do rekordbox agora e nada mudou",
+        "backupFailed": "Não foi possível copiar a coleção antes e nada mudou",
+        "writeFailed": "Não foi possível salvar a mudança. A coleção continua como estava",
+        "readOnly": "A coleção do rekordbox é somente leitura e nada mudou",
+        "stale": "A playlist mudou no rekordbox. Confira e tente de novo",
+        "noSeparator": "Sua coleção não tem nenhum separador para copiar"
+      }
+    }
   },
   "engineIssue": {
     "unreadable": "A biblioteca do Engine DJ não foi atualizada: o Surco não conseguiu lê-la.",

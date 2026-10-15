@@ -1691,7 +1691,28 @@
       "rekordbox": "“{{name}}” is no longer in rekordbox"
     },
     "missing_one": "{{count}} track from “{{name}}” has no file on disk",
-    "missing_other": "{{count}} tracks from “{{name}}” have no file on disk"
+    "missing_other": "{{count}} tracks from “{{name}}” have no file on disk",
+    "edit": {
+      "added_one": "{{count}} track added to “{{name}}”",
+      "added_other": "{{count}} tracks added to “{{name}}”",
+      "noneAdded": "No tracks added to “{{name}}”",
+      "already_one": "{{count}} was already in the playlist",
+      "already_other": "{{count}} were already in the playlist",
+      "notInCollection_one": "{{count}} is not in the rekordbox collection",
+      "notInCollection_other": "{{count}} are not in the rekordbox collection",
+      "ambiguous_one": "{{count}} is in the collection twice and Surco can't tell which to use",
+      "ambiguous_other": "{{count}} are in the collection twice and Surco can't tell which to use",
+      "refused": {
+        "cancelled": "Nothing changed because rekordbox is still open",
+        "running": "rekordbox opened before saving, so nothing changed",
+        "unreadable": "Surco can't change the rekordbox collection files right now, so nothing changed",
+        "backupFailed": "Couldn't back up the collection first, so nothing changed",
+        "writeFailed": "Couldn't save the change. The collection is as it was",
+        "readOnly": "The rekordbox collection is read-only, so nothing changed",
+        "stale": "The playlist changed in rekordbox. Check it and try again",
+        "noSeparator": "Your collection has no separator to copy"
+      }
+    }
   },
   "engineIssue": {
     "unreadable": "Engine DJ's library wasn't updated: Surco couldn't read it.",

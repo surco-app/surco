@@ -1691,7 +1691,28 @@
       "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox"
     },
     "missing_one": "{{count}} Titel aus „{{name}}“ hat keine Datei auf dem Datenträger",
-    "missing_other": "{{count}} Titel aus „{{name}}“ haben keine Datei auf dem Datenträger"
+    "missing_other": "{{count}} Titel aus „{{name}}“ haben keine Datei auf dem Datenträger",
+    "edit": {
+      "added_one": "{{count}} Titel zu „{{name}}“ hinzugefügt",
+      "added_other": "{{count}} Titel zu „{{name}}“ hinzugefügt",
+      "noneAdded": "Keine Titel zu „{{name}}“ hinzugefügt",
+      "already_one": "{{count}} war schon in der Playlist",
+      "already_other": "{{count}} waren schon in der Playlist",
+      "notInCollection_one": "{{count}} ist nicht in der rekordbox-Sammlung",
+      "notInCollection_other": "{{count}} sind nicht in der rekordbox-Sammlung",
+      "ambiguous_one": "{{count}} ist doppelt in der Sammlung und Surco weiß nicht, welcher gilt",
+      "ambiguous_other": "{{count}} sind doppelt in der Sammlung und Surco weiß nicht, welche gelten",
+      "refused": {
+        "cancelled": "Nichts geändert, weil rekordbox noch geöffnet ist",
+        "running": "rekordbox wurde vor dem Speichern geöffnet, nichts geändert",
+        "unreadable": "Surco kann die Dateien der rekordbox-Sammlung gerade nicht ändern, nichts geändert",
+        "backupFailed": "Die Sammlung konnte vorher nicht gesichert werden, nichts geändert",
+        "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Sammlung ist unverändert",
+        "readOnly": "Die rekordbox-Sammlung ist schreibgeschützt, nichts geändert",
+        "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
+        "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren"
+      }
+    }
   },
   "engineIssue": {
     "unreadable": "Die Engine-DJ-Bibliothek wurde nicht aktualisiert: Surco konnte sie nicht lesen.",

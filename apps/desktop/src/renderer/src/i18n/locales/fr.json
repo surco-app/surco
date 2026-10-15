@@ -1691,7 +1691,28 @@
       "rekordbox": "« {{name}} » n’est plus dans rekordbox"
     },
     "missing_one": "{{count}} piste de « {{name}} » n’a pas de fichier sur le disque",
-    "missing_other": "{{count}} pistes de « {{name}} » n’ont pas de fichier sur le disque"
+    "missing_other": "{{count}} pistes de « {{name}} » n’ont pas de fichier sur le disque",
+    "edit": {
+      "added_one": "{{count}} piste ajoutée à « {{name}} »",
+      "added_other": "{{count}} pistes ajoutées à « {{name}} »",
+      "noneAdded": "Aucune piste ajoutée à « {{name}} »",
+      "already_one": "{{count}} était déjà dans la playlist",
+      "already_other": "{{count}} étaient déjà dans la playlist",
+      "notInCollection_one": "{{count}} n’est pas dans la collection rekordbox",
+      "notInCollection_other": "{{count}} ne sont pas dans la collection rekordbox",
+      "ambiguous_one": "{{count}} est deux fois dans la collection et Surco ne sait pas laquelle utiliser",
+      "ambiguous_other": "{{count}} sont deux fois dans la collection et Surco ne sait pas lesquelles utiliser",
+      "refused": {
+        "cancelled": "Rien n’a changé car rekordbox est encore ouvert",
+        "running": "rekordbox s’est ouvert avant l’enregistrement, rien n’a changé",
+        "unreadable": "Surco ne peut pas modifier les fichiers de la collection rekordbox pour le moment, rien n’a changé",
+        "backupFailed": "Impossible de sauvegarder la collection avant, rien n’a changé",
+        "writeFailed": "Impossible d’enregistrer la modification. La collection est restée telle quelle",
+        "readOnly": "La collection rekordbox est en lecture seule, rien n’a changé",
+        "stale": "La playlist a changé dans rekordbox. Vérifie-la et réessaie",
+        "noSeparator": "Ta collection n’a aucun séparateur à copier"
+      }
+    }
   },
   "engineIssue": {
     "unreadable": "La bibliothèque Engine DJ n'a pas été mise à jour : Surco n'a pas pu la lire.",

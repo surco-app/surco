@@ -11,6 +11,7 @@ export interface SourceBrowser {
   tree: SourceNode[] | undefined
   treeFailed: boolean
   entries: SourcePlaylistEntry[] | undefined
+  canInsertSeparator: boolean
   selectSource: (source: PlaylistSource | null) => void
   selectPlaylist: (node: SourceNode, folders: string[]) => void
 }
@@ -70,6 +71,13 @@ export function useSourceBrowser({
     staleTime: Number.POSITIVE_INFINITY,
   })
 
+  const separator = useQuery({
+    queryKey: ['source-separator'],
+    queryFn: () => window.api.rekordboxHasSeparator(),
+    enabled: source === 'rekordbox',
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
   // A playlist deleted in rekordbox while it was open: once the re-read tree no longer
   // holds it, the list goes back to the tree instead of showing rows of a playlist that is
   // gone. The tree stays open where it was, which is the "back to the folder" of the spec,
@@ -86,6 +94,7 @@ export function useSourceBrowser({
     queryClient.invalidateQueries({ queryKey: ['source-available'] })
     queryClient.invalidateQueries({ queryKey: ['source-tree'] })
     queryClient.invalidateQueries({ queryKey: ['source-playlist'] })
+    queryClient.invalidateQueries({ queryKey: ['source-separator'] })
   })
 
   return {
@@ -95,6 +104,7 @@ export function useSourceBrowser({
     tree: tree.data,
     treeFailed: tree.isError,
     entries: entries.data,
+    canInsertSeparator: separator.data ?? false,
     selectSource: (next) => {
       setSource(next)
       setPlaylist(null)

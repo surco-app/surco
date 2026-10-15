@@ -137,4 +137,13 @@ describe('useSourceBrowser', () => {
     act(() => result.current.selectSource('appleMusic'))
     expect(result.current.playlist).toBeNull()
   })
+
+  // "Insert separator" copies the collection's own separator; with none, the menu item says
+  // so instead of failing after the user picked it.
+  it('knows whether rekordbox has a separator to copy', async () => {
+    const { result } = setup({ rekordboxHasSeparator: vi.fn().mockResolvedValue(true) })
+    expect(result.current.canInsertSeparator).toBe(false)
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.canInsertSeparator).toBe(true))
+  })
 })
