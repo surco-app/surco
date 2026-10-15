@@ -317,3 +317,37 @@ describe('SourceTree organising', () => {
     expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
   })
 })
+
+// The folder menu opens at the click; from a folder low in a long tree its items ran past
+// the bottom of the window, out of reach.
+describe('SourceTree folder menu placement', () => {
+  const size = { width: window.innerWidth, height: window.innerHeight }
+  afterEach(() => {
+    vi.restoreAllMocks()
+    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+  })
+  const openAt = (clientX: number, clientY: number) => {
+    Object.assign(window, { innerWidth: 1200, innerHeight: 882 })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.dataset.testid !== 'source-tree-menu') return new DOMRect(0, 0, 0, 0)
+      return new DOMRect(0, 0, 190, 80)
+    })
+    setup(null, true)
+    fireEvent.contextMenu(screen.getByTestId('source-node-bases'), { clientX, clientY })
+    return screen.getByTestId('source-tree-menu')
+  }
+
+  it('stays inside the window when opened near its bottom right corner', () => {
+    const menu = openAt(1150, 860)
+    expect(Number.parseFloat(menu.style.left) + 190).toBeLessThanOrEqual(1200)
+    expect(Number.parseFloat(menu.style.top) + 80).toBeLessThanOrEqual(882)
+  })
+
+  it('opens at the click when it fits', () => {
+    const menu = openAt(100, 200)
+    expect(menu.style.left).toBe('100px')
+    expect(menu.style.top).toBe('200px')
+  })
+})

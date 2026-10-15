@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
@@ -108,6 +108,19 @@ export function SourceTree({
   }
   const focusField = useCallback((el: HTMLInputElement | null) => el?.focus(), [])
   const [menu, setMenu] = useState<{ node: SourceNode; x: number; y: number } | null>(null)
+  // Opened at the click, then pulled back inside the window once its size is known: from a
+  // folder low in a long tree its items ran past the bottom, as the track menu's did.
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const [menuAt, setMenuAt] = useState({ x: 0, y: 0 })
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!menu || !el) return
+    const { width, height } = el.getBoundingClientRect()
+    setMenuAt({
+      x: Math.min(menu.x, window.innerWidth - width - 8),
+      y: Math.min(menu.y, window.innerHeight - height - 8),
+    })
+  }, [menu])
   const createInside = (node: SourceNode, folder: boolean): void => {
     setMenu(null)
     setOpened((prev) => new Set([...prev, node.id]))
@@ -305,14 +318,17 @@ export function SourceTree({
             className="absolute inset-0"
           />
           <div
-            ref={(el) => el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()}
+            ref={(el) => {
+              menuRef.current = el
+              el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+            }}
             role="menu"
             aria-label={tr('sources.tree.folderMenu')}
             data-testid="source-tree-menu"
             onKeyDown={(e) => {
               if (e.key === 'Escape') setMenu(null)
             }}
-            style={{ top: menu.y, left: menu.x }}
+            style={{ top: menuAt.y, left: menuAt.x }}
             className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
             <button
