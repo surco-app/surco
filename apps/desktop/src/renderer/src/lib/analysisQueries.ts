@@ -55,6 +55,7 @@ export function cancellableAnalysisOptions<T>(
 const ANALYSIS_QUERY_KEYS = [
   'properties',
   'loudness',
+  'fingerprint',
   'spectrogram',
   'spectrumVerdict',
   'bpm',

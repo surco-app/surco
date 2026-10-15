@@ -46,6 +46,10 @@ export interface AudioAnalysisIpc {
     args: [inputPath: string, priority?: 'high' | 'low']
     result: LoudnessResult | null
   }
+  'audio:fingerprint': {
+    args: [inputPath: string, priority?: 'high' | 'low']
+    result: string | null
+  }
   'audio:clicks': {
     args: [inputPath: string, priority?: 'high' | 'low']
     result: { count: number; marks: number[]; scannedSec: number } | null

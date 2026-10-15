@@ -208,6 +208,8 @@ const api: Api = {
     invokeAudio('audio:peek', family, path) as Promise<PeekableAnalyses[F] | null>,
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     invokeAudio('audio:loudness', path, priority),
+  fingerprint: (path: string, priority: 'high' | 'low' = 'low'): Promise<string | null> =>
+    invokeAudio('audio:fingerprint', path, priority),
   properties: (path: string): Promise<TrackProperties | null> =>
     invokeAudio('audio:properties', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>

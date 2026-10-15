@@ -240,6 +240,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     loadCachedAnalyses: async () => ({}),
     peekAnalysis: async () => null,
     loudness: async () => null,
+    fingerprint: async () => null,
     properties: async () => null,
     bpm: async () => null,
     key: async () => null,

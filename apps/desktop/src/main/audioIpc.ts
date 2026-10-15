@@ -12,7 +12,12 @@ import type {
   WaveformScan,
 } from '../shared/types'
 import { activity } from './activity'
-import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
+import {
+  cachedAnalysis,
+  FINGERPRINT_NAMESPACE,
+  LOUDNESS_NAMESPACE,
+  peekAnalysis,
+} from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
 import { coverThumbUrlFor } from './coverThumbs'
@@ -20,6 +25,7 @@ import {
   analyzeBitsUsage,
   analyzeCutoff,
   analyzeShelf,
+  audioFingerprint,
   buildSpectrum,
   cacheableSpectrum,
   detectTrackClicks,
@@ -296,6 +302,22 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       return null
     }
   })
+
+  handleAudio(
+    'audio:fingerprint',
+    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+      try {
+        return await cachedAnalysis(FINGERPRINT_NAMESPACE, inputPath, () =>
+          cancellable(inputPath, priority, (signal) =>
+            analysisLimiter.run(() => audioFingerprint(inputPath, signal), priority, signal),
+          ),
+        )
+      } catch (err) {
+        if (!isAbortError(err)) log.error('audio:fingerprint failed', err)
+        return null
+      }
+    },
+  )
 
   // The repair section's clicks: the count for the header pill, and the marks the wave
   // draws (and "jump to the next click" seeks to) — one detector pass, one cache entry,

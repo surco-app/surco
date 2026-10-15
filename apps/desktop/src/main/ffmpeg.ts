@@ -2859,6 +2859,44 @@ export function parseAstats(stderr: string): AstatsResult | null {
   }
 }
 
+// An MD5 of the decode as 16-bit stereo 44.1 kHz, so two containers of the same samples
+// (a 24-bit AIFF whose low byte is empty and its 16-bit WAV) read as the same audio
+// whatever their headers declare. Null when the file cannot be decoded.
+export async function audioFingerprint(
+  input: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  try {
+    const { stdout } = await run(
+      ffmpegPath,
+      [
+        '-v',
+        'error',
+        ...forcedInputArgs(input),
+        '-i',
+        input,
+        '-map',
+        '0:a:0',
+        '-ac',
+        '2',
+        '-ar',
+        '44100',
+        '-c:a',
+        'pcm_s16le',
+        '-f',
+        'md5',
+        '-',
+      ],
+      { maxBuffer: 1024 * 64, timeout: ANALYSIS_TIMEOUT_MS, signal },
+    )
+    const match = String(stdout).match(/MD5=([0-9a-f]{32})/)
+    return match ? match[1] : null
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return null
+  }
+}
+
 // Measures EBU R128 loudness and the per-channel checks (balance, DC offset) in a
 // single decode by chaining astats and ebur128 — both print their summary to
 // stderr at info level, so — unlike the other ffmpeg helpers — we must not pass

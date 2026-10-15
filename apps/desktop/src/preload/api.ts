@@ -274,6 +274,7 @@ export interface Api {
     path: string,
   ) => Promise<PeekableAnalyses[F] | null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
+  fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>
