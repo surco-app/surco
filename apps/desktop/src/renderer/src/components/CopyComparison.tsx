@@ -53,12 +53,6 @@ const DECIDING_ROW: Partial<Record<CopyReason, RowId>> = {
   crest: 'crest',
 }
 
-const BORDER = {
-  good: 'var(--color-good)',
-  warn: 'var(--color-warn)',
-  neutral: 'var(--color-line-strong)',
-} as const
-
 export function CopyComparison({
   id,
   verdict,
@@ -160,7 +154,6 @@ export function CopyComparison({
   ]
   const decided = 'reason' in verdict ? verdict : null
   const decidingRow = decided ? DECIDING_ROW[decided.reason] : undefined
-  const tone = verdict.winner === 'a' ? 'good' : verdict.winner === 'b' ? 'warn' : 'neutral'
   const cellTone = (side: 'a' | 'b'): string =>
     decided?.winner === side ? 'text-[var(--color-good)]' : 'text-[var(--color-warn)]'
 
@@ -168,9 +161,9 @@ export function CopyComparison({
     <div
       id={id}
       data-testid="copy-comparison"
-      data-tone={tone}
-      className="mt-2 border-l-2 pl-2.5 text-xs"
-      style={{ borderColor: BORDER[tone] }}
+      // No rule of its own: the verdict line above carries the colour, and this is its
+      // detail, set in line with that line's words.
+      className="mt-1.5 pl-3 text-xs"
     >
       <p data-testid="copy-sentence" className="text-fg-dim">
         {sentence()}
