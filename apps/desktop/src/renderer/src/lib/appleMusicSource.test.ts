@@ -13,7 +13,12 @@ describe('musicTree', () => {
       ['folder', 'Bases'],
       ['folder', 'Cantaditas'],
     ])
-    expect(tree[1].children?.[0]).toEqual({ id: 'AAAAAAAAAAAAAAA1', name: '95', kind: 'playlist', count: 10 })
+    expect(tree[1].children?.[0]).toEqual({
+      id: 'AAAAAAAAAAAAAAA1',
+      name: '95',
+      kind: 'playlist',
+      count: 10,
+    })
   })
 })
 

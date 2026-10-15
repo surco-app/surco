@@ -10,16 +10,28 @@ afterEach(cleanup)
 const TODAS_CANT: SourceNode = { id: 'ct', name: 'Todas', kind: 'playlist', count: 448 }
 const TODAS_BASES: SourceNode = { id: 'bt', name: 'Todas', kind: 'playlist', count: 336 }
 const NODES: SourceNode[] = [
-  { id: 'cant', name: 'CANTADITAS', kind: 'folder', count: 1, children: [
-    { id: 'c90', name: '90s', kind: 'folder', count: 1, children: [TODAS_CANT] },
-  ] },
+  {
+    id: 'cant',
+    name: 'CANTADITAS',
+    kind: 'folder',
+    count: 1,
+    children: [{ id: 'c90', name: '90s', kind: 'folder', count: 1, children: [TODAS_CANT] }],
+  },
   { id: 'bases', name: 'BASES', kind: 'folder', count: 1, children: [TODAS_BASES] },
   { id: 'house', name: 'House', kind: 'playlist', count: 32 },
 ]
 
 function setup(selectedId: string | null = null) {
   const onSelect = vi.fn()
-  render(<SourceTree title="rekordbox" nodes={NODES} failed={false} selectedId={selectedId} onSelect={onSelect} />)
+  render(
+    <SourceTree
+      title="rekordbox"
+      nodes={NODES}
+      failed={false}
+      selectedId={selectedId}
+      onSelect={onSelect}
+    />,
+  )
   return onSelect
 }
 
@@ -53,7 +65,15 @@ describe('SourceTree', () => {
   })
 
   it('says when the collection could not be read instead of looking empty', () => {
-    render(<SourceTree title="rekordbox" nodes={undefined} failed selectedId={null} onSelect={vi.fn()} />)
+    render(
+      <SourceTree
+        title="rekordbox"
+        nodes={undefined}
+        failed
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    )
     expect(screen.getByTestId('source-tree-failed')).toBeInTheDocument()
   })
 })

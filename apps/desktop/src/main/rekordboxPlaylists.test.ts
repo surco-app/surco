@@ -9,11 +9,49 @@ import { writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 // Shapes measured on a real 2067-track collection (15/10): folders nested two deep whose
 // playlists repeat names ("Todas" under CANTADITAS › 90s and BASES › 90s), one blank
 // separator MP3 linked hundreds of times, and a −128 cloud-sync trial playlist.
-const SEP = { ID: 'sep', FolderPath: '/Users/dj/Music/PioneerDJ/Blank Audio/_.mp3', FileType: 1, Title: ' ', Length: 1, KeyID: 'k1' }
-const NIGHT = { ID: 'c1', FolderPath: '/Volumes/Public/Music/Rebel Vision/Night Train.aiff', FileType: 12, Title: 'Night Train (Extended Mix)', Length: 256, BPM: 15000, Rating: 0, KeyID: 'k1' }
-const PLAY = { ID: 'c2', FolderPath: '/Volumes/Public/Music/2 Fabiola/Play This Song.wav', FileType: 11, Title: 'Play This Song (Transformix)', Length: 338, BPM: 13807, Rating: 5, KeyID: 'k2' }
-const SPOTIFY = { ID: 'c3', FolderPath: 'spotify:track:0OTO8ZF2YqFQVw9hnZylTd', FileType: 25, Title: 'Streamed', Length: 200 }
-const GONE = { ID: 'c4', FolderPath: '/Volumes/Public/Music/gone.wav', FileType: 11, Title: 'Gone', Length: 300, deleted: true }
+const SEP = {
+  ID: 'sep',
+  FolderPath: '/Users/dj/Music/PioneerDJ/Blank Audio/_.mp3',
+  FileType: 1,
+  Title: ' ',
+  Length: 1,
+  KeyID: 'k1',
+}
+const NIGHT = {
+  ID: 'c1',
+  FolderPath: '/Volumes/Public/Music/Rebel Vision/Night Train.aiff',
+  FileType: 12,
+  Title: 'Night Train (Extended Mix)',
+  Length: 256,
+  BPM: 15000,
+  Rating: 0,
+  KeyID: 'k1',
+}
+const PLAY = {
+  ID: 'c2',
+  FolderPath: '/Volumes/Public/Music/2 Fabiola/Play This Song.wav',
+  FileType: 11,
+  Title: 'Play This Song (Transformix)',
+  Length: 338,
+  BPM: 13807,
+  Rating: 5,
+  KeyID: 'k2',
+}
+const SPOTIFY = {
+  ID: 'c3',
+  FolderPath: 'spotify:track:0OTO8ZF2YqFQVw9hnZylTd',
+  FileType: 25,
+  Title: 'Streamed',
+  Length: 200,
+}
+const GONE = {
+  ID: 'c4',
+  FolderPath: '/Volumes/Public/Music/gone.wav',
+  FileType: 11,
+  Title: 'Gone',
+  Length: 300,
+  deleted: true,
+}
 
 let db: NonNullable<ReturnType<typeof openRekordboxDb>>
 
@@ -21,7 +59,10 @@ beforeAll(async () => {
   const path = join(await mkdtemp(join(tmpdir(), 'surco-rbpl-')), 'master.db')
   writeRekordboxPlaylistFixture(path, {
     content: [SEP, NIGHT, PLAY, SPOTIFY, GONE],
-    keys: [{ ID: 'k1', ScaleName: '4B' }, { ID: 'k2', ScaleName: '8A' }],
+    keys: [
+      { ID: 'k1', ScaleName: '4B' },
+      { ID: 'k2', ScaleName: '8A' },
+    ],
     playlists: [
       { ID: 'combos', Name: 'COMBOS', Attribute: 1, ParentID: 'root', Seq: 2 },
       { ID: 'factory', Name: 'Factory', Attribute: 0, ParentID: 'combos', Seq: 2 },
@@ -30,7 +71,13 @@ beforeAll(async () => {
       { ID: 'cant90', Name: '90s', Attribute: 1, ParentID: 'cant', Seq: 1 },
       { ID: 'cant90todas', Name: 'Todas', Attribute: 0, ParentID: 'cant90', Seq: 1 },
       { ID: 'house', Name: 'House', Attribute: 0, ParentID: 'root', Seq: 3 },
-      { ID: 'trial', Name: 'Trial playlist - Cloud Library Sync', Attribute: -128, ParentID: 'root', Seq: 4 },
+      {
+        ID: 'trial',
+        Name: 'Trial playlist - Cloud Library Sync',
+        Attribute: -128,
+        ParentID: 'root',
+        Seq: 4,
+      },
       { ID: 'old', Name: 'Borrada', Attribute: 0, ParentID: 'root', Seq: 5, deleted: true },
     ],
     links: [
@@ -58,7 +105,11 @@ describe('readRekordboxTree', () => {
     const combos = tree[1]
     expect(combos.kind).toBe('folder')
     expect(combos.children?.map((n) => n.name)).toEqual(['90s', 'Factory'])
-    expect(tree[0].children?.[0].children?.[0]).toMatchObject({ id: 'cant90todas', name: 'Todas', kind: 'playlist' })
+    expect(tree[0].children?.[0].children?.[0]).toMatchObject({
+      id: 'cant90todas',
+      name: 'Todas',
+      kind: 'playlist',
+    })
   })
 
   it('counts only real tracks, so the number matches the rows the list will show', () => {

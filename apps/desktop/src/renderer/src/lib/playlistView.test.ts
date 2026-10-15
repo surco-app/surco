@@ -30,7 +30,14 @@ describe('playlistView', () => {
   it('collapses runs of separators and drops a trailing one: a break is a break', () => {
     const view = playlistView(
       [A, B],
-      [entry(SEP, true), entry('/m/A.wav'), entry(SEP, true), entry(SEP, true), entry('/m/B.wav'), entry(SEP, true)],
+      [
+        entry(SEP, true),
+        entry('/m/A.wav'),
+        entry(SEP, true),
+        entry(SEP, true),
+        entry('/m/B.wav'),
+        entry(SEP, true),
+      ],
     )
     expect([...view.separatorBefore].sort()).toEqual(['a', 'b'])
   })

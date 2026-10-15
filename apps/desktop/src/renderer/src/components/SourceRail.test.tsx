@@ -16,7 +16,9 @@ describe('SourceRail', () => {
 
   it('picks a source, and the working list with null', () => {
     const onSelect = vi.fn()
-    render(<SourceRail sources={['appleMusic', 'rekordbox']} active="rekordbox" onSelect={onSelect} />)
+    render(
+      <SourceRail sources={['appleMusic', 'rekordbox']} active="rekordbox" onSelect={onSelect} />,
+    )
     fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
     fireEvent.click(screen.getByTestId('source-rail-tracks'))
     expect(onSelect.mock.calls).toEqual([['appleMusic'], [null]])

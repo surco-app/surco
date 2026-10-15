@@ -57,12 +57,19 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     CREATE TABLE djmdSongPlaylist (ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255),
       ContentID VARCHAR(255), TrackNo INTEGER, rb_local_deleted INTEGER DEFAULT 0);
   `)
-  const content = db.prepare(
-    'INSERT INTO djmdContent VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-  )
+  const content = db.prepare('INSERT INTO djmdContent VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
   for (const c of data.content) {
-    content.run(c.ID, c.FolderPath, c.FileType, c.Title, c.Length, c.BPM ?? 0, c.Rating ?? 0,
-      c.KeyID ?? null, c.deleted ? 1 : 0)
+    content.run(
+      c.ID,
+      c.FolderPath,
+      c.FileType,
+      c.Title,
+      c.Length,
+      c.BPM ?? 0,
+      c.Rating ?? 0,
+      c.KeyID ?? null,
+      c.deleted ? 1 : 0,
+    )
   }
   const key = db.prepare('INSERT INTO djmdKey VALUES (?, ?)')
   for (const k of data.keys) key.run(k.ID, k.ScaleName)
@@ -72,8 +79,13 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   }
   const link = db.prepare('INSERT INTO djmdSongPlaylist VALUES (?, ?, ?, ?, ?)')
   data.links.forEach((l, i) => {
-    link.run(`link-${i}`, l.PlaylistID, l.ContentID, l.TrackNo,
-      l.deleted === null ? null : l.deleted ? 1 : 0)
+    link.run(
+      `link-${i}`,
+      l.PlaylistID,
+      l.ContentID,
+      l.TrackNo,
+      l.deleted === null ? null : l.deleted ? 1 : 0,
+    )
   })
   db.close()
 }

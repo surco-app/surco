@@ -1,5 +1,5 @@
-import type { openRekordboxDb } from './rekordboxDb'
 import type { AppleMusicTrackMeta, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import type { openRekordboxDb } from './rekordboxDb'
 
 // Reads the user's rekordbox playlists as a source of tracks: the folder tree and one
 // playlist's rows. Read-only by construction — every caller opens the collection with

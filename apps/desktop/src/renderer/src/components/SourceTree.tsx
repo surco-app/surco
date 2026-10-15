@@ -19,7 +19,10 @@ function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): Sour
 // Every playlist with the folder names above it. Search lists these flat: with names
 // repeated across folders (the measured collection has five "Todas"), the path is what
 // tells the hits apart.
-function flatten(nodes: SourceNode[], folders: string[] = []): { node: SourceNode; folders: string[] }[] {
+function flatten(
+  nodes: SourceNode[],
+  folders: string[] = [],
+): { node: SourceNode; folders: string[] }[] {
   return nodes.flatMap((n) =>
     n.kind === 'folder' ? flatten(n.children ?? [], [...folders, n.name]) : [{ node: n, folders }],
   )
@@ -58,7 +61,12 @@ export function SourceTree({
       return next
     })
 
-  const row = (node: SourceNode, depth: number, folders: string[], trail?: string): React.JSX.Element => {
+  const row = (
+    node: SourceNode,
+    depth: number,
+    folders: string[],
+    trail?: string,
+  ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
     const open = opened.has(node.id) || forced.has(node.id)
     const selected = node.id === selectedId
@@ -91,15 +99,25 @@ export function SourceTree({
   }
 
   let body: React.ReactNode
-  if (failed) body = <p data-testid="source-tree-failed" className="px-3 text-xs text-fg-faint">{tr('sources.failed')}</p>
+  if (failed)
+    body = (
+      <p data-testid="source-tree-failed" className="px-3 text-xs text-fg-faint">
+        {tr('sources.failed')}
+      </p>
+    )
   else if (!nodes) body = <p className="px-3 text-xs text-fg-faint">{tr('sources.loading')}</p>
-  else if (nodes.length === 0) body = <p className="px-3 text-xs text-fg-faint">{tr('sources.empty')}</p>
-  else if (hits && hits.length === 0) body = <p className="px-3 text-xs text-fg-faint">{tr('sources.noMatch')}</p>
+  else if (nodes.length === 0)
+    body = <p className="px-3 text-xs text-fg-faint">{tr('sources.empty')}</p>
+  else if (hits && hits.length === 0)
+    body = <p className="px-3 text-xs text-fg-faint">{tr('sources.noMatch')}</p>
   else if (hits) body = <ul>{hits.map((h) => row(h.node, 0, h.folders, h.folders.join(' › ')))}</ul>
   else body = <ul>{nodes.map((n) => row(n, 0, []))}</ul>
 
   return (
-    <div data-testid="source-tree" className="flex w-[236px] shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]">
+    <div
+      data-testid="source-tree"
+      className="flex w-[236px] shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]"
+    >
       <div className="px-3 pt-3 pb-2 font-semibold">{title}</div>
       <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
