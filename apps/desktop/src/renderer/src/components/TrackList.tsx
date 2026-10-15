@@ -1167,6 +1167,10 @@ export const TrackList = memo(function TrackList({
         className="flex flex-col gap-0.5 p-2"
         onDragOver={onReorderOver}
         onDrop={onReorderDrop}
+        onDragLeave={(e) => {
+          // Crossing from row to row fires leaves too; only leaving the list drops the line.
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropBefore(undefined)
+        }}
         onDragEnd={endReorder}
         onMouseUp={() => setArmed(null)}
         onWheelCapture={(e) => {

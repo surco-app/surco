@@ -1686,6 +1686,42 @@ describe('TrackList reorder', () => {
     expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/b.wav'], undefined)
   })
 
+  // A grip drag stays inside the list: handing the files to the OS as well would start a
+  // second, native drag that lands the rows in Finder or Spek instead of moving them.
+  it('does not hand the files to the OS when the drag starts on the grip', () => {
+    renderList(abc(), null, [], { reorder: reorderSpy() })
+    fireEvent.mouseDown(screen.getByTestId('track-grip-b'))
+    fireEvent.dragStart(wrapperOf('b'), { dataTransfer: fakeDataTransfer() })
+    expect(api.startTrackDrag).not.toHaveBeenCalled()
+  })
+
+  // The line promises where a drop lands; left behind after the drag leaves the list, it
+  // promises a drop that the list will no longer take.
+  it('takes the insertion line away when the drag leaves the list', () => {
+    renderList(abc(), null, [], { reorder: reorderSpy() })
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
+    expect(screen.getByTestId('reorder-line')).toBeInTheDocument()
+    fireEvent.dragLeave(screen.getByRole('listbox'), {
+      dataTransfer: dt,
+      relatedTarget: document.body,
+    })
+    expect(screen.queryByTestId('reorder-line')).not.toBeInTheDocument()
+  })
+
+  // Moving between rows crosses child elements, each firing a leave; the line stays.
+  it('keeps the insertion line while the drag moves between rows', () => {
+    renderList(abc(), null, [], { reorder: reorderSpy() })
+    const dt = fakeDataTransfer()
+    fireEvent.mouseDown(screen.getByTestId('track-grip-c'))
+    fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+    fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
+    fireEvent.dragLeave(wrapperOf('a'), { dataTransfer: dt, relatedTarget: wrapperOf('b') })
+    expect(screen.getByTestId('reorder-line')).toBeInTheDocument()
+  })
+
   it('removes a separator from its own line', () => {
     const reorder = reorderSpy()
     renderList(abc(), null, [], { reorder, separatorBefore: new Map([['b', ['s1']]]) })
