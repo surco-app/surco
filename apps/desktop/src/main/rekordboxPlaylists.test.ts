@@ -41,6 +41,7 @@ beforeAll(async () => {
       { PlaylistID: 'factory', ContentID: 'c4', TrackNo: 5 },
       { PlaylistID: 'factory', ContentID: 'c2', TrackNo: 6, deleted: true },
       { PlaylistID: 'cant90todas', ContentID: 'c2', TrackNo: 1 },
+      { PlaylistID: 'nineties', ContentID: 'c1', TrackNo: 1, deleted: null },
     ],
   })
   const opened = openRekordboxDb(path, { readonly: true })
@@ -67,6 +68,11 @@ describe('readRekordboxTree', () => {
     expect(factory?.count).toBe(3)
   })
 
+  it('keeps a link whose deleted flag is NULL, since only 1 means deleted', () => {
+    const nineties = readRekordboxTree(db)[1].children?.[0]
+    expect(nineties?.count).toBe(1)
+  })
+
   it('leaves out the cloud-sync trial row and deleted playlists, which rekordbox does not list', () => {
     const names = readRekordboxTree(db).map((n) => n.name)
     expect(names).not.toContain('Trial playlist - Cloud Library Sync')
@@ -89,6 +95,10 @@ describe('readRekordboxPlaylist', () => {
     const [night, , play] = readRekordboxPlaylist(db, 'factory')
     expect(night.meta).toEqual({ bpm: '150', key: '4B' })
     expect(play.meta).toEqual({ bpm: '138.07', key: '8A', rating: 100 })
+  })
+
+  it('lists a link whose deleted flag is NULL, since only 1 means deleted', () => {
+    expect(readRekordboxPlaylist(db, 'nineties').map((r) => r.path)).toEqual([NIGHT.FolderPath])
   })
 
   it('returns nothing for a playlist that is not there, rather than throwing', () => {

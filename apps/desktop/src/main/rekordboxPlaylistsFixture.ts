@@ -31,7 +31,8 @@ export interface FixtureLink {
   PlaylistID: string
   ContentID: string
   TrackNo: number
-  deleted?: boolean
+  // null writes a NULL flag, which rekordbox leaves on some rows instead of 0.
+  deleted?: boolean | null
 }
 
 export interface PlaylistFixture {
@@ -71,7 +72,8 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   }
   const link = db.prepare('INSERT INTO djmdSongPlaylist VALUES (?, ?, ?, ?, ?)')
   data.links.forEach((l, i) => {
-    link.run(`link-${i}`, l.PlaylistID, l.ContentID, l.TrackNo, l.deleted ? 1 : 0)
+    link.run(`link-${i}`, l.PlaylistID, l.ContentID, l.TrackNo,
+      l.deleted === null ? null : l.deleted ? 1 : 0)
   })
   db.close()
 }

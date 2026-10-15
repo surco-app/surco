@@ -14,7 +14,7 @@ const STREAMING_FILE_TYPE = 25
 // 1 s MP3 under PioneerDJ/Imported from Device, linked 345 times, and another DJ's will
 // sit anywhere. Length is in whole seconds.
 const IS_SEPARATOR = `(c.Length <= 2 AND trim(coalesce(c.Title, '')) = '')`
-const LIVE_LINK = `s.rb_local_deleted = 0 AND coalesce(c.rb_local_deleted, 0) = 0`
+const LIVE_LINK = `coalesce(s.rb_local_deleted, 0) = 0 AND coalesce(c.rb_local_deleted, 0) = 0`
 
 interface PlaylistRow {
   ID: string
