@@ -3468,7 +3468,7 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('copy-sentence')).toBeNull()
     fireEvent.click(pill)
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'The Apple Music copy is 2.2 dB louder and went through a limiter',
+      'The Apple Music copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
     )
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
   })

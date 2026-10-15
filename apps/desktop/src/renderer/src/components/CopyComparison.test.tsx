@@ -43,7 +43,7 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'The Apple Music copy is 2.2 dB louder and went through a limiter, with 1978 samples pinned at its ceiling.',
+      'The Apple Music copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
     )
     expect(screen.getByTestId('copy-row-peakCount')).toHaveAttribute('data-decides', 'true')
     expect(screen.getByTestId('copy-row-loudness')).not.toHaveAttribute('data-decides')
@@ -62,8 +62,23 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'This file went through a limiter, with 1978 samples pinned at its ceiling.',
+      'This file has 1978 samples pinned at its ceiling, the mark of a limiter.',
     )
+  })
+
+  // A limiter is inferred from the pinned samples, never measured; with no count to show,
+  // the card can only say what the figures say, that this copy is more limited.
+  it('does not claim a limiter when the pinned samples are not known', () => {
+    render(
+      <CopyComparison
+        verdict={{ winner: 'b', reason: 'peakCount' }}
+        here={{ ...wav, peakCount: null }}
+        library={aif}
+        hereLabel="WAV"
+        libraryLabel="AIF"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent('This file is more limited.')
   })
 
   // Lossy against lossless is a fact about the formats, not the cutoffs: a knee-less 16 kHz
