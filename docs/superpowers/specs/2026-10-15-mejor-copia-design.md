@@ -71,7 +71,7 @@ colorean las filas que decidieron.
 ### Textos
 
 Todos son afirmaciones de calidad y **cada frase se aprueba antes de entrar**
-([[no-afirmaciones-calidad-nuevas]]). Propuestas del boceto, pendientes de visto bueno:
+(lección del 23/09: el rojo sin medir genera reportes). Propuestas del boceto, pendientes de visto bueno:
 
 - "Mejor copia de 2 · menos limitada"
 - "Hay una copia mejor en la lista · esta está más limitada"
