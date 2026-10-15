@@ -246,6 +246,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
+    pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
     rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
     rekordboxHasSeparator: vi.fn<Api['rekordboxHasSeparator']>().mockResolvedValue(true),
     editRekordboxPlaylist: vi
@@ -1808,6 +1809,48 @@ describe('App source playlists', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(window.api.expandPaths).not.toHaveBeenCalled()
     expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The OS may hand a dragged file back resolved through a symlink (~/Music/Music links to
+  // the NAS on the DJ's machine). Those are still the dragged rows: no import, no jump to
+  // Tracks, and on the tree they go by their rekordbox entry.
+  describe('with the dropped files spelled through the resolved music folder', () => {
+    const openResolved = (over: Record<string, unknown> = {}) =>
+      openFactory({
+        getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
+        pathAliases: vi.fn(async (paths: string[]) =>
+          paths.flatMap((p) => [p, p.replace('/m/', '/Volumes/Public/Music/')]),
+        ),
+        ...over,
+      })
+
+    it('does not import its own rows dropped back in the window', async () => {
+      await openResolved()
+      vi.mocked(window.api.expandPaths).mockClear()
+      fireEvent.dragStart(rowWrapper(2), { dataTransfer: fakeDataTransfer() })
+      await act(async () => {})
+      fireEvent.drop(screen.getByTestId('sidebar'), {
+        dataTransfer: fakeDataTransfer([new File([''], 'c.wav')]),
+      })
+      await new Promise((r) => setTimeout(r, 0))
+      expect(window.api.expandPaths).not.toHaveBeenCalled()
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('adds its own rows dropped on a tree playlist by their rekordbox entry', async () => {
+      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+      await openResolved({ editRekordboxPlaylist: edit })
+      fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
+      await act(async () => {})
+      fireEvent.drop(screen.getByTestId('source-node-h'), {
+        dataTransfer: fakeDataTransfer([new File([''], 'a.wav')]),
+      })
+      expect(edit).toHaveBeenCalledWith({
+        kind: 'add',
+        playlistId: 'h',
+        tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+      })
+    })
   })
 
   // Vicent's report: a row of a Music playlist let go on the list was imported, and the rail

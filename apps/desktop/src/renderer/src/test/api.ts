@@ -218,6 +218,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     hasClipboardImage: async () => false,
     startCoverDrag: noop,
     startTrackDrag: noop,
+    pathAliases: async (paths) => paths,
     reveal: async () => {},
     openFile: async () => '',
     trashFile: async () => {},

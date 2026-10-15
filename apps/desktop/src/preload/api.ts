@@ -254,6 +254,9 @@ export interface Api {
   hasClipboardImage: () => Promise<boolean>
   startCoverDrag: (path: string) => void
   startTrackDrag: (paths: string[], coverUrl?: string) => void
+  // Every spelling of these files the OS may hand back on a drop (resolved, the home music
+  // link swapped), so rows dragged out of the list are known when they come back.
+  pathAliases: (paths: string[]) => Promise<string[]>
   reveal: (path: string) => Promise<void>
   openFile: (path: string) => Promise<string>
   // `permanentConfirmed`: the dialog said this file is deleted for good and the user agreed.

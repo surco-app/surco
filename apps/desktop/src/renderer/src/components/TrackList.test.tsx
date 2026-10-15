@@ -10,6 +10,7 @@ const api = {
   openFile: vi.fn(),
   copyText: vi.fn(),
   startTrackDrag: vi.fn(),
+  pathAliases: vi.fn(async (paths: string[]) => paths),
   getPathForFile: vi.fn((f: File) => `/music/${f.name}`),
 }
 vi.hoisted(() => {

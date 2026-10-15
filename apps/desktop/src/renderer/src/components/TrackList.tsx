@@ -1070,6 +1070,7 @@ export const TrackList = memo(function TrackList({
       selectedIds.has(track.id)
         ? tracks.filter((t) => selectedIds.has(t.id)).map((t) => t.id)
         : [track.id],
+      paths,
     )
     // The OS drag thumbnail is the file's own art, matching the row — never the cover
     // the user dropped into the editor form, which lives on the live coverUrl.

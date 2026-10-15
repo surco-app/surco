@@ -58,3 +58,22 @@ export function pathKey(options: PathMatchOptions = {}): (path: string) => strin
     return out.toLowerCase()
   }
 }
+
+// Every spelling the OS may hand back for one file: as given, resolved, and with the home
+// music link swapped either way. A drag out of the list can come back into Surco's window
+// with any of them, and its rows must still be known as the rows that were dragged.
+export function pathAliases(path: string, options: PathMatchOptions = {}): string[] {
+  const out = new Set([path])
+  try {
+    out.add(options.realPath?.(path) ?? path)
+  } catch {
+    // Unresolvable: the literal path and the prefix swaps below still name it.
+  }
+  for (const [link, target] of linkPrefixes(options)) {
+    for (const p of [...out]) {
+      if (p.startsWith(link)) out.add(target + p.slice(link.length))
+      if (p.startsWith(target)) out.add(link + p.slice(target.length))
+    }
+  }
+  return [...out]
+}

@@ -193,6 +193,8 @@ const api: Api = {
   startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
   startTrackDrag: (paths: string[], coverUrl?: string): void =>
     ipcRenderer.send('track:drag', { paths, coverUrl }),
+  pathAliases: (paths: string[]): Promise<string[]> =>
+    ipcRenderer.invoke('library:pathAliases', paths),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
   trashFile: (path: string, permanentConfirmed: boolean): Promise<void> =>

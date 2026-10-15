@@ -3,18 +3,31 @@
 // also delivers them as files to Surco's own window is not something to build on: the tree
 // reads the rows from here instead. Module state, because the list and the tree share no
 // component, and a drag is one at a time.
-let draggedRowIds: string[] | null = null
+let dragged: { ids: string[]; aliases: Set<string> } | null = null
 
-export function setDraggedRows(ids: string[]): void {
-  draggedRowIds = ids
+// The paths are the dragged rows' files. Their other spellings (resolved through the
+// symlinked music folder) arrive from main a moment later, long before any drop can.
+export function setDraggedRows(ids: string[], paths: string[] = []): void {
+  const record = { ids, aliases: new Set(paths.map((p) => p.normalize('NFC'))) }
+  dragged = record
+  if (paths.length === 0) return
+  void window.api.pathAliases(paths).then((all) => {
+    for (const p of all) record.aliases.add(p.normalize('NFC'))
+  })
 }
 
 export function draggedRows(): string[] | null {
-  return draggedRowIds
+  return dragged?.ids ?? null
 }
 
 export function clearDraggedRows(): void {
-  draggedRowIds = null
+  dragged = null
+}
+
+// Whether a path is one of the dragged rows' files, in whichever spelling the OS hands it
+// back (NFD, or resolved through a symlink).
+export function isDraggedPath(path: string): boolean {
+  return dragged?.aliases.has(path.normalize('NFC')) ?? false
 }
 
 // The dragged rows when this drop is that drag coming back down in Surco's window: every
@@ -24,9 +37,9 @@ export function ownRowsDropped(
   e: { dataTransfer?: DataTransfer | null },
   pathOf: (id: string) => string | undefined,
 ): string[] | null {
-  const ids = draggedRowIds
-  if (!ids) return null
-  const held = new Set(ids.flatMap((id) => pathOf(id)?.normalize('NFC') ?? []))
+  if (!dragged) return null
+  const { ids, aliases } = dragged
+  const held = new Set([...aliases, ...ids.flatMap((id) => pathOf(id)?.normalize('NFC') ?? [])])
   const files = Array.from(e.dataTransfer?.files ?? [])
   return files.every((f) => held.has(window.api.getPathForFile(f).normalize('NFC'))) ? ids : null
 }

@@ -118,7 +118,13 @@ import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
-import { clearDraggedRows, draggedRows, isReorderDrag, ownRowsDropped } from './lib/reorderDrag'
+import {
+  clearDraggedRows,
+  draggedRows,
+  isDraggedPath,
+  isReorderDrag,
+  ownRowsDropped,
+} from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
 import { scopedMusicSource } from './lib/reviewSource'
 import {
@@ -1841,9 +1847,9 @@ export default function App(): React.JSX.Element {
       const t = byId.get(id)
       return t ? [t] : []
     })
-    clearDraggedRows()
     const heldPaths = new Set(held.map((t) => t.inputPath.normalize('NFC')))
-    const fromList = held.length > 0 && paths.every((p) => heldPaths.has(p))
+    const fromList = held.length > 0 && paths.every((p) => heldPaths.has(p) || isDraggedPath(p))
+    clearDraggedRows()
     const byPath = new Map(tracksRef.current.map((t) => [t.inputPath.normalize('NFC'), t]))
     const tracks = fromList
       ? held.map(trackRef)
