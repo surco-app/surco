@@ -594,28 +594,30 @@ export default function App(): React.JSX.Element {
   // again and only loads what is new. Stable so that re-read, not every render, runs it.
   const browser = useSourceBrowser()
   const openSourcePlaylistStable = useStableCallback(openSourcePlaylist)
-  useEffect(() => {
-    if (browser.entries && browser.source)
-      void openSourcePlaylistStable(browser.entries, browser.source)
-  }, [browser.entries, browser.source, openSourcePlaylistStable])
-  // Told once per opened playlist, so the gap between Music's count and the rows here has a
-  // reason; a refocus re-read of the same playlist is not a new opening.
+  // Told once per opened playlist, so the gap between the source's count and the rows here
+  // has a reason; a refocus re-read of the same playlist is not a new opening. Missing
+  // counts both rows the source has no file for and files it names that the disk lacks.
   const noticedPlaylist = useRef<string | null>(null)
+  const { entries: sourceEntries, source: sourceKind, playlist: sourcePlaylist } = browser
   useEffect(() => {
-    if (!browser.entries || !browser.source || !browser.playlist) return
-    const opened = `${browser.source}:${browser.playlist.id}`
-    if (noticedPlaylist.current === opened) return
-    noticedPlaylist.current = opened
-    const missing = browser.entries.filter((e) => !e.separator && e.path === null).length
-    if (missing === 0) return
-    pushToast(store, {
-      key: 'source-missing-files',
-      tone: 'neutral',
-      message: tr('sources.missing', { count: missing, name: browser.playlist.name }),
-      duration: 4000,
-      testid: 'app-notice',
+    if (!sourceEntries || !sourceKind) return
+    void openSourcePlaylistStable(sourceEntries, sourceKind).then((notOnDisk) => {
+      if (!sourcePlaylist) return
+      const opened = `${sourceKind}:${sourcePlaylist.id}`
+      if (noticedPlaylist.current === opened) return
+      noticedPlaylist.current = opened
+      const noFile = sourceEntries.filter((e) => !e.separator && e.path === null).length
+      const missing = noFile + notOnDisk
+      if (missing === 0) return
+      pushToast(store, {
+        key: 'source-missing-files',
+        tone: 'neutral',
+        message: tr('sources.missing', { count: missing, name: sourcePlaylist.name }),
+        duration: 4000,
+        testid: 'app-notice',
+      })
     })
-  }, [browser.entries, browser.source, browser.playlist, store, tr])
+  }, [sourceEntries, sourceKind, sourcePlaylist, openSourcePlaylistStable, store, tr])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),

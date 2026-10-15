@@ -93,8 +93,8 @@ describe('opening a source playlist', () => {
     )
     const onDuplicatesSkipped = vi.fn()
     const { result } = setup({ expandPaths }, { onDuplicatesSkipped })
-    let first: Promise<void> = Promise.resolve()
-    let second: Promise<void> = Promise.resolve()
+    let first: Promise<number> = Promise.resolve(0)
+    let second: Promise<number> = Promise.resolve(0)
     act(() => {
       first = result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
       second = result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')

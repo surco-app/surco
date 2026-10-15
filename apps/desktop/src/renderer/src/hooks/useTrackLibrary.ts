@@ -133,7 +133,7 @@ interface TrackLibrary {
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   pickFiles: () => Promise<void>
-  openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<void>
+  openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<number>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
@@ -690,16 +690,20 @@ export function useTrackLibrary({
   // the ones not already in the crate are passed on. That keeps a track loaded from another
   // playlist with its edits, and keeps addPaths from reporting it as a skipped duplicate —
   // going back to a playlist is not something the user did twice.
+  //
+  // Resolves how many of the playlist's files are not on disk: expandPaths already stats
+  // them, so the paths it drops are that set, without a second stat per row (a network
+  // crate pays ~340 ms per 100 files for it).
   async function openSourcePlaylist(
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
-  ): Promise<void> {
+  ): Promise<number> {
     const loaded = new Set(tracksRef.current.map((t) => t.inputPath))
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
         !e.separator && e.path !== null && !loaded.has(e.path),
     )
-    if (fresh.length === 0) return
+    if (fresh.length === 0) return 0
     // Staged BEFORE expanding: the expand stream can create the rows before the awaited
     // call returns, and they must find the stamp waiting.
     for (const e of fresh) {
@@ -711,7 +715,10 @@ export function useTrackLibrary({
         })
       }
     }
-    const expanded = await window.api.expandPaths([...new Set(fresh.map((e) => e.path))])
+    const freshPaths = [...new Set(fresh.map((e) => e.path))]
+    const expanded = await window.api.expandPaths(freshPaths)
+    const onDisk = new Set(expanded)
+    const dropped = freshPaths.filter((p) => !onDisk.has(p)).length
     // Checked again after the await: an overlapping open of the same playlist (a focus
     // refetch while the first expand is still running) may have added these meanwhile,
     // and passing them on would report them as skipped duplicates.
@@ -725,8 +732,8 @@ export function useTrackLibrary({
       appleMusicMeta.current.delete(e.path)
       pendingSeed.current.delete(e.path)
     }
-    if (toAdd.length === 0) return
-    await addPaths(toAdd)
+    if (toAdd.length > 0) await addPaths(toAdd)
+    return dropped
   }
 
   // Publishes to the live crate as well as to state, for the same reason the import

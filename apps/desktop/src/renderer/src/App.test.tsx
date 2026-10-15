@@ -807,6 +807,29 @@ describe('App source playlists', () => {
     expect(screen.queryByTestId(/^track-separator-/)).not.toBeInTheDocument()
   })
 
+  // A file rekordbox still lists but the disk no longer has is a row that silently vanishes
+  // from the playlist; the notice is what tells the user the gap is not Surco losing it.
+  it('counts a playlist file that is gone from disk in the missing-file notice', async () => {
+    const entry = (path: string | null) => ({ path, separator: false, meta: {} })
+    setApi({
+      readTags: vi.fn(async () => ({ title: 'Alpha', artist: 'DJ' })),
+      expandPaths: vi.fn(async (paths: string[]) => paths.filter((p) => p !== '/m/gone.wav')),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([entry('/m/a.wav'), entry('/m/gone.wav')]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      '1 track from “Factory” has no file on disk',
+    )
+  })
+
   // A collection repeats the same set across folders ("Todas", "Top") in another order.
   // Keeping the selected track's list still while it is edited must not keep the previous
   // playlist's order once another playlist is opened, or its breaks land between the wrong rows.
