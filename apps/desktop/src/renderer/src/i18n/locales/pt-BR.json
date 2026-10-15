@@ -74,7 +74,8 @@
         "playlistMusic_one": "A única faixa de “{{name}}”. Altera o Apple Music",
         "playlistMusic_other": "As {{count}} faixas de “{{name}}”. Altera o Apple Music",
         "duplicates": "De “{{name}}” em toda a sua biblioteca do Music"
-      }
+      },
+      "showDuplicates": "Mostrar duplicados"
     },
     "cancelAutoMatch": "Parar a correspondência automática: as faixas já correspondidas mantêm as tags",
     "cancelAnalyze": "Parar a análise: as faixas já analisadas mantêm o veredito"

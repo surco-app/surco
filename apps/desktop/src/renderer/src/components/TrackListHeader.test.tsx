@@ -49,6 +49,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       selectedIds={['t1']}
       selectedPosition={1}
       canReviewList
+      reviewDetail="The 1 track in the list. Changes the file"
       {...handlers}
       {...over}
     />,
@@ -220,6 +221,56 @@ describe('TrackListHeader actions row', () => {
     openMenu()
     fireEvent.mouseDown(document.body)
     expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  // The same words now review a list, a rekordbox playlist or Apple Music; the second line
+  // is what tells the user which, and that Apple Music, not a file, is what changes.
+  it('says under Review metadata what it will touch, as its description', () => {
+    renderHeader({ reviewDetail: 'The 70 tracks in “Factory”. Changes the files' })
+    const menu = openMenu()
+    const item = within(menu).getByTestId('list-review-open')
+    expect(item).toHaveAccessibleName(i18n.t('header.menu.review'))
+    expect(item).toHaveAccessibleDescription('The 70 tracks in “Factory”. Changes the files')
+    expect(within(menu).getByTestId('list-review-open-detail')).toHaveTextContent(
+      'The 70 tracks in “Factory”. Changes the files',
+    )
+  })
+
+  it('offers duplicates right after the review only when an Apple Music playlist gives them', () => {
+    const onShow = vi.fn()
+    renderHeader({ duplicates: { detail: 'From “2K” across your whole Music library', onShow } })
+    const menu = openMenu()
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((el) => el.dataset.testid),
+    ).toEqual([
+      'list-review-open',
+      'music-duplicates-open',
+      'fill-all',
+      'open-find-replace',
+      'trash-selected',
+      'clear-all',
+    ])
+    const item = within(menu).getByTestId('music-duplicates-open')
+    expect(item).toHaveAccessibleName(i18n.t('header.menu.showDuplicates'))
+    expect(within(menu).getByTestId('music-duplicates-open-detail')).toHaveTextContent(
+      'From “2K” across your whole Music library',
+    )
+    fireEvent.click(item)
+    expect(onShow).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  // The duplicates review holds its writes like the metadata one, so it waits with it.
+  it('holds Show duplicates with the review while the review cannot open', () => {
+    renderHeader({
+      canReviewList: false,
+      duplicates: { detail: '“2K” has no tracks to review', onShow: vi.fn() },
+    })
+    const menu = openMenu()
+    expect(within(menu).getByTestId('list-review-open')).toBeDisabled()
+    expect(within(menu).getByTestId('music-duplicates-open')).toBeDisabled()
   })
 })
 

@@ -5,6 +5,7 @@ import {
   ArrowUpNarrowWide,
   CaseSensitive,
   Clock,
+  Copy,
   Crosshair,
   Ellipsis,
   FileAudio,
@@ -22,7 +23,7 @@ import {
   User,
 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { LibrarySource } from '../lib/librarySource'
 import type { FilterSelection, TrackSort } from '../lib/triage'
@@ -70,6 +71,11 @@ interface Props {
   onFindReplace: () => void
   onReviewList: () => void
   canReviewList: boolean
+  // What the review would touch, under its label: the list, a rekordbox playlist or an
+  // Apple Music playlist read the same words otherwise.
+  reviewDetail: string
+  // Only with an Apple Music playlist open: its copies across the whole library.
+  duplicates?: { detail: string; onShow: () => void }
   onClearAll: () => void
   onRemoveSelected: () => void
   onTrashSelected: () => void
@@ -80,6 +86,7 @@ function MenuAction({
   testid,
   icon: Icon,
   label,
+  detail,
   hint,
   danger,
   disabled,
@@ -88,24 +95,41 @@ function MenuAction({
   testid: string
   icon: LucideIcon
   label: string
+  detail?: string
   hint?: string
   danger?: boolean
   disabled?: boolean
   onClick: () => void
 }): React.JSX.Element {
+  const detailId = useId()
   return (
+    // Named by its label alone and described by the second line, so a screen reader says
+    // the action first and what it touches after.
     <button
       type="button"
       role="menuitem"
       data-testid={testid}
       disabled={disabled}
       onClick={onClick}
+      aria-label={label}
+      aria-describedby={detail ? detailId : undefined}
       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
       <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
-      <span className="flex-1">{label}</span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span>{label}</span>
+        {detail && (
+          <span
+            id={detailId}
+            data-testid={`${testid}-detail`}
+            className="text-[11px] text-fg-faint"
+          >
+            {detail}
+          </span>
+        )}
+      </span>
       {hint && (
         <span aria-hidden="true" className="shrink-0 pl-3 text-fg-faint">
           {hint}
@@ -148,6 +172,8 @@ export function TrackListHeader({
   onFindReplace,
   onReviewList,
   canReviewList,
+  reviewDetail,
+  duplicates,
   onClearAll,
   onRemoveSelected,
   onTrashSelected,
@@ -365,10 +391,21 @@ export function TrackListHeader({
                       testid="list-review-open"
                       icon={SpellCheck}
                       label={tr('header.menu.review')}
+                      detail={reviewDetail}
                       hint={hintFor('list-review')}
                       disabled={!canReviewList}
                       onClick={() => run(onReviewList)}
                     />
+                    {duplicates && (
+                      <MenuAction
+                        testid="music-duplicates-open"
+                        icon={Copy}
+                        label={tr('header.menu.showDuplicates')}
+                        detail={duplicates.detail}
+                        disabled={!canReviewList}
+                        onClick={() => run(duplicates.onShow)}
+                      />
+                    )}
                     <MenuAction
                       testid="fill-all"
                       icon={Tag}

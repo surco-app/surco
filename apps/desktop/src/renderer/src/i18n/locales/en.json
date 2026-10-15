@@ -74,7 +74,8 @@
         "playlistMusic_one": "The only track in “{{name}}”. Changes Apple Music",
         "playlistMusic_other": "The {{count}} tracks in “{{name}}”. Changes Apple Music",
         "duplicates": "From “{{name}}” across your whole Music library"
-      }
+      },
+      "showDuplicates": "Show duplicates"
     },
     "cancelAutoMatch": "Stop auto-matching: tracks already matched keep their tags",
     "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"

@@ -74,7 +74,8 @@
         "playlistMusic_one": "Le seul morceau de « {{name}} ». Modifie Apple Music",
         "playlistMusic_other": "Les {{count}} morceaux de « {{name}} ». Modifie Apple Music",
         "duplicates": "De « {{name}} » dans toute ta bibliothèque Music"
-      }
+      },
+      "showDuplicates": "Afficher les doublons"
     },
     "cancelAutoMatch": "Arrêter l'association automatique : les morceaux déjà associés gardent leurs tags",
     "cancelAnalyze": "Arrêter l'analyse : les morceaux déjà analysés gardent leur verdict"

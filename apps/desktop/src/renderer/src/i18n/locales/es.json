@@ -74,7 +74,8 @@
         "playlistMusic_one": "La única pista de «{{name}}». Cambia Apple Music",
         "playlistMusic_other": "Las {{count}} pistas de «{{name}}». Cambia Apple Music",
         "duplicates": "De «{{name}}» en toda tu biblioteca de Music"
-      }
+      },
+      "showDuplicates": "Mostrar duplicados"
     },
     "cancelAutoMatch": "Detener el emparejado: las pistas ya emparejadas conservan sus etiquetas",
     "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"

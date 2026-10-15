@@ -74,7 +74,8 @@
         "playlistMusic_one": "Der einzige Track aus „{{name}}“. Ändert Apple Music",
         "playlistMusic_other": "Die {{count}} Tracks aus „{{name}}“. Ändert Apple Music",
         "duplicates": "Aus „{{name}}“ in deiner ganzen Music-Mediathek"
-      }
+      },
+      "showDuplicates": "Duplikate anzeigen"
     },
     "cancelAutoMatch": "Automatisches Zuordnen stoppen: bereits zugeordnete Tracks behalten ihre Tags",
     "cancelAnalyze": "Analyse stoppen: bereits analysierte Tracks behalten ihr Ergebnis"

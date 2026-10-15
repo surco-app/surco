@@ -120,6 +120,7 @@ import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { clearDraggedRows, draggedRows, isReorderDrag } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
+import { reviewDetail } from './lib/reviewTarget'
 import { sameTracks } from './lib/sameTracks'
 import {
   type ClickMods,
@@ -2386,6 +2387,7 @@ export default function App(): React.JSX.Element {
                           onFindReplace={onFindReplace}
                           onReviewList={openListReview}
                           canReviewList={tracks.length > 0 && !batching}
+                          reviewDetail={reviewDetail(tr, { kind: 'list', count: tracks.length })}
                           onClearAll={onClearAll}
                           onRemoveSelected={onRemoveSelected}
                           onTrashSelected={onTrashSelected}
