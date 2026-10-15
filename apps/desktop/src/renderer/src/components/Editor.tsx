@@ -203,6 +203,9 @@ interface Props {
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
 
+// macOS paths compare without case, and Music may hand back the other Unicode form.
+const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
+
 const COPY_STATE_LABEL = {
   here: 'editor.copyHereBetter',
   library: 'editor.copyLibraryBetter',
@@ -630,15 +633,18 @@ export const Editor = memo(function Editor({
   // be measured gives no verdict and leaves that check as the only answer. A pair that could
   // not be lined up is not one master, so compareCopies skips the level criteria and the
   // format and spectrum still decide.
-  const hereFacts = useCopyFacts(item.inputPath, !!replacedCopyPath, 'high')
-  const libraryFacts = useCopyFacts(replacedCopyPath, !!replacedCopyPath)
-  const copyPair = usePairFacts(item.inputPath, replacedCopyPath, !!replacedCopyPath)
+  // A track opened from the library's own folder is that copy, so there is nothing to compare.
+  const comparedCopyPath =
+    pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
+  const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
+  const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
+  const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
   const copyVerdict =
     hereFacts && libraryFacts && copyPair !== undefined
       ? compareCopies(hereFacts, libraryFacts, copyPair)
       : null
   const copyMeasuring =
-    !!replacedCopyPath &&
+    !!comparedCopyPath &&
     (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
   const [copyOpenFor, setCopyOpenFor] = useState('')
   const copyOpen =
