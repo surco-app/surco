@@ -21,6 +21,7 @@ import type {
   DeclickConfig,
   ForeignTag,
   KeyResult,
+  LimiterGlimpse,
   LoudnessResult,
   MetaRead,
   MetaTextKey,
@@ -70,6 +71,7 @@ import {
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
 import { isSameFile } from './inplace'
+import { glimpseColumns, pickCeilingWindow } from './limiterGlimpse'
 import { isMissingInputError } from './missingInput'
 import { absorbMp3HeadJunk } from './mp3Head'
 import { recordNmlPatch } from './nmlBatch'
@@ -3020,6 +3022,75 @@ export async function comparePair(
     correlation: (n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb)),
     residualDb: residual === 0 ? -Infinity : 10 * Math.log10(residual / saa),
     gainDb: 20 * Math.log10(gain),
+  }
+}
+
+// The stretch the glimpse shows, how far either side of it the two copies are searched for
+// their offset (comparePair's one second of reach), and how many columns it is drawn in.
+const GLIMPSE_SECONDS = 0.4
+const GLIMPSE_REACH_SECONDS = 1
+const GLIMPSE_COLUMNS = 600
+
+// Finds where the worse copy's limiter works hardest (one astats pass, windows of 16384
+// samples on the first channel, ~0.25 s on a 6-minute WAV) and returns that stretch of both
+// copies at the worse copy's rate, lined up and at the same loudness. The worse copy's own
+// rate keeps its flattened peaks from being reshaped by a resampler. Null when either copy
+// cannot be decoded, or the worse one has no ceiling to find.
+export async function limiterGlimpse(
+  worse: string,
+  better: string,
+  sampleRate: number,
+  signal?: AbortSignal,
+): Promise<LimiterGlimpse | null> {
+  try {
+    const { stdout } = await run(
+      ffmpegPath,
+      [
+        '-v',
+        'error',
+        ...forcedInputArgs(worse),
+        '-i',
+        worse,
+        '-af',
+        'pan=mono|c0=c0,asetnsamples=n=16384,astats=metadata=1:reset=1:measure_perchannel=Peak_count+Min_level+Max_level:measure_overall=none,ametadata=print:file=-',
+        '-f',
+        'null',
+        '-',
+      ],
+      { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS, signal },
+    )
+    const at = pickCeilingWindow(String(stdout))
+    if (at === null) return null
+    const startSec = Math.max(0, at - GLIMPSE_REACH_SECONDS)
+    const decode = (input: string): Promise<Float32Array> =>
+      decodePcm(input, {
+        sampleRate,
+        startSec,
+        seconds: at - startSec + GLIMPSE_SECONDS + GLIMPSE_REACH_SECONDS,
+        maxBufferMb: 16,
+        signal,
+      })
+    const [a, b] = await Promise.all([decode(worse), decode(better)])
+    const lag = bestLag(a, b, 0)
+    if (lag === null) return null
+    let ab = 0
+    let bb = 0
+    for (let i = Math.max(0, -lag); i < Math.min(a.length, b.length - lag); i++) {
+      ab += a[i] * b[i + lag]
+      bb += b[i + lag] * b[i + lag]
+    }
+    if (ab <= 0 || bb === 0) return null
+    const length = Math.round(GLIMPSE_SECONDS * sampleRate)
+    // A window at the very start or end of the track can leave the other copy, offset by
+    // the lag, short of it; shifting by those few samples keeps the same hits in view.
+    const from = Math.min(
+      Math.max(Math.round((at - startSec) * sampleRate), -lag),
+      Math.min(a.length, b.length - lag) - length,
+    )
+    return glimpseColumns(a, b, { lag, gain: ab / bb, from, length, columns: GLIMPSE_COLUMNS })
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return null
   }
 }
 

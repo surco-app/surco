@@ -9,6 +9,7 @@ import type {
   BpmResult,
   DockIconFrames,
   KeyResult,
+  LimiterGlimpse,
   ListFixRequest,
   ListRemoval,
   LoudnessResult,
@@ -212,6 +213,12 @@ const api: Api = {
   fingerprint: (path: string, priority: 'high' | 'low' = 'low'): Promise<string | null> =>
     invokeAudio('audio:fingerprint', path, priority),
   comparePair: (a: string, b: string): Promise<PairFacts | null> => invokeAudio('audio:pair', a, b),
+  limiterGlimpse: (
+    worse: string,
+    better: string,
+    sampleRate: number,
+  ): Promise<LimiterGlimpse | null> =>
+    invokeAudio('audio:limiterGlimpse', worse, better, sampleRate),
   properties: (path: string): Promise<TrackProperties | null> =>
     invokeAudio('audio:properties', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>
