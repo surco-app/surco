@@ -89,6 +89,9 @@ beforeAll(async () => {
       { PlaylistID: 'factory', ContentID: 'c2', TrackNo: 6, deleted: true },
       { PlaylistID: 'cant90todas', ContentID: 'c2', TrackNo: 1 },
       { PlaylistID: 'nineties', ContentID: 'c1', TrackNo: 1, deleted: null },
+      { PlaylistID: 'house', ContentID: 'c1', TrackNo: 1 },
+      { PlaylistID: 'house', ContentID: 'c2', TrackNo: 2 },
+      { PlaylistID: 'house', ContentID: 'c1', TrackNo: 3 },
     ],
   })
   const opened = openRekordboxDb(path, { readonly: true })
@@ -117,6 +120,12 @@ describe('readRekordboxTree', () => {
     // and a deleted link: the user sees the two tracks and the streaming row's absence.
     const factory = readRekordboxTree(db)[1].children?.[1]
     expect(factory?.count).toBe(3)
+  })
+
+  it('counts a track linked twice once, since the list shows each file in one row', () => {
+    // Measured: Factory read 76 in the tree over 70 rows, COMBOS › 20Ks 565 over 325.
+    const house = readRekordboxTree(db)[2]
+    expect(house.count).toBe(2)
   })
 
   it('keeps a link whose deleted flag is NULL, since only 1 means deleted', () => {

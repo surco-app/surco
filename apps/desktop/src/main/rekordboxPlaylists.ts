@@ -25,10 +25,14 @@ interface PlaylistRow {
 }
 
 export function readRekordboxTree(db: RekordboxDb): SourceNode[] {
+  // Distinct tracks, not links: a track linked twice in one playlist is one row in the
+  // list, and a count the list never reaches reads as missing tracks. Streaming rows are
+  // still counted (the open toast announces them), and two content rows for one file
+  // still count twice; neither can be told apart here without the disk.
   const rows = db
     .prepare(
       `SELECT p.ID, p.Name, p.Attribute, p.ParentID,
-              (SELECT count(*) FROM djmdSongPlaylist s JOIN djmdContent c ON c.ID = s.ContentID
+              (SELECT count(DISTINCT c.ID) FROM djmdSongPlaylist s JOIN djmdContent c ON c.ID = s.ContentID
                 WHERE s.PlaylistID = p.ID AND ${LIVE_LINK} AND NOT ${IS_SEPARATOR}) AS n
          FROM djmdPlaylist p
         WHERE coalesce(p.rb_local_deleted, 0) = 0 AND p.Attribute IN (0, 1)
