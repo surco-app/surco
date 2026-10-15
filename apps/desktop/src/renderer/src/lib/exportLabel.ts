@@ -18,8 +18,8 @@ export interface ExportLabelState {
   // offer a replacement instead of an add. Ranked below the in-place and stale updates:
   // those already describe an update of the file itself.
   replaces?: boolean
-  // The library's copy measured better than this file, so the replace offer turns into a
-  // note that the library already holds the better one. Pressing still converts.
+  // The library's copy measured better than this file, so the replace offer says it goes
+  // against that verdict ("anyway"). It still names the action, and pressing still replaces.
   libraryBetter?: boolean
   // Whether the pending output keeps the source's format with no filter re-rendering the
   // audio. Only then can an in-place or stale export be a tag update; otherwise it is a
@@ -85,7 +85,8 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.appleMusicUpdate' }
   if (state.done) return { key: 'editor.exportAgain' }
   if (state.replaces) {
-    if (state.libraryBetter) return { key: 'editor.libraryHasBetter' }
+    if (state.libraryBetter)
+      return { key: 'editor.libraryHasBetter', options: { format: state.format } }
     return { key: 'editor.replaceMusic', options: { format: state.format } }
   }
   if (!state.withAppleMusic && !state.withEngineDj && place) {

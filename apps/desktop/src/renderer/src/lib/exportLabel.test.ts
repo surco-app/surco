@@ -74,12 +74,19 @@ describe('exportButtonLabel', () => {
     ).toEqual({ key: 'editor.replaceMusic', options: { format: 'AIFF' } })
   })
 
-  // Offering to replace a copy that measured better would push the worse file into the
-  // library; the button says so instead, and pressing it still converts.
-  it('says Apple Music already has a better copy instead of offering the replace', () => {
+  // Replacing a copy that measured better pushes the worse file into the library. The
+  // button still names what pressing it does, and the "anyway" says it goes against the
+  // verdict the pill shows.
+  it('offers the replace as a deliberate one when Apple Music has the better copy', () => {
     expect(
-      exportButtonLabel({ ...base, replaces: true, libraryBetter: true, withAppleMusic: true }),
-    ).toEqual({ key: 'editor.libraryHasBetter' })
+      exportButtonLabel({
+        ...base,
+        replaces: true,
+        libraryBetter: true,
+        withAppleMusic: true,
+        format: 'AIFF',
+      }),
+    ).toEqual({ key: 'editor.libraryHasBetter', options: { format: 'AIFF' } })
   })
 
   // The flag only speaks to the replace offer; with nothing to supersede the plain label

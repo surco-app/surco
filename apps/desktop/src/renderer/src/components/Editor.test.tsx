@@ -3537,13 +3537,12 @@ describe('Editor Apple Music library badge', () => {
   })
 
   // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
-  // so the button stops offering it; the press still converts, one deliberate click away.
-  it('stops offering the replace when Apple Music has the better copy', async () => {
+  // so the button says the replace goes against the verdict; it still names the action
+  // and the press still replaces.
+  it('offers the replace as a deliberate one when Apple Music has the better copy', async () => {
     const { onProcess } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent(
-        'Apple Music already has a better copy',
-      ),
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway with \w+$/),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcess).toHaveBeenCalled()

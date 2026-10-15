@@ -724,7 +724,7 @@
     "copyLimitedHereBare": "Este arquivo passou por um limitador.",
     "copySameAudio": "Mesmas amostras, mesmo ganho. Só muda o contêiner.",
     "copyNoDifference": "Nenhuma diferença medida entre as duas cópias.",
-    "libraryHasBetter": "O Apple Music já tem uma cópia melhor",
+    "libraryHasBetter": "Substituir mesmo assim por {{format}}",
     "replaceMusic": "Substituir por {{format}} + Apple Music",
     "requiredEmpty": "Obrigatório: preencha antes de converter",
     "coverMixed": "As faixas selecionadas têm capas diferentes",

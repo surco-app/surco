@@ -724,7 +724,7 @@
     "copyLimitedHereBare": "This file went through a limiter.",
     "copySameAudio": "Same samples, same gain. Only the container differs.",
     "copyNoDifference": "No measured difference between the two copies.",
-    "libraryHasBetter": "Apple Music already has a better copy",
+    "libraryHasBetter": "Replace anyway with {{format}}",
     "replaceMusic": "Replace with {{format}} + Apple Music",
     "requiredEmpty": "Required: fill it in before converting",
     "coverMixed": "The selected tracks have different artwork",
