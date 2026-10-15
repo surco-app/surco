@@ -625,8 +625,21 @@ export default function App(): React.JSX.Element {
   // Music, and leaving it selected there kept its editor open beside a list without it.
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
   const selectionBySource = useRef(new Map<PlaylistSource | null, Selection>())
+  // Another playlist of the same source hides the rows of the one left, which stay in the
+  // working list: a selection kept across the switch let the editor, the row menu (a
+  // rekordbox write among its items) and the bulk actions act on rows no longer on screen.
+  // It is set aside while the new rows load and comes back narrowed to them once they land.
+  const heldSelection = useRef<Selection | null>(null)
+  const selectPlaylist = useStableCallback((node: SourceNode, folders: string[]) => {
+    if (node.id !== browser.playlist?.id) {
+      heldSelection.current ??= selection
+      setSelection({ ids: [], anchor: null })
+    }
+    browser.selectPlaylist(node, folders)
+  })
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return
+    heldSelection.current = null
     selectionBySource.current.set(browser.source, selection)
     const kept = selectionBySource.current.get(next)
     const alive = new Set(tracks.map((t) => t.id))
@@ -1264,6 +1277,14 @@ export default function App(): React.JSX.Element {
     () => playlistScope?.tracks ?? (browser.source ? [] : tracksView),
     [playlistScope, browser.source, tracksView],
   )
+  useEffect(() => {
+    const held = heldSelection.current
+    if (!held || !playlistScope) return
+    heldSelection.current = null
+    const shown = new Set(playlistScope.tracks.map((t) => t.id))
+    const ids = held.ids.filter((id) => shown.has(id))
+    setSelection({ ids, anchor: held.anchor && shown.has(held.anchor) ? held.anchor : null })
+  }, [playlistScope])
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
   // entries load the list is empty, and the order must follow on arrival.
   const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
@@ -2384,7 +2405,7 @@ export default function App(): React.JSX.Element {
                     nodes={browser.tree}
                     failed={browser.treeFailed}
                     selectedId={browser.playlist?.id ?? null}
-                    onSelect={browser.selectPlaylist}
+                    onSelect={selectPlaylist}
                     edit={browser.source === 'rekordbox' ? treeEdit : undefined}
                   />
                 )}

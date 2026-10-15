@@ -1515,6 +1515,94 @@ describe('App source playlists', () => {
     )
   })
 
+  // Opening another playlist of the same source hides the rows of the one left, yet they
+  // stay in the working list. A selection kept across the switch made the editor, the row
+  // menu and the bulk actions act on rows the DJ could no longer see, a rekordbox write
+  // among them. Only what the new view shows may stay selected.
+  describe('switching playlists inside rekordbox', () => {
+    const HOUSE_ENTRIES = [linked('/m/b.wav', 'h2'), linked('/m/c.wav', 'h3')]
+    const openThree = async (over: Record<string, unknown> = {}) => {
+      await openFactory({
+        loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
+          { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+          { id: 'h', name: 'House', kind: 'playlist', count: 2 },
+          { id: 'g', name: 'Gym', kind: 'playlist', count: 0 },
+        ]),
+        loadRekordboxPlaylist: vi.fn(async (id: string) =>
+          id === 'h' ? HOUSE_ENTRIES : id === 'g' ? [] : FACTORY_ENTRIES,
+        ),
+        ...over,
+      })
+    }
+    const openHouse = async () => {
+      fireEvent.click(screen.getByTestId('source-node-h'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    }
+    const selectedTitles = () =>
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent)
+
+    it('adds only the rows of the open playlist to another one', async () => {
+      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+        applied: true,
+        report: { added: 2, already: 0, notInCollection: 0, ambiguous: 0 },
+      })
+      await openThree({ editRekordboxPlaylist: edit })
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      fireEvent.click(rows[2], { metaKey: true })
+      await openHouse()
+      expect(selectedTitles()).toEqual([
+        expect.stringContaining('Bravo'),
+        expect.stringContaining('Charlie'),
+      ])
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      fireEvent.click(screen.getByTestId('track-menu-playlist-g'))
+      expect(edit).toHaveBeenCalledWith({
+        kind: 'add',
+        playlistId: 'g',
+        tracks: [
+          { contentId: 'c-h2', paths: ['/m/b.wav'] },
+          { contentId: 'c-h3', paths: ['/m/c.wav'] },
+        ],
+      })
+    })
+
+    it('closes the editor of a row the new playlist does not hold', async () => {
+      await openThree()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+      await openHouse()
+      expect(selectedTitles()).toEqual([])
+      expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
+    })
+
+    it('keeps the editor on a row the new playlist also holds', async () => {
+      await openThree()
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+      await openHouse()
+      expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')])
+      expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+    })
+
+    it('has no selection to trash when the new playlist holds none of it', async () => {
+      await openThree()
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      fireEvent.click(screen.getByTestId('source-node-g'))
+      await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+      runMenu('trash-selected')
+      await act(async () => {})
+      expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
+    })
+  })
+
   // Copying between playlists names the exact rekordbox entry of a row read from a
   // playlist, so the symlinked twins copy instead of being refused.
   it('adds a row to another playlist from its menu, naming its rekordbox entry', async () => {
