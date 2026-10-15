@@ -320,8 +320,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     },
   )
 
-  // Not cached on disk: pairs are few, and the answer changes when either file does. The
-  // renderer keeps it for the session instead.
+  // Not cached on disk: pairs are few, and the answer changes when either file does.
   handleAudio('audio:pair', async (_e, a: string, b: string) => {
     try {
       return await cancellable(a, 'low', (signal) =>

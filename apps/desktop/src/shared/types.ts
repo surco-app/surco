@@ -1206,10 +1206,12 @@ export type SpectrumVerdict = Omit<SpectrumResult, 'image'>
 // One track in an Engine DJ export request. The renderer ships this serializable shape
 // across IPC; the main process resolves it to an absolute path on disk (for the relative
 // path Engine stores and the file size) before writing the SQLite library.
+
 // Whether two copies come from the same master: both aligned on the lag that best matches
 // them, then compared sample by sample. Peak count and crest only rank copies inside one
 // master, so the best-copy verdict reads this first. residualDb is what is left of a once b
-// is scaled by gainDb (-Infinity when nothing is left).
+// is scaled by gainDb (-Infinity when nothing is left). The probe gives no PairFacts at
+// all when the best fit is inverted or unrelated (gain <= 0), so gainDb is always finite.
 export interface PairFacts {
   correlation: number
   residualDb: number

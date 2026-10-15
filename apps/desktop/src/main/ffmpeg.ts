@@ -2899,31 +2899,40 @@ export async function audioFingerprint(
   }
 }
 
-// Same-master probe at the tempo rate: alignment and correlation live in the body of the
-// mix, so 11025 Hz mono is enough. Ten minutes bounds the buffer (~26 MB each) and is
-// more than a track needs to show whether two copies share a master.
-const PAIR_SAMPLE_RATE = 11025
-const PAIR_MAX_SECONDS = 600
+// Same-master probe, at 44.1 kHz throughout. A lag found at a lower rate cannot settle a
+// 44.1 kHz offset that is not a multiple of the decimation, and on tonal or looped
+// material the true offset, falling between coarse samples, scores below a repeat a beat
+// away: the coarse search then hands the refinement the wrong neighbourhood. The first
+// 91 s of each copy (~16 MB) hold the 60 s compared plus the one second of reach.
+const PAIR_RATE = 44100
+const PAIR_DECODE_SECONDS = 91
+const PAIR_WINDOW_SECONDS = 60
 const PAIR_MIN_SECONDS = 10
+const PAIR_SILENT_RMS = 1e-6
 
 // The lag (in samples, a[i] lines up with b[i + lag]) within one second either way that
-// best matches a 5 s window of a, by normalised cross-correlation at full rate. Done
-// through the FFT: the direct sum is ~1.2e9 multiply-adds, and a coarse search on a
-// decimated grid steps over the peak, which on bright tonal material is one sample wide.
-function bestLag(a: Float32Array, b: Float32Array): number {
-  const rate = PAIR_SAMPLE_RATE
-  const from = a.length >= 40 * rate ? 30 * rate : 0
-  const width = Math.min(a.length, from + 5 * rate) - from
-  const span = width + 2 * rate
+// best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
+// Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
+// window is silent, since silence lines up with anything.
+function bestLag(a: Float32Array, b: Float32Array, from: number): number | null {
+  const reach = PAIR_RATE
+  const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
+  const silent = width * PAIR_SILENT_RMS ** 2
+  const span = width + 2 * reach
   let n = 1
   while (n < span) n <<= 1
   const wRe = new Float64Array(n)
   const wIm = new Float64Array(n)
   const sRe = new Float64Array(n)
   const sIm = new Float64Array(n)
-  for (let i = 0; i < width; i++) wRe[i] = a[from + i]
+  let windowEnergy = 0
+  for (let i = 0; i < width; i++) {
+    wRe[i] = a[from + i]
+    windowEnergy += wRe[i] * wRe[i]
+  }
+  if (windowEnergy < silent) return null
   for (let k = 0; k < span; k++) {
-    const j = from - rate + k
+    const j = from - reach + k
     if (j >= 0 && j < b.length) sRe[k] = b[j]
   }
   const energy = new Float64Array(span + 1)
@@ -2937,24 +2946,26 @@ function bestLag(a: Float32Array, b: Float32Array): number {
     sIm[k] = -im
   }
   fft(sRe, sIm)
-  let best = 0
+  let best: number | null = null
   let bestScore = -Infinity
-  for (let k = 0; k <= 2 * rate; k++) {
+  for (let k = 0; k <= 2 * reach; k++) {
     const e = energy[k + width] - energy[k]
-    if (e <= 0) continue
+    if (e < silent) continue
     const score = sRe[k] / Math.sqrt(e)
     if (score > bestScore) {
       bestScore = score
-      best = k - rate
+      best = k - reach
     }
   }
   return best
 }
 
-// Aligns two copies and says how alike they are over the stretch they share. Calibrated
-// on 26 real pairs: the same master correlates 0.992 to 0.9999, a different source 0.38 to
-// 0.86. Null when either file cannot be decoded, is under 10 s, or is silent where they
-// overlap, since a verdict on that would be a guess.
+// Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
+// the start when a is under 90 s). Calibrated on 26 real pairs: the same master
+// correlates 0.992 to 0.9999, a different source 0.38 to 0.86. Null when either file
+// cannot be decoded or is under 10 s, when either side is silent where they meet or they
+// share under 10 s there, or when the best fit is inverted or unrelated (gain <= 0):
+// none of those supports a same-master claim either way.
 export async function comparePair(
   a: string,
   b: string,
@@ -2962,9 +2973,9 @@ export async function comparePair(
 ): Promise<PairFacts | null> {
   const decode = (input: string): Promise<Float32Array> =>
     decodePcm(input, {
-      sampleRate: PAIR_SAMPLE_RATE,
-      seconds: PAIR_MAX_SECONDS,
-      maxBufferMb: 32,
+      sampleRate: PAIR_RATE,
+      seconds: PAIR_DECODE_SECONDS,
+      maxBufferMb: 16,
       signal,
     })
   let pa: Float32Array
@@ -2975,11 +2986,13 @@ export async function comparePair(
     if (isAbortError(err)) throw err
     return null
   }
-  const minSamples = PAIR_MIN_SECONDS * PAIR_SAMPLE_RATE
+  const minSamples = PAIR_MIN_SECONDS * PAIR_RATE
   if (pa.length < minSamples || pb.length < minSamples) return null
-  const lag = bestLag(pa, pb)
-  const start = Math.max(0, -lag)
-  const end = Math.min(pa.length, pb.length - lag)
+  const lag = bestLag(pa, pb, pa.length >= 40 * PAIR_RATE ? 30 * PAIR_RATE : 0)
+  if (lag === null) return null
+  const from = pa.length >= 90 * PAIR_RATE ? 30 * PAIR_RATE : 0
+  const start = Math.max(from, -lag)
+  const end = Math.min(from + PAIR_WINDOW_SECONDS * PAIR_RATE, pa.length, pb.length - lag)
   const n = end - start
   let sa = 0
   let sb = 0
@@ -2995,9 +3008,8 @@ export async function comparePair(
     sbb += y * y
     sab += x * y
   }
-  const varA = n * saa - sa * sa
-  const varB = n * sbb - sb * sb
-  if (saa === 0 || sbb === 0 || varA <= 0 || varB <= 0) return null
+  const silent = n * PAIR_SILENT_RMS ** 2
+  if (n < minSamples || saa < silent || sbb < silent || sab <= 0) return null
   const gain = sab / sbb
   let residual = 0
   for (let i = start; i < end; i++) {
@@ -3005,7 +3017,7 @@ export async function comparePair(
     residual += d * d
   }
   return {
-    correlation: (n * sab - sa * sb) / Math.sqrt(varA * varB),
+    correlation: (n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb)),
     residualDb: residual === 0 ? -Infinity : 10 * Math.log10(residual / saa),
     gainDb: 20 * Math.log10(gain),
   }
