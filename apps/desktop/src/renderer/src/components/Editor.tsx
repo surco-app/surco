@@ -1,11 +1,8 @@
 import {
   ChevronRight,
-  CircleCheck,
-  CircleEqual,
   Copy,
   Eraser,
   Globe,
-  Loader2,
   Music,
   RefreshCw,
   Scissors,
@@ -1173,42 +1170,47 @@ export const Editor = memo(function Editor({
   // section speaks of the open track, so "better" or "worse" needs no subject, and its
   // numbers sit beside the spectrum they are read with. The Metadata header keeps only the
   // library mark, which still turns to a warning when the library's copy is the better one.
-  const copyStateIcon = {
-    here: <CircleCheck className="h-3.5 w-3.5 text-[var(--color-good)]" aria-hidden="true" />,
-    library: <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />,
-    same: <CircleEqual className="h-3.5 w-3.5" aria-hidden="true" />,
-    measuring: (
-      <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-    ),
+  // Drawn as one more finding under the spectrum: the same rule on its left, coloured as
+  // the findings above it are (green better, amber worse, grey the same or still measuring).
+  const copyStateTone = {
+    here: 'good',
+    library: 'warn',
+    same: 'neutral',
+    measuring: 'neutral',
+  } as const
+  const TONE_BORDER = {
+    good: 'var(--color-good)',
+    warn: 'var(--color-warn)',
+    neutral: 'var(--color-line-strong)',
   }
   const copyLine =
     !isMulti && inLibrary === 'yes' && copyState ? (
       <>
-        <button
-          type="button"
-          data-testid="copy-verdict"
-          data-state={copyState}
-          aria-expanded={copyOpen}
-          aria-controls={copyCardId}
-          disabled={copyState === 'measuring'}
-          onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-          className={`press -mx-1 mt-2 flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs hover:bg-[var(--color-hover)] disabled:hover:bg-transparent ${
-            copyState === 'library'
-              ? 'text-[var(--color-warn)]'
-              : copyState === 'here'
-                ? 'text-fg-muted'
-                : 'text-fg-dim'
-          }`}
+        <div
+          data-testid="copy-line"
+          data-tone={copyStateTone[copyState]}
+          className="mt-2 border-l-2 pl-2.5 text-xs"
+          style={{ borderColor: TONE_BORDER[copyStateTone[copyState]] }}
         >
-          {copyStateIcon[copyState]}
-          {tr(COPY_STATE_LABEL[copyState], { library: libraryName })}
-          {copyState !== 'measuring' && (
-            <ChevronRight
-              className={`h-3 w-3 text-fg-dim transition-transform ${copyOpen ? 'rotate-90' : ''}`}
-              aria-hidden="true"
-            />
-          )}
-        </button>
+          <button
+            type="button"
+            data-testid="copy-verdict"
+            data-state={copyState}
+            aria-expanded={copyOpen}
+            aria-controls={copyCardId}
+            disabled={copyState === 'measuring'}
+            onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+            className="press -mx-1 flex items-center gap-1 rounded px-1 text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg-muted disabled:hover:bg-transparent"
+          >
+            {tr(COPY_STATE_LABEL[copyState], { library: libraryName })}
+            {copyState !== 'measuring' && (
+              <ChevronRight
+                className={`h-3 w-3 transition-transform ${copyOpen ? 'rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
         {copyOpen && copyVerdict && hereFacts && libraryFacts && (
           <CopyComparison
             id={copyCardId}
