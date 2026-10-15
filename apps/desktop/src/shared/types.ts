@@ -968,6 +968,9 @@ export interface AppleMusicTrackMeta {
   trackNumber?: string
   discNumber?: string
   bpm?: string
+  // The musical key, as the source spells it ("4B", "Am"). Only rekordbox supplies one:
+  // Music has no key field.
+  key?: string
   // 0-100 as Music scales it, and only when the user set it: Music also reports a rating
   // it computed itself (`rating kind: computed`), which is not an opinion to write into
   // anyone's files.
@@ -994,6 +997,34 @@ export interface AppleMusicPlaylistTracks {
   // a value the file wins, because the file is what the user's other tools read.
   meta: Record<string, AppleMusicTrackMeta>
   missing: number
+}
+
+// Where a crate of playlists comes from. Engine DJ and Traktor join in a later phase with
+// the same shapes.
+export type PlaylistSource = 'appleMusic' | 'rekordbox'
+
+// One row of a source's playlist tree. A playlist counts its real tracks, separators left
+// out, because that is the number the user sees in the list; a folder counts its direct
+// children, as rekordbox's own tree does.
+export interface SourceNode {
+  id: string
+  name: string
+  kind: 'folder' | 'playlist'
+  count: number
+  children?: SourceNode[]
+}
+
+// One row of a playlist, in the playlist's own order. A separator is a placeholder file the
+// DJ drops between blocks (measured: one blank 1 s MP3 linked 345 times), kept so the list
+// can draw the break but never loaded as a track. A null path is a row with no file
+// (streaming), counted but not loadable.
+export interface SourcePlaylistEntry {
+  path: string | null
+  separator: boolean
+  // What the source knows that the file may not. Same shape and scale as Music's (rating
+  // 0-100), so one fill rule serves every source.
+  meta: AppleMusicTrackMeta
+  musicPersistentId?: string
 }
 
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
