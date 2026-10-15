@@ -375,7 +375,7 @@
     "importApplePlaylist": "Importar do Apple Music…",
     "musicReview": "Revisar metadados no Apple Music…",
     "musicDuplicates": "Mostrar duplicados no Apple Music…",
-    "listReview": "Revisar metadados da lista…"
+    "listReview": "Revisar metadados…"
   },
   "trackList": {
     "backup": "Voltar ao original… (cópia de {{when}})",

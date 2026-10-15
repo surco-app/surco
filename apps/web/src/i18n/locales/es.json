@@ -1897,7 +1897,7 @@
         "steps": [
           {
             "title": "Abre la revisión",
-            "text": "En el menú Archivo, o con ⌘K, elige «Revisar metadatos en Apple Music…»."
+            "text": "Con ⌘K elige «Revisar metadatos en Apple Music…», o abre una playlist de Apple Music en la columna de fuentes y elige «Revisar metadatos» en el menú … de la lista."
           },
           {
             "title": "Elige cómo queda cada grupo",
@@ -1956,7 +1956,7 @@
         "steps": [
           {
             "title": "Abre los duplicados",
-            "text": "En el menú Archivo, o con ⌘K, elige «Mostrar duplicados en Apple Music…»."
+            "text": "Con ⌘K elige «Mostrar duplicados en Apple Music…», o abre una playlist de Apple Music en la columna de fuentes y elige «Mostrar duplicados» en el menú … de la lista."
           },
           {
             "title": "Compara las copias",

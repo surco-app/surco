@@ -1897,7 +1897,7 @@
         "steps": [
           {
             "title": "Open the review",
-            "text": "From the File menu, or with ⌘K, choose “Review metadata in Apple Music…”."
+            "text": "With ⌘K, choose “Review metadata in Apple Music…”, or open an Apple Music playlist in the sources column and choose “Review metadata” in the list’s … menu."
           },
           {
             "title": "Pick how each group should read",
@@ -1956,7 +1956,7 @@
         "steps": [
           {
             "title": "Open the duplicates",
-            "text": "From the File menu, or with ⌘K, choose “Show duplicates in Apple Music…”."
+            "text": "With ⌘K, choose “Show duplicates in Apple Music…”, or open an Apple Music playlist in the sources column and choose “Show duplicates” in the list’s … menu."
           },
           {
             "title": "Compare the copies",

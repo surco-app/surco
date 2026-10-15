@@ -39,25 +39,26 @@ function itemFor(items: Item[], label: string): Item {
 }
 
 describe('appMenuTemplate', () => {
-  it('reviews the Music library from the File menu on a Mac', () => {
-    const { template, run } = build()
-    const file = menu(template, 'File')
-    click(itemFor(file, 'Review metadata in Apple Music…'))
-    click(itemFor(file, 'Show duplicates in Apple Music…'))
-    expect(run.mock.calls.map((c) => c[0])).toEqual(['music-review', 'music-duplicates'])
-  })
-
-  it('reviews the list from the Tracks menu on every platform', () => {
+  // The Music review moved to the list's … menu, where it acts on the playlist open in the
+  // source rail; the whole-library commands stay in the palette.
+  it('keeps the Music review out of the File menu on every platform', () => {
     for (const mac of [true, false]) {
       const { template, run } = build('en', mac)
-      click(itemFor(menu(template, 'Tracks'), 'Review metadata in the list…'))
-      expect(run).toHaveBeenCalledWith('list-review')
+      for (const item of menu(template, 'File')) if (item.click) click(item)
+      const ran = run.mock.calls.map((c) => c[0])
+      expect(ran).not.toContain('music-review')
+      expect(ran).not.toContain('music-duplicates')
     }
   })
 
-  it('has no Music review where there is no Music to script', () => {
-    const file = menu(build('en', false).template, 'File')
-    expect(file.find((i) => i.label === 'Review metadata in Apple Music…')).toBeUndefined()
+  // The command follows the open source (the list, a rekordbox or a Music playlist), so its
+  // label no longer names the list.
+  it('reviews the list from the Tracks menu on every platform', () => {
+    for (const mac of [true, false]) {
+      const { template, run } = build('en', mac)
+      click(itemFor(menu(template, 'Tracks'), 'Review metadata…'))
+      expect(run).toHaveBeenCalledWith('list-review')
+    }
   })
 
   it('reveals in File Explorer on Windows, where there is no Finder', () => {

@@ -17,8 +17,6 @@ interface MenuStrings {
   rename: string
   findReplace: string
   addAppleMusic: string
-  reviewMusic: string
-  musicDuplicates: string
   remove: string
   removeAll: string
   processCurrent: string
@@ -107,8 +105,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Generar nombre del archivo…',
     findReplace: 'Buscar y reemplazar…',
     addAppleMusic: 'Añadir a Apple Music',
-    reviewMusic: 'Revisar metadatos en Apple Music…',
-    musicDuplicates: 'Mostrar duplicados en Apple Music…',
     remove: 'Quitar de la lista',
     removeAll: 'Vaciar la lista',
     processCurrent: 'Convertir pista',
@@ -122,7 +118,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analizar calidad',
     selectAllTracks: 'Seleccionar todas las pistas',
     fillAll: 'Rellenar todo desde el nombre…',
-    reviewList: 'Revisar metadatos de la lista…',
+    reviewList: 'Revisar metadatos…',
     trashSelected: 'Mover la selección a la papelera…',
     search: 'Buscar en la lista de pistas',
     play: 'Reproducir / pausar',
@@ -202,8 +198,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Build file name…',
     findReplace: 'Find & Replace…',
     addAppleMusic: 'Add to Apple Music',
-    reviewMusic: 'Review metadata in Apple Music…',
-    musicDuplicates: 'Show duplicates in Apple Music…',
     remove: 'Remove from list',
     removeAll: 'Remove all',
     processCurrent: 'Convert track',
@@ -217,7 +211,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analyze quality',
     selectAllTracks: 'Select all tracks',
     fillAll: 'Fill all tags from file name…',
-    reviewList: 'Review metadata in the list…',
+    reviewList: 'Review metadata…',
     trashSelected: 'Move selection to Trash…',
     search: 'Search the track list',
     play: 'Play / pause',
@@ -297,8 +291,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Dateinamen erstellen…',
     findReplace: 'Suchen & Ersetzen…',
     addAppleMusic: 'Zu Apple Music hinzufügen',
-    reviewMusic: 'Metadaten in Apple Music prüfen…',
-    musicDuplicates: 'Duplikate in Apple Music anzeigen…',
     remove: 'Aus der Liste entfernen',
     removeAll: 'Liste leeren',
     processCurrent: 'Track konvertieren',
@@ -312,7 +304,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Qualität analysieren',
     selectAllTracks: 'Alle Tracks auswählen',
     fillAll: 'Alle Tags aus dem Dateinamen füllen…',
-    reviewList: 'Metadaten der Liste prüfen…',
+    reviewList: 'Metadaten prüfen…',
     trashSelected: 'Auswahl in den Papierkorb legen…',
     search: 'In der Trackliste suchen',
     play: 'Abspielen / Pause',
@@ -392,8 +384,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Composer le nom du fichier…',
     findReplace: 'Rechercher et remplacer…',
     addAppleMusic: 'Ajouter à Apple Music',
-    reviewMusic: 'Vérifier les métadonnées dans Apple Music…',
-    musicDuplicates: 'Afficher les doublons dans Apple Music…',
     remove: 'Retirer de la liste',
     removeAll: 'Vider la liste',
     processCurrent: 'Convertir le morceau',
@@ -407,7 +397,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analyser la qualité',
     selectAllTracks: 'Sélectionner tous les morceaux',
     fillAll: 'Remplir tous les tags depuis le nom du fichier…',
-    reviewList: 'Vérifier les métadonnées de la liste…',
+    reviewList: 'Vérifier les métadonnées…',
     trashSelected: 'Mettre la sélection à la corbeille…',
     search: 'Rechercher dans la liste des morceaux',
     play: 'Lecture / pause',
@@ -488,8 +478,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rename: 'Gerar nome do arquivo…',
     findReplace: 'Localizar e substituir…',
     addAppleMusic: 'Adicionar ao Apple Music',
-    reviewMusic: 'Revisar metadados no Apple Music…',
-    musicDuplicates: 'Mostrar duplicados no Apple Music…',
     remove: 'Remover da lista',
     removeAll: 'Limpar a lista',
     processCurrent: 'Converter faixa',
@@ -503,7 +491,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analisar qualidade',
     selectAllTracks: 'Selecionar todas as faixas',
     fillAll: 'Preencher tudo a partir do nome…',
-    reviewList: 'Revisar metadados da lista…',
+    reviewList: 'Revisar metadados…',
     trashSelected: 'Mover a seleção para a lixeira…',
     search: 'Buscar na lista de faixas',
     play: 'Reproduzir / pausar',

@@ -54,13 +54,7 @@ export function appMenuTemplate({
         keymapItem(t(windows ? 'revealWin' : 'reveal'), 'reveal'),
         keymapItem(t('rename'), 'rename'),
         keymapItem(t('findReplace'), 'find-replace'),
-        ...(mac
-          ? [
-              keymapItem(t('addAppleMusic'), 'add-apple-music'),
-              keymapItem(t('reviewMusic'), 'music-review'),
-              keymapItem(t('musicDuplicates'), 'music-duplicates'),
-            ]
-          : []),
+        ...(mac ? [keymapItem(t('addAppleMusic'), 'add-apple-music')] : []),
         { type: 'separator' },
         keymapItem(t('processCurrent'), 'process-current'),
         keymapItem(t('processAll'), 'process-all'),
