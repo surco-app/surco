@@ -11,6 +11,7 @@ import {
 } from '../main/settings'
 import type { Api } from '../preload/api'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
+import type { Release } from '../shared/types'
 import { bootMain, closeMain, invokeMain, listen, type ScenarioOptions } from './harness'
 
 // The whole app, not its hooks: <App/> rendered over the same real main the hook-level
@@ -26,6 +27,27 @@ export interface AppScenario {
   convertAll: () => Promise<void>
   errors: string[]
   close: () => void
+}
+
+// The releases a search finds, standing in for Discogs: every query lists them all, the way
+// a search for the record a DJ is holding lists its pressings, and the DJ picks one.
+function catalogApi(catalog: Release[]): Partial<Api> {
+  return {
+    search: async (_query, provider) =>
+      catalog
+        .filter((r) => !provider || r.provider === provider)
+        .map((r) => ({
+          provider: r.provider,
+          id: Number(r.id),
+          title: `${r.artists[0]?.name ?? ''} - ${r.title}`,
+          year: r.year ? String(r.year) : undefined,
+        })),
+    getRelease: async (ref) => {
+      const found = catalog.find((r) => String(r.id) === String(ref))
+      if (!found) throw new Error(`scenario: no release ${ref} in the catalog`)
+      return found
+    },
+  }
 }
 
 function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => void }) {
@@ -59,6 +81,7 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     onEngineSyncIssue: () => () => {},
     checkForUpdates: async () => {},
     hasClipboardImage: async () => false,
+    prepareCoverDrag: async () => null,
     getConfigDir: async () => null,
     detectTraktorNmlPath: async () => null,
     rekordboxCollection: async () => '',
@@ -88,14 +111,17 @@ function stubBrowser(): void {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
 }
 
-export async function openApp(options: ScenarioOptions): Promise<AppScenario> {
+export async function openApp(
+  options: ScenarioOptions,
+  catalog: Release[] = [],
+): Promise<AppScenario> {
   configure({ getElementError: (message) => new Error(message ?? '') })
   const { errors, api } = bootMain({
     ...options,
     settings: { hasSeenOnboarding: true, ...options.settings },
   })
   const openFiles: { current?: (paths: string[]) => void } = {}
-  const shell = shellApi(errors, openFiles)
+  const shell = { ...shellApi(errors, openFiles), ...catalogApi(catalog) }
   ;(window as unknown as { api: Api }).api = new Proxy(api, {
     get(target, key) {
       if (key in shell) return shell[key as keyof typeof shell]
