@@ -359,6 +359,7 @@ async function addOneTrack(): Promise<HTMLElement[]> {
 describe('App sidebar clipping', () => {
   it('clips the sidebar so the player cannot animate into page scroll', async () => {
     await renderApp()
+    await addTwoTracks()
     expect(screen.getByTestId('sidebar').className).toContain('overflow-hidden')
   })
 
@@ -366,6 +367,7 @@ describe('App sidebar clipping', () => {
   // tell it apart; its name is what lets a screen reader user jump straight to the tracks.
   it('names the sidebar landmark', async () => {
     await renderApp()
+    await addTwoTracks()
     expect(screen.getByRole('complementary', { name: i18n.t('common.trackList') })).toBe(
       screen.getByTestId('sidebar'),
     )
@@ -384,24 +386,17 @@ describe('App sidebar divider', () => {
     act(() => vi.advanceTimersByTime(500))
   }
 
-  // Double-clicking the divider fits the panel to the track names. An empty list has no
-  // names to fit to, so the fit gesture is a no-op — the divider must not advertise it
-  // with a hover hint until there are rows to measure.
-  it('hides the fit hint while the list is empty', async () => {
+  // An empty column beside the empty-screen card read as a second, broken screen, and lit
+  // up on its own while files were dragged in. Until there is a track the window is one
+  // screen: no column, no divider to drag between nothing and the card.
+  it('draws no list column nor divider while the list is empty, and both once tracks arrive', async () => {
     await renderApp()
-    vi.useFakeTimers()
-    try {
-      hoverDivider()
-      expect(screen.queryByRole('tooltip')).toBeNull()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('invites the first drop once, from the empty centre, and leaves the empty list column silent', async () => {
-    await renderApp()
-    expect(screen.getByTestId('empty-actions')).toBeInTheDocument()
-    expect(screen.getByTestId('track-list-scroll')).toBeEmptyDOMElement()
+    expect(await screen.findByTestId('empty-actions')).toBeInTheDocument()
+    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument()
+    await addTwoTracks()
+    expect(screen.getByTestId('sidebar')).toBeInTheDocument()
+    expect(screen.getAllByRole('separator').length).toBeGreaterThan(0)
   })
 
   it('offers the fit hint once the list has tracks', async () => {
@@ -788,6 +783,27 @@ describe('App source rail', () => {
     expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
     await act(async () => answer(true))
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
+  })
+
+  // A tree with nothing picked in it has no rows to show either: beside it stays the one
+  // empty screen, not an empty list column. Picking a playlist is asking for its rows, so
+  // the column is back before they have even loaded.
+  it('keeps the tree beside the single empty screen until a playlist is picked', async () => {
+    setApi({
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('source-node-f')
+    expect(screen.getByTestId('empty-dropzone')).toBeInTheDocument()
+    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('source-node-f'))
+    expect(await screen.findByTestId('sidebar')).toBeInTheDocument()
   })
 })
 
@@ -4477,28 +4493,36 @@ describe('App duplicates filter', () => {
 })
 
 describe('drop target', () => {
-  // The tracks land in the sidebar list, so that is where the drag has to answer. The old
-  // full-screen overlay covered both columns — including the one nothing was going to
-  // happen in — to say "drop here" without ever pointing at where "here" was.
+  // With tracks in the list they land in the sidebar, so that is where the drag answers.
+  // The old full-screen overlay covered both columns — including the one nothing was going
+  // to happen in — to say "drop here" without ever pointing at where "here" was.
   it('marks the column the tracks will land in, covering nothing', async () => {
     await renderApp()
+    await addTwoTracks()
     const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
 
     fireEvent.dragEnter(root)
 
-    expect(await screen.findByTestId('drop-ghosts')).toBeInTheDocument()
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-drop-over', 'true')
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-drop-over', 'true'),
+    )
   })
 
-  it('clears the mark once the pointer really leaves', async () => {
+  // On the empty screen there is no column yet: the one screen there is answers the drag,
+  // not a list column beside it.
+  it('lights the one empty screen while the first files are dragged in, and clears it on leave', async () => {
     await renderApp()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const zone = await screen.findByTestId('empty-dropzone')
+    const root = zone.closest('.flex.h-screen') as HTMLElement
 
     fireEvent.dragEnter(root)
-    await screen.findByTestId('drop-ghosts')
+
+    await waitFor(() => expect(zone).toHaveAttribute('data-drop-over', 'true'))
+    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
+
     fireEvent.dragLeave(root)
 
-    await waitFor(() => expect(screen.queryByTestId('drop-ghosts')).toBeNull())
+    await waitFor(() => expect(zone).not.toHaveAttribute('data-drop-over'))
   })
 
   // The artwork well handles its own drop and stops it there, so the window never heard
@@ -4531,19 +4555,6 @@ describe('drop target', () => {
     fireEvent.dragLeave(root)
 
     await waitFor(() => expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over'))
-  })
-
-  // The ghost rows stand for "tracks go here", not for how many are coming: the count is
-  // unknown until the folder is expanded, and promising five when forty arrive would be a
-  // worse lie than promising nothing.
-  it('shows a fixed pattern of ghosts, not a count of the dragged files', async () => {
-    await renderApp()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
-
-    fireEvent.dragEnter(root)
-    const ghosts = await screen.findByTestId('drop-ghosts')
-
-    expect(ghosts.children.length).toBeGreaterThan(1)
   })
 })
 
@@ -5234,7 +5245,9 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = (await screen.findByTestId('empty-actions')).closest(
+      '.flex.h-screen',
+    ) as HTMLElement
     fireEvent.drop(root, {
       dataTransfer: { files: Object.keys(tags).map((name) => ({ name })), types: ['Files'] },
     })
@@ -5330,7 +5343,9 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('sidebar')).closest('.flex.h-screen') as HTMLElement
+    const root = (await screen.findByTestId('empty-actions')).closest(
+      '.flex.h-screen',
+    ) as HTMLElement
     const drop = (paths: string[]) =>
       fireEvent.drop(root, {
         dataTransfer: { files: paths.map((name) => ({ name })), types: ['Files'] },

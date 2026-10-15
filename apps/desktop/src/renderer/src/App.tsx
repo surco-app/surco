@@ -161,10 +161,6 @@ import type { CopiedTags, TrackItem } from './types'
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 
-// Widths for the placeholder rows shown while a drag is over the window. Uneven on
-// purpose — equal bars read as a loading skeleton, ragged ones as track titles.
-const GHOST_ROWS = [62, 48, 70, 41, 55, 50, 66, 44, 58] as const
-
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
@@ -2238,6 +2234,7 @@ export default function App(): React.JSX.Element {
   )
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
+  const showList = tracks.length > 0 || browser.playlist !== null || review !== null
   const progress = topBarProgress(
     [analysis, matching, batchProgress, importProgress],
     anyLoadingMeta,
@@ -2355,193 +2352,180 @@ export default function App(): React.JSX.Element {
                     edit={browser.source === 'rekordbox' ? treeEdit : undefined}
                   />
                 )}
-                <aside
-                  data-testid="sidebar"
-                  aria-label={tr('common.trackList')}
-                  // The drag answers here because this is the column the tracks land in. The
-                  // styling hangs off a data attribute rather than a class so the drop state
-                  // is readable in the DOM (and in tests) as state, not as styling.
-                  data-drop-over={dragging || undefined}
-                  style={{ width: sidebar.width }}
-                  // Clips its own children: the player enters on translateY(100%), so without
-                  // this it is briefly drawn a card's height below the column and the page
-                  // grows a scrollbar that flashes and disappears.
-                  className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
-                >
-                  <div
-                    ref={listScrollRef}
-                    data-testid="track-list-scroll"
-                    onPointerEnter={() => setListHovered(true)}
-                    onPointerLeave={() => setListHovered(false)}
-                    className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
+                {/* Until there are rows the window is one screen: an empty column beside the
+                  empty-screen card read as a second, broken pane. A picked playlist and an
+                  open review have rows (or are about to), so they bring the column back. */}
+                {showList && (
+                  <aside
+                    data-testid="sidebar"
+                    aria-label={tr('common.trackList')}
+                    // The drag answers here because this is the column the tracks land in. The
+                    // styling hangs off a data attribute rather than a class so the drop state
+                    // is readable in the DOM (and in tests) as state, not as styling.
+                    data-drop-over={dragging || undefined}
+                    style={{ width: sidebar.width }}
+                    // Clips its own children: the player enters on translateY(100%), so without
+                    // this it is briefly drawn a card's height below the column and the page
+                    // grows a scrollbar that flashes and disappears.
+                    className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
                   >
-                    {review !== null ? (
-                      <MusicReviewColumn onClose={() => setReview(null)} busy={reviewBusy} />
-                    ) : tracks.length ===
-                      0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
-                    // as well meant two doors on one screen, and the smaller of the two sat in the
-                    // column that has nothing in it yet.
-                    null : (
-                      <>
-                        <TrackListHeader
-                          tr={tr}
-                          hintFor={hintFor}
-                          search={search}
-                          setSearch={setSearch}
-                          trackSearchRef={trackSearchRef}
-                          qualityFilterRef={qualityFilterRef}
-                          filterSelection={filterSelection}
-                          setFilterSelection={setFilterSelection}
-                          librarySource={librarySource}
-                          qualityTally={qualityTally}
-                          formatTally={formatTally}
-                          sortBy={sortBy}
-                          setSortBy={setSortBy}
-                          sortDir={sortDir}
-                          toggleSortDir={toggleSortDir}
-                          tracks={tracks}
-                          visibleTracks={visibleTracks}
-                          selectedId={selectedId}
-                          selectedIds={selectedIds}
-                          selectedPosition={selectedPosition}
-                          onAdd={onAdd}
-                          onImportApplePlaylist={
-                            isMac ? () => browser.selectSource('appleMusic') : undefined
-                          }
-                          onSelectAllTracks={onSelectAllTracks}
-                          scrollToSelected={scrollToSelected}
-                          onFillAll={onFillAll}
-                          onFindReplace={onFindReplace}
-                          onReviewList={() => openTargetReview('all')}
-                          canReviewList={target.count > 0 && !batching}
-                          reviewDetail={reviewDetail(tr, target)}
-                          duplicates={
-                            target.kind === 'music'
-                              ? {
-                                  detail: duplicatesDetail(tr, target.name),
-                                  onShow: () => openTargetReview('duplicates'),
-                                }
-                              : undefined
-                          }
-                          onClearAll={onClearAll}
-                          onRemoveSelected={onRemoveSelected}
-                          onTrashSelected={onTrashSelected}
-                          onTrashSuspects={onTrashSuspects}
-                        />
-                        {rekordboxOpen && !reorderEnabled && (
-                          <p
-                            data-testid="reorder-hint"
-                            className="px-4 pt-1 text-[11px] text-fg-faint"
-                          >
-                            {tr('sources.reorder.hint')}
-                          </p>
-                        )}
-                        {visibleTracks.length === 0 ? (
-                          <div className="flex flex-col items-center gap-3 p-6 text-center">
-                            <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
-                            {(search || filterActive) && (
-                              <button
-                                type="button"
-                                data-testid="reset-view"
-                                onClick={() => {
-                                  setSearch('')
-                                  setFilterSelection(EMPTY_FILTER)
-                                }}
-                                className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
-                              >
-                                {tr('sidebar.search.reset')}
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <TrackList
-                            tracks={visibleTracks}
-                            selectedId={selectedId}
-                            selectedIds={selectedIdSet}
-                            outputFormat={
-                              settings?.outputFormat === 'source'
-                                ? 'aiff'
-                                : (settings?.outputFormat ?? 'aiff')
-                            }
-                            bindings={bindings}
-                            onSelect={onSelectTrack}
-                            onActivate={toggleTrack}
-                            onRemove={removeFromList}
-                            onSwipeRemove={removeTrack}
-                            onAcceptReview={acceptReviewRow}
-                            onPrefetch={handlePrefetch}
-                            renderMenu={renderTrackMenu}
-                            scrollRootRef={listScrollRef}
-                            separatorBefore={
-                              playlistScope && sortBy === 'import'
-                                ? playlistScope.separatorBefore
-                                : undefined
-                            }
-                            trailingSeparators={
-                              playlistScope && sortBy === 'import'
-                                ? playlistScope.trailingSeparators
-                                : undefined
-                            }
-                            reorder={reorder}
-                            outsideFilter={outsideFilterIds}
-                            onVisible={onListRowVisible}
-                            rowRegistry={rowEls}
-                            backupAtByPath={backupAtByPath}
-                            onOpenBackup={onOpenBackup}
-                            duplicateRankById={duplicateRankById}
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
-                  {player.mounted && livePlayerTrack && (
-                    <LivePlayer
-                      track={livePlayerTrack}
-                      audioRef={audioRef}
-                      continuous={settings?.continuousPlayback ?? false}
-                      onToggleContinuous={() =>
-                        saveSettings({
-                          continuousPlayback: !(settings?.continuousPlayback ?? false),
-                        })
-                      }
-                      showWaveform={settings?.showWaveform ?? true}
-                      onToggleWaveform={() =>
-                        saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
-                      }
-                      onReveal={() => revealSelection(livePlayerTrack.id)}
-                      onClose={closePlayer}
-                      leaving={player.leaving}
-                    />
-                  )}
-
-                  {tracks.length === 0 && dragging && (
-                    // The shape of the list that is about to exist, drawn in the space it will
-                    // fill. A fixed pattern on purpose: the real count isn't known until the
-                    // dropped folders are expanded, so a number here would be a guess the user
-                    // then watches turn out wrong.
                     <div
-                      data-testid="drop-ghosts"
-                      aria-hidden="true"
-                      className="drop-ghosts pointer-events-none absolute inset-x-3 top-40 flex flex-col gap-2"
+                      ref={listScrollRef}
+                      data-testid="track-list-scroll"
+                      onPointerEnter={() => setListHovered(true)}
+                      onPointerLeave={() => setListHovered(false)}
+                      className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                     >
-                      {GHOST_ROWS.map((width, i) => (
-                        <div
-                          key={width}
-                          style={{ width: `${width}%`, animationDelay: `${i * 0.06}s` }}
-                          className="h-6 rounded-md border border-dashed border-[var(--color-accent)]/45 bg-[var(--color-accent)]/5"
-                        />
-                      ))}
+                      {review !== null ? (
+                        <MusicReviewColumn onClose={() => setReview(null)} busy={reviewBusy} />
+                      ) : tracks.length ===
+                        0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
+                      // as well meant two doors on one screen, and the smaller of the two sat in the
+                      // column that has nothing in it yet.
+                      null : (
+                        <>
+                          <TrackListHeader
+                            tr={tr}
+                            hintFor={hintFor}
+                            search={search}
+                            setSearch={setSearch}
+                            trackSearchRef={trackSearchRef}
+                            qualityFilterRef={qualityFilterRef}
+                            filterSelection={filterSelection}
+                            setFilterSelection={setFilterSelection}
+                            librarySource={librarySource}
+                            qualityTally={qualityTally}
+                            formatTally={formatTally}
+                            sortBy={sortBy}
+                            setSortBy={setSortBy}
+                            sortDir={sortDir}
+                            toggleSortDir={toggleSortDir}
+                            tracks={tracks}
+                            visibleTracks={visibleTracks}
+                            selectedId={selectedId}
+                            selectedIds={selectedIds}
+                            selectedPosition={selectedPosition}
+                            onAdd={onAdd}
+                            onImportApplePlaylist={
+                              isMac ? () => browser.selectSource('appleMusic') : undefined
+                            }
+                            onSelectAllTracks={onSelectAllTracks}
+                            scrollToSelected={scrollToSelected}
+                            onFillAll={onFillAll}
+                            onFindReplace={onFindReplace}
+                            onReviewList={() => openTargetReview('all')}
+                            canReviewList={target.count > 0 && !batching}
+                            reviewDetail={reviewDetail(tr, target)}
+                            duplicates={
+                              target.kind === 'music'
+                                ? {
+                                    detail: duplicatesDetail(tr, target.name),
+                                    onShow: () => openTargetReview('duplicates'),
+                                  }
+                                : undefined
+                            }
+                            onClearAll={onClearAll}
+                            onRemoveSelected={onRemoveSelected}
+                            onTrashSelected={onTrashSelected}
+                            onTrashSuspects={onTrashSuspects}
+                          />
+                          {rekordboxOpen && !reorderEnabled && (
+                            <p
+                              data-testid="reorder-hint"
+                              className="px-4 pt-1 text-[11px] text-fg-faint"
+                            >
+                              {tr('sources.reorder.hint')}
+                            </p>
+                          )}
+                          {visibleTracks.length === 0 ? (
+                            <div className="flex flex-col items-center gap-3 p-6 text-center">
+                              <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
+                              {(search || filterActive) && (
+                                <button
+                                  type="button"
+                                  data-testid="reset-view"
+                                  onClick={() => {
+                                    setSearch('')
+                                    setFilterSelection(EMPTY_FILTER)
+                                  }}
+                                  className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                                >
+                                  {tr('sidebar.search.reset')}
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <TrackList
+                              tracks={visibleTracks}
+                              selectedId={selectedId}
+                              selectedIds={selectedIdSet}
+                              outputFormat={
+                                settings?.outputFormat === 'source'
+                                  ? 'aiff'
+                                  : (settings?.outputFormat ?? 'aiff')
+                              }
+                              bindings={bindings}
+                              onSelect={onSelectTrack}
+                              onActivate={toggleTrack}
+                              onRemove={removeFromList}
+                              onSwipeRemove={removeTrack}
+                              onAcceptReview={acceptReviewRow}
+                              onPrefetch={handlePrefetch}
+                              renderMenu={renderTrackMenu}
+                              scrollRootRef={listScrollRef}
+                              separatorBefore={
+                                playlistScope && sortBy === 'import'
+                                  ? playlistScope.separatorBefore
+                                  : undefined
+                              }
+                              trailingSeparators={
+                                playlistScope && sortBy === 'import'
+                                  ? playlistScope.trailingSeparators
+                                  : undefined
+                              }
+                              reorder={reorder}
+                              outsideFilter={outsideFilterIds}
+                              onVisible={onListRowVisible}
+                              rowRegistry={rowEls}
+                              backupAtByPath={backupAtByPath}
+                              onOpenBackup={onOpenBackup}
+                              duplicateRankById={duplicateRankById}
+                            />
+                          )}
+                        </>
+                      )}
                     </div>
-                  )}
-                </aside>
+                    {player.mounted && livePlayerTrack && (
+                      <LivePlayer
+                        track={livePlayerTrack}
+                        audioRef={audioRef}
+                        continuous={settings?.continuousPlayback ?? false}
+                        onToggleContinuous={() =>
+                          saveSettings({
+                            continuousPlayback: !(settings?.continuousPlayback ?? false),
+                          })
+                        }
+                        showWaveform={settings?.showWaveform ?? true}
+                        onToggleWaveform={() =>
+                          saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
+                        }
+                        onReveal={() => revealSelection(livePlayerTrack.id)}
+                        onClose={closePlayer}
+                        leaving={player.leaving}
+                      />
+                    )}
+                  </aside>
+                )}
 
-                <ResizeHandle
-                  onPointerDown={sidebar.onPointerDown}
-                  // Fitting to content only means something once there are track names to
-                  // measure; on an empty list the gesture is a no-op, so drop it and its hint.
-                  onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
-                  title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
-                />
+                {showList && (
+                  <ResizeHandle
+                    onPointerDown={sidebar.onPointerDown}
+                    // Fitting to content only means something once there are track names to
+                    // measure; on an empty list the gesture is a no-op, so drop it and its hint.
+                    onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
+                    title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
+                  />
+                )}
 
                 <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
                   {review !== null ? (
@@ -2609,10 +2593,10 @@ export default function App(): React.JSX.Element {
                     </ErrorBoundary>
                   ) : (
                     <div className="flex h-full items-center justify-center p-8 text-center">
-                      {/* The drag answers here as well as in the sidebar. The column stays the
-                        place the rows land, but on an empty screen this panel is the only thing
-                        on show, and inviting a drag while the wide panel beside the column
-                        refused the drop was this screen's oldest lie. */}
+                      {/* The drag answers here as well as in the sidebar. The column is the
+                        place the rows land once there are any, but on an empty screen this
+                        panel is the only thing on show, and inviting a drag while the wide
+                        panel refused the drop was this screen's oldest lie. */}
                       <div
                         data-testid="empty-dropzone"
                         data-drop-over={dragging || undefined}
