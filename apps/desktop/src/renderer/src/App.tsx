@@ -46,6 +46,8 @@ import {
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
+import { SourceRail } from './components/SourceRail'
+import { SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
@@ -73,6 +75,7 @@ import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
+import { useSourceBrowser } from './hooks/useSourceBrowser'
 import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackLibrary'
@@ -108,6 +111,7 @@ import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { isMacOS } from './lib/platform'
+import { playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
@@ -489,6 +493,7 @@ export default function App(): React.JSX.Element {
     seedRestoredEdits,
     pickFiles,
     importApplePlaylist,
+    openSourcePlaylist,
     updateTrack,
     mapTracks,
     updateTracksMeta,
@@ -596,6 +601,16 @@ export default function App(): React.JSX.Element {
       noticeOnPathsAdded(paths)
     },
   })
+
+  // Which DJ library and playlist the list is narrowed to. The playlist's files join the
+  // working list as they arrive, so its rows exist to be shown; a refocus re-read lands here
+  // again and only loads what is new. Stable so that re-read, not every render, runs it.
+  const browser = useSourceBrowser()
+  const openSourcePlaylistStable = useStableCallback(openSourcePlaylist)
+  useEffect(() => {
+    if (browser.entries && browser.source)
+      void openSourcePlaylistStable(browser.entries, browser.source)
+  }, [browser.entries, browser.source, openSourcePlaylistStable])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
@@ -1166,14 +1181,21 @@ export default function App(): React.JSX.Element {
     })
     return () => dismissToast(store, id)
   }, [libraryFailed, librarySource, store])
+  // The list narrowed to the open playlist, in its order. Only what the list shows and
+  // counts reads it: the whole working list is still what is analyzed and persisted.
+  const playlistScope = useMemo(
+    () => (browser.playlist && browser.entries ? playlistView(tracksView, browser.entries) : null),
+    [browser.playlist, browser.entries, tracksView],
+  )
+  const scopeTracks = playlistScope?.tracks ?? tracksView
   tracksViewRef.current = tracksView
   settingsRef.current = settings
   // Feed the snapshot to the background sweep so it can re-check ownership against each
   // match's canonical metadata (the sweep reads .current at apply time, not at render).
   libraryIndexRef.current = libraryIndex
 
-  const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
-  const formatTally = useMemo(() => formatBuckets(tracksView), [tracksView])
+  const qualityTally = useMemo(() => qualityCounts(scopeTracks), [scopeTracks])
+  const formatTally = useMemo(() => formatBuckets(scopeTracks), [scopeTracks])
   // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
   // the crate gone single-format — fall back to every format so the user is never stranded
@@ -1202,7 +1224,7 @@ export default function App(): React.JSX.Element {
       stickyIds.current = new Set()
     }
     const sorted = sortTracks(
-      filterWithSticky(tracksView, filterSelection, stickyIds.current).filter(
+      filterWithSticky(scopeTracks, filterSelection, stickyIds.current).filter(
         searchMatcher(deferredSearch),
       ),
       sortBy,
@@ -1222,7 +1244,7 @@ export default function App(): React.JSX.Element {
     if (!hold) heldOrder.current = { view: viewKey, selected: selectedId }
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
-  }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir, selectedId, listHovered])
+  }, [scopeTracks, filterSelection, deferredSearch, sortBy, sortDir, selectedId, listHovered])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -2085,6 +2107,22 @@ export default function App(): React.JSX.Element {
               </div>
 
               <div className="flex min-h-0 flex-1">
+                {browser.sources.length > 0 && (
+                  <SourceRail
+                    sources={browser.sources}
+                    active={browser.source}
+                    onSelect={browser.selectSource}
+                  />
+                )}
+                {browser.source && (
+                  <SourceTree
+                    title={tr(`sources.${browser.source}`)}
+                    nodes={browser.tree}
+                    failed={browser.treeFailed}
+                    selectedId={browser.playlist?.id ?? null}
+                    onSelect={browser.selectPlaylist}
+                  />
+                )}
                 <aside
                   data-testid="sidebar"
                   aria-label={tr('common.trackList')}
@@ -2183,6 +2221,11 @@ export default function App(): React.JSX.Element {
                             onPrefetch={handlePrefetch}
                             renderMenu={renderTrackMenu}
                             scrollRootRef={listScrollRef}
+                            separatorBefore={
+                              playlistScope && sortBy === 'import'
+                                ? playlistScope.separatorBefore
+                                : undefined
+                            }
                             outsideFilter={outsideFilterIds}
                             onVisible={onListRowVisible}
                             rowRegistry={rowEls}

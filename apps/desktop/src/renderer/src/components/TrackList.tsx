@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import {
+  Fragment,
   memo,
   type RefObject,
   useCallback,
@@ -91,6 +92,10 @@ interface Props {
   // Rows kept on screen after the active filter stopped matching them (filterWithSticky),
   // drawn dimmed so they read as handled until the next filter refresh drops them.
   outsideFilter?: ReadonlySet<string>
+  // Rows a playlist breaks before (lib/playlistView), drawn with a dashed line above them.
+  // Only passed while the list shows a playlist in its own order: under any other sort the
+  // breaks would land between unrelated rows.
+  separatorBefore?: ReadonlySet<string>
 }
 
 export type MenuState = { track: TrackItem; x: number; y: number }
@@ -898,6 +903,7 @@ export const TrackList = memo(function TrackList({
   onOpenBackup,
   duplicateRankById,
   outsideFilter,
+  separatorBefore,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
@@ -1025,35 +1031,45 @@ export const TrackList = memo(function TrackList({
         }}
       >
         {tracks.map((t, i) => (
-          <TrackRow
-            key={t.id}
-            track={t}
-            bindings={bindings}
-            selected={selectedIds.has(t.id)}
-            primary={t.id === selectedId}
-            // The selection owns the single tab stop; with nothing selected the first row
-            // holds it so the list stays reachable by Tab.
-            tabbable={t.id === selectedId || (selectedId === null && i === 0)}
-            deferPaint={tracks.length >= DEFER_PAINT_MIN_ROWS}
-            outputFormat={outputFormat}
-            onSelect={onSelect}
-            onActivate={onActivate}
-            onSwipeRemove={removeBySwipe}
-            onSwipeRemoveStart={startSwipeRemove}
-            onAcceptReview={onAcceptReview}
-            onRemoveKey={removeViaKeyboard}
-            onExtendKey={extendViaKeyboard}
-            onPrefetch={onPrefetch}
-            onOpenMenu={openMenu}
-            onDragOut={startDragOut}
-            observeRow={observeRow}
-            onVisible={onVisible}
-            rowRegistry={rowRegistry}
-            backupAt={backupAtByPath?.get(t.inputPath)}
-            onOpenBackup={onOpenBackup}
-            duplicate={duplicateRankById?.get(t.id)}
-            outsideFilter={outsideFilter?.has(t.id) ?? false}
-          />
+          <Fragment key={t.id}>
+            {separatorBefore?.has(t.id) && (
+              <div
+                data-testid={`track-separator-${t.id}`}
+                aria-hidden="true"
+                className="mx-4 flex h-[22px] items-center gap-2 text-[10.5px] text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
+              >
+                {tr('sources.separator')}
+              </div>
+            )}
+            <TrackRow
+              track={t}
+              bindings={bindings}
+              selected={selectedIds.has(t.id)}
+              primary={t.id === selectedId}
+              // The selection owns the single tab stop; with nothing selected the first row
+              // holds it so the list stays reachable by Tab.
+              tabbable={t.id === selectedId || (selectedId === null && i === 0)}
+              deferPaint={tracks.length >= DEFER_PAINT_MIN_ROWS}
+              outputFormat={outputFormat}
+              onSelect={onSelect}
+              onActivate={onActivate}
+              onSwipeRemove={removeBySwipe}
+              onSwipeRemoveStart={startSwipeRemove}
+              onAcceptReview={onAcceptReview}
+              onRemoveKey={removeViaKeyboard}
+              onExtendKey={extendViaKeyboard}
+              onPrefetch={onPrefetch}
+              onOpenMenu={openMenu}
+              onDragOut={startDragOut}
+              observeRow={observeRow}
+              onVisible={onVisible}
+              rowRegistry={rowRegistry}
+              backupAt={backupAtByPath?.get(t.inputPath)}
+              onOpenBackup={onOpenBackup}
+              duplicate={duplicateRankById?.get(t.id)}
+              outsideFilter={outsideFilter?.has(t.id) ?? false}
+            />
+          </Fragment>
         ))}
       </div>
       {menu && renderMenu(menu, closeMenu)}

@@ -77,10 +77,12 @@ function renderList(
     canPasteMeta = false,
     bindings: overrideBindings = bindings,
     duplicateRankById,
+    separatorBefore,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
     duplicateRankById?: ReadonlyMap<string, DuplicateRank>
+    separatorBefore?: ReadonlySet<string>
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -110,6 +112,7 @@ function renderList(
       onAcceptReview={onAcceptReview}
       onPrefetch={onPrefetch}
       duplicateRankById={duplicateRankById}
+      separatorBefore={separatorBefore}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -153,6 +156,16 @@ describe('TrackList', () => {
   it('renders one row per track', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })])
     expect(screen.getAllByTestId('track-row')).toHaveLength(3)
+  })
+
+  // A DJ splits a set inside one playlist with blank separator tracks; drawing the break
+  // where it falls keeps the sections the DJ built readable in Surco's list.
+  it('draws a separator line above the rows a playlist breaks before', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+      separatorBefore: new Set(['b']),
+    })
+    expect(screen.getByTestId('track-separator-b')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-separator-a')).not.toBeInTheDocument()
   })
 
   it('shows the track title and artist', () => {

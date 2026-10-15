@@ -244,6 +244,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
+    rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
     onWindowFocus: () => () => {},
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
@@ -748,6 +749,62 @@ describe('App auto-match', () => {
     // The untouched second track still matches; the edited one is left alone.
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
+  })
+})
+
+describe('App source playlists', () => {
+  // Browsing a rekordbox playlist must show the set as the DJ built it: only its tracks, in
+  // its order, with its breaks drawn, loading the ones not in the list yet. Going back to
+  // Tracks must give back the whole working list, the playlist's new files included, since
+  // opening a playlist only narrows what is on screen and never drops a track.
+  it('shows a rekordbox playlist in the list, in its order, with the break drawn', async () => {
+    const entry = (path: string | null, separator = false) => ({ path, separator, meta: {} })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/b.wav', '/m/x.wav', '/m/a.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: {
+          '/m/a.wav': 'Alpha',
+          '/m/b.wav': 'Bravo',
+          '/m/c.wav': 'Charlie',
+          '/m/x.wav': 'Xray',
+        }[path],
+        artist: 'DJ',
+      })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 3 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([
+          entry('/m/a.wav'),
+          entry('/m/_.mp3', true),
+          entry('/m/b.wav'),
+          entry('/m/c.wav'),
+        ]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row').map((r) => r.textContent)).toEqual([
+        expect.stringContaining('Alpha'),
+        expect.stringContaining('Bravo'),
+        expect.stringContaining('Charlie'),
+      ]),
+    )
+    const [rowA, rowB] = screen.getAllByTestId('track-row')
+    const separator = await screen.findByTestId(/^track-separator-/)
+    expect(rowA.compareDocumentPosition(separator) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(separator.compareDocumentPosition(rowB) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    expect(screen.queryByTestId('source-tree')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
+    expect(screen.queryByTestId(/^track-separator-/)).not.toBeInTheDocument()
   })
 })
 
