@@ -901,7 +901,7 @@ En `es.json`:
 ```json
   "sources": {
     "rail": "Fuentes",
-    "tracks": "Pistas",
+    "workingList": "Pistas",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "search": "Buscar playlist",
@@ -917,8 +917,8 @@ En `es.json`:
   },
 ```
 
-`en.json`: `"rail": "Sources"`, `"tracks": "Tracks"`, `"appleMusic": "Music"`, `"rekordbox": "rekordbox"`, `"search": "Search playlists"`, `"loading": "Reading playlists…"`, `"failed": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds."`, `"empty": "No playlists."`, `"noMatch": "No playlist matches."`, `"tracks_one": "{{count}} track"`, `"tracks_other": "{{count}} tracks"`, `"separators_one": "{{count}} separator"`, `"separators_other": "{{count}} separators"`, `"separator": "separator"`.
-`de`: Quellen / Titel / Music / rekordbox / Playlist suchen / Playlists werden gelesen… / Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück. / Keine Playlists. / Keine Playlist passt. / {{count}} Titel (one y other) / {{count}} Trenner (one y other) / Trenner.
+`en.json`: `"rail": "Sources"`, `"workingList": "Tracks"`, `"appleMusic": "Music"`, `"rekordbox": "rekordbox"`, `"search": "Search playlists"`, `"loading": "Reading playlists…"`, `"failed": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds."`, `"empty": "No playlists."`, `"noMatch": "No playlist matches."`, `"tracks_one": "{{count}} track"`, `"tracks_other": "{{count}} tracks"`, `"separators_one": "{{count}} separator"`, `"separators_other": "{{count}} separators"`, `"separator": "separator"`.
+`de` (mismo orden de claves que en): Quellen / Titel / Music / rekordbox / Playlist suchen / Playlists werden gelesen… / Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück. / Keine Playlists. / Keine Playlist passt. / {{count}} Titel (one y other) / {{count}} Trenner (one y other) / Trenner.
 `fr`: Sources / Morceaux / Music / rekordbox / Rechercher une playlist / Lecture des playlists… / Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes. / Aucune playlist. / Aucune playlist ne correspond. / {{count}} morceau, {{count}} morceaux / {{count}} séparateur, {{count}} séparateurs / séparateur.
 `pt-BR`: Fontes / Faixas / Music / rekordbox / Buscar playlist / Lendo playlists… / Não foi possível ler a coleção. Se você acabou de mudar algo, volte ao Surco em alguns segundos. / Nenhuma playlist. / Nenhuma playlist corresponde. / {{count}} faixa, {{count}} faixas / {{count}} separador, {{count}} separadores / separador.
 
@@ -1068,7 +1068,7 @@ export function SourceRail({
       aria-label={tr('sources.rail')}
       className="flex w-[60px] shrink-0 flex-col items-center gap-1 border-r border-line bg-[var(--color-ink)] pt-2.5"
     >
-      {item('tracks', tr('sources.tracks'), ListMusic, active === null, () => onSelect(null))}
+      {item('tracks', tr('sources.workingList'), ListMusic, active === null, () => onSelect(null))}
       {sources.map((s) => item(s, tr(`sources.${s}`), ICON[s], active === s, () => onSelect(s)))}
     </nav>
   )
