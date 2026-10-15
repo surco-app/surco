@@ -208,6 +208,17 @@ describe('compareCopies, every branch and both directions', () => {
     expect(compareCopies(lossless, b, pair(-0.01))).toEqual({ winner: 'tie' })
   })
 
+  // One copy measured and the other not is partial data: the measured figure alone must
+  // not read as a gap of 1000 samples or 12 dB against nothing.
+  it('skips a level criterion only one side has measured, from either side', () => {
+    const missingPeaks = { ...level(1000, 12), fingerprint: 'p', peakCount: null }
+    expect(compareCopies(missingPeaks, level(1000, 12), sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(level(1000, 12), missingPeaks, sameMaster)).toEqual({ winner: 'tie' })
+    const missingCrest = { ...level(10, 12), fingerprint: 'c', crestDb: null }
+    expect(compareCopies(missingCrest, level(10, 12), sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(level(10, 12), missingCrest, sameMaster)).toEqual({ winner: 'tie' })
+  })
+
   // Two files that both failed to fingerprint share no MD5; null must not equal null.
   it('never reads two missing fingerprints as the same audio', () => {
     expect(
@@ -245,6 +256,12 @@ describe('isSameAudio', () => {
   // 24-bit one; claiming it equals the 16-bit copy could send the user to delete it.
   it('never calls a 24-bit copy of unknown depth the same as a 16-bit one', () => {
     expect(isSameAudio(at(44100, 'unknown'), at(44100), null)).toBe(false)
+  })
+
+  // Two copies the scan could not call may each be real 24-bit or padded; a 16-bit MD5
+  // match cannot tell them apart, so unknown matches nothing, not even another unknown.
+  it('never calls two copies of unknown depth the same audio', () => {
+    expect(isSameAudio(at(44100, 'unknown'), at(44100, 'unknown'), null)).toBe(false)
   })
 
   it('reads two real 24-bit copies at one rate with the same MD5 as the same audio', () => {
