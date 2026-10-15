@@ -71,7 +71,6 @@ import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
-import type { ReviewFilter } from './hooks/useMusicReview'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -120,7 +119,14 @@ import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { clearDraggedRows, draggedRows, isReorderDrag } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
-import { reviewDetail } from './lib/reviewTarget'
+import { scopedMusicSource } from './lib/reviewSource'
+import {
+  duplicatesDetail,
+  type ReviewOpening,
+  reviewDetail,
+  reviewOpening,
+  reviewTarget,
+} from './lib/reviewTarget'
 import { sameTracks } from './lib/sameTracks'
 import {
   type ClickMods,
@@ -284,9 +290,7 @@ export default function App(): React.JSX.Element {
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
-  const [review, setReview] = useState<{ source: 'music' | 'list'; filter: ReviewFilter } | null>(
-    null,
-  )
+  const [review, setReview] = useState<ReviewOpening | null>(null)
   const openListReview = useStableCallback(() => setReview({ source: 'list', filter: 'all' }))
   const listReviewIgnored = useStableCallback(() => settingsRef.current?.listReviewIgnored ?? [])
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
@@ -1253,6 +1257,25 @@ export default function App(): React.JSX.Element {
     scopeAutoMatch(sweepScope)
     scopeAnalysis(sweepScope)
   }, [sweepScope, scopeAutoMatch, scopeAnalysis])
+  // What "Revisar metadatos" would read with the rail as it is: the rows shown, which are
+  // the open playlist's once they are applied, reviewed in Apple Music for a Music playlist
+  // and through the files otherwise.
+  const playlistName = browser.playlist?.name ?? null
+  const target = useMemo(
+    () =>
+      reviewTarget({
+        source: browser.source,
+        playlistName,
+        entries: browser.entries,
+        playlistTracks: playlistScope?.tracks ?? null,
+        workingCount: tracksView.length,
+      }),
+    [browser.source, playlistName, browser.entries, playlistScope, tracksView.length],
+  )
+  const openTargetReview = useStableCallback((filter: 'all' | 'duplicates') => {
+    const next = reviewOpening(target, filter)
+    if (next) setReview(next)
+  })
   tracksViewRef.current = tracksView
   settingsRef.current = settings
   // Feed the snapshot to the background sweep so it can re-check ownership against each
@@ -2050,7 +2073,7 @@ export default function App(): React.JSX.Element {
       pickFiles: () => void watchLoad(pickFiles),
       openApplePlaylist: isMac ? () => browser.selectSource('appleMusic') : undefined,
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
-      openListReview,
+      openListReview: () => openTargetReview('all'),
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
@@ -2182,25 +2205,29 @@ export default function App(): React.JSX.Element {
     openListReview,
     onSettled: cleanLoad,
   })
-  // One source per opening: it remembers what it wrote and trashed until the review closes.
+  // One source per opening: it remembers what it wrote and trashed until the review closes,
+  // and it keeps to the rows it opened on. Picking another playlist while it is open does
+  // not move it: what the menu said it would touch is what it touches.
   const reviewKind = review?.source
-  const listSource = useMemo(
-    () =>
-      reviewKind === 'list'
-        ? listReviewSource({
-            rows: () => tracksViewRef.current,
-            mac: isMac,
-            launchMusic: () =>
-              !!settingsRef.current?.addToAppleMusic ||
-              tracksRef.current.some((t) => t.fromAppleMusic || t.musicPersistentId),
-            onRowsRemoved: (paths) =>
-              removeTracks(
-                tracksRef.current.filter((t) => paths.includes(t.inputPath)).map((t) => t.id),
-              ),
-          })
-        : undefined,
-    [reviewKind, removeTracks, tracksRef],
-  )
+  const reviewPaths = review?.source === 'list' ? review.paths : undefined
+  const reviewIds = review?.source === 'music' ? review.scope?.ids : undefined
+  const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
+  const reviewSource = useMemo(() => {
+    if (reviewKind === 'music')
+      return reviewIds && reviewMode ? scopedMusicSource(reviewIds, reviewMode) : undefined
+    if (reviewKind !== 'list') return undefined
+    return listReviewSource({
+      rows: reviewPaths
+        ? () => tracksViewRef.current.filter((t) => reviewPaths.has(t.inputPath))
+        : () => tracksViewRef.current,
+      mac: isMac,
+      launchMusic: () =>
+        !!settingsRef.current?.addToAppleMusic ||
+        tracksRef.current.some((t) => t.fromAppleMusic || t.musicPersistentId),
+      onRowsRemoved: (paths) =>
+        removeTracks(tracksRef.current.filter((t) => paths.includes(t.inputPath)).map((t) => t.id)),
+    })
+  }, [reviewKind, reviewPaths, reviewIds, reviewMode, removeTracks, tracksRef])
   // A conversion writes the same files and library databases the review would, so the
   // review holds its writes until it ends.
   const reviewBusy = batching || tracks.some((t) => t.status === 'processing')
@@ -2254,7 +2281,7 @@ export default function App(): React.JSX.Element {
             <MusicReviewProvider
               open={review !== null}
               filter={review?.filter ?? 'all'}
-              source={listSource}
+              source={reviewSource}
               ignored={
                 (review?.source === 'list'
                   ? settings?.listReviewIgnored
@@ -2385,9 +2412,17 @@ export default function App(): React.JSX.Element {
                           scrollToSelected={scrollToSelected}
                           onFillAll={onFillAll}
                           onFindReplace={onFindReplace}
-                          onReviewList={openListReview}
-                          canReviewList={tracks.length > 0 && !batching}
-                          reviewDetail={reviewDetail(tr, { kind: 'list', count: tracks.length })}
+                          onReviewList={() => openTargetReview('all')}
+                          canReviewList={target.count > 0 && !batching}
+                          reviewDetail={reviewDetail(tr, target)}
+                          duplicates={
+                            target.kind === 'music'
+                              ? {
+                                  detail: duplicatesDetail(tr, target.name),
+                                  onShow: () => openTargetReview('duplicates'),
+                                }
+                              : undefined
+                          }
                           onClearAll={onClearAll}
                           onRemoveSelected={onRemoveSelected}
                           onTrashSelected={onTrashSelected}

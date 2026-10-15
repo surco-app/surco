@@ -4829,6 +4829,83 @@ describe('App Music review', () => {
     fireEvent.click(screen.getByTestId('music-review-close'))
     expect(await screen.findByTestId('editor-trim')).toBeInTheDocument()
   })
+
+  // From a Music playlist the review is about that playlist: its own metadata, and the
+  // copies of its tracks wherever they sit in the library.
+  describe('from an open Music playlist', () => {
+    const library = [
+      { ...reviewEntry('0000000000000001', 'DJ Lara'), title: 'Gold' },
+      { ...reviewEntry('0000000000000002', 'DJ Lara'), title: 'Gold' },
+      { ...reviewEntry('0000000000000003', 'Dj Lara'), title: 'Iron' },
+      { ...reviewEntry('0000000000000005', 'Ana'), title: 'Copper' },
+      { ...reviewEntry('0000000000000006', 'Bo'), title: 'Lead' },
+      { ...reviewEntry('0000000000000007', 'Bo'), title: 'Lead' },
+    ]
+    const fridayIds = {
+      '/m/gold.wav': '0000000000000001',
+      '/m/copper.wav': '0000000000000005',
+    }
+    const openFriday = async (persistentIds: Record<string, string> = fridayIds) => {
+      vi.resetModules()
+      reviewApi({
+        loadMusicReview: vi.fn().mockResolvedValue(library),
+        appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
+        loadAppleMusicPlaylists: vi
+          .fn()
+          .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 2 }]),
+        loadAppleMusicPlaylistTracks: vi.fn().mockResolvedValue({
+          paths: ['/m/gold.wav', '/m/copper.wav'],
+          persistentIds,
+          meta: {},
+          missing: 0,
+        }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+      fireEvent.click(await screen.findByTestId('source-node-P1'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.click(screen.getByTestId('list-actions-more'))
+    }
+
+    it('names the playlist and that Apple Music changes, then reviews only its tracks', async () => {
+      await openFriday()
+      expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent(
+        'The 2 tracks in “Friday”. Changes Apple Music',
+      )
+      expect(screen.getByTestId('music-duplicates-open-detail')).toHaveTextContent(
+        'From “Friday” across your whole Music library',
+      )
+      fireEvent.click(screen.getByTestId('list-review-open'))
+      expect(await screen.findByTestId('music-review-all-clear')).toBeInTheDocument()
+      expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0)
+      expect(window.api.loadMusicReview).toHaveBeenCalledTimes(1)
+    })
+
+    // The copy to delete is usually outside the playlist: Gold's second copy is found, and
+    // Lead, whose copies are both outside it, is not the playlist's business.
+    it('shows the copies of its tracks found anywhere in the library, and only those', async () => {
+      await openFriday()
+      fireEvent.click(screen.getByTestId('music-duplicates-open'))
+      await waitFor(() => expect(screen.getAllByTestId('music-review-row')).toHaveLength(1))
+      expect(screen.getByTestId('music-review-row-name')).toHaveTextContent('Gold')
+      expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('Duplicates')
+    })
+
+    // Rows with no Music entry behind them are rows the Music review never loads: counting
+    // the rows shown would open a review that says the whole library is empty.
+    it('offers nothing to review when none of the rows shown is a Music entry', async () => {
+      await openFriday({})
+      expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent(
+        '“Friday” has no tracks to review',
+      )
+      expect(screen.getByTestId('list-review-open')).toBeDisabled()
+      expect(screen.getByTestId('music-duplicates-open')).toBeDisabled()
+      runMenu('list-review')
+      await act(async () => {})
+      expect(screen.queryByTestId('music-review')).not.toBeInTheDocument()
+      expect(window.api.loadMusicReview).not.toHaveBeenCalled()
+    })
+  })
 })
 
 const listApi = (over: Record<string, unknown> = {}) => {
@@ -5039,6 +5116,65 @@ describe('App list review', () => {
     fireEvent.click(await screen.findByTestId('convert-all'))
     fireEvent.click(await screen.findByTestId('list-actions-more'))
     await waitFor(() => expect(screen.getByTestId('list-review-open')).toBeDisabled())
+  })
+
+  // No source open, the review is the list's, and the line says it writes the files.
+  it('says under Review metadata that it changes the files of the whole list', async () => {
+    vi.resetModules()
+    listApi()
+    await renderApp()
+    await addThree()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent(
+      'The 3 tracks in the list. Changes the files',
+    )
+    expect(screen.queryByTestId('music-duplicates-open')).not.toBeInTheDocument()
+  })
+
+  // A rekordbox playlist is the crate the DJ is working on: the review finds what is wrong in
+  // it, not in every file that ever passed through the list, and it keeps to the rows the
+  // menu named even when another playlist is picked while it is open.
+  it('reviews only the open rekordbox playlist and keeps to it when another one is picked', async () => {
+    vi.resetModules()
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    listApi({
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
+        { id: 'f', name: 'Factory', kind: 'playlist', count: 2 },
+        { id: 'g', name: 'Closing', kind: 'playlist', count: 1 },
+      ]),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) =>
+        id === 'f' ? [entry('/music/a.wav'), entry('/music/b.wav')] : [entry('/music/c.wav')],
+      ),
+    })
+    await renderApp()
+    await addThree()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent(
+      'The 2 tracks in “Factory”. Changes the files',
+    )
+    expect(screen.queryByTestId('music-duplicates-open')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('list-review-open'))
+    expect(await screen.findByTestId('list-review-scope')).toHaveTextContent(
+      /^2 tracks in the list$/,
+    )
+    expect(await screen.findByTestId('music-review-all-clear')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('source-node-g'))
+    await act(async () => {})
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(/^2 tracks in the list$/)
+    expect(screen.getByTestId('music-review-all-clear')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('music-review-close'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    runMenu('list-review')
+    expect(await screen.findByTestId('list-review-scope')).toHaveTextContent(
+      /^1 track in the list$/,
+    )
   })
 })
 
