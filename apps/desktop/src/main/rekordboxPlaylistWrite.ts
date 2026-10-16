@@ -23,6 +23,7 @@ import {
   resolveTracks,
 } from './rekordboxPlaylistEdit'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { writeBackup } from './rekordboxSessionBackup'
 
 // Writes one organising edit into the user's rekordbox collection, the one library they
 // cannot rebuild. Same bargain as the repoint (rekordboxLibrary.ts): the edit is planned
@@ -205,7 +206,7 @@ export async function editRekordboxPlaylist(
       // The session's copy first: it must describe the collection before Surco's first
       // edit. Then the copy a failed write is restored from.
       await deps.sessionBackup(path)
-      await copyFile(path, `${path}${BACKUP_SUFFIX}`)
+      await writeBackup(path, `${path}${BACKUP_SUFFIX}`)
     }
     // Read now, so nothing waits between the second check below and the transaction.
     if (withXml) xml = await readFile(xmlPath, 'utf8')

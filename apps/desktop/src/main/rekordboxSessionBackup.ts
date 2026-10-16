@@ -1,4 +1,14 @@
-import { copyFile } from 'node:fs/promises'
+import { chmod, copyFile, rm, stat } from 'node:fs/promises'
+
+// A copy keeps the mode of what it copied, and rekordbox can leave its files read-only.
+// Copied over in place, last time's read-only copy refused the next one, and with it every
+// write after the first. Removed first and left owner-writable, a copy never blocks the
+// next.
+export async function writeBackup(from: string, to: string): Promise<void> {
+  await rm(to, { force: true })
+  await copyFile(from, to)
+  await chmod(to, (await stat(to)).mode | 0o200)
+}
 
 // One copy of the collection per conversion run, taken before the first write and left
 // alone afterwards.
@@ -26,7 +36,7 @@ export interface SessionBackup {
 export function createSessionBackup(deps: {
   copy?: (from: string, to: string) => Promise<void>
 }): SessionBackup {
-  const copy = deps.copy ?? copyFile
+  const copy = deps.copy ?? writeBackup
   // Per collection, not one flag: tracking a single "done" would leave a second collection
   // in the same run with no pre-run copy at all.
   const done = new Set<string>()

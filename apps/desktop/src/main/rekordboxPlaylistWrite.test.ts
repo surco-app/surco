@@ -26,6 +26,7 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
 import { editRekordboxPlaylist, replaceFile, restoreCollection } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { createSessionBackup } from './rekordboxSessionBackup'
 
 const NOW = new Date('2026-10-15T18:00:00.000Z')
 const MOVE: RekordboxPlaylistEdit = {
@@ -197,6 +198,41 @@ describe('editRekordboxPlaylist', () => {
     expect(d.sessionBackup).toHaveBeenCalledWith(path)
     expect(linkIds(`${path}.surco-backup`, '2000')).toEqual(FACTORY)
     expect(linkIds(path, '2000')).toEqual(['f6', 'f1', 'f2', 'f3', 'f4', 'f5', 'f7'])
+  })
+
+  // rekordbox can leave its files read-only, and a copy keeps the mode of what it copied.
+  // The user's second edit then found last edit's backups locked and was refused as
+  // backup-failed: one read-only copy blocked every write after it.
+  it('backs up again over read-only copies left by the last edit', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const session = createSessionBackup({})
+    for (const file of [path, xmlPath]) {
+      await writeFile(`${file}.surco-backup`, 'last edit')
+      await writeFile(`${file}.surco-session`, 'last run')
+      await chmod(`${file}.surco-backup`, 0o444)
+      await chmod(`${file}.surco-session`, 0o444)
+    }
+    const result = await editRekordboxPlaylist(
+      path,
+      CREATE,
+      deps({ sessionBackup: (p: string) => session.ensure(p) }),
+    )
+    expect(result.applied).toBe(true)
+    expect(linkIds(`${path}.surco-backup`, '2000')).toEqual(FACTORY)
+    expect(await readFile(`${xmlPath}.surco-session`, 'utf8')).not.toBe('last run')
+  })
+
+  // The source itself read-only: its copies must still be replaceable by the next edit.
+  it('leaves backups of a read-only XML that the next edit can replace', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    await chmod(xmlPath, 0o444)
+    const session = createSessionBackup({})
+    const d = deps({ sessionBackup: (p: string) => session.ensure(p) })
+    expect((await editRekordboxPlaylist(path, CREATE, d)).applied).toBe(true)
+    session.reset()
+    expect((await editRekordboxPlaylist(path, { ...CREATE, name: 'Bolo 2' }, d)).applied).toBe(true)
   })
 
   // No backup, no write: a session copy that cannot be made stops the edit before
