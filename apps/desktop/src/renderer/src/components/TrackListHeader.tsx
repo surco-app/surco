@@ -11,7 +11,6 @@ import {
   FileAudio,
   FilePlus,
   ListMinus,
-  ListMusic,
   ListOrdered,
   ListX,
   type LucideIcon,
@@ -61,10 +60,6 @@ interface Props {
   // 1-based position of the selected row, shown when exactly one row is selected.
   selectedPosition: number | null
   onAdd: () => void
-  // Opens the Apple Music playlist picker. Undefined off macOS, where the button is not
-  // rendered at all rather than shown disabled: nothing the user could configure would
-  // make it work there.
-  onImportApplePlaylist?: () => void
   onSelectAllTracks: () => void
   scrollToSelected: () => void
   onFillAll: () => void
@@ -165,7 +160,6 @@ export function TrackListHeader({
   selectedIds,
   selectedPosition,
   onAdd,
-  onImportApplePlaylist,
   onSelectAllTracks,
   scrollToSelected,
   onFillAll,
@@ -303,20 +297,6 @@ export function TrackListHeader({
           <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
           <Tooltip label={tr('header.add')} hint={hintFor('add')} />
         </button>
-        {/* Its sibling: the other way to fill this column, so it sits beside adding files
-            rather than hiding in the palette once a list is loaded. */}
-        {onImportApplePlaylist && (
-          <button
-            type="button"
-            data-testid="import-apple-playlist"
-            onClick={onImportApplePlaylist}
-            aria-label={tr('commands.importApplePlaylist')}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-          >
-            <ListMusic className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={tr('commands.importApplePlaylist')} />
-          </button>
-        )}
         {tracks.length > 0 && (
           <>
             <span

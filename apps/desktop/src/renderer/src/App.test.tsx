@@ -6010,52 +6010,42 @@ describe('App list review notice', () => {
   })
 })
 
-// Reported while testing the Apple Music import: the entry point lived only in the empty
-// state, so once a playlist was loaded there was no visible way to load another. The
-// command palette still had it, but a shortcut nobody can see is not a door.
-describe('App Apple Music import stays reachable', () => {
-  it('keeps it beside adding files once tracks are loaded, not only on the empty screen', async () => {
-    // isMac is read at module scope, so a cached copy of App carries whatever platform the
-    // previous test set. Both cases here reset for that reason.
+// The list toolbar had an icon that opened Music's playlists. The rail's Music icon does the
+// same, and the toolbar one still showed inside rekordbox, where it read as acting on the
+// rekordbox playlist. The rail and the palette are the way in now; the toolbar has no copy.
+describe('App list toolbar leaves opening Music to the rail', () => {
+  it('has no Music button in Tracks, Music or rekordbox', async () => {
     vi.resetModules()
-    setApi({ platform: 'darwin' })
-    await renderApp()
-    await addTwoTracks()
-
-    const row = screen.getByTestId('add-files').parentElement
-    expect(row?.contains(screen.getByTestId('import-apple-playlist'))).toBe(true)
-  })
-
-  // It no longer imports anything: it opens Music's playlists in the rail, and its name
-  // has to say that or the DJ waits for an import that never comes.
-  it('is named for what it does, opening the Music playlists', async () => {
-    vi.resetModules()
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
     setApi({
       platform: 'darwin',
-      loadAppleMusicPlaylists: vi.fn<Api['loadAppleMusicPlaylists']>().mockResolvedValue([]),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([entry('/m/c.wav')]),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 1 }]),
+      loadAppleMusicPlaylistTracks: vi
+        .fn<Api['loadAppleMusicPlaylistTracks']>()
+        .mockResolvedValue({ paths: ['/m/d.wav'], persistentIds: {}, meta: {}, missing: 0 }),
     })
     await renderApp()
     await addTwoTracks()
-    const button = screen.getByTestId('import-apple-playlist')
-    expect(button).toHaveAccessibleName('Open Apple Music playlists')
-    fireEvent.click(button)
-    expect(await screen.findByTestId('source-rail-appleMusic')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-  })
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
+    expect(screen.queryByTestId('import-apple-playlist')).toBeNull()
 
-  // Off macOS there is no Apple Music to read, and nothing the user could configure would
-  // change that — so the button is absent rather than shown permanently disabled, which is
-  // how the empty state already treats its Apple Music line.
-  it('is absent off macOS, where it could never work', async () => {
-    // isMac is read at module scope, so the copy of App cached by the previous test still
-    // holds darwin. Only a reset makes this test read its own platform.
-    vi.resetModules()
-    setApi({ platform: 'win32' })
-    await renderApp()
-    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.queryByTestId('import-apple-playlist')).toBeNull()
 
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.queryByTestId('import-apple-playlist')).toBeNull()
   })
 })

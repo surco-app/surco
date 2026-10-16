@@ -2537,9 +2537,6 @@ export default function App(): React.JSX.Element {
                             selectedIds={selectedIds}
                             selectedPosition={selectedPosition}
                             onAdd={onAdd}
-                            onImportApplePlaylist={
-                              isMac ? () => selectSource('appleMusic') : undefined
-                            }
                             onSelectAllTracks={onSelectAllTracks}
                             scrollToSelected={scrollToSelected}
                             onFillAll={onFillAll}
