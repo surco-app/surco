@@ -5344,7 +5344,7 @@ describe('App Music review', () => {
     it('names the playlist and that Apple Music changes, then reviews only its tracks', async () => {
       await openFriday()
       expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent(
-        'The 2 tracks in “Friday”. Changes Apple Music',
+        'The 2 tracks in “Friday”. Changes Apple Music and the files',
       )
       expect(screen.getByTestId('music-duplicates-open-detail')).toHaveTextContent(
         'From “Friday” across your whole Music library',
