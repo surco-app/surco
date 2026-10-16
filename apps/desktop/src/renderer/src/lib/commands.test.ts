@@ -50,6 +50,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canProcessSelected: false,
     canProcessAll: false,
     batching: false,
+    canReviewList: false,
     cancelBatch: () => {},
     editorFormatRef: { current: null },
     editorDestinationRef: { current: null },
@@ -138,15 +139,17 @@ describe('Music review commands', () => {
     ).toBe(false)
   })
 
-  // The review works on the loaded tracks and writes the same files a conversion does.
-  it('offers the list review only with tracks loaded and no conversion running', () => {
+  // The palette and the list's menu decide with one rule (App's canReviewList: something
+  // to review for the open target and no conversion running). Rows on screen are not that:
+  // a Music playlist whose rows have no Music entry showed rows and opened nothing.
+  it('offers the list review by the same rule as the list menu', () => {
     const open = vi.fn()
     const find = (deps: Partial<CommandDeps>) =>
       buildCommands(makeDeps({ openListReview: open, ...deps })).find((c) => c.id === 'list-review')
-    expect(find({ tracks: [] })?.enabled).toBe(false)
-    expect(find({ tracks: [track()], batching: true })?.enabled).toBe(false)
+    expect(find({ tracks: [track()], canReviewList: false })?.enabled).toBe(false)
+    expect(find({ tracks: [], canReviewList: true })?.enabled).toBe(true)
     const ready = buildCommands(
-      makeDeps({ openListReview: open, tracks: [track()], platform: 'win32' }),
+      makeDeps({ openListReview: open, canReviewList: true, platform: 'win32' }),
     )
     runCommand(ready, 'list-review')
     expect(open).toHaveBeenCalledTimes(1)

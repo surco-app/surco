@@ -141,6 +141,9 @@ export interface CommandDeps {
   // flips into that cancel mid-run, like the sweep commands do.
   batching: boolean
   cancelBatch: () => void
+  // The list menu's own rule for its review item, so the palette never offers a review the
+  // menu has disabled (nothing to review in the open target, or a conversion running).
+  canReviewList: boolean
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
   editorFormatRef: { readonly current: FormatSetting | null }
   editorDestinationRef: { readonly current: Destination | null }
@@ -293,6 +296,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     canProcessAll,
     batching,
     cancelBatch,
+    canReviewList,
     editorFormatRef,
     editorDestinationRef,
     editorDestinationPickRef,
@@ -400,7 +404,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       group: 'library',
       title: tr('commands.listReview'),
       hint: hintFor('list-review'),
-      enabled: tracks.length > 0 && !batching,
+      enabled: canReviewList,
       run: openListReview,
     },
     {

@@ -1329,6 +1329,9 @@ export default function App(): React.JSX.Element {
       }),
     [browser.source, playlistName, browser.entries, playlistScope, scopeTracks.length],
   )
+  // One rule for the list menu and the palette: something to review in the open target,
+  // and no conversion writing the same files.
+  const canReviewList = target.count > 0 && !batching
   const openTargetReview = useStableCallback((filter: 'all' | 'duplicates') => {
     const next = reviewOpening(target, filter)
     if (next) setReview(next)
@@ -2144,6 +2147,7 @@ export default function App(): React.JSX.Element {
       canProcessAll,
       batching,
       cancelBatch,
+      canReviewList,
       editorFormatRef,
       editorDestinationRef,
       editorDestinationPickRef,
@@ -2523,7 +2527,7 @@ export default function App(): React.JSX.Element {
                             onFillAll={onFillAll}
                             onFindReplace={onFindReplace}
                             onReviewList={() => openTargetReview('all')}
-                            canReviewList={target.count > 0 && !batching}
+                            canReviewList={canReviewList}
                             reviewDetail={reviewDetail(tr, target)}
                             duplicates={
                               target.kind === 'music'
