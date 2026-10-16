@@ -26,7 +26,7 @@ vi.mock('./renameRetry', async (importOriginal) => {
 })
 
 import { existsSync } from 'node:fs'
-import { mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -149,6 +149,11 @@ describe('addToEngineLibrary', () => {
         'Sets',
       ),
     )
+    const before = await readFile(dbPath)
+    // A read-only backup from an earlier add: copied over in place it was refused, and the
+    // whole add with it.
+    await writeFile(join(lib, 'Database2', 'm.db.surco-backup'), 'stale')
+    await chmod(join(lib, 'Database2', 'm.db.surco-backup'), 0o444)
     const file = await makeFile(root, 'two.aiff')
     await addToEngineLibrary(lib, file, meta({ title: 'Two' }), 'Surco')
     const db = await open(dbPath)
@@ -161,7 +166,7 @@ describe('addToEngineLibrary', () => {
       'Surco',
     ])
     db.close()
-    expect((await stat(join(lib, 'Database2', 'm.db.surco-backup'))).size).toBeGreaterThan(0)
+    expect(await readFile(join(lib, 'Database2', 'm.db.surco-backup'))).toEqual(before)
   })
 
   // A run's adds reach Engine in several writes when the conversions are slow, and each

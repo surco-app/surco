@@ -1,4 +1,4 @@
-import { copyFile, readFile, unlink, writeFile } from 'node:fs/promises'
+import { readFile, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { Database } from 'sql.js'
@@ -8,6 +8,7 @@ import { assertEngineClosed } from './engineLibrary'
 import { absolute } from './engineRepoint'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { LibraryRepointResult } from './libraryRepointFlush'
+import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
 // Rewrites the text names Engine DJ keeps on a Track row when a review fixed the file.
@@ -88,7 +89,7 @@ export async function updateEngineTags(
 
     try {
       await options.sessionBackup?.(dbPath)
-      await copyFile(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+      await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
     } catch (e) {
       log.warn(`Engine DJ tags: backup failed: ${(e as Error).message}`)
       return settle({ written: false, reason: 'backup-failed' })

@@ -215,6 +215,19 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     expect(entry('e1').ContentID).toBe('B')
   })
 
+  // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
+  // copying the next one over it was refused, blocking every later write.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    await writeFile(`${dbPath}.surco-backup`, 'stale')
+    await chmod(`${dbPath}.surco-backup`, 0o444)
+    const [result] = await replaceRekordboxDuplicates(dbPath, pair())
+    expect(result.written).toBe(true)
+    const live = dbPath
+    dbPath = `${live}.surco-backup`
+    expect(entry('e1').ContentID).toBe('A')
+    dbPath = live
+  })
+
   it('writes nothing when the session backup cannot be made', async () => {
     const results = await replaceRekordboxDuplicates(dbPath, pair(), {
       sessionBackup: vi.fn(async () => Promise.reject(new Error('disk full'))),

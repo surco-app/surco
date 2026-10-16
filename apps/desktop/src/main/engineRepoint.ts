@@ -1,10 +1,11 @@
-import { copyFile, readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import { loadSqlJs } from './engine'
 import { assertEngineClosed } from './engineLibrary'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
+import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
 // Moves an existing Engine DJ library row onto the file a conversion just produced, so the
@@ -125,7 +126,7 @@ export async function repointEngineTracks(
 
     try {
       await options.sessionBackup?.(dbPath)
-      await copyFile(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+      await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
     } catch (e) {
       log.warn(`Engine DJ repoint: backup failed: ${(e as Error).message}`)
       return results.map((r) =>

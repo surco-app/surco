@@ -1,5 +1,5 @@
 import { realpathSync } from 'node:fs'
-import { mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -213,6 +213,18 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }], { sessionBackup })
     expect(await readFile(`${lib.dbPath}.surco-backup`)).toEqual(original)
     expect(sessionBackup).toHaveBeenCalledWith(lib.dbPath)
+  })
+
+  // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
+  // copying the next one over it was refused, blocking every later write.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    const lib = await library(schema)
+    const original = await readFile(lib.dbPath)
+    await writeFile(`${lib.dbPath}.surco-backup`, 'stale')
+    await chmod(`${lib.dbPath}.surco-backup`, 0o444)
+    const [result] = await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }])
+    expect(result.written).toBe(true)
+    expect(await readFile(`${lib.dbPath}.surco-backup`)).toEqual(original)
   })
 
   it('reports a new file that is no longer there', async () => {

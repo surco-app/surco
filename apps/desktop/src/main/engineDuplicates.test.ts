@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -189,6 +189,17 @@ describe('replaceEngineDuplicates with both copies in the library', () => {
     })
     await replaceEngineDuplicates(lib.dir, [{ from: lib.from, to: lib.to }], { sessionBackup })
     expect(sessionBackup).toHaveBeenCalledWith(lib.dbPath)
+    expect(await walk(`${lib.dbPath}.surco-backup`, 2)).toEqual([2, 1, 3])
+  })
+
+  // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
+  // copying the next one over it was refused, blocking every later write.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    const lib = await library()
+    await writeFile(`${lib.dbPath}.surco-backup`, 'stale')
+    await chmod(`${lib.dbPath}.surco-backup`, 0o444)
+    const [result] = await replaceEngineDuplicates(lib.dir, [{ from: lib.from, to: lib.to }])
+    expect(result.written).toBe(true)
     expect(await walk(`${lib.dbPath}.surco-backup`, 2)).toEqual([2, 1, 3])
   })
 

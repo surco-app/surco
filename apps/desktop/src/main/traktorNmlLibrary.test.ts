@@ -90,6 +90,17 @@ describe('syncCollection', () => {
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
   })
 
+  // Una copia hereda el modo de lo copiado: una colección de solo lectura dejaba un backup
+  // de solo lectura, y copiar el siguiente encima fallaba, bloqueando toda escritura posterior.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    writeFileSync(`${nmlPath}.surco-backup`, 'stale')
+    chmodSync(`${nmlPath}.surco-backup`, 0o444)
+    const result = await syncCollection(nmlPath, [patch])
+
+    expect(result.written).toBe(true)
+    expect(readFileSync(`${nmlPath}.surco-backup`, 'utf8')).toBe(NML)
+  })
+
   // Traktor carga la colección al arrancar y la reescribe al cerrar: escribir con
   // Traktor abierto se pierde al salir, sin error visible. Mejor no escribir.
   it('refuses to write while Traktor is running', async () => {

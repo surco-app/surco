@@ -1,4 +1,4 @@
-import { access, chmod, mkdtemp, readFile } from 'node:fs/promises'
+import { access, chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -227,6 +227,21 @@ describe('updateRekordboxTags', () => {
     dbPath = live
     expect(track().Title).toBe('New Title')
     expect(await readFile(backup)).not.toHaveLength(0)
+  })
+
+  // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
+  // copying the next one over it was refused, blocking every later write.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    await writeFile(`${dbPath}.surco-backup`, 'stale')
+    await chmod(`${dbPath}.surco-backup`, 0o444)
+    const [result] = await updateRekordboxTags(dbPath, [
+      { path: TRACK, fields: { title: { from: 'Old Title', to: 'New Title' } } },
+    ])
+    expect(result.written).toBe(true)
+    const live = dbPath
+    dbPath = `${live}.surco-backup`
+    expect(track().Title).toBe('Old Title')
+    dbPath = live
   })
 
   it('refuses to write when rekordbox opened between the read and the write', async () => {

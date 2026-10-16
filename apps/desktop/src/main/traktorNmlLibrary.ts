@@ -1,5 +1,6 @@
 import { type Dirent, readdirSync, readlinkSync } from 'node:fs'
-import { copyFile, readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
+import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
+import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
 import { refreshCachedCoverArt } from './traktorCoverCache'
@@ -104,7 +105,7 @@ async function writeCollection(
   patched: string,
 ): Promise<SyncResult['reason'] | null> {
   try {
-    await copyFile(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
+    await writeBackup(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
   } catch {
     // No backup, no write. A write without a recoverable copy next to it is the one
     // outcome this whole module exists to rule out.

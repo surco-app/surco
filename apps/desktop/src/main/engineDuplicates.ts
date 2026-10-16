@@ -1,4 +1,4 @@
-import { copyFile, readFile, unlink, writeFile } from 'node:fs/promises'
+import { readFile, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { Database } from 'sql.js'
@@ -8,6 +8,7 @@ import { assertEngineClosed } from './engineLibrary'
 import { absolute, repointEngineTracks } from './engineRepoint'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { DuplicateReplaceResult } from './rekordboxDuplicates'
+import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
 // The Engine DJ side of removing a duplicate copy, with engineTags.ts's lifecycle: Engine
@@ -139,7 +140,7 @@ async function writeReplaces(
 ): Promise<string | null> {
   try {
     await options.sessionBackup?.(dbPath)
-    await copyFile(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+    await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
   } catch (e) {
     log.warn(`Engine DJ duplicates: backup failed: ${(e as Error).message}`)
     return 'backup-failed'

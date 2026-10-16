@@ -305,6 +305,21 @@ describe('repointTrack', () => {
     expect(await readFile(`${dbPath}.surco-backup`)).toEqual(before)
   })
 
+  // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
+  // copying the next one over it was refused, blocking every later write.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+    const before = await readFile(dbPath)
+    await writeFile(`${dbPath}.surco-backup`, 'stale')
+    await chmod(`${dbPath}.surco-backup`, 0o444)
+
+    const result = await repointTrack(dbPath, { from: MP3, to: output })
+
+    expect(result.written).toBe(true)
+    expect(await readFile(`${dbPath}.surco-backup`)).toEqual(before)
+  })
+
   // The per-write backup below is overwritten before every track, so after a long run it
   // holds the collection as it was before the LAST track. The session copy is what can
   // still put things back the way they were before the run started, so it has to be taken

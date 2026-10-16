@@ -1,9 +1,9 @@
-import { copyFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import type { DuplicatePair } from '../shared/types'
 import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
 import { repointTracks } from './rekordboxLibrary'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { writeBackup } from './rekordboxSessionBackup'
 import { nextUsn, stamp } from './rekordboxTags'
 
 // When the user removes a duplicate copy from Music, rekordbox moves to the copy they kept.
@@ -137,7 +137,7 @@ async function writeReplaces(
 ): Promise<string | null> {
   try {
     await options.sessionBackup?.(collectionPath)
-    await copyFile(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
+    await writeBackup(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
   } catch {
     return 'backup-failed'
   }

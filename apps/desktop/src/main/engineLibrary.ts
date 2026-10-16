@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { realpathSync } from 'node:fs'
-import { copyFile, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative, resolve as resolvePath } from 'node:path'
 import type { Database } from 'sql.js'
 import { errorWithKey } from '../shared/errorKeys'
@@ -16,6 +16,7 @@ import {
 } from './engine'
 import { isEngineDjRunning } from './engineProcess'
 import { pathKey } from './libraryPathKey'
+import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
 // Registers converted files in the user's own Engine DJ library (the "Engine DJ"
@@ -210,7 +211,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
     // Keep the pre-write database around: this file is the user's real library, and a
     // backup next to it is the recovery path if a write ever goes wrong.
     for (const backup of new Set(adds.map((add) => add.sessionBackup))) await backup?.(dbPath)
-    await copyFile(dbPath, join(database2, 'm.db.surco-backup'))
+    await writeBackup(dbPath, join(database2, 'm.db.surco-backup'))
     db = new SQL.Database(await readFile(dbPath))
   } else {
     await mkdir(database2, { recursive: true })

@@ -18,6 +18,7 @@ import {
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { writeBackup } from './rekordboxSessionBackup'
 
 // Moves an existing collection entry onto the file a conversion just produced, so the
 // track keeps its ID and therefore its playlists, cues and play history. Writing into a
@@ -123,7 +124,7 @@ export async function repointTracks(
   repoints: Repoint[],
   batch: RepointBatchOptions = {},
 ): Promise<RepointResult[]> {
-  const copy = batch.backup ?? copyFile
+  const copy = batch.backup ?? writeBackup
   const results: (RepointResult | undefined)[] = repoints.map(() => undefined)
   const pending: { index: number; size: number; fileType: number }[] = []
   for (const [index, { from, to }] of repoints.entries()) {

@@ -1,5 +1,14 @@
 import { realpathSync } from 'node:fs'
-import { mkdir, mkdtemp, readdir, readFile, stat, symlink, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  stat,
+  symlink,
+  writeFile,
+} from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -199,6 +208,18 @@ describe('updateEngineTags', () => {
     const sessionBackup = vi.fn(async () => {})
     await updateEngineTags(lib.dir, [artist(lib.file)], { sessionBackup })
     expect(sessionBackup).toHaveBeenCalledWith(lib.dbPath)
+    expect(await readFile(`${lib.dbPath}.surco-backup`)).toEqual(bytes)
+  })
+
+  // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
+  // copying the next one over it was refused, blocking every later write.
+  it('replaces a read-only backup left by an earlier write', async () => {
+    const lib = await library()
+    const bytes = await readFile(lib.dbPath)
+    await writeFile(`${lib.dbPath}.surco-backup`, 'stale')
+    await chmod(`${lib.dbPath}.surco-backup`, 0o444)
+    const [result] = await updateEngineTags(lib.dir, [artist(lib.file)])
+    expect(result.written).toBe(true)
     expect(await readFile(`${lib.dbPath}.surco-backup`)).toEqual(bytes)
   })
 

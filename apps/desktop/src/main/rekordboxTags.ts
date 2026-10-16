@@ -1,10 +1,10 @@
 import { randomInt, randomUUID } from 'node:crypto'
-import { copyFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import type { LibraryTagUpdate, MusicReviewField, TagChange } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { writeBackup } from './rekordboxSessionBackup'
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
 
@@ -184,7 +184,7 @@ export async function updateRekordboxTags(
   if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
   try {
     await options.sessionBackup?.(collectionPath)
-    await copyFile(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
+    await writeBackup(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
   } catch {
     return settle({ written: false, reason: 'backup-failed' })
   }
