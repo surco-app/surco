@@ -1604,6 +1604,58 @@ describe('App source playlists', () => {
     })
   })
 
+  // The open playlist can lose rows without a switch: removed from it here, or changed in
+  // rekordbox and re-read. Those rows stay in the working list, and kept selected they went
+  // into the next "Añadir a playlist" and the bulk actions without being on screen.
+  describe('rows leaving the open playlist', () => {
+    const openWithReread = async (after: typeof FACTORY_ENTRIES, edit = vi.fn()) => {
+      edit.mockResolvedValue({ applied: true })
+      const load = vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValueOnce(FACTORY_ENTRIES)
+        .mockResolvedValue(after)
+      await openFactory({
+        loadRekordboxPlaylist: vi.fn(async (id: string) => (id === 'f' ? load(id) : [])),
+        editRekordboxPlaylist: edit,
+      })
+      return edit
+    }
+
+    it('drops rows removed from the playlist from the selection', async () => {
+      const edit = await openWithReread([FACTORY_ENTRIES[1], FACTORY_ENTRIES[3]])
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      fireEvent.contextMenu(rows[1])
+      fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
+      fireEvent.click(await screen.findByTestId('confirm-ok'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
+      const charlie = screen.getAllByTestId('track-row')[0]
+      fireEvent.click(charlie, { metaKey: true })
+      fireEvent.contextMenu(charlie)
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
+      expect(edit).toHaveBeenLastCalledWith({
+        kind: 'add',
+        playlistId: 'h',
+        tracks: [{ contentId: 'c-l3', paths: ['/m/c.wav'] }],
+      })
+    })
+
+    it('closes the editor of a row a re-read no longer finds in the playlist', async () => {
+      await openWithReread([FACTORY_ENTRIES[2], FACTORY_ENTRIES[3]])
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+      fireEvent.click(screen.getByTestId('separator-remove-s1'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
+      runMenu('trash-selected')
+      await act(async () => {})
+      expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
+    })
+  })
+
   // Copying between playlists names the exact rekordbox entry of a row read from a
   // playlist, so the symlinked twins copy instead of being refused.
   it('adds a row to another playlist from its menu, naming its rekordbox entry', async () => {

@@ -1283,13 +1283,23 @@ export default function App(): React.JSX.Element {
     () => playlistScope?.tracks ?? (browser.source ? [] : tracksView),
     [playlistScope, browser.source, tracksView],
   )
+  // Whenever the open playlist's rows change (its arrival after a switch, a row removed
+  // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
+  // the others stay in the working list, and selected they would reach the row menu and
+  // the bulk actions unseen.
   useEffect(() => {
+    if (!playlistScope) return
     const held = heldSelection.current
-    if (!held || !playlistScope) return
     heldSelection.current = null
     const shown = new Set(playlistScope.tracks.map((t) => t.id))
-    const ids = held.ids.filter((id) => shown.has(id))
-    setSelection({ ids, anchor: held.anchor && shown.has(held.anchor) ? held.anchor : null })
+    setSelection((current) => {
+      const from = held ?? current
+      const ids = from.ids.filter((id) => shown.has(id))
+      const anchor = from.anchor && shown.has(from.anchor) ? from.anchor : null
+      return !held && ids.length === current.ids.length && anchor === current.anchor
+        ? current
+        : { ids, anchor }
+    })
   }, [playlistScope])
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
   // entries load the list is empty, and the order must follow on arrival.
