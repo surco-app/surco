@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import type {
   PlaylistAddReport,
@@ -49,11 +49,15 @@ export interface PlaylistWriteDeps extends FindOptions {
   writeXml?: (path: string, text: string) => Promise<void>
 }
 
-// Written beside and renamed over, so rekordbox never finds a half-written file.
+// Written beside and renamed over, so rekordbox never finds a half-written file. The temp
+// file is born with the default mode; given the original's before the rename, so the
+// replacement does not quietly change permissions set on the user's file.
 export async function replaceFile(path: string, text: string): Promise<void> {
   const temp = `${path}.surco-tmp`
   try {
+    const { mode } = await stat(path)
     await writeFile(temp, text, 'utf8')
+    await chmod(temp, mode)
     await rename(temp, path)
   } catch (err) {
     // A half step left in rekordbox's folder would stay there for good.
@@ -108,9 +112,11 @@ async function xmlTakesNode(xmlPath: string, parentId: string): Promise<boolean>
   }
 }
 
+// Through replaceFile rather than a copy over it: the write kept a read-only file read-only,
+// and a copy onto it is refused.
 async function restoreFile(path: string): Promise<void> {
   try {
-    await copyFile(`${path}${BACKUP_SUFFIX}`, path)
+    await replaceFile(path, await readFile(`${path}${BACKUP_SUFFIX}`, 'utf8'))
   } catch (err) {
     log.error(`rekordbox ${path} could not be restored from ${BACKUP_SUFFIX}: ${String(err)}`)
   }

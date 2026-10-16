@@ -1,5 +1,5 @@
 import { existsSync, rmSync, writeFileSync } from 'node:fs'
-import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -418,6 +418,35 @@ describe('editRekordboxPlaylist', () => {
     expect(await readFile(xmlPath, 'utf8')).toBe(before)
   }, 30_000)
 
+  // The write keeps a read-only XML read-only, so putting it back cannot be a copy over it:
+  // that copy is refused and the node would stay with no playlist row behind it.
+  it('puts a read-only XML back when the database cannot commit after the node was written', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
+    await chmod(xmlPath, 0o444)
+    let reader: ReturnType<typeof openRekordboxDb> = null
+    try {
+      const result = await editRekordboxPlaylist(
+        path,
+        CREATE,
+        deps({
+          writeXml: vi.fn(async (p: string, text: string) => {
+            await replaceFile(p, text)
+            reader = openRekordboxDb(path, { readonly: true })
+            reader?.prepare('BEGIN').run()
+            reader?.prepare('SELECT count(*) FROM djmdPlaylist').get()
+          }),
+        }),
+      )
+      expect(result).toEqual({ applied: false, reason: 'write-failed' })
+    } finally {
+      ;(reader as ReturnType<typeof openRekordboxDb>)?.close()
+    }
+    expect(await readFile(xmlPath, 'utf8')).toBe(before)
+    expect((await stat(xmlPath)).mode & 0o777).toBe(0o444)
+  }, 30_000)
+
   // A layout the text edit refuses to guess at is known before rekordbox is asked to close:
   // the user must not lose a running rekordbox for a creation that cannot land.
   it('refuses a creation the XML cannot take without asking anything', async () => {
@@ -550,6 +579,18 @@ describe('editRekordboxPlaylist', () => {
 // The XML is written beside and renamed over. A rename that fails left the half-step file
 // in rekordbox's folder for good.
 describe('replaceFile', () => {
+  // The temp file is born with the default mode, so renaming it over silently changed the
+  // permissions the user (or rekordbox) had set on their own file.
+  it('keeps the mode of the file it replaces', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbreplace-'))
+    const target = join(dir, 'masterPlaylists6.xml')
+    await writeFile(target, '<old/>')
+    await chmod(target, 0o440)
+    await replaceFile(target, '<xml/>')
+    expect((await stat(target)).mode & 0o777).toBe(0o440)
+    expect(await readFile(target, 'utf8')).toBe('<xml/>')
+  })
+
   it('leaves no temporary file behind when the rename fails', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'surco-rbreplace-'))
     const target = join(dir, 'masterPlaylists6.xml')
