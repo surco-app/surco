@@ -134,7 +134,7 @@
     "bringGroup": "Bring in tracks",
     "addTracks": "Add tracks",
     "addTracksHint": "Convert and tag your files",
-    "importApplePlaylist": "Import from Apple Music",
+    "importApplePlaylist": "Open Apple Music playlists",
     "importHint": "Load the tracks from a playlist",
     "libraryGroup": "Tidy the library",
     "reviewMusic": "Review metadata in Apple Music",
@@ -372,7 +372,7 @@
     "trimStartZoomOut": "Zoom out from the head cut",
     "trimEndZoomIn": "Zoom in on the tail cut",
     "trimEndZoomOut": "Zoom out from the tail cut",
-    "importApplePlaylist": "Import from Apple Music…",
+    "importApplePlaylist": "Open Apple Music playlists",
     "musicReview": "Review metadata in Apple Music…",
     "musicDuplicates": "Show duplicates in Apple Music…",
     "listReview": "Review metadata…"

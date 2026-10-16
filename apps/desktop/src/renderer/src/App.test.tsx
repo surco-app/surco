@@ -5937,6 +5937,25 @@ describe('App Apple Music import stays reachable', () => {
     expect(row?.contains(screen.getByTestId('import-apple-playlist'))).toBe(true)
   })
 
+  // It no longer imports anything: it opens Music's playlists in the rail, and its name
+  // has to say that or the DJ waits for an import that never comes.
+  it('is named for what it does, opening the Music playlists', async () => {
+    vi.resetModules()
+    setApi({
+      platform: 'darwin',
+      loadAppleMusicPlaylists: vi.fn<Api['loadAppleMusicPlaylists']>().mockResolvedValue([]),
+    })
+    await renderApp()
+    await addTwoTracks()
+    const button = screen.getByTestId('import-apple-playlist')
+    expect(button).toHaveAccessibleName('Open Apple Music playlists')
+    fireEvent.click(button)
+    expect(await screen.findByTestId('source-rail-appleMusic')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
   // Off macOS there is no Apple Music to read, and nothing the user could configure would
   // change that — so the button is absent rather than shown permanently disabled, which is
   // how the empty state already treats its Apple Music line.

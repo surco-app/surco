@@ -134,7 +134,7 @@
     "bringGroup": "Trazer faixas",
     "addTracks": "Adicionar faixas",
     "addTracksHint": "Converter e etiquetar seus arquivos",
-    "importApplePlaylist": "Importar do Apple Music",
+    "importApplePlaylist": "Abrir playlists do Apple Music",
     "importHint": "Carregar as faixas de uma playlist",
     "libraryGroup": "Organizar a biblioteca",
     "reviewMusic": "Revisar metadados no Apple Music",
@@ -372,7 +372,7 @@
     "trimStartZoomOut": "Afastar o corte inicial",
     "trimEndZoomIn": "Aproximar o corte final",
     "trimEndZoomOut": "Afastar o corte final",
-    "importApplePlaylist": "Importar do Apple Music…",
+    "importApplePlaylist": "Abrir playlists do Apple Music",
     "musicReview": "Revisar metadados no Apple Music…",
     "musicDuplicates": "Mostrar duplicados no Apple Music…",
     "listReview": "Revisar metadados…"

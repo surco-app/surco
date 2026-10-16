@@ -134,7 +134,7 @@
     "bringGroup": "Traer pistas",
     "addTracks": "Añadir pistas",
     "addTracksHint": "Convertir y etiquetar tus ficheros",
-    "importApplePlaylist": "Importar de Apple Music",
+    "importApplePlaylist": "Abrir playlists de Apple Music",
     "importHint": "Cargar las pistas de una playlist",
     "libraryGroup": "Ordenar la biblioteca",
     "reviewMusic": "Revisar metadatos en Apple Music",
@@ -372,7 +372,7 @@
     "trimStartZoomOut": "Alejar la vista del corte de entrada",
     "trimEndZoomIn": "Acercar la vista del corte de salida",
     "trimEndZoomOut": "Alejar la vista del corte de salida",
-    "importApplePlaylist": "Importar de Apple Music…",
+    "importApplePlaylist": "Abrir playlists de Apple Music",
     "musicReview": "Revisar metadatos en Apple Music…",
     "musicDuplicates": "Mostrar duplicados en Apple Music…",
     "listReview": "Revisar metadatos…"
