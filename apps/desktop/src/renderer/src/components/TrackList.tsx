@@ -1051,6 +1051,7 @@ export const TrackList = memo(function TrackList({
             className="rounded opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
           >
             <X size={11} aria-hidden="true" />
+            <Tooltip label={tr('sources.reorder.removeSeparator')} />
           </button>
         )}
       </div>

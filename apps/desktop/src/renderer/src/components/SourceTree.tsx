@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
+import { Tooltip } from './Tooltip'
 
 // The folders on the way to a node, so the tree can open them for the selected playlist.
 function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): SourceNode[] | null {
@@ -284,6 +285,7 @@ export function SourceTree({
               className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <ListPlus size={14} aria-hidden="true" />
+              <Tooltip label={tr('sources.tree.newPlaylist')} />
             </button>
             <button
               type="button"
@@ -293,6 +295,7 @@ export function SourceTree({
               className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <FolderPlus size={14} aria-hidden="true" />
+              <Tooltip label={tr('sources.tree.newFolder')} />
             </button>
           </span>
         )}

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
 import { clearDraggedRows, setDraggedRows } from '../lib/reorderDrag'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { SourceTree } from './SourceTree'
@@ -150,6 +150,25 @@ describe('SourceTree', () => {
 })
 
 describe('SourceTree organising', () => {
+  // "los iconos no tienen tooltip": two bare glyphs side by side, and nothing on hover said
+  // which one makes a playlist and which a folder.
+  it('names the create buttons in a tooltip on hover', () => {
+    vi.useFakeTimers()
+    setup(null, true)
+    for (const [id, key] of [
+      ['source-tree-new-playlist', 'sources.tree.newPlaylist'],
+      ['source-tree-new-folder', 'sources.tree.newFolder'],
+    ]) {
+      const button = screen.getByTestId(id)
+      fireEvent.pointerEnter(button)
+      fireEvent.pointerMove(button, { clientX: 10, clientY: 10 })
+      act(() => vi.advanceTimersByTime(500))
+      expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t(key))
+      fireEvent.pointerLeave(button)
+    }
+    vi.useRealTimers()
+  })
+
   it('creates a playlist at the root, named right in the tree', () => {
     const { edit } = setup(null, true)
     fireEvent.click(screen.getByTestId('source-tree-new-playlist'))

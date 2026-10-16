@@ -1761,6 +1761,21 @@ describe('TrackList reorder', () => {
     expect(reorder.onRemoveSeparator).toHaveBeenCalledWith('s1')
   })
 
+  // The ✕ is a bare glyph on a dashed line; hovering it has to say what it removes.
+  it('names the separator remove button in a tooltip on hover', () => {
+    vi.useFakeTimers()
+    renderList(abc(), null, [], {
+      reorder: reorderSpy(),
+      separatorBefore: new Map([['b', ['s1']]]),
+    })
+    const button = screen.getByTestId('separator-remove-s1')
+    fireEvent.pointerEnter(button)
+    fireEvent.pointerMove(button, { clientX: 10, clientY: 10 })
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('sources.reorder.removeSeparator'))
+    vi.useRealTimers()
+  })
+
   // A listbox holds options only: a focusable button inside it is announced as part of the
   // list and stops Tab inside it. The line and its ✕ stay out of the accessibility tree,
   // and the keyboard removes a separator from the row menu instead.

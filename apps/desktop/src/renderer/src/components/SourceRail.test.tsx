@@ -19,12 +19,11 @@ describe('SourceRail', () => {
   // words; the name stays as the button's accessible name and hover title. The marks are
   // drawn in the text colour like the list icon beside them, not in the apps' own colours,
   // so the rail reads as Surco's and the pressed state shows the same way on all three.
-  it('shows each source by its own mark in the rail colour, named only for screen readers and on hover', () => {
+  it('shows each source by its own mark in the rail colour, named only for screen readers and in a tooltip', () => {
     render(<SourceRail sources={['appleMusic', 'rekordbox']} active={null} onSelect={vi.fn()} />)
     const rekordbox = screen.getByTestId('source-rail-rekordbox')
     expect(rekordbox).toHaveTextContent('')
     expect(rekordbox).toHaveAccessibleName('rekordbox')
-    expect(rekordbox).toHaveAttribute('title', 'rekordbox')
     for (const s of ['rekordbox', 'appleMusic']) {
       const icon = screen.getByTestId(`source-rail-icon-${s}`)
       expect(icon.tagName.toLowerCase()).toBe('svg')
@@ -32,6 +31,22 @@ describe('SourceRail', () => {
     }
     expect(screen.getByTestId('source-rail-tracks')).toHaveAccessibleName('Tracks')
     expect(screen.getByTestId('source-rail-tracks')).toHaveTextContent('')
+  })
+
+  // The rail has no words, so the name a sighted user reads on hover is the only way to
+  // tell the marks apart; it comes from the app's themed tooltip like every other icon.
+  it('names each icon in the app tooltip on focus, not in a native title', () => {
+    render(<SourceRail sources={['appleMusic', 'rekordbox']} active={null} onSelect={vi.fn()} />)
+    for (const [id, name] of [
+      ['tracks', 'Tracks'],
+      ['rekordbox', 'rekordbox'],
+    ]) {
+      const button = screen.getByTestId(`source-rail-${id}`)
+      expect(button).not.toHaveAttribute('title')
+      fireEvent.focusIn(button)
+      expect(screen.getByRole('tooltip')).toHaveTextContent(name)
+      fireEvent.focusOut(button)
+    }
   })
 
   it('picks a source, and the working list with null', () => {

@@ -3,6 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
 import { AppleMusicIcon, RekordboxIcon } from './SourceIcons'
+import { Tooltip } from './Tooltip'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, so the rail
 // needs no words under it. Drawn in the rail's colour, not the apps' own.
@@ -38,13 +39,13 @@ export function SourceRail({
       data-testid={`source-rail-${key}`}
       aria-pressed={on}
       aria-label={label}
-      title={label}
       onClick={pick}
       className={`flex size-[44px] items-center justify-center rounded-lg ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
       }`}
     >
       {icon}
+      <Tooltip label={label} />
     </button>
   )
   return (
