@@ -71,8 +71,8 @@
         "playlistFiles_one": "A única faixa de “{{name}}”. Altera o arquivo",
         "playlistFiles_other": "As {{count}} faixas de “{{name}}”. Altera os arquivos",
         "playlistMusic_zero": "“{{name}}” não tem faixas para revisar",
-        "playlistMusic_one": "A única faixa de “{{name}}”. Altera o Apple Music",
-        "playlistMusic_other": "As {{count}} faixas de “{{name}}”. Altera o Apple Music",
+        "playlistMusic_one": "A única faixa de “{{name}}”. Altera o Apple Music e o arquivo",
+        "playlistMusic_other": "As {{count}} faixas de “{{name}}”. Altera o Apple Music e os arquivos",
         "duplicates": "De “{{name}}” em toda a sua biblioteca do Music"
       },
       "showDuplicates": "Mostrar duplicados"

@@ -71,8 +71,8 @@
         "playlistFiles_one": "Der einzige Track aus „{{name}}“. Ändert die Datei",
         "playlistFiles_other": "Die {{count}} Tracks aus „{{name}}“. Ändert die Dateien",
         "playlistMusic_zero": "„{{name}}“ hat keine Tracks zum Prüfen",
-        "playlistMusic_one": "Der einzige Track aus „{{name}}“. Ändert Apple Music",
-        "playlistMusic_other": "Die {{count}} Tracks aus „{{name}}“. Ändert Apple Music",
+        "playlistMusic_one": "Der einzige Track aus „{{name}}“. Ändert Apple Music und die Datei",
+        "playlistMusic_other": "Die {{count}} Tracks aus „{{name}}“. Ändert Apple Music und die Dateien",
         "duplicates": "Aus „{{name}}“ in deiner ganzen Music-Mediathek"
       },
       "showDuplicates": "Duplikate anzeigen"

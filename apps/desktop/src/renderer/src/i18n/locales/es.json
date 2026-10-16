@@ -71,8 +71,8 @@
         "playlistFiles_one": "La única pista de «{{name}}». Cambia el fichero",
         "playlistFiles_other": "Las {{count}} pistas de «{{name}}». Cambia los ficheros",
         "playlistMusic_zero": "«{{name}}» no tiene pistas que revisar",
-        "playlistMusic_one": "La única pista de «{{name}}». Cambia Apple Music",
-        "playlistMusic_other": "Las {{count}} pistas de «{{name}}». Cambia Apple Music",
+        "playlistMusic_one": "La única pista de «{{name}}». Cambia Apple Music y el fichero",
+        "playlistMusic_other": "Las {{count}} pistas de «{{name}}». Cambia Apple Music y los ficheros",
         "duplicates": "De «{{name}}» en toda tu biblioteca de Music"
       },
       "showDuplicates": "Mostrar duplicados"

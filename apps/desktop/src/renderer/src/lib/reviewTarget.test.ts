@@ -134,7 +134,7 @@ describe('reviewDetail', () => {
       reviewDetail(tr, { kind: 'playlist', name: 'Factory', paths: new Set(), count: 70 }),
     ).toBe('The 70 tracks in “Factory”. Changes the files')
     expect(reviewDetail(tr, { kind: 'music', name: '2K', ids: new Set(), count: 406 })).toBe(
-      'The 406 tracks in “2K”. Changes Apple Music',
+      'The 406 tracks in “2K”. Changes Apple Music and the files',
     )
     expect(duplicatesDetail(tr, '2K')).toBe('From “2K” across your whole Music library')
   })
@@ -150,7 +150,7 @@ describe('reviewDetail', () => {
   it('reads in Spanish as approved', async () => {
     await i18n.changeLanguage('es')
     expect(reviewDetail(tr, { kind: 'music', name: '2K', ids: new Set(), count: 406 })).toBe(
-      'Las 406 pistas de «2K». Cambia Apple Music',
+      'Las 406 pistas de «2K». Cambia Apple Music y los ficheros',
     )
     expect(
       reviewDetail(tr, { kind: 'playlist', name: 'Factory', paths: new Set(), count: 70 }),

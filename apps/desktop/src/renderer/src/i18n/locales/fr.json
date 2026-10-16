@@ -71,8 +71,8 @@
         "playlistFiles_one": "Le seul morceau de « {{name}} ». Modifie le fichier",
         "playlistFiles_other": "Les {{count}} morceaux de « {{name}} ». Modifie les fichiers",
         "playlistMusic_zero": "« {{name}} » n'a aucun morceau à vérifier",
-        "playlistMusic_one": "Le seul morceau de « {{name}} ». Modifie Apple Music",
-        "playlistMusic_other": "Les {{count}} morceaux de « {{name}} ». Modifie Apple Music",
+        "playlistMusic_one": "Le seul morceau de « {{name}} ». Modifie Apple Music et le fichier",
+        "playlistMusic_other": "Les {{count}} morceaux de « {{name}} ». Modifie Apple Music et les fichiers",
         "duplicates": "De « {{name}} » dans toute ta bibliothèque Music"
       },
       "showDuplicates": "Afficher les doublons"
