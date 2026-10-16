@@ -2029,6 +2029,8 @@
       "both": "{{duplicates}} and {{spellings}}",
       "found": "{{loaded}}. {{issues}} to review",
       "review": "Review"
-    }
+    },
+    "scopePlaylist_one": "{{count}} track in “{{name}}”",
+    "scopePlaylist_other": "{{count}} tracks in “{{name}}”"
   }
 }

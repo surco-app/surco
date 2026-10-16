@@ -147,7 +147,15 @@ export function MusicReviewProvider({
   )
 }
 
-export function MusicReviewColumn({ onClose, busy }: { onClose: () => void; busy: boolean }) {
+export function MusicReviewColumn({
+  onClose,
+  busy,
+  scopeName,
+}: {
+  onClose: () => void
+  busy: boolean
+  scopeName?: string
+}) {
   const shared = useContext(ReviewContext)
   if (!shared) return null
   return (
@@ -163,6 +171,7 @@ export function MusicReviewColumn({ onClose, busy }: { onClose: () => void; busy
       onSort={shared.setSort}
       confirming={shared.confirming}
       onConfirming={shared.setConfirming}
+      scopeName={scopeName}
     />
   )
 }

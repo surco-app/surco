@@ -785,6 +785,7 @@ export function MusicReview({
   onSort,
   confirming,
   onConfirming,
+  scopeName,
 }: {
   review: Review
   selectedKey: string | null
@@ -797,6 +798,8 @@ export function MusicReview({
   onSort: (sort: ReviewSort) => void
   confirming: boolean
   onConfirming: (open: boolean) => void
+  // The playlist the review was opened on, named in its scope line.
+  scopeName?: string
 }) {
   const { t } = useTranslation()
   const copy = REVIEW_COPY[review.kind]
@@ -908,7 +911,9 @@ export function MusicReview({
         {review.kind === 'list' && review.status !== 'loading' && (
           <p data-testid="list-review-scope" className="px-2 pb-2 text-xs text-fg-faint">
             {[
-              t('listReview.scope', { count: review.reviewed }),
+              scopeName === undefined
+                ? t('listReview.scope', { count: review.reviewed })
+                : t('listReview.scopePlaylist', { count: review.reviewed, name: scopeName }),
               ...(review.skipped > 0 ? [t('listReview.skipped', { count: review.skipped })] : []),
               ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
             ].join(' · ')}

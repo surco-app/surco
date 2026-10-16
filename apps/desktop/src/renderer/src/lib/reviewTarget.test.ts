@@ -107,6 +107,7 @@ describe('reviewOpening', () => {
       source: 'list',
       filter: 'all',
       paths,
+      name: 'F',
     })
     expect(reviewOpening({ kind: 'list', count: 3 }, 'all')).toEqual({
       source: 'list',

@@ -5634,20 +5634,20 @@ describe('App list review', () => {
     expect(screen.queryByTestId('music-duplicates-open')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('list-review-open'))
     expect(await screen.findByTestId('list-review-scope')).toHaveTextContent(
-      /^2 tracks in the list$/,
+      /^2 tracks in “Factory”$/,
     )
     expect(await screen.findByTestId('music-review-all-clear')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('source-node-g'))
     await act(async () => {})
-    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(/^2 tracks in the list$/)
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(/^2 tracks in “Factory”$/)
     expect(screen.getByTestId('music-review-all-clear')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('music-review-close'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     runMenu('list-review')
     expect(await screen.findByTestId('list-review-scope')).toHaveTextContent(
-      /^1 track in the list$/,
+      /^1 track in “Closing”$/,
     )
   })
 })

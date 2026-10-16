@@ -2029,6 +2029,8 @@
       "both": "{{duplicates}} et {{spellings}}",
       "found": "{{loaded}}. {{issues}} à vérifier",
       "review": "Vérifier"
-    }
+    },
+    "scopePlaylist_one": "{{count}} piste de « {{name}} »",
+    "scopePlaylist_other": "{{count}} pistes de « {{name}} »"
   }
 }

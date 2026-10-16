@@ -15,7 +15,7 @@ export type ReviewTarget =
 // The review App keeps open: which engine, which filter it opened on, and the rows it was
 // opened for. No paths is the whole working list; no scope is the whole Music library.
 export type ReviewOpening =
-  | { source: 'list'; filter: ReviewFilter; paths?: ReadonlySet<string> }
+  | { source: 'list'; filter: ReviewFilter; paths?: ReadonlySet<string>; name?: string }
   | {
       source: 'music'
       filter: ReviewFilter
@@ -67,7 +67,7 @@ export function reviewOpening(
       scope: { ids: target.ids, mode: filter === 'duplicates' ? 'duplicates' : 'tracks' },
     }
   return target.kind === 'playlist'
-    ? { source: 'list', filter, paths: target.paths }
+    ? { source: 'list', filter, paths: target.paths, name: target.name }
     : { source: 'list', filter }
 }
 

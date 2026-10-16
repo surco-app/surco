@@ -2462,7 +2462,11 @@ export default function App(): React.JSX.Element {
                       className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                     >
                       {review !== null ? (
-                        <MusicReviewColumn onClose={() => setReview(null)} busy={reviewBusy} />
+                        <MusicReviewColumn
+                          onClose={() => setReview(null)}
+                          busy={reviewBusy}
+                          scopeName={review?.source === 'list' ? review.name : undefined}
+                        />
                       ) : browser.entriesLoading ? (
                         // A playlist still being read is not an empty result: "No tracks
                         // match" here read as the playlist having nothing in it.

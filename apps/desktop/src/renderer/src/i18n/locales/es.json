@@ -2029,6 +2029,8 @@
       "both": "{{duplicates}} y {{spellings}}",
       "found": "{{loaded}}. {{issues}} por revisar",
       "review": "Revisar"
-    }
+    },
+    "scopePlaylist_one": "{{count}} pista de «{{name}}»",
+    "scopePlaylist_other": "{{count}} pistas de «{{name}}»"
   }
 }
