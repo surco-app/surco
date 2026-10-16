@@ -59,21 +59,33 @@ export function pathKey(options: PathMatchOptions = {}): (path: string) => strin
   }
 }
 
-// Every spelling the OS may hand back for one file: as given, resolved, and with the home
-// music link swapped either way. A drag out of the list can come back into Surco's window
-// with any of them, and its rows must still be known as the rows that were dragged.
-export function pathAliases(path: string, options: PathMatchOptions = {}): string[] {
-  const out = new Set([path])
-  try {
-    out.add(options.realPath?.(path) ?? path)
-  } catch {
-    // Unresolvable: the literal path and the prefix swaps below still name it.
-  }
-  for (const [link, target] of linkPrefixes(options)) {
-    for (const p of [...out]) {
-      if (p.startsWith(link)) out.add(target + p.slice(link.length))
-      if (p.startsWith(target)) out.add(link + p.slice(target.length))
+// One drag's worth: a selection is a few hundred rows, and the cap keeps one call from
+// holding the main process for minutes.
+export const MAX_ALIAS_PATHS = 5000
+
+// Every spelling the OS may hand back for the dragged files: as given, resolved, and with
+// the home music link swapped either way. A drag out of the list can come back into Surco's
+// window with any of them, and its rows must still be known as the rows that were dragged.
+// Called over IPC, so anything but a list of strings answers nothing. Each path is
+// resolved once and the music folder once per call: on the NAS every resolve pays an
+// lstat per path component.
+export async function pathAliasesOf(
+  input: unknown,
+  options: { realPath: (path: string) => Promise<string>; homeMusicDir?: string },
+): Promise<string[]> {
+  if (!Array.isArray(input)) return []
+  const paths = input.filter((p): p is string => typeof p === 'string').slice(0, MAX_ALIAS_PATHS)
+  const home = options.homeMusicDir ?? `${homedir()}/Music/Music`
+  const target = await options.realPath(home).catch(() => home)
+  const resolved = await Promise.all(paths.map((p) => options.realPath(p).catch(() => p)))
+  const out = new Set<string>()
+  paths.forEach((p, i) => {
+    for (const q of [p, resolved[i]]) {
+      out.add(q)
+      if (target === home) continue
+      if (q.startsWith(home)) out.add(target + q.slice(home.length))
+      if (q.startsWith(target)) out.add(home + q.slice(target.length))
     }
-  }
+  })
   return [...out]
 }

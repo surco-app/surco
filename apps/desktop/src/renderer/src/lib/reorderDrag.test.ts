@@ -74,6 +74,21 @@ describe('ownRowsDropped', () => {
     ).toEqual(['a', 'b'])
   })
 
+  // Main failing to answer leaves the plain paths, and no unhandled rejection.
+  it('falls back to the plain paths when main cannot resolve the spellings', async () => {
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    ;(window as unknown as { api: { pathAliases: unknown } }).api.pathAliases = vi.fn(() =>
+      Promise.reject(new Error('gone')),
+    )
+    setDraggedRows(['a'], [PATHS.a])
+    await settle()
+    await settle()
+    process.off('unhandledRejection', unhandled)
+    expect(unhandled).not.toHaveBeenCalled()
+    expect(ownRowsDropped(drop([PATHS.a]), pathOf)).toEqual(['a'])
+  })
+
   it('does not take a file the drag did not carry as one of its rows', async () => {
     setDraggedRows(['a'], [PATHS.a])
     await settle()

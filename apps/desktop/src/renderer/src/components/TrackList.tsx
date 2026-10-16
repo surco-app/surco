@@ -1068,15 +1068,16 @@ export const TrackList = memo(function TrackList({
       ? tracks.filter((t) => selectedIds.has(t.id))
       : [track]
     const paths = dragged.map((t) => t.inputPath)
-    // The tree's drop reads these (lib/reorderDrag): the OS drag below carries files for
+    // The OS drag thumbnail is the file's own art, matching the row — never the cover
+    // the user dropped into the editor form, which lives on the live coverUrl. Sent first:
+    // the drag must start on the gesture, before main resolves anything for the record.
+    window.api.startTrackDrag(paths, track.embeddedCover)
+    // The tree's drop reads these (lib/reorderDrag): the OS drag above carries files for
     // other apps, and is not relied on to bring them back into this window.
     setDraggedRows(
       dragged.map((t) => t.id),
       paths,
     )
-    // The OS drag thumbnail is the file's own art, matching the row — never the cover
-    // the user dropped into the editor form, which lives on the live coverUrl.
-    window.api.startTrackDrag(paths, track.embeddedCover)
   }, [])
   // One IntersectionObserver for the whole list instead of one per row — 500 rows
   // used to mean 500 observer instances doing identical work against the same root.

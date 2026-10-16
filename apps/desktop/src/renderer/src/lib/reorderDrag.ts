@@ -11,9 +11,13 @@ export function setDraggedRows(ids: string[], paths: string[] = []): void {
   const record = { ids, aliases: new Set(paths.map((p) => p.normalize('NFC'))) }
   dragged = record
   if (paths.length === 0) return
-  void window.api.pathAliases(paths).then((all) => {
-    for (const p of all) record.aliases.add(p.normalize('NFC'))
-  })
+  window.api
+    .pathAliases(paths)
+    .then((all) => {
+      for (const p of all) record.aliases.add(p.normalize('NFC'))
+    })
+    // Main not answering leaves the plain paths, which the record already holds.
+    .catch(() => {})
 }
 
 export function draggedRows(): string[] | null {

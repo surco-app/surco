@@ -310,6 +310,16 @@ describe('TrackList', () => {
     expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/a.wav'], 'data:image/jpeg;base64,AAA')
   })
 
+  // The OS drag has to start on the gesture; resolving the files' other spellings in main
+  // goes after it, never in front of it.
+  it('starts the OS drag before asking main for the dragged files spellings', () => {
+    renderList([track({ id: 'a' })])
+    fireEvent.dragStart(screen.getByTestId('track-row').closest('[draggable]') as Element)
+    expect(api.startTrackDrag.mock.invocationCallOrder[0]).toBeLessThan(
+      api.pathAliases.mock.invocationCallOrder[0],
+    )
+  })
+
   it('drags every selected file out when the dragged row is part of the selection', () => {
     // Dragging one of several selected rows lifts the whole selection (Finder's rule),
     // so a DJ can drop a batch onto another app at once. List order is preserved.

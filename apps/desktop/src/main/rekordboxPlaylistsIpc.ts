@@ -1,8 +1,9 @@
 import { existsSync, realpathSync } from 'node:fs'
+import { realpath } from 'node:fs/promises'
 import { BrowserWindow, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { RekordboxPlaylistEdit } from '../shared/types'
-import { pathAliases } from './libraryPathKey'
+import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
 import { openRekordboxDb } from './rekordboxDb'
 import { separatorContent } from './rekordboxPlaylistEdit'
@@ -60,8 +61,8 @@ export function registerRekordboxPlaylistsIpc(
   )
   // Rows dragged out of the list and dropped back in come with the OS's spelling of their
   // files, which may be resolved through the symlinked music folder.
-  ipcMain.handle('library:pathAliases', (_e, paths: string[]) =>
-    paths.flatMap((p) => pathAliases(p, { realPath: (q: string) => realpathSync(q) })),
+  ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>
+    pathAliasesOf(paths, { realPath: (p: string) => realpath(p) }),
   )
   ipcMain.handle('rekordbox:hasSeparator', () =>
     withCollection(collection(), (db) => separatorContent(db) !== null, false),
