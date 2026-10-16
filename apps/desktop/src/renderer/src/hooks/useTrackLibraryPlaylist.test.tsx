@@ -83,13 +83,69 @@ describe('opening a source playlist', () => {
           },
         ],
         'rekordbox',
+        { fillLoaded: true },
       )
     })
-    const meta = result.current.tracks[0].meta
-    expect(meta.bpm).toBe('124')
-    expect(meta.key).toBe('8A')
-    expect(meta.rating).toBe('4')
-    expect(meta.grouping).toBe('')
+    const row = result.current.tracks[0]
+    expect(row.meta.bpm).toBe('124')
+    expect(row.meta.key).toBe('8A')
+    expect(row.meta.rating).toBe('4')
+    expect(row.meta.grouping).toBe('')
+    // Filled the way a fresh row is: part of what was read, not an edit to convert.
+    expect(row.diskSignature).toBe(trackSignature(row))
+  })
+
+  // An edit the user made stays the only change, and the filled values do not join it.
+  it('keeps a filled gap out of the edits the row already had', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+    const { result } = setup({ readMeta })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const id = result.current.tracks[0].id
+    act(() =>
+      result.current.updateTrack(id, { meta: { ...result.current.tracks[0].meta, title: 'B' } }),
+    )
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '124' } }],
+        'rekordbox',
+        { fillLoaded: true },
+      )
+    })
+    const row = result.current.tracks[0]
+    expect(row.meta.bpm).toBe('124')
+    expect(row.diskSignature).toBe(trackSignature({ ...row, meta: { ...row.meta, title: 'A' } }))
+  })
+
+  // Every edit re-reads the playlist; a gap the user cleared on purpose must not come back
+  // on the next reorder. Only an opening fills.
+  it('fills nothing on a re-read of a playlist already open', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+    const { result } = setup({ readMeta })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '124' } }],
+        'rekordbox',
+        { fillLoaded: false },
+      )
+    })
+    expect(result.current.tracks[0].meta.bpm).toBe('')
   })
 
   it('loads the playlist files and leaves separators and file-less rows out', async () => {

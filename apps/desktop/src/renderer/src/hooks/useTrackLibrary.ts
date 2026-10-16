@@ -11,7 +11,7 @@ import type {
 } from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { mapWithConcurrency } from '../lib/concurrency'
-import { trackSignature } from '../lib/dirty'
+import { trackSignature, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
@@ -132,7 +132,11 @@ interface TrackLibrary {
   // every row already exists and none is "fresh" — a reopened session restored one of four
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
-  openSourcePlaylist: (entries: SourcePlaylistEntry[], source: PlaylistSource) => Promise<number>
+  openSourcePlaylist: (
+    entries: SourcePlaylistEntry[],
+    source: PlaylistSource,
+    options?: { fillLoaded?: boolean },
+  ) => Promise<number>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
@@ -690,6 +694,7 @@ export function useTrackLibrary({
   async function openSourcePlaylist(
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
+    { fillLoaded = false }: { fillLoaded?: boolean } = {},
   ): Promise<number> {
     // Compared composed: the NAS stores names decomposed while a drop is composed, and one
     // file under both spellings must stay the one row that holds the user's edits. Outputs
@@ -709,24 +714,40 @@ export function useTrackLibrary({
         !e.separator && e.path !== null && !loaded.has(same(e.path)),
     )
     // A row loaded before its rekordbox playlist was opened gets the BPM, key and stars the
-    // entry holds, as a fresh one does; only its empty fields, so what it holds wins. Rows
-    // still reading their tags are left to that read.
-    if (source === 'rekordbox') {
+    // entry holds, as a fresh one does: only its empty fields, so what it holds wins, and as
+    // part of what was read (both snapshots take it), so it is not an edit to convert. Once
+    // per opening (the caller says which): every edit re-reads the playlist, and a gap the
+    // user cleared must not come back on the next reorder. Rows still reading their tags
+    // are left to that read.
+    if (source === 'rekordbox' && fillLoaded) {
       const fromEntry = new Map(
         entries.flatMap((e) => (e.path && !e.separator ? [[same(e.path), e.meta] as const] : [])),
       )
-      const filled = new Map<string, TrackMetadata>()
-      for (const t of tracksRef.current) {
+      const gaps = (t: TrackItem) => {
         const from = fromEntry.get(same(t.inputPath))
-        if (!from || t.loadingMeta) continue
-        const meta = fillFromAppleMusic(t.meta, {
-          bpm: from.bpm,
-          key: from.key,
-          rating: from.rating,
-        })
-        if (meta !== t.meta) filled.set(t.id, meta)
+        return (meta: TrackMetadata): TrackMetadata =>
+          from
+            ? fillFromAppleMusic(meta, { bpm: from.bpm, key: from.key, rating: from.rating })
+            : meta
       }
-      for (const [id, meta] of filled) updateTrack(id, { meta })
+      const touched = new Set(
+        tracksRef.current
+          .filter((t) => !t.loadingMeta && gaps(t)(t.meta) !== t.meta)
+          .map((t) => t.id),
+      )
+      if (touched.size > 0)
+        mapTracks((t) => {
+          if (!touched.has(t.id)) return t
+          const fill = gaps(t)
+          return {
+            ...t,
+            meta: fill(t.meta),
+            ...(t.diskSignature && { diskSignature: withSignatureMeta(t.diskSignature, fill) }),
+            ...(t.processedSignature && {
+              processedSignature: withSignatureMeta(t.processedSignature, fill),
+            }),
+          }
+        })
     }
     if (fresh.length === 0) return 0
     // Staged BEFORE expanding: the expand stream can create the rows before the awaited

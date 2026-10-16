@@ -37,6 +37,18 @@ export function trackSignature(track: SignatureFields): string {
   ])
 }
 
+// A snapshot taken by trackSignature with its tags changed, the rest left as it was. For a
+// value that arrives as part of what was read (a DJ library filling a gap the file left):
+// applied to the read snapshot too, it does not show as an edit to convert. Kept beside
+// trackSignature because it knows that layout.
+export function withSignatureMeta(
+  signature: string,
+  change: (meta: TrackItem['meta']) => TrackItem['meta'],
+): string {
+  const [meta, ...rest] = JSON.parse(signature) as [TrackItem['meta'], ...unknown[]]
+  return JSON.stringify([change(meta), ...rest])
+}
+
 // Only a done track can be stale: idle/processing/error already show a convert
 // button. A done track with no snapshot (shouldn't happen) is treated as fresh.
 export function isStale(track: TrackItem): boolean {

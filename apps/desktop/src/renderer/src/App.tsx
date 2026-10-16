@@ -671,10 +671,16 @@ export default function App(): React.JSX.Element {
   // has a reason; a refocus re-read of the same playlist is not a new opening. Missing
   // counts both rows the source has no file for and files it names that the disk lacks.
   const noticedPlaylist = useRef<string | null>(null)
+  // The gaps of rows already loaded are filled from the playlist once per opening, the
+  // same moment fresh rows get theirs; an edit's re-read is not an opening.
+  const filledPlaylist = useRef<string | null>(null)
   const { entries: sourceEntries, source: sourceKind, playlist: sourcePlaylist } = browser
   useEffect(() => {
     if (!sourceEntries || !sourceKind) return
-    void openSourcePlaylistStable(sourceEntries, sourceKind).then((notOnDisk) => {
+    const opening = sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
+    const fillLoaded = opening !== null && filledPlaylist.current !== opening
+    if (fillLoaded) filledPlaylist.current = opening
+    void openSourcePlaylistStable(sourceEntries, sourceKind, { fillLoaded }).then((notOnDisk) => {
       if (!sourcePlaylist) return
       const opened = `${sourceKind}:${sourcePlaylist.id}`
       if (noticedPlaylist.current === opened) return

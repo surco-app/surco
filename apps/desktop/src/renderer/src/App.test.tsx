@@ -1656,6 +1656,32 @@ describe('App source playlists', () => {
     })
   })
 
+  // The opening fills the BPM rekordbox holds; a BPM the DJ then clears stays cleared
+  // through the re-read every edit makes.
+  it('fills a loaded row from its playlist on opening only, not on an edit re-read', async () => {
+    const withBpm = FACTORY_ENTRIES.map((e) =>
+      e.path === '/m/a.wav' ? { ...e, meta: { bpm: '124' } } : e,
+    )
+    await openFactory({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ visibleFields: ['title', 'artist', 'bpm'] })),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValueOnce(withBpm)
+        .mockResolvedValue(withBpm.filter((e) => !e.separator)),
+    })
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    const bpm = await screen.findByTestId('field-bpm')
+    await waitFor(() => expect(bpm).toHaveValue('124'))
+    fireEvent.change(bpm, { target: { value: '' } })
+    fireEvent.blur(bpm)
+    fireEvent.click(screen.getByTestId('separator-remove-s1'))
+    await waitFor(() => expect(screen.queryByTestId('track-separator-s1')).not.toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('field-bpm')).toHaveValue('')
+  })
+
   // Copying between playlists names the exact rekordbox entry of a row read from a
   // playlist, so the symlinked twins copy instead of being refused.
   it('adds a row to another playlist from its menu, naming its rekordbox entry', async () => {
