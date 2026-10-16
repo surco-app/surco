@@ -1753,6 +1753,21 @@ describe('App source playlists', () => {
     expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['s1'] })
   })
 
+  // Sorted another way the separators are not drawn, and "above" would name one the DJ
+  // cannot see, above the row in an order that is not on screen.
+  it('offers no separator removal from the row menu when separators are not drawn', async () => {
+    await openFactory()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+    await screen.findByTestId('reorder-hint')
+    const bravo = screen
+      .getAllByTestId('track-row')
+      .find((r) => r.textContent?.includes('Bravo')) as HTMLElement
+    fireEvent.contextMenu(bravo)
+    await screen.findByTestId('track-menu-remove-from')
+    expect(screen.queryByTestId('track-menu-remove-separator')).not.toBeInTheDocument()
+  })
+
   // The separator lands above the right-clicked row, so the edit names that row's link.
   it('inserts a separator above the right-clicked row', async () => {
     const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
