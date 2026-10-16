@@ -1524,8 +1524,10 @@ comparación»* (`useDeclickAb.ts:60-67`).
   correcciones de la revisión de metadatos, cuyo Deshacer depende de la copia
   (`musicFieldWrite.ts:38-42`), y los borrados automáticos de arriba. Los límites de días y
   espacio se aplican igual.
-- **Pantalla de inicio** como lista de acciones: añadir pistas y, en macOS, importar una
-  lista de Apple Music, revisar metadatos y mostrar duplicados de Music (`EmptyActions.tsx`).
+- **Pantalla de inicio** mínima, con el disco, «Suelta tus pistas aquí» y el atajo para
+  elegir (⌘O, Ctrl+O fuera de macOS). Toda la pantalla es un botón que abre el selector
+  de ficheros y acepta soltar pistas (`App.tsx`). Abrir playlists de Apple Music, revisar
+  metadatos y mostrar duplicados siguen en el rail, los menús y la paleta (⌘K).
 - **Deshacer** de hasta 20 pasos para ediciones de tags. No cubre operaciones de
   fichero ni conversiones.
 

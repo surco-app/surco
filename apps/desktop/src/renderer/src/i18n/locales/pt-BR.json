@@ -130,17 +130,8 @@
   },
   "empty": {
     "title": "Arraste suas faixas para cá",
-    "lead": "Ou comece por aqui.",
-    "bringGroup": "Trazer faixas",
-    "addTracks": "Adicionar faixas",
-    "addTracksHint": "Converter e etiquetar seus arquivos",
-    "importApplePlaylist": "Abrir playlists do Apple Music",
-    "importHint": "Carregar as faixas de uma playlist",
-    "libraryGroup": "Organizar a biblioteca",
-    "reviewMusic": "Revisar metadados no Apple Music",
-    "reviewMusicHint": "Erros, maiúsculas e caracteres invisíveis",
-    "showDuplicates": "Mostrar duplicados",
-    "duplicatesHint": "A mesma faixa salva duas vezes"
+    "pickHint": "{{shortcut}} para escolher",
+    "addTracks": "Adicionar faixas"
   },
   "errors": {
     "unexpected": "Algo deu errado: {{detail}}",

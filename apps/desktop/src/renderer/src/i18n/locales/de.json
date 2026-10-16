@@ -130,17 +130,8 @@
   },
   "empty": {
     "title": "Zieh deine Tracks hierher",
-    "lead": "Oder fang hier an.",
-    "bringGroup": "Tracks holen",
-    "addTracks": "Tracks hinzufügen",
-    "addTracksHint": "Deine Dateien konvertieren und taggen",
-    "importApplePlaylist": "Apple-Music-Playlists öffnen",
-    "importHint": "Die Tracks einer Playlist laden",
-    "libraryGroup": "Bibliothek aufräumen",
-    "reviewMusic": "Metadaten in Apple Music prüfen",
-    "reviewMusicHint": "Tippfehler, Großschreibung, unsichtbare Zeichen",
-    "showDuplicates": "Duplikate anzeigen",
-    "duplicatesHint": "Derselbe Track doppelt gespeichert"
+    "pickHint": "{{shortcut}} zum Auswählen",
+    "addTracks": "Tracks hinzufügen"
   },
   "errors": {
     "unexpected": "Etwas ist schiefgelaufen: {{detail}}",

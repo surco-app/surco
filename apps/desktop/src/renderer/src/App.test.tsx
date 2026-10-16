@@ -392,7 +392,7 @@ describe('App sidebar divider', () => {
   // screen: no column, no divider to drag between nothing and the card.
   it('draws no list column nor divider while the list is empty, and both once tracks arrive', async () => {
     await renderApp()
-    expect(await screen.findByTestId('empty-actions')).toBeInTheDocument()
+    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
     expect(screen.queryByRole('separator')).not.toBeInTheDocument()
     await addTwoTracks()
@@ -5774,9 +5774,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('empty-actions')).closest(
-      '.flex.h-screen',
-    ) as HTMLElement
+    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
     fireEvent.drop(root, {
       dataTransfer: { files: Object.keys(tags).map((name) => ({ name })), types: ['Files'] },
     })
@@ -5872,9 +5870,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('empty-actions')).closest(
-      '.flex.h-screen',
-    ) as HTMLElement
+    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
     const drop = (paths: string[]) =>
       fireEvent.drop(root, {
         dataTransfer: { files: paths.map((name) => ({ name })), types: ['Files'] },
@@ -6064,10 +6060,10 @@ describe('App Apple Music import stays reachable', () => {
   })
 })
 
-// The empty screen used to offer two doors at once: an "Add files" button in the narrow
-// left column and an "Import from Apple Music" button in the centre. Neither of them led,
-// and the copy told the user to drag onto a column while the big empty panel beside it —
-// where anyone would aim — accepted nothing.
+// The empty screen used to offer a card of doors (add, open Music, review, duplicates)
+// under section headers. A first screen is read in one glance: the disc, where to drop,
+// and the key that opens the dialog. The other doors live in the rail, the palette and
+// the menus, where they are reached once there is something to act on.
 describe('App empty screen offers a single way in', () => {
   it('puts adding files in the centre panel, not in the track column', async () => {
     vi.resetModules()
@@ -6078,84 +6074,88 @@ describe('App empty screen offers a single way in', () => {
     expect(add.closest('[data-testid="sidebar"]')).toBeNull()
   })
 
-  // One list, read top to bottom like ⌘K: bringing tracks in leads, tidying the library
-  // follows, so the first thing a new user meets is the way in.
-  it('lists bringing tracks in, then tidying the library, on macOS', async () => {
+  it('says only where to drop and which key opens the dialog, with no headers or other doors', async () => {
     vi.resetModules()
     reviewApi()
     await renderApp()
 
-    const bring = await screen.findByTestId('empty-group-bring')
-    const library = screen.getByTestId('empty-group-library')
-    expect(bring).toHaveRole('group')
-    expect(bring).toHaveAccessibleName('Bring in tracks')
-    expect(library).toHaveRole('group')
-    expect(library).toHaveAccessibleName('Tidy the library')
-    expect(
-      within(screen.getByTestId('empty-actions'))
-        .getAllByRole('button')
-        .map((b) => b.dataset.testid),
-    ).toEqual([
-      'add-files',
-      'empty-import-playlist',
-      'empty-music-review',
-      'empty-music-duplicates',
-    ])
+    const add = await screen.findByTestId('add-files')
+    expect(add).toHaveTextContent('Drop your tracks here')
+    expect(screen.getByTestId('empty-pick-hint')).toHaveTextContent('⌘O to choose')
+    expect(screen.queryByRole('group')).toBeNull()
+    expect(screen.queryByText('Bring in tracks')).toBeNull()
+    expect(screen.queryByText('Tidy the library')).toBeNull()
+    expect(screen.queryByText('Or start here.')).toBeNull()
+    expect(within(screen.getByRole('main')).getAllByRole('button')).toEqual([add])
   })
 
-  // A keycap teaches the key that really opens the dialog; one on a row with no binding
-  // would teach a key that does nothing.
-  it('shows the real shortcut on adding tracks and none on rows without one', async () => {
-    vi.resetModules()
-    reviewApi()
-    await renderApp()
-
-    expect(
-      within(await screen.findByTestId('add-files')).getByTestId('empty-action-shortcut'),
-    ).toHaveTextContent('⌘O')
-    for (const id of ['empty-import-playlist', 'empty-music-review', 'empty-music-duplicates']) {
-      expect(within(screen.getByTestId(id)).queryByTestId('empty-action-shortcut')).toBeNull()
-    }
-  })
-
-  // Apple Music and its review only exist on macOS; off it the second group would offer
-  // doors that open onto nothing.
-  it('drops the Apple Music rows and the library group off macOS', async () => {
+  // The hint teaches the key that really opens the dialog, and off macOS that key is Ctrl.
+  it('names the shortcut the way the platform writes it', async () => {
     vi.resetModules()
     reviewApi({ platform: 'win32' })
     await renderApp()
 
-    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
-    expect(screen.queryByTestId('empty-import-playlist')).toBeNull()
-    expect(screen.queryByTestId('empty-group-library')).toBeNull()
-    expect(screen.queryByTestId('empty-music-review')).toBeNull()
-    expect(screen.queryByTestId('empty-music-duplicates')).toBeNull()
+    expect(await screen.findByTestId('empty-pick-hint')).toHaveTextContent('Ctrl+O to choose')
   })
 
-  it('opens the file dialog from adding tracks', async () => {
+  // The whole panel is the target: aiming at the text, the disc or the space around them
+  // has to open the dialog, the way the panel already takes a drop anywhere on it.
+  it('opens the file dialog from a click anywhere on the panel', async () => {
     vi.resetModules()
     reviewApi()
     await renderApp()
 
-    fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(window.api.pickFiles).toHaveBeenCalled())
+    expect(await screen.findByTestId('add-files')).toContainElement(
+      screen.getByTestId('empty-disc'),
+    )
+    fireEvent.click(screen.getByText('Drop your tracks here'))
+    await waitFor(() => expect(window.api.pickFiles).toHaveBeenCalledTimes(1))
   })
 
-  it('opens Music in the rail from importing, where the dialog used to open', async () => {
+  // A native button is what makes Tab reach the panel and Enter or Space open the dialog;
+  // a clickable div would leave the keyboard user with no way in. Its name says the action,
+  // since the visible line only says where to drop.
+  it('is a native button the keyboard can reach, named for adding tracks', async () => {
     vi.resetModules()
-    reviewApi({
-      loadAppleMusicPlaylists: vi
-        .fn()
-        .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', folder: null, count: 3 }]),
-    })
+    reviewApi()
     await renderApp()
 
-    fireEvent.click(await screen.findByTestId('empty-import-playlist'))
-    expect(await screen.findByTestId('source-rail-appleMusic')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const add = await screen.findByTestId('add-files')
+    expect(add.tagName).toBe('BUTTON')
+    expect(add).toHaveAttribute('type', 'button')
+    expect(add).toHaveAccessibleName('Add tracks')
+    act(() => add.focus())
+    expect(add).toHaveFocus()
+  })
+
+  it('keeps the Music doors in the rail and the palette now that the empty screen drops them', async () => {
+    vi.resetModules()
+    reviewApi()
+    await renderApp()
+
+    await screen.findByTestId('add-files')
+    expect(screen.getByTestId('source-rail-appleMusic')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    const palette = await screen.findByRole('dialog')
+    expect(palette).toHaveTextContent(i18n.t('commands.musicReview'))
+    expect(palette).toHaveTextContent(i18n.t('commands.musicDuplicates'))
+    expect(palette).toHaveTextContent(i18n.t('commands.importApplePlaylist'))
+  })
+
+  // A source with no playlist open has nothing to add files into; its one action is
+  // picking a playlist, so the panel says that and a click there opens no dialog.
+  it('asks for a playlist instead of files in a source with none open', async () => {
+    vi.resetModules()
+    reviewApi({ loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]) })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    const pick = await screen.findByTestId('source-pick-playlist')
+    expect(pick).toHaveTextContent('Pick a playlist to see its tracks')
+    expect(screen.queryByTestId('add-files')).toBeNull()
+    fireEvent.click(pick)
+    await act(async () => {})
+    expect(window.api.pickFiles).not.toHaveBeenCalled()
   })
 
   describe('Music playlist rows without a file', () => {
@@ -6227,57 +6227,20 @@ describe('App empty screen offers a single way in', () => {
     })
   })
 
-  it('opens the review on all groups from its row', async () => {
-    vi.resetModules()
-    reviewApi()
-    await renderApp()
-
-    fireEvent.click(await screen.findByTestId('empty-music-review'))
-    await screen.findByTestId('music-review-empty')
-    expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('All')
-  })
-
-  it('opens the review on duplicates from its row', async () => {
-    vi.resetModules()
-    reviewApi()
-    await renderApp()
-
-    fireEvent.click(await screen.findByTestId('empty-music-duplicates'))
-    await screen.findByTestId('music-review-empty')
-    expect(screen.getByTestId('music-review-filter-trigger')).toHaveTextContent('Duplicates')
-  })
-
-  // Native buttons in the tab order are what make Tab reach each row and Enter or Space
-  // run it; a clickable div would leave the keyboard user facing a list they cannot use.
-  it('makes every row a native button the keyboard can reach', async () => {
-    vi.resetModules()
-    reviewApi()
-    await renderApp()
-
-    const rows = within(await screen.findByTestId('empty-actions')).getAllByRole('button')
-    for (const row of rows) {
-      expect(row.tagName).toBe('BUTTON')
-      expect(row).toHaveAttribute('type', 'button')
-      expect(row).not.toHaveAttribute('tabindex', '-1')
-      act(() => row.focus())
-      expect(row).toHaveFocus()
-    }
-  })
-
-  // The list fills the panel, but the panel is still where people aim a folder: a drop
-  // anywhere on it has to bring the tracks in.
+  // The panel is where people aim a folder: a drop anywhere on it, the text included,
+  // has to bring the tracks in rather than be taken as a click on the button.
   it('adds the files dropped on the empty panel', async () => {
     vi.resetModules()
     reviewApi({ getPathForFile: vi.fn(() => '/music/dropped.wav') })
     await renderApp()
 
-    const zone = await screen.findByTestId('empty-dropzone')
     const file = new File([''], 'dropped.wav')
-    fireEvent.drop(within(zone).getByTestId('empty-actions'), {
+    fireEvent.drop(await screen.findByText('Drop your tracks here'), {
       dataTransfer: { files: [file], types: ['Files'], getData: () => '' },
     })
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/dropped.wav'])
+    expect(window.api.pickFiles).not.toHaveBeenCalled()
   })
 
   // The panel is where the tracks visibly land, so it has to answer the drag the copy

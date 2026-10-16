@@ -130,17 +130,8 @@
   },
   "empty": {
     "title": "Suelta tus pistas aquí",
-    "lead": "O empieza por aquí.",
-    "bringGroup": "Traer pistas",
-    "addTracks": "Añadir pistas",
-    "addTracksHint": "Convertir y etiquetar tus ficheros",
-    "importApplePlaylist": "Abrir playlists de Apple Music",
-    "importHint": "Cargar las pistas de una playlist",
-    "libraryGroup": "Ordenar la biblioteca",
-    "reviewMusic": "Revisar metadatos en Apple Music",
-    "reviewMusicHint": "Erratas, mayúsculas y caracteres invisibles",
-    "showDuplicates": "Mostrar duplicados",
-    "duplicatesHint": "La misma pista guardada dos veces"
+    "pickHint": "{{shortcut}} para elegir",
+    "addTracks": "Añadir pistas"
   },
   "errors": {
     "unexpected": "Algo ha fallado: {{detail}}",

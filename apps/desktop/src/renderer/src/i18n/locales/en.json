@@ -130,17 +130,8 @@
   },
   "empty": {
     "title": "Drop your tracks here",
-    "lead": "Or start here.",
-    "bringGroup": "Bring in tracks",
-    "addTracks": "Add tracks",
-    "addTracksHint": "Convert and tag your files",
-    "importApplePlaylist": "Open Apple Music playlists",
-    "importHint": "Load the tracks from a playlist",
-    "libraryGroup": "Tidy the library",
-    "reviewMusic": "Review metadata in Apple Music",
-    "reviewMusicHint": "Typos, capitals and invisible characters",
-    "showDuplicates": "Show duplicates",
-    "duplicatesHint": "The same track saved twice"
+    "pickHint": "{{shortcut}} to choose",
+    "addTracks": "Add tracks"
   },
   "errors": {
     "unexpected": "Something went wrong: {{detail}}",

@@ -36,7 +36,6 @@ import type {
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
-import { EmptyActions } from './components/EmptyActions'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import {
@@ -2723,7 +2722,7 @@ export default function App(): React.JSX.Element {
                         />
                       </Suspense>
                     </ErrorBoundary>
-                  ) : (
+                  ) : browser.source && !browser.playlist ? (
                     <div className="flex h-full items-center justify-center p-8 text-center">
                       {/* The drag answers here as well as in the sidebar. The column is the
                         place the rows land once there are any, but on an empty screen this
@@ -2738,52 +2737,51 @@ export default function App(): React.JSX.Element {
                           <EmptyDisc />
                         </div>
                         {/* A source with nothing picked has no rows and no editor; the one
-                          thing to do there is pick a playlist, so that is all it says. */}
-                        {browser.source && !browser.playlist ? (
-                          <p
-                            data-testid="source-pick-playlist"
-                            className="empty-copy-in text-sm text-pretty text-fg-dim"
-                            style={{ animationDelay: '0.10s' }}
-                          >
-                            {tr('sources.pickPlaylist')}
-                          </p>
-                        ) : (
-                          <>
-                            <p
-                              className="empty-copy-in text-base font-semibold tracking-[-0.01em] text-balance text-fg"
-                              style={{ animationDelay: '0.10s' }}
-                            >
-                              {tr('empty.title')}
-                            </p>
-                            <p
-                              className="empty-copy-in mt-1 text-sm text-pretty text-fg-dim"
-                              style={{ animationDelay: '0.16s' }}
-                            >
-                              {tr('empty.lead')}
-                            </p>
-                            <div className="empty-copy-in mt-5" style={{ animationDelay: '0.22s' }}>
-                              <EmptyActions
-                                onAdd={onAdd}
-                                addShortcut={hintFor('add')}
-                                onImportPlaylist={
-                                  isMac ? () => selectSource('appleMusic') : undefined
-                                }
-                                onReviewMusic={
-                                  isMac
-                                    ? () => setReview({ source: 'music', filter: 'all' })
-                                    : undefined
-                                }
-                                onShowDuplicates={
-                                  isMac
-                                    ? () => setReview({ source: 'music', filter: 'duplicates' })
-                                    : undefined
-                                }
-                              />
-                            </div>
-                          </>
-                        )}
+                          thing to do there is pick a playlist, so that is all it says, and
+                          a click there opens no file dialog. */}
+                        <p
+                          data-testid="source-pick-playlist"
+                          className="empty-copy-in text-sm text-pretty text-fg-dim"
+                          style={{ animationDelay: '0.10s' }}
+                        >
+                          {tr('sources.pickPlaylist')}
+                        </p>
                       </div>
                     </div>
+                  ) : (
+                    // The whole panel is one native button, so a click anywhere on it and
+                    // Enter or Space from the keyboard all open the same dialog as ⌘O. Its
+                    // name is the action because the visible line only says where to drop.
+                    <button
+                      type="button"
+                      data-testid="add-files"
+                      aria-label={tr('empty.addTracks')}
+                      onClick={onAdd}
+                      className="flex h-full w-full items-center justify-center p-8 text-center"
+                    >
+                      <span
+                        data-testid="empty-dropzone"
+                        data-drop-over={dragging || undefined}
+                        className="empty-dropzone block w-full max-w-[460px] rounded-2xl px-4 py-8"
+                      >
+                        <span className="mb-4 flex justify-center">
+                          <EmptyDisc />
+                        </span>
+                        <span
+                          className="empty-copy-in block text-base font-semibold tracking-[-0.01em] text-balance text-fg"
+                          style={{ animationDelay: '0.10s' }}
+                        >
+                          {tr('empty.title')}
+                        </span>
+                        <span
+                          data-testid="empty-pick-hint"
+                          className="empty-copy-in mt-1 block text-xs text-fg-dim"
+                          style={{ animationDelay: '0.16s' }}
+                        >
+                          {tr('empty.pickHint', { shortcut: hintFor('add') })}
+                        </span>
+                      </span>
+                    </button>
                   )}
                 </main>
               </div>

@@ -130,17 +130,8 @@
   },
   "empty": {
     "title": "Dépose tes morceaux ici",
-    "lead": "Ou commence ici.",
-    "bringGroup": "Faire entrer des morceaux",
-    "addTracks": "Ajouter des morceaux",
-    "addTracksHint": "Convertir et taguer tes fichiers",
-    "importApplePlaylist": "Ouvrir les playlists Apple Music",
-    "importHint": "Charger les morceaux d'une playlist",
-    "libraryGroup": "Ranger la bibliothèque",
-    "reviewMusic": "Vérifier les métadonnées dans Apple Music",
-    "reviewMusicHint": "Fautes, majuscules et caractères invisibles",
-    "showDuplicates": "Afficher les doublons",
-    "duplicatesHint": "Le même morceau enregistré deux fois"
+    "pickHint": "{{shortcut}} pour choisir",
+    "addTracks": "Ajouter des morceaux"
   },
   "errors": {
     "unexpected": "Quelque chose a mal tourné : {{detail}}",
