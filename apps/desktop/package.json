@@ -12,6 +12,7 @@
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
+    "build-baken": "node ../../scripts/build-baken.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome lint src",

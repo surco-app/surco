@@ -31,6 +31,16 @@ asarUnpack:
   # startup with ERR_MODULE_NOT_FOUND before a window ever appears — for every user, with
   # no way out. Same reason ffmpeg-static is unpacked above.
   - node_modules/better-sqlite3-multiple-ciphers/**
+# baken writes the USB export (export.pdb, exportLibrary.db, ANLZ). Built from pinned source
+# plus Surco's patches by scripts/build-baken.mjs (baken on macOS, baken.exe on Windows), and
+# kept outside app.asar because a binary inside the archive cannot be executed. On macOS
+# electron-builder signs every Mach-O in the bundle with the Developer ID, this one included,
+# so notarization covers it; build-test.yml's mac-signed job checks that before any tag.
+# Windows ships unsigned today (packaging/windows-signing.md); baken.exe joins the signing
+# when it arrives.
+extraResources:
+  - from: resources/baken
+    to: baken
 # Registers Surco as a handler for the formats it opens so Finder lists "Open With
 # Surco" (these become CFBundleDocumentTypes on macOS). rank Alternate: Surco offers to
 # open them but never claims the default away from Music/Audacity — it just joins the

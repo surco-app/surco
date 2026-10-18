@@ -68,6 +68,10 @@ npm run dist:desktop   # package the installer
 
 Issues and pull requests are welcome. Surco is GPL-3.0: improvements stay open for everyone.
 
+## Third-party software
+
+Surco bundles [baken](https://github.com/M-Igashi/baken) by Masanari Higashi (MIT licence) to write USB sticks for Pioneer DJ / AlphaTheta players, built from its v4.6.1 source with the patches in `apps/desktop/vendor/baken/patches`. Its licence and those of its dependencies ship next to the binary (`Contents/Resources/baken/` on macOS, `resources\baken\` on Windows).
+
 ## License
 
 Copyright (C) 2026 Vicent Gozalbes.

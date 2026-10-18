@@ -174,6 +174,26 @@ jobs:
         shell: bash
         run: node node_modules/electron/install.js
 
+      # baken (the USB export's writer) is compiled from pinned source plus Surco's patches
+      # on each runner, for its own arch, and its export tests (the patches' among them) gate
+      # the release. The cache keeps the clone and cargo's target so a release does not pay
+      # the full Rust build every time. Linux only gets the licences.
+      - name: Cache baken build
+        if: runner.os != 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/.baken-build
+          key: baken-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('apps/desktop/vendor/baken/**') }}
+
+      - name: Build baken
+        shell: bash
+        env:
+          BAKEN_TEST: '1'
+        run: node scripts/build-baken.mjs
+
       # The App Store Connect API key arrives base64-encoded as a secret; notarize
       # needs it as a file on disk.
       - name: Write Apple API key

@@ -19,3 +19,7 @@ dist
 # Bundle generado del lienzo de diseno: se republica desde los .dc.html
 .design-*/*.html
 !.design-*/*.dc.html
+
+# Built by scripts/build-baken.mjs on each machine; never committed.
+apps/desktop/resources/baken/
+apps/desktop/.baken-build/
