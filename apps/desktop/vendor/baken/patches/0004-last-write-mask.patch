@@ -1,0 +1,181 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Surco <hola@getsurco.app>
+Date: Sun, 18 Oct 2026 22:55:41 +0200
+Subject: [PATCH 4/6] Write each page's last-write mask as rekordbox does
+
+---
+ crates/baken-export/src/pdb/page.rs   | 71 +++++++++++++++++++++++++--
+ crates/baken-export/src/pdb/writer.rs | 67 +++++++++++++++++++++++++
+ 2 files changed, 135 insertions(+), 3 deletions(-)
+
+diff --git a/crates/baken-export/src/pdb/page.rs b/crates/baken-export/src/pdb/page.rs
+index 2829fb8..623845d 100644
+--- a/crates/baken-export/src/pdb/page.rs
++++ b/crates/baken-export/src/pdb/page.rs
+@@ -13,9 +13,9 @@ const NONE: u32 = 0x03FF_FFFF;
+ /// How the two "fixed" tables differ from everything else in the header.
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub enum HeaderStyle {
+-    /// `unknown5 = 1`, `num_rows_large = rows - 1`.
++    /// unknown5 = 1, num_rows_large = rows - 1, last-write mask = the last row's bit.
+     Normal,
+-    /// colors and columns: `unknown5 = rows`, `num_rows_large = 0`.
++    /// colors and columns: unknown5 = rows, num_rows_large = 0, last-write mask = every row.
+     Fixed,
+ }
+ 
+@@ -106,7 +106,17 @@ impl DataPage {
+             let bit = 1u16 << slot;
+             let present = u16::from_le_bytes([p[flags], p[flags + 1]]) | bit;
+             p[flags..flags + 2].copy_from_slice(&present.to_le_bytes());
+-            p[flags + 2..flags + 4].copy_from_slice(&present.to_le_bytes());
++            // The rows of the page's last write, which unknown5 and num_rows_large describe:
++            // the last row for a Normal page, every row for a Fixed one. rekordbox's storage
++            // manager sizes its undo of that write from unknown5 and walks this mask; a mask
++            // wider than unknown5 says made it write past its buffer (heap corruption on
++            // the first delete, 16/10/2026).
++            let last_write = match self.style {
++                HeaderStyle::Normal if i + 1 == n => bit,
++                HeaderStyle::Normal => 0,
++                HeaderStyle::Fixed => present,
++            };
++            p[flags + 2..flags + 4].copy_from_slice(&last_write.to_le_bytes());
+             off += align4(row.len());
+         }
+         p
+@@ -189,4 +199,59 @@ mod tests {
+         }
+         assert_eq!(n, 284);
+     }
++
++    fn u16_at(p: &[u8], at: usize) -> u16 {
++        u16::from_le_bytes([p[at], p[at + 1]])
++    }
++
++    /// The u16 after group `g`'s presence flags: the rows of the page's last write.
++    fn last_write_mask(p: &[u8], g: usize) -> u16 {
++        u16_at(p, PAGE_LEN - g * GROUP_BYTES - 2)
++    }
++
++    /// rekordbox 7.2.19's own page of 7 playlist entries (16/10/2026): unknown5 1,
++    /// num_rows_large 6, presence 0x7f and a last-write mask of 0x40, the last row only.
++    /// baken wrote 0x7f there, and rekordbox's storage manager corrupted its heap the
++    /// first time it deleted a row of such a page.
++    #[test]
++    fn the_last_write_is_the_last_row_as_rekordbox_writes_it() {
++        let mut page = DataPage::new(18, 8, 1, HeaderStyle::Normal);
++        for i in 0..7u8 {
++            assert!(page.try_push(&[i; 12]));
++        }
++        let p = page.to_bytes();
++        assert_eq!(u16_at(&p, 0x20), 1);
++        assert_eq!(u16_at(&p, 0x22), 6);
++        assert_eq!(u16_at(&p, PAGE_LEN - 4), 0x7f);
++        assert_eq!(last_write_mask(&p, 0), 0x40);
++    }
++
++    /// Past 16 rows the mask lives in the last row's group only; the others carry 0.
++    #[test]
++    fn the_last_write_spans_row_groups() {
++        let mut page = DataPage::new(2, 0, 1, HeaderStyle::Normal);
++        for i in 0..20u8 {
++            assert!(page.try_push(&[i; 8]));
++        }
++        let p = page.to_bytes();
++        assert_eq!(u16_at(&p, 0x20), 1);
++        assert_eq!(u16_at(&p, 0x22), 19);
++        assert_eq!(last_write_mask(&p, 0), 0);
++        assert_eq!(last_write_mask(&p, 1), 1 << 3);
++    }
++
++    /// colors and columns are written as one set of every row (unknown5 = rows,
++    /// num_rows_large = 0), so their mask is every row: coherent too, and what rekordbox's
++    /// template tables carry.
++    #[test]
++    fn fixed_pages_keep_every_row_in_the_last_write() {
++        let mut page = DataPage::new(5, 6, 1, HeaderStyle::Fixed);
++        for i in 0..8u8 {
++            assert!(page.try_push(&[i; 8]));
++        }
++        let p = page.to_bytes();
++        assert_eq!(u16_at(&p, 0x20), 8);
++        assert_eq!(u16_at(&p, 0x22), 0);
++        assert_eq!(last_write_mask(&p, 0), 0xff);
++    }
+ }
+diff --git a/crates/baken-export/src/pdb/writer.rs b/crates/baken-export/src/pdb/writer.rs
+index 1593cc7..9f9040a 100644
+--- a/crates/baken-export/src/pdb/writer.rs
++++ b/crates/baken-export/src/pdb/writer.rs
+@@ -420,4 +420,71 @@ mod tests {
+         assert_eq!(rows_seen.get(&5).copied().unwrap_or(0), 0);
+         assert_eq!(rows_seen[&19], 1);
+     }
++
++    /// Every data page rekordbox writes keeps its last write coherent: unknown5 (+0x20) is
++    /// the number of rows in the set and num_rows_large (+0x22) its first row, the set being
++    /// the u16 after each row group's presence flags, group `g` holding rows `16 g..`. That
++    /// held on every page of rekordbox 7.2.19's export, its exportExt.pdb and rekordcrate's
++    /// templates; baken's pages broke it, and rekordbox crashed syncing onto them
++    /// (16/10/2026). Checked the way `crashtools/fix_txmask.py` reads a stick.
++    #[test]
++    fn every_data_page_has_a_coherent_last_write() {
++        let mut e = Export {
++            export_date: "2026-10-16".into(),
++            device_name: "TEST".into(),
++            genres: vec![(1, "Makina".into())],
++            artists: vec![(1, "A".into())],
++            albums: vec![(1, 1, "B".into())],
++            keys: vec![(1, "8A".into())],
++            artworks: (1..=150)
++                .map(|id| (id, crate::artwork::path(id, 'a', false)))
++                .collect(),
++            ..Default::default()
++        };
++        for i in 1..=700u32 {
++            e.tracks.push(TrackRow {
++                id: i,
++                title: format!("Track {i}"),
++                file_path: format!("/Contents/A/B/{i}.flac"),
++                ..Default::default()
++            });
++        }
++        for id in 1..=3u32 {
++            e.playlists.push(ExportPlaylist {
++                id,
++                parent: 0,
++                sort_order: id - 1,
++                is_folder: false,
++                name: format!("P{id}"),
++                track_ids: (1..=700 / id).collect(),
++            });
++        }
++        let out = write(&e);
++        let u16_at = |p: &[u8], at: usize| u16::from_le_bytes([p[at], p[at + 1]]);
++        let mut checked = 0;
++        for i in 1..out.len() / PAGE_LEN {
++            let p = page(&out, i);
++            let rows = (u32::from_le_bytes([p[0x18], p[0x19], p[0x1a], 0]) & 0x1fff) as usize;
++            if p[0x1b] & 0x40 != 0 || rows == 0 {
++                continue;
++            }
++            let masks: Vec<u16> = (0..rows.div_ceil(16))
++                .map(|g| u16_at(p, PAGE_LEN - g * 36 - 2))
++                .collect();
++            let count: u32 = masks.iter().map(|m| m.count_ones()).sum();
++            let first = masks
++                .iter()
++                .enumerate()
++                .find(|(_, m)| **m != 0)
++                .map_or(0x1fff, |(g, m)| g as u32 * 16 + m.trailing_zeros());
++            assert_eq!(u32::from(u16_at(p, 0x20)), count, "page {i}: unknown5");
++            assert_eq!(
++                u32::from(u16_at(p, 0x22)),
++                first,
++                "page {i}: num_rows_large"
++            );
++            checked += 1;
++        }
++        assert!(checked > 20, "only {checked} data pages");
++    }
+ }

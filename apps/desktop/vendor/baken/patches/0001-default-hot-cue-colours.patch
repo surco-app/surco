@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Surco <hola@getsurco.app>
+Date: Sun, 18 Oct 2026 22:50:35 +0200
+Subject: [PATCH 1/6] Write rekordbox's default colour for a hot cue without
+ one
+
+---
+ crates/baken-export/src/anlz/cues.rs | 46 +++++++++++++++++++++++++---
+ 1 file changed, 42 insertions(+), 4 deletions(-)
+
+diff --git a/crates/baken-export/src/anlz/cues.rs b/crates/baken-export/src/anlz/cues.rs
+index fb03abc..7ccf44a 100644
+--- a/crates/baken-export/src/anlz/cues.rs
++++ b/crates/baken-export/src/anlz/cues.rs
+@@ -131,15 +131,30 @@ type HotCueColour = (u8, (u8, u8, u8), [u8; 3]);
+ /// rekordbox's hot cue without a colour: code 0, green bytes.
+ const NO_COLOUR: [u8; 4] = [0, 0x1a, 0xff, 0x00];
+ 
++/// What rekordbox 7.2.19 writes for a hot cue left without a colour: code 0 and the RGB of
++/// its letter, read off a stick it exported (16/10/2026) for A to F. G and H were not
++/// measured and keep [`NO_COLOUR`].
++const LETTER_DEFAULTS: [[u8; 3]; 6] = [
++    [0xff, 0x00, 0x17],
++    [0x00, 0xc4, 0xff],
++    [0x33, 0xff, 0x00],
++    [0x4d, 0x00, 0xff],
++    [0x00, 0xff, 0x30],
++    [0xff, 0x5e, 0x00],
++];
++
+ /// Hot cue colour bytes `(code, r, g, b)` as rekordbox 7 writes them. The
+ /// XML colour names one of [`HOT_CUE_COLOURS`]; any other (an XML from
+ /// another tool) takes the nearest. Green goes out as [`NO_COLOUR`]: the XML
+ /// gives both green and no colour as 40/226/20, rekordbox wrote both forms
+-/// for a green hot cue, and both show green. A hot cue without a colour in
+-/// the XML gets the same.
++/// for a green hot cue, and both show green. A hot cue without a colour in the XML gets
++/// rekordbox's default for its letter ([`LETTER_DEFAULTS`]).
+ fn hot_colour(c: &Cue) -> [u8; 4] {
+     let Some((r, g, b)) = c.rgb else {
+-        return NO_COLOUR;
++        return usize::try_from(c.num)
++            .ok()
++            .and_then(|n| LETTER_DEFAULTS.get(n))
++            .map_or(NO_COLOUR, |&[r, g, b]| [0, r, g, b]);
+     };
+     let distance = |(pr, pg, pb): (u8, u8, u8)| {
+         let d = |x: u8, y: u8| (i32::from(x) - i32::from(y)).pow(2);
+@@ -396,7 +411,30 @@ mod tests {
+             [0x2a, 0xff, 0x00, 0x00]
+         );
+         assert_eq!(hot_colour(&hot(Some((0, 255, 0)))), NO_COLOUR);
+-        assert_eq!(hot_colour(&hot(None)), NO_COLOUR);
++        // No colour is rekordbox's default for the letter: code 0 and that letter's RGB, as
++        // rekordbox 7.2.19 wrote A to F on a stick (16/10/2026). Writing green for every
++        // letter made the pads of an exported stick differ from rekordbox's.
++        for (num, [r, g, b]) in [
++            (0, [0xff, 0x00, 0x17]),
++            (1, [0x00, 0xc4, 0xff]),
++            (2, [0x33, 0xff, 0x00]),
++            (3, [0x4d, 0x00, 0xff]),
++            (4, [0x00, 0xff, 0x30]),
++            (5, [0xff, 0x5e, 0x00]),
++        ] {
++            let c = Cue {
++                num,
++                rgb: None,
++                ..Default::default()
++            };
++            assert_eq!(hot_colour(&c), [0, r, g, b], "letter {num}");
++        }
++        // G and H were not measured, so they keep the form baken wrote before
++        let g = Cue {
++            num: 6,
++            ..Default::default()
++        };
++        assert_eq!(hot_colour(&g), NO_COLOUR);
+     }
+ 
+     /// rekordbox's own export of a hot cue in each colour (`Tape 3` and

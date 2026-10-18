@@ -1,0 +1,132 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Surco <hola@getsurco.app>
+Date: Sun, 18 Oct 2026 22:51:33 +0200
+Subject: [PATCH 2/6] Take artwork from a folder of pictures named by TrackID
+
+---
+ crates/baken-export/src/artwork.rs   |  9 +++++++++
+ crates/baken-export/src/lib.rs       | 11 ++++++++++-
+ crates/baken-export/tests/artwork.rs | 17 +++++++++++++++++
+ crates/baken/src/args.rs             |  5 +++++
+ crates/baken/src/expressport.rs      |  1 +
+ 5 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/crates/baken-export/src/artwork.rs b/crates/baken-export/src/artwork.rs
+index 6bb65f7..acf62c6 100644
+--- a/crates/baken-export/src/artwork.rs
++++ b/crates/baken-export/src/artwork.rs
+@@ -51,6 +51,15 @@ pub fn for_file(audio: &Path) -> Option<Thumbnails> {
+     thumbnails(&embedded(audio)?)
+ }
+ 
++/// The thumbnails of `<dir>/<id>.jpg`, `.jpeg` or `.png`, the picture a front-end put
++/// there for TrackID `id`; `None` when there is none or it does not decode.
++pub fn from_dir(dir: &Path, id: u64) -> Option<Thumbnails> {
++    ["jpg", "jpeg", "png"]
++        .iter()
++        .find_map(|ext| std::fs::read(dir.join(format!("{id}.{ext}"))).ok())
++        .and_then(|bytes| thumbnails(&bytes))
++}
++
+ /// The embedded picture, the front cover when there are several: ID3v2
+ /// `APIC` (MP3, and the ID3 chunk of AIFF), FLAC `PICTURE`, MP4 `covr`.
+ /// symphonia does not read the ID3 chunk of a WAV file.
+diff --git a/crates/baken-export/src/lib.rs b/crates/baken-export/src/lib.rs
+index 57d6848..998fd10 100644
+--- a/crates/baken-export/src/lib.rs
++++ b/crates/baken-export/src/lib.rs
+@@ -65,6 +65,9 @@ pub struct Options {
+     /// Put the picture embedded in each audio file on the stick as artwork
+     /// (issue #235): four small JPEG files per track.
+     pub artwork: bool,
++    /// With `artwork`: a folder of pictures named by TrackID that take precedence over
++    /// the picture embedded in the audio ([`artwork::from_dir`]).
++    pub artwork_dir: Option<PathBuf>,
+ }
+ 
+ #[derive(Debug, Clone)]
+@@ -147,6 +150,7 @@ pub struct Plan {
+     pub onelibrary: bool,
+     /// [`Options::artwork`].
+     pub artwork: bool,
++    pub artwork_dir: Option<PathBuf>,
+ }
+ 
+ impl Plan {
+@@ -441,6 +445,7 @@ pub fn plan(opts: &Options) -> Result<Plan> {
+         prune: opts.prune,
+         onelibrary: opts.onelibrary,
+         artwork: opts.artwork,
++        artwork_dir: opts.artwork_dir.clone(),
+     })
+ }
+ 
+@@ -1144,7 +1149,11 @@ fn prepare(plan: &Plan, pt: &PlanTrack) -> anyhow::Result<Prepared> {
+     }
+     prepared.audio = audio;
+     if plan.artwork {
+-        prepared.artwork = artwork::for_file(&pt.source);
++        prepared.artwork = plan
++            .artwork_dir
++            .as_deref()
++            .and_then(|dir| artwork::from_dir(dir, pt.device.track.id))
++            .or_else(|| artwork::for_file(&pt.source));
+     }
+     Ok(prepared)
+ }
+diff --git a/crates/baken-export/tests/artwork.rs b/crates/baken-export/tests/artwork.rs
+index 744cb20..5f4e27f 100644
+--- a/crates/baken-export/tests/artwork.rs
++++ b/crates/baken-export/tests/artwork.rs
+@@ -129,6 +129,23 @@ fn the_cover_goes_onto_the_stick_as_rekordbox_writes_it() {
+     std::fs::remove_dir_all(&root).unwrap();
+ }
+ 
++/// rekordbox shows covers it keeps in its own cache (every WAV's, and those of files whose
++/// tags carry none), which no file holds; a front-end that has them puts each one in a
++/// folder under the track's TrackID, and it wins over the embedded picture.
++#[test]
++fn a_picture_in_the_artwork_dir_goes_where_the_file_has_none() {
++    let (root, mut opts) = library("dir");
++    let dir = root.join("art");
++    std::fs::create_dir_all(&dir).unwrap();
++    std::fs::write(dir.join("2.png"), png(64, 64)).unwrap();
++    opts.artwork_dir = Some(dir);
++    let report = export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
++    assert!(report.failures.is_empty(), "{:?}", report.failures);
++    assert_eq!(report.artwork, 2, "the plain track gets the folder's picture");
++    assert!(art(&opts, "a2.jpg").exists());
++    std::fs::remove_dir_all(&root).unwrap();
++}
++
+ #[test]
+ fn prune_removes_artwork_no_track_uses() {
+     let (root, mut opts) = library("prune");
+diff --git a/crates/baken/src/args.rs b/crates/baken/src/args.rs
+index 4876961..4d354b2 100644
+--- a/crates/baken/src/args.rs
++++ b/crates/baken/src/args.rs
+@@ -118,6 +118,11 @@ pub struct ExpressportArgs {
+     #[arg(long)]
+     pub artwork: bool,
+ 
++    /// With --artwork: a folder of pictures named <TrackID>.jpg or .png that take
++    /// precedence over the picture embedded in each audio file.
++    #[arg(long, value_name = "DIR", requires = "artwork")]
++    pub artwork_dir: Option<PathBuf>,
++
+     /// Resolve everything and print what would be written, without touching the stick.
+     #[arg(long)]
+     pub dry_run: bool,
+diff --git a/crates/baken/src/expressport.rs b/crates/baken/src/expressport.rs
+index 927204d..97bf19e 100644
+--- a/crates/baken/src/expressport.rs
++++ b/crates/baken/src/expressport.rs
+@@ -25,6 +25,7 @@ pub fn run(args: &ExpressportArgs) -> Result<()> {
+         prune: args.prune,
+         onelibrary: args.onelibrary,
+         artwork: args.artwork,
++        artwork_dir: args.artwork_dir.clone(),
+     };
+     let plan = plan(&opts)?;
+     print_plan(&plan);

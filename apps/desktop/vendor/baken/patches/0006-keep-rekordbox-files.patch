@@ -1,0 +1,278 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Surco <hola@getsurco.app>
+Date: Sun, 18 Oct 2026 23:33:50 +0200
+Subject: [PATCH 6/6] Keep rekordbox's extension tables and the source's date
+ on the stick
+
+---
+ crates/baken-export/src/lib.rs          | 57 +++++++++++++---
+ crates/baken-export/tests/onelibrary.rs | 87 +++++++++++++++++++++++++
+ crates/baken/src/args.rs                |  5 ++
+ crates/baken/src/expressport.rs         |  1 +
+ 4 files changed, 142 insertions(+), 8 deletions(-)
+
+diff --git a/crates/baken-export/src/lib.rs b/crates/baken-export/src/lib.rs
+index f84c8c9..49e5d1c 100644
+--- a/crates/baken-export/src/lib.rs
++++ b/crates/baken-export/src/lib.rs
+@@ -72,6 +72,9 @@ pub struct Options {
+     /// The rekordbox collection's identity ([`identity`]); without it the stick gets
+     /// what an XML-only export has.
+     pub identity: Option<identity::MasterIdentity>,
++    /// Never remove `exportExt.pdb`, the My Tag tables rekordbox wrote: with
++    /// [`Options::identity`] the stick is rekordbox's own library, which it keeps syncing.
++    pub keep_rekordbox_ext: bool,
+ }
+ 
+ #[derive(Debug, Clone)]
+@@ -98,7 +101,10 @@ pub struct PlanTrack {
+ /// writes. Left next to a new `export.pdb` they describe rekordbox's old
+ /// library, which rekordbox reports as "a library inconsistency on the
+ /// device" and OneLibrary players show instead of ours (issue #208). With
+-/// [`Options::onelibrary`] the database is replaced and the rest removed.
++/// [`Options::onelibrary`] the database is replaced and the rest removed. With
++/// [`Options::keep_rekordbox_ext`] the extension tables rekordbox wrote stay, because the
++/// stick then carries the collection's identity ([`Options::identity`]) and rekordbox
++/// keeps syncing it.
+ pub const ONELIBRARY_FILES: [&str; 4] = [
+     "exportLibrary.db",
+     "exportLibrary.db-wal",
+@@ -157,6 +163,8 @@ pub struct Plan {
+     pub artwork_dir: Option<PathBuf>,
+     /// [`Options::identity`].
+     pub identity: Option<identity::MasterIdentity>,
++    /// [`Options::keep_rekordbox_ext`].
++    pub keep_rekordbox_ext: bool,
+ }
+ 
+ impl Plan {
+@@ -238,6 +246,9 @@ pub struct Report {
+     /// Why it was not, though asked for. The run goes on as without the
+     /// option, so the stick has no OneLibrary rather than the old one.
+     pub onelibrary_error: Option<String>,
++    /// Copied audio files whose source's modification time the stick's filesystem
++    /// refused; the copy itself is fine.
++    pub dates_not_kept: usize,
+     /// [`Options::artwork`]: tracks that got artwork, which are also the
+     /// artwork ids handed out (1 to this).
+     pub artwork: usize,
+@@ -460,6 +471,7 @@ pub fn plan(opts: &Options) -> Result<Plan> {
+         artwork: opts.artwork,
+         artwork_dir: opts.artwork_dir.clone(),
+         identity: opts.identity.clone(),
++        keep_rekordbox_ext: opts.keep_rekordbox_ext,
+     })
+ }
+ 
+@@ -966,13 +978,15 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+         path: pdb_path,
+         err,
+     })?;
+-    match onelibrary.map(|db| db.and_then(|db| replace_onelibrary(&rb_dir, &db, &mut report))) {
++    match onelibrary.map(|db| {
++        db.and_then(|db| replace_onelibrary(&rb_dir, &db, plan.keep_rekordbox_ext, &mut report))
++    }) {
+         Some(Ok(())) => report.onelibrary_written = true,
+         Some(Err(e)) => {
+             report.onelibrary_error = Some(format!("{e:#}"));
+-            remove_onelibrary(&rb_dir, &mut report);
++            remove_onelibrary(&rb_dir, plan.keep_rekordbox_ext, &mut report);
+         }
+-        None => remove_onelibrary(&rb_dir, &mut report),
++        None => remove_onelibrary(&rb_dir, plan.keep_rekordbox_ext, &mut report),
+     }
+ 
+     if let Some(dir) = &plan.settings_dir {
+@@ -1020,8 +1034,8 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+ /// since an error would lose the report of a run that has written
+ /// `export.pdb`. Their `._` files go with the `PIONEER/rekordbox` walk at the
+ /// end of [`export`], under the rules of #192.
+-fn remove_onelibrary(rb_dir: &Path, report: &mut Report) {
+-    for name in ONELIBRARY_FILES {
++fn remove_onelibrary(rb_dir: &Path, keep_ext: bool, report: &mut Report) {
++    for name in removable(keep_ext) {
+         match fsname::remove_file(&rb_dir.join(name)) {
+             Ok(()) => report.onelibrary_removed += 1,
+             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+@@ -1035,8 +1049,13 @@ fn remove_onelibrary(rb_dir: &Path, report: &mut Report) {
+ /// `-shm` go first: SQLite would replay an old write-ahead log into the new
+ /// database. `exportExt.pdb` goes too, since it lists rekordbox's My Tags for
+ /// rekordbox's track ids.
+-fn replace_onelibrary(rb_dir: &Path, db: &[u8], report: &mut Report) -> anyhow::Result<()> {
+-    for name in ONELIBRARY_FILES.iter().filter(|&&n| n != onelibrary::FILE) {
++fn replace_onelibrary(
++    rb_dir: &Path,
++    db: &[u8],
++    keep_ext: bool,
++    report: &mut Report,
++) -> anyhow::Result<()> {
++    for name in removable(keep_ext).filter(|&n| n != onelibrary::FILE) {
+         match fsname::remove_file(&rb_dir.join(name)) {
+             Ok(()) => report.onelibrary_removed += 1,
+             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+@@ -1047,6 +1066,14 @@ fn replace_onelibrary(rb_dir: &Path, db: &[u8], report: &mut Report) -> anyhow::
+     fsname::write_atomic(&path, db).with_context(|| format!("writing {}", path.display()))
+ }
+ 
++/// [`ONELIBRARY_FILES`] an export removes: all of them, or all but `exportExt.pdb`
++/// with [`Options::keep_rekordbox_ext`].
++fn removable(keep_ext: bool) -> impl Iterator<Item = &'static str> {
++    ONELIBRARY_FILES
++        .into_iter()
++        .filter(move |&n| !(keep_ext && n == "exportExt.pdb"))
++}
++
+ /// Hands out track indices to the workers that prepare tracks ahead of the
+ /// writer, at most `window` beyond the last track written, so a slow stick
+ /// does not pile up prepared tracks. Two workers already hide the decoding
+@@ -1368,6 +1395,11 @@ fn write_track(
+         (Audio::Source, _) => {
+             let size = copy_audio(&pt.source, &dest)?;
+             report.copied += 1;
++            // rekordbox's copies keep their source's date; a filesystem that refuses
++            // it costs the date only, never the track.
++            if keep_modified(&pt.source, &dest).is_err() {
++                report.dates_not_kept += 1;
++            }
+             size
+         }
+     };
+@@ -1504,6 +1536,15 @@ fn copy_audio(src: &Path, dst: &Path) -> anyhow::Result<u64> {
+     copied
+ }
+ 
++/// Give `dst` the modification time of `src`.
++fn keep_modified(src: &Path, dst: &Path) -> std::io::Result<()> {
++    let time = std::fs::metadata(src)?.modified()?;
++    std::fs::File::options()
++        .write(true)
++        .open(dst)?
++        .set_modified(time)
++}
++
+ /// Fill in what the XML left at 0 from the audio a generated-analysis track
+ /// was just decoded from (#167); a value rekordbox wrote always stays. The
+ /// rules follow what rekordbox writes: MP3 the audio-frame rate, lossless the
+diff --git a/crates/baken-export/tests/onelibrary.rs b/crates/baken-export/tests/onelibrary.rs
+index 537c4ee..7017c72 100644
+--- a/crates/baken-export/tests/onelibrary.rs
++++ b/crates/baken-export/tests/onelibrary.rs
+@@ -204,3 +204,90 @@ fn a_stale_log_that_stays_keeps_the_database_off_the_stick() {
+     assert_eq!(report.tracks_in_database, 1);
+     std::fs::remove_dir_all(&root).unwrap();
+ }
++
++/// With patch 0005's identity the stick is rekordbox's own library, and rekordbox expects
++/// to find the My Tag tables it wrote (`exportExt.pdb`) when it syncs it again. A stale
++/// write-ahead log still goes: it would replay into the new database.
++#[test]
++fn keep_rekordbox_ext_leaves_export_ext_pdb() {
++    for onelibrary in [true, false] {
++        let (root, mut opts) = rekordbox_stick(&format!("keep-ext-{onelibrary}"));
++        std::fs::write(rb(&opts).join("exportExt.pdb"), b"ext").unwrap();
++        opts.onelibrary = onelibrary;
++        opts.keep_rekordbox_ext = true;
++        let report = export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
++        assert!(report.failures.is_empty(), "{:?}", report.failures);
++        assert_eq!(
++            std::fs::read(rb(&opts).join("exportExt.pdb")).unwrap(),
++            b"ext"
++        );
++        assert!(!rb(&opts).join("exportLibrary.db-wal").exists());
++        assert!(!rb(&opts).join("exportLibrary.db-shm").exists());
++        let removed = if onelibrary { 2 } else { 3 };
++        assert_eq!(
++            report.onelibrary_removed, removed,
++            "onelibrary {onelibrary}"
++        );
++        std::fs::remove_dir_all(&root).unwrap();
++    }
++    let (root, opts) = rekordbox_stick("drop-ext");
++    export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
++    assert!(left(&opts).is_empty(), "without the option all of them go");
++    std::fs::remove_dir_all(&root).unwrap();
++}
++
++fn find(dir: &Path, name: &str) -> Option<PathBuf> {
++    std::fs::read_dir(dir).ok()?.flatten().find_map(|e| {
++        let p = e.path();
++        if p.is_dir() {
++            find(&p, name)
++        } else {
++            (p.file_name()? == name).then_some(p)
++        }
++    })
++}
++
++fn modified(path: &Path) -> std::time::SystemTime {
++    std::fs::metadata(path).unwrap().modified().unwrap()
++}
++
++fn set_modified(path: &Path, secs: u64) {
++    std::fs::File::options()
++        .write(true)
++        .open(path)
++        .unwrap()
++        .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs))
++        .unwrap();
++}
++
++/// The audio rekordbox copies onto a stick keeps its source's modification time, and the
++/// coexistence run that rekordbox accepted reproduced it. A track already on the stick is
++/// not written again, so its date stays whatever it was.
++#[test]
++fn copied_audio_carries_the_source_modification_time() {
++    const JAN_25_NOON: u64 = 1769342400;
++    let (root, opts) = rekordbox_stick("mtime");
++    let source = root.join("music/t.wav");
++    set_modified(&source, JAN_25_NOON);
++    export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
++    let copy = find(&opts.device.join("Contents"), "t.wav").unwrap();
++    let apart = |a: std::time::SystemTime, b: std::time::SystemTime| {
++        a.duration_since(b)
++            .or_else(|_| b.duration_since(a))
++            .unwrap()
++    };
++    assert!(
++        apart(modified(&copy), modified(&source)) <= std::time::Duration::from_secs(2),
++        "within FAT's two seconds"
++    );
++
++    const FEB_1: u64 = 1769904000;
++    set_modified(&copy, FEB_1);
++    let report = export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
++    assert_eq!(report.kept, 1);
++    assert_eq!(
++        modified(&copy),
++        std::time::UNIX_EPOCH + std::time::Duration::from_secs(FEB_1)
++    );
++    std::fs::remove_dir_all(&root).unwrap();
++}
+diff --git a/crates/baken/src/args.rs b/crates/baken/src/args.rs
+index c42e55e..974c64b 100644
+--- a/crates/baken/src/args.rs
++++ b/crates/baken/src/args.rs
+@@ -129,6 +129,11 @@ pub struct ExpressportArgs {
+     #[arg(long, value_name = "FILE")]
+     pub master_ids: Option<PathBuf>,
+ 
++    /// Never remove exportExt.pdb, the My Tag tables rekordbox wrote on the stick: with
++    /// --master-ids the stick is rekordbox's own library, which rekordbox keeps syncing.
++    #[arg(long)]
++    pub keep_rekordbox_ext: bool,
++
+     /// One JSON object per line on stdout (the plan, each track, the report or an error)
+     /// instead of the progress bar, for a front-end that drives the export.
+     #[arg(long)]
+diff --git a/crates/baken/src/expressport.rs b/crates/baken/src/expressport.rs
+index c143036..d348445 100644
+--- a/crates/baken/src/expressport.rs
++++ b/crates/baken/src/expressport.rs
+@@ -34,6 +34,7 @@ pub fn run(args: &ExpressportArgs) -> Result<()> {
+         artwork: args.artwork,
+         artwork_dir: args.artwork_dir.clone(),
+         identity,
++        keep_rekordbox_ext: args.keep_rekordbox_ext,
+     };
+     if args.json {
+         return crate::json::run(&opts, args.dry_run);

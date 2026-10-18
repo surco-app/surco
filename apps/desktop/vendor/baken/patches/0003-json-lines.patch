@@ -1,0 +1,482 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Surco <hola@getsurco.app>
+Date: Sun, 18 Oct 2026 22:53:46 +0200
+Subject: [PATCH 3/6] Report each track as JSON lines with --json and cancel
+ between tracks on request
+
+---
+ Cargo.lock                           |   2 +
+ crates/baken-core/src/lib.rs         |   2 +-
+ crates/baken-core/src/progress.rs    |  19 +++
+ crates/baken-export/src/lib.rs       |  17 ++-
+ crates/baken-export/tests/artwork.rs |  95 ++++++++++++++-
+ crates/baken/Cargo.toml              |   4 +
+ crates/baken/src/args.rs             |   5 +
+ crates/baken/src/expressport.rs      |   3 +
+ crates/baken/src/json.rs             | 172 +++++++++++++++++++++++++++
+ crates/baken/src/main.rs             |   2 +
+ 10 files changed, 317 insertions(+), 4 deletions(-)
+ create mode 100644 crates/baken/src/json.rs
+
+diff --git a/Cargo.lock b/Cargo.lock
+index 17c0dfd..8fcf3ff 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -107,6 +107,8 @@ dependencies = [
+  "console",
+  "dialoguer",
+  "indicatif",
++ "libc",
++ "serde_json",
+  "update-informer",
+ ]
+ 
+diff --git a/crates/baken-core/src/lib.rs b/crates/baken-core/src/lib.rs
+index bc608a8..3f8a024 100644
+--- a/crates/baken-core/src/lib.rs
++++ b/crates/baken-core/src/lib.rs
+@@ -14,5 +14,5 @@ pub mod rbsort;
+ 
+ pub use cancel::CancelToken;
+ pub use error::{Error, Result};
+-pub use progress::Progress;
++pub use progress::{Progress, TrackEvent};
+ pub use tools::{check_ffmpeg, set_tools, Tools};
+diff --git a/crates/baken-core/src/progress.rs b/crates/baken-core/src/progress.rs
+index 0983dc4..27466c9 100644
+--- a/crates/baken-core/src/progress.rs
++++ b/crates/baken-core/src/progress.rs
+@@ -1,10 +1,29 @@
+ use std::path::Path;
+ 
++/// What happens to one track of an export, for a front-end that shows it.
++pub enum TrackEvent<'a> {
++    /// The writer takes track `index` (plan order); `size` is its source's.
++    Start {
++        index: usize,
++        usb_path: &'a str,
++        size: u64,
++    },
++    /// Its files are on the stick; `kept` when the audio already was.
++    Written { index: usize, kept: bool },
++    /// It failed on its own and stays out of the database; the run goes on.
++    Failed { index: usize, message: &'a str },
++    /// Every track is done and the databases are being written: stopping now would
++    /// leave `export.pdb` and `exportLibrary.db` describing different libraries.
++    Database,
++}
++
+ /// Receives per-file completion events from long-running operations.
+ /// Files are processed in parallel, so `file` is the one that just finished,
+ /// not necessarily the next in input order. Called from worker threads.
+ pub trait Progress: Sync {
+     fn on_file_done(&self, done: usize, total: usize, file: &Path);
++    /// Export only; the default ignores it.
++    fn on_track(&self, _event: TrackEvent<'_>) {}
+ }
+ 
+ /// No-op progress sink.
+diff --git a/crates/baken-export/src/lib.rs b/crates/baken-export/src/lib.rs
+index 998fd10..55b9322 100644
+--- a/crates/baken-export/src/lib.rs
++++ b/crates/baken-export/src/lib.rs
+@@ -27,7 +27,7 @@ use anlz::locate::{read_optional, AnlzIndex, Entry};
+ use anlz::rewrite::{self, FileKind, Mp3Audio};
+ use anlz::section::AnlzFile;
+ use anyhow::Context as _;
+-use baken_core::{fsname, CancelToken, Progress};
++use baken_core::{fsname, CancelToken, Progress, TrackEvent};
+ use build::DeviceTrack;
+ use collection::Library;
+ use rayon::prelude::*;
+@@ -875,8 +875,18 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+                 stopped = Some(e);
+                 break;
+             }
++            progress.on_track(TrackEvent::Start {
++                index: i,
++                usb_path: &pt.device.usb_path,
++                size: pt.device.file_size,
++            });
++            let kept_before = report.kept;
+             match prepared.and_then(|p| write_track(plan, pt, p, &mut report)) {
+                 Ok(dt) => {
++                    progress.on_track(TrackEvent::Written {
++                        index: i,
++                        kept: report.kept > kept_before,
++                    });
+                     wanted.insert(device_path(&plan.device, &dt.usb_path));
+                     for kind in FileKind::ALL {
+                         wanted.insert(device_path(&plan.device, &dt.anlz_path(kind.extension())));
+@@ -900,6 +910,10 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+                         Ok(e) => e.to_string(),
+                         Err(e) => e.to_string(),
+                     };
++                    progress.on_track(TrackEvent::Failed {
++                        index: i,
++                        message: &message,
++                    });
+                     report
+                         .failures
+                         .push((pt.device.track.name.clone(), message));
+@@ -917,6 +931,7 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+     }
+     still_mounted()?;
+ 
++    progress.on_track(TrackEvent::Database);
+     let date = build::today();
+     let model = build::build(
+         &plan.library,
+diff --git a/crates/baken-export/tests/artwork.rs b/crates/baken-export/tests/artwork.rs
+index 5f4e27f..42f1ea6 100644
+--- a/crates/baken-export/tests/artwork.rs
++++ b/crates/baken-export/tests/artwork.rs
+@@ -2,10 +2,11 @@
+ //! as four thumbnails, the database rows point at them, a re-run leaves them
+ //! as they are, and `--prune` removes the ones no track uses any more.
+ 
+-use baken_core::CancelToken;
++use baken_core::{CancelToken, Progress, TrackEvent};
+ use baken_export::{export, plan, Options};
+ use image::{Rgb, RgbImage};
+ use std::path::{Path, PathBuf};
++use std::sync::Mutex;
+ 
+ const FRAMES: u32 = 22050;
+ 
+@@ -141,7 +142,10 @@ fn a_picture_in_the_artwork_dir_goes_where_the_file_has_none() {
+     opts.artwork_dir = Some(dir);
+     let report = export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
+     assert!(report.failures.is_empty(), "{:?}", report.failures);
+-    assert_eq!(report.artwork, 2, "the plain track gets the folder's picture");
++    assert_eq!(
++        report.artwork, 2,
++        "the plain track gets the folder's picture"
++    );
+     assert!(art(&opts, "a2.jpg").exists());
+     std::fs::remove_dir_all(&root).unwrap();
+ }
+@@ -159,3 +163,90 @@ fn prune_removes_artwork_no_track_uses() {
+     assert!(!opts.device.join("PIONEER/Artwork").join("00001").exists());
+     std::fs::remove_dir_all(&root).unwrap();
+ }
++
++#[derive(Default)]
++struct Recorder(Mutex<Vec<String>>);
++
++impl Progress for Recorder {
++    fn on_file_done(&self, _done: usize, _total: usize, _file: &Path) {}
++    fn on_track(&self, event: TrackEvent<'_>) {
++        let line = match event {
++            TrackEvent::Start { index, .. } => format!("start {index}"),
++            TrackEvent::Written { index, kept } => format!("written {index} {kept}"),
++            TrackEvent::Failed { index, .. } => format!("failed {index}"),
++            TrackEvent::Database => "database".into(),
++        };
++        self.0.lock().unwrap().push(line);
++    }
++}
++
++/// A front-end shows each track as it starts and lands, whether its audio was already on
++/// the stick, and when the database is being written (when stopping the run is no longer
++/// safe). The second run copies nothing.
++#[test]
++fn the_export_reports_each_track_and_then_the_database() {
++    let (root, opts) = library("events");
++    let first = Recorder::default();
++    export(&plan(&opts).unwrap(), &first, &CancelToken::new()).unwrap();
++    assert_eq!(
++        first.0.into_inner().unwrap(),
++        [
++            "start 0",
++            "written 0 false",
++            "start 1",
++            "written 1 false",
++            "database"
++        ]
++    );
++    let again = Recorder::default();
++    export(&plan(&opts).unwrap(), &again, &CancelToken::new()).unwrap();
++    assert_eq!(
++        again.0.into_inner().unwrap(),
++        [
++            "start 0",
++            "written 0 true",
++            "start 1",
++            "written 1 true",
++            "database"
++        ]
++    );
++    std::fs::remove_dir_all(&root).unwrap();
++}
++
++struct CancelAfterFirst(CancelToken);
++
++impl Progress for CancelAfterFirst {
++    fn on_file_done(&self, _done: usize, _total: usize, _file: &Path) {}
++    fn on_track(&self, event: TrackEvent<'_>) {
++        if let TrackEvent::Written { index: 0, .. } = event {
++            self.0.cancel();
++        }
++    }
++}
++
++/// A front-end's cancel lands between tracks: the track being copied is finished whole, the
++/// next one is never started, and export.pdb is not written. Killing the process instead
++/// could leave a half-written audio file over one the stick's previous library points at
++/// (copy_audio writes in place).
++#[test]
++fn a_cancel_stops_before_the_next_track_and_writes_no_database() {
++    let (root, opts) = library("cancel");
++    let token = CancelToken::new();
++    let report = export(
++        &plan(&opts).unwrap(),
++        &CancelAfterFirst(token.clone()),
++        &token,
++    )
++    .unwrap();
++    assert!(report.cancelled);
++    let source = std::fs::metadata(root.join("music/cover.aif"))
++        .unwrap()
++        .len();
++    let copied = std::fs::metadata(opts.device.join("Contents/A/B/cover.aif"))
++        .unwrap()
++        .len();
++    assert_eq!(copied, source, "the track in progress is complete");
++    assert!(!opts.device.join("Contents/A/B/plain.aif").exists());
++    assert!(!opts.device.join("PIONEER/rekordbox/export.pdb").exists());
++    std::fs::remove_dir_all(&root).unwrap();
++}
+diff --git a/crates/baken/Cargo.toml b/crates/baken/Cargo.toml
+index 64df18d..16e77ea 100644
+--- a/crates/baken/Cargo.toml
++++ b/crates/baken/Cargo.toml
+@@ -30,3 +30,7 @@ dialoguer = "0.12"
+ console = "0.16"
+ indicatif = "0.18"
+ update-informer = { version = "1.2", default-features = false, features = ["github", "ureq", "rustls-tls"] }
++serde_json.workspace = true
++
++[target.'cfg(unix)'.dependencies]
++libc = "0.2"
+diff --git a/crates/baken/src/args.rs b/crates/baken/src/args.rs
+index 4d354b2..6b37023 100644
+--- a/crates/baken/src/args.rs
++++ b/crates/baken/src/args.rs
+@@ -123,6 +123,11 @@ pub struct ExpressportArgs {
+     #[arg(long, value_name = "DIR", requires = "artwork")]
+     pub artwork_dir: Option<PathBuf>,
+ 
++    /// One JSON object per line on stdout (the plan, each track, the report or an error)
++    /// instead of the progress bar, for a front-end that drives the export.
++    #[arg(long)]
++    pub json: bool,
++
+     /// Resolve everything and print what would be written, without touching the stick.
+     #[arg(long)]
+     pub dry_run: bool,
+diff --git a/crates/baken/src/expressport.rs b/crates/baken/src/expressport.rs
+index 97bf19e..2a6b05e 100644
+--- a/crates/baken/src/expressport.rs
++++ b/crates/baken/src/expressport.rs
+@@ -27,6 +27,9 @@ pub fn run(args: &ExpressportArgs) -> Result<()> {
+         artwork: args.artwork,
+         artwork_dir: args.artwork_dir.clone(),
+     };
++    if args.json {
++        return crate::json::run(&opts, args.dry_run);
++    }
+     let plan = plan(&opts)?;
+     print_plan(&plan);
+     if args.dry_run {
+diff --git a/crates/baken/src/json.rs b/crates/baken/src/json.rs
+new file mode 100644
+index 0000000..37fb6a5
+--- /dev/null
++++ b/crates/baken/src/json.rs
+@@ -0,0 +1,172 @@
++//! `expressport --json`: one JSON object per line on stdout, for a front-end that drives
++//! the export and shows its progress. The human output is a progress bar that vanishes
++//! when stdout is not a terminal, so a front-end had nothing to read.
++
++use baken_core::{CancelToken, Progress, TrackEvent};
++use baken_export::{export, plan, Error, Options, Plan, Report};
++use serde_json::{json, Value};
++use std::io::{BufRead, Write};
++use std::path::Path;
++
++fn emit(value: Value) {
++    let mut out = std::io::stdout().lock();
++    let _ = writeln!(out, "{value}");
++    let _ = out.flush();
++}
++
++pub fn run(opts: &Options, dry_run: bool) -> anyhow::Result<()> {
++    let plan = match plan(opts) {
++        Ok(plan) => plan,
++        Err(e) => fail(&e),
++    };
++    emit(plan_json(&plan));
++    if dry_run {
++        return Ok(());
++    }
++    let token = CancelToken::new();
++    cancel_on_request(&token);
++    match export(&plan, &JsonProgress, &token) {
++        Ok(report) => {
++            emit(report_json(&report));
++            Ok(())
++        }
++        Err(e) => fail(&e),
++    }
++}
++
++/// The error as the last line, and a failing exit status.
++fn fail(e: &Error) -> ! {
++    let message = e.to_string();
++    emit(match e {
++        Error::NotEnoughSpace { needed, available } => json!({
++            "event": "error", "kind": "not-enough-space", "message": message,
++            "needed": needed, "available": available,
++        }),
++        Error::DeviceWrite { .. } => {
++            json!({ "event": "error", "kind": "device-write", "message": message })
++        }
++        Error::DeviceNotFound(_) => {
++            json!({ "event": "error", "kind": "device-not-found", "message": message })
++        }
++        _ => json!({ "event": "error", "kind": "other", "message": message }),
++    });
++    std::process::exit(1)
++}
++
++/// `onStick` is the size check only (the export also compares pieces of the file), which
++/// is what a summary before the run needs: how much is left to copy.
++fn plan_json(plan: &Plan) -> Value {
++    let tracks: Vec<Value> = plan
++        .tracks
++        .iter()
++        .map(|t| {
++            let on_stick =
++                std::fs::metadata(plan.device.join(t.device.usb_path.trim_start_matches('/')))
++                    .map(|m| m.len() == t.device.file_size)
++                    .unwrap_or(false);
++            json!({
++                "id": t.device.track.id, "usbPath": t.device.usb_path,
++                "size": t.device.file_size, "onStick": on_stick,
++            })
++        })
++        .collect();
++    let warnings: Vec<String> = plan
++        .format_warnings()
++        .iter()
++        .map(|w| w.to_string())
++        .collect();
++    let skipped: Vec<Value> = plan
++        .skipped
++        .iter()
++        .map(|s| json!({ "name": s.name, "reason": s.reason }))
++        .collect();
++    json!({
++        "event": "plan", "volumeRoot": plan.volume_root, "tracks": tracks,
++        "spaceNeeded": plan.space_needed,
++        "spaceAvailable": plan.space_available, "warnings": warnings, "skipped": skipped,
++        "onelibraryFiles": plan.onelibrary_files,
++    })
++}
++
++fn report_json(r: &Report) -> Value {
++    let failures: Vec<Value> = r
++        .failures
++        .iter()
++        .map(|(name, message)| json!({ "name": name, "message": message }))
++        .collect();
++    json!({
++        "event": "report", "copied": r.copied, "kept": r.kept, "failures": failures,
++        "cancelled": r.cancelled, "onelibraryWritten": r.onelibrary_written,
++        "onelibraryError": r.onelibrary_error, "artwork": r.artwork, "pruned": r.pruned,
++        "tracksInDatabase": r.tracks_in_database,
++    })
++}
++
++/// Cancels `token` when the front-end asks: a line `cancel` on stdin, which works on every
++/// platform (a Windows child process gets no SIGINT), or SIGINT/SIGTERM on Unix. The export
++/// checks the token between tracks, so the track being copied always finishes and no audio
++/// file is left half-written. stdin closing (the front-end gone) is not a cancel.
++fn cancel_on_request(token: &CancelToken) {
++    let on_line = token.clone();
++    std::thread::spawn(move || {
++        for line in std::io::stdin().lock().lines() {
++            match line {
++                Ok(l) if l.trim() == "cancel" => {
++                    on_line.cancel();
++                    break;
++                }
++                Ok(_) => {}
++                Err(_) => break,
++            }
++        }
++    });
++    #[cfg(unix)]
++    cancel_on_signals(token.clone());
++}
++
++#[cfg(unix)]
++fn cancel_on_signals(token: CancelToken) {
++    use std::sync::atomic::{AtomicBool, Ordering};
++    static STOP: AtomicBool = AtomicBool::new(false);
++    // Only an atomic store in the handler: nothing else is async-signal-safe.
++    extern "C" fn on_signal(_: libc::c_int) {
++        STOP.store(true, Ordering::SeqCst);
++    }
++    let handler = on_signal as extern "C" fn(libc::c_int) as libc::sighandler_t;
++    unsafe {
++        libc::signal(libc::SIGINT, handler);
++        libc::signal(libc::SIGTERM, handler);
++    }
++    std::thread::spawn(move || loop {
++        if STOP.load(Ordering::SeqCst) {
++            token.cancel();
++            break;
++        }
++        std::thread::sleep(std::time::Duration::from_millis(50));
++    });
++}
++
++struct JsonProgress;
++
++impl Progress for JsonProgress {
++    fn on_file_done(&self, _done: usize, _total: usize, _file: &Path) {}
++
++    fn on_track(&self, event: TrackEvent<'_>) {
++        emit(match event {
++            TrackEvent::Start {
++                index,
++                usb_path,
++                size,
++            } => {
++                json!({ "event": "start", "index": index, "usbPath": usb_path, "size": size })
++            }
++            TrackEvent::Written { index, kept } => {
++                json!({ "event": "written", "index": index, "kept": kept })
++            }
++            TrackEvent::Failed { index, message } => {
++                json!({ "event": "failed", "index": index, "message": message })
++            }
++            TrackEvent::Database => json!({ "event": "database" }),
++        });
++    }
++}
+diff --git a/crates/baken/src/main.rs b/crates/baken/src/main.rs
+index cc67139..6750ec8 100644
+--- a/crates/baken/src/main.rs
++++ b/crates/baken/src/main.rs
+@@ -3,6 +3,8 @@ mod cdjsafe;
+ mod cli;
+ #[cfg(feature = "expressport")]
+ mod expressport;
++#[cfg(feature = "expressport")]
++mod json;
+ mod progress;
+ mod rbsort;
+ mod report;
