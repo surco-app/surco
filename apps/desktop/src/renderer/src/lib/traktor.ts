@@ -1,5 +1,5 @@
+import { escapeXml } from '../../../shared/xml'
 import type { TrackItem } from '../types'
-import { escapeXml } from './xml'
 
 // Builds a Traktor collection (.nml) from the loaded tracks, plus a single "Surco"
 // playlist. Like the rekordbox export it's a bridge file the user imports — Traktor

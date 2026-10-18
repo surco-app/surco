@@ -1,6 +1,6 @@
 import { yearFromDate } from '../../../shared/tagFields'
+import { escapeXml } from '../../../shared/xml'
 import type { TrackItem } from '../types'
-import { escapeXml } from './xml'
 
 // Builds a rekordbox-importable collection XML (DJ_PLAYLISTS v1) from the loaded
 // tracks, plus a single "Surco" playlist referencing them all. rekordbox imports each
