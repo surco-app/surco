@@ -301,16 +301,14 @@ rekordbox."
   con los nodos del XML escritos justo antes del commit; si algo falla, primero el rollback
   de SQLite, y solo se copia encima si el estado de `master.db` es desconocido. Orden dentro
   del lote: altas de pista, playlists nuevas, enlaces, renombrados, cues, borrados.
-- Al aplicar una playlist que cambia de pistas, Surco sube su `updated_at` y el `Timestamp`
-  de su nodo en `masterPlaylists6.xml`, como rekordbox (medido el 18/10: al añadir Vicent una
-  pista a Makina en rekordbox, el `Timestamp` del nodo cambió). Si no, el sync de rekordbox
-  a un USB no vería la playlist cambiada. El spike (a) confirma cuál de los dos mueve
-  rekordbox.
+- Al aplicar una playlist que cambia de pistas, Surco mueve solo el `Timestamp` de su nodo en
+  `masterPlaylists6.xml` y deja su `updated_at` como está, igual que rekordbox (medido en el
+  spike (a), `docs/llevar-a-rekordbox-medidas.md`). Si no, el sync de rekordbox a un USB no
+  vería la playlist cambiada.
 - **Conflictos**, gana rekordbox y Surco avisa, nunca en silencio:
-  - playlist con `updated_at` posterior al encolado: sus operaciones se descartan ("No se
-    añadió Bam Bam a Makina: cambió en rekordbox"). Si rekordbox mueve ese `updated_at` con
-    solo abrir la playlist (daría conflictos falsos), se mide en el spike (a) y se cambia la
-    huella por la lista de enlaces;
+  - playlist cuyo `Timestamp` del XML es posterior al encolado: sus operaciones se descartan
+    ("No se añadió Bam Bam a Makina: cambió en rekordbox"). El `updated_at` no sirve de
+    huella porque rekordbox no lo mueve al añadir ni reordenar;
   - cues de una pista que ya no tienen la huella guardada: se descartan ("Los cues de Tengo
     cambiaron en rekordbox. Vuelve a marcarlos.");
   - pista de un enlace que ya no existe, o playlist borrada: se descarta con aviso.
