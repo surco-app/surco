@@ -1,3 +1,4 @@
+import type { Language } from '../i18n'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import { PAGES } from './nav'
@@ -58,7 +59,8 @@ const fold = (text: string) =>
   text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
+    .replace(/(?<=\p{Script=Latin})\p{Diacritic}+/gu, '')
+    .normalize('NFC')
 
 const words = (text: string) =>
   fold(text)
@@ -68,41 +70,53 @@ const words = (text: string) =>
 export function matchesUseCase(c: Searchable, query: string, source: UseCaseSource | null) {
   if (source && !USE_CASE_SOURCES_BY_CASE[c.id]?.includes(source)) return false
   const haystack = words([c.title, ...c.body, c.keywords].join(' '))
-  return words(query).every((q) => haystack.some((w) => w.startsWith(q)))
+  return words(query).every((q) =>
+    haystack.some((w) =>
+      /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(q)
+        ? w.includes(q)
+        : w.startsWith(q),
+    ),
+  )
 }
 
-type Lang = 'es' | 'en'
 type PagedCase = { id: string; slug: string }
 
-const CASES: Record<Lang, PagedCase[]> = {
+const CASES: Record<Language, PagedCase[]> = {
   es: es.useCases.cases,
   en: en.useCases.cases,
+  ja: en.useCases.cases,
 }
 
-export const recipePath = (lang: Lang, slug: string) => `${PAGES.useCases[lang]}/${slug}`
+export const recipePath = (lang: Language, slug: string) => `${PAGES.useCases[lang]}/${slug}`
+export const recipePathForId = (lang: Language, id: string) => {
+  const c = CASES[lang].find((entry) => entry.id === id)
+  if (!c) throw new Error(`Unknown use case: ${id}`)
+  return recipePath(lang, c.slug)
+}
 
-const pathOf = (lang: Lang, c: PagedCase) => recipePath(lang, c.slug)
+const pathOf = (lang: Language, c: PagedCase) => recipePath(lang, c.slug)
 
 export type RecipePage = {
   id: string
-  lang: Lang
+  lang: Language
   path: string
-  alternates: Record<Lang, string>
+  alternates: Record<Language, string>
 }
 
 export function recipePages(): RecipePage[] {
-  return (['es', 'en'] as const).flatMap((lang) =>
+  return (['es', 'en', 'ja'] as const).flatMap((lang) =>
     CASES[lang].map((c) => {
       const alternates = {
         es: pathOf('es', CASES.es.find((o) => o.id === c.id) ?? c),
         en: pathOf('en', CASES.en.find((o) => o.id === c.id) ?? c),
+        ja: pathOf('ja', CASES.ja.find((o) => o.id === c.id) ?? c),
       }
       return { id: c.id, lang, path: alternates[lang], alternates }
     }),
   )
 }
 
-export function recipePathForAnchor(lang: Lang, hash: string): string | null {
+export function recipePathForAnchor(lang: Language, hash: string): string | null {
   const c = CASES[lang].find((o) => `#${o.id}` === hash)
   return c ? pathOf(lang, c) : null
 }

@@ -11,6 +11,7 @@ import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
 import Walkthrough from './components/Walkthrough'
+import type { Language } from './i18n'
 import { PAGES } from './lib/nav'
 
 // The home page is three things: what this is, what it does to a track, and how to
@@ -32,7 +33,7 @@ const INTEGRATIONS = [
 
 export default function App() {
   const { t, i18n } = useTranslation()
-  const featuresHref = PAGES.features[i18n.language === 'en' ? 'en' : 'es']
+  const featuresHref = PAGES.features[i18n.language as Language]
 
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">

@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
+import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 
 export default function Footer() {
   const { t, i18n } = useTranslation()
-  const lang = i18n.language === 'en' ? 'en' : 'es'
+  const lang = i18n.language as Language
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
   const useCasesHref = PAGES.useCases[lang]

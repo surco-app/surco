@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
@@ -21,7 +22,7 @@ import TrimScene from './scenes/TrimScene'
 // verdict lands harder once they already know what Surco is for.
 export default function Walkthrough() {
   const { t, i18n } = useTranslation()
-  const guideHref = PAGES.guide[i18n.language === 'en' ? 'en' : 'es']
+  const guideHref = PAGES.guide[i18n.language as Language]
 
   return (
     <>

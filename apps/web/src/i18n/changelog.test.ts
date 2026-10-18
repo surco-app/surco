@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
+import { resources } from './index'
 
 type Item = string | { text: string; in: string }
 type Release = { version: string; date: string; title: string; items: Item[] }
+
+describe('Japanese release history', () => {
+  it('reuses the English releases while keeping Japanese UI keys', () => {
+    expect(resources.ja.translation.changelog.releases).toBe(en)
+    expect(resources.ja.translation.changelog.title).toBeDefined()
+  })
+})
 
 // The changelog page renders straight from this data, so an empty list or a
 // shuffled order ships a broken or misleading page. Newest-first is the

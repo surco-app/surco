@@ -17,24 +17,23 @@ import Guide from './components/Guide'
 import UseCasePage, { type UseCase } from './components/UseCase'
 import UseCases from './components/UseCases'
 import { createI18n, type Language } from './i18n'
+import { HOME, PAGES } from './lib/nav'
 import { SITE } from './lib/sitemap'
 import { type RecipePage, recipePages } from './lib/useCases'
 
-const PATHS: Record<Language, string> = { es: '/', en: '/en' }
-const FEATURE_PATHS: Record<Language, string> = { es: '/funciones', en: '/en/features' }
-const GUIDE_PATHS: Record<Language, string> = { es: '/guia', en: '/en/guide' }
-const USE_CASES_PATHS: Record<Language, string> = { es: '/casos-de-uso', en: '/en/use-cases' }
-const CHANGELOG_PATHS: Record<Language, string> = { es: '/cambios', en: '/en/changelog' }
-const FLAC_TO_AIFF_PATHS: Record<Language, string> = {
-  es: '/convertir/flac-a-aiff',
-  en: '/en/convert/flac-to-aiff',
-}
-const CODE_SIGNING_PATHS: Record<Language, string> = {
-  es: '/firma-de-codigo',
-  en: '/en/code-signing',
-}
+const PATHS = HOME
+const FEATURE_PATHS = PAGES.features
+const GUIDE_PATHS = PAGES.guide
+const USE_CASES_PATHS = PAGES.useCases
+const CHANGELOG_PATHS = PAGES.changelog
+const FLAC_TO_AIFF_PATHS = PAGES.flacToAiff
+const CODE_SIGNING_PATHS = PAGES.codeSigning
 
-const I18N: Record<Language, i18n> = { es: createI18n('es'), en: createI18n('en') }
+const I18N: Record<Language, i18n> = {
+  es: createI18n('es'),
+  en: createI18n('en'),
+  ja: createI18n('ja'),
+}
 
 function DocumentHead({ lng }: { lng: Language }) {
   const t = I18N[lng].getFixedT(lng)
@@ -60,6 +59,7 @@ function DocumentHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}/`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}/en`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}/ja`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}/`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -92,6 +92,7 @@ function FeaturesHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${FEATURE_PATHS.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${FEATURE_PATHS.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${FEATURE_PATHS.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${FEATURE_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -123,6 +124,7 @@ function GuideHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${GUIDE_PATHS.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${GUIDE_PATHS.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${GUIDE_PATHS.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${GUIDE_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -154,6 +156,7 @@ function UseCasesHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${USE_CASES_PATHS.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${USE_CASES_PATHS.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${USE_CASES_PATHS.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${USE_CASES_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -188,6 +191,7 @@ function RecipeHead({ page }: { page: RecipePage }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${page.alternates.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${page.alternates.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${page.alternates.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${page.alternates.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -219,6 +223,7 @@ function ChangelogHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${CHANGELOG_PATHS.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${CHANGELOG_PATHS.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${CHANGELOG_PATHS.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${CHANGELOG_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -261,6 +266,7 @@ function FlacToAiffHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${FLAC_TO_AIFF_PATHS.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${FLAC_TO_AIFF_PATHS.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${FLAC_TO_AIFF_PATHS.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${FLAC_TO_AIFF_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -293,6 +299,7 @@ function CodeSigningHead({ lng }: { lng: Language }) {
       <link rel="canonical" href={url} />
       <link rel="alternate" hrefLang="es" href={`${SITE}${CODE_SIGNING_PATHS.es}`} />
       <link rel="alternate" hrefLang="en" href={`${SITE}${CODE_SIGNING_PATHS.en}`} />
+      <link rel="alternate" hrefLang="ja" href={`${SITE}${CODE_SIGNING_PATHS.ja}`} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE}${CODE_SIGNING_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
@@ -344,12 +351,16 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, element: <LocalizedApp lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'ja', element: <LocalizedApp lng="ja" />, entry: 'src/routes.tsx' },
       { path: 'funciones', element: <LocalizedFeatures lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/features', element: <LocalizedFeatures lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'ja/features', element: <LocalizedFeatures lng="ja" />, entry: 'src/routes.tsx' },
       { path: 'guia', element: <LocalizedGuide lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'ja/guide', element: <LocalizedGuide lng="ja" />, entry: 'src/routes.tsx' },
       { path: 'casos-de-uso', element: <LocalizedUseCases lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/use-cases', element: <LocalizedUseCases lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'ja/use-cases', element: <LocalizedUseCases lng="ja" />, entry: 'src/routes.tsx' },
       ...recipePages().map((page) => ({
         path: page.path.slice(1),
         element: <LocalizedRecipe page={page} />,
@@ -357,6 +368,7 @@ export const routes: RouteRecord[] = [
       })),
       { path: 'cambios', element: <LocalizedChangelog lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/changelog', element: <LocalizedChangelog lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'ja/changelog', element: <LocalizedChangelog lng="ja" />, entry: 'src/routes.tsx' },
       {
         path: 'convertir/flac-a-aiff',
         element: <LocalizedFlacToAiff lng="es" />,
@@ -368,6 +380,11 @@ export const routes: RouteRecord[] = [
         entry: 'src/routes.tsx',
       },
       {
+        path: 'ja/convert/flac-to-aiff',
+        element: <LocalizedFlacToAiff lng="ja" />,
+        entry: 'src/routes.tsx',
+      },
+      {
         path: 'firma-de-codigo',
         element: <LocalizedCodeSigning lng="es" />,
         entry: 'src/routes.tsx',
@@ -375,6 +392,11 @@ export const routes: RouteRecord[] = [
       {
         path: 'en/code-signing',
         element: <LocalizedCodeSigning lng="en" />,
+        entry: 'src/routes.tsx',
+      },
+      {
+        path: 'ja/code-signing',
+        element: <LocalizedCodeSigning lng="ja" />,
         entry: 'src/routes.tsx',
       },
       // Transactional pages PayPal redirects to after the donate flow: their copy is

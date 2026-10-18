@@ -1,23 +1,39 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
+import { LANGUAGES, type Language } from '../i18n'
 import { trackDonate } from '../lib/analytics'
 import { isCondensed } from '../lib/header'
-import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
+import { HEADER_SECTIONS, HOME, PAGES, type Page } from '../lib/nav'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 // `page` marks which standalone page renders the header; section links then
 // point back to the landing instead of to anchors that don't exist here.
-export default function Header({ page, alternate }: { page?: Page; alternate?: string }) {
+export default function Header({
+  page,
+  alternates,
+}: {
+  page?: Page
+  alternates?: Record<Language, string>
+}) {
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [offerOther, dismissOffer] = useAutoLanguage()
-  const lang = i18n.language === 'en' ? 'en' : 'es'
-  const otherCode = lang === 'en' ? 'es' : 'en'
-  const otherLabel = lang === 'en' ? 'ES' : 'EN'
-  const home = lang === 'en' ? '/en' : '/'
-  const otherHref = alternate ?? (page ? PAGES[page][otherCode] : lang === 'en' ? '/' : '/en')
+  const lang = i18n.language as Language
+  const otherCode = lang === 'es' ? 'en' : 'es'
+  const home = HOME[lang]
+  const languageHref = (code: Language) =>
+    alternates?.[code] ?? (page ? PAGES[page][code] : HOME[code])
+  const otherHref = languageHref(otherCode)
+  // A manual choice persists, and landing-page section ids survive the switch.
+  const switchLanguage = (code: Language) => (e: React.MouseEvent) => {
+    rememberLanguage(code)
+    if (typeof window !== 'undefined' && window.location.hash) {
+      e.preventDefault()
+      window.location.href = languageHref(code) + window.location.hash
+    }
+  }
   const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
@@ -46,18 +62,6 @@ export default function Header({ page, alternate }: { page?: Page; alternate?: s
     }
   }, [open])
 
-  // Keep the in-page anchor when switching language: both pages share the same
-  // section ids, so we send the visitor to the same spot on the other locale.
-  const keepHash = (e: React.MouseEvent) => {
-    // A manual switch is an explicit choice: persist it so auto-detection never
-    // overrides it on the next visit.
-    rememberLanguage(otherCode)
-    if (typeof window !== 'undefined' && window.location.hash) {
-      e.preventDefault()
-      window.location.href = otherHref + window.location.hash
-    }
-  }
-
   return (
     <header
       className={`sticky top-0 z-40 transition-colors duration-300 ${
@@ -83,7 +87,7 @@ export default function Header({ page, alternate }: { page?: Page; alternate?: s
             <a
               data-testid="language-offer-switch"
               href={otherHref}
-              onClick={keepHash}
+              onClick={switchLanguage(otherCode)}
               className="font-semibold text-blue transition-colors hover:text-cyan"
             >
               {t('nav.languageOffer.switch', { lng: otherCode })}
@@ -155,13 +159,19 @@ export default function Header({ page, alternate }: { page?: Page; alternate?: s
               {t('nav.donar')}
             </a>
           </nav>
-          <a
-            href={otherHref}
-            onClick={keepHash}
-            className="inline-flex items-center rounded-full border border-line px-3 py-2 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
-          >
-            {otherLabel}
-          </a>
+          <div className="flex items-center gap-1">
+            {LANGUAGES.filter((code) => code !== lang).map((code) => (
+              <a
+                key={code}
+                href={languageHref(code)}
+                hrefLang={code}
+                onClick={switchLanguage(code)}
+                className="inline-flex items-center rounded-full border border-line px-3 py-2 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
+              >
+                {code.toUpperCase()}
+              </a>
+            ))}
+          </div>
           <button
             type="button"
             aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}

@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
+import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
-import { recipePath } from '../lib/useCases'
+import { recipePages } from '../lib/useCases'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -107,16 +108,13 @@ function SettingRow({ s }: { s: Setting }) {
 
 export default function UseCasePage({ id }: { id: string }) {
   const { t, i18n } = useTranslation()
-  const lang = i18n.language === 'en' ? 'en' : 'es'
-  const other = lang === 'en' ? 'es' : 'en'
+  const lang = i18n.language as Language
   const guideHref = PAGES.guide[lang]
   const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
   const groups = t('useCases.groups', { returnObjects: true }) as Group[]
   const c = cases.find((o) => o.id === id) as UseCase
   const group = groups.find((g) => g.id === c.group)
-  const otherCase = (
-    i18n.getFixedT(other)('useCases.cases', { returnObjects: true }) as UseCase[]
-  ).find((o) => o.id === id) as UseCase
+  const alternates = recipePages().find((page) => page.lang === lang && page.id === id)?.alternates
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
@@ -130,7 +128,7 @@ export default function UseCasePage({ id }: { id: string }) {
         }}
       />
 
-      <Header page="useCases" alternate={recipePath(other, otherCase.slug)} />
+      <Header page="useCases" alternates={alternates} />
 
       <main id="main" className="relative mx-auto max-w-3xl px-6">
         <article data-testid="use-case" className="pt-12 pb-12 sm:pt-16">

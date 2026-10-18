@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import en from './locales/en.json'
 import es from './locales/es.json'
+import ja from './locales/ja.json'
 
 // SignPath Foundation signs the Windows installer for free on condition that the site
 // carries a section titled "Code signing policy" with their attribution. If either goes
@@ -11,11 +12,13 @@ describe('code signing policy', () => {
     expect(en.codeSigning.title).toBe('Code signing policy')
   })
 
-  it('carries the SignPath attribution in both languages', () => {
+  it('carries the SignPath attribution in every language', () => {
     expect(en.codeSigning.attribution).toBe(
       'Free code signing provided by SignPath.io, certificate by SignPath Foundation.',
     )
     expect(es.codeSigning.attribution).toContain('SignPath.io')
     expect(es.codeSigning.attribution).toContain('SignPath Foundation')
+    expect(ja.codeSigning.attribution).toContain('SignPath.io')
+    expect(ja.codeSigning.attribution).toContain('SignPath Foundation')
   })
 })

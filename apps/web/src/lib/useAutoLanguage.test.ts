@@ -13,8 +13,23 @@ describe('suggestsEnglish', () => {
     expect(suggestsEnglish(null, '/', 'es-ES')).toBe(false)
   })
 
+  it('does not offer English to a Japanese browser on the Spanish page', () => {
+    expect(suggestsEnglish(null, '/', 'ja-JP')).toBe(false)
+  })
+
+  it('keeps offering English to other non-Spanish browsers', () => {
+    expect(suggestsEnglish(null, '/', 'fr-FR')).toBe(true)
+    expect(suggestsEnglish(null, '/guia', 'de-DE')).toBe(true)
+  })
+
   it('stays quiet on the English pages, where the visitor already is', () => {
     expect(suggestsEnglish(null, '/en/guide', 'en-US')).toBe(false)
+  })
+
+  it('never offers English on Japanese pages', () => {
+    expect(suggestsEnglish(null, '/ja', 'en-US')).toBe(false)
+    expect(suggestsEnglish(null, '/ja/guide', 'en-US')).toBe(false)
+    expect(suggestsEnglish(null, '/ja/use-cases', 'ja-JP')).toBe(false)
   })
 
   it('never overrides a language the visitor picked or dismissed', () => {
