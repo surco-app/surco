@@ -32,7 +32,7 @@ import {
 } from './applemusic'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
-import { createMenuT } from './i18n'
+import { createMenuT, resolveMenuLocale } from './i18n'
 import { removeDuplicateCopyLogged } from './musicDuplicates'
 import { rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
@@ -300,7 +300,7 @@ export function registerAppleMusicIpc(
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
             if (updated) return updated
             if (!job.outputPath) {
-              const t = createMenuT(app.getLocale())
+              const t = createMenuT(resolveMenuLocale(settings.language, app.getLocale()))
               throw new Error(t('appleMusicGone'))
             }
             try {

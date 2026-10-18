@@ -11,10 +11,12 @@ describe('baseLocale', () => {
     expect(baseLocale('fr-CA')).toBe('fr')
     expect(baseLocale('pt-PT')).toBe('pt-BR')
     expect(baseLocale('pt-BR')).toBe('pt-BR')
+    expect(baseLocale('ja')).toBe('ja')
+    expect(baseLocale('ja-JP')).toBe('ja')
   })
 
   it('falls back to English for anything not shipped', () => {
-    expect(baseLocale('ja')).toBe('en')
+    expect(baseLocale('ko-KR')).toBe('en')
     expect(baseLocale('en-US')).toBe('en')
   })
 })
@@ -23,6 +25,7 @@ describe('resolveLocale', () => {
   it('pins an explicit preference and lets system follow the OS', () => {
     expect(resolveLocale('de')).toBe('de')
     expect(resolveLocale('pt-BR')).toBe('pt-BR')
+    expect(resolveLocale('ja')).toBe('ja')
     expect(resolveLocale('system')).toBe(baseLocale(navigator.language))
   })
 })
@@ -35,12 +38,13 @@ describe('nextLocale', () => {
     expect(nextLocale('es')).toBe('de')
     expect(nextLocale('de')).toBe('fr')
     expect(nextLocale('fr')).toBe('pt-BR')
-    expect(nextLocale('pt-BR')).toBe('en')
+    expect(nextLocale('pt-BR')).toBe('ja')
+    expect(nextLocale('ja')).toBe('en')
   })
 
   it('collapses a regional variant before stepping', () => {
     expect(nextLocale('es-ES')).toBe('de')
     expect(nextLocale('en-US')).toBe('es')
-    expect(nextLocale('ja')).toBe('es')
+    expect(nextLocale('ja-JP')).toBe('en')
   })
 })

@@ -1,7 +1,7 @@
 // The shipped locales, in the ⌘⇧L cycle order. Every helper below collapses whatever
 // tag the OS or i18next reports (es-ES, pt-PT, de-AT…) onto one of these, with English
 // as the catch-all — a regional variant must never boot an untranslated UI.
-export const LOCALES = ['en', 'es', 'de', 'fr', 'pt-BR'] as const
+export const LOCALES = ['en', 'es', 'de', 'fr', 'pt-BR', 'ja'] as const
 export type Locale = (typeof LOCALES)[number]
 
 // Portuguese ships only as pt-BR, so every pt-* variant lands there; the others map to
@@ -11,6 +11,7 @@ const BASE_PREFIXES: readonly [string, Locale][] = [
   ['de', 'de'],
   ['fr', 'fr'],
   ['pt', 'pt-BR'],
+  ['ja', 'ja'],
 ]
 
 // The base locale of whatever tag i18next currently reports (en-US, es-ES…): the

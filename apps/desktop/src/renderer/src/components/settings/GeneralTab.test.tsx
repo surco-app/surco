@@ -20,12 +20,12 @@ afterEach(cleanup)
 const synced = { theme: 'system', language: 'system' } as unknown as SyncedDraft
 const local = { betaUpdates: false } as unknown as LocalDraft
 
-function renderTab(over: Partial<LocalDraft> = {}) {
+function renderTab(over: Partial<LocalDraft> = {}, patch = vi.fn()) {
   const patchLocal = vi.fn()
   render(
     <GeneralTab
       synced={synced}
-      patch={vi.fn()}
+      patch={patch}
       local={{ ...local, ...over }}
       patchLocal={patchLocal}
       onPreviewTheme={vi.fn()}
@@ -50,6 +50,16 @@ it('names the theme and language choices after their labels', () => {
   expect(screen.getByRole('group', { name: i18n.t('settings.language') })).toContainElement(
     screen.getByTestId('settings-language-es'),
   )
+  expect(screen.getByTestId('settings-language-ja')).toHaveTextContent('日本語')
+})
+
+it('persists a selected Japanese UI language through the settings patch', () => {
+  const patch = vi.fn()
+  renderTab({}, patch)
+
+  fireEvent.click(screen.getByTestId('settings-language-ja'))
+
+  expect(patch).toHaveBeenCalledWith('language', 'ja')
 })
 
 // Added after a run of regressions that reached users straight from a release: the

@@ -4,6 +4,7 @@ import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
 // Every visible string is keyed; a missing key silently falls back to the other
@@ -38,6 +39,7 @@ const LOCALES: [string, unknown][] = [
   ['de', de],
   ['fr', fr],
   ['pt-BR', ptBR],
+  ['ja', ja],
 ]
 
 describe('locale parity', () => {
@@ -68,7 +70,7 @@ describe('locale parity', () => {
 
 describe('search sources hint', () => {
   it('names every source the checkboxes offer, Beatport included, in every language', () => {
-    for (const locale of [es, en, de, fr, ptBR]) {
+    for (const locale of [es, en, de, fr, ptBR, ja]) {
       expect(locale.settings.searchProvidersHint).toContain('Beatport')
     }
   })
@@ -76,7 +78,7 @@ describe('search sources hint', () => {
 
 describe('skipped library activity lines', () => {
   it('read as one sentence with a comma, without an explanatory colon, in every language', () => {
-    for (const locale of [es, en, de, fr, ptBR]) {
+    for (const locale of [es, en, de, fr, ptBR, ja]) {
       const { rekordboxCollectionMissing, engineCollectionMissing, traktorSyncCollectionMissing } =
         locale.activity
       for (const text of [

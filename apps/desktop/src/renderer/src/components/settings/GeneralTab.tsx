@@ -16,7 +16,7 @@ import {
 } from './SettingsPrimitives'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
-const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
+const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja']
 
 interface Props {
   synced: SyncedDraft
@@ -86,7 +86,7 @@ export function GeneralTab({
               onChange={(id) => patch('language', id)}
               testidPrefix="settings-language"
               label={tr('settings.language')}
-              labelFor={(id) => tr(`settings.languages.${id}`)}
+              labelFor={(id) => (id === 'ja' ? '日本語' : tr(`settings.languages.${id}`))}
             />
           </SettingsField>
 

@@ -14,12 +14,12 @@ import {
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
-import type { FormatSetting, NormalizeConfig, Settings } from '../shared/types'
+import type { FormatSetting, LanguagePref, NormalizeConfig, Settings } from '../shared/types'
 import { migratedSyncToggles } from './syncToggleMigration'
 
 export const defaults: Settings = {
   theme: 'system',
-  // Follow the OS locale by default; the user can pin English or Spanish.
+  // Follow the OS locale by default; the user can pin a shipped language.
   language: 'system',
   discogsToken: '',
   beatportUsername: '',
@@ -198,6 +198,22 @@ function normalizeOutputFormat(value: unknown): FormatSetting {
   return defaults.outputFormat
 }
 
+const LANGUAGE_PREFS = [
+  'system',
+  'en',
+  'es',
+  'de',
+  'fr',
+  'pt-BR',
+  'ja',
+] as const satisfies readonly LanguagePref[]
+
+function normalizeLanguagePref(value: unknown): LanguagePref {
+  return typeof value === 'string' && (LANGUAGE_PREFS as readonly string[]).includes(value)
+    ? (value as LanguagePref)
+    : 'system'
+}
+
 function localFile(): string {
   return join(app.getPath('userData'), 'settings.json')
 }
@@ -273,6 +289,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
   return {
     ...base,
     ...patch,
+    language: normalizeLanguagePref(patch.language === undefined ? base.language : patch.language),
     stats: { ...base.stats, ...patch.stats },
     normalize: migrateDcOffset({ ...base.normalize, ...patch.normalize }),
     // Not a spread-merge like the two above: a 0.49-0.50 file stores declick as a
@@ -442,6 +459,7 @@ function persist(next: Settings): Settings {
 
 export function saveSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
+  next.language = normalizeLanguagePref(next.language)
   // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs
   // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
   // last source also turns it off.

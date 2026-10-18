@@ -4,9 +4,9 @@ import { systemLocale } from './locale'
 import en from './locales/en.json'
 
 // English is the fallback i18next falls back to for any missing/unloaded key, so it
-// must be present synchronously at import time. The other four locales are ~50 KB of
+// must be present synchronously at import time. The other locales are ~50 KB of
 // JSON each and only one is ever active per session — loading them eagerly would ship
-// ~200 KB the user never reads. Each is fetched with a dynamic import (its own Vite
+// bundles the user never reads. Each is fetched with a dynamic import (its own Vite
 // chunk) only when it becomes the active language, and cached here so a repeat switch
 // back to an already-seen locale doesn't re-fetch.
 const LAZY_LOCALES = {
@@ -14,6 +14,7 @@ const LAZY_LOCALES = {
   de: () => import('./locales/de.json'),
   fr: () => import('./locales/fr.json'),
   'pt-BR': () => import('./locales/pt-BR.json'),
+  ja: () => import('./locales/ja.json'),
 } as const
 type LazyLocale = keyof typeof LAZY_LOCALES
 
