@@ -1,0 +1,2 @@
+# Pinned upstream data and patches must stay byte for byte (LF) on every checkout.
+apps/desktop/vendor/baken/** -text

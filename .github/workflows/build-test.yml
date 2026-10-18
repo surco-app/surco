@@ -145,6 +145,7 @@ jobs:
       - name: Check baken is signed, hardened and notarized
         working-directory: apps/desktop
         run: |
+          set -o pipefail
           APP=$(ls -d dist/mac-arm64/Surco.app)
           codesign -dv --verbose=4 "$APP/Contents/Resources/baken/baken" 2>&1 | tee baken-sign.txt
           grep -q 'Authority=Developer ID Application' baken-sign.txt
