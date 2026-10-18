@@ -4,6 +4,8 @@
 
 **Goal:** From Surco on macOS or Windows, the DJ ticks rekordbox playlists (or whole folders), picks a removable stick identified by a stable volume identifier, and presses Exportar: Surco reads `master.db` read-only, prepares baken's input, and a bundled, patched `baken expressport` writes a stick every CDJ and XDJ reads (Device Library + OneLibrary), copying only what changed, with a per-track progress list whose waveforms fill as the bytes land.
 
+**Coexistence (added 18/10):** the same stick must stay syncable from Surco or from rekordbox. Surco's export carries the collection's identity (DBID, master content IDs, My Tags, stable stick playlist IDs), writes `playlists3.sync`/`playlists3Plus.sync` like rekordbox, keeps what rekordbox wrote (`exportExt.pdb`, `DEVSETTING.DAT`, `extracted/gcred.dat`), and its `export.pdb` pages carry a coherent "last write" mask (the root cause of rekordbox's crashes when syncing on top of baken's output). Proven by hand on rekordbox 7.2.19 on 18/10 with scripts; Tasks 2 (patches 0004-0006), 9b, 9c, 11 (Step 8a) and 12 (Step 7a) turn that into product code and checks.
+
 **Architecture:** The main process reads the selection from `master.db` (`usbExportSource.ts`), stages a work folder with the XML, the analysis files (PVDI masked as rekordbox does), the artwork per TrackID and, when asked, the My Settings (`usbExportStage.ts`, `bakenXml.ts`, `anlz.ts`), and drives baken through its new `--json` line protocol (`bakenRun.ts`): a dry run for the summary, and for an export a dry run (root and space checks) and then the real run, after re-checking the volume identity and while watching it (`usbExport.ts`). Removable volumes come from `diskutil` on macOS and a PowerShell query on Windows (`usbVolumes.ts`, `windowsVolumes.ps1`); a per-stick memory lives in `usb-exports.json` (`usbExportMemory.ts`). The renderer has one modal with two faces, choosing (tree with checkboxes, stick chooser, summary) and exporting (the track list with the revealing waveforms), and the export's state lives in a store outside React so a progress tick repaints only what reads it (the row, the pill, the top line).
 
 **Tech Stack:** Electron + React 19 + TS, Tailwind v4, lucide-react, vitest + Testing Library (jsdom), `better-sqlite3-multiple-ciphers` (SQLCipher), biome; Rust (cargo, pinned toolchain) only for the baken patch series; PowerShell (Windows only, at run time).
@@ -12,16 +14,18 @@
 
 **Platform:** macOS and Windows (x64). On Linux nothing of this appears (no button, no command, no notice; the IPC answers "unsupported").
 
-**Out of scope:** Linux, Windows arm64, porting baken to TS, formatting the stick, `--cdjsafe`, protecting a rekordbox stick, My Tag / `exportExt.pdb`, hand-assigned hot cue colours (exported with their letter's default), exporting from Engine/Traktor/the working list, two exports at once, opening pull requests upstream (Vicent decides; Task 2 only drafts them).
+**Out of scope:** Linux, Windows arm64, porting baken to TS, formatting the stick, `--cdjsafe`, protecting a rekordbox stick, writing `exportExt.pdb` or My Tags assigned to tracks (rekordbox's `exportExt.pdb` is kept byte for byte, never regenerated), editing in place what rekordbox wrote, hand-assigned hot cue colours (exported with their letter's default), exporting from Engine/Traktor/the working list, two exports at once, opening pull requests upstream (Vicent decides; Task 2 only drafts them).
 
 ## Global Constraints
 
-- **The session scratchpad is pinned**: every command uses `SCRATCH=/private/tmp/claude-501/-Users-vicent-code-surco/60b03f2f-5add-4da8-8475-3fe0dd5d1e8d/scratchpad` (it holds the spike: `usb-spike/` with the Rust toolchain, `tsx`, the validators, the analysis copies and `rekordbox-baseline/`). Export it at the start of every task. If `$SCRATCH/usb-spike` is gone (reboot), stop and report: Tasks 2, 4 and 12 rest on it.
+- **The session scratchpad is pinned** (it also holds `usb-coexist/`, the coexistence measurements, scripts and the two-way test's dumps): every command uses `SCRATCH=/private/tmp/claude-501/-Users-vicent-code-surco/60b03f2f-5add-4da8-8475-3fe0dd5d1e8d/scratchpad` (it holds the spike: `usb-spike/` with the Rust toolchain, `tsx`, the validators, the analysis copies and `rekordbox-baseline/`). Export it at the start of every task. If `$SCRATCH/usb-spike` is gone (reboot), stop and report: Tasks 2, 4 and 12 rest on it.
 - **Never write anything under the rekordbox data folder** (`~/Library/Pioneer` on macOS, `%APPDATA%\Pioneer` on Windows) and never point baken at it: baken always gets `--anlz-dir` (Surco's staged copy) and `--settings-dir` (staged copy) or `--no-settings`. `bakenArgs` refuses a device or a staged path inside that folder, the home folder itself, or the system root (`/`, `%SystemDrive%\`). `master.db` is opened with `{ readonly: true }` only, through `openRekordboxDb`.
 - **Never write a volume that is not the selected one.** A volume target is resolved by its stable identifier (macOS `VolumeUUID`, Windows volume GUID) to its mount point or drive root, asked again right before baken is spawned (a different or missing identifier writes nothing: `volume-changed` / `volume-gone`), and its `stat(root).dev` is recorded and polled every second during the run (a change or a failed stat cancels the export). Volumes are never matched by name or drive letter alone. A volume target that baken's plan reports as not a volume root is refused (`not-volume-root`).
 - **Folder targets ("Otro destino")** must resolve (`realpath`) inside a listed removable volume, else `not-removable`; `--prune` is never passed for a folder target.
-- **Never delete user files.** Surco itself deletes nothing on the stick. baken writes only `PIONEER/` and `Contents/` at the volume root; `--prune` (removes unreferenced files only inside `Contents/`, `PIONEER/USBANLZ/`, `PIONEER/Artwork/`) is passed only for a volume target and only when the user ticked "Borrar del USB la música que ya no se exporta", which defaults to off.
+- **Never delete user files.** On the stick, Surco itself deletes exactly four names in `PIONEER/rekordbox/` before a real run (`exportLibrary.db-wal`, `exportLibrary.db-shm`, `sync.temp`, `sync.devlibplus.temp`: a stale WAL next to a new database would replay foreign pages onto it) and writes exactly two (`playlists3.sync`, `playlists3Plus.sync`, after baken reports success, atomically); nothing else. baken writes only `PIONEER/` and `Contents/` at the volume root and, with patch 0006's `--keep-rekordbox-ext`, never removes `exportExt.pdb`; `DEVSETTING.DAT`, `extracted/`, `RBFLTR.DAT` and `TrashBox` are never touched (a `DEVSETTING.DAT` already on the stick is never overwritten by staged My Settings); `--prune` (removes unreferenced files only inside `Contents/`, `PIONEER/USBANLZ/`, `PIONEER/Artwork/`) is passed only for a volume target and only when the user ticked "Borrar del USB la música que ya no se exporta", which defaults to off.
 - **My Settings are opt-in**: `--settings-dir` only when the request's `settings` is true (checkbox "Copiar My Settings", off by default, remembered per stick); otherwise `--no-settings`.
+- **Coexistence identity** (measured 16-18/10 against rekordbox 7.2.19's own export, `usb-coexist/` in the scratchpad): every `export.pdb` track row carries `djmdContent.ID` at `+0x14` and `djmdProperty.DBID` at `+0x18`, and `master.db`'s `FileSize` at `+0x10`; OneLibrary `content.masterDbId` = DBID, `content.fileSize` = master `FileSize`, `property.myTagMasterDBID` = `djmdCloudProperty.ID` (the `SyncService`/`Google` row), `myTag` = `djmdMyTag` (`myTag_id` = ID, `sequenceNo` = Seq - 1, `attribute`, parent 0 for root else ParentID). Stick playlist IDs (`Dev_ID`) are kept from the stick's `playlists3.sync` and new ones take max + 1 in tree order. Every data page of `export.pdb` has `u5 == popcount(mask)` and `unrl == lowest bit of mask` (patch 0004).
+- **rekordbox closed to export, sources mounted**: a real run never starts while rekordbox runs (the existing `ensureRekordboxClosed` dialog; Cancel writes nothing, `rekordbox-open`), nor when the root of a volume holding selected music is missing (`sources-unreachable`), nor when a selected playlist would end up with no exportable track (`playlist-empty`). During the run the music's volume roots are polled every second with the stick's `dev`; one that disappears cancels at the next track (`source-lost`). The summary still works with rekordbox open (read-only).
 - **Single flight**: `start()` claims the export synchronously before its first `await` and releases it on every early return; the renderer's Exportar is disabled while a start is pending. One export at a time.
 - **Space before writing**: every export runs baken's dry run first and refuses (`no-space`, with needed and free bytes) when `spaceNeeded > spaceAvailable`, or when baken reports `not-enough-space`.
 - **Cancel only at a track boundary**: Surco writes `cancel\n` to baken's stdin (patch 0003; SIGINT/SIGTERM also handled on macOS) and waits for baken's report; it never kills baken. No audio file referenced by the previous export is ever left truncated. Cancel is not offered from the `database` event on (cutting between `export.pdb` and `exportLibrary.db` would leave two different libraries).
@@ -72,12 +76,12 @@ EOF
 
 ## Decisions taken where the spec or the request left room
 
-1. **baken is patched and built by Surco, not used as published.** Progress, the "ya estaba" state, cancelling at a track boundary, rekordbox's default hot cue colours and the cached artwork cannot be had from outside: baken's human output is an `indicatif` bar that disappears off a TTY, its CLI never triggers its own cancel token, and artwork lives in `export.pdb` tables. Three small patches; Task 2 drafts their upstream PRs in `docs/baken-upstream-prs.md` and opens nothing.
+1. **baken is patched and built by Surco, not used as published.** Progress, the "ya estaba" state, cancelling at a track boundary, rekordbox's default hot cue colours and the cached artwork cannot be had from outside: baken's human output is an `indicatif` bar that disappears off a TTY, its CLI never triggers its own cancel token, and artwork lives in `export.pdb` tables. Three small patches, and since 18/10 three more for living with rekordbox on one stick (the last-write mask, the collection identity, keeping rekordbox's files; Decisions 17-18); Task 2 drafts their upstream PRs in `docs/baken-upstream-prs.md` and opens nothing.
 2. **Cancel is a request on stdin, not a signal.** A Windows child process gets no SIGINT; a stdin line works on both platforms, and baken then stops between tracks, so no audio over a file the old export references is ever truncated (baken's `copy_audio` writes in place).
 3. **PVDI is masked in Surco's staged copy, not by a baken patch and not after baken.** baken copies `.2EX` verbatim apart from the path. Patching the stick afterwards would make baken's byte comparison rewrite every analysis file on every export, the slow part on FAT32.
 4. **Unreferenced music stays by default** (`--prune` only on request, never for a folder target).
 5. **The per-stick memory is its own file** (`usb-exports.json` in userData), keyed `volume:<id>` or `folder:<realpath>`; it also remembers the prune and My Settings boxes.
-6. **Who wrote the stick**: `exportExt.pdb` present means rekordbox; otherwise `export.pdb` with the size and mtime (±2 s, FAT's resolution) Surco remembered means Surco; no `export.pdb` means empty; anything else is "tiene una exportación" with its date.
+6. **Who wrote the stick** (changed 18/10, Task 9c): no `export.pdb` means empty; `export.pdb` with the size and mtime (±2 s, FAT's resolution) Surco remembered means Surco; otherwise `exportExt.pdb` or `playlists3.sync` present means rekordbox (its own export, or a sync on top of Surco's); anything else is "tiene una exportación" with its date. Surco's check goes first because Surco now keeps `exportExt.pdb` and writes the `.sync` files. Task 8 first builds the older rule; Task 9c reorders it with its red test.
 7. **The analysis files are staged fresh for every summary and every export**, only for the selected tracks; Task 1 measures the cost; the summary waits 300 ms after the last tick.
 8. **Summary and export both use baken's dry run**, so "X nuevas", the root check and the space check are baken's own judgement. When baken refuses the plan for space, the summary is built from Surco's selection with every track new and `noSpace` (needed, free).
 9. **Per-track bytes come from polling the destination file** every 250 ms (baken writes the audio in place in 4 MB pieces), only for tracks the plan says are not on the stick; the volume's `dev` is polled every second on both platforms.
@@ -88,6 +92,13 @@ EOF
 14. **`escapeXml` moves from `renderer/src/lib/xml.ts` to `shared/xml.ts`** so the main process can use it.
 15. **Separators are exported as tracks** but never counted.
 16. **baken is compiled inside each platform's build, not downloaded**, with a pinned Rust toolchain and the patch tests run in CI.
+17. **The last-write mask is fixed in baken (patch 0004), not after it.** It is baken's bug, it breaks any stick rekordbox later touches, and post-processing `export.pdb` would add a second writer of a binary format. `crashtools/fix_txmask.py` (13 bytes changed on the test stick) is the reference the patch's tests reproduce.
+18. **The identity goes through baken (patch 0005) from a `master-ids.json` Surco stages**, and the stick playlist IDs as a `DeviceId` attribute on each XML `NODE`. Without the file or the attribute baken behaves as before, so the patch can go upstream.
+19. **Database rows carry master's `FileSize`, the XML's `Size` stays the real one.** rekordbox's own export writes master's (stale) size; the proven coexistence run did the same; baken decides what to copy from the XML's real size. Whether the real size in the rows would also work is untested and not needed.
+20. **Surco writes the two `.sync` files itself (`rekordboxStickSync.ts`)**, from `master.db`, `masterPlaylists6.xml` and the Dev_IDs it gave baken: they are rekordbox's bookkeeping, not part of what players read. `Timestamp` = the node's in `masterPlaylists6.xml`, falling back to `updated_at` in ms; open question carried to Task 12 Step 7a (rekordbox once wrote `updated_at` there).
+21. **The stick's `playlists3.sync` is the shared selection.** Choosing a stick ticks the playlists it lists (`CheckType` 1, mapped from hex to master IDs), else what Surco remembers: a playlist rekordbox synced is not dropped because Surco's memory did not know it.
+22. **What rekordbox adds to OneLibrary is regenerated, not preserved**: the one measured addition (artwork rows for WAVs) comes from Surco's `--artwork-dir`. Task 12 Step 7a compares OneLibrary before and after by `masterContentId`.
+23. **Exporting asks to close rekordbox** (the `.sync` header says `AutomaticSync="1"`; two writers on `export.pdb` is the crash class patch 0004 fixes).
 
 ## Review Focus
 
@@ -95,7 +106,8 @@ EOF
 2. **Exportar pressed twice quickly.** One baken, one export. Pinned in Task 9 (two concurrent `start()` calls) and Task 11 (button disabled while starting).
 3. **Closing the modal mid-export, Cancel while a big WAV copies, Cancel during the database phase.** Closing never stops baken; Cancel asks baken over stdin and waits for its report; after `database` there is no Cancel. Pinned in Task 2 (cargo test: cancel leaves no partial audio, no `export.pdb`), Task 7 (stdin), Task 9 (exporter) and Task 10 (view).
 4. **A folder chosen as "Otro destino" on the system disk, or a stick mounted below its root.** Refused before anything runs; prune never applies to folders. Pinned in Task 7 (args) and Task 9 (exporter).
-5. **A track whose file is gone or whose NAS is asleep, a streaming row, a track baken skips, a track without analysis.** Each is listed with its reason in the summary and left out; the rest exports; a track without analysis still exports with a flat bar. Pinned in Task 7 (stage), Task 9 (`unexportable`) and Task 10 (flat bar).
+5. **A track whose file is gone or whose NAS is asleep, a streaming row, a track baken skips, a track without analysis.** Each is listed with its reason in the summary and left out; the rest exports; a track without analysis still exports with a flat bar. Pinned in Task 7 (stage), Task 9 (`unexportable`) and Task 10 (flat bar). A whole music volume unmounted (the 16/10 NAS case) refuses the export instead, and one unmounted mid-run cancels it (Task 9c).
+6. **Two writers on one stick.** rekordbox syncing on top of Surco's export must not crash or empty playlists, and Surco exporting on top of rekordbox's sync must not lose its playlists or IDs. Pinned in Task 2 (patches 0004-0006, cargo tests), Task 9b (`.sync` byte for byte, stable Dev_IDs), Task 9c (holder order, cleanup, rekordbox closed, `.sync` only after success) and Task 12 Step 7a (two-way check in real rekordbox).
 
 ---
 
@@ -104,9 +116,9 @@ EOF
 | File | Responsibility |
 |---|---|
 | `docs/export-usb-medidas.md` (new, Task 1) | the spike's measured facts, the columns and counts measured on the collection, diskutil shapes, staging cost |
-| `docs/baken-upstream-prs.md` (new, Task 2) | the three PR drafts, for Vicent to send or not |
+| `docs/baken-upstream-prs.md` (new, Task 2) | the six PR drafts, for Vicent to send or not |
 | `apps/desktop/src/main/fixtures/diskutil-*.plist`, `win32-volumes.json` (new, Tasks 1, 8) | real `diskutil` outputs (trimmed) and a PowerShell output for the volume tests |
-| `apps/desktop/vendor/baken/` (new, Task 2) | `UPSTREAM`, `RUST_TOOLCHAIN`, `patches/`, `LICENSE`, `THIRD_PARTY_LICENSES.md` |
+| `apps/desktop/vendor/baken/` (new, Task 2) | `UPSTREAM`, `RUST_TOOLCHAIN`, `patches/` (0001-0006), `LICENSE`, `THIRD_PARTY_LICENSES.md` |
 | `scripts/build-baken.mjs` (new, Task 3) | clones the pinned tag, applies the patches, tests and builds for this machine into `apps/desktop/resources/baken/` |
 | `.github/workflows/release.yml`, `build-test.yml`, `ci.yml` (mod, Task 3) | build baken (cargo cache) before packaging; a signed and notarized macOS test build; a Windows job for the USB tests and the PowerShell script |
 | `apps/desktop/electron-builder.yml`, `.gitignore`, `README.md` (mod, Task 3) | ship the binary and its licences |
@@ -121,6 +133,8 @@ EOF
 | `src/main/bakenRun.ts` (new, Task 7) | arguments with guards, JSON line parser, spawn, cancel over stdin |
 | `src/main/usbVolumes.ts`, `src/main/windowsVolumes.ps1` (new, Task 8) | plist and PowerShell parsing, removable filters, holder, list and watch per platform |
 | `src/main/usbExportMemory.ts` (new, Task 8) | `usb-exports.json` |
+| `src/main/rekordboxStickSync.ts` (new, Task 9b) | the collection's identity for the stick (`master-ids.json`), stable Dev_IDs, `playlists3.sync` read and write, node timestamps from `masterPlaylists6.xml`, the four stale stick files |
+| `src/main/bakenXml.ts`, `usbExportStage.ts`, `bakenRun.ts`, `usbVolumes.ts`, `usbExport.ts` (mod, Tasks 9b-9c) | `DeviceId` per node, the staged identity, `--master-ids` and `--keep-rekordbox-ext`, the new holder order and the stick's ticked playlists, the coexistence steps of an export |
 | `src/main/usbExport.ts` (new, Task 9) | summary, checks, export, progress, cancel, memory |
 | `src/main/usbExportIpc.ts` (new, Task 9) | IPC handlers and the lazy volume watch |
 | `src/main/index.ts` (mod, Task 9) | wiring |
@@ -195,6 +209,23 @@ ls -la "$HOME/Library/Pioneer/rekordbox/share$(dirname "$img")"
 
 Expected: the folder holds `artwork.jpg` (or the `ImagePath` name) and an `_s` sibling of the same stem (e.g. `artwork_s.jpg`). If the small one is named differently, write the real rule in the note and use it in Task 7 (`smallCoverPath`).
 
+- [ ] **Step 2b: Measure the identity rekordbox puts on a stick**
+
+Same copy, read-only use. Append to `measure.cjs` and run it again:
+
+```js
+console.log('DBID', db.prepare(`SELECT DBID FROM djmdProperty`).all())
+console.log('cloud property', db.prepare(`SELECT ID, Reserved1, Reserved2 FROM djmdCloudProperty`).all())
+console.log('my tags', db.prepare(`SELECT count(*) n, sum(Attribute = 1) columns FROM djmdMyTag WHERE coalesce(rb_local_deleted,0)=0`).get())
+console.log('my tags on tracks', db.prepare(`SELECT count(*) n FROM djmdSongMyTag WHERE coalesce(rb_local_deleted,0)=0`).get())
+```
+
+```bash
+grep -c '<NODE ' ~/Library/Pioneer/rekordbox/masterPlaylists6.xml
+```
+
+Expected (16/10 values): one DBID (3942308644); exactly one `djmdCloudProperty` row, `SyncService`/`Google` (ID 4278116378); 28 My Tags; 0 My Tags on tracks. If there is not exactly one cloud property row, write what there is in the note and stop: Task 9b's `myTagMasterDbId` rule rests on it. If My Tags on tracks is not 0, say so in the note (they are out of scope and `exportExt.pdb` is kept as rekordbox wrote it).
+
 - [ ] **Step 3: Save the real diskutil shapes**
 
 Run from `apps/desktop`. Mount the test stick only (Volume UUID `B10C96EF-51C2-344E-B78D-DAFC319D973E`, exFAT, named `Surco`). Reading `diskutil` writes nothing.
@@ -267,7 +298,7 @@ Expected: one line with the time. Under 3 s for 500 tracks keeps Decision 6; abo
 
 - [ ] **Step 5: Write the note**
 
-Create `docs/export-usb-medidas.md` in Spanish with: the spike's "Fase 2" verdict and its difference table (from `findings.md`, trimmed to what this plan acts on); the PVDI rule and empty section (Global Constraints); the default hot cue colours A..F (255/0/23, 0/196/255, 51/255/0, 77/0/255, 0/255/48, 255/94/0) and the Kind 8/9 and hand-coloured counts from Step 2 (if G or H exist in the collection, say so: patch 0001 then needs their default colour measured from a rekordbox export before Task 12); the columns of Step 2; the diskutil fields of Step 3; the staging time of Step 4; and the open questions handed to Task 12 (exFAT on CDJ-2000 not testable on this stick; OneLibrary on 3000X/XDJ-AZ validated once by Vicent with the spike stick).
+Create `docs/export-usb-medidas.md` in Spanish with: the spike's "Fase 2" verdict and its difference table (from `findings.md`, trimmed to what this plan acts on); the PVDI rule and empty section (Global Constraints); the default hot cue colours A..F (255/0/23, 0/196/255, 51/255/0, 77/0/255, 0/255/48, 255/94/0) and the Kind 8/9 and hand-coloured counts from Step 2 (if G or H exist in the collection, say so: patch 0001 then needs their default colour measured from a rekordbox export before Task 12); the columns of Step 2; the diskutil fields of Step 3; the identity of Step 2b; the coexistence findings (what rekordbox did on the test stick on 16/10 and 18/10, the last-write mask invariant, the `.sync` rule, from `usb-coexist/analisis.md`, `rebuild.md`, `crash-analysis.md` in the scratchpad); the staging time of Step 4; and the open questions handed to Task 12 (exFAT on CDJ-2000 not testable on this stick; OneLibrary on 3000X/XDJ-AZ validated once by Vicent with the spike stick).
 
 - [ ] **Step 6: Delete the copies and commit**
 
@@ -280,16 +311,16 @@ git commit -m "Record the measured facts behind the USB export"
 ```
 
 ---
-### Task 2: The baken patch series (default hot cue colours, artwork folder, JSON lines with cancel)
+### Task 2: The baken patch series (default hot cue colours, artwork folder, JSON lines with cancel, last-write mask, collection identity, rekordbox's files)
 
 **Files:**
-- Create: `vendor/baken/UPSTREAM`, `vendor/baken/RUST_TOOLCHAIN`, `vendor/baken/LICENSE`, `vendor/baken/THIRD_PARTY_LICENSES.md`, `vendor/baken/patches/0001-default-hot-cue-colours.patch`, `vendor/baken/patches/0002-artwork-dir.patch`, `vendor/baken/patches/0003-json-lines.patch`
+- Create: `vendor/baken/UPSTREAM`, `vendor/baken/RUST_TOOLCHAIN`, `vendor/baken/LICENSE`, `vendor/baken/THIRD_PARTY_LICENSES.md`, `vendor/baken/patches/0001-default-hot-cue-colours.patch`, `vendor/baken/patches/0002-artwork-dir.patch`, `vendor/baken/patches/0003-json-lines.patch`, `vendor/baken/patches/0004-last-write-mask.patch`, `vendor/baken/patches/0005-master-identity.patch`, `vendor/baken/patches/0006-keep-rekordbox-files.patch`
 - Create: `docs/baken-upstream-prs.md` (drafts only; nothing is sent)
 - Scratch only: `$SCRATCH/baken-build/` (a clone of baken where the patches are written and tested)
 
 **Interfaces:**
 - Consumes: Task 1's note (if hot cues G or H exist in the collection, their default colours must be measured before patch 0001 is final; otherwise it ships A..F as below).
-- Produces: `baken expressport --json` speaking exactly the protocol in Global Constraints, including `volumeRoot` in the plan and a `cancel` line on stdin (SIGINT/SIGTERM too on Unix) that stops the export between tracks; `--artwork-dir DIR` reading `<TrackID>.jpg|.jpeg|.png`; hot cues without an XML colour written as code 0 + their letter's RGB (A..F). Task 3 builds these; Tasks 7 and 9 consume the protocol.
+- Produces: `baken expressport --json` speaking exactly the protocol in Global Constraints, including `volumeRoot` in the plan and a `cancel` line on stdin (SIGINT/SIGTERM too on Unix) that stops the export between tracks; `--artwork-dir DIR` reading `<TrackID>.jpg|.jpeg|.png`; hot cues without an XML colour written as code 0 + their letter's RGB (A..F); every `export.pdb` data page with a coherent last-write mask; `--master-ids FILE` (the collection's identity, schema in Step 8c) and a `DeviceId` attribute per XML `NODE`; `--keep-rekordbox-ext` (never removes `exportExt.pdb`); copied audio with its source's mtime. Task 3 builds these; Tasks 7, 9, 9b and 9c consume them.
 
 The toolchain the spike installed works here (it has no default toolchain set, hence `RUSTUP_TOOLCHAIN`); if it is gone, install the same version into the scratchpad with rustup:
 
@@ -842,6 +873,181 @@ Expected: no warnings, all PASS.
 git add -A && git commit -m "Report each track as JSON lines with --json and cancel between tracks on request"
 ```
 
+- [ ] **Step 8a: Patch 0004, red: the last write of every page is coherent**
+
+rekordbox 7.2.19 crashed 2 of 2 times syncing on top of baken's `export.pdb` (heap corruption inside its DeviceSQL engine, while deleting rows of a page baken wrote) and never on its own export. The difference is the page's "last write" triple: `unknown5` (+0x20, rows in the set), `num_rows_large` (+0x22, first row of the set) and the u16 after each row group's presence flags (the set's bit mask). Everything rekordbox writes keeps `unknown5 == popcount(mask)` and `num_rows_large == lowest set bit`; baken writes `1` and `rows - 1` but puts the presence flags in the mask (`usb-coexist/crash-analysis.md`).
+
+In `crates/baken-export/src/pdb/page.rs`, in its `#[cfg(test)] mod tests` (create it at the end of the file if the file has none, with `use super::*;`), add
+
+```rust
+    fn u16_at(p: &[u8], at: usize) -> u16 {
+        u16::from_le_bytes([p[at], p[at + 1]])
+    }
+
+    /// The u16 after group `g`'s presence flags: the rows of the page's last write.
+    fn last_write_mask(p: &[u8], g: usize) -> u16 {
+        u16_at(p, PAGE_LEN - g * GROUP_BYTES - 2)
+    }
+
+    /// rekordbox 7.2.19's own page of 7 playlist entries (16/10/2026): unknown5 1,
+    /// num_rows_large 6, presence 0x7f and a last-write mask of 0x40, the last row only.
+    /// baken wrote 0x7f there, and rekordbox's storage manager corrupted its heap the
+    /// first time it deleted a row of such a page.
+    #[test]
+    fn the_last_write_is_the_last_row_as_rekordbox_writes_it() {
+        let mut page = DataPage::new(18, 8, 1, HeaderStyle::Normal);
+        for i in 0..7u8 {
+            assert!(page.try_push(&[i; 12]));
+        }
+        let p = page.to_bytes();
+        assert_eq!(u16_at(&p, 0x20), 1);
+        assert_eq!(u16_at(&p, 0x22), 6);
+        assert_eq!(u16_at(&p, PAGE_LEN - 4), 0x7f);
+        assert_eq!(last_write_mask(&p, 0), 0x40);
+    }
+
+    /// Past 16 rows the mask lives in the last row's group only; the others carry 0.
+    #[test]
+    fn the_last_write_spans_row_groups() {
+        let mut page = DataPage::new(2, 0, 1, HeaderStyle::Normal);
+        for i in 0..20u8 {
+            assert!(page.try_push(&[i; 8]));
+        }
+        let p = page.to_bytes();
+        assert_eq!(u16_at(&p, 0x20), 1);
+        assert_eq!(u16_at(&p, 0x22), 19);
+        assert_eq!(last_write_mask(&p, 0), 0);
+        assert_eq!(last_write_mask(&p, 1), 1 << 3);
+    }
+
+    /// colors and columns are written as one set of every row (unknown5 = rows,
+    /// num_rows_large = 0), so their mask is every row: coherent too, and what rekordbox's
+    /// template tables carry.
+    #[test]
+    fn fixed_pages_keep_every_row_in_the_last_write() {
+        let mut page = DataPage::new(5, 6, 1, HeaderStyle::Fixed);
+        for i in 0..8u8 {
+            assert!(page.try_push(&[i; 8]));
+        }
+        let p = page.to_bytes();
+        assert_eq!(u16_at(&p, 0x20), 8);
+        assert_eq!(u16_at(&p, 0x22), 0);
+        assert_eq!(last_write_mask(&p, 0), 0xff);
+    }
+```
+
+and in `crates/baken-export/src/pdb/writer.rs`'s tests, next to the test that builds a whole export (read the module's tests first and reuse its builder; if none returns the file's bytes, build one from the fixture `Export` the `e.playlists.push(ExportPlaylist {` test already makes), add `every_data_page_has_a_coherent_last_write`: for each 4096-byte page after the header whose byte `0x1b` lacks `0x40` (data pages) and has rows (the 13-bit row count decoded as `crashtools/fix_txmask.py` does, `int.from_bytes(p[0x18:0x1b], 'little') & 0x1fff`), OR the masks of all its row groups and assert `unknown5 == mask.count_ones()` and `num_rows_large == mask.trailing_zeros()`, naming the page index on failure.
+
+Run: `cargo test -p baken-export last_write` and `cargo test -p baken-export every_data_page_has_a_coherent_last_write`
+Expected: FAIL. `the_last_write_is_the_last_row…` left `0x7f` right `0x40`; the spanning one fails on group 0; the fixed one passes (it already holds); the writer test names the first incoherent page.
+
+- [ ] **Step 8b: Patch 0004, green**
+
+In `DataPage::to_bytes`, replace
+
+```rust
+            p[flags + 2..flags + 4].copy_from_slice(&present.to_le_bytes());
+```
+
+with
+
+```rust
+            // The rows of the page's last write, which unknown5 and num_rows_large describe:
+            // the last row for a Normal page, every row for a Fixed one. rekordbox's storage
+            // manager sizes its undo of that write from unknown5 and walks this mask; a mask
+            // wider than unknown5 says made it write past its buffer (heap corruption on
+            // the first delete, 16/10/2026).
+            let last_write = match self.style {
+                HeaderStyle::Normal if i + 1 == n => bit,
+                HeaderStyle::Normal => 0,
+                HeaderStyle::Fixed => present,
+            };
+            p[flags + 2..flags + 4].copy_from_slice(&last_write.to_le_bytes());
+```
+
+(rows are written in order, so an earlier row of the last group first writes 0 and the last row then writes its bit). Update the doc comment of `HeaderStyle::Normal` to `/// unknown5 = 1, num_rows_large = rows - 1, last-write mask = the last row's bit.` and of `Fixed` to `/// colors and columns: unknown5 = rows, num_rows_large = 0, last-write mask = every row.`
+
+Run: `cargo test -p baken-export`
+Expected: PASS (all). If a byte-for-byte test against a rekordbox page (the writer's own header tests) now fails, read which page: rekordbox's pages are coherent, so the expected bytes in that test came from baken, not from rekordbox; report it before changing the expectation.
+
+Cross-check on the spike's data (scratch only, read-only for the sources):
+
+```bash
+cargo build --release -p baken
+rm -rf "$SCRATCH/baken-build/fake-usb-tx" && mkdir -p "$SCRATCH/baken-build/fake-usb-tx"
+BAKEN_NO_UPDATE_CHECK=1 target/release/baken expressport "$SCRATCH/usb-spike/phase2/collection2.xml" \
+  --device "$SCRATCH/baken-build/fake-usb-tx" --anlz-dir "$SCRATCH/usb-spike/anlz-src/USBANLZ" \
+  --no-settings --onelibrary --artwork --generate-analysis --device-name ""
+python3 -I "$SCRATCH/usb-coexist/crashtools/txcheck.py" "$SCRATCH/baken-build/fake-usb-tx/PIONEER/rekordbox/export.pdb"
+python3 -I "$SCRATCH/usb-coexist/crashtools/fix_txmask.py" "$SCRATCH/baken-build/fake-usb-tx/PIONEER/rekordbox/export.pdb" "$SCRATCH/baken-build/fixed-again.pdb"
+```
+
+Expected: txcheck reports 0 inconsistent pages (read its head first for its argument form), and `fix_txmask.py` prints `fixed pages 0`.
+
+Commit in the baken clone with the title "Write each page's last-write mask as rekordbox does" (`git commit -am`).
+
+- [ ] **Step 8c: Patch 0005, red: the collection's identity on the stick**
+
+A stick rekordbox recognises as its own carries its collection's identity (measured on rekordbox 7.2.19's export, `usb-coexist/analisis.md` Q3): the track row's `+0x14` is `djmdContent.ID` (baken: id + 20) and `+0x18` the collection's DBID (baken: the constant `MASTER_DB_ID`); OneLibrary's `content.masterDbId` is the DBID, `property.myTagMasterDBID` the cloud property ID, and `myTag` the collection's My Tags. And the stick's playlist IDs must not change between exports (rekordbox maps them in `playlists3.sync`).
+
+The input is an optional file, so baken without it behaves exactly as before:
+
+```json
+{"dbId": 3942308644, "myTagMasterDbId": 4278116378,
+ "myTags": [{"id": 1, "seq": 0, "name": "Genre", "attribute": 1, "parent": 0}],
+ "fileSizes": {"143097810": 53680358}}
+```
+
+(`seq` already 0-based; `fileSizes` by XML `TrackID`, the size rekordbox's database has for the track), passed as `--master-ids FILE`, and an optional `DeviceId="N"` attribute on each XML `NODE` (folder or playlist).
+
+Tests, each in the module that owns the code (read each module's tests first and follow their builders):
+- `crates/baken-export/src/collection.rs`: `a_node_keeps_its_device_id` (parsing `<NODE Type="1" Name="Makina" KeyType="0" Entries="0" DeviceId="7">` gives `device_id == Some(7)`; without the attribute `None`).
+- `crates/baken-export/src/build.rs`: `device_ids_from_the_xml_are_kept` (three playlists, the second with `DeviceId="9"`, the others without: 9 for it and 10, 11 for the others in document order, so new ones take max + 1; with none given, 1..N as today; two nodes with the same `DeviceId` is an error) and `track_rows_carry_the_master_identity` (with identity `dbId` 3942308644 and `fileSizes` {TrackID: 53680358}: the `TrackRow` has `master_id` = the XML TrackID, `master_db_id` = 3942308644 and `file_size` = 53680358; without identity, `id + 20`, `MASTER_DB_ID` and the real size, as today).
+- `crates/baken-export/src/pdb/rows.rs`: `the_track_row_puts_the_master_id_and_db_id_where_rekordbox_does` (encode a row with `master_id` 143097810 and `master_db_id` 3942308644; bytes `0x14..0x18` are 143097810 LE and `0x18..0x1c` 3942308644 LE).
+- `crates/baken-export/src/onelibrary.rs`: `onelibrary_carries_the_master_identity` (the existing in-memory build test's shape, with identity: every `content.masterDbId` = 3942308644, `fileSize` from `fileSizes`, `property.myTagMasterDBID` = 4278116378, `myTag` rows exactly the identity's, and `playlist.playlist_id` = the Dev_IDs; without identity, the four default My Tag rows and `MASTER_DB_ID`, as today).
+- `crates/baken/src/args.rs` (or wherever the expressport flags are parsed): `master_ids_is_read_from_a_file` and `a_bad_master_ids_file_is_an_error_before_anything_is_written` (a malformed file exits non-zero with the `error` JSON line, before the plan; Surco never writes a stick from a half-read identity).
+
+Run: `cargo test -p baken-export` and `cargo test -p baken`
+Expected: the new tests fail to compile (no `device_id`, `master_id`, `master_db_id`, identity type) or fail on the constant.
+
+- [ ] **Step 8d: Patch 0005, green**
+
+- `collection.rs`: `Playlist` gains `pub device_id: Option<u32>`, read with the existing `attr(e, "DeviceId")` helper in `push_node` and parsed as `u32` (a non-number is an XML error, like a bad `Count`).
+- A new `crates/baken-export/src/identity.rs`: `#[derive(Debug, Clone, Default, serde::Deserialize)] #[serde(rename_all = "camelCase")] pub struct MasterIdentity { pub db_id: u32, pub my_tag_master_db_id: u32, pub my_tags: Vec<MyTag>, pub file_sizes: HashMap<String, u64> }` with `MyTag { id, seq, name, attribute, parent }`, and `pub fn load(path: &Path) -> anyhow::Result<MasterIdentity>`. Add `serde` with `derive` to `baken-export` only if it is not there yet.
+- `Options` (lib.rs) gains `pub identity: Option<MasterIdentity>`; `build.rs` takes it:
+  - playlist ids: a first pass collects the given `device_id`s of included nodes; `next` starts at their max + 1 (or 1); a node with `device_id` uses it, the rest take `next` in document order;
+  - `TrackRow` gains `master_id: u32` and `master_db_id: u32`, from the track's XML id and `identity.db_id` when there is an identity, else `id + 20` and `MASTER_DB_ID`; `file_size` from `identity.file_sizes[TrackID]` when present, else as today.
+- `rows.rs`: in `TrackRow::encode`, `self.id + 20` becomes `self.master_id` and `MASTER_DB_ID` becomes `self.master_db_id`; keep the constant as the default and rewrite its doc comment: rekordbox writes its collection's DBID there, and baken's constant is what an XML-only export has.
+- `onelibrary.rs`: `content.masterDbId` from the row's `master_db_id`, `fileSize` from the row's `file_size`; `property` gets `identity.my_tag_master_db_id` (else 0); `myTag` gets the identity's rows when there is an identity, else the four defaults; `playlist_id` is the export playlist's id (already so, once build.rs gives Dev_IDs).
+- `crates/baken`: `--master-ids FILE` loads it before planning; on error, the `error` event (`kind: "other"`) and exit 1, nothing written.
+
+Run: `cargo test -p baken-export` and `cargo test -p baken`
+Expected: PASS (all).
+
+Commit in the baken clone with the title "Carry the rekordbox collection's identity and stable playlist ids onto the stick".
+
+- [ ] **Step 8e: Patch 0006, red: leave rekordbox's files, keep the source's date**
+
+rekordbox expects to find its `exportExt.pdb` (My Tag tables) on a stick it syncs, and the coexistence run kept it; baken removes it (issue #208, written when the stick was rekordbox's old library). With patch 0005's identity the stick is no longer "another library". And the audio rekordbox copies carries its source's modification time, which the proven run reproduced.
+
+Tests in `crates/baken-export/src/lib.rs` (or `tests/`, next to the existing OneLibrary replacement tests; read them first):
+- `keep_rekordbox_ext_leaves_export_ext_pdb`: a fake stick with `PIONEER/rekordbox/exportExt.pdb` (bytes `b"ext"`), `exportLibrary.db-wal` and `-shm`; export with `keep_rekordbox_ext: true`: `exportExt.pdb` is still `b"ext"`, the `-wal` and `-shm` are gone (a stale WAL would replay into the new database), and the report counts 2 removed. Without the option, today's behaviour (all three gone).
+- `copied_audio_carries_the_source_modification_time`: a source file with mtime 2026-01-25 12:00:00 (`File::set_modified`), exported: the stick's copy has the same mtime within 2 s (FAT); a track kept ("ya estaba") is not rewritten and its mtime does not change.
+
+Run: `cargo test -p baken-export keep_rekordbox_ext` and `cargo test -p baken-export copied_audio_carries`
+Expected: FAIL (no option; the mtime is the copy's time).
+
+- [ ] **Step 8f: Patch 0006, green**
+
+- `Options` gains `pub keep_rekordbox_ext: bool`; in `remove_onelibrary` and `replace_onelibrary` the names skip `"exportExt.pdb"` when it is set (one small helper used by both). Update `ONELIBRARY_FILES`' doc comment: with `keep_rekordbox_ext` the extension tables rekordbox wrote stay, because the stick then carries the collection's identity (patch 0005) and rekordbox keeps syncing it.
+- In the audio copy (`copy_audio`, read it first), after the last write and before the file is closed or renamed, set the destination's modification time to the source's (`std::fs::File::set_modified`, stable since Rust 1.75); an error on a filesystem that refuses it is a report warning, never a failed track.
+- `crates/baken`: flag `--keep-rekordbox-ext`.
+
+Run: `cargo test -p baken-export` and `cargo test -p baken`
+Expected: PASS (all).
+
+Commit in the baken clone with the title "Keep rekordbox's extension tables and the source's date on the stick".
+
 - [ ] **Step 9: Check the protocol end to end on the spike's data**
 
 The spike's XML and analysis copies are in `$SCRATCH/usb-spike` (Makina, 7 tracks). The XML's `Location`s are on the NAS: `/Volumes/Public` must be mounted (`ls /Volumes/Public` lists the share), or every track is skipped. The device is a scratch folder, never a stick.
@@ -871,6 +1077,30 @@ rm -rf "$SCRATCH/baken-build/fake-usb-cancel" && mkdir -p "$SCRATCH/baken-build/
 ls "$SCRATCH/baken-build/fake-usb-cancel/PIONEER/rekordbox/export.pdb" 2>&1 | tail -1
 ```
 
+Then the identity and the kept files, on the folder of the first run, with an identity file made from the 16/10 values and the spike XML's track ids:
+
+```bash
+node -e '
+const fs = require("fs"); const xml = fs.readFileSync(process.argv[1], "utf8")
+const ids = [...xml.matchAll(/<TRACK TrackID="(\d+)"/g)].map((m) => m[1])
+fs.writeFileSync(process.argv[2], JSON.stringify({ dbId: 3942308644, myTagMasterDbId: 4278116378,
+  myTags: [{ id: 1, seq: 0, name: "Genre", attribute: 1, parent: 0 }], fileSizes: Object.fromEntries(ids.map((i) => [i, 1234])) }))
+' "$SCRATCH/usb-spike/phase2/collection2.xml" "$SCRATCH/baken-build/master-ids.json"
+printf 'x' > "$SCRATCH/baken-build/fake-usb/PIONEER/rekordbox/exportExt.pdb"
+BAKEN_NO_UPDATE_CHECK=1 "$B" expressport "$SCRATCH/usb-spike/phase2/collection2.xml" \
+  --device "$SCRATCH/baken-build/fake-usb" --anlz-dir "$SCRATCH/usb-spike/anlz-src/USBANLZ" \
+  --no-settings --onelibrary --artwork --generate-analysis --device-name "" --json \
+  --master-ids "$SCRATCH/baken-build/master-ids.json" --keep-rekordbox-ext | tail -1
+cat "$SCRATCH/baken-build/fake-usb/PIONEER/rekordbox/exportExt.pdb"; echo
+"$SCRATCH/usb-spike/venv/bin/python" -I -c '
+import sys; from pyrekordbox.onelibrary import OneLibrary
+lib = OneLibrary(sys.argv[1])
+print({(c.masterDbId, c.fileSize) for c in lib.get_content()}, len(list(lib.get_my_tag())))
+' "$SCRATCH/baken-build/fake-usb/PIONEER/rekordbox/exportLibrary.db"
+```
+
+Expected (besides the first runs below): the report line; `x` (exportExt.pdb kept); `{(3942308644, 1234)} 1`; and `myTagMasterDBID` 4278116378 when the property is printed the way `usb-coexist/tras-fix/check.py` does.
+
 Expected: the dry run prints exactly one `plan` line with `"volumeRoot":false` (a scratch folder is not a volume root) and 7 tracks, all `"onStick":false`; `run1.jsonl` has `plan`, 7 × (`start`, `written` with `"kept":false`), `database`, `report` with `"tracksInDatabase":7`, every line valid JSON (`node -e 'require("fs").readFileSync(process.argv[1],"utf8").trim().split("\n").forEach(l=>JSON.parse(l))' "$SCRATCH/baken-build/run1.jsonl"` prints nothing); the third run prints `7`; the cancelled run's last line is a `report` with `"cancelled":true` and fewer than 7 `written` before it, and there is no `export.pdb` (`No such file or directory`).
 
 - [ ] **Step 10: Export the series into Surco and commit**
@@ -878,11 +1108,14 @@ Expected: the dry run prints exactly one `plan` line with `"volumeRoot":false` (
 From the worktree root:
 
 ```bash
-rm -rf "$SCRATCH/baken-patches" && git -C "$SCRATCH/baken-build" format-patch -3 --zero-commit --no-signature -o "$SCRATCH/baken-patches"
+rm -rf "$SCRATCH/baken-patches" && git -C "$SCRATCH/baken-build" format-patch -6 --zero-commit --no-signature -o "$SCRATCH/baken-patches"
 mkdir -p apps/desktop/vendor/baken/patches
 cp "$SCRATCH"/baken-patches/0001-*.patch apps/desktop/vendor/baken/patches/0001-default-hot-cue-colours.patch
 cp "$SCRATCH"/baken-patches/0002-*.patch apps/desktop/vendor/baken/patches/0002-artwork-dir.patch
 cp "$SCRATCH"/baken-patches/0003-*.patch apps/desktop/vendor/baken/patches/0003-json-lines.patch
+cp "$SCRATCH"/baken-patches/0004-*.patch apps/desktop/vendor/baken/patches/0004-last-write-mask.patch
+cp "$SCRATCH"/baken-patches/0005-*.patch apps/desktop/vendor/baken/patches/0005-master-identity.patch
+cp "$SCRATCH"/baken-patches/0006-*.patch apps/desktop/vendor/baken/patches/0006-keep-rekordbox-files.patch
 cp "$SCRATCH/baken-build/LICENSE" apps/desktop/vendor/baken/LICENSE
 # The dependency licences are generated in baken's release job (cargo about), not kept in its
 # source tree: take the v4.6.1 release's file the spike downloaded with the official binary.
@@ -890,14 +1123,14 @@ cp "$SCRATCH/usb-spike/tools/baken/THIRD_PARTY_LICENSES.md" apps/desktop/vendor/
 printf '1.99.1\n' > apps/desktop/vendor/baken/RUST_TOOLCHAIN
 printf 'https://github.com/M-Igashi/baken\nv4.6.1\nc97435a978cafb949ee052afbd6ea9b7bff6fd0b\n' > apps/desktop/vendor/baken/UPSTREAM
 rm -rf "$SCRATCH/baken-check" && git clone -q --branch v4.6.1 https://github.com/M-Igashi/baken "$SCRATCH/baken-check"
-git -C "$SCRATCH/baken-check" am -q "$PWD"/apps/desktop/vendor/baken/patches/*.patch && git -C "$SCRATCH/baken-check" log --oneline -4
+git -C "$SCRATCH/baken-check" am -q "$PWD"/apps/desktop/vendor/baken/patches/*.patch && git -C "$SCRATCH/baken-check" log --oneline -7
 ```
 
-Expected: `git am` applies all three on a clean `v4.6.1` and the log shows them on top of `c97435a`.
+Expected: `git am` applies all six on a clean `v4.6.1` and the log shows them on top of `c97435a`.
 
 - [ ] **Step 11: Draft the upstream pull requests, send nothing**
 
-Opening pull requests on someone else's public repository speaks for Vicent: that is his call. Write `docs/baken-upstream-prs.md` (English, it is for baken's author) with one section per patch: a title, a body that says what changes and why, the measurement behind it (rekordbox 7.2.19's export of 16/10/2026 for the colours, the WAV covers rekordbox keeps in its cache for the artwork folder, the front-end use case and the cancel guarantee for the JSON lines), the tests the patch adds, and the patch file name. Start the file with one line in Spanish for Vicent: "Borradores. No se ha enviado nada; los envías tú si quieres." Do not run `gh`, do not push anywhere.
+Opening pull requests on someone else's public repository speaks for Vicent: that is his call. Write `docs/baken-upstream-prs.md` (English, it is for baken's author) with one section per patch: a title, a body that says what changes and why, the measurement behind it (rekordbox 7.2.19's export of 16/10/2026 for the colours, the WAV covers rekordbox keeps in its cache for the artwork folder, the front-end use case and the cancel guarantee for the JSON lines, the crash reports and the page invariant measured over rekordbox's and rekordcrate's pages for the last-write mask, rekordbox's own export of the same playlist for the identity and the kept files), the tests the patch adds. The last-write mask goes first and stands alone: it is a plain bug that crashes rekordbox, worth sending even if the rest is not, and the patch file name. Start the file with one line in Spanish for Vicent: "Borradores. No se ha enviado nada; los envías tú si quieres." Do not run `gh`, do not push anywhere.
 
 ```bash
 git add apps/desktop/vendor/baken docs/baken-upstream-prs.md
@@ -4943,6 +5176,258 @@ git commit -m "Summarise and run the USB export with baken, checking the stick f
 Expected: tsc clean; `src/main` all PASS (none skipped).
 
 ---
+### Task 9b: The collection's identity on the stick, stable playlist ids and the `.sync` files
+
+**Files:**
+- Create: `src/main/rekordboxStickSync.ts`, `src/main/rekordboxStickSync.test.ts`
+- Modify: `src/main/usbExportSource.ts` (+ test, `folderIds`), `src/main/bakenXml.ts` (+ test, `DeviceId`), `src/main/usbExportStage.ts` (+ test, `master-ids.json`), `src/main/bakenRun.ts` (+ test, the two flags), `src/main/rekordboxExportFixture.ts` (DBID, cloud property, My Tags, `FileSize`)
+
+**Interfaces:**
+- Consumes: Task 2's `--master-ids`, `DeviceId` and `--keep-rekordbox-ext`; `ExportSelection` (Task 5); `buildBakenXml` (Task 6); `Stage`, `stageExport`, `bakenArgs` (Task 7); `openRekordboxDb` (`rekordboxDb.ts`); `hexId`, `playlistXmlPath` (`rekordboxMasterXml.ts`).
+- Produces (Task 9c):
+
+```ts
+// rekordboxStickSync.ts
+export interface MasterIdentity {
+  dbId: number; myTagMasterDbId: number
+  myTags: { id: number; seq: number; name: string; attribute: number; parent: number }[]
+  fileSizes: Record<string, number>
+}
+export function readMasterIdentity(db: RekordboxDb, trackIds: string[]): MasterIdentity
+export function signedInt32(n: number): number
+export interface StickNode { id: string; parentId: string; folder: boolean }   // master IDs, 'root' for the root
+export function stickDeviceIds(nodes: StickNode[], syncText: string | null): Map<string, number>
+export function nodeTimestamps(masterPlaylistsXml: string): Map<string, number> // hex Id -> ms
+export function syncFileText(dbId: number, nodes: StickNode[], devIds: ReadonlyMap<string, number>, stamps: ReadonlyMap<string, number>, updatedAt: ReadonlyMap<string, number>): string
+export function syncedPlaylists(syncText: string): string[]                      // master IDs, CheckType 1
+export const STALE_STICK_FILES: readonly string[]
+export const SYNC_FILES: readonly string[]
+// usbExportSource.ts: ExportPlaylist gains folderIds: string[] (master IDs, outermost first) and updatedAt: number (ms)
+// bakenXml.ts: buildBakenXml(sel, facts, platform?, deviceIds?: ReadonlyMap<string, number>)
+// usbExportStage.ts: StageInput gains identity: MasterIdentity | null, deviceIds: ReadonlyMap<string, number> and stickHas: string[] (names already in the stick's PIONEER/); Stage gains masterIds: string | null
+// bakenRun.ts: --master-ids <stage.masterIds> when present, and --keep-rekordbox-ext always
+```
+
+- [ ] **Step 1: Write the failing tests for the pure rules**
+
+`src/main/rekordboxStickSync.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { nodeTimestamps, signedInt32, stickDeviceIds, syncedPlaylists, syncFileText } from './rekordboxStickSync'
+
+const BASES = { id: '1401397687', parentId: 'root', folder: true }
+const MAKINA = { id: '3965545314', parentId: '1401397687', folder: false }
+
+// rekordbox 7.2.19 wrote exactly these 529 bytes on the test stick, and the coexistence run
+// regenerated them byte for byte from master.db and masterPlaylists6.xml (18/10/2026). Any
+// difference is a stick rekordbox may not recognise as synced.
+const REKORDBOX_SYNC = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '',
+  '<Sync DBID="-352658652" AutomaticSync="1" AllPlaylists="0" IncludeCue="1" ForcedSync="0" Timestamp="0">',
+  '  <Playlists>',
+  '    <NODE Id="0" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="0" Timestamp="0" CheckType="2"/>',
+  '    <NODE Id="5387A1B7" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="1" Timestamp="1787178676095" CheckType="2"/>',
+  '    <NODE Id="EC5D6B62" ParentId="5387A1B7" Attribute="0" Lib_Type="0" Dev_ID="2" Timestamp="1792349372735" CheckType="1"/>',
+  '  </Playlists>',
+  '</Sync>',
+  '',
+].join('\r\n')
+
+describe('syncFileText', () => {
+  it('writes the file rekordbox writes, byte for byte', () => {
+    const text = syncFileText(
+      3942308644,
+      [BASES, MAKINA],
+      new Map([[BASES.id, 1], [MAKINA.id, 2]]),
+      new Map([['5387A1B7', 1787178676095], ['EC5D6B62', 1792349372735]]),
+      new Map(),
+    )
+    expect(text).toBe(REKORDBOX_SYNC)
+    expect(Buffer.byteLength(text)).toBe(529)
+  })
+
+  // A playlist created after masterPlaylists6.xml was last read has no node yet; its
+  // updated_at is the best stand-in (rekordbox itself once wrote it there).
+  it('falls back to updated_at when the node is not in masterPlaylists6.xml', () => {
+    const text = syncFileText(3942308644, [BASES, MAKINA], new Map([[BASES.id, 1], [MAKINA.id, 2]]), new Map(), new Map([[MAKINA.id, 1790869744796]]))
+    expect(text).toContain('Id="EC5D6B62" ParentId="5387A1B7" Attribute="0" Lib_Type="0" Dev_ID="2" Timestamp="1790869744796" CheckType="1"')
+  })
+})
+
+describe('signedInt32', () => {
+  it('reads the DBID as rekordbox prints it', () => {
+    expect(signedInt32(3942308644)).toBe(-352658652)
+    expect(signedInt32(12345)).toBe(12345)
+  })
+})
+
+describe('stickDeviceIds', () => {
+  // rekordbox maps its playlists to the stick's through these ids: renumbering them on a
+  // re-export would point its sync state at other playlists.
+  it('keeps the ids the stick already has and gives new nodes the next ones in tree order', () => {
+    const NEW = { id: '200', parentId: 'root', folder: false }
+    const ids = stickDeviceIds([BASES, NEW, MAKINA], REKORDBOX_SYNC)
+    expect(ids.get(BASES.id)).toBe(1)
+    expect(ids.get(MAKINA.id)).toBe(2)
+    expect(ids.get(NEW.id)).toBe(3)
+  })
+
+  it('numbers 1..N in tree order on a stick without a sync file', () => {
+    expect([...stickDeviceIds([BASES, MAKINA], null).values()]).toEqual([1, 2])
+  })
+})
+
+describe('nodeTimestamps', () => {
+  it('reads each node by its own Id, never by its ParentId', () => {
+    const xml = [
+      '    <NODE Id="EC5D6B62" ParentId="5387A1B7" Attribute="0" Timestamp="1792349372735" Lib_Type="0" CheckType="0"/>',
+      '    <NODE Id="5387A1B7" ParentId="0" Attribute="1" Timestamp="1787178676095" Lib_Type="0" CheckType="0"/>',
+    ].join('\r\n')
+    expect(nodeTimestamps(xml)).toEqual(new Map([['EC5D6B62', 1792349372735], ['5387A1B7', 1787178676095]]))
+  })
+})
+
+describe('syncedPlaylists', () => {
+  it('lists the ticked playlists by their master id, not the folders', () => {
+    expect(syncedPlaylists(REKORDBOX_SYNC)).toEqual(['3965545314'])
+  })
+})
+```
+
+And in `usbExportSource.test.ts`: `gives each playlist its folder ids and updated_at` (BASES › Makina in the fixture: `folderIds` `['<BASES id>']`, `updatedAt` the row's `updated_at` in ms); in `bakenXml.test.ts`: `puts the stick id on each node` (with `deviceIds` BASES 1, Makina 2: `<NODE Type="0" Name="BASES" Count="1" DeviceId="1">` and `<NODE Name="Makina" Type="1" KeyType="0" Entries="2" DeviceId="2">`; without the map, no `DeviceId` anywhere, so today's tests stay as they are); in `usbExportStage.test.ts`: `stages the identity for baken` (`master-ids.json` in the stage dir, parsed equal to the identity passed in, `stage.masterIds` its path; `null` identity, no file) and `never stages DEVSETTING.DAT over the stick's own` (with `stickHas: ['DEVSETTING.DAT']`, the staged settings folder lacks it); in `bakenRun.test.ts`: `passes the identity and keeps rekordbox's files` (`--master-ids` + path when `stage.masterIds`, `--keep-rekordbox-ext` always, also on a dry run) and `refuses an identity file inside the rekordbox folder` (same guard as the other staged paths).
+
+For `readMasterIdentity`, extend `rekordboxExportFixture.ts` with `djmdProperty (DBID)`, `djmdCloudProperty (ID, Reserved1, Reserved2)`, `djmdMyTag (ID, Seq, Name, Attribute, ParentID, rb_local_deleted)` and `djmdContent.FileSize`, and test in `rekordboxStickSync.test.ts`: `reads the identity rekordbox puts on its own sticks` (DBID 3942308644; cloud ID 4278116378 from the `SyncService`/`Google` row even with another row present; My Tags with `seq` = Seq - 1, `parent` 0 for `root`, deleted ones left out; `fileSizes` only for the asked track ids, the stale master value, not the file's).
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxStickSync.test.ts src/main/usbExportSource.test.ts src/main/bakenXml.test.ts src/main/usbExportStage.test.ts src/main/bakenRun.test.ts`
+Expected: FAIL (module missing; new fields and flags absent). The older tests in those files still pass.
+
+- [ ] **Step 3: Implement**
+
+`src/main/rekordboxStickSync.ts`, with the WHY comments of the repo's style (each rule says where it was measured: `usb-coexist/rebuild.md`, 16/10 and 18/10):
+- `signedInt32(n)`: `n >= 2 ** 31 ? n - 2 ** 32 : n`.
+- `syncFileText`: lines joined by `\r\n` with a final `\r\n`, exactly the header, root node and node lines of the test; `Id`/`ParentId` with `hexId` (root `0`); `Attribute` 1 folder / 0 playlist; `CheckType` 2 folder / 1 playlist; `Timestamp` from `stamps.get(hexId(id))`, else `updatedAt.get(id)`, else 0. Nodes in the order given (tree order: each folder before its children, as `selectedPlaylists` walks the tree).
+- `stickDeviceIds`: parse `<NODE Id="…" … Dev_ID="…"` pairs from `syncText` (hex → master decimal with `BigInt('0x' + hex).toString()`), keep those for nodes still exported, then `max + 1` upwards for the rest in the given order.
+- `nodeTimestamps`: `/<NODE Id="([0-9A-F]+)"[^>]*\bTimestamp="(\d+)"/g`.
+- `syncedPlaylists`: nodes with `Attribute="0"` and `CheckType="1"`, as master decimal ids.
+- `readMasterIdentity(db, ids)`: `SELECT DBID FROM djmdProperty`; `SELECT ID FROM djmdCloudProperty WHERE Reserved1 = 'SyncService' AND Reserved2 = 'Google'` (0 when missing, logged; Task 1 measured exactly one); `djmdMyTag` live rows ordered by `CAST(ID AS INTEGER)`; `FileSize` for the ids.
+- `STALE_STICK_FILES = ['exportLibrary.db-wal', 'exportLibrary.db-shm', 'sync.temp', 'sync.devlibplus.temp']`, `SYNC_FILES = ['playlists3.sync', 'playlists3Plus.sync']`.
+
+`usbExportSource.ts`: `selectedPlaylists` already walks the folders; carry their ids next to their names into `folderIds`, and `updatedAt` from `djmdPlaylist.updated_at` (parse rekordbox's `2026-10-15 18:00:00.000 +00:00` with the parser `rekordboxRows.ts` uses for its stamps, or `Date.parse` after replacing the first space with `T` if it has none; test both forms the collection has).
+
+`bakenXml.ts`: the optional `deviceIds` map adds ` DeviceId="N"` to each folder and playlist `NODE` it has an id for.
+
+`usbExportStage.ts`: write `master-ids.json` (`JSON.stringify(identity)`) beside the XML when `identity` is given; skip `DEVSETTING.DAT` when `stickHas` lists it.
+
+`bakenArgs`: `...(stage.masterIds ? ['--master-ids', stage.masterIds] : [])` and `'--keep-rekordbox-ext'`, and the `masterIds` path joins the staged paths the Pioneer-folder guard checks.
+
+- [ ] **Step 4: Run them to see them pass, then mutate**
+
+Run the command of Step 2. Expected: PASS. Then break on purpose and see red, restoring each time: drop the final `\r\n` (byte-for-byte test); use `Dev_ID` = position instead of the stick's (`keeps the ids the stick already has…`); match `Id=` without the `<NODE ` anchor (`never by its ParentId`); leave out `--keep-rekordbox-ext` (`keeps rekordbox's files`).
+
+- [ ] **Step 5: Types, lint, commit**
+
+```bash
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- biome check --write src
+git add -A apps/desktop/src/main
+git commit -m "Give the USB export the rekordbox collection's identity and stable playlist ids"
+```
+
+---
+
+### Task 9c: Export so rekordbox can keep syncing the same stick
+
+**Files:**
+- Modify: `src/main/usbExport.ts` (+ test), `src/main/usbExportIpc.ts`, `src/main/usbVolumes.ts` (+ test), `src/shared/types.ts`
+
+**Interfaces:**
+- Consumes: Task 9b; `isRekordboxRunning` (`rekordboxProcess.ts`) and the `ensureRekordboxClosed` dialog the playlist writer already uses; Task 9's exporter.
+- Produces (Task 11 Step 8a):
+
+```ts
+// shared/types.ts
+export type UsbFailure = /* Task 9's */ | 'rekordbox-open' | 'sources-unreachable' | 'playlist-empty' | 'source-lost' | 'sync-files'
+export type UsbWarning = /* Task 9's */ | { kind: 'sourcesUnreachable'; volume: string; tracks: number } | { kind: 'rekordboxOpen' } | { kind: 'emptyPlaylist'; names: string[] }
+export interface UsbVolume { /* Task 8's */ stickPlaylists: string[] | null }   // master IDs ticked in the stick's playlists3.sync
+// the finished event gains syncFiles: boolean (false: the database is new but the .sync files could not be written)
+```
+
+`UsbExporterDeps` gains `rekordboxRunning: () => Promise<boolean>`, `ensureRekordboxClosed: () => Promise<boolean>`, `exists: (path: string) => Promise<boolean>`, `readText: (path: string) => Promise<string | null>`, `writeAtomic: (path: string, text: string) => Promise<void>` (the `.surco-tmp` beside and rename, like `replaceFile`), `removeFile: (path: string) => Promise<void>` (missing is fine), `identity: (dbPath: string, trackIds: string[]) => MasterIdentity | 'unreadable'`, `masterPlaylistsXml: () => Promise<string | null>`.
+
+- [ ] **Step 1: Write the failing tests**
+
+In `src/main/usbVolumes.test.ts`, replace the test `is rekordbox when exportExt.pdb is there` and its comment with:
+
+```ts
+  // Surco keeps rekordbox's exportExt.pdb and writes the .sync files itself (18/10), so
+  // their presence no longer says who wrote last: Surco's remembered export.pdb is
+  // checked first, and only a stick that is not Surco's last write is rekordbox's.
+  it('is Surco when export.pdb is the one Surco wrote, even with rekordbox files beside it', async () => {
+    const root = await stick(['export.pdb', 'exportExt.pdb', 'playlists3.sync'])
+    utimesSync(join(root, 'PIONEER/rekordbox/export.pdb'), 1000, 1000)
+    expect((await stickHolder(root, { size: 9, mtimeMs: 1_000_000 })).by).toBe('surco')
+  })
+
+  it('is rekordbox when it wrote after Surco, by exportExt.pdb or playlists3.sync', async () => {
+    expect((await stickHolder(await stick(['export.pdb', 'exportExt.pdb']), { size: 1, mtimeMs: 0 })).by).toBe('rekordbox')
+    expect((await stickHolder(await stick(['export.pdb', 'playlists3.sync']), null)).by).toBe('rekordbox')
+  })
+```
+
+and `reads the playlists the stick's sync file ticks` (`readVolumes` with a stick holding `REKORDBOX_SYNC` from Task 9b's test: `stickPlaylists` `['3965545314']`; none, `null`).
+
+In `src/main/usbExport.test.ts` (Task 9's harness: fake deps, fake runner), each with a WHY comment:
+- `asks to close rekordbox before writing and writes nothing if it stays open` (`rekordboxRunning` true, `ensureRekordboxClosed` false: `{ ok: false, reason: 'rekordbox-open' }`, the runner never called, no file removed); `exports once rekordbox is closed through the dialog`.
+- `plans with rekordbox open and says so` (`plan()` works, warning `rekordboxOpen`).
+- `refuses when the music's volume is not mounted` (tracks under `/Volumes/Public`, `exists('/Volumes/Public')` false: `sources-unreachable`, nothing spawned; the plan has the warning with `volume: 'Public'` and the track count). Windows: tracks under `E:\Musica`, `exists('E:\\')` false, same. A track under the system disk (`/Users/…`) never counts as unreachable by volume.
+- `refuses a playlist that would be empty` (every track of Makina missing on disk with its volume mounted: `playlist-empty`, warning `emptyPlaylist` naming it).
+- `cancels when the music's volume goes away mid-run` (the fake runner emits `start`; `exists` flips to false; at the next 1 s tick `cancel` is asked; on the cancelled report, `finished` with `reason: 'source-lost'`).
+- `removes only the four stale files, before baken, and only on a real run` (`removeFile` called exactly with `PIONEER/rekordbox/` + each `STALE_STICK_FILES` name under the target root, before the runner's real call; never on `plan()` or a dry run; never for anything else).
+- `writes both sync files after a successful run` (after the `report`, `writeAtomic` twice, `playlists3.sync` and `playlists3Plus.sync`, same text, built from the identity, the Dev_IDs given to the stage and the `masterPlaylists6.xml` stamps; the memory is written after them so `export.pdb`'s facts are the final ones).
+- `writes no sync file when baken fails or is cancelled`.
+- `says the sync files failed without calling the export failed` (`writeAtomic` throws: `finished` `done` with `syncFiles: false`, logged).
+- `keeps the stick's playlist ids across exports` (`readText` of the stick's `playlists3.sync` returns `REKORDBOX_SYNC`; the stage receives Dev_IDs BASES 1, Makina 2 although a new playlist sorts before them).
+- `refuses an unreadable identity` (`identity` returns `'unreadable'`: `unreadable`, nothing spawned).
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/usbVolumes.test.ts src/main/usbExport.test.ts`
+Expected: FAIL on the new tests; Task 9's still pass.
+
+- [ ] **Step 3: Implement**
+
+- `stickHolder`: no `export.pdb` → empty; remembered size and mtime → surco; `exportExt.pdb` or `playlists3.sync` → rekordbox; else other. `readVolumes` adds `stickPlaylists` from `syncedPlaylists` of the stick's `playlists3.sync` (null when absent or unreadable).
+- `usbExport.ts`:
+  - `sourceRoot(path, platform)`: on macOS `/Volumes/<name>` for paths under `/Volumes/`, else `null` (the system disk is always there); on Windows the drive root `X:\` (or the `\\server\share\` of a UNC path). `prepare` groups the selection's non-streaming tracks by root and checks each with `exists`; any missing → `sources-unreachable` with the first missing root's name and its track count (for `plan()`, the warning instead, and the summary still shows).
+  - after staging, a selected playlist whose tracks are all in `stage.missing` → `playlist-empty`.
+  - `prepare` also reads the identity (`deps.identity(db, trackIds)`), the stick's `playlists3.sync` (`readText`), computes `stickDeviceIds` over the exported nodes (folders from `folderIds`, then playlists, in tree order) and passes identity and ids to the stage.
+  - `start()`: after the claim and before preparing, `if (await deps.rekordboxRunning() && !(await deps.ensureRekordboxClosed())) return refuse('rekordbox-open')`. `plan()` never asks; it adds `rekordboxOpen` when running.
+  - before `launch`, `removeFile` each of `STALE_STICK_FILES` under `<root>/PIONEER/rekordbox/`.
+  - in `launch`, the 1 s watch also checks every source root; one gone sets `lostSource` and cancels while in `tracks`; the finish maps it to `source-lost` like `lostVolume`.
+  - on a successful report: `syncFileText` with `nodeTimestamps(await deps.masterPlaylistsXml() ?? '')` and each playlist's `updatedAt`; `writeAtomic` both `SYNC_FILES`; then the memory; `finished` carries `syncFiles`.
+- `usbExportIpc.ts`: wire the new deps (`isRekordboxRunning`, the existing close dialog, `fs.promises` for `exists`/`readText`/`removeFile`, `replaceFile` from `rekordboxPlaylistWrite.ts` style for `writeAtomic` on the stick, `readMasterIdentity` through `openRekordboxDb` read-only, `masterPlaylists6.xml` beside the collection read-only).
+
+- [ ] **Step 4: Run them to see them pass, then mutate the safety rules**
+
+Run the command of Step 2, then Task 9's whole exporter file. Expected: PASS. Mutations, each must turn a test red: move the stale-file removal before the volume identity check (`removes only the four stale files…` must see it happen only after `idAt` matched); write the `.sync` files before the report (`writes no sync file when baken fails…`); skip the rekordbox check (`asks to close rekordbox…`); put the `exportExt.pdb` check before Surco's in `stickHolder` (`is Surco… even with rekordbox files beside it`).
+
+- [ ] **Step 5: Types, the whole main suite, lint, commit**
+
+```bash
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+cd apps/desktop && node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main && cd ../..
+npm exec --workspace apps/desktop -- biome check --write src
+git add -A apps/desktop/src
+git commit -m "Export to a stick rekordbox can keep syncing"
+```
+
+---
+
 ### Task 10: The exporting face: the store, and the track list whose waveforms fill as bytes land
 
 **Files:**
@@ -7102,6 +7587,36 @@ In `App.tsx`:
             )}
 ```
 
+- [ ] **Step 8a: What the stick says it holds, and the coexistence notices**
+
+Needs Task 9c. In `UsbExportModal.test.tsx`, red first, each with a WHY comment:
+- `ticks what the stick's sync file lists over what Surco remembers` (a volume with `stickPlaylists: ['3965545314']` and `remembered.playlistIds: ['1']`: Makina is ticked, `1` is not; the boxes still come from `remembered`). Why: rekordbox may have synced more playlists to the stick since Surco last wrote it; leaving them unticked would drop them on the next export.
+- `falls back to what Surco remembers on a stick without a sync file` (`stickPlaylists: null`).
+- `shows the new notices` (`rekordboxOpen`, `sourcesUnreachable` with `Public` and 7, `emptyPlaylist` with Makina, each by its `data-testid`), and `disables Exportar while the music is not reachable or a playlist would be empty`.
+- `says rekordbox stayed open, the music went away mid-run, and the sync files could not be written` (the three failure reasons and `syncFiles: false` in the done notice).
+
+In `UsbExportModal.tsx`, `remember(r)` takes the volume and seeds `checked` from `v.stickPlaylists ?? r?.playlistIds ?? []` (a folder target has no sync file to read: memory only). Rename the warning text for `rekordboxExport` (key kept) and add the new warnings' rows and failure texts. Locale additions for Step 9 (es; translate the same sense into en, de, fr, pt-BR, with no em dash and no explanatory colon):
+
+```json
+{ "usbExport": {
+  "warning": {
+    "rekordboxExport": "Este USB lo sincronizó rekordbox por última vez. Surco lo rehace con estas playlists y aprovecha la música que ya está.",
+    "rekordboxOpen": "rekordbox está abierto. Se te pedirá cerrarlo al exportar.",
+    "sourcesUnreachable": "No se encuentra {{volume}}, donde está la música de {{count}} pistas. Móntalo y vuelve a exportar.",
+    "emptyPlaylist": "No se encuentra ninguna pista de {{names}}."
+  },
+  "failure": {
+    "rekordbox-open": "rekordbox sigue abierto. No se ha exportado nada.",
+    "sources-unreachable": "No se encuentra la música. Monta su disco y vuelve a exportar.",
+    "playlist-empty": "Una playlist se quedaría vacía. No se ha exportado nada.",
+    "source-lost": "Se desmontó el disco de la música a mitad. El USB tiene su biblioteca anterior.",
+    "sync-files": "El USB quedó bien para los reproductores, pero rekordbox puede no reconocer sus playlists. Exporta otra vez."
+  }
+} }
+```
+
+(`sync-files` is shown from the done event's `syncFiles: false`, not as a refusal.) Replace the five `rekordboxExport` strings Step 9 lists below with this new sense in each language.
+
 - [ ] **Step 9: Locale strings**
 
 Merge `$SCRATCH/usb-locale-11.json`:
@@ -7509,7 +8024,7 @@ The `Mis cosas` folder stands for the user's own files on the stick (Global Cons
 
 - [ ] **Step 3: First export from the app**
 
-Launch the packaged app (`open "$APP"`), with rekordbox **open** (reading must work with it running). In the rekordbox tree header press the USB button. Check, and write each in the note:
+Launch the packaged app (`open "$APP"`), with rekordbox **open** (reading must work with it running). In the rekordbox tree header press the USB button. The summary works with rekordbox open and shows "rekordbox está abierto…"; Exportar brings up the close dialog, and Cancel there writes nothing (`ls -la /Volumes/Surco/PIONEER/rekordbox` unchanged). Close rekordbox through the dialog for the rest of this step. Check, and write each in the note:
 - the modal lists only `Surco`, with its capacity, `exFAT` and what it holds;
 - tick `BASES` (Makina gets ticked and the folder is open); the summary says 7 pistas, the warnings show exFAT (and the rekordbox one if the stick still has rekordbox's export at its root);
 - "Copiar My Settings" and "Borrar del USB…" are both off;
@@ -7540,7 +8055,17 @@ Expected (each script prints its own verdict; if a path argument differs, read i
 - `PVDI equal to rekordbox 7, different 0`;
 - 28 artwork files (7 tracks × 4) instead of the spike's 8;
 - no `MYSETTING.DAT` written by this export (the box was off; if the stick already had one, its date is unchanged);
-- `no tocar`.
+- `no tocar`;
+- the coexistence pieces, read-only:
+
+```bash
+python3 -I "$SCRATCH/usb-coexist/crashtools/txcheck.py" /Volumes/Surco/PIONEER/rekordbox/export.pdb
+cmp /Volumes/Surco/PIONEER/rekordbox/playlists3.sync /Volumes/Surco/PIONEER/rekordbox/playlists3Plus.sync && echo same
+ls /Volumes/Surco/PIONEER/rekordbox/ /Volumes/Surco/PIONEER/extracted/
+"$SCRATCH/usb-spike/venv/bin/python" -I "$SCRATCH/usb-coexist/tras-fix/check.py"
+```
+
+  0 inconsistent pages; `same`; `exportExt.pdb` and `gcred.dat` still there if they were before, and no `exportLibrary.db-wal`, `-shm` or `sync*.temp`; `check.py` (point its path at the stick, or copy it first and edit the copy) prints every content with `masterDbId` 3942308644 and its real `masterContentId`, `myTagMasterDBID` 4278116378 and 28 `myTag` rows.
 
 - [ ] **Step 5: Second export, incremental, the memory and the boxes**
 
@@ -7553,6 +8078,19 @@ Close and reopen the modal: `Surco` is preselected and `BASES` ticked. The summa
 - "Otro destino…" on a folder of the Mac's disk (`~/Desktop`): the summary says "Elige una carpeta de un USB o una tarjeta." and Exportar stays disabled. On `/Volumes/Surco/sets`: the warning "Los reproductores solo leen la raíz de un USB" and no prune box.
 - Too big: tick enough playlists to exceed the stick's free space: "No cabe. Hace falta X y hay Y libres." and Exportar disabled.
 
+- [ ] **Step 7a: Two-way sync with real rekordbox (Vicent at the keyboard)**
+
+The proof the coexistence holds in the product, not only in the 18/10 scripts. The NAS must stay mounted the whole step: check `ls /Volumes/Public` before each sync, and if `/Volumes/Public` vanishes mid-step (the AutoMounter unmounts on network changes), stop and redo that sub-step. Before each sub-step, copy `/Volumes/Surco/PIONEER/rekordbox` to `$SCRATCH/usb-verify/two-way-<n>/` (read-only copy) so every change can be diffed afterwards. Only Vicent drives rekordbox; Surco's side is the packaged app.
+
+1. Surco exports BASES/Makina (rekordbox closed). Vicent opens rekordbox with the stick plugged in: no "library inconsistency" notice, the stick shows BASES › Makina with its tracks.
+2. In rekordbox Vicent adds one track to Makina and syncs the stick, then quits rekordbox. Expected: no crash (no new file in `~/Library/Logs/DiagnosticReports/rekordbox-*.ips`), the new track's audio is the only new file in `Contents/` (`find /Volumes/Surco/Contents -newer "$SCRATCH/usb-verify/two-way-2" -type f -not -name '._*'`), no `exportLibrary.db-wal` or `-shm` left, and rekordbox's Export Log lists no failure for this sync.
+3. Surco, rekordbox closed: open the modal. The stick reads "lo sincronizó rekordbox", Makina is ticked, the summary has the new track as "ya está". Export. Then, read-only: the `Dev_ID`s in `playlists3.sync` are those of sub-step 2; `txcheck.py` 0 inconsistent; and OneLibrary compared with the copy of sub-step 3, by `masterContentId` (title, artist, `image_id` not null where it was, `analysisDataFilePath`): nothing rekordbox had is lost. A loss is a bug (Decision 22), fixed with its red test before going on.
+4. Vicent opens rekordbox and syncs again without changing anything. Expected: nothing copied, no playlist marked as changed, no crash. This is the open `Timestamp` question (Decision 20): if rekordbox treats Makina as changed, write down the node's `Timestamp` in `masterPlaylists6.xml`, Makina's `updated_at`, and what rekordbox wrote into `playlists3.sync`; that decides the rule.
+5. Surco adds the playlist BASES › 90s and exports; Vicent opens rekordbox: both playlists are there and synced, and a sync copies nothing.
+6. The stick of sub-step 5 in the CDJ-3000X and the XDJ-AZ: both playlists with every track, waveforms, cues and covers.
+
+Write each sub-step's expected-versus-seen in the note. Sub-steps 2 and 4 failing is a no-go for merging.
+
 - [ ] **Step 7: Nothing of rekordbox's changed**
 
 ```bash
@@ -7560,7 +8098,7 @@ find ~/Library/Pioneer -maxdepth 3 -exec stat -f '%m %z %N' {} \; | sort > "$SCR
 diff "$SCRATCH/usb-verify/pioneer-before.txt" "$SCRATCH/usb-verify/pioneer-after.txt" && echo "~/Library/Pioneer untouched by Surco"
 ```
 
-Expected: no diff, or only files rekordbox itself writes while open (`master.db-wal`, `master.db-shm`, logs); list any other line in the note and stop if one is Surco's doing.
+Expected: no diff, or only files rekordbox itself writes while open (`master.db-wal`, `master.db-shm`, logs, and whatever Vicent's own actions in rekordbox during Step 7a changed, such as the track he added to Makina); list any other line in the note and stop if one is Surco's doing.
 
 - [ ] **Step 8: Vicent's hardware checklist**
 
@@ -7578,7 +8116,8 @@ Hand Vicent the stick with BASES/Makina exported by Surco, and this list (CDJ-30
 10. Búsqueda por título y por artista ("K-Style").
 11. Suena de principio a fin y el salto a hot cue cae en su sitio.
 12. Exportar desde Surco una playlist más al mismo USB: tarda segundos y el equipo ve las dos.
-13. Si algo falla, modelo, firmware y foto de la pantalla.
+13. El USB que sale del paso 7a (Surco y rekordbox por turnos) se ve igual que uno solo de rekordbox.
+14. Si algo falla, modelo, firmware y foto de la pantalla.
 
 - [ ] **Step 9: The Windows checklist, for a Windows user**
 
@@ -7598,7 +8137,7 @@ There is no Windows machine here. Write this list (Spanish, for Vicent to pass o
 
 - [ ] **Step 10: Write the verdict and commit**
 
-Add to `docs/export-usb-medidas.md` a section "Verificación (fecha)" with the times of Steps 3 and 5, each Step's expected-versus-seen, the hardware answers per model and firmware, the Windows checklist (and its answers when they come back), and the verdict. Any failed check is a bug to fix (with its red test) before merging, not a note. Windows stays "pendiente de verificar" until the checklist comes back.
+Add to `docs/export-usb-medidas.md` a section "Verificación (fecha)" with the times of Steps 3 and 5, each Step's expected-versus-seen (Step 7a's six sub-steps and the answer to the `Timestamp` question included), the hardware answers per model and firmware, the Windows checklist (and its answers when they come back), and the verdict. Any failed check is a bug to fix (with its red test) before merging, not a note. Windows stays "pendiente de verificar" until the checklist comes back.
 
 ```bash
 git add docs/export-usb-medidas.md

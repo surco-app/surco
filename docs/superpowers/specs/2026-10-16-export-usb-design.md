@@ -5,6 +5,10 @@ Viene del spike de las fases 1 y 2 (`usb-spike/findings.md` en el scratchpad de 
 resumido en `docs/export-usb-medidas.md` en la tarea 1 del plan). El USB que escribió el spike
 con baken se probó en sus reproductores y "funciona perfectamente".
 
+**Actualizada el 18/10** con la convivencia con rekordbox en el mismo USB (sección "Convivencia
+con rekordbox", decisiones 15 a 22): medida y probada en rekordbox 7.2.19 sobre el USB de
+pruebas, cambia las decisiones 4 y 10 y suma tres parches de baken.
+
 ## El caso
 
 Vicent pincha con CDJ-2000, CDJ-3000, CDJ-3000X y XDJ-AZ. Preparar un USB con rekordbox es
@@ -16,6 +20,8 @@ cambia nada de su colección. Quiere:
    memory cues, carátula, clave y BPM, como uno de rekordbox.
 3. Que la segunda vez sea casi instantánea: solo copia lo que cambió.
 4. Ver cómo avanza sin quedarse mirando una barra muda, y poder seguir trabajando.
+5. (16/10, tras el spike) Poder sincronizar **el mismo USB** desde Surco o desde rekordbox,
+   el que tenga a mano, sin que ninguno rompa lo que hizo el otro.
 
 ## Medido en el spike (16/10)
 
@@ -40,6 +46,50 @@ cambia nada de su colección. Quiere:
 - La salida de baken para humanos es una barra de `indicatif` que desaparece cuando la salida no
   es una terminal. No hay nada que Surco pueda leer para enseñar el progreso.
 
+## Convivencia con rekordbox (16/10 a 18/10)
+
+Objetivo: el mismo USB se sincroniza desde Surco o desde rekordbox, el que Vicent tenga a
+mano. Medido en rekordbox 7.2.19 sobre el USB de pruebas (UUID
+`B10C96EF-51C2-344E-B78D-DAFC319D973E`), con las notas, volcados y scripts en el scratchpad de
+la sesión (`usb-coexist/`: `analisis.md`, `rebuild.md`, `crash-analysis.md`,
+`crashtools/fix_txmask.py`, `work-final/`).
+
+**Lo que pasó con el USB de baken tal cual.**
+- La primera sincronización de rekordbox "no exportó" nada porque el NAS estaba desmontado
+  (el AutoMounter lo desmonta al cambiar de red, `unmountOnInterfaceChange = 1`): `[1] The
+  file doesn't exist` era literal. rekordbox adoptó las playlists de Surco (sus `Dev_ID`) pero
+  **vació Makina** en el USB, y al salir se colgó dejando `exportLibrary.db-wal` y `-shm` sin
+  aplicar.
+- Con el NAS montado, rekordbox **se colgó dos veces de dos** al sincronizar sobre el
+  `export.pdb` de baken (corrupción de memoria en su motor DeviceSQL, al borrar o insertar
+  filas en páginas escritas por baken). Sobre el `export.pdb` de rekordbox, la misma
+  sincronización no se cuelga.
+- **Causa**: cada página de datos guarda la "última escritura" (recuento en `+0x20`, índice
+  de la primera fila en `+0x22`, y una máscara en el u16 que sigue a la presencia de cada
+  grupo de filas). En todo lo que escribe rekordbox (y en 680 páginas reales de los tests de
+  rekordcrate) el recuento es el número de bits de la máscara y el índice su bit más bajo.
+  baken pone recuento 1 e índice n−1 pero la máscara con todas las filas. 10 páginas
+  incoherentes en el USB de baken, 0 en el de rekordbox. Arreglarlo cambia 13 bytes
+  (`fix_txmask.py`).
+
+**Lo que necesita rekordbox para reconocer el USB como suyo**, sacado de su propia exportación:
+DBID de la colección en cada pista (`export.pdb` y OneLibrary), `djmdContent.ID` en la fila
+de pista, `myTagMasterDBID` y las My Tags, y los dos `.sync` (deterministas desde
+`master.db` y `masterPlaylists6.xml`).
+
+**Probado, 18/10, con todo lo anterior aplicado** (`fix_txmask` + identidad + `.sync` +
+`exportExt.pdb`, `gcred.dat` y `DEVSETTING.DAT` conservados):
+- rekordbox sincroniza encima de una exportación de Surco: añade la pista nueva a Makina,
+  copia solo el audio nuevo, no se cuelga y sale limpio.
+- Surco exporta encima de lo que rekordbox sincronizó, y el USB sigue valiendo para los dos
+  (rbsync, rekordcrate y pyrekordbox sin problemas, `.sync` idénticos a los de rekordbox).
+- `~/Library/Pioneer` sin cambios por Surco en todas las pruebas.
+
+**Sin resolver**: una vez rekordbox escribió en el `.sync` el `updated_at` de la playlist en
+lugar del `Timestamp` de `masterPlaylists6.xml` (decisión 18); no está medido qué haría
+rekordbox si las filas del USB llevaran el tamaño real del audio en vez del de `master.db`
+(se probó con el de `master.db`, decisión 16); no está medido si mira la fecha del audio.
+
 ## Decisiones
 
 1. **Enfoque A, baken como binario auxiliar**, igual que ffmpeg. Surco lee `master.db` en solo
@@ -60,6 +110,11 @@ cambia nada de su colección. Quiere:
      también SIGINT/SIGTERM en macOS) marca la cancelación, baken termina la pista que copia y
      para sin escribir `export.pdb`. La entrada estándar sirve igual en Windows, donde un
      proceso hijo no recibe SIGINT.
+   - **Máscara de la última escritura** de cada página de `export.pdb` (decisión 15).
+   - **Identidad de la colección**: IDs y DBID de rekordbox en pistas y playlists, en
+     `export.pdb` y en OneLibrary (decisión 16).
+   - **No borrar lo de rekordbox**: `exportExt.pdb` se queda, y el audio copiado lleva la
+     fecha de su origen (decisión 4).
    Mientras baken no los publique, Surco compila baken desde la etiqueta `v4.6.1` más sus
    parches, dentro del propio build de cada plataforma (CI y local, con el mismo script y una
    versión de Rust fijada). No se publican binarios sueltos en `surco-releases`: una release
@@ -70,12 +125,25 @@ cambia nada de su colección. Quiere:
    así que Surco enmascara PVDI en la copia de trabajo de los análisis antes de pasársela. Es
    código de Surco, con tests, y no frena las exportaciones siguientes. Retocar los ANLZ ya
    escritos en el USB sí las frenaría: baken compara byte a byte y los reescribiría cada vez.
-4. **Lo que queda en el USB y lo que se sustituye.** Surco solo escribe dentro de `PIONEER/` y
-   `Contents/` en la raíz del volumen, y solo lo hace baken.
+4. **Lo que queda en el USB y lo que se sustituye** (cambiada el 18/10). Solo se escribe dentro
+   de `PIONEER/` y `Contents/` en la raíz del volumen: el audio, los análisis y las bases de
+   datos los escribe baken; Surco solo los dos ficheros de sync y la limpieza de abajo.
    - Se sustituyen siempre, al final y por escritura atómica (fichero `.tmp` al lado y rename
-     encima), `PIONEER/rekordbox/export.pdb` y `exportLibrary.db`. Se borran
-     `exportLibrary.db-wal`, `-shm` y `exportExt.pdb` de una exportación anterior de rekordbox,
-     porque si quedan los equipos OneLibrary enseñan la biblioteca vieja.
+     encima), `PIONEER/rekordbox/export.pdb`, `exportLibrary.db`, `playlists3.sync` y
+     `playlists3Plus.sync`.
+   - Antes de lanzar baken, Surco borra en `PIONEER/rekordbox/` solo `exportLibrary.db-wal`,
+     `exportLibrary.db-shm`, `sync.temp` y `sync.devlibplus.temp`: un WAL viejo junto a una
+     base nueva le reaplicaría páginas ajenas y la corrompería (el USB de pruebas quedó así
+     cuando rekordbox se colgó al salir).
+   - **Se quedan como los dejó rekordbox** `exportExt.pdb`, `DEVSETTING.DAT`,
+     `extracted/gcred.dat`, `RBFLTR.DAT` y `TrashBox` (estos dos, del CDJ-3000X). Antes se
+     borraba `exportExt.pdb`; la prueba de convivencia mostró que rekordbox lo espera y que
+     conservarlo no estorba. Lleva las My Tags de rekordbox; Surco no lo regenera (no hay
+     escritor de esa tabla) y en su colección no hay ninguna My Tag asignada a pistas. Un USB
+     sin él (vacío o de Surco antes del 18/10) se queda sin él hasta que rekordbox lo cree.
+   - El audio que copia baken lleva la fecha de modificación de su origen, como las copias de
+     rekordbox (parche). Es lo que tenía el USB con el que se probó la convivencia; no está
+     medido si rekordbox lo mira.
    - **My Settings solo si se pide**: casilla "Copiar My Settings" (apagada, se recuerda por
      USB). Encendida, se copian los de rekordbox del ordenador (`MYSETTING*.DAT`,
      `DJMMYSETTING.DAT`, `djprofile.nxs`), salvo los que un reproductor guardó en el USB, que
@@ -111,9 +179,11 @@ cambia nada de su colección. Quiere:
    `export.pdb` tras escribirlo, y las casillas de borrar y de My Settings. Por clave
    `volume:<id>` o `folder:<ruta real>`. No va en `settings.json` porque no tiene sentido en
    otra máquina y puede crecer a miles de IDs.
-10. **Quién escribió el USB.** `exportExt.pdb` presente = rekordbox (baken lo borra siempre).
-    Si no, y `export.pdb` tiene el tamaño y la fecha que guardó la memoria = Surco. Si no hay
-    `export.pdb` = vacío. Cualquier otro caso = "tiene una exportación" con su fecha.
+10. **Quién escribió el USB** (cambiada el 18/10, porque Surco ya no borra `exportExt.pdb` y
+    escribe los `.sync`). Sin `export.pdb` = vacío. Si `export.pdb` tiene el tamaño y la fecha
+    que guardó la memoria = Surco. Si no, y hay `exportExt.pdb` o `playlists3.sync` =
+    rekordbox (lo exportó o sincronizó encima de lo de Surco). Cualquier otro caso = "tiene una
+    exportación" con su fecha. El orden importa: la comprobación de Surco va primero.
 11. **Siempre OneLibrary, siempre análisis.** `--onelibrary` siempre (CDJ-3000X y XDJ-AZ solo
     leen eso). `--generate-analysis` siempre: una pista sin analizar en rekordbox sale con onda
     calculada por baken en vez de quedarse sin onda.
@@ -125,6 +195,61 @@ cambia nada de su colección. Quiere:
     traducen; el texto en inglés de baken solo va al registro.
 14. **Plataformas: macOS y Windows**, Linux fuera. En Windows la función aparece igual que en
     macOS cuando hay colección de rekordbox (`%APPDATA%\Pioneer\rekordbox\master.db`).
+15. **Máscara de la última escritura en `export.pdb`, como rekordbox.** Es la causa de los
+    cuelgues de rekordbox al sincronizar sobre un USB de Surco (ver "Convivencia"). En cada
+    página de datos de las tablas normales, recuento 1, índice n−1 y en la máscara solo el
+    bit de la última fila, en el último grupo de filas (0 en los demás). Las tablas fijas
+    (colores, columnas) siguen con recuento n, índice 0 y máscara igual a la presencia, que
+    también es coherente. Va en baken (parche), no como arreglo posterior: es un fallo de
+    baken que afecta a cualquier USB que luego toque rekordbox.
+16. **El USB lleva la identidad de la colección**, como el de rekordbox:
+    - fila de pista de `export.pdb`: en `+0x14` el `djmdContent.ID` (baken ponía 21, 22…), en
+      `+0x18` el `djmdProperty.DBID`; tamaño el `FileSize` de `master.db`, aunque esté
+      desfasado, como rekordbox (decisión tomada para repetir lo probado; el XML de baken
+      sigue llevando el tamaño real, que es el que usa para decidir qué copia);
+    - OneLibrary: `content.masterDbId` = `djmdProperty.DBID` (baken ponía la constante
+      3933607398), `content.fileSize` igual que arriba, `property.myTagMasterDBID` =
+      `djmdCloudProperty.ID` (la fila `SyncService`/`Google` en su colección), y las filas de
+      `myTag` desde `djmdMyTag` (`myTag_id` = ID, `sequenceNo` = Seq − 1, `attribute`, padre 0
+      en la raíz);
+    - IDs de playlist del USB **estables** (decisión 17).
+17. **IDs de playlist del USB estables entre exportaciones**, de Surco o de rekordbox. Surco
+    lee el `playlists3.sync` del USB: cada playlist que ya estaba conserva su `Dev_ID`; las
+    nuevas toman el mayor más uno, en el orden del árbol. Sin fichero, 1..N en el orden del
+    árbol (lo de hoy). baken los recibe por playlist en el XML (parche).
+18. **Surco escribe `playlists3.sync` y `playlists3Plus.sync`**, idénticos entre sí y a los
+    de rekordbox (comprobado byte a byte): CRLF; cabecera
+    `<Sync DBID="<DBID como int32 con signo>" AutomaticSync="1" AllPlaylists="0" IncludeCue="1" ForcedSync="0" Timestamp="0">`;
+    nodo raíz `Id="0" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="0" Timestamp="0" CheckType="2"`;
+    un nodo por carpeta y playlist exportada con `Id`/`ParentId` = ID de `master.db` en hex
+    mayúsculas, `Attribute` 1 carpeta y 0 playlist, `Dev_ID` = ID en el USB, `CheckType` 2
+    carpeta y 1 playlist, y `Timestamp` = el del mismo nodo en `masterPlaylists6.xml` (si el
+    nodo no está, `updated_at` en ms). Se escriben después de que baken termine bien, nunca
+    en una exportación cancelada o fallida. **Pregunta abierta**: una vez rekordbox escribió
+    en el `.sync` el `updated_at` de la playlist en vez del `Timestamp` del XML (USB del
+    18/10, Makina 1790869744796). La verificación de doble sentido comprueba que con el del
+    XML rekordbox no ve cambios fantasma ni deja de ver los de verdad.
+19. **Lo que rekordbox añade al sincronizar se regenera, no se conserva.** Lo medido que añade
+    (carátulas de WAV que baken no extraía) lo pone ahora Surco con `--artwork-dir`, así que
+    el USB que deja Surco tiene lo mismo. La verificación compara OneLibrary antes y después
+    por `masterContentId`; si algo de rekordbox se pierde y Surco no lo regenera, es un fallo
+    que se arregla antes de cerrar.
+20. **Exportar con rekordbox abierto no.** La pasada en seco y el resumen sí (solo leen),
+    pero Exportar con rekordbox abierto saca el diálogo de hoy ("rekordbox está abierto",
+    Cerrar rekordbox / Cancelar). Razón: los `.sync` dicen `AutomaticSync="1"` y rekordbox
+    escribe en el USB cuando lo ve montado; dos escritores a la vez sobre `export.pdb` es la
+    clase de fallo que la decisión 15 acaba de arreglar.
+21. **Sin música no se exporta.** Antes de preparar nada, Surco mira que exista la raíz de
+    cada volumen del que salen las pistas (`/Volumes/Public`, `E:\`). Si falta alguna, no
+    exporta: "No se encuentra Public, donde está la música de 7 pistas. Móntalo y vuelve a
+    exportar." Durante la copia vigila esas raíces cada segundo, como el USB, y cancela entre
+    pistas si una desaparece. Tampoco exporta si una playlist elegida se quedaría vacía
+    porque no se encuentra ninguna de sus pistas, aunque el volumen esté. Lección del 16/10: el
+    AutoMounter de macOS desmontó el NAS a mitad y rekordbox vació la playlist del USB.
+22. **Una sola escritora por pasada**, nunca dos programas a la vez sobre el USB, y cada una
+    reconstruye su parte respetando la identidad de la otra. Surco nunca edita en su sitio lo
+    que escribió rekordbox (rekordbox borra filas marcando páginas; imitarlo es frágil):
+    reconstruye con los IDs de arriba, que para rekordbox es lo mismo.
 
 ## Qué se ve
 
@@ -153,15 +278,22 @@ Dos columnas.
   - Cada fila, nombre, capacidad y libre ("29,3 GB · 21,4 GB libres"), sistema de ficheros
     (FAT32, exFAT, HFS+, NTFS) y qué lleva ("exportado por rekordbox el 16/10 08:27",
     "exportado por Surco hoy 09:12", "vacío").
-  - Se preselecciona el único, o el último usado. Al elegir un USB que Surco ya exportó, el
-    árbol y las casillas quedan como la última vez, de forma que basta con pulsar Exportar.
+  - Se preselecciona el único, o el último usado. Al elegir un USB, el árbol queda marcado
+    con las playlists que el USB lleva según su `playlists3.sync` (lo último que sincronizó
+    cualquiera de los dos programas) y, si no tiene, con las que recuerda Surco; las
+    casillas, como la última vez. Basta con pulsar Exportar, y lo que rekordbox añadió al USB
+    no se pierde por no marcarlo.
   - Sin USB, "Conecta un USB" en su lugar. "Otro destino…" abre un selector de carpeta
     (decisión 8).
 - **Derecha**, abajo, el resumen, que se recalcula al marcar (sin escribir nada).
   - "N pistas" y "X nuevas · 1,2 GB" y "Y ya están" y "Z quitadas desde la última vez".
   - Avisos, uno por línea, solo si aplican.
-    - "Este USB lo exportó rekordbox. Su biblioteca se sustituye por esta; la música que ya
-      está se aprovecha."
+    - "Este USB lo sincronizó rekordbox por última vez. Surco lo rehace con estas playlists y
+      aprovecha la música que ya está." (antes decía que se sustituía su biblioteca; ahora se
+      conserva su identidad, decisión 22)
+    - "No se encuentra Public, donde está la música de 7 pistas. Móntalo y vuelve a
+      exportar." (Exportar se deshabilita, decisión 21.)
+    - "rekordbox está abierto. Se te pedirá cerrarlo al exportar." (decisión 20)
     - "exFAT. El CDJ-2000 no lo lee." y "GPT. El CDJ-2000 y los NXS2 no lo leen." y "NTFS. Los
       reproductores no lo leen."
     - "3 pistas puede que no suenen en un CDJ-2000" (32 bits, más de 48 kHz, FLAC), con un
@@ -245,6 +377,7 @@ bytes (cada 250 ms para la fila que se copia).
 | `bakenRun.ts` | argumentos con guardas, lanzar baken, leer sus líneas JSON, pedir cancelar por la entrada estándar |
 | `usbVolumes.ts` + `windowsVolumes.ps1` | volúmenes extraíbles (`diskutil` en macOS, PowerShell en Windows), vigilancia, qué lleva cada uno |
 | `usbExportMemory.ts` | `usb-exports.json` |
+| `rekordboxStickSync.ts` | identidad de la colección (DBID, `djmdCloudProperty`, My Tags, `FileSize`); leer y escribir `playlists3.sync`; `Dev_ID` estables; `Timestamp` desde `masterPlaylists6.xml`; limpieza previa del USB |
 | `usbExport.ts` + `usbExportIpc.ts` | resumen (baken `--dry-run --json`), comprobaciones, exportar, progreso, memoria |
 
 IPC: `usb:volumes`, `usb:volumesChanged` (evento), `usb:pickFolder`, `usb:plan`, `usb:export`,
@@ -281,17 +414,27 @@ la raíz del sistema (`/`, `%SystemDrive%\`) ni la carpeta del usuario.
 - Carpetas de rekordbox como `NODE Type="0"`, playlists como `Type="1" KeyType="0"`, en el
   orden de rekordbox, solo las elegidas y las carpetas que las contienen.
 
+**La identidad, en la carpeta de trabajo.** Surco lee de `master.db` (solo lectura)
+`djmdProperty.DBID`, el ID de `djmdCloudProperty`, `djmdMyTag` y el `FileSize` de cada pista,
+y del USB su `playlists3.sync`, y deja `master-ids.json` en la carpeta de trabajo; el XML
+lleva el `Dev_ID` de cada playlist. baken los recibe con `--master-ids` (parche). Lee también
+`masterPlaylists6.xml` (solo lectura) para los `Timestamp`.
+
 **La exportación.**
 1. Reservar la exportación (una a la vez).
-2. Leer de `master.db` y preparar la carpeta de trabajo.
-3. Comprobar que el punto de montaje o la letra siguen siendo el volumen elegido, apuntar su
+2. Comprobar que rekordbox está cerrado (si no, el diálogo de hoy) y que existen las raíces de
+   los volúmenes de la música.
+3. Leer de `master.db` y preparar la carpeta de trabajo, con la identidad.
+4. Comprobar que el punto de montaje o la letra siguen siendo el volumen elegido, apuntar su
    `dev`, y con "Otro destino" que la carpeta está en un volumen extraíble.
-4. Pasada en seco de baken: que el destino de un volumen sea su raíz y que quepa.
-5. Lanzar baken con `--json`. Mientras copia una pista, Surco mira cada 250 ms el tamaño del
+5. Pasada en seco de baken: que el destino de un volumen sea su raíz y que quepa.
+6. Limpiar en el USB el WAL, el shm y los `sync*.temp` de `PIONEER/rekordbox/`.
+7. Lanzar baken con `--json`. Mientras copia una pista, Surco mira cada 250 ms el tamaño del
    fichero de destino (baken lo escribe en su sitio a trozos de 4 MB) para la fila y los MB/s,
-   y cada segundo el `dev` del destino.
-6. Al evento "escribiendo base de datos", Cancelar desaparece.
-7. Informe: guardar la memoria del USB (con tamaño y fecha del `export.pdb` nuevo) y avisar.
+   y cada segundo el `dev` del destino y las raíces de la música.
+8. Al evento "escribiendo base de datos", Cancelar desaparece.
+9. Si baken termina bien, escribir `playlists3.sync` y `playlists3Plus.sync` (atómicos).
+10. Informe: guardar la memoria del USB (con tamaño y fecha del `export.pdb` nuevo) y avisar.
 
 ### Renderer
 
@@ -346,6 +489,11 @@ interface UsbPlan {
 | La colección no se lee | el modal dice por qué, como el árbol | nada |
 | Cancelar | "Cancelando…" y luego "Cancelado. El USB tiene su biblioteca anterior." | la biblioteca anterior, sin audio a medias |
 | Doble clic en Exportar | una sola exportación | lo de una exportación |
+| rekordbox abierto al exportar | el diálogo de hoy; con Cancelar no se exporta | nada cambia |
+| Volumen de la música desmontado antes de empezar | "No se encuentra Public, donde está la música de 7 pistas. Móntalo y vuelve a exportar." | nada cambia |
+| Volumen de la música desmontado a mitad | "Se desmontó Public a mitad. El USB tiene su biblioteca anterior." | la biblioteca anterior, sin audio a medias |
+| Una playlist se quedaría vacía | "No se encuentra ninguna pista de Makina." Nada se lanza | nada cambia |
+| No se pueden escribir los `.sync` tras baken | "El USB quedó bien para los reproductores, pero rekordbox puede no reconocer sus playlists. Exporta otra vez." | la biblioteca nueva con los `.sync` anteriores |
 
 Los errores viajan del main como códigos (`reason`), no como texto, y se traducen en el renderer.
 
@@ -369,7 +517,20 @@ Los errores viajan del main como códigos (`reason`), no como texto, y se traduc
   hecha, ya estaba, error, cancelando; movimiento reducido sin transición), almacén, píldora y
   aviso al conectar. Selectores `data-testid`.
 - **Parches de baken**: `cargo test` de baken con los tests nuevos de cada parche, también en
-  CI al compilarlo (incluido cancelar entre pistas sin dejar audio a medias).
+  CI al compilarlo (incluido cancelar entre pistas sin dejar audio a medias). Los nuevos:
+  toda página de datos escrita cumple recuento = bits de la máscara e índice = bit más bajo
+  (y la página de 7 entradas de playlist sale con 1, 6 y `0x40`, como la de rekordbox); la
+  fila de pista lleva el ID de la colección y el DBID; OneLibrary lleva `masterDbId`,
+  `fileSize`, `myTagMasterDBID` y las My Tags del fichero de identidad; un `Dev_ID` del XML se
+  respeta en `export.pdb` y en OneLibrary; `exportExt.pdb` sigue tras exportar; el audio
+  copiado lleva la fecha del origen.
+- **Convivencia, en Surco**: el `.sync` generado es byte a byte el de rekordbox de la prueba
+  (fixture con CRLF); DBID con signo; `Dev_ID` estables al añadir y quitar playlists; el
+  `Timestamp` sale del XML y, sin nodo, de `updated_at`; la limpieza borra solo los cuatro
+  nombres; quién escribió el USB con el orden nuevo; exportar se niega con rekordbox abierto,
+  con un volumen de música sin montar y con una playlist que quedaría vacía; un volumen de
+  música que desaparece a mitad cancela; los `.sync` no se escriben si baken falla o se
+  cancela.
 - **Verificación en el USB de pruebas** (UUID `B10C96EF-51C2-344E-B78D-DAFC319D973E`, el único
   volumen extraíble conectado) desde la app empaquetada en macOS: exportar BASES/Makina,
   repetir sin cambios, añadir y quitar una playlist, cancelar a mitad, desenchufar a mitad.
@@ -394,11 +555,25 @@ Los errores viajan del main como códigos (`reason`), no como texto, y se traduc
   11. Suena de principio a fin y el salto a hot cue cae en su sitio.
   12. Segunda exportación con una playlist más: tarda segundos y el reproductor ve las dos.
   13. Si algo falla, modelo, firmware y foto de la pantalla.
+- **Doble sentido con rekordbox real** (Vicent, en el USB de pruebas, con el NAS montado y el
+  AutoMounter vigilado), antes de dar la función por buena:
+  1. Surco exporta BASES/Makina. rekordbox abre el USB sin avisos de inconsistencia.
+  2. En rekordbox, añadir una pista a Makina y sincronizar: añade la pista, copia solo su
+     audio (el resto "ya está"), no se cuelga y sale limpio (sin `-wal` ni `-shm` en el USB).
+  3. Surco exporta otra vez sin cambiar nada: el árbol sale marcado como lo dejó rekordbox,
+     la pista que añadió rekordbox está, los `Dev_ID` no cambian, las carátulas de WAV
+     siguen, y en OneLibrary nada de lo que añadió rekordbox se pierde.
+  4. rekordbox sincroniza otra vez sin cambios: no copia nada y no ve playlists cambiadas
+     (la pregunta abierta del `Timestamp`).
+  5. Añadir en Surco una playlist y exportar; rekordbox la reconoce como sincronizada.
+  6. El USB final en CDJ-3000X y XDJ-AZ: las dos playlists con todas sus pistas.
 
 ## Fuera de alcance
 
 Linux; Windows arm64; el port de baken a TS; formatear el USB; `--cdjsafe` (convertir a MP3
-al exportar); proteger un USB de rekordbox (descartado por Vicent); My Tag y `exportExt.pdb`;
+al exportar); proteger un USB de rekordbox (descartado por Vicent); escribir `exportExt.pdb` (se conserva
+el de rekordbox) y llevar al USB las My Tags asignadas a pistas; editar en su sitio lo que
+escribió rekordbox;
 historial del reproductor de vuelta a rekordbox; colores de hot cue asignados a mano en
 rekordbox (se exportan con el color por defecto de su letra; la tarea 1 cuenta cuántos hay);
 exportar desde Engine DJ, Traktor o la lista de trabajo; varias exportaciones a la vez; abrir
