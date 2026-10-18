@@ -6,10 +6,10 @@ Subject: [PATCH 2/6] Take artwork from a folder of pictures named by TrackID
 ---
  crates/baken-export/src/artwork.rs   |  9 +++++++++
  crates/baken-export/src/lib.rs       | 11 ++++++++++-
- crates/baken-export/tests/artwork.rs | 17 +++++++++++++++++
+ crates/baken-export/tests/artwork.rs | 20 ++++++++++++++++++++
  crates/baken/src/args.rs             |  5 +++++
  crates/baken/src/expressport.rs      |  1 +
- 5 files changed, 42 insertions(+), 1 deletion(-)
+ 5 files changed, 45 insertions(+), 1 deletion(-)
 
 diff --git a/crates/baken-export/src/artwork.rs b/crates/baken-export/src/artwork.rs
 index 6bb65f7..acf62c6 100644
@@ -75,10 +75,10 @@ index 57d6848..998fd10 100644
      Ok(prepared)
  }
 diff --git a/crates/baken-export/tests/artwork.rs b/crates/baken-export/tests/artwork.rs
-index 744cb20..5f4e27f 100644
+index 744cb20..68eb06f 100644
 --- a/crates/baken-export/tests/artwork.rs
 +++ b/crates/baken-export/tests/artwork.rs
-@@ -129,6 +129,23 @@ fn the_cover_goes_onto_the_stick_as_rekordbox_writes_it() {
+@@ -129,6 +129,26 @@ fn the_cover_goes_onto_the_stick_as_rekordbox_writes_it() {
      std::fs::remove_dir_all(&root).unwrap();
  }
  
@@ -94,7 +94,10 @@ index 744cb20..5f4e27f 100644
 +    opts.artwork_dir = Some(dir);
 +    let report = export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
 +    assert!(report.failures.is_empty(), "{:?}", report.failures);
-+    assert_eq!(report.artwork, 2, "the plain track gets the folder's picture");
++    assert_eq!(
++        report.artwork, 2,
++        "the plain track gets the folder's picture"
++    );
 +    assert!(art(&opts, "a2.jpg").exists());
 +    std::fs::remove_dir_all(&root).unwrap();
 +}

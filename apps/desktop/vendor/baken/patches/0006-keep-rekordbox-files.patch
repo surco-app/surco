@@ -5,14 +5,14 @@ Subject: [PATCH 6/6] Keep rekordbox's extension tables and the source's date
  on the stick
 
 ---
- crates/baken-export/src/lib.rs          | 57 +++++++++++++---
- crates/baken-export/tests/onelibrary.rs | 87 +++++++++++++++++++++++++
- crates/baken/src/args.rs                |  5 ++
- crates/baken/src/expressport.rs         |  1 +
- 4 files changed, 142 insertions(+), 8 deletions(-)
+ crates/baken-export/src/lib.rs          |  60 +++++++++++---
+ crates/baken-export/tests/onelibrary.rs | 104 ++++++++++++++++++++++++
+ crates/baken/src/args.rs                |   5 ++
+ crates/baken/src/expressport.rs         |   1 +
+ 4 files changed, 160 insertions(+), 10 deletions(-)
 
 diff --git a/crates/baken-export/src/lib.rs b/crates/baken-export/src/lib.rs
-index f84c8c9..49e5d1c 100644
+index f84c8c9..f00d887 100644
 --- a/crates/baken-export/src/lib.rs
 +++ b/crates/baken-export/src/lib.rs
 @@ -72,6 +72,9 @@ pub struct Options {
@@ -56,7 +56,17 @@ index f84c8c9..49e5d1c 100644
      /// [`Options::artwork`]: tracks that got artwork, which are also the
      /// artwork ids handed out (1 to this).
      pub artwork: usize,
-@@ -460,6 +471,7 @@ pub fn plan(opts: &Options) -> Result<Plan> {
+@@ -390,8 +401,7 @@ pub fn plan(opts: &Options) -> Result<Plan> {
+         (None, None)
+     };
+     let rb_dir = opts.device.join("PIONEER/rekordbox");
+-    let onelibrary_files = ONELIBRARY_FILES
+-        .into_iter()
++    let onelibrary_files = removable(opts.keep_rekordbox_ext)
+         .filter(|f| rb_dir.join(f).symlink_metadata().is_ok())
+         .collect();
+ 
+@@ -460,6 +470,7 @@ pub fn plan(opts: &Options) -> Result<Plan> {
          artwork: opts.artwork,
          artwork_dir: opts.artwork_dir.clone(),
          identity: opts.identity.clone(),
@@ -64,7 +74,7 @@ index f84c8c9..49e5d1c 100644
      })
  }
  
-@@ -966,13 +978,15 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+@@ -966,13 +977,15 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
          path: pdb_path,
          err,
      })?;
@@ -83,7 +93,7 @@ index f84c8c9..49e5d1c 100644
      }
  
      if let Some(dir) = &plan.settings_dir {
-@@ -1020,8 +1034,8 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
+@@ -1020,8 +1033,8 @@ pub fn export(plan: &Plan, progress: &dyn Progress, cancel: &CancelToken) -> Res
  /// since an error would lose the report of a run that has written
  /// `export.pdb`. Their `._` files go with the `PIONEER/rekordbox` walk at the
  /// end of [`export`], under the rules of #192.
@@ -94,7 +104,7 @@ index f84c8c9..49e5d1c 100644
          match fsname::remove_file(&rb_dir.join(name)) {
              Ok(()) => report.onelibrary_removed += 1,
              Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-@@ -1035,8 +1049,13 @@ fn remove_onelibrary(rb_dir: &Path, report: &mut Report) {
+@@ -1035,8 +1048,13 @@ fn remove_onelibrary(rb_dir: &Path, report: &mut Report) {
  /// `-shm` go first: SQLite would replay an old write-ahead log into the new
  /// database. `exportExt.pdb` goes too, since it lists rekordbox's My Tags for
  /// rekordbox's track ids.
@@ -110,7 +120,7 @@ index f84c8c9..49e5d1c 100644
          match fsname::remove_file(&rb_dir.join(name)) {
              Ok(()) => report.onelibrary_removed += 1,
              Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-@@ -1047,6 +1066,14 @@ fn replace_onelibrary(rb_dir: &Path, db: &[u8], report: &mut Report) -> anyhow::
+@@ -1047,6 +1065,14 @@ fn replace_onelibrary(rb_dir: &Path, db: &[u8], report: &mut Report) -> anyhow::
      fsname::write_atomic(&path, db).with_context(|| format!("writing {}", path.display()))
  }
  
@@ -125,7 +135,7 @@ index f84c8c9..49e5d1c 100644
  /// Hands out track indices to the workers that prepare tracks ahead of the
  /// writer, at most `window` beyond the last track written, so a slow stick
  /// does not pile up prepared tracks. Two workers already hide the decoding
-@@ -1368,6 +1395,11 @@ fn write_track(
+@@ -1368,6 +1394,11 @@ fn write_track(
          (Audio::Source, _) => {
              let size = copy_audio(&pt.source, &dest)?;
              report.copied += 1;
@@ -137,7 +147,7 @@ index f84c8c9..49e5d1c 100644
              size
          }
      };
-@@ -1504,6 +1536,15 @@ fn copy_audio(src: &Path, dst: &Path) -> anyhow::Result<u64> {
+@@ -1504,6 +1535,15 @@ fn copy_audio(src: &Path, dst: &Path) -> anyhow::Result<u64> {
      copied
  }
  
@@ -154,10 +164,10 @@ index f84c8c9..49e5d1c 100644
  /// was just decoded from (#167); a value rekordbox wrote always stays. The
  /// rules follow what rekordbox writes: MP3 the audio-frame rate, lossless the
 diff --git a/crates/baken-export/tests/onelibrary.rs b/crates/baken-export/tests/onelibrary.rs
-index 537c4ee..7017c72 100644
+index 537c4ee..3390804 100644
 --- a/crates/baken-export/tests/onelibrary.rs
 +++ b/crates/baken-export/tests/onelibrary.rs
-@@ -204,3 +204,90 @@ fn a_stale_log_that_stays_keeps_the_database_off_the_stick() {
+@@ -204,3 +204,107 @@ fn a_stale_log_that_stays_keeps_the_database_off_the_stick() {
      assert_eq!(report.tracks_in_database, 1);
      std::fs::remove_dir_all(&root).unwrap();
  }
@@ -190,6 +200,23 @@ index 537c4ee..7017c72 100644
 +    let (root, opts) = rekordbox_stick("drop-ext");
 +    export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
 +    assert!(left(&opts).is_empty(), "without the option all of them go");
++    std::fs::remove_dir_all(&root).unwrap();
++}
++
++/// The plan names what the export removes, and a front-end shows it before the run: with
++/// the option, `exportExt.pdb` is not among them.
++#[test]
++fn the_plan_does_not_list_a_kept_export_ext_pdb() {
++    let (root, mut opts) = rekordbox_stick("plan-keep-ext");
++    opts.keep_rekordbox_ext = true;
++    assert_eq!(
++        plan(&opts).unwrap().onelibrary_files,
++        [
++            "exportLibrary.db",
++            "exportLibrary.db-wal",
++            "exportLibrary.db-shm"
++        ]
++    );
 +    std::fs::remove_dir_all(&root).unwrap();
 +}
 +

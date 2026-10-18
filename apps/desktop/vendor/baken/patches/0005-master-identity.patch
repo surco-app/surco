@@ -7,7 +7,7 @@ Subject: [PATCH 5/6] Carry the rekordbox collection's identity and stable
 ---
  Cargo.lock                            |   2 +
  crates/baken-export/Cargo.toml        |   2 +
- crates/baken-export/src/build.rs      | 125 ++++++++++++++++++++++--
+ crates/baken-export/src/build.rs      | 132 ++++++++++++++++++++++++--
  crates/baken-export/src/collection.rs |  20 ++++
  crates/baken-export/src/identity.rs   |  46 +++++++++
  crates/baken-export/src/lib.rs        |  21 +++-
@@ -17,8 +17,8 @@ Subject: [PATCH 5/6] Carry the rekordbox collection's identity and stable
  crates/baken/src/args.rs              |   6 ++
  crates/baken/src/expressport.rs       |  10 +-
  crates/baken/src/json.rs              |   2 +-
- crates/baken/tests/master_ids.rs      | 113 ++++++++++++++++++++++
- 13 files changed, 474 insertions(+), 39 deletions(-)
+ crates/baken/tests/master_ids.rs      | 114 ++++++++++++++++++++++
+ 13 files changed, 482 insertions(+), 39 deletions(-)
  create mode 100644 crates/baken-export/src/identity.rs
  create mode 100644 crates/baken/tests/master_ids.rs
 
@@ -49,7 +49,7 @@ index b5e4f95..ad9243c 100644
  # Artwork: image decodes and scales the embedded picture, jpeg-encoder writes
  # the thumbnails with 4:2:0 chroma as rekordbox does (image's encoder is 4:4:4).
 diff --git a/crates/baken-export/src/build.rs b/crates/baken-export/src/build.rs
-index 095c680..1fd0bc7 100644
+index 095c680..0444b43 100644
 --- a/crates/baken-export/src/build.rs
 +++ b/crates/baken-export/src/build.rs
 @@ -1,11 +1,13 @@
@@ -106,7 +106,7 @@ index 095c680..1fd0bc7 100644
              artwork_id: dt.artwork_id,
              key_id,
              original_artist_id: 0,
-@@ -205,16 +223,29 @@ pub fn build(
+@@ -205,16 +223,30 @@ pub fn build(
              cur = library.playlists[c].parent;
          }
      }
@@ -120,7 +120,7 @@ index 095c680..1fd0bc7 100644
 +    }
      let mut node_id = vec![0u32; library.playlists.len()];
 -    let mut next = 1u32;
-+    let mut next = given.iter().max().map_or(1, |m| m + 1);
++    let mut next = given.iter().max().map_or(Some(1), |m| m.checked_add(1));
      let mut sibling_count: HashMap<Option<usize>, u32> = HashMap::new();
      let mut playlists = Vec::new();
      for (i, p) in library.playlists.iter().enumerate() {
@@ -132,14 +132,15 @@ index 095c680..1fd0bc7 100644
 +        node_id[i] = match p.device_id {
 +            Some(id) => id,
 +            None => {
-+                next += 1;
-+                next - 1
++                let id = next.context("no playlist id is left after the DeviceIds given")?;
++                next = id.checked_add(1);
++                id
 +            }
 +        };
          let sort = sibling_count.entry(p.parent).or_insert(0);
          let sort_order = *sort;
          *sort += 1;
-@@ -247,7 +278,7 @@ pub fn build(
+@@ -247,7 +279,7 @@ pub fn build(
          })
          .collect();
  
@@ -148,7 +149,7 @@ index 095c680..1fd0bc7 100644
          tracks: rows_out,
          artists: artists.rows,
          albums: albums_out,
-@@ -258,7 +289,7 @@ pub fn build(
+@@ -258,7 +290,7 @@ pub fn build(
          artworks,
          device_name: device_name.to_string(),
          export_date: export_date.to_string(),
@@ -157,7 +158,7 @@ index 095c680..1fd0bc7 100644
  }
  
  /// Today's date as `YYYY-MM-DD` (UTC), without pulling in a date crate.
-@@ -336,6 +367,82 @@ mod tests {
+@@ -336,6 +368,88 @@ mod tests {
          assert!(key_rows(&keyed(&["", "x"])).is_empty());
      }
  
@@ -212,6 +213,12 @@ index 095c680..1fd0bc7 100644
 +        assert_eq!(ids(&none).unwrap(), [1, 2, 3]);
 +        let twice = [node("A", r#" DeviceId="4""#), node("B", r#" DeviceId="4""#)].concat();
 +        assert!(ids(&twice).is_err());
++        // The last id there is: a playlist new to the stick has none left, which is an
++        // error rather than an id that wraps onto another playlist's.
++        let last = node("A", r#" DeviceId="4294967295""#);
++        assert_eq!(ids(&last).unwrap(), [u32::MAX]);
++        let full = [last, node("B", "")].concat();
++        assert!(ids(&full).is_err());
 +    }
 +
 +    /// rekordbox recognises a stick as its collection's by the track row's `+0x14`
@@ -773,10 +780,10 @@ index 37fb6a5..cc52dd4 100644
          Error::NotEnoughSpace { needed, available } => json!({
 diff --git a/crates/baken/tests/master_ids.rs b/crates/baken/tests/master_ids.rs
 new file mode 100644
-index 0000000..7ae283a
+index 0000000..2cbfd16
 --- /dev/null
 +++ b/crates/baken/tests/master_ids.rs
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,114 @@
 +//! `expressport --master-ids FILE`: the rekordbox collection's identity a front-end read
 +//! from rekordbox's database, which makes the stick rekordbox's own.
 +
@@ -885,8 +892,9 @@ index 0000000..7ae283a
 +    let stdout = String::from_utf8(out.stdout).unwrap();
 +    let lines: Vec<&str> = stdout.lines().collect();
 +    assert_eq!(lines.len(), 1, "{stdout}");
-+    assert!(lines[0].starts_with(r#"{"event":"error""#), "{stdout}");
-+    assert!(lines[0].contains(r#""kind":"other""#), "{stdout}");
++    let line: serde_json::Value = serde_json::from_str(lines[0]).unwrap();
++    assert_eq!(line["event"], "error", "{stdout}");
++    assert_eq!(line["kind"], "other", "{stdout}");
 +    assert_eq!(std::fs::read_dir(root.join("usb")).unwrap().count(), 0);
 +    std::fs::remove_dir_all(&root).unwrap();
 +}

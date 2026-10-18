@@ -157,7 +157,8 @@ baken's export of the same playlist (16-18/10/2026):
 The XML carries none of this. `--master-ids FILE` takes it as JSON
 (`dbId`, `myTagMasterDbId`, `myTags`, `fileSizes` by TrackID) and an optional
 `DeviceId="N"` on each XML `NODE` gives the playlist id to keep; nodes without one take
-the next free id in document order, and two nodes with the same id are an error. Without
+the next free id in document order, and two nodes with the same id, or a new node with
+no id left after `u32::MAX`, are an error. Without
 either, the stick is exactly what baken wrote before. A file that does not parse ends the
 run before anything is planned or written.
 
@@ -182,7 +183,8 @@ rekordbox's old library next to baken's new one. With the identity of the previo
 patch the stick is rekordbox's own library, and rekordbox expects to find the My Tag
 tables it wrote there when it syncs again; the coexistence run that rekordbox accepted
 kept the file. `--keep-rekordbox-ext` leaves it, and still removes a stale
-`exportLibrary.db-wal`/`-shm`, which SQLite would replay into the new database.
+`exportLibrary.db-wal`/`-shm`, which SQLite would replay into the new database. The plan
+no longer lists the kept file among those the export removes.
 
 The audio rekordbox copies onto a stick keeps its source's modification time, and the
 coexistence run reproduced that. The copy now sets it too; a filesystem that refuses is
@@ -195,5 +197,6 @@ In `tests/onelibrary.rs`:
 
 - `keep_rekordbox_ext_leaves_export_ext_pdb`: with and without `--onelibrary`, the file
   stays byte for byte and the log files go; without the option every file goes as before.
+- `the_plan_does_not_list_a_kept_export_ext_pdb`.
 - `copied_audio_carries_the_source_modification_time`: the copy's time matches the
   source's within FAT's two seconds, and a kept track's time stays.

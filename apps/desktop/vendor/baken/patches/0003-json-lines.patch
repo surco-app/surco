@@ -9,13 +9,13 @@ Subject: [PATCH 3/6] Report each track as JSON lines with --json and cancel
  crates/baken-core/src/lib.rs         |   2 +-
  crates/baken-core/src/progress.rs    |  19 +++
  crates/baken-export/src/lib.rs       |  17 ++-
- crates/baken-export/tests/artwork.rs |  95 ++++++++++++++-
+ crates/baken-export/tests/artwork.rs |  90 +++++++++++++-
  crates/baken/Cargo.toml              |   4 +
  crates/baken/src/args.rs             |   5 +
  crates/baken/src/expressport.rs      |   3 +
  crates/baken/src/json.rs             | 172 +++++++++++++++++++++++++++
  crates/baken/src/main.rs             |   2 +
- 10 files changed, 317 insertions(+), 4 deletions(-)
+ 10 files changed, 313 insertions(+), 3 deletions(-)
  create mode 100644 crates/baken/src/json.rs
 
 diff --git a/Cargo.lock b/Cargo.lock
@@ -128,7 +128,7 @@ index 998fd10..55b9322 100644
      let model = build::build(
          &plan.library,
 diff --git a/crates/baken-export/tests/artwork.rs b/crates/baken-export/tests/artwork.rs
-index 5f4e27f..42f1ea6 100644
+index 68eb06f..42f1ea6 100644
 --- a/crates/baken-export/tests/artwork.rs
 +++ b/crates/baken-export/tests/artwork.rs
 @@ -2,10 +2,11 @@
@@ -144,19 +144,7 @@ index 5f4e27f..42f1ea6 100644
  
  const FRAMES: u32 = 22050;
  
-@@ -141,7 +142,10 @@ fn a_picture_in_the_artwork_dir_goes_where_the_file_has_none() {
-     opts.artwork_dir = Some(dir);
-     let report = export(&plan(&opts).unwrap(), &(), &CancelToken::new()).unwrap();
-     assert!(report.failures.is_empty(), "{:?}", report.failures);
--    assert_eq!(report.artwork, 2, "the plain track gets the folder's picture");
-+    assert_eq!(
-+        report.artwork, 2,
-+        "the plain track gets the folder's picture"
-+    );
-     assert!(art(&opts, "a2.jpg").exists());
-     std::fs::remove_dir_all(&root).unwrap();
- }
-@@ -159,3 +163,90 @@ fn prune_removes_artwork_no_track_uses() {
+@@ -162,3 +163,90 @@ fn prune_removes_artwork_no_track_uses() {
      assert!(!opts.device.join("PIONEER/Artwork").join("00001").exists());
      std::fs::remove_dir_all(&root).unwrap();
  }
