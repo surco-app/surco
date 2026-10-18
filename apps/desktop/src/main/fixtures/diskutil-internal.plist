@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BusProtocol</key>
+	<string>Apple Fabric</string>
+	<key>Ejectable</key>
+	<false/>
+	<key>FilesystemType</key>
+	<string>apfs</string>
+	<key>Internal</key>
+	<true/>
+	<key>MountPoint</key>
+	<string>/</string>
+	<key>RemovableMediaOrExternalDevice</key>
+	<false/>
+	<key>VolumeName</key>
+	<string>Macintosh HD</string>
+	<key>VolumeUUID</key>
+	<string>00000000-0000-0000-0000-000000000001</string>
+</dict>
+</plist>
