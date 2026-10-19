@@ -46,6 +46,12 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-in-use')).toBeInTheDocument()
   })
 
+  it('says Mi flujo is in use when the stored active flow no longer exists, since that is the flow that runs', () => {
+    render(<Harness active="gone" />)
+    expect(screen.getByTestId('cue-flow-in-use')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-flow-use')).toBeNull()
+  })
+
   it('recalculates the preview live when a block changes', () => {
     render(<Harness />)
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()

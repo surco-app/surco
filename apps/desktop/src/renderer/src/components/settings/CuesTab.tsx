@@ -204,7 +204,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               onChange={(e) => put({ ...flow, name: e.target.value })}
               className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
             />
-            {synced.activeCueFlow === flow.id ? (
+            {activeCueFlow(synced).id === flow.id ? (
               <span data-testid="cue-flow-in-use" className="text-xs text-fg-dim">
                 {tr('settings.cueFlows.inUse')}
               </span>
