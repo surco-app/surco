@@ -1021,10 +1021,6 @@ export interface SourceNode {
   children?: SourceNode[]
 }
 
-// One row of a playlist, in the playlist's own order. A separator is a placeholder file the
-// DJ drops between blocks (measured: one blank 1 s MP3 linked 345 times), kept so the list
-// can draw the break but never loaded as a track. A null path is a row with no file
-// (streaming), counted but not loadable.
 export interface RowCue {
   ms: number
   kind: number
@@ -1045,6 +1041,10 @@ export interface RowWaveRequest {
   analysisPath?: string
 }
 
+// One row of a playlist, in the playlist's own order. A separator is a placeholder file the
+// DJ drops between blocks (measured: one blank 1 s MP3 linked 345 times), kept so the list
+// can draw the break but never loaded as a track. A null path is a row with no file
+// (streaming), counted but not loadable.
 export interface SourcePlaylistEntry {
   path: string | null
   separator: boolean
