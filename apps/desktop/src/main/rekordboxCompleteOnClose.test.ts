@@ -3,7 +3,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { CALLS_ONLY, MY_FLOW, ONE_AT_32 } from '../shared/cueFlows'
+import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../shared/cueFlows'
 import type { RekordboxQueueState } from '../shared/types'
 import { anlzFile, pqtzSection } from './anlzFixture'
 import { completableOps, completeOnClose } from './rekordboxCompleteOnClose'
@@ -14,6 +14,33 @@ import type { CuesOp } from './rekordboxQueueOps'
 
 const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
 const BEATS = Array.from({ length: 800 }, (_, i) => i * 500)
+
+type CueRow = NonNullable<Parameters<typeof writeRekordboxPlaylistFixture>[1]['cueRows']>[number]
+
+async function callsCollection(cueRows: CueRow[]): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'surco-rbcalls-'))
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    content: ORGANISE_FIXTURE.content.map((c) =>
+      c.ID === '101' ? { ...c, AnalysisDataPath: ANLZ } : c,
+    ),
+    cueRows,
+  })
+  mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+  writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
+  return path
+}
+
+function opsOf(path: string, flow: CueFlow): CuesOp[] {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return completableOps(db, join(path, '../share'), flow, () => 'op')
+  } finally {
+    db.close()
+  }
+}
 
 async function collection(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbcomplete-'))
@@ -82,6 +109,39 @@ describe('completableOps', () => {
       { ms: 64000, kind: 1, color: 22 },
     ])
     db.close()
+  })
+
+  it('completes a flow with a CALL rule once, so the CALLs it placed never read as drops on the next close', async () => {
+    const callBack: CueFlow = {
+      id: 'c',
+      name: '',
+      rules: [
+        {
+          from: 'drop',
+          direction: 'back',
+          bars: 16,
+          repeat: 2,
+          when: 'fits',
+          place: 'call',
+          color: { fixed: 1 },
+        },
+      ],
+    }
+    let rows: CueRow[] = [
+      { ID: '11', ContentID: '101', InMsec: 128000, Kind: 0, ColorTableIndex: null },
+    ]
+    const first = opsOf(await callsCollection(rows), callBack)
+    expect(first).toHaveLength(1)
+    rows =
+      first[0].wanted?.map((w, i) => ({
+        ID: w.id ?? `n${i}`,
+        ContentID: '101',
+        InMsec: w.ms,
+        Kind: w.kind,
+        ColorTableIndex: w.color,
+      })) ?? []
+    for (let close = 0; close < 3; close++)
+      expect(opsOf(await callsCollection(rows), callBack)).toEqual([])
   })
 
   it('has nothing to complete with Solo CALL, since the drops already are the CALLs', async () => {

@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { CALLS_ONLY, type CueFlow, type CueRule, MY_FLOW, ONE_AT_32 } from './cueFlows'
+import {
+  BUNDLED_FLOWS,
+  CALLS_ONLY,
+  type CueFlow,
+  type CueRule,
+  MY_FLOW,
+  ONE_AT_32,
+} from './cueFlows'
 import {
   diffCues,
   type ExistingCue,
   evaluateFlow,
   type FlowTrack,
+  findDrops,
   flowOutcome,
   proposeDrops,
 } from './cueRules'
@@ -208,6 +216,49 @@ describe('flowOutcome with a rule that places only a CALL', () => {
     if (out.status !== 'plan') throw new Error(out.status)
     expect(out.wanted).toContainEqual({ id: 'c', ms: beat(32) + 20, kind: 0, color: null })
     expect(diffCues(existing, out.wanted)).toEqual({ insert: [], update: [], remove: [] })
+  })
+})
+
+describe('flowOutcome run again on its own output', () => {
+  const callRules: CueFlow[] = (['back', 'forward'] as const).flatMap((direction) =>
+    [4, 8, 16, 32].flatMap((bars) =>
+      ([1, 2, 3, 'edge'] as const).flatMap((repeat) =>
+        (['fits', 'always'] as const).map((when) =>
+          flow(rule({ direction, bars, repeat, when, place: 'call' })),
+        ),
+      ),
+    ),
+  )
+  const flows: CueFlow[] = [
+    ...BUNDLED_FLOWS,
+    ...callRules,
+    {
+      ...MY_FLOW,
+      rules: [...MY_FLOW.rules, rule({ direction: 'forward', bars: 8, place: 'call' })],
+    },
+  ]
+  const dropSets = [[beat(64)], [beat(64), beat(128)], [beat(40), beat(112)]]
+
+  it('changes nothing, so a CALL a rule placed never turns into a drop that grows more CALLs', () => {
+    for (const f of flows)
+      for (const drops of dropSets) {
+        let existing: ExistingCue[] = []
+        let marked = drops
+        for (let round = 0; round < 3; round++) {
+          const out = outcome({ existing, drops: marked, previousDrops: marked, flow: f })
+          if (out.status !== 'plan') throw new Error(`${out.status} on round ${round}`)
+          if (round > 0)
+            expect(
+              diffCues(existing, out.wanted),
+              `${JSON.stringify(f.rules)} ${drops} round ${round}`,
+            ).toEqual({ insert: [], update: [], remove: [] })
+          existing = out.wanted.map((w, i) => ({ ...w, id: w.id ?? `r${round}-${i}` }))
+          marked = findDrops(
+            existing.filter((c) => c.kind === 0).map((c) => c.ms),
+            existing.filter((c) => c.kind !== 0).map((c) => c.ms),
+          )
+        }
+      }
   })
 })
 

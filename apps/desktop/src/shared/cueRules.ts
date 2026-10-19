@@ -313,11 +313,30 @@ export type FlowOutcome =
 
 const keep = (c: ExistingCue): WantedCue => ({ id: c.id, ms: c.ms, kind: c.kind, color: c.color })
 
+export function flowDrops(flow: CueFlow, track: FlowTrack): number[] {
+  const all = [...new Set(track.drops)].sort((a, b) => a - b)
+  if (!flow.rules.some((r) => r.place === 'call')) return all
+  const regenerates = (kept: number[]): boolean => {
+    const calls = evaluateFlow(flow, { ...track, drops: kept }).cues.filter(
+      (c) => c.place === 'call',
+    )
+    return all.every((d) => kept.includes(d) || calls.some((c) => near(c.ms, d)))
+  }
+  let drops = all
+  for (let i = 0; i < drops.length; i++) {
+    const kept = drops.filter((_, j) => j !== i)
+    if (!regenerates(kept)) continue
+    drops = kept
+    i = -1
+  }
+  return drops
+}
+
 export function flowOutcome(input: FlowInput): FlowOutcome {
   const { existing, beats, strong, phrases, flow } = input
   const hot = existing.filter((c) => c.kind !== 0)
   const memory = existing.filter((c) => c.kind === 0)
-  const wantedDrops = [...new Set(input.drops)].sort((a, b) => a - b)
+  const wantedDrops = flowDrops(flow, { beats, drops: input.drops, strong, phrases })
   const currentDrops = memory.filter((m) => hot.every((h) => !near(m.ms, h.ms)))
   const removed = new Set(
     currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
@@ -326,9 +345,10 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
     .filter((ms) => !memory.some((m) => near(m.ms, ms)))
     .map((ms) => ({ ms, kind: 0, color: null }))
   const plan = evaluateFlow(flow, { beats, drops: wantedDrops, strong, phrases })
-  const oldPlan = evaluateFlow(input.previousFlow ?? flow, {
+  const previousFlow = input.previousFlow ?? flow
+  const oldPlan = evaluateFlow(previousFlow, {
     beats,
-    drops: input.previousDrops,
+    drops: flowDrops(previousFlow, { beats, drops: input.previousDrops, strong, phrases }),
     strong,
     phrases,
   })
