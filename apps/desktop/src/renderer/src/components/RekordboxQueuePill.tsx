@@ -125,17 +125,19 @@ export function RekordboxQueuePill({
               >
                 {tr('rekordboxQueue.discard')}
               </button>
-              <button
-                type="button"
-                data-testid="rekordbox-queue-apply"
-                onClick={() => {
-                  setOpen(false)
-                  onApplyNow()
-                }}
-                className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
-              >
-                {tr('rekordboxQueue.applyNow')}
-              </button>
+              {state.items.length > 0 && (
+                <button
+                  type="button"
+                  data-testid="rekordbox-queue-apply"
+                  onClick={() => {
+                    setOpen(false)
+                    onApplyNow()
+                  }}
+                  className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+                >
+                  {tr('rekordboxQueue.applyNow')}
+                </button>
+              )}
             </div>
           )}
         </div>

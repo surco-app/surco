@@ -42,6 +42,13 @@ describe('RekordboxQueuePill', () => {
     )
   })
 
+  it('offers only Discard on a held queue with nothing left in it, since Discard is what lifts the hold', () => {
+    setup({ tracks: 0, changes: 0, items: [], halted: true })
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    expect(screen.queryByTestId('rekordbox-queue-apply')).toBeNull()
+    expect(screen.getByTestId('rekordbox-queue-discard')).toBeInTheDocument()
+  })
+
   it('explains a queue prepared for another collection', () => {
     setup({ ...STATE, elsewhere: true })
     fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))

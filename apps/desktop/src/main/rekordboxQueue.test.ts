@@ -1,3 +1,4 @@
+import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import type { RekordboxQueueState } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
@@ -194,6 +195,24 @@ describe('rekordbox queue', () => {
     at = '/real/master.db'
     q.enqueue([track('a', '/m/a.wav')])
     expect(q.state().items.map((i) => i.key)).toEqual(['edit:e1'])
+  })
+
+  it('logs the run it leaves out of a queue held for another collection, so a lost repoint can be traced', () => {
+    let at = '/copy/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([rename])
+    at = '/real/master.db'
+    vi.mocked(log.warn).mockClear()
+    q.enqueue([track('a', '/m/a.wav')], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('1 repoint'))
+  })
+
+  it('does not call a queue held while no collection is found one for another collection', () => {
+    let at = '/real/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([rename])
+    at = ''
+    expect(q.state().elsewhere).toBeUndefined()
   })
 
   it('belongs to the collection in use again once emptied', async () => {

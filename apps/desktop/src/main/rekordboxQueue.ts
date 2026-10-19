@@ -128,7 +128,7 @@ function stateOf(q: QueueFile, collection: string): RekordboxQueueState {
     changes: all.length - tracks,
     items: all,
     ...(q.halted ? { halted: true } : {}),
-    ...(q.collection && q.collection !== collection ? { elsewhere: true } : {}),
+    ...(collection && q.collection && q.collection !== collection ? { elsewhere: true } : {}),
   }
 }
 
@@ -262,7 +262,13 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     enqueue(ops, repoints = []) {
       const here = deps.collection()
       if (q.repoints.length === 0 && q.ops.length === 0) q.collection = here || undefined
-      else if (q.collection && q.collection !== here) return
+      else if (q.collection && q.collection !== here) {
+        if (ops.length > 0 || repoints.length > 0)
+          log.warn(
+            `rekordbox queue held for ${q.collection}, left out ${ops.length} operation(s) and ${repoints.length} repoint(s) read from ${here || 'no collection'}`,
+          )
+        return
+      }
       for (const r of repoints) {
         const at = q.repoints.findIndex((x) => x.from === r.from)
         if (at === -1) q.repoints.push(r)
