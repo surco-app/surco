@@ -326,6 +326,13 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
     )
     if (pairedMemory) removed.add(pairedMemory.id)
   }
+  for (const c of plan.cues) {
+    if (c.place !== 'call') continue
+    const there = memory.find((m) => near(m.ms, c.ms))
+    if (there) removed.delete(there.id)
+    else if (![...added, ...placed].some((w) => w.kind === 0 && near(w.ms, c.ms)))
+      placed.push({ ms: c.ms, kind: 0, color: null })
+  }
   return {
     status: 'plan',
     wanted: [...memory.filter((m) => !removed.has(m.id)).map(keep), ...added, ...placed],

@@ -177,6 +177,33 @@ describe('flowOutcome', () => {
   })
 })
 
+describe('flowOutcome with a rule that places only a CALL', () => {
+  const callAt32 = flow(rule({ bars: 32, place: 'call' }))
+
+  it('writes the CALL the rule places, so a CALL rule is not silently dropped', () => {
+    expect(outcome({ flow: callAt32 })).toEqual({
+      status: 'plan',
+      wanted: [
+        { ms: beat(64), kind: 0, color: null },
+        { ms: beat(32), kind: 0, color: null },
+      ],
+      hot: [],
+      trimmed: [],
+    })
+  })
+
+  it('keeps the rekordbox CALL already near that spot instead of inserting a second one', () => {
+    const existing: ExistingCue[] = [
+      { id: 'd', ms: beat(64), kind: 0, color: null },
+      { id: 'c', ms: beat(32) + 20, kind: 0, color: null },
+    ]
+    const out = outcome({ existing, previousDrops: [beat(64)], flow: callAt32 })
+    if (out.status !== 'plan') throw new Error(out.status)
+    expect(out.wanted).toContainEqual({ id: 'c', ms: beat(32) + 20, kind: 0, color: null })
+    expect(diffCues(existing, out.wanted)).toEqual({ insert: [], update: [], remove: [] })
+  })
+})
+
 describe('diffCues', () => {
   const existing: ExistingCue[] = [
     { id: 'a', ms: beat(16), kind: 1, color: 1 },
