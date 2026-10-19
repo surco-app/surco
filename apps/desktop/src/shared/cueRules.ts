@@ -246,7 +246,7 @@ function wantedProblem(w: WantedCue, was: ExistingCue | undefined): InvalidWante
   if (typeof w.ms !== 'number' || !Number.isFinite(w.ms) || w.ms < 0) return 'ms'
   if (w.id !== undefined && typeof w.id !== 'string') return 'id'
   if (!(w.kind === 0 || HOT_KINDS.includes(w.kind) || (was && was.kind === w.kind))) return 'kind'
-  const kept = was !== undefined && was.color === w.color
+  const kept = was !== undefined && was.color === w.color && (was.kind === 0) === (w.kind === 0)
   const color =
     w.kind === 0
       ? w.color === null

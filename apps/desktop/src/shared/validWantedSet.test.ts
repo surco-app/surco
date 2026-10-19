@@ -78,6 +78,15 @@ describe('validWantedSet, the only gate before a hand-edited set reaches master.
     })
   })
 
+  it('refuses a hot cue turned into a CALL that keeps its colour, since a CALL never has one', () => {
+    const live: ExistingCue[] = [{ id: 'h', ms: 4000, kind: 1, color: 5 }]
+    expect(check([{ id: 'h', ms: 4000, kind: 0, color: 5 }], live)).toEqual({
+      ok: false,
+      reason: 'color',
+    })
+    expect(check([{ id: 'h', ms: 4000, kind: 0, color: null }], live)).toEqual({ ok: true })
+  })
+
   it('refuses the same rekordbox cue twice', () => {
     expect(
       check(
