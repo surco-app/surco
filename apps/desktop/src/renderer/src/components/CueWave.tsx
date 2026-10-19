@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DrawnHotCue } from '../../../shared/cueRules'
 import type { CueWaveColumn } from '../../../shared/types'
-import { barLines, CUE_COLOR, clickAction, HOT_LETTER } from '../lib/cueWave'
+import { barLines, clickAction, cueColor, HOT_LETTER } from '../lib/cueWave'
 
 const HIT_PX = 6
 
@@ -20,7 +20,7 @@ export function CueWave({
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
   durationMs: number
-  hot: (DrawnHotCue & { pending: boolean })[]
+  hot: (Omit<DrawnHotCue, 'color'> & { color: number | null; pending: boolean })[]
   drops: { ms: number; pending: boolean }[]
   disabled?: boolean
   onAddDrop: (ms: number) => void
@@ -127,11 +127,11 @@ export function CueWave({
           key={`h${h.kind}`}
           data-testid={`cue-wave-hot-${HOT_LETTER[h.kind]}`}
           data-pending={h.pending ? 'true' : 'false'}
-          style={{ left: pct(h.ms), backgroundColor: CUE_COLOR[h.color] }}
+          style={{ left: pct(h.ms), backgroundColor: cueColor(h.color) }}
           className={`absolute top-0 bottom-0 w-0.5 ${h.pending ? 'opacity-50' : ''}`}
         >
           <span
-            style={{ backgroundColor: CUE_COLOR[h.color] }}
+            style={{ backgroundColor: cueColor(h.color) }}
             className="absolute bottom-0 left-0 rounded-sm px-1 text-[9px] font-bold text-[var(--color-panel)]"
           >
             {HOT_LETTER[h.kind]}

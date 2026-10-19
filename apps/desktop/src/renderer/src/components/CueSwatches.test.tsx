@@ -52,6 +52,18 @@ describe('CueSwatches', () => {
     )
   })
 
+  it('fills a hot cue without colour in the neutral colour, not the 16-bar blue', () => {
+    render(
+      <CueSwatches
+        summary={{ analysed: true, hot: [{ ms: 1000, color: null }] }}
+        pending={false}
+      />,
+    )
+    expect(screen.getByTestId('track-cue-swatch').style.backgroundColor).toBe(
+      'var(--color-fg-faint)',
+    )
+  })
+
   it('names the count of cues and whether they wait, for screen readers', () => {
     const hot = [
       { ms: 1000, color: 1 },

@@ -1,9 +1,7 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueSummary } from '../../../shared/types'
-import { CUE_COLOR } from '../lib/cueWave'
-
-const UNKNOWN_CUE_COLOR = 'var(--color-fg-faint)'
+import { cueColor, UNKNOWN_CUE_COLOR } from '../lib/cueWave'
 
 export function CueSwatches({
   summary,
@@ -41,7 +39,7 @@ export function CueSwatches({
         tr('trackList.cuesNone')
       ) : (
         summary.hot.map((h, i) => {
-          const color = CUE_COLOR[h.color ?? 1] ?? UNKNOWN_CUE_COLOR
+          const color = cueColor(h.color)
           return (
             <span
               // biome-ignore lint/suspicious/noArrayIndexKey: cues at the same ms need the index to stay distinct

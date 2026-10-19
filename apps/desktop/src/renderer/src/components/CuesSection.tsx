@@ -53,7 +53,7 @@ function Marking({
   const drawnHot =
     outcome.status === 'plan'
       ? outcome.hot.map((h) => ({ ...h, pending: !same(h.ms, h.kind, h.color) }))
-      : hot.map((h) => ({ ms: h.ms, kind: h.kind, color: h.color ?? 1, pending: false }))
+      : hot.map((h) => ({ ms: h.ms, kind: h.kind, color: h.color, pending: false }))
   return (
     <>
       <CueWave

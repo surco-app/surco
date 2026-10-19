@@ -16,6 +16,20 @@ export const HOT_LETTER: Record<number, string> = {
   7: 'F',
   8: 'G',
   9: 'H',
+  10: 'I',
+  11: 'J',
+  12: 'K',
+  13: 'L',
+  14: 'M',
+  15: 'N',
+  16: 'O',
+  17: 'P',
+}
+
+export const UNKNOWN_CUE_COLOR = 'var(--color-fg-faint)'
+
+export function cueColor(color: number | null): string {
+  return (color === null ? undefined : CUE_COLOR[color]) ?? UNKNOWN_CUE_COLOR
 }
 
 export function barLines(grid: { ms: number; beat: number }[]): { ms: number; strong: boolean }[] {

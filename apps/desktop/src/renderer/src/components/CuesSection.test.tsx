@@ -171,6 +171,30 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-manual')).toBeInTheDocument()
   })
 
+  it('draws hand-placed hot cues of any colour or letter visibly, never in a countdown colour', async () => {
+    setup({
+      ...READ,
+      cues: [
+        { id: 'a', ms: bar(40), kind: 1, color: 0 },
+        { id: 'b', ms: bar(80), kind: 2, color: null },
+        { id: 'i', ms: bar(120), kind: 10, color: null },
+      ],
+    })
+    await waitFor(() => expect(screen.getByTestId('cues-manual')).toBeInTheDocument())
+    const legend = [
+      'var(--color-accent)',
+      'var(--color-good)',
+      'var(--color-danger)',
+      'var(--color-warn)',
+    ]
+    for (const letter of ['A', 'B', 'I']) {
+      const cueLine = screen.getByTestId(`cue-wave-hot-${letter}`)
+      expect(cueLine).toHaveTextContent(letter)
+      expect(cueLine.style.backgroundColor).toBe('var(--color-fg-faint)')
+      expect(legend).not.toContain(cueLine.style.backgroundColor)
+    }
+  })
+
   it('offers no marking on a track rekordbox has not analysed', async () => {
     setup({ ...READ, analysed: false, grid: [] })
     await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
