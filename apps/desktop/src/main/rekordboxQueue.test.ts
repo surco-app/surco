@@ -206,7 +206,34 @@ describe('rekordbox queue', () => {
     q.enqueue([rename])
     expect(q.state().elsewhere).toBeUndefined()
     expect(await q.apply(closed)).toMatchObject({ status: 'applied' })
-    expect(d.applyBatch).toHaveBeenCalledWith('/real/master.db', [rename], expect.any(Function))
+    expect(d.applyBatch).toHaveBeenCalledWith(
+      '/real/master.db',
+      [rename],
+      expect.any(Function),
+      expect.any(Function),
+    )
+  })
+
+  it('does not write what the user discarded while rekordbox was being closed, and reports nothing for it', async () => {
+    const d = deps()
+    const q = createRekordboxQueue(d)
+    d.applyBatch.mockImplementation(async (_c, ops, ensureClosed, stillQueued) => {
+      await ensureClosed()
+      return applied(ops.filter((o) => stillQueued(o.id)))
+    })
+    q.enqueue([rename])
+    const result = await q.apply(async () => {
+      q.discard()
+      return true
+    })
+    expect(result).toEqual({
+      status: 'applied',
+      tracks: 0,
+      changes: 0,
+      notices: [],
+      written: [],
+      outcomes: [],
+    })
   })
 
   it('tells the window every time the queue changes', () => {

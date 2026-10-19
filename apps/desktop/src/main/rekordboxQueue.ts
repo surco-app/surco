@@ -44,6 +44,7 @@ export interface QueueDeps {
     collectionPath: string,
     ops: QueueOp[],
     ensureClosed: () => Promise<boolean>,
+    stillQueued: (id: string) => boolean,
   ) => Promise<BatchResult>
   repoint: (collectionPath: string, repoints: RekordboxRepoint[]) => Promise<LibraryRepointResult[]>
   nodeStamps: (collectionPath: string) => Promise<Record<string, number>>
@@ -207,7 +208,8 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       }
       return true
     }
-    const result = await deps.applyBatch(collectionPath, ops, askAndSnapshot)
+    const queued = (id: string): boolean => q.ops.some((o) => o.id === id)
+    const result = await deps.applyBatch(collectionPath, ops, askAndSnapshot, queued)
     if (!result.ok) {
       if (result.reason === 'write-unknown') {
         q.halted = true
@@ -215,6 +217,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       }
       return refused(result.reason)
     }
+    const kept = result.outcomes.filter((o) => queued(o.id))
     const given = new Set(ops.map((o) => o.id))
     q.ops = q.ops.filter((o) => !given.has(o.id))
     delete q.halted
@@ -231,7 +234,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       }
     }
     const byId = new Map(ops.map((o) => [o.id, o]))
-    const outcomes = result.outcomes.map((o): OpOutcome => {
+    const outcomes = kept.map((o): OpOutcome => {
       const op = byId.get(o.id)
       if (
         op?.kind === 'edit' &&

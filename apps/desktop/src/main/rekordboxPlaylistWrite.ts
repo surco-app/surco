@@ -72,6 +72,7 @@ export interface PlaylistWriteDeps extends FindOptions {
   onWrite?: () => void
   onRollback?: () => void
   writeXml?: (path: string, text: string) => Promise<void>
+  stillQueued?: (id: string) => boolean
 }
 
 // Written beside and renamed over, so rekordbox never finds a half-written file. The temp
@@ -468,6 +469,10 @@ export async function applyRekordboxBatch(
   if (!db) return { ok: false, reason: 'unreadable' }
   const stillPlanned: Planned[] = []
   for (const p of planned) {
+    if (deps.stillQueued && !deps.stillQueued(p.op.id)) {
+      outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: 'cancelled', notices: [] })
+      continue
+    }
     if (p.op.kind === 'track') {
       const again = planTrack(db, xml, p.op, deps)
       if ('outcome' in again) outcomes.set(p.op.id, again.outcome)

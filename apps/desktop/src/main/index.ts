@@ -203,9 +203,10 @@ const broadcast = (channel: string, payload: unknown): void => {
 const rekordboxQueue = createRekordboxQueue({
   store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
   collection: rekordboxCollectionPath,
-  applyBatch: (collectionPath, ops, ensureClosed) =>
+  applyBatch: (collectionPath, ops, ensureClosed, stillQueued) =>
     applyRekordboxBatch(collectionPath, ops, {
       ensureClosed,
+      stillQueued,
       sessionBackup: (path) => sessions.rekordbox.ensure(path),
       realPath: (p: string) => realpathSync(p),
     }),

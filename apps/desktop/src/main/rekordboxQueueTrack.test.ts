@@ -346,6 +346,20 @@ describe('track operations', () => {
     expect(result.ok && result.outcomes.map((o) => o.applied)).toEqual([true, true])
   })
 
+  it('writes nothing for an operation discarded while rekordbox was being closed', async () => {
+    const path = await collection()
+    const file = await newFile('Bam Bam.wav')
+    const before = read(path, 'SELECT ID FROM djmdContent').length
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: file, facts: facts(file), wanted: [{ name: 'Bolos' }] })],
+      { ...deps(), stillQueued: () => false },
+    )
+    expect(result).toMatchObject({ ok: true, wrote: false })
+    expect(named(path, 'Bolos')).toEqual([])
+    expect(read(path, 'SELECT ID FROM djmdContent')).toHaveLength(before)
+  })
+
   it('links the track once when the same playlist is listed twice', async () => {
     const path = await collection()
     await applyRekordboxBatch(
