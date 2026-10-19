@@ -744,7 +744,15 @@
     "stillSearching": "Ainda buscando em {{providers}}…",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
-    "suggestedStatus": "Sugerido: {{title}}"
+    "suggestedStatus": "Sugerido: {{title}}",
+    "playlists": {
+      "placeholder": "Adicionar a uma playlist",
+      "remove": "Remover {{name}}",
+      "create": "Criar playlist “{{name}}”",
+      "pending": "Será criada ao gravar a faixa",
+      "some": "Só em algumas faixas. Clique para colocá-la em todas",
+      "options": "Playlists do rekordbox"
+    }
   },
   "fields": {
     "groupFilled_one": "{{count}} preenchido",
@@ -791,7 +799,8 @@
     "rowMoveDown": "Mover {{name}} para baixo",
     "rowHide": "Ocultar {{name}}",
     "rowShow": "Mostrar {{name}}",
-    "rowToken": "Nome interno {{token}}"
+    "rowToken": "Nome interno {{token}}",
+    "rekordboxPlaylists": "Playlists"
   },
   "declick": {
     "cueWarning": "ALAC não guarda os cues nem o beatgrid do Traktor: eles se perdem ao converter.",

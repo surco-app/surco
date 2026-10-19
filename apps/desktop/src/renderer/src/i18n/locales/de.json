@@ -744,7 +744,15 @@
     "stillSearching": "Sucht noch in {{providers}}…",
     "resultsCount_one": "{{count}} Ergebnis",
     "resultsCount_other": "{{count}} Ergebnisse",
-    "suggestedStatus": "Vorgeschlagen: {{title}}"
+    "suggestedStatus": "Vorgeschlagen: {{title}}",
+    "playlists": {
+      "placeholder": "Zu einer Playlist hinzufügen",
+      "remove": "{{name}} entfernen",
+      "create": "Playlist „{{name}}“ erstellen",
+      "pending": "Wird beim Schreiben des Titels erstellt",
+      "some": "Nur bei einigen Titeln. Klicken, um sie allen hinzuzufügen",
+      "options": "rekordbox-Playlists"
+    }
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",
@@ -791,7 +799,8 @@
     "rowMoveDown": "{{name}} nach unten",
     "rowHide": "{{name}} ausblenden",
     "rowShow": "{{name}} anzeigen",
-    "rowToken": "Interner Name {{token}}"
+    "rowToken": "Interner Name {{token}}",
+    "rekordboxPlaylists": "Playlists"
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
