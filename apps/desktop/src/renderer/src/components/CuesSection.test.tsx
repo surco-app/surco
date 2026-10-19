@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { CALLS_ONLY, MY_FLOW } from '../../../shared/cueFlows'
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
 import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
@@ -65,18 +66,20 @@ function setup(
     logError,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  render(
+  const tree = (current: Partial<Settings> | null) => (
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={settings ?? null}>
+      <SettingsProvider settings={current}>
         <CuesSection
           cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
           open
           onToggle={vi.fn()}
         />
       </SettingsProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
+  const { rerender } = render(tree(settings ?? null))
   return {
+    changeSettings: (next: Partial<Settings>) => rerender(tree(next)),
     logError,
     saveRekordboxCues,
     undoRekordboxCues,
@@ -262,6 +265,29 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
+  })
+
+  it('follows a flow chosen in Settings while the editor is open, keeping the draft and using it for the next drop', async () => {
+    const { changeSettings } = setup(READ, null, { activeCueFlow: 'mine' })
+    await ready()
+    clickAt(bar(64))
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    changeSettings({ activeCueFlow: 'one-at-32' })
+    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveValue('one-at-32'))
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    clickAt(bar(160))
+    expect(screen.queryByTestId('cues-manual')).toBeNull()
+    expect(screen.getAllByTestId(/^cue-wave-hot-/).map((el) => el.style.left)).toContain(
+      `${(bar(128) / 400000) * 100}%`,
+    )
+  })
+
+  it('shows Mi flujo in the flow list once the flow picked there is deleted in Settings', async () => {
+    const { changeSettings } = setup()
+    await ready()
+    fireEvent.change(screen.getByTestId('cues-flow'), { target: { value: 'one-at-32' } })
+    changeSettings({ cueFlows: [CALLS_ONLY, MY_FLOW] })
+    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveValue('mine'))
   })
 
   it('names the bundled flows in the flow list instead of showing them blank', async () => {

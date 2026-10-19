@@ -20,6 +20,7 @@ export type DraftNotice = 'manual' | 'too-many' | null
 export interface DraftSnapshot {
   cues: DraftCue[]
   flowId: string
+  generatedBy: string
   trimmed: number[]
   edited: string[]
 }
@@ -27,6 +28,7 @@ export interface DraftSnapshot {
 export interface CueDraft {
   cues: DraftCue[]
   flowId: string
+  generatedBy: string
   past: DraftSnapshot[]
   selected: string | null
   notice: DraftNotice
@@ -53,6 +55,7 @@ export type DraftAction =
   | { type: 'add-hot'; ms: number }
   | { type: 'add-call'; ms: number }
   | { type: 'apply-flow'; flowId: string }
+  | { type: 'use-flow'; flowId: string }
   | { type: 'undo' }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
@@ -62,6 +65,7 @@ export function startDraft(cues: WantedCue[], flowId: string): CueDraft {
   return {
     cues: cues.map((c, i) => ({ ...c, key: c.id ?? `n${i}` })),
     flowId,
+    generatedBy: flowId,
     past: [],
     selected: null,
     notice: null,
@@ -106,7 +110,13 @@ function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {})
     cues,
     past: [
       ...state.past,
-      { cues: state.cues, flowId: state.flowId, trimmed: state.trimmed, edited: state.edited },
+      {
+        cues: state.cues,
+        flowId: state.flowId,
+        generatedBy: state.generatedBy,
+        trimmed: state.trimmed,
+        edited: state.edited,
+      },
     ],
   }
 }
@@ -147,6 +157,7 @@ function regenerate(
   if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,
+    generatedBy: flow.id,
     nextKey,
     selected: null,
     notice: out.status === 'manual' ? 'manual' : null,
@@ -180,7 +191,9 @@ function pairOf(cues: DraftCue[], target: DraftCue): DraftCue | undefined {
 
 export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft {
   const flow = flowById(ctx, state.flowId)
+  const generator = flowById(ctx, state.generatedBy)
   if (action.type === 'select') return { ...state, selected: action.key }
+  if (action.type === 'use-flow') return { ...state, flowId: action.flowId }
   if (action.type === 'undo') {
     const previous = state.past[state.past.length - 1]
     if (!previous) return state
@@ -188,6 +201,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       ...state,
       cues: previous.cues,
       flowId: previous.flowId,
+      generatedBy: previous.generatedBy,
       trimmed: previous.trimmed,
       edited: previous.edited,
       past: state.past.slice(0, -1),
@@ -199,10 +213,10 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   if (action.type === 'mark-drop') {
     const ms = snap(ctx, action.ms)
     if (draftDrops(state.cues).some((d) => near(d, ms))) return state
-    return regenerate(state, ctx, [...draftDrops(state.cues), ms], flow, flow)
+    return regenerate(state, ctx, [...draftDrops(state.cues), ms], flow, generator)
   }
   if (action.type === 'apply-flow')
-    return regenerate(state, ctx, draftDrops(state.cues), flowById(ctx, action.flowId), flow)
+    return regenerate(state, ctx, draftDrops(state.cues), flowById(ctx, action.flowId), generator)
   if (action.type === 'add-hot' || action.type === 'add-call') {
     const ms = snap(ctx, action.ms)
     const hot = action.type === 'add-hot'
@@ -223,7 +237,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       ctx,
       drops.filter((d) => !near(d, target.ms)),
       flow,
-      flow,
+      generator,
     )
   }
   if (action.type === 'remove') {

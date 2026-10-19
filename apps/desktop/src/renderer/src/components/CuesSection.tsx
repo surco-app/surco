@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { activeCueFlow } from '../../../shared/cueFlows'
+import { activeCueFlow, MY_FLOW_ID } from '../../../shared/cueFlows'
 import { MAX_HOT_CUES } from '../../../shared/cueRules'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
@@ -70,6 +70,14 @@ function Editing({
   )
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [chosen, setChosen] = useState(state.flowId)
+  const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
+  const openedWith = useRef(active.id)
+  useEffect(() => {
+    if (openedWith.current === active.id) return
+    openedWith.current = active.id
+    setChosen(active.id)
+    dispatch({ type: 'use-flow', flowId: active.id })
+  }, [active.id])
   const menuRef = useRef<HTMLDivElement>(null)
   const wanted = wantedOfDraft(state.cues)
   const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
@@ -236,7 +244,7 @@ function Editing({
         <select
           data-testid="cues-flow"
           aria-label={tr('editor.cues.flow')}
-          value={chosen}
+          value={shownFlow}
           onChange={(e) => setChosen(e.target.value)}
           className="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2 py-1.5 text-xs"
         >
@@ -249,7 +257,7 @@ function Editing({
         <button
           type="button"
           data-testid="cues-apply-flow"
-          onClick={() => dispatch({ type: 'apply-flow', flowId: chosen })}
+          onClick={() => dispatch({ type: 'apply-flow', flowId: shownFlow })}
           className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)]"
         >
           {tr('editor.cues.applyFlow')}

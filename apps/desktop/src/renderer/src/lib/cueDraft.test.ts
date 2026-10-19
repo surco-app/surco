@@ -159,6 +159,20 @@ describe('reduceDraft', () => {
     expect(draftDrops(s.cues)).toEqual([bar(64)])
   })
 
+  it('switches to a flow chosen in Settings without touching the draft, judging fit by the flow that drew it', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const switched = run(marked, { type: 'use-flow', flowId: 'one-at-32' })
+    expect(switched.cues).toBe(marked.cues)
+    expect(switched.past).toBe(marked.past)
+    const s = run(switched, { type: 'mark-drop', ms: bar(160) })
+    expect(s.notice).toBeNull()
+    expect(s.flowId).toBe('one-at-32')
+    expect(s.cues.filter((c) => c.kind !== 0).map((c) => [c.ms, c.color])).toEqual([
+      [bar(32), 22],
+      [bar(128), 22],
+    ])
+  })
+
   it('says a plan needs more than 8 hot cues and changes nothing', () => {
     let s = startDraft([{ id: 'y', ms: 500, kind: 1, color: 32 }], 'mine')
     for (const n of [48, 96, 144]) s = run(s, { type: 'mark-drop', ms: bar(n) })
