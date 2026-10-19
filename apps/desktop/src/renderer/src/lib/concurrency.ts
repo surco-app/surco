@@ -18,24 +18,34 @@ export async function mapWithConcurrency<T, R>(
   return results
 }
 
-// The same cap, shared by every caller of the returned run: work beyond `limit` waits its
-// turn in arrival order. For a cap that must hold across calls, which mapWithConcurrency's
-// per-call pool does not.
-export function createConcurrencyLimit(limit: number): <R>(task: () => Promise<R>) => Promise<R> {
+export interface PriorityLimit {
+  run<R>(key: string, task: () => Promise<R>): Promise<R>
+  prioritize(keys: readonly string[]): void
+}
+
+export function createPriorityLimit(limit: number): PriorityLimit {
   let active = 0
-  const waiting: (() => void)[] = []
+  let waiting: { key: string; start: () => void }[] = []
   const release = (): void => {
     const next = waiting.shift()
-    if (next) next()
+    if (next) next.start()
     else active--
   }
-  return async (task) => {
-    if (active >= limit) await new Promise<void>((resolve) => waiting.push(resolve))
-    else active++
-    try {
-      return await task()
-    } finally {
-      release()
-    }
+  return {
+    async run(key, task) {
+      if (active >= limit) await new Promise<void>((start) => waiting.push({ key, start }))
+      else active++
+      try {
+        return await task()
+      } finally {
+        release()
+      }
+    },
+    prioritize(keys) {
+      const wanted = new Set(keys)
+      const first = keys.flatMap((k) => waiting.filter((w) => w.key === k))
+      if (first.length === 0) return
+      waiting = [...first, ...waiting.filter((w) => !wanted.has(w.key))]
+    },
   }
 }

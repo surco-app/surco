@@ -527,6 +527,7 @@ export default function App(): React.JSX.Element {
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    prioritizeReads,
     openSourcePlaylist,
     updateTrack,
     mapTracks,
@@ -1085,6 +1086,10 @@ export default function App(): React.JSX.Element {
     focusAutoMatch(selectedId)
   }, [selectedId, focusAutoMatch])
 
+  useEffect(() => {
+    if (selectedId) prioritizeReads([selectedId])
+  }, [selectedId, prioritizeReads])
+
   // With auto-match on, the track you're viewing shouldn't need the toolbar button: once
   // the selection rests on a row, enqueue it just like an import would. Already-matched
   // tracks are filtered out downstream, so revisiting one never re-probes. Debounced so
@@ -1389,6 +1394,7 @@ export default function App(): React.JSX.Element {
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
+    if (visible) prioritizeReads([id])
   })
   // A library that could not be read leaves every row without a verdict, the same blank a
   // check still loading shows; the notice is what tells the two apart. It goes away once

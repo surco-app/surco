@@ -333,6 +333,47 @@ describe('useTrackLibrary read cap across imports', () => {
     expect(peak).toBe(6)
     expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
   })
+
+  it('reads the row on screen before the ones still queued ahead of it', async () => {
+    const order: string[] = []
+    const gates = new Map<string, () => void>()
+    const { fireBatch } = setApi({
+      readMeta: vi.fn(
+        (path: string) =>
+          new Promise((resolve) => {
+            order.push(path)
+            gates.set(path, () =>
+              resolve({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+            )
+          }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      for (let i = 0; i < 10; i++) fireBatch([`/m/${i}.wav`])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(order).toHaveLength(6)
+    const last = result.current.tracks.find((t) => t.inputPath === '/m/9.wav')
+    act(() => result.current.prioritizeReads([last?.id ?? '']))
+    await act(async () => {
+      gates.get('/m/0.wav')?.()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(order).toHaveLength(7)
+    expect(order[6]).toBe('/m/9.wav')
+  })
 })
 
 describe('useTrackLibrary removed tracks vs watcher', () => {

@@ -11,7 +11,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
-import { createConcurrencyLimit } from '../lib/concurrency'
+import { createPriorityLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
@@ -133,6 +133,7 @@ interface TrackLibrary {
   // every row already exists and none is "fresh" — a reopened session restored one of four
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
+  prioritizeReads: (ids: string[]) => void
   openSourcePlaylist: (
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
@@ -187,7 +188,7 @@ export function useTrackLibrary({
   // (thousands of files on a NAS, one tag read each) and was the only one with no way
   // out. Cleared when the next import starts.
   const importCancel = useRef(false)
-  const readSlot = useRef(createConcurrencyLimit(READ_CONCURRENCY))
+  const readSlot = useRef(createPriorityLimit(READ_CONCURRENCY))
   // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   // Paths the user said no to: removed from the crate (row X or the multi-delete button) or
@@ -360,7 +361,7 @@ export function useTrackLibrary({
     const unread = new Set(bases.map((b) => b.id))
     void Promise.all(
       bases.map((base) =>
-        readSlot.current(async () => {
+        readSlot.current.run(base.id, async () => {
           // Checked before the read, not after: the point is to not start the ones still
           // queued behind the handful already in flight.
           if (importCancel.current) return
@@ -940,6 +941,8 @@ export function useTrackLibrary({
   // Stops an import mid-flight: the reads already running finish (their results are
   // worth keeping), nothing further is picked off the queue, and the rows that never
   // got read are dropped by the settle handler in addPaths.
+  const prioritizeReads = useCallback((ids: string[]): void => readSlot.current.prioritize(ids), [])
+
   function cancelImport(): void {
     importCancel.current = true
     importDone.current = 0
@@ -959,6 +962,7 @@ export function useTrackLibrary({
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    prioritizeReads,
     openSourcePlaylist,
     updateTrack,
     mapTracks,

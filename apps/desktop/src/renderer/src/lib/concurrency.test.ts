@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createConcurrencyLimit, mapWithConcurrency } from './concurrency'
+import { createPriorityLimit, mapWithConcurrency } from './concurrency'
 
 const delay = <T>(ms: number, value: T): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -42,11 +42,11 @@ describe('mapWithConcurrency', () => {
   })
 })
 
-describe('createConcurrencyLimit', () => {
+describe('createPriorityLimit', () => {
   // One limit shared by separate callers: a playlist opening streams one file per import
   // call, and a cap per call let all of them read at once.
   it('holds the limit across separate callers', async () => {
-    const run = createConcurrencyLimit(2)
+    const limit = createPriorityLimit(2)
     let inFlight = 0
     let peak = 0
     const task = async () => {
@@ -55,16 +55,16 @@ describe('createConcurrencyLimit', () => {
       await delay(5, null)
       inFlight--
     }
-    await Promise.all([run(task), run(task), run(task), run(task), run(task)])
+    await Promise.all([1, 2, 3, 4, 5].map((i) => limit.run(String(i), task)))
     expect(peak).toBe(2)
   })
 
   it('starts queued work in the order it was asked for', async () => {
-    const run = createConcurrencyLimit(1)
+    const limit = createPriorityLimit(1)
     const started: number[] = []
     await Promise.all(
       [1, 2, 3].map((n) =>
-        run(async () => {
+        limit.run(String(n), async () => {
           started.push(n)
           await delay(1, null)
         }),
@@ -74,8 +74,40 @@ describe('createConcurrencyLimit', () => {
   })
 
   it('frees the slot when a task fails', async () => {
-    const run = createConcurrencyLimit(1)
-    await expect(run(async () => Promise.reject(new Error('x')))).rejects.toThrow('x')
-    expect(await run(async () => 'next')).toBe('next')
+    const limit = createPriorityLimit(1)
+    await expect(limit.run('a', async () => Promise.reject(new Error('x')))).rejects.toThrow('x')
+    expect(await limit.run('b', async () => 'next')).toBe('next')
+  })
+
+  it('starts a waiting task early when its row comes on screen', async () => {
+    const limit = createPriorityLimit(1)
+    const started: string[] = []
+    let releaseFirst: () => void = () => {}
+    const first = limit.run('a', () => {
+      started.push('a')
+      return new Promise<void>((r) => (releaseFirst = r))
+    })
+    const rest = ['b', 'c', 'd'].map((k) =>
+      limit.run(k, async () => {
+        started.push(k)
+      }),
+    )
+    limit.prioritize(['d'])
+    releaseFirst()
+    await Promise.all([first, ...rest])
+    expect(started).toEqual(['a', 'd', 'b', 'c'])
+  })
+
+  it('ignores keys that are running or not queued', async () => {
+    const limit = createPriorityLimit(1)
+    const started: string[] = []
+    const all = ['a', 'b'].map((k) =>
+      limit.run(k, async () => {
+        started.push(k)
+      }),
+    )
+    limit.prioritize(['a', 'zzz'])
+    await Promise.all(all)
+    expect(started).toEqual(['a', 'b'])
   })
 })
