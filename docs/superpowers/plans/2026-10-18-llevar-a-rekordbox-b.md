@@ -3405,3 +3405,78 @@ git commit -m "Optionally complete the countdown on close for tracks with drops 
 
 ---
 
+### Task 11: Verify on a copy, then Vicent in real rekordbox
+
+**Files:** none of the repo (scripts in the scratchpad). Findings go to the final summary.
+
+**Interfaces:**
+- Consumes: the whole of plans A and B.
+- Produces: measured evidence, and the checklist Vicent runs if he decides to.
+
+- [ ] **Step 1: The whole suite, types and lint**
+
+As plan A Task 18 Step 1. Every failing or skipped test is reported by name.
+
+- [ ] **Step 2: A copy, the app pointed at it**
+
+As plan A Task 18 Step 2, into `$SCRATCH/rb-b` (same settings backup and restore, `syncRekordbox` as Vicent has it).
+
+- [ ] **Step 3: Drive Flow 2**
+
+With the driver: open the rekordbox source, the playlist Makina, and in turn the three tracks the spike used (Hands Of Fate and Din Dah, countdowns to complete; Tengo, hot cues by hand). For each: `ss <name>-open` with the Cues section unfolded; on Hands Of Fate and Din Dah click the waveform where the spike's new drops were (1:39.955 and 0:26.469 lie on the planned positions; mark the drops that produce them, as `build-report.json` in `spike-alta` lists), `ss <name>-plan`, then Guardar en rekordbox. On Tengo, click a drop and check the "hot cues puestos a mano" line, `ss tengo-manual`, then Undo. With the real rekordbox closed the queue lands at once ("Listo en rekordbox · 2 pistas"); otherwise the pill shows two tracks with "cues" until it closes. Open the swatches column of Makina, `ss swatches`. Look at every screenshot.
+
+- [ ] **Step 4: Read the copy back and compare with the spike**
+
+```bash
+cat > "$SCRATCH/rb-b/cues.cjs" <<'EOF'
+const Database = require('/Users/vicent/code/surco/node_modules/better-sqlite3-multiple-ciphers')
+const db = new Database(`${process.argv[2]}/master.db`, { readonly: true, fileMustExist: true })
+db.pragma(`cipher='sqlcipher'`)
+db.pragma('legacy=4')
+db.pragma(`key='402fd482c38817c35ffa8ffb8c7d93143b749e7d315df7a81732a1ff43608497'`)
+console.log('integrity', db.pragma('integrity_check', { simple: true }))
+for (const title of ['Hands Of Fate', 'Din Dah', 'Tengo']) {
+  const t = db.prepare('SELECT ID, UUID, CueUpdated, rb_local_usn FROM djmdContent WHERE Title = ?').get(title)
+  const cues = db.prepare('SELECT ID, InMsec, InFrame, Kind, Color, ColorTableIndex, ContentUUID, rb_local_usn FROM djmdCue WHERE ContentID = ? ORDER BY InMsec, Kind').all(t.ID)
+  const cc = db.prepare('SELECT rb_cue_count, rb_local_usn FROM contentCue WHERE ContentID = ?').get(t.ID)
+  console.log(title, t, cc, cues)
+}
+EOF
+node "$SCRATCH/rb-b/cues.cjs" "$SCRATCH/rb-b"
+```
+
+Expected: `integrity ok`; Hands Of Fate and Din Dah with the hot cues of the spike's report (letters, `ColorTableIndex` 1/22/42/32, `InFrame` = ms × 150 / 1000, `Color` −1, `ContentUUID` the track's, new rows `rb_local_usn` NULL), a memory cue under each, `CueUpdated` up by the rows changed, `contentCue.rb_local_usn` + 1 = the track's; Tengo byte for byte as before.
+
+- [ ] **Step 5: Vicent's checklist in real rekordbox (only if he decides to)**
+
+Same swap and sha256 discipline as plan A Task 18 Step 5. What to look at:
+1. Hands Of Fate and Din Dah: hot cues in their letter, colour and beat; CAL intact; Tengo unchanged. The colours drawn in Surco's section match rekordbox's (Task 7's CSS approximations of palette entries 1, 22, 42, 32).
+2. Export one of them to a test USB from rekordbox and look at it on the CDJ.
+3. Remove a drop in Surco on a track whose countdown Surco wrote, save, close rekordbox: the old countdown is gone and no stray memory cue reads as a drop (Decision 2).
+4. With "Al cerrar rekordbox, poner la cuenta atrás" on, the count Surco gave matches what rekordbox shows completed after one close; then turn it off again.
+5. Mark a drop, then move a hot cue of that track in rekordbox before closing it: Surco says "Los cues de … cambiaron en rekordbox. Vuelve a marcarlos." and writes nothing for it.
+
+- [ ] **Step 6: Restore the shared setting**
+
+As plan A Task 18 Step 6.
+
+---
+
+## Self-review
+
+**Spec coverage.** "Qué se ve": waveform (PWV5, else PWAV), grid with bar and 16-bar marks, hot cues with letter and colour, existing drops, click to the nearest beat, click on a drop removes it, hover ghost, live faint countdown, help once, legend, Deshacer, Guardar, the manual line, the unanalysed state: Tasks 3, 4, 7, 8. "En la lista" swatches and the hollow state: Task 9. "Las reglas" 1 to 7: Tasks 1, 2. "Escribir cues", removal as rekordbox does, counters: Task 5 (Decision 1 corrects `rb_local_usn` with medidas). "Guardar" queues, closed applies, open waits with the pill: Task 6 with plan A's queue. "Completar solo", off by default, counted before saving, same batch: Task 10. Conflicts by cue fingerprint: Task 6. Errors "Cues cambiados" and "Más de 8 hot cues": Tasks 2, 6, 8. IPC names: `rekordbox:trackCues` and `rekordbox:saveCues` as the spec; `rekordbox:cueSummary` and `rekordbox:countCompletable` added for the swatches and the count. Decision 9 of the spec (a section, not a tab, conflict with "every section changes the file"): Task 8, accepted as the spec says.
+
+**Placeholder scan.** No TBD, TODO or "similar to"; the two `biome-ignore` lines in Task 7 are linter directives the repo already uses, not comments.
+
+**Type consistency.** `ExistingCue` (Task 2) is `TrackCueRow` (Task 4) field for field (`id`, `ms`, `kind`, `color`), so `readTrackCues().cues` feeds `cueChanges` without mapping. `CueChangeSet` flows from `cueChanges` (Task 2) through `Planned.cues` (Task 6) into `applyCueChanges` (Task 5). `SaveCuesRequest` (Task 6) is what `CuesSection` sends (Task 8) and what `completableOps` builds (Task 10). `DrawnHotCue` (Task 2) is what `CueWave` draws (Task 7).
+
+**Review Focus.** First beat and early clicks: Task 1 `'snaps a click before the first beat to the first beat'`, Task 7 `'snaps a click before the grid to its first beat'`. Hand-placed hot cues: Task 2 `'writes only the drops when hand-placed hot cues do not fit'`, Task 6 `'writes only the drop on a track with hand-placed hot cues'`. More than 8: Task 2 and Task 6. Cues changed in rekordbox: Task 6 `'drops the operation when rekordbox changed the cues meanwhile'`. Unanalysed tracks: Task 4, Task 8 `'offers no marking...'`, Task 9, Task 10 (104 left out).
+
+## Execution handoff
+
+Plan complete and saved to `docs/superpowers/plans/2026-10-18-llevar-a-rekordbox-b.md`. It starts from plan A merged. Please review the plan. Which execution approach would you prefer?
+
+- **Subagent-driven**: a fresh subagent per task, a fresh reviewer per task, a whole-branch review at the end.
+- **Native**: one session implements every task, one fresh reviewer at the end.
+
+For this plan I recommend **Subagent-driven**, because Tasks 2, 5 and 6 write into the cue table of the DJ's only collection, and a reviewer per task is the cheap check against a shipped mistake there.
