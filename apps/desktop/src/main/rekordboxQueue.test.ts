@@ -174,6 +174,41 @@ describe('rekordbox queue', () => {
     expect(q.state().halted).toBeUndefined()
   })
 
+  it('never applies what was queued for one collection to another, and says the queue belongs elsewhere', async () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    at = '/real/master.db'
+    const again = createRekordboxQueue({ ...d, onChange: vi.fn() })
+    expect(again.state().elsewhere).toBe(true)
+    expect(await again.apply(closed)).toEqual({ status: 'refused', reason: 'other-collection' })
+    expect(d.repoint).not.toHaveBeenCalled()
+    expect(d.applyBatch).not.toHaveBeenCalled()
+  })
+
+  it('does not mix operations read from this collection into a queue held for another', () => {
+    let at = '/copy/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([rename])
+    at = '/real/master.db'
+    q.enqueue([track('a', '/m/a.wav')])
+    expect(q.state().items.map((i) => i.key)).toEqual(['edit:e1'])
+  })
+
+  it('belongs to the collection in use again once emptied', async () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    at = '/real/master.db'
+    q.discard()
+    q.enqueue([rename])
+    expect(q.state().elsewhere).toBeUndefined()
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied' })
+    expect(d.applyBatch).toHaveBeenCalledWith('/real/master.db', [rename], expect.any(Function))
+  })
+
   it('tells the window every time the queue changes', () => {
     const d = deps()
     const q = createRekordboxQueue(d)

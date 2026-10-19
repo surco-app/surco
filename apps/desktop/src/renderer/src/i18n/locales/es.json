@@ -1734,7 +1734,8 @@
         "readOnly": "La colección de rekordbox es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en rekordbox. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que está a su lado"
+        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que está a su lado",
+        "otherCollection": "Lo que espera es de otra colección de rekordbox, así que no se cambió nada. Vuelve a esa colección o descarta lo que espera"
       }
     },
     "tree": {
@@ -2206,6 +2207,8 @@
     "discardYes": "Descartar",
     "discardNo": "Cancelar",
     "pillHalted": "Cambios de rekordbox en pausa",
-    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar"
+    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar",
+    "pillElsewhere": "Espera otra colección de rekordbox",
+    "elsewhere": "Esto se preparó para otra colección de rekordbox. Surco no lo aplicará a la que usas ahora"
   }
 }

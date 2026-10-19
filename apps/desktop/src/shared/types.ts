@@ -1073,6 +1073,7 @@ export type RekordboxEditRefusal =
   | 'stale'
   | 'no-separator'
   | 'nothing-to-add'
+  | 'other-collection'
 
 // What an add did with each track it was given.
 export interface PlaylistAddReport {
@@ -1593,6 +1594,7 @@ export interface RekordboxQueueState {
   changes: number
   items: RekordboxQueueItem[]
   halted?: true
+  elsewhere?: true
 }
 
 export interface RekordboxQueueWritten {

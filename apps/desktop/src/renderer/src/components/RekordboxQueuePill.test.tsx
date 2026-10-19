@@ -42,6 +42,14 @@ describe('RekordboxQueuePill', () => {
     )
   })
 
+  it('explains a queue prepared for another collection', () => {
+    setup({ ...STATE, elsewhere: true })
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    expect(screen.getByTestId('rekordbox-queue-elsewhere')).toHaveTextContent(
+      'This was prepared for another rekordbox collection. Surco will not apply it to the one you use now',
+    )
+  })
+
   it('counts the waiting tracks', () => {
     setup()
     expect(screen.getByTestId('rekordbox-queue-pill')).toHaveTextContent(

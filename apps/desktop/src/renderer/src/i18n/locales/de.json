@@ -1734,7 +1734,8 @@
         "readOnly": "Die rekordbox-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup daneben"
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup daneben",
+        "otherCollection": "Was wartet, gehört zu einer anderen rekordbox-Sammlung, daher wurde nichts geändert. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet"
       }
     },
     "tree": {
@@ -2206,6 +2207,8 @@
     "discardYes": "Verwerfen",
     "discardNo": "Abbrechen",
     "pillHalted": "rekordbox-Änderungen angehalten",
-    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst"
+    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst",
+    "pillElsewhere": "Wartet auf eine andere rekordbox-Sammlung",
+    "elsewhere": "Das wurde für eine andere rekordbox-Sammlung vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
   }
 }

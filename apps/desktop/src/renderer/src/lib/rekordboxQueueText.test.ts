@@ -21,6 +21,19 @@ describe('rekordbox queue text', () => {
     )
   })
 
+  it('says the queue waits for another collection rather than for rekordbox to close', () => {
+    expect(pillText(tr, { tracks: 1, changes: 0, items: [], elsewhere: true })).toBe(
+      'Waiting for another rekordbox collection',
+    )
+  })
+
+  it('says why nothing was written when the queue belongs to another collection', () => {
+    expect(appliedMessage(tr, { refused: 'other-collection' })).toEqual({
+      text: 'What is waiting belongs to another rekordbox collection, so nothing was changed. Go back to that collection or discard what is waiting',
+      tone: 'danger',
+    })
+  })
+
   it('names what happens to each track', () => {
     expect(partText(tr, { kind: 'playlists', names: ['Makina', 'Cierre'] })).toBe(
       'to Makina, Cierre',

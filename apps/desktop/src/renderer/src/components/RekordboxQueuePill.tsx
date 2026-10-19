@@ -70,6 +70,11 @@ export function RekordboxQueuePill({
               {tr('rekordboxQueue.halted')}
             </p>
           )}
+          {state.elsewhere && (
+            <p data-testid="rekordbox-queue-elsewhere" className="mb-2 px-1.5 text-xs text-danger">
+              {tr('rekordboxQueue.elsewhere')}
+            </p>
+          )}
           <ul className="max-h-64 space-y-1 overflow-auto">
             {state.items.map((item) => (
               <li

@@ -17,6 +17,7 @@ interface QueueFile {
   repoints: RekordboxRepoint[]
   ops: QueueOp[]
   halted?: true
+  collection?: string
 }
 
 export interface QueueStore {
@@ -101,7 +102,7 @@ function load(store: QueueStore): QueueFile {
   return empty
 }
 
-function stateOf(q: QueueFile): RekordboxQueueState {
+function stateOf(q: QueueFile, collection: string): RekordboxQueueState {
   const items = new Map<string, RekordboxQueueItem>()
   const item = (key: string, label: string): RekordboxQueueItem => {
     const found = items.get(key)
@@ -121,7 +122,13 @@ function stateOf(q: QueueFile): RekordboxQueueState {
   }
   const all = [...items.values()]
   const tracks = all.filter((i) => i.key.startsWith('track:')).length
-  return { tracks, changes: all.length - tracks, items: all, ...(q.halted ? { halted: true } : {}) }
+  return {
+    tracks,
+    changes: all.length - tracks,
+    items: all,
+    ...(q.halted ? { halted: true } : {}),
+    ...(q.collection && q.collection !== collection ? { elsewhere: true } : {}),
+  }
 }
 
 type Applied = Extract<QueueApply, { status: 'applied' }>
@@ -144,7 +151,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
 
   const save = (): void => {
     deps.store.write(JSON.stringify(q))
-    deps.onChange(stateOf(q))
+    deps.onChange(stateOf(q, deps.collection()))
   }
 
   const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })
@@ -157,6 +164,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     if (q.halted && !manual) return refused('write-unknown')
     const collectionPath = deps.collection()
     if (!collectionPath) return refused('unreadable')
+    if (q.collection && q.collection !== collectionPath) return refused('other-collection')
     const repoints = [...q.repoints]
     let askBatch = ensureClosed
     const repointedTo = new Set<string>()
@@ -249,6 +257,9 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
 
   return {
     enqueue(ops, repoints = []) {
+      const here = deps.collection()
+      if (q.repoints.length === 0 && q.ops.length === 0) q.collection = here || undefined
+      else if (q.collection && q.collection !== here) return
       for (const r of repoints) {
         const at = q.repoints.findIndex((x) => x.from === r.from)
         if (at === -1) q.repoints.push(r)
@@ -261,7 +272,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       }
       save()
     },
-    state: () => stateOf(q),
+    state: () => stateOf(q, deps.collection()),
     isEmpty: () => q.repoints.length === 0 && q.ops.length === 0,
     discard() {
       q.repoints = []

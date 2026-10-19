@@ -1734,7 +1734,8 @@
         "readOnly": "The rekordbox collection is read-only, so nothing changed",
         "stale": "The playlist changed in rekordbox. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup next to it"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup next to it",
+        "otherCollection": "What is waiting belongs to another rekordbox collection, so nothing was changed. Go back to that collection or discard what is waiting"
       }
     },
     "tree": {
@@ -2206,6 +2207,8 @@
     "discardYes": "Discard",
     "discardNo": "Cancel",
     "pillHalted": "rekordbox changes on hold",
-    "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard"
+    "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard",
+    "pillElsewhere": "Waiting for another rekordbox collection",
+    "elsewhere": "This was prepared for another rekordbox collection. Surco will not apply it to the one you use now"
   }
 }
