@@ -78,6 +78,7 @@ Medido con el mismo método que el 19/10 (driver, copia `rb-b`, caché vacía, N
 
 ## Riesgos y comprobaciones previas
 
-- No sé si los ficheros de `ImagePath` existen en el `share` real: la copia `rb-b` solo trae `USBANLZ`. Antes de planificar, el controlador copia `share/PIONEER/Artwork` con rekordbox cerrado (nunca un agente) y se comprueba la cobertura.
+- Carátulas, comprobado el 19/10 sobre una copia de `share/PIONEER/Artwork` (166 MB, copiada con rekordbox cerrado a `rb-b/share`): existen 992 de 1001 en All y 2051 de 2061 en la colección, con sus tamaños `_m` y `_s`. Un tema sin fichero de carátula muestra la del audio cuando llega su lectura.
+- Análisis, comprobado igual sobre una copia de `share/PIONEER/USBANLZ` (749 MB): los 1001 temas de All tienen `.DAT` con PWAV, 9 MB en total, y leerlos todos cuesta 98 ms. La onda puede ir en la misma respuesta que la playlist o pedirse por filas visibles; el plan elige por medida.
 - Un tema sin análisis en rekordbox no tiene `.DAT`: va sin onda, como una pista que no está en rekordbox.
 - Abrir de nuevo una playlist tras editarla en rekordbox debe refrescar la vista previa, igual que hoy refresca las entradas al volver el foco.
