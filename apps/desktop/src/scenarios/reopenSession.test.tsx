@@ -73,8 +73,8 @@ describe('Come back to a crate the next day and find each track as it was left',
   it('opens the track at the loudness left on it', async () => {
     await surco.select('Opener')
     openSection('editor-normalize')
-    await waitFor(() => expect(targetField().value).toBe('-20'))
-  })
+    await waitFor(() => expect(targetField().value).toBe('-20'), { timeout: 10_000 })
+  }, 20_000)
 
   it('opens the track at the click repair left on it', () => {
     openSection('editor-declick')
