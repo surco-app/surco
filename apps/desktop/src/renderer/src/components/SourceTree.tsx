@@ -121,7 +121,6 @@ export function SourceTree({
     setMenu(null)
     renameTarget.current = node.id
     setRenaming(node.id)
-    setQuery('')
   }
   const commitRename = (node: SourceNode, value: string): void => {
     if (renameTarget.current !== node.id) return
@@ -209,82 +208,84 @@ export function SourceTree({
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
-    if (renaming === node.id)
-      return (
-        <li key={node.id} style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
-          <input
-            ref={focusField}
-            data-testid="source-tree-rename-field"
-            aria-label={tr('sources.tree.name')}
-            defaultValue={node.name}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitRename(node, e.currentTarget.value)
-              if (e.key === 'Escape') cancelRename()
-            }}
-            onBlur={(e) => {
-              if (!document.hasFocus()) return
-              commitRename(node, e.currentTarget.value)
-            }}
-            className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
-          />
-        </li>
-      )
     return (
       <li key={node.id}>
-        <button
-          type="button"
-          data-testid={`source-node-${node.id}`}
-          aria-expanded={isFolder ? open : undefined}
-          aria-current={selected || undefined}
-          onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
-          onContextMenu={(e) => {
-            if (!edit) return
-            e.preventDefault()
-            setMenu({ node, x: e.clientX, y: e.clientY })
-          }}
-          data-drop-target={dropOn?.id === node.id || undefined}
-          onDragOver={(e) => {
-            if (!edit || isFolder || !carriesTracks(e)) return
-            e.preventDefault()
-            setDropOn({ id: node.id, count: dropCount(e) })
-          }}
-          onDragLeave={(e) => {
-            // Moving onto the row's own name or count fires a leave on the row itself.
-            if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
-            setDropOn((d) => (d?.id === node.id ? null : d))
-          }}
-          onDrop={(e) => {
-            if (!edit || isFolder || !carriesTracks(e)) return
-            e.preventDefault()
-            e.stopPropagation()
-            setDropOn(null)
-            edit.onDropTracks(node, Array.from(e.dataTransfer.files))
-          }}
-          style={{ paddingLeft: 10 + depth * 18 }}
-          className={`flex h-[27px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[11.5px] ${
-            selected
-              ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
-              : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
-          } ${isFolder ? 'font-semibold' : ''} ${
-            dropOn?.id === node.id
-              ? 'outline-dashed outline-1 -outline-offset-1 outline-[var(--color-accent)]'
-              : ''
-          }`}
-        >
-          {isFolder && <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />}
-          <span className="min-w-0 truncate">{node.name}</span>
-          {trail && <span className="min-w-0 truncate text-[11px] text-fg-faint">{trail}</span>}
-          {dropOn?.id === node.id ? (
-            <span
-              data-testid="source-drop-count"
-              className="ml-auto text-[11px] text-[var(--color-accent)]"
-            >
-              {tr('sources.tree.dropCount', { count: dropOn.count })}
-            </span>
-          ) : (
-            <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
-          )}
-        </button>
+        {renaming === node.id ? (
+          <div style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
+            <input
+              ref={focusField}
+              data-testid="source-tree-rename-field"
+              aria-label={tr('sources.tree.name')}
+              defaultValue={node.name}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitRename(node, e.currentTarget.value)
+                if (e.key === 'Escape') cancelRename()
+              }}
+              onBlur={(e) => {
+                if (!document.hasFocus()) return
+                commitRename(node, e.currentTarget.value)
+              }}
+              className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            data-testid={`source-node-${node.id}`}
+            aria-expanded={isFolder ? open : undefined}
+            aria-current={selected || undefined}
+            onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
+            onContextMenu={(e) => {
+              if (!edit) return
+              e.preventDefault()
+              setMenu({ node, x: e.clientX, y: e.clientY })
+            }}
+            data-drop-target={dropOn?.id === node.id || undefined}
+            onDragOver={(e) => {
+              if (!edit || isFolder || !carriesTracks(e)) return
+              e.preventDefault()
+              setDropOn({ id: node.id, count: dropCount(e) })
+            }}
+            onDragLeave={(e) => {
+              // Moving onto the row's own name or count fires a leave on the row itself.
+              if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+              setDropOn((d) => (d?.id === node.id ? null : d))
+            }}
+            onDrop={(e) => {
+              if (!edit || isFolder || !carriesTracks(e)) return
+              e.preventDefault()
+              e.stopPropagation()
+              setDropOn(null)
+              edit.onDropTracks(node, Array.from(e.dataTransfer.files))
+            }}
+            style={{ paddingLeft: 10 + depth * 18 }}
+            className={`flex h-[27px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[11.5px] ${
+              selected
+                ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
+                : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
+            } ${isFolder ? 'font-semibold' : ''} ${
+              dropOn?.id === node.id
+                ? 'outline-dashed outline-1 -outline-offset-1 outline-[var(--color-accent)]'
+                : ''
+            }`}
+          >
+            {isFolder && (
+              <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
+            )}
+            <span className="min-w-0 truncate">{node.name}</span>
+            {trail && <span className="min-w-0 truncate text-[11px] text-fg-faint">{trail}</span>}
+            {dropOn?.id === node.id ? (
+              <span
+                data-testid="source-drop-count"
+                className="ml-auto text-[11px] text-[var(--color-accent)]"
+              >
+                {tr('sources.tree.dropCount', { count: dropOn.count })}
+              </span>
+            ) : (
+              <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+            )}
+          </button>
+        )}
         {isFolder && open && (
           <ul>
             {(node.children ?? []).map((c) => row(c, depth + 1, [...folders, node.name]))}

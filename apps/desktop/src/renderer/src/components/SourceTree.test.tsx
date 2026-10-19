@@ -454,6 +454,42 @@ describe('SourceTree rename and delete', () => {
     expect(edit.onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'cant' }))
   })
 
+  it('shows the rename field for a search hit inside a closed folder', () => {
+    setup(null, true)
+    fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'todas' } })
+    openMenu('ct')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    expect(screen.getByTestId('source-tree-rename-field')).toHaveValue('Todas')
+  })
+
+  it('keeps the children of an open folder visible while it is renamed', () => {
+    setup(null, true)
+    fireEvent.click(screen.getByTestId('source-node-bases'))
+    openMenu('bases')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    expect(screen.getByTestId('source-tree-rename-field')).toHaveValue('BASES')
+    expect(screen.getByTestId('source-node-bt')).toBeInTheDocument()
+  })
+
+  it('keeps the new name when the field loses focus', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: 'House 26' } })
+    fireEvent.blur(field)
+    expect(edit.onRename).toHaveBeenCalledWith(expect.objectContaining({ id: 'house' }), 'House 26')
+  })
+
+  it('sends nothing when the delete confirmation is cancelled', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    fireEvent.click(screen.getByTestId('confirm-cancel'))
+    expect(edit.onDelete).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
+  })
+
   it('confirms a playlist delete before anything is sent', () => {
     const { edit } = setup(null, true)
     openMenu('house')
