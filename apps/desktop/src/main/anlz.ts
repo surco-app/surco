@@ -114,6 +114,14 @@ export function phrases(ext: Buffer): { mood: number; masked: boolean; entries: 
   return { mood, masked, entries }
 }
 
+export function colorWaveSpanMs(ext: Buffer): number | null {
+  const s = anlzSections(ext).find((x) => x.tag === 'PWV5')
+  if (!s || s.length < 20) return null
+  const header = ext.readUInt32BE(s.start + 4)
+  const count = Math.min(ext.readUInt32BE(s.start + 16), Math.floor((s.length - header) / 2))
+  return count > 0 ? (count * 1000) / 150 : null
+}
+
 export function colorWave(ext: Buffer, columns = 1200): CueWaveColumn[] | null {
   const s = anlzSections(ext).find((x) => x.tag === 'PWV5')
   if (!s) return null

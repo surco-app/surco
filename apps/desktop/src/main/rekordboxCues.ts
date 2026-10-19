@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRules'
 import type { CueSummary, CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
-import { beatGrid, colorWave, phrases, wavePreview } from './anlz'
+import { beatGrid, colorWave, colorWaveSpanMs, phrases, wavePreview } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
@@ -45,6 +45,7 @@ interface Analysis {
   grid: { ms: number; beat: number }[]
   strong: StrongPart[]
   wave: CueWaveColumn[] | null
+  spanMs: number | null
 }
 
 function analyse(
@@ -68,8 +69,9 @@ function analyse(
         grid.map((b) => b.ms),
       )
     : []
-  if (!withWave) return { grid, strong, wave: null }
-  return { grid, strong, wave: buildWave(dat, ext) }
+  const spanMs = ext ? colorWaveSpanMs(ext) : null
+  if (!withWave) return { grid, strong, wave: null, spanMs }
+  return { grid, strong, wave: buildWave(dat, ext), spanMs }
 }
 
 function buildWave(dat: Buffer, ext: Buffer | null): CueWaveColumn[] | null {
@@ -105,7 +107,8 @@ export function readTrackCues(
     analysis = null
   }
   if (!analysis) return { ...base, analysed: false, grid: [], strong: [], wave: null }
-  return { ...base, analysed: true, ...analysis }
+  const { spanMs, ...found } = analysis
+  return { ...base, durationMs: spanMs ?? base.durationMs, analysed: true, ...found }
 }
 
 function hasGrid(shareDir: string, analysisPath: string | null): boolean {

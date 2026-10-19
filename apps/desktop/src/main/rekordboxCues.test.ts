@@ -68,7 +68,6 @@ describe('readTrackCues', () => {
     expect(read).toMatchObject({
       contentId: '103',
       analysed: true,
-      durationMs: 300000,
       strong: [{ start: BEATS[32], end: BEATS[63] }],
       wave: [{ h: 1, rgb: [255, 255, 255] }],
     })
@@ -82,6 +81,29 @@ describe('readTrackCues', () => {
     expect(read?.cues.map((c) => c.id).sort()).toEqual(['q1', 'q2', 'q3'])
     db.close()
   })
+  it('takes the duration from the colour waveform rekordbox drew, not the whole seconds of Length, so a click maps to the beat under it', async () => {
+    const entries = Array.from({ length: 45526 }, () => ({ r: 7, g: 7, b: 7, h: 31 }))
+    const { db, share } = await collection({ ext: anlzFile(pwv5Section(entries)) })
+    expect(readTrackCues(db, share, '103')?.durationMs).toBeCloseTo((45526 * 1000) / 150, 6)
+    db.close()
+  })
+
+  it('takes the duration from the colour waveform also for a read without waveforms', async () => {
+    const entries = Array.from({ length: 45526 }, () => ({ r: 7, g: 7, b: 7, h: 31 }))
+    const { db, share } = await collection({ ext: anlzFile(pwv5Section(entries)) })
+    expect(readTrackCues(db, share, '103', { wave: false })?.durationMs).toBeCloseTo(
+      (45526 * 1000) / 150,
+      6,
+    )
+    db.close()
+  })
+
+  it('keeps Length as the duration when there is no colour waveform', async () => {
+    const { db, share } = await collection({ ext: null })
+    expect(readTrackCues(db, share, '103')?.durationMs).toBe(300000)
+    db.close()
+  })
+
   it('falls back to the monochrome preview waveform without an .EXT', async () => {
     const { db, share } = await collection({ ext: null })
     expect(readTrackCues(db, share, '103')?.wave?.[0]).toEqual({ h: 1, rgb: null })
