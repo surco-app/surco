@@ -5,6 +5,7 @@ import type { SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readTrackCues } from './rekordboxCues'
+import { learnFromCollection } from './rekordboxLearnFlow'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import type { RekordboxQueue } from './rekordboxQueue'
 
@@ -29,6 +30,15 @@ export function registerRekordboxCuesIpc(host: {
       path,
       (db) => completableOps(db, rekordboxShareDir(path), host.flow()).length,
       0,
+    )
+  })
+  ipcMain.handle('rekordbox:learnFlow', async () => {
+    const path = host.collection()
+    return withCollection(
+      path,
+      (db) => learnFromCollection(db, rekordboxShareDir(path)),
+      null,
+      await keyOf(path),
     )
   })
   ipcMain.handle(

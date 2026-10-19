@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -6,10 +6,16 @@ import { ipcMain } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
+vi.mock('./rekordboxDb', async (actual) => {
+  const real = await actual<typeof import('./rekordboxDb')>()
+  return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
+})
 
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
+import { flowOutcome } from '../shared/cueRules'
 import { anlzFile, pqtzSection } from './anlzFixture'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
+import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
@@ -38,7 +44,78 @@ async function completableCollection(): Promise<string> {
   return path
 }
 
+const BEATS = Array.from({ length: 800 }, (_, i) => i * 500)
+
+function myFlowRows(contentId: string, dropMs: number) {
+  const out = flowOutcome({
+    existing: [],
+    drops: [dropMs],
+    previousDrops: [],
+    beats: BEATS,
+    strong: [],
+    phrases: [],
+    flow: MY_FLOW,
+  })
+  if (out.status !== 'plan') throw new Error('the fixture flow must plan')
+  return out.wanted.map((c, i) => ({
+    ID: `${contentId}${i}`,
+    ContentID: contentId,
+    InMsec: c.ms,
+    Kind: c.kind,
+    ColorTableIndex: c.color,
+  }))
+}
+
+async function markedCollection(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'surco-rblearn-'))
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    content: ORGANISE_FIXTURE.content.map((c) => ({ ...c, AnalysisDataPath: ANLZ })),
+    cueRows: [
+      ...myFlowRows('101', 128000),
+      ...myFlowRows('102', 160000),
+      ...myFlowRows('103', 192000),
+      { ID: '1041', ContentID: '104', InMsec: 8000, Kind: 1, ColorTableIndex: 56 },
+      { ID: '1042', ContentID: '104', InMsec: 8000, Kind: 0, ColorTableIndex: null },
+    ],
+  })
+  mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+  writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
+  return path
+}
+
 describe('registerRekordboxCuesIpc', () => {
+  it('learns the flow from the marked tracks of the collection, opened read-only and never changed', async () => {
+    const path = await markedCollection()
+    const before = readFileSync(path)
+    vi.mocked(openRekordboxDb).mockClear()
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+      applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
+    })
+    const learned = await handler('rekordbox:learnFlow')({})
+    expect(learned).toEqual({
+      flow: expect.objectContaining({ rules: [MY_FLOW.rules[0]] }),
+      coverage: { matching: 3, marked: 3 },
+    })
+    expect(vi.mocked(openRekordboxDb).mock.calls.every(([, o]) => o?.readonly === true)).toBe(true)
+    expect(vi.mocked(openRekordboxDb)).toHaveBeenCalled()
+    expect(readFileSync(path).equals(before)).toBe(true)
+  })
+
+  it('learns nothing without a collection', async () => {
+    registerRekordboxCuesIpc({
+      collection: () => '',
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+      applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:learnFlow')({})).toBeNull()
+  })
+
   it('counts what the active flow would complete, none with Solo CALL', async () => {
     const path = await completableCollection()
     const host = (flow: () => typeof MY_FLOW) => ({

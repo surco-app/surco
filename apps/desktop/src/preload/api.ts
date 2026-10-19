@@ -4,6 +4,7 @@
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { WantedCue } from '../shared/cueRules'
+import type { LearnedFlow } from '../shared/learnFlow'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -212,6 +213,7 @@ export interface Api {
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
+  rekordboxLearnFlow: () => Promise<LearnedFlow | null>
   saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>
   rekordboxQueuedCues: (contentId: string) => Promise<WantedCue[] | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
