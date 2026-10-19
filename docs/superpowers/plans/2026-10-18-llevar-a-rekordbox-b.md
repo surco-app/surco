@@ -445,3 +445,263 @@ git commit -m "Port the rekordbox-cues countdown rules to TypeScript"
 
 ---
 
+### Task 2: The change set: `completar` with extended rule 5
+
+**Files:**
+- Modify: `src/shared/cueRules.ts` (append)
+- Test: `src/shared/cueRules.test.ts` (append)
+
+**Interfaces:**
+- Consumes: Task 1 `planCues`, `fitsPlan`, `SAME_POSITION_MS`, `START_MS`, `MAX_HOT_CUES`, `PlannedCue`, `StrongPart`.
+- Produces:
+  - `COLOR_BY_KIND: Record<CountdownKind, number>` (16: 1, 32: 22, 48: 42, inicio: 32), `HOT_KINDS = [1, 2, 3, 5, 6, 7, 8, 9]`
+  - `interface ExistingCue { id: string; ms: number; kind: number; color: number | null }` (`kind` 0 is a memory cue)
+  - `interface CueChangeSet { insert: { ms: number; kind: number; color: number | null }[]; update: { id: string; kind: number; color: number }[]; remove: string[] }`
+  - `interface DrawnHotCue { ms: number; kind: number; color: number }`
+  - `type CueOutcome = { status: 'plan'; changes: CueChangeSet; hot: DrawnHotCue[] } | { status: 'manual'; changes: CueChangeSet } | { status: 'too-many'; needed: number }`
+  - `cueChanges(existing: ExistingCue[], drops: number[], previousDrops: number[], beats: number[], strong: StrongPart[]): CueOutcome`
+  - `isEmptyChange(changes: CueChangeSet): boolean`
+
+Rules (spec "Las reglas" 5 and 6, `cues.py completar`, plan B Decision 2):
+- Drops are memory cues away from every hot cue. A wanted drop with no memory cue there gets one; a current drop no longer wanted is removed.
+- Fit: every existing hot cue is before 3 s, or on the new plan, or on the plan computed from `previousDrops` (the countdown Surco or the script put, which is recalculated). No fit: status `manual`, only the drop changes.
+- Fit: wanted = the plan plus every hot cue before 3 s that is not on it (kept as "inicio"); more than 8 is `too-many` and nothing is written. In time order they take `HOT_KINDS`; a hot cue already at the position is reused (updated only if its letter or colour differs), else inserted; every planned position without a memory cue gets one. A hot cue not wanted (it was on the old plan) is removed with the memory cue at its position.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `src/shared/cueRules.test.ts` (add `cueChanges`, `type ExistingCue`, `isEmptyChange` to the import):
+
+```ts
+describe('cueChanges', () => {
+  let n = 0
+  const id = () => `c${++n}`
+  const hotAt = (ms: number, kind: number, color: number): ExistingCue => ({ id: id(), ms, kind, color })
+  const memAt = (ms: number): ExistingCue => ({ id: id(), ms, kind: 0, color: null })
+  const byMs = <T extends { ms: number; kind: number }>(a: T, b: T) => a.ms - b.ms || a.kind - b.kind
+
+  // Flow 2 on a track with no cues: the drop, the countdown in A, B, C with their colours,
+  // and a memory cue under each hot cue, as the script writes it.
+  it('writes the drop and its countdown on a track without cues', () => {
+    const out = cueChanges([], [beat(64)], [], grid(200), [])
+    expect(out.status).toBe('plan')
+    if (out.status !== 'plan') return
+    expect([...out.changes.insert].sort(byMs)).toEqual([
+      { ms: beat(16), kind: 0, color: null },
+      { ms: beat(16), kind: 1, color: 42 },
+      { ms: beat(32), kind: 0, color: null },
+      { ms: beat(32), kind: 2, color: 22 },
+      { ms: beat(48), kind: 0, color: null },
+      { ms: beat(48), kind: 3, color: 1 },
+      { ms: beat(64), kind: 0, color: null },
+    ])
+    expect(out.changes.update).toEqual([])
+    expect(out.changes.remove).toEqual([])
+    expect(out.hot).toEqual([
+      { ms: beat(16), kind: 1, color: 42 },
+      { ms: beat(32), kind: 2, color: 22 },
+      { ms: beat(48), kind: 3, color: 1 },
+    ])
+  })
+
+  // Measured on Hands Of Fate: a new countdown shifts the letters of the cues after it.
+  it('reuses hot cues already on the plan and moves their letters', () => {
+    const existing = [hotAt(0, 1, 32), hotAt(beat(48), 2, 1), memAt(beat(48)), memAt(beat(64))]
+    const out = cueChanges(existing, [beat(64), beat(128)], [beat(64)], grid(200), [])
+    if (out.status !== 'plan') throw new Error(out.status)
+    expect(out.hot.map((h) => h.kind)).toEqual([1, 2, 3, 5, 6, 7, 8])
+    expect(out.changes.update).toEqual([{ id: existing[1].id, kind: 5, color: 1 }])
+    expect(out.changes.remove).toEqual([])
+    expect(out.changes.insert.filter((c) => c.kind === 0).map((c) => c.ms).sort((a, b) => a - b)).toEqual([
+      0,
+      beat(16),
+      beat(32),
+      beat(80),
+      beat(96),
+      beat(112),
+      beat(128),
+    ])
+  })
+
+  // fits_plan: a hot cue the DJ put by hand somewhere else is never touched.
+  it('writes only the drops when hand-placed hot cues do not fit', () => {
+    const manual = hotAt(beat(40), 1, 1)
+    const out = cueChanges([manual], [beat(64)], [], grid(200), [])
+    expect(out).toEqual({
+      status: 'manual',
+      changes: { insert: [{ ms: beat(64), kind: 0, color: null }], update: [], remove: [] },
+    })
+  })
+
+  // Extended rule 5: removing a drop recalculates; the old countdown goes with its memory
+  // cues, or each leftover memory cue would read as a new drop.
+  it('removes the countdown of a drop the user took away, with its paired memory cues', () => {
+    const plan = [
+      [beat(16), 1, 42],
+      [beat(32), 2, 22],
+      [beat(48), 3, 1],
+      [beat(80), 5, 42],
+      [beat(96), 6, 22],
+      [beat(112), 7, 1],
+    ] as const
+    const hot = plan.map(([ms, kind, color]) => hotAt(ms, kind, color))
+    const paired = plan.map(([ms]) => memAt(ms))
+    const drop64 = memAt(beat(64))
+    const drop128 = memAt(beat(128))
+    const out = cueChanges(
+      [...hot, ...paired, drop64, drop128],
+      [beat(64)],
+      [beat(64), beat(128)],
+      grid(200),
+      [],
+    )
+    if (out.status !== 'plan') throw new Error(out.status)
+    expect(out.changes.insert).toEqual([])
+    expect(out.changes.update).toEqual([])
+    expect([...out.changes.remove].sort()).toEqual(
+      [hot[3].id, hot[4].id, hot[5].id, paired[3].id, paired[4].id, paired[5].id, drop128.id].sort(),
+    )
+  })
+
+  // Spec: more than 8 hot cues, nothing is written and the user is told.
+  it('refuses a plan that needs more than 8 hot cues', () => {
+    const drops = Array.from({ length: 4 }, (_, i) => beat(48 + 48 * i))
+    expect(cueChanges([hotAt(500, 1, 32)], drops, [], grid(400), [])).toEqual({
+      status: 'too-many',
+      needed: 9,
+    })
+  })
+
+  it('changes nothing when the cues already are the plan', () => {
+    const existing = [
+      hotAt(beat(16), 1, 42),
+      hotAt(beat(32), 2, 22),
+      hotAt(beat(48), 3, 1),
+      memAt(beat(16)),
+      memAt(beat(32)),
+      memAt(beat(48)),
+      memAt(beat(64)),
+    ]
+    const out = cueChanges(existing, [beat(64)], [beat(64)], grid(200), [])
+    expect(out.status === 'plan' && isEmptyChange(out.changes)).toBe(true)
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/shared/cueRules.test.ts`
+Expected: FAIL, `cueChanges is not a function`.
+
+- [ ] **Step 3: Implement**
+
+Append to `src/shared/cueRules.ts`:
+
+```ts
+export const COLOR_BY_KIND: Record<CountdownKind, number> = { 16: 1, 32: 22, 48: 42, inicio: 32 }
+export const HOT_KINDS = [1, 2, 3, 5, 6, 7, 8, 9]
+
+export interface ExistingCue {
+  id: string
+  ms: number
+  kind: number
+  color: number | null
+}
+
+export interface CueChangeSet {
+  insert: { ms: number; kind: number; color: number | null }[]
+  update: { id: string; kind: number; color: number }[]
+  remove: string[]
+}
+
+export interface DrawnHotCue {
+  ms: number
+  kind: number
+  color: number
+}
+
+export type CueOutcome =
+  | { status: 'plan'; changes: CueChangeSet; hot: DrawnHotCue[] }
+  | { status: 'manual'; changes: CueChangeSet }
+  | { status: 'too-many'; needed: number }
+
+const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
+
+export function isEmptyChange(changes: CueChangeSet): boolean {
+  return changes.insert.length === 0 && changes.update.length === 0 && changes.remove.length === 0
+}
+
+export function cueChanges(
+  existing: ExistingCue[],
+  drops: number[],
+  previousDrops: number[],
+  beats: number[],
+  strong: StrongPart[],
+): CueOutcome {
+  const hot = existing.filter((c) => c.kind !== 0)
+  const memory = existing.filter((c) => c.kind === 0)
+  const wantedDrops = [...new Set(drops)].sort((a, b) => a - b)
+  const currentDrops = memory.filter((m) => hot.every((h) => !near(m.ms, h.ms)))
+  const changes: CueChangeSet = {
+    insert: wantedDrops
+      .filter((ms) => !memory.some((m) => near(m.ms, ms)))
+      .map((ms) => ({ ms, kind: 0, color: null })),
+    update: [],
+    remove: currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
+  }
+  const plan = planCues(wantedDrops, beats, strong)
+  const oldPlan = planCues(previousDrops, beats, strong)
+  const fits = hot.every((h) => fitsPlan([h.ms], plan) || fitsPlan([h.ms], oldPlan))
+  if (!fits) return { status: 'manual', changes }
+
+  const wanted: PlannedCue[] = [
+    ...plan,
+    ...hot
+      .filter((h) => h.ms < START_MS && plan.every((p) => !near(h.ms, p.ms)))
+      .map((h) => ({ ms: h.ms, kind: 'inicio' as const })),
+  ].sort((a, b) => a.ms - b.ms)
+  if (wanted.length > MAX_HOT_CUES) return { status: 'too-many', needed: wanted.length }
+
+  const used = new Set<string>()
+  const drawn: DrawnHotCue[] = wanted.map((w, i) => {
+    const kind = HOT_KINDS[i]
+    const color = COLOR_BY_KIND[w.kind]
+    const there = hot.find((h) => !used.has(h.id) && near(h.ms, w.ms))
+    if (there) {
+      used.add(there.id)
+      if (there.kind !== kind || there.color !== color)
+        changes.update.push({ id: there.id, kind, color })
+    } else changes.insert.push({ ms: w.ms, kind, color })
+    if (!memory.some((m) => near(m.ms, w.ms)) && !changes.insert.some((c) => c.kind === 0 && near(c.ms, w.ms)))
+      changes.insert.push({ ms: w.ms, kind: 0, color: null })
+    return { ms: there ? there.ms : w.ms, kind, color }
+  })
+  for (const h of hot) {
+    if (used.has(h.id)) continue
+    changes.remove.push(h.id)
+    const pairedMemory = memory.find((m) => near(m.ms, h.ms) && !changes.remove.includes(m.id))
+    if (pairedMemory) changes.remove.push(pairedMemory.id)
+  }
+  return { status: 'plan', changes, hot: drawn }
+}
+```
+
+- [ ] **Step 4: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/shared/cueRules.test.ts`
+Expected: PASS.
+
+- [ ] **Step 5: Mutation check**
+
+One at a time, rerun and restore: drop `|| fitsPlan([h.ms], oldPlan)` (`'removes the countdown of a drop...'` must fail: it turns `manual`); drop the paired-memory removal (same test fails); change `> MAX_HOT_CUES` to `> MAX_HOT_CUES + 1` (`'refuses a plan that needs more than 8 hot cues'` fails).
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/shared/cueRules.ts apps/desktop/src/shared/cueRules.test.ts
+git commit -m "Turn the drops a DJ marks into the cue rows to write, never over hand-placed hot cues"
+```
+
+---
+
