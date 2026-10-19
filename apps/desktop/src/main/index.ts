@@ -115,14 +115,9 @@ import { findRekordboxCollection } from './rekordboxPath'
 import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
-import {
-  createRekordboxQueue,
-  fileStore,
-  type QueueApply,
-  type RekordboxQueue,
-} from './rekordboxQueue'
+import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
-import { watchRekordboxQueue } from './rekordboxQueueWatch'
+import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { loadLastSession, saveLastSession } from './session'
 import {
@@ -231,14 +226,13 @@ const rekordboxQueueWatch = watchRekordboxQueue({
   isRunning: isRekordboxRunning,
   onApplied: announceApplied,
 })
-const enqueueRekordbox: RekordboxQueue['enqueue'] = (ops, repoints) => {
-  rekordboxQueue.enqueue(ops, repoints)
-  rekordboxQueueWatch.poke()
-}
 const applyRekordboxQueueQuietly = (): void => {
   void serialLibraryFlush(() =>
     rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
-  ).then(announceApplied)
+  ).then((result) => {
+    announceApplied(result)
+    if (stillWaiting(result)) rekordboxQueueWatch.poke()
+  })
 }
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
@@ -931,8 +925,9 @@ function registerIpc(): void {
     () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     {
       ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
-      queue: { enqueue: enqueueRekordbox, apply: rekordboxQueue.apply },
+      queue: rekordboxQueue,
       onApplied: announceApplied,
+      onWaiting: rekordboxQueueWatch.poke,
     },
   )
   registerRekordboxQueueIpc(rekordboxQueue, {
@@ -1008,7 +1003,7 @@ function registerIpc(): void {
   ipcMain.on('process:batch-end', (e) =>
     serialLibraryFlush(() =>
       flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), sessions, {
-        enqueue: enqueueRekordbox,
+        enqueue: rekordboxQueue.enqueue,
         applyQuietly: applyRekordboxQueueQuietly,
       }),
     ),

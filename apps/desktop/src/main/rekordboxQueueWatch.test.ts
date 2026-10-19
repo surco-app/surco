@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { QueueApply } from './rekordboxQueue'
-import { type WatchDeps, watchRekordboxQueue } from './rekordboxQueueWatch'
+import { stillWaiting, type WatchDeps, watchRekordboxQueue } from './rekordboxQueueWatch'
 
 const APPLIED: QueueApply = { status: 'applied', tracks: 1, changes: 0, notices: [], outcomes: [] }
 
@@ -149,5 +149,15 @@ describe('watchRekordboxQueue', () => {
     expect(deps.queue.apply).toHaveBeenCalledTimes(1)
     expect(deps.onApplied).not.toHaveBeenCalled()
     watch.stop()
+  })
+})
+
+describe('stillWaiting', () => {
+  it('is true only for work that waits for rekordbox to close', () => {
+    expect(stillWaiting({ status: 'refused', reason: 'cancelled' })).toBe(true)
+    expect(stillWaiting({ status: 'refused', reason: 'rekordbox-running' })).toBe(true)
+    expect(stillWaiting({ status: 'refused', reason: 'backup-failed' })).toBe(false)
+    expect(stillWaiting(APPLIED)).toBe(false)
+    expect(stillWaiting({ status: 'empty' })).toBe(false)
   })
 })

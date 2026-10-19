@@ -9,6 +9,13 @@ export interface WatchDeps {
   intervalMs?: number
 }
 
+export function stillWaiting(result: QueueApply): boolean {
+  return (
+    result.status === 'refused' &&
+    (result.reason === 'cancelled' || result.reason === 'rekordbox-running')
+  )
+}
+
 export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: () => void } {
   let timer: ReturnType<typeof setInterval> | null = null
   let armed = true
@@ -49,11 +56,7 @@ export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: 
         deps.onApplied({ status: 'refused', reason: 'write-failed' })
         return
       }
-      if (
-        result.status === 'refused' &&
-        (result.reason === 'cancelled' || result.reason === 'rekordbox-running')
-      )
-        return
+      if (stillWaiting(result)) return
       if (result.status === 'refused') armed = false
       if (result.status !== 'empty') deps.onApplied(result)
       if (deps.queue.isEmpty()) stop()
