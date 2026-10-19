@@ -45,6 +45,7 @@ Reglas globales del motor, iguales que hoy en `cueRules.ts`:
 - Dos cues a menos de 50 ms son la misma (`SAME_POSITION_MS`).
 - Toda posición se ajusta al golpe más cercano de la rejilla de rekordbox (`nearestBeat`).
 - Nunca se pisa trabajo a mano: si las hot cues que ya tiene la pista no encajan con el plan, solo se escriben los CALL y se avisa (hoy `fitsPlan`).
+- Un CALL que pone una regla "Pon CALL" no cuenta como donde rompe la vez siguiente, para que el flujo no se multiplique al completar al cerrar. Si dos donde rompe de verdad quedan justo a la distancia de esa regla, el primero se lee como su CALL: se conserva, pero no genera su propia cuenta atrás. No afecta a "Mi flujo", que no tiene reglas solo de CALL.
 
 **Flujos incluidos**, editables y borrables salvo "Mi flujo", que se puede editar pero vuelve a su estado con "Restablecer":
 
