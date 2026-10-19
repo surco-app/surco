@@ -131,6 +131,49 @@ describe('rekordbox queue', () => {
     expect(q.busy()).toBe(false)
   })
 
+  it('holds every automatic apply after a write left the collection unknown, so the only good backup is never overwritten', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({
+        ok: false,
+        reason: 'write-unknown',
+      })),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'write-unknown' })
+    d.repoint.mockClear()
+    d.applyBatch.mockClear()
+    const again = createRekordboxQueue({ ...d, onChange: vi.fn() })
+    expect(again.state().halted).toBe(true)
+    expect(await again.apply(closed)).toEqual({ status: 'refused', reason: 'write-unknown' })
+    expect(d.repoint).not.toHaveBeenCalled()
+    expect(d.applyBatch).not.toHaveBeenCalled()
+  })
+
+  it('lets the user apply a held queue on purpose, and is no longer held once it writes', async () => {
+    const d = deps()
+    d.applyBatch.mockResolvedValueOnce({ ok: false, reason: 'write-unknown' })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    await q.apply(closed)
+    expect(await q.apply(closed, { manual: true })).toMatchObject({ status: 'applied' })
+    expect(q.state().halted).toBeUndefined()
+  })
+
+  it('is no longer held once the user discards', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({
+        ok: false,
+        reason: 'write-unknown',
+      })),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    await q.apply(closed)
+    q.discard()
+    expect(q.state().halted).toBeUndefined()
+  })
+
   it('tells the window every time the queue changes', () => {
     const d = deps()
     const q = createRekordboxQueue(d)

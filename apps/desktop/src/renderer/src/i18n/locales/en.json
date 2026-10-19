@@ -2204,6 +2204,8 @@
     "discard": "Discard",
     "discardConfirm": "Discard what is waiting? Playlists go back to what rekordbox has",
     "discardYes": "Discard",
-    "discardNo": "Cancel"
+    "discardNo": "Cancel",
+    "pillHalted": "rekordbox changes on hold",
+    "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard"
   }
 }

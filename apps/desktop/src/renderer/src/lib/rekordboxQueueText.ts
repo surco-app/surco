@@ -21,6 +21,7 @@ export function noticeText(tr: TFunction, notice: RekordboxQueueNotice): string 
 }
 
 export function pillText(tr: TFunction, state: RekordboxQueueState): string | null {
+  if (state.halted) return tr('rekordboxQueue.pillHalted')
   if (state.tracks > 0) return tr('rekordboxQueue.pillTracks', { count: state.tracks })
   if (state.changes > 0) return tr('rekordboxQueue.pillChanges', { count: state.changes })
   return null

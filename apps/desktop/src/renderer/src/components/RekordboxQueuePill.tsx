@@ -65,6 +65,11 @@ export function RekordboxQueuePill({
           data-testid="rekordbox-queue-menu"
           className="absolute top-full right-0 z-30 mt-1.5 w-80 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]"
         >
+          {state.halted && (
+            <p data-testid="rekordbox-queue-halted" className="mb-2 px-1.5 text-xs text-danger">
+              {tr('rekordboxQueue.halted')}
+            </p>
+          )}
           <ul className="max-h-64 space-y-1 overflow-auto">
             {state.items.map((item) => (
               <li

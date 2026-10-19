@@ -2204,6 +2204,8 @@
     "discard": "Verwerfen",
     "discardConfirm": "Wartende Änderungen verwerfen? Die Playlists zeigen wieder, was rekordbox hat",
     "discardYes": "Verwerfen",
-    "discardNo": "Abbrechen"
+    "discardNo": "Abbrechen",
+    "pillHalted": "rekordbox-Änderungen angehalten",
+    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst"
   }
 }

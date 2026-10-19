@@ -34,6 +34,14 @@ describe('RekordboxQueuePill', () => {
     expect(screen.queryByTestId('rekordbox-queue-pill')).toBeNull()
   })
 
+  it('explains a queue on hold and that only Apply now or Discard moves it', () => {
+    setup({ ...STATE, halted: true })
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    expect(screen.getByTestId('rekordbox-queue-halted')).toHaveTextContent(
+      'The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard',
+    )
+  })
+
   it('counts the waiting tracks', () => {
     setup()
     expect(screen.getByTestId('rekordbox-queue-pill')).toHaveTextContent(

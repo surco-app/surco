@@ -2204,6 +2204,8 @@
     "discard": "Descartar",
     "discardConfirm": "Descartar o que espera? As playlists voltam ao que o rekordbox tem",
     "discardYes": "Descartar",
-    "discardNo": "Cancelar"
+    "discardNo": "Cancelar",
+    "pillHalted": "Mudanças do rekordbox em pausa",
+    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar"
   }
 }

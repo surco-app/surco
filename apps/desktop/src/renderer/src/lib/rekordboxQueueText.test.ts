@@ -15,6 +15,12 @@ describe('rekordbox queue text', () => {
     expect(pillText(tr, { tracks: 0, changes: 0, items: [] })).toBeNull()
   })
 
+  it('says the queue is on hold after a write left the collection unknown, whatever waits', () => {
+    expect(pillText(tr, { tracks: 3, changes: 0, items: [], halted: true })).toBe(
+      'rekordbox changes on hold',
+    )
+  })
+
   it('names what happens to each track', () => {
     expect(partText(tr, { kind: 'playlists', names: ['Makina', 'Cierre'] })).toBe(
       'to Makina, Cierre',

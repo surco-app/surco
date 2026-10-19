@@ -16,6 +16,7 @@ interface QueueFile {
   version: 1
   repoints: RekordboxRepoint[]
   ops: QueueOp[]
+  halted?: true
 }
 
 export interface QueueStore {
@@ -68,7 +69,7 @@ export interface RekordboxQueue {
   drop: (id: string) => void
   busy: () => boolean
   settled: () => Promise<void>
-  apply: (ensureClosed: () => Promise<boolean>) => Promise<QueueApply>
+  apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
 }
 
 const COLLECTION_WIDE: ReadonlySet<string> = new Set([
@@ -120,7 +121,7 @@ function stateOf(q: QueueFile): RekordboxQueueState {
   }
   const all = [...items.values()]
   const tracks = all.filter((i) => i.key.startsWith('track:')).length
-  return { tracks, changes: all.length - tracks, items: all }
+  return { tracks, changes: all.length - tracks, items: all, ...(q.halted ? { halted: true } : {}) }
 }
 
 type Applied = Extract<QueueApply, { status: 'applied' }>
@@ -148,8 +149,12 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
 
   const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })
 
-  const run = async (ensureClosed: () => Promise<boolean>): Promise<QueueApply> => {
+  const run = async (
+    ensureClosed: () => Promise<boolean>,
+    manual: boolean,
+  ): Promise<QueueApply> => {
     if (q.repoints.length === 0 && q.ops.length === 0) return { status: 'empty' }
+    if (q.halted && !manual) return refused('write-unknown')
     const collectionPath = deps.collection()
     if (!collectionPath) return refused('unreadable')
     const repoints = [...q.repoints]
@@ -195,9 +200,16 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       return true
     }
     const result = await deps.applyBatch(collectionPath, ops, askAndSnapshot)
-    if (!result.ok) return refused(result.reason)
+    if (!result.ok) {
+      if (result.reason === 'write-unknown') {
+        q.halted = true
+        save()
+      }
+      return refused(result.reason)
+    }
     const given = new Set(ops.map((o) => o.id))
     q.ops = q.ops.filter((o) => !given.has(o.id))
+    delete q.halted
     save()
     if (result.wrote && before) {
       try {
@@ -254,6 +266,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     discard() {
       q.repoints = []
       q.ops = []
+      delete q.halted
       save()
     },
     drop(id) {
@@ -262,10 +275,10 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     },
     busy: () => pending > 0,
     settled: () => chain.then(() => undefined),
-    apply(ensureClosed) {
+    apply(ensureClosed, opts) {
       pending += 1
       const next = chain
-        .then(() => run(ensureClosed))
+        .then(() => run(ensureClosed, opts?.manual ?? false))
         .finally(() => {
           pending -= 1
         })

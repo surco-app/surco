@@ -31,8 +31,9 @@ export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcH
   ipcMain.handle('rekordbox:queue', () => queue.state())
   ipcMain.handle('rekordbox:applyNow', (e) =>
     serialLibraryFlush(async () => {
-      const result = await queue.apply(() =>
-        host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+      const result = await queue.apply(
+        () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+        { manual: true },
       )
       if (stillWaiting(result)) host.onWaiting?.()
       return appliedNotice(result)

@@ -2204,6 +2204,8 @@
     "discard": "Abandonner",
     "discardConfirm": "Abandonner ce qui attend ? Les playlists reviennent à ce qu’a rekordbox",
     "discardYes": "Abandonner",
-    "discardNo": "Annuler"
+    "discardNo": "Annuler",
+    "pillHalted": "Changements rekordbox en pause",
+    "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que vous n’aurez pas choisi Appliquer maintenant ou Abandonner"
   }
 }

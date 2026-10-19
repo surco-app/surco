@@ -1592,6 +1592,7 @@ export interface RekordboxQueueState {
   tracks: number
   changes: number
   items: RekordboxQueueItem[]
+  halted?: true
 }
 
 export interface RekordboxQueueWritten {

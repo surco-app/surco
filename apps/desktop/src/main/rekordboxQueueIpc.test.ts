@@ -70,6 +70,7 @@ describe('registerRekordboxQueueIpc', () => {
     registerRekordboxQueueIpc(q, { collection: () => '/c/master.db', ensureClosed })
     expect(await handler('rekordbox:applyNow')({ sender: {} })).toEqual(appliedNotice(APPLIED))
     expect(ensureClosed).toHaveBeenCalledWith('window')
+    expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
   it('wakes the watcher when the apply is cancelled and the work keeps waiting', async () => {
