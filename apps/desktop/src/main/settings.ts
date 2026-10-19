@@ -168,6 +168,7 @@ const LOCAL_KEYS = [
   'traktorNmlPath',
   // Same for the rekordbox collection override.
   'rekordboxDbPath',
+  'completeCuesOnClose',
   'hasSeenOnboarding',
   'conversionCount',
   'stats',

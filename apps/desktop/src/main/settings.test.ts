@@ -953,3 +953,44 @@ describe('migrateImportFields', () => {
     expect(fields.filter((f) => f === 'bpm')).toHaveLength(1)
   })
 })
+
+describe('complete cues on close is per machine', () => {
+  it('does not turn on for this Mac because another Mac turned it on in the synced folder', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ completeCuesOnClose: true }))
+    setConfigDir(dir)
+
+    expect(getSettings().completeCuesOnClose).toBe(false)
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('keeps it in this Mac only file when turned on with a synced folder', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+
+    saveSettings({ completeCuesOnClose: true })
+
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    const local = JSON.parse(readFileSync(join(app.getPath('userData'), 'settings.json'), 'utf-8'))
+    expect(synced.completeCuesOnClose).toBeUndefined()
+    expect(local.completeCuesOnClose).toBe(true)
+    expect(getSettings().completeCuesOnClose).toBe(true)
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('keeps the value it had on a Mac without a synced folder', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ completeCuesOnClose: true }),
+    )
+
+    expect(getSettings().completeCuesOnClose).toBe(true)
+  })
+})
