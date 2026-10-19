@@ -160,3 +160,19 @@ Sus patrones, medidos en las mismas pistas (3023 hot cues antes del primer donde
 - 727 hot cues caen en el primer golpe; sus colores se reparten (verde 248, azul 227, amarillo 159, rojo 92), así que en muchas pistas cortas la cue de la cuenta atrás coincide con el inicio.
 
 Es "Mi flujo", tal como está en §1.
+
+## Medido: aprender de mi colección (20/10/2026)
+
+Misma copia de pruebas, solo lectura. Comando: `SURCO_LEARN_FLOW_DB=<copia> vitest run src/main/learnFlowMeasure.test.ts`.
+
+Flujo aprendido: una regla, "desde donde rompe, hacia atrás, 16 compases, 3 veces, si cabe: hot cue + CALL, azul (1), verde (22) y rojo (42)". Es la regla 1 de "Mi flujo". La cue de inicio amarilla no sale: de las 322 pistas donde cabría, solo 44 la tienen.
+
+Encaja con 1161 de 1576 pistas marcadas (74 %). "Mi flujo" completo, con la cue de inicio, encaja con 901 (57 %).
+
+Qué cuenta como encajar: la pista tiene todas las cues que pondría el flujo, en su sitio, del mismo tipo y del mismo color; las letras no cuentan y las cues de más están permitidas. Casi todas sus pistas tienen cues de más (1281 con hot cues de más y 1279 con CALL de más), así que exigir la pista exacta rechazaba hasta "Mi flujo" (150 de 1576).
+
+Las que no encajan: a 389 les falta una hot cue de la cuenta atrás, a 401 un CALL, 14 tienen una cue movida, 10 difieren en la cue de inicio y 3 tienen una hot cue sin color.
+
+Auto no usa calibración: medida en §"Medido: botón Auto", calibrar con sus marcas no mejora la regla general.
+
+Un flujo sin reglas encaja con cualquier pista si se permiten cues de más, así que nunca se propone: una colección que solo tiene CALL recibe "Tu colección no tiene un patrón claro" y le queda "Solo CALL" entre los incluidos.
