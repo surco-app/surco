@@ -78,7 +78,16 @@ describe('readTrackCues', () => {
       { ms: 1500, beat: 4 },
       { ms: 2000, beat: 1 },
     ])
+    expect(read?.phrases).toEqual([
+      { ms: 0, kind: 'intro' },
+      { ms: 16000, kind: 'chorus' },
+    ])
     expect(read?.cues.map((c) => c.id).sort()).toEqual(['q1', 'q2', 'q3'])
+    db.close()
+  })
+  it('reads no phrases for a track without an .EXT, so flows counting from phrases place nothing', async () => {
+    const { db, share } = await collection({ ext: null })
+    expect(readTrackCues(db, share, '103')?.phrases).toEqual([])
     db.close()
   })
   it('takes the duration from the colour waveform rekordbox drew, not the whole seconds of Length, so a click maps to the beat under it', async () => {

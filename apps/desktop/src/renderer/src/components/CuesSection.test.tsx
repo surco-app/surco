@@ -19,6 +19,7 @@ const READ: TrackCues = {
   analysed: true,
   grid: GRID,
   strong: [],
+  phrases: [],
   cues: [],
   wave: null,
   durationMs: 400000,

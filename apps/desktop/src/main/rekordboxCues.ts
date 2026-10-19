@@ -2,6 +2,7 @@ import { randomInt, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
+import { type FlowPhrase, phraseKindOf } from '../shared/cueFlows'
 import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRules'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, colorWaveSpanMs, phrases, wavePreview } from './anlz'
@@ -44,6 +45,7 @@ function read(path: string): Buffer | null {
 interface Analysis {
   grid: { ms: number; beat: number }[]
   strong: StrongPart[]
+  phrases: FlowPhrase[]
   wave: CueWaveColumn[] | null
   spanMs: number | null
 }
@@ -69,9 +71,16 @@ function analyse(
         grid.map((b) => b.ms),
       )
     : []
+  const phraseList: FlowPhrase[] = sections
+    ? sections.entries.flatMap((p) => {
+        const kind = phraseKindOf(sections.mood, p.kind)
+        const at = grid[p.beat - 1]
+        return kind && at ? [{ ms: at.ms, kind }] : []
+      })
+    : []
   const spanMs = ext ? colorWaveSpanMs(ext) : null
-  if (!withWave) return { grid, strong, wave: null, spanMs }
-  return { grid, strong, wave: buildWave(dat, ext), spanMs }
+  if (!withWave) return { grid, strong, phrases: phraseList, wave: null, spanMs }
+  return { grid, strong, phrases: phraseList, wave: buildWave(dat, ext), spanMs }
 }
 
 function buildWave(dat: Buffer, ext: Buffer | null): CueWaveColumn[] | null {
@@ -106,7 +115,7 @@ export function readTrackCues(
   } catch {
     analysis = null
   }
-  if (!analysis) return { ...base, analysed: false, grid: [], strong: [], wave: null }
+  if (!analysis) return { ...base, analysed: false, grid: [], strong: [], phrases: [], wave: null }
   const { spanMs, ...found } = analysis
   return { ...base, durationMs: spanMs ?? base.durationMs, analysed: true, ...found }
 }

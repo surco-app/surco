@@ -1,4 +1,5 @@
 import type { BackupPolicy } from './backupPolicy'
+import type { FlowPhrase } from './cueFlows'
 import type { StrongPart } from './cueRules'
 import type { EditorSectionPref } from './editorSections'
 import type { Chord } from './shortcuts'
@@ -1661,6 +1662,7 @@ export interface TrackCues {
   analysed: boolean
   grid: { ms: number; beat: number }[]
   strong: StrongPart[]
+  phrases: FlowPhrase[]
   cues: TrackCueRow[]
   wave: CueWaveColumn[] | null
   durationMs: number

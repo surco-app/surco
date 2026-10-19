@@ -22,6 +22,7 @@ const READ: TrackCues = {
   analysed: true,
   grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
   strong: [],
+  phrases: [],
   cues: [],
   wave: null,
   durationMs: 400000,
