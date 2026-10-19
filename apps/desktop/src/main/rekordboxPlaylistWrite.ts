@@ -338,6 +338,7 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   })
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
   if (!read?.analysed || read.fingerprint !== op.fingerprint) return changed('cues-changed')
+  if (op.wanted === undefined && op.drops === undefined) return changed('cues-invalid')
   const wanted = queuedWanted(op, read)
   if (wanted === null) return changed('cues-too-many')
   const valid = validWantedSet(wanted, read.cues)

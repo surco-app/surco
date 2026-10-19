@@ -179,6 +179,16 @@ describe('cues operations', () => {
     expect(cuesOf(path)).toHaveLength(COUNTDOWN.length)
   })
 
+  it('refuses an operation with neither a wanted set nor drops, which would only delete the drops', async () => {
+    const path = await collection([{ ID: 'd', InMsec: bar(64), Kind: 0, ColorTableIndex: null }])
+    const empty = op(path, { wanted: undefined })
+    const result = await applyRekordboxBatch(path, [empty], deps())
+    expect(result.ok && result.outcomes[0].notices).toEqual([
+      { code: 'cues-invalid', track: 'Gowan' },
+    ])
+    expect(cuesOf(path).map((c) => c.id)).toEqual(['d'])
+  })
+
   it('moves a cue rekordbox already has instead of adding a second one', async () => {
     const path = await collection([
       { ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 },
