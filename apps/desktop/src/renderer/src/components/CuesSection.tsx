@@ -48,7 +48,7 @@ function Marking({
   const outcome = cueChanges(read.cues, drops, initial, beats, read.strong)
   const dirty = drops.length !== initial.length || drops.some((d) => !initial.includes(d))
   const refreshQueued = () => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
-  const same = (ms: number, kind: number, color: number) =>
+  const same = (ms: number, kind: number, color: number | null) =>
     hot.some((h) => Math.abs(h.ms - ms) <= SAME_POSITION_MS && h.kind === kind && h.color === color)
   const drawnHot =
     outcome.status === 'plan'

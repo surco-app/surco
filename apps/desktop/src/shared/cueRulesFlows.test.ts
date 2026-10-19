@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { type CueFlow, type CueRule, MY_FLOW } from './cueFlows'
-import { evaluateFlow, type FlowTrack } from './cueRules'
+import { CALLS_ONLY, type CueFlow, type CueRule, MY_FLOW, ONE_AT_32 } from './cueFlows'
+import { diffCues, type ExistingCue, evaluateFlow, type FlowTrack, flowOutcome } from './cueRules'
 
 const grid = (bars: number): number[] => Array.from({ length: bars * 4 }, (_, i) => i * 500)
 const beat = (bars: number): number => bars * 2000
@@ -101,5 +101,117 @@ describe('evaluateFlow', () => {
 
   it('plans nothing on a track without a grid', () => {
     expect(evaluateFlow(MY_FLOW, track({ beats: [] }))).toEqual({ cues: [], trimmed: [] })
+  })
+})
+
+const outcome = (over: Partial<Parameters<typeof flowOutcome>[0]> = {}) =>
+  flowOutcome({
+    existing: [],
+    drops: [beat(64)],
+    previousDrops: [],
+    beats: grid(200),
+    strong: [],
+    phrases: [],
+    flow: MY_FLOW,
+    ...over,
+  })
+
+describe('flowOutcome', () => {
+  it('pairs no CALL with the hot cue of a flow that places only a hot cue', () => {
+    expect(outcome({ flow: ONE_AT_32 })).toEqual({
+      status: 'plan',
+      wanted: [
+        { ms: beat(64), kind: 0, color: null },
+        { ms: beat(32), kind: 1, color: 22 },
+      ],
+      hot: [{ ms: beat(32), kind: 1, color: 22 }],
+      trimmed: [],
+    })
+  })
+
+  it('leaves only the CALL of the drop with Solo CALL', () => {
+    expect(outcome({ flow: CALLS_ONLY })).toEqual({
+      status: 'plan',
+      wanted: [{ ms: beat(64), kind: 0, color: null }],
+      hot: [],
+      trimmed: [],
+    })
+  })
+
+  it('keeps the rekordbox ID of every cue it keeps, so saving is a diff by identity', () => {
+    const existing: ExistingCue[] = [
+      { id: 'h', ms: beat(48), kind: 5, color: 1 },
+      { id: 'p', ms: beat(48), kind: 0, color: null },
+      { id: 'd', ms: beat(64), kind: 0, color: 0 },
+    ]
+    const out = outcome({ existing, previousDrops: [beat(64)] })
+    if (out.status !== 'plan') throw new Error(out.status)
+    expect(out.wanted.filter((w) => w.id !== undefined)).toEqual([
+      { id: 'p', ms: beat(48), kind: 0, color: null },
+      { id: 'd', ms: beat(64), kind: 0, color: 0 },
+      { id: 'h', ms: beat(48), kind: 3, color: 1 },
+    ])
+  })
+
+  it('lists the hot cues the 8 limit leaves out, so the user sees which ones', () => {
+    const drops = Array.from({ length: 4 }, (_, i) => beat(48 + 48 * i))
+    const out = outcome({ drops, beats: grid(400) })
+    expect(out.status === 'plan' && out.trimmed).toEqual([beat(0)])
+  })
+
+  it('counts cues of the flow that generated the draft as fitting when switching flows', () => {
+    const fromMine = outcome()
+    if (fromMine.status !== 'plan') throw new Error(fromMine.status)
+    const existing = fromMine.wanted.map((w, i) => ({ ...w, id: `e${i}` }))
+    const switched = outcome({
+      existing,
+      previousDrops: [beat(64)],
+      flow: ONE_AT_32,
+      previousFlow: MY_FLOW,
+    })
+    expect(switched.status).toBe('plan')
+    expect(switched.status === 'plan' && switched.hot).toEqual([
+      { ms: beat(32), kind: 1, color: 22 },
+    ])
+  })
+})
+
+describe('diffCues', () => {
+  const existing: ExistingCue[] = [
+    { id: 'a', ms: beat(16), kind: 1, color: 1 },
+    { id: 'b', ms: beat(16), kind: 0, color: null },
+    { id: 'c', ms: beat(64), kind: 0, color: null },
+  ]
+
+  it('moves a kept cue in place instead of deleting and inserting it', () => {
+    expect(
+      diffCues(existing, [
+        { id: 'a', ms: beat(20), kind: 1, color: 1 },
+        { id: 'b', ms: beat(20), kind: 0, color: null },
+        { id: 'c', ms: beat(64), kind: 0, color: null },
+      ]),
+    ).toEqual({
+      insert: [],
+      update: [
+        { id: 'a', kind: 1, color: 1, ms: beat(20) },
+        { id: 'b', kind: 0, color: null, ms: beat(20) },
+      ],
+      remove: [],
+    })
+  })
+
+  it('inserts cues without an ID and removes the rekordbox cues the set left out', () => {
+    expect(
+      diffCues(existing, [
+        { id: 'c', ms: beat(64), kind: 0, color: null },
+        { ms: beat(48), kind: 1, color: 22 },
+      ]),
+    ).toEqual({ insert: [{ ms: beat(48), kind: 1, color: 22 }], update: [], remove: ['a', 'b'] })
+  })
+
+  it('writes a new letter or colour without a position when the cue did not move', () => {
+    expect(diffCues(existing, [{ id: 'a', ms: beat(16), kind: 2, color: 42 }]).update).toEqual([
+      { id: 'a', kind: 2, color: 42 },
+    ])
   })
 })

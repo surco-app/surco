@@ -202,7 +202,6 @@ export function evaluateFlow(flow: CueFlow, track: FlowTrack): FlowPlan {
   return trimToLimit(placed)
 }
 
-export const COLOR_BY_KIND: Record<CountdownKind, number> = { 16: 1, 32: 22, 48: 42, inicio: 32 }
 export const HOT_KINDS = [1, 2, 3, 5, 6, 7, 8, 9]
 
 export interface ExistingCue {
@@ -214,14 +213,21 @@ export interface ExistingCue {
 
 export interface CueChangeSet {
   insert: { ms: number; kind: number; color: number | null }[]
-  update: { id: string; kind: number; color: number }[]
+  update: { id: string; kind: number; color: number | null; ms?: number }[]
   remove: string[]
 }
 
 export interface DrawnHotCue {
   ms: number
   kind: number
-  color: number
+  color: number | null
+}
+
+export interface WantedCue {
+  id?: string
+  ms: number
+  kind: number
+  color: number | null
 }
 
 export type CueOutcome =
@@ -235,6 +241,118 @@ export function isEmptyChange(changes: CueChangeSet): boolean {
   return changes.insert.length === 0 && changes.update.length === 0 && changes.remove.length === 0
 }
 
+export interface FlowInput {
+  existing: ExistingCue[]
+  drops: number[]
+  previousDrops: number[]
+  beats: number[]
+  strong: StrongPart[]
+  phrases: FlowPhrase[]
+  flow: CueFlow
+  previousFlow?: CueFlow
+}
+
+export type FlowOutcome =
+  | { status: 'plan'; wanted: WantedCue[]; hot: DrawnHotCue[]; trimmed: number[] }
+  | { status: 'manual'; wanted: WantedCue[] }
+  | { status: 'too-many'; needed: number }
+
+const keep = (c: ExistingCue): WantedCue => ({ id: c.id, ms: c.ms, kind: c.kind, color: c.color })
+
+export function flowOutcome(input: FlowInput): FlowOutcome {
+  const { existing, beats, strong, phrases, flow } = input
+  const hot = existing.filter((c) => c.kind !== 0)
+  const memory = existing.filter((c) => c.kind === 0)
+  const wantedDrops = [...new Set(input.drops)].sort((a, b) => a - b)
+  const currentDrops = memory.filter((m) => hot.every((h) => !near(m.ms, h.ms)))
+  const removed = new Set(
+    currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
+  )
+  const added: WantedCue[] = wantedDrops
+    .filter((ms) => !memory.some((m) => near(m.ms, ms)))
+    .map((ms) => ({ ms, kind: 0, color: null }))
+  const plan = evaluateFlow(flow, { beats, drops: wantedDrops, strong, phrases })
+  const oldPlan = evaluateFlow(input.previousFlow ?? flow, {
+    beats,
+    drops: input.previousDrops,
+    strong,
+    phrases,
+  })
+  const hotOf = (p: FlowPlan) => p.cues.filter((c) => c.place !== 'call')
+  const fits = hot.every((h) => fitsPlan([h.ms], hotOf(plan)) || fitsPlan([h.ms], hotOf(oldPlan)))
+  if (!fits)
+    return {
+      status: 'manual',
+      wanted: [...memory.filter((m) => !removed.has(m.id)).map(keep), ...added, ...hot.map(keep)],
+    }
+
+  const start = flow.rules.find((r) => r.from === 'first-beat')
+  const planned = [
+    ...hotOf(plan).map((c) => ({ ms: c.ms, color: c.color, paired: c.place === 'both' })),
+    ...hot
+      .filter((h) => h.ms < START_MS && hotOf(plan).every((p) => !near(h.ms, p.ms)))
+      .map((h) => ({
+        ms: h.ms,
+        color: start ? ruleColor(start, 1) : h.color,
+        paired: start?.place === 'both',
+      })),
+  ].sort((a, b) => a.ms - b.ms)
+  if (planned.length > MAX_HOT_CUES) return { status: 'too-many', needed: planned.length }
+
+  const used = new Set<string>()
+  const placed: WantedCue[] = []
+  const drawn: DrawnHotCue[] = planned.map((w, i) => {
+    const kind = HOT_KINDS[i]
+    const there = hot.find((h) => !used.has(h.id) && near(h.ms, w.ms))
+    if (there) used.add(there.id)
+    placed.push(
+      there
+        ? { id: there.id, ms: there.ms, kind, color: w.color }
+        : { ms: w.ms, kind, color: w.color },
+    )
+    if (
+      w.paired &&
+      !memory.some((m) => near(m.ms, w.ms)) &&
+      ![...added, ...placed].some((c) => c.id === undefined && c.kind === 0 && near(c.ms, w.ms))
+    )
+      placed.push({ ms: w.ms, kind: 0, color: null })
+    return { ms: there ? there.ms : w.ms, kind, color: w.color }
+  })
+  for (const h of hot) {
+    if (used.has(h.id)) continue
+    removed.add(h.id)
+    const pairedMemory = memory.find(
+      (m) => near(m.ms, h.ms) && !removed.has(m.id) && !wantedDrops.some((d) => near(d, m.ms)),
+    )
+    if (pairedMemory) removed.add(pairedMemory.id)
+  }
+  return {
+    status: 'plan',
+    wanted: [...memory.filter((m) => !removed.has(m.id)).map(keep), ...added, ...placed],
+    hot: drawn,
+    trimmed: plan.trimmed.map((c) => c.ms),
+  }
+}
+
+export function diffCues(existing: ExistingCue[], wanted: WantedCue[]): CueChangeSet {
+  const byId = new Map(existing.map((c) => [c.id, c]))
+  const kept = new Set<string>()
+  const changes: CueChangeSet = { insert: [], update: [], remove: [] }
+  for (const w of wanted) {
+    const was = w.id === undefined ? undefined : byId.get(w.id)
+    if (!was) {
+      changes.insert.push({ ms: w.ms, kind: w.kind, color: w.color })
+      continue
+    }
+    kept.add(was.id)
+    if (was.ms !== w.ms) changes.update.push({ id: was.id, kind: w.kind, color: w.color, ms: w.ms })
+    else if (was.kind !== w.kind || was.color !== w.color)
+      changes.update.push({ id: was.id, kind: w.kind, color: w.color })
+  }
+  changes.remove = existing.filter((c) => !kept.has(c.id)).map((c) => c.id)
+  return changes
+}
+
 export function cueChanges(
   existing: ExistingCue[],
   drops: number[],
@@ -242,57 +360,18 @@ export function cueChanges(
   beats: number[],
   strong: StrongPart[],
 ): CueOutcome {
-  const hot = existing.filter((c) => c.kind !== 0)
-  const memory = existing.filter((c) => c.kind === 0)
-  const wantedDrops = [...new Set(drops)].sort((a, b) => a - b)
-  const currentDrops = memory.filter((m) => hot.every((h) => !near(m.ms, h.ms)))
-  const changes: CueChangeSet = {
-    insert: wantedDrops
-      .filter((ms) => !memory.some((m) => near(m.ms, ms)))
-      .map((ms) => ({ ms, kind: 0, color: null })),
-    update: [],
-    remove: currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
-  }
-  const plan = planCues(wantedDrops, beats, strong)
-  const oldPlan = planCues(previousDrops, beats, strong)
-  const fits = hot.every((h) => fitsPlan([h.ms], plan) || fitsPlan([h.ms], oldPlan))
-  if (!fits) return { status: 'manual', changes }
-
-  const wanted: PlannedCue[] = [
-    ...plan,
-    ...hot
-      .filter((h) => h.ms < START_MS && plan.every((p) => !near(h.ms, p.ms)))
-      .map((h) => ({ ms: h.ms, kind: 'inicio' as const })),
-  ].sort((a, b) => a.ms - b.ms)
-  if (wanted.length > MAX_HOT_CUES) return { status: 'too-many', needed: wanted.length }
-
-  const used = new Set<string>()
-  const drawn: DrawnHotCue[] = wanted.map((w, i) => {
-    const kind = HOT_KINDS[i]
-    const color = COLOR_BY_KIND[w.kind]
-    const there = hot.find((h) => !used.has(h.id) && near(h.ms, w.ms))
-    if (there) {
-      used.add(there.id)
-      if (there.kind !== kind || there.color !== color)
-        changes.update.push({ id: there.id, kind, color })
-    } else changes.insert.push({ ms: w.ms, kind, color })
-    if (
-      !memory.some((m) => near(m.ms, w.ms)) &&
-      !changes.insert.some((c) => c.kind === 0 && near(c.ms, w.ms))
-    )
-      changes.insert.push({ ms: w.ms, kind: 0, color: null })
-    return { ms: there ? there.ms : w.ms, kind, color }
+  const out = flowOutcome({
+    existing,
+    drops,
+    previousDrops,
+    beats,
+    strong,
+    phrases: [],
+    flow: MY_FLOW,
   })
-  for (const h of hot) {
-    if (used.has(h.id)) continue
-    changes.remove.push(h.id)
-    const pairedMemory = memory.find(
-      (m) =>
-        near(m.ms, h.ms) &&
-        !changes.remove.includes(m.id) &&
-        !wantedDrops.some((d) => near(d, m.ms)),
-    )
-    if (pairedMemory) changes.remove.push(pairedMemory.id)
-  }
-  return { status: 'plan', changes, hot: drawn }
+  if (out.status === 'too-many') return out
+  const changes = diffCues(existing, out.wanted)
+  return out.status === 'manual'
+    ? { status: 'manual', changes }
+    : { status: 'plan', changes, hot: out.hot }
 }

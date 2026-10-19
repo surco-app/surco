@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { nearestBeat, type PlannedCue, planCues, type StrongPart } from './cueRules'
+import {
+  type CueOutcome,
+  cueChanges,
+  type ExistingCue,
+  fitsPlan,
+  HOT_KINDS,
+  nearestBeat,
+  type PlannedCue,
+  planCues,
+  type StrongPart,
+} from './cueRules'
 
 const SAME = 50
 const LEGACY_DISTANCES = [16, 32, 48] as const
@@ -75,6 +85,127 @@ describe('Mi flujo through the engine against the frozen planCues', () => {
       expect(planCues(drops, beats, strong), `case ${i}`).toEqual(
         legacyPlanCues(drops, beats, strong),
       )
+    }
+  })
+})
+
+const LEGACY_COLOR: Record<16 | 32 | 48 | 'inicio', number> = { 16: 1, 32: 22, 48: 42, inicio: 32 }
+const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME
+
+function legacyCueChanges(
+  existing: ExistingCue[],
+  drops: number[],
+  previousDrops: number[],
+  beats: number[],
+  strong: StrongPart[],
+): CueOutcome {
+  const hot = existing.filter((c) => c.kind !== 0)
+  const memory = existing.filter((c) => c.kind === 0)
+  const wantedDrops = [...new Set(drops)].sort((a, b) => a - b)
+  const currentDrops = memory.filter((m) => hot.every((h) => !near(m.ms, h.ms)))
+  const changes = {
+    insert: wantedDrops
+      .filter((ms) => !memory.some((m) => near(m.ms, ms)))
+      .map((ms) => ({ ms, kind: 0, color: null as number | null })),
+    update: [] as { id: string; kind: number; color: number }[],
+    remove: currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
+  }
+  const plan = legacyPlanCues(wantedDrops, beats, strong)
+  const oldPlan = legacyPlanCues(previousDrops, beats, strong)
+  const fits = hot.every((h) => fitsPlan([h.ms], plan) || fitsPlan([h.ms], oldPlan))
+  if (!fits) return { status: 'manual', changes }
+  const wanted: PlannedCue[] = [
+    ...plan,
+    ...hot
+      .filter((h) => h.ms < 3000 && plan.every((p) => !near(h.ms, p.ms)))
+      .map((h) => ({ ms: h.ms, kind: 'inicio' as const })),
+  ].sort((a, b) => a.ms - b.ms)
+  if (wanted.length > 8) return { status: 'too-many', needed: wanted.length }
+  const used = new Set<string>()
+  const drawn = wanted.map((w, i) => {
+    const kind = HOT_KINDS[i]
+    const color = LEGACY_COLOR[w.kind]
+    const there = hot.find((h) => !used.has(h.id) && near(h.ms, w.ms))
+    if (there) {
+      used.add(there.id)
+      if (there.kind !== kind || there.color !== color)
+        changes.update.push({ id: there.id, kind, color })
+    } else changes.insert.push({ ms: w.ms, kind, color })
+    if (
+      !memory.some((m) => near(m.ms, w.ms)) &&
+      !changes.insert.some((c) => c.kind === 0 && near(c.ms, w.ms))
+    )
+      changes.insert.push({ ms: w.ms, kind: 0, color: null })
+    return { ms: there ? there.ms : w.ms, kind, color }
+  })
+  for (const h of hot) {
+    if (used.has(h.id)) continue
+    changes.remove.push(h.id)
+    const pairedMemory = memory.find(
+      (m) =>
+        near(m.ms, h.ms) &&
+        !changes.remove.includes(m.id) &&
+        !wantedDrops.some((d) => near(d, m.ms)),
+    )
+    if (pairedMemory) changes.remove.push(pairedMemory.id)
+  }
+  return { status: 'plan', changes, hot: drawn }
+}
+
+function randomExisting(
+  r: () => number,
+  beats: number[],
+  previousDrops: number[],
+  strong: StrongPart[],
+  pick: () => number,
+): ExistingCue[] {
+  const out: ExistingCue[] = []
+  let n = 0
+  const id = (): string => `e${n++}`
+  if (r() < 0.7)
+    legacyPlanCues(previousDrops, beats, strong).forEach((p, i) => {
+      if (r() < 0.85)
+        out.push({
+          id: id(),
+          ms: p.ms,
+          kind: HOT_KINDS[i] ?? 9,
+          color: r() < 0.9 ? LEGACY_COLOR[p.kind] : 1,
+        })
+      if (r() < 0.85) out.push({ id: id(), ms: p.ms, kind: 0, color: null })
+    })
+  for (const d of previousDrops)
+    if (r() < 0.9) out.push({ id: id(), ms: d, kind: 0, color: r() < 0.9 ? null : 0 })
+  if (r() < 0.2)
+    out.push({
+      id: id(),
+      ms: pick(),
+      kind: [1, 2, 3, 5][Math.floor(r() * 4)],
+      color: r() < 0.5 ? null : 1,
+    })
+  if (r() < 0.2) out.push({ id: id(), ms: Math.floor(r() * 3000), kind: 1, color: 32 })
+  if (out.length > 0 && r() < 0.1) out.push({ ...out[Math.floor(r() * out.length)], id: id() })
+  return out
+}
+
+const removalsAsSet = (o: CueOutcome): CueOutcome =>
+  o.status === 'too-many'
+    ? o
+    : { ...o, changes: { ...o.changes, remove: [...o.changes.remove].sort() } }
+
+describe('Mi flujo through wanted sets against the frozen cueChanges', () => {
+  it('changes exactly what cues.py completar changed in 3000 random collections', () => {
+    const r = prng(19102026)
+    for (let i = 0; i < 3000; i++) {
+      const { beats, drops: previousDrops, strong, pick } = randomTrack(r)
+      const existing = randomExisting(r, beats, previousDrops, strong, pick)
+      const drops = [
+        ...previousDrops.filter(() => r() < 0.7),
+        ...Array.from({ length: Math.floor(r() * 3) }, pick),
+      ]
+      expect(
+        removalsAsSet(cueChanges(existing, drops, previousDrops, beats, strong)),
+        `case ${i}`,
+      ).toEqual(removalsAsSet(legacyCueChanges(existing, drops, previousDrops, beats, strong)))
     }
   })
 })
