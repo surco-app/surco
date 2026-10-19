@@ -328,6 +328,48 @@ describe('plan', () => {
   })
 })
 
+describe('staging', () => {
+  // The stage looks for the stick's own PIONEER/DEVSETTING.DAT under this root so the
+  // staged My Settings never overwrite it: it has to be where baken will write.
+  it('stages against the root baken will write, the real folder for a folder target', async () => {
+    const roots: string[] = []
+    const base = deps(async () => {}, {
+      realPath: async (p) => (p === '/Volumes/surco/sets' ? '/Volumes/Surco/sets' : p),
+    })
+    const ex = createUsbExporter({
+      ...base,
+      stage: (sel, dir, root) => {
+        roots.push(root)
+        return base.stage(sel, dir, root)
+      },
+    })
+    await ex.plan(REQ)
+    await ex.plan({ ...REQ, target: { kind: 'folder', path: '/Volumes/surco/sets' } })
+    expect(roots).toEqual(['/Volumes/Surco', '/Volumes/Surco/sets'])
+  })
+
+  // A failure while staging must reach the renderer as a code, not as an English
+  // exception through IPC, and must not leave the work folder in tmp.
+  it('answers with a code and removes the work folder when staging fails', async () => {
+    const removed: string[] = []
+    const ex = createUsbExporter(
+      deps(async () => {}, {
+        stage: async () => {
+          throw new Error('EACCES: permission denied')
+        },
+        removeDir: async (dir) => {
+          removed.push(dir)
+        },
+      }),
+    )
+    expect(await ex.plan(REQ)).toEqual({ ok: false, reason: 'baken-failed' })
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'baken-failed' })
+    expect(removed).toEqual(['/tmp/stage', '/tmp/stage'])
+    expect(calls).toEqual([])
+    expect(logged.join('\n')).toContain('EACCES')
+  })
+})
+
 describe('start', () => {
   const happy: Script = async (emit) => {
     emit(PLAN)
@@ -348,6 +390,22 @@ describe('start', () => {
     const ex = createUsbExporter(deps(happy, { idAt: async () => 'OTHER' }))
     expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'volume-changed' })
     expect(calls).toEqual([])
+  })
+
+  // The dry run takes seconds; a stick swapped meanwhile must not get the real run.
+  it('asks again who is at the mount point right before the real run', async () => {
+    let asked = 0
+    const swapped = createUsbExporter(
+      deps(happy, { idAt: async () => (asked++ === 0 ? UUID : 'OTHER') }),
+    )
+    expect(await swapped.start(REQ)).toEqual({ ok: false, reason: 'volume-changed' })
+    expect(realCalls()).toEqual([])
+    let looked = 0
+    const remounted = createUsbExporter(
+      deps(happy, { devOf: async () => (looked++ === 0 ? 42 : 7) }),
+    )
+    expect(await remounted.start(REQ)).toEqual({ ok: false, reason: 'volume-gone' })
+    expect(realCalls()).toEqual([])
   })
 
   // Two presses before the first await returns: one baken, one export.
@@ -524,6 +582,77 @@ describe('start', () => {
     await ex.start(REQ)
     expect(await finished()).toEqual({ type: 'finished', outcome: 'error', reason: 'volume-gone' })
     expect(cancels).toBe(1)
+  })
+
+  // The cancel lands too late to stop the last track, so baken finishes; but what it wrote
+  // may have gone to another stick. Never remember it as this stick's export.
+  it('reports the volume lost, not done, when it changed during the last track', async () => {
+    let dev = 42
+    const ex = createUsbExporter(
+      deps(
+        async (emit) => {
+          emit(PLAN)
+          emit({ event: 'start', index: 2, usbPath: '/Contents/A/UnknownAlbum/102.wav', size: 30 })
+          dev = 7
+          await tick(20)
+          emit({ event: 'written', index: 2, kept: false })
+          emit({ event: 'database' })
+          emit(REPORT)
+        },
+        { devOf: async () => dev },
+      ),
+    )
+    await ex.start(REQ)
+    expect(await finished()).toEqual({ type: 'finished', outcome: 'error', reason: 'volume-gone' })
+    expect(memory.get(`volume:${UUID}`)).toBeNull()
+  })
+
+  // The renderer greys Cancel and shows "stopping" the same way whoever asked; a press of
+  // Cancel after that asks baken nothing more.
+  it('says it is stopping when the stick changes, as for a user cancel', async () => {
+    let dev = 42
+    const ex = createUsbExporter(
+      deps(
+        async (emit, cancelled) => {
+          emit(PLAN)
+          emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+          dev = 7
+          await cancelled
+          await tick(20)
+          emit({ ...REPORT, cancelled: true } as BakenEvent)
+        },
+        { devOf: async () => dev },
+      ),
+    )
+    await ex.start(REQ)
+    for (let i = 0; i < 100 && cancels === 0; i++) await tick(2)
+    expect(sent).toContainEqual({ type: 'cancelling' })
+    expect(ex.cancel()).toBe(false)
+    expect(cancels).toBe(1)
+    await finished()
+  })
+
+  // A cancel that lands during the last track is too late for baken to stop: the stick has
+  // the whole export, so it is done and remembered (the ledger's rule).
+  it('treats a report that was not cancelled as done even after a cancel', async () => {
+    const ex = createUsbExporter(
+      deps(async (emit, cancelled) => {
+        emit(PLAN)
+        emit({ event: 'start', index: 2, usbPath: '/Contents/A/UnknownAlbum/102.wav', size: 30 })
+        await cancelled
+        emit({ event: 'written', index: 2, kept: false })
+        emit({ event: 'database' })
+        emit(REPORT)
+      }),
+    )
+    await ex.start(REQ)
+    await tick()
+    expect(ex.cancel()).toBe(true)
+    expect((await finished()) as UsbExportEvent).toMatchObject({
+      type: 'finished',
+      outcome: 'done',
+    })
+    expect(memory.get(`volume:${UUID}`)).not.toBeNull()
   })
 
   it('says the stick went away when it was unplugged mid-export', async () => {

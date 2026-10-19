@@ -113,7 +113,13 @@ async function prepare(
   const sel = deps.readSelection(db, req.playlistIds)
   if (sel === 'unreadable') return 'unreadable'
   if (sel.tracks.length === 0) return 'nothing-selected'
-  return { target, sel, stage: await deps.stage(sel, await deps.makeStageDir(), target.root) }
+  const dir = await deps.makeStageDir()
+  try {
+    return { target, sel, stage: await deps.stage(sel, dir, target.root) }
+  } catch (err) {
+    await deps.removeDir(dir)
+    throw err
+  }
 }
 
 function planTracks(p: Prepared, plan: BakenPlan | null): UsbPlanTrack[] {
@@ -198,17 +204,19 @@ function summary(
   }
 }
 
+interface RunState {
+  phase: 'starting' | 'tracks' | 'database'
+  cancelling: boolean
+  cancel: () => void
+}
+
 type DryRun = { plan: BakenPlan | null; error: BakenError | null; started: boolean }
 
 export function createUsbExporter(deps: UsbExporterDeps) {
   const run = deps.run ?? runBaken
   // Claimed synchronously at the top of start(), before any await: two quick presses must
   // never start two bakens on one stick.
-  let running: {
-    phase: 'starting' | 'tracks' | 'database'
-    cancelling: boolean
-    cancel: () => void
-  } | null = null
+  let running: RunState | null = null
 
   const argsFor = (p: Prepared, req: UsbExportRequest, dryRun: boolean): string[] | null => {
     try {
@@ -254,6 +262,15 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   }
 
   async function plan(req: UsbExportRequest): Promise<UsbPlanResult> {
+    try {
+      return await summarise(req)
+    } catch (err) {
+      deps.log(`usb export summary failed: ${String(err)}`)
+      return { ok: false, reason: 'baken-failed' }
+    }
+  }
+
+  async function summarise(req: UsbExportRequest): Promise<UsbPlanResult> {
     const p = await prepare(deps, req)
     if (typeof p === 'string') return { ok: false, reason: p }
     try {
@@ -290,13 +307,23 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     return 'baken-failed'
   }
 
+  // What is mounted at the target's root now: the selected volume by its identifier, and
+  // the device number, which must still be `dev` once one was recorded. Never by name.
+  async function volumeAt(
+    p: Prepared,
+    req: UsbExportRequest,
+    dev: number | null,
+  ): Promise<number | UsbFailure> {
+    if (req.target.kind === 'volume' && (await deps.idAt(p.target.root)) !== req.target.uuid)
+      return 'volume-changed'
+    const now = await deps.devOf(p.target.root)
+    if (now === null || (dev !== null && now !== dev)) return 'volume-gone'
+    return now
+  }
+
   async function start(req: UsbExportRequest): Promise<UsbStartResult> {
     if (running) return { ok: false, reason: 'busy' }
-    const state: {
-      phase: 'starting' | 'tracks' | 'database'
-      cancelling: boolean
-      cancel: () => void
-    } = {
+    const state: RunState = {
       phase: 'starting',
       cancelling: false,
       cancel: () => {},
@@ -315,10 +342,8 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       const p = await prepare(deps, req)
       if (typeof p === 'string') return refuse(p)
       staged = p
-      if (req.target.kind === 'volume' && (await deps.idAt(p.target.root)) !== req.target.uuid)
-        return refuse('volume-changed')
-      const dev = await deps.devOf(p.target.root)
-      if (dev === null) return refuse('volume-gone')
+      const dev = await volumeAt(p, req, null)
+      if (typeof dev === 'string') return refuse(dev)
       const d = await dryRun(p, req)
       if (d === 'refused') return refuse('refused')
       if (!d.started) return refuse('no-baken')
@@ -328,6 +353,9 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       if (!d.plan.volumeRoot && p.target.kind === 'volume') return refuse('not-volume-root')
       const args = argsFor(p, req, false)
       if (!args) return refuse('refused')
+      // The dry run takes a while: a stick swapped meanwhile must not get the real run.
+      const still = await volumeAt(p, req, dev)
+      if (typeof still === 'string') return refuse(still)
       return launch(p, req, args, dev, state)
     } catch (err) {
       deps.log(`usb export did not start: ${String(err)}`)
@@ -340,7 +368,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     req: UsbExportRequest,
     args: string[],
     dev: number,
-    state: { phase: 'starting' | 'tracks' | 'database'; cancelling: boolean; cancel: () => void },
+    state: RunState,
   ): UsbStartResult {
     const startedAt = deps.now()
     const join = (deps.platform === 'win32' ? win32 : posix).join
@@ -408,7 +436,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       void deps.devOf(p.target.root).then((now) => {
         if (now === dev || lostVolume) return
         lostVolume = true
-        if (state.phase === 'tracks') handle.cancel()
+        requestCancel(state)
       })
     }, deps.devPollMs ?? 1000)
     void handle.done.then(async ({ started }) => {
@@ -417,7 +445,10 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       running = null
       try {
         const r = report as BakenReport | null
-        if (r && !r.cancelled) {
+        // Checked first: even a run baken finished may have written part of itself to
+        // whatever took the stick's place, so it is never remembered as this stick's.
+        if (lostVolume) deps.send({ type: 'finished', outcome: 'error', reason: 'volume-gone' })
+        else if (r && !r.cancelled) {
           for (const f of r.failures) deps.log(`usb export failed ${f.name}: ${f.message}`)
           deps.memory.remember(targetKey(req.target), {
             playlistIds: req.playlistIds,
@@ -435,9 +466,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
             failed: r.failures.length,
             ms: deps.now() - startedAt,
           })
-        } else if (lostVolume)
-          deps.send({ type: 'finished', outcome: 'error', reason: 'volume-gone' })
-        else if (r?.cancelled) deps.send({ type: 'finished', outcome: 'cancelled' })
+        } else if (r?.cancelled) deps.send({ type: 'finished', outcome: 'cancelled' })
         else
           deps.send({
             type: 'finished',
@@ -454,12 +483,17 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   // Only while tracks are copying, and only as a request: baken finishes the track in
   // progress and reports. Once it writes the databases, stopping could leave export.pdb new
   // and exportLibrary.db old: two libraries on one stick.
-  function cancel(): boolean {
-    if (running?.phase !== 'tracks' || running.cancelling) return false
-    running.cancelling = true
-    running.cancel()
+  // The device watch asks through here too, so the renderer shows the same "stopping".
+  function requestCancel(state: RunState | null): boolean {
+    if (state?.phase !== 'tracks' || state.cancelling) return false
+    state.cancelling = true
+    state.cancel()
     deps.send({ type: 'cancelling' })
     return true
+  }
+
+  function cancel(): boolean {
+    return requestCancel(running)
   }
 
   return { plan, start, cancel, busy: () => running !== null }
