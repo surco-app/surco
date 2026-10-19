@@ -707,11 +707,79 @@ describe('applyRekordboxBatch', () => {
   it('removes the deleted nodes from the XML and keeps the rest', async () => {
     const path = await collection()
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
     await applyRekordboxBatch(path, [edit('x', { kind: 'delete', playlistId: '1000' })], deps())
-    const xml = await readFile(xmlPath, 'utf8')
-    expect(xml).not.toContain('Id="3E8"')
-    expect(xml).not.toContain('Id="7D0"')
-    expect(xml).toContain('Id="BB8"')
+    expect(await readFile(xmlPath, 'utf8')).toBe(
+      before
+        .split(/(?<=\n)/)
+        .filter((line) => !/<NODE Id="(3E8|7D0)"/.test(line))
+        .join(''),
+    )
+  })
+
+  it('drops an operation whose playlist rekordbox changed while the user was closing it', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const original = await readFile(xmlPath, 'utf8')
+    const touchedInRekordbox = original.replace(
+      /(<NODE Id="BB8" [^>]*Timestamp=")\d+/,
+      '$11767225600001',
+    )
+    const d = deps({
+      ensureClosed: vi.fn(async () => {
+        await writeFile(xmlPath, touchedInRekordbox, 'utf8')
+        return true
+      }),
+    })
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('r', { kind: 'rename', playlistId: '3000', name: 'X' }, { '3000': 1767225600000 })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        {
+          id: 'r',
+          applied: false,
+          reason: 'stale',
+          notices: [{ code: 'edit-changed', playlist: 'House' }],
+        },
+      ],
+    })
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House' })
+    expect(await readFile(xmlPath, 'utf8')).toBe(touchedInRekordbox)
+  })
+
+  it('reports nothing written when every planned operation was refused inside the batch', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [
+        edit('folder', { kind: 'delete', playlistId: '1000' }),
+        edit('child', { kind: 'delete', playlistId: '2000' }),
+      ],
+      deps(),
+    )
+    expect(result.ok && result.wrote).toBe(true)
+    const again = await applyRekordboxBatch(
+      path,
+      [edit('gone', { kind: 'rename', playlistId: '3000', name: 'X' })],
+      deps({
+        ensureClosed: vi.fn(async () => {
+          const db = openRekordboxDb(path)
+          db?.prepare('DELETE FROM djmdPlaylist WHERE ID = ?').run('3000')
+          db?.close()
+          return true
+        }),
+      }),
+    )
+    expect(again).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'gone', applied: false, reason: 'stale', notices: [] }],
+    })
   })
 
   it('moves the Timestamp of a renamed playlist so the USB sync sees it', async () => {

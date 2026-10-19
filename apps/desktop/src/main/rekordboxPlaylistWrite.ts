@@ -43,13 +43,13 @@ import {
 } from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
 
-// Writes one organising edit into the user's rekordbox collection, the one library they
-// cannot rebuild. Same bargain as the repoint (rekordboxLibrary.ts): the edit is planned
-// on a read-only handle first, so an edit with nothing to write (or one the XML cannot
-// take) never asks the user to close rekordbox; rekordbox must be closed (asked once, then
-// checked again right before the write); there is a complete copy for the session and one
-// for this write before anything changes; and the edit runs in one transaction that also
-// covers the XML node, written just before the commit. A failure is undone by SQLite's own
+// Writes a batch of organising operations into the user's rekordbox collection, the one
+// library they cannot rebuild. Same bargain as the repoint (rekordboxLibrary.ts): the
+// operations are planned on a read-only handle first, so a batch with nothing to write (or
+// one the XML cannot take) never asks the user to close rekordbox; rekordbox must be closed
+// (asked once, then checked again right before the write); there is a complete copy for the
+// session and one for this write before anything changes; and the operations run in one
+// transaction, a savepoint each, that also covers the XML, written just before the commit. A failure is undone by SQLite's own
 // rollback, not by copying files over the user's: only an XML already written goes back
 // from its copy, and master.db is copied back only when its state is unknown.
 
@@ -198,6 +198,20 @@ function playlistName(db: Db, id: string): string {
   return row?.Name ?? id
 }
 
+function changedOutcome(db: Db, xml: string | null, op: QueueOp): OpOutcome | null {
+  if (xml === null) return null
+  for (const [playlistId, stamp] of Object.entries(op.stamps)) {
+    if (nodeTimestamp(xml, playlistId) !== stamp)
+      return {
+        id: op.id,
+        applied: false,
+        reason: 'stale',
+        notices: [{ code: 'edit-changed', playlist: playlistName(db, playlistId) }],
+      }
+  }
+  return null
+}
+
 function planEdit(probe: Db, xml: string | null, op: EditOp, find: FindOptions): Plan {
   const { edit } = op
   const refused = (reason: RekordboxEditRefusal, report?: PlaylistAddReport): Plan => ({
@@ -207,17 +221,8 @@ function planEdit(probe: Db, xml: string | null, op: EditOp, find: FindOptions):
   })
   const problem = editProblem(probe, edit)
   if (problem) return refused(problem)
-  for (const [playlistId, stamp] of Object.entries(op.stamps)) {
-    if (xml !== null && nodeTimestamp(xml, playlistId) !== stamp)
-      return {
-        outcome: {
-          id: op.id,
-          applied: false,
-          reason: 'stale',
-          notices: [{ code: 'edit-changed', playlist: playlistName(probe, playlistId) }],
-        },
-      }
-  }
+  const changed = changedOutcome(probe, xml, op)
+  if (changed) return { outcome: changed }
   if (
     edit.kind === 'move' &&
     !moveChangesOrder(probe, edit.playlistId, edit.linkIds, edit.beforeLinkId)
@@ -353,6 +358,16 @@ export async function applyRekordboxBatch(
 
   const db = openRekordboxDb(collectionPath)
   if (!db) return { ok: false, reason: 'unreadable' }
+  const stillPlanned: Planned[] = []
+  for (const p of planned) {
+    const changed = changedOutcome(db, xml, p.op)
+    if (changed) outcomes.set(p.op.id, changed)
+    else stillPlanned.push(p)
+  }
+  if (stillPlanned.length === 0) {
+    db.close()
+    return { ok: true, wrote: false, outcomes: inOrder() }
+  }
   const now = deps.now?.() ?? new Date()
   const draft: XmlDraft = {
     xml,
@@ -360,13 +375,16 @@ export async function applyRekordboxBatch(
     now: now.getTime(),
   }
   let xmlWritten = false
+  let anyApplied = false
   try {
     db.exec('BEGIN')
-    for (const p of [...planned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
+    for (const p of [...stillPlanned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
       const saved = draft.xml
       db.exec('SAVEPOINT surco_op')
       try {
-        outcomes.set(p.op.id, writeOp(db, draft, p, now))
+        const outcome = writeOp(db, draft, p, now)
+        outcomes.set(p.op.id, outcome)
+        if (outcome.applied) anyApplied = true
         db.exec('RELEASE surco_op')
       } catch (err) {
         if (!(err instanceof EditRefused)) throw err
@@ -393,7 +411,7 @@ export async function applyRekordboxBatch(
     return { ok: false, reason: 'write-failed' }
   }
   db.close()
-  return { ok: true, wrote: true, outcomes: inOrder() }
+  return { ok: true, wrote: anyApplied, outcomes: inOrder() }
 }
 
 export async function editRekordboxPlaylist(
