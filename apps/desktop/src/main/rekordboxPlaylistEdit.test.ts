@@ -549,6 +549,31 @@ describe('trackPlaylists', () => {
     expect(trackPlaylists(db, '102').sort()).toEqual(['2000', '3000'])
     expect(trackPlaylists(db, '103')).toEqual([])
   })
+
+  it('leaves out folders, smart lists and soft-deleted playlists or links, since the queue removes the track from what it lists', async () => {
+    db.close()
+    db = await openFixture({
+      content: [{ ID: '500', FolderPath: '/m/a.wav', FileType: 11, Title: 'A', Length: 200 }],
+      keys: [],
+      playlists: [
+        { ID: '10', Name: 'Live', Attribute: 0, ParentID: 'root', Seq: 1 },
+        { ID: '11', Name: 'Gone', Attribute: 0, ParentID: 'root', Seq: 2, deleted: true },
+        { ID: '12', Name: 'Unlinked', Attribute: 0, ParentID: 'root', Seq: 3 },
+        { ID: '13', Name: 'Folder', Attribute: 1, ParentID: 'root', Seq: 4 },
+        { ID: '14', Name: 'Smart', Attribute: 4, ParentID: 'root', Seq: 5 },
+        { ID: '15', Name: 'Null flag', Attribute: 0, ParentID: 'root', Seq: 6 },
+      ],
+      links: [
+        { PlaylistID: '10', ContentID: '500', TrackNo: 1 },
+        { PlaylistID: '11', ContentID: '500', TrackNo: 1 },
+        { PlaylistID: '12', ContentID: '500', TrackNo: 1, deleted: true },
+        { PlaylistID: '13', ContentID: '500', TrackNo: 1 },
+        { PlaylistID: '14', ContentID: '500', TrackNo: 1 },
+        { PlaylistID: '15', ContentID: '500', TrackNo: 1, deleted: null },
+      ],
+    })
+    expect(trackPlaylists(db, '500').sort()).toEqual(['10', '15'])
+  })
 })
 
 describe('removeTrackFromPlaylist', () => {
