@@ -118,6 +118,25 @@ describe('bakenArgs', () => {
       bakenArgs({ ...WIN, stage: stage('C:\\Users\\dj\\AppData\\Roaming\\Pioneer\\tmp') }),
     ).toThrow(BakenGuardError)
   })
+  // APFS and NTFS ignore case, so a differently-cased spelling is the same folder.
+  it('compares case-insensitively on macOS too', () => {
+    for (const device of ['/users/dj/library/pioneer', '/USERS/DJ'])
+      expect(() => bakenArgs({ ...MAC, device })).toThrow(BakenGuardError)
+  })
+
+  // baken writes <device>/PIONEER; a device above the Pioneer folder would reach it.
+  it('refuses a device that contains the Pioneer folder', () => {
+    expect(() => bakenArgs({ ...MAC, device: '/Users/dj/Library' })).toThrow(BakenGuardError)
+    expect(() => bakenArgs({ ...WIN, device: 'C:\\Users\\dj\\AppData\\Roaming' })).toThrow(
+      BakenGuardError,
+    )
+    expect(() => bakenArgs({ ...WIN, device: 'C:\\Users' })).toThrow(BakenGuardError)
+  })
+
+  it('refuses an XML staged inside the Pioneer folder', () => {
+    const s = { ...stage('/tmp/s'), xml: '/Users/dj/Library/Pioneer/collection.xml' }
+    expect(() => bakenArgs({ ...MAC, stage: s })).toThrow(BakenGuardError)
+  })
 })
 
 describe('parseBakenLine', () => {

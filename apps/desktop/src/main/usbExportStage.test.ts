@@ -108,6 +108,7 @@ const SEL = (): ExportSelection => {
 describe('stageExport', () => {
   it('copies the analysis for baken under USBANLZ, masking the vocal section', async () => {
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -123,6 +124,7 @@ describe('stageExport', () => {
   it('never changes rekordbox own files', async () => {
     const before = readFileSync(join(share, 'PIONEER/USBANLZ/51d/3f604/ANLZ0000.2EX'))
     await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -133,6 +135,7 @@ describe('stageExport', () => {
 
   it('names the artwork by TrackID for baken', async () => {
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -148,6 +151,7 @@ describe('stageExport', () => {
   // XML; the rest still exports.
   it('leaves out what has no file, and says which', async () => {
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -164,6 +168,7 @@ describe('stageExport', () => {
 
   it('keeps the waveform preview for the export list', async () => {
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -175,6 +180,7 @@ describe('stageExport', () => {
 
   it('copies only the My Settings files baken reads', async () => {
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -189,6 +195,7 @@ describe('stageExport', () => {
   // with --no-settings and the player keeps its own.
   it('has no settings folder when rekordbox wrote none', async () => {
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: join(root, 'nowhere'),
@@ -202,6 +209,7 @@ describe('stageExport', () => {
   it('leaves DEVSETTING.DAT out when the stick already has one', async () => {
     writeFileSync(join(settings, 'DEVSETTING.DAT'), 'dev')
     const fresh = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -209,11 +217,11 @@ describe('stageExport', () => {
     })
     expect(existsSync(join(fresh.settingsDir as string, 'DEVSETTING.DAT'))).toBe(true)
     const kept = await stageExport({
+      stickHasDevSetting: true,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
       dir: join(root, 'stage-b'),
-      stickHasDevSetting: true,
     })
     expect(existsSync(join(kept.settingsDir as string, 'DEVSETTING.DAT'))).toBe(false)
     expect(existsSync(join(kept.settingsDir as string, 'MYSETTING.DAT'))).toBe(true)
@@ -224,12 +232,48 @@ describe('stageExport', () => {
   it('copies a 2EX that is not a PMAI file unchanged', async () => {
     writeFileSync(join(share, 'PIONEER/USBANLZ/51d/3f604/ANLZ0000.2EX'), 'junk')
     const s = await stageExport({
+      stickHasDevSetting: false,
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
       dir: join(root, 'stage'),
     })
     expect(readFileSync(join(s.anlzDir, '51d/3f604/ANLZ0000.2EX'), 'utf8')).toBe('junk')
+  })
+
+  // A truncated section header makes the readers throw; one bad analysis must not stop the
+  // other tracks, and the track still exports without grid or waveform.
+  it('stages a track whose analysis is corrupt as one without analysis', async () => {
+    const bad = anlzFile(Buffer.concat([Buffer.from('PQTZ'), u32(12), u32(12)]))
+    writeFileSync(join(share, 'PIONEER/USBANLZ/51d/3f604/ANLZ0000.DAT'), bad)
+    const s = await stageExport({
+      stickHasDevSetting: false,
+      sel: SEL(),
+      shareDir: share,
+      settingsSource: settings,
+      dir: join(root, 'stage'),
+    })
+    expect(s.included).toEqual(['101'])
+    expect(s.waves.has('101')).toBe(false)
+  })
+
+  // The path comes from master.db; one that climbs out must never reach outside the staged
+  // folder, nor read outside rekordbox's share folder.
+  it('ignores an analysis path that climbs out of USBANLZ', async () => {
+    const sel = SEL()
+    sel.tracks[0].analysisPath = '/PIONEER/USBANLZ/../../../escape/ANLZ0000.DAT'
+    mkdirSync(join(root, 'escape'), { recursive: true })
+    writeFileSync(join(root, 'escape', 'ANLZ0000.DAT'), anlzFile(pwav))
+    const s = await stageExport({
+      stickHasDevSetting: false,
+      sel,
+      shareDir: share,
+      settingsSource: settings,
+      dir: join(root, 'stage'),
+    })
+    expect(existsSync(join(root, 'stage', 'escape'))).toBe(false)
+    expect(s.waves.has('101')).toBe(false)
+    expect(s.included).toEqual(['101'])
   })
 
   it('finds rekordbox small thumbnail beside the cover', () => {

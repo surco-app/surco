@@ -100,7 +100,7 @@ export function bakenArgs(input: BakenArgsInput): string[] {
   const p = platform === 'win32' ? win32 : posix
   const norm = (x: string): string => {
     const r = p.resolve(x)
-    return platform === 'win32' ? r.toLowerCase() : r
+    return r.toLowerCase()
   }
   const inside = (path: string, dir: string): boolean => {
     const a = norm(path)
@@ -110,11 +110,18 @@ export function bakenArgs(input: BakenArgsInput): string[] {
   if (
     norm(device) === norm(input.systemRoot) ||
     norm(device) === norm(input.home) ||
-    inside(device, input.pioneerDir)
+    inside(device, input.pioneerDir) ||
+    inside(input.pioneerDir, device)
   )
     throw new BakenGuardError(`refusing to export to ${device}`)
-  for (const dir of [stage.dir, stage.anlzDir, stage.artworkDir, stage.settingsDir ?? stage.dir])
-    if (inside(dir, input.pioneerDir))
+  for (const dir of [
+    stage.dir,
+    stage.xml,
+    stage.anlzDir,
+    stage.artworkDir,
+    stage.settingsDir ?? stage.dir,
+  ])
+    if (inside(dir, input.pioneerDir) || inside(input.pioneerDir, dir))
       throw new BakenGuardError(`refusing to stage inside ${input.pioneerDir}`)
   return [
     'expressport',

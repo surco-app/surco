@@ -1,5 +1,5 @@
 import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { dirname, extname, join } from 'node:path'
+import { dirname, extname, join, posix } from 'node:path'
 import { beatGrid, maskVocals, wavePreview } from './anlz'
 import { buildBakenXml, type XmlTrackFacts } from './bakenXml'
 import type { ExportSelection } from './usbExportSource'
@@ -29,7 +29,7 @@ export interface StageInput {
   settingsSource: string | null
   dir: string
   // The stick already has PIONEER/DEVSETTING.DAT: baken's settings copy would overwrite it.
-  stickHasDevSetting?: boolean
+  stickHasDevSetting: boolean
 }
 
 const REQUIRED_SETTINGS = ['MYSETTING.DAT', 'MYSETTING2.DAT', 'DJMMYSETTING.DAT']
@@ -86,23 +86,29 @@ export async function stageExport(input: StageInput): Promise<Stage> {
       continue
     }
     let grid: XmlTrackFacts['grid'] = []
-    if (t.analysisPath.startsWith(ANLZ_ROOT)) {
-      const rel = t.analysisPath.slice(ANLZ_ROOT.length)
-      for (const ext of ['DAT', 'EXT', '2EX']) {
-        const name = rel.replace(/\.DAT$/, `.${ext}`)
-        const bytes = await read(join(shareDir, ANLZ_ROOT, name))
-        if (!bytes) continue
-        await mkdir(dirname(join(anlzDir, name)), { recursive: true })
-        await writeFile(
-          join(anlzDir, name),
-          ext === '2EX' && isPmai(bytes) ? maskVocals(bytes) : bytes,
-        )
-        if (ext === 'DAT') {
-          grid = beatGrid(bytes)
-          const wave = wavePreview(bytes)
-          if (wave) waves.set(t.id, wave)
+    const analysisPath = posix.normalize(t.analysisPath)
+    try {
+      if (analysisPath.startsWith(ANLZ_ROOT)) {
+        const rel = analysisPath.slice(ANLZ_ROOT.length)
+        for (const ext of ['DAT', 'EXT', '2EX']) {
+          const name = rel.replace(/\.DAT$/, `.${ext}`)
+          const bytes = await read(join(shareDir, ANLZ_ROOT, name))
+          if (!bytes) continue
+          await mkdir(dirname(join(anlzDir, name)), { recursive: true })
+          await writeFile(
+            join(anlzDir, name),
+            ext === '2EX' && isPmai(bytes) ? maskVocals(bytes) : bytes,
+          )
+          if (ext === 'DAT') {
+            grid = beatGrid(bytes)
+            const wave = wavePreview(bytes)
+            if (wave) waves.set(t.id, wave)
+          }
         }
       }
+    } catch {
+      grid = []
+      waves.delete(t.id)
     }
     if (t.imagePath) {
       const cover = await read(join(shareDir, t.imagePath))
@@ -123,7 +129,7 @@ export async function stageExport(input: StageInput): Promise<Stage> {
     settingsDir: await stageSettings(
       input.settingsSource,
       join(dir, 'settings'),
-      input.stickHasDevSetting === true,
+      input.stickHasDevSetting,
     ),
     included: [...facts.keys()],
     missing,
