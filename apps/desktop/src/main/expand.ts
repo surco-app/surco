@@ -1,5 +1,6 @@
-import { readdir, stat } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
+import { sourceStat } from './sourceStat'
 
 // Beyond the four output formats, ffmpeg also decodes AAC/ALAC (.m4a/.mp4/.aac — what
 // Apple Music libraries are made of) and Ogg Vorbis/Opus (.ogg/.oga/.opus — Bandcamp and
@@ -62,7 +63,7 @@ export type OnBatch = (paths: string[]) => void
 export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<string[]> {
   const expanded = await Promise.all(
     paths.map(async (p) => {
-      const info = await stat(p).catch(() => null)
+      const info = await sourceStat(p).catch(() => null)
       if (!info) return []
       if (info.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)
