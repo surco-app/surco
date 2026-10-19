@@ -190,6 +190,7 @@ describe('opening a source playlist', () => {
       second = result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
     })
     await act(async () => {
+      await vi.waitFor(() => expect(pending.length).toBeGreaterThan(0))
       for (const resolve of pending) resolve()
       await Promise.all([first, second])
     })
@@ -426,5 +427,125 @@ describe('opening a source playlist', () => {
     await waitFor(() => expect(result.current.tracks[0].loadingMeta).toBe(false))
     const t = result.current.tracks[0]
     expect(t.diskSignature).toBe(trackSignature({ meta: t.meta }))
+  })
+})
+
+describe('opening a rekordbox playlist with previews', () => {
+  const preview = (title: string) => ({
+    title,
+    artist: 'Rebel Vision',
+    durationSec: 256,
+    cues: [{ ms: 1000, kind: 1 }],
+  })
+  const entry = (path: string, title: string) => ({
+    path,
+    separator: false,
+    meta: {},
+    contentId: path,
+    preview: preview(title),
+  })
+
+  it('adds the rows before the disk check answers, each with its preview', async () => {
+    let answer: (paths: string[]) => void = () => {}
+    const expandPaths = vi.fn(() => new Promise<string[]>((r) => (answer = r)))
+    const read = vi.fn(() => new Promise(() => {}))
+    const { result } = setup({ expandPaths, readMeta: read, readMetaLight: read })
+    let opened: Promise<number> = Promise.resolve(0)
+    act(() => {
+      opened = result.current.openSourcePlaylist(
+        [entry('/m/a.aiff', 'A'), entry('/m/b.aiff', 'B')],
+        'rekordbox',
+      )
+    })
+    await waitFor(() => expect(result.current.tracks).toHaveLength(2))
+    expect(result.current.tracks.map((t) => t.sourcePreview?.title)).toEqual(['A', 'B'])
+    answer(['/m/a.aiff', '/m/b.aiff'])
+    await act(async () => {
+      await opened
+    })
+  })
+
+  it('drops the row of a file the disk lacks and counts it once, as missing and not as unreadable', async () => {
+    const read = vi.fn((path: string) =>
+      path === '/m/gone.aiff'
+        ? new Promise((_, reject) => setTimeout(() => reject(new Error('ENOENT')), 20))
+        : Promise.resolve({
+            tags: tags({ title: 'A' }),
+            duration: 1,
+            cover: null,
+            foreignTags: [],
+            partial: true,
+          }),
+    )
+    const expandPaths = vi.fn(async () => ['/m/a.aiff'])
+    const onMetaReadFailed = vi.fn()
+    const { result } = setup(
+      { expandPaths, readMeta: read, readMetaLight: read },
+      { onMetaReadFailed },
+    )
+    let missing = -1
+    await act(async () => {
+      missing = await result.current.openSourcePlaylist(
+        [entry('/m/a.aiff', 'A'), entry('/m/gone.aiff', 'Gone')],
+        'rekordbox',
+      )
+    })
+    expect(missing).toBe(1)
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff'])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 40))
+    })
+    expect(onMetaReadFailed).not.toHaveBeenCalled()
+  })
+
+  it('never counts the preview as an edit once the file is read', async () => {
+    const read = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A from file', artist: 'File Artist' }),
+      duration: 255,
+      cover: null,
+      foreignTags: [],
+      partial: true,
+    })
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry('/m/a.aiff', 'A')], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const row = result.current.tracks[0]
+    expect(row.meta.title).toBe('A from file')
+    expect(row.diskSignature).toBe(trackSignature(row))
+  })
+
+  it('refreshes the preview of a row already loaded when the playlist is read again', async () => {
+    const read = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: 255,
+      cover: null,
+      foreignTags: [],
+      partial: true,
+    })
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry('/m/a.aiff', 'A')], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const before = result.current.tracks[0]
+    const withNewCue = {
+      ...entry('/m/a.aiff', 'A'),
+      preview: {
+        ...preview('A'),
+        cues: [
+          { ms: 1000, kind: 1 },
+          { ms: 64000, kind: 2 },
+        ],
+      },
+    }
+    await act(async () => {
+      await result.current.openSourcePlaylist([withNewCue], 'rekordbox')
+    })
+    const after = result.current.tracks[0]
+    expect(after.sourcePreview?.cues).toHaveLength(2)
+    expect(after.diskSignature).toBe(before.diskSignature)
+    expect(after.diskSignature).toBe(trackSignature(after))
   })
 })

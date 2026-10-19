@@ -43,6 +43,7 @@ import {
   REORDER_TYPE,
   setDraggedRows,
 } from '../lib/reorderDrag'
+import { rowDisplay } from '../lib/rowDisplay'
 import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
@@ -472,6 +473,7 @@ const TrackRow = memo(function TrackRow({
   const cleaned = activeCleanups(t).length > 0
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
+  const shown = rowDisplay(t)
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
@@ -657,10 +659,10 @@ const TrackRow = memo(function TrackRow({
                 style={{ '--progress': STAGE_PROGRESS[stage] } as React.CSSProperties}
               />
             )}
-            {t.embeddedCover ? (
+            {shown.cover ? (
               <img
                 data-testid="track-cover"
-                src={t.embeddedCover}
+                src={shown.cover}
                 alt=""
                 // Covers are base64 JPEGs; without these two the browser decodes each one
                 // synchronously on the main thread the moment its row is first painted —
@@ -695,17 +697,17 @@ const TrackRow = memo(function TrackRow({
               <span className="relative block min-w-0 flex-1 truncate">
                 <span className={ROW_TITLE}>
                   <Tooltip label={rowTooltip(t, tr)} />
-                  {t.listLabel}
+                  {shown.title}
                 </span>
               </span>
               {cueSwatch && <CueSwatches summary={cueSwatch.summary} pending={cueSwatch.pending} />}
               <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
-                {t.duration !== undefined && (
-                  <span data-testid="track-duration">{formatTime(t.duration)}</span>
+                {shown.duration !== undefined && (
+                  <span data-testid="track-duration">{formatTime(shown.duration)}</span>
                 )}
               </span>
             </span>
-            {t.loadingMeta ? (
+            {shown.waiting ? (
               <span
                 data-testid="track-loading"
                 className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
@@ -728,7 +730,7 @@ const TrackRow = memo(function TrackRow({
                 <span className={ROW_DETAIL}>
                   <span className="relative block w-fit max-w-full truncate">
                     <Tooltip label={rowTooltip(t, tr)} />
-                    {t.meta.artist || tr('trackList.noArtist')}
+                    {shown.artist || tr('trackList.noArtist')}
                   </span>
                 </span>
                 {/* A failed tag read leaves the row showing only its file-name parse; the mark

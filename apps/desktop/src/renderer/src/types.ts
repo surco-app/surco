@@ -11,6 +11,7 @@ import type {
   ReviewRawFields,
   SearchProviderId,
   SearchResult,
+  SourcePreview,
   SpectrumVerdict,
   TrackMetadata,
   TrimRange,
@@ -64,6 +65,7 @@ export interface TrackItem {
   // Total length in seconds, probed when the file is added. Undefined when the
   // probe failed or has not run yet, so the row simply omits the time.
   duration?: number
+  sourcePreview?: SourcePreview
   coverUrl?: string
   coverPath?: string
   // The artwork embedded in the file itself, captured once when the file is added

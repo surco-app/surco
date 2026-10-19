@@ -462,6 +462,27 @@ describe('TrackList', () => {
     expect(screen.queryByTestId('track-duration')).toBeNull()
   })
 
+  it('paints a row opened from rekordbox complete while its file is still being read', () => {
+    renderList([
+      track({
+        id: 'a',
+        loadingMeta: true,
+        sourcePreview: {
+          title: 'Night Train (Extended Mix)',
+          artist: 'Rebel Vision',
+          durationSec: 256,
+          coverUrl: 'surco://media/x',
+          cues: [],
+        },
+      }),
+    ])
+    expect(screen.getByTestId('track-row')).toHaveTextContent('Night Train (Extended Mix)')
+    expect(screen.getByTestId('track-row')).toHaveTextContent('Rebel Vision')
+    expect(screen.getByTestId('track-duration')).toHaveTextContent('4:16')
+    expect(screen.getByTestId('track-cover')).toHaveAttribute('src', 'surco://media/x')
+    expect(screen.queryByTestId('track-loading')).toBeNull()
+  })
+
   // A converted track edited afterwards would look identical to an untouched done
   // one (green dot), making it unsafe to defer Updates: the user could never tell
   // which tracks still carry unapplied changes. The amber dot makes batching

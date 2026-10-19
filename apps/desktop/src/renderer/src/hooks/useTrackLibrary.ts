@@ -202,7 +202,7 @@ export function useTrackLibrary({
   const importTotal = useRef(0)
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
   // 300-file drop yields one "couldn't read N" notice rather than a toast per file.
-  const importFailed = useRef(0)
+  const importFailed = useRef(new Set<string>())
   // removeTrack must keep a stable identity (memoized rows depend on it) while App's
   // registry-cleanup callback is recreated every render; the ref bridges the two.
   const onRemoveRef = useRef(onRemove)
@@ -363,19 +363,19 @@ export function useTrackLibrary({
           // Checked before the read, not after: the point is to not start the ones still
           // queued behind the handful already in flight.
           if (importCancel.current) return
-          const ok = await loadTrackMeta(base)
+          const present = tracksRef.current.some((t) => t.id === base.id)
+          const ok = present ? await loadTrackMeta(base) : true
           unread.delete(base.id)
-          if (!ok) importFailed.current += 1
+          if (!ok) importFailed.current.add(base.id)
           importDone.current += 1
           if (importCancel.current) return
           if (importDone.current >= importTotal.current) {
             importDone.current = 0
             importTotal.current = 0
             setImportProgress(null)
-            if (importFailed.current > 0) {
-              onMetaReadFailed(importFailed.current)
-              importFailed.current = 0
-            }
+            const failed = tracksRef.current.filter((t) => importFailed.current.has(t.id)).length
+            importFailed.current = new Set()
+            if (failed > 0) onMetaReadFailed(failed)
           } else {
             setImportProgress({ done: importDone.current, total: importTotal.current })
           }
@@ -535,7 +535,11 @@ export function useTrackLibrary({
   // declaration here would recreate it on every render of this hook (i.e. every render
   // of App), breaking that memo.
   const startOverTrack = useStableCallback((track: TrackItem): void => {
-    const base = { ...newTrack(track.inputPath), loadingMeta: true }
+    const base = {
+      ...newTrack(track.inputPath),
+      loadingMeta: true,
+      sourcePreview: track.sourcePreview,
+    }
     onForget(track.id)
     setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
     setSelection((s) => ({
@@ -690,14 +694,15 @@ export function useTrackLibrary({
   }, [])
 
   // A playlist opened from a source is browsing, not importing: the files go through the
-  // same expand-and-add path as a drop so every filter and analysis behaves alike, but only
-  // the ones not already in the crate are passed on. That keeps a track loaded from another
+  // same add path as a drop so every filter and analysis behaves alike, but only the ones
+  // not already in the crate are passed on. That keeps a track loaded from another
   // playlist with its edits, and keeps addPaths from reporting it as a skipped duplicate —
   // going back to a playlist is not something the user did twice.
   //
-  // Resolves how many of the playlist's files are not on disk: expandPaths already stats
-  // them, so the paths it drops are that set, without a second stat per row (a network
-  // crate pays ~340 ms per 100 files for it).
+  // The rows go in at once, without waiting for the disk; expandPaths then stats them in
+  // the background and the rows whose file is not there are removed. Resolves how many of
+  // the playlist's files are not on disk: the paths expandPaths drops are that set, without
+  // a second stat per row (a network crate pays ~340 ms per 100 files for it).
   async function openSourcePlaylist(
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
@@ -716,6 +721,25 @@ export function useTrackLibrary({
         ),
       )
     const loaded = loadedNow()
+    if (source === 'rekordbox') {
+      const previewOf = new Map(
+        entries.flatMap((e) =>
+          e.path && !e.separator && e.preview ? [[same(e.path), e.preview] as const] : [],
+        ),
+      )
+      const stale = new Set(
+        tracksRef.current
+          .filter((t) => {
+            const next = previewOf.get(same(t.inputPath))
+            return next !== undefined && JSON.stringify(next) !== JSON.stringify(t.sourcePreview)
+          })
+          .map((t) => t.id),
+      )
+      if (stale.size > 0)
+        mapTracks((t) =>
+          stale.has(t.id) ? { ...t, sourcePreview: previewOf.get(same(t.inputPath)) } : t,
+        )
+    }
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
         !e.separator && e.path !== null && !loaded.has(same(e.path)),
@@ -757,8 +781,7 @@ export function useTrackLibrary({
         })
     }
     if (fresh.length === 0) return 0
-    // Staged BEFORE expanding: the expand stream can create the rows before the awaited
-    // call returns, and they must find the stamp waiting.
+    // Staged BEFORE adding: the rows created below must find the stamp waiting.
     for (const e of fresh) {
       appleMusicMeta.current.set(e.path, e.meta)
       if (source === 'appleMusic') {
@@ -767,26 +790,23 @@ export function useTrackLibrary({
           ...(e.musicPersistentId ? { musicPersistentId: e.musicPersistentId } : {}),
         })
       }
+      if (source === 'rekordbox' && e.preview)
+        pendingSeed.current.set(e.path, { sourcePreview: e.preview })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
-    const expanded = await window.api.expandPaths(freshPaths)
-    const onDisk = new Set(expanded.map(same))
-    const dropped = freshPaths.filter((p) => !onDisk.has(same(p))).length
-    // Checked again after the await: an overlapping open of the same playlist (a focus
-    // refetch while the first expand is still running) may have added these meanwhile,
-    // and passing them on would report them as skipped duplicates.
-    const stillLoaded = loadedNow()
-    const toAdd = expanded.filter((p) => !stillLoaded.has(same(p)))
-    // A staged path that expandPaths dropped never gets a row to consume its entries, and
-    // would leak into a later unrelated load of that same file.
-    const consumed = new Set([...toAdd.map(same), ...stillLoaded])
+    await addPaths(freshPaths)
+    const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
+    const gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
+    // A staged path the disk lacks may never have been consumed by a row, and would leak
+    // into a later unrelated load of that same file.
     for (const e of fresh) {
-      if (consumed.has(same(e.path))) continue
+      if (!gone.has(same(e.path))) continue
       appleMusicMeta.current.delete(e.path)
       pendingSeed.current.delete(e.path)
     }
-    if (toAdd.length > 0) await addPaths(toAdd)
-    return dropped
+    const goneRows = tracksRef.current.filter((t) => gone.has(same(t.inputPath))).map((t) => t.id)
+    if (goneRows.length > 0) removeTracks(goneRows)
+    return gone.size
   }
 
   // Publishes to the live crate as well as to state, for the same reason the import
@@ -914,7 +934,7 @@ export function useTrackLibrary({
     importCancel.current = true
     importDone.current = 0
     importTotal.current = 0
-    importFailed.current = 0
+    importFailed.current = new Set()
     setImportProgress(null)
   }
 
