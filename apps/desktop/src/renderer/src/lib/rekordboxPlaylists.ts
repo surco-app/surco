@@ -72,6 +72,17 @@ function resolveTarget(
   return root ? { id: root.id, name: root.name } : target
 }
 
+const namesById = new WeakMap<readonly PlaylistOption[], Map<string, string>>()
+
+function namesOf(options: readonly PlaylistOption[]): Map<string, string> {
+  let byId = namesById.get(options)
+  if (!byId) {
+    byId = new Map(options.map((o) => [o.id, o.name]))
+    namesById.set(options, byId)
+  }
+  return byId
+}
+
 export function effectivePlaylists(
   track: TrackItem,
   membership: Membership | undefined,
@@ -80,7 +91,7 @@ export function effectivePlaylists(
   if (!membership || !options) return undefined
   if (track.rekordboxPlaylists)
     return track.rekordboxPlaylists.map((t) => resolveTarget(t, options))
-  const byId = new Map(options.map((o) => [o.id, o.name]))
+  const byId = namesOf(options)
   return (membership[rekordboxPathOf(track)] ?? []).flatMap((id) => {
     const name = byId.get(id)
     return name === undefined ? [] : [{ id, name }]

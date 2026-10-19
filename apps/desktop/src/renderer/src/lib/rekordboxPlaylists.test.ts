@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { SourceNode } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -219,5 +219,17 @@ describe('playlistDotsOf', () => {
   it('draws no dots while the membership or the options are still unknown', () => {
     expect(playlistDotsOf([a], undefined, OPTIONS, new Map()).size).toBe(0)
     expect(playlistDotsOf([a], membership, undefined, new Map()).size).toBe(0)
+  })
+
+  it('builds the id lookup once per call, not once per track', () => {
+    const many = Array.from({ length: 200 }, (_, n) =>
+      track({ id: `t${n}`, inputPath: `/m/${n}.wav` }),
+    )
+    const all = Object.fromEntries(many.map((t) => [t.inputPath, ['3000']]))
+    const set = vi.spyOn(Map.prototype, 'set')
+    playlistDotsOf(many, all, OPTIONS, new Map())
+    const writes = set.mock.calls.length
+    set.mockRestore()
+    expect(writes).toBeLessThan(many.length + OPTIONS.length * 3)
   })
 })

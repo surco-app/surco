@@ -1,8 +1,14 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Settings } from '../../../shared/types'
 import { withRekordboxField } from '../lib/fields'
-import { type Membership, type PlaylistOption, playlistOptions } from '../lib/rekordboxPlaylists'
+import {
+  type Membership,
+  type PlaylistOption,
+  playlistOptions,
+  rekordboxPathOf,
+} from '../lib/rekordboxPlaylists'
+import type { TrackItem } from '../types'
 
 export function useRekordboxAvailable(): boolean {
   const { data = false } = useQuery({
@@ -37,6 +43,21 @@ export function useRekordboxMembership(
     placeholderData: keepPrevious ? keepPreviousData : undefined,
   })
   return data
+}
+
+const LIST_MEMBERSHIP_DEBOUNCE_MS = 1000
+
+export function useRekordboxListMembership(
+  tracks: readonly TrackItem[],
+  enabled: boolean,
+): Membership | undefined {
+  const paths = useMemo(() => (enabled ? tracks.map(rekordboxPathOf) : []), [tracks, enabled])
+  const [settled, setSettled] = useState(paths)
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(paths), LIST_MEMBERSHIP_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [paths])
+  return useRekordboxMembership(settled, enabled, { keepPrevious: true })
 }
 
 export function useOfferRekordboxField(

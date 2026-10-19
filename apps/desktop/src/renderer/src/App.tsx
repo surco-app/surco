@@ -83,7 +83,7 @@ import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import {
   useOfferRekordboxField,
   useRekordboxAvailable,
-  useRekordboxMembership,
+  useRekordboxListMembership,
   useRekordboxPlaylistOptions,
 } from './hooks/useRekordboxPlaylists'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
@@ -128,7 +128,7 @@ import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
-import { type PlaylistDot, playlistDotsOf, rekordboxPathOf } from './lib/rekordboxPlaylists'
+import { type PlaylistDot, playlistDotsOf } from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -622,9 +622,7 @@ export default function App(): React.JSX.Element {
   })
 
   const rekordboxOptionsForDots = useRekordboxPlaylistOptions(rekordboxAvailable)
-  const listMembership = useRekordboxMembership(tracks.map(rekordboxPathOf), rekordboxAvailable, {
-    keepPrevious: true,
-  })
+  const listMembership = useRekordboxListMembership(tracks, rekordboxAvailable)
   const dotsRef = useRef<Map<string, PlaylistDot>>(new Map())
   const playlistDots = useMemo(() => {
     const next = playlistDotsOf(tracks, listMembership, rekordboxOptionsForDots, dotsRef.current)
