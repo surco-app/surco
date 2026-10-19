@@ -77,6 +77,7 @@ EOF
 16. **Rename and delete are new kinds of `RekordboxPlaylistEdit`** (Decision 4), so `editProblem`, the writer and `editMessage` stay one switch each.
 17. **Link edits move the node `Timestamp`, tree edits included.** Phase 2a wrote that link edits never touch `masterPlaylists6.xml`; the spike measured rekordbox moving it (Makina, 19:00:36.518), so 2a's moves, removes, separators and adds now move it too, and the XML is backed up whenever it exists and something is written. Replaces the 2a test that asserted the XML untouched.
 18. **Phases are per operation.** Each queued operation runs whole inside its own `SAVEPOINT`, operations sorted by the spec's phase (tracks, creates, links, renames, cues, deletes). A track operation does its own add, new playlists and links in that order. The one cross-operation dependency, the same new playlist name on two tracks, is one map per batch (Task 5).
+19. **A track's entry is looked up when it is queued** by its final path and, only when the run also repoints it ("Sincronizar rekordbox" on), by the path it came from. With the toggle off, a format change adds the new file beside the old entry instead of moving the old entry; the toggle keeps meaning "Surco may move my entries". Checked with Vicent in Task 16.
 
 ## Review Focus
 
@@ -2664,6 +2665,644 @@ npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
 npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
 git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxQueueOps.ts apps/desktop/src/main/rekordboxQueue.ts apps/desktop/src/main/rekordboxQueue.test.ts
 git commit -m "Keep rekordbox writes in a persistent queue and apply it as one batch"
+```
+
+---
+
+### Task 7: Apply when rekordbox closes
+
+**Files:**
+- Create: `src/main/rekordboxQueueWatch.ts`
+- Test: `src/main/rekordboxQueueWatch.test.ts`
+
+**Interfaces:**
+- Consumes: Task 6 `RekordboxQueue` (`isEmpty`, `apply`), `QueueApply`.
+- Produces: `interface WatchDeps { queue: Pick<RekordboxQueue, 'isEmpty' | 'apply'>; isRunning: () => Promise<boolean>; onApplied: (result: QueueApply) => void; intervalMs?: number }`, `watchRekordboxQueue(deps: WatchDeps): { poke(): void; stop(): void }`. `poke` is called at startup and after every enqueue; it checks at once and then every 5 s while the queue holds anything, and stops by itself when it is empty.
+
+Behaviour (spec "Cuándo se aplica", Decision 10): rekordbox running means wait and remember it was seen. Closed means apply, with an `ensureClosed` that only checks (never a dialog: the user did not ask for anything right now). A refusal for rekordbox (`cancelled`, `rekordbox-running`) keeps polling. Any other refusal (`backup-failed`, `write-failed`, ...) is reported once and disarms the watcher until rekordbox is seen running again, so a missing backup is retried at the next close and not every 5 s. Ticks never overlap.
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/main/rekordboxQueueWatch.test.ts`:
+
+```ts
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { QueueApply } from './rekordboxQueue'
+import { watchRekordboxQueue, type WatchDeps } from './rekordboxQueueWatch'
+
+const APPLIED: QueueApply = { status: 'applied', tracks: 1, changes: 0, notices: [], outcomes: [] }
+
+function setup(running: boolean[], results: QueueApply[] = [APPLIED]) {
+  let empty = false
+  const deps = {
+    queue: {
+      isEmpty: () => empty,
+      apply: vi.fn<WatchDeps['queue']['apply']>(async (ensureClosed) => {
+        const result = results.shift() ?? APPLIED
+        if (result.status === 'applied') empty = true
+        expect(await ensureClosed()).toBe(true)
+        return result
+      }),
+    },
+    isRunning: vi.fn(async () => running.shift() ?? false),
+    onApplied: vi.fn<WatchDeps['onApplied']>(),
+  }
+  return { deps, setEmpty: (v: boolean) => (empty = v) }
+}
+
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
+
+describe('watchRekordboxQueue', () => {
+  // The spec's case: the DJ converts with rekordbox open, closes it later, and the
+  // queue lands without anyone pressing anything.
+  it('applies once rekordbox is seen closed', async () => {
+    const { deps } = setup([true, true, false, false])
+    const watch = watchRekordboxQueue(deps)
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(deps.queue.apply).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(deps.queue.apply).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(1)
+    expect(deps.onApplied).toHaveBeenCalledWith(APPLIED)
+    watch.stop()
+  })
+
+  // Polling costs a process listing every 5 s; with nothing queued it must not run.
+  it('stops polling once the queue is empty', async () => {
+    const { deps } = setup([false, false])
+    const watch = watchRekordboxQueue(deps)
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    const checks = deps.isRunning.mock.calls.length
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(deps.isRunning.mock.calls.length).toBe(checks)
+  })
+
+  // A backup that cannot be made (disk full) would otherwise retry, and log, every 5 s
+  // for as long as Surco stays open.
+  it('waits for the next close after a failure that is not rekordbox', async () => {
+    const { deps } = setup(
+      [false, false, false, true, false, false],
+      [{ status: 'refused', reason: 'backup-failed' }, APPLIED],
+    )
+    const watch = watchRekordboxQueue(deps)
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(deps.onApplied).toHaveBeenCalledWith({ status: 'refused', reason: 'backup-failed' })
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(2)
+    watch.stop()
+  })
+
+  // rekordbox reopened between the check and the write: nothing to tell, keep waiting.
+  it('keeps polling silently when the apply found rekordbox open again', async () => {
+    const { deps } = setup([false, false, false, false], [{ status: 'refused', reason: 'rekordbox-running' }, APPLIED])
+    const watch = watchRekordboxQueue(deps)
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(2)
+    expect(deps.onApplied).toHaveBeenCalledTimes(1)
+    expect(deps.onApplied).toHaveBeenCalledWith(APPLIED)
+    watch.stop()
+  })
+
+  it('does nothing at startup with an empty queue', async () => {
+    const { deps, setEmpty } = setup([])
+    setEmpty(true)
+    watchRekordboxQueue(deps).poke()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(deps.isRunning).not.toHaveBeenCalled()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueueWatch.test.ts`
+Expected: FAIL, `Cannot find module './rekordboxQueueWatch'`.
+
+- [ ] **Step 3: Implement**
+
+Create `src/main/rekordboxQueueWatch.ts`:
+
+```ts
+import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+
+export interface WatchDeps {
+  queue: Pick<RekordboxQueue, 'isEmpty' | 'apply'>
+  isRunning: () => Promise<boolean>
+  onApplied: (result: QueueApply) => void
+  intervalMs?: number
+}
+
+export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: () => void } {
+  let timer: ReturnType<typeof setInterval> | null = null
+  let armed = true
+  let busy = false
+
+  const stop = (): void => {
+    if (timer) clearInterval(timer)
+    timer = null
+  }
+
+  const tick = async (): Promise<void> => {
+    if (busy) return
+    if (deps.queue.isEmpty()) {
+      stop()
+      return
+    }
+    busy = true
+    try {
+      if (await deps.isRunning()) {
+        armed = true
+        return
+      }
+      if (!armed) return
+      const result = await deps.queue.apply(async () => !(await deps.isRunning()))
+      if (
+        result.status === 'refused' &&
+        (result.reason === 'cancelled' || result.reason === 'rekordbox-running')
+      )
+        return
+      if (result.status === 'refused') armed = false
+      if (result.status !== 'empty') deps.onApplied(result)
+      if (deps.queue.isEmpty()) stop()
+    } finally {
+      busy = false
+    }
+  }
+
+  return {
+    poke() {
+      if (deps.queue.isEmpty()) return
+      if (!timer) timer = setInterval(() => void tick(), deps.intervalMs ?? 5000)
+      void tick()
+    },
+    stop,
+  }
+}
+```
+
+- [ ] **Step 4: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueueWatch.test.ts`
+Expected: PASS.
+
+- [ ] **Step 5: Mutation check**
+
+Delete `if (!armed) return` and rerun: `'waits for the next close after a failure that is not rekordbox'` must fail. Restore.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/main/rekordboxQueueWatch.ts apps/desktop/src/main/rekordboxQueueWatch.test.ts
+git commit -m "Apply the rekordbox queue when rekordbox closes"
+```
+
+---
+
+### Task 8: A conversion run fills the queue
+
+**Files:**
+- Modify: `src/shared/types.ts` (`ProcessJob.rekordboxPlaylists?`)
+- Modify: `src/main/rekordboxBatch.ts` (`RekordboxRepoint.playlists?`, `attachRekordboxPlaylists`)
+- Modify: `src/main/processTrack.ts` (`ProcessTrackDeps.attachRekordboxPlaylists?`, one call after `convertAudio`)
+- Create: `src/main/rekordboxQueueFromRun.ts`
+- Modify: `src/main/libraryFlushes.ts` (`flushConversionBatch`)
+- Test: `src/main/rekordboxBatch.test.ts`, `src/main/processTrack.test.ts`, `src/main/rekordboxQueueFromRun.test.ts`
+
+**Interfaces:**
+- Consumes: Task 2 `readContentFacts`, `ContentProbe`; Task 3 `trackPlaylists`; Task 1 `nodeTimestamp`; Task 5 `TrackOp`, `RekordboxPlaylistTarget`; Task 6 `RekordboxQueue['enqueue']`; existing `flushRekordboxSync`, `FlushResult`, `resolveTracks`.
+- Produces:
+  - `ProcessJob.rekordboxPlaylists?: RekordboxPlaylistTarget[]` (absent: the field was never touched, nothing is queued; `[]`: out of every playlist)
+  - `RekordboxRepoint.playlists?: RekordboxPlaylistTarget[]`; `attachRekordboxPlaylists(to: string, playlists: RekordboxPlaylistTarget[]): void`
+  - `ProcessTrackDeps.attachRekordboxPlaylists?: (to: string, playlists: RekordboxPlaylistTarget[]) => void`
+  - `trackOpsFromRun(collectionPath: string, repoints: RekordboxRepoint[], opts: { repointing: boolean; probe: ContentProbe; find: FindOptions; newId?: () => string }): Promise<TrackOp[]>`
+  - `interface RunQueueDeps { collectionPath: string; repointing: boolean; flushRepoints: (repoints: RekordboxRepoint[]) => Promise<FlushResult>; readOps: (repoints: RekordboxRepoint[]) => Promise<TrackOp[]>; enqueue: (ops: TrackOp[], repoints: RekordboxRepoint[]) => void; apply: () => void }`, `queueConversionRun(repoints: RekordboxRepoint[], deps: RunQueueDeps): Promise<void>`
+  - `flushConversionBatch(host, sessions, queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void })` (new third parameter; Task 9 passes it)
+
+Rules (spec "Al convertir o actualizar", Decisions 5, 14 and 19):
+- The repoint flush runs as today, gated by "Sincronizar rekordbox", with its close dialog. If it stopped because rekordbox stayed open, its repoints go to the queue instead of being lost, and no "blocked" dialog follows (the pill says it).
+- The track operations do not depend on the toggle: for every repoint carrying `playlists`, one `TrackOp` for the final path. Its entry is looked up when it is queued, by the final path and, when the repoint is part of this run, by the path it came from; its current playlists become `known`; the node `Timestamp` of every playlist it is in or wants becomes `stamps`; the file's facts are read now, while the file is certainly there.
+- Then the queue applies without a dialog (only if rekordbox is closed); otherwise it waits and the pill shows it.
+- Decision 19: when "Sincronizar rekordbox" is off, a converted MP3-to-WAV with playlists is looked up by its new path only, so the WAV is added beside the MP3 entry rather than the MP3 entry silently following it. Flagged for Vicent in Task 16.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `src/main/rekordboxBatch.test.ts` (add `attachRekordboxPlaylists` to the import):
+
+```ts
+describe('playlists on a repoint', () => {
+  // The repoint is recorded inside the encode; only the job knows the wanted playlists,
+  // so they join the entry for the file it just wrote.
+  it('attaches the wanted playlists to the repoint of the file just written', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }])
+    expect(endRekordboxBatch()).toEqual([{ ...a, playlists: [{ id: '3000', name: 'Makina' }] }])
+  })
+
+  // Apple Music moves the file after the encode; the playlists travel with the redirect.
+  it('keeps the playlists when the repoint is redirected', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachRekordboxPlaylists('/m/one.wav', [{ name: 'Bolos' }])
+    redirectRekordboxRepoint('/m/one.wav', '/Media/one.wav')
+    expect(endRekordboxBatch()).toEqual([{ ...a, to: '/Media/one.wav', playlists: [{ name: 'Bolos' }] }])
+  })
+})
+```
+
+Append to `src/main/processTrack.test.ts`, inside its top-level `describe` (it has `job` and `makeDeps` helpers):
+
+```ts
+  // The Playlists field rides the job; main hands it to the rekordbox batch for the file
+  // the conversion actually wrote.
+  it('attaches the job playlists to the file it wrote', async () => {
+    const attachRekordboxPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({ rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] }),
+      makeDeps({ attachRekordboxPlaylists }),
+    )
+    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(result.outputPath, [
+      { id: '3000', name: 'Makina' },
+    ])
+  })
+
+  it('attaches nothing when the field was never touched', async () => {
+    const attachRekordboxPlaylists = vi.fn()
+    await runProcessTrack(job(), makeDeps({ attachRekordboxPlaylists }))
+    expect(attachRekordboxPlaylists).not.toHaveBeenCalled()
+  })
+```
+
+Create `src/main/rekordboxQueueFromRun.test.ts`:
+
+```ts
+import { mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
+import type { RekordboxRepoint } from './rekordboxBatch'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
+import { ORGANISE_FIXTURE, TWIN_PATHS, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+import { queueConversionRun, type RunQueueDeps, trackOpsFromRun } from './rekordboxQueueFromRun'
+
+const META = rekordboxMetaFrom({ ...emptyMetadata(), artist: 'Sister Nancy', title: 'Bam Bam' })
+const probe = {
+  properties: async () => ({ sampleRateHz: 44100, bitDepth: 16, channels: 2, bitrateKbps: 1411 }),
+  duration: async () => 200,
+}
+let n = 0
+const newId = () => `op-${++n}`
+
+async function collection(): Promise<{ path: string; dir: string }> {
+  const dir = await mkdtemp(join(tmpdir(), 'surco-rbrun-'))
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    xml: true,
+    xmlTimestamps: { '2000': 1767225600111 },
+  })
+  return { path, dir }
+}
+
+describe('trackOpsFromRun', () => {
+  // The conversion moved Play This Song from MP3 to WAV; its entry is found by where it
+  // came from, and Surco records where rekordbox has it today to spot later changes.
+  it('records the entry, its playlists and their Timestamps when queued', async () => {
+    const { path } = await collection()
+    const repoint: RekordboxRepoint = {
+      from: '/Volumes/Public/Music/Play This Song.wav',
+      to: '/Volumes/Public/Music/Play This Song (24).wav',
+      meta: META,
+      playlists: [{ id: '3000', name: 'House' }],
+    }
+    const [op] = await trackOpsFromRun(path, [repoint], { repointing: true, probe, find: TWIN_PATHS, newId })
+    expect(op).toMatchObject({
+      kind: 'track',
+      path: '/Volumes/Public/Music/Play This Song (24).wav',
+      label: 'Sister Nancy - Bam Bam',
+      contentId: '102',
+      wanted: [{ id: '3000', name: 'House' }],
+    })
+    expect(op.known.sort()).toEqual(['2000', '3000'])
+    expect(op.stamps).toEqual({ '2000': 1767225600111, '3000': 1767225600000 })
+  })
+
+  // Read now, while the file is certainly there; the apply may come hours later.
+  it('reads the facts of a file rekordbox does not have', async () => {
+    const { path, dir } = await collection()
+    const file = join(dir, 'Bam Bam.wav')
+    await writeFile(file, Buffer.alloc(64))
+    const [op] = await trackOpsFromRun(
+      path,
+      [{ from: file, to: file, meta: META, playlists: [{ name: 'Bolos' }] }],
+      { repointing: false, probe, find: TWIN_PATHS, newId },
+    )
+    expect(op.contentId).toBeUndefined()
+    expect(op.known).toEqual([])
+    expect(op.facts).toMatchObject({ path: file, fileType: 11, fileSize: 64 })
+  })
+
+  it('queues nothing for a track whose field was never touched', async () => {
+    const { path } = await collection()
+    expect(
+      await trackOpsFromRun(path, [{ from: '/m/a.mp3', to: '/m/a.wav', meta: META }], {
+        repointing: true,
+        probe,
+        find: TWIN_PATHS,
+        newId,
+      }),
+    ).toEqual([])
+  })
+
+  it('queues nothing without a collection', async () => {
+    expect(
+      await trackOpsFromRun('', [{ from: '/m/a.wav', to: '/m/a.wav', meta: META, playlists: [] }], {
+        repointing: false,
+        probe,
+        find: TWIN_PATHS,
+        newId,
+      }),
+    ).toEqual([])
+  })
+})
+
+describe('queueConversionRun', () => {
+  const repoint: RekordboxRepoint = { from: '/m/a.mp3', to: '/m/a.wav', meta: META }
+  const deps = (over: Partial<RunQueueDeps> = {}) => ({
+    collectionPath: '/c/master.db',
+    repointing: true,
+    flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({ written: 1, skipped: [] })),
+    readOps: vi.fn<RunQueueDeps['readOps']>(async () => []),
+    enqueue: vi.fn<RunQueueDeps['enqueue']>(),
+    apply: vi.fn<RunQueueDeps['apply']>(),
+    ...over,
+  })
+
+  // Today Cancel loses the repoint and the DJ relocates the track by hand in rekordbox.
+  it('queues the repoints the user kept rekordbox open for', async () => {
+    const d = deps({
+      flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({
+        written: 0,
+        skipped: [],
+        blocked: 'rekordbox-running',
+      })),
+    })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).toHaveBeenCalledWith([], [repoint])
+    expect(d.apply).toHaveBeenCalled()
+  })
+
+  it('queues the run playlists whatever the repoint did', async () => {
+    const op = {
+      id: 'x',
+      kind: 'track' as const,
+      path: '/m/a.wav',
+      label: 'a',
+      facts: null,
+      wanted: [],
+      known: [],
+      stamps: {},
+    }
+    const d = deps({ readOps: vi.fn<RunQueueDeps['readOps']>(async () => [op]) })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).toHaveBeenCalledWith([op], [])
+  })
+
+  it('leaves the queue alone when the run has nothing for it', async () => {
+    const d = deps()
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).not.toHaveBeenCalled()
+    expect(d.apply).not.toHaveBeenCalled()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxBatch.test.ts src/main/processTrack.test.ts src/main/rekordboxQueueFromRun.test.ts`
+Expected: FAIL, `attachRekordboxPlaylists is not a function`, the processTrack spy never called, and `Cannot find module './rekordboxQueueFromRun'`.
+
+- [ ] **Step 3: The job and the batch**
+
+In `src/shared/types.ts`, add to `ProcessJob` (after `replacesLabel`):
+
+```ts
+  rekordboxPlaylists?: RekordboxPlaylistTarget[]
+```
+
+In `src/main/rekordboxBatch.ts`, add `import type { RekordboxPlaylistTarget } from '../shared/types'`, add `playlists?: RekordboxPlaylistTarget[]` to `RekordboxRepoint`, and append:
+
+```ts
+export function attachRekordboxPlaylists(to: string, playlists: RekordboxPlaylistTarget[]): void {
+  const index = repoints.findIndex((r) => r.to === to)
+  if (index !== -1) repoints[index] = { ...repoints[index], playlists }
+}
+```
+
+`redirectRekordboxRepoint` already spreads the entry, so the playlists follow it; its "landed back on the source" drop only fires without `meta`, which a conversion always records.
+
+In `src/main/processTrack.ts`, add to `ProcessTrackDeps`:
+
+```ts
+  attachRekordboxPlaylists?: (to: string, playlists: RekordboxPlaylistTarget[]) => void
+```
+
+(import the type from `../shared/types`), and right after the `try { ... } catch { ... } finally { ... }` around `deps.convertAudio`:
+
+```ts
+    if (job.rekordboxPlaylists) deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists)
+```
+
+- [ ] **Step 4: Operations out of a run**
+
+Create `src/main/rekordboxQueueFromRun.ts`:
+
+```ts
+import { randomUUID } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { basename } from 'node:path'
+import type { FlushResult } from './libraryRepointFlush'
+import type { RekordboxRepoint } from './rekordboxBatch'
+import { type ContentProbe, readContentFacts } from './rekordboxContentAdd'
+import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import { nodeTimestamp, playlistXmlPath } from './rekordboxMasterXml'
+import { resolveTracks, trackPlaylists } from './rekordboxPlaylistEdit'
+import type { TrackOp } from './rekordboxQueueOps'
+
+function labelOf(r: RekordboxRepoint): string {
+  const artist = r.meta?.artist.trim()
+  const title = r.meta?.title.trim()
+  return artist && title ? `${artist} - ${title}` : basename(r.to)
+}
+
+export async function trackOpsFromRun(
+  collectionPath: string,
+  repoints: RekordboxRepoint[],
+  opts: { repointing: boolean; probe: ContentProbe; find: FindOptions; newId?: () => string },
+): Promise<TrackOp[]> {
+  const wanted = repoints.filter((r) => r.playlists)
+  if (wanted.length === 0 || !collectionPath) return []
+  const db = openRekordboxDb(collectionPath, { readonly: true })
+  if (!db) return []
+  const xmlPath = playlistXmlPath(collectionPath)
+  const xml = existsSync(xmlPath) ? readFileSync(xmlPath, 'utf8') : null
+  const read: { r: RekordboxRepoint; contentId?: string; known: string[]; stamps: Record<string, number> }[] = []
+  try {
+    for (const r of wanted) {
+      const paths = opts.repointing && r.from !== r.to ? [r.to, r.from] : [r.to]
+      const contentId = resolveTracks(db, [{ paths }], { ...opts.find, quiet: true }).contentIds[0]
+      const known = contentId ? trackPlaylists(db, contentId) : []
+      const stamps: Record<string, number> = {}
+      const touched = new Set([...known, ...(r.playlists ?? []).flatMap((t) => (t.id ? [t.id] : []))])
+      for (const pid of touched) {
+        const stamp = xml === null ? null : nodeTimestamp(xml, pid)
+        if (stamp !== null) stamps[pid] = stamp
+      }
+      read.push({ r, contentId, known, stamps })
+    }
+  } finally {
+    db.close()
+  }
+  const newId = opts.newId ?? randomUUID
+  const ops: TrackOp[] = []
+  for (const { r, contentId, known, stamps } of read) {
+    const facts = r.meta ? await readContentFacts(r.to, r.meta, opts.probe).catch(() => null) : null
+    ops.push({
+      id: newId(),
+      kind: 'track',
+      path: r.to,
+      label: labelOf(r),
+      ...(contentId ? { contentId } : {}),
+      facts,
+      wanted: r.playlists ?? [],
+      known,
+      stamps,
+    })
+  }
+  return ops
+}
+
+export interface RunQueueDeps {
+  collectionPath: string
+  repointing: boolean
+  flushRepoints: (repoints: RekordboxRepoint[]) => Promise<FlushResult>
+  readOps: (repoints: RekordboxRepoint[]) => Promise<TrackOp[]>
+  enqueue: (ops: TrackOp[], repoints: RekordboxRepoint[]) => void
+  apply: () => void
+}
+
+export async function queueConversionRun(
+  repoints: RekordboxRepoint[],
+  deps: RunQueueDeps,
+): Promise<void> {
+  const result = await deps.flushRepoints(repoints)
+  const waiting = result.blocked === 'rekordbox-running' ? repoints : []
+  const ops = deps.collectionPath ? await deps.readOps(repoints) : []
+  if (ops.length === 0 && waiting.length === 0) return
+  deps.enqueue(ops, waiting)
+  deps.apply()
+}
+```
+
+`readContentFacts` for a file whose tags or duration cannot be read gives `null`, and the apply then says `not-added` if it had to add it.
+
+- [ ] **Step 5: The flush uses it**
+
+In `src/main/libraryFlushes.ts`, import `queueConversionRun`, `trackOpsFromRun` from `./rekordboxQueueFromRun`, `type RekordboxQueue` from `./rekordboxQueue`, `probeDuration`, `probeProperties` from `./ffmpeg` (alongside `toNmlLocation`), and change `flushConversionBatch` to take the queue and run the rekordbox part through `queueConversionRun`:
+
+```ts
+export async function flushConversionBatch(
+  host: LibraryHost,
+  sessions: { rekordbox: SessionBackup; engine: SessionBackup },
+  queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
+): Promise<void> {
+  await flushTraktorSync({ ...traktorFlushDeps(host), endNmlBatch })
+  const repoints = endRekordboxBatch()
+  const rekordbox = rekordboxFlushDeps(host)
+  const collectionPath = currentLibraryStatus().rekordbox.found
+    ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+    : ''
+  await queueConversionRun(repoints, {
+    collectionPath,
+    repointing: rekordbox.collectionPath !== '',
+    flushRepoints: async (list) => {
+      const result = await flushRekordboxSync({
+        ...rekordbox,
+        showBlockedDialog: () => {},
+        endBatch: () => list,
+        repointTracks: (path, items) =>
+          repointTracks(
+            path,
+            items.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+            {
+              sessionBackup: (db) => sessions.rekordbox.ensure(db),
+              readCover: readEmbeddedCover,
+            },
+          ),
+      })
+      logLibraryFlush('rekordbox repoint', result)
+      return result
+    },
+    readOps: (list) =>
+      trackOpsFromRun(collectionPath, list, {
+        repointing: rekordbox.collectionPath !== '',
+        probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
+        find: { realPath: (p: string) => realpathSync(p) },
+      }),
+    enqueue: queue.enqueue,
+    apply: queue.applyQuietly,
+  })
+  const engineResult = await flushEngineSync({
+    ...engineFlushDeps(host),
+    endBatch: () => repoints.filter((repoint) => repoint.from !== repoint.to),
+    repointTracks: (libraryDir, list) =>
+      repointEngineTracks(
+        libraryDir,
+        list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+        { sessionBackup: (path) => sessions.engine.ensure(path) },
+      ),
+  })
+  logLibraryFlush('Engine DJ repoint', engineResult)
+}
+```
+
+The existing comments of this function stay on the lines that stay (the Traktor and Engine ones); the rekordbox block is new code and carries none. Engine DJ still gets the run's repoints, as before.
+
+`index.ts` keeps compiling only once Task 9 passes the third argument; to keep this commit green, pass a stand-in in the one call site (`index.ts`, `process:batch-end`) that Task 9 replaces:
+
+```ts
+      flushConversionBatch(
+        hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
+        sessions,
+        { enqueue: () => {}, applyQuietly: () => {} },
+      ),
+```
+
+- [ ] **Step 6: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxBatch.test.ts src/main/processTrack.test.ts src/main/rekordboxQueueFromRun.test.ts src/main/rekordboxFlush.test.ts`
+Expected: PASS.
+
+- [ ] **Step 7: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxBatch.ts apps/desktop/src/main/rekordboxBatch.test.ts apps/desktop/src/main/processTrack.ts apps/desktop/src/main/processTrack.test.ts apps/desktop/src/main/rekordboxQueueFromRun.ts apps/desktop/src/main/rekordboxQueueFromRun.test.ts apps/desktop/src/main/libraryFlushes.ts apps/desktop/src/main/index.ts
+git commit -m "Queue a converted track's rekordbox playlists and the repoints rekordbox kept from running"
 ```
 
 ---
