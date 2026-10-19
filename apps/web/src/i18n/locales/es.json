@@ -552,8 +552,7 @@
     "smartscreen": "Al abrir el instalador, Windows mostrará «Windows protegió tu PC»: pulsa «Más información» y luego «Ejecutar de todas formas». Es SmartScreen avisando de que no reconoce al editor, no de que el archivo tenga nada malo.",
     "unsupported": "Todavía no hay instalador para tu sistema.",
     "unreachable": "No hemos podido consultar las descargas ahora mismo.",
-    "unreachableLink": "Descárgalo desde GitHub",
-    "countSuffix": "descargas y subiendo"
+    "unreachableLink": "Descárgalo desde GitHub"
   },
   "guide": {
     "metaTitle": "Cómo usar Surco: Guía paso a paso",

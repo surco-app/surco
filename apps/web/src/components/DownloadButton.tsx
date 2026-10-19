@@ -14,7 +14,6 @@ import {
 } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
-import DownloadCount from './DownloadCount'
 
 const REPO = 'surco-app/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
@@ -44,7 +43,6 @@ export default function DownloadButton({
   showMeta = true,
   note,
   center = false,
-  showCount = true,
 }: {
   // Which of the eight placements this is, reported with the click. Several of them share
   // a page, so page_path alone cannot say which CTA earned the download.
@@ -57,8 +55,6 @@ export default function DownloadButton({
   note?: string
   // A centred hero lines the button and its small print up on the page's axis.
   center?: boolean
-  // The home hero shows the count in its own pill above the headline instead.
-  showCount?: boolean
 }) {
   const { t } = useTranslation()
   // Starts 'unknown' in the prerender (no window) and resolves on mount, so the
@@ -252,14 +248,11 @@ export default function DownloadButton({
             ) : state === 'unsupported' ? (
               <p data-testid="download-unsupported">{t('download.unsupported')}</p>
             ) : (
-              <>
-                {facts.length > 0 && (
-                  <span data-testid="download-facts" className="font-mono text-faint tabular-nums">
-                    {facts.map((fact) => fact.replaceAll(' ', '\u00a0')).join(' · ')}
-                  </span>
-                )}
-                {showCount && <DownloadCount />}
-              </>
+              facts.length > 0 && (
+                <span data-testid="download-facts" className="font-mono text-faint tabular-nums">
+                  {facts.map((fact) => fact.replaceAll(' ', '\u00a0')).join(' · ')}
+                </span>
+              )
             )}
           </div>
         </>
