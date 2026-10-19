@@ -134,6 +134,7 @@ interface CueRow {
   contentId: string
   InMsec: number
   Kind: number
+  ColorTableIndex: number | null
 }
 
 const PLAYLIST_CONTENT = `SELECT s.ContentID FROM djmdSongPlaylist s
@@ -173,7 +174,7 @@ export function readRekordboxPlaylistWithPreview(
     .all(id) as PreviewRow[]
   const cueRows = db
     .prepare(
-      `SELECT ContentID AS contentId, InMsec, Kind FROM djmdCue
+      `SELECT ContentID AS contentId, InMsec, Kind, ColorTableIndex FROM djmdCue
         WHERE coalesce(rb_local_deleted, 0) = 0 AND ContentID IN (${PLAYLIST_CONTENT})
         ORDER BY InMsec`,
     )
@@ -181,7 +182,7 @@ export function readRekordboxPlaylistWithPreview(
   const cues = new Map<string, RowCue[]>()
   for (const c of cueRows) {
     const list = cues.get(String(c.contentId)) ?? []
-    list.push({ ms: c.InMsec, kind: c.Kind })
+    list.push({ ms: c.InMsec, kind: c.Kind, color: c.ColorTableIndex })
     cues.set(String(c.contentId), list)
   }
   const previews = new Map<string, SourcePreview>()

@@ -450,7 +450,7 @@ describe('TrackList', () => {
           title: 'Dance 4 Me',
           artist: 'DJ Miguel',
           durationSec: 287,
-          cues: [{ ms: 1000, kind: 1 }],
+          cues: [{ ms: 1000, kind: 1, color: null }],
         },
       }),
     ])
@@ -475,7 +475,12 @@ describe('TrackList', () => {
       id: 'a',
       inputPath: '/music/a.mp3',
       duration: 200,
-      sourcePreview: { title: 'A', artist: '', durationSec: 200, cues: [{ ms: 1000, kind: 1 }] },
+      sourcePreview: {
+        title: 'A',
+        artist: '',
+        durationSec: 200,
+        cues: [{ ms: 1000, kind: 1, color: null }],
+      },
     })
     renderList([t], null, [], { pendingCuePaths: new Set(['/music/a.mp3']) })
     expect(screen.getByTestId('track-wave')).toHaveAttribute('data-pending', 'true')

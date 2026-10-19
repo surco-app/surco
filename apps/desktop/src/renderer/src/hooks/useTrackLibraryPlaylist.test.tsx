@@ -435,7 +435,7 @@ describe('opening a rekordbox playlist with previews', () => {
     title,
     artist: 'Rebel Vision',
     durationSec: 256,
-    cues: [{ ms: 1000, kind: 1 }],
+    cues: [{ ms: 1000, kind: 1, color: null }],
   })
   const entry = (path: string, title: string) => ({
     path,
@@ -541,8 +541,8 @@ describe('opening a rekordbox playlist with previews', () => {
       preview: {
         ...preview('A'),
         cues: [
-          { ms: 1000, kind: 1 },
-          { ms: 64000, kind: 2 },
+          { ms: 1000, kind: 1, color: null },
+          { ms: 64000, kind: 2, color: null },
         ],
       },
     }
@@ -592,8 +592,8 @@ describe('opening a rekordbox playlist with previews', () => {
       preview: {
         ...preview('A'),
         cues: [
-          { ms: 1000, kind: 1 },
-          { ms: 64000, kind: 2 },
+          { ms: 1000, kind: 1, color: null },
+          { ms: 64000, kind: 2, color: null },
         ],
       },
     }

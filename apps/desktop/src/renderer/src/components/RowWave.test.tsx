@@ -19,9 +19,9 @@ afterEach(() => {
 
 const request = { path: '/m/a.wav', analysisPath: '/a.DAT' }
 const cues = [
-  { ms: 0, kind: 1 },
-  { ms: 32000, kind: 0 },
-  { ms: 64000, kind: 2 },
+  { ms: 0, kind: 1, color: 42 },
+  { ms: 32000, kind: 0, color: null },
+  { ms: 64000, kind: 2, color: 22 },
 ]
 
 describe('RowWave', () => {
@@ -47,7 +47,7 @@ describe('RowWave', () => {
     rerender(
       <RowWave
         request={request}
-        cues={[{ ms: 999000, kind: 1 }]}
+        cues={[{ ms: 999000, kind: 1, color: null }]}
         durationSec={128}
         pending={false}
       />,
@@ -61,5 +61,25 @@ describe('RowWave', () => {
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName(
       '2 hot cues waiting for rekordbox',
     )
+  })
+
+  it('paints each cue in the colour rekordbox gives it', () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} />)
+    const [a, b] = screen.getAllByTestId('track-hot-cue')
+    expect(a).toHaveStyle({ backgroundColor: '#e62828' })
+    expect(b).toHaveStyle({ backgroundColor: '#28e214' })
+    expect(screen.getByTestId('track-memory-cue')).toHaveStyle({ borderTopColor: '#e62828' })
+  })
+
+  it('keeps a waiting cue hollow in its own colour', () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending />)
+    const [a] = screen.getAllByTestId('track-hot-cue')
+    expect(a).toHaveStyle({ borderColor: '#e62828', color: '#e62828' })
+  })
+
+  it('marks a track whose cues wait for rekordbox even before it has any hot cue', () => {
+    render(<RowWave request={request} cues={[]} durationSec={128} pending />)
+    expect(screen.getByTestId('track-cue-pending')).toBeInTheDocument()
+    expect(screen.getByTestId('track-wave')).toHaveAccessibleName('Cues waiting for rekordbox')
   })
 })

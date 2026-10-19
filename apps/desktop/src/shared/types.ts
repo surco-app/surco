@@ -1028,6 +1028,7 @@ export interface SourceNode {
 export interface RowCue {
   ms: number
   kind: number
+  color: number | null
 }
 
 export interface SourcePreview {

@@ -1,6 +1,11 @@
 import type React from 'react'
 import { useCallback, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  HOT_CUE_DEFAULT_COLOR,
+  hotCueColor,
+  MEMORY_CUE_COLOR,
+} from '../../../shared/rekordboxCueColors'
 import type { RowCue, RowWaveRequest } from '../../../shared/types'
 import { cueLetter } from '../lib/rowCues'
 import { rowWaveKey, rowWaveOf, subscribeRowWave } from '../lib/rowWaves'
@@ -44,10 +49,13 @@ export function RowWave({
       : []
   const hot = placed.filter((c) => c.kind !== 0)
   const memory = placed.filter((c) => c.kind === 0)
-  const label =
-    hot.length > 0
-      ? tr(pending ? 'trackList.cuesAriaPending' : 'trackList.cuesAria', { count: hot.length })
-      : undefined
+  const awaiting = pending && hot.length === 0
+  let label: string | undefined
+  if (hot.length > 0) {
+    label = tr(pending ? 'trackList.cuesAriaPending' : 'trackList.cuesAria', { count: hot.length })
+  } else if (awaiting) {
+    label = tr('trackList.cuesPendingNone')
+  }
   return (
     <span
       data-testid="track-wave"
@@ -73,25 +81,38 @@ export function RowWave({
           key={`m-${c.ms}`}
           data-testid="track-memory-cue"
           aria-hidden="true"
-          style={{ left: `calc(${c.at}% - 4px)` }}
-          className="absolute top-0.5 h-0 w-0 border-x-4 border-t-[6px] border-x-transparent border-t-[var(--color-warn)]"
+          style={{ left: `calc(${c.at}% - 4px)`, borderTopColor: MEMORY_CUE_COLOR }}
+          className="absolute top-0.5 h-0 w-0 border-x-4 border-t-[6px] border-x-transparent"
         />
       ))}
-      {hot.map((c) => (
+      {awaiting && (
         <span
-          key={`h-${c.kind}-${c.ms}`}
-          data-testid="track-hot-cue"
+          data-testid="track-cue-pending"
           aria-hidden="true"
-          style={{ left: `calc(${c.at}% - 6px)` }}
-          className={`absolute top-0 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
-            pending
-              ? 'border border-[var(--color-accent)] text-[var(--color-accent)]'
-              : 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-          }`}
-        >
-          {cueLetter(c.kind)}
-        </span>
-      ))}
+          style={{ left: 'calc(0% - 6px)', borderColor: HOT_CUE_DEFAULT_COLOR }}
+          className="absolute top-0 h-3 w-3 rounded-[3px] border"
+        />
+      )}
+      {hot.map((c) => {
+        const colour = hotCueColor(c.color)
+        return (
+          <span
+            key={`h-${c.kind}-${c.ms}`}
+            data-testid="track-hot-cue"
+            aria-hidden="true"
+            style={
+              pending
+                ? { left: `calc(${c.at}% - 6px)`, borderColor: colour, color: colour }
+                : { left: `calc(${c.at}% - 6px)`, backgroundColor: colour, color: '#000' }
+            }
+            className={`absolute top-0 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
+              pending ? 'border' : ''
+            }`}
+          >
+            {cueLetter(c.kind)}
+          </span>
+        )
+      })}
     </span>
   )
 }

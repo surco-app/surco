@@ -256,9 +256,9 @@ describe('readRekordboxPlaylistWithPreview', () => {
       coverUrl: mediaUrl(join(share, 'PIONEER/Artwork/abc/def/artwork_m.jpg')),
       analysisPath: join(share, 'PIONEER/USBANLZ/p1/q1/ANLZ0000.DAT'),
       cues: [
-        { ms: 1000, kind: 1 },
-        { ms: 32000, kind: 0 },
-        { ms: 64000, kind: 2 },
+        { ms: 1000, kind: 1, color: 1 },
+        { ms: 32000, kind: 0, color: null },
+        { ms: 64000, kind: 2, color: 22 },
       ],
     })
   })
