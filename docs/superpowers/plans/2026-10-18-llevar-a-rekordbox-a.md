@@ -5557,3 +5557,760 @@ git commit -m "Show a track's rekordbox playlists as dots in the list"
 
 ---
 
+### Task 15: The queue in the renderer: state, notices, apply and discard
+
+**Files:**
+- Create: `src/renderer/src/lib/rekordboxQueueText.ts`
+- Create: `src/renderer/src/hooks/useRekordboxQueue.ts`
+- Modify: `src/renderer/src/lib/playlistEdits.ts` (export `refusalKey`)
+- Modify: `src/renderer/src/i18n/locales/*.json` (`rekordboxQueue.*`)
+- Test: `src/renderer/src/lib/rekordboxQueueText.test.ts`, `src/renderer/src/hooks/useRekordboxQueue.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 9 `window.api.rekordboxQueue`, `applyRekordboxQueue`, `discardRekordboxQueue`, `onRekordboxQueueChanged`, `onRekordboxQueueApplied`; Task 6 `RekordboxQueueState`, `RekordboxQueueApplied`, `RekordboxQueuePart`, `RekordboxQueueNotice`.
+- Produces:
+  - `refusalKey(reason: Exclude<RekordboxEditRefusal, 'nothing-to-add'>): string` (the existing `REFUSED` lookup, exported)
+  - `appliedMessage(tr: TFunction, applied: RekordboxQueueApplied): { text: string; tone: 'neutral' | 'danger' } | null`
+  - `noticeText(tr: TFunction, notice: RekordboxQueueNotice): string`
+  - `pillText(tr: TFunction, state: RekordboxQueueState): string | null` (null: nothing waits, no pill)
+  - `partText(tr: TFunction, part: RekordboxQueuePart): string`
+  - `useRekordboxQueue(notify: (text: string, tone: 'neutral' | 'danger') => void, onDiscarded: (paths: string[]) => void): { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> }`
+
+Behaviour: the hook reads the state once, follows `rekordbox:queueChanged`, and on every applied notice (pushed by main, or the answer of "Aplicar ahora") tells the user and re-reads `['rekordbox-membership']`, `['source-tree']` and `['source-playlist']` (the collection is the only truth). "Descartar" empties the queue and hands the queued track paths back so the app can drop those tracks' Playlists edits (spec: "las ediciones vuelven a lo que dice rekordbox").
+
+- [ ] **Step 1: Locale strings**
+
+Merge with the helper:
+
+```json
+{
+  "es": { "rekordboxQueue": {
+    "pillTracks_one": "1 pista espera a que cierres rekordbox",
+    "pillTracks_other": "{{count}} pistas esperan a que cierres rekordbox",
+    "pillChanges_one": "1 cambio espera a que cierres rekordbox",
+    "pillChanges_other": "{{count}} cambios esperan a que cierres rekordbox",
+    "applied_one": "Listo en rekordbox · 1 pista",
+    "applied_other": "Listo en rekordbox · {{count}} pistas",
+    "appliedChanges_one": "Listo en rekordbox · 1 cambio",
+    "appliedChanges_other": "Listo en rekordbox · {{count}} cambios",
+    "backupFailed": "No se pudo hacer la copia de rekordbox. Se intentará al cerrarlo otra vez",
+    "applyNow": "Aplicar ahora",
+    "discard": "Descartar",
+    "discardConfirm": "¿Descartar lo que espera? Las playlists vuelven a lo que dice rekordbox",
+    "discardYes": "Descartar",
+    "discardNo": "Cancelar",
+    "notice": {
+      "ambiguous": "No se añadió {{track}}. rekordbox la tiene dos veces",
+      "fileMissing": "No se dio de alta {{track}}. El fichero ya no está",
+      "notAdded": "No se dio de alta {{track}}. No se pudo leer el fichero",
+      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en rekordbox",
+      "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
+      "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox"
+    },
+    "part": {
+      "repoint": "nueva ruta",
+      "collection": "alta en la colección",
+      "playlists": "a {{names}}",
+      "noPlaylists": "fuera de sus playlists",
+      "tree": { "create": "crear", "rename": "renombrar", "delete": "borrar", "add": "añadir pistas", "move": "reordenar", "remove": "quitar pistas", "insertSeparator": "poner separador" }
+    }
+  } },
+  "en": { "rekordboxQueue": {
+    "pillTracks_one": "1 track waits for you to close rekordbox",
+    "pillTracks_other": "{{count}} tracks wait for you to close rekordbox",
+    "pillChanges_one": "1 change waits for you to close rekordbox",
+    "pillChanges_other": "{{count}} changes wait for you to close rekordbox",
+    "applied_one": "Done in rekordbox · 1 track",
+    "applied_other": "Done in rekordbox · {{count}} tracks",
+    "appliedChanges_one": "Done in rekordbox · 1 change",
+    "appliedChanges_other": "Done in rekordbox · {{count}} changes",
+    "backupFailed": "Could not back up rekordbox. Surco will try again when you close it",
+    "applyNow": "Apply now",
+    "discard": "Discard",
+    "discardConfirm": "Discard what is waiting? Playlists go back to what rekordbox has",
+    "discardYes": "Discard",
+    "discardNo": "Cancel",
+    "notice": {
+      "ambiguous": "{{track}} was not added. rekordbox has it twice",
+      "fileMissing": "{{track}} was not added to the collection. The file is gone",
+      "notAdded": "{{track}} was not added to the collection. The file could not be read",
+      "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in rekordbox",
+      "playlistGone": "{{playlist}} is no longer in rekordbox. {{track}} was not added",
+      "editChanged": "{{playlist}} was not changed. It changed in rekordbox"
+    },
+    "part": {
+      "repoint": "new path",
+      "collection": "added to the collection",
+      "playlists": "to {{names}}",
+      "noPlaylists": "out of its playlists",
+      "tree": { "create": "create", "rename": "rename", "delete": "delete", "add": "add tracks", "move": "reorder", "remove": "remove tracks", "insertSeparator": "add separator" }
+    }
+  } },
+  "de": { "rekordboxQueue": {
+    "pillTracks_one": "1 Titel wartet, bis du rekordbox schließt",
+    "pillTracks_other": "{{count}} Titel warten, bis du rekordbox schließt",
+    "pillChanges_one": "1 Änderung wartet, bis du rekordbox schließt",
+    "pillChanges_other": "{{count}} Änderungen warten, bis du rekordbox schließt",
+    "applied_one": "Fertig in rekordbox · 1 Titel",
+    "applied_other": "Fertig in rekordbox · {{count}} Titel",
+    "appliedChanges_one": "Fertig in rekordbox · 1 Änderung",
+    "appliedChanges_other": "Fertig in rekordbox · {{count}} Änderungen",
+    "backupFailed": "rekordbox konnte nicht gesichert werden. Surco versucht es beim nächsten Schließen erneut",
+    "applyNow": "Jetzt anwenden",
+    "discard": "Verwerfen",
+    "discardConfirm": "Wartende Änderungen verwerfen? Die Playlists zeigen wieder, was rekordbox hat",
+    "discardYes": "Verwerfen",
+    "discardNo": "Abbrechen",
+    "notice": {
+      "ambiguous": "{{track}} wurde nicht hinzugefügt. rekordbox hat ihn doppelt",
+      "fileMissing": "{{track}} wurde nicht in die Sammlung aufgenommen. Die Datei ist weg",
+      "notAdded": "{{track}} wurde nicht in die Sammlung aufgenommen. Die Datei war nicht lesbar",
+      "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Sie hat sich in rekordbox geändert",
+      "playlistGone": "{{playlist}} gibt es in rekordbox nicht mehr. {{track}} wurde nicht hinzugefügt",
+      "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert"
+    },
+    "part": {
+      "repoint": "neuer Pfad",
+      "collection": "in die Sammlung",
+      "playlists": "nach {{names}}",
+      "noPlaylists": "aus seinen Playlists",
+      "tree": { "create": "erstellen", "rename": "umbenennen", "delete": "löschen", "add": "Titel hinzufügen", "move": "umsortieren", "remove": "Titel entfernen", "insertSeparator": "Trenner einfügen" }
+    }
+  } },
+  "fr": { "rekordboxQueue": {
+    "pillTracks_one": "1 morceau attend que vous fermiez rekordbox",
+    "pillTracks_other": "{{count}} morceaux attendent que vous fermiez rekordbox",
+    "pillChanges_one": "1 changement attend que vous fermiez rekordbox",
+    "pillChanges_other": "{{count}} changements attendent que vous fermiez rekordbox",
+    "applied_one": "Fait dans rekordbox · 1 morceau",
+    "applied_other": "Fait dans rekordbox · {{count}} morceaux",
+    "appliedChanges_one": "Fait dans rekordbox · 1 changement",
+    "appliedChanges_other": "Fait dans rekordbox · {{count}} changements",
+    "backupFailed": "Impossible de sauvegarder rekordbox. Surco réessaiera à sa prochaine fermeture",
+    "applyNow": "Appliquer maintenant",
+    "discard": "Abandonner",
+    "discardConfirm": "Abandonner ce qui attend ? Les playlists reviennent à ce qu’a rekordbox",
+    "discardYes": "Abandonner",
+    "discardNo": "Annuler",
+    "notice": {
+      "ambiguous": "{{track}} n’a pas été ajouté. rekordbox l’a en double",
+      "fileMissing": "{{track}} n’a pas été ajouté à la collection. Le fichier n’est plus là",
+      "notAdded": "{{track}} n’a pas été ajouté à la collection. Le fichier est illisible",
+      "playlistChanged": "{{track}} n’a pas été modifié dans {{playlist}}. Elle a changé dans rekordbox",
+      "playlistGone": "{{playlist}} n’existe plus dans rekordbox. {{track}} n’a pas été ajouté",
+      "editChanged": "{{playlist}} n’a pas été modifiée. Elle a changé dans rekordbox"
+    },
+    "part": {
+      "repoint": "nouveau chemin",
+      "collection": "ajout à la collection",
+      "playlists": "dans {{names}}",
+      "noPlaylists": "hors de ses playlists",
+      "tree": { "create": "créer", "rename": "renommer", "delete": "supprimer", "add": "ajouter des morceaux", "move": "réordonner", "remove": "retirer des morceaux", "insertSeparator": "ajouter un séparateur" }
+    }
+  } },
+  "pt-BR": { "rekordboxQueue": {
+    "pillTracks_one": "1 faixa espera você fechar o rekordbox",
+    "pillTracks_other": "{{count}} faixas esperam você fechar o rekordbox",
+    "pillChanges_one": "1 mudança espera você fechar o rekordbox",
+    "pillChanges_other": "{{count}} mudanças esperam você fechar o rekordbox",
+    "applied_one": "Pronto no rekordbox · 1 faixa",
+    "applied_other": "Pronto no rekordbox · {{count}} faixas",
+    "appliedChanges_one": "Pronto no rekordbox · 1 mudança",
+    "appliedChanges_other": "Pronto no rekordbox · {{count}} mudanças",
+    "backupFailed": "Não foi possível fazer a cópia do rekordbox. O Surco tentará de novo ao fechá-lo",
+    "applyNow": "Aplicar agora",
+    "discard": "Descartar",
+    "discardConfirm": "Descartar o que espera? As playlists voltam ao que o rekordbox tem",
+    "discardYes": "Descartar",
+    "discardNo": "Cancelar",
+    "notice": {
+      "ambiguous": "{{track}} não foi adicionada. O rekordbox a tem duas vezes",
+      "fileMissing": "{{track}} não entrou na coleção. O arquivo não está mais lá",
+      "notAdded": "{{track}} não entrou na coleção. Não foi possível ler o arquivo",
+      "playlistChanged": "{{track}} não mudou em {{playlist}}. Ela mudou no rekordbox",
+      "playlistGone": "{{playlist}} não existe mais no rekordbox. {{track}} não foi adicionada",
+      "editChanged": "{{playlist}} não mudou. Ela mudou no rekordbox"
+    },
+    "part": {
+      "repoint": "novo caminho",
+      "collection": "entrada na coleção",
+      "playlists": "em {{names}}",
+      "noPlaylists": "fora das suas playlists",
+      "tree": { "create": "criar", "rename": "renomear", "delete": "apagar", "add": "adicionar faixas", "move": "reordenar", "remove": "tirar faixas", "insertSeparator": "inserir separador" }
+    }
+  } }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Create `src/renderer/src/lib/rekordboxQueueText.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest'
+import i18n from '../i18n'
+import { appliedMessage, partText, pillText } from './rekordboxQueueText'
+
+const tr = i18n.getFixedT('en')
+
+describe('rekordbox queue text', () => {
+  // Spec: the pill counts tracks, not operations; with only tree edits, changes.
+  it('counts tracks first, tree changes otherwise, and hides with nothing waiting', () => {
+    expect(pillText(tr, { tracks: 3, changes: 1, items: [] })).toBe(
+      '3 tracks wait for you to close rekordbox',
+    )
+    expect(pillText(tr, { tracks: 0, changes: 2, items: [] })).toBe(
+      '2 changes wait for you to close rekordbox',
+    )
+    expect(pillText(tr, { tracks: 0, changes: 0, items: [] })).toBeNull()
+  })
+
+  it('names what happens to each track', () => {
+    expect(partText(tr, { kind: 'playlists', names: ['Makina', 'Cierre'] })).toBe('to Makina, Cierre')
+    expect(partText(tr, { kind: 'collection' })).toBe('added to the collection')
+    expect(partText(tr, { kind: 'tree', edit: 'rename' })).toBe('rename')
+  })
+
+  // Never in silence: what rekordbox kept is named in the same line as what landed.
+  it('says what landed and what rekordbox kept', () => {
+    expect(
+      appliedMessage(tr, {
+        tracks: 3,
+        changes: 0,
+        notices: [{ code: 'playlist-changed', track: 'Bam Bam', playlist: 'Makina' }],
+      }),
+    ).toEqual({
+      text: 'Done in rekordbox · 3 tracks. Bam Bam was not changed in Makina. It changed in rekordbox',
+      tone: 'neutral',
+    })
+  })
+
+  it('says the copy failed and that it will try again', () => {
+    expect(appliedMessage(tr, { refused: 'backup-failed' })).toEqual({
+      text: 'Could not back up rekordbox. Surco will try again when you close it',
+      tone: 'danger',
+    })
+  })
+
+  it('says nothing when nothing landed and nothing was kept', () => {
+    expect(appliedMessage(tr, { tracks: 0, changes: 0, notices: [] })).toBeNull()
+  })
+})
+```
+
+Create `src/renderer/src/hooks/useRekordboxQueue.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
+import type React from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
+import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
+import '../i18n'
+import { installApi } from '../test/api'
+import { useRekordboxQueue } from './useRekordboxQueue'
+
+afterEach(cleanup)
+
+const WAITING: RekordboxQueueState = {
+  tracks: 1,
+  changes: 0,
+  items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'collection' }] }],
+}
+
+function setup(over: Partial<Api> = {}) {
+  let changed: (s: RekordboxQueueState) => void = () => {}
+  let applied: (a: RekordboxQueueApplied) => void = () => {}
+  const api = installApi({
+    rekordboxQueue: vi.fn<Api['rekordboxQueue']>(async () => WAITING),
+    onRekordboxQueueChanged: (cb) => {
+      changed = cb
+      return () => {}
+    },
+    onRekordboxQueueApplied: (cb) => {
+      applied = cb
+      return () => {}
+    },
+    ...over,
+  })
+  const client = new QueryClient()
+  const invalidate = vi.spyOn(client, 'invalidateQueries')
+  const notify = vi.fn()
+  const onDiscarded = vi.fn()
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  )
+  const hook = renderHook(() => useRekordboxQueue(notify, onDiscarded), { wrapper })
+  return { hook, api, notify, onDiscarded, invalidate, changed: (s: RekordboxQueueState) => changed(s), applied: (a: RekordboxQueueApplied) => applied(a) }
+}
+
+describe('useRekordboxQueue', () => {
+  it('reads the queue and follows its changes', async () => {
+    const { hook, changed } = setup()
+    await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))
+    act(() => changed({ tracks: 0, changes: 0, items: [] }))
+    expect(hook.result.current.state.tracks).toBe(0)
+  })
+
+  // The collection is the only truth: once something lands, dots, field and tree re-read it.
+  it('tells the user and re-reads rekordbox when the queue lands', async () => {
+    const { notify, invalidate, applied } = setup()
+    act(() => applied({ tracks: 2, changes: 0, notices: [] }))
+    expect(notify).toHaveBeenCalledWith('Done in rekordbox · 2 tracks', 'neutral')
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-membership'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['source-tree'] })
+  })
+
+  it('hands back the discarded tracks so their edits go back to rekordbox', async () => {
+    const discardRekordboxQueue = vi.fn<Api['discardRekordboxQueue']>(async () => {})
+    const { hook, onDiscarded } = setup({ discardRekordboxQueue })
+    await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))
+    await act(() => hook.result.current.discard())
+    expect(discardRekordboxQueue).toHaveBeenCalled()
+    expect(onDiscarded).toHaveBeenCalledWith(['/m/a.wav'])
+  })
+
+  it('announces the answer of Apply now', async () => {
+    const { hook, notify } = setup({
+      applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>(async () => ({ tracks: 1, changes: 0, notices: [] })),
+    })
+    await act(() => hook.result.current.applyNow())
+    expect(notify).toHaveBeenCalledWith('Done in rekordbox · 1 track', 'neutral')
+  })
+})
+```
+
+The renderer tests run in English (only `en` is bundled synchronously; `i18n/index.ts`), so the assertions read the English copy.
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/rekordboxQueueText.test.ts src/renderer/src/hooks/useRekordboxQueue.test.tsx`
+Expected: FAIL, missing modules.
+
+- [ ] **Step 4: Implement**
+
+In `src/renderer/src/lib/playlistEdits.ts`, below `REFUSED`:
+
+```ts
+export function refusalKey(reason: Exclude<RekordboxEditRefusal, 'nothing-to-add'>): string {
+  return REFUSED[reason]
+}
+```
+
+Create `src/renderer/src/lib/rekordboxQueueText.ts`:
+
+```ts
+import type { TFunction } from 'i18next'
+import type {
+  RekordboxQueueApplied,
+  RekordboxQueueNotice,
+  RekordboxQueuePart,
+  RekordboxQueueState,
+} from '../../../shared/types'
+import { refusalKey } from './playlistEdits'
+
+const NOTICE_KEY: Record<RekordboxQueueNotice['code'], string> = {
+  ambiguous: 'rekordboxQueue.notice.ambiguous',
+  'file-missing': 'rekordboxQueue.notice.fileMissing',
+  'not-added': 'rekordboxQueue.notice.notAdded',
+  'playlist-changed': 'rekordboxQueue.notice.playlistChanged',
+  'playlist-gone': 'rekordboxQueue.notice.playlistGone',
+  'edit-changed': 'rekordboxQueue.notice.editChanged',
+}
+
+export function noticeText(tr: TFunction, notice: RekordboxQueueNotice): string {
+  return tr(NOTICE_KEY[notice.code], notice)
+}
+
+export function pillText(tr: TFunction, state: RekordboxQueueState): string | null {
+  if (state.tracks > 0) return tr('rekordboxQueue.pillTracks', { count: state.tracks })
+  if (state.changes > 0) return tr('rekordboxQueue.pillChanges', { count: state.changes })
+  return null
+}
+
+export function partText(tr: TFunction, part: RekordboxQueuePart): string {
+  if (part.kind === 'playlists')
+    return part.names.length > 0
+      ? tr('rekordboxQueue.part.playlists', { names: part.names.join(', ') })
+      : tr('rekordboxQueue.part.noPlaylists')
+  if (part.kind === 'tree') return tr(`rekordboxQueue.part.tree.${part.edit}`)
+  return tr(`rekordboxQueue.part.${part.kind}`)
+}
+
+export function appliedMessage(
+  tr: TFunction,
+  applied: RekordboxQueueApplied,
+): { text: string; tone: 'neutral' | 'danger' } | null {
+  if ('refused' in applied) {
+    const key =
+      applied.refused === 'backup-failed'
+        ? 'rekordboxQueue.backupFailed'
+        : applied.refused === 'nothing-to-add'
+          ? null
+          : refusalKey(applied.refused)
+    return key ? { text: tr(key), tone: 'danger' } : null
+  }
+  const parts = [
+    ...(applied.tracks > 0 ? [tr('rekordboxQueue.applied', { count: applied.tracks })] : []),
+    ...(applied.tracks === 0 && applied.changes > 0
+      ? [tr('rekordboxQueue.appliedChanges', { count: applied.changes })]
+      : []),
+    ...applied.notices.map((n) => noticeText(tr, n)),
+  ]
+  return parts.length > 0 ? { text: parts.join('. '), tone: 'neutral' } : null
+}
+```
+
+Create `src/renderer/src/hooks/useRekordboxQueue.ts`:
+
+```ts
+import { useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
+import { appliedMessage } from '../lib/rekordboxQueueText'
+
+const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
+
+export function useRekordboxQueue(
+  notify: (text: string, tone: 'neutral' | 'danger') => void,
+  onDiscarded: (paths: string[]) => void,
+): { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> } {
+  const queryClient = useQueryClient()
+  const { t: tr } = useTranslation()
+  const [state, setState] = useState<RekordboxQueueState>(NOTHING)
+
+  useEffect(() => {
+    let live = true
+    void window.api.rekordboxQueue().then((s) => {
+      if (live) setState(s)
+    })
+    const off = window.api.onRekordboxQueueChanged(setState)
+    return () => {
+      live = false
+      off()
+    }
+  }, [])
+
+  const reread = useCallback(
+    () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
+        queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
+        queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
+      ]),
+    [queryClient],
+  )
+
+  const announce = useCallback(
+    (applied: RekordboxQueueApplied | null) => {
+      if (!applied) return
+      const message = appliedMessage(tr, applied)
+      if (message) notify(message.text, message.tone)
+      void reread()
+    },
+    [tr, notify, reread],
+  )
+
+  useEffect(() => window.api.onRekordboxQueueApplied(announce), [announce])
+
+  const applyNow = useCallback(async () => {
+    announce(await window.api.applyRekordboxQueue())
+  }, [announce])
+
+  const discard = useCallback(async () => {
+    const paths = state.items.flatMap((i) =>
+      i.key.startsWith('track:') ? [i.key.slice('track:'.length)] : [],
+    )
+    await window.api.discardRekordboxQueue()
+    onDiscarded(paths)
+    void reread()
+  }, [state, onDiscarded, reread])
+
+  return { state, applyNow, discard }
+}
+```
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/rekordboxQueueText.test.ts src/renderer/src/hooks/useRekordboxQueue.test.tsx src/renderer/src/lib/playlistEdits.test.ts src/renderer/src/i18n`
+Expected: PASS.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/lib/rekordboxQueueText.ts apps/desktop/src/renderer/src/lib/rekordboxQueueText.test.ts apps/desktop/src/renderer/src/hooks/useRekordboxQueue.ts apps/desktop/src/renderer/src/hooks/useRekordboxQueue.test.tsx apps/desktop/src/renderer/src/lib/playlistEdits.ts apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Follow the rekordbox queue in the window and say what landed"
+```
+
+---
+
+### Task 16: The pending pill
+
+**Files:**
+- Create: `src/renderer/src/components/RekordboxQueuePill.tsx`
+- Modify: `src/renderer/src/components/Toolbar.tsx` (`queuePill` slot)
+- Modify: `src/renderer/src/App.tsx` (the hook, the pill, dropping discarded edits)
+- Test: `src/renderer/src/components/RekordboxQueuePill.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 15 `useRekordboxQueue`, `pillText`, `partText`; Task 13's App `patchTracks`; Task 10 `rekordboxPathOf`.
+- Produces: `RekordboxQueuePill({ state, onApplyNow, onDiscard }: { state: RekordboxQueueState; onApplyNow: () => void; onDiscard: () => void })`; test ids `rekordbox-queue-pill`, `rekordbox-queue-menu`, `rekordbox-queue-item-<key>`, `rekordbox-queue-apply`, `rekordbox-queue-discard`, `rekordbox-queue-discard-yes`, `rekordbox-queue-discard-no`; `Toolbar` prop `queuePill?: React.ReactNode` (drawn before the trailing main action).
+
+Spec "La píldora": only when something waits; click opens the list (track and what happens to it) with "Aplicar ahora" (today's close dialog) and "Descartar" (confirmed).
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/renderer/src/components/RekordboxQueuePill.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import '../i18n'
+import type { RekordboxQueueState } from '../../../shared/types'
+import { RekordboxQueuePill } from './RekordboxQueuePill'
+
+afterEach(cleanup)
+
+const STATE: RekordboxQueueState = {
+  tracks: 1,
+  changes: 1,
+  items: [
+    {
+      key: 'track:/m/a.wav',
+      label: 'Sister Nancy - Bam Bam',
+      parts: [{ kind: 'collection' }, { kind: 'playlists', names: ['Makina', 'Cierre'] }],
+    },
+    { key: 'edit:e1', label: 'House', parts: [{ kind: 'tree', edit: 'rename' }] },
+  ],
+}
+
+function setup(state = STATE) {
+  const onApplyNow = vi.fn()
+  const onDiscard = vi.fn()
+  render(<RekordboxQueuePill state={state} onApplyNow={onApplyNow} onDiscard={onDiscard} />)
+  return { onApplyNow, onDiscard }
+}
+
+describe('RekordboxQueuePill', () => {
+  it('is not there when nothing waits', () => {
+    setup({ tracks: 0, changes: 0, items: [] })
+    expect(screen.queryByTestId('rekordbox-queue-pill')).toBeNull()
+  })
+
+  it('counts the waiting tracks', () => {
+    setup()
+    expect(screen.getByTestId('rekordbox-queue-pill')).toHaveTextContent(
+      '1 track waits for you to close rekordbox',
+    )
+  })
+
+  // The DJ checks what will land before closing rekordbox.
+  it('lists each track and what happens to it', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    expect(screen.getByTestId('rekordbox-queue-item-track:/m/a.wav')).toHaveTextContent(
+      'Sister Nancy - Bam Bam',
+    )
+    expect(screen.getByTestId('rekordbox-queue-item-track:/m/a.wav')).toHaveTextContent(
+      'added to the collection, to Makina, Cierre',
+    )
+    expect(screen.getByTestId('rekordbox-queue-item-edit:e1')).toHaveTextContent('House')
+  })
+
+  it('applies now from the menu', () => {
+    const { onApplyNow } = setup()
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    fireEvent.click(screen.getByTestId('rekordbox-queue-apply'))
+    expect(onApplyNow).toHaveBeenCalled()
+  })
+
+  // Discarding cannot be undone: the edits go back to what rekordbox says.
+  it('asks before discarding', () => {
+    const { onDiscard } = setup()
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    fireEvent.click(screen.getByTestId('rekordbox-queue-discard'))
+    expect(onDiscard).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('rekordbox-queue-discard-no'))
+    expect(onDiscard).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('rekordbox-queue-discard'))
+    fireEvent.click(screen.getByTestId('rekordbox-queue-discard-yes'))
+    expect(onDiscard).toHaveBeenCalled()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/RekordboxQueuePill.test.tsx`
+Expected: FAIL, `Cannot find module './RekordboxQueuePill'`.
+
+- [ ] **Step 3: Implement**
+
+Create `src/renderer/src/components/RekordboxQueuePill.tsx`:
+
+```tsx
+import { Clock } from 'lucide-react'
+import type React from 'react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { RekordboxQueueState } from '../../../shared/types'
+import { partText, pillText } from '../lib/rekordboxQueueText'
+
+export function RekordboxQueuePill({
+  state,
+  onApplyNow,
+  onDiscard,
+}: {
+  state: RekordboxQueueState
+  onApplyNow: () => void
+  onDiscard: () => void
+}): React.JSX.Element | null {
+  const { t: tr } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const text = pillText(tr, state)
+  if (!text) return null
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        data-testid="rekordbox-queue-pill"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((v) => !v)
+          setConfirming(false)
+        }}
+        className="press flex items-center gap-1.5 rounded-full border border-[var(--color-line-strong)] px-2.5 py-1 text-xs text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+        {text}
+      </button>
+      {open && (
+        <div
+          data-testid="rekordbox-queue-menu"
+          className="absolute top-full right-0 z-30 mt-1.5 w-80 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-2 shadow-lg"
+        >
+          <ul className="max-h-64 space-y-1 overflow-auto">
+            {state.items.map((item) => (
+              <li
+                key={item.key}
+                data-testid={`rekordbox-queue-item-${item.key}`}
+                className="rounded px-1.5 py-1 text-xs"
+              >
+                <span className="block truncate text-fg">{item.label}</span>
+                <span className="block truncate text-fg-faint">
+                  {item.parts.map((p) => partText(tr, p)).join(', ')}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {confirming ? (
+            <div className="mt-2 border-t border-[var(--color-line)] pt-2 text-xs">
+              <p className="mb-2 text-fg-muted">{tr('rekordboxQueue.discardConfirm')}</p>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  data-testid="rekordbox-queue-discard-no"
+                  onClick={() => setConfirming(false)}
+                  className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+                >
+                  {tr('rekordboxQueue.discardNo')}
+                </button>
+                <button
+                  type="button"
+                  data-testid="rekordbox-queue-discard-yes"
+                  onClick={() => {
+                    setOpen(false)
+                    setConfirming(false)
+                    onDiscard()
+                  }}
+                  className="rounded px-2 py-1 text-danger hover:bg-[var(--color-hover)]"
+                >
+                  {tr('rekordboxQueue.discardYes')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2 flex justify-end gap-2 border-t border-[var(--color-line)] pt-2 text-xs">
+              <button
+                type="button"
+                data-testid="rekordbox-queue-discard"
+                onClick={() => setConfirming(true)}
+                className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+              >
+                {tr('rekordboxQueue.discard')}
+              </button>
+              <button
+                type="button"
+                data-testid="rekordbox-queue-apply"
+                onClick={() => {
+                  setOpen(false)
+                  onApplyNow()
+                }}
+                className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+              >
+                {tr('rekordboxQueue.applyNow')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+`text-danger` is the theme's own class (used by the error rows in `ListRow`).
+
+In `src/renderer/src/components/Toolbar.tsx`: add `queuePill?: React.ReactNode` to `Props` and the destructuring, and render `{queuePill}` as the first child of the trailing group, right before the separator `<div aria-hidden="true" className="mx-1 h-5 w-px ...` that precedes `{primary}` / `PrimaryAction` (put it once, above the ternary, so both branches get it).
+
+In `src/renderer/src/App.tsx`, after `editRekordbox` (line ~628):
+
+```tsx
+  const dropDiscardedPlaylists = useStableCallback((paths: string[]) => {
+    const discarded = new Set(paths)
+    const ids = tracksRef.current
+      .filter((t) => t.rekordboxPlaylists && discarded.has(rekordboxPathOf(t)))
+      .map((t) => t.id)
+    if (ids.length > 0) patchTracks(ids, { rekordboxPlaylists: undefined })
+  })
+  const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists)
+```
+
+(`notifyEdit` is the keyed `rekordbox-edit` toast, so a queue notice replaces an edit notice instead of stacking), and on `<Toolbar`:
+
+```tsx
+                  queuePill={
+                    <RekordboxQueuePill
+                      state={rekordboxQueue.state}
+                      onApplyNow={() => void rekordboxQueue.applyNow()}
+                      onDiscard={() => void rekordboxQueue.discard()}
+                    />
+                  }
+```
+
+Imports: `useRekordboxQueue` from `./hooks/useRekordboxQueue`, `RekordboxQueuePill` from `./components/RekordboxQueuePill` (lazy-loading is not worth it for one small component).
+
+- [ ] **Step 4: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/RekordboxQueuePill.test.tsx src/renderer/src/components/Toolbar.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 5: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/components/RekordboxQueuePill.tsx apps/desktop/src/renderer/src/components/RekordboxQueuePill.test.tsx apps/desktop/src/renderer/src/components/Toolbar.tsx apps/desktop/src/renderer/src/App.tsx
+git commit -m "Show what waits for rekordbox to close, with Apply now and Discard"
+```
+
+---
+
