@@ -2213,5 +2213,8 @@
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy master.db.surco-backup, so if anything looks wrong, restore from it first",
     "pillElsewhere": "Waiting for another rekordbox collection",
     "elsewhere": "This was prepared for another rekordbox collection. Surco will not apply it to the one you use now"
+  },
+  "cueWave": {
+    "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to mark drops"
   }
 }

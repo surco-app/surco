@@ -2213,5 +2213,8 @@
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie master.db.surco-backup. Wenn etwas nicht stimmt, stelle die Sammlung zuerst daraus wieder her",
     "pillElsewhere": "Wartet auf eine andere rekordbox-Sammlung",
     "elsewhere": "Das wurde für eine andere rekordbox-Sammlung vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
+  },
+  "cueWave": {
+    "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Drops zu markieren"
   }
 }
