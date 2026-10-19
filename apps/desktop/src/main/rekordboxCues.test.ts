@@ -224,6 +224,55 @@ describe('applyCueChanges', () => {
     remove: ['q3'],
   }
 
+  it('moves a cue in place, keeping its row so rekordbox keeps its identity', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 1)`,
+    ).run(JSON.stringify([{ ID: 'q2', Kind: 1, InMsec: 8000, InFrame: 1200 }]))
+    expect(
+      applyCueChanges(
+        db,
+        '103',
+        { insert: [], update: [{ id: 'q2', kind: 1, color: 1, ms: 12000 }], remove: [] },
+        { now: NOW },
+      ),
+    ).toBe(1)
+    expect(
+      db
+        .prepare(
+          `SELECT InMsec, InFrame, Kind, ColorTableIndex, updated_at FROM djmdCue WHERE ID = 'q2'`,
+        )
+        .get(),
+    ).toEqual({ InMsec: 12000, InFrame: 1800, Kind: 1, ColorTableIndex: 1, updated_at: STAMP })
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    expect(JSON.parse(cc.Cues)).toEqual([
+      {
+        ID: 'q2',
+        Kind: 1,
+        InMsec: 12000,
+        InFrame: 1800,
+        updated_at: '2026-10-18T19:00:00.000+00:00',
+      },
+    ])
+    db.close()
+  })
+
+  it('leaves the position alone when only the letter changes', async () => {
+    const db = await writable()
+    applyCueChanges(
+      db,
+      '103',
+      { insert: [], update: [{ id: 'q2', kind: 3, color: 1 }], remove: [] },
+      { now: NOW },
+    )
+    expect(db.prepare(`SELECT InMsec, InFrame FROM djmdCue WHERE ID = 'q2'`).get()).toMatchObject({
+      InMsec: 8000,
+    })
+    db.close()
+  })
+
   it('writes the cue rows the way the spike did and rekordbox accepted', async () => {
     const db = await writable()
     const ids = ['70001', '70002', '70003']

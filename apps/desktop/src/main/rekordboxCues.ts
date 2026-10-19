@@ -146,6 +146,8 @@ function liveEntries(db: Db, contentId: string): Record<string, unknown>[] {
   ).map((e) => ({ ...e, created_at: isoOf(e.created_at), updated_at: isoOf(e.updated_at) }))
 }
 
+const frameOf = (ms: number): number => Math.floor((ms * 150) / 1000)
+
 function changedEntries(
   cues: string | null,
   changes: CueChangeSet,
@@ -160,6 +162,10 @@ function changedEntries(
     const e = entries.find((x) => String(x.ID) === u.id)
     if (e) {
       e.Kind = u.kind
+      if (u.ms !== undefined) {
+        e.InMsec = u.ms
+        e.InFrame = frameOf(u.ms)
+      }
       e.updated_at = iso
     }
   }
@@ -192,7 +198,7 @@ export function applyCueChanges(
       ID: unusedRowId(db, 'djmdCue', ctx.newCueId ?? randomCueId),
       ContentID: contentId,
       InMsec: c.ms,
-      InFrame: Math.floor((c.ms * 150) / 1000),
+      InFrame: frameOf(c.ms),
       InMpegFrame: 0,
       InMpegAbs: 0,
       OutMsec: -1,
@@ -223,8 +229,13 @@ export function applyCueChanges(
     `UPDATE djmdCue SET Kind = ?, ColorTableIndex = ?, rb_local_usn = ?, updated_at = ?
       WHERE ID = ? AND ContentID = ?`,
   )
-  for (const u of changes.update)
+  const move = db.prepare(
+    'UPDATE djmdCue SET InMsec = ?, InFrame = ? WHERE ID = ? AND ContentID = ?',
+  )
+  for (const u of changes.update) {
     update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id, contentId)
+    if (u.ms !== undefined) move.run(u.ms, frameOf(u.ms), u.id, contentId)
+  }
   const remove = db.prepare('DELETE FROM djmdCue WHERE ID = ? AND ContentID = ?')
   for (const id of changes.remove) remove.run(id, contentId)
 
