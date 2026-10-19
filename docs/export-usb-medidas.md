@@ -197,3 +197,21 @@ Copiar los `.DAT`, `.EXT` y `.2EX` de las primeras 500 pistas analizadas (1500 f
 - El significado de los Kind 10, 11 y 12.
 - Si rekordbox, con el NAS montado, reutiliza las pistas de Surco o las copia otra vez.
 - La nota escrita de la prueba del 18/10 con el arreglo de la máscara (sección 6).
+
+## 10. Coste de la lista de exportación con 600 filas (Tarea 10)
+
+Medido el 19/10/2026 en la app construida (Electron 44.4.5, macOS, ventana de 1440x900 a escala 2) con un gancho temporal que montaba `UsbExportProgress` sobre la app con 600 pistas de 100 barras cada una, 300 terminadas, la 300 copiándose y un `progress` cada 250 ms. Diez segundos de traza de Chromium (`devtools.timeline`) por escenario, contando las `RunTask` del hilo principal del renderer, más los intervalos de `requestAnimationFrame`.
+
+| Escenario | Hilo principal ocupado | Tarea más larga | Tareas de más de 16 ms | Frame p99 / máx. |
+|---|---|---|---|---|
+| App en reposo, sin lista (pantalla vacía con su animación del disco) | 4,2 % | 1,1 ms | 0 | 18,6 / 18,7 ms |
+| Lo mismo con la lista y la onda que se rellena (transición de clip-path de 250 ms) | 12,4 a 14,5 % | 9 ms | 0 | 18,5 / 18,7 ms |
+| App quieta (sin animaciones de fondo), sin lista | 0,9 % | 0,4 ms | 0 | 18,5 / 18,7 ms |
+| App quieta con la lista, onda con transición | 7,0 % | 10 ms | 0 | 18,5 / 18,7 ms |
+| App quieta con la lista, onda sin transición (salta en cada tick) | 4,7 a 4,8 % | 8,6 ms | 0 | 18,5 / 18,7 ms |
+
+Ningún frame pasa de 18,8 ms (el p50 es 16,7, el ritmo de la pantalla) y ninguna tarea pasa de 16 ms tras el primer pintado. Con la app quieta la lista se queda por debajo del 10 % con la onda animada, así que se queda la onda (decisión de Vicent del 16/10, solo si sale barata).
+
+Lo que sube la cifra no es la onda sino cualquier animación que esté corriendo en el documento mientras hay 600 filas montadas, porque Chromium recorre la lista entera en cada frame. Con la pantalla vacía de fondo, su disco que late (`empty-disc-ping`, infinita) ya hace eso y sube la app en reposo al 4,2 %. Una barra fina en lugar de la onda sale peor, no mejor. Con la animación del disco de fondo, la barra por `width` dio 22,8 a 23,1 % y por `scaleX` 18,5 a 18,8 %. Mover la onda con `transform`, con `will-change` o con `contain: strict` tampoco bajó de 13,7 %, y `content-visibility: auto` en las filas lo subió a 16 a 18 % por el IntersectionObserver interno.
+
+Si algún día la lista tuviera que pesar menos, la palanca medida es quitar la transición (la onda avanza a saltos cuatro veces por segundo, 4,7 % frente a 7,0 %), o virtualizar la lista.

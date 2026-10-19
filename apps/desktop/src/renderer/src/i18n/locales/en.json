@@ -2023,5 +2023,60 @@
     },
     "scopePlaylist_one": "{{count}} track in “{{name}}”",
     "scopePlaylist_other": "{{count}} tracks in “{{name}}”"
+  },
+  "usbExport": {
+    "progress": {
+      "queued": "queued",
+      "copying": "copying",
+      "kept": "already there",
+      "counter": "{{done}} / {{total}}",
+      "speed": "{{value}}/s",
+      "left": "{{time}} left",
+      "free": "{{size}} free",
+      "background": "Keep going in the background",
+      "cancel": "Cancel",
+      "finishing": "Finishing…",
+      "close": "Close",
+      "done_one": "Done · {{count}} track in {{time}}. You can eject the USB now.",
+      "done_other": "Done · {{count}} tracks in {{time}}. You can eject the USB now.",
+      "failedCount_one": "{{count}} could not be exported.",
+      "failedCount_other": "{{count}} could not be exported.",
+      "cancelled": "Cancelled. The USB keeps its previous library.",
+      "cancelling": "Cancelling…"
+    },
+    "span": {
+      "minSec": "{{min}} min {{sec}} s",
+      "sec": "{{sec}} s"
+    },
+    "fs": {
+      "fat32": "FAT32",
+      "exfat": "exFAT",
+      "hfs": "HFS+",
+      "apfs": "APFS",
+      "other": "other format",
+      "ntfs": "NTFS"
+    },
+    "errors": {
+      "unsupported": "Export to USB is only available on macOS and Windows.",
+      "no-collection": "The rekordbox collection was not found.",
+      "unreadable": "The rekordbox collection could not be read.",
+      "nothing-selected": "Tick at least one playlist.",
+      "volume-gone": "The USB was disconnected. What was on it is unchanged; plug it in and export again.",
+      "volume-changed": "That USB is no longer mounted there.",
+      "no-baken": "A part of Surco needed to export is missing. Reinstall Surco.",
+      "refused": "Surco does not write to that folder.",
+      "baken-failed": "The export failed. The USB keeps its previous library.",
+      "device-write": "The USB could not be written.",
+      "no-space": "It does not fit on the USB.",
+      "busy": "An export is already running.",
+      "not-removable": "Choose a folder on a USB or a card.",
+      "not-volume-root": "Players only read the root of a USB."
+    },
+    "trackFailure": {
+      "missing-file": "file not found",
+      "unreadable": "could not be read",
+      "device": "could not write to the USB"
+    },
+    "pill": "USB {{done}}/{{total}}"
   }
 }

@@ -2023,5 +2023,60 @@
     },
     "scopePlaylist_one": "{{count}} piste de « {{name}} »",
     "scopePlaylist_other": "{{count}} pistes de « {{name}} »"
+  },
+  "usbExport": {
+    "progress": {
+      "queued": "en attente",
+      "copying": "copie",
+      "kept": "déjà là",
+      "counter": "{{done}} / {{total}}",
+      "speed": "{{value}}/s",
+      "left": "encore {{time}}",
+      "free": "{{size}} libres",
+      "background": "Continuer en arrière-plan",
+      "cancel": "Annuler",
+      "finishing": "Finalisation…",
+      "close": "Fermer",
+      "done_one": "Terminé · {{count}} piste en {{time}}. Tu peux éjecter la clé USB.",
+      "done_other": "Terminé · {{count}} pistes en {{time}}. Tu peux éjecter la clé USB.",
+      "failedCount_one": "{{count}} n’a pas pu être exportée.",
+      "failedCount_other": "{{count}} n’ont pas pu être exportées.",
+      "cancelled": "Annulé. La clé USB garde sa bibliothèque précédente.",
+      "cancelling": "Annulation…"
+    },
+    "span": {
+      "minSec": "{{min}} min {{sec}} s",
+      "sec": "{{sec}} s"
+    },
+    "fs": {
+      "fat32": "FAT32",
+      "exfat": "exFAT",
+      "hfs": "HFS+",
+      "apfs": "APFS",
+      "other": "autre format",
+      "ntfs": "NTFS"
+    },
+    "errors": {
+      "unsupported": "L’export vers USB n’existe que sur macOS et Windows.",
+      "no-collection": "La collection rekordbox est introuvable.",
+      "unreadable": "La collection rekordbox n’a pas pu être lue.",
+      "nothing-selected": "Coche au moins une playlist.",
+      "volume-gone": "La clé USB a été débranchée. Son contenu n’a pas changé ; rebranche-la et exporte à nouveau.",
+      "volume-changed": "Cette clé USB n’est plus montée à cet endroit.",
+      "no-baken": "Il manque une partie de Surco pour exporter. Réinstalle Surco.",
+      "refused": "Surco n’écrit pas dans ce dossier.",
+      "baken-failed": "L’export a échoué. La clé USB garde sa bibliothèque précédente.",
+      "device-write": "Impossible d’écrire sur la clé USB.",
+      "no-space": "Ça ne tient pas sur la clé USB.",
+      "busy": "Un export est déjà en cours.",
+      "not-removable": "Choisis un dossier sur une clé USB ou une carte.",
+      "not-volume-root": "Les lecteurs ne lisent que la racine d’une clé USB."
+    },
+    "trackFailure": {
+      "missing-file": "fichier introuvable",
+      "unreadable": "lecture impossible",
+      "device": "écriture impossible sur la clé USB"
+    },
+    "pill": "USB {{done}}/{{total}}"
   }
 }

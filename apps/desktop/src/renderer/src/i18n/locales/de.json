@@ -2023,5 +2023,60 @@
     },
     "scopePlaylist_one": "{{count}} Titel aus „{{name}}“",
     "scopePlaylist_other": "{{count}} Titel aus „{{name}}“"
+  },
+  "usbExport": {
+    "progress": {
+      "queued": "wartet",
+      "copying": "wird kopiert",
+      "kept": "schon da",
+      "counter": "{{done}} / {{total}}",
+      "speed": "{{value}}/s",
+      "left": "noch {{time}}",
+      "free": "{{size}} frei",
+      "background": "Im Hintergrund weitermachen",
+      "cancel": "Abbrechen",
+      "finishing": "Wird abgeschlossen…",
+      "close": "Schließen",
+      "done_one": "Fertig · {{count}} Track in {{time}}. Du kannst den USB-Stick jetzt auswerfen.",
+      "done_other": "Fertig · {{count}} Tracks in {{time}}. Du kannst den USB-Stick jetzt auswerfen.",
+      "failedCount_one": "{{count}} konnte nicht exportiert werden.",
+      "failedCount_other": "{{count}} konnten nicht exportiert werden.",
+      "cancelled": "Abgebrochen. Der USB-Stick behält seine bisherige Bibliothek.",
+      "cancelling": "Wird abgebrochen…"
+    },
+    "span": {
+      "minSec": "{{min}} min {{sec}} s",
+      "sec": "{{sec}} s"
+    },
+    "fs": {
+      "fat32": "FAT32",
+      "exfat": "exFAT",
+      "hfs": "HFS+",
+      "apfs": "APFS",
+      "other": "anderes Format",
+      "ntfs": "NTFS"
+    },
+    "errors": {
+      "unsupported": "Export auf USB gibt es nur unter macOS und Windows.",
+      "no-collection": "Die rekordbox-Sammlung wurde nicht gefunden.",
+      "unreadable": "Die rekordbox-Sammlung konnte nicht gelesen werden.",
+      "nothing-selected": "Markiere mindestens eine Playlist.",
+      "volume-gone": "Der USB-Stick wurde getrennt. Was darauf war, ist unverändert; steck ihn ein und exportiere erneut.",
+      "volume-changed": "Dieser USB-Stick ist dort nicht mehr eingebunden.",
+      "no-baken": "Ein Teil von Surco für den Export fehlt. Installiere Surco neu.",
+      "refused": "Surco schreibt nicht in diesen Ordner.",
+      "baken-failed": "Der Export ist fehlgeschlagen. Der USB-Stick behält seine bisherige Bibliothek.",
+      "device-write": "Auf den USB-Stick konnte nicht geschrieben werden.",
+      "no-space": "Passt nicht auf den USB-Stick.",
+      "busy": "Es läuft bereits ein Export.",
+      "not-removable": "Wähle einen Ordner auf einem USB-Stick oder einer Karte.",
+      "not-volume-root": "Player lesen nur das Hauptverzeichnis eines USB-Sticks."
+    },
+    "trackFailure": {
+      "missing-file": "Datei nicht gefunden",
+      "unreadable": "konnte nicht gelesen werden",
+      "device": "konnte nicht auf den USB-Stick schreiben"
+    },
+    "pill": "USB {{done}}/{{total}}"
   }
 }

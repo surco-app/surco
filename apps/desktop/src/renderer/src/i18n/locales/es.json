@@ -2023,5 +2023,60 @@
     },
     "scopePlaylist_one": "{{count}} pista de «{{name}}»",
     "scopePlaylist_other": "{{count}} pistas de «{{name}}»"
+  },
+  "usbExport": {
+    "progress": {
+      "queued": "en cola",
+      "copying": "copiando",
+      "kept": "ya estaba",
+      "counter": "{{done}} / {{total}}",
+      "speed": "{{value}}/s",
+      "left": "quedan {{time}}",
+      "free": "{{size}} libres",
+      "background": "Seguir en segundo plano",
+      "cancel": "Cancelar",
+      "finishing": "Terminando…",
+      "close": "Cerrar",
+      "done_one": "Listo · {{count}} pista en {{time}}. Ya puedes expulsar el USB.",
+      "done_other": "Listo · {{count}} pistas en {{time}}. Ya puedes expulsar el USB.",
+      "failedCount_one": "{{count}} no se pudo exportar.",
+      "failedCount_other": "{{count}} no se pudieron exportar.",
+      "cancelled": "Cancelado. El USB tiene su biblioteca anterior.",
+      "cancelling": "Cancelando…"
+    },
+    "span": {
+      "minSec": "{{min}} min {{sec}} s",
+      "sec": "{{sec}} s"
+    },
+    "fs": {
+      "fat32": "FAT32",
+      "exfat": "exFAT",
+      "hfs": "HFS+",
+      "apfs": "APFS",
+      "other": "otro formato",
+      "ntfs": "NTFS"
+    },
+    "errors": {
+      "unsupported": "Exportar a USB solo está disponible en macOS y Windows.",
+      "no-collection": "No encuentro la colección de rekordbox.",
+      "unreadable": "No se pudo leer la colección de rekordbox.",
+      "nothing-selected": "Marca al menos una playlist.",
+      "volume-gone": "El USB se desconectó. Lo que había sigue igual; conéctalo y exporta otra vez.",
+      "volume-changed": "Ese USB ya no está montado ahí.",
+      "no-baken": "Falta una pieza de Surco para exportar. Reinstala Surco.",
+      "refused": "Surco no escribe en esa carpeta.",
+      "baken-failed": "La exportación falló. El USB tiene su biblioteca anterior.",
+      "device-write": "No se pudo escribir en el USB.",
+      "no-space": "No cabe en el USB.",
+      "busy": "Ya hay una exportación en marcha.",
+      "not-removable": "Elige una carpeta de un USB o una tarjeta.",
+      "not-volume-root": "Los reproductores solo leen la raíz de un USB."
+    },
+    "trackFailure": {
+      "missing-file": "no se encuentra el fichero",
+      "unreadable": "no se pudo leer",
+      "device": "no se pudo escribir en el USB"
+    },
+    "pill": "USB {{done}}/{{total}}"
   }
 }
