@@ -2,7 +2,7 @@ import Database from 'better-sqlite3-multiple-ciphers'
 import { REKORDBOX_KEY } from './rekordboxDb'
 import { type PlaylistFixture, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
-// The playlist fixture plus what the USB export still adds: djmdCue and the identity tables
+// The playlist fixture plus what the USB export still adds: its own cue rows and the identity tables
 // (djmdProperty, djmdCloudProperty, djmdMyTag). Column names as measured on rekordbox 7.2.19
 // (docs/export-usb-medidas.md).
 export interface ContentDetails {

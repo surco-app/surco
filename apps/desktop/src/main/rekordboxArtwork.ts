@@ -44,7 +44,7 @@ export function renderArtwork(cover: Buffer): Map<string, Buffer> | null {
   }
 }
 
-function insideShare(share: string, candidate: string): boolean {
+export function insideShare(share: string, candidate: string): boolean {
   const rel = relative(resolve(share), candidate)
   return rel !== '' && !rel.startsWith('..') && !rel.startsWith(sep)
 }

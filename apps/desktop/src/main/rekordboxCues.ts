@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import { type StrongPart, strongParts } from '../shared/cueRules'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, phrases, wavePreview } from './anlz'
+import { insideShare } from './rekordboxArtwork'
 
 type Db = InstanceType<typeof Database>
 
@@ -44,11 +46,14 @@ function analyse(
   analysisPath: string | null,
   withWave: boolean,
 ): Analysis | null {
-  const dat = analysisPath ? read(`${shareDir}${analysisPath}`) : null
-  if (!dat || !analysisPath) return null
+  if (!analysisPath) return null
+  const datPath = resolve(shareDir, `.${analysisPath}`)
+  if (!insideShare(shareDir, datPath)) return null
+  const dat = read(datPath)
+  if (!dat) return null
   const grid = beatGrid(dat).map((b) => ({ ms: b.ms, beat: b.beat }))
   if (grid.length === 0) return null
-  const ext = read(`${shareDir}${analysisPath.replace(/\.DAT$/, '.EXT')}`)
+  const ext = read(datPath.replace(/\.DAT$/, '.EXT'))
   const sections = ext ? phrases(ext) : null
   const strong = sections
     ? strongParts(
@@ -58,10 +63,18 @@ function analyse(
       )
     : []
   if (!withWave) return { grid, strong, wave: null }
-  const preview = wavePreview(dat, 400)
-  const wave =
-    (ext ? colorWave(ext) : null) ?? (preview ? preview.map((h) => ({ h, rgb: null })) : null)
-  return { grid, strong, wave }
+  return { grid, strong, wave: buildWave(dat, ext) }
+}
+
+function buildWave(dat: Buffer, ext: Buffer | null): CueWaveColumn[] | null {
+  try {
+    const preview = wavePreview(dat, 400)
+    return (
+      (ext ? colorWave(ext) : null) ?? (preview ? preview.map((h) => ({ h, rgb: null })) : null)
+    )
+  } catch {
+    return null
+  }
 }
 
 export function readTrackCues(

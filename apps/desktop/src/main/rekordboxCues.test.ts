@@ -1,8 +1,9 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import type { ExistingCue } from '../shared/cueRules'
 import {
   anlzFile,
   pqtzSection,
@@ -18,11 +19,15 @@ import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlay
 const ANLZ = '/PIONEER/USBANLZ/219/e40e4/ANLZ0000.DAT'
 const BEATS = Array.from({ length: 64 }, (_, i) => i * 500)
 
-async function collection(over: { analysed?: boolean; ext?: Buffer | null; dat?: Buffer } = {}) {
+async function collection(
+  over: { analysed?: boolean; ext?: Buffer | null; dat?: Buffer; path?: string } = {},
+) {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbcues-'))
   const path = join(dir, 'master.db')
   const content = ORGANISE_FIXTURE.content.map((c) =>
-    c.ID === '103' ? { ...c, AnalysisDataPath: over.analysed === false ? '' : ANLZ } : c,
+    c.ID === '103'
+      ? { ...c, AnalysisDataPath: over.analysed === false ? '' : (over.path ?? ANLZ) }
+      : c,
   )
   writeRekordboxPlaylistFixture(path, {
     ...ORGANISE_FIXTURE,
@@ -112,14 +117,33 @@ describe('readTrackCues', () => {
     db.close()
   })
 
-  it('reads a truncated PWV5 as not analysed instead of throwing', async () => {
+  it('keeps a good grid when the colour waveform is truncated', async () => {
     const { db, share } = await collection({
       ext: anlzFile(
         pssiSection(1, [{ beat: 1, kind: 1 }]),
         section('PWV5', Buffer.alloc(0), Buffer.alloc(0)),
       ),
     })
-    expect(readTrackCues(db, share, '103')?.analysed).toBe(false)
+    expect(readTrackCues(db, share, '103')).toMatchObject({ analysed: true, wave: null })
+    expect(readTrackCues(db, share, '103')?.grid).toHaveLength(64)
+    db.close()
+  })
+
+  it('reads a track whose DAT is missing from disk as not analysed', async () => {
+    const { db, share } = await collection()
+    rmSync(join(share, ANLZ))
+    expect(readTrackCues(db, share, '103')).toMatchObject({ analysed: false, grid: [], wave: null })
+    db.close()
+  })
+
+  it('never reads an analysis path that climbs out of the share folder', async () => {
+    const { db, share } = await collection({ path: '/../outside/ANLZ0000.DAT' })
+    mkdirSync(join(share, '..', 'outside'), { recursive: true })
+    writeFileSync(
+      join(share, '..', 'outside', 'ANLZ0000.DAT'),
+      anlzFile(pqtzSection(BEATS), pwavSection([31, 0, 16])),
+    )
+    expect(readTrackCues(db, share, '103')).toMatchObject({ analysed: false, grid: [], wave: null })
     db.close()
   })
 
@@ -130,10 +154,10 @@ describe('readTrackCues', () => {
     db.close()
   })
 
-  it('hands cues Task 2 can consume as they are', async () => {
+  it('returns cue rows typed as the existing cues the change planner takes, so no mapping can drift', async () => {
     const { db, share } = await collection()
-    const q2 = readTrackCues(db, share, '103')?.cues.find((c) => c.id === 'q2')
-    expect(q2).toEqual({ id: 'q2', ms: 8000, kind: 1, color: 1 })
+    const existing: ExistingCue[] = readTrackCues(db, share, '103')?.cues ?? []
+    expect(existing.find((c) => c.id === 'q2')).toEqual({ id: 'q2', ms: 8000, kind: 1, color: 1 })
     db.close()
   })
 })
