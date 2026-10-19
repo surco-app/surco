@@ -39,6 +39,7 @@
     "space": "Espacio"
   },
   "hero": {
+    "latestRelease": "Nuevo en {{version}}",
     "h1a": "Prepara tus pistas",
     "h1b": "antes de pincharlas.",
     "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."

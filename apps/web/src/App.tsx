@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import BrewCommand from './components/BrewCommand'
 import DownloadButton from './components/DownloadButton'
-import DownloadCount from './components/DownloadCount'
 import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
+import LatestRelease from './components/LatestRelease'
 import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
@@ -49,9 +49,8 @@ export default function App() {
             confirm what the picture just showed instead of queueing under the button. */}
         <section className="mx-auto max-w-6xl px-6 pt-10 pb-12 text-center sm:pt-14 lg:pt-16 lg:pb-16">
           <Reveal eager>
-            {/* Fixed height so the pill landing after the releases fetch pushes nothing down. */}
             <div className="mb-6 flex h-8 items-center justify-center">
-              <DownloadCount pill />
+              <LatestRelease />
             </div>
           </Reveal>
           <Reveal eager>

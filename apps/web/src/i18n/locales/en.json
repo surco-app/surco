@@ -39,6 +39,7 @@
     "space": "Space"
   },
   "hero": {
+    "latestRelease": "New in {{version}}",
     "h1a": "Get your tracks ready",
     "h1b": "before you play them.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
