@@ -65,6 +65,7 @@ export interface RekordboxQueue {
   state: () => RekordboxQueueState
   isEmpty: () => boolean
   discard: () => void
+  drop: (id: string) => void
   apply: (ensureClosed: () => Promise<boolean>) => Promise<QueueApply>
 }
 
@@ -239,6 +240,10 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     discard() {
       q.repoints = []
       q.ops = []
+      save()
+    },
+    drop(id) {
+      q.ops = q.ops.filter((o) => o.id !== id)
       save()
     },
     apply(ensureClosed) {

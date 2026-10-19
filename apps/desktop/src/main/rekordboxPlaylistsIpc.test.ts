@@ -192,6 +192,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const queue = {
       enqueue: vi.fn(),
       apply: vi.fn(async () => ({ status: 'refused', reason: 'backup-failed' }) as const),
+      drop: vi.fn(),
     }
     registerRekordboxPlaylistsIpc(() => path, {
       ensureClosed: vi.fn(async () => true),
@@ -204,6 +205,35 @@ describe('registerRekordboxPlaylistsIpc', () => {
       reason: 'backup-failed',
     })
     expect(onWaiting).not.toHaveBeenCalled()
+  })
+
+  it('takes a refused edit out of the queue, so a retry after "nothing changed" does not write it twice', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
+    const queue = queueFor(
+      path,
+      vi.fn(async () => {
+        throw new Error('disk full')
+      }),
+    )
+    queue.enqueue([
+      {
+        id: 'other',
+        kind: 'edit',
+        edit: { kind: 'rename', playlistId: '2000', name: 'Factory 26' },
+        stamps: {},
+        label: 'Factory',
+      },
+    ])
+    registerRekordboxPlaylistsIpc(() => path, { ensureClosed: vi.fn(async () => true), queue })
+    expect(
+      await handler('rekordbox:edit')(
+        { sender: {} },
+        { kind: 'create', parentId: 'root', name: 'Makina 2', folder: false },
+        'Makina 2',
+      ),
+    ).toEqual({ applied: false, reason: 'backup-failed' })
+    expect(queue.state().items.map((i) => i.label)).toEqual(['Factory'])
   })
 
   it('wakes the watcher when the edit waits for rekordbox to close', async () => {

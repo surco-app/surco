@@ -49,7 +49,7 @@ export function collectionAvailable(path: string): boolean {
 export interface PlaylistEditHost {
   // The "rekordbox is open" dialog, over the window the edit came from.
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
-  queue: Pick<RekordboxQueue, 'enqueue' | 'apply'>
+  queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop'>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
 }
@@ -100,6 +100,7 @@ export function registerRekordboxPlaylistsIpc(
       if (result.status === 'applied' && (result.tracks > 0 || result.changes > 1))
         host.onApplied?.(result)
       if (stillWaiting(result)) host.onWaiting?.()
+      else if (result.status === 'refused') host.queue.drop(op.id)
       if (result.status === 'refused') return { applied: false, reason: result.reason }
       const outcome =
         result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
