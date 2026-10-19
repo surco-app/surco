@@ -26,6 +26,7 @@ import { readVolumes, systemVolumeSource, watchVolumes } from './usbVolumes'
 
 // The USB export's IPC, macOS and Windows. Elsewhere every call answers "unsupported" and
 // nothing is watched; the renderer does not offer the feature there at all.
+// Returns what the quit guard needs: whether an export runs, and how to stop it.
 export function registerUsbExportIpc(opts: {
   collection: () => string
   userData: string
@@ -39,7 +40,7 @@ export function registerUsbExportIpc(opts: {
     win: BrowserWindow | null,
     detail: typeof USB_QUIT_DETAIL,
   ) => Promise<boolean>
-}): void {
+}): { busy: () => boolean; stop: () => Promise<void> } | null {
   const platform = process.platform
   const source = systemVolumeSource(platform)
   if (!source) {
@@ -48,7 +49,7 @@ export function registerUsbExportIpc(opts: {
     ipcMain.handle('usb:plan', () => ({ ok: false, reason: 'unsupported' }))
     ipcMain.handle('usb:export', () => ({ ok: false, reason: 'unsupported' }))
     ipcMain.handle('usb:cancel', () => false)
-    return
+    return null
   }
   const win = platform === 'win32'
   // rekordbox's own folders: never written, never handed to baken.
@@ -195,4 +196,5 @@ export function registerUsbExportIpc(opts: {
     return exporter.start(req)
   })
   ipcMain.handle('usb:cancel', () => exporter.cancel())
+  return { busy: exporter.busy, stop: exporter.stop }
 }

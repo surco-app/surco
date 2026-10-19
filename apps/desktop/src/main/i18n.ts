@@ -76,6 +76,9 @@ interface MenuStrings {
   quitBusyDetail: string
   quitBusyConfirm: string
   quitBusyCancel: string
+  quitUsbMessage: string
+  quitUsbDetail: string
+  quitUsbCancel: string
   dialogConfigDir: string
   dialogPickTracks: string
   dialogOutputDir: string
@@ -173,6 +176,10 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Si sales ahora se detendrán {n} conversiones y las pistas que faltan se quedarán sin convertir.',
     quitBusyConfirm: 'Salir igualmente',
     quitBusyCancel: 'Seguir convirtiendo',
+    quitUsbMessage: 'Hay una exportación al USB en curso',
+    quitUsbDetail:
+      'Si sales ahora, Surco parará al acabar la canción que está copiando, o esperará a que termine de escribir la base de datos, y después se cerrará.',
+    quitUsbCancel: 'Seguir exportando',
     dialogConfigDir: 'Carpeta de configuración',
     dialogPickTracks: 'Selecciona pistas',
     dialogOutputDir: 'Carpeta de salida',
@@ -268,6 +275,10 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Quitting now stops {n} conversions, and the tracks still queued will be left unconverted.',
     quitBusyConfirm: 'Quit anyway',
     quitBusyCancel: 'Keep converting',
+    quitUsbMessage: 'A USB export is still running',
+    quitUsbDetail:
+      'If you quit now, Surco stops after the track it is copying, or waits until it has finished writing the database, and then closes.',
+    quitUsbCancel: 'Keep exporting',
     dialogConfigDir: 'Settings folder',
     dialogPickTracks: 'Choose tracks',
     dialogOutputDir: 'Output folder',
@@ -363,6 +374,10 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Beim Beenden werden {n} Konvertierungen gestoppt, und die noch wartenden Titel bleiben unkonvertiert.',
     quitBusyConfirm: 'Trotzdem beenden',
     quitBusyCancel: 'Weiter konvertieren',
+    quitUsbMessage: 'Ein USB-Export läuft noch',
+    quitUsbDetail:
+      'Wenn du jetzt beendest, stoppt Surco nach dem Titel, der gerade kopiert wird, oder wartet, bis die Datenbank geschrieben ist, und schließt sich dann.',
+    quitUsbCancel: 'Weiter exportieren',
     dialogConfigDir: 'Einstellungsordner',
     dialogPickTracks: 'Tracks auswählen',
     dialogOutputDir: 'Ausgabeordner',
@@ -459,6 +474,10 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Quitter maintenant arrête {n} conversions, et les morceaux en attente resteront non convertis.',
     quitBusyConfirm: 'Quitter quand même',
     quitBusyCancel: 'Continuer la conversion',
+    quitUsbMessage: 'Un export sur clé USB est en cours',
+    quitUsbDetail:
+      "Si tu quittes maintenant, Surco s'arrête après le morceau en cours de copie, ou attend la fin de l'écriture de la base de données, puis se ferme.",
+    quitUsbCancel: "Continuer l'export",
     dialogConfigDir: 'Dossier de configuration',
     dialogPickTracks: 'Choisis des morceaux',
     dialogOutputDir: 'Dossier de sortie',
@@ -554,6 +573,10 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Sair agora interrompe {n} conversões, e as faixas na fila ficarão sem converter.',
     quitBusyConfirm: 'Sair mesmo assim',
     quitBusyCancel: 'Continuar convertendo',
+    quitUsbMessage: 'Ainda há uma exportação para o USB em andamento',
+    quitUsbDetail:
+      'Se você sair agora, o Surco para depois da faixa que está copiando, ou espera terminar de gravar o banco de dados, e então fecha.',
+    quitUsbCancel: 'Continuar exportando',
     dialogConfigDir: 'Pasta de configuração',
     dialogPickTracks: 'Escolha faixas',
     dialogOutputDir: 'Pasta de saída',

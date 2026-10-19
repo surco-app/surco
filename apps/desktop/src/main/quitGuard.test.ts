@@ -19,7 +19,77 @@ describe('createQuitGuard', () => {
     const guard = createQuitGuard({ count: () => 3, confirm })
     expect(guard.mustAsk()).toBe(true)
     expect(await guard.ask()).toBe(false)
-    expect(confirm).toHaveBeenCalledWith(3)
+    expect(confirm).toHaveBeenCalledWith(3, false)
+  })
+
+  // A USB export runs in main: quitting without asking left baken writing the stick with
+  // no app, no .sync files and no memory of the export.
+  it('asks while a USB export runs, even with nothing converting', async () => {
+    const confirm = vi.fn().mockResolvedValue(false)
+    const guard = createQuitGuard({ count: () => 0, exporting: () => true, confirm })
+    expect(guard.mustAsk()).toBe(true)
+    expect(await guard.ask()).toBe(false)
+    expect(confirm).toHaveBeenCalledWith(0, true)
+  })
+
+  // The window closes only once the export has stopped and reported, so its last writes
+  // land before the process goes.
+  it('waits for the export to settle before letting the close through', async () => {
+    let settled = false
+    let finish: () => void = () => {}
+    const settle = vi.fn(
+      () =>
+        new Promise<void>((r) => {
+          finish = () => {
+            settled = true
+            r()
+          }
+        }),
+    )
+    const guard = createQuitGuard({
+      count: () => 0,
+      exporting: () => true,
+      confirm: async () => true,
+      settle,
+    })
+    const quitting = guard.ask()
+    await new Promise((r) => setTimeout(r, 5))
+    expect(settle).toHaveBeenCalledTimes(1)
+    finish()
+    expect(await quitting).toBe(true)
+    expect(settled).toBe(true)
+  })
+
+  // A baken that never reports must not make the app impossible to quit.
+  it('gives up waiting after settleMs', async () => {
+    vi.useFakeTimers()
+    try {
+      const guard = createQuitGuard({
+        count: () => 0,
+        exporting: () => true,
+        confirm: async () => true,
+        settle: () => new Promise<void>(() => {}),
+        settleMs: 1000,
+      })
+      const quitting = guard.ask()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(await quitting).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // Declining must not touch the export.
+  it('does not stop the export when the user stays', async () => {
+    const settle = vi.fn(async () => {})
+    const guard = createQuitGuard({
+      count: () => 0,
+      exporting: () => true,
+      confirm: async () => false,
+      settle,
+    })
+    expect(await guard.ask()).toBe(false)
+    expect(settle).not.toHaveBeenCalled()
   })
 
   // Declining leaves the window open AND the guard armed: a second close has to ask

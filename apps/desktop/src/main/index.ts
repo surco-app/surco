@@ -351,6 +351,10 @@ let manualUpdateCheck = false
 // Retry button both funnel through it so every check shares the same failure path.
 let requestUpdateCheck: (() => void) | null = null
 
+// Set by registerIpc on macOS and Windows; the quit guard asks about a running export and
+// stops it before the app goes.
+let usbExport: { busy: () => boolean; stop: () => Promise<void> } | null = null
+
 function checkForUpdates(win: BrowserWindow): void {
   if (!app.isPackaged) {
     const t = createMenuT(menuLocale())
@@ -444,15 +448,23 @@ function createWindow(): BrowserWindow {
   // still close on the first click. The flag makes the confirmed close fall straight
   // through instead of re-prompting, and covers ⌘Q too, since app.quit() closes the
   // window and lands right back here.
+  // A USB export is asked about the same way; a confirmed quit stops it at the next track
+  // (or lets the databases finish) and closes once baken has reported.
   const quitGuard = createQuitGuard({
     count: activeConversions.count,
-    confirm: async (running) => {
+    exporting: () => usbExport?.busy() ?? false,
+    settle: () => usbExport?.stop() ?? Promise.resolve(),
+    confirm: async (running, exporting) => {
       const t = createMenuT(menuLocale())
+      const details = [
+        running > 0 ? t('quitBusyDetail').replace('{n}', String(running)) : null,
+        exporting ? t('quitUsbDetail') : null,
+      ]
       const { response } = await dialog.showMessageBox(win, {
         type: 'warning',
-        message: t('quitBusyMessage'),
-        detail: t('quitBusyDetail').replace('{n}', String(running)),
-        buttons: [t('quitBusyConfirm'), t('quitBusyCancel')],
+        message: running > 0 ? t('quitBusyMessage') : t('quitUsbMessage'),
+        detail: details.filter(Boolean).join('\n\n'),
+        buttons: [t('quitBusyConfirm'), running > 0 ? t('quitBusyCancel') : t('quitUsbCancel')],
         // Keep converting is the default: an absent-minded Return on this dialog must
         // not be what throws away a batch that has been running for minutes.
         defaultId: 1,
@@ -869,7 +881,7 @@ function registerIpc(): void {
       sessionBackup: (path) => sessions.rekordbox.ensure(path),
     },
   )
-  registerUsbExportIpc({
+  usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     userData: app.getPath('userData'),
     home: homedir(),
