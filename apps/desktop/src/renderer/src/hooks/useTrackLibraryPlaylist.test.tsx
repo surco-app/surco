@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import { trackSignature } from '../lib/dirty'
@@ -447,8 +448,8 @@ describe('opening a rekordbox playlist with previews', () => {
 
   it('adds the rows before the disk check answers, each with its preview', async () => {
     let answer: (paths: string[]) => void = () => {}
-    const expandPaths = vi.fn(() => new Promise<string[]>((r) => (answer = r)))
-    const read = vi.fn(() => new Promise(() => {}))
+    const expandPaths = vi.fn<Api['expandPaths']>(() => new Promise<string[]>((r) => (answer = r)))
+    const read = vi.fn<Api['readMetaLight']>(() => new Promise(() => {}))
     const { result } = setup({ expandPaths, readMeta: read, readMetaLight: read })
     let opened: Promise<number> = Promise.resolve(0)
     act(() => {
@@ -466,7 +467,7 @@ describe('opening a rekordbox playlist with previews', () => {
   })
 
   it('drops the row of a file the disk lacks and counts it once, as missing and not as unreadable', async () => {
-    const read = vi.fn((path: string) =>
+    const read = vi.fn<Api['readMetaLight']>((path: string) =>
       path === '/m/gone.aiff'
         ? new Promise((_, reject) => setTimeout(() => reject(new Error('ENOENT')), 20))
         : Promise.resolve({
@@ -477,7 +478,7 @@ describe('opening a rekordbox playlist with previews', () => {
             partial: true,
           }),
     )
-    const expandPaths = vi.fn(async () => ['/m/a.aiff'])
+    const expandPaths = vi.fn<Api['expandPaths']>(async () => ['/m/a.aiff'])
     const onMetaReadFailed = vi.fn()
     const { result } = setup(
       { expandPaths, readMeta: read, readMetaLight: read },
@@ -506,7 +507,7 @@ describe('opening a rekordbox playlist with previews', () => {
           ? (next as (s: typeof selection) => typeof selection)(selection)
           : (next as typeof selection)
     })
-    const expandPaths = vi.fn(async () => ['/m/a.aiff'])
+    const expandPaths = vi.fn<Api['expandPaths']>(async () => ['/m/a.aiff'])
     const { result } = setup({ expandPaths }, { setSelection })
     await act(async () => {
       await result.current.openSourcePlaylist(
@@ -520,7 +521,7 @@ describe('opening a rekordbox playlist with previews', () => {
   })
 
   it('refreshes the preview of a converted row that rekordbox now lists by its output', async () => {
-    const read = vi.fn().mockResolvedValue({
+    const read = vi.fn<Api['readMetaLight']>().mockResolvedValue({
       tags: tags({ title: 'A' }),
       duration: 255,
       cover: null,
@@ -556,7 +557,7 @@ describe('opening a rekordbox playlist with previews', () => {
   })
 
   it('never counts the preview as an edit once the file is read', async () => {
-    const read = vi.fn().mockResolvedValue({
+    const read = vi.fn<Api['readMetaLight']>().mockResolvedValue({
       tags: tags({ title: 'A from file', artist: 'File Artist' }),
       duration: 255,
       cover: null,
@@ -574,7 +575,7 @@ describe('opening a rekordbox playlist with previews', () => {
   })
 
   it('refreshes the preview of a row already loaded when the playlist is read again', async () => {
-    const read = vi.fn().mockResolvedValue({
+    const read = vi.fn<Api['readMetaLight']>().mockResolvedValue({
       tags: tags({ title: 'A' }),
       duration: 255,
       cover: null,
@@ -630,8 +631,8 @@ describe('the light read of a rekordbox row', () => {
   }
 
   it('lists the row from the light read and leaves it marked as partial', async () => {
-    const readMetaLight = vi.fn().mockResolvedValue(light)
-    const readMeta = vi.fn().mockResolvedValue(full)
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
     const { result } = setup({ readMetaLight, readMeta })
     await act(async () => {
       await result.current.openSourcePlaylist([entry], 'rekordbox')
@@ -642,8 +643,8 @@ describe('the light read of a rekordbox row', () => {
   })
 
   it('completes the cover and foreign tags without the row reading as edited', async () => {
-    const readMetaLight = vi.fn().mockResolvedValue(light)
-    const readMeta = vi.fn().mockResolvedValue(full)
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
     const { result } = setup({ readMetaLight, readMeta })
     await act(async () => {
       await result.current.openSourcePlaylist([entry], 'rekordbox')
@@ -662,8 +663,8 @@ describe('the light read of a rekordbox row', () => {
 
   it('lets a conversion wait for the completion the selection already started, instead of refusing the row', async () => {
     let answer: (read: typeof full) => void = () => {}
-    const readMetaLight = vi.fn().mockResolvedValue(light)
-    const readMeta = vi.fn(() => new Promise<typeof full>((r) => (answer = r)))
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>(() => new Promise<typeof full>((r) => (answer = r)))
     const { result } = setup({ readMetaLight, readMeta })
     await act(async () => {
       await result.current.openSourcePlaylist([entry], 'rekordbox')
@@ -684,8 +685,8 @@ describe('the light read of a rekordbox row', () => {
   })
 
   it('leaves the row partial when the full read throws, so the conversion refuses it instead of crashing', async () => {
-    const readMetaLight = vi.fn().mockResolvedValue(light)
-    const readMeta = vi.fn().mockRejectedValue(new Error('gone'))
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockRejectedValue(new Error('gone'))
     const { result } = setup({ readMetaLight, readMeta })
     await act(async () => {
       await result.current.openSourcePlaylist([entry], 'rekordbox')
@@ -700,8 +701,8 @@ describe('the light read of a rekordbox row', () => {
   })
 
   it('removes the foreign tags the full read finds when the row was cleared before it landed', async () => {
-    const readMetaLight = vi.fn().mockResolvedValue(light)
-    const readMeta = vi.fn().mockResolvedValue(full)
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
     const { result } = setup({ readMetaLight, readMeta })
     await act(async () => {
       await result.current.openSourcePlaylist([entry], 'rekordbox')
@@ -729,11 +730,11 @@ describe('the light read of a rekordbox row', () => {
       path: `/m/${i}.aiff`,
       contentId: `c${i}`,
     }))
-    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
     const pending: Array<() => void> = []
     let inFlight = 0
     let peak = 0
-    const readMeta = vi.fn(
+    const readMeta = vi.fn<Api['readMeta']>(
       () =>
         new Promise<typeof full>((resolve) => {
           inFlight += 1
@@ -770,8 +771,8 @@ describe('the light read of a rekordbox row', () => {
   })
 
   it('reads a dropped file fully, as before', async () => {
-    const readMetaLight = vi.fn().mockResolvedValue(light)
-    const readMeta = vi.fn().mockResolvedValue(full)
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
     const { result } = setup({ readMetaLight, readMeta })
     await act(async () => {
       await result.current.addPaths(['/m/b.aiff'])

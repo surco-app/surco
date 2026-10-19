@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
 import { isStale, trackSignature } from '../lib/dirty'
 import { useTrackLibrary } from './useTrackLibrary'
@@ -338,12 +339,12 @@ describe('useTrackLibrary read cap across imports', () => {
     const order: string[] = []
     const gates = new Map<string, () => void>()
     const { fireBatch } = setApi({
-      readMeta: vi.fn(
+      readMeta: vi.fn<Api['readMeta']>(
         (path: string) =>
           new Promise((resolve) => {
             order.push(path)
             gates.set(path, () =>
-              resolve({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
             )
           }),
       ),

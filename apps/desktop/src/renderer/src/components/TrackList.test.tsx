@@ -12,7 +12,7 @@ const api = {
   startTrackDrag: vi.fn(),
   pathAliases: vi.fn(async (paths: string[]) => paths),
   getPathForFile: vi.fn((f: File) => `/music/${f.name}`),
-  rowWaves: vi.fn(async () => ({})),
+  rowWaves: vi.fn<Api['rowWaves']>(async () => ({})),
 }
 vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {}
