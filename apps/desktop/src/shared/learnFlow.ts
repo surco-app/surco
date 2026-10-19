@@ -1,21 +1,19 @@
-import { type CueFlow, type CueRule, type FlowPhrase, RULE_BARS } from './cueFlows'
+import { type CueFlow, type CueRule, type FlowPhrase, MY_FLOW, RULE_BARS } from './cueFlows'
 import {
   BAR_TOLERANCE,
   BEATS_PER_BAR,
-  type CueChangeSet,
-  diffCues,
-  type ExistingCue,
   evaluateFlow,
   findDrops,
   flowOutcome,
-  isEmptyChange,
   nearestBeat,
   SAME_POSITION_MS,
   START_MS,
   type StrongPart,
 } from './cueRules'
 
-export const DISTANCE_SUPPORT = 0.1
+export const DISTANCE_SUPPORT = 0.2
+export const MIN_SUPPORT_SHARE = 0.02
+const MIN_SUPPORT_TRACKS = 2
 export const PATTERN_SHARE = 0.3
 const MAJORITY = 0.5
 const MAX_LEARNED_REPEAT = 8
@@ -41,30 +39,28 @@ export interface LearnedFlow {
 
 export type MismatchReason =
   | 'too-many'
-  | 'manual'
   | 'missing-hot-cue'
   | 'extra-hot-cue'
   | 'call-missing'
   | 'call-extra'
-  | 'letter-order'
   | 'colour-null'
   | 'colour-differs'
   | 'start-cue-differs'
   | 'moved'
   | 'several-drops'
-  | 'other'
 
 export interface LearnDiagnosis {
   tracks: number
   noGrid: number
   noDrop: number
   marked: number
-  support: Record<string, number>
+  support: Record<string, Support>
   flow: CueFlow
   countdownPaired: number | null
   start: { open: number; withStart: number }
   matching: number
   mismatches: Partial<Record<MismatchReason, number[]>>
+  myFlow: { matching: number; mismatches: Partial<Record<MismatchReason, number[]>> }
 }
 
 interface HotBefore {
@@ -78,7 +74,13 @@ interface Marked {
   index: number
   track: LearnTrack
   drops: number[]
+  dropBeat: number
   before: HotBefore[]
+}
+
+interface Support {
+  tracks: number
+  eligible: number
 }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
@@ -105,7 +107,7 @@ function markedOf(track: LearnTrack, index: number): Marked | null {
         firstBeat: near(h.ms, track.beats[0]),
       }
     })
-  return { index, track, drops, before }
+  return { index, track, drops, dropBeat: dropAt, before }
 }
 
 function dominantColor(colors: (number | null)[]): number {
@@ -121,18 +123,28 @@ const pairedShare = (cues: HotBefore[]): number | null =>
 const placeOf = (cues: HotBefore[]): 'both' | 'hot' =>
   (pairedShare(cues) ?? 1) >= MAJORITY ? 'both' : 'hot'
 
-function distanceSupport(tracks: Marked[]): Map<number, number> {
-  const support = new Map<number, number>()
+function distanceSupport(tracks: Marked[]): Map<number, Support> {
+  const counts = new Map<number, number>()
   for (const t of tracks)
     for (const d of new Set(
       t.before.flatMap((h) => (h.bars === null || h.firstBeat ? [] : [h.bars])),
     ))
-      support.set(d, (support.get(d) ?? 0) + 1)
-  return support
+      counts.set(d, (counts.get(d) ?? 0) + 1)
+  return new Map(
+    [...counts]
+      .sort((a, b) => a[0] - b[0])
+      .map(([d, n]) => [
+        d,
+        { tracks: n, eligible: tracks.filter((t) => t.dropBeat > d * BEATS_PER_BAR).length },
+      ]),
+  )
 }
 
-function learnedDistances(tracks: Marked[], support: Map<number, number>): number[] {
-  const kept = [...support].filter(([, n]) => n >= DISTANCE_SUPPORT * tracks.length).map(([d]) => d)
+function learnedDistances(tracks: Marked[], support: Map<number, Support>): number[] {
+  const least = Math.max(MIN_SUPPORT_TRACKS, Math.ceil(MIN_SUPPORT_SHARE * tracks.length))
+  const kept = [...support]
+    .filter(([, s]) => s.tracks >= least && s.tracks >= DISTANCE_SUPPORT * s.eligible)
+    .map(([d]) => d)
   const step = Math.min(...kept.filter((d) => d > 0 && RULE_BARS.includes(d)))
   const out: number[] = []
   for (let k = 1; k <= MAX_LEARNED_REPEAT && kept.includes(k * step); k++) out.push(k * step)
@@ -194,42 +206,75 @@ function startRule(open: Marked[], starts: HotBefore[]): CueRule | null {
   }
 }
 
-function changeReasons(existing: ExistingCue[], changes: CueChangeSet): MismatchReason[] {
-  const byId = new Map(existing.map((c) => [c.id, c]))
+interface Placed {
+  ms: number
+  hot: boolean
+  color: number | null
+}
+
+const placedOf = (c: LearnCue): Placed => ({ ms: c.ms, hot: c.kind !== 0, color: c.color })
+
+function compareCues(beats: number[], wanted: Placed[], actual: Placed[]): MismatchReason[] {
   const reasons: MismatchReason[] = []
-  for (const c of changes.insert) reasons.push(c.kind === 0 ? 'call-missing' : 'missing-hot-cue')
-  for (const id of changes.remove)
-    reasons.push(byId.get(id)?.kind === 0 ? 'call-extra' : 'extra-hot-cue')
-  for (const u of changes.update) {
-    const was = byId.get(u.id)
-    if (!was) reasons.push('other')
-    else if (was.ms < START_MS) reasons.push('start-cue-differs')
-    else if (u.ms !== undefined) reasons.push('moved')
-    else if (was.kind !== u.kind) reasons.push('letter-order')
-    else if (was.color === null || was.color < 1) reasons.push('colour-null')
-    else reasons.push('colour-differs')
+  const left = [...actual]
+  const missed: Placed[] = []
+  const hotReason = (c: Placed, reason: MismatchReason): MismatchReason =>
+    c.hot && c.ms < START_MS ? 'start-cue-differs' : reason
+  for (const w of wanted) {
+    const i = left.findIndex((a) => a.hot === w.hot && near(a.ms, w.ms))
+    if (i < 0) {
+      missed.push(w)
+      continue
+    }
+    const [a] = left.splice(i, 1)
+    if (w.hot && a.color !== w.color)
+      reasons.push(hotReason(a, a.color === null || a.color < 1 ? 'colour-null' : 'colour-differs'))
   }
+  for (const w of missed) {
+    const at = nearestBeat(beats, w.ms)
+    const i = left.findIndex(
+      (a) => a.hot === w.hot && Math.abs(nearestBeat(beats, a.ms) - at) <= BEATS_PER_BAR,
+    )
+    if (i >= 0) {
+      left.splice(i, 1)
+      reasons.push(hotReason(w, 'moved'))
+    } else reasons.push(w.hot ? hotReason(w, 'missing-hot-cue') : 'call-missing')
+  }
+  for (const a of left) reasons.push(a.hot ? hotReason(a, 'extra-hot-cue') : 'call-extra')
   return reasons
 }
 
 function mismatchOf(flow: CueFlow, t: Marked): MismatchReason[] {
-  const existing = t.track.cues.map((c, i) => ({ ...c, id: String(i) }))
   const out = flowOutcome({
-    existing,
+    existing: [],
     drops: t.drops,
-    previousDrops: t.drops,
+    previousDrops: [],
     beats: t.track.beats,
     strong: t.track.strong,
     phrases: t.track.phrases,
     flow,
   })
-  const changes = out.status === 'plan' ? diffCues(existing, out.wanted) : null
-  if (changes && isEmptyChange(changes)) return []
-  const reasons: MismatchReason[] = changes
-    ? changeReasons(existing, changes)
-    : [out.status === 'too-many' ? 'too-many' : 'manual']
+  const reasons: MismatchReason[] =
+    out.status === 'too-many'
+      ? ['too-many']
+      : compareCues(t.track.beats, out.wanted.map(placedOf), t.track.cues.map(placedOf))
+  if (reasons.length === 0) return []
   if (t.drops.length > 1) reasons.push('several-drops')
-  return [...new Set(reasons.length > 0 ? reasons : ['other' as const])]
+  return [...new Set(reasons)]
+}
+
+function mismatchesOf(
+  marked: Marked[],
+  flow: CueFlow,
+): { matching: number; mismatches: Partial<Record<MismatchReason, number[]>> } {
+  const mismatches: Partial<Record<MismatchReason, number[]>> = {}
+  let matching = 0
+  for (const t of marked) {
+    const reasons = mismatchOf(flow, t)
+    if (reasons.length === 0) matching++
+    for (const r of reasons) mismatches[r] = [...(mismatches[r] ?? []), t.index]
+  }
+  return { matching, mismatches }
 }
 
 function learnMarked(marked: Marked[]) {
@@ -242,15 +287,14 @@ function learnMarked(marked: Marked[]) {
     name: '',
     rules: [countdown, startRule(open, starts)].filter((r): r is CueRule => r !== null),
   }
-  const misses = marked.map((t) => ({ index: t.index, reasons: mismatchOf(flow, t) }))
-  return { support, distances, flow, open, starts, misses }
+  return { support, distances, flow, open, starts }
 }
 
 export function learnFlow(tracks: LearnTrack[]): LearnedFlow | null {
   const marked = tracks.flatMap((t, i) => markedOf(t, i) ?? [])
   if (marked.length === 0) return null
-  const { flow, misses } = learnMarked(marked)
-  const matching = misses.filter((m) => m.reasons.length === 0).length
+  const { flow } = learnMarked(marked)
+  const { matching } = mismatchesOf(marked, flow)
   if (matching < PATTERN_SHARE * marked.length) return null
   return { flow, coverage: { matching, marked: marked.length } }
 }
@@ -258,20 +302,19 @@ export function learnFlow(tracks: LearnTrack[]): LearnedFlow | null {
 export function diagnoseLearnFlow(tracks: LearnTrack[]): LearnDiagnosis {
   const marked = tracks.flatMap((t, i) => markedOf(t, i) ?? [])
   const noGrid = tracks.filter((t) => t.beats.length === 0).length
-  const { support, distances, flow, open, starts, misses } = learnMarked(marked)
-  const mismatches: Partial<Record<MismatchReason, number[]>> = {}
-  for (const m of misses)
-    for (const r of m.reasons) mismatches[r] = [...(mismatches[r] ?? []), m.index]
+  const { support, distances, flow, open, starts } = learnMarked(marked)
+  const learned = mismatchesOf(marked, flow)
   return {
     tracks: tracks.length,
     noGrid,
     noDrop: tracks.length - noGrid - marked.length,
     marked: marked.length,
-    support: Object.fromEntries([...support].sort((a, b) => b[1] - a[1])),
+    support: Object.fromEntries(support),
     flow,
     countdownPaired: pairedShare(countdownCues(marked, distances)),
     start: { open: open.length, withStart: starts.length },
-    matching: misses.filter((m) => m.reasons.length === 0).length,
-    mismatches,
+    matching: learned.matching,
+    mismatches: learned.mismatches,
+    myFlow: mismatchesOf(marked, MY_FLOW),
   }
 }

@@ -167,20 +167,71 @@ const at =
     return patch === null ? [] : [{ ...c, ...patch }]
   }
 
+const reletter = (t: LearnTrack): LearnTrack => {
+  const hot = t.cues.filter((c) => c.kind !== 0)
+  const kinds = hot.map((c) => c.kind).reverse()
+  return {
+    ...t,
+    cues: [...t.cues.filter((c) => c.kind === 0), ...hot.map((c, i) => ({ ...c, kind: kinds[i] }))],
+  }
+}
+
+describe('learnFlow on collections shaped like the real one', () => {
+  it('keeps 48 when few first drops are deep enough for it, since support counts only the tracks where the distance fits', () => {
+    const tracks = [
+      ...Array.from({ length: 33 }, () => track([40, 104])),
+      ...Array.from({ length: 3 }, () => track([80, 160])),
+      ...Array.from({ length: 4 }, () => track([8, 72])),
+    ]
+    const learned = learnFlow(tracks)
+    expect(learned?.flow.rules).toEqual(MY_FLOW.rules)
+    expect(learned?.coverage).toEqual({ matching: 40, marked: 40 })
+  })
+
+  it('ignores the letters, since rekordbox letters by time and a flow has none', () => {
+    const tracks = [
+      ...Array.from({ length: 15 }, () => track([64, 128])),
+      ...Array.from({ length: 5 }, () => reletter(track([64, 128]))),
+    ]
+    expect(learnFlow(tracks)?.coverage).toEqual({ matching: 20, marked: 20 })
+  })
+
+  it('never lets a distance seen on a single track in, even where it is the only track it fits', () => {
+    const tracks = [...Array.from({ length: 20 }, () => track([64])), withExtraHot(120, 64)]
+    expect(learnFlow(tracks)?.flow.rules).toEqual([MY_FLOW.rules[0]])
+  })
+
+  it('leaves out a common distance that is not a multiple of the step, since one rule cannot place it', () => {
+    const tracks = [
+      ...Array.from({ length: 10 }, () => track([64])),
+      ...Array.from({ length: 10 }, () => withExtraHot(64, 20)),
+    ]
+    const learned = learnFlow(tracks)
+    expect(learned?.flow.rules).toEqual([MY_FLOW.rules[0]])
+    expect(learned?.coverage).toEqual({ matching: 10, marked: 20 })
+  })
+})
+
 describe('diagnoseLearnFlow', () => {
   it('names why each marked track misses the learned flow, so a low coverage can be explained before it is judged', () => {
     const clean = Array.from({ length: 20 }, () => track([64]))
     const starts = Array.from({ length: 3 }, () => track([8]))
+    const everyTwenty = Array.from({ length: 9 }, (_, i) => ({
+      ms: bar(20 * (i + 1)),
+      kind: 0,
+      color: null,
+    }))
     const odd: LearnTrack[] = [
-      edited(track([64]), (c) =>
-        c.kind === 1 ? [{ ...c, kind: 3 }] : c.kind === 3 ? [{ ...c, kind: 1 }] : [c],
-      ),
+      reletter(track([64])),
       edited(track([64]), at(32, 'hot', { color: null })),
       edited(track([64]), at(32, 'hot', { color: 56 })),
       edited(track([64]), at(16, 'any', null)),
       withExtraHot(64, 8),
       edited(track([64, 160]), at(32, 'hot', { color: null })),
       edited(track([8]), at(0, 'hot', { color: 56 })),
+      edited(track([64]), (c) => (c.ms === bar(48) ? [{ ...c, ms: c.ms + 500 }] : [c])),
+      track([64, 160]),
+      { beats: BEATS, cues: everyTwenty, strong: [], phrases: [] },
       {
         beats: BEATS,
         cues: [
@@ -195,25 +246,36 @@ describe('diagnoseLearnFlow', () => {
     const first = clean.length + starts.length
     const d = diagnoseLearnFlow([...clean, ...starts, ...odd])
     expect(d).toMatchObject({
-      tracks: 32,
+      tracks: 35,
       noGrid: 1,
       noDrop: 1,
-      marked: 30,
+      marked: 33,
       flow: { rules: MY_FLOW.rules },
       countdownPaired: 1,
       start: { open: 4, withStart: 4 },
-      matching: 23,
+      matching: 25,
     })
-    expect(d.support).toEqual({ 8: 1, 16: 26, 32: 26, 48: 25 })
-    expect(d.mismatches).toEqual({
-      'letter-order': [first],
+    expect(d.support[48]).toEqual({ tracks: 27, eligible: 28 })
+    expect(d.support[8]).toEqual({ tracks: 1, eligible: 29 })
+    const mismatches = {
       'colour-null': [first + 1, first + 5],
       'colour-differs': [first + 2],
       'missing-hot-cue': [first + 3],
       'call-missing': [first + 3],
-      manual: [first + 4],
-      'several-drops': [first + 5],
+      'extra-hot-cue': [first + 4],
+      'several-drops': [first + 5, first + 9],
       'start-cue-differs': [first + 6],
-    })
+      moved: [first + 7],
+      'too-many': [first + 9],
+    }
+    expect(d.mismatches).toEqual(mismatches)
+    expect(d.myFlow).toEqual({ matching: 25, mismatches })
+  })
+
+  it('measures Mi flujo on the same tracks as the reference when the collection learns another flow', () => {
+    const d = diagnoseLearnFlow([32, 48, 64, 96].map((n) => track([n], ONE_AT_32)))
+    expect(d.flow.rules).toEqual(ONE_AT_32.rules)
+    expect(d.matching).toBe(4)
+    expect(d.myFlow.matching).toBe(0)
   })
 })

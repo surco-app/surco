@@ -30,6 +30,16 @@ describe.skipIf(!copy)('Learn the flow from the DJ’s own collection', () => {
         }),
       )
       const d = diagnoseLearnFlow(tracks)
+      const examples = (mismatches: Record<string, number[] | undefined>) =>
+        Object.fromEntries(
+          Object.entries(mismatches).map(([reason, indices = []]) => [
+            reason,
+            {
+              tracks: indices.length,
+              examples: indices.slice(0, EXAMPLES).map((i) => read.tracks[i].contentId),
+            },
+          ]),
+        )
       console.log(
         JSON.stringify({
           read: {
@@ -48,15 +58,8 @@ describe.skipIf(!copy)('Learn the flow from the DJ’s own collection', () => {
             isMyFlow: isDeepStrictEqual(d.flow.rules, MY_FLOW.rules),
           },
           matching: d.matching,
-          mismatches: Object.fromEntries(
-            Object.entries(d.mismatches).map(([reason, indices]) => [
-              reason,
-              {
-                tracks: indices.length,
-                examples: indices.slice(0, EXAMPLES).map((i) => read.tracks[i].contentId),
-              },
-            ]),
-          ),
+          mismatches: examples(d.mismatches),
+          myFlow: { matching: d.myFlow.matching, mismatches: examples(d.myFlow.mismatches) },
         }),
       )
     } finally {
