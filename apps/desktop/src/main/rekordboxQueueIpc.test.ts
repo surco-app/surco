@@ -69,6 +69,30 @@ describe('registerRekordboxQueueIpc', () => {
     expect(onApplied).not.toHaveBeenCalled()
   })
 
+  it('wakes the watcher when the apply is cancelled and the work keeps waiting', async () => {
+    const onWaiting = vi.fn()
+    registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {
+      collection: () => '/c/master.db',
+      ensureClosed: vi.fn(async () => false),
+      onApplied: vi.fn(),
+      onWaiting,
+    })
+    expect(await handler('rekordbox:applyNow')({ sender: {} })).toBeNull()
+    expect(onWaiting).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not wake the watcher after a refusal that retrying would only repeat', async () => {
+    const onWaiting = vi.fn()
+    registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'backup-failed' }), {
+      collection: () => '/c/master.db',
+      ensureClosed: vi.fn(async () => true),
+      onApplied: vi.fn(),
+      onWaiting,
+    })
+    await handler('rekordbox:applyNow')({ sender: {} })
+    expect(onWaiting).not.toHaveBeenCalled()
+  })
+
   it('discards and reports the state', async () => {
     const q = queue()
     registerRekordboxQueueIpc(q, {

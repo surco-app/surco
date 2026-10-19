@@ -5,6 +5,7 @@ import { serialLibraryFlush } from './libraryTagSync'
 import { readMembership } from './rekordboxMembership'
 import { withCollection } from './rekordboxPlaylistsIpc'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+import { stillWaiting } from './rekordboxQueueWatch'
 
 export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null {
   if (result.status === 'empty') return null
@@ -19,16 +20,19 @@ export interface QueueIpcHost {
   collection: () => string
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onApplied: (notice: RekordboxQueueApplied) => void
+  onWaiting?: () => void
 }
 
 export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcHost): void {
   ipcMain.handle('rekordbox:queue', () => queue.state())
   ipcMain.handle('rekordbox:applyNow', (e) =>
-    serialLibraryFlush(async () =>
-      appliedNotice(
-        await queue.apply(() => host.ensureClosed(BrowserWindow.fromWebContents(e.sender))),
-      ),
-    ),
+    serialLibraryFlush(async () => {
+      const result = await queue.apply(() =>
+        host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+      )
+      if (stillWaiting(result)) host.onWaiting?.()
+      return appliedNotice(result)
+    }),
   )
   ipcMain.handle('rekordbox:discardQueue', () => queue.discard())
   ipcMain.handle('rekordbox:membership', (_e, paths: string[]) =>
