@@ -19,6 +19,7 @@ import { mergeReadMeta } from '../lib/readMerge'
 import { withReviewedFields } from '../lib/reviewedFields'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
+import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import { clearMaximizedSection } from './useEditorSections'
 import { useStableCallback } from './useStableCallback'
@@ -312,10 +313,10 @@ export function useTrackLibrary({
     // case is excluded on purpose: those paths ARE audio, and the skip notice below covers
     // them; firing both would report one drop twice.
     if (!streamed && paths.length > 0 && audio.length === 0) onNoAudioFound()
-    // Only genuinely new rows restore: a path already in the list is a live track
-    // whose current state must not be clobbered by a stale saved edit. A reopen seeds
-    // its edits through seedRestoredEdits BEFORE expanding, so the streamed rows find
-    // them waiting — see the ref's own comment.
+    // Only new rows and rows joining Files untouched restore: a path already in the list
+    // with edits of its own is a live track whose current state must not be clobbered by a
+    // stale saved edit. A reopen seeds its edits through seedRestoredEdits BEFORE
+    // expanding, so the streamed rows find them waiting — see the ref's own comment.
     if (restore) {
       for (const path of fresh) {
         const edit = restore[path]
@@ -338,8 +339,16 @@ export function useTrackLibrary({
       const joining = new Set(
         toFiles ? audio.filter((p) => existing.has(p) && !alreadyInFiles.has(p)) : [],
       )
-      if (joining.size > 0)
-        mapTracks((t) => (joining.has(t.inputPath) ? { ...t, inFiles: true } : t))
+      const joined = new Map(
+        tracksRef.current
+          .filter((t) => joining.has(t.inputPath))
+          .map((t) => [t.id, joinFiles(t, restore?.[t.inputPath])]),
+      )
+      if (joined.size > 0)
+        mapTracks((t) => {
+          const patch = joined.get(t.id)
+          return patch ? { ...t, ...patch } : t
+        })
       const skipped = audio.filter((p) => alreadyInFiles.has(p)).length - selfStreamed.length
       if (skipped > 0) onDuplicatesSkipped(skipped)
     }
@@ -414,6 +423,23 @@ export function useTrackLibrary({
       tracksRef.current = tracksRef.current.filter((t) => !dropped.has(t.id))
       setTracks((prev) => prev.filter((t) => !dropped.has(t.id)))
     })
+  }
+
+  function joinFiles(t: TrackItem, saved: SessionEdit | undefined): Partial<TrackItem> {
+    if (!saved) return { inFiles: true }
+    if (t.loadingMeta) {
+      restoredEdits.current.set(t.inputPath, saved)
+      return { inFiles: true }
+    }
+    restoredEdits.current.delete(t.inputPath)
+    if (hasStagedEdits(t) || t.normalize !== undefined || t.declick !== undefined)
+      return { inFiles: true }
+    return {
+      ...restoredPatch(saved),
+      ...(!t.embeddedCover && saved.coverUrl && { embeddedCover: saved.coverUrl }),
+      meta: saved.meta,
+      inFiles: true,
+    }
   }
 
   // The fields of a reopened session's staged edit that overlay the fresh file read.

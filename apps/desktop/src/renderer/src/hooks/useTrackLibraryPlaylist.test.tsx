@@ -916,6 +916,44 @@ describe('Files and the source playlists keep their own tracks', () => {
     expect(result.current.tracks).toHaveLength(0)
   })
 
+  it('restores the saved edits of a session row a playlist had already loaded', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const id = result.current.tracks[0].id
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'], {
+        '/m/a.aiff': { meta: tags({ title: 'Saved' }), declick: { mode: 'strong', noise: 'off' } },
+      })
+    })
+    expect(result.current.tracks).toEqual([
+      expect.objectContaining({
+        id,
+        inFiles: true,
+        meta: expect.objectContaining({ title: 'Saved' }),
+        declick: { mode: 'strong', noise: 'off' },
+      }),
+    ])
+  })
+
+  it('keeps what the user typed on a playlist row over the saved session it joins', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const row = result.current.tracks[0]
+    act(() => result.current.updateTrack(row.id, { meta: { ...row.meta, title: 'Typed' } }))
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'], {
+        '/m/a.aiff': { meta: tags({ title: 'Saved' }) },
+      })
+    })
+    expect(result.current.tracks[0]).toMatchObject({ inFiles: true, meta: { title: 'Typed' } })
+  })
+
   it('keeps a row started over in Files', async () => {
     const { result } = setup()
     await act(async () => {
