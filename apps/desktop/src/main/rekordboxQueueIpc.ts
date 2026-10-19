@@ -13,7 +13,12 @@ export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null 
     return result.reason === 'cancelled' || result.reason === 'rekordbox-running'
       ? null
       : { refused: result.reason }
-  return { tracks: result.tracks, changes: result.changes, notices: result.notices }
+  return {
+    tracks: result.tracks,
+    changes: result.changes,
+    notices: result.notices,
+    written: result.written,
+  }
 }
 
 export interface QueueIpcHost {

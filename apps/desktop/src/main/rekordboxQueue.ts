@@ -6,6 +6,7 @@ import type {
   RekordboxQueueItem,
   RekordboxQueueNotice,
   RekordboxQueueState,
+  RekordboxQueueWritten,
 } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
@@ -55,6 +56,7 @@ export type QueueApply =
       tracks: number
       changes: number
       notices: RekordboxQueueNotice[]
+      written: RekordboxQueueWritten[]
       outcomes: OpOutcome[]
     }
 
@@ -162,6 +164,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
         tracks: repointedTo.size,
         changes: 0,
         notices: repointNotices,
+        written: [],
         outcomes: [],
       }
     let before: Record<string, number> | null = null
@@ -211,7 +214,10 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       ...appliedOps.flatMap((op) => (op?.kind === 'track' ? [op.path] : [])),
     ]).size
     const changes = appliedOps.filter((op) => op?.kind === 'edit').length
-    return { status: 'applied', tracks, changes, notices, outcomes: result.outcomes }
+    const written = appliedOps.flatMap((op) =>
+      op?.kind === 'track' ? [{ path: op.path, wanted: op.wanted }] : [],
+    )
+    return { status: 'applied', tracks, changes, notices, written, outcomes: result.outcomes }
   }
 
   return {

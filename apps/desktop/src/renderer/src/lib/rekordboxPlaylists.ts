@@ -1,4 +1,8 @@
-import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
+import type {
+  RekordboxPlaylistTarget,
+  RekordboxQueueWritten,
+  SourceNode,
+} from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 
@@ -179,17 +183,38 @@ export function playlistDotsOf(
   return out
 }
 
+function withoutPlaylistEdit(t: TrackItem): TrackItem {
+  const before = trackSignature(t)
+  const cleared: TrackItem = { ...t, rekordboxPlaylists: undefined }
+  const after = trackSignature(cleared)
+  return {
+    ...cleared,
+    ...(t.processedSignature === before && { processedSignature: after }),
+    ...(t.diskSignature === before && { diskSignature: after }),
+  }
+}
+
 export function discardPlaylistEdits(tracks: TrackItem[], paths: string[]): TrackItem[] {
   const discarded = new Set(paths)
+  return tracks.map((t) =>
+    !t.rekordboxPlaylists || !discarded.has(rekordboxPathOf(t)) ? t : withoutPlaylistEdit(t),
+  )
+}
+
+function sameTargets(a: RekordboxPlaylistTarget[], b: RekordboxPlaylistTarget[]): boolean {
+  const keys = new Set(a.map(targetKey))
+  return keys.size === new Set(b.map(targetKey)).size && b.every((t) => keys.has(targetKey(t)))
+}
+
+export function clearWrittenPlaylists(
+  tracks: TrackItem[],
+  written: RekordboxQueueWritten[],
+): TrackItem[] {
+  const wantedBy = new Map(written.map((w) => [w.path, w.wanted]))
   return tracks.map((t) => {
-    if (!t.rekordboxPlaylists || !discarded.has(rekordboxPathOf(t))) return t
-    const before = trackSignature(t)
-    const cleared: TrackItem = { ...t, rekordboxPlaylists: undefined }
-    const after = trackSignature(cleared)
-    return {
-      ...cleared,
-      ...(t.processedSignature === before && { processedSignature: after }),
-      ...(t.diskSignature === before && { diskSignature: after }),
-    }
+    const wanted = wantedBy.get(rekordboxPathOf(t))
+    return t.rekordboxPlaylists && wanted && sameTargets(t.rekordboxPlaylists, wanted)
+      ? withoutPlaylistEdit(t)
+      : t
   })
 }

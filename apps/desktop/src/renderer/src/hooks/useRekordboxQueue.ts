@@ -1,7 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
+import type {
+  RekordboxQueueApplied,
+  RekordboxQueueState,
+  RekordboxQueueWritten,
+} from '../../../shared/types'
 import { refusalKey } from '../lib/playlistEdits'
 import { appliedMessage } from '../lib/rekordboxQueueText'
 
@@ -10,6 +14,7 @@ const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
 export function useRekordboxQueue(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
   onDiscarded: (paths: string[]) => void,
+  onWritten: (written: RekordboxQueueWritten[]) => void,
 ): { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> } {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -53,9 +58,10 @@ export function useRekordboxQueue(
       if (!applied) return
       const message = appliedMessage(tr, applied)
       if (message) notify(message.text, message.tone)
+      if ('written' in applied) onWritten(applied.written)
       void reread()
     },
-    [tr, notify, reread],
+    [tr, notify, reread, onWritten],
   )
 
   useEffect(() => window.api.onRekordboxQueueApplied(announce), [announce])

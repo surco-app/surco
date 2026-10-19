@@ -36,15 +36,17 @@ function setup(over: Partial<Api> = {}) {
   const invalidate = vi.spyOn(client, 'invalidateQueries')
   const notify = vi.fn()
   const onDiscarded = vi.fn()
+  const onWritten = vi.fn()
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
-  const hook = renderHook(() => useRekordboxQueue(notify, onDiscarded), { wrapper })
+  const hook = renderHook(() => useRekordboxQueue(notify, onDiscarded, onWritten), { wrapper })
   return {
     hook,
     api,
     notify,
     onDiscarded,
+    onWritten,
     invalidate,
     changed: (s: RekordboxQueueState) => changed(s),
     applied: (a: RekordboxQueueApplied) => applied(a),
@@ -61,11 +63,18 @@ describe('useRekordboxQueue', () => {
 
   it('tells the user and re-reads rekordbox when the queue lands, because the collection is the only truth', async () => {
     const { notify, invalidate, applied } = setup()
-    act(() => applied({ tracks: 2, changes: 0, notices: [] }))
+    act(() => applied({ tracks: 2, changes: 0, notices: [], written: [] }))
     expect(notify).toHaveBeenCalledWith('Done in rekordbox · 2 tracks', 'neutral')
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-membership'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['source-tree'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['source-playlist'] })
+  })
+
+  it('hands back what landed so the fields the collection now holds are cleared', async () => {
+    const { onWritten, applied } = setup()
+    const written = [{ path: '/m/a.wav', wanted: [{ name: 'Surco prueba A' }] }]
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written }))
+    expect(onWritten).toHaveBeenCalledWith(written)
   })
 
   it('hands back the discarded tracks so their edits go back to rekordbox', async () => {
@@ -83,6 +92,7 @@ describe('useRekordboxQueue', () => {
         tracks: 1,
         changes: 0,
         notices: [],
+        written: [],
       })),
     })
     await act(() => hook.result.current.applyNow())

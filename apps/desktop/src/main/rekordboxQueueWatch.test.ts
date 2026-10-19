@@ -2,7 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { QueueApply } from './rekordboxQueue'
 import { stillWaiting, type WatchDeps, watchRekordboxQueue } from './rekordboxQueueWatch'
 
-const APPLIED: QueueApply = { status: 'applied', tracks: 1, changes: 0, notices: [], outcomes: [] }
+const APPLIED: QueueApply = {
+  status: 'applied',
+  tracks: 1,
+  changes: 0,
+  notices: [],
+  written: [],
+  outcomes: [],
+}
 
 function setup(
   running: boolean[],

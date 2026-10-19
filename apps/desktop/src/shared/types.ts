@@ -1592,6 +1592,16 @@ export interface RekordboxQueueState {
   items: RekordboxQueueItem[]
 }
 
+export interface RekordboxQueueWritten {
+  path: string
+  wanted: RekordboxPlaylistTarget[]
+}
+
 export type RekordboxQueueApplied =
-  | { tracks: number; changes: number; notices: RekordboxQueueNotice[] }
+  | {
+      tracks: number
+      changes: number
+      notices: RekordboxQueueNotice[]
+      written: RekordboxQueueWritten[]
+    }
   | { refused: RekordboxEditRefusal }

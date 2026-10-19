@@ -134,6 +134,7 @@ describe('rekordbox queue', () => {
       tracks: 1,
       changes: 0,
       notices: [],
+      written: [{ path: '/m/b.wav', wanted: [{ id: '3000', name: 'Makina' }] }],
       outcomes: [{ id: 'a', applied: true, notices: [] }],
     })
     expect(calls).toEqual(['repoint', 'batch'])
@@ -155,6 +156,30 @@ describe('rekordbox queue', () => {
       { code: 'edit-changed', playlist: 'Makina' },
     ])
     expect(q.isEmpty()).toBe(true)
+  })
+
+  it('lists each track it wrote with the playlists it carried and leaves out the one rekordbox refused', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({
+        ok: true,
+        wrote: true,
+        outcomes: [
+          { id: 'a', applied: true, notices: [] },
+          { id: 'b', applied: false, reason: 'stale', notices: [] },
+          { id: 'e1', applied: true, notices: [] },
+        ],
+      })),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([
+      track('a', '/m/a.wav', { wanted: [{ name: 'Surco prueba A' }] }),
+      track('b', '/m/b.wav'),
+      rename,
+    ])
+    const result = await q.apply(closed)
+    expect(result.status === 'applied' && result.written).toEqual([
+      { path: '/m/a.wav', wanted: [{ name: 'Surco prueba A' }] },
+    ])
   })
 
   it('keeps everything when the batch is refused because nothing written means nothing lost', async () => {

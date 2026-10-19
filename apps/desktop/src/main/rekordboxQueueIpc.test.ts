@@ -20,6 +20,7 @@ const APPLIED: QueueApply = {
   tracks: 3,
   changes: 0,
   notices: [{ code: 'ambiguous', track: 'Ekkah' }],
+  written: [{ path: '/m/e.wav', wanted: [{ name: 'Surco prueba A' }] }],
   outcomes: [{ id: 'e', applied: true, createdId: '77', notices: [] }],
 }
 
@@ -42,6 +43,7 @@ describe('appliedNotice', () => {
       tracks: 3,
       changes: 0,
       notices: [{ code: 'ambiguous', track: 'Ekkah' }],
+      written: [{ path: '/m/e.wav', wanted: [{ name: 'Surco prueba A' }] }],
     })
   })
 

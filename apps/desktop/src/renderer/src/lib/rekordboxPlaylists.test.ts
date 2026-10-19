@@ -6,6 +6,7 @@ import { isStale, trackSignature } from './dirty'
 import {
   bulkPlaylistState,
   canCreate,
+  clearWrittenPlaylists,
   discardPlaylistEdits,
   effectivePlaylists,
   isPlaylistsPending,
@@ -274,5 +275,47 @@ describe('discardPlaylistEdits', () => {
     const out = discardPlaylistEdits(rows, ['/nowhere.wav'])
     expect(out[0]).toBe(rows[0])
     expect(out[1]).toBe(rows[1])
+  })
+})
+
+describe('clearWrittenPlaylists', () => {
+  const typed = [{ name: 'Surco prueba A' }]
+  const written = (over: Partial<TrackItem> = {}): TrackItem => {
+    const base = track({
+      id: 'a',
+      status: 'done',
+      outputPath: '/out/a.aiff',
+      rekordboxPlaylists: typed,
+      ...over,
+    })
+    const signature = trackSignature(base)
+    return { ...base, processedSignature: signature, diskSignature: signature }
+  }
+
+  it('clears a field the collection now holds without making the row stale or unsaved, so a later rename cannot orphan it', () => {
+    const [out] = clearWrittenPlaylists(
+      [written()],
+      [{ path: '/out/a.aiff', wanted: [{ name: 'Surco prueba A' }] }],
+    )
+    expect(out.rekordboxPlaylists).toBeUndefined()
+    expect(isStale(out)).toBe(false)
+    expect(hasStagedEdits(out)).toBe(false)
+  })
+
+  it('compares the raw targets whatever their order', () => {
+    const two = [{ id: '1', name: 'A' }, { name: 'B' }]
+    const [out] = clearWrittenPlaylists(
+      [written({ rekordboxPlaylists: two })],
+      [{ path: '/out/a.aiff', wanted: [{ name: 'B' }, { id: '1', name: 'A' }] }],
+    )
+    expect(out.rekordboxPlaylists).toBeUndefined()
+  })
+
+  it('keeps an edit made after queueing because it was never written', () => {
+    const rows = [written({ rekordboxPlaylists: [{ name: 'Surco prueba A' }, { name: 'Otra' }] })]
+    const out = clearWrittenPlaylists(rows, [
+      { path: '/out/a.aiff', wanted: [{ name: 'Surco prueba A' }] },
+    ])
+    expect(out[0]).toBe(rows[0])
   })
 })

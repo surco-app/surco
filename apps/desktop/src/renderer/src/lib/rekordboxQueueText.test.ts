@@ -29,6 +29,7 @@ describe('rekordbox queue text', () => {
         tracks: 3,
         changes: 0,
         notices: [{ code: 'playlist-changed', track: 'Bam Bam', playlist: 'Makina' }],
+        written: [],
       }),
     ).toEqual({
       text: 'Done in rekordbox · 3 tracks. Bam Bam was not changed in Makina. It changed in rekordbox',
@@ -69,6 +70,6 @@ describe('rekordbox queue text', () => {
   })
 
   it('says nothing when nothing landed and nothing was kept', () => {
-    expect(appliedMessage(tr, { tracks: 0, changes: 0, notices: [] })).toBeNull()
+    expect(appliedMessage(tr, { tracks: 0, changes: 0, notices: [], written: [] })).toBeNull()
   })
 })

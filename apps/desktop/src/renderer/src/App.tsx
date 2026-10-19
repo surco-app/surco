@@ -27,6 +27,7 @@ import type {
   PlaylistSource,
   PlaylistTrackRef,
   RekordboxPlaylistTarget,
+  RekordboxQueueWritten,
   SearchHints,
   SearchProviderId,
   Settings,
@@ -130,7 +131,12 @@ import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
-import { discardPlaylistEdits, type PlaylistDot, playlistDotsOf } from './lib/rekordboxPlaylists'
+import {
+  clearWrittenPlaylists,
+  discardPlaylistEdits,
+  type PlaylistDot,
+  playlistDotsOf,
+} from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -662,7 +668,10 @@ export default function App(): React.JSX.Element {
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
-  const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists)
+  const dropWrittenPlaylists = useStableCallback((written: RekordboxQueueWritten[]) =>
+    setTracks((prev) => clearWrittenPlaylists(prev, written)),
+  )
+  const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists, dropWrittenPlaylists)
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
   const queuePill = useMemo(
     () => (
