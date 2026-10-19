@@ -705,3 +705,542 @@ git commit -m "Turn the drops a DJ marks into the cue rows to write, never over 
 
 ---
 
+### Task 3: PSSI phrases and the PWV5 waveform
+
+**Files:**
+- Create: `src/main/anlzFixture.ts` (test builders, shared by Tasks 3, 4, 9, 10)
+- Modify: `src/main/anlz.ts` (append `phrases`, `colorWave`)
+- Modify: `src/shared/types.ts` (`CueWaveColumn`)
+- Test: `src/main/anlz.test.ts` (append)
+
+**Interfaces:**
+- Consumes: `anlzSections` (existing, USB export plan Task 4); `Phrase` (Task 1).
+- Produces:
+  - `shared/types.ts`: `interface CueWaveColumn { h: number; rgb: [number, number, number] | null }` (`h` 0..1; `rgb` 0..255, null for the monochrome preview)
+  - `phrases(ext: Buffer): { mood: number; masked: boolean; entries: Phrase[] } | null`
+  - `colorWave(ext: Buffer, columns?: number): CueWaveColumn[] | null` (default 1200 columns: height by maximum, colour of the tallest entry)
+  - `anlzFixture.ts`: `anlzFile(...sections: Buffer[]): Buffer`, `pqtzSection(beatsMs: number[], bpm?: number): Buffer`, `pssiSection(mood: number, phrases: Phrase[], masked?: boolean): Buffer`, `pwavSection(heights: number[]): Buffer`, `pwv5Section(entries: { r: number; g: number; b: number; h: number }[]): Buffer`
+
+Layouts (Deep Symmetry's ANLZ notes, confirmed by the spike's `anlz.cjs` on Vicent's files): `PSSI` header 32 bytes (`len_entry_bytes` 24 at 12, `len_entries` u16 at 16, `mood` u16 at 18), entries of 24 bytes with `beat` u16 at 2 and `kind` u16 at 4; when masked, every byte from 18 is XORed with `KEY[(x - 18) % 19] + len_entries` (medidas: the local copies are not masked, the USB ones are; both are read). `PWV5` header 24 bytes (`len_entry_bytes` 2 at 12, `len_entries` u32 at 16), entries u16 big-endian: red bits 15-13, green 12-10, blue 9-7, height 6-2.
+
+- [ ] **Step 1: The fixture builders**
+
+Create `src/main/anlzFixture.ts`:
+
+```ts
+import type { Phrase } from '../shared/cueRules'
+
+const PSSI_KEY = [
+  0xcb, 0xe1, 0xee, 0xfa, 0xe5, 0xee, 0xad, 0xee, 0xe9, 0xd2, 0xe9, 0xeb, 0xe1, 0xe9, 0xf3, 0xe8,
+  0xe9, 0xf4, 0xe1,
+]
+
+const u16 = (n: number): Buffer => {
+  const b = Buffer.alloc(2)
+  b.writeUInt16BE(n)
+  return b
+}
+
+const u32 = (n: number): Buffer => {
+  const b = Buffer.alloc(4)
+  b.writeUInt32BE(n)
+  return b
+}
+
+function section(tag: string, headerRest: Buffer, body: Buffer): Buffer {
+  const header = 12 + headerRest.length
+  return Buffer.concat([
+    Buffer.from(tag, 'latin1'),
+    u32(header),
+    u32(header + body.length),
+    headerRest,
+    body,
+  ])
+}
+
+export function anlzFile(...sections: Buffer[]): Buffer {
+  const head = Buffer.concat([
+    Buffer.from('PMAI'),
+    u32(28),
+    u32(0),
+    Buffer.from('00000001000100000001000000000000', 'hex'),
+  ])
+  const out = Buffer.concat([head, ...sections])
+  out.writeUInt32BE(out.length, 8)
+  return out
+}
+
+export function pqtzSection(beatsMs: number[], bpm = 145): Buffer {
+  const body = Buffer.concat(
+    beatsMs.map((ms, i) => {
+      const e = Buffer.alloc(8)
+      e.writeUInt16BE((i % 4) + 1, 0)
+      e.writeUInt16BE(Math.round(bpm * 100), 2)
+      e.writeUInt32BE(ms, 4)
+      return e
+    }),
+  )
+  return section('PQTZ', Buffer.concat([u32(0), u32(0x80000), u32(beatsMs.length)]), body)
+}
+
+export function pssiSection(mood: number, phrases: Phrase[], masked = false): Buffer {
+  const headerRest = Buffer.concat([
+    u32(24),
+    u16(phrases.length),
+    u16(mood),
+    Buffer.alloc(6),
+    u16(phrases.at(-1)?.beat ?? 0),
+    Buffer.alloc(4),
+  ])
+  const body = Buffer.concat(
+    phrases.map((p, i) => Buffer.concat([u16(i + 1), u16(p.beat), u16(p.kind), Buffer.alloc(18)])),
+  )
+  const out = section('PSSI', headerRest, body)
+  if (masked)
+    for (let x = 18; x < out.length; x++)
+      out[x] ^= (PSSI_KEY[(x - 18) % 19] + phrases.length) & 0xff
+  return out
+}
+
+export function pwavSection(heights: number[]): Buffer {
+  return section(
+    'PWAV',
+    Buffer.concat([u32(heights.length), u32(0x10000)]),
+    Buffer.from(heights.map((h) => h & 0x1f)),
+  )
+}
+
+export function pwv5Section(entries: { r: number; g: number; b: number; h: number }[]): Buffer {
+  const body = Buffer.concat(entries.map((e) => u16((e.r << 13) | (e.g << 10) | (e.b << 7) | (e.h << 2))))
+  return section('PWV5', Buffer.concat([u32(2), u32(entries.length), u32(0x00960305)]), body)
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Append to `src/main/anlz.test.ts` (merge `colorWave`, `phrases` into the import from `./anlz`, and import the builders from `./anlzFixture`):
+
+```ts
+describe('phrases', () => {
+  const PHRASES = [
+    { beat: 1, kind: 1 },
+    { beat: 33, kind: 5 },
+    { beat: 65, kind: 3 },
+  ]
+
+  // medidas: the local copies Surco reads are in the clear (mood 1 or 2 on Makina).
+  it('reads mood and phrases from a local analysis', () => {
+    expect(phrases(anlzFile(pssiSection(1, PHRASES)))).toEqual({
+      mood: 1,
+      masked: false,
+      entries: PHRASES,
+    })
+  })
+
+  // rekordbox masks PSSI on a USB; the strong parts must not depend on where it came from.
+  it('unmasks a masked section', () => {
+    expect(phrases(anlzFile(pssiSection(2, PHRASES, true)))).toEqual({
+      mood: 2,
+      masked: true,
+      entries: PHRASES,
+    })
+  })
+
+  it('is null without a PSSI', () => {
+    expect(phrases(anlzFile())).toBeNull()
+  })
+})
+
+describe('colorWave', () => {
+  // What the section draws is rekordbox's own colour waveform, so it looks like the CDJ.
+  it('keeps the tallest entry of each column with its colour', () => {
+    const wave = colorWave(
+      anlzFile(
+        pwv5Section([
+          { r: 7, g: 0, b: 0, h: 31 },
+          { r: 0, g: 7, b: 0, h: 10 },
+          { r: 0, g: 0, b: 7, h: 0 },
+          { r: 0, g: 0, b: 7, h: 16 },
+        ]),
+      ),
+      2,
+    )
+    expect(wave).toEqual([
+      { h: 1, rgb: [255, 0, 0] },
+      { h: 16 / 31, rgb: [0, 0, 255] },
+    ])
+  })
+
+  it('is null without a PWV5', () => {
+    expect(colorWave(anlzFile())).toBeNull()
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/anlz.test.ts`
+Expected: FAIL, `phrases is not a function`.
+
+- [ ] **Step 4: Implement**
+
+Append to `src/shared/types.ts`:
+
+```ts
+export interface CueWaveColumn {
+  h: number
+  rgb: [number, number, number] | null
+}
+```
+
+Append to `src/main/anlz.ts`:
+
+```ts
+const PSSI_KEY = [
+  0xcb, 0xe1, 0xee, 0xfa, 0xe5, 0xee, 0xad, 0xee, 0xe9, 0xd2, 0xe9, 0xeb, 0xe1, 0xe9, 0xf3, 0xe8,
+  0xe9, 0xf4, 0xe1,
+]
+
+export function phrases(
+  ext: Buffer,
+): { mood: number; masked: boolean; entries: Phrase[] } | null {
+  const s = anlzSections(ext).find((x) => x.tag === 'PSSI')
+  if (!s) return null
+  const t = Buffer.from(ext.subarray(s.start, s.start + s.length))
+  const count = t.readUInt16BE(16)
+  const moodRaw = t.readUInt16BE(18)
+  const masked = !(moodRaw >= 1 && moodRaw <= 3)
+  if (masked) for (let x = 18; x < t.length; x++) t[x] ^= (PSSI_KEY[(x - 18) % 19] + count) & 0xff
+  const header = t.readUInt32BE(4)
+  const entries: Phrase[] = []
+  for (let i = 0; i < count; i++) {
+    const at = header + i * 24
+    if (at + 6 > t.length) break
+    entries.push({ beat: t.readUInt16BE(at + 2), kind: t.readUInt16BE(at + 4) })
+  }
+  return { mood: t.readUInt16BE(18), masked, entries }
+}
+
+export function colorWave(ext: Buffer, columns = 1200): CueWaveColumn[] | null {
+  const s = anlzSections(ext).find((x) => x.tag === 'PWV5')
+  if (!s) return null
+  const header = ext.readUInt32BE(s.start + 4)
+  const count = Math.min(ext.readUInt32BE(s.start + 16), Math.floor((s.length - header) / 2))
+  if (count <= 0) return null
+  const width = Math.min(columns, count)
+  const scale = (v: number): number => Math.round((v / 7) * 255)
+  return Array.from({ length: width }, (_, i) => {
+    const from = Math.floor((i * count) / width)
+    const to = Math.max(from + 1, Math.floor(((i + 1) * count) / width))
+    let best = -1
+    let word = 0
+    for (let e = from; e < to; e++) {
+      const w = ext.readUInt16BE(s.start + header + e * 2)
+      const h = (w >> 2) & 0x1f
+      if (h > best) {
+        best = h
+        word = w
+      }
+    }
+    return {
+      h: best / 31,
+      rgb: [scale((word >> 13) & 7), scale((word >> 10) & 7), scale((word >> 7) & 7)],
+    }
+  })
+}
+```
+
+with `import type { Phrase } from '../shared/cueRules'` and `import type { CueWaveColumn } from '../shared/types'` at the top of `anlz.ts`. The USB export's functions are not touched.
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/anlz.test.ts`
+Expected: PASS, the export's own `anlz` tests included.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/main/anlz.ts apps/desktop/src/main/anlz.test.ts apps/desktop/src/main/anlzFixture.ts apps/desktop/src/shared/types.ts
+git commit -m "Read rekordbox's phrases and colour waveform from the analysis files"
+```
+
+---
+
+### Task 4: Read a track's cues and analysis
+
+**Files:**
+- Modify: `src/main/rekordboxPlaylistsFixture.ts` (`djmdCue`, `contentCue`, `FixtureContent.AnalysisDataPath`, `PlaylistFixture.cues`)
+- Modify: `src/shared/types.ts` (`TrackCueRow`, `TrackCues`)
+- Create: `src/main/rekordboxCues.ts`
+- Test: `src/main/rekordboxCues.test.ts`
+
+**Interfaces:**
+- Consumes: Task 3 `phrases`, `colorWave`, `anlzFixture`; `beatGrid`, `wavePreview` (`anlz.ts`); Task 1 `strongParts`; `rekordboxShareDir` (`rekordboxArtwork.ts`).
+- Produces:
+  - `shared/types.ts`: `interface TrackCueRow { id: string; ms: number; kind: number; color: number | null }`; `interface TrackCues { contentId: string; analysed: boolean; grid: { ms: number; beat: number }[]; strong: StrongPart[]; cues: TrackCueRow[]; wave: CueWaveColumn[] | null; durationMs: number; fingerprint: string }` (`StrongPart` re-exported type from `shared/cueRules`)
+  - `rekordboxCues.ts`: `readTrackCues(db: Db, shareDir: string, contentId: string): TrackCues | null` (null when the entry is gone); `cueFingerprint(cues: TrackCueRow[]): string`; `liveCues(db: Db, contentId: string): TrackCueRow[]`
+  - fixture: `FixtureContent.AnalysisDataPath?: string`, `PlaylistFixture.cues?: { ID: string; ContentID: string; InMsec: number; Kind: number; ColorTableIndex: number | null }[]` (the `contentCue` table is created empty)
+
+`analysed` is true only with an `AnalysisDataPath`, its `.DAT` on disk and a non-empty `PQTZ`: a track plan A added has none until rekordbox analyses it (spec "Pista sin analizar"). The fingerprint is the sorted `ID|Kind|InMsec|ColorTableIndex` of every live cue (spec "La cola persistente").
+
+- [ ] **Step 1: Extend the fixture**
+
+In `src/main/rekordboxPlaylistsFixture.ts`: add `AnalysisDataPath?: string` to `FixtureContent`; add to `PlaylistFixture`:
+
+```ts
+  cues?: { ID: string; ContentID: string; InMsec: number; Kind: number; ColorTableIndex: number | null }[]
+```
+
+add these two tables to the `db.exec` template:
+
+```sql
+    CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), InMsec INTEGER,
+      InFrame INTEGER, InMpegFrame INTEGER, InMpegAbs INTEGER, OutMsec INTEGER, OutFrame INTEGER,
+      OutMpegFrame INTEGER, OutMpegAbs INTEGER, Kind INTEGER, Color INTEGER, ColorTableIndex INTEGER,
+      ActiveLoop INTEGER, Comment VARCHAR(255), BeatLoopSize INTEGER, CueMicrosec INTEGER,
+      InPointSeekInfo VARCHAR(255), OutPointSeekInfo VARCHAR(255), ContentUUID VARCHAR(255),
+      ${LOOKUP_COLUMNS});
+    CREATE TABLE contentCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), Cues TEXT,
+      rb_cue_count INTEGER, ${LOOKUP_COLUMNS});
+```
+
+write `AnalysisDataPath` in the content insert (add the column and `c.AnalysisDataPath ?? ''` to the statement and the `run` call, after `UUID`), and after the artists:
+
+```ts
+  const cue = db.prepare(
+    `INSERT INTO djmdCue (ID, ContentID, InMsec, InFrame, Kind, Color, ColorTableIndex, OutMsec,
+       ContentUUID, rb_local_deleted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, -1, ?, -1, ?, 0, ?, ?)`,
+  )
+  for (const q of data.cues ?? [])
+    cue.run(
+      q.ID,
+      q.ContentID,
+      q.InMsec,
+      Math.floor((q.InMsec * 150) / 1000),
+      q.Kind,
+      q.ColorTableIndex,
+      `uuid-c-${q.ContentID}`,
+      FIXTURE_STAMP,
+      FIXTURE_STAMP,
+    )
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Create `src/main/rekordboxCues.test.ts`:
+
+```ts
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { anlzFile, pqtzSection, pssiSection, pwavSection, pwv5Section } from './anlzFixture'
+import { openRekordboxDb } from './rekordboxDb'
+import { cueFingerprint, readTrackCues } from './rekordboxCues'
+import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+
+const ANLZ = '/PIONEER/USBANLZ/219/e40e4/ANLZ0000.DAT'
+const BEATS = Array.from({ length: 64 }, (_, i) => i * 500)
+
+async function collection(over: { analysed?: boolean; ext?: Buffer | null } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'surco-rbcues-'))
+  const path = join(dir, 'master.db')
+  const content = ORGANISE_FIXTURE.content.map((c) =>
+    c.ID === '103' ? { ...c, AnalysisDataPath: over.analysed === false ? '' : ANLZ } : c,
+  )
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    content,
+    cues: [
+      { ID: 'q2', ContentID: '103', InMsec: 8000, Kind: 1, ColorTableIndex: 1 },
+      { ID: 'q1', ContentID: '103', InMsec: 8000, Kind: 0, ColorTableIndex: null },
+      { ID: 'q3', ContentID: '103', InMsec: 16000, Kind: 0, ColorTableIndex: null },
+    ],
+  })
+  const share = join(dir, 'share')
+  mkdirSync(join(share, '/PIONEER/USBANLZ/219/e40e4'), { recursive: true })
+  writeFileSync(join(share, ANLZ), anlzFile(pqtzSection(BEATS), pwavSection([31, 0, 16])))
+  if (over.ext !== null)
+    writeFileSync(
+      join(share, ANLZ.replace('.DAT', '.EXT')),
+      over.ext ??
+        anlzFile(
+          pssiSection(1, [
+            { beat: 1, kind: 1 },
+            { beat: 33, kind: 5 },
+          ]),
+          pwv5Section([{ r: 7, g: 7, b: 7, h: 31 }]),
+        ),
+    )
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  return { db, share }
+}
+
+describe('readTrackCues', () => {
+  it('reads the grid, the strong parts, the cues and the colour waveform', async () => {
+    const { db, share } = await collection()
+    const read = readTrackCues(db, share, '103')
+    expect(read).toMatchObject({
+      contentId: '103',
+      analysed: true,
+      durationMs: 300000,
+      strong: [{ start: BEATS[32], end: BEATS[63] }],
+      wave: [{ h: 1, rgb: [255, 255, 255] }],
+    })
+    expect(read?.grid.slice(0, 5)).toEqual([
+      { ms: 0, beat: 1 },
+      { ms: 500, beat: 2 },
+      { ms: 1000, beat: 3 },
+      { ms: 1500, beat: 4 },
+      { ms: 2000, beat: 1 },
+    ])
+    expect(read?.cues.map((c) => c.id).sort()).toEqual(['q1', 'q2', 'q3'])
+    db.close()
+  })
+
+  // Decision 4: the colour waveform, or the monochrome preview without it.
+  it('falls back to the preview waveform without an .EXT', async () => {
+    const { db, share } = await collection({ ext: null })
+    expect(readTrackCues(db, share, '103')?.wave?.[0]).toEqual({ h: 1, rgb: null })
+    db.close()
+  })
+
+  // A track plan A added has no analysis until rekordbox opens: no grid, no marking.
+  it('says a track rekordbox has not analysed yet', async () => {
+    const { db, share } = await collection({ analysed: false })
+    expect(readTrackCues(db, share, '103')).toMatchObject({ analysed: false, grid: [], wave: null })
+    db.close()
+  })
+
+  it('answers null for an entry that is gone', async () => {
+    const { db, share } = await collection()
+    expect(readTrackCues(db, share, '999')).toBeNull()
+    db.close()
+  })
+})
+
+describe('cueFingerprint', () => {
+  // The conflict check: any cue rekordbox added, moved, recoloured or deleted changes it.
+  it('changes with any cue and ignores their order', () => {
+    const a = { id: 'q1', ms: 8000, kind: 0, color: null }
+    const b = { id: 'q2', ms: 8000, kind: 1, color: 1 }
+    expect(cueFingerprint([a, b])).toBe(cueFingerprint([b, a]))
+    expect(cueFingerprint([a, { ...b, color: 22 }])).not.toBe(cueFingerprint([a, b]))
+    expect(cueFingerprint([a])).not.toBe(cueFingerprint([a, b]))
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCues.test.ts`
+Expected: FAIL, `Cannot find module './rekordboxCues'`.
+
+- [ ] **Step 4: Implement**
+
+Append to `src/shared/types.ts`:
+
+```ts
+export interface TrackCueRow {
+  id: string
+  ms: number
+  kind: number
+  color: number | null
+}
+
+export interface TrackCues {
+  contentId: string
+  analysed: boolean
+  grid: { ms: number; beat: number }[]
+  strong: { start: number; end: number }[]
+  cues: TrackCueRow[]
+  wave: CueWaveColumn[] | null
+  durationMs: number
+  fingerprint: string
+}
+```
+
+Create `src/main/rekordboxCues.ts`:
+
+```ts
+import { existsSync, readFileSync } from 'node:fs'
+import type Database from 'better-sqlite3-multiple-ciphers'
+import { strongParts } from '../shared/cueRules'
+import type { TrackCueRow, TrackCues } from '../shared/types'
+import { beatGrid, colorWave, phrases, wavePreview } from './anlz'
+
+type Db = InstanceType<typeof Database>
+
+export function cueFingerprint(cues: TrackCueRow[]): string {
+  return cues
+    .map((c) => `${c.id}|${c.kind}|${c.ms}|${c.color ?? ''}`)
+    .sort()
+    .join(';')
+}
+
+export function liveCues(db: Db, contentId: string): TrackCueRow[] {
+  return (
+    db
+      .prepare(
+        `SELECT ID, InMsec, Kind, ColorTableIndex FROM djmdCue
+          WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+      )
+      .all(contentId) as { ID: string; InMsec: number; Kind: number; ColorTableIndex: number | null }[]
+  ).map((r) => ({ id: String(r.ID), ms: r.InMsec, kind: r.Kind, color: r.ColorTableIndex }))
+}
+
+function read(path: string): Buffer | null {
+  return existsSync(path) ? readFileSync(path) : null
+}
+
+export function readTrackCues(db: Db, shareDir: string, contentId: string): TrackCues | null {
+  const row = db
+    .prepare(
+      `SELECT AnalysisDataPath, Length FROM djmdContent
+        WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .get(contentId) as { AnalysisDataPath: string | null; Length: number } | undefined
+  if (!row) return null
+  const cues = liveCues(db, contentId)
+  const base = { contentId, cues, durationMs: row.Length * 1000, fingerprint: cueFingerprint(cues) }
+  const dat = row.AnalysisDataPath ? read(`${shareDir}${row.AnalysisDataPath}`) : null
+  const grid = dat ? beatGrid(dat).map((b) => ({ ms: b.ms, beat: b.beat })) : []
+  if (!dat || grid.length === 0) return { ...base, analysed: false, grid: [], strong: [], wave: null }
+  const ext = read(`${shareDir}${row.AnalysisDataPath?.replace(/\.DAT$/, '.EXT')}`)
+  const sections = ext ? phrases(ext) : null
+  const beatsMs = grid.map((b) => b.ms)
+  const preview = wavePreview(dat, 400)
+  return {
+    ...base,
+    analysed: true,
+    grid,
+    strong: sections ? strongParts(sections.mood, sections.entries, beatsMs) : [],
+    wave:
+      (ext ? colorWave(ext) : null) ??
+      (preview ? preview.map((h) => ({ h, rgb: null })) : null),
+  }
+}
+```
+
+`rekordboxShareDir(collectionPath)` (from `rekordboxArtwork.ts`) is what Task 6's IPC passes as `shareDir`; the spike read the analysis with exactly that join (`share` + `AnalysisDataPath`).
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCues.test.ts src/main/rekordboxPlaylistWrite.test.ts src/main/rekordboxContentAdd.test.ts`
+Expected: PASS.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/main/rekordboxCues.ts apps/desktop/src/main/rekordboxCues.test.ts apps/desktop/src/main/rekordboxPlaylistsFixture.ts apps/desktop/src/shared/types.ts
+git commit -m "Read a rekordbox track's cues, grid, strong parts and waveform"
+```
+
+---
+
