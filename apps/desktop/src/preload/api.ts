@@ -209,6 +209,8 @@ export interface Api {
   rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>
+  rekordboxQueuedCues: (contentId: string) => Promise<number[] | null>
+  undoRekordboxCues: (contentId: string) => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void

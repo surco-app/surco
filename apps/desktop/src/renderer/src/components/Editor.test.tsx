@@ -183,6 +183,7 @@ function renderEditor(
     outputDir?: string
     convertBesideOriginal?: boolean
     autoMatch?: boolean
+    rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -221,6 +222,7 @@ function renderEditor(
       <Editor
         item={item(over)}
         libraryIndex={props.libraryIndex ?? null}
+        rekordboxCue={props.rekordboxCue}
         searchInputRef={createRef<HTMLInputElement>()}
         onChange={onChange}
         onProcess={onProcess}
@@ -294,6 +296,28 @@ function renderEditor(
     onSearchWeb,
   }
 }
+
+describe('Editor cues section', () => {
+  beforeEach(() => {
+    Object.assign((window as unknown as { api: object }).api, {
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>().mockResolvedValue(null),
+    })
+  })
+
+  it('is absent for a track that is not in an open rekordbox playlist', () => {
+    renderEditor({ id: 'a' })
+    expect(screen.queryByTestId('cues-section')).toBeNull()
+    expect(screen.queryByTestId('cues-single-only')).toBeNull()
+  })
+
+  it('shows for a single track of an open rekordbox playlist', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+    })
+    expect(screen.getByTestId('cues-section')).toBeInTheDocument()
+  })
+})
 
 describe('Editor cover picker', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -1321,6 +1345,7 @@ describe('Editor multi-select', () => {
       groupingPresets?: string[]
       groupingSeparator?: string
       customFields?: Settings['customFields']
+      rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
     } = {},
   ) {
     if (opts.platform)
@@ -1351,6 +1376,7 @@ describe('Editor multi-select', () => {
       <Editor
         item={a}
         libraryIndex={null}
+        rekordboxCue={opts.rekordboxCue}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         onResultsWidthChange={vi.fn()}
@@ -1480,6 +1506,20 @@ describe('Editor multi-select', () => {
     expect(header).toBeDisabled()
     expect(header).toHaveAttribute('aria-expanded', 'false')
     expect(section).toHaveTextContent(i18n.t('editor.singleTrackOnly'))
+  })
+
+  it('keeps the cues header in place, folded and disabled, over several tracks of a rekordbox playlist', () => {
+    renderMulti({ rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' } })
+    const section = screen.getByTestId('cues-single-only')
+    const header = within(section).getByRole('button', { name: i18n.t('editor.cues.title') })
+    expect(header).toBeDisabled()
+    expect(section).toHaveTextContent(i18n.t('editor.singleTrackOnly'))
+  })
+
+  it('shows no cues section over several tracks outside a rekordbox playlist', () => {
+    renderMulti()
+    expect(screen.queryByTestId('cues-single-only')).toBeNull()
+    expect(screen.queryByTestId('cues-section')).toBeNull()
   })
 
   // A disabled header refuses focus, so ⌘] aimed at one left focus where it was and every

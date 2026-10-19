@@ -509,6 +509,21 @@ describe('cues in the queue', () => {
     ...over,
   })
 
+  it('hands back the queued cues of a track so the editor can keep showing what will be written', () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([cues('c1', [1000]), cues('c2', [2000], { contentId: '104', path: '/m/b.wav' })])
+    expect(q.cuesOp('103')?.drops).toEqual([1000])
+    expect(q.cuesOp('999')).toBeUndefined()
+  })
+
+  it('forgets the queued cues of a track once they are dropped, since Undo takes the save back', () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([cues('c1', [1000])])
+    q.drop('c1')
+    expect(q.cuesOp('103')).toBeUndefined()
+    expect(q.isEmpty()).toBe(true)
+  })
+
   it('keeps the latest cues of a track and shows them on the track line, since saving twice leaves the last marking', () => {
     const store = memoryStore()
     const q = createRekordboxQueue(deps({ store }))

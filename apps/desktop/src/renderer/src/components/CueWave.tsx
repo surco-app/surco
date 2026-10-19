@@ -113,7 +113,7 @@ export function CueWave({
         <span
           key={`d${d.ms}`}
           data-testid={`cue-wave-drop-${d.ms}`}
-          data-pending={d.pending ? 'true' : undefined}
+          data-pending={d.pending ? 'true' : 'false'}
           style={{ left: pct(d.ms) }}
           className={`absolute top-0 bottom-0 w-0.5 bg-[var(--color-fg)] ${d.pending ? 'opacity-60' : ''}`}
         >
@@ -126,7 +126,7 @@ export function CueWave({
         <span
           key={`h${h.kind}`}
           data-testid={`cue-wave-hot-${HOT_LETTER[h.kind]}`}
-          data-pending={h.pending ? 'true' : undefined}
+          data-pending={h.pending ? 'true' : 'false'}
           style={{ left: pct(h.ms), backgroundColor: CUE_COLOR[h.color] }}
           className={`absolute top-0 bottom-0 w-0.5 ${h.pending ? 'opacity-50' : ''}`}
         >

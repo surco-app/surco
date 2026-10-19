@@ -10,7 +10,7 @@ import type {
 } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
-import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 
 interface QueueFile {
   version: 1
@@ -69,6 +69,7 @@ export interface RekordboxQueue {
   isEmpty: () => boolean
   discard: () => void
   drop: (id: string) => void
+  cuesOp: (contentId: string) => CuesOp | undefined
   busy: () => boolean
   settled: () => Promise<void>
   apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
@@ -303,6 +304,8 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       q.ops = q.ops.filter((o) => o.id !== id)
       save()
     },
+    cuesOp: (contentId) =>
+      q.ops.find((o): o is CuesOp => o.kind === 'cues' && o.contentId === contentId),
     busy: () => pending > 0,
     settled: () => chain.then(() => undefined),
     apply(ensureClosed, opts) {

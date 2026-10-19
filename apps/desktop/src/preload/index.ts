@@ -190,6 +190,10 @@ const api: Api = {
   rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
   rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
+  rekordboxQueuedCues: (contentId: string): Promise<number[] | null> =>
+    ipcRenderer.invoke('rekordbox:queuedCues', contentId),
+  undoRekordboxCues: (contentId: string): Promise<void> =>
+    ipcRenderer.invoke('rekordbox:undoCues', contentId),
   saveRekordboxCues: (req: SaveCuesRequest): Promise<void> =>
     ipcRenderer.invoke('rekordbox:saveCues', req),
   rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>

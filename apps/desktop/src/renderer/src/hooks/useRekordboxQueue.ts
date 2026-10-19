@@ -50,6 +50,7 @@ export function useRekordboxQueue(
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-track-cues'] }),
+        queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }),
       ]),
     [queryClient],
   )

@@ -1,9 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cueChanges, findDrops, SAME_POSITION_MS } from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
-import { useTrackCues } from '../hooks/useTrackCues'
+import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
 import { CUE_COLOR } from '../lib/cueWave'
 import { CueWave } from './CueWave'
 import { SectionBody } from './SectionBody'
@@ -22,8 +23,17 @@ interface CueTarget {
   label: string
 }
 
-function Marking({ read, cue }: { read: TrackCues; cue: CueTarget }): React.JSX.Element {
+function Marking({
+  read,
+  queued,
+  cue,
+}: {
+  read: TrackCues
+  queued: number[] | null
+  cue: CueTarget
+}): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const queryClient = useQueryClient()
   const hot = read.cues.filter((c) => c.kind !== 0)
   const initial = useMemo(
     () =>
@@ -33,10 +43,11 @@ function Marking({ read, cue }: { read: TrackCues; cue: CueTarget }): React.JSX.
       ),
     [read],
   )
-  const [drops, setDrops] = useState<number[]>(initial)
+  const [drops, setDrops] = useState<number[]>(queued ?? initial)
   const beats = read.grid.map((b) => b.ms)
   const outcome = cueChanges(read.cues, drops, initial, beats, read.strong)
   const dirty = drops.length !== initial.length || drops.some((d) => !initial.includes(d))
+  const refreshQueued = () => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
   const same = (ms: number, kind: number, color: number) =>
     hot.some((h) => Math.abs(h.ms - ms) <= SAME_POSITION_MS && h.kind === kind && h.color === color)
   const drawnHot =
@@ -90,8 +101,12 @@ function Marking({ read, cue }: { read: TrackCues; cue: CueTarget }): React.JSX.
           <button
             type="button"
             data-testid="cues-undo"
-            disabled={!dirty}
-            onClick={() => setDrops(initial)}
+            disabled={!dirty && queued === null}
+            onClick={() => {
+              setDrops(initial)
+              if (queued !== null)
+                void window.api.undoRekordboxCues(cue.contentId).then(refreshQueued)
+            }}
             className="press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)] disabled:opacity-40"
           >
             {tr('editor.cues.undo')}
@@ -101,14 +116,16 @@ function Marking({ read, cue }: { read: TrackCues; cue: CueTarget }): React.JSX.
             data-testid="cues-save"
             disabled={!dirty || outcome.status === 'too-many'}
             onClick={() =>
-              void window.api.saveRekordboxCues({
-                contentId: cue.contentId,
-                path: cue.path,
-                label: cue.label,
-                drops,
-                previousDrops: initial,
-                fingerprint: read.fingerprint,
-              })
+              void window.api
+                .saveRekordboxCues({
+                  contentId: cue.contentId,
+                  path: cue.path,
+                  label: cue.label,
+                  drops,
+                  previousDrops: initial,
+                  fingerprint: read.fingerprint,
+                })
+                .then(refreshQueued)
             }
             className="press rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
           >
@@ -131,6 +148,7 @@ export function CuesSection({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { data: read, isError } = useTrackCues(cue.contentId)
+  const { data: queued } = useQueuedCues(cue.contentId)
   return (
     <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
@@ -143,13 +161,21 @@ export function CuesSection({
       <SectionBody open={open}>
         <div className="mt-3">
           {isError || read === null ? (
-            <p className="text-xs text-fg-dim">{tr('editor.cues.unreadable')}</p>
-          ) : read === undefined ? null : !read.analysed || read.grid.length === 0 ? (
+            <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
+              {tr('editor.cues.unreadable')}
+            </p>
+          ) : read === undefined || queued === undefined ? null : !read.analysed ||
+            read.grid.length === 0 ? (
             <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
               {tr('editor.cues.unanalysed')}
             </p>
           ) : (
-            <Marking key={read.fingerprint} read={read} cue={cue} />
+            <Marking
+              key={`${read.fingerprint}|${queued?.join(',') ?? ''}`}
+              read={read}
+              queued={queued}
+              cue={cue}
+            />
           )}
         </div>
       </SectionBody>

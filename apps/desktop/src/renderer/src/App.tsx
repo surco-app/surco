@@ -1992,6 +1992,17 @@ export default function App(): React.JSX.Element {
   // afterwards is re-read and shown (useRekordboxEdits).
   const rekordboxOpen =
     browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
+  const selectedContentId =
+    rekordboxOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
+  const selectedPath = selected?.inputPath
+  const selectedLabel = selected?.listLabel
+  const rekordboxCue = useMemo(
+    () =>
+      selectedContentId && selectedPath !== undefined && selectedLabel !== undefined
+        ? { contentId: selectedContentId, path: selectedPath, label: selectedLabel }
+        : undefined,
+    [selectedContentId, selectedPath, selectedLabel],
+  )
   // A row read from an open rekordbox playlist names its collection entry; any other track
   // is looked up by its file, and by its converted file when a conversion moved the entry.
   const trackRef = (t: TrackItem): PlaylistTrackRef => ({
@@ -2858,15 +2869,7 @@ export default function App(): React.JSX.Element {
                       <Suspense fallback={null}>
                         <Editor
                           item={selected}
-                          rekordboxCue={
-                            rekordboxOpen && playlistScope?.contentOf.get(selected.id)
-                              ? {
-                                  contentId: playlistScope.contentOf.get(selected.id) as string,
-                                  path: selected.inputPath,
-                                  label: selected.listLabel,
-                                }
-                              : undefined
-                          }
+                          rekordboxCue={rekordboxCue}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}

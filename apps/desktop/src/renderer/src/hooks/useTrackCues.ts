@@ -13,3 +13,12 @@ export function useTrackCues(contentId: string | undefined): {
   })
   return { data, isError }
 }
+
+export function useQueuedCues(contentId: string): { data: number[] | null | undefined } {
+  const { data } = useQuery({
+    queryKey: ['rekordbox-queued-cues', contentId],
+    queryFn: () => window.api.rekordboxQueuedCues(contentId),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return { data }
+}

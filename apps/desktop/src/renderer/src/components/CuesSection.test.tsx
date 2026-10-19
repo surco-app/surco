@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { cueChanges } from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { installApi } from '../test/api'
@@ -38,14 +39,18 @@ beforeEach(() => {
   })
 })
 
-function setup(read: TrackCues = READ) {
+function setup(read: TrackCues | null | Error = READ, queued: number[] | null = null) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
-  installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read),
-    saveRekordboxCues,
+  const undoRekordboxCues = vi.fn<Api['undoRekordboxCues']>(async () => {})
+  const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async () => {
+    if (read instanceof Error) throw read
+    return read
   })
+  const rekordboxQueuedCues = vi.fn<Api['rekordboxQueuedCues']>(async () => queued)
+  installApi({ rekordboxTrackCues, rekordboxQueuedCues, saveRekordboxCues, undoRekordboxCues })
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <CuesSection
         cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
         open
@@ -53,7 +58,7 @@ function setup(read: TrackCues = READ) {
       />
     </QueryClientProvider>,
   )
-  return { saveRekordboxCues }
+  return { saveRekordboxCues, undoRekordboxCues, rekordboxTrackCues, rekordboxQueuedCues, client }
 }
 
 const clickAt = (ms: number) =>
@@ -134,5 +139,71 @@ describe('CuesSection', () => {
   it('shows the legend', async () => {
     setup()
     await waitFor(() => expect(screen.getByTestId('cues-legend')).toHaveTextContent('16 bars'))
+  })
+
+  it('explains it could not read rekordbox when the read fails', async () => {
+    setup(new Error('boom'))
+    await waitFor(() => expect(screen.getByTestId('cues-unreadable')).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-save')).toBeNull()
+  })
+
+  it('explains it could not read rekordbox when there is no collection', async () => {
+    setup(null)
+    await waitFor(() => expect(screen.getByTestId('cues-unreadable')).toBeInTheDocument())
+  })
+
+  it('shows the drops of a queued save faint, so the user sees what will be written', async () => {
+    setup(READ, [bar(64)])
+    await waitFor(() =>
+      expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toHaveAttribute(
+        'data-pending',
+        'true',
+      ),
+    )
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true')
+  })
+
+  it('still computes against the drops rekordbox holds when a save is queued', async () => {
+    const { saveRekordboxCues } = setup(READ, [bar(64)])
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toBeInTheDocument())
+    clickAt(bar(96))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(saveRekordboxCues).toHaveBeenCalledWith(
+      expect.objectContaining({ drops: [bar(64), bar(96)], previousDrops: [], fingerprint: 'f0' }),
+    )
+  })
+
+  it('takes the queued save back with Undo and returns to what rekordbox says', async () => {
+    const { undoRekordboxCues, rekordboxQueuedCues } = setup(READ, [bar(64)])
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toBeInTheDocument())
+    rekordboxQueuedCues.mockResolvedValue(null)
+    fireEvent.click(screen.getByTestId('cues-undo'))
+    expect(undoRekordboxCues).toHaveBeenCalledWith('103')
+    await waitFor(() => expect(screen.queryByTestId(`cue-wave-drop-${bar(64)}`)).toBeNull())
+  })
+
+  it('draws what rekordbox now holds as written once the queue landed and the cues were re-read', async () => {
+    const { rekordboxTrackCues, client } = setup(READ, [bar(64)])
+    await waitFor(() =>
+      expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true'),
+    )
+    const outcome = cueChanges(
+      [],
+      [bar(64)],
+      [],
+      GRID.map((g) => g.ms),
+      [],
+    )
+    if (outcome.status !== 'plan') throw new Error('expected a plan')
+    const written: TrackCues = {
+      ...READ,
+      fingerprint: 'f1',
+      cues: outcome.changes.insert.map((c, i) => ({ id: `w${i}`, ...c })),
+    }
+    rekordboxTrackCues.mockResolvedValue(written)
+    await client.invalidateQueries({ queryKey: ['rekordbox-track-cues'] })
+    await waitFor(() =>
+      expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'false'),
+    )
   })
 })

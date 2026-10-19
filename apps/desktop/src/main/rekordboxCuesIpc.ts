@@ -8,12 +8,20 @@ import type { RekordboxQueue } from './rekordboxQueue'
 
 export function registerRekordboxCuesIpc(host: {
   collection: () => string
-  queue: Pick<RekordboxQueue, 'enqueue'>
+  queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
   applyQuietly: () => void
 }): void {
   ipcMain.handle('rekordbox:trackCues', (_e, contentId: string) => {
     const path = host.collection()
     return withCollection(path, (db) => readTrackCues(db, rekordboxShareDir(path), contentId), null)
+  })
+  ipcMain.handle(
+    'rekordbox:queuedCues',
+    (_e, contentId: string) => host.queue.cuesOp(contentId)?.drops ?? null,
+  )
+  ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {
+    const op = host.queue.cuesOp(contentId)
+    if (op) host.queue.drop(op.id)
   })
   ipcMain.handle('rekordbox:saveCues', (_e, req: SaveCuesRequest) => {
     host.queue.enqueue([{ ...req, id: randomUUID(), kind: 'cues' }])
