@@ -498,6 +498,63 @@ describe('opening a rekordbox playlist with previews', () => {
     expect(onMetaReadFailed).not.toHaveBeenCalled()
   })
 
+  it('leaves the first track that exists selected when the first one listed is missing', async () => {
+    let selection: { ids: string[]; anchor: string | null } = { ids: [], anchor: null }
+    const setSelection = vi.fn((next: unknown) => {
+      selection =
+        typeof next === 'function'
+          ? (next as (s: typeof selection) => typeof selection)(selection)
+          : (next as typeof selection)
+    })
+    const expandPaths = vi.fn(async () => ['/m/a.aiff'])
+    const { result } = setup({ expandPaths }, { setSelection })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [entry('/m/gone.aiff', 'Gone'), entry('/m/a.aiff', 'A')],
+        'rekordbox',
+      )
+    })
+    const first = result.current.tracks[0]
+    expect(first.inputPath).toBe('/m/a.aiff')
+    expect(selection).toEqual({ ids: [first.id], anchor: first.id })
+  })
+
+  it('refreshes the preview of a converted row that rekordbox now lists by its output', async () => {
+    const read = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: 255,
+      cover: null,
+      foreignTags: [],
+      partial: true,
+    })
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry('/m/a.wav', 'A')], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    act(() =>
+      result.current.updateTrack(result.current.tracks[0].id, { outputPath: '/out/a.aiff' }),
+    )
+    const before = result.current.tracks[0]
+    const atOutput = {
+      ...entry('/out/a.aiff', 'A'),
+      preview: {
+        ...preview('A'),
+        cues: [
+          { ms: 1000, kind: 1 },
+          { ms: 64000, kind: 2 },
+        ],
+      },
+    }
+    await act(async () => {
+      await result.current.openSourcePlaylist([atOutput], 'rekordbox')
+    })
+    const after = result.current.tracks[0]
+    expect(after.sourcePreview?.cues).toHaveLength(2)
+    expect(after.diskSignature).toBe(before.diskSignature)
+    expect(after.diskSignature).toBe(trackSignature(after))
+  })
+
   it('never counts the preview as an edit once the file is read', async () => {
     const read = vi.fn().mockResolvedValue({
       tags: tags({ title: 'A from file', artist: 'File Artist' }),

@@ -7,6 +7,7 @@ import type {
   ReviewRawFields,
   SessionEdit,
   SourcePlaylistEntry,
+  SourcePreview,
   TrackMetadata,
 } from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
@@ -727,18 +728,19 @@ export function useTrackLibrary({
           e.path && !e.separator && e.preview ? [[same(e.path), e.preview] as const] : [],
         ),
       )
+      const nextPreview = (t: TrackItem): SourcePreview | undefined =>
+        previewOf.get(same(t.inputPath)) ??
+        (t.outputPath ? previewOf.get(same(t.outputPath)) : undefined)
       const stale = new Set(
         tracksRef.current
           .filter((t) => {
-            const next = previewOf.get(same(t.inputPath))
+            const next = nextPreview(t)
             return next !== undefined && JSON.stringify(next) !== JSON.stringify(t.sourcePreview)
           })
           .map((t) => t.id),
       )
       if (stale.size > 0)
-        mapTracks((t) =>
-          stale.has(t.id) ? { ...t, sourcePreview: previewOf.get(same(t.inputPath)) } : t,
-        )
+        mapTracks((t) => (stale.has(t.id) ? { ...t, sourcePreview: nextPreview(t) } : t))
     }
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
@@ -805,7 +807,15 @@ export function useTrackLibrary({
       pendingSeed.current.delete(e.path)
     }
     const goneRows = tracksRef.current.filter((t) => gone.has(same(t.inputPath))).map((t) => t.id)
-    if (goneRows.length > 0) removeTracks(goneRows)
+    if (goneRows.length > 0) {
+      removeTracks(goneRows)
+      const added = new Set(freshPaths.map(same))
+      const firstKept = tracksRef.current.find(
+        (t) => added.has(same(t.inputPath)) && !gone.has(same(t.inputPath)),
+      )
+      if (firstKept)
+        setSelection((s) => (s.anchor ? s : { ids: [firstKept.id], anchor: firstKept.id }))
+    }
     return gone.size
   }
 
