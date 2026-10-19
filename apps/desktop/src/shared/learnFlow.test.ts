@@ -210,6 +210,41 @@ describe('learnFlow on collections shaped like the real one', () => {
     expect(learned?.flow.rules).toEqual([MY_FLOW.rules[0]])
     expect(learned?.coverage).toEqual({ matching: 20, marked: 20 })
   })
+
+  it('learns no start cue when most tracks with an early drop have none, as on the real collection', () => {
+    const early = (): LearnTrack => ({
+      beats: BEATS,
+      cues: [
+        { ms: bar(12), kind: 0, color: null },
+        { ms: bar(6), kind: 1, color: 1 },
+        { ms: bar(6), kind: 0, color: null },
+      ],
+      strong: [],
+      phrases: [],
+    })
+    const tracks = [
+      ...Array.from({ length: 20 }, () => track([64])),
+      ...Array.from({ length: 5 }, early),
+      track([8]),
+    ]
+    expect(learnFlow(tracks)?.flow.rules).toEqual([MY_FLOW.rules[0]])
+  })
+
+  it('weighs a distance only among tracks whose first drop lies strictly beyond it, since a drop exactly there puts the cue on bar 1', () => {
+    const tracks = [
+      ...Array.from({ length: 4 }, () => track([80])),
+      ...Array.from({ length: 20 }, () => track([48])),
+    ]
+    expect(learnFlow(tracks)?.flow.rules).toEqual([MY_FLOW.rules[0]])
+  })
+
+  it('needs 2 % of the marked tracks behind a distance in a large collection, so a handful of deep tracks cannot add one', () => {
+    const tracks = [
+      ...Array.from({ length: 148 }, () => track([64])),
+      ...Array.from({ length: 2 }, () => withExtraHot(120, 64)),
+    ]
+    expect(learnFlow(tracks)?.flow.rules).toEqual([MY_FLOW.rules[0]])
+  })
 })
 
 describe('coverage counts a track when the plan of the flow is inside its cues', () => {
