@@ -46,7 +46,7 @@ export type BatchResult =
   | { ok: false; reason: RekordboxEditRefusal }
 
 const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
-  create: 1,
+  create: -1,
   add: 2,
   move: 2,
   remove: 2,

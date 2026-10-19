@@ -12,7 +12,7 @@ import {
   TWIN_PATHS,
   writeRekordboxPlaylistFixture,
 } from './rekordboxPlaylistsFixture'
-import type { TrackOp } from './rekordboxQueueOps'
+import type { EditOp, TrackOp } from './rekordboxQueueOps'
 
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
@@ -324,6 +324,26 @@ describe('track operations', () => {
     expect(contentsOf(path, bolos.ID)).toHaveLength(1)
     expect(result).toMatchObject({ ok: true, wrote: false })
     expect(result.ok && result.outcomes[0].notices).toEqual([])
+  })
+
+  it('makes one playlist when the tree and the field both create the same name in one batch', async () => {
+    const path = await collection()
+    const file = await newFile('Bam Bam.wav')
+    const create: EditOp = {
+      id: 'e',
+      kind: 'edit',
+      edit: { kind: 'create', parentId: 'root', name: 'Makina 2', folder: false },
+      stamps: {},
+    }
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: file, facts: facts(file), wanted: [{ name: 'Makina 2' }] }), create],
+      deps(),
+    )
+    const rows = named(path, 'Makina 2')
+    expect(rows).toHaveLength(1)
+    expect(contentsOf(path, rows[0].ID)).toHaveLength(1)
+    expect(result.ok && result.outcomes.map((o) => o.applied)).toEqual([true, true])
   })
 
   it('links the track once when the same playlist is listed twice', async () => {
