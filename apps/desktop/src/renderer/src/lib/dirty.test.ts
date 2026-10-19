@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { isDeclickStale, isNormalizeStale, isStale, trackSignature } from './dirty'
+import {
+  isDeclickStale,
+  isNormalizeStale,
+  isStale,
+  trackSignature,
+  withSignatureCover,
+} from './dirty'
 
 // A freshly converted track: its snapshot equals its own current values, so it is
 // non-stale by construction. Tests then spread an edit on top to diverge from it.
@@ -230,6 +236,31 @@ describe('trackSignature with rekordbox playlists', () => {
     const t = converted()
     expect(trackSignature({ ...t, rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] })).not.toBe(
       trackSignature(t),
+    )
+  })
+})
+
+describe('withSignatureCover', () => {
+  it('changes only the cover of a snapshot, so art read from the file is not an edit while a typed tag still is', () => {
+    const meta = { title: 'A' } as TrackItem['meta']
+    const typed = { title: 'B' } as TrackItem['meta']
+    const snapshot = trackSignature({ meta, outputName: 'a', trim: { startSec: 1 } })
+    const patched = withSignatureCover(snapshot, 'surco://cover/a.jpg')
+    expect(patched).toBe(
+      trackSignature({
+        meta,
+        outputName: 'a',
+        trim: { startSec: 1 },
+        coverUrl: 'surco://cover/a.jpg',
+      }),
+    )
+    expect(patched).not.toBe(
+      trackSignature({
+        meta: typed,
+        outputName: 'a',
+        trim: { startSec: 1 },
+        coverUrl: 'surco://cover/a.jpg',
+      }),
     )
   })
 })

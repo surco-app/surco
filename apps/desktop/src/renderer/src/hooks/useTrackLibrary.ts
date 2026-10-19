@@ -12,7 +12,7 @@ import type {
 } from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { createPriorityLimit } from '../lib/concurrency'
-import { trackSignature, withSignatureMeta } from '../lib/dirty'
+import { trackSignature, withSignatureCover, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
@@ -583,24 +583,23 @@ export function useTrackLibrary({
       if (!read || read.failed) return
       const { cover, foreignTags } = read
       enqueueMetaPatch(id, (t) => {
-        const untouched = t.diskSignature === trackSignature(t)
-        const completed: TrackItem = {
+        const adopted = t.coverUrl === undefined && !t.coverRemoved ? cover?.thumbUrl : undefined
+        return {
           ...t,
           metaPartial: false,
           foreignTags,
           embeddedCover: cover?.thumbUrl ?? t.embeddedCover,
           embeddedCoverDims:
             cover && cover.width > 0 ? { w: cover.width, h: cover.height } : t.embeddedCoverDims,
-          ...(untouched && t.coverUrl === undefined && !t.coverRemoved && cover?.thumbUrl
-            ? { coverUrl: cover.thumbUrl }
-            : {}),
-        }
-        const before = trackSignature(t)
-        const after = trackSignature(completed)
-        return {
-          ...completed,
-          ...(t.processedSignature === before && { processedSignature: after }),
-          ...(t.diskSignature === before && { diskSignature: after }),
+          ...(adopted && {
+            coverUrl: adopted,
+            ...(t.processedSignature && {
+              processedSignature: withSignatureCover(t.processedSignature, adopted),
+            }),
+            ...(t.diskSignature && {
+              diskSignature: withSignatureCover(t.diskSignature, adopted),
+            }),
+          }),
           ...(t.metaCleared &&
             t.foreignRemoved && {
               foreignRemoved: [

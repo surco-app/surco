@@ -56,6 +56,11 @@ export function withSignatureMeta(
   return JSON.stringify([change(meta), ...rest])
 }
 
+export function withSignatureCover(signature: string, coverUrl: string): string {
+  const [meta, outputName, , ...rest] = JSON.parse(signature) as unknown[]
+  return JSON.stringify([meta, outputName, coverProxy(coverUrl), ...rest])
+}
+
 // Only a done track can be stale: idle/processing/error already show a convert
 // button. A done track with no snapshot (shouldn't happen) is treated as fresh.
 export function isStale(track: TrackItem): boolean {

@@ -3,8 +3,10 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
-import type { TrackMetadata } from '../../../shared/types'
+import type { Release, TrackMetadata } from '../../../shared/types'
+import { coverSourceOf, keepCoverArg } from '../lib/coverSource'
 import { trackSignature } from '../lib/dirty'
+import { buildReleaseMeta } from '../lib/release'
 import { useTrackLibrary } from './useTrackLibrary'
 
 // readMeta resolves the whole tag shape in the real app; a partial object makes
@@ -659,6 +661,39 @@ describe('the light read of a rekordbox row', () => {
     expect(row.coverUrl).toBe('surco://cover/a.jpg')
     expect(row.foreignTags).toEqual([{ name: 'ENERGY', value: '7' }])
     expect(row.diskSignature).toBe(trackSignature(row))
+  })
+
+  it('adopts the file art for a row edited before its full read, so a later match keeps it and only the edit reads as modified', async () => {
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const id = result.current.tracks[0].id
+    const readMetaValue = result.current.tracks[0].meta
+    act(() =>
+      result.current.updateTrack(id, { meta: { ...readMetaValue, comment: 'typed early' } }),
+    )
+    await act(async () => {
+      await result.current.completeTrackMeta(id)
+    })
+    const row = result.current.tracks[0]
+    expect(row.metaPartial).toBe(false)
+    expect(row.diskSignature).not.toBe(trackSignature(row))
+    expect(row.diskSignature).toBe(trackSignature({ ...row, meta: readMetaValue }))
+    const withArt: Release = {
+      provider: 'discogs',
+      id: 1,
+      title: 'Album',
+      artists: [{ name: 'R' }],
+      tracklist: [{ position: '1', title: 'A' }],
+      images: [{ uri: 'https://discogs/cover.jpg', type: 'primary', resource_url: '' }],
+    }
+    const pick = buildReleaseMeta(row.meta, withArt, withArt.tracklist[0], keepCoverArg(row))
+    const matched = { ...row, meta: pick.meta, coverUrl: pick.coverUrl, coverPath: pick.coverPath }
+    expect(coverSourceOf(matched)).toEqual({ coverFromFile: '/m/a.aiff' })
   })
 
   it('lets a conversion wait for the completion the selection already started, instead of refusing the row', async () => {
