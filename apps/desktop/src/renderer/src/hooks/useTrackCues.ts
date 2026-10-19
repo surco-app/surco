@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import type { WantedCue } from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
 
 export function useTrackCues(contentId: string | undefined): {
@@ -14,7 +15,7 @@ export function useTrackCues(contentId: string | undefined): {
   return { data, isError }
 }
 
-export function useQueuedCues(contentId: string): { data: number[] | null | undefined } {
+export function useQueuedCues(contentId: string): { data: WantedCue[] | null | undefined } {
   const { data } = useQuery({
     queryKey: ['rekordbox-queued-cues', contentId],
     queryFn: () =>

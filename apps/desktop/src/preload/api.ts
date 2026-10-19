@@ -3,6 +3,7 @@
 // this contract fails the main-side build instead of surfacing as a runtime IPC
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
+import type { WantedCue } from '../shared/cueRules'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -212,7 +213,7 @@ export interface Api {
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>
-  rekordboxQueuedCues: (contentId: string) => Promise<number[] | null>
+  rekordboxQueuedCues: (contentId: string) => Promise<WantedCue[] | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void

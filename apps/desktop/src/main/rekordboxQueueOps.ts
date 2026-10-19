@@ -1,3 +1,4 @@
+import type { WantedCue } from '../shared/cueRules'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -30,9 +31,12 @@ export interface TrackOp {
   stamps: Record<string, number>
 }
 
-export interface CuesOp extends SaveCuesRequest {
+export interface CuesOp extends Omit<SaveCuesRequest, 'wanted'> {
   id: string
   kind: 'cues'
+  wanted?: WantedCue[]
+  drops?: number[]
+  previousDrops?: number[]
 }
 
 export type QueueOp = EditOp | TrackOp | CuesOp

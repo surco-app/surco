@@ -24,8 +24,7 @@ describe('registerRekordboxCuesIpc', () => {
       contentId: '103',
       path: '/m/a.wav',
       label: 'a',
-      drops: [1000],
-      previousDrops: [],
+      wanted: [{ ms: 1000, kind: 0, color: null }],
       fingerprint: 'f',
     }
     await handler('rekordbox:saveCues')({}, req)
@@ -43,15 +42,20 @@ describe('registerRekordboxCuesIpc', () => {
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
   })
 
-  it('reports the drops queued for a track, or null when nothing waits', () => {
-    const cuesOp = vi.fn((id: string) => (id === '103' ? { id: 'c1', drops: [1000] } : undefined))
+  it('reports the cues queued for a track, or null when nothing waits or the save predates wanted sets', () => {
+    const wanted = [{ ms: 1000, kind: 0, color: null }]
+    const ops: Record<string, unknown> = {
+      '103': { id: 'c1', wanted },
+      '105': { id: 'c2', drops: [1000], previousDrops: [] },
+    }
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
-      queue: { enqueue: vi.fn(), cuesOp: cuesOp as never, drop: vi.fn() },
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn((id: string) => ops[id]) as never, drop: vi.fn() },
       applyQuietly: vi.fn(),
     })
-    expect(handler('rekordbox:queuedCues')({}, '103')).toEqual([1000])
+    expect(handler('rekordbox:queuedCues')({}, '103')).toEqual(wanted)
     expect(handler('rekordbox:queuedCues')({}, '104')).toBeNull()
+    expect(handler('rekordbox:queuedCues')({}, '105')).toBeNull()
   })
 
   it('takes a queued save back by dropping its operation', () => {

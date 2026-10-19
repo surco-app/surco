@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import { cueChanges } from '../../../shared/cueRules'
+import { cueChanges, type WantedCue } from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { installApi } from '../test/api'
@@ -40,7 +40,7 @@ beforeEach(() => {
   })
 })
 
-function setup(read: TrackCues | null | Error = READ, queued: number[] | null | Error = null) {
+function setup(read: TrackCues | null | Error = READ, queued: WantedCue[] | null | Error = null) {
   const logError = vi.fn<Api['logError']>()
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   const undoRekordboxCues = vi.fn<Api['undoRekordboxCues']>(async () => {})
@@ -98,14 +98,15 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-save')).toBeDisabled()
     clickAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save'))
-    expect(saveRekordboxCues).toHaveBeenCalledWith({
-      contentId: '103',
-      path: '/m/g.wav',
-      label: 'Gowan',
-      drops: [bar(64)],
-      previousDrops: [],
-      fingerprint: 'f0',
-    })
+    expect(saveRekordboxCues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentId: '103',
+        path: '/m/g.wav',
+        label: 'Gowan',
+        fingerprint: 'f0',
+        wanted: expect.arrayContaining([{ ms: bar(64), kind: 0, color: null }]),
+      }),
+    )
   })
 
   it('computes a re-save against the drops rekordbox holds, not against the first queued save', async () => {
@@ -115,14 +116,16 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     clickAt(bar(96))
     fireEvent.click(screen.getByTestId('cues-save'))
-    expect(saveRekordboxCues).toHaveBeenLastCalledWith({
-      contentId: '103',
-      path: '/m/g.wav',
-      label: 'Gowan',
-      drops: [bar(64), bar(96)],
-      previousDrops: [],
-      fingerprint: 'f0',
-    })
+    expect(saveRekordboxCues).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        contentId: '103',
+        fingerprint: 'f0',
+        wanted: expect.arrayContaining([
+          { ms: bar(64), kind: 0, color: null },
+          { ms: bar(96), kind: 0, color: null },
+        ]),
+      }),
+    )
   })
 
   it('goes back to what rekordbox says with Undo', async () => {
@@ -147,7 +150,14 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-save')).toBeEnabled()
     fireEvent.click(screen.getByTestId('cues-save'))
     expect(saveRekordboxCues).toHaveBeenCalledWith(
-      expect.objectContaining({ drops: [bar(64)], previousDrops: [bar(64)], fingerprint: 'f0' }),
+      expect.objectContaining({
+        contentId: '103',
+        fingerprint: 'f0',
+        wanted: expect.arrayContaining([
+          { id: 'drop', ms: bar(64), kind: 0, color: null },
+          { ms: bar(16), kind: 1, color: 42 },
+        ]),
+      }),
     )
   })
 
@@ -234,7 +244,7 @@ describe('CuesSection', () => {
   })
 
   it('shows the drops of a queued save faint, so the user sees what will be written', async () => {
-    setup(READ, [bar(64)])
+    setup(READ, [{ ms: bar(64), kind: 0, color: null }])
     await waitFor(() =>
       expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toHaveAttribute(
         'data-pending',
@@ -245,17 +255,26 @@ describe('CuesSection', () => {
   })
 
   it('still computes against the drops rekordbox holds when a save is queued', async () => {
-    const { saveRekordboxCues } = setup(READ, [bar(64)])
+    const { saveRekordboxCues } = setup(READ, [{ ms: bar(64), kind: 0, color: null }])
     await waitFor(() => expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toBeInTheDocument())
     clickAt(bar(96))
     fireEvent.click(screen.getByTestId('cues-save'))
     expect(saveRekordboxCues).toHaveBeenCalledWith(
-      expect.objectContaining({ drops: [bar(64), bar(96)], previousDrops: [], fingerprint: 'f0' }),
+      expect.objectContaining({
+        contentId: '103',
+        fingerprint: 'f0',
+        wanted: expect.arrayContaining([
+          { ms: bar(64), kind: 0, color: null },
+          { ms: bar(96), kind: 0, color: null },
+        ]),
+      }),
     )
   })
 
   it('takes the queued save back with Undo and returns to what rekordbox says', async () => {
-    const { undoRekordboxCues, rekordboxQueuedCues } = setup(READ, [bar(64)])
+    const { undoRekordboxCues, rekordboxQueuedCues } = setup(READ, [
+      { ms: bar(64), kind: 0, color: null },
+    ])
     await waitFor(() => expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toBeInTheDocument())
     rekordboxQueuedCues.mockResolvedValue(null)
     fireEvent.click(screen.getByTestId('cues-undo'))
@@ -264,7 +283,7 @@ describe('CuesSection', () => {
   })
 
   it('draws what rekordbox now holds as written once the queue landed and the cues were re-read', async () => {
-    const { rekordboxTrackCues, client } = setup(READ, [bar(64)])
+    const { rekordboxTrackCues, client } = setup(READ, [{ ms: bar(64), kind: 0, color: null }])
     await waitFor(() =>
       expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true'),
     )

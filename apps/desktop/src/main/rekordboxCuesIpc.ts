@@ -27,7 +27,7 @@ export function registerRekordboxCuesIpc(host: {
   })
   ipcMain.handle(
     'rekordbox:queuedCues',
-    (_e, contentId: string) => host.queue.cuesOp(contentId)?.drops ?? null,
+    (_e, contentId: string) => host.queue.cuesOp(contentId)?.wanted ?? null,
   )
   ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {
     const op = host.queue.cuesOp(contentId)

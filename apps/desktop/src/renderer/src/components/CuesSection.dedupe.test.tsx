@@ -49,6 +49,7 @@ describe('CuesSection drops', () => {
     fireEvent.click(screen.getByTestId('add-same'))
     fireEvent.click(screen.getByTestId('add-same'))
     fireEvent.click(screen.getByTestId('cues-save'))
-    expect(saveRekordboxCues).toHaveBeenCalledWith(expect.objectContaining({ drops: [128000] }))
+    const [req] = saveRekordboxCues.mock.calls[0]
+    expect(req.wanted.filter((c) => c.ms === 128000 && c.kind === 0)).toHaveLength(1)
   })
 })

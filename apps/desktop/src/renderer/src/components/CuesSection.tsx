@@ -2,7 +2,15 @@ import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cueChanges, findDrops, isEmptyChange, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { MY_FLOW } from '../../../shared/cueFlows'
+import {
+  diffCues,
+  findDrops,
+  flowOutcome,
+  isEmptyChange,
+  SAME_POSITION_MS,
+  type WantedCue,
+} from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
 import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
 import { CUE_COLOR } from '../lib/cueWave'
@@ -29,7 +37,7 @@ function Marking({
   cue,
 }: {
   read: TrackCues
-  queued: number[] | null
+  queued: WantedCue[] | null
   cue: CueTarget
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -43,9 +51,25 @@ function Marking({
       ),
     [read],
   )
-  const [drops, setDrops] = useState<number[]>(queued ?? initial)
+  const [drops, setDrops] = useState<number[]>(
+    queued
+      ? findDrops(
+          queued.filter((c) => c.kind === 0).map((c) => c.ms),
+          queued.filter((c) => c.kind !== 0).map((c) => c.ms),
+        )
+      : initial,
+  )
   const beats = read.grid.map((b) => b.ms)
-  const outcome = cueChanges(read.cues, drops, initial, beats, read.strong)
+  const outcome = flowOutcome({
+    existing: read.cues,
+    drops,
+    previousDrops: initial,
+    beats,
+    strong: read.strong,
+    phrases: read.phrases,
+    flow: MY_FLOW,
+  })
+  const changes = outcome.status === 'too-many' ? null : diffCues(read.cues, outcome.wanted)
   const dirty = drops.length !== initial.length || drops.some((d) => !initial.includes(d))
   const refreshQueued = () => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
   const same = (ms: number, kind: number, color: number | null) =>
@@ -114,19 +138,19 @@ function Marking({
           <button
             type="button"
             data-testid="cues-save"
-            disabled={outcome.status === 'too-many' || (!dirty && isEmptyChange(outcome.changes))}
-            onClick={() =>
+            disabled={changes === null || (!dirty && isEmptyChange(changes))}
+            onClick={() => {
+              if (outcome.status === 'too-many') return
               void window.api
                 .saveRekordboxCues({
                   contentId: cue.contentId,
                   path: cue.path,
                   label: cue.label,
-                  drops,
-                  previousDrops: initial,
+                  wanted: outcome.wanted,
                   fingerprint: read.fingerprint,
                 })
                 .then(refreshQueued)
-            }
+            }}
             className="press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
           >
             {tr('editor.cues.save')}
@@ -171,7 +195,7 @@ export function CuesSection({
             </p>
           ) : (
             <Marking
-              key={`${read.fingerprint}|${queued?.join(',') ?? ''}`}
+              key={`${read.fingerprint}|${JSON.stringify(queued)}`}
               read={read}
               queued={queued}
               cue={cue}

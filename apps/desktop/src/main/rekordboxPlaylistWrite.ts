@@ -1,13 +1,22 @@
 import { existsSync } from 'node:fs'
 import { chmod, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
-import { type CueChangeSet, cueChanges, isEmptyChange } from '../shared/cueRules'
+import { MY_FLOW } from '../shared/cueFlows'
+import {
+  type CueChangeSet,
+  diffCues,
+  flowOutcome,
+  isEmptyChange,
+  MAX_HOT_CUES,
+  type WantedCue,
+} from '../shared/cueRules'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxQueueNotice,
+  TrackCues,
 } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
@@ -308,22 +317,32 @@ function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions
   return { op, track: { entry, adds, removes, names, notices } }
 }
 
+function wantedOf(op: CuesOp, read: TrackCues): WantedCue[] | null {
+  if (op.wanted) return op.wanted
+  const out = flowOutcome({
+    existing: read.cues,
+    drops: op.drops ?? [],
+    previousDrops: op.previousDrops ?? [],
+    beats: read.grid.map((b) => b.ms),
+    strong: read.strong,
+    phrases: read.phrases,
+    flow: MY_FLOW,
+  })
+  return out.status === 'too-many' ? null : out.wanted
+}
+
 function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   const changed = (code: 'cues-changed' | 'cues-too-many'): Plan => ({
     outcome: { id: op.id, applied: false, notices: [{ code, track: op.label }] },
   })
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
   if (!read?.analysed || read.fingerprint !== op.fingerprint) return changed('cues-changed')
-  const out = cueChanges(
-    read.cues,
-    op.drops,
-    op.previousDrops,
-    read.grid.map((b) => b.ms),
-    read.strong,
-  )
-  if (out.status === 'too-many') return changed('cues-too-many')
-  if (isEmptyChange(out.changes)) return { outcome: { id: op.id, applied: true, notices: [] } }
-  return { op, cues: out.changes }
+  const wanted = wantedOf(op, read)
+  if (wanted === null || wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES)
+    return changed('cues-too-many')
+  const cues = diffCues(read.cues, wanted)
+  if (isEmptyChange(cues)) return { outcome: { id: op.id, applied: true, notices: [] } }
+  return { op, cues }
 }
 
 function planOp(

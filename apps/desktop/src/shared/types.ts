@@ -1,6 +1,6 @@
 import type { BackupPolicy } from './backupPolicy'
 import type { CueFlow, FlowPhrase } from './cueFlows'
-import type { StrongPart } from './cueRules'
+import type { StrongPart, WantedCue } from './cueRules'
 import type { EditorSectionPref } from './editorSections'
 import type { Chord } from './shortcuts'
 
@@ -1675,7 +1675,6 @@ export interface SaveCuesRequest {
   contentId: string
   path: string
   label: string
-  drops: number[]
-  previousDrops: number[]
+  wanted: WantedCue[]
   fingerprint: string
 }

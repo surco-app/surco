@@ -3,6 +3,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
 import { anlzFile, pqtzSection } from './anlzFixture'
 import { openRekordboxDb } from './rekordboxDb'
 import {
@@ -75,14 +76,23 @@ const deps = () => ({
   ...TWIN_PATHS,
 })
 
+const COUNTDOWN: WantedCue[] = [
+  { ms: bar(64), kind: 0, color: null },
+  { ms: bar(16), kind: 1, color: 42 },
+  { ms: bar(16), kind: 0, color: null },
+  { ms: bar(32), kind: 2, color: 22 },
+  { ms: bar(32), kind: 0, color: null },
+  { ms: bar(48), kind: 3, color: 1 },
+  { ms: bar(48), kind: 0, color: null },
+]
+
 const op = (path: string, over: Partial<CuesOp> = {}): CuesOp => ({
   id: 'c',
   kind: 'cues',
   contentId: '103',
   path: '/Volumes/Public/Music/Gowan.wav',
   label: 'Gowan',
-  drops: [bar(64)],
-  previousDrops: [],
+  wanted: COUNTDOWN,
   fingerprint: fingerprintOf(path),
   ...over,
 })
@@ -143,35 +153,70 @@ describe('cues operations', () => {
     expect(cuesOf(path)).toEqual([])
   })
 
-  it('writes nothing and says so when the plan needs more than 8 hot cues', async () => {
-    const path = await collection([{ ID: 'y', InMsec: 500, Kind: 1, ColorTableIndex: 32 }])
-    const drops = [bar(48), bar(96), bar(144), bar(192)]
-    const result = await applyRekordboxBatch(path, [op(path, { drops })], deps())
+  it('writes nothing and says so when the wanted set has more than 8 hot cues', async () => {
+    const path = await collection()
+    const wanted = Array.from({ length: 9 }, (_, i) => ({
+      ms: bar(8 * i + 8),
+      kind: HOT_KINDS[i] ?? 10,
+      color: 1,
+    }))
+    const result = await applyRekordboxBatch(path, [op(path, { wanted })], deps())
     expect(result.ok && result.outcomes[0].notices).toEqual([
       { code: 'cues-too-many', track: 'Gowan' },
     ])
-    expect(cuesOf(path)).toHaveLength(1)
+    expect(cuesOf(path)).toEqual([])
   })
 
-  it('writes only the drop on a track with hand-placed hot cues, never over manual work', async () => {
-    const path = await collection([{ ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 }])
-    await applyRekordboxBatch(path, [op(path)], deps())
-    expect(cuesOf(path).map((c) => [c.ms, c.kind])).toEqual([
-      [bar(40), 1],
-      [bar(64), 0],
+  it('moves a cue rekordbox already has instead of adding a second one', async () => {
+    const path = await collection([
+      { ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 },
+      { ID: 'n', InMsec: bar(40), Kind: 0, ColorTableIndex: null },
+    ])
+    const wanted = [
+      { id: 'm', ms: bar(44), kind: 1, color: 1 },
+      { id: 'n', ms: bar(44), kind: 0, color: null },
+    ]
+    await applyRekordboxBatch(path, [op(path, { wanted })], deps())
+    expect(cuesOf(path).map((c) => [c.id, c.ms, c.kind])).toEqual([
+      ['n', bar(44), 0],
+      ['m', bar(44), 1],
     ])
   })
 
-  it('applies a marking that is already in rekordbox without asking to close it', async () => {
+  it('deletes the cues the wanted set leaves out', async () => {
+    const path = await collection([
+      { ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 },
+      { ID: 'n', InMsec: bar(64), Kind: 0, ColorTableIndex: null },
+    ])
+    await applyRekordboxBatch(
+      path,
+      [op(path, { wanted: [{ id: 'n', ms: bar(64), kind: 0, color: null }] })],
+      deps(),
+    )
+    expect(cuesOf(path).map((c) => c.id)).toEqual(['n'])
+  })
+
+  it('applies a wanted set that is already in rekordbox without asking to close it', async () => {
     const path = await collection()
     await applyRekordboxBatch(path, [op(path)], deps())
     const d = deps()
-    const result = await applyRekordboxBatch(path, [op(path, { previousDrops: [bar(64)] })], d)
+    const wanted = cuesOf(path).map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
+    const result = await applyRekordboxBatch(path, [op(path, { wanted })], d)
     expect(result).toEqual({
       ok: true,
       wrote: false,
       outcomes: [{ id: 'c', applied: true, notices: [] }],
     })
     expect(d.ensureClosed).not.toHaveBeenCalled()
+  })
+
+  it('still lands an operation the previous build queued with drops, as Mi flujo and never over manual work', async () => {
+    const path = await collection([{ ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 }])
+    const legacy = op(path, { wanted: undefined, drops: [bar(64)], previousDrops: [] })
+    await applyRekordboxBatch(path, [legacy], deps())
+    expect(cuesOf(path).map((c) => [c.ms, c.kind])).toEqual([
+      [bar(40), 1],
+      [bar(64), 0],
+    ])
   })
 })
