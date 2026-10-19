@@ -2,11 +2,9 @@ import Database from 'better-sqlite3-multiple-ciphers'
 import { REKORDBOX_KEY } from './rekordboxDb'
 import { type PlaylistFixture, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
-// The playlist fixture plus what the USB export reads: the name tables, the djmdContent
-// columns baken's XML carries, and djmdCue. Column names as measured on rekordbox 7.2.19
-// (docs/export-usb-medidas.md). Added on top rather than folded into the shared fixture so
-// the organising tests keep the minimal schema they were written against. The identity
-// tables (djmdProperty, djmdCloudProperty, djmdMyTag) are what the stick's identity reads.
+// The playlist fixture plus what the USB export still adds: djmdCue and the identity tables
+// (djmdProperty, djmdCloudProperty, djmdMyTag). Column names as measured on rekordbox 7.2.19
+// (docs/export-usb-medidas.md).
 export interface ContentDetails {
   ArtistID?: string
   AlbumID?: string

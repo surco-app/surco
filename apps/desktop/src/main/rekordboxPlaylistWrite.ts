@@ -12,6 +12,7 @@ import { hexId, playlistXmlPath, withPlaylistNode, xmlNodeIds } from './rekordbo
 import {
   addToPlaylist,
   createNode,
+  deleteNode,
   EditRefused,
   editProblem,
   insertSeparator,
@@ -20,6 +21,7 @@ import {
   playlistContents,
   randomPlaylistId,
   removeFromPlaylist,
+  renameNode,
   resolveTracks,
 } from './rekordboxPlaylistEdit'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -245,11 +247,13 @@ export async function editRekordboxPlaylist(
     else if (edit.kind === 'remove') removeFromPlaylist(db, edit.playlistId, edit.linkIds, { now })
     else if (edit.kind === 'insertSeparator')
       insertSeparator(db, edit.playlistId, edit.beforeLinkId, { now })
-    else
+    else if (edit.kind === 'create')
       created = createNode(db, edit.parentId, edit.name, edit.folder, {
         now,
         newPlaylistId: freeId,
       })
+    else if (edit.kind === 'rename') renameNode(db, edit.playlistId, edit.name, { now })
+    else deleteNode(db, edit.playlistId, { now })
     // After the statements, so a test can fail the write once it really changed something.
     deps.onWrite?.()
     // The node goes in before the row commits: an XML that cannot be written is then a

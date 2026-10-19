@@ -6,14 +6,19 @@ import { openRekordboxDb } from './rekordboxDb'
 import {
   addToPlaylist,
   createNode,
+  deleteNode,
   EditRefused,
   editProblem,
   insertSeparator,
   moveInPlaylist,
+  nodeSubtree,
   randomPlaylistId,
   removeFromPlaylist,
+  removeTrackFromPlaylist,
+  renameNode,
   resolveTracks,
   separatorContent,
+  trackPlaylists,
 } from './rekordboxPlaylistEdit'
 import {
   FIXTURE_STAMP,
@@ -468,5 +473,106 @@ describe('createNode', () => {
       expect(id).toBeGreaterThanOrEqual(100)
       expect(id).toBeLessThan(2 ** 28)
     }
+  })
+})
+
+const NESTED: PlaylistFixture = {
+  ...ORGANISE_FIXTURE,
+  playlists: [
+    ...ORGANISE_FIXTURE.playlists,
+    { ID: '1100', Name: 'SUB', Attribute: 1, ParentID: '1000', Seq: 2 },
+    { ID: '1110', Name: 'Deep', Attribute: 0, ParentID: '1100', Seq: 1 },
+  ],
+  links: [
+    ...ORGANISE_FIXTURE.links,
+    { ID: 'd1', PlaylistID: '1110', ContentID: '101', TrackNo: 1 },
+  ],
+}
+
+const live = (id: string) =>
+  db
+    .prepare('SELECT ID, Name, Seq, rb_local_usn AS usn, updated_at FROM djmdPlaylist WHERE ID = ?')
+    .get(id) as
+    | { ID: string; Name: string; Seq: number; usn: number; updated_at: string }
+    | undefined
+
+describe('renameNode', () => {
+  it('renames the row and stamps it as a change of its own', () => {
+    renameNode(db, '3000', '  House 2026 ', ctx)
+    expect(live('3000')).toMatchObject({ Name: 'House 2026', usn: 501, updated_at: STAMP })
+  })
+
+  it('renames a folder too', () => {
+    renameNode(db, '1000', 'COMBOS VIEJOS', ctx)
+    expect(live('1000')?.Name).toBe('COMBOS VIEJOS')
+  })
+
+  it('refuses a node that is gone or a blank name', () => {
+    expect(() => renameNode(db, '9999', 'X', ctx)).toThrow(EditRefused)
+    expect(() => renameNode(db, '3000', '  ', ctx)).toThrow(EditRefused)
+  })
+})
+
+describe('deleteNode', () => {
+  it('takes a folder, its nested folders and playlists and all their links, which the menu that deletes it never shows', async () => {
+    db.close()
+    db = await openFixture(NESTED)
+    expect(nodeSubtree(db, '1000').sort()).toEqual(['1000', '1100', '1110', '2000'])
+    expect(deleteNode(db, '1000', ctx)).toEqual(['1000', '2000', '1100', '1110'])
+    for (const id of ['1000', '1100', '1110', '2000']) expect(live(id)).toBeUndefined()
+    expect(rows('2000')).toEqual([])
+    expect(rows('1110')).toEqual([])
+    expect(contents('3000')).toEqual(['102', '110'])
+  })
+
+  it('never deletes a collection entry, the one promise the confirmation makes', async () => {
+    db.close()
+    db = await openFixture(NESTED)
+    const before = db.prepare('SELECT count(*) AS n FROM djmdContent').get()
+    deleteNode(db, '1000', ctx)
+    expect(db.prepare('SELECT count(*) AS n FROM djmdContent').get()).toEqual(before)
+  })
+
+  it('closes the gap among the siblings that followed, as rekordbox keeps Seq 1..n per parent', () => {
+    deleteNode(db, '1000', ctx)
+    expect(live('3000')).toMatchObject({ Seq: 1, updated_at: STAMP })
+    expect(live('4000')?.Seq).toBe(2)
+  })
+
+  it('refuses a node that is gone', () => {
+    expect(() => deleteNode(db, '9999', ctx)).toThrow(EditRefused)
+  })
+})
+
+describe('trackPlaylists', () => {
+  it('lists the playlists that link the entry once each, normal playlists only, as the field starts', () => {
+    expect(trackPlaylists(db, '102').sort()).toEqual(['2000', '3000'])
+    expect(trackPlaylists(db, '103')).toEqual([])
+  })
+})
+
+describe('removeTrackFromPlaylist', () => {
+  it('removes every link of the entry and renumbers the rest', () => {
+    expect(removeTrackFromPlaylist(db, '2000', '102', ctx)).toBe(2)
+    expect(contents('2000')).toEqual(['101', '109', '201', '109', '104'])
+    expect(trackNos('2000')).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('removes nothing when the playlist does not hold the entry', () => {
+    expect(removeTrackFromPlaylist(db, '3000', '101', ctx)).toBe(0)
+    expect(contents('3000')).toEqual(['102', '110'])
+  })
+})
+
+describe('editProblem for rename and delete', () => {
+  it('flags a node that is gone and a blank name', () => {
+    expect(editProblem(db, { kind: 'rename', playlistId: '9999', name: 'X' })).toBe('stale')
+    expect(editProblem(db, { kind: 'rename', playlistId: '3000', name: ' ' })).toBe('stale')
+    expect(editProblem(db, { kind: 'delete', playlistId: '9999' })).toBe('stale')
+  })
+
+  it('passes a folder and a playlist', () => {
+    expect(editProblem(db, { kind: 'rename', playlistId: '1000', name: 'X' })).toBeNull()
+    expect(editProblem(db, { kind: 'delete', playlistId: '3000' })).toBeNull()
   })
 })

@@ -2,8 +2,11 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
-import { beforeAll, describe, expect, it } from 'vitest'
+import log from 'electron-log/main'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
+
+vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }))
 
 // A real master.db is 56 MB of the user's own collection and cannot live in the repo, so
 // every test here builds a miniature one with the same encryption and the same column
@@ -237,6 +240,19 @@ describe('findTrackByPath', () => {
       homeMusicDir: '/Users/vicent/Music/Music',
     })
     expect(found).toEqual({ ambiguous: ['500000001', '500000002'] })
+    db.close()
+  })
+})
+
+describe('findTrackByPath quiet', () => {
+  it('logs no miss when asked to be quiet, because the membership read asks for every row and most were never in rekordbox', () => {
+    const db = openRekordboxDb(dbPath)
+    if (!db) throw new Error('fixture did not open')
+    vi.mocked(log.info).mockClear()
+    expect(findTrackByPath(db, '/nowhere/x.wav', { quiet: true })).toBeNull()
+    expect(log.info).not.toHaveBeenCalled()
+    findTrackByPath(db, '/nowhere/x.wav')
+    expect(log.info).toHaveBeenCalled()
     db.close()
   })
 })

@@ -41,7 +41,7 @@ export function isAmbiguous(m: RekordboxTrack | AmbiguousMatch | null): m is Amb
   return m !== null && 'ambiguous' in m
 }
 
-export type FindOptions = PathMatchOptions
+export type FindOptions = PathMatchOptions & { quiet?: boolean }
 
 // rekordbox stores the format as a number, verified against a real 1,962-track
 // collection rather than taken from third-party notes, which list mp3 as "0 or 1".
@@ -141,10 +141,13 @@ export function findTrackByPath(
   // searched by, the resolved target and what each same-named row resolves to are the
   // three facts that separate a wrong filename from a wrong prefix from a real absence.
   if (matches.length === 0) {
-    log.info(
-      `rekordbox lookup miss: name=${JSON.stringify(fileName)} target=${JSON.stringify(target)} rows=${rows.length}` +
-        rows.map((r) => ` | row ${r.ID} -> ${JSON.stringify(safeResolve(r.FolderPath))}`).join(''),
-    )
+    if (!options.quiet)
+      log.info(
+        `rekordbox lookup miss: name=${JSON.stringify(fileName)} target=${JSON.stringify(target)} rows=${rows.length}` +
+          rows
+            .map((r) => ` | row ${r.ID} -> ${JSON.stringify(safeResolve(r.FolderPath))}`)
+            .join(''),
+      )
     return null
   }
   if (matches.length > 1) return { ambiguous: matches.map((r) => String(r.ID)) }

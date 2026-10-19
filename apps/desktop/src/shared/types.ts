@@ -1051,6 +1051,8 @@ export type RekordboxPlaylistEdit =
   | { kind: 'insertSeparator'; playlistId: string; beforeLinkId: string }
   // parentId 'root' is the top of the tree, as rekordbox spells it.
   | { kind: 'create'; parentId: string; name: string; folder: boolean }
+  | { kind: 'rename'; playlistId: string; name: string }
+  | { kind: 'delete'; playlistId: string }
 
 // Why an edit was not written. Every one leaves the collection exactly as it was.
 export type RekordboxEditRefusal =

@@ -294,6 +294,11 @@ export function editProblem(db: Db, edit: RekordboxPlaylistEdit): 'stale' | 'no-
     if (edit.name.trim() === '') return 'stale'
     return edit.parentId === 'root' || nodeAttribute(db, edit.parentId) === 1 ? null : 'stale'
   }
+  if (edit.kind === 'rename' || edit.kind === 'delete') {
+    const attribute = nodeAttribute(db, edit.playlistId)
+    if (attribute !== 0 && attribute !== 1) return 'stale'
+    return edit.kind === 'rename' && edit.name.trim() === '' ? 'stale' : null
+  }
   if (nodeAttribute(db, edit.playlistId) !== 0) return 'stale'
   const known = new Set(links(db, edit.playlistId).map((l) => l.ID))
   const named =
@@ -349,4 +354,90 @@ export function createNode(
     stamp,
   )
   return { id, attribute }
+}
+
+function requireNode(db: Db, id: string): void {
+  const attribute = nodeAttribute(db, id)
+  if (attribute !== 0 && attribute !== 1) throw new EditRefused('stale')
+}
+
+export function renameNode(db: Db, id: string, name: string, ctx: EditContext): void {
+  requireNode(db, id)
+  if (name.trim() === '') throw new EditRefused('stale')
+  const stamp = rekordboxStamp(ctx.now)
+  db.prepare('UPDATE djmdPlaylist SET Name = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?').run(
+    name.trim(),
+    takeLocalUsn(db, stamp),
+    stamp,
+    id,
+  )
+}
+
+export function nodeSubtree(db: Db, id: string): string[] {
+  const children = db.prepare(
+    `SELECT ID FROM djmdPlaylist WHERE ParentID = ? AND coalesce(rb_local_deleted, 0) = 0 ORDER BY Seq`,
+  )
+  const found = [id]
+  for (let i = 0; i < found.length; i++) {
+    for (const row of children.all(found[i]) as { ID: string }[]) found.push(String(row.ID))
+  }
+  return found
+}
+
+export function deleteNode(db: Db, id: string, ctx: EditContext): string[] {
+  requireNode(db, id)
+  const { ParentID, Seq } = db
+    .prepare('SELECT ParentID, Seq FROM djmdPlaylist WHERE ID = ?')
+    .get(id) as { ParentID: string; Seq: number }
+  const doomed = nodeSubtree(db, id)
+  const unlink = db.prepare('DELETE FROM djmdSongPlaylist WHERE PlaylistID = ?')
+  const drop = db.prepare('DELETE FROM djmdPlaylist WHERE ID = ?')
+  for (const node of doomed) {
+    unlink.run(node)
+    drop.run(node)
+  }
+  const stamp = rekordboxStamp(ctx.now)
+  const after = db
+    .prepare(
+      `SELECT ID, Seq FROM djmdPlaylist WHERE ParentID = ? AND Seq > ? AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .all(ParentID, Seq) as { ID: string; Seq: number }[]
+  const renumber = db.prepare(
+    'UPDATE djmdPlaylist SET Seq = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  )
+  for (const sibling of after)
+    renumber.run(sibling.Seq - 1, takeLocalUsn(db, stamp), stamp, sibling.ID)
+  return doomed
+}
+
+export function trackPlaylists(db: Db, contentId: string): string[] {
+  return (
+    db
+      .prepare(
+        `SELECT DISTINCT p.ID FROM djmdSongPlaylist s JOIN djmdPlaylist p ON p.ID = s.PlaylistID
+          WHERE s.ContentID = ? AND coalesce(s.rb_local_deleted, 0) = 0
+            AND coalesce(p.rb_local_deleted, 0) = 0 AND p.Attribute = 0`,
+      )
+      .all(contentId) as { ID: string }[]
+  ).map((r) => String(r.ID))
+}
+
+export function removeTrackFromPlaylist(
+  db: Db,
+  playlistId: string,
+  contentId: string,
+  ctx: EditContext,
+): number {
+  requirePlaylist(db, playlistId)
+  const order = links(db, playlistId)
+  const doomed = order.filter((l) => l.ContentID === contentId)
+  if (doomed.length === 0) return 0
+  const remove = db.prepare('DELETE FROM djmdSongPlaylist WHERE ID = ?')
+  for (const l of doomed) remove.run(l.ID)
+  writeOrder(
+    db,
+    order.filter((l) => l.ContentID !== contentId),
+    rekordboxStamp(ctx.now),
+  )
+  return doomed.length
 }
