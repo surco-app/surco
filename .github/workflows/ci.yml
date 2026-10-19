@@ -53,3 +53,39 @@ jobs:
 
       - name: Test
         run: npm test
+
+  # The USB export's Windows paths (drive letters, the PowerShell volume query, the guards)
+  # are tested everywhere with fixtures; this job runs them on Windows itself and runs the
+  # real PowerShell query, which no Mac can.
+  usb-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - name: USB export tests
+        working-directory: apps/desktop
+        run: npx vitest run src/main/usbVolumes.test.ts src/main/usbExportMemory.test.ts src/main/bakenPath.test.ts src/main/bakenRun.test.ts src/main/bakenXml.test.ts src/main/usbExportStage.test.ts
+
+      - name: The volume query runs and answers JSON
+        shell: pwsh
+        run: |
+          $json = powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File apps/desktop/src/main/windowsVolumes.ps1
+          $vols = $json | ConvertFrom-Json
+          if ($null -eq $vols) { throw 'no JSON from windowsVolumes.ps1' }
+          Write-Output "volumes: $(@($vols).Count)"
+          @($vols) | Where-Object { $_.DriveLetter -eq 'C:' -and -not $_.DeviceID } | ForEach-Object { throw 'C: without a volume GUID' }

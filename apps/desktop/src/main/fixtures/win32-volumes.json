@@ -1,0 +1,72 @@
+[
+  {
+    "DeviceID": "\\\\?\\Volume{0b1f0c55-0000-0000-0000-100000000000}\\",
+    "DriveLetter": "C:",
+    "Label": "Windows",
+    "FileSystem": "NTFS",
+    "Capacity": 511101108224,
+    "FreeSpace": 201326592000,
+    "DriveType": 3,
+    "SerialNumber": 3735928559,
+    "BusType": "NVMe",
+    "PartitionStyle": "GPT",
+    "SystemVolume": false,
+    "BootVolume": true
+  },
+  {
+    "DeviceID": "\\\\?\\Volume{6f1c2a7e-3b4d-11f0-9c2a-806e6f6e6963}\\",
+    "DriveLetter": "E:",
+    "Label": "VICENT",
+    "FileSystem": "FAT32",
+    "Capacity": 31457280000,
+    "FreeSpace": 22988390400,
+    "DriveType": 2,
+    "SerialNumber": 2970916591,
+    "BusType": "USB",
+    "PartitionStyle": "MBR",
+    "SystemVolume": false,
+    "BootVolume": false
+  },
+  {
+    "DeviceID": "\\\\?\\Volume{9a2d4c11-77e0-4b5a-8f3e-2c1d0e9f8a7b}\\",
+    "DriveLetter": "F:",
+    "Label": "SSD SETS",
+    "FileSystem": "exFAT",
+    "Capacity": 500107862016,
+    "FreeSpace": 300000000000,
+    "DriveType": 3,
+    "SerialNumber": 1234567890,
+    "BusType": "USB",
+    "PartitionStyle": "GPT",
+    "SystemVolume": false,
+    "BootVolume": false
+  },
+  {
+    "DeviceID": "\\\\?\\Volume{11111111-2222-3333-4444-555555555555}\\",
+    "DriveLetter": "D:",
+    "Label": null,
+    "FileSystem": null,
+    "Capacity": 0,
+    "FreeSpace": 0,
+    "DriveType": 5,
+    "SerialNumber": 0,
+    "BusType": "SATA",
+    "PartitionStyle": null,
+    "SystemVolume": false,
+    "BootVolume": false
+  },
+  {
+    "DeviceID": "\\\\?\\Volume{aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee}\\",
+    "DriveLetter": "Z:",
+    "Label": "Public",
+    "FileSystem": "NTFS",
+    "Capacity": 4000000000000,
+    "FreeSpace": 1000000000000,
+    "DriveType": 4,
+    "SerialNumber": 0,
+    "BusType": null,
+    "PartitionStyle": null,
+    "SystemVolume": false,
+    "BootVolume": false
+  }
+]

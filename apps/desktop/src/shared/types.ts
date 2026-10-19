@@ -1409,3 +1409,43 @@ export type LibraryTagSync =
   | { outcome: 'nothing' | 'open' | 'missing' | 'failed' }
 
 export type LibraryTagSyncReport = Record<'rekordbox' | 'engine' | 'traktor', LibraryTagSync>
+
+// The USB export (docs/superpowers/specs/2026-10-16-export-usb-design.md). A stick is
+// always named by a stable volume identifier (macOS VolumeUUID, Windows volume GUID), never
+// by its name or drive letter: two sticks may share a name ("Vicent" and "Vicent").
+export type UsbFilesystem = 'fat32' | 'exfat' | 'hfs' | 'apfs' | 'ntfs' | 'other'
+
+export interface UsbHolder {
+  by: 'rekordbox' | 'surco' | 'other' | 'empty'
+  // export.pdb's modification time, when there is one.
+  at: number | null
+}
+
+// What Surco exported to this stick last time, so the next time is one press of Exportar.
+export interface UsbRemembered {
+  playlistIds: string[]
+  prune: boolean
+  settings: boolean
+  at: number
+}
+
+export interface UsbVolume {
+  uuid: string
+  name: string
+  // /Volumes/Vicent on macOS, E:\ on Windows.
+  mountPoint: string
+  filesystem: UsbFilesystem
+  partitionScheme: 'mbr' | 'gpt' | 'other'
+  totalBytes: number
+  freeBytes: number
+  holder: UsbHolder
+  remembered: UsbRemembered | null
+}
+
+export type UsbTarget = { kind: 'volume'; uuid: string } | { kind: 'folder'; path: string }
+
+export interface UsbVolumeList {
+  volumes: UsbVolume[]
+  // targetKey of the last export, to preselect it.
+  lastKey: string | null
+}
