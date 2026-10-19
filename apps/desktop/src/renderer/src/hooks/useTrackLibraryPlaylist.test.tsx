@@ -975,6 +975,35 @@ describe('Files and the source playlists keep their own tracks', () => {
     expect(result.current.tracks[0].inFiles).toBe(true)
   })
 
+  it('stops the import, the new-tracks offer and the folder watch when Files is emptied', async () => {
+    let folderChanged: (root: string, files: string[]) => void = () => {}
+    const unwatchFolders = vi.fn<Api['unwatchFolders']>().mockResolvedValue(undefined)
+    const { result } = setup(
+      {
+        readMeta: vi.fn<Api['readMeta']>(() => new Promise(() => {})),
+        unwatchFolders,
+        onFoldersChanged: vi.fn<Api['onFoldersChanged']>((cb) => {
+          folderChanged = cb
+          return () => {}
+        }),
+      },
+      { filesOpen: true },
+    )
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff', '/m/b.aiff'])
+    })
+    act(() => folderChanged('/m', ['/m/a.aiff', '/m/b.aiff', '/m/c.aiff']))
+    expect(result.current.pendingNew).not.toBeNull()
+    expect(result.current.importProgress).not.toBeNull()
+
+    act(() => result.current.clearTracks())
+
+    expect(result.current.importProgress).toBeNull()
+    expect(result.current.pendingNew).toBeNull()
+    expect(unwatchFolders).toHaveBeenCalled()
+  })
+
   it('empties Files without dropping the rows a playlist lists', async () => {
     const { result } = setup({}, { filesOpen: true })
     await act(async () => {

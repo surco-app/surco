@@ -1046,23 +1046,23 @@ export function useTrackLibrary({
 
   function clearTracks(): void {
     const cleared = tracksRef.current
-    if (filesOpenRef.current && cleared.some((t) => listedIn(listedBySource.current, t))) {
-      removeTracks(cleared.map((t) => t.id))
-      return
-    }
     // An import still reading is reading for a crate that no longer exists: without
     // this the pill kept counting toward a total whose rows had just been emptied out.
     cancelImport()
-    setTracks([])
-    setSelection({ ids: [], anchor: null })
     setPendingNew(null)
-    ignoredPaths.current.clear()
     // Emptying the list is a context change like an import: drop any full-window maximized
     // view now, so it can't linger on the store and re-open over the next crate's still-
     // analyzing spectrum. Belt-and-braces with the clear in addPaths.
     clearMaximizedSection()
     // Stop watching the emptied crate's folders; the next folder load rebuilds the watcher.
     void window.api.unwatchFolders()
+    if (filesOpenRef.current && cleared.some((t) => listedIn(listedBySource.current, t))) {
+      removeTracks(cleared.map((t) => t.id))
+      return
+    }
+    setTracks([])
+    setSelection({ ids: [], anchor: null })
+    ignoredPaths.current.clear()
     onClear(cleared)
   }
 
