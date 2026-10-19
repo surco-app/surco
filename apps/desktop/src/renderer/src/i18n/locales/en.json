@@ -2154,5 +2154,39 @@
       "streaming": "streaming track",
       "skipped": "baken does not take it"
     }
+  },
+  "rekordboxQueue": {
+    "pillTracks_one": "1 track waits for you to close rekordbox",
+    "pillTracks_other": "{{count}} tracks wait for you to close rekordbox",
+    "pillChanges_one": "1 change waits for you to close rekordbox",
+    "pillChanges_other": "{{count}} changes wait for you to close rekordbox",
+    "applied_one": "Done in rekordbox · 1 track",
+    "applied_other": "Done in rekordbox · {{count}} tracks",
+    "appliedChanges_one": "Done in rekordbox · 1 change",
+    "appliedChanges_other": "Done in rekordbox · {{count}} changes",
+    "backupFailed": "Could not back up rekordbox. Surco will try again when you close it",
+    "notice": {
+      "ambiguous": "{{track}} was not added. rekordbox has it twice",
+      "fileMissing": "{{track}} was not added to the collection. The file is gone",
+      "notAdded": "{{track}} was not added to the collection. The file could not be read",
+      "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in rekordbox",
+      "playlistGone": "{{playlist}} is no longer in rekordbox. {{track}} was not added",
+      "editChanged": "{{playlist}} was not changed. It changed in rekordbox"
+    },
+    "part": {
+      "repoint": "new path",
+      "collection": "added to the collection",
+      "playlists": "to {{names}}",
+      "noPlaylists": "out of its playlists",
+      "tree": {
+        "create": "create",
+        "rename": "rename",
+        "delete": "delete",
+        "add": "add tracks",
+        "move": "reorder",
+        "remove": "remove tracks",
+        "insertSeparator": "add separator"
+      }
+    }
   }
 }

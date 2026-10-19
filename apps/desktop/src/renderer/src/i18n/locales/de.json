@@ -2154,5 +2154,39 @@
       "streaming": "Streaming-Track",
       "skipped": "baken nimmt ihn nicht an"
     }
+  },
+  "rekordboxQueue": {
+    "pillTracks_one": "1 Titel wartet, bis du rekordbox schließt",
+    "pillTracks_other": "{{count}} Titel warten, bis du rekordbox schließt",
+    "pillChanges_one": "1 Änderung wartet, bis du rekordbox schließt",
+    "pillChanges_other": "{{count}} Änderungen warten, bis du rekordbox schließt",
+    "applied_one": "Fertig in rekordbox · 1 Titel",
+    "applied_other": "Fertig in rekordbox · {{count}} Titel",
+    "appliedChanges_one": "Fertig in rekordbox · 1 Änderung",
+    "appliedChanges_other": "Fertig in rekordbox · {{count}} Änderungen",
+    "backupFailed": "rekordbox konnte nicht gesichert werden. Surco versucht es beim nächsten Schließen erneut",
+    "notice": {
+      "ambiguous": "{{track}} wurde nicht hinzugefügt. rekordbox hat ihn doppelt",
+      "fileMissing": "{{track}} wurde nicht in die Sammlung aufgenommen. Die Datei ist weg",
+      "notAdded": "{{track}} wurde nicht in die Sammlung aufgenommen. Die Datei war nicht lesbar",
+      "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Sie hat sich in rekordbox geändert",
+      "playlistGone": "{{playlist}} gibt es in rekordbox nicht mehr. {{track}} wurde nicht hinzugefügt",
+      "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert"
+    },
+    "part": {
+      "repoint": "neuer Pfad",
+      "collection": "in die Sammlung",
+      "playlists": "nach {{names}}",
+      "noPlaylists": "aus seinen Playlists",
+      "tree": {
+        "create": "erstellen",
+        "rename": "umbenennen",
+        "delete": "löschen",
+        "add": "Titel hinzufügen",
+        "move": "umsortieren",
+        "remove": "Titel entfernen",
+        "insertSeparator": "Trenner einfügen"
+      }
+    }
   }
 }

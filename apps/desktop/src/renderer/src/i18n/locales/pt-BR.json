@@ -2154,5 +2154,39 @@
       "streaming": "faixa de streaming",
       "skipped": "o baken não a aceita"
     }
+  },
+  "rekordboxQueue": {
+    "pillTracks_one": "1 faixa espera você fechar o rekordbox",
+    "pillTracks_other": "{{count}} faixas esperam você fechar o rekordbox",
+    "pillChanges_one": "1 mudança espera você fechar o rekordbox",
+    "pillChanges_other": "{{count}} mudanças esperam você fechar o rekordbox",
+    "applied_one": "Pronto no rekordbox · 1 faixa",
+    "applied_other": "Pronto no rekordbox · {{count}} faixas",
+    "appliedChanges_one": "Pronto no rekordbox · 1 mudança",
+    "appliedChanges_other": "Pronto no rekordbox · {{count}} mudanças",
+    "backupFailed": "Não foi possível fazer a cópia do rekordbox. O Surco tentará de novo ao fechá-lo",
+    "notice": {
+      "ambiguous": "{{track}} não foi adicionada. O rekordbox a tem duas vezes",
+      "fileMissing": "{{track}} não entrou na coleção. O arquivo não está mais lá",
+      "notAdded": "{{track}} não entrou na coleção. Não foi possível ler o arquivo",
+      "playlistChanged": "{{track}} não mudou em {{playlist}}. Ela mudou no rekordbox",
+      "playlistGone": "{{playlist}} não existe mais no rekordbox. {{track}} não foi adicionada",
+      "editChanged": "{{playlist}} não mudou. Ela mudou no rekordbox"
+    },
+    "part": {
+      "repoint": "novo caminho",
+      "collection": "entrada na coleção",
+      "playlists": "em {{names}}",
+      "noPlaylists": "fora das suas playlists",
+      "tree": {
+        "create": "criar",
+        "rename": "renomear",
+        "delete": "apagar",
+        "add": "adicionar faixas",
+        "move": "reordenar",
+        "remove": "tirar faixas",
+        "insertSeparator": "inserir separador"
+      }
+    }
   }
 }

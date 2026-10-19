@@ -48,6 +48,10 @@ const REFUSED: Record<Exclude<RekordboxEditRefusal, 'nothing-to-add'>, string> =
   'no-separator': 'sources.edit.refused.noSeparator',
 }
 
+export function refusalKey(reason: Exclude<RekordboxEditRefusal, 'nothing-to-add'>): string {
+  return REFUSED[reason]
+}
+
 // The line the user reads after an edit, or null when the list itself already shows what
 // happened. An add always reports, because tracks it could not add vanish from the gesture
 // with no other trace.
