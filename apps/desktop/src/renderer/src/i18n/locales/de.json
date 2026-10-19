@@ -1359,7 +1359,8 @@
     "completeCuesCount_one": "1 Titel wird beim Schließen von rekordbox ergänzt.",
     "completeCuesCount_other": "{{count}} Titel werden beim Schließen von rekordbox ergänzt.",
     "completeCuesYes": "Einschalten",
-    "completeCuesNo": "Abbrechen"
+    "completeCuesNo": "Abbrechen",
+    "completeCuesFailed": "Die Tracks in rekordbox konnten nicht gezählt werden. Es bleibt aus."
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",

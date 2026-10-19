@@ -1359,7 +1359,8 @@
     "completeCuesCount_one": "Se completará 1 pista al cerrar rekordbox.",
     "completeCuesCount_other": "Se completarán {{count}} pistas al cerrar rekordbox.",
     "completeCuesYes": "Encender",
-    "completeCuesNo": "Cancelar"
+    "completeCuesNo": "Cancelar",
+    "completeCuesFailed": "No se han podido contar las pistas de rekordbox. Sigue apagado."
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",

@@ -1359,7 +1359,8 @@
     "completeCuesCount_one": "1 morceau sera complété à la fermeture de rekordbox.",
     "completeCuesCount_other": "{{count}} morceaux seront complétés à la fermeture de rekordbox.",
     "completeCuesYes": "Activer",
-    "completeCuesNo": "Annuler"
+    "completeCuesNo": "Annuler",
+    "completeCuesFailed": "Impossible de compter les morceaux dans rekordbox. L'option reste désactivée."
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",

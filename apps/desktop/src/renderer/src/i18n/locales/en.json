@@ -1359,7 +1359,8 @@
     "completeCuesCount_one": "1 track will be completed when rekordbox closes.",
     "completeCuesCount_other": "{{count}} tracks will be completed when rekordbox closes.",
     "completeCuesYes": "Turn on",
-    "completeCuesNo": "Cancel"
+    "completeCuesNo": "Cancel",
+    "completeCuesFailed": "Could not count the tracks in rekordbox. It stays off."
   },
   "errorBoundary": {
     "title": "Something failed to render",

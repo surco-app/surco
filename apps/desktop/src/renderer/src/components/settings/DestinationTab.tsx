@@ -105,6 +105,7 @@ export function DestinationTab({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [completeCount, setCompleteCount] = useState<number | null>(null)
+  const [completeCountFailed, setCompleteCountFailed] = useState(false)
   // One signed number still drives the whole section, clamped so a value from an older
   // build cannot step out of range. The DJ never sees this sign: the choice below carries
   // the direction and the stepper only ever shows its magnitude.
@@ -443,17 +444,31 @@ export function DestinationTab({
           testid="settings-complete-cues"
           className="mt-4"
           checked={synced.completeCuesOnClose}
-          disabled={!rekordboxCollection}
+          disabled={!rekordboxCollection && !synced.completeCuesOnClose}
           onChange={(v) => {
+            setCompleteCountFailed(false)
             if (!v) {
               setCompleteCount(null)
               patch('completeCuesOnClose', false)
               return
             }
-            void window.api.rekordboxCountCompletable().then(setCompleteCount)
+            void window.api
+              .rekordboxCountCompletable()
+              .then(setCompleteCount)
+              .catch((e: unknown) => {
+                window.api.logError(
+                  `rekordbox cues: completable count failed (${e instanceof Error ? e.message : String(e)})`,
+                )
+                setCompleteCountFailed(true)
+              })
           }}
           label={tr('settings.completeCues')}
         />
+        {completeCountFailed && (
+          <p data-testid="settings-complete-cues-failed" className="mt-2 text-xs text-warn">
+            {tr('settings.completeCuesFailed')}
+          </p>
+        )}
         {completeCount !== null && (
           <div
             data-testid="settings-complete-cues-confirm"

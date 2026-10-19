@@ -1359,7 +1359,8 @@
     "completeCuesCount_one": "1 faixa será completada ao fechar o rekordbox.",
     "completeCuesCount_other": "{{count}} faixas serão completadas ao fechar o rekordbox.",
     "completeCuesYes": "Ligar",
-    "completeCuesNo": "Cancelar"
+    "completeCuesNo": "Cancelar",
+    "completeCuesFailed": "Não foi possível contar as faixas no rekordbox. Continua desligado."
   },
   "errorBoundary": {
     "title": "Algo falhou ao renderizar",

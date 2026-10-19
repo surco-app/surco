@@ -837,4 +837,78 @@ describe('complete on close', () => {
     expect(patch).toHaveBeenCalledWith('completeCuesOnClose', false)
     expect(rekordboxCountCompletable).not.toHaveBeenCalled()
   })
+
+  it('says it could not count and stays off when rekordbox cannot be read, so it never turns on unseen', async () => {
+    const rekordboxCountCompletable = vi.fn<Api['rekordboxCountCompletable']>(async () => {
+      throw new Error('locked')
+    })
+    const logError = vi.fn<Api['logError']>()
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      rekordboxCountCompletable,
+      logError,
+    }
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, completeCuesOnClose: false }}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection="/rb/master.db"
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    expect(await screen.findByTestId('settings-complete-cues-failed')).toHaveTextContent(
+      i18n.t('settings.completeCuesFailed'),
+    )
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining('locked'))
+    expect(patch).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('settings-complete-cues-confirm')).not.toBeInTheDocument()
+  })
+
+  it('can still be turned off when the collection is gone, since it would write there at the next close', () => {
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, completeCuesOnClose: true }}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+    const toggle = screen.getByTestId('settings-complete-cues')
+    expect(toggle).toBeEnabled()
+    fireEvent.click(toggle)
+    expect(patch).toHaveBeenCalledWith('completeCuesOnClose', false)
+  })
+
+  it('cannot be turned on without a collection', () => {
+    render(
+      <DestinationTab
+        synced={{ ...synced, completeCuesOnClose: false }}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('settings-complete-cues')).toBeDisabled()
+  })
 })
