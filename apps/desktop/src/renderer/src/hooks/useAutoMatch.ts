@@ -83,6 +83,7 @@ interface AutoMatchSweep {
   // Narrows the sweep to the open playlist (null: the whole working list). Queued tracks
   // outside it are set aside, and those set aside that it holds are queued again.
   scopeTo: (inScope: ((t: TrackItem) => boolean) | null) => void
+  holdForReads: (held: boolean) => void
 }
 
 // The Discogs auto-match sweep. An import and the toolbar sweep both enqueue every
@@ -123,6 +124,7 @@ export function useAutoMatch({
   // first) and at high priority, so the row in front of you resolves now instead of
   // waiting its turn behind a folder's worth of background matches.
   const focusedId = useRef<string | null>(null)
+  const held = useRef(false)
   // The open playlist, and the tracks enqueued while outside it. Every playlist the user
   // opens adds its files to the working list, and with all of them queued the sweep kept
   // spending Discogs on sets the user had already left while the pill grew with each one.
@@ -254,6 +256,7 @@ export function useAutoMatch({
     // The focused (selected) track jumps even ahead of the other on-screen rows.
     const i = targets.findIndex((t) => t.id === focusedId.current)
     if (i > 0) targets.unshift(targets.splice(i, 1)[0])
+    if (held.current) return targets.filter((t) => t.id === focusedId.current)
     return targets
   }, [tracksRef])
 
@@ -404,6 +407,14 @@ export function useAutoMatch({
     [pumpAutoMatch],
   )
 
+  const holdForReads = useCallback(
+    (next: boolean): void => {
+      held.current = next
+      if (!next) void pumpAutoMatch()
+    },
+    [pumpAutoMatch],
+  )
+
   // A probe already in flight finishes (its answer is as good as any) but leaves the pill,
   // which counts only the open playlist's work. Read against the live list: the queue holds
   // ids, and a track not committed yet stays where it is.
@@ -446,5 +457,6 @@ export function useAutoMatch({
     forgetTrack,
     reset,
     focusTrack,
+    holdForReads,
   }
 }

@@ -1067,6 +1067,7 @@ export default function App(): React.JSX.Element {
     reset: resetAutoMatch,
     focusTrack: focusAutoMatch,
     scopeTo: scopeAutoMatch,
+    holdForReads: holdAutoMatch,
   } = useAutoMatch({
     tracksRef,
     updateTrack,
@@ -1079,6 +1080,10 @@ export default function App(): React.JSX.Element {
     editingRef,
     reportActivity,
   })
+
+  useEffect(() => {
+    holdAutoMatch(importProgress !== null)
+  }, [importProgress, holdAutoMatch])
 
   // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
   // high-priority lane), so the track you're looking at resolves now instead of waiting its

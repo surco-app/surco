@@ -543,3 +543,29 @@ describe('useAutoMatch', () => {
     )
   })
 })
+
+describe('holding the sweep while files are read', () => {
+  it('waits for the reads to finish before searching, so Discogs never competes with the NAS', async () => {
+    setApi()
+    const tracks = [track('a'), track('b')]
+    const { result } = setup(tracks)
+    act(() => result.current.holdForReads(true))
+    act(() => result.current.enqueueAutoMatch(tracks, true))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(window.api.search).not.toHaveBeenCalled()
+    act(() => result.current.holdForReads(false))
+    await waitFor(() => expect(window.api.search).toHaveBeenCalledTimes(2))
+  })
+
+  it('still matches the selected track at once', async () => {
+    setApi()
+    const tracks = [track('a'), track('b')]
+    const { result } = setup(tracks)
+    act(() => result.current.holdForReads(true))
+    act(() => result.current.focusTrack('b'))
+    act(() => result.current.enqueueAutoMatch(tracks, true))
+    await waitFor(() => expect(window.api.search).toHaveBeenCalledTimes(1))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(window.api.search).toHaveBeenCalledTimes(1)
+  })
+})
