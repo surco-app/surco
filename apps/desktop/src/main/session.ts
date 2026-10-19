@@ -1,10 +1,11 @@
 import { existsSync, renameSync, writeFileSync } from 'node:fs'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
 import { parseDeclick } from '../shared/declick'
 import { normalizeTrim } from '../shared/trim'
 import type { NormalizeConfig, NormalizeMode, SessionData, SessionEdit } from '../shared/types'
+import { sourceStat } from './sourceStat'
 
 // The last-loaded track paths plus each track's staged (not yet converted) edits, so
 // a relaunch can offer to reopen where the user left off — edits included, because a
@@ -136,7 +137,7 @@ export async function loadLastSession(): Promise<SessionData> {
     const candidates = raw.paths.filter((p): p is string => typeof p === 'string')
     const present = await Promise.all(
       candidates.map((p) =>
-        stat(p).then(
+        sourceStat(p).then(
           () => true,
           () => false,
         ),
