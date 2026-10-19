@@ -2187,6 +2187,11 @@
         "remove": "retirer des morceaux",
         "insertSeparator": "ajouter un séparateur"
       }
-    }
+    },
+    "applyNow": "Appliquer maintenant",
+    "discard": "Abandonner",
+    "discardConfirm": "Abandonner ce qui attend ? Les playlists reviennent à ce qu’a rekordbox",
+    "discardYes": "Abandonner",
+    "discardNo": "Annuler"
   }
 }

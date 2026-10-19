@@ -81,6 +81,7 @@ interface Props {
   // The USB export's pill (UsbExportPill), which subscribes to the export itself; the
   // toolbar only places it, so a byte tick never re-renders the toolbar.
   usbPill?: React.ReactNode
+  queuePill?: React.ReactNode
 }
 
 // The window's title-bar toolbar: the convert-the-list action, the auto-match and
@@ -121,6 +122,7 @@ export const Toolbar = memo(function Toolbar({
   onSettings,
   primary,
   usbPill,
+  queuePill,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const convertLabel =
@@ -195,6 +197,7 @@ export const Toolbar = memo(function Toolbar({
           </span>
         )}
         {usbPill}
+        {queuePill}
         {importing && (
           // A live pill matching the auto-match/analyze sweeps (accent text, spinning
           // glyph, done/total), so a big drop reads as active work rather than a static

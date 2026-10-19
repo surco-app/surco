@@ -2187,6 +2187,11 @@
         "remove": "Titel entfernen",
         "insertSeparator": "Trenner einfügen"
       }
-    }
+    },
+    "applyNow": "Jetzt anwenden",
+    "discard": "Verwerfen",
+    "discardConfirm": "Wartende Änderungen verwerfen? Die Playlists zeigen wieder, was rekordbox hat",
+    "discardYes": "Verwerfen",
+    "discardNo": "Abbrechen"
   }
 }

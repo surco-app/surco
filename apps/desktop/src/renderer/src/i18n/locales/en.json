@@ -2187,6 +2187,11 @@
         "remove": "remove tracks",
         "insertSeparator": "add separator"
       }
-    }
+    },
+    "applyNow": "Apply now",
+    "discard": "Discard",
+    "discardConfirm": "Discard what is waiting? Playlists go back to what rekordbox has",
+    "discardYes": "Discard",
+    "discardNo": "Cancel"
   }
 }

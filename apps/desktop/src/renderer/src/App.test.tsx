@@ -279,6 +279,13 @@ function setApi(over: Record<string, unknown> = {}): void {
     editRekordboxPlaylist: vi
       .fn<Api['editRekordboxPlaylist']>()
       .mockResolvedValue({ applied: true }),
+    rekordboxQueue: vi
+      .fn<Api['rekordboxQueue']>()
+      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
+    applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>().mockResolvedValue(null),
+    discardRekordboxQueue: vi.fn<Api['discardRekordboxQueue']>().mockResolvedValue(undefined),
+    onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>(() => () => {}),
+    onRekordboxQueueApplied: vi.fn<Api['onRekordboxQueueApplied']>(() => () => {}),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},

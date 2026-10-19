@@ -2187,6 +2187,11 @@
         "remove": "tirar faixas",
         "insertSeparator": "inserir separador"
       }
-    }
+    },
+    "applyNow": "Aplicar agora",
+    "discard": "Descartar",
+    "discardConfirm": "Descartar o que espera? As playlists voltam ao que o rekordbox tem",
+    "discardYes": "Descartar",
+    "discardNo": "Cancelar"
   }
 }

@@ -49,6 +49,7 @@ import {
 } from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
+import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
@@ -86,6 +87,7 @@ import {
   useRekordboxListMembership,
   useRekordboxPlaylistOptions,
 } from './hooks/useRekordboxPlaylists'
+import { useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -128,7 +130,7 @@ import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
-import { type PlaylistDot, playlistDotsOf } from './lib/rekordboxPlaylists'
+import { type PlaylistDot, playlistDotsOf, rekordboxPathOf } from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -657,6 +659,25 @@ export default function App(): React.JSX.Element {
     [store],
   )
   const editRekordbox = useRekordboxEdits(notifyEdit)
+  const dropDiscardedPlaylists = useStableCallback((paths: string[]) => {
+    const discarded = new Set(paths)
+    const ids = tracksRef.current
+      .filter((t) => t.rekordboxPlaylists && discarded.has(rekordboxPathOf(t)))
+      .map((t) => t.id)
+    if (ids.length > 0) patchTracks(ids, { rekordboxPlaylists: undefined })
+  })
+  const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists)
+  const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
+  const queuePill = useMemo(
+    () => (
+      <RekordboxQueuePill
+        state={rekordboxQueue.state}
+        onApplyNow={() => void applyQueueNow()}
+        onDiscard={() => void discardQueue()}
+      />
+    ),
+    [rekordboxQueue.state, applyQueueNow, discardQueue],
+  )
   // The USB export: macOS and Windows, with a rekordbox collection. Its state lives in
   // usbExportStore, outside React; App reads only the phase (for the notices), so a byte
   // tick never re-renders the app.
@@ -2570,6 +2591,7 @@ export default function App(): React.JSX.Element {
                   onSettings={onOpenSettings}
                   primary={reviewAction}
                   usbPill={usbPill}
+                  queuePill={queuePill}
                 />
               </div>
 

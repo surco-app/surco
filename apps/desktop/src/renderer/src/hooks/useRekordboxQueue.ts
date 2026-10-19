@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
+import { refusalKey } from '../lib/playlistEdits'
 import { appliedMessage } from '../lib/rekordboxQueueText'
 
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
@@ -16,10 +17,17 @@ export function useRekordboxQueue(
 
   useEffect(() => {
     let live = true
-    void window.api.rekordboxQueue().then((s) => {
-      if (live) setState(s)
+    let pushed = false
+    void window.api
+      .rekordboxQueue()
+      .then((s) => {
+        if (live && !pushed) setState(s)
+      })
+      .catch(() => {})
+    const off = window.api.onRekordboxQueueChanged((s) => {
+      pushed = true
+      setState(s)
     })
-    const off = window.api.onRekordboxQueueChanged(setState)
     return () => {
       live = false
       off()
@@ -49,17 +57,26 @@ export function useRekordboxQueue(
   useEffect(() => window.api.onRekordboxQueueApplied(announce), [announce])
 
   const applyNow = useCallback(async () => {
-    announce(await window.api.applyRekordboxQueue())
-  }, [announce])
+    try {
+      announce(await window.api.applyRekordboxQueue())
+    } catch {
+      notify(tr(refusalKey('write-failed')), 'danger')
+    }
+  }, [announce, notify, tr])
 
   const discard = useCallback(async () => {
     const paths = state.items.flatMap((i) =>
       i.key.startsWith('track:') ? [i.key.slice('track:'.length)] : [],
     )
-    await window.api.discardRekordboxQueue()
+    try {
+      await window.api.discardRekordboxQueue()
+    } catch {
+      notify(tr(refusalKey('write-failed')), 'danger')
+      return
+    }
     onDiscarded(paths)
     void reread()
-  }, [state, onDiscarded, reread])
+  }, [state, onDiscarded, reread, notify, tr])
 
   return { state, applyNow, discard }
 }

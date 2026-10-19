@@ -88,4 +88,41 @@ describe('useRekordboxQueue', () => {
     await act(() => hook.result.current.applyNow())
     expect(notify).toHaveBeenCalledWith('Done in rekordbox · 1 track', 'neutral')
   })
+
+  it('keeps the pushed state when the first read answers late with an older one', async () => {
+    let answer: (s: RekordboxQueueState) => void = () => {}
+    const { hook, changed } = setup({
+      rekordboxQueue: vi.fn<Api['rekordboxQueue']>(
+        () =>
+          new Promise((resolve) => {
+            answer = resolve
+          }),
+      ),
+    })
+    act(() => changed({ tracks: 0, changes: 0, items: [] }))
+    await act(async () => answer(WAITING))
+    expect(hook.result.current.state.tracks).toBe(0)
+  })
+
+  it('says so instead of rejecting when applying now fails', async () => {
+    const { hook, notify } = setup({
+      applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>(async () => {
+        throw new Error('ipc')
+      }),
+    })
+    await act(() => hook.result.current.applyNow())
+    expect(notify).toHaveBeenCalledWith(expect.any(String), 'danger')
+  })
+
+  it('keeps the edits when discarding fails, because nothing was discarded', async () => {
+    const { hook, notify, onDiscarded } = setup({
+      discardRekordboxQueue: vi.fn<Api['discardRekordboxQueue']>(async () => {
+        throw new Error('ipc')
+      }),
+    })
+    await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))
+    await act(() => hook.result.current.discard())
+    expect(notify).toHaveBeenCalledWith(expect.any(String), 'danger')
+    expect(onDiscarded).not.toHaveBeenCalled()
+  })
 })
