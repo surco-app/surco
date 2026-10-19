@@ -2184,7 +2184,9 @@
       "notAdded": "{{track}} não entrou na coleção. Não foi possível ler o arquivo",
       "playlistChanged": "{{track}} não mudou em {{playlist}}. Ela mudou no rekordbox",
       "playlistGone": "{{playlist}} não existe mais no rekordbox. {{track}} não foi adicionada",
-      "editChanged": "{{playlist}} não mudou. Ela mudou no rekordbox"
+      "editChanged": "{{playlist}} não mudou. Ela mudou no rekordbox",
+      "cuesChanged": "Os cues de {{track}} mudaram no rekordbox. Marque-os de novo",
+      "cuesTooMany": "{{track}} precisaria de mais de 8 hot cues. Tire um drop"
     },
     "part": {
       "repoint": "novo caminho",
@@ -2199,7 +2201,8 @@
         "move": "reordenar",
         "remove": "tirar faixas",
         "insertSeparator": "inserir separador"
-      }
+      },
+      "cues": "cues"
     },
     "applyNow": "Aplicar agora",
     "discard": "Descartar",

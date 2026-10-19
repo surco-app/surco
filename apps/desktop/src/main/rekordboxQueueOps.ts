@@ -5,6 +5,7 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxPlaylistTarget,
   RekordboxQueueNotice,
+  SaveCuesRequest,
 } from '../shared/types'
 import type { ContentFacts } from './rekordboxContentAdd'
 import { withNodeTimestamp } from './rekordboxMasterXml'
@@ -29,7 +30,12 @@ export interface TrackOp {
   stamps: Record<string, number>
 }
 
-export type QueueOp = EditOp | TrackOp
+export interface CuesOp extends SaveCuesRequest {
+  id: string
+  kind: 'cues'
+}
+
+export type QueueOp = EditOp | TrackOp | CuesOp
 
 export interface OpOutcome {
   id: string
@@ -56,7 +62,9 @@ const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
 }
 
 export function opRank(op: QueueOp): number {
-  return op.kind === 'track' ? 0 : EDIT_RANK[op.edit.kind]
+  if (op.kind === 'track') return 0
+  if (op.kind === 'cues') return 4
+  return EDIT_RANK[op.edit.kind]
 }
 
 export interface XmlDraft {

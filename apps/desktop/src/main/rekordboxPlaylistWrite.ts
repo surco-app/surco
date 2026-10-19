@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { chmod, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
+import { type CueChangeSet, cueChanges, isEmptyChange } from '../shared/cueRules'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -8,7 +9,9 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxQueueNotice,
 } from '../shared/types'
+import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
+import { applyCueChanges, readTrackCues } from './rekordboxCues'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
 import {
   hexId,
@@ -40,6 +43,7 @@ import { isRekordboxRunning } from './rekordboxProcess'
 import {
   type BatchResult,
   bumpNode,
+  type CuesOp,
   type EditOp,
   editResultOfOutcome,
   type OpOutcome,
@@ -198,6 +202,7 @@ interface Planned {
     names: string[]
     notices: RekordboxQueueNotice[]
   }
+  cues?: CueChangeSet
 }
 
 type Plan = Planned | { outcome: OpOutcome }
@@ -303,8 +308,34 @@ function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions
   return { op, track: { entry, adds, removes, names, notices } }
 }
 
-function planOp(probe: Db, xml: string | null, op: QueueOp, find: FindOptions): Plan {
-  return op.kind === 'track' ? planTrack(probe, xml, op, find) : planEdit(probe, xml, op, find)
+function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
+  const changed = (code: 'cues-changed' | 'cues-too-many'): Plan => ({
+    outcome: { id: op.id, applied: false, notices: [{ code, track: op.label }] },
+  })
+  const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
+  if (!read?.analysed || read.fingerprint !== op.fingerprint) return changed('cues-changed')
+  const out = cueChanges(
+    read.cues,
+    op.drops,
+    op.previousDrops,
+    read.grid.map((b) => b.ms),
+    read.strong,
+  )
+  if (out.status === 'too-many') return changed('cues-too-many')
+  if (isEmptyChange(out.changes)) return { outcome: { id: op.id, applied: true, notices: [] } }
+  return { op, cues: out.changes }
+}
+
+function planOp(
+  probe: Db,
+  xml: string | null,
+  op: QueueOp,
+  find: FindOptions,
+  shareDir: string,
+): Plan {
+  if (op.kind === 'track') return planTrack(probe, xml, op, find)
+  if (op.kind === 'cues') return planCuesOp(probe, op, shareDir)
+  return planEdit(probe, xml, op, find)
 }
 
 function freeId(draft: XmlDraft): string {
@@ -410,12 +441,16 @@ function writeTrack(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOut
 }
 
 function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
-  return planned.op.kind === 'track'
-    ? writeTrack(db, draft, planned, now)
-    : writeEdit(db, draft, planned, now)
+  if (planned.op.kind === 'track') return writeTrack(db, draft, planned, now)
+  if (planned.op.kind === 'cues') {
+    applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
+    return { id: planned.op.id, applied: true, notices: [] }
+  }
+  return writeEdit(db, draft, planned, now)
 }
 
 function needsNode(planned: Planned): boolean {
+  if (planned.op.kind === 'cues') return false
   if (planned.op.kind === 'track') return (planned.track?.names.length ?? 0) > 0
   return planned.op.edit.kind === 'create'
 }
@@ -427,6 +462,7 @@ export async function applyRekordboxBatch(
 ): Promise<BatchResult> {
   if (!collectionPath) return { ok: false, reason: 'unreadable' }
   const xmlPath = playlistXmlPath(collectionPath)
+  const shareDir = rekordboxShareDir(collectionPath)
   const hasXml = existsSync(xmlPath)
   const outcomes = new Map<string, OpOutcome>()
   const planned: Planned[] = []
@@ -435,7 +471,7 @@ export async function applyRekordboxBatch(
   try {
     const current = hasXml ? await readFile(xmlPath, 'utf8') : null
     for (const op of ops) {
-      const plan = planOp(probe, current, op, deps)
+      const plan = planOp(probe, current, op, deps, shareDir)
       if ('outcome' in plan) outcomes.set(op.id, plan.outcome)
       else planned.push(plan)
     }
@@ -473,8 +509,8 @@ export async function applyRekordboxBatch(
       outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: 'cancelled', notices: [] })
       continue
     }
-    if (p.op.kind === 'track') {
-      const again = planTrack(db, xml, p.op, deps)
+    if (p.op.kind !== 'edit') {
+      const again = planOp(db, xml, p.op, deps, shareDir)
       if ('outcome' in again) outcomes.set(p.op.id, again.outcome)
       else stillPlanned.push(again)
       continue

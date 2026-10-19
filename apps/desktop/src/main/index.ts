@@ -110,6 +110,7 @@ import {
   beginRekordboxBatch,
   redirectRekordboxRepoint,
 } from './rekordboxBatch'
+import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
 import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
@@ -938,6 +939,11 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
     onWaiting: rekordboxQueueWatch.poke,
     onReady: rekordboxQueueWatch.poke,
+  })
+  registerRekordboxCuesIpc({
+    collection: rekordboxCollectionPath,
+    queue: rekordboxQueue,
+    applyQuietly: applyRekordboxQueueQuietly,
   })
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),

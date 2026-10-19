@@ -4,7 +4,7 @@ import type { RekordboxQueueState } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import { createRekordboxQueue, type QueueDeps, type QueueStore } from './rekordboxQueue'
-import type { BatchResult, QueueOp, TrackOp } from './rekordboxQueueOps'
+import type { BatchResult, CuesOp, QueueOp, TrackOp } from './rekordboxQueueOps'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 
@@ -493,5 +493,91 @@ describe('rekordbox queue', () => {
     expect(result.status === 'applied' && result.notices).toEqual([
       { code: 'file-missing', track: 'b.wav' },
     ])
+  })
+})
+
+describe('cues in the queue', () => {
+  const cues = (id: string, drops: number[], over: Partial<CuesOp> = {}): CuesOp => ({
+    id,
+    kind: 'cues',
+    contentId: '103',
+    path: '/m/a.wav',
+    label: 'a',
+    drops,
+    previousDrops: [],
+    fingerprint: 'f',
+    ...over,
+  })
+
+  it('keeps the latest cues of a track and shows them on the track line, since saving twice leaves the last marking', () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([track('t', '/m/a.wav', { contentId: '103' }), cues('c1', [1000])])
+    q.enqueue([cues('c2', [2000])])
+    expect(q.state()).toEqual({
+      tracks: 1,
+      changes: 0,
+      items: [
+        {
+          key: 'track:/m/a.wav',
+          label: 'a.wav',
+          parts: [{ kind: 'playlists', names: ['Makina'] }, { kind: 'cues' }],
+        },
+      ],
+    })
+  })
+
+  it('counts the tracks a batch of cues alone wrote so "Listo en rekordbox" appears, and leaves them out of the written playlists', async () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([
+      cues('c1', [1000]),
+      cues('c2', [2000], { contentId: '104', path: '/m/b.wav', label: 'b' }),
+    ])
+    expect(await q.apply(closed)).toMatchObject({
+      status: 'applied',
+      tracks: 2,
+      changes: 0,
+      written: [],
+    })
+    expect(q.isEmpty()).toBe(true)
+  })
+
+  it('moves no stamp for queued cues after a batch wrote, since cues carry none', async () => {
+    const store = memoryStore()
+    const nodeStamps = vi
+      .fn<QueueDeps['nodeStamps']>()
+      .mockResolvedValueOnce({ '3000': 100 })
+      .mockResolvedValueOnce({ '3000': 200 })
+    const d = deps({ store, nodeStamps })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    d.applyBatch.mockImplementationOnce(async (_c, ops, ensureClosed) => {
+      await ensureClosed()
+      q.enqueue([cues('c1', [1000])])
+      return applied(ops)
+    })
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
+    const saved = JSON.parse(store.text ?? '{}') as { ops: QueueOp[] }
+    expect(saved.ops).toEqual([cues('c1', [1000])])
+  })
+
+  it('never applies cues queued for one collection to another', async () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([cues('c1', [1000])])
+    at = '/real/master.db'
+    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'other-collection' })
+    expect(d.applyBatch).not.toHaveBeenCalled()
+  })
+
+  it('holds queued cues after a write left the collection unknown', async () => {
+    const d = deps()
+    d.applyBatch.mockResolvedValueOnce({ ok: false, reason: 'write-unknown' })
+    const q = createRekordboxQueue(d)
+    q.enqueue([cues('c1', [1000])])
+    await q.apply(closed)
+    d.applyBatch.mockClear()
+    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'write-unknown' })
+    expect(d.applyBatch).not.toHaveBeenCalled()
   })
 })

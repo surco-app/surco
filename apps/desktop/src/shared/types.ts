@@ -1089,7 +1089,10 @@ export type RekordboxEditResult =
   | { applied: false; reason: RekordboxEditRefusal; report?: PlaylistAddReport }
 
 export type RekordboxQueueNotice =
-  | { code: 'ambiguous' | 'file-missing' | 'not-added'; track: string }
+  | {
+      code: 'ambiguous' | 'file-missing' | 'not-added' | 'cues-changed' | 'cues-too-many'
+      track: string
+    }
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
   | { code: 'edit-changed'; playlist: string }
 
@@ -1583,6 +1586,7 @@ export type RekordboxQueuePart =
   | { kind: 'collection' }
   | { kind: 'playlists'; names: string[] }
   | { kind: 'tree'; edit: RekordboxPlaylistEdit['kind'] }
+  | { kind: 'cues' }
 
 export interface RekordboxQueueItem {
   key: string
@@ -1632,5 +1636,14 @@ export interface TrackCues {
   cues: TrackCueRow[]
   wave: CueWaveColumn[] | null
   durationMs: number
+  fingerprint: string
+}
+
+export interface SaveCuesRequest {
+  contentId: string
+  path: string
+  label: string
+  drops: number[]
+  previousDrops: number[]
   fingerprint: string
 }

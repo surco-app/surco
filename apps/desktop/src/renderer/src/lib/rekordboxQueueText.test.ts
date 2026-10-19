@@ -109,6 +109,21 @@ describe('rekordbox queue text', () => {
     })
   })
 
+  it('names the cue notices so a marking rekordbox won over is never lost in silence', () => {
+    expect(
+      appliedMessage(tr, {
+        tracks: 0,
+        changes: 0,
+        notices: [{ code: 'cues-changed', track: 'Tengo' }],
+        written: [],
+      })?.text,
+    ).toBe('The cues of Tengo changed in rekordbox. Mark them again')
+    expect(noticeText(tr, { code: 'cues-too-many', track: 'Tengo' })).toBe(
+      'Tengo would need more than 8 hot cues. Remove a drop',
+    )
+    expect(partText(tr, { kind: 'cues' })).toBe('cues')
+  })
+
   it('says nothing when nothing landed and nothing was kept', () => {
     expect(appliedMessage(tr, { tracks: 0, changes: 0, notices: [], written: [] })).toBeNull()
   })

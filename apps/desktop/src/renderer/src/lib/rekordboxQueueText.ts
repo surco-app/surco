@@ -14,6 +14,8 @@ const NOTICE_KEY: Record<RekordboxQueueNotice['code'], string> = {
   'playlist-changed': 'rekordboxQueue.notice.playlistChanged',
   'playlist-gone': 'rekordboxQueue.notice.playlistGone',
   'edit-changed': 'rekordboxQueue.notice.editChanged',
+  'cues-changed': 'rekordboxQueue.notice.cuesChanged',
+  'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
 }
 
 export function noticeText(tr: TFunction, notice: RekordboxQueueNotice): string {

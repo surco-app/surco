@@ -83,7 +83,9 @@ const COLLECTION_WIDE: ReadonlySet<string> = new Set([
 ])
 
 export function keyOf(op: QueueOp): string {
-  return op.kind === 'track' ? `track:${op.path}` : `edit:${op.id}`
+  if (op.kind === 'track') return `track:${op.path}`
+  if (op.kind === 'cues') return `cues:${op.contentId}`
+  return `edit:${op.id}`
 }
 
 function load(store: QueueStore): QueueFile {
@@ -114,12 +116,18 @@ function stateOf(q: QueueFile, collection: string): RekordboxQueueState {
   }
   for (const r of q.repoints) item(`track:${r.to}`, basename(r.to)).parts.push({ kind: 'repoint' })
   for (const op of q.ops) {
-    const it = item(keyOf(op), op.kind === 'track' ? op.label : (op.label ?? ''))
-    if (op.kind === 'track') {
-      it.label = op.label
-      if (!op.contentId) it.parts.push({ kind: 'collection' })
-      it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
-    } else it.parts.push({ kind: 'tree', edit: op.edit.kind })
+    if (op.kind === 'edit') {
+      item(keyOf(op), op.label ?? '').parts.push({ kind: 'tree', edit: op.edit.kind })
+      continue
+    }
+    const it = item(`track:${op.path}`, op.label)
+    if (op.kind === 'cues') {
+      it.parts.push({ kind: 'cues' })
+      continue
+    }
+    it.label = op.label
+    if (!op.contentId) it.parts.push({ kind: 'collection' })
+    it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
   }
   const all = [...items.values()]
   const tracks = all.filter((i) => i.key.startsWith('track:')).length
@@ -225,9 +233,11 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     if (result.wrote && before) {
       try {
         const after = await deps.nodeStamps(collectionPath)
-        for (const op of q.ops)
+        for (const op of q.ops) {
+          if (op.kind === 'cues') continue
           for (const [id, stamp] of Object.entries(op.stamps))
             if (stamp === before[id] && after[id] !== undefined) op.stamps[id] = after[id]
+        }
         save()
       } catch (err) {
         log.warn(`rekordbox node stamps unreadable after the batch: ${String(err)}`)
@@ -249,7 +259,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     const appliedOps = outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
     const tracks = new Set([
       ...repointedTo,
-      ...appliedOps.flatMap((op) => (op?.kind === 'track' ? [op.path] : [])),
+      ...appliedOps.flatMap((op) => (op && op.kind !== 'edit' ? [op.path] : [])),
     ]).size
     const changes = appliedOps.filter((op) => op?.kind === 'edit').length
     const written = appliedOps.flatMap((op) =>

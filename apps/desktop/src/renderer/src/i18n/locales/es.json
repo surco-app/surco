@@ -2184,7 +2184,9 @@
       "notAdded": "No se dio de alta {{track}}. No se pudo leer el fichero",
       "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en rekordbox",
       "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
-      "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox"
+      "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox",
+      "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
+      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un drop"
     },
     "part": {
       "repoint": "nueva ruta",
@@ -2199,7 +2201,8 @@
         "move": "reordenar",
         "remove": "quitar pistas",
         "insertSeparator": "poner separador"
-      }
+      },
+      "cues": "cues"
     },
     "applyNow": "Aplicar ahora",
     "discard": "Descartar",

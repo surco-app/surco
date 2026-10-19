@@ -24,6 +24,7 @@ import type {
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxSyncIssue,
+  SaveCuesRequest,
   ScanVerdict,
   SearchHints,
   SearchPriority,
@@ -33,6 +34,7 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
   SpectrumVerdict,
+  TrackCues,
   TrackProperties,
   TrashEntry,
   UsbExportEvent,
@@ -186,6 +188,10 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:applyNow'),
   discardRekordboxQueue: (): Promise<void> => ipcRenderer.invoke('rekordbox:discardQueue'),
   rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
+  rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
+    ipcRenderer.invoke('rekordbox:trackCues', contentId),
+  saveRekordboxCues: (req: SaveCuesRequest): Promise<void> =>
+    ipcRenderer.invoke('rekordbox:saveCues', req),
   rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('rekordbox:membership', paths),
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {

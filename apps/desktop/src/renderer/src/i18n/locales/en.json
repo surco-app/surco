@@ -2184,7 +2184,9 @@
       "notAdded": "{{track}} was not added to the collection. The file could not be read",
       "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in rekordbox",
       "playlistGone": "{{playlist}} is no longer in rekordbox. {{track}} was not added",
-      "editChanged": "{{playlist}} was not changed. It changed in rekordbox"
+      "editChanged": "{{playlist}} was not changed. It changed in rekordbox",
+      "cuesChanged": "The cues of {{track}} changed in rekordbox. Mark them again",
+      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a drop"
     },
     "part": {
       "repoint": "new path",
@@ -2199,7 +2201,8 @@
         "move": "reorder",
         "remove": "remove tracks",
         "insertSeparator": "add separator"
-      }
+      },
+      "cues": "cues"
     },
     "applyNow": "Apply now",
     "discard": "Discard",

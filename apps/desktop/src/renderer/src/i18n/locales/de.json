@@ -2184,7 +2184,9 @@
       "notAdded": "{{track}} wurde nicht in die Sammlung aufgenommen. Die Datei war nicht lesbar",
       "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Sie hat sich in rekordbox geändert",
       "playlistGone": "{{playlist}} gibt es in rekordbox nicht mehr. {{track}} wurde nicht hinzugefügt",
-      "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert"
+      "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert",
+      "cuesChanged": "Die Cues von {{track}} haben sich in rekordbox geändert. Markiere sie erneut",
+      "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne einen Drop"
     },
     "part": {
       "repoint": "neuer Pfad",
@@ -2199,7 +2201,8 @@
         "move": "umsortieren",
         "remove": "Titel entfernen",
         "insertSeparator": "Trenner einfügen"
-      }
+      },
+      "cues": "Cues"
     },
     "applyNow": "Jetzt anwenden",
     "discard": "Verwerfen",

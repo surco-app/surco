@@ -46,6 +46,7 @@ import type {
   Release,
   RemoveCopyResult,
   ReviewOutcome,
+  SaveCuesRequest,
   ScanVerdict,
   SearchHints,
   SearchPriority,
@@ -58,6 +59,7 @@ import type {
   SourcePlaylistEntry,
   SpectrumResult,
   SpectrumVerdict,
+  TrackCues,
   TrackMetadata,
   TrackProperties,
   TrashEntry,
@@ -205,6 +207,8 @@ export interface Api {
   applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
   discardRekordboxQueue: () => Promise<void>
   rekordboxQueueReady: () => Promise<void>
+  rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
+  saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
