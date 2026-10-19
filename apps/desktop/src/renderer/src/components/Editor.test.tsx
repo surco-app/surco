@@ -235,7 +235,9 @@ function renderEditor(
         onApplyTitleFormat={onApplyTitleFormat}
         onAddToAppleMusic={vi.fn()}
         onCleanUp={onCleanUp}
-        onResultsWidthChange={vi.fn()}
+        resultsWidth={480}
+        onResultsResizeStart={vi.fn()}
+        onResultsFit={vi.fn()}
         onShowLoudnessHelp={onShowLoudnessHelp}
         onHideEditorHints={vi.fn()}
         onOpenRename={onOpenRename}
@@ -1022,7 +1024,9 @@ function MultiHarness() {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
-        onResultsWidthChange={vi.fn()}
+        resultsWidth={480}
+        onResultsResizeStart={vi.fn()}
+        onResultsFit={vi.fn()}
         selectedTracks={selectedTracks}
         onApplyMatches={vi.fn()}
         onProcessAll={vi.fn()}
@@ -1384,7 +1388,9 @@ describe('Editor multi-select', () => {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
-        onResultsWidthChange={vi.fn()}
+        resultsWidth={480}
+        onResultsResizeStart={vi.fn()}
+        onResultsFit={vi.fn()}
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
         onProcessAll={onProcessAll}

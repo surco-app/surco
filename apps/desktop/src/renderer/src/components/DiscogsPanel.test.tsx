@@ -53,8 +53,9 @@ function panel(b: DiscogsBrowser) {
       selectTrack={vi.fn()}
       searchInputRef={createRef<HTMLInputElement>()}
       formatFilter={[]}
-      resultsWidth={315}
-      onResultsWidthChange={vi.fn()}
+      width={315}
+      onResizeStart={vi.fn()}
+      onFit={vi.fn()}
     />
   )
 }
@@ -62,6 +63,51 @@ function panel(b: DiscogsBrowser) {
 function renderPanel(b: DiscogsBrowser) {
   return render(panel(b))
 }
+
+describe('DiscogsPanel column width', () => {
+  function renderSized(onResizeStart = vi.fn(), onFit = vi.fn<(deficit: number) => void>()) {
+    render(
+      <DiscogsPanel
+        browser={browser({ results: [{ provider: 'discogs', id: 1, title: 'A long album' }] })}
+        matchedTrack={undefined}
+        matchTier={undefined}
+        appliedTrack={undefined}
+        showTokenTip={false}
+        isMulti={false}
+        selectedTracks={undefined}
+        onApplyMatches={undefined}
+        selectTrack={vi.fn()}
+        searchInputRef={createRef<HTMLInputElement>()}
+        formatFilter={[]}
+        width={377}
+        onResizeStart={onResizeStart}
+        onFit={onFit}
+      />,
+    )
+    return { onResizeStart, onFit }
+  }
+
+  it('takes the width the window layout hands it, so resizing the window resizes the column', () => {
+    renderSized()
+    expect(screen.getByTestId('matches-column')).toHaveStyle({ width: '377px' })
+  })
+
+  it('hands the drag of its divider to the layout, which saves it as a share', () => {
+    const { onResizeStart } = renderSized()
+    fireEvent.pointerDown(screen.getByRole('separator'))
+    expect(onResizeStart).toHaveBeenCalledTimes(1)
+  })
+
+  it('measures how far the widest title is clipped on double-click and asks the layout for that much', () => {
+    const { onFit } = renderSized()
+    const span = within(screen.getByTestId('discogs-result')).getByText('A long album')
+    const fit = span.closest<HTMLElement>('[data-fit]') ?? span
+    Object.defineProperty(fit, 'scrollWidth', { configurable: true, value: 260 })
+    Object.defineProperty(fit, 'clientWidth', { configurable: true, value: 200 })
+    fireEvent.doubleClick(screen.getByRole('separator'))
+    expect(onFit).toHaveBeenCalledWith(60)
+  })
+})
 
 describe('DiscogsPanel result entrance', () => {
   function results(n: number) {
@@ -226,8 +272,9 @@ describe('DiscogsPanel suggestion marks', () => {
         selectTrack={vi.fn()}
         searchInputRef={createRef<HTMLInputElement>()}
         formatFilter={[]}
-        resultsWidth={315}
-        onResultsWidthChange={vi.fn()}
+        width={315}
+        onResizeStart={vi.fn()}
+        onFit={vi.fn()}
       />,
     )
   }

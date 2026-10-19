@@ -145,6 +145,12 @@ export interface TrimRange {
 
 export type KeyNotation = 'camelot' | 'musical'
 
+export interface ColumnShares {
+  tree?: number
+  list?: number
+  results?: number
+}
+
 export interface Settings {
   theme: ThemePref
   // UI language; 'system' (the default) follows the OS locale.
@@ -301,10 +307,10 @@ export interface Settings {
   // Where the floating activity panel was last parked and its size, in window pixels.
   // Machine-local (screen-dependent), null until the user first moves or resizes it.
   activityPanel: { x: number; y: number; width: number; height: number } | null
-  // The search-results column's width in the editor, in pixels. Machine-local
-  // (screen-dependent), null until the user first drags its divider — the drag
-  // used to reset on every track switch because the width lived in the panel.
+  // The search-results column's width in the editor, in pixels. No longer read: columnShares
+  // replaced it. Kept so settings files that carry it stay valid.
   resultsWidth: number | null
+  columnShares?: ColumnShares
   // When on, every imported track queues its quality analysis in the background (low
   // priority, same shared cache as the sweep), so suspect rips surface on their own
   // without pressing Analyze. Off by default: it spends an ffmpeg decode per drop.

@@ -50,7 +50,7 @@ import {
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
-import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
+import { ResizeHandle } from './components/ResizeHandle'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
@@ -65,6 +65,7 @@ import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
+import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useDuplicateRanks } from './hooks/useDuplicateRanks'
@@ -1336,8 +1337,12 @@ export default function App(): React.JSX.Element {
     setThemePreview(null)
   }
 
-  const sidebar = useResizableWidth(300, 300, 600)
-
+  const columns = useColumnLayout({
+    hasRail: browser.sources.length > 0,
+    hasTree: !!browser.source,
+    saved: settings?.columnShares,
+    onCommit: (columnShares) => saveSettings({ columnShares }),
+  })
   // Double-clicking the divider fits the list to its tracks: measure how far each title and
   // artist is clipped (or has to spare) and resize by the widest, so long names stop
   // truncating without the user dragging — and an over-wide column tightens back up.
@@ -1347,8 +1352,8 @@ export default function App(): React.JSX.Element {
       const span = el.querySelector<HTMLElement>('[data-fit]')
       if (span) rows.push({ scrollWidth: span.scrollWidth, clientWidth: span.clientWidth })
     }
-    sidebar.autoFit(contentDeficit(rows))
-  }, [sidebar.autoFit])
+    columns.fit('list', contentDeficit(rows))
+  }, [columns.fit])
 
   // Memoized so the O(n) lookup runs only when the list or the selection changes, not on
   // every App render (a progress tick, a drag-over, a hover prefetch) — on a large crate
@@ -1818,9 +1823,10 @@ export default function App(): React.JSX.Element {
     })
   // Stable like the other editor props: saveSettings is recreated per render,
   // and an unstable identity here would re-render the memoized Editor per keystroke.
-  const onResultsWidthChange = useStableCallback((width: number) =>
-    saveSettings({ resultsWidth: width }),
+  const onResultsResizeStart = useStableCallback((e: React.PointerEvent) =>
+    columns.startResize('results', e),
   )
+  const onResultsFit = useStableCallback((deficit: number) => columns.fit('results', deficit))
 
   // The header's convert-all: the same bulk scope and editor settings the palette command
   // uses, so pressing the button and running the command cannot diverge.
@@ -2661,6 +2667,7 @@ export default function App(): React.JSX.Element {
                 {browser.source && (
                   <SourceTree
                     key={browser.source}
+                    width={columns.widths.tree}
                     title={tr(`sources.${browser.source}`)}
                     source={browser.source}
                     nodes={browser.tree}
@@ -2686,7 +2693,7 @@ export default function App(): React.JSX.Element {
                     // styling hangs off a data attribute rather than a class so the drop state
                     // is readable in the DOM (and in tests) as state, not as styling.
                     data-drop-over={dragging || undefined}
-                    style={{ width: sidebar.width }}
+                    style={{ width: columns.widths.list }}
                     // Clips its own children: the player enters on translateY(100%), so without
                     // this it is briefly drawn a card's height below the column and the page
                     // grows a scrollbar that flashes and disappears.
@@ -2864,7 +2871,7 @@ export default function App(): React.JSX.Element {
 
                 {showList && (
                   <ResizeHandle
-                    onPointerDown={sidebar.onPointerDown}
+                    onPointerDown={(e) => columns.startResize('list', e)}
                     // Fitting to content only means something once there are track names to
                     // measure; on an empty list the gesture is a no-op, so drop it and its hint.
                     onDoubleClick={listedCount > 0 ? autoFitSidebar : undefined}
@@ -2926,7 +2933,9 @@ export default function App(): React.JSX.Element {
                           onDeclickChange={onDeclickChange}
                           onAddToAppleMusic={onAddSelectedToAppleMusic}
                           onCleanUp={onCleanUp}
-                          onResultsWidthChange={onResultsWidthChange}
+                          resultsWidth={columns.widths.results}
+                          onResultsResizeStart={onResultsResizeStart}
+                          onResultsFit={onResultsFit}
                           onShowLoudnessHelp={onShowLoudnessHelp}
                           onHideEditorHints={onHideEditorHints}
                           onOpenRename={onOpenRename}

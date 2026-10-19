@@ -441,6 +441,15 @@ describe('configurable settings folder', () => {
     expect(read(localFile()).beatportPassword).toBe('ENCRYPTED')
   })
 
+  it('keeps the column proportions on this Mac, so a laptop drag does not reshape the desk screen', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ columnShares: { list: 0.3 } })
+    expect(read(syncedFile(dir))).not.toHaveProperty('columnShares')
+    expect(read(localFile()).columnShares).toEqual({ list: 0.3 })
+    expect(getSettings().columnShares).toEqual({ list: 0.3 })
+  })
+
   it('seeds the chosen folder with current prefs and reads/writes through it', () => {
     saveSettings({ keyNotation: 'musical' })
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))

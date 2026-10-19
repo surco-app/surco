@@ -1,7 +1,16 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../preload/api'
@@ -449,6 +458,53 @@ describe('App sidebar divider', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('App column widths', () => {
+  const initialWidth = window.innerWidth
+  beforeEach(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 })
+  })
+  afterEach(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: initialWidth })
+  })
+
+  it('sizes the list as a share of the window, so a wider window gives every column room', async () => {
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '370px' })
+  })
+
+  it('saves the dragged list width as a share of the window, not as pixels', async () => {
+    const saveSettings = vi.fn<Api['saveSettings']>().mockResolvedValue(settings())
+    setApi({ saveSettings })
+    await renderApp()
+    await addTwoTracks()
+    const at = (event: Event, clientX: number): Event =>
+      Object.defineProperty(event, 'clientX', { value: clientX })
+    const divider = screen.getAllByRole('separator')[0]
+    fireEvent(divider, at(createEvent.pointerDown(divider), 370))
+    fireEvent(window, at(createEvent.pointerMove(window), 420))
+    fireEvent(window, at(createEvent.pointerUp(window), 420))
+    const saved = saveSettings.mock.calls.find(([patch]) => patch.columnShares)?.[0]
+    expect(saved?.columnShares?.list).toBeCloseTo((420 * 0.83) / 1280)
+    expect(saved?.resultsWidth).toBeUndefined()
+  })
+
+  it('reads the saved share back, whatever pixel width an older version stored', async () => {
+    setApi({
+      getSettings: vi
+        .fn<Api['getSettings']>()
+        .mockResolvedValue(settings({ resultsWidth: 385, columnShares: { list: 0.3 } })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar')).toHaveStyle({
+        width: `${Math.round((1280 * 0.3) / 0.83)}px`,
+      }),
+    )
   })
 })
 

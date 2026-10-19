@@ -183,9 +183,10 @@ const LOCAL_KEYS = [
   // Which channel this machine takes, for the same reason: one machine can be trying a
   // beta while another stays on stable.
   'betaUpdates',
-  // A pixel position only means something on the screen it was saved on.
+  // A pixel position or a column proportion only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',
+  'columnShares',
   'beatportUsername',
   'beatportPassword',
 ] as const satisfies readonly (keyof Settings)[]

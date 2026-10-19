@@ -35,6 +35,7 @@ export function flattenPlaylists(
 }
 
 export function SourceTree({
+  width,
   title,
   source,
   nodes,
@@ -44,6 +45,7 @@ export function SourceTree({
   edit,
   onExportUsb,
 }: {
+  width: number
   title: string
   source: PlaylistSource
   nodes: SourceNode[] | undefined
@@ -332,7 +334,8 @@ export function SourceTree({
         e.stopPropagation()
         setDropOn(null)
       }}
-      className="flex w-[236px] shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]"
+      style={{ width }}
+      className="flex shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1 px-3 pt-3 pb-2">
         <span className="text-sm font-semibold">{title}</span>

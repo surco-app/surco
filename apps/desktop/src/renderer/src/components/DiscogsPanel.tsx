@@ -26,7 +26,7 @@ import { contentDeficit } from '../lib/resize'
 import { holdOrder } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
-import { DEFAULT_RESULTS_WIDTH, ResizeHandle, useResizableWidth } from './ResizeHandle'
+import { ResizeHandle } from './ResizeHandle'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
@@ -67,11 +67,9 @@ interface Props {
   // The release formats search is restricted to (Settings → Search). Empty = no filter.
   // Shown as a hint so a thinned or empty result set reads as the filter at work.
   formatFilter: string[]
-  // The column's persisted width and its save hook: the panel remounts on every
-  // track switch (the editor is keyed by track), so a width held only in state
-  // used to snap back the moment the user changed tracks.
-  resultsWidth: number | null
-  onResultsWidthChange: (width: number) => void
+  width: number
+  onResizeStart: (e: React.PointerEvent) => void
+  onFit: (deficit: number) => void
 }
 
 // The Discogs column: the search box, its results, and the expanded release's
@@ -94,8 +92,9 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   selectTrack,
   searchInputRef,
   formatFilter,
-  resultsWidth,
-  onResultsWidthChange,
+  width,
+  onResizeStart,
+  onFit,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const onOpenSettings = useOpenSettings()
@@ -167,12 +166,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   const suggestedTitle = suggestedKey
     ? results.find((r) => `${r.provider}:${r.id}` === suggestedKey)?.title
     : undefined
-  const discogs = useResizableWidth(
-    resultsWidth ?? DEFAULT_RESULTS_WIDTH,
-    300,
-    720,
-    onResultsWidthChange,
-  )
   // Double-clicking the divider fits the Discogs column to its results: measure how far each
   // release and track title is clipped (or has to spare) and resize by the widest, so long
   // album names stop truncating — and a column left too wide tightens back up.
@@ -184,8 +177,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       scrollWidth: s.scrollWidth,
       clientWidth: s.clientWidth,
     }))
-    discogs.autoFit(contentDeficit(rows))
-  }, [discogs.autoFit])
+    onFit(contentDeficit(rows))
+  }, [onFit])
 
   // The source filter is keyed to the enabled catalogs, not to which ones a given search
   // happened to return: showing it whenever two sources are configured (and there's a
@@ -509,7 +502,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     <>
       <div
         data-testid="matches-column"
-        style={{ width: discogs.width }}
+        style={{ width }}
         className="flex shrink-0 flex-col border-r border-[var(--color-line)]"
       >
         <div className="relative border-b border-[var(--color-line)] pb-2">
@@ -703,7 +696,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       </div>
 
       <ResizeHandle
-        onPointerDown={discogs.onPointerDown}
+        onPointerDown={onResizeStart}
         onDoubleClick={autoFitDiscogs}
         title={tr('editor.fitHint')}
       />

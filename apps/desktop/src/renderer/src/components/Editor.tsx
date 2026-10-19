@@ -197,9 +197,9 @@ interface Props {
   // superseded, the old Apple Music copy) for the Trash in one confirmed step. Confirmation
   // lives in App, so the link just signals intent with what it would clean up.
   onCleanUp?: (offer: CleanupOffer) => void
-  // Persists the results column's width (Settings.resultsWidth): the panel
-  // remounts per track, so the width must round-trip through settings to stick.
-  onResultsWidthChange: (width: number) => void
+  resultsWidth: number
+  onResultsResizeStart: (e: React.PointerEvent) => void
+  onResultsFit: (deficit: number) => void
   // Opens the loudness-pills explainer. App owns the modal so it gates the global
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
@@ -266,7 +266,9 @@ export const Editor = memo(function Editor({
   onDeclickChange,
   onAddToAppleMusic,
   onCleanUp,
-  onResultsWidthChange,
+  resultsWidth,
+  onResultsResizeStart,
+  onResultsFit,
   onShowLoudnessHelp,
   rekordboxCue,
   onHideEditorHints,
@@ -310,7 +312,6 @@ export const Editor = memo(function Editor({
     importFields,
     discogsFormats,
     discogsMaxResults,
-    resultsWidth,
     searchProviders,
     searchIgnoreWords,
     searchByAlbumFirst,
@@ -1304,8 +1305,9 @@ export const Editor = memo(function Editor({
         selectTrack={selectTrack}
         searchInputRef={searchInputRef}
         formatFilter={discogsFormats}
-        resultsWidth={resultsWidth}
-        onResultsWidthChange={onResultsWidthChange}
+        width={resultsWidth}
+        onResizeStart={onResultsResizeStart}
+        onFit={onResultsFit}
       />
 
       <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">

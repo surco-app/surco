@@ -39,6 +39,7 @@ function setup(selectedId: string | null = null, editable = false) {
     // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the window's own file drop
     <div onDrop={onOuterDrop}>
       <SourceTree
+        width={236}
         title="rekordbox"
         source="rekordbox"
         nodes={NODES}
@@ -55,6 +56,21 @@ function setup(selectedId: string | null = null, editable = false) {
 const files = (...names: string[]) => fakeDataTransfer(names.map((n) => new File([''], n)))
 
 describe('SourceTree', () => {
+  it('takes the width the window layout hands it instead of a fixed one', () => {
+    render(
+      <SourceTree
+        width={251}
+        title="rekordbox"
+        source="rekordbox"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('source-tree')).toHaveStyle({ width: '251px' })
+  })
+
   it('starts with folders closed and opens one on click', () => {
     setup()
     expect(screen.queryByTestId('source-node-ct')).not.toBeInTheDocument()
@@ -86,6 +102,7 @@ describe('SourceTree', () => {
   it('keeps that folder closed when the tree is re-read on refocus', () => {
     const props = {
       title: 'rekordbox',
+      width: 236,
       source: 'rekordbox' as const,
       failed: false,
       onSelect: vi.fn(),
@@ -114,6 +131,7 @@ describe('SourceTree', () => {
   it('says when the collection could not be read instead of looking empty', () => {
     render(
       <SourceTree
+        width={236}
         title="rekordbox"
         source="rekordbox"
         nodes={undefined}
@@ -130,6 +148,7 @@ describe('SourceTree', () => {
   it('keeps showing the tree it already read when a later re-read fails', () => {
     render(
       <SourceTree
+        width={236}
         title="rekordbox"
         source="rekordbox"
         nodes={NODES}
@@ -147,6 +166,7 @@ describe('SourceTree', () => {
   it('points a Music failure at Music being open and Surco being allowed to control it', () => {
     render(
       <SourceTree
+        width={236}
         title="Music"
         source="appleMusic"
         nodes={undefined}
@@ -166,6 +186,7 @@ describe('SourceTree', () => {
     const onExportUsb = vi.fn()
     const props = {
       title: 'rekordbox',
+      width: 236,
       source: 'rekordbox' as const,
       nodes: NODES,
       failed: false,
