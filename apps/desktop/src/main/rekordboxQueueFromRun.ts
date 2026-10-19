@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { basename } from 'node:path'
+import log from 'electron-log/main'
 import type { FlushResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import { type ContentProbe, readContentFacts } from './rekordboxContentAdd'
@@ -85,7 +86,12 @@ export async function queueConversionRun(
 ): Promise<void> {
   const result = await deps.flushRepoints(repoints)
   const waiting = result.blocked === 'rekordbox-running' ? repoints : []
-  const ops = deps.collectionPath ? await deps.readOps(repoints) : []
+  const ops = deps.collectionPath
+    ? await deps.readOps(repoints).catch((e) => {
+        log.error('rekordbox queue: reading the run playlists failed', e)
+        return []
+      })
+    : []
   if (ops.length === 0 && waiting.length === 0) return
   deps.enqueue(ops, waiting)
   deps.apply()

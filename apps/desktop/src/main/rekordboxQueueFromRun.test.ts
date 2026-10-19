@@ -57,6 +57,24 @@ describe('trackOpsFromRun', () => {
     expect(op.stamps).toEqual({ '2000': 1767225600111, '3000': 1767225600000 })
   })
 
+  it('looks a converted file up by its new path only when the repoint is off so it is added beside the old entry', async () => {
+    const { path } = await collection()
+    const [op] = await trackOpsFromRun(
+      path,
+      [
+        {
+          from: '/Volumes/Public/Music/Play This Song.wav',
+          to: '/Volumes/Public/Music/Play This Song (24).wav',
+          meta: META,
+          playlists: [{ id: '3000', name: 'House' }],
+        },
+      ],
+      { repointing: false, probe, find: TWIN_PATHS, newId },
+    )
+    expect(op.contentId).toBeUndefined()
+    expect(op.known).toEqual([])
+  })
+
   it('reads the facts of a file rekordbox does not have while the file is certainly there', async () => {
     const { path, dir } = await collection()
     const file = join(dir, 'Bam Bam.wav')
@@ -134,6 +152,44 @@ describe('queueConversionRun', () => {
     const d = deps({ readOps: vi.fn<RunQueueDeps['readOps']>(async () => [op]) })
     await queueConversionRun([repoint], d)
     expect(d.enqueue).toHaveBeenCalledWith([op], [])
+  })
+
+  it('still queues the waiting repoints when reading the playlist operations fails', async () => {
+    const d = deps({
+      flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({
+        written: 0,
+        skipped: [],
+        blocked: 'rekordbox-running',
+      })),
+      readOps: vi.fn<RunQueueDeps['readOps']>(async () => {
+        throw new Error('disk')
+      }),
+    })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).toHaveBeenCalledWith([], [repoint])
+  })
+
+  it('queues both the operations and the waiting repoints when the flush was blocked', async () => {
+    const op = {
+      id: 'x',
+      kind: 'track' as const,
+      path: '/m/a.wav',
+      label: 'a',
+      facts: null,
+      wanted: [],
+      known: [],
+      stamps: {},
+    }
+    const d = deps({
+      flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({
+        written: 0,
+        skipped: [],
+        blocked: 'rekordbox-running',
+      })),
+      readOps: vi.fn<RunQueueDeps['readOps']>(async () => [op]),
+    })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).toHaveBeenCalledWith([op], [repoint])
   })
 
   it('leaves the queue alone when the run has nothing for it', async () => {
