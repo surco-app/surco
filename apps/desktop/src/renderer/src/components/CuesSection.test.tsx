@@ -133,6 +133,37 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-save')).toBeDisabled()
   })
 
+  it('saves a countdown left incomplete on drops already in rekordbox without touching the drops', async () => {
+    const { saveRekordboxCues } = setup({
+      ...READ,
+      cues: [
+        { id: 'drop', ms: bar(64), kind: 0, color: null },
+        { id: 'a', ms: bar(48), kind: 1, color: 1 },
+      ],
+    })
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true')
+    expect(screen.getByTestId('cues-save')).toBeEnabled()
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(saveRekordboxCues).toHaveBeenCalledWith(
+      expect.objectContaining({ drops: [bar(64)], previousDrops: [bar(64)], fingerprint: 'f0' }),
+    )
+  })
+
+  it('keeps Save off when the drawn plan is already what rekordbox holds', async () => {
+    const outcome = cueChanges(
+      [],
+      [bar(64)],
+      [],
+      GRID.map((g) => g.ms),
+      [],
+    )
+    if (outcome.status !== 'plan') throw new Error('expected a plan')
+    setup({ ...READ, cues: outcome.changes.insert.map((c, i) => ({ id: `w${i}`, ...c })) })
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-save')).toBeDisabled()
+  })
+
   it('says hand-placed hot cues stay as they are', async () => {
     setup({ ...READ, cues: [{ id: 'm', ms: bar(40), kind: 1, color: 1 }] })
     await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())

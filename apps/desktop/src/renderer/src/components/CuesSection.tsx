@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cueChanges, findDrops, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { cueChanges, findDrops, isEmptyChange, SAME_POSITION_MS } from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
 import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
 import { CUE_COLOR } from '../lib/cueWave'
@@ -114,7 +114,7 @@ function Marking({
           <button
             type="button"
             data-testid="cues-save"
-            disabled={!dirty || outcome.status === 'too-many'}
+            disabled={outcome.status === 'too-many' || (!dirty && isEmptyChange(outcome.changes))}
             onClick={() =>
               void window.api
                 .saveRekordboxCues({
