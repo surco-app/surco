@@ -2108,7 +2108,8 @@
       "prune": "Borrar del USB la música que ya no se exporta",
       "cancel": "Cancelar",
       "export": "Exportar",
-      "settings": "Copiar My Settings"
+      "settings": "Copiar My Settings",
+      "planFailed": "No se pudo calcular el resumen. Cambia la selección para volver a intentarlo."
     },
     "summary": {
       "tracks_one": "{{count}} pista",

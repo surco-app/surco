@@ -1,6 +1,6 @@
 import { Usb } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   SourceNode,
@@ -16,7 +16,7 @@ import { useUsbPlan } from '../hooks/useUsbPlan'
 import { formatFileSize } from '../lib/properties'
 import { holderText } from '../lib/usbExport'
 import { type UsbExportStore, usbExportStore, useUsbExportState } from '../lib/usbExportStore'
-import { CheckTree } from './CheckTree'
+import { CheckTree, playlistIdsUnder } from './CheckTree'
 import { ModalShell } from './ModalShell'
 import { UsbExportProgress } from './UsbExportProgress'
 
@@ -88,12 +88,16 @@ export function UsbExportModal({
     seed(tickedFor(first), first.remembered)
   }
   const folder = target?.kind === 'folder'
-  // Sorted, so the plan's settle key does not change with the order of the ticks.
+  // A playlist deleted in rekordbox can still be listed by the stick's sync file or by
+  // Surco's memory: only ticks the tree can show are sent, so nothing invisible goes on
+  // the stick. Sorted, so the plan's settle key does not change with the order of the ticks.
+  const inTree = useMemo(() => new Set((nodes ?? []).flatMap(playlistIdsUnder)), [nodes])
+  const ticked = [...checked].filter((id) => inTree.has(id)).sort()
   const req: UsbExportRequest | null =
-    target && checked.size > 0
-      ? { playlistIds: [...checked].sort(), target, prune: folder ? false : prune, settings }
+    target && ticked.length > 0
+      ? { playlistIds: ticked, target, prune: folder ? false : prune, settings }
       : null
-  const { plan, failure, loading } = useUsbPlan(req)
+  const { plan, failure, broken, loading } = useUsbPlan(req)
   const chosen =
     target?.kind === 'volume'
       ? (volumes?.volumes.find((v) => v.uuid === target.uuid) ?? null)
@@ -115,9 +119,11 @@ export function UsbExportModal({
     if (!req || starting) return
     setStarting(true)
     setStartError(null)
+    // Accepted, the chooser stays until main's first event swaps in the progress view;
+    // Exportar stays off meanwhile, or a second press is refused as busy.
     void onStart(req).then((r) => {
-      setStarting(false)
       if (r.ok) return
+      setStarting(false)
       setStartError(
         r.reason === 'no-space' && r.neededBytes !== undefined && r.freeBytes !== undefined
           ? tr('usbExport.warnings.noSpace', {
@@ -267,6 +273,9 @@ export function UsbExportModal({
               {!req && <p className="text-fg-faint">{tr('usbExport.choose.pick')}</p>}
               {req && loading && (
                 <p className="text-fg-faint">{tr('usbExport.choose.calculating')}</p>
+              )}
+              {req && !loading && broken && (
+                <p className="text-danger">{tr('usbExport.choose.planFailed')}</p>
               )}
               {req && !loading && failure && (
                 <p className="text-danger">{tr(`usbExport.errors.${failure}`)}</p>

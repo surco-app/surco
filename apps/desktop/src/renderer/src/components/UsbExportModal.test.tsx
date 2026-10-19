@@ -291,6 +291,36 @@ describe('UsbExportModal choosing', () => {
     expect(screen.getByTestId('usb-export')).toBeEnabled()
   })
 
+  // Between main accepting the export and its first event the chooser is still on screen;
+  // a second press there would only be refused as busy.
+  it('keeps Exportar disabled once the export is accepted, until the progress shows', async () => {
+    const { onStart } = await show({ volumes: [vol({ remembered: REMEMBERED })], lastKey: null })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('usb-export'))
+    })
+    expect(screen.getByTestId('usb-export')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('usb-export'))
+    expect(onStart).toHaveBeenCalledTimes(1)
+  })
+
+  // A plan that fails outright (IPC rejected) must not leave "Calculando…" forever.
+  it('says the summary could not be worked out when asking for it fails', async () => {
+    usbPlan.mockRejectedValue(new Error('ipc'))
+    await show({ volumes: [vol({ remembered: REMEMBERED })], lastKey: null })
+    expect(screen.getByTestId('usb-summary')).toHaveTextContent('No se pudo calcular el resumen')
+    expect(screen.getByTestId('usb-export')).toBeDisabled()
+  })
+
+  // A playlist deleted in rekordbox can still be listed in the stick's sync file or in
+  // Surco's memory; ticked but absent from the tree, it would be invisible yet sent.
+  it('drops ticks for playlists no longer in the tree', async () => {
+    await show({
+      volumes: [vol({ stickPlaylists: ['mak', 'gone'] })],
+      lastKey: null,
+    })
+    expect(usbPlan).toHaveBeenLastCalledWith(expect.objectContaining({ playlistIds: ['mak'] }))
+  })
+
   // A folder picked by hand is never pruned, so the box is not offered for it.
   it('hides the prune box for a folder destination', async () => {
     await show({ volumes: [vol({ remembered: REMEMBERED })], lastKey: null })

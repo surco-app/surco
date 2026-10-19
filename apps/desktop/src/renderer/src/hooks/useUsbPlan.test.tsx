@@ -27,6 +27,25 @@ describe('useUsbPlan', () => {
     expect(usbPlan.mock.calls[0][0]).toMatchObject({ playlistIds: ['a', 'b', 'c'] })
   })
 
+  // A rejected request must settle, or the summary says "Calculando…" forever.
+  it('settles as broken when the request fails', async () => {
+    vi.useFakeTimers()
+    const usbPlan = vi.fn<Api['usbPlan']>(async () => {
+      throw new Error('ipc')
+    })
+    ;(window as unknown as { api: Api }).api = stubApi({ usbPlan })
+    const target = { kind: 'volume' as const, uuid: 'U' }
+    const { result } = renderHook(() =>
+      useUsbPlan({ playlistIds: ['a'], target, prune: false, settings: false }),
+    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350)
+    })
+    expect(result.current.loading).toBe(false)
+    expect(result.current.broken).toBe(true)
+    expect(result.current.plan).toBeNull()
+  })
+
   // A slow answer for an older selection must not overwrite the summary of the current one.
   it('drops a late answer to an older selection', async () => {
     vi.useFakeTimers()

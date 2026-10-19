@@ -640,7 +640,7 @@ export default function App(): React.JSX.Element {
     (isMac || window.api.platform === 'win32') && browser.sources.includes('rekordbox')
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
-  const usbRunning = usbPhase === 'copying' || usbPhase === 'database'
+  const usbRunning = useUsbExportState(isRunning)
   const { list: usbVolumes } = useUsbVolumes(usbAvailable)
   const [usbModal, setUsbModal] = useState<{ preselect: string | null } | null>(null)
   // Opening after a finished background export starts again at the chooser: its result was
@@ -654,6 +654,13 @@ export default function App(): React.JSX.Element {
     setUsbModal(null)
     if (!isRunning(usbExportStore.getState())) usbExportStore.dispatch({ type: 'reset' })
   }, [])
+  // Built once per open/close, so the memoized toolbar it goes into is not re-rendered by
+  // every App render. The arrow keeps the click event from reaching openUsbExport as a
+  // preselected stick.
+  const usbPill = useMemo(
+    () => <UsbExportPill hidden={usbModal !== null} onOpen={() => openUsbExport()} />,
+    [usbModal, openUsbExport],
+  )
   // The same query key the source browser uses for rekordbox's tree, so an open tree is
   // reused and a tree read here is there when the user opens rekordbox in the rail.
   const usbTree = useQuery({
@@ -2532,9 +2539,7 @@ export default function App(): React.JSX.Element {
                   activityRunning={activityRunning}
                   onSettings={onOpenSettings}
                   primary={reviewAction}
-                  usbPill={
-                    <UsbExportPill hidden={usbModal !== null} onOpen={() => openUsbExport()} />
-                  }
+                  usbPill={usbPill}
                 />
               </div>
 

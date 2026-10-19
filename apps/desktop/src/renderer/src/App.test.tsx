@@ -60,6 +60,22 @@ vi.mock('./components/TrackList', async (importOriginal) => {
   })
   return { ...real, TrackList: CountingTrackList }
 })
+// Pass-through Toolbar that keeps the props of its last render, so a test can check that
+// App hands it the same identity for a prop across App renders.
+const { toolbarProps } = vi.hoisted(() => ({
+  toolbarProps: { last: null as { usbPill?: unknown } | null },
+}))
+vi.mock('./components/Toolbar', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./components/Toolbar')>()
+  const { memo } = await import('react')
+  const CountingToolbar = memo(function CountingToolbar(
+    props: React.ComponentProps<typeof real.Toolbar>,
+  ): React.JSX.Element {
+    toolbarProps.last = props
+    return <real.Toolbar {...props} />
+  })
+  return { ...real, Toolbar: CountingToolbar }
+})
 vi.mock('./lib/triage', async (importOriginal) => {
   const real = await importOriginal<typeof import('./lib/triage')>()
   const sortTracks: typeof real.sortTracks = (tracks, sortBy, dir) => {
@@ -857,6 +873,19 @@ describe('App USB export', () => {
     expect(screen.getByTestId('usb-sync-files-notice')).toHaveTextContent(
       'rekordbox may not recognise its playlists',
     )
+  })
+
+  // The toolbar is memoized so App's renders do not reach it; a pill slot built fresh on
+  // every App render would undo that. A stick list arriving re-renders App and changes
+  // nothing the pill shows.
+  it('hands the toolbar the same USB pill across App renders', async () => {
+    const feed = usbApi()
+    await renderApp()
+    await waitFor(() => expect(feed.volumes).toBeDefined())
+    await act(async () => {})
+    const before = toolbarProps.last?.usbPill
+    act(() => feed.volumes?.({ volumes: [stick('A', 'surco')], lastKey: null }))
+    expect(toolbarProps.last?.usbPill).toBe(before)
   })
 
   // Escape closes the chooser like any other dialog, and the list's shortcuts stay off

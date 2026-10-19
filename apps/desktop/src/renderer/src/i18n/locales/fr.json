@@ -2108,7 +2108,8 @@
       "prune": "Supprimer de la clé la musique qui n’est plus exportée",
       "cancel": "Annuler",
       "export": "Exporter",
-      "settings": "Copier My Settings"
+      "settings": "Copier My Settings",
+      "planFailed": "Le résumé n’a pas pu être calculé. Modifie la sélection pour réessayer."
     },
     "summary": {
       "tracks_one": "{{count}} piste",

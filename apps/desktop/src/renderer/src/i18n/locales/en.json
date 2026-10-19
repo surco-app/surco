@@ -2108,7 +2108,8 @@
       "prune": "Delete music from the USB that is no longer exported",
       "cancel": "Cancel",
       "export": "Export",
-      "settings": "Copy My Settings"
+      "settings": "Copy My Settings",
+      "planFailed": "The summary could not be worked out. Change the selection to try again."
     },
     "summary": {
       "tracks_one": "{{count}} track",

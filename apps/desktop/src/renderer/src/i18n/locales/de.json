@@ -2108,7 +2108,8 @@
       "prune": "Musik vom USB-Stick löschen, die nicht mehr exportiert wird",
       "cancel": "Abbrechen",
       "export": "Exportieren",
-      "settings": "My Settings kopieren"
+      "settings": "My Settings kopieren",
+      "planFailed": "Die Übersicht konnte nicht berechnet werden. Ändere die Auswahl, um es erneut zu versuchen."
     },
     "summary": {
       "tracks_one": "{{count}} Track",
