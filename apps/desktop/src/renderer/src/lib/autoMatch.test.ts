@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import {
+  acceptReviewOf,
   acceptReviewPatch,
   autoMatchRelease,
   MAX_AUTO_PROBE,
@@ -13,6 +14,7 @@ import {
   shouldAutoApplyMatch,
   tracksToAutoMatch,
 } from './autoMatch'
+import { coverSourceOf } from './coverSource'
 import { confidenceTier } from './release'
 
 function release(id: number, over: Partial<Release> = {}): Release {
@@ -862,6 +864,42 @@ describe('acceptReviewPatch', () => {
   // (and its shortcut/enabled gate reads the same undefined).
   it('returns undefined when the track has no review suggestion', () => {
     expect(acceptReviewPatch(track())).toBeUndefined()
+  })
+})
+
+describe('acceptReviewOf', () => {
+  const reviewMatch = {
+    release: release(1, { images: [{ uri: 'discogs.jpg', type: 'primary', resource_url: '' }] }),
+    track: { position: 'A1', title: 'One More Time' },
+    result: searchResult(1),
+  }
+  const partial = {
+    id: 't1',
+    inputPath: '/m/t1.flac',
+    meta: { title: 'old', artist: 'old' },
+    metaPartial: true,
+    reviewMatch,
+  } as TrackItem
+
+  it('accepts on the fully read row, so a file listed before its art was read keeps that art', async () => {
+    const readFullTrack = vi.fn(
+      async (): Promise<TrackItem> => ({
+        ...partial,
+        metaPartial: false,
+        embeddedCover: 'file-thumb',
+        coverUrl: 'file-thumb',
+      }),
+    )
+    const accepted = await acceptReviewOf('t1', readFullTrack)
+    expect(readFullTrack).toHaveBeenCalledWith('t1')
+    expect(accepted?.patch.meta?.title).toBe('One More Time')
+    const staged = { ...partial, embeddedCover: 'file-thumb', ...accepted?.patch }
+    expect(coverSourceOf(staged)).toEqual({ coverFromFile: '/m/t1.flac' })
+  })
+
+  it('accepts nothing while the row is still partly read, rather than guess the file has no art', async () => {
+    const accepted = await acceptReviewOf('t1', async () => partial)
+    expect(accepted).toBeUndefined()
   })
 })
 

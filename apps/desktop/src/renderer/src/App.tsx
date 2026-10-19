@@ -100,7 +100,7 @@ import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
-  acceptReviewPatch,
+  acceptReviewOf,
   type MatchCleanup,
   searchHintsFor,
   tracksToAutoMatch,
@@ -1254,6 +1254,10 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     for (const id of partialSelected) void completeTrackMeta(id)
   }, [partialSelected, completeTrackMeta])
+  const readFullTrack = useStableCallback(async (id: string) => {
+    await completeTrackMeta(id)
+    return tracksRef.current.find((t) => t.id === id)
+  })
 
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
   // the filtered-visible subset removes those rows and keeps watching, so the hidden FLAC/WAV
@@ -2272,24 +2276,22 @@ export default function App(): React.JSX.Element {
   // the stored release exactly like clicking it in the editor. A no-op when there's nothing to
   // accept, so the command's enabled gate and this stay in agreement.
   const acceptReview = useStableCallback(() => {
-    if (!selected) return
-    const patch = acceptReviewPatch(selected, importFields, genrePresets, fullReleaseDate)
-    if (patch && selected.reviewMatch) {
-      updateTrack(selected.id, patch)
-      window.api.recordStat(matchStatKey(selected.reviewMatch.release.provider))
-    }
+    if (selected) void acceptReviewRow(selected.id)
   })
   // The row spark's click: same acceptance as the command above, but for the row that
   // was clicked rather than the selection — reviewing 40 amber sparks must not require
   // selecting each one first.
-  const acceptReviewRow = useStableCallback((id: string) => {
-    const t = tracksRef.current.find((x) => x.id === id)
-    if (!t) return
-    const patch = acceptReviewPatch(t, importFields, genrePresets, fullReleaseDate)
-    if (patch && t.reviewMatch) {
-      updateTrack(t.id, patch)
-      window.api.recordStat(matchStatKey(t.reviewMatch.release.provider))
-    }
+  const acceptReviewRow = useStableCallback(async (id: string) => {
+    const accepted = await acceptReviewOf(
+      id,
+      readFullTrack,
+      importFields,
+      genrePresets,
+      fullReleaseDate,
+    )
+    if (!accepted) return
+    updateTrack(id, accepted.patch)
+    window.api.recordStat(matchStatKey(accepted.provider))
   })
   // Rotates system → light → dark and persists it, the palette twin of the Settings control.
   const toggleTheme = useStableCallback(() => {

@@ -154,6 +154,19 @@ export function acceptReviewPatch(
   }
 }
 
+export async function acceptReviewOf(
+  id: string,
+  readFullTrack: (id: string) => Promise<TrackItem | undefined>,
+  importFields?: readonly MetaTextKey[],
+  genrePresets?: readonly string[],
+  fullReleaseDate = false,
+): Promise<{ patch: Partial<TrackItem>; provider: Release['provider'] } | undefined> {
+  const track = await readFullTrack(id)
+  if (!track?.reviewMatch || track.metaPartial) return undefined
+  const patch = acceptReviewPatch(track, importFields, genrePresets, fullReleaseDate)
+  return patch && { patch, provider: track.reviewMatch.release.provider }
+}
+
 // Whether opening a track's editor should write its confident match without waiting for
 // the user to click the suggested tracklist row. The sweep already spares that click on
 // visible rows (it applies 'high' straight off), so this only fires where the sweep didn't
