@@ -1821,8 +1821,8 @@ export default function App(): React.JSX.Element {
       patchTracks,
       setNotice,
     })
-  // Stable like the other editor props: saveSettings is recreated per render,
-  // and an unstable identity here would re-render the memoized Editor per keystroke.
+  // Stable like the other editor props: an inline arrow is a new identity per render,
+  // which would re-render the memoized Editor per keystroke.
   const onResultsResizeStart = useStableCallback((e: React.PointerEvent) =>
     columns.startResize('results', e),
   )
