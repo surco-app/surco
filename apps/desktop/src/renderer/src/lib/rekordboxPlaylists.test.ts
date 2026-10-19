@@ -86,8 +86,8 @@ describe('matchingOptions', () => {
 })
 
 describe('chipLabel', () => {
-  it('names the folder a playlist sits in, since a bare "All" does not say which one it is', () => {
-    expect(chipLabel(OPTIONS, { id: '1101', name: 'Todas' })).toBe('FIJAS › Todas')
+  it('shows the whole folder path, since a bare "All" or its parent alone does not say which one it is', () => {
+    expect(chipLabel(OPTIONS, { id: '1101', name: 'Todas' })).toBe('BOLOS › FIJAS › Todas')
     expect(chipLabel(OPTIONS, { id: '1001', name: 'Bolos de verano' })).toBe(
       'BOLOS › Bolos de verano',
     )
