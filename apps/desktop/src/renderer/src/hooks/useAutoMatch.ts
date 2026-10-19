@@ -40,6 +40,7 @@ interface Params {
   // track must be read at the moment it's probed/applied, not from a closure snapshot.
   tracksRef: { readonly current: TrackItem[] }
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  completeTrackMeta: (id: string) => Promise<void>
   // Live view of the Apple Music library snapshot (null until it lands / off macOS). Read at
   // apply time so the sweep can re-check ownership against the match's canonical title/artist —
   // the same second attempt the editor makes — and pin the verdict so the list/filter agree
@@ -95,6 +96,7 @@ interface AutoMatchSweep {
 export function useAutoMatch({
   tracksRef,
   updateTrack,
+  completeTrackMeta,
   libraryIndexRef,
   searchProvidersRef,
   importFieldsRef,
@@ -177,8 +179,10 @@ export function useAutoMatch({
       // mints a new meta object, so an identity check covers all fields at once. A stale
       // verdict is discarded silently: reporting it would describe an apply that never
       // happened.
+      if (m.tier === 'high' && t.metaPartial) await completeTrackMeta(t.id)
       const live = tracksRef.current.find((x) => x.id === t.id)
       if (!live || live.meta !== t.meta || editingRef.current === t.id) return
+      if (m.tier === 'high' && live.metaPartial) return
       reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
@@ -232,6 +236,7 @@ export function useAutoMatch({
     [
       searchApiAt,
       updateTrack,
+      completeTrackMeta,
       tracksRef,
       libraryIndexRef,
       importFieldsRef,

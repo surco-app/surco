@@ -1069,6 +1069,7 @@ export default function App(): React.JSX.Element {
   } = useAutoMatch({
     tracksRef,
     updateTrack,
+    completeTrackMeta,
     libraryIndexRef,
     searchProvidersRef,
     importFieldsRef,

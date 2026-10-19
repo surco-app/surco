@@ -5,6 +5,7 @@ import type { Api } from '../../../preload/api'
 import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
 import type { MetaTextKey, SearchProviderId, TrackMetadata } from '../../../shared/types'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { coverSourceOf } from '../lib/coverSource'
 import type { TrackItem } from '../types'
 import { useAutoMatch } from './useAutoMatch'
 
@@ -70,6 +71,7 @@ function setup(
     useAutoMatch({
       tracksRef,
       updateTrack,
+      completeTrackMeta: vi.fn<(id: string) => Promise<void>>().mockResolvedValue(undefined),
       libraryIndexRef,
       searchProvidersRef,
       importFieldsRef,
@@ -541,6 +543,79 @@ describe('useAutoMatch', () => {
     expect(reportActivity).toHaveBeenCalledWith(
       expect.objectContaining({ labelKey: 'activity.autoMatchNone' }),
     )
+  })
+})
+
+describe('a row listed before its full read', () => {
+  const releaseWithArt = {
+    ...release,
+    images: [{ type: 'primary', uri: 'https://discogs/cover.jpg', resource_url: '' }],
+  }
+
+  function partialTrack(id: string): TrackItem {
+    return { ...track(id), metaPartial: true }
+  }
+
+  function renderSweep(
+    tracks: TrackItem[],
+    completeTrackMeta: (id: string) => Promise<void>,
+    tracksRef: { current: TrackItem[] } = { current: tracks },
+  ): {
+    result: { current: ReturnType<typeof useAutoMatch> }
+    tracksRef: { current: TrackItem[] }
+  } {
+    const updateTrack = (id: string, patch: Partial<TrackItem>): void => {
+      tracksRef.current = tracksRef.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    }
+    const { result } = renderHook(() =>
+      useAutoMatch({
+        tracksRef,
+        updateTrack,
+        completeTrackMeta,
+        libraryIndexRef: { current: null },
+        searchProvidersRef: { current: ['discogs'] },
+        importFieldsRef: { current: [...DEFAULT_IMPORT_FIELDS] },
+        genrePresetsRef: { current: [] },
+        fullReleaseDateRef: { current: false },
+        matchCleanupRef: { current: {} },
+        editingRef: { current: null },
+        reportActivity: vi.fn(),
+      }),
+    )
+    return { result, tracksRef }
+  }
+
+  it('keeps the file its own art, because the light read left the row looking coverless', async () => {
+    setApi({ getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(releaseWithArt) })
+    const tracks = [partialTrack('a')]
+    const tracksRef = { current: tracks }
+    const completeTrackMeta = vi.fn<(id: string) => Promise<void>>(async (id) => {
+      tracksRef.current = tracksRef.current.map((t) =>
+        t.id === id
+          ? { ...t, metaPartial: false, embeddedCover: 'file-thumb', coverUrl: 'file-thumb' }
+          : t,
+      )
+    })
+    const { result } = renderSweep(tracks, completeTrackMeta, tracksRef)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+
+    await waitFor(() => expect(tracksRef.current[0].autoMatched).toBe(true))
+    expect(coverSourceOf(tracksRef.current[0])).toEqual({ coverFromFile: '/m/a.wav' })
+  })
+
+  it('leaves a row whose full read fails unmatched, so its unread art is never replaced', async () => {
+    setApi({ getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(releaseWithArt) })
+    const tracks = [partialTrack('a')]
+    const completeTrackMeta = vi.fn<(id: string) => Promise<void>>().mockResolvedValue(undefined)
+    const { result, tracksRef } = renderSweep(tracks, completeTrackMeta)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+
+    await waitFor(() => expect(result.current.matching).toBeNull())
+    expect(completeTrackMeta).toHaveBeenCalledWith('a')
+    expect(tracksRef.current[0].coverUrl).toBeUndefined()
+    expect(tracksRef.current[0].autoMatched).toBeUndefined()
   })
 })
 
