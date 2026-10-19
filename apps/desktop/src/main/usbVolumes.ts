@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
-import { existsSync, watch } from 'node:fs'
-import { readdir, stat } from 'node:fs/promises'
+import { watch } from 'node:fs'
+import { access, readdir, stat } from 'node:fs/promises'
 import { join, posix, win32 } from 'node:path'
 import { promisify } from 'node:util'
 import type { UsbFilesystem, UsbHolder, UsbVolume } from '../shared/types'
@@ -169,7 +169,8 @@ function winFilesystem(fs: string | null): UsbFilesystem {
 // a bus, so they never qualify.
 export function parseWindowsVolumes(json: unknown): RawVolume[] {
   const items = Array.isArray(json) ? json : json && typeof json === 'object' ? [json] : []
-  return (items as Partial<WinVolume>[]).flatMap((v) => {
+  const objects = items.filter((v) => v && typeof v === 'object')
+  return (objects as Partial<WinVolume>[]).flatMap((v) => {
     const guid = GUID.exec(String(v.DeviceID ?? ''))?.[1]
     const letter = String(v.DriveLetter ?? '')
     if (!guid || !/^[A-Z]:$/i.test(letter) || v.SystemVolume || v.BootVolume) return []
@@ -302,19 +303,39 @@ const LETTERS = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((l) => `${l}:\\`)
 export function watchVolumes(
   platform: NodeJS.Platform,
   onChange: () => void,
-  deps: { exists: (p: string) => boolean; intervalMs?: number } = { exists: existsSync },
+  deps: { exists: (p: string) => Promise<boolean>; intervalMs?: number } = {
+    exists: (p) =>
+      access(p).then(
+        () => true,
+        () => false,
+      ),
+  },
 ): () => void {
   if (platform === 'win32') {
-    const snapshot = (): string => LETTERS.filter((l) => deps.exists(l)).join('')
-    let last = snapshot()
-    const timer = setInterval(() => {
-      const now = snapshot()
-      if (now !== last) {
-        last = now
-        onChange()
-      }
+    // Asynchronous, and one check at a time: a mapped drive whose NAS sleeps can hang a stat
+    // for seconds, which must neither block the main thread nor stack up ticks.
+    const snapshot = async (): Promise<string> =>
+      (await Promise.all(LETTERS.map(async (l) => ((await deps.exists(l)) ? l : '')))).join('')
+    let last: string | null = null
+    let pending = true
+    let stopped = false
+    snapshot().then((now) => {
+      last = now
+      pending = false
+    })
+    const timer = setInterval(async () => {
+      if (pending) return
+      pending = true
+      const now = await snapshot()
+      pending = false
+      if (stopped || now === last) return
+      last = now
+      onChange()
     }, deps.intervalMs ?? 2000)
-    return () => clearInterval(timer)
+    return () => {
+      stopped = true
+      clearInterval(timer)
+    }
   }
   let timer: NodeJS.Timeout | null = null
   const watcher = watch('/Volumes', () => {

@@ -1,6 +1,7 @@
 # Surco's USB export: the lettered volumes of this PC with what the removable filter needs.
 # Read-only. With a drive letter argument ('E:'), only that volume.
 $ErrorActionPreference = 'SilentlyContinue'
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
 $only = $args[0]
 $vols = Get-CimInstance -ClassName Win32_Volume | Where-Object { $_.DriveLetter -and (-not $only -or $_.DriveLetter -eq $only) }
 $out = foreach ($v in $vols) {

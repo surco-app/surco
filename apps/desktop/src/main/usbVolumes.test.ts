@@ -82,7 +82,7 @@ describe('filesystemOf and schemeOf', () => {
 
   // GPT is the other thing a CDJ-2000 or NXS2 cannot read.
   it('names the partition scheme of the whole disk', () => {
-    expect(['mbr', 'gpt']).toContain(schemeOf(WHOLE))
+    expect(schemeOf(WHOLE)).toBe('mbr')
     expect(schemeOf({ Content: 'FDisk_partition_scheme' })).toBe('mbr')
     expect(schemeOf({ Content: 'GUID_partition_scheme' })).toBe('gpt')
     expect(schemeOf(null)).toBe('other')
@@ -166,6 +166,7 @@ describe('Windows: parseWindowsVolumes', () => {
     const [, stick] = WIN as Record<string, unknown>[]
     expect(parseWindowsVolumes(stick)).toHaveLength(1)
     expect(parseWindowsVolumes(null)).toEqual([])
+    expect(parseWindowsVolumes([null, 'x', 3, stick])).toHaveLength(1)
     expect(parseWindowsVolumes([{ DriveLetter: 'E:' }])).toEqual([])
   })
 
@@ -243,22 +244,48 @@ describe('stickHolder', () => {
 describe('watchVolumes on Windows', () => {
   // No /Volumes on Windows: the set of existing drive letters is checked every 2 s (a stat
   // per letter, cheap) and only a change reruns the PowerShell query.
-  it('fires when a drive letter appears or goes', () => {
+  it('fires when a drive letter appears or goes', async () => {
     vi.useFakeTimers()
     const present = new Set(['C:\\'])
     const onChange = vi.fn()
     const stop = watchVolumes('win32', onChange, {
-      exists: (p) => present.has(p),
+      exists: async (p) => present.has(p),
       intervalMs: 2000,
     })
-    vi.advanceTimersByTime(2000)
+    await vi.advanceTimersByTimeAsync(2000)
     expect(onChange).not.toHaveBeenCalled()
     present.add('E:\\')
-    vi.advanceTimersByTime(2000)
+    await vi.advanceTimersByTimeAsync(2000)
     expect(onChange).toHaveBeenCalledTimes(1)
     present.delete('E:\\')
-    vi.advanceTimersByTime(2000)
+    await vi.advanceTimersByTimeAsync(2000)
     expect(onChange).toHaveBeenCalledTimes(2)
+    stop()
+  })
+
+  // A mapped drive whose NAS sleeps makes a stat hang for seconds: the check must not block
+  // the main thread, and a tick must not pile on top of one still waiting.
+  it('skips a tick while the previous check is still pending', async () => {
+    vi.useFakeTimers()
+    let calls = 0
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const stop = watchVolumes('win32', vi.fn(), {
+      exists: async (p) => {
+        calls++
+        if (p === 'Z:\\') await gate
+        return p === 'C:\\'
+      },
+      intervalMs: 1000,
+    })
+    await vi.advanceTimersByTimeAsync(5000)
+    const during = calls
+    expect(during).toBe(24)
+    release()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(calls).toBeGreaterThan(during)
     stop()
   })
 })

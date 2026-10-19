@@ -89,3 +89,6 @@ jobs:
           if ($null -eq $vols) { throw 'no JSON from windowsVolumes.ps1' }
           Write-Output "volumes: $(@($vols).Count)"
           @($vols) | Where-Object { $_.DriveLetter -eq 'C:' -and -not $_.DeviceID } | ForEach-Object { throw 'C: without a volume GUID' }
+          $c = @($vols) | Where-Object { $_.DriveLetter -eq 'C:' } | Select-Object -First 1
+          if ($c.PartitionStyle -notin 'GPT', 'MBR') { throw "C: PartitionStyle is '$($c.PartitionStyle)'" }
+          if ("$($c.BusType)" -match '^\d+$') { throw "C: BusType is numeric: $($c.BusType)" }
