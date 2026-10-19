@@ -66,7 +66,7 @@ export default function App() {
             </p>
           </Reveal>
           <Reveal eager delay={150}>
-            <DownloadButton location="hero" note={t('home.heroFree')} center showCount={false} />
+            <DownloadButton location="hero" note={t('home.heroFree')} center />
           </Reveal>
           <Reveal eager delay={220}>
             <div className="relative isolate mx-auto mt-12 max-w-5xl text-left">

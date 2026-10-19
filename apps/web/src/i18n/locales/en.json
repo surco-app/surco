@@ -552,8 +552,7 @@
     "smartscreen": "When you open the installer, Windows will show “Windows protected your PC”: click “More info”, then “Run anyway”. That’s SmartScreen saying it doesn’t recognise the publisher, not that anything is wrong with the file.",
     "unsupported": "There's no installer for your system yet.",
     "unreachable": "We couldn't check the downloads right now.",
-    "unreachableLink": "Download it from GitHub",
-    "countSuffix": "downloads and counting"
+    "unreachableLink": "Download it from GitHub"
   },
   "guide": {
     "metaTitle": "How to use Surco: step-by-step guide",
