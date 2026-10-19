@@ -244,8 +244,14 @@ describe('applyCueChanges', () => {
     }
     expect(cc.ID).toBe('uuid-c-103')
     const entries = JSON.parse(cc.Cues) as { ID: string; Kind: number; updated_at: string }[]
-    expect(entries.map((e) => e.ID).sort()).toEqual(['70001', '70002'])
-    expect(cc.rb_cue_count).toBe(2)
+    expect(entries.map((e) => e.ID).sort()).toEqual(['70001', '70002', 'q1', 'q2'])
+    expect(cc.rb_cue_count).toBe(4)
+    expect(entries.find((e) => e.ID === 'q2')).toMatchObject({
+      Kind: 3,
+      ContentUUID: 'uuid-c-103',
+      created_at: '2026-01-01T00:00:00.000+00:00',
+      updated_at: '2026-10-18T19:00:00.000+00:00',
+    })
     const content = db
       .prepare(`SELECT CueUpdated, rb_local_usn, updated_at FROM djmdContent WHERE ID = '103'`)
       .get() as {
@@ -285,6 +291,20 @@ describe('applyCueChanges', () => {
       { ID: 'q2', Kind: 3, InMsec: 8000, updated_at: '2026-10-18T19:00:00.000+00:00' },
     ])
     expect(cc.rb_cue_count).toBe(1)
+    db.close()
+  })
+
+  it('never updates or deletes a cue of another track even when handed its ID', async () => {
+    const db = await writable()
+    applyCueChanges(
+      db,
+      '103',
+      { insert: [], update: [{ id: 'other', kind: 3, color: 1 }], remove: ['other'] },
+      { now: NOW },
+    )
+    expect(
+      db.prepare(`SELECT ID, Kind, updated_at FROM djmdCue WHERE ContentID = '104'`).all(),
+    ).toEqual([{ ID: 'other', Kind: 0, updated_at: '2026-01-01 00:00:00.000 +00:00' }])
     db.close()
   })
 

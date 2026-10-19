@@ -125,6 +125,46 @@ const CUE_JSON_KEYS = [
 
 const randomCueId = (): string => String(randomInt(100, 2 ** 32))
 
+const isoOf = (stamp: unknown): unknown =>
+  typeof stamp === 'string' ? stamp.replace(' ', 'T').replace(' +', '+') : stamp
+
+function liveEntries(db: Db, contentId: string): Record<string, unknown>[] {
+  return (
+    db
+      .prepare(
+        `SELECT ${CUE_JSON_KEYS.join(', ')} FROM djmdCue
+          WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+      )
+      .all(contentId) as Record<string, unknown>[]
+  ).map((e) => ({ ...e, created_at: isoOf(e.created_at), updated_at: isoOf(e.updated_at) }))
+}
+
+function changedEntries(
+  cues: string | null,
+  changes: CueChangeSet,
+  inserted: Record<string, string | number | null>[],
+  iso: string,
+): Record<string, unknown>[] {
+  const gone = new Set(changes.remove)
+  const entries = (cues ? (JSON.parse(cues) as Record<string, unknown>[]) : []).filter(
+    (e) => !gone.has(String(e.ID)),
+  )
+  for (const u of changes.update) {
+    const e = entries.find((x) => String(x.ID) === u.id)
+    if (e) {
+      e.Kind = u.kind
+      e.updated_at = iso
+    }
+  }
+  for (const row of inserted)
+    entries.push(
+      Object.fromEntries(
+        CUE_JSON_KEYS.map((k) => [k, k === 'created_at' || k === 'updated_at' ? iso : row[k]]),
+      ),
+    )
+  return entries
+}
+
 export function applyCueChanges(
   db: Db,
   contentId: string,
@@ -173,32 +213,18 @@ export function applyCueChanges(
     inserted.push(row)
   }
   const update = db.prepare(
-    'UPDATE djmdCue SET Kind = ?, ColorTableIndex = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+    `UPDATE djmdCue SET Kind = ?, ColorTableIndex = ?, rb_local_usn = ?, updated_at = ?
+      WHERE ID = ? AND ContentID = ?`,
   )
-  for (const u of changes.update) update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id)
-  const remove = db.prepare('DELETE FROM djmdCue WHERE ID = ?')
-  for (const id of changes.remove) remove.run(id)
+  for (const u of changes.update)
+    update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id, contentId)
+  const remove = db.prepare('DELETE FROM djmdCue WHERE ID = ? AND ContentID = ?')
+  for (const id of changes.remove) remove.run(id, contentId)
 
   const cc = db.prepare('SELECT ID, Cues FROM contentCue WHERE ContentID = ?').get(contentId) as
     | { ID: string; Cues: string | null }
     | undefined
-  const gone = new Set(changes.remove)
-  const entries = (cc?.Cues ? (JSON.parse(cc.Cues) as Record<string, unknown>[]) : []).filter(
-    (e) => !gone.has(String(e.ID)),
-  )
-  for (const u of changes.update) {
-    const e = entries.find((x) => String(x.ID) === u.id)
-    if (e) {
-      e.Kind = u.kind
-      e.updated_at = iso
-    }
-  }
-  for (const row of inserted)
-    entries.push(
-      Object.fromEntries(
-        CUE_JSON_KEYS.map((k) => [k, k === 'created_at' || k === 'updated_at' ? iso : row[k]]),
-      ),
-    )
+  const entries = cc ? changedEntries(cc.Cues, changes, inserted, iso) : liveEntries(db, contentId)
   const ccUsn = takeLocalUsn(db, stamp)
   if (cc)
     db.prepare(
