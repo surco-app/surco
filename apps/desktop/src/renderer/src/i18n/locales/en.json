@@ -1726,8 +1726,8 @@
       "ambiguous_one": "{{count}} is in the collection twice and Surco can't tell which to use",
       "ambiguous_other": "{{count}} are in the collection twice and Surco can't tell which to use",
       "refused": {
-        "cancelled": "Nothing changed because rekordbox is still open",
-        "running": "rekordbox opened before saving, so nothing changed",
+        "cancelled": "rekordbox is still open. The change will apply when you close it",
+        "running": "rekordbox opened before saving. The change will apply when you close it",
         "unreadable": "Surco can't change the rekordbox collection files right now, so nothing changed",
         "backupFailed": "Couldn't back up the collection first, so nothing changed",
         "writeFailed": "Couldn't save the change. The collection is as it was",
@@ -1745,7 +1745,19 @@
       "name": "Name",
       "dropCount": "+{{count}} on drop",
       "folderMenu": "Folder actions",
-      "exportUsb": "Export to USB"
+      "exportUsb": "Export to USB",
+      "rename": "Rename",
+      "delete": "Delete",
+      "menu": "Playlist actions",
+      "deleteTitle": "Delete from rekordbox",
+      "deletePlaylist": "Delete the playlist “{{name}}”? The tracks stay in the collection.",
+      "deleteFolder": "Delete the folder “{{name}}” and what is inside? {{contents}}. The tracks stay in the collection.",
+      "deleteFolderEmpty": "Delete the folder “{{name}}”? The tracks stay in the collection.",
+      "playlists_one": "1 playlist",
+      "playlists_other": "{{count}} playlists",
+      "folders_one": "1 folder",
+      "folders_other": "{{count}} folders",
+      "and": " and "
     },
     "reorder": {
       "removeSeparator": "Remove separator",

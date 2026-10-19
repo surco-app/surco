@@ -3,6 +3,7 @@ import type {
   RekordboxEditRefusal,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  SourceNode,
   SourcePlaylistEntry,
 } from '../../../shared/types'
 
@@ -48,6 +49,23 @@ const REFUSED: Record<Exclude<RekordboxEditRefusal, 'nothing-to-add'>, string> =
   'no-separator': 'sources.edit.refused.noSeparator',
 }
 
+const WAITING: ReadonlySet<RekordboxEditRefusal> = new Set(['cancelled', 'rekordbox-running'])
+
+export function subtreeCounts(node: SourceNode): { playlists: number; folders: number } {
+  let playlists = 0
+  let folders = 0
+  const walk = (nodes: readonly SourceNode[]): void => {
+    for (const n of nodes) {
+      if (n.kind === 'folder') {
+        folders += 1
+        walk(n.children ?? [])
+      } else playlists += 1
+    }
+  }
+  walk(node.children ?? [])
+  return { playlists, folders }
+}
+
 export function refusalKey(reason: Exclude<RekordboxEditRefusal, 'nothing-to-add'>): string {
   return REFUSED[reason]
 }
@@ -62,7 +80,10 @@ export function editMessage(
   playlistName: string,
 ): { text: string; tone: 'neutral' | 'danger' } | null {
   if (!result.applied && result.reason !== 'nothing-to-add')
-    return { text: tr(REFUSED[result.reason]), tone: 'danger' }
+    return {
+      text: tr(REFUSED[result.reason]),
+      tone: WAITING.has(result.reason) ? 'neutral' : 'danger',
+    }
   if (edit.kind !== 'add' || !result.report) return null
   const r = result.report
   const parts = [

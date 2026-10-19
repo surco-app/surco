@@ -71,7 +71,30 @@ describe('useRekordboxEdits', () => {
     await waitFor(() =>
       expect(result.current.entries?.map((e) => e.linkId)).toEqual(['a', 'b', 'c']),
     )
-    expect(notify).toHaveBeenCalledWith('Nothing changed because rekordbox is still open', 'danger')
+    expect(notify).toHaveBeenCalledWith(
+      'rekordbox is still open. The change will apply when you close it',
+      'neutral',
+    )
+  })
+
+  it('sends the playlist name with the edit, for the queue to show', async () => {
+    const { result } = setup(Promise.resolve({ applied: true }))
+    await act(async () => {
+      await result.current.edit({ kind: 'rename', playlistId: 'f', name: 'Factory 26' }, 'Factory')
+    })
+    expect(window.api.editRekordboxPlaylist).toHaveBeenCalledWith(
+      { kind: 'rename', playlistId: 'f', name: 'Factory 26' },
+      'Factory',
+    )
+  })
+
+  it('re-reads the membership after an edit, since a deleted playlist changes the dots', async () => {
+    const { result, client } = setup(Promise.resolve({ applied: true }))
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    await act(async () => {
+      await result.current.edit({ kind: 'delete', playlistId: 'f' }, 'Factory')
+    })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-membership'] })
   })
 
   // A focus re-read already in flight when the row is dropped answers with the order from

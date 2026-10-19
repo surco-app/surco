@@ -1726,8 +1726,8 @@
       "ambiguous_one": "{{count}} está duas vezes na coleção e o Surco não sabe qual usar",
       "ambiguous_other": "{{count}} estão duas vezes na coleção e o Surco não sabe quais usar",
       "refused": {
-        "cancelled": "Nada mudou porque o rekordbox continua aberto",
-        "running": "O rekordbox abriu antes de salvar e nada mudou",
+        "cancelled": "O rekordbox continua aberto. A mudança será aplicada ao fechá-lo",
+        "running": "O rekordbox abriu antes de salvar. A mudança será aplicada ao fechá-lo",
         "unreadable": "O Surco não consegue alterar os arquivos da coleção do rekordbox agora e nada mudou",
         "backupFailed": "Não foi possível copiar a coleção antes e nada mudou",
         "writeFailed": "Não foi possível salvar a mudança. A coleção continua como estava",
@@ -1745,7 +1745,19 @@
       "name": "Nome",
       "dropCount": "+{{count}} ao soltar",
       "folderMenu": "Ações da pasta",
-      "exportUsb": "Exportar para USB"
+      "exportUsb": "Exportar para USB",
+      "rename": "Renomear",
+      "delete": "Apagar",
+      "menu": "Ações da playlist",
+      "deleteTitle": "Apagar do rekordbox",
+      "deletePlaylist": "Apagar a playlist “{{name}}”? As faixas continuam na coleção.",
+      "deleteFolder": "Apagar a pasta “{{name}}” e o que tem dentro? {{contents}}. As faixas continuam na coleção.",
+      "deleteFolderEmpty": "Apagar a pasta “{{name}}”? As faixas continuam na coleção.",
+      "playlists_one": "1 playlist",
+      "playlists_other": "{{count}} playlists",
+      "folders_one": "1 pasta",
+      "folders_other": "{{count}} pastas",
+      "and": " e "
     },
     "reorder": {
       "removeSeparator": "Remover separador",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RekordboxPlaylistEdit, SourcePlaylistEntry } from '../../../shared/types'
 import i18n from '../i18n'
-import { editMessage, moveBefore, movedEntries } from './playlistEdits'
+import { editMessage, moveBefore, movedEntries, subtreeCounts } from './playlistEdits'
 
 const row = (linkId: string): SourcePlaylistEntry => ({
   path: `/m/${linkId}.wav`,
@@ -98,9 +98,7 @@ describe('editMessage', () => {
     ).toBe('No tracks added to “House”. 3 are not in the rekordbox collection')
   })
 
-  // Cancel in the dialog leaves rekordbox open; the view snaps back to the collection and
-  // this is the line that says why.
-  it('says nothing changed when rekordbox stayed open', () => {
+  it('says the edit waits for rekordbox to close', () => {
     expect(
       editMessage(
         tr,
@@ -108,7 +106,10 @@ describe('editMessage', () => {
         { applied: false, reason: 'cancelled' },
         'Factory',
       ),
-    ).toEqual({ text: 'Nothing changed because rekordbox is still open', tone: 'danger' })
+    ).toEqual({
+      text: 'rekordbox is still open. The change will apply when you close it',
+      tone: 'neutral',
+    })
   })
 
   it('stays quiet for an edit the list already shows', () => {
@@ -136,5 +137,31 @@ describe('editMessage', () => {
       "Surco can't change the rekordbox collection files right now, so nothing changed",
     )
     expect(text).not.toMatch(/read/i)
+  })
+})
+
+describe('subtreeCounts', () => {
+  it('counts every playlist and folder under a node', () => {
+    expect(
+      subtreeCounts({
+        id: 'b',
+        name: 'BASES',
+        kind: 'folder',
+        count: 2,
+        children: [
+          { id: 'p1', name: 'A', kind: 'playlist', count: 1 },
+          {
+            id: 'f1',
+            name: 'F',
+            kind: 'folder',
+            count: 2,
+            children: [
+              { id: 'p2', name: 'B', kind: 'playlist', count: 1 },
+              { id: 'p3', name: 'C', kind: 'playlist', count: 1 },
+            ],
+          },
+        ],
+      }),
+    ).toEqual({ playlists: 3, folders: 1 })
   })
 })

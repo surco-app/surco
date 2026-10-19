@@ -3,7 +3,9 @@ import type React from 'react'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
+import { subtreeCounts } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Tooltip } from './Tooltip'
 
 // The folders on the way to a node, so the tree can open them for the selected playlist.
@@ -54,6 +56,8 @@ export function SourceTree({
   edit?: {
     onCreate: (parentId: string, name: string, folder: boolean) => void
     onDropTracks: (node: SourceNode, files: File[]) => void
+    onRename: (node: SourceNode, name: string) => void
+    onDelete: (node: SourceNode) => void
   }
   // The USB export, offered where it exists: rekordbox's tree on macOS and Windows.
   onExportUsb?: () => void
@@ -109,6 +113,37 @@ export function SourceTree({
   const cancel = (): void => {
     pending.current = null
     setCreating(null)
+  }
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const renameTarget = useRef<string | null>(null)
+  const [deleting, setDeleting] = useState<SourceNode | null>(null)
+  const startRename = (node: SourceNode): void => {
+    setMenu(null)
+    renameTarget.current = node.id
+    setRenaming(node.id)
+    setQuery('')
+  }
+  const commitRename = (node: SourceNode, value: string): void => {
+    if (renameTarget.current !== node.id) return
+    renameTarget.current = null
+    setRenaming(null)
+    const name = value.trim()
+    if (name && name !== node.name) edit?.onRename(node, name)
+  }
+  const cancelRename = (): void => {
+    renameTarget.current = null
+    setRenaming(null)
+  }
+  const deleteMessage = (node: SourceNode): string => {
+    if (node.kind === 'playlist') return tr('sources.tree.deletePlaylist', { name: node.name })
+    const { playlists, folders } = subtreeCounts(node)
+    const contents = [
+      ...(playlists > 0 ? [tr('sources.tree.playlists', { count: playlists })] : []),
+      ...(folders > 0 ? [tr('sources.tree.folders', { count: folders })] : []),
+    ].join(tr('sources.tree.and'))
+    return contents
+      ? tr('sources.tree.deleteFolder', { name: node.name, contents })
+      : tr('sources.tree.deleteFolderEmpty', { name: node.name })
   }
   const focusField = useCallback((el: HTMLInputElement | null) => el?.focus(), [])
   const [menu, setMenu] = useState<{ node: SourceNode; x: number; y: number } | null>(null)
@@ -174,6 +209,26 @@ export function SourceTree({
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
+    if (renaming === node.id)
+      return (
+        <li key={node.id} style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
+          <input
+            ref={focusField}
+            data-testid="source-tree-rename-field"
+            aria-label={tr('sources.tree.name')}
+            defaultValue={node.name}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename(node, e.currentTarget.value)
+              if (e.key === 'Escape') cancelRename()
+            }}
+            onBlur={(e) => {
+              if (!document.hasFocus()) return
+              commitRename(node, e.currentTarget.value)
+            }}
+            className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
+          />
+        </li>
+      )
     return (
       <li key={node.id}>
         <button
@@ -183,7 +238,7 @@ export function SourceTree({
           aria-current={selected || undefined}
           onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
           onContextMenu={(e) => {
-            if (!edit || !isFolder) return
+            if (!edit) return
             e.preventDefault()
             setMenu({ node, x: e.clientX, y: e.clientY })
           }}
@@ -345,7 +400,9 @@ export function SourceTree({
               el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
             }}
             role="menu"
-            aria-label={tr('sources.tree.folderMenu')}
+            aria-label={tr(
+              menu.node.kind === 'folder' ? 'sources.tree.folderMenu' : 'sources.tree.menu',
+            )}
             data-testid="source-tree-menu"
             onKeyDown={(e) => {
               if (e.key === 'Escape') setMenu(null)
@@ -353,26 +410,61 @@ export function SourceTree({
             style={{ top: menuAt.y, left: menuAt.x }}
             className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
+            {menu.node.kind === 'folder' && (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="source-tree-new-playlist-inside"
+                  onClick={() => createInside(menu.node, false)}
+                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                >
+                  {tr('sources.tree.newPlaylistInside')}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="source-tree-new-folder-inside"
+                  onClick={() => createInside(menu.node, true)}
+                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                >
+                  {tr('sources.tree.newFolderInside')}
+                </button>
+              </>
+            )}
             <button
               type="button"
               role="menuitem"
-              data-testid="source-tree-new-playlist-inside"
-              onClick={() => createInside(menu.node, false)}
+              data-testid="source-tree-rename"
+              onClick={() => startRename(menu.node)}
               className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
             >
-              {tr('sources.tree.newPlaylistInside')}
+              {tr('sources.tree.rename')}
             </button>
             <button
               type="button"
               role="menuitem"
-              data-testid="source-tree-new-folder-inside"
-              onClick={() => createInside(menu.node, true)}
-              className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+              data-testid="source-tree-delete"
+              onClick={() => {
+                setDeleting(menu.node)
+                setMenu(null)
+              }}
+              className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-danger hover:bg-[var(--color-hover)]"
             >
-              {tr('sources.tree.newFolderInside')}
+              {tr('sources.tree.delete')}
             </button>
           </div>
         </div>
+      )}
+      {deleting && (
+        <ConfirmDialog
+          title={tr('sources.tree.deleteTitle')}
+          message={deleteMessage(deleting)}
+          confirmLabel={tr('sources.tree.delete')}
+          destructive
+          onConfirm={() => edit?.onDelete(deleting)}
+          onClose={() => setDeleting(null)}
+        />
       )}
     </div>
   )

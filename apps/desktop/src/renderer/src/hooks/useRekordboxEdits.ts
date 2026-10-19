@@ -31,7 +31,7 @@ export function useRekordboxEdits(
       }
       let result: RekordboxEditResult
       try {
-        result = await window.api.editRekordboxPlaylist(edit)
+        result = await window.api.editRekordboxPlaylist(edit, playlistName)
       } catch {
         result = { applied: false, reason: 'write-failed' }
       }
@@ -39,6 +39,7 @@ export function useRekordboxEdits(
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
         queryClient.invalidateQueries({ queryKey: ['source-separator'] }),
+        queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
       ])
       const message = editMessage(tr, edit, result, playlistName)
       if (message) notify(message.text, message.tone)

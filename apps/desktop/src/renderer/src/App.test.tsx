@@ -1639,12 +1639,15 @@ describe('App source playlists', () => {
     fireEvent.dragOver(rowWrapper(0), { dataTransfer: back, clientY: -1 })
     fireEvent.drop(rowWrapper(0), { dataTransfer: back })
     expect(window.api.expandPaths).not.toHaveBeenCalledWith(['/m/c.wav'])
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'move',
-      playlistId: 'f',
-      linkIds: ['l3'],
-      beforeLinkId: 'l1',
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'move',
+        playlistId: 'f',
+        linkIds: ['l3'],
+        beforeLinkId: 'l1',
+      },
+      'Factory',
+    )
     await waitFor(() =>
       expect(titles()).toEqual([
         expect.stringContaining('Charlie'),
@@ -1713,14 +1716,17 @@ describe('App source playlists', () => {
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-g'))
-      expect(edit).toHaveBeenCalledWith({
-        kind: 'add',
-        playlistId: 'g',
-        tracks: [
-          { contentId: 'c-h2', paths: ['/m/b.wav'] },
-          { contentId: 'c-h3', paths: ['/m/c.wav'] },
-        ],
-      })
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'g',
+          tracks: [
+            { contentId: 'c-h2', paths: ['/m/b.wav'] },
+            { contentId: 'c-h3', paths: ['/m/c.wav'] },
+          ],
+        },
+        'Gym',
+      )
     })
 
     it('closes the editor of a row the new playlist does not hold', async () => {
@@ -1786,11 +1792,14 @@ describe('App source playlists', () => {
       fireEvent.contextMenu(charlie)
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
-      expect(edit).toHaveBeenLastCalledWith({
-        kind: 'add',
-        playlistId: 'h',
-        tracks: [{ contentId: 'c-l3', paths: ['/m/c.wav'] }],
-      })
+      expect(edit).toHaveBeenLastCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'h',
+          tracks: [{ contentId: 'c-l3', paths: ['/m/c.wav'] }],
+        },
+        'House',
+      )
     })
 
     it('closes the editor of a row a re-read no longer finds in the playlist', async () => {
@@ -1843,17 +1852,20 @@ describe('App source playlists', () => {
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('track-menu-add-to'))
     fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'add',
-      playlistId: 'h',
-      tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'add',
+        playlistId: 'h',
+        tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+      },
+      'House',
+    )
     expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
       '1 track added to “House”',
     )
   })
 
-  it('says nothing changed and re-reads the playlist when rekordbox stays open', async () => {
+  it('says the change waits and re-reads the playlist when rekordbox stays open', async () => {
     const load = vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(FACTORY_ENTRIES)
     const edit = vi
       .fn<Api['editRekordboxPlaylist']>()
@@ -1863,9 +1875,12 @@ describe('App source playlists', () => {
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
     fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
     // Removing deletes rows of the DJ's real playlist: the link sent must be the clicked row's.
-    expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['l2'] })
+    expect(edit).toHaveBeenCalledWith(
+      { kind: 'remove', playlistId: 'f', linkIds: ['l2'] },
+      'Factory',
+    )
     expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
-      'Nothing changed because rekordbox is still open',
+      'rekordbox is still open. The change will apply when you close it',
     )
     expect(load.mock.calls.length).toBeGreaterThan(before)
   })
@@ -1886,7 +1901,10 @@ describe('App source playlists', () => {
     expect(edit).not.toHaveBeenCalled()
     expect(await screen.findByText('Remove 2 tracks from “Factory”?')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('confirm-ok'))
-    expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l2'] })
+    expect(edit).toHaveBeenCalledWith(
+      { kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l2'] },
+      'Factory',
+    )
   })
 
   // The separator line's ✕ is mouse-only; the row menu is the keyboard's way to remove the
@@ -1900,7 +1918,10 @@ describe('App source playlists', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
     fireEvent.click(await screen.findByTestId('track-menu-remove-separator'))
-    expect(edit).toHaveBeenCalledWith({ kind: 'remove', playlistId: 'f', linkIds: ['s1'] })
+    expect(edit).toHaveBeenCalledWith(
+      { kind: 'remove', playlistId: 'f', linkIds: ['s1'] },
+      'Factory',
+    )
   })
 
   // Sorted another way the separators are not drawn, and "above" would name one the DJ
@@ -1926,11 +1947,14 @@ describe('App source playlists', () => {
     const insert = await screen.findByTestId('track-menu-insert-separator')
     await waitFor(() => expect(insert).toBeEnabled())
     fireEvent.click(insert)
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'insertSeparator',
-      playlistId: 'f',
-      beforeLinkId: 'l3',
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'insertSeparator',
+        playlistId: 'f',
+        beforeLinkId: 'l3',
+      },
+      'Factory',
+    )
   })
 
   // With a filter on, rows between the visible ones are hidden; a drop would land among them.
@@ -2015,11 +2039,14 @@ describe('App source playlists', () => {
     const house = screen.getByTestId('source-node-h')
     fireEvent.dragOver(house, { dataTransfer: fakeDataTransfer() })
     fireEvent.drop(house, { dataTransfer: fakeDataTransfer() })
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'add',
-      playlistId: 'h',
-      tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'add',
+        playlistId: 'h',
+        tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+      },
+      'House',
+    )
   })
 
   // A record left behind would add these rows again on the next drop that brings no files.
@@ -2041,11 +2068,14 @@ describe('App source playlists', () => {
     const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
     fireEvent.dragOver(house, { dataTransfer: dt })
     fireEvent.drop(house, { dataTransfer: dt })
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'add',
-      playlistId: 'h',
-      tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'add',
+        playlistId: 'h',
+        tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+      },
+      'House',
+    )
     expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -2055,12 +2085,15 @@ describe('App source playlists', () => {
     fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
     fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
     fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'create',
-      parentId: 'root',
-      name: 'Bolo',
-      folder: false,
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'create',
+        parentId: 'root',
+        name: 'Bolo',
+        folder: false,
+      },
+      'Bolo',
+    )
   })
 
   // A reorder is not files arriving; lighting the import overlay would invite a drop that
@@ -2121,11 +2154,14 @@ describe('App source playlists', () => {
       fireEvent.drop(screen.getByTestId('source-node-h'), {
         dataTransfer: fakeDataTransfer([new File([''], 'a.wav')]),
       })
-      expect(edit).toHaveBeenCalledWith({
-        kind: 'add',
-        playlistId: 'h',
-        tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
-      })
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'h',
+          tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+        },
+        'House',
+      )
     })
   })
 
@@ -2211,12 +2247,15 @@ describe('App source playlists', () => {
     fireEvent.dragStart(rowWrapper(0), { dataTransfer: dt })
     fireEvent.dragOver(rowWrapper(2), { dataTransfer: dt, clientY: 1 })
     fireEvent.drop(rowWrapper(2), { dataTransfer: dt })
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'move',
-      playlistId: 'f',
-      linkIds: ['l1', 'l4'],
-      beforeLinkId: null,
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'move',
+        playlistId: 'f',
+        linkIds: ['l1', 'l4'],
+        beforeLinkId: null,
+      },
+      'Factory',
+    )
   })
 
   // The record of a drag-out can outlive it (an OS drag that ended elsewhere tells this
@@ -2233,11 +2272,14 @@ describe('App source playlists', () => {
     const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
     fireEvent.dragOver(house, { dataTransfer: dt })
     fireEvent.drop(house, { dataTransfer: dt })
-    expect(edit).toHaveBeenCalledWith({
-      kind: 'add',
-      playlistId: 'h',
-      tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
-    })
+    expect(edit).toHaveBeenCalledWith(
+      {
+        kind: 'add',
+        playlistId: 'h',
+        tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+      },
+      'House',
+    )
   })
 })
 

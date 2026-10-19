@@ -1726,8 +1726,8 @@
       "ambiguous_one": "{{count}} está dos veces en la colección y no se sabe cuál usar",
       "ambiguous_other": "{{count}} están dos veces en la colección y no se sabe cuáles usar",
       "refused": {
-        "cancelled": "No se cambió nada porque rekordbox sigue abierto",
-        "running": "rekordbox se abrió antes de guardar y no se cambió nada",
+        "cancelled": "rekordbox sigue abierto. El cambio se aplicará al cerrarlo",
+        "running": "rekordbox se abrió antes de guardar. El cambio se aplicará al cerrarlo",
         "unreadable": "Surco no puede cambiar los archivos de la colección de rekordbox ahora y no se cambió nada",
         "backupFailed": "No se pudo copiar la colección antes de cambiarla y no se cambió nada",
         "writeFailed": "No se pudo guardar el cambio. La colección sigue como estaba",
@@ -1745,7 +1745,19 @@
       "name": "Nombre",
       "dropCount": "+{{count}} al soltar",
       "folderMenu": "Acciones de la carpeta",
-      "exportUsb": "Exportar a USB"
+      "exportUsb": "Exportar a USB",
+      "rename": "Renombrar",
+      "delete": "Borrar",
+      "menu": "Acciones de la playlist",
+      "deleteTitle": "Borrar de rekordbox",
+      "deletePlaylist": "¿Borrar la playlist «{{name}}»? Las pistas siguen en la colección.",
+      "deleteFolder": "¿Borrar la carpeta «{{name}}» y lo que lleva dentro? {{contents}}. Las pistas siguen en la colección.",
+      "deleteFolderEmpty": "¿Borrar la carpeta «{{name}}»? Las pistas siguen en la colección.",
+      "playlists_one": "1 playlist",
+      "playlists_other": "{{count}} playlists",
+      "folders_one": "1 carpeta",
+      "folders_other": "{{count}} carpetas",
+      "and": " y "
     },
     "reorder": {
       "removeSeparator": "Quitar separador",

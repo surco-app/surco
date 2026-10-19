@@ -2024,9 +2024,20 @@ export default function App(): React.JSX.Element {
   const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
     void editRekordbox({ kind: 'create', parentId, name, folder }, name)
   })
+  const renameInRekordbox = useStableCallback((node: SourceNode, name: string) => {
+    void editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
+  })
+  const deleteInRekordbox = useStableCallback((node: SourceNode) => {
+    void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
+  })
   const treeEdit = useMemo(
-    () => ({ onCreate: createInRekordbox, onDropTracks: dropOnRekordbox }),
-    [createInRekordbox, dropOnRekordbox],
+    () => ({
+      onCreate: createInRekordbox,
+      onDropTracks: dropOnRekordbox,
+      onRename: renameInRekordbox,
+      onDelete: deleteInRekordbox,
+    }),
+    [createInRekordbox, dropOnRekordbox, renameInRekordbox, deleteInRekordbox],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them

@@ -28,7 +28,12 @@ const NODES: SourceNode[] = [
 
 function setup(selectedId: string | null = null, editable = false) {
   const onSelect = vi.fn()
-  const edit = { onCreate: vi.fn(), onDropTracks: vi.fn() }
+  const edit = {
+    onCreate: vi.fn(),
+    onDropTracks: vi.fn(),
+    onRename: vi.fn(),
+    onDelete: vi.fn(),
+  }
   const onOuterDrop = vi.fn()
   render(
     // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the window's own file drop
@@ -387,5 +392,75 @@ describe('SourceTree folder menu placement', () => {
     const menu = openAt(100, 200)
     expect(menu.style.left).toBe('100px')
     expect(menu.style.top).toBe('200px')
+  })
+})
+
+describe('SourceTree rename and delete', () => {
+  const openMenu = (id: string) =>
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${id}`), { clientX: 10, clientY: 10 })
+
+  it('offers Rename and Delete on a playlist', () => {
+    setup(null, true)
+    openMenu('house')
+    expect(screen.getByTestId('source-tree-rename')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-playlist-inside')).toBeNull()
+  })
+
+  it('renames in place, Enter keeps the name and Escape drops it', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    expect(field).toHaveValue('House')
+    fireEvent.change(field, { target: { value: 'House 26' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(edit.onRename).toHaveBeenCalledWith(expect.objectContaining({ id: 'house' }), 'House 26')
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    fireEvent.keyDown(screen.getByTestId('source-tree-rename-field'), { key: 'Escape' })
+    expect(edit.onRename).toHaveBeenCalledTimes(1)
+  })
+
+  it('writes nothing for an unchanged name', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    fireEvent.keyDown(screen.getByTestId('source-tree-rename-field'), { key: 'Enter' })
+    expect(edit.onRename).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing for an empty name', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: '   ' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(edit.onRename).not.toHaveBeenCalled()
+  })
+
+  it('confirms a folder delete with what it holds and says the tracks stay', () => {
+    const { edit } = setup(null, true)
+    openMenu('cant')
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    expect(
+      screen.getByText(
+        'Delete the folder “CANTADITAS” and what is inside? 1 playlist and 1 folder. The tracks stay in the collection.',
+      ),
+    ).toBeInTheDocument()
+    expect(edit.onDelete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(edit.onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'cant' }))
+  })
+
+  it('confirms a playlist delete before anything is sent', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    expect(
+      screen.getByText('Delete the playlist “House”? The tracks stay in the collection.'),
+    ).toBeInTheDocument()
+    expect(edit.onDelete).not.toHaveBeenCalled()
   })
 })

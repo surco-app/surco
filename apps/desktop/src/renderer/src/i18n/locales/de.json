@@ -1726,8 +1726,8 @@
       "ambiguous_one": "{{count}} ist doppelt in der Sammlung und Surco weiß nicht, welcher gilt",
       "ambiguous_other": "{{count}} sind doppelt in der Sammlung und Surco weiß nicht, welche gelten",
       "refused": {
-        "cancelled": "Nichts geändert, weil rekordbox noch geöffnet ist",
-        "running": "rekordbox wurde vor dem Speichern geöffnet, nichts geändert",
+        "cancelled": "rekordbox ist noch geöffnet. Die Änderung wird beim Schließen angewendet",
+        "running": "rekordbox wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet",
         "unreadable": "Surco kann die Dateien der rekordbox-Sammlung gerade nicht ändern, nichts geändert",
         "backupFailed": "Die Sammlung konnte vorher nicht gesichert werden, nichts geändert",
         "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Sammlung ist unverändert",
@@ -1745,7 +1745,19 @@
       "name": "Name",
       "dropCount": "+{{count}} beim Loslassen",
       "folderMenu": "Ordneraktionen",
-      "exportUsb": "Auf USB exportieren"
+      "exportUsb": "Auf USB exportieren",
+      "rename": "Umbenennen",
+      "delete": "Löschen",
+      "menu": "Playlist-Aktionen",
+      "deleteTitle": "Aus rekordbox löschen",
+      "deletePlaylist": "Playlist „{{name}}“ löschen? Die Titel bleiben in der Sammlung.",
+      "deleteFolder": "Ordner „{{name}}“ mit Inhalt löschen? {{contents}}. Die Titel bleiben in der Sammlung.",
+      "deleteFolderEmpty": "Ordner „{{name}}“ löschen? Die Titel bleiben in der Sammlung.",
+      "playlists_one": "1 Playlist",
+      "playlists_other": "{{count}} Playlists",
+      "folders_one": "1 Ordner",
+      "folders_other": "{{count}} Ordner",
+      "and": " und "
     },
     "reorder": {
       "removeSeparator": "Trenner entfernen",
