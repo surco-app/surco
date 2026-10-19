@@ -101,6 +101,25 @@ describe('completeOnClose', () => {
     expect(q.enqueue).toHaveBeenCalledWith([expect.objectContaining({ contentId: '101' })])
   })
 
+  it('queues the set of the flow it is given, not the fixed one', async () => {
+    const path = await collection()
+    const q = queue()
+    completeOnClose({
+      enabled: () => true,
+      collection: () => path,
+      queue: q,
+      flow: () => ONE_AT_32,
+    })
+    expect(q.enqueue).toHaveBeenCalledWith([
+      expect.objectContaining({
+        wanted: [
+          { id: '11', ms: 128000, kind: 0, color: null },
+          { ms: 64000, kind: 1, color: 22 },
+        ],
+      }),
+    ])
+  })
+
   it('never replaces cues the user queued for a track, since enqueue swaps an op with the same key', async () => {
     const path = await collection()
     const mine: CuesOp = {
