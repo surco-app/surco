@@ -17,10 +17,16 @@ export interface DraftCue extends WantedCue {
 
 export type DraftNotice = 'manual' | 'too-many' | null
 
+export interface DraftSnapshot {
+  cues: DraftCue[]
+  flowId: string
+  trimmed: number[]
+}
+
 export interface CueDraft {
   cues: DraftCue[]
   flowId: string
-  past: DraftCue[][]
+  past: DraftSnapshot[]
   selected: string | null
   notice: DraftNotice
   trimmed: number[]
@@ -77,13 +83,26 @@ export function wantedOfDraft(cues: DraftCue[]): WantedCue[] {
   return cues.map(({ key: _key, ...c }) => c)
 }
 
+const needsGrid = (action: DraftAction): boolean =>
+  action.type === 'mark-drop' ||
+  action.type === 'add-hot' ||
+  action.type === 'add-call' ||
+  action.type === 'move'
+
 const flowById = (ctx: DraftContext, id: string): CueFlow =>
   ctx.flows.find((f) => f.id === id) ?? MY_FLOW
 
 const snap = (ctx: DraftContext, ms: number): number => ctx.beats[nearestBeat(ctx.beats, ms)]
 
 function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {}): CueDraft {
-  return { ...state, notice: null, ...over, cues, past: [...state.past, state.cues] }
+  return {
+    ...state,
+    notice: null,
+    trimmed: [],
+    ...over,
+    cues,
+    past: [...state.past, { cues: state.cues, flowId: state.flowId, trimmed: state.trimmed }],
+  }
 }
 
 function regenerate(
@@ -137,8 +156,17 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   if (action.type === 'undo') {
     const previous = state.past[state.past.length - 1]
     if (!previous) return state
-    return { ...state, cues: previous, past: state.past.slice(0, -1), selected: null, notice: null }
+    return {
+      ...state,
+      cues: previous.cues,
+      flowId: previous.flowId,
+      trimmed: previous.trimmed,
+      past: state.past.slice(0, -1),
+      selected: null,
+      notice: null,
+    }
   }
+  if (needsGrid(action) && ctx.beats.length === 0) return state
   if (action.type === 'mark-drop') {
     const ms = snap(ctx, action.ms)
     if (draftDrops(state.cues).some((d) => near(d, ms))) return state
@@ -158,14 +186,17 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   }
   const target = state.cues.find((c) => c.key === action.key)
   if (!target) return state
-  if (action.type === 'unmark-drop')
+  if (action.type === 'unmark-drop') {
+    const drops = draftDrops(state.cues)
+    if (!drops.some((d) => near(d, target.ms))) return state
     return regenerate(
       state,
       ctx,
-      draftDrops(state.cues).filter((d) => d !== target.ms),
+      drops.filter((d) => !near(d, target.ms)),
       flow,
       flow,
     )
+  }
   if (action.type === 'remove') {
     const pair = pairOf(state.cues, target)
     return commit(
@@ -193,7 +224,9 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   const moving = new Set([target.key, pair?.key])
   const taken = (hot: boolean): boolean =>
     state.cues.some((c) => !moving.has(c.key) && isHot(c) === hot && near(c.ms, ms))
-  if (near(ms, target.ms) || taken(isHot(target)) || (pair && taken(false))) return state
+  const ontoDrop = isHot(target) && !pair && state.cues.some((c) => !isHot(c) && near(c.ms, ms))
+  if (near(ms, target.ms) || taken(isHot(target)) || (pair && taken(false)) || ontoDrop)
+    return state
   return commit(
     state,
     state.cues.map((c) => (moving.has(c.key) ? { ...c, ms } : c)),

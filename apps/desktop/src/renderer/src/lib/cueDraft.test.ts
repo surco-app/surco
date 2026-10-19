@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
+import { type ExistingCue, validWantedSet } from '../../../shared/cueRules'
 import {
   type CueDraft,
   type DraftAction,
@@ -7,6 +8,7 @@ import {
   freeLetters,
   reduceDraft,
   startDraft,
+  wantedOfDraft,
 } from './cueDraft'
 
 const beats = Array.from({ length: 800 }, (_, i) => i * 500)
@@ -164,5 +166,77 @@ describe('reduceDraft', () => {
       ['70001', bar(20)],
       ['70002', bar(20)],
     ])
+  })
+
+  it('undoes a flow change with its flow and trimmed cues, so the next mark uses the first flow again', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const switched = run(marked, { type: 'apply-flow', flowId: 'one-at-32' })
+    const back = run(switched, { type: 'undo' })
+    expect(back.flowId).toBe('mine')
+    expect(back.trimmed).toEqual(marked.trimmed)
+    const again = run(back, { type: 'mark-drop', ms: bar(128) })
+    expect(again.notice).toBeNull()
+    expect(again.flowId).toBe('mine')
+  })
+
+  it('clears the trimmed cues once a manual edit makes them stale', () => {
+    let s = startDraft([{ id: 'y', ms: 500, kind: 1, color: 32 }], 'mine')
+    for (const n of [48, 96]) s = run(s, { type: 'mark-drop', ms: bar(n) })
+    s = { ...s, trimmed: [bar(1)] }
+    expect(run(s, { type: 'add-call', ms: bar(7) }).trimmed).toEqual([])
+  })
+
+  it('ignores an unmark on a cue that is not a drop, leaving no undo step', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const a = at(marked, bar(16), true)
+    expect(run(marked, { type: 'unmark-drop', key: a?.key as string })).toBe(marked)
+  })
+
+  it('refuses to move an unpaired hot cue onto a drop', () => {
+    const s = run(empty(), { type: 'add-call', ms: bar(64) }, { type: 'add-hot', ms: bar(10) })
+    const hot = at(s, bar(10), true)
+    expect(run(s, { type: 'move', key: hot?.key as string, ms: bar(64) })).toBe(s)
+  })
+
+  it('does nothing that needs a beat when the track has no grid', () => {
+    const bare = { ...ctx, beats: [] as number[] }
+    const s = empty()
+    for (const a of [
+      { type: 'mark-drop', ms: 1000 },
+      { type: 'add-hot', ms: 1000 },
+      { type: 'add-call', ms: 1000 },
+    ] as DraftAction[])
+      expect(reduceDraft(s, a, bare)).toBe(s)
+  })
+
+  it('never hands main a set it refuses, whatever the editing sequence', () => {
+    const live: ExistingCue[] = [
+      { id: '1', ms: bar(16), kind: 1, color: 0 as unknown as number },
+      { id: '2', ms: bar(16), kind: 0, color: null },
+      { id: '3', ms: bar(30), kind: 10, color: 5 },
+      { id: '4', ms: bar(64), kind: 0, color: null },
+    ]
+    let s = startDraft(live, 'mine')
+    const check = () => expect(validWantedSet(wantedOfDraft(s.cues), live)).toEqual({ ok: true })
+    const step = (a: DraftAction) => {
+      s = reduceDraft(s, a, ctx)
+      check()
+    }
+    check()
+    step({ type: 'mark-drop', ms: bar(100) })
+    step({ type: 'move', key: '1', ms: bar(20) })
+    step({ type: 'reletter', key: '1', kind: 2 })
+    step({ type: 'recolour', key: '1', color: 9 })
+    step({ type: 'add-hot', ms: bar(12) })
+    step({ type: 'add-call', ms: bar(13) })
+    step({ type: 'remove', key: '2' })
+    step({ type: 'apply-flow', flowId: 'one-at-32' })
+    step({ type: 'mark-drop', ms: bar(140) })
+    step({ type: 'undo' })
+  })
+
+  it('drops the editor keys and keeps every other field of a cue', () => {
+    const s = startDraft([{ id: '7', ms: 10, kind: 1, color: 4 }], 'mine')
+    expect(wantedOfDraft(s.cues)).toEqual([{ id: '7', ms: 10, kind: 1, color: 4 }])
   })
 })
