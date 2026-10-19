@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
-import { BUNDLED_FLOWS, MY_FLOW } from '../../../../shared/cueFlows'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../../preload/api'
+import { BUNDLED_FLOWS, MY_FLOW, ONE_AT_32 } from '../../../../shared/cueFlows'
+import type { LearnedFlow } from '../../../../shared/learnFlow'
 import i18n from '../../i18n'
 import type { SyncedDraft } from '../../lib/settingsDraft'
+import { installApi } from '../../test/api'
 import { CuesTab } from './CuesTab'
 
 let afterTest: (() => unknown) | null = null
@@ -18,13 +21,14 @@ afterEach(async () => {
 
 let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow'> | null = null
 
-function Harness({ active = 'mine' }: { active?: string }) {
+function Harness({ active = 'mine', collection = '' }: { active?: string; collection?: string }) {
   const [draft, setDraft] = useState({ cueFlows: BUNDLED_FLOWS, activeCueFlow: active })
   last = draft
   return (
     <CuesTab
       synced={draft as unknown as SyncedDraft}
       patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
+      rekordboxCollection={collection}
     />
   )
 }
@@ -105,5 +109,91 @@ describe('CuesTab', () => {
     fireEvent.click(screen.getByTestId('cue-flow-delete'))
     expect(last?.cueFlows.map((f) => f.id)).toEqual(['mine', 'calls-only'])
     expect(last?.activeCueFlow).toBe('mine')
+  })
+
+  describe('Aprender de mi colección', () => {
+    const LEARNED: LearnedFlow = {
+      flow: { id: 'learned', name: '', rules: ONE_AT_32.rules },
+      coverage: { matching: 18, marked: 20 },
+    }
+
+    function learnable(result: Promise<LearnedFlow | null>) {
+      const rekordboxLearnFlow = vi.fn<Api['rekordboxLearnFlow']>(() => result)
+      installApi({ rekordboxLearnFlow })
+      render(<Harness collection="/rb/master.db" />)
+      return rekordboxLearnFlow
+    }
+
+    it('stays visible but disabled without a rekordbox collection, since there is nothing to learn from', () => {
+      installApi()
+      render(<Harness />)
+      expect(screen.getByTestId('cue-learn')).toBeDisabled()
+    })
+
+    it('spins while the collection is read and shows the proposal with its coverage', async () => {
+      await i18n.changeLanguage('es')
+      afterTest = () => i18n.changeLanguage('en')
+      let finish: (value: LearnedFlow | null) => void = () => {}
+      learnable(
+        new Promise((done) => {
+          finish = done
+        }),
+      )
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      expect(screen.getByTestId('cue-learn-spinner')).toBeInTheDocument()
+      expect(screen.getByTestId('cue-learn')).toBeDisabled()
+      await act(async () => finish(LEARNED))
+      expect(screen.queryByTestId('cue-learn-spinner')).toBeNull()
+      const proposal = screen.getByTestId('cue-learned')
+      expect(proposal).toHaveTextContent('Aprendido de mi colección')
+      expect(proposal).toHaveTextContent('Encaja con 18 de 20 pistas')
+      expect(within(proposal).getByTestId('cue-flow-preview')).toBeInTheDocument()
+      expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+      expect(last?.activeCueFlow).toBe('mine')
+    })
+
+    it('saves the proposal as a new flow in use only on "Usar este flujo"', async () => {
+      await i18n.changeLanguage('es')
+      afterTest = () => i18n.changeLanguage('en')
+      learnable(Promise.resolve(LEARNED))
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      fireEvent.click(await screen.findByTestId('cue-learned-use'))
+      const made = last?.cueFlows.find((f) => !BUNDLED_FLOWS.some((b) => b.id === f.id))
+      expect(made).toEqual({
+        id: expect.any(String),
+        name: 'Aprendido de mi colección',
+        rules: ONE_AT_32.rules,
+      })
+      expect(made?.id).not.toBe('learned')
+      expect(last?.activeCueFlow).toBe(made?.id)
+      expect(screen.queryByTestId('cue-learned')).toBeNull()
+    })
+
+    it('discards the proposal without touching the flows', async () => {
+      learnable(Promise.resolve(LEARNED))
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      fireEvent.click(await screen.findByTestId('cue-learned-discard'))
+      expect(screen.queryByTestId('cue-learned')).toBeNull()
+      expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+      expect(last?.activeCueFlow).toBe('mine')
+    })
+
+    it('says the collection has no clear pattern when nothing is learned', async () => {
+      await i18n.changeLanguage('es')
+      afterTest = () => i18n.changeLanguage('en')
+      learnable(Promise.resolve(null))
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      expect(await screen.findByTestId('cue-learn-none')).toHaveTextContent(
+        'Tu colección no tiene un patrón claro',
+      )
+      expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+    })
+
+    it('says the collection could not be read instead of spinning forever', async () => {
+      learnable(Promise.reject(new Error('locked')))
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      expect(await screen.findByTestId('cue-learn-failed')).toBeInTheDocument()
+      expect(screen.queryByTestId('cue-learn-spinner')).toBeNull()
+    })
   })
 })

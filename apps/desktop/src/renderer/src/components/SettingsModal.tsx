@@ -391,7 +391,9 @@ export function SettingsModal({
             {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
             {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
             {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
-            {tab === 'cues' && <CuesTab synced={synced} patch={patch} />}
+            {tab === 'cues' && (
+              <CuesTab synced={synced} patch={patch} rekordboxCollection={rekordboxCollection} />
+            )}
             {tab === 'fields' && (
               <FieldsEditor
                 visibleFields={synced.visibleFields}

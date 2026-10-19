@@ -1432,7 +1432,13 @@
       "colorMode": {
         "fixed": "one colour",
         "each": "a colour per repeat"
-      }
+      },
+      "learn": "Learn from my collection",
+      "learnedName": "Learned from my collection",
+      "learnedCoverage": "Fits {{matching}} of {{marked}} tracks",
+      "discard": "Discard",
+      "learnNone": "Your collection has no clear pattern",
+      "learnFailed": "The rekordbox collection could not be read"
     }
   },
   "errorBoundary": {

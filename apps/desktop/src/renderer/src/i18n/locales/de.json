@@ -1432,7 +1432,13 @@
       "colorMode": {
         "fixed": "eine Farbe",
         "each": "eine Farbe pro Wiederholung"
-      }
+      },
+      "learn": "Aus meiner Sammlung lernen",
+      "learnedName": "Aus meiner Sammlung gelernt",
+      "learnedCoverage": "Passt zu {{matching}} von {{marked}} Tracks",
+      "discard": "Verwerfen",
+      "learnNone": "Deine Sammlung hat kein klares Muster",
+      "learnFailed": "Die rekordbox-Sammlung konnte nicht gelesen werden"
     }
   },
   "errorBoundary": {
