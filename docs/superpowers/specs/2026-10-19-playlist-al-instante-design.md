@@ -85,19 +85,27 @@ Medido con el mismo método que el 19/10 (driver, copia `rb-b`, caché vacía, N
 
 ## Medido tras el plan (19/10)
 
-Mismo método que el 19/10 (driver sobre el build, copia `rb-b`, audio en el NAS por SMB, `analysis-cache` borrada antes de cada pasada fría). Dos pasadas frías de la apertura y dos del editor. La caché de ficheros del sistema y del SMB no se puede vaciar, así que la segunda pasada lee el NAS ya caliente.
+Mismo método que el 19/10 (driver sobre el build, copia `rb-b`, audio en el NAS por SMB, `analysis-cache` borrada antes de cada pasada fría). La primera medida son dos pasadas frías de la apertura y dos del editor sobre el plan terminado. Tras cerrar los huecos que encontró, tres pasadas frías de la apertura (dos con su pasada en caliente detrás) y dos del editor. La caché de ficheros del sistema y del SMB no se puede vaciar, así que las pasadas frías leen el NAS ya caliente.
 
-| Objetivo | Antes | Después | Veredicto |
-|---|---|---|---|
-| All (999) completa en menos de 0,5 s | 133,5 s | 0,37 s y 0,28 s con todas las filas completas en el DOM; las carátulas y ondas de las filas en pantalla se pintan a 7,1 s y 7,6 s en dos aperturas frías y a 0,72 s en otra | no cumple, en pantalla 7,1 s |
-| MDT (33) completa en menos de 0,3 s | 6,1 s | 0,14 s y 0,13 s en el DOM; carátulas y ondas en pantalla a 0,16 s y 0,15 s, y a 3,6 s en una apertura | no cumple siempre, una apertura de tres a 3,6 s |
-| Main nunca bloqueado más de 200 ms seguidos | 59 s seguidos, 113 s en total (All) | All 251 ms y 154 ms seguidos, 451 ms y 144 ms en total; MDT 128 ms y 121 ms | no cumple, 251 ms en una de dos pasadas |
-| Editor en menos de 10 s con la caché fría | sin medir | espectro a 4,9 s y 1,0 s (MDT) y a 4,0 s y 1,0 s (All) desde el clic en la fila | cumple, 4,9 s el peor |
-| Ninguna fila modificada sin tocarla | sin medir | 0 filas con la marca ámbar y 0 `data-dirty` en las ocho aperturas | cumple |
+| Objetivo | Antes | Primera medida | Tras cerrar los huecos | Veredicto |
+|---|---|---|---|---|
+| All (999) completa en menos de 0,5 s | 133,5 s | 0,37 s y 0,28 s en el DOM; carátulas y ondas en pantalla a 7,1 s y 7,6 s en dos aperturas frías y a 0,72 s en otra | carátulas en pantalla a 0,24 s, 0,28 s y 0,24 s y ondas a 0,27 s, 0,30 s y 0,27 s en frío; 0,15 s y 0,16 s en caliente; 0,30 s en la apertura del editor | cumple, 0,30 s el peor |
+| MDT (33) completa en menos de 0,3 s | 6,1 s | 0,14 s y 0,13 s en el DOM; en pantalla a 0,16 s y 0,15 s, y a 3,6 s en una apertura | en pantalla a 0,09 s, 0,09 s y 0,07 s en frío, 0,05 s en caliente y 0,09 s en la apertura del editor | cumple, 0,09 s el peor |
+| Main nunca bloqueado más de 200 ms seguidos | 59 s seguidos, 113 s en total (All) | All 251 ms y 154 ms seguidos; MDT 128 ms y 121 ms; editor hasta 189 ms | All 71 ms, 114 ms y 68 ms en frío, 106 ms en caliente; MDT 0 ms; editor 64 ms y 63 ms | cumple, 114 ms el peor |
+| Editor en menos de 10 s con la caché fría | sin medir | espectro a 4,9 s y 1,0 s (MDT) y a 4,0 s y 1,0 s (All) desde el clic en la fila | espectro a 0,82 s y 0,82 s (MDT) y a 0,75 s y 0,77 s (All) | cumple, 0,82 s el peor |
+| Ninguna fila modificada sin tocarla | sin medir | 0 filas con la marca ámbar y 0 `data-dirty` en las ocho aperturas | 0 y 0 en las diez aperturas | cumple |
 
-- El bloqueo de 251 ms es la propia lectura de la playlist (`rekordbox:playlist`), que corre síncrona en el main y costó 240 ms y 151 ms en All.
-- Las carátulas en pantalla llegan a la vez que la respuesta de `list:rowWaves`, que se pidió para 985 filas y no solo para las visibles y tardó 6,7 s y 6,9 s. En pantalla se ven los marcos vacíos hasta entonces.
-- Las lecturas de ficheros de All terminaron a 58,7 s y a 16,9 s (NAS ya caliente); las de MDT a 4,4 s y 0,5 s. Ninguna búsqueda a Discogs ni MusicBrainz durante las lecturas; la primera salió entre 3 ms y 18 ms después de la última. Después sí corren todas (247 búsquedas para MDT, 1697 en 25 min para All).
+Qué cerró cada hueco.
+
+- Las carátulas y las ondas en pantalla esperaban a unas 3000 consultas `stat` al NAS (comprobar los ficheros de la playlist y mirar su análisis en caché) lanzadas todas a la vez al abrir. Ocupaban la cola de hilos de Node, que es una sola y en orden, y la lectura local de una carátula o de un `.DAT` iba detrás. Medido aparte, 13 lecturas locales tardaban 10,9 s detrás de 2955 `stat` y 2 ms con como mucho tres `stat` a la vez; el NAS tarda lo mismo en total (10,5 a 10,7 s) con una consulta en vuelo o con todas. Ahora van de tres en tres. Subir el número de hilos no ayudaba (6,5 s con 32 hilos).
+- La onda se pide solo para las filas que han estado en pantalla (13 a 21 filas al abrir All), no para las 985.
+- La apertura de MDT a 3,6 s era la comprobación de la sesión anterior al arrancar (1018 `stat` al NAS a la vez), que dejaba cualquier otra lectura 7 s en cola. Ahora va también de tres en tres.
+- `rekordbox:playlist` gastaba 77 ms de cada apertura en derivar la clave de SQLCipher a partir de la frase. La clave se deriva ahora una vez por colección, fuera del main, y se abre con ella. Sin esa derivación, la lectura de All son unos 30 ms de consultas y 5 ms de comprobar carátulas. Lo mismo para el árbol y la comprobación del separador, que corren juntos en cada foco (sumaban 226 ms), y para los cues y las playlists del tema que abre el editor (sumaban 210 ms).
+- Un `.DAT` mal formado ya no deja sin onda al resto del lote. Esa fila usa la onda de Surco.
+
+Notas.
+
+- El hueco de unos 400 ms del renderer hacia 1,2 s después del clic en All lo provoca el propio script de medida. Su foto de las filas llama a `getBoundingClientRect` sobre las 999 y eso cuesta 405 ms medido. Sin esa foto, con un perfil de CPU de la misma apertura, el mayor hueco es de 125 a 143 ms y es el primer render de las 999 filas. La medida del editor tenía el mismo efecto y pintaba All a 0,6 s; limitada a las 20 primeras filas, como la de la apertura, pinta a 0,30 s.
+- Las lecturas de ficheros de All terminan a 16,7 s, 17,0 s y 17,4 s, como antes, porque las marca el NAS; las de MDT a 0,4 s, 0,5 s y 0,9 s. La primera búsqueda sale entre 2 ms y 22 ms después de la última lectura.
 - Las 10 filas visibles muestran onda y cues (MDT 58 hot cues y 87 memory cues; All 28 y 43 en 8 de las 10).
 - Dos filas de All pierden el artista cuando llega la lectura del fichero, porque el fichero no lo lleva; es lo que pide el diseño.
-- El renderer tiene un hueco de 400 a 420 ms hacia 1,4 s después del clic en All, en frío y en caliente.
