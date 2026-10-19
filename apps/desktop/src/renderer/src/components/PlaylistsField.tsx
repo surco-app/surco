@@ -297,6 +297,8 @@ function TreeField({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const buttonId = useId()
+  const countId = useId()
+  const whereId = useId()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -328,6 +330,7 @@ function TreeField({
           data-testid="playlists-summary"
           aria-expanded={open}
           aria-haspopup="dialog"
+          aria-describedby={tokens.length > 0 ? `${countId} ${whereId}` : countId}
           onClick={() => setOpen((v) => !v)}
           className={`flex h-[34px] w-full items-center gap-2 rounded-lg border bg-[var(--color-panel-2)]/30 px-3 text-left text-sm outline-none focus-visible:border-[var(--color-accent)] ${
             open ? 'border-[var(--color-accent)]' : 'border-[var(--color-line-strong)]'
@@ -335,10 +338,15 @@ function TreeField({
         >
           {tokens.length > 0 ? (
             <>
-              <span data-testid="playlists-count" className="shrink-0 font-medium text-fg">
+              <span
+                id={countId}
+                data-testid="playlists-count"
+                className="shrink-0 font-medium text-fg"
+              >
                 {tr('editor.playlists.count', { count: tokens.length })}
               </span>
               <span
+                id={whereId}
                 data-testid="playlists-where"
                 className="min-w-0 flex-1 truncate text-xs text-fg-faint"
               >
@@ -362,7 +370,7 @@ function TreeField({
               </span>
             </>
           ) : (
-            <span className="min-w-0 flex-1 truncate text-fg-faint">
+            <span id={countId} className="min-w-0 flex-1 truncate text-fg-faint">
               {tr('editor.playlists.placeholder')}
             </span>
           )}

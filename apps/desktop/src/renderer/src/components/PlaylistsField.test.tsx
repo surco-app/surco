@@ -77,6 +77,15 @@ describe('PlaylistsField closed', () => {
     expect(screen.queryByTestId('playlists-popover')).toBeNull()
   })
 
+  it('reads the count and where to a screen reader, since the label alone only names the field', () => {
+    render(<Harness />)
+    expect(summary()).toHaveAccessibleName('Playlists')
+    expect(summary()).toHaveAccessibleDescription('In 7 playlists BOLOS (5) · CANTADITAS · House')
+    cleanup()
+    render(<Harness initial={[]} />)
+    expect(summary()).toHaveAccessibleDescription('Add to a playlist')
+  })
+
   it('says one playlist in the singular', () => {
     render(<Harness initial={[target('house')]} />)
     expect(screen.getByTestId('playlists-count')).toHaveTextContent('In 1 playlist')
