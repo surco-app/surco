@@ -25,6 +25,7 @@ import type {
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxSyncIssue,
+  RowWaveRequest,
   SaveCuesRequest,
   ScanVerdict,
   SearchHints,
@@ -193,6 +194,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
   rekordboxCueSummary: (contentIds: string[]): Promise<Record<string, CueSummary>> =>
     ipcRenderer.invoke('rekordbox:cueSummary', contentIds),
+  rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
+    ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>
     ipcRenderer.invoke('rekordbox:countCompletable'),
   rekordboxQueuedCues: (contentId: string): Promise<number[] | null> =>

@@ -1039,6 +1039,11 @@ export interface SourcePreview {
   cues: RowCue[]
 }
 
+export interface RowWaveRequest {
+  path: string
+  analysisPath?: string
+}
+
 export interface SourcePlaylistEntry {
   path: string | null
   separator: boolean

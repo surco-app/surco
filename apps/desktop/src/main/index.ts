@@ -121,6 +121,7 @@ import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQue
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -962,6 +963,7 @@ function registerIpc(): void {
     queue: rekordboxQueue,
     applyQuietly: applyRekordboxQueueQuietly,
   })
+  registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     userData: app.getPath('userData'),

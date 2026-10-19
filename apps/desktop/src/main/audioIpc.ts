@@ -17,6 +17,7 @@ import {
   FINGERPRINT_NAMESPACE,
   LOUDNESS_NAMESPACE,
   peekAnalysis,
+  WAVEFORM_NAMESPACE,
 } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
@@ -87,7 +88,6 @@ const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties-v2'
 const BPM_NAMESPACE = 'bpm'
 const KEY_NAMESPACE = 'key'
-const WAVEFORM_NAMESPACE = 'waveform-v6'
 const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
 
 // An .m4a is graded by the codec it holds (AAC or ALAC), which entries cached before the

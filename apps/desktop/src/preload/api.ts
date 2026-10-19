@@ -47,6 +47,7 @@ import type {
   Release,
   RemoveCopyResult,
   ReviewOutcome,
+  RowWaveRequest,
   SaveCuesRequest,
   ScanVerdict,
   SearchHints,
@@ -210,6 +211,7 @@ export interface Api {
   rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rekordboxCueSummary: (contentIds: string[]) => Promise<Record<string, CueSummary>>
+  rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>
   rekordboxQueuedCues: (contentId: string) => Promise<number[] | null>
