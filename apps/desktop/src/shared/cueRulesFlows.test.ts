@@ -94,9 +94,10 @@ describe('evaluateFlow', () => {
 
   it('never counts loose CALLs against the 8 hot cues', () => {
     const calls = flow(rule({ repeat: 'edge', when: 'always', place: 'call' }))
-    expect(
-      evaluateFlow(calls, track({ beats: grid(400), drops: [beat(400) - 500] })).trimmed,
-    ).toEqual([])
+    const out = evaluateFlow(calls, track({ beats: grid(400), drops: [beat(400) - 500] }))
+    expect(out.trimmed).toEqual([])
+    expect(out.cues).toHaveLength(24)
+    expect(out.cues.every((c) => c.place === 'call')).toBe(true)
   })
 
   it('plans nothing on a track without a grid', () => {

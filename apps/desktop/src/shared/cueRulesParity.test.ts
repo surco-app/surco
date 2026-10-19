@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { MY_FLOW } from './cueFlows'
 import {
   type CueOutcome,
   cueChanges,
   type ExistingCue,
+  evaluateFlow,
   fitsPlan,
   HOT_KINDS,
   nearestBeat,
@@ -54,7 +56,23 @@ function prng(seed: number): () => number {
   }
 }
 
+function spacedTrack(r: () => number) {
+  const count = 1000 + Math.floor(r() * 800)
+  const start = Math.floor(r() * 2000)
+  const beatMs = 400 + r() * 200
+  const beats = Array.from({ length: count }, (_, i) => Math.round(start + i * beatMs))
+  const pick = (): number => beats[Math.floor(r() * count)]
+  const drops: number[] = []
+  const step = r() < 0.75 ? 48 : 20
+  for (let at = 48 + Math.floor(r() * 32); at < count / 4; at += step + Math.floor(r() * 24))
+    drops.push(beats[at * 4])
+  const strong: StrongPart[] =
+    r() < 0.8 ? [] : [{ start: beats[Math.floor(r() * count)], end: beats[count - 1] }]
+  return { beats, drops, strong, pick }
+}
+
 function randomTrack(r: () => number) {
+  if (r() < 0.2) return spacedTrack(r)
   const count = 100 + Math.floor(r() * 700)
   const start = Math.floor(r() * 2000)
   const beatMs = 400 + r() * 200
@@ -86,6 +104,31 @@ describe('Mi flujo through the engine against the frozen planCues', () => {
         legacyPlanCues(drops, beats, strong),
       )
     }
+  })
+
+  const grid = (bars: number): number[] => Array.from({ length: bars * 4 }, (_, i) => i * 500)
+  const beat = (bars: number): number => bars * 2000
+
+  it('trims the 48 and then the earliest 32s to fit eight, as rules.py did', () => {
+    const beats = grid(400)
+    const drops = [48, 96, 144, 192, 240].map(beat)
+    expect(planCues(drops, beats)).toEqual(legacyPlanCues(drops, beats))
+    const out = evaluateFlow(MY_FLOW, { beats, drops, strong: [], phrases: [] })
+    expect(out.cues).toHaveLength(8)
+    expect(out.trimmed.map((c) => [c.ms, c.bars])).toEqual([
+      [beat(0), 48],
+      [beat(16), 32],
+      [beat(64), 32],
+    ])
+  })
+
+  it('still asks for more than eight when trimming cannot get there, as rules.py did', () => {
+    const beats = grid(400)
+    const drops = Array.from({ length: 10 }, (_, i) => beat(32 + 32 * i))
+    expect(planCues(drops, beats)).toEqual(legacyPlanCues(drops, beats))
+    expect(planCues(drops, beats)).toHaveLength(10)
+    expect(cueChanges([], drops, [], beats, [])).toEqual(legacyCueChanges([], drops, [], beats, []))
+    expect(cueChanges([], drops, [], beats, [])).toEqual({ status: 'too-many', needed: 10 })
   })
 })
 
