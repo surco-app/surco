@@ -2924,6 +2924,7 @@ export default function App(): React.JSX.Element {
                           onCopyFilename={onCopyFilename}
                           onSearchWeb={onSearchWeb}
                           onExportCollection={onOpenExport}
+                          readFullTrack={readFullTrack}
                         />
                       </Suspense>
                     </ErrorBoundary>

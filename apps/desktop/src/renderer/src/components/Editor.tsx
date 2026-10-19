@@ -37,6 +37,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import type { RememberedPick } from '../hooks/useEditorPicks'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
+import { useLatest } from '../hooks/useLatest'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import {
   useRekordboxAvailable,
@@ -222,6 +223,7 @@ interface Props {
   // Opens the DJ-app collection export (rekordbox/Traktor/Serato/M3U8/Engine USB) — the
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
+  readFullTrack: (id: string) => Promise<TrackItem | undefined>
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
 
@@ -273,6 +275,7 @@ export const Editor = memo(function Editor({
   onCopyFilename,
   onSearchWeb,
   onExportCollection,
+  readFullTrack,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
   // pull — this used to be a 17-prop wall App re-plumbed for each field (see
@@ -698,30 +701,31 @@ export const Editor = memo(function Editor({
     onChange,
   })
 
-  function selectTrack(track: ReleaseTrack, moveFocus = true): void {
+  const latestItem = useLatest(item)
+  async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {
     if (!release) return
+    const current = item.metaPartial ? await readFullTrack(item.id) : item
+    if (!current || current.metaPartial || current.id !== latestItem.current.id) return
     // The cover flag protects only the file's ORIGINAL embedded art. While the shown
     // cover is still that original (coverUrl === embeddedCover), keep it — unless the user
     // opted into replacing low-res art and this original is small, in which case the
     // release's larger image wins. Once a previous release (or the absence of any embedded
     // art) means the shown cover isn't the original, there's nothing of the user's to
     // protect, so a pick always takes the release image.
-    const coverIsOriginal = !!item.coverUrl && item.coverUrl === item.embeddedCover
+    const coverIsOriginal = !!current.coverUrl && current.coverUrl === current.embeddedCover
+    const shownDims =
+      coverIsOriginal && current.embeddedCoverDims ? current.embeddedCoverDims : coverDims
     onChange({
       ...buildReleaseMeta(
-        item.meta,
+        current.meta,
         release,
         track,
         {
-          url: item.coverUrl,
-          path: item.coverPath,
+          url: current.coverUrl,
+          path: current.coverPath,
           keep:
             coverIsOriginal &&
-            !(
-              replaceLowResCover &&
-              effectiveCoverDims &&
-              isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)
-            ),
+            !(replaceLowResCover && shownDims && isLowResCover(shownDims.w, shownDims.h)),
         },
         importFields,
         genrePresets,
@@ -766,7 +770,7 @@ export const Editor = memo(function Editor({
     ) {
       autoAppliedRelease.current = release.id
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
-      selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
+      void selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
     }
   }, [autoMatch, release, matchedTrack, matchTier, item.matched, isMulti])
 

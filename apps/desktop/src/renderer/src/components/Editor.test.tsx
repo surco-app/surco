@@ -19,6 +19,7 @@ import type {
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { coverSourceOf } from '../lib/coverSource'
 import { resetEditorPlace } from '../lib/editorPlace'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { createQueryClient } from '../lib/queryClient'
@@ -184,6 +185,7 @@ function renderEditor(
     convertBesideOriginal?: boolean
     autoMatch?: boolean
     rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
+    readFullTrack?: React.ComponentProps<typeof Editor>['readFullTrack']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -242,6 +244,7 @@ function renderEditor(
         onCopyFilename={onCopyFilename}
         onSearchWeb={onSearchWeb}
         onExportCollection={onExportCollection}
+        readFullTrack={props.readFullTrack ?? (async () => undefined)}
       />
     </OpenSettingsProvider>,
     {
@@ -1018,6 +1021,7 @@ function MultiHarness() {
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
+        readFullTrack={async () => undefined}
         onResultsWidthChange={vi.fn()}
         selectedTracks={selectedTracks}
         onApplyMatches={vi.fn()}
@@ -1379,6 +1383,7 @@ describe('Editor multi-select', () => {
         rekordboxCue={opts.rekordboxCue}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
+        readFullTrack={async () => undefined}
         onResultsWidthChange={vi.fn()}
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
@@ -2828,6 +2833,36 @@ describe('Editor Discogs apply', () => {
     fireEvent.click(screen.getByTestId('discogs-result'))
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('embedded.jpg')
+  })
+
+  it('reads a row listed before its full read first, so the file keeps its own cover', async () => {
+    withImages()
+    const read = item({ id: 'a', coverUrl: 'embedded.jpg', embeddedCover: 'embedded.jpg' })
+    const readFullTrack = vi.fn(async () => read)
+    const { onChange } = renderEditor({ id: 'a', metaPartial: true }, 'wav', { readFullTrack })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+    expect(readFullTrack).toHaveBeenCalledWith('a')
+    expect(coverSourceOf({ ...read, ...onChange.mock.calls.at(-1)?.[0] })).toEqual({
+      coverFromFile: '/music/a.wav',
+    })
+  })
+
+  it('applies nothing while the row is still partly read, rather than guess the file has no art', async () => {
+    withImages()
+    const partial = item({ id: 'a', metaPartial: true })
+    const readFullTrack = vi.fn(async () => partial)
+    const { onChange } = renderEditor({ id: 'a', metaPartial: true }, 'wav', { readFullTrack })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(readFullTrack).toHaveBeenCalledWith('a'))
+    await act(async () => {})
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
   })
 
   // By default the user's own cover wins even when it's low-res: a small but correct
