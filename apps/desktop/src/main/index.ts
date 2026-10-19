@@ -650,12 +650,19 @@ function stopDockAnimation(): void {
 // drag legible, but only when it's at hand as a data: URL — createFromDataURL is
 // synchronous, unlike fetching a Discogs http cover, which would have to await. A
 // track with no usable cover falls back to the app icon, loaded once.
+const TRACK_DRAG_ICON_POINTS = 48
+function dragIconOf(image: NativeImage): NativeImage {
+  const pixels = TRACK_DRAG_ICON_POINTS * 2
+  return nativeImage.createFromBuffer(image.resize({ width: pixels, height: pixels }).toPNG(), {
+    scaleFactor: 2,
+  })
+}
 let trackDragIconCache: NativeImage | null = null
 function genericDragIcon(): NativeImage {
   if (!trackDragIconCache)
-    trackDragIconCache = nativeImage
-      .createFromPath(join(app.getAppPath(), 'build', 'icon.png'))
-      .resize({ width: 128, height: 128 })
+    trackDragIconCache = dragIconOf(
+      nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')),
+    )
   return trackDragIconCache
 }
 function trackDragIcon(coverUrl?: string): NativeImage {
@@ -665,7 +672,7 @@ function trackDragIcon(coverUrl?: string): NativeImage {
     : coverUrl?.startsWith('data:')
       ? nativeImage.createFromDataURL(coverUrl)
       : null
-  if (cover && !cover.isEmpty()) return cover.resize({ width: 128, height: 128 })
+  if (cover && !cover.isEmpty()) return dragIconOf(cover)
   return genericDragIcon()
 }
 
