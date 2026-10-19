@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { hexId, playlistXmlPath, withPlaylistNode, xmlNodeIds } from './rekordboxMasterXml'
+import {
+  hexId,
+  nodeTimestamp,
+  playlistXmlPath,
+  withNodeTimestamp,
+  withoutNodes,
+  withPlaylistNode,
+  xmlNodeIds,
+} from './rekordboxMasterXml'
 
 describe('masterPlaylists6.xml ids', () => {
   // Measured: Id is the decimal ID in uppercase hex without leading zeros (30D40 is
@@ -83,5 +91,63 @@ describe('masterPlaylists6.xml', () => {
   // The real file keeps nodes the database no longer has; a new ID must avoid those too.
   it('lists the node IDs the file already holds', () => {
     expect(xmlNodeIds(XML)).toEqual(new Set(['3E8']))
+  })
+})
+
+const THREE = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '',
+  '<MASTER_PLAYLIST Version="3.0.0" AutomaticSync="0">',
+  '  <PRODUCT Name="rekordbox" Version="7.2.19" Company="Pioneer DJ"/>',
+  '  <PLAYLISTS>',
+  '    <NODE Id="3E8" ParentId="0" Attribute="1" Timestamp="1767225600000" Lib_Type="0" CheckType="0"/>',
+  '    <NODE Id="7D0" ParentId="3E8" Attribute="0" Timestamp="1767225600001" Lib_Type="0" CheckType="0"/>',
+  '    <NODE Id="BB8" ParentId="0" Attribute="0" Timestamp="1767225600002" Lib_Type="0" CheckType="0"/>',
+  '    <NODE Id="ITUNES" ParentId="0" Attribute="0" Timestamp="5" Lib_Type="1" CheckType="0"/>',
+  '  </PLAYLISTS>',
+  '</MASTER_PLAYLIST>',
+  '',
+].join('\r\n')
+
+describe('masterPlaylists6.xml node timestamps', () => {
+  it('reads the Timestamp of the node for a decimal row ID', () => {
+    expect(nodeTimestamp(THREE, '2000')).toBe(1767225600001)
+    expect(nodeTimestamp(THREE, '3000')).toBe(1767225600002)
+  })
+
+  it('says null for a playlist the XML has no node for', () => {
+    expect(nodeTimestamp(THREE, '4000')).toBeNull()
+  })
+
+  it('never reads a ParentId as the node it points at', () => {
+    const onlyChild = THREE.replace(/.*Id="3E8".*\r\n/, '')
+    expect(nodeTimestamp(onlyChild, '1000')).toBeNull()
+  })
+
+  it('moves only the one node Timestamp, since rekordbox sync compares it and any other byte moved would be a change Surco invented', () => {
+    const next = withNodeTimestamp(THREE, '2000', 1797000000000)
+    expect(next).toBe(THREE.replace('Timestamp="1767225600001"', 'Timestamp="1797000000000"'))
+  })
+
+  it('leaves the text alone when the node is missing', () => {
+    expect(withNodeTimestamp(THREE, '4000', 1797000000000)).toBe(THREE)
+  })
+})
+
+describe('masterPlaylists6.xml node removal', () => {
+  it('drops the named nodes whole with their line ending, so no node outlives its playlist and no blank line is left', () => {
+    const next = withoutNodes(THREE, ['1000', '2000'])
+    expect(next).toBe(THREE.replace(/.*Id="3E8".*\r\n/, '').replace(/.*Id="7D0".*\r\n/, ''))
+    expect(next).toContain('Id="BB8"')
+    expect(next).toContain('Id="ITUNES"')
+    expect(next.includes('\r\n\r\n    <NODE')).toBe(false)
+  })
+
+  it('ignores IDs the XML never had', () => {
+    expect(withoutNodes(THREE, ['4000'])).toBe(THREE)
+  })
+
+  it('keeps a node whose ParentId names a removed one, for the caller to name too', () => {
+    expect(withoutNodes(THREE, ['1000'])).toContain('Id="7D0"')
   })
 })

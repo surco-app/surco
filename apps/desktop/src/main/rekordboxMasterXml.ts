@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 // rekordbox 6 and 7 keep every playlist and folder twice: as a row in master.db and as a
 // NODE in masterPlaylists6.xml beside it, where the row ID is written in hex.
 // Creating a playlist or folder means adding both, as pyrekordbox does; moving tracks
-// never touches this file (measured: link edits do not even change the playlist row). The
+// only moves the node's Timestamp (measured: link edits do not even change the playlist row). The
 // file is edited as text, not reparsed and reserialised, so everything rekordbox wrote
 // (its CRLF line ends, the iTunes nodes, nodes the database no longer has) stays byte for
 // byte.
@@ -39,4 +39,32 @@ export function withPlaylistNode(
 
 export function xmlNodeIds(xml: string): Set<string> {
   return new Set([...xml.matchAll(/<NODE [^>]*\bId="([^"]+)"/g)].map((m) => m[1]))
+}
+
+function nodeTag(xml: string, id: string): RegExpExecArray | null {
+  return new RegExp(`<NODE [^>]*\\bId="${hexId(id)}"[^>]*>`).exec(xml)
+}
+
+export function nodeTimestamp(xml: string, id: string): number | null {
+  const tag = nodeTag(xml, id)
+  const value = tag && /\bTimestamp="(\d+)"/.exec(tag[0])
+  return value ? Number(value[1]) : null
+}
+
+export function withNodeTimestamp(xml: string, id: string, timestamp: number): string {
+  const tag = nodeTag(xml, id)
+  if (!tag) return xml
+  const next = tag[0].replace(/\bTimestamp="\d+"/, `Timestamp="${timestamp}"`)
+  return `${xml.slice(0, tag.index)}${next}${xml.slice(tag.index + tag[0].length)}`
+}
+
+export function withoutNodes(xml: string, ids: string[]): string {
+  const doomed = new Set(ids.map(hexId))
+  return xml
+    .split(/(?<=\n)/)
+    .filter((line) => {
+      const id = /<NODE [^>]*\bId="([^"]+)"/.exec(line)
+      return !(id && doomed.has(id[1]))
+    })
+    .join('')
 }
