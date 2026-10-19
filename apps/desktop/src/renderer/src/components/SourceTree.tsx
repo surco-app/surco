@@ -259,11 +259,11 @@ export function SourceTree({
               edit.onDropTracks(node, Array.from(e.dataTransfer.files))
             }}
             style={{ paddingLeft: 10 + depth * 18 }}
-            className={`flex h-[27px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[11.5px] ${
+            className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[13px] ${
               selected
                 ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
                 : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
-            } ${isFolder ? 'font-semibold' : ''} ${
+            } ${isFolder ? 'font-medium' : ''} ${
               dropOn?.id === node.id
                 ? 'outline-dashed outline-1 -outline-offset-1 outline-[var(--color-accent)]'
                 : ''
@@ -273,17 +273,17 @@ export function SourceTree({
               <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
             )}
             <span className="min-w-0 truncate">{node.name}</span>
-            {trail && <span className="min-w-0 truncate text-[11px] text-fg-faint">{trail}</span>}
+            {trail && <span className="min-w-0 truncate text-xs text-fg-faint">{trail}</span>}
             {dropOn?.id === node.id ? (
               <span
                 data-testid="source-drop-count"
-                className="ml-auto text-[11px] text-[var(--color-accent)]"
+                className="ml-auto text-xs text-[var(--color-accent)]"
               >
                 {tr('sources.tree.dropCount', { count: dropOn.count })}
               </span>
             ) : (
               !isFolder && (
-                <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+                <span className="ml-auto text-xs tabular-nums text-fg-faint">{node.count}</span>
               )
             )}
           </button>
@@ -335,7 +335,7 @@ export function SourceTree({
       className="flex w-[236px] shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1 px-3 pt-3 pb-2">
-        <span className="font-semibold">{title}</span>
+        <span className="text-sm font-semibold">{title}</span>
         {(edit || onExportUsb) && (
           <span className="ml-auto flex gap-0.5">
             {onExportUsb && (
@@ -377,7 +377,7 @@ export function SourceTree({
           </span>
         )}
       </div>
-      <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs">
+      <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-[13px]">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
         <input
           data-testid="source-tree-search"
