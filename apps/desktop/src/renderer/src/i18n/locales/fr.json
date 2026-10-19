@@ -431,7 +431,10 @@
       "trash": "Mettre à la corbeille",
       "trashWin": "Mettre à la corbeille"
     },
-    "progress": "{{percent}} % terminé"
+    "progress": "{{percent}} % terminé",
+    "playlists_one": "Dans 1 playlist rekordbox : {{names}}",
+    "playlists_other": "Dans {{count}} playlists rekordbox : {{names}}",
+    "playlistsPending": "Changements de playlists pas encore écrits"
   },
   "editor": {
     "searchPlaceholder": "Rechercher dans tes sources ou coller un id de release Discogs…",

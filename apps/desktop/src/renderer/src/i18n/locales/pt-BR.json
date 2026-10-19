@@ -431,7 +431,10 @@
       "trash": "Mover para a Lixeira",
       "trashWin": "Mover para a Lixeira"
     },
-    "progress": "{{percent}}% concluído"
+    "progress": "{{percent}}% concluído",
+    "playlists_one": "Em 1 playlist do rekordbox: {{names}}",
+    "playlists_other": "Em {{count}} playlists do rekordbox: {{names}}",
+    "playlistsPending": "Mudanças de playlists ainda não gravadas"
   },
   "editor": {
     "searchPlaceholder": "Busque nas suas fontes ou cole um release id do Discogs…",

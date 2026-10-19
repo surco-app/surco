@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
 import type { Settings } from '../../../shared/types'
 import { withRekordboxField } from '../lib/fields'
@@ -23,13 +23,18 @@ export function useRekordboxPlaylistOptions(enabled: boolean): PlaylistOption[] 
   return useMemo(() => (data ? playlistOptions(data) : undefined), [data])
 }
 
-export function useRekordboxMembership(paths: string[], enabled: boolean): Membership | undefined {
+export function useRekordboxMembership(
+  paths: string[],
+  enabled: boolean,
+  { keepPrevious = false }: { keepPrevious?: boolean } = {},
+): Membership | undefined {
   const key = [...new Set(paths)].sort()
   const { data } = useQuery({
     queryKey: ['rekordbox-membership', key],
     queryFn: () => window.api.rekordboxMembership(key),
     enabled: enabled && key.length > 0,
     staleTime: Number.POSITIVE_INFINITY,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   })
   return data
 }

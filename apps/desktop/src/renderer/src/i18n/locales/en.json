@@ -431,7 +431,10 @@
       "trash": "Move to Trash",
       "trashWin": "Move to Recycle Bin"
     },
-    "progress": "{{percent}}% complete"
+    "progress": "{{percent}}% complete",
+    "playlists_one": "In 1 rekordbox playlist: {{names}}",
+    "playlists_other": "In {{count}} rekordbox playlists: {{names}}",
+    "playlistsPending": "Playlist changes not written yet"
   },
   "editor": {
     "searchPlaceholder": "Search your sources or paste a Discogs release id…",

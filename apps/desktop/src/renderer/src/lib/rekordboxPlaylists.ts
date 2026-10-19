@@ -139,3 +139,30 @@ export function withTarget(
     return { id: t.id, rekordboxPlaylists: on ? [...rest, target] : rest }
   })
 }
+
+export interface PlaylistDot {
+  names: string[]
+  pending: boolean
+}
+
+export function playlistDotsOf(
+  tracks: readonly TrackItem[],
+  membership: Membership | undefined,
+  options: readonly PlaylistOption[] | undefined,
+  previous: ReadonlyMap<string, PlaylistDot>,
+): Map<string, PlaylistDot> {
+  const out = new Map<string, PlaylistDot>()
+  for (const t of tracks) {
+    const names = effectivePlaylists(t, membership, options)?.map((p) => p.name)
+    if (!names || names.length === 0) continue
+    const pending = isPlaylistsPending(t, membership, options) ?? false
+    const before = previous.get(t.id)
+    const same =
+      before !== undefined &&
+      before.pending === pending &&
+      before.names.length === names.length &&
+      before.names.every((n, i) => n === names[i])
+    out.set(t.id, same ? before : { names, pending })
+  }
+  return out
+}

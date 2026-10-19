@@ -8,6 +8,7 @@ import {
   effectivePlaylists,
   isPlaylistsPending,
   matchingOptions,
+  playlistDotsOf,
   playlistOptions,
   withTarget,
 } from './rekordboxPlaylists'
@@ -189,5 +190,34 @@ describe('bulk', () => {
     expect(bulkPlaylistState([a, b], membership, undefined)).toBeUndefined()
     expect(withTarget([a, b], undefined, OPTIONS, todas, true)).toBeUndefined()
     expect(withTarget([a, b], membership, undefined, todas, true)).toBeUndefined()
+  })
+})
+
+describe('playlistDotsOf', () => {
+  const a = track({ id: 'a', inputPath: '/m/a.wav' })
+  const b = track({ id: 'b', inputPath: '/m/b.wav' })
+  const membership = { '/m/a.wav': ['3000'] }
+
+  it('names the playlists of each track and says when they are not written yet', () => {
+    const pending = track({
+      id: 'c',
+      inputPath: '/m/c.wav',
+      rekordboxPlaylists: [{ name: 'Cierre' }],
+    })
+    const dots = playlistDotsOf([a, b, pending], membership, OPTIONS, new Map())
+    expect(dots.get('a')).toEqual({ names: ['Makina'], pending: false })
+    expect(dots.has('b')).toBe(false)
+    expect(dots.get('c')).toEqual({ names: ['Cierre'], pending: true })
+  })
+
+  it('keeps the same object for a row whose dots did not change, so an edit does not re-render the whole list', () => {
+    const first = playlistDotsOf([a], membership, OPTIONS, new Map())
+    const second = playlistDotsOf([{ ...a }], membership, OPTIONS, first)
+    expect(second.get('a')).toBe(first.get('a'))
+  })
+
+  it('draws no dots while the membership or the options are still unknown', () => {
+    expect(playlistDotsOf([a], undefined, OPTIONS, new Map()).size).toBe(0)
+    expect(playlistDotsOf([a], membership, undefined, new Map()).size).toBe(0)
   })
 })

@@ -57,6 +57,27 @@ describe('useRekordboxPlaylists', () => {
     expect(rekordboxMembership).toHaveBeenCalledWith(['/m/a.wav', '/m/b.wav'])
   })
 
+  it('keeps the previous membership while the next one loads only when the list asks for it', async () => {
+    const rekordboxMembership = vi.fn<Api['rekordboxMembership']>(
+      (paths) =>
+        new Promise((resolve) => {
+          if (paths[0] === '/m/a.wav') resolve({ '/m/a.wav': ['3000'] })
+        }),
+    )
+    installApi({ rekordboxMembership })
+    const { result, rerender } = renderHook(
+      ({ path, keep }) => ({
+        strict: useRekordboxMembership([path], true),
+        kept: useRekordboxMembership([path], true, { keepPrevious: keep }),
+      }),
+      { wrapper, initialProps: { path: '/m/a.wav', keep: true } },
+    )
+    await waitFor(() => expect(result.current.strict).toEqual({ '/m/a.wav': ['3000'] }))
+    rerender({ path: '/m/b.wav', keep: true })
+    expect(result.current.strict).toBeUndefined()
+    expect(result.current.kept).toEqual({ '/m/a.wav': ['3000'] })
+  })
+
   it('asks nothing while disabled', () => {
     const rekordboxMembership = vi.fn<Api['rekordboxMembership']>(async () => ({}))
     installApi({ rekordboxMembership })

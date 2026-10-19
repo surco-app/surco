@@ -80,7 +80,12 @@ import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
-import { useOfferRekordboxField, useRekordboxAvailable } from './hooks/useRekordboxPlaylists'
+import {
+  useOfferRekordboxField,
+  useRekordboxAvailable,
+  useRekordboxMembership,
+  useRekordboxPlaylistOptions,
+} from './hooks/useRekordboxPlaylists'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -123,6 +128,7 @@ import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
+import { type PlaylistDot, playlistDotsOf, rekordboxPathOf } from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -614,6 +620,17 @@ export default function App(): React.JSX.Element {
       noticeOnPathsAdded(paths)
     },
   })
+
+  const rekordboxOptionsForDots = useRekordboxPlaylistOptions(rekordboxAvailable)
+  const listMembership = useRekordboxMembership(tracks.map(rekordboxPathOf), rekordboxAvailable, {
+    keepPrevious: true,
+  })
+  const dotsRef = useRef<Map<string, PlaylistDot>>(new Map())
+  const playlistDots = useMemo(() => {
+    const next = playlistDotsOf(tracks, listMembership, rekordboxOptionsForDots, dotsRef.current)
+    dotsRef.current = next
+    return next
+  }, [tracks, listMembership, rekordboxOptionsForDots])
 
   // Which DJ library and playlist the list is narrowed to. The playlist's files join the
   // working list as they arrive, so its rows exist to be shown; a refocus re-read lands here
@@ -2740,6 +2757,7 @@ export default function App(): React.JSX.Element {
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               backupAtByPath={backupAtByPath}
+                              playlistDots={playlistDots}
                               onOpenBackup={onOpenBackup}
                               duplicateRankById={duplicateRankById}
                             />

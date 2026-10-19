@@ -431,7 +431,10 @@
       "trash": "In den Papierkorb legen",
       "trashWin": "In den Papierkorb verschieben"
     },
-    "progress": "{{percent}} % abgeschlossen"
+    "progress": "{{percent}} % abgeschlossen",
+    "playlists_one": "In 1 rekordbox-Playlist: {{names}}",
+    "playlists_other": "In {{count}} rekordbox-Playlists: {{names}}",
+    "playlistsPending": "Playlist-Änderungen noch nicht geschrieben"
   },
   "editor": {
     "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",

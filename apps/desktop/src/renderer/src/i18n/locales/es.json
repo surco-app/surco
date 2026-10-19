@@ -431,7 +431,10 @@
       "trash": "Mover a la papelera",
       "trashWin": "Mover a la papelera de reciclaje"
     },
-    "progress": "{{percent}} % completado"
+    "progress": "{{percent}} % completado",
+    "playlists_one": "En 1 playlist de rekordbox: {{names}}",
+    "playlists_other": "En {{count}} playlists de rekordbox: {{names}}",
+    "playlistsPending": "Cambios de playlists sin escribir"
   },
   "editor": {
     "searchPlaceholder": "Busca en tus fuentes o pega un ID de release de Discogs…",
