@@ -110,6 +110,7 @@ import {
   beginRekordboxBatch,
   redirectRekordboxRepoint,
 } from './rekordboxBatch'
+import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
@@ -227,6 +228,13 @@ const rekordboxQueueWatch = watchRekordboxQueue({
   collection: rekordboxCollectionPath,
   isRunning: isRekordboxRunning,
   onApplied: announceApplied,
+  alwaysWatch: () => getSettings().completeCuesOnClose,
+  onClosed: () =>
+    completeOnClose({
+      enabled: () => getSettings().completeCuesOnClose,
+      collection: rekordboxCollectionPath,
+      queue: rekordboxQueue,
+    }),
 })
 const applyRekordboxQueueQuietly = (): void => {
   void serialLibraryFlush(() =>
@@ -695,6 +703,7 @@ function registerIpc(): void {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }
+    if (patch.completeCuesOnClose !== undefined) rekordboxQueueWatch.poke()
     return settingsForRenderer(next)
   })
 

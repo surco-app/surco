@@ -104,6 +104,7 @@ export function DestinationTab({
   onChangeRekordboxDbPath,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [completeCount, setCompleteCount] = useState<number | null>(null)
   // One signed number still drives the whole section, clamped so a value from an older
   // build cannot step out of range. The DJ never sees this sign: the choice below carries
   // the direction and the stepper only ever shows its magnitude.
@@ -438,6 +439,51 @@ export function DestinationTab({
           />
         </div>
         <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
+        <CheckboxRow
+          testid="settings-complete-cues"
+          className="mt-4"
+          checked={synced.completeCuesOnClose}
+          disabled={!rekordboxCollection}
+          onChange={(v) => {
+            if (!v) {
+              setCompleteCount(null)
+              patch('completeCuesOnClose', false)
+              return
+            }
+            void window.api.rekordboxCountCompletable().then(setCompleteCount)
+          }}
+          label={tr('settings.completeCues')}
+        />
+        {completeCount !== null && (
+          <div
+            data-testid="settings-complete-cues-confirm"
+            className="mt-2 rounded-lg border border-[var(--color-line-strong)] p-3 text-xs"
+          >
+            <p className="text-fg">{tr('settings.completeCuesCount', { count: completeCount })}</p>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                data-testid="settings-complete-cues-no"
+                onClick={() => setCompleteCount(null)}
+                className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+              >
+                {tr('settings.completeCuesNo')}
+              </button>
+              <button
+                type="button"
+                data-testid="settings-complete-cues-yes"
+                onClick={() => {
+                  patch('completeCuesOnClose', true)
+                  setCompleteCount(null)
+                }}
+                className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+              >
+                {tr('settings.completeCuesYes')}
+              </button>
+            </div>
+          </div>
+        )}
+        <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
       </SettingsSection>
       {/* Engine DJ's library is the one its destination already writes to, so the
           toggle is the whole setup: it keeps rows that point at a converted file's

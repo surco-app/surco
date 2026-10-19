@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import type { SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
+import { completableOps } from './rekordboxCompleteOnClose'
 import { cueSummaries, readTrackCues } from './rekordboxCues'
 import { withCollection } from './rekordboxPlaylistsIpc'
 import type { RekordboxQueue } from './rekordboxQueue'
@@ -18,6 +19,10 @@ export function registerRekordboxCuesIpc(host: {
   ipcMain.handle('rekordbox:cueSummary', (_e, contentIds: string[]) => {
     const path = host.collection()
     return withCollection(path, (db) => cueSummaries(db, rekordboxShareDir(path), contentIds), {})
+  })
+  ipcMain.handle('rekordbox:countCompletable', () => {
+    const path = host.collection()
+    return withCollection(path, (db) => completableOps(db, rekordboxShareDir(path)).length, 0)
   })
   ipcMain.handle(
     'rekordbox:queuedCues',

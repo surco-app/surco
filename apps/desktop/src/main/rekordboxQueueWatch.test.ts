@@ -168,3 +168,65 @@ describe('stillWaiting', () => {
     expect(stillWaiting({ status: 'empty' })).toBe(false)
   })
 })
+
+describe('watchRekordboxQueue on close', () => {
+  it('sees rekordbox close with nothing queued yet, because complete on close fills the queue at that moment', async () => {
+    const { deps, setEmpty } = setup([true, false, false])
+    setEmpty(true)
+    const onClosed = vi.fn(() => setEmpty(false))
+    const watch = watchRekordboxQueue({ ...deps, alwaysWatch: () => true, onClosed })
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(onClosed).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    watch.stop()
+  })
+
+  it('never calls onClosed when rekordbox was not seen open, so starting Surco is not a close', async () => {
+    const { deps, setEmpty } = setup([false, false])
+    setEmpty(true)
+    const onClosed = vi.fn()
+    const watch = watchRekordboxQueue({ ...deps, alwaysWatch: () => true, onClosed })
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(onClosed).not.toHaveBeenCalled()
+    expect(deps.queue.apply).not.toHaveBeenCalled()
+    watch.stop()
+  })
+
+  it('stops polling an empty queue once the option is turned off', async () => {
+    const { deps, setEmpty } = setup([])
+    setEmpty(true)
+    let on = true
+    const watch = watchRekordboxQueue({ ...deps, alwaysWatch: () => on })
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    on = false
+    await vi.advanceTimersByTimeAsync(5000)
+    const checks = deps.isRunning.mock.calls.length
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(checks).toBeGreaterThan(0)
+    expect(deps.isRunning.mock.calls.length).toBe(checks)
+  })
+
+  it('still applies what is queued when onClosed throws', async () => {
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    const { deps } = setup([true, false, false])
+    const onClosed = vi.fn(() => {
+      throw new Error('collection unreadable')
+    })
+    const watch = watchRekordboxQueue({ ...deps, onClosed })
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(1)
+    expect(unhandled).not.toHaveBeenCalled()
+    process.off('unhandledRejection', unhandled)
+    watch.stop()
+  })
+})

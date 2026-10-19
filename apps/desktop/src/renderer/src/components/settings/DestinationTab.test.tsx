@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
 import i18n from '../../i18n'
 
@@ -29,6 +30,7 @@ const synced: SyncedDraft = {
   addToEngineDj: false,
   syncTraktor: false,
   syncRekordbox: false,
+  completeCuesOnClose: false,
   syncEngineDj: false,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
@@ -781,5 +783,58 @@ describe('DestinationTab originals', () => {
     expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
       i18n.t('settings.originalBackupAudioChangesHint'),
     )
+  })
+})
+
+describe('complete on close', () => {
+  function renderRekordbox(completeCuesOnClose: boolean, count = 312) {
+    const rekordboxCountCompletable = vi.fn<Api['rekordboxCountCompletable']>(async () => count)
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      rekordboxCountCompletable,
+    }
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, completeCuesOnClose }}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection="/rb/master.db"
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+    return { patch, rekordboxCountCompletable }
+  }
+
+  it('says how many tracks it will write into before turning on, since it touches tracks never opened in Surco', async () => {
+    const { patch } = renderRekordbox(false)
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    expect(await screen.findByTestId('settings-complete-cues-confirm')).toHaveTextContent(
+      i18n.t('settings.completeCuesCount', { count: 312 }),
+    )
+    expect(patch).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('settings-complete-cues-yes'))
+    expect(patch).toHaveBeenCalledWith('completeCuesOnClose', true)
+    expect(screen.queryByTestId('settings-complete-cues-confirm')).not.toBeInTheDocument()
+  })
+
+  it('keeps it off when the count is declined', async () => {
+    const { patch } = renderRekordbox(false)
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    fireEvent.click(await screen.findByTestId('settings-complete-cues-no'))
+    expect(patch).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('settings-complete-cues-confirm')).not.toBeInTheDocument()
+  })
+
+  it('turns off without asking, because turning off writes nothing', () => {
+    const { patch, rekordboxCountCompletable } = renderRekordbox(true)
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    expect(patch).toHaveBeenCalledWith('completeCuesOnClose', false)
+    expect(rekordboxCountCompletable).not.toHaveBeenCalled()
   })
 })

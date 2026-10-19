@@ -1353,7 +1353,13 @@
     "originalBackupLimitsKept": "Los límites siguen rigiendo para lo que ya está guardado.",
     "engineSync": "Biblioteca de Engine DJ",
     "syncEngineDj": "Actualizar la biblioteca de Engine DJ al convertir",
-    "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida en el destino Engine DJ. Antes de escribir, Surco guarda junto a la biblioteca una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto."
+    "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida en el destino Engine DJ. Antes de escribir, Surco guarda junto a la biblioteca una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto.",
+    "completeCues": "Al cerrar rekordbox, poner la cuenta atrás en las pistas con drops y sin hot cues",
+    "completeCuesHint": "Escribe en tu colección, también en pistas que no has mirado en Surco. Apagado, la cuenta atrás solo se guarda desde la sección Cues.",
+    "completeCuesCount_one": "Se completará 1 pista al cerrar rekordbox.",
+    "completeCuesCount_other": "Se completarán {{count}} pistas al cerrar rekordbox.",
+    "completeCuesYes": "Encender",
+    "completeCuesNo": "Cancelar"
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",

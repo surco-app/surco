@@ -1353,7 +1353,13 @@
     "originalBackupLimitsKept": "Les limites régissent toujours ce qui est déjà conservé.",
     "engineSync": "Bibliothèque Engine DJ",
     "syncEngineDj": "Mettre à jour la bibliothèque Engine DJ à la conversion",
-    "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie pour la destination Engine DJ qui est utilisée. Avant d'écrire, Surco enregistre à côté de la bibliothèque une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert."
+    "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie pour la destination Engine DJ qui est utilisée. Avant d'écrire, Surco enregistre à côté de la bibliothèque une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert.",
+    "completeCues": "À la fermeture de rekordbox, placer le compte à rebours sur les morceaux avec drops et sans hot cues",
+    "completeCuesHint": "Écrit dans ta collection, y compris sur des morceaux que tu n'as pas regardés dans Surco. Désactivé, le compte à rebours ne s'enregistre que depuis la section Cues.",
+    "completeCuesCount_one": "1 morceau sera complété à la fermeture de rekordbox.",
+    "completeCuesCount_other": "{{count}} morceaux seront complétés à la fermeture de rekordbox.",
+    "completeCuesYes": "Activer",
+    "completeCuesNo": "Annuler"
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",

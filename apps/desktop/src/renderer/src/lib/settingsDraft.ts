@@ -23,6 +23,7 @@ export interface SyncedDraft {
   addToEngineDj: boolean
   syncTraktor: boolean
   syncRekordbox: boolean
+  completeCuesOnClose: boolean
   syncEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
@@ -120,6 +121,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     addToEngineDj: s.addToEngineDj,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,
+    completeCuesOnClose: s.completeCuesOnClose,
     syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,

@@ -193,6 +193,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
   rekordboxCueSummary: (contentIds: string[]): Promise<Record<string, CueSummary>> =>
     ipcRenderer.invoke('rekordbox:cueSummary', contentIds),
+  rekordboxCountCompletable: (): Promise<number> =>
+    ipcRenderer.invoke('rekordbox:countCompletable'),
   rekordboxQueuedCues: (contentId: string): Promise<number[] | null> =>
     ipcRenderer.invoke('rekordbox:queuedCues', contentId),
   undoRekordboxCues: (contentId: string): Promise<void> =>

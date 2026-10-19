@@ -54,6 +54,7 @@ const settings: Settings = {
   rekordboxDbPath: '',
   syncTraktor: false,
   syncRekordbox: false,
+  completeCuesOnClose: false,
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   betaUpdates: false,

@@ -66,6 +66,7 @@ export const defaults: Settings = {
   // syncToggleMigration.ts.
   syncTraktor: false,
   syncRekordbox: false,
+  completeCuesOnClose: false,
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —

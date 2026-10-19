@@ -1353,7 +1353,13 @@
     "originalBackupLimitsKept": "The limits still govern what is already kept.",
     "engineSync": "Engine DJ library",
     "syncEngineDj": "Update the Engine DJ library when converting",
-    "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen under the Engine DJ destination. Before writing, Surco saves a backup of the whole run next to the library, plus one of each write, and it never writes while Engine DJ is open."
+    "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen under the Engine DJ destination. Before writing, Surco saves a backup of the whole run next to the library, plus one of each write, and it never writes while Engine DJ is open.",
+    "completeCues": "When rekordbox closes, set the countdown on tracks with drops and no hot cues",
+    "completeCuesHint": "It writes to your collection on tracks you have not looked at in Surco. Off, the countdown is only saved from the Cues section.",
+    "completeCuesCount_one": "1 track will be completed when rekordbox closes.",
+    "completeCuesCount_other": "{{count}} tracks will be completed when rekordbox closes.",
+    "completeCuesYes": "Turn on",
+    "completeCuesNo": "Cancel"
   },
   "errorBoundary": {
     "title": "Something failed to render",

@@ -1353,7 +1353,13 @@
     "originalBackupLimitsKept": "Die Grenzen gelten weiterhin für das bereits Aufbewahrte.",
     "engineSync": "Engine-DJ-Bibliothek",
     "syncEngineDj": "Engine-DJ-Bibliothek beim Konvertieren aktualisieren",
-    "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die beim Ziel Engine DJ gewählte Bibliothek. Vor dem Schreiben legt Surco neben der Bibliothek eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist."
+    "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die beim Ziel Engine DJ gewählte Bibliothek. Vor dem Schreiben legt Surco neben der Bibliothek eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
+    "completeCues": "Beim Schließen von rekordbox den Countdown in Titeln mit Drops und ohne Hot Cues setzen",
+    "completeCuesHint": "Schreibt in deine Sammlung, auch in Titel, die du in Surco nicht angesehen hast. Aus wird der Countdown nur im Abschnitt Cues gespeichert.",
+    "completeCuesCount_one": "1 Titel wird beim Schließen von rekordbox ergänzt.",
+    "completeCuesCount_other": "{{count}} Titel werden beim Schließen von rekordbox ergänzt.",
+    "completeCuesYes": "Einschalten",
+    "completeCuesNo": "Abbrechen"
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",

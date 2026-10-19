@@ -7,6 +7,8 @@ export interface WatchDeps {
   isRunning: () => Promise<boolean>
   onApplied: (result: QueueApply) => void
   intervalMs?: number
+  alwaysWatch?: () => boolean
+  onClosed?: () => void
 }
 
 export function stillWaiting(result: QueueApply): boolean {
@@ -20,15 +22,18 @@ export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: 
   let timer: ReturnType<typeof setInterval> | null = null
   let armed = true
   let busy = false
+  let seenRunning = false
+  const shouldWatch = (): boolean => !deps.queue.isEmpty() || (deps.alwaysWatch?.() ?? false)
 
   const stop = (): void => {
     if (timer) clearInterval(timer)
     timer = null
+    seenRunning = false
   }
 
   const tick = async (): Promise<void> => {
     if (busy) return
-    if (deps.queue.isEmpty()) {
+    if (!shouldWatch()) {
       stop()
       return
     }
@@ -44,9 +49,18 @@ export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: 
       }
       if (running) {
         armed = true
+        seenRunning = true
         return
       }
-      if (!armed) return
+      if (seenRunning) {
+        seenRunning = false
+        try {
+          deps.onClosed?.()
+        } catch (error) {
+          log.warn('rekordbox close handler threw', error)
+        }
+      }
+      if (deps.queue.isEmpty() || !armed) return
       let result: QueueApply
       try {
         result = await deps.queue.apply(async () => !(await deps.isRunning()))
@@ -59,7 +73,7 @@ export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: 
       if (stillWaiting(result)) return
       if (result.status === 'refused') armed = false
       if (result.status !== 'empty') deps.onApplied(result)
-      if (deps.queue.isEmpty()) stop()
+      if (!shouldWatch()) stop()
     } finally {
       busy = false
     }
@@ -67,7 +81,7 @@ export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: 
 
   return {
     poke() {
-      if (deps.queue.isEmpty()) return
+      if (!shouldWatch()) return
       if (!timer) timer = setInterval(() => void tick(), deps.intervalMs ?? 5000)
       void tick()
     },

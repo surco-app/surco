@@ -41,6 +41,7 @@ describe('registerRekordboxCuesIpc', () => {
     })
     expect(handler('rekordbox:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:cueSummary')({}, ['103'])).toEqual({})
+    expect(handler('rekordbox:countCompletable')({})).toBe(0)
   })
 
   it('reports the drops queued for a track, or null when nothing waits', () => {

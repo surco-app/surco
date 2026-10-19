@@ -134,6 +134,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     rekordboxDbPath: '',
     syncTraktor: false,
     syncRekordbox: false,
+    completeCuesOnClose: false,
     rekordboxPlaylistsFieldOffered: true,
     syncEngineDj: false,
     betaUpdates: false,
