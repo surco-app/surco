@@ -133,3 +133,30 @@ Vicent, 19/10: "el auto, esta feature no podría analizar la db de cada usuario 
 
 - Mover y borrar cues de rekordbox es más delicado que añadir. Las pruebas se hacen sobre la copia de pruebas, nunca sobre `~/Library/Pioneer`, y el orden de letras al mover una cue se comprueba en rekordbox de verdad antes de dar el plan por bueno.
 - El motor genérico tiene que respetar casos raros de `rules.py` (intro que no cuadra, pistas cortas, más de 8 cues); por eso el criterio duro es la paridad con sus tests.
+
+## Medido: botón Auto (19/10/2026)
+
+Copia de pruebas `scratchpad/rb-ver/master.db` (copiada el 19/10 con rekordbox cerrado, después del recoloreado del 18/10), solo lectura. Comando: `SURCO_AUTO_DROPS_DB=<copia> vitest run src/main/autoDropsMeasure.test.ts`.
+
+| Medida | Valor |
+|---|---|
+| Pistas con donde rompe marcado | 1576 (todas con frases de rekordbox) |
+| Donde rompe marcados | 4396 |
+| Acertados (propuesta en el mismo compás) | 2780 |
+| Propuestas | 15924 (unas 10 por pista) |
+| Propuestas que caen en un donde rompe suyo | 2780 |
+| Recall | 0,632 |
+| Precisión | 0,175 |
+
+Calibrado con sus propias marcas (dejando fuera cada pista al aprender, y también en 5 grupos por pista): aprende "inicio del estribillo, 0 compases", que es lo mismo que ya propone la regla general, y da exactamente los mismos números. Calibrar no mejora.
+
+No sale: acierta 2780 de 4396 (63 %), por debajo del 70 % fijado, y de cada 10 propuestas solo 2 son buenas. Queda pendiente. Lo que más se escapa: 537 donde rompe al inicio de una subida y 486 un compás después del inicio de un estribillo o una subida.
+
+Sus patrones, medidos en las mismas pistas (3023 hot cues antes del primer donde rompe):
+
+- Distancias a donde rompe: 16 compases 1562 veces, 32 compases 994, 48 compases 243; el resto son casos sueltos.
+- Color dominante por distancia: 16 azul (1), 32 verde (22), 48 rojo (42).
+- El 99,5 % de esas hot cues lleva su CALL debajo.
+- 727 hot cues caen en el primer golpe; sus colores se reparten (verde 248, azul 227, amarillo 159, rojo 92), así que en muchas pistas cortas la cue de la cuenta atrás coincide con el inicio.
+
+Es "Mi flujo", tal como está en §1.
