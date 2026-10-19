@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { HOT_CUE_DEFAULT_COLOR, hotCueColor, MEMORY_CUE_COLOR } from './rekordboxCueColors'
+import {
+  HOT_CUE_DEFAULT_COLOR,
+  HOT_CUE_DEFAULT_INDEX,
+  HOT_CUE_PICKER,
+  hotCueColor,
+  MEMORY_CUE_COLOR,
+} from './rekordboxCueColors'
 
 describe('rekordbox cue colours', () => {
   it('paints the four countdown colours as rekordbox shows them', () => {
@@ -22,5 +28,15 @@ describe('rekordbox cue colours', () => {
 
   it('draws memory cues red, as rekordbox does', () => {
     expect(MEMORY_CUE_COLOR).toBe('#e62828')
+  })
+
+  it('offers the 16 colours of rekordbox picker, the four of the countdown among them', () => {
+    expect(HOT_CUE_PICKER).toHaveLength(16)
+    expect(HOT_CUE_PICKER).toEqual(expect.arrayContaining([1, 22, 32, 42]))
+    expect(new Set(HOT_CUE_PICKER.map(hotCueColor)).size).toBe(16)
+  })
+
+  it('gives a new hot cue the colour rekordbox draws a cue without one', () => {
+    expect(hotCueColor(HOT_CUE_DEFAULT_INDEX)).toBe(HOT_CUE_DEFAULT_COLOR)
   })
 })
