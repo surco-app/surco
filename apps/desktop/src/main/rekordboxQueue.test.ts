@@ -510,9 +510,12 @@ describe('cues in the queue', () => {
   })
 
   it('keeps the latest cues of a track and shows them on the track line, since saving twice leaves the last marking', () => {
-    const q = createRekordboxQueue(deps())
+    const store = memoryStore()
+    const q = createRekordboxQueue(deps({ store }))
     q.enqueue([track('t', '/m/a.wav', { contentId: '103' }), cues('c1', [1000])])
     q.enqueue([cues('c2', [2000])])
+    const saved = JSON.parse(store.text ?? '{}') as { ops: QueueOp[] }
+    expect(saved.ops.filter((o) => o.kind === 'cues')).toEqual([cues('c2', [2000])])
     expect(q.state()).toEqual({
       tracks: 1,
       changes: 0,
@@ -552,12 +555,15 @@ describe('cues in the queue', () => {
     q.enqueue([track('a', '/m/a.wav')])
     d.applyBatch.mockImplementationOnce(async (_c, ops, ensureClosed) => {
       await ensureClosed()
-      q.enqueue([cues('c1', [1000])])
+      q.enqueue([cues('c1', [1000]), track('b', '/m/b.wav', { stamps: { '3000': 100 } })])
       return applied(ops)
     })
     expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
     const saved = JSON.parse(store.text ?? '{}') as { ops: QueueOp[] }
-    expect(saved.ops).toEqual([cues('c1', [1000])])
+    expect(saved.ops).toEqual([
+      cues('c1', [1000]),
+      track('b', '/m/b.wav', { stamps: { '3000': 200 } }),
+    ])
   })
 
   it('never applies cues queued for one collection to another', async () => {

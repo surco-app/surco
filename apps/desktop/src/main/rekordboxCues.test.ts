@@ -265,6 +265,20 @@ describe('applyCueChanges', () => {
     db.close()
   })
 
+  it('seeds contentCue timestamps in ISO form for a negative offset too', async () => {
+    const db = await writable()
+    db.prepare(
+      `UPDATE djmdCue SET created_at = '2026-01-01 00:00:00.000 -05:00' WHERE ID = 'q1'`,
+    ).run()
+    applyCueChanges(db, '103', { insert: [], update: [], remove: ['q3'] }, { now: NOW })
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    const entries = JSON.parse(cc.Cues) as { ID: string; created_at: string }[]
+    expect(entries.find((e) => e.ID === 'q1')?.created_at).toBe('2026-01-01T00:00:00.000-05:00')
+    db.close()
+  })
+
   it('updates an existing contentCue entry and drops the removed one', async () => {
     const db = await writable()
     db.prepare(

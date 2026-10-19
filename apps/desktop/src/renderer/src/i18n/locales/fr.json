@@ -2185,8 +2185,8 @@
       "playlistChanged": "{{track}} n’a pas été modifié dans {{playlist}}. Elle a changé dans rekordbox",
       "playlistGone": "{{playlist}} n’existe plus dans rekordbox. {{track}} n’a pas été ajouté",
       "editChanged": "{{playlist}} n’a pas été modifiée. Elle a changé dans rekordbox",
-      "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marquez-les à nouveau",
-      "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez un drop"
+      "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marque-les à nouveau",
+      "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retire un drop"
     },
     "part": {
       "repoint": "nouveau chemin",

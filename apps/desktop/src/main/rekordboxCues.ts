@@ -126,7 +126,7 @@ const CUE_JSON_KEYS = [
 const randomCueId = (): string => String(randomInt(100, 2 ** 32))
 
 const isoOf = (stamp: unknown): unknown =>
-  typeof stamp === 'string' ? stamp.replace(' ', 'T').replace(' +', '+') : stamp
+  typeof stamp === 'string' ? stamp.replace(' ', 'T').replace(/ ([+-]\d\d:\d\d)$/, '$1') : stamp
 
 function liveEntries(db: Db, contentId: string): Record<string, unknown>[] {
   return (
