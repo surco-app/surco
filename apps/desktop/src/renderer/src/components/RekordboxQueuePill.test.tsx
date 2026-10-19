@@ -87,4 +87,26 @@ describe('RekordboxQueuePill', () => {
     fireEvent.pointerDown(document.body)
     expect(screen.queryByTestId('rekordbox-queue-menu')).toBeNull()
   })
+
+  it('does not come back already open after the queue empties and fills again', () => {
+    const view = render(
+      <RekordboxQueuePill state={STATE} onApplyNow={vi.fn()} onDiscard={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    fireEvent.click(screen.getByTestId('rekordbox-queue-discard'))
+    const empty = { tracks: 0, changes: 0, items: [] }
+    view.rerender(<RekordboxQueuePill state={empty} onApplyNow={vi.fn()} onDiscard={vi.fn()} />)
+    view.rerender(<RekordboxQueuePill state={STATE} onApplyNow={vi.fn()} onDiscard={vi.fn()} />)
+    expect(screen.queryByTestId('rekordbox-queue-menu')).toBeNull()
+  })
+
+  it('keeps Escape to itself so the app behind does not also react', () => {
+    setup()
+    const behind = vi.fn()
+    window.addEventListener('keydown', behind)
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    window.removeEventListener('keydown', behind)
+    expect(behind).not.toHaveBeenCalled()
+  })
 })

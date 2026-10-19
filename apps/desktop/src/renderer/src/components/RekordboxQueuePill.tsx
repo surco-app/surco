@@ -22,7 +22,9 @@ export function RekordboxQueuePill({
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      setOpen(false)
     }
     const onPointer = (e: PointerEvent): void => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
@@ -36,6 +38,12 @@ export function RekordboxQueuePill({
   }, [open])
 
   const text = pillText(tr, state)
+  const hidden = !text
+  useEffect(() => {
+    if (!hidden) return
+    setOpen(false)
+    setConfirming(false)
+  }, [hidden])
   if (!text) return null
   return (
     <div ref={rootRef} className="relative">

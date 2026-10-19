@@ -130,7 +130,7 @@ import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
-import { type PlaylistDot, playlistDotsOf, rekordboxPathOf } from './lib/rekordboxPlaylists'
+import { discardPlaylistEdits, type PlaylistDot, playlistDotsOf } from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -659,13 +659,9 @@ export default function App(): React.JSX.Element {
     [store],
   )
   const editRekordbox = useRekordboxEdits(notifyEdit)
-  const dropDiscardedPlaylists = useStableCallback((paths: string[]) => {
-    const discarded = new Set(paths)
-    const ids = tracksRef.current
-      .filter((t) => t.rekordboxPlaylists && discarded.has(rekordboxPathOf(t)))
-      .map((t) => t.id)
-    if (ids.length > 0) patchTracks(ids, { rekordboxPlaylists: undefined })
-  })
+  const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
+    setTracks((prev) => discardPlaylistEdits(prev, paths)),
+  )
   const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists)
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
   const queuePill = useMemo(

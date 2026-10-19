@@ -23,7 +23,11 @@ export function useRekordboxQueue(
       .then((s) => {
         if (live && !pushed) setState(s)
       })
-      .catch(() => {})
+      .catch((e: unknown) => {
+        window.api.logError(
+          `rekordbox queue: first read failed (${e instanceof Error ? e.message : String(e)})`,
+        )
+      })
     const off = window.api.onRekordboxQueueChanged((s) => {
       pushed = true
       setState(s)

@@ -1,5 +1,6 @@
 import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { trackSignature } from './dirty'
 
 export interface PlaylistOption {
   id: string
@@ -176,4 +177,19 @@ export function playlistDotsOf(
     out.set(t.id, same ? before : { names, pending })
   }
   return out
+}
+
+export function discardPlaylistEdits(tracks: TrackItem[], paths: string[]): TrackItem[] {
+  const discarded = new Set(paths)
+  return tracks.map((t) => {
+    if (!t.rekordboxPlaylists || !discarded.has(rekordboxPathOf(t))) return t
+    const before = trackSignature(t)
+    const cleared: TrackItem = { ...t, rekordboxPlaylists: undefined }
+    const after = trackSignature(cleared)
+    return {
+      ...cleared,
+      ...(t.processedSignature === before && { processedSignature: after }),
+      ...(t.diskSignature === before && { diskSignature: after }),
+    }
+  })
 }

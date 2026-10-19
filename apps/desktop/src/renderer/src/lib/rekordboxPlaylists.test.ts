@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { SourceNode } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { isStale, trackSignature } from './dirty'
 import {
   bulkPlaylistState,
   canCreate,
+  discardPlaylistEdits,
   effectivePlaylists,
   isPlaylistsPending,
   matchingOptions,
@@ -12,6 +14,7 @@ import {
   playlistOptions,
   withTarget,
 } from './rekordboxPlaylists'
+import { hasStagedEdits } from './sessionEdits'
 
 function track(over: Partial<TrackItem> & { id: string }): TrackItem {
   return {
@@ -231,5 +234,45 @@ describe('playlistDotsOf', () => {
     const writes = set.mock.calls.length
     set.mockRestore()
     expect(writes).toBeLessThan(many.length + OPTIONS.length * 3)
+  })
+})
+
+describe('discardPlaylistEdits', () => {
+  const target = [{ id: '1001', name: 'Bolos' }]
+  const converted = (over: Partial<TrackItem> = {}): TrackItem => {
+    const base = track({
+      id: 'a',
+      status: 'done',
+      outputPath: '/out/a.aiff',
+      rekordboxPlaylists: target,
+      ...over,
+    })
+    const signature = trackSignature(base)
+    return { ...base, processedSignature: signature, diskSignature: signature }
+  }
+
+  it('clears a converted row matched by its output path without making it stale or unsaved', () => {
+    const [out] = discardPlaylistEdits([converted()], ['/out/a.aiff'])
+    expect(out.rekordboxPlaylists).toBeUndefined()
+    expect(isStale(out)).toBe(false)
+    expect(hasStagedEdits(out)).toBe(false)
+  })
+
+  it('keeps the other staged edits and their staleness', () => {
+    const edited = converted()
+    const staged = {
+      ...edited,
+      meta: { ...edited.meta, title: 'New title' },
+    }
+    const [out] = discardPlaylistEdits([staged], ['/out/a.aiff'])
+    expect(out.meta.title).toBe('New title')
+    expect(isStale(out)).toBe(true)
+  })
+
+  it('leaves unmatched rows untouched', () => {
+    const rows = [converted(), track({ id: 'b' })]
+    const out = discardPlaylistEdits(rows, ['/nowhere.wav'])
+    expect(out[0]).toBe(rows[0])
+    expect(out[1]).toBe(rows[1])
   })
 })

@@ -125,4 +125,15 @@ describe('useRekordboxQueue', () => {
     expect(notify).toHaveBeenCalledWith(expect.any(String), 'danger')
     expect(onDiscarded).not.toHaveBeenCalled()
   })
+
+  it('logs a first read that fails instead of swallowing it', async () => {
+    const logError = vi.fn<Api['logError']>()
+    setup({
+      logError,
+      rekordboxQueue: vi.fn<Api['rekordboxQueue']>(async () => {
+        throw new Error('ipc down')
+      }),
+    })
+    await waitFor(() => expect(logError).toHaveBeenCalledWith(expect.stringContaining('ipc down')))
+  })
 })
