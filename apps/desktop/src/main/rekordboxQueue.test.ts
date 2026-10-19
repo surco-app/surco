@@ -59,6 +59,7 @@ function deps(over: Partial<QueueDeps> = {}) {
     repoint: vi.fn<QueueDeps['repoint']>(async (_c, list) =>
       list.map((): LibraryRepointResult => ({ written: true })),
     ),
+    nodeStamps: vi.fn<QueueDeps['nodeStamps']>(async () => ({})),
     onChange: vi.fn<(s: RekordboxQueueState) => void>(),
   }
   return Object.assign(base, over)
@@ -259,5 +260,62 @@ describe('rekordbox queue', () => {
     await q.apply(closed)
     const saved = JSON.parse(store.text ?? '{}') as { ops: TrackOp[] }
     expect(saved.ops.map((o) => o.stamps)).toEqual([{ '3000': 200, '3001': 50 }, { '3000': 90 }])
+  })
+
+  async function stampsAfterBatch(
+    batch: (ops: QueueOp[]) => BatchResult,
+    second: () => Promise<Record<string, number>>,
+  ) {
+    const store = memoryStore()
+    const nodeStamps = vi
+      .fn<QueueDeps['nodeStamps']>()
+      .mockResolvedValueOnce({ '3000': 100 })
+      .mockImplementationOnce(second)
+    const d = deps({ store, nodeStamps })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    d.applyBatch.mockImplementationOnce(async (_c, ops, ensureClosed) => {
+      await ensureClosed()
+      q.enqueue([track('b', '/m/b.wav', { stamps: { '3000': 100 } })])
+      return batch(ops)
+    })
+    const result = await q.apply(closed)
+    const saved = JSON.parse(store.text ?? '{}') as { ops: TrackOp[] }
+    return { result, saved }
+  }
+
+  it('refreshes no stamp when the batch wrote nothing since no node moved', async () => {
+    const { saved } = await stampsAfterBatch(
+      (ops) => ({ ...applied(ops), wrote: false }),
+      async () => ({ '3000': 200 }),
+    )
+    expect(saved.ops.map((o) => o.stamps)).toEqual([{ '3000': 100 }])
+  })
+
+  it('keeps the recorded stamp of a node the batch deleted so the op still reads as stale', async () => {
+    const { saved } = await stampsAfterBatch(applied, async () => ({}))
+    expect(saved.ops.map((o) => o.stamps)).toEqual([{ '3000': 100 }])
+  })
+
+  it('still reports a write whose stamp read failed afterwards and has already dropped the applied ops', async () => {
+    const { result, saved } = await stampsAfterBatch(applied, async () => {
+      throw new Error('xml gone')
+    })
+    expect(result).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(saved.ops.map((o) => o.id)).toEqual(['b'])
+  })
+
+  it('tells about a conversion output that is missing instead of dropping the repoint', async () => {
+    const d = deps({
+      repoint: vi.fn<QueueDeps['repoint']>(async () => [
+        { written: false, reason: 'output-missing' },
+      ]),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    const result = await q.apply(closed)
+    expect(result.status === 'applied' && result.notices).toEqual([
+      { code: 'file-missing', track: 'b.wav' },
+    ])
   })
 })

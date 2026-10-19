@@ -43,7 +43,7 @@ export interface QueueDeps {
     ensureClosed: () => Promise<boolean>,
   ) => Promise<BatchResult>
   repoint: (collectionPath: string, repoints: RekordboxRepoint[]) => Promise<LibraryRepointResult[]>
-  nodeStamps?: (collectionPath: string) => Promise<Record<string, number>>
+  nodeStamps: (collectionPath: string) => Promise<Record<string, number>>
   onChange: (state: RekordboxQueueState) => void
 }
 
@@ -147,6 +147,10 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
         if (r.written) repointedTo.add(repoints[i].to)
         else if (r.reason === 'ambiguous')
           repointNotices.push({ code: 'ambiguous', track: basename(repoints[i].to) })
+        else if (r.reason === 'output-missing')
+          repointNotices.push({ code: 'file-missing', track: basename(repoints[i].to) })
+        else if (r.reason === 'no-match')
+          log.info(`rekordbox repoint found no match for ${basename(repoints[i].to)}`)
       }
       q.repoints = q.repoints.filter((r) => !repoints.includes(r))
       save()
@@ -163,20 +167,29 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     let before: Record<string, number> | null = null
     const askAndSnapshot = async (): Promise<boolean> => {
       if (!(await askBatch())) return false
-      before = (await deps.nodeStamps?.(collectionPath)) ?? null
+      try {
+        before = await deps.nodeStamps(collectionPath)
+      } catch (err) {
+        log.warn(`rekordbox node stamps unreadable before the batch: ${String(err)}`)
+      }
       return true
     }
     const result = await deps.applyBatch(collectionPath, ops, askAndSnapshot)
     if (!result.ok) return refused(result.reason)
     const given = new Set(ops.map((o) => o.id))
     q.ops = q.ops.filter((o) => !given.has(o.id))
-    if (result.wrote && before && deps.nodeStamps) {
-      const after = await deps.nodeStamps(collectionPath)
-      for (const op of q.ops)
-        for (const [id, stamp] of Object.entries(op.stamps))
-          if (stamp === before[id] && after[id] !== undefined) op.stamps[id] = after[id]
-    }
     save()
+    if (result.wrote && before) {
+      try {
+        const after = await deps.nodeStamps(collectionPath)
+        for (const op of q.ops)
+          for (const [id, stamp] of Object.entries(op.stamps))
+            if (stamp === before[id] && after[id] !== undefined) op.stamps[id] = after[id]
+        save()
+      } catch (err) {
+        log.warn(`rekordbox node stamps unreadable after the batch: ${String(err)}`)
+      }
+    }
     const byId = new Map(ops.map((o) => [o.id, o]))
     const notices = [
       ...repointNotices,
