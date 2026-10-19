@@ -82,7 +82,7 @@ function Picker({
         }}
         onKeyDown={onKeyDown}
         onBlur={() => setText('')}
-        className="w-full bg-transparent py-0.5 text-sm text-fg outline-none placeholder:text-fg-faint"
+        className="w-full rounded-md bg-transparent px-2 py-1 text-sm text-fg outline-none placeholder:text-fg-faint"
       />
       {rows.length > 0 && (
         <div
