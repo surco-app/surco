@@ -5086,3 +5086,474 @@ git commit -m "List the rekordbox Playlists field in Campos and show it once a c
 
 ---
 
+### Task 13: The field in the editor
+
+**Files:**
+- Modify: `src/renderer/src/lib/fieldSpecs.ts` (`PlaylistsSpec`, `FieldSpec.playlists`, `BuildFieldSpecsParams.playlists`, both modes)
+- Modify: `src/renderer/src/components/MetadataForm.tsx` (`renderField`)
+- Modify: `src/renderer/src/components/Editor.tsx` (builds the spec, new prop `onChangeTracksPlaylists`)
+- Modify: `src/renderer/src/App.tsx` (passes `onChangeTracksPlaylists`)
+- Test: `src/renderer/src/lib/fieldSpecs.test.ts`, `src/renderer/src/components/MetadataForm.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 10 `effectivePlaylists`, `bulkPlaylistState`, `withTarget`, `rekordboxPathOf`, `PlaylistOption`; Task 11 `PlaylistsField`, `PlaylistsBulkField`; Task 12 `REKORDBOX_PLAYLISTS_FIELD`, `useRekordboxAvailable`, `useRekordboxPlaylistOptions`, `useRekordboxMembership`; `patchTracks(ids, patch)` from `useTrackLibrary`.
+- Produces:
+  - `interface PlaylistsSpec { options: PlaylistOption[]; single: { value: RekordboxPlaylistTarget[]; onChange: (next: RekordboxPlaylistTarget[]) => void }; bulk: { states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]; onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void } }`
+  - `FieldSpec.playlists?: PlaylistsSpec & { multi: boolean }`; `BuildFieldSpecsParams.playlists?: PlaylistsSpec` (absent: no collection, the field is skipped)
+  - `Editor` prop `onChangeTracksPlaylists?: (patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[]) => void`
+
+The field sits where the user put it in Campos, single or bulk; it is never required and has no `{ }` menu.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `src/renderer/src/lib/fieldSpecs.test.ts` (it has `params()` and `track()`):
+
+```ts
+describe('the rekordbox Playlists field', () => {
+  const playlists = {
+    options: [{ id: '3000', name: 'Makina', path: '' }],
+    single: { value: [{ id: '3000', name: 'Makina' }], onChange: vi.fn() },
+    bulk: { states: [], onToggle: vi.fn() },
+  }
+
+  // In the user's order from Campos, like any other field.
+  it('takes its place among the shown fields', () => {
+    const specs = buildFieldSpecs(
+      params({ visibleFields: ['title', 'rekordboxPlaylists', 'genre'], playlists }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(['title', 'rekordboxPlaylists', 'genre'])
+    expect(specs[1].playlists).toMatchObject({ multi: false, options: playlists.options })
+    expect(specs[1].required).toBeUndefined()
+  })
+
+  // No collection: not in the form, though the key stays in visibleFields for later.
+  it('is left out without a collection', () => {
+    const specs = buildFieldSpecs(params({ visibleFields: ['title', 'rekordboxPlaylists'] }))
+    expect(specs.map((s) => s.key)).toEqual(['title'])
+  })
+
+  it('is offered in bulk for a selection', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a'), track('b')],
+        visibleFields: ['genre', 'rekordboxPlaylists'],
+        playlists,
+      }),
+    )
+    expect(specs.at(-1)).toMatchObject({ key: 'rekordboxPlaylists', playlists: { multi: true } })
+  })
+})
+```
+
+Append to `src/renderer/src/components/MetadataForm.test.tsx` (next to its other `vi.mock` calls add the stub, and use its `renderForm`):
+
+```tsx
+vi.mock('./PlaylistsField', () => ({
+  PlaylistsField: () => <div data-testid="playlists-field" />,
+  PlaylistsBulkField: () => <div data-testid="playlists-bulk" />,
+}))
+
+describe('the rekordbox Playlists field', () => {
+  const playlists = {
+    options: [],
+    single: { value: [], onChange: vi.fn() },
+    bulk: { states: [], onToggle: vi.fn() },
+  }
+
+  it('draws the single field for one track and the bulk one for a selection', () => {
+    renderForm([{ ...spec('rekordboxPlaylists'), playlists: { ...playlists, multi: false } }])
+    expect(screen.getByTestId('playlists-field')).toBeInTheDocument()
+    cleanup()
+    renderForm([{ ...spec('rekordboxPlaylists'), playlists: { ...playlists, multi: true } }])
+    expect(screen.getByTestId('playlists-bulk')).toBeInTheDocument()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/fieldSpecs.test.ts src/renderer/src/components/MetadataForm.test.tsx`
+Expected: FAIL, the key is dropped (it names no tag and no custom field) and the form renders a plain `Field`.
+
+- [ ] **Step 3: The spec**
+
+In `src/renderer/src/lib/fieldSpecs.ts`, import `type RekordboxPlaylistTarget` (shared types), `REKORDBOX_PLAYLISTS_FIELD` (`./fields`) and `type PlaylistOption` (`./rekordboxPlaylists`), then add:
+
+```ts
+export interface PlaylistsSpec {
+  options: PlaylistOption[]
+  single: {
+    value: RekordboxPlaylistTarget[]
+    onChange: (next: RekordboxPlaylistTarget[]) => void
+  }
+  bulk: {
+    states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]
+    onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
+  }
+}
+```
+
+`FieldSpec` gains `playlists?: PlaylistsSpec & { multi: boolean }`; `BuildFieldSpecsParams` gains `playlists?: PlaylistsSpec`, and `buildFieldSpecs` destructures it. A small builder above `buildFieldSpecs`:
+
+```ts
+function playlistsField(
+  playlists: PlaylistsSpec,
+  multi: boolean,
+  tr: (key: string) => string,
+): FieldSpec {
+  return {
+    key: REKORDBOX_PLAYLISTS_FIELD,
+    label: tr('fields.rekordboxPlaylists'),
+    value: '',
+    onChange: () => {},
+    playlists: { ...playlists, multi },
+  }
+}
+```
+
+In the bulk branch, after the custom fields' spread:
+
+```ts
+        ...(playlists && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
+          ? [playlistsField(playlists, true, tr)]
+          : []),
+```
+
+In the single branch, first line of `visibleFields.flatMap((key) => {`:
+
+```ts
+        if (key === REKORDBOX_PLAYLISTS_FIELD)
+          return playlists ? [playlistsField(playlists, false, tr)] : []
+```
+
+- [ ] **Step 4: The form**
+
+In `src/renderer/src/components/MetadataForm.tsx`, import `PlaylistsBulkField, PlaylistsField` from `./PlaylistsField` and make the first lines of `renderField`:
+
+```tsx
+  if (f.playlists) {
+    return f.playlists.multi ? (
+      <PlaylistsBulkField
+        label={f.label}
+        options={f.playlists.options}
+        states={f.playlists.bulk.states}
+        onToggle={f.playlists.bulk.onToggle}
+      />
+    ) : (
+      <PlaylistsField
+        label={f.label}
+        options={f.playlists.options}
+        value={f.playlists.single.value}
+        onChange={f.playlists.single.onChange}
+      />
+    )
+  }
+```
+
+It has no `width`, so `toRows` gives it a row of its own and the grid's default branch (`Fragment`) places it; its own `@[24rem]:contents` wrapper puts the label and the box in the form's two columns like `Field`.
+
+- [ ] **Step 5: The editor**
+
+In `src/renderer/src/components/Editor.tsx`: add `onChangeTracksPlaylists?: (patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[]) => void` to the props and destructuring; import the three hooks from `../hooks/useRekordboxPlaylists`, `bulkPlaylistState`, `effectivePlaylists`, `rekordboxPathOf`, `withTarget` from `../lib/rekordboxPlaylists`, `REKORDBOX_PLAYLISTS_FIELD` from `../lib/fields`, `type PlaylistsSpec` from `../lib/fieldSpecs`. Before the `fieldSpecs` `useMemo`:
+
+```tsx
+  const rekordboxAvailable = useRekordboxAvailable()
+  const showPlaylists = rekordboxAvailable && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
+  const rekordboxOptions = useRekordboxPlaylistOptions(showPlaylists)
+  const playlistTracks = useMemo(
+    () => (isMulti && selectedTracks ? selectedTracks : [item]),
+    [isMulti, selectedTracks, item],
+  )
+  const membership = useRekordboxMembership(playlistTracks.map(rekordboxPathOf), showPlaylists)
+  const playlistsSpec = useMemo<PlaylistsSpec | undefined>(
+    () =>
+      showPlaylists
+        ? {
+            options: rekordboxOptions,
+            single: {
+              value: effectivePlaylists(item, membership, rekordboxOptions),
+              onChange: (next) => onChange({ rekordboxPlaylists: next }),
+            },
+            bulk: {
+              states: bulkPlaylistState(playlistTracks, membership, rekordboxOptions),
+              onToggle: (target, on) =>
+                onChangeTracksPlaylists?.(
+                  withTarget(playlistTracks, membership, rekordboxOptions, target, on),
+                ),
+            },
+          }
+        : undefined,
+    [showPlaylists, rekordboxOptions, item, membership, playlistTracks, onChange, onChangeTracksPlaylists],
+  )
+```
+
+and pass `playlists: playlistsSpec` to `buildFieldSpecs` and add `playlistsSpec` to that `useMemo`'s dependency list.
+
+In `src/renderer/src/App.tsx`, next to `onEditorChange`:
+
+```tsx
+  const onChangeTracksPlaylists = useStableCallback(
+    (patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[]) => {
+      for (const p of patches) patchTracks([p.id], { rekordboxPlaylists: p.rekordboxPlaylists })
+    },
+  )
+```
+
+and `onChangeTracksPlaylists={onChangeTracksPlaylists}` on `<Editor`.
+
+- [ ] **Step 6: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/fieldSpecs.test.ts src/renderer/src/components/MetadataForm.test.tsx src/renderer/src/components/Editor.test.tsx`
+Expected: PASS. `Editor.test.tsx` runs with the default stub (`rekordboxAvailable` false), so nothing there changes.
+
+- [ ] **Step 7: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/lib/fieldSpecs.ts apps/desktop/src/renderer/src/lib/fieldSpecs.test.ts apps/desktop/src/renderer/src/components/MetadataForm.tsx apps/desktop/src/renderer/src/components/MetadataForm.test.tsx apps/desktop/src/renderer/src/components/Editor.tsx apps/desktop/src/renderer/src/App.tsx
+git commit -m "Show the rekordbox Playlists field in the editor, for one track and for a selection"
+```
+
+---
+
+### Task 14: Dots in the list
+
+**Files:**
+- Create: `src/renderer/src/components/PlaylistDots.tsx`
+- Modify: `src/renderer/src/lib/rekordboxPlaylists.ts` (`PlaylistDot`, `playlistDotsOf`)
+- Modify: `src/renderer/src/components/TrackList.tsx` (`Props.playlistDots`, `RowProps.playlistDots`, the title line)
+- Modify: `src/renderer/src/App.tsx` (computes the dots)
+- Modify: `src/renderer/src/i18n/locales/*.json` (`trackList.playlists`)
+- Test: `src/renderer/src/lib/rekordboxPlaylists.test.ts`, `src/renderer/src/components/PlaylistDots.test.tsx`, `src/renderer/src/components/TrackList.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 10 `effectivePlaylists`, `isPlaylistsPending`, `rekordboxPathOf`; Task 12 `useRekordboxAvailable`, `useRekordboxPlaylistOptions`, `useRekordboxMembership`.
+- Produces:
+  - `interface PlaylistDot { names: string[]; pending: boolean }`
+  - `playlistDotsOf(tracks: readonly TrackItem[], membership: Membership, options: readonly PlaylistOption[], previous: ReadonlyMap<string, PlaylistDot>): Map<string, PlaylistDot>` (a track whose names and pending flag did not change keeps the very same object, so the memoized rows do not re-render; tracks with no playlists are left out)
+  - `PlaylistDots({ dot }: { dot: PlaylistDot })`, test id `track-playlist-dots` with `data-pending`
+  - `TrackList` prop `playlistDots?: ReadonlyMap<string, PlaylistDot>`
+
+Spec "En la lista": up to 4 dots, from 5 the text "5+"; tooltip with the names; hollow while the playlist change is not yet written. Colour: accent (Decision 11). The read is one `rekordbox:membership` for every row of the list (Decision 13 narrowed: the list, not only the visible rows, because the virtualized list has no stable visible set to key a query on); Task 17 measures it on Vicent's 2000-track crate.
+
+- [ ] **Step 1: Locale strings**
+
+Merge with the helper:
+
+```json
+{
+  "es": { "trackList": { "playlists_one": "En 1 playlist de rekordbox: {{names}}", "playlists_other": "En {{count}} playlists de rekordbox: {{names}}", "playlistsPending": "Cambios de playlists sin escribir" } },
+  "en": { "trackList": { "playlists_one": "In 1 rekordbox playlist: {{names}}", "playlists_other": "In {{count}} rekordbox playlists: {{names}}", "playlistsPending": "Playlist changes not written yet" } },
+  "de": { "trackList": { "playlists_one": "In 1 rekordbox-Playlist: {{names}}", "playlists_other": "In {{count}} rekordbox-Playlists: {{names}}", "playlistsPending": "Playlist-Änderungen noch nicht geschrieben" } },
+  "fr": { "trackList": { "playlists_one": "Dans 1 playlist rekordbox : {{names}}", "playlists_other": "Dans {{count}} playlists rekordbox : {{names}}", "playlistsPending": "Changements de playlists pas encore écrits" } },
+  "pt-BR": { "trackList": { "playlists_one": "Em 1 playlist do rekordbox: {{names}}", "playlists_other": "Em {{count}} playlists do rekordbox: {{names}}", "playlistsPending": "Mudanças de playlists ainda não gravadas" } }
+}
+```
+
+The colon in these lines introduces a list of names, not an explanation (the rule forbids the explanatory colon only).
+
+- [ ] **Step 2: Write the failing tests**
+
+Append to `src/renderer/src/lib/rekordboxPlaylists.test.ts` (add `playlistDotsOf` to the import):
+
+```ts
+describe('playlistDotsOf', () => {
+  const a = track({ id: 'a', inputPath: '/m/a.wav' })
+  const b = track({ id: 'b', inputPath: '/m/b.wav' })
+  const membership = { '/m/a.wav': ['3000'] }
+
+  it('names the playlists of each track and says when they are not written yet', () => {
+    const pending = track({ id: 'c', inputPath: '/m/c.wav', rekordboxPlaylists: [{ name: 'Cierre' }] })
+    const dots = playlistDotsOf([a, b, pending], membership, OPTIONS, new Map())
+    expect(dots.get('a')).toEqual({ names: ['Makina'], pending: false })
+    expect(dots.has('b')).toBe(false)
+    expect(dots.get('c')).toEqual({ names: ['Cierre'], pending: true })
+  })
+
+  // Every edit replaces the track array; a fresh object per row would re-render the whole
+  // list on each keystroke.
+  it('keeps the same object for a row whose dots did not change', () => {
+    const first = playlistDotsOf([a], membership, OPTIONS, new Map())
+    const second = playlistDotsOf([{ ...a }], membership, OPTIONS, first)
+    expect(second.get('a')).toBe(first.get('a'))
+  })
+})
+```
+
+Create `src/renderer/src/components/PlaylistDots.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import '../i18n'
+import { PlaylistDots } from './PlaylistDots'
+
+afterEach(cleanup)
+
+describe('PlaylistDots', () => {
+  it('draws one dot per playlist up to four and names them', () => {
+    render(<PlaylistDots dot={{ names: ['Makina', 'Cierre'], pending: false }} />)
+    const dots = screen.getByTestId('track-playlist-dots')
+    expect(dots.querySelectorAll('[data-dot]')).toHaveLength(2)
+    expect(dots).toHaveTextContent('Makina, Cierre')
+  })
+
+  it('says 5+ from five playlists on', () => {
+    render(<PlaylistDots dot={{ names: ['a', 'b', 'c', 'd', 'e', 'f'], pending: false }} />)
+    expect(screen.getByTestId('track-playlist-dots')).toHaveTextContent('5+')
+    expect(screen.getByTestId('track-playlist-dots').querySelectorAll('[data-dot]')).toHaveLength(0)
+  })
+
+  // Hollow, like the pending edits of today, until the queue lands in rekordbox.
+  it('draws pending dots hollow', () => {
+    render(<PlaylistDots dot={{ names: ['Cierre'], pending: true }} />)
+    expect(screen.getByTestId('track-playlist-dots')).toHaveAttribute('data-pending', 'true')
+  })
+})
+```
+
+Append to `src/renderer/src/components/TrackList.test.tsx`:
+
+```tsx
+describe('TrackList rekordbox playlists', () => {
+  it('shows the dots of the rows that have playlists', () => {
+    render(
+      <TrackList
+        tracks={[track({ id: 'a' }), track({ id: 'b' })]}
+        selectedId={null}
+        selectedIds={new Set()}
+        outputFormat="aiff"
+        bindings={bindings}
+        onSelect={vi.fn()}
+        onActivate={vi.fn()}
+        onRemove={vi.fn()}
+        onSwipeRemove={vi.fn()}
+        onAcceptReview={vi.fn()}
+        onPrefetch={vi.fn()}
+        renderMenu={() => null}
+        playlistDots={new Map([['a', { names: ['Makina'], pending: false }]])}
+      />,
+    )
+    expect(screen.getAllByTestId('track-playlist-dots')).toHaveLength(1)
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/rekordboxPlaylists.test.ts src/renderer/src/components/PlaylistDots.test.tsx src/renderer/src/components/TrackList.test.tsx`
+Expected: FAIL, missing export, missing module, unknown prop.
+
+- [ ] **Step 4: Implement**
+
+Append to `src/renderer/src/lib/rekordboxPlaylists.ts`:
+
+```ts
+export interface PlaylistDot {
+  names: string[]
+  pending: boolean
+}
+
+export function playlistDotsOf(
+  tracks: readonly TrackItem[],
+  membership: Membership,
+  options: readonly PlaylistOption[],
+  previous: ReadonlyMap<string, PlaylistDot>,
+): Map<string, PlaylistDot> {
+  const out = new Map<string, PlaylistDot>()
+  for (const t of tracks) {
+    const names = effectivePlaylists(t, membership, options).map((p) => p.name)
+    if (names.length === 0) continue
+    const pending = isPlaylistsPending(t, membership)
+    const before = previous.get(t.id)
+    const same =
+      before !== undefined &&
+      before.pending === pending &&
+      before.names.length === names.length &&
+      before.names.every((n, i) => n === names[i])
+    out.set(t.id, same ? before : { names, pending })
+  }
+  return out
+}
+```
+
+Create `src/renderer/src/components/PlaylistDots.tsx`:
+
+```tsx
+import type React from 'react'
+import { useTranslation } from 'react-i18next'
+import type { PlaylistDot } from '../lib/rekordboxPlaylists'
+import { Tooltip } from './Tooltip'
+
+export function PlaylistDots({ dot }: { dot: PlaylistDot }): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const names = dot.names.join(', ')
+  const label = `${tr('trackList.playlists', { count: dot.names.length, names })}${
+    dot.pending ? `. ${tr('trackList.playlistsPending')}` : ''
+  }`
+  return (
+    <span
+      data-testid="track-playlist-dots"
+      data-pending={dot.pending ? 'true' : undefined}
+      className="group/dot relative flex shrink-0 items-center gap-0.5 text-[10px] text-[var(--color-accent)]"
+    >
+      {dot.names.length > 4
+        ? '5+'
+        : dot.names.map((name) => (
+            <span
+              key={name}
+              data-dot
+              aria-hidden="true"
+              className={`h-1.5 w-1.5 rounded-full border border-[var(--color-accent)] ${
+                dot.pending ? '' : 'bg-[var(--color-accent)]'
+              }`}
+            />
+          ))}
+      <Tooltip label={names} align="end" scope="dot" />
+      <span className="sr-only">{label}</span>
+    </span>
+  )
+}
+```
+
+In `src/renderer/src/components/TrackList.tsx`: import `PlaylistDots` and `type PlaylistDot`; add `playlistDots?: ReadonlyMap<string, PlaylistDot>` to `Props` (next to `backupAtByPath`) and destructure it in `TrackList`; add `playlistDot?: PlaylistDot` to `RowProps` and `TrackRow`'s destructuring; pass `playlistDot={playlistDots?.get(t.id)}` where `backupAt=` is passed (line ~1191); and in the title line, between the title span and `track-duration-slot`:
+
+```tsx
+              {playlistDot && <PlaylistDots dot={playlistDot} />}
+```
+
+In `src/renderer/src/App.tsx`, near the other per-row maps passed to `<TrackList` (`backupAtByPath`):
+
+```tsx
+  const rekordboxOptionsForDots = useRekordboxPlaylistOptions(rekordboxAvailable)
+  const listMembership = useRekordboxMembership(tracks.map(rekordboxPathOf), rekordboxAvailable)
+  const dotsRef = useRef<Map<string, PlaylistDot>>(new Map())
+  const playlistDots = useMemo(() => {
+    const next = playlistDotsOf(tracks, listMembership, rekordboxOptionsForDots, dotsRef.current)
+    dotsRef.current = next
+    return next
+  }, [tracks, listMembership, rekordboxOptionsForDots])
+```
+
+(`rekordboxAvailable` is the value Task 12 added; imports `useRekordboxMembership`, `useRekordboxPlaylistOptions` from `./hooks/useRekordboxPlaylists`, `playlistDotsOf`, `rekordboxPathOf`, `type PlaylistDot` from `./lib/rekordboxPlaylists`), and `playlistDots={playlistDots}` on `<TrackList`.
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/rekordboxPlaylists.test.ts src/renderer/src/components/PlaylistDots.test.tsx src/renderer/src/components/TrackList.test.tsx src/renderer/src/i18n`
+Expected: PASS.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/lib/rekordboxPlaylists.ts apps/desktop/src/renderer/src/lib/rekordboxPlaylists.test.ts apps/desktop/src/renderer/src/components/PlaylistDots.tsx apps/desktop/src/renderer/src/components/PlaylistDots.test.tsx apps/desktop/src/renderer/src/components/TrackList.tsx apps/desktop/src/renderer/src/components/TrackList.test.tsx apps/desktop/src/renderer/src/App.tsx apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Show a track's rekordbox playlists as dots in the list"
+```
+
+---
+
