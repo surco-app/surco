@@ -342,7 +342,7 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
   const hot = existing.filter((c) => c.kind !== 0)
   const memory = existing.filter((c) => c.kind === 0)
   const wantedDrops = flowDrops(flow, { beats, drops: input.drops, strong, phrases })
-  const currentDrops = memory.filter((m) => hot.every((h) => !near(m.ms, h.ms)))
+  const currentDrops = memory.filter((m) => !m.loop && hot.every((h) => !near(m.ms, h.ms)))
   const removed = new Set(
     currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
   )

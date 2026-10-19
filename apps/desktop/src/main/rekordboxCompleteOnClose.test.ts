@@ -144,6 +144,23 @@ describe('completableOps', () => {
       expect(opsOf(await callsCollection(rows), callBack)).toEqual([])
   })
 
+  it('never counts down to a memory loop, which is a loop and not a drop', async () => {
+    const path = await callsCollection([
+      { ID: '11', ContentID: '101', InMsec: 128000, Kind: 0, ColorTableIndex: null },
+      {
+        ID: 'l',
+        ContentID: '101',
+        InMsec: 200000,
+        Kind: 0,
+        ColorTableIndex: null,
+        OutMsec: 204000,
+      },
+    ])
+    const [op] = opsOf(path, MY_FLOW)
+    expect(op.wanted?.filter((w) => w.kind !== 0).map((w) => w.ms)).toEqual([32000, 64000, 96000])
+    expect(op.wanted).toContainEqual({ id: 'l', ms: 200000, kind: 0, color: null })
+  })
+
   it('has nothing to complete with Solo CALL, since the drops already are the CALLs', async () => {
     const path = await collection()
     const db = openRekordboxDb(path, { readonly: true })

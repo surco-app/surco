@@ -77,9 +77,9 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
   }
 }
 
-export function draftDrops(cues: WantedCue[]): number[] {
+export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {
   return findDrops(
-    cues.filter((c) => !isHot(c)).map((c) => c.ms),
+    cues.filter((c) => !isHot(c) && !locked.includes(c.key)).map((c) => c.ms),
     cues.filter(isHot).map((c) => c.ms),
   )
 }
@@ -135,11 +135,12 @@ function regenerate(
     ms: c.ms,
     kind: c.kind,
     color: c.color,
+    loop: state.locked.includes(c.key),
   }))
   const out = flowOutcome({
     existing,
     drops,
-    previousDrops: draftDrops(state.cues),
+    previousDrops: draftDrops(state.cues, state.locked),
     beats: ctx.beats,
     strong: ctx.strong,
     phrases: ctx.phrases,
@@ -213,11 +214,17 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   if (needsGrid(action) && ctx.beats.length === 0) return state
   if (action.type === 'mark-drop') {
     const ms = snap(ctx, action.ms)
-    if (draftDrops(state.cues).some((d) => near(d, ms))) return state
-    return regenerate(state, ctx, [...draftDrops(state.cues), ms], flow, generator)
+    if (draftDrops(state.cues, state.locked).some((d) => near(d, ms))) return state
+    return regenerate(state, ctx, [...draftDrops(state.cues, state.locked), ms], flow, generator)
   }
   if (action.type === 'apply-flow')
-    return regenerate(state, ctx, draftDrops(state.cues), flowById(ctx, action.flowId), generator)
+    return regenerate(
+      state,
+      ctx,
+      draftDrops(state.cues, state.locked),
+      flowById(ctx, action.flowId),
+      generator,
+    )
   if (action.type === 'add-hot' || action.type === 'add-call') {
     const ms = snap(ctx, action.ms)
     const hot = action.type === 'add-hot'
@@ -231,7 +238,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   const target = state.cues.find((c) => c.key === action.key)
   if (!target || state.locked.includes(target.key)) return state
   if (action.type === 'unmark-drop') {
-    const drops = draftDrops(state.cues)
+    const drops = draftDrops(state.cues, state.locked)
     if (!drops.some((d) => near(d, target.ms))) return state
     return regenerate(
       state,

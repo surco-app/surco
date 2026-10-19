@@ -122,6 +122,19 @@ describe('reduceDraft', () => {
     expect(marked.cues.find((c) => c.key === 'm')).toMatchObject({ ms: bar(80), kind: 0 })
   })
 
+  it('never reads a memory loop as a drop, so no flow counts down to it', () => {
+    const s = startDraft([{ id: 'm', ms: bar(100), kind: 0, color: null }], 'mine', ['m'])
+    expect(draftDrops(s.cues, s.locked)).toEqual([])
+    const marked = run(s, { type: 'mark-drop', ms: bar(64) })
+    expect(draftDrops(marked.cues, marked.locked)).toEqual([bar(64)])
+    expect(marked.cues.filter((c) => c.kind !== 0).map((c) => c.ms)).toEqual([
+      bar(16),
+      bar(32),
+      bar(48),
+    ])
+    expect(marked.cues.find((c) => c.key === 'm')).toMatchObject({ ms: bar(100), kind: 0 })
+  })
+
   it('refuses a move onto another hot cue so two never share a spot', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const a = at(marked, bar(16), true)

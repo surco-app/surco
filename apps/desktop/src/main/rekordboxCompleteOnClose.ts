@@ -35,7 +35,7 @@ export function completableOps(
     const read = readTrackCues(db, shareDir, contentId, { wave: false })
     if (!read?.analysed) continue
     const drops = findDrops(
-      read.cues.map((c) => c.ms),
+      read.cues.filter((c) => !c.loop).map((c) => c.ms),
       [],
     )
     const out = flowOutcome({
