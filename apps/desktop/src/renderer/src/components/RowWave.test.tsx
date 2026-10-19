@@ -48,9 +48,50 @@ describe('RowWave', () => {
     render(<RowWave request={request} cues={cues} durationSec={128} pending={false} active />)
     const hot = screen.getAllByTestId('track-hot-cue')
     expect(hot.map((h) => h.textContent)).toEqual(['A', 'B'])
-    expect(hot[1].style.left).toBe('calc(50% - 6px)')
+    expect(hot[1].style.left).toBe('50%')
+    expect(hot[1].style.transform).toBe('translateX(-50%)')
     expect(screen.getAllByTestId('track-memory-cue')).toHaveLength(1)
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName('2 hot cues')
+  })
+
+  it('draws a CALL under its hot cue, centred, instead of hiding it behind the square', () => {
+    render(
+      <RowWave
+        request={request}
+        cues={[
+          { ms: 0, kind: 1, color: 42 },
+          { ms: 0, kind: 0, color: null },
+        ]}
+        durationSec={128}
+        pending={false}
+        active
+      />,
+    )
+    const hot = screen.getByTestId('track-hot-cue')
+    const call = screen.getByTestId('track-memory-cue')
+    expect(call.style.left).toBe(hot.style.left)
+    expect(call.style.transform).toBe('translateX(-50%)')
+    expect(hot.style.transform).toBe('translateX(-50%)')
+    expect(call.style.top).toBe('13px')
+  })
+
+  it('puts every CALL at one height, the drop alone and the ones under hot cues', () => {
+    render(
+      <RowWave
+        request={request}
+        cues={[
+          { ms: 0, kind: 1, color: 42 },
+          { ms: 0, kind: 0, color: null },
+          { ms: 64000, kind: 0, color: null },
+        ]}
+        durationSec={128}
+        pending={false}
+        active
+      />,
+    )
+    expect(new Set(screen.getAllByTestId('track-memory-cue').map((c) => c.style.top))).toEqual(
+      new Set(['13px']),
+    )
   })
 
   it('draws one triangle for memory cues stacked at the same spot, as collections passed through Traktor carry them', () => {

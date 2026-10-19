@@ -1,13 +1,9 @@
 import type React from 'react'
 import { useCallback, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  HOT_CUE_DEFAULT_COLOR,
-  hotCueColor,
-  MEMORY_CUE_COLOR,
-} from '../../../shared/rekordboxCueColors'
+import { HOT_CUE_DEFAULT_COLOR, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { RowCue, RowWaveRequest } from '../../../shared/types'
-import { cueLetter } from '../lib/rowCues'
+import { markStyle, placeCues } from '../lib/cueMarks'
 import { rowWaveKey, rowWaveOf, subscribeRowWave } from '../lib/rowWaves'
 
 const WAVE_HEIGHT = 20
@@ -44,15 +40,9 @@ export function RowWave({
   )
   const bars = useSyncExternalStore(subscribe, () => rowWaveOf(key))
   const span = durationSec && durationSec > 0 ? durationSec * 1000 : 0
-  const placed =
-    span > 0
-      ? cues
-          .filter((c) => c.ms >= 0 && c.ms <= span)
-          .map((c) => ({ ...c, at: (c.ms / span) * 100 }))
-      : []
-  const hot = placed.filter((c) => c.kind !== 0)
-  const memory = placed.filter(
-    (c, i) => c.kind === 0 && placed.findIndex((o) => o.kind === 0 && o.ms === c.ms) === i,
+  const { hot, calls } = placeCues(
+    cues.map((c, i) => ({ key: `${i}`, ...c })),
+    span,
   )
   const awaiting = pending && hot.length === 0
   let label: string | undefined
@@ -81,40 +71,40 @@ export function RowWave({
           <path d={wavePath(bars)} />
         </svg>
       )}
-      {memory.map((c) => (
+      {calls.map((c) => (
         <span
-          key={`m-${c.ms}`}
+          key={`m-${c.key}`}
           data-testid="track-memory-cue"
           aria-hidden="true"
-          style={{ left: `calc(${c.at}% - 4px)`, borderTopColor: MEMORY_CUE_COLOR }}
-          className="absolute top-0.5 h-0 w-0 border-x-4 border-t-[6px] border-x-transparent"
+          style={{ ...markStyle(c.at, 'call', 'row'), borderTopColor: MEMORY_CUE_COLOR }}
+          className="absolute h-0 w-0 border-x-4 border-t-[6px] border-x-transparent"
         />
       ))}
       {awaiting && (
         <span
           data-testid="track-cue-pending"
           aria-hidden="true"
-          style={{ left: 'calc(0% - 6px)', borderColor: HOT_CUE_DEFAULT_COLOR }}
-          className="absolute top-0 h-3 w-3 rounded-[3px] border"
+          style={{ ...markStyle(0, 'hot', 'row'), borderColor: HOT_CUE_DEFAULT_COLOR }}
+          className="absolute h-3 w-3 rounded-[3px] border"
         />
       )}
       {hot.map((c) => {
-        const colour = hotCueColor(c.color)
+        const colour = c.colour
         return (
           <span
-            key={`h-${c.kind}-${c.ms}`}
+            key={`h-${c.key}`}
             data-testid="track-hot-cue"
             aria-hidden="true"
             style={
               pending
-                ? { left: `calc(${c.at}% - 6px)`, borderColor: colour, color: colour }
-                : { left: `calc(${c.at}% - 6px)`, backgroundColor: colour, color: '#000' }
+                ? { ...markStyle(c.at, 'hot', 'row'), borderColor: colour, color: colour }
+                : { ...markStyle(c.at, 'hot', 'row'), backgroundColor: colour, color: '#000' }
             }
-            className={`absolute top-0 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
+            className={`absolute h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
               pending ? 'border' : ''
             }`}
           >
-            {cueLetter(c.kind)}
+            {c.letter}
           </span>
         )
       })}
