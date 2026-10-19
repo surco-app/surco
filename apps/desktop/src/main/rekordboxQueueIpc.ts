@@ -19,7 +19,6 @@ export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null 
 export interface QueueIpcHost {
   collection: () => string
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
-  onApplied: (notice: RekordboxQueueApplied) => void
   onWaiting?: () => void
 }
 

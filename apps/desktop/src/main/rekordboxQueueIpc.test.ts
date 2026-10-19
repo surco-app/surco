@@ -62,11 +62,9 @@ describe('registerRekordboxQueueIpc', () => {
   it('applies now behind the close dialog and answers with the notice', async () => {
     const q = queue()
     const ensureClosed = vi.fn(async () => true)
-    const onApplied = vi.fn()
-    registerRekordboxQueueIpc(q, { collection: () => '/c/master.db', ensureClosed, onApplied })
+    registerRekordboxQueueIpc(q, { collection: () => '/c/master.db', ensureClosed })
     expect(await handler('rekordbox:applyNow')({ sender: {} })).toEqual(appliedNotice(APPLIED))
     expect(ensureClosed).toHaveBeenCalledWith('window')
-    expect(onApplied).not.toHaveBeenCalled()
   })
 
   it('wakes the watcher when the apply is cancelled and the work keeps waiting', async () => {
@@ -74,7 +72,6 @@ describe('registerRekordboxQueueIpc', () => {
     registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {
       collection: () => '/c/master.db',
       ensureClosed: vi.fn(async () => false),
-      onApplied: vi.fn(),
       onWaiting,
     })
     expect(await handler('rekordbox:applyNow')({ sender: {} })).toBeNull()
@@ -86,7 +83,6 @@ describe('registerRekordboxQueueIpc', () => {
     registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'backup-failed' }), {
       collection: () => '/c/master.db',
       ensureClosed: vi.fn(async () => true),
-      onApplied: vi.fn(),
       onWaiting,
     })
     await handler('rekordbox:applyNow')({ sender: {} })
@@ -98,7 +94,6 @@ describe('registerRekordboxQueueIpc', () => {
     registerRekordboxQueueIpc(q, {
       collection: () => '',
       ensureClosed: vi.fn(async () => true),
-      onApplied: vi.fn(),
     })
     await handler('rekordbox:discardQueue')()
     expect(q.discard).toHaveBeenCalled()
@@ -109,7 +104,6 @@ describe('registerRekordboxQueueIpc', () => {
     registerRekordboxQueueIpc(queue(), {
       collection: () => '',
       ensureClosed: vi.fn(async () => true),
-      onApplied: vi.fn(),
     })
     expect(handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
   })

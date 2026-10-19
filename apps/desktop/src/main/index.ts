@@ -933,7 +933,6 @@ function registerIpc(): void {
   registerRekordboxQueueIpc(rekordboxQueue, {
     collection: rekordboxCollectionPath,
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
-    onApplied: (notice) => broadcast('rekordbox:queueApplied', notice),
     onWaiting: rekordboxQueueWatch.poke,
   })
   usbExport = registerUsbExportIpc({
