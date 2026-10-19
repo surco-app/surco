@@ -39,15 +39,25 @@ beforeEach(() => {
   })
 })
 
-function setup(read: TrackCues | null | Error = READ, queued: number[] | null = null) {
+function setup(read: TrackCues | null | Error = READ, queued: number[] | null | Error = null) {
+  const logError = vi.fn<Api['logError']>()
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   const undoRekordboxCues = vi.fn<Api['undoRekordboxCues']>(async () => {})
   const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async () => {
     if (read instanceof Error) throw read
     return read
   })
-  const rekordboxQueuedCues = vi.fn<Api['rekordboxQueuedCues']>(async () => queued)
-  installApi({ rekordboxTrackCues, rekordboxQueuedCues, saveRekordboxCues, undoRekordboxCues })
+  const rekordboxQueuedCues = vi.fn<Api['rekordboxQueuedCues']>(async () => {
+    if (queued instanceof Error) throw queued
+    return queued
+  })
+  installApi({
+    rekordboxTrackCues,
+    rekordboxQueuedCues,
+    saveRekordboxCues,
+    undoRekordboxCues,
+    logError,
+  })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
@@ -58,7 +68,14 @@ function setup(read: TrackCues | null | Error = READ, queued: number[] | null = 
       />
     </QueryClientProvider>,
   )
-  return { saveRekordboxCues, undoRekordboxCues, rekordboxTrackCues, rekordboxQueuedCues, client }
+  return {
+    logError,
+    saveRekordboxCues,
+    undoRekordboxCues,
+    rekordboxTrackCues,
+    rekordboxQueuedCues,
+    client,
+  }
 }
 
 const clickAt = (ms: number) =>
@@ -205,5 +222,11 @@ describe('CuesSection', () => {
     await waitFor(() =>
       expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'false'),
     )
+  })
+
+  it('shows what rekordbox says and logs when the queued save cannot be read', async () => {
+    const { logError } = setup(READ, new Error('ipc down'))
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining('ipc down'))
   })
 })

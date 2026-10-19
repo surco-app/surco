@@ -17,7 +17,13 @@ export function useTrackCues(contentId: string | undefined): {
 export function useQueuedCues(contentId: string): { data: number[] | null | undefined } {
   const { data } = useQuery({
     queryKey: ['rekordbox-queued-cues', contentId],
-    queryFn: () => window.api.rekordboxQueuedCues(contentId),
+    queryFn: () =>
+      window.api.rekordboxQueuedCues(contentId).catch((e: unknown) => {
+        window.api.logError(
+          `rekordbox cues: queued save unreadable (${e instanceof Error ? e.message : String(e)})`,
+        )
+        return null
+      }),
     staleTime: Number.POSITIVE_INFINITY,
   })
   return { data }
