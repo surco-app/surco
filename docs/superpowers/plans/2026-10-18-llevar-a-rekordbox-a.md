@@ -4238,3 +4238,851 @@ git commit -m "Keep a track's wanted rekordbox playlists with its staged edits a
 
 ---
 
+### Task 11: The Playlists field
+
+**Files:**
+- Create: `src/renderer/src/components/PlaylistsField.tsx`
+- Modify: `src/renderer/src/i18n/locales/{es,en,de,fr,pt-BR}.json` (`fields.rekordboxPlaylists`, `editor.playlists.*`)
+- Test: `src/renderer/src/components/PlaylistsField.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 10 `PlaylistOption`, `matchingOptions`, `canCreate`, `targetKey`; `RekordboxPlaylistTarget`; `RekordboxIcon` (`components/SourceIcons.tsx`).
+- Produces:
+  - `PlaylistsField({ label, options, value, onChange }: { label: string; options: PlaylistOption[]; value: RekordboxPlaylistTarget[]; onChange: (next: RekordboxPlaylistTarget[]) => void })`
+  - `PlaylistsBulkField({ label, options, states, onToggle }: { label: string; options: PlaylistOption[]; states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]; onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void })`
+  - test ids: `playlists-field`, `playlists-bulk`, `playlists-token-<key>`, `playlists-token-remove-<key>`, `playlists-input`, `playlists-option-<id>`, `playlists-create`, `playlists-token-complete-<key>` (bulk, a half token) (`<key>` is `targetKey`: the ID, or `new:<name>`)
+
+The field follows `Field.tsx`'s grid (label column from 24rem, `@[24rem]:contents`), and the tokens follow `SuggestionChips`' look: accent border for a playlist every track is in, dashed for one only some are in or one still to be created.
+
+- [ ] **Step 1: Locale strings**
+
+Write `$SCRATCH/playlists-field.json` and merge it with the Global Constraints helper (`node "$SCRATCH/merge-locale.cjs" "$SCRATCH/playlists-field.json"` from `apps/desktop`):
+
+```json
+{
+  "es": {
+    "fields": { "rekordboxPlaylists": "Playlists" },
+    "editor": {
+      "playlists": {
+        "placeholder": "Añadir a una playlist",
+        "remove": "Quitar {{name}}",
+        "create": "Crear playlist «{{name}}»",
+        "pending": "Se creará al escribir la pista",
+        "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
+        "options": "Playlists de rekordbox"
+      }
+    }
+  },
+  "en": {
+    "fields": { "rekordboxPlaylists": "Playlists" },
+    "editor": {
+      "playlists": {
+        "placeholder": "Add to a playlist",
+        "remove": "Remove {{name}}",
+        "create": "Create playlist “{{name}}”",
+        "pending": "Created when the track is written",
+        "some": "Only on some tracks. Click to add it to all",
+        "options": "rekordbox playlists"
+      }
+    }
+  },
+  "de": {
+    "fields": { "rekordboxPlaylists": "Playlists" },
+    "editor": {
+      "playlists": {
+        "placeholder": "Zu einer Playlist hinzufügen",
+        "remove": "{{name}} entfernen",
+        "create": "Playlist „{{name}}“ erstellen",
+        "pending": "Wird beim Schreiben des Titels erstellt",
+        "some": "Nur bei einigen Titeln. Klicken, um sie allen hinzuzufügen",
+        "options": "rekordbox-Playlists"
+      }
+    }
+  },
+  "fr": {
+    "fields": { "rekordboxPlaylists": "Playlists" },
+    "editor": {
+      "playlists": {
+        "placeholder": "Ajouter à une playlist",
+        "remove": "Retirer {{name}}",
+        "create": "Créer la playlist « {{name}} »",
+        "pending": "Créée à l’écriture du morceau",
+        "some": "Seulement sur certains morceaux. Cliquez pour l’ajouter à tous",
+        "options": "Playlists rekordbox"
+      }
+    }
+  },
+  "pt-BR": {
+    "fields": { "rekordboxPlaylists": "Playlists" },
+    "editor": {
+      "playlists": {
+        "placeholder": "Adicionar a uma playlist",
+        "remove": "Remover {{name}}",
+        "create": "Criar playlist “{{name}}”",
+        "pending": "Será criada ao gravar a faixa",
+        "some": "Só em algumas faixas. Clique para colocá-la em todas",
+        "options": "Playlists do rekordbox"
+      }
+    }
+  }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Create `src/renderer/src/components/PlaylistsField.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import '../i18n'
+import type { RekordboxPlaylistTarget } from '../../../shared/types'
+import type { PlaylistOption } from '../lib/rekordboxPlaylists'
+import { PlaylistsBulkField, PlaylistsField } from './PlaylistsField'
+
+afterEach(cleanup)
+
+const OPTIONS: PlaylistOption[] = [
+  { id: '1001', name: 'Bolos de verano', path: 'BOLOS' },
+  { id: '1101', name: 'Todas', path: 'BOLOS › FIJAS' },
+  { id: '2000', name: 'Todas', path: '' },
+  { id: '3000', name: 'Makina', path: '' },
+]
+
+function Harness({ initial = [] as RekordboxPlaylistTarget[], spy = vi.fn() }) {
+  const [value, setValue] = useState(initial)
+  return (
+    <PlaylistsField
+      label="Playlists"
+      options={OPTIONS}
+      value={value}
+      onChange={(next) => {
+        spy(next)
+        setValue(next)
+      }}
+    />
+  )
+}
+
+const input = () => screen.getByTestId('playlists-input')
+
+describe('PlaylistsField', () => {
+  // Two "Todas" in the collection: only the folder path tells the DJ which one.
+  it('filters by name and shows each option with its folder path', () => {
+    render(<Harness />)
+    fireEvent.change(input(), { target: { value: 'tod' } })
+    expect(screen.getByTestId('playlists-option-1101')).toHaveTextContent('BOLOS › FIJAS')
+    expect(screen.getByTestId('playlists-option-2000')).toBeInTheDocument()
+    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+  })
+
+  it('picks the highlighted option with Enter, as Mail does', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    fireEvent.change(input(), { target: { value: 'mak' } })
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(spy).toHaveBeenLastCalledWith([{ id: '3000', name: 'Makina' }])
+    expect(screen.getByTestId('playlists-token-3000')).toHaveTextContent('Makina')
+    expect(input()).toHaveValue('')
+  })
+
+  it('moves the highlight with the arrows', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    fireEvent.change(input(), { target: { value: 'tod' } })
+    fireEvent.keyDown(input(), { key: 'ArrowDown' })
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(spy).toHaveBeenLastCalledWith([{ id: '2000', name: 'Todas' }])
+  })
+
+  it('removes the last token with Backspace on an empty box', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} initial={[{ id: '3000', name: 'Makina' }, { id: '2000', name: 'Todas' }]} />)
+    fireEvent.keyDown(input(), { key: 'Backspace' })
+    expect(spy).toHaveBeenLastCalledWith([{ id: '3000', name: 'Makina' }])
+  })
+
+  it('removes one token with its own button', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} initial={[{ id: '3000', name: 'Makina' }, { id: '2000', name: 'Todas' }]} />)
+    fireEvent.click(screen.getByTestId('playlists-token-remove-3000'))
+    expect(spy).toHaveBeenLastCalledWith([{ id: '2000', name: 'Todas' }])
+  })
+
+  it('puts the folder path in the token tooltip', () => {
+    render(<Harness initial={[{ id: '1101', name: 'Todas' }]} />)
+    expect(screen.getByTestId('playlists-token-1101')).toHaveAttribute('title', 'BOLOS › FIJAS')
+  })
+
+  // A new playlist goes to the root when the track is written; until then it is pending.
+  it('offers to create a playlist the text does not name exactly, and marks it pending', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    fireEvent.change(input(), { target: { value: 'Makina' } })
+    expect(screen.queryByTestId('playlists-create')).toBeNull()
+    fireEvent.change(input(), { target: { value: 'Cierre' } })
+    fireEvent.click(screen.getByTestId('playlists-create'))
+    expect(spy).toHaveBeenLastCalledWith([{ name: 'Cierre' }])
+    expect(screen.getByTestId('playlists-token-new:Cierre')).toHaveAttribute('data-pending', 'true')
+  })
+
+  it('creates with Enter when the create row is the only one', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    fireEvent.change(input(), { target: { value: 'Cierre' } })
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(spy).toHaveBeenLastCalledWith([{ name: 'Cierre' }])
+  })
+})
+
+describe('PlaylistsBulkField', () => {
+  const states = [
+    { target: { id: '3000', name: 'Makina' }, state: 'all' as const },
+    { target: { id: '2000', name: 'Todas' }, state: 'some' as const },
+  ]
+
+  // Like the Grouping chips in bulk: a half token completes for every track on click.
+  it('completes a half token for all the tracks', () => {
+    const onToggle = vi.fn()
+    render(<PlaylistsBulkField label="Playlists" options={OPTIONS} states={states} onToggle={onToggle} />)
+    expect(screen.getByTestId('playlists-token-2000')).toHaveAttribute('data-state', 'some')
+    fireEvent.click(screen.getByTestId('playlists-token-complete-2000'))
+    expect(onToggle).toHaveBeenCalledWith({ id: '2000', name: 'Todas' }, true)
+  })
+
+  it('removes a token from every track', () => {
+    const onToggle = vi.fn()
+    render(<PlaylistsBulkField label="Playlists" options={OPTIONS} states={states} onToggle={onToggle} />)
+    fireEvent.click(screen.getByTestId('playlists-token-remove-3000'))
+    expect(onToggle).toHaveBeenCalledWith({ id: '3000', name: 'Makina' }, false)
+  })
+
+  it('adds a picked playlist to every track', () => {
+    const onToggle = vi.fn()
+    render(<PlaylistsBulkField label="Playlists" options={OPTIONS} states={states} onToggle={onToggle} />)
+    fireEvent.change(input(), { target: { value: 'bolos' } })
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(onToggle).toHaveBeenCalledWith({ id: '1001', name: 'Bolos de verano' }, true)
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/PlaylistsField.test.tsx`
+Expected: FAIL, `Cannot find module './PlaylistsField'`.
+
+- [ ] **Step 4: Implement**
+
+Create `src/renderer/src/components/PlaylistsField.tsx`:
+
+```tsx
+import { X } from 'lucide-react'
+import type React from 'react'
+import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { RekordboxPlaylistTarget } from '../../../shared/types'
+import {
+  canCreate,
+  matchingOptions,
+  type PlaylistOption,
+  targetKey,
+} from '../lib/rekordboxPlaylists'
+import { RekordboxIcon } from './SourceIcons'
+
+const MAX_OPTIONS = 8
+
+interface Token {
+  target: RekordboxPlaylistTarget
+  state: 'all' | 'some'
+}
+
+function Picker({
+  inputId,
+  options,
+  chosen,
+  onPick,
+  onBackspace,
+}: {
+  inputId: string
+  options: readonly PlaylistOption[]
+  chosen: readonly RekordboxPlaylistTarget[]
+  onPick: (target: RekordboxPlaylistTarget) => void
+  onBackspace: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [text, setText] = useState('')
+  const [active, setActive] = useState(0)
+  const listId = useId()
+  const matches =
+    text.trim() === '' ? [] : matchingOptions(options, text, chosen).slice(0, MAX_OPTIONS)
+  const rows: RekordboxPlaylistTarget[] = [
+    ...matches.map((o) => ({ id: o.id, name: o.name })),
+    ...(canCreate(options, text, chosen) ? [{ name: text.trim() }] : []),
+  ]
+  const pick = (target: RekordboxPlaylistTarget): void => {
+    onPick(target)
+    setText('')
+    setActive(0)
+  }
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActive((i) => Math.min(i + 1, rows.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActive((i) => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter' && rows[active]) {
+      e.preventDefault()
+      pick(rows[active])
+    } else if (e.key === 'Escape') setText('')
+    else if (e.key === 'Backspace' && text === '') onBackspace()
+  }
+  return (
+    <div className="relative min-w-[8rem] flex-1">
+      <input
+        id={inputId}
+        data-testid="playlists-input"
+        role="combobox"
+        aria-expanded={rows.length > 0}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={rows.length > 0 ? `${listId}-${active}` : undefined}
+        value={text}
+        placeholder={tr('editor.playlists.placeholder')}
+        onChange={(e) => {
+          setText(e.target.value)
+          setActive(0)
+        }}
+        onKeyDown={onKeyDown}
+        className="w-full bg-transparent py-0.5 text-sm text-fg outline-none placeholder:text-fg-faint"
+      />
+      {rows.length > 0 && (
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label={tr('editor.playlists.options')}
+          className="absolute top-full left-0 z-20 mt-1 max-h-64 w-72 overflow-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 shadow-lg"
+        >
+          {rows.map((row, i) => {
+            const path = row.id ? options.find((o) => o.id === row.id)?.path : undefined
+            return (
+              <li
+                key={targetKey(row)}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={i === active}
+                data-testid={row.id ? `playlists-option-${row.id}` : 'playlists-create'}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(row)}
+                onKeyDown={() => {}}
+                onMouseEnter={() => setActive(i)}
+                className={`flex cursor-default items-center gap-3 px-2.5 py-1 text-xs ${
+                  i === active ? 'bg-[var(--color-hover)] text-fg' : 'text-fg-muted'
+                }`}
+              >
+                <span className="truncate">
+                  {row.id ? row.name : tr('editor.playlists.create', { name: row.name })}
+                </span>
+                {path && (
+                  <span className="ml-auto shrink-0 truncate text-[10px] text-fg-faint">{path}</span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function TokenChip({
+  token,
+  path,
+  onRemove,
+  onComplete,
+}: {
+  token: Token
+  path: string
+  onRemove: () => void
+  onComplete?: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const key = targetKey(token.target)
+  const pending = !token.target.id
+  const loose = pending || token.state === 'some'
+  return (
+    <span
+      data-testid={`playlists-token-${key}`}
+      data-state={token.state}
+      data-pending={pending ? 'true' : undefined}
+      title={
+        pending
+          ? tr('editor.playlists.pending')
+          : token.state === 'some'
+            ? tr('editor.playlists.some')
+            : path || undefined
+      }
+      className={`inline-flex max-w-full items-center gap-0.5 rounded-full border py-0.5 pr-0.5 pl-2 text-[11px] ${
+        loose
+          ? 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
+          : 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-fg'
+      }`}
+    >
+      {onComplete ? (
+        <button
+          type="button"
+          data-testid={`playlists-token-complete-${key}`}
+          onClick={onComplete}
+          className="truncate"
+        >
+          {token.target.name}
+        </button>
+      ) : (
+        <span className="truncate">{token.target.name}</span>
+      )}
+      <button
+        type="button"
+        data-testid={`playlists-token-remove-${key}`}
+        aria-label={tr('editor.playlists.remove', { name: token.target.name })}
+        onClick={onRemove}
+        className="press rounded-full p-0.5 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        <X className="h-3 w-3" aria-hidden="true" />
+      </button>
+    </span>
+  )
+}
+
+function Shell({
+  label,
+  inputId,
+  testId,
+  children,
+}: {
+  label: string
+  inputId: string
+  testId: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div data-testid={testId} className="group block @[24rem]:contents">
+      <label
+        htmlFor={inputId}
+        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim @[24rem]:col-start-1 @[24rem]:mb-0 @[24rem]:min-h-[34px] @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right"
+      >
+        {label}
+        <RekordboxIcon size={12} />
+      </label>
+      <div className="flex min-h-[34px] flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2 py-1 focus-within:border-[var(--color-accent)] @[24rem]:col-start-2">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+const pathOf = (options: readonly PlaylistOption[], target: RekordboxPlaylistTarget): string =>
+  (target.id && options.find((o) => o.id === target.id)?.path) || ''
+
+export function PlaylistsField({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  options: PlaylistOption[]
+  value: RekordboxPlaylistTarget[]
+  onChange: (next: RekordboxPlaylistTarget[]) => void
+}): React.JSX.Element {
+  const inputId = useId()
+  const without = (key: string) => value.filter((t) => targetKey(t) !== key)
+  return (
+    <Shell label={label} inputId={inputId} testId="playlists-field">
+      {value.map((target) => (
+        <TokenChip
+          key={targetKey(target)}
+          token={{ target, state: 'all' }}
+          path={pathOf(options, target)}
+          onRemove={() => onChange(without(targetKey(target)))}
+        />
+      ))}
+      <Picker
+        inputId={inputId}
+        options={options}
+        chosen={value}
+        onPick={(target) => onChange([...value, target])}
+        onBackspace={() => {
+          if (value.length > 0) onChange(value.slice(0, -1))
+        }}
+      />
+    </Shell>
+  )
+}
+
+export function PlaylistsBulkField({
+  label,
+  options,
+  states,
+  onToggle,
+}: {
+  label: string
+  options: PlaylistOption[]
+  states: Token[]
+  onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
+}): React.JSX.Element {
+  const inputId = useId()
+  const chosen = states.map((s) => s.target)
+  return (
+    <Shell label={label} inputId={inputId} testId="playlists-bulk">
+      {states.map((token) => (
+        <TokenChip
+          key={targetKey(token.target)}
+          token={token}
+          path={pathOf(options, token.target)}
+          onRemove={() => onToggle(token.target, false)}
+          onComplete={token.state === 'some' ? () => onToggle(token.target, true) : undefined}
+        />
+      ))}
+      <Picker
+        inputId={inputId}
+        options={options}
+        chosen={chosen}
+        onPick={(target) => onToggle(target, true)}
+        onBackspace={() => {}}
+      />
+    </Shell>
+  )
+}
+```
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/components/PlaylistsField.test.tsx src/renderer/src/i18n`
+Expected: PASS (the i18n suite checks es and en carry the same keys).
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/components/PlaylistsField.tsx apps/desktop/src/renderer/src/components/PlaylistsField.test.tsx apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Add the Playlists field with Mail-style tokens, search by name and create"
+```
+
+If biome flags the `<li>` (`useKeyWithClickEvents`), keep the empty `onKeyDown` it already has: the keyboard path is the combobox's own arrows and Enter, as in `Field`'s suggestion list.
+
+---
+
+### Task 12: The field's data, its row in Campos and its first appearance
+
+**Files:**
+- Modify: `src/shared/types.ts` (`Settings.rekordboxPlaylistsFieldOffered`), `src/main/settings.ts` (default), `src/renderer/src/test/api.ts` (default settings)
+- Modify: `src/renderer/src/lib/fields.ts` (`REKORDBOX_PLAYLISTS_FIELD`, `withRekordboxField`, `labeledFields`)
+- Create: `src/renderer/src/hooks/useRekordboxPlaylists.ts`
+- Modify: `src/renderer/src/components/FieldsEditor.tsx` (`rekordboxField` prop), `src/renderer/src/components/SettingsModal.tsx` (passes it), `src/renderer/src/App.tsx` (the first offer)
+- Test: `src/renderer/src/lib/fields.test.ts`, `src/renderer/src/hooks/useRekordboxPlaylists.test.tsx`, `src/renderer/src/components/FieldsEditor.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 9 `window.api.rekordboxMembership`, `loadRekordboxTree`, `rekordboxAvailable`; Task 10 `playlistOptions`, `Membership`, `PlaylistOption`; Task 11 locale key `fields.rekordboxPlaylists`.
+- Produces:
+  - `Settings.rekordboxPlaylistsFieldOffered: boolean` (default false)
+  - `REKORDBOX_PLAYLISTS_FIELD = 'rekordboxPlaylists'`; `withRekordboxField(visibleFields: string[], offered: boolean, available: boolean): string[] | null` (the list with the field appended once, or null when there is nothing to do); `labeledFields(customFields, tr, rekordbox = false)` lists the field only when `rekordbox` is true
+  - `useRekordboxAvailable(): boolean` (query `['source-available', 'rekordbox']`, the rail's own)
+  - `useRekordboxPlaylistOptions(enabled: boolean): PlaylistOption[]` (query `['source-tree', 'rekordbox']`, the tree's own, so a tree edit or an apply refreshes both; Decision 12)
+  - `useRekordboxMembership(paths: string[], enabled: boolean): Membership` (query `['rekordbox-membership', sortedUniquePaths]`)
+  - `useOfferRekordboxField(settings: Settings | null, available: boolean, save: (patch: Partial<Settings>) => void): void`
+  - `FieldsEditor` prop `rekordboxField?: boolean`; row test ids stay `field-row-rekordboxPlaylists`, `hidden-field-rekordboxPlaylists`
+
+Rules (spec Decisions 1 and 2): with a collection, the field is listed in Campos like any other (shown, hidden, ordered) but has no Required toggle and no Auto toggle; without one it is neither in Campos nor in the form, while its key stays in `visibleFields` for when the collection comes back. The first time a collection is found the field is appended to the shown list, once: hidden afterwards, it stays hidden. `FindReplaceModal`, `RenameModal`, `NamingTab` and the editor's `{ }` menu keep calling `labeledFields` without the flag, so the field never reaches find and replace or `{token}` names.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `src/renderer/src/lib/fields.test.ts` (merge `labeledFields`, `REKORDBOX_PLAYLISTS_FIELD`, `withRekordboxField` into its import from `./fields`):
+
+```ts
+describe('the rekordbox Playlists field', () => {
+  // Decision 1: added visible at the end the first time a collection is found, once.
+  it('is appended once when a collection is first found', () => {
+    expect(withRekordboxField(['title', 'artist'], false, true)).toEqual([
+      'title',
+      'artist',
+      REKORDBOX_PLAYLISTS_FIELD,
+    ])
+  })
+
+  // Hidden by the user afterwards, it stays hidden.
+  it('is never added again once offered, nor without a collection', () => {
+    expect(withRekordboxField(['title'], true, true)).toBeNull()
+    expect(withRekordboxField(['title'], false, false)).toBeNull()
+  })
+
+  // Decision 2: not a tag, so not a {token} for names nor a find and replace target.
+  it('is a labelled field only where the caller asks for it', () => {
+    const tr = (k: string) => k
+    expect(labeledFields([], tr).some((f) => f.key === REKORDBOX_PLAYLISTS_FIELD)).toBe(false)
+    expect(labeledFields([], tr, true)).toContainEqual({
+      key: REKORDBOX_PLAYLISTS_FIELD,
+      label: 'fields.rekordboxPlaylists',
+    })
+  })
+})
+```
+
+Create `src/renderer/src/hooks/useRekordboxPlaylists.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
+import type React from 'react'
+import { describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
+import type { Settings } from '../../../shared/types'
+import { installApi } from '../test/api'
+import {
+  useOfferRekordboxField,
+  useRekordboxMembership,
+  useRekordboxPlaylistOptions,
+} from './useRekordboxPlaylists'
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+)
+
+describe('useRekordboxPlaylists', () => {
+  it('turns the tree into options with their folder paths', async () => {
+    installApi({
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>(async () => [
+        { id: '1', name: 'BOLOS', kind: 'folder', count: 1, children: [{ id: '2', name: 'Verano', kind: 'playlist', count: 3 }] },
+      ]),
+    })
+    const { result } = renderHook(() => useRekordboxPlaylistOptions(true), { wrapper })
+    await waitFor(() => expect(result.current).toEqual([{ id: '2', name: 'Verano', path: 'BOLOS' }]))
+  })
+
+  // One read for the visible rows, never one per row.
+  it('asks main once for every path, sorted and without repeats', async () => {
+    const rekordboxMembership = vi.fn<Api['rekordboxMembership']>(async () => ({ '/m/a.wav': ['3000'] }))
+    installApi({ rekordboxMembership })
+    const { result } = renderHook(() => useRekordboxMembership(['/m/b.wav', '/m/a.wav', '/m/b.wav'], true), {
+      wrapper,
+    })
+    await waitFor(() => expect(result.current).toEqual({ '/m/a.wav': ['3000'] }))
+    expect(rekordboxMembership).toHaveBeenCalledTimes(1)
+    expect(rekordboxMembership).toHaveBeenCalledWith(['/m/a.wav', '/m/b.wav'])
+  })
+
+  it('asks nothing while disabled', () => {
+    const rekordboxMembership = vi.fn<Api['rekordboxMembership']>(async () => ({}))
+    installApi({ rekordboxMembership })
+    renderHook(() => useRekordboxMembership(['/m/a.wav'], false), { wrapper })
+    expect(rekordboxMembership).not.toHaveBeenCalled()
+  })
+
+  it('offers the field once, when a collection is there', () => {
+    const save = vi.fn()
+    const settings = { visibleFields: ['title'], rekordboxPlaylistsFieldOffered: false } as Settings
+    renderHook(() => useOfferRekordboxField(settings, true, save))
+    expect(save).toHaveBeenCalledWith({
+      visibleFields: ['title', 'rekordboxPlaylists'],
+      rekordboxPlaylistsFieldOffered: true,
+    })
+    save.mockClear()
+    renderHook(() =>
+      useOfferRekordboxField({ ...settings, rekordboxPlaylistsFieldOffered: true }, true, save),
+    )
+    expect(save).not.toHaveBeenCalled()
+  })
+})
+```
+
+(`installApi` from `src/renderer/src/test/api.ts` installs the default stub with overrides.)
+
+Append to `src/renderer/src/components/FieldsEditor.test.tsx` (`setup` gains an optional `rekordboxField?: boolean` that it passes through to `<FieldsEditor rekordboxField={over.rekordboxField} ...>`):
+
+```tsx
+describe('the rekordbox Playlists row', () => {
+  // Shown, hidden and ordered like any field, but it is not a tag: nothing to require.
+  it('lists the field with no Required toggle when there is a collection', () => {
+    setup({ visibleFields: ['title', 'rekordboxPlaylists'], rekordboxField: true })
+    expect(screen.getByTestId('field-row-rekordboxPlaylists')).toBeInTheDocument()
+    expect(screen.queryByTestId('field-required-rekordboxPlaylists')).toBeNull()
+  })
+
+  it('leaves the field out entirely without a collection', () => {
+    setup({ visibleFields: ['title', 'rekordboxPlaylists'] })
+    expect(screen.queryByTestId('field-row-rekordboxPlaylists')).toBeNull()
+    expect(screen.queryByTestId('hidden-field-rekordboxPlaylists')).toBeNull()
+  })
+
+  it('offers it among the hidden fields when the user hid it', () => {
+    setup({ visibleFields: ['title'], rekordboxField: true })
+    expect(screen.getByTestId('hidden-field-rekordboxPlaylists')).toBeInTheDocument()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/fields.test.ts src/renderer/src/hooks/useRekordboxPlaylists.test.tsx src/renderer/src/components/FieldsEditor.test.tsx`
+Expected: FAIL, missing exports and module; the row tests fail because Campos does not know the key.
+
+- [ ] **Step 3: The setting**
+
+`src/shared/types.ts`, in `Settings` next to `syncRekordbox`: `rekordboxPlaylistsFieldOffered: boolean`. `src/main/settings.ts` defaults, next to `syncRekordbox: false`: `rekordboxPlaylistsFieldOffered: false,`. `src/renderer/src/test/api.ts` default settings, next to `syncRekordbox: false`: `rekordboxPlaylistsFieldOffered: false,`.
+
+- [ ] **Step 4: `fields.ts`**
+
+Add:
+
+```ts
+export const REKORDBOX_PLAYLISTS_FIELD = 'rekordboxPlaylists'
+
+export function withRekordboxField(
+  visibleFields: string[],
+  offered: boolean,
+  available: boolean,
+): string[] | null {
+  if (!available || offered) return null
+  return [...visibleFields.filter((k) => k !== REKORDBOX_PLAYLISTS_FIELD), REKORDBOX_PLAYLISTS_FIELD]
+}
+```
+
+and give `labeledFields` a third parameter:
+
+```ts
+export function labeledFields(
+  customFields: readonly CustomField[],
+  tr: (key: string) => string,
+  rekordbox = false,
+): { key: string; label: string }[] {
+  return [
+    ...FIELD_DEFS.map((d) => ({ key: d.key as string, label: tr(`fields.${d.key}`) })),
+    ...customFields.map((f) => ({ key: f.key, label: f.label })),
+    ...(rekordbox
+      ? [{ key: REKORDBOX_PLAYLISTS_FIELD, label: tr('fields.rekordboxPlaylists') }]
+      : []),
+  ]
+}
+```
+
+- [ ] **Step 5: The hooks**
+
+Create `src/renderer/src/hooks/useRekordboxPlaylists.ts`:
+
+```ts
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo } from 'react'
+import type { Settings } from '../../../shared/types'
+import { withRekordboxField } from '../lib/fields'
+import { type Membership, type PlaylistOption, playlistOptions } from '../lib/rekordboxPlaylists'
+
+const NO_MEMBERSHIP: Membership = {}
+
+export function useRekordboxAvailable(): boolean {
+  const { data = false } = useQuery({
+    queryKey: ['source-available', 'rekordbox'],
+    queryFn: () => window.api.rekordboxAvailable(),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return data
+}
+
+export function useRekordboxPlaylistOptions(enabled: boolean): PlaylistOption[] {
+  const { data } = useQuery({
+    queryKey: ['source-tree', 'rekordbox'],
+    queryFn: () => window.api.loadRekordboxTree(),
+    enabled,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return useMemo(() => playlistOptions(data ?? []), [data])
+}
+
+export function useRekordboxMembership(paths: string[], enabled: boolean): Membership {
+  const key = [...new Set(paths)].sort()
+  const { data } = useQuery({
+    queryKey: ['rekordbox-membership', key],
+    queryFn: () => window.api.rekordboxMembership(key),
+    enabled: enabled && key.length > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return data ?? NO_MEMBERSHIP
+}
+
+export function useOfferRekordboxField(
+  settings: Settings | null,
+  available: boolean,
+  save: (patch: Partial<Settings>) => void,
+): void {
+  useEffect(() => {
+    if (!settings) return
+    const next = withRekordboxField(
+      settings.visibleFields,
+      settings.rekordboxPlaylistsFieldOffered,
+      available,
+    )
+    if (next) save({ visibleFields: next, rekordboxPlaylistsFieldOffered: true })
+  }, [settings, available, save])
+}
+```
+
+- [ ] **Step 6: Campos**
+
+In `src/renderer/src/components/FieldsEditor.tsx`: import `REKORDBOX_PLAYLISTS_FIELD`; add `rekordboxField?: boolean` to `Props` and the destructuring; `const fields = labeledFields(customFields, tr, rekordboxField)`; in `visibleFields.map((key, i) => (` return `null` for the field without a collection, by turning the arrow body into a block:
+
+```tsx
+          {visibleFields.map((key, i) =>
+            key === REKORDBOX_PLAYLISTS_FIELD && !rekordboxField ? null : (
+              // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder.
+              <div
+```
+
+(closing with `),` after the row's `</div>`), and render the Required toggle only for tags:
+
+```tsx
+              {key === REKORDBOX_PLAYLISTS_FIELD ? (
+                <span aria-hidden="true" />
+              ) : (
+                <button
+                  type="button"
+                  data-testid={`field-required-${key}`}
+                  ...the existing button unchanged...
+                </button>
+              )}
+```
+
+`hidden` is derived from `fields`, so the field shows among the hidden ones only with a collection; `autoToggle` already draws an empty slot for a key outside `IMPORTABLE_FIELDS`.
+
+In `src/renderer/src/components/SettingsModal.tsx`, import `useRekordboxAvailable` and pass `rekordboxField={useRekordboxAvailable()}` through a `const rekordboxField = useRekordboxAvailable()` at the top of the component body, then `rekordboxField={rekordboxField}` on `<FieldsEditor`. The onboarding wizard's `FieldsEditor` gets no flag: there is no collection talk in the wizard.
+
+In `src/renderer/src/App.tsx`, right after the `useSettings` call (line ~298, which returns `settings` and `saveSettings`):
+
+```ts
+  const rekordboxAvailable = useRekordboxAvailable()
+  const saveSettingsStable = useStableCallback(saveSettings)
+  useOfferRekordboxField(settings, rekordboxAvailable, saveSettingsStable)
+```
+
+(imports from `./hooks/useRekordboxPlaylists`; `useStableCallback` is already imported). `saveSettings` is recreated every render; the stable wrapper keeps the effect from running on each one.
+
+- [ ] **Step 7: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/fields.test.ts src/renderer/src/hooks/useRekordboxPlaylists.test.tsx src/renderer/src/components/FieldsEditor.test.tsx src/renderer/src/components/SettingsModal.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 8: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/settings.ts apps/desktop/src/renderer/src/test/api.ts apps/desktop/src/renderer/src/lib/fields.ts apps/desktop/src/renderer/src/lib/fields.test.ts apps/desktop/src/renderer/src/hooks/useRekordboxPlaylists.ts apps/desktop/src/renderer/src/hooks/useRekordboxPlaylists.test.tsx apps/desktop/src/renderer/src/components/FieldsEditor.tsx apps/desktop/src/renderer/src/components/FieldsEditor.test.tsx apps/desktop/src/renderer/src/components/SettingsModal.tsx apps/desktop/src/renderer/src/App.tsx
+git commit -m "List the rekordbox Playlists field in Campos and show it once a collection is found"
+```
+
+---
+
