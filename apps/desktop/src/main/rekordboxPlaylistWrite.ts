@@ -6,7 +6,9 @@ import type {
   RekordboxEditRefusal,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  RekordboxQueueNotice,
 } from '../shared/types'
+import { type ContentFacts, insertContent } from './rekordboxContentAdd'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
 import {
   hexId,
@@ -25,11 +27,14 @@ import {
   insertSeparator,
   moveChangesOrder,
   moveInPlaylist,
+  nodeAttribute,
   playlistContents,
   randomPlaylistId,
   removeFromPlaylist,
+  removeTrackFromPlaylist,
   renameNode,
   resolveTracks,
+  trackPlaylists,
 } from './rekordboxPlaylistEdit'
 import { isRekordboxRunning } from './rekordboxProcess'
 import {
@@ -39,6 +44,7 @@ import {
   type OpOutcome,
   opRank,
   type QueueOp,
+  type TrackOp,
   type XmlDraft,
 } from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -187,6 +193,13 @@ interface Planned {
   op: QueueOp
   contentIds?: string[]
   unresolved?: { notInCollection: number; ambiguous: number }
+  track?: {
+    entry?: string
+    adds: string[]
+    removes: string[]
+    names: string[]
+    notices: RekordboxQueueNotice[]
+  }
 }
 
 type Plan = Planned | { outcome: OpOutcome }
@@ -198,7 +211,7 @@ function playlistName(db: Db, id: string): string {
   return row?.Name ?? id
 }
 
-function changedOutcome(db: Db, xml: string | null, op: QueueOp): OpOutcome | null {
+function changedOutcome(db: Db, xml: string | null, op: EditOp): OpOutcome | null {
   if (xml === null) return null
   for (const [playlistId, stamp] of Object.entries(op.stamps)) {
     if (nodeTimestamp(xml, playlistId) !== stamp)
@@ -240,8 +253,53 @@ function planEdit(probe: Db, xml: string | null, op: EditOp, find: FindOptions):
   return { op }
 }
 
+function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions): Plan {
+  const notices: RekordboxQueueNotice[] = []
+  const finish = (applied: boolean): Plan => ({ outcome: { id: op.id, applied, notices } })
+  const resolved = resolveTracks(probe, [{ contentId: op.contentId, paths: [op.path] }], find)
+  if (resolved.ambiguous > 0) {
+    notices.push({ code: 'ambiguous', track: op.label })
+    return finish(false)
+  }
+  const entry = resolved.contentIds[0]
+  if (!entry && op.wanted.length === 0) return finish(true)
+  if (!entry && (!op.facts || !existsSync(op.path))) {
+    notices.push({ code: op.facts ? 'file-missing' : 'not-added', track: op.label })
+    return finish(false)
+  }
+  const changed = (pid: string): boolean =>
+    xml !== null && op.stamps[pid] !== undefined && nodeTimestamp(xml, pid) !== op.stamps[pid]
+  const current = entry ? trackPlaylists(probe, entry) : []
+  const wantedIds = op.wanted.flatMap((t) => (t.id ? [t.id] : []))
+  const names = [...new Set(op.wanted.flatMap((t) => (t.id ? [] : [t.name.trim()])))].filter(
+    (n) => n !== '',
+  )
+  const adds: string[] = []
+  for (const target of op.wanted) {
+    if (!target.id || current.includes(target.id)) continue
+    if (nodeAttribute(probe, target.id) !== 0)
+      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
+    else if (changed(target.id))
+      notices.push({ code: 'playlist-changed', track: op.label, playlist: target.name })
+    else adds.push(target.id)
+  }
+  const removes: string[] = []
+  for (const pid of current) {
+    if (wantedIds.includes(pid)) continue
+    if (!op.known.includes(pid) || changed(pid))
+      notices.push({
+        code: 'playlist-changed',
+        track: op.label,
+        playlist: playlistName(probe, pid),
+      })
+    else removes.push(pid)
+  }
+  if (adds.length === 0 && removes.length === 0 && names.length === 0) return finish(!!entry)
+  return { op, track: { entry, adds, removes, names, notices } }
+}
+
 function planOp(probe: Db, xml: string | null, op: QueueOp, find: FindOptions): Plan {
-  return planEdit(probe, xml, op, find)
+  return op.kind === 'track' ? planTrack(probe, xml, op, find) : planEdit(probe, xml, op, find)
 }
 
 function freeId(draft: XmlDraft): string {
@@ -303,12 +361,58 @@ function writeEdit(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutc
   return done()
 }
 
+function liveRootPlaylist(db: Db, name: string): string | undefined {
+  const row = db
+    .prepare(
+      `SELECT ID FROM djmdPlaylist WHERE Name = ? AND ParentID = 'root' AND Attribute = 0
+        AND coalesce(rb_local_deleted, 0) = 0 ORDER BY Seq LIMIT 1`,
+    )
+    .get(name) as { ID: string } | undefined
+  return row?.ID
+}
+
+function writeTrack(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  const op = planned.op as TrackOp
+  const plan = planned.track as NonNullable<Planned['track']>
+  const ctx = { now, newPlaylistId: () => freeId(draft) }
+  const entry = plan.entry ?? insertContent(db, op.facts as ContentFacts, { now })
+  const adds = [...plan.adds]
+  for (const name of plan.names) {
+    let pid = draft.created.get(name) ?? liveRootPlaylist(db, name)
+    if (!pid) {
+      pid = createNode(db, 'root', name, false, ctx).id
+      if (draft.xml !== null)
+        draft.xml = withPlaylistNode(draft.xml, {
+          id: pid,
+          parentId: 'root',
+          attribute: 0,
+          timestamp: draft.now,
+        })
+      draft.taken.add(hexId(pid))
+    }
+    draft.created.set(name, pid)
+    if (!trackPlaylists(db, entry).includes(pid)) adds.push(pid)
+  }
+  for (const pid of adds) {
+    addToPlaylist(db, pid, [entry], ctx)
+    bumpNode(draft, pid)
+  }
+  for (const pid of plan.removes) {
+    removeTrackFromPlaylist(db, pid, entry, ctx)
+    bumpNode(draft, pid)
+  }
+  return { id: op.id, applied: true, notices: plan.notices, contentId: entry }
+}
+
 function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
-  return writeEdit(db, draft, planned, now)
+  return planned.op.kind === 'track'
+    ? writeTrack(db, draft, planned, now)
+    : writeEdit(db, draft, planned, now)
 }
 
 function needsNode(planned: Planned): boolean {
-  return planned.op.kind === 'edit' && planned.op.edit.kind === 'create'
+  if (planned.op.kind === 'track') return (planned.track?.names.length ?? 0) > 0
+  return planned.op.edit.kind === 'create'
 }
 
 export async function applyRekordboxBatch(
@@ -360,6 +464,12 @@ export async function applyRekordboxBatch(
   if (!db) return { ok: false, reason: 'unreadable' }
   const stillPlanned: Planned[] = []
   for (const p of planned) {
+    if (p.op.kind === 'track') {
+      const again = planTrack(db, xml, p.op, deps)
+      if ('outcome' in again) outcomes.set(p.op.id, again.outcome)
+      else stillPlanned.push(again)
+      continue
+    }
     const changed = changedOutcome(db, xml, p.op)
     if (changed) outcomes.set(p.op.id, changed)
     else stillPlanned.push(p)
@@ -373,13 +483,18 @@ export async function applyRekordboxBatch(
     xml,
     taken: xml === null ? new Set<string>() : xmlNodeIds(xml),
     now: now.getTime(),
+    created: new Map<string, string>(),
   }
   let xmlWritten = false
   let anyApplied = false
   try {
     db.exec('BEGIN')
     for (const p of [...stillPlanned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
-      const saved = draft.xml
+      const saved = {
+        xml: draft.xml,
+        taken: new Set(draft.taken),
+        created: new Map(draft.created),
+      }
       db.exec('SAVEPOINT surco_op')
       try {
         const outcome = writeOp(db, draft, p, now)
@@ -390,7 +505,7 @@ export async function applyRekordboxBatch(
         if (!(err instanceof EditRefused)) throw err
         db.exec('ROLLBACK TO surco_op')
         db.exec('RELEASE surco_op')
-        draft.xml = saved
+        Object.assign(draft, saved)
         outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: err.reason, notices: [] })
       }
     }

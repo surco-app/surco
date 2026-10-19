@@ -1565,3 +1565,8 @@ export type UsbExportEvent =
     }
   | { type: 'finished'; outcome: 'cancelled' }
   | { type: 'finished'; outcome: 'error'; reason: UsbFailure }
+
+export interface RekordboxPlaylistTarget {
+  id?: string
+  name: string
+}

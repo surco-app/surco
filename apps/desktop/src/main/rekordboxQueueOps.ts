@@ -2,8 +2,10 @@ import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
   RekordboxPlaylistEdit,
+  RekordboxPlaylistTarget,
   RekordboxQueueNotice,
 } from '../shared/types'
+import type { ContentFacts } from './rekordboxContentAdd'
 import { withNodeTimestamp } from './rekordboxMasterXml'
 
 export interface EditOp {
@@ -13,7 +15,19 @@ export interface EditOp {
   stamps: Record<string, number>
 }
 
-export type QueueOp = EditOp
+export interface TrackOp {
+  id: string
+  kind: 'track'
+  path: string
+  label: string
+  contentId?: string
+  facts: ContentFacts | null
+  wanted: RekordboxPlaylistTarget[]
+  known: string[]
+  stamps: Record<string, number>
+}
+
+export type QueueOp = EditOp | TrackOp
 
 export interface OpOutcome {
   id: string
@@ -21,6 +35,7 @@ export interface OpOutcome {
   reason?: RekordboxEditRefusal
   report?: PlaylistAddReport
   createdId?: string
+  contentId?: string
   notices: RekordboxQueueNotice[]
 }
 
@@ -39,12 +54,13 @@ const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
 }
 
 export function opRank(op: QueueOp): number {
-  return EDIT_RANK[op.edit.kind]
+  return op.kind === 'track' ? 0 : EDIT_RANK[op.edit.kind]
 }
 
 export interface XmlDraft {
   xml: string | null
   taken: Set<string>
+  created: Map<string, string>
   now: number
 }
 
