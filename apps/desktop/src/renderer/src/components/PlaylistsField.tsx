@@ -111,7 +111,7 @@ function Picker({
               >
                 {path && (
                   <span className="flex min-w-0 justify-end overflow-hidden text-fg-faint">
-                    <span className="whitespace-nowrap">{`${path} › `}</span>
+                    <span className="whitespace-pre">{`${path} › `}</span>
                   </span>
                 )}
                 <span className={path ? 'shrink-0 truncate' : 'truncate'}>
