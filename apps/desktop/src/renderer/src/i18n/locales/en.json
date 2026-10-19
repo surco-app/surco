@@ -755,6 +755,20 @@
       "pending": "Created when the track is written",
       "some": "Only on some tracks. Click to add it to all",
       "options": "rekordbox playlists"
+    },
+    "cues": {
+      "title": "Cues",
+      "help": "Click the waveform to mark a drop. Surco sets the countdown at 16, 32 and 48 bars on rekordbox's grid.",
+      "unanalysed": "rekordbox has not analysed this track yet",
+      "manual": "This track has hot cues set by hand. Surco saves the drops and leaves the hot cues alone.",
+      "tooMany": "It would need more than 8 hot cues. Remove a drop.",
+      "undo": "Undo",
+      "save": "Save to rekordbox",
+      "legend16": "16 bars",
+      "legend32": "32 bars",
+      "legend48": "48 bars",
+      "legendStart": "Start",
+      "unreadable": "Could not read the cues from rekordbox"
     }
   },
   "fields": {
@@ -1262,6 +1276,7 @@
       "otherTags": "Other metadata",
       "properties": "Properties",
       "quality": "Audio quality",
+      "cues": "Cues",
       "output": "File name",
       "trim": "Silence trim",
       "declick": "Vinyl click repair",

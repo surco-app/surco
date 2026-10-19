@@ -755,6 +755,20 @@
       "pending": "Wird beim Schreiben des Titels erstellt",
       "some": "Nur bei einigen Titeln. Klicken, um sie allen hinzuzufügen",
       "options": "rekordbox-Playlists"
+    },
+    "cues": {
+      "title": "Cues",
+      "help": "Klicke in die Wellenform, um einen Drop zu markieren. Surco setzt den Countdown bei 16, 32 und 48 Takten auf das Raster von rekordbox.",
+      "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
+      "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco speichert die Drops und lässt die Hot Cues unverändert.",
+      "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Drop.",
+      "undo": "Rückgängig",
+      "save": "In rekordbox speichern",
+      "legend16": "16 Takte",
+      "legend32": "32 Takte",
+      "legend48": "48 Takte",
+      "legendStart": "Start",
+      "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden"
     }
   },
   "fields": {
@@ -1262,6 +1276,7 @@
       "otherTags": "Weitere Metadaten",
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
+      "cues": "Cues",
       "output": "Dateiname",
       "trim": "Stille kürzen",
       "declick": "Vinyl-Klick-Reparatur",

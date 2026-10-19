@@ -755,6 +755,20 @@
       "pending": "Créée à l’écriture du morceau",
       "some": "Seulement sur certains morceaux. Cliquez pour l’ajouter à tous",
       "options": "Playlists rekordbox"
+    },
+    "cues": {
+      "title": "Cues",
+      "help": "Cliquez sur la forme d’onde pour marquer un drop. Surco place le compte à rebours à 16, 32 et 48 mesures sur la grille de rekordbox.",
+      "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
+      "manual": "Ce morceau a des hot cues placés à la main. Surco enregistre les drops et ne touche pas aux hot cues.",
+      "tooMany": "Il faudrait plus de 8 hot cues. Retirez un drop.",
+      "undo": "Annuler",
+      "save": "Enregistrer dans rekordbox",
+      "legend16": "16 mesures",
+      "legend32": "32 mesures",
+      "legend48": "48 mesures",
+      "legendStart": "Début",
+      "unreadable": "Impossible de lire les cues de rekordbox"
     }
   },
   "fields": {
@@ -1262,6 +1276,7 @@
       "otherTags": "Autres métadonnées",
       "properties": "Propriétés",
       "quality": "Qualité audio",
+      "cues": "Cues",
       "output": "Nom du fichier",
       "trim": "Rognage du silence",
       "declick": "Réparation des clics de vinyle",

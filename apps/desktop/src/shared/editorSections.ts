@@ -7,6 +7,7 @@ const EDITOR_SECTION_IDS = [
   'otherTags',
   'properties',
   'quality',
+  'cues',
   'output',
   'trim',
   'declick',
@@ -27,6 +28,7 @@ export const EDITOR_SECTION_GROUP: Record<EditorSectionId, EditorSectionGroup> =
   otherTags: 'metadata',
   properties: 'metadata',
   quality: 'metadata',
+  cues: 'metadata',
   trim: 'audio',
   declick: 'audio',
   normalize: 'audio',
@@ -57,6 +59,7 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   // Reference figures, consulted when the quality verdict raises an eyebrow.
   { id: 'properties', open: false },
   { id: 'quality', open: true },
+  { id: 'cues', open: true },
   // Folded: the header pill still surfaces the "this rip has silence" finding
   // (the attention filter flags it list-wide too), and folded it skips the wave
   // decode for the tracks the user never trims.

@@ -251,7 +251,7 @@ describe('deriveEditorSections', () => {
   // intent picked, the editor keeps only the always-present sections and hides the rest.
   it('hides every audio section when no audio intent is picked', () => {
     const sections = deriveEditorSections([])
-    expect(shown(sections)).toEqual(['form', 'properties', 'quality', 'output'])
+    expect(shown(sections)).toEqual(['form', 'properties', 'quality', 'cues', 'output'])
     // trim/declick/normalize are the ones the metadata-only DJ never uses.
     for (const id of ['trim', 'declick', 'normalize'] as const) {
       expect(sections.find((s) => s.id === id)?.hidden).toBe(true)
@@ -287,10 +287,10 @@ describe('deriveEditorSections', () => {
 
   // The metadata form, quality verdict and output name are the product's core — they
   // are never hidden regardless of which audio intents are (or aren't) picked.
-  it('always keeps the metadata, quality and output sections', () => {
+  it('always keeps the metadata, quality, cues and output sections', () => {
     for (const intents of [[], ['restore'], ['level'], ['quality']] as const) {
       const sections = deriveEditorSections([...intents])
-      for (const id of ['form', 'quality', 'output'] as const) {
+      for (const id of ['form', 'quality', 'cues', 'output'] as const) {
         expect(sections.find((s) => s.id === id)?.hidden).not.toBe(true)
       }
     }
@@ -376,6 +376,7 @@ describe('buildOnboardingPatch on a re-run', () => {
     { id: 'otherTags', open: true, hidden: true },
     { id: 'quality', open: false },
     { id: 'properties', open: true },
+    { id: 'cues', open: true },
     { id: 'normalize', open: true },
     { id: 'trim', open: false, hidden: true },
     { id: 'declick', open: false, hidden: true },
@@ -402,6 +403,7 @@ describe('buildOnboardingPatch on a re-run', () => {
       { id: 'otherTags', open: true, hidden: true },
       { id: 'quality', open: false },
       { id: 'properties', open: true },
+      { id: 'cues', open: true },
       { id: 'normalize', open: true },
       { id: 'trim', open: false },
       { id: 'declick', open: false },
@@ -420,6 +422,7 @@ describe('buildOnboardingPatch on a re-run', () => {
       { id: 'otherTags', open: true, hidden: true },
       { id: 'quality', open: false },
       { id: 'properties', open: true },
+      { id: 'cues', open: true },
       { id: 'normalize', open: true, hidden: true },
       { id: 'trim', open: false, hidden: true },
       { id: 'declick', open: false, hidden: true },
@@ -465,6 +468,7 @@ describe('the wizard on a second machine with a synced layout', () => {
     { id: 'otherTags', open: true, hidden: true },
     { id: 'quality', open: false },
     { id: 'properties', open: true },
+    { id: 'cues', open: true },
     { id: 'normalize', open: true },
     { id: 'trim', open: false, hidden: true },
     { id: 'declick', open: false, hidden: true },

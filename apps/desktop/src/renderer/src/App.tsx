@@ -2858,6 +2858,15 @@ export default function App(): React.JSX.Element {
                       <Suspense fallback={null}>
                         <Editor
                           item={selected}
+                          rekordboxCue={
+                            rekordboxOpen && playlistScope?.contentOf.get(selected.id)
+                              ? {
+                                  contentId: playlistScope.contentOf.get(selected.id) as string,
+                                  path: selected.inputPath,
+                                  label: selected.listLabel,
+                                }
+                              : undefined
+                          }
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}

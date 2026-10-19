@@ -86,6 +86,7 @@ describe('LayoutTab sections', () => {
       'settings-section-row-otherTags',
       'settings-section-row-properties',
       'settings-section-row-quality',
+      'settings-section-row-cues',
       'settings-section-row-trim',
       'settings-section-row-declick',
       'settings-section-row-normalize',
@@ -107,9 +108,17 @@ describe('LayoutTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-down-properties'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'otherTags', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map(
-        (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
-      ),
+      [
+        'form',
+        'otherTags',
+        'quality',
+        'properties',
+        'cues',
+        'trim',
+        'declick',
+        'normalize',
+        'output',
+      ].map((id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id)),
     )
   })
 
@@ -118,9 +127,17 @@ describe('LayoutTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-up-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'otherTags', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map(
-        (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
-      ),
+      [
+        'form',
+        'otherTags',
+        'quality',
+        'properties',
+        'cues',
+        'trim',
+        'declick',
+        'normalize',
+        'output',
+      ].map((id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id)),
     )
   })
 
@@ -135,9 +152,17 @@ describe('LayoutTab sections', () => {
     fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'otherTags', 'properties', 'quality', 'trim', 'declick', 'output', 'normalize'].map(
-        (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
-      ),
+      [
+        'form',
+        'otherTags',
+        'properties',
+        'quality',
+        'cues',
+        'trim',
+        'declick',
+        'output',
+        'normalize',
+      ].map((id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id)),
     )
   })
 

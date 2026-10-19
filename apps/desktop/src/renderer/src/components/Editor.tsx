@@ -103,6 +103,7 @@ import { stripParentheticals } from '../lib/textClean'
 import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { CopyComparison } from './CopyComparison'
+import { CuesSection } from './CuesSection'
 import { DeclickSection } from './DeclickSection'
 import { DiscogsPanel } from './DiscogsPanel'
 import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
@@ -201,6 +202,7 @@ interface Props {
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
+  rekordboxCue?: { contentId: string; path: string; label: string }
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
@@ -263,6 +265,7 @@ export const Editor = memo(function Editor({
   onCleanUp,
   onResultsWidthChange,
   onShowLoudnessHelp,
+  rekordboxCue,
   onHideEditorHints,
   onOpenRename,
   onRegenerateName,
@@ -816,7 +819,10 @@ export const Editor = memo(function Editor({
 
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
-  function singleTrackOnly(id: 'quality' | 'properties', title: string): React.JSX.Element {
+  function singleTrackOnly(
+    id: 'quality' | 'properties' | 'cues',
+    title: string,
+  ): React.JSX.Element {
     return (
       <div
         key={id}
@@ -1436,6 +1442,17 @@ export const Editor = memo(function Editor({
                             onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}
                           />
                         )
+                      )
+                    case 'cues':
+                      if (!rekordboxCue) return false
+                      if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
+                      return (
+                        <CuesSection
+                          key={id}
+                          cue={rekordboxCue}
+                          open={sectionOpen.cues}
+                          onToggle={() => setSectionOpen('cues', !sectionOpen.cues)}
+                        />
                       )
                     case 'properties':
                       if (isMulti) return singleTrackOnly(id, tr('editor.propertiesTitle'))

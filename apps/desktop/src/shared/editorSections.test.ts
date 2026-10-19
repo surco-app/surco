@@ -20,6 +20,7 @@ describe('normalizeEditorSections', () => {
       'otherTags',
       'properties',
       'quality',
+      'cues',
       'trim',
       'declick',
       'normalize',
@@ -51,6 +52,7 @@ describe('normalizeEditorSections', () => {
       { id: 'output', open: true },
       { id: 'quality', open: false },
       { id: 'properties', open: true },
+      { id: 'cues', open: true },
       { id: 'trim', open: false },
       { id: 'declick', open: false },
     ])
@@ -66,6 +68,7 @@ describe('normalizeEditorSections', () => {
       'otherTags',
       'properties',
       'quality',
+      'cues',
       'trim',
       'declick',
       'normalize',
@@ -153,10 +156,17 @@ describe('normalizeEditorSections', () => {
       'otherTags',
       'properties',
       'quality',
+      'cues',
       'trim',
       'declick',
       'normalize',
       'output',
     ])
+  })
+
+  it('inserts the Cues section after Quality in an older stored order', () => {
+    const stored = DEFAULT_EDITOR_SECTIONS.filter((s) => s.id !== 'cues')
+    const ids = normalizeEditorSections(stored).map((s) => s.id)
+    expect(ids.indexOf('cues')).toBe(ids.indexOf('quality') + 1)
   })
 })

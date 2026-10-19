@@ -755,6 +755,20 @@
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
       "options": "Playlists de rekordbox"
+    },
+    "cues": {
+      "title": "Cues",
+      "help": "Haz clic en la onda para marcar un drop. Surco pone la cuenta atrás a 16, 32 y 48 compases sobre la rejilla de rekordbox.",
+      "unanalysed": "rekordbox aún no ha analizado esta pista",
+      "manual": "Esta pista tiene hot cues puestos a mano. Surco guarda los drops y no toca los hot cues.",
+      "tooMany": "Necesitaría más de 8 hot cues. Quita un drop.",
+      "undo": "Deshacer",
+      "save": "Guardar en rekordbox",
+      "legend16": "16 compases",
+      "legend32": "32 compases",
+      "legend48": "48 compases",
+      "legendStart": "Inicio",
+      "unreadable": "No se pudieron leer los cues de rekordbox"
     }
   },
   "fields": {
@@ -1262,6 +1276,7 @@
       "otherTags": "Otros metadatos",
       "properties": "Propiedades",
       "quality": "Calidad de audio",
+      "cues": "Cues",
       "output": "Nombre del archivo",
       "trim": "Recorte de silencio",
       "declick": "Reparación de clicks de vinilo",

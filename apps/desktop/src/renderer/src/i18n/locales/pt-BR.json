@@ -755,6 +755,20 @@
       "pending": "Será criada ao gravar a faixa",
       "some": "Só em algumas faixas. Clique para colocá-la em todas",
       "options": "Playlists do rekordbox"
+    },
+    "cues": {
+      "title": "Cues",
+      "help": "Clique na forma de onda para marcar um drop. O Surco põe a contagem regressiva a 16, 32 e 48 compassos na grade do rekordbox.",
+      "unanalysed": "O rekordbox ainda não analisou esta faixa",
+      "manual": "Esta faixa tem hot cues postos à mão. O Surco salva os drops e não mexe nos hot cues.",
+      "tooMany": "Precisaria de mais de 8 hot cues. Tire um drop.",
+      "undo": "Desfazer",
+      "save": "Salvar no rekordbox",
+      "legend16": "16 compassos",
+      "legend32": "32 compassos",
+      "legend48": "48 compassos",
+      "legendStart": "Início",
+      "unreadable": "Não foi possível ler os cues do rekordbox"
     }
   },
   "fields": {
@@ -1262,6 +1276,7 @@
       "otherTags": "Outros metadados",
       "properties": "Propriedades",
       "quality": "Qualidade de áudio",
+      "cues": "Cues",
       "output": "Nome do arquivo",
       "trim": "Corte de silêncio",
       "declick": "Reparo de clicks de vinil",

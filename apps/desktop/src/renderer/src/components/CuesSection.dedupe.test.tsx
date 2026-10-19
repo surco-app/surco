@@ -1,0 +1,53 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
+import type { TrackCues } from '../../../shared/types'
+import '../i18n'
+import { installApi } from '../test/api'
+import { CuesSection } from './CuesSection'
+
+vi.mock('./CueWave', () => ({
+  CueWave: ({ onAddDrop }: { onAddDrop: (ms: number) => void }) => (
+    <button type="button" data-testid="add-same" onClick={() => onAddDrop(128000)} />
+  ),
+}))
+
+afterEach(cleanup)
+
+const READ: TrackCues = {
+  contentId: '103',
+  analysed: true,
+  grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+  strong: [],
+  cues: [],
+  wave: null,
+  durationMs: 400000,
+  fingerprint: 'f0',
+}
+
+describe('CuesSection drops', () => {
+  it('keeps one drop when the same position is added twice', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    installApi({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
+      saveRekordboxCues,
+    })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <CuesSection
+          cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
+          open
+          onToggle={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('add-same')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('add-same'))
+    fireEvent.click(screen.getByTestId('add-same'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(saveRekordboxCues).toHaveBeenCalledWith(expect.objectContaining({ drops: [128000] }))
+  })
+})
