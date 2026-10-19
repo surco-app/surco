@@ -104,6 +104,10 @@ interface Prepared {
   empty: string[]
 }
 
+// The close dialog's wording for an export: rekordbox can come back once the USB is done,
+// not right away while baken writes it.
+export const USB_QUIT_DETAIL = 'rekordboxQuitDetailUsb' as const
+
 const CDJ2000_FLAC = 5
 
 // baken's per-track failure texts are English and for a terminal; the UI gets a code.
@@ -234,7 +238,7 @@ async function prepare(
     )
   } catch (err) {
     deps.log(`usb export has no stick playlist id left: ${String(err)}`)
-    return 'sync-files'
+    return 'stick-ids-full'
   }
   const dir = await deps.makeStageDir()
   try {
@@ -357,6 +361,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   // sync. They describe the library baken just wrote, so they come only after its success;
   // failing them leaves that library intact, which is not a failed export.
   async function writeSyncFiles(p: Prepared): Promise<boolean> {
+    let file = 'masterPlaylists6.xml'
     try {
       const text = syncFileText(
         p.identity.dbId,
@@ -365,10 +370,13 @@ export function createUsbExporter(deps: UsbExporterDeps) {
         nodeTimestamps((await deps.masterPlaylistsXml()) ?? ''),
         new Map(p.sel.playlists.map((pl) => [pl.id, pl.updatedAt])),
       )
-      for (const name of SYNC_FILES) await deps.writeAtomic(stickFile(p, name), text)
+      for (const name of SYNC_FILES) {
+        file = stickFile(p, name)
+        await deps.writeAtomic(file, text)
+      }
       return true
     } catch (err) {
-      deps.log(`usb export could not write the sync files: ${String(err)}`)
+      deps.log(`usb export could not write ${file}: ${String(err)}`)
       return false
     }
   }

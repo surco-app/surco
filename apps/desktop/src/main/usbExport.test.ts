@@ -4,8 +4,15 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { UsbExportEvent, UsbExportRequest, UsbVolume } from '../shared/types'
 import type { BakenEvent, BakenHandle } from './bakenRun'
+import { createMenuT } from './i18n'
 import { type MasterIdentity, STALE_STICK_FILES, syncFileText } from './rekordboxStickSync'
-import { createUsbExporter, failureReason, sourceRoot, type UsbExporterDeps } from './usbExport'
+import {
+  createUsbExporter,
+  failureReason,
+  sourceRoot,
+  USB_QUIT_DETAIL,
+  type UsbExporterDeps,
+} from './usbExport'
 import { createUsbMemory, type UsbMemory } from './usbExportMemory'
 import type { ExportSelection, ExportTrack } from './usbExportSource'
 import type { Stage } from './usbExportStage'
@@ -120,10 +127,15 @@ let cancels: number
 let logged: string[]
 let removed: string[]
 let writes: [string, string][]
+// Bumped before each test: a baken run a test left behind (one that never awaited its
+// finish, or a mutant that let a refused export run) keeps calling the harness after its
+// test ended, and must not land in the next test's records.
+let generation = 0
 
 const IDENTITY: MasterIdentity = { dbId: 3942308644, myTagMasterDbId: 7, myTags: [], fileSizes: {} }
 
 beforeEach(async () => {
+  generation++
   memory = createUsbMemory(join(await mkdtemp(join(tmpdir(), 'usb-exp-')), 'usb-exports.json'))
   sent = []
   calls = []
@@ -140,6 +152,8 @@ function deps(
   over: Partial<UsbExporterDeps> & { dry?: Script; started?: boolean } = {},
 ): UsbExporterDeps {
   const { dry = dryPlan, started = true, ...rest } = over
+  const mine = generation
+  const live = (): boolean => mine === generation
   return {
     platform: 'darwin',
     collection: () => '/rb/master.db',
@@ -172,27 +186,31 @@ function deps(
     home: '/Users/dj',
     pioneerDir: '/Users/dj/Library/Pioneer',
     systemRoot: '/',
-    send: (e) => sent.push(e),
+    send: (e) => {
+      if (live()) sent.push(e)
+    },
     now: () => 1000,
     fileSize: async () => 35,
     pdbFacts: async () => ({ size: 9, mtimeMs: 5 }),
-    log: (m) => logged.push(m),
+    log: (m) => {
+      if (live()) logged.push(m)
+    },
     rekordboxRunning: async () => false,
     ensureRekordboxClosed: async () => true,
     exists: async () => true,
     readText: async () => null,
     writeAtomic: async (path, text) => {
-      writes.push([path, text])
+      if (live()) writes.push([path, text])
     },
     removeFile: async (path) => {
-      removed.push(path)
+      if (live()) removed.push(path)
     },
     identity: () => IDENTITY,
     masterPlaylistsXml: async () => null,
     pollMs: 2,
     devPollMs: 2,
     run: (_cmd, args, onEvent): BakenHandle => {
-      calls.push(args)
+      if (live()) calls.push(args)
       let cancel: () => void = () => {}
       const cancelled = new Promise<void>((r) => {
         cancel = r
@@ -206,7 +224,7 @@ function deps(
       return {
         done,
         cancel: () => {
-          cancels++
+          if (live()) cancels++
           cancel()
         },
       }
@@ -1021,11 +1039,13 @@ describe('sharing the stick with rekordbox', () => {
 
   // The library on the stick is new and complete; only rekordbox's view of which playlists
   // it holds is stale. That is not a failed export.
+  // The log names the file that failed: the first may already be the new one, and which
+  // is stale is what a support reply needs.
   it('says the sync files failed without calling the export failed', async () => {
     const ex = createUsbExporter(
       deps(happy, {
-        writeAtomic: async () => {
-          throw new Error('EROFS: read-only file system')
+        writeAtomic: async (path) => {
+          if (path.endsWith('playlists3Plus.sync')) throw new Error('EROFS: read-only file system')
         },
       }),
     )
@@ -1034,8 +1054,46 @@ describe('sharing the stick with rekordbox', () => {
       outcome: 'done',
       syncFiles: false,
     })
-    expect(logged.join('\n')).toContain('EROFS')
+    expect(logged.find((m) => m.includes('EROFS'))).toContain(`${STICK_DIR}/playlists3Plus.sync`)
     expect(memory.get(`volume:${UUID}`)).not.toBeNull()
+  })
+
+  // baken finished every track before the NAS went: the stick holds a whole library, and
+  // the tracks the loss made fail are counted as failed, as for any other failure.
+  it('is done, failures counted, when a source went but baken finished anyway', async () => {
+    let mounted = true
+    const ex = createUsbExporter(
+      deps(
+        async (emit) => {
+          emit(PLAN)
+          emit({ event: 'start', index: 2, usbPath: '/Contents/A/UnknownAlbum/102.wav', size: 30 })
+          mounted = false
+          await tick(20)
+          emit({ event: 'failed', index: 2, message: 'No such file or directory (os error 2)' })
+          emit({ event: 'database' })
+          emit({
+            ...REPORT,
+            failures: [{ name: 'T102', message: 'No such file or directory (os error 2)' }],
+          } as BakenEvent)
+        },
+        { readSelection: () => onPublic, exists: async () => mounted },
+      ),
+    )
+    await ex.start(REQ)
+    expect((await finished()) as UsbExportEvent).toMatchObject({ outcome: 'done', failed: 1 })
+    expect(cancels).toBe(1)
+  })
+
+  // An export may take minutes: the dialog must not invite reopening rekordbox "right
+  // away" while baken writes the stick, and it says so in every language.
+  it('asks to close rekordbox with words about the USB export', () => {
+    for (const locale of ['es', 'en', 'de', 'fr', 'pt-BR']) {
+      const t = createMenuT(locale)
+      const text = t(USB_QUIT_DETAIL)
+      expect(text).toContain('USB')
+      expect(text).not.toBe(t('rekordboxQuitDetailPlaylists'))
+      expect(text).not.toMatch(/[—:]/)
+    }
   })
 
   // rekordbox knows the stick's playlists by these ids; a renumbered one is a different
@@ -1091,7 +1149,7 @@ describe('sharing the stick with rekordbox', () => {
   it('refuses when the stick has no playlist id left', async () => {
     const full = REKORDBOX_SYNC.replace('Dev_ID="2"', 'Dev_ID="4294967295"')
     const ex = createUsbExporter(deps(happy, { readText: async () => full }))
-    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'sync-files' })
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'stick-ids-full' })
     expect(calls).toEqual([])
   })
 

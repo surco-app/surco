@@ -1518,8 +1518,10 @@ export type UsbFailure =
   | 'sources-unreachable'
   | 'playlist-empty'
   | 'source-lost'
-  // The stick's playlists3.sync already uses the last playlist id a new one could take.
+  // Never a refusal: the done notice's code when finished carries syncFiles false.
   | 'sync-files'
+  // The stick's playlists3.sync already uses the last playlist id a new one could take.
+  | 'stick-ids-full'
 
 export type UsbPlanResult = { ok: true; plan: UsbPlan } | { ok: false; reason: UsbFailure }
 

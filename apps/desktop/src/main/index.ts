@@ -309,7 +309,7 @@ async function ensureTraktorClosed(win: BrowserWindow | null): Promise<boolean> 
 // convert the whole track again to get another attempt.
 const rekordboxQuitPrompt = sharedPrompt(
   async (
-    detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists',
+    detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' | 'rekordboxQuitDetailUsb',
     win: BrowserWindow | null,
   ): Promise<boolean> => {
     if (!(await isRekordboxRunning())) return true
@@ -332,8 +332,12 @@ const rekordboxQuitPrompt = sharedPrompt(
 
 function ensureRekordboxClosed(
   win: BrowserWindow | null,
-  // The conversion's wording by default; a playlist edit has nothing to do with a new file.
-  detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' = 'rekordboxQuitDetail',
+  // The conversion's wording by default; a playlist edit has nothing to do with a new file,
+  // and a USB export must not invite reopening rekordbox before it finishes.
+  detail:
+    | 'rekordboxQuitDetail'
+    | 'rekordboxQuitDetailPlaylists'
+    | 'rekordboxQuitDetailUsb' = 'rekordboxQuitDetail',
 ): Promise<boolean> {
   return rekordboxQuitPrompt(detail, win)
 }
@@ -878,7 +882,7 @@ function registerIpc(): void {
         appPath: app.getAppPath(),
         exists: existsSync,
       }),
-    ensureRekordboxClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+    ensureRekordboxClosed,
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs

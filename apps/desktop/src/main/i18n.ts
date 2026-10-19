@@ -67,6 +67,7 @@ interface MenuStrings {
   rekordboxQuitMessage: string
   rekordboxQuitDetail: string
   rekordboxQuitDetailPlaylists: string
+  rekordboxQuitDetailUsb: string
   rekordboxQuitConfirm: string
   rekordboxQuitCancel: string
   rekordboxSyncBlocked: string
@@ -159,6 +160,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco necesita cerrarlo para actualizar tu colección y que apunte al archivo nuevo. rekordbox se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
     rekordboxQuitDetailPlaylists:
       'Surco necesita cerrarlo para guardar el cambio en tus playlists. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+    rekordboxQuitDetailUsb:
+      'Surco necesita cerrarlo para exportar tus playlists al USB. rekordbox se cerrará de forma segura y puedes volver a abrirlo cuando termine la exportación al USB.',
     rekordboxQuitConfirm: 'Cerrar rekordbox',
     rekordboxQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
@@ -252,6 +255,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco needs to close it to update your collection so it points at the new file. rekordbox will be closed safely; you can reopen it once the conversion finishes.',
     rekordboxQuitDetailPlaylists:
       'Surco needs to close it to save the change to your playlists. rekordbox will be closed safely and you can reopen it right away.',
+    rekordboxQuitDetailUsb:
+      'Surco needs to close it to export your playlists to the USB drive. rekordbox will be closed safely and you can reopen it once the export to the USB drive finishes.',
     rekordboxQuitConfirm: 'Close rekordbox',
     rekordboxQuitCancel: 'Cancel',
     rekordboxSyncBlocked:
@@ -345,6 +350,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco muss es schließen, um deine Sammlung zu aktualisieren, damit sie auf die neue Datei zeigt. rekordbox wird sicher geschlossen; du kannst es nach der Konvertierung wieder öffnen.',
     rekordboxQuitDetailPlaylists:
       'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. rekordbox wird sicher geschlossen und du kannst es gleich wieder öffnen.',
+    rekordboxQuitDetailUsb:
+      'Surco muss es schließen, um deine Playlists auf den USB-Stick zu exportieren. rekordbox wird sicher geschlossen und du kannst es wieder öffnen, sobald der Export auf den USB-Stick fertig ist.',
     rekordboxQuitConfirm: 'rekordbox schließen',
     rekordboxQuitCancel: 'Abbrechen',
     rekordboxSyncBlocked:
@@ -439,6 +446,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco doit le fermer pour mettre à jour ta collection et la faire pointer vers le nouveau fichier. rekordbox sera fermé proprement ; tu pourras le rouvrir une fois la conversion terminée.',
     rekordboxQuitDetailPlaylists:
       'Surco doit le fermer pour enregistrer la modification de tes playlists. rekordbox sera fermé proprement et tu pourras le rouvrir tout de suite.',
+    rekordboxQuitDetailUsb:
+      "Surco doit le fermer pour exporter tes playlists sur la clé USB. rekordbox sera fermé proprement et tu pourras le rouvrir une fois l'export sur la clé USB terminé.",
     rekordboxQuitConfirm: 'Fermer rekordbox',
     rekordboxQuitCancel: 'Annuler',
     rekordboxSyncBlocked:
@@ -532,6 +541,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'O Surco precisa fechá-lo para atualizar a sua coleção e apontar para o arquivo novo. O rekordbox será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
     rekordboxQuitDetailPlaylists:
       'O Surco precisa fechá-lo para salvar a mudança nas suas playlists. O rekordbox será fechado com segurança e você pode reabri-lo em seguida.',
+    rekordboxQuitDetailUsb:
+      'O Surco precisa fechá-lo para exportar as suas playlists para o pendrive USB. O rekordbox será fechado com segurança e você pode reabri-lo quando a exportação para o USB terminar.',
     rekordboxQuitConfirm: 'Fechar o rekordbox',
     rekordboxQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:

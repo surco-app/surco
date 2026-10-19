@@ -18,7 +18,7 @@ import { openRekordboxDb } from './rekordboxDb'
 import { playlistXmlPath } from './rekordboxMasterXml'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { readMasterIdentity } from './rekordboxStickSync'
-import { createUsbExporter } from './usbExport'
+import { createUsbExporter, USB_QUIT_DETAIL } from './usbExport'
 import { createUsbMemory, targetKey } from './usbExportMemory'
 import { readExportSelection } from './usbExportSource'
 import { stageExport } from './usbExportStage'
@@ -33,8 +33,12 @@ export function registerUsbExportIpc(opts: {
   // %APPDATA% on Windows (app.getPath('appData')); unused on macOS.
   appData: string
   baken: () => { file: string; prefixArgs: string[] } | null
-  // The close dialog the playlist writer uses; true once rekordbox is gone.
-  ensureRekordboxClosed: (win: BrowserWindow | null) => Promise<boolean>
+  // The close dialog the playlist writer uses, with the export's wording; true once
+  // rekordbox is gone.
+  ensureRekordboxClosed: (
+    win: BrowserWindow | null,
+    detail: typeof USB_QUIT_DETAIL,
+  ) => Promise<boolean>
 }): void {
   const platform = process.platform
   const source = systemVolumeSource(platform)
@@ -114,7 +118,7 @@ export function registerUsbExportIpc(opts: {
         .catch(() => null),
     log: (m) => log.info(m),
     rekordboxRunning: isRekordboxRunning,
-    ensureRekordboxClosed: () => opts.ensureRekordboxClosed(asking),
+    ensureRekordboxClosed: () => opts.ensureRekordboxClosed(asking, USB_QUIT_DETAIL),
     exists: (path) =>
       access(path).then(
         () => true,
