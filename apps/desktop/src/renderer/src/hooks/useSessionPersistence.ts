@@ -113,7 +113,7 @@ export function useSessionPersistence({
     lastSessionToastId.current = null
   }, [tracks, store])
 
-  // What the next launch offers to reopen: the current list's source paths plus each
+  // What the next launch offers to reopen: the Files list's source paths plus each
   // track's staged edits, rewritten as they change so a crash or forced quit loses (at
   // most) the last second of retagging. The signature guard skips no-op renders
   // (progress ticks mint new track objects constantly without touching the payload),
@@ -128,8 +128,9 @@ export function useSessionPersistence({
     // Rows whose metadata read is still in flight would snapshot half-loaded state —
     // and during a session restore that would overwrite the very edits being restored
     // — so the save waits for the import to settle.
-    if (tracks.some((t) => t.loadingMeta)) return
-    if (savedSessionSig.current === null && tracks.length === 0) return
+    const files = tracks.filter((t) => t.inFiles)
+    if (files.some((t) => t.loadingMeta)) return
+    if (savedSessionSig.current === null && files.length === 0) return
     // Everything expensive happens on the debounced side, not here. The signature used to
     // be built (a full serialize of every path and every staged edit) in the effect body to
     // decide whether to schedule a write — so it ran on EVERY tracks identity change: each
@@ -141,7 +142,7 @@ export function useSessionPersistence({
     if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
     sessionSaveTimer.current = setTimeout(() => {
       sessionSaveTimer.current = null
-      const settled = tracksRef.current
+      const settled = tracksRef.current.filter((t) => t.inFiles)
       if (settled.some((t) => t.loadingMeta)) return
       const paths = settled.map((t) => t.inputPath)
       const edits = sessionEdits(settled)

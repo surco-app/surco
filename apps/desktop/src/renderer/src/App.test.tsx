@@ -1027,7 +1027,7 @@ describe('App source rail', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
 
     fireEvent.click(screen.getByTestId('source-rail-tracks'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     const selectedTitles = () =>
       screen
         .getAllByTestId('track-row')
@@ -1193,8 +1193,8 @@ describe('App source rail', () => {
 describe('App source playlists', () => {
   // Browsing a rekordbox playlist must show the set as the DJ built it: only its tracks, in
   // its order, with its breaks drawn, loading the ones not in the list yet. Going back to
-  // Tracks must give back the whole working list, the playlist's new files included, since
-  // opening a playlist only narrows what is on screen and never drops a track.
+  // Tracks must give back the working list as it was: the playlist's new files stay in the
+  // playlist, and opening it never drops a track of Tracks.
   it('shows a rekordbox playlist in the list, in its order, with the break drawn', async () => {
     const entry = (path: string | null, separator = false) => ({ path, separator, meta: {} })
     setApi({
@@ -1241,8 +1241,122 @@ describe('App source playlists', () => {
 
     fireEvent.click(screen.getByTestId('source-rail-tracks'))
     expect(screen.queryByTestId('source-tree')).not.toBeInTheDocument()
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row').map((r) => r.textContent)).toEqual([
+        expect.stringContaining('Bravo'),
+        expect.stringContaining('Xray'),
+        expect.stringContaining('Alpha'),
+      ]),
+    )
     expect(screen.queryByTestId(/^track-separator-/)).not.toBeInTheDocument()
+  })
+
+  // "si abro un playlist en Apple Music, luego voy a Files, aparecen también allí": a Music
+  // playlist is browsed, not imported, so Tracks keeps only what the user put there.
+  it('keeps an Apple Music playlist’s rows out of Tracks', async () => {
+    setApi({
+      platform: 'darwin',
+      pickFiles: vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: path === '/m/a.wav' ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: 1 }]),
+      loadAppleMusicPlaylistTracks: vi.fn<Api['loadAppleMusicPlaylistTracks']>().mockResolvedValue({
+        paths: ['/m/b.wav'],
+        persistentIds: {},
+        meta: {},
+        missing: 0,
+      }),
+    })
+    await renderApp()
+    await addOneTrack()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row').map((r) => r.textContent)).toEqual([
+        expect.stringContaining('Bravo'),
+      ]),
+    )
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await act(async () => {})
+    expect(screen.getAllByTestId('track-row').map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Alpha'),
+    ])
+  })
+
+  function factoryWithAlpha(over: Record<string, unknown> = {}): void {
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path === '/m/a.wav' ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+      ...over,
+    })
+  }
+
+  // The same file dropped in Tracks after its playlist loaded it is one track in both
+  // places, with the edits it has; it was not in Tracks, so it is no duplicate either.
+  it('puts a dropped file that the open playlist holds in Tracks as one row, with no duplicate notice', async () => {
+    factoryWithAlpha({ getPathForFile: vi.fn(() => '/m/a.wav') })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await act(async () => {})
+    expect(screen.queryAllByTestId('track-row')).toHaveLength(0)
+
+    fireEvent.drop(screen.getByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'a.wav')]),
+    })
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('track-row')).toHaveTextContent('Alpha')
+    await act(async () => {})
+    expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument()
+  })
+
+  // Removing from Tracks is about Tracks: the playlist still lists the file, so its row
+  // stays there with what the user typed on it.
+  it('keeps a row removed from Tracks, edits included, in the open playlist that lists it', async () => {
+    const pickFiles = vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav'])
+    factoryWithAlpha({ pickFiles })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    runMenu('add')
+    await waitFor(() => expect(pickFiles).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    fireEvent.click(screen.getByTestId('track-row'))
+    fireEvent.change(await screen.findByTestId('field-title'), {
+      target: { value: 'Hand Typed' },
+    })
+    fireEvent.blur(screen.getByTestId('field-title'))
+
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('track-row'))
+    expect(await screen.findByTestId('field-title')).toHaveValue('Hand Typed')
   })
 
   // A file rekordbox still lists but the disk no longer has is a row that silently vanishes
@@ -1466,9 +1580,9 @@ describe('App source playlists', () => {
       await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
     })
 
-    // Tracks is the whole working list, as before playlists existed: every import there
-    // gets matched, the ones a playlist set aside included.
-    it('matches what a playlist set aside once the whole list is back on screen', async () => {
+    // Tracks holds only what the user put there: the rows a playlist set aside are not on
+    // screen in Tracks either, so going there spends nothing on them.
+    it('matches nothing a playlist set aside once Tracks is back on screen', async () => {
       const { probed, release } = setupPlaylists()
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -1480,8 +1594,11 @@ describe('App source playlists', () => {
       await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
 
       fireEvent.click(screen.getByTestId('source-rail-tracks'))
+      await act(async () => {})
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
 
-      await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
+      expect(probed).not.toContain('a2')
+      expect(probed).not.toContain('a3')
     })
 
     // Music with nothing picked shows no rows, so it has no work either: falling back to the

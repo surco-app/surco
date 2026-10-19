@@ -63,6 +63,13 @@ function newTrack(path: string): TrackItem {
   }
 }
 
+function listedIn(listed: ReadonlySet<string>, t: TrackItem): boolean {
+  return (
+    listed.has(t.inputPath.normalize('NFC')) ||
+    (!!t.outputPath && listed.has(t.outputPath.normalize('NFC')))
+  )
+}
+
 interface Params {
   // The library owns the selection consequences of its operations (deselect on remove,
   // id swap on start-over, first-track pick on import) through App's setter.
@@ -97,6 +104,7 @@ interface Params {
   // the disk-cached quality/clipping verdicts (seedCachedAnalyses) in one round trip so
   // the list shows them immediately instead of waiting on each track's own lazy probe.
   onPathsAdded?: (paths: string[]) => void
+  filesOpen?: boolean
 }
 
 // Tracks that appeared in a watched folder after it was loaded, waiting on the user to
@@ -127,6 +135,7 @@ interface TrackLibrary {
     paths: string[],
     restore?: Record<string, SessionEdit>,
     streamed?: boolean,
+    toFiles?: boolean,
   ) => Promise<void>
   // Stages a reopen's saved edits before its paths are expanded. Measured in the app: the
   // walk streams the paths first, so by the time addPaths' own restore argument arrives
@@ -176,7 +185,11 @@ export function useTrackLibrary({
   onNoAudioFound,
   onMetaReadFailed,
   onPathsAdded,
+  filesOpen = true,
 }: Params): TrackLibrary {
+  const filesOpenRef = useRef(filesOpen)
+  filesOpenRef.current = filesOpen
+  const listedBySource = useRef(new Set<string>())
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
@@ -283,10 +296,14 @@ export function useTrackLibrary({
     paths: string[],
     restore?: Record<string, SessionEdit>,
     streamed = false,
+    toFiles = true,
   ): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
     const existing = new Set(tracksRef.current.map((t) => t.inputPath))
+    const alreadyInFiles = new Set(
+      tracksRef.current.filter((t) => t.inFiles).map((t) => t.inputPath),
+    )
     const audio = paths.filter((p) => AUDIO_EXT.test(p))
     const fresh = audio.filter((p) => !existing.has(p))
     // A user-initiated drop that yielded no audio at all: say so rather than doing nothing
@@ -318,7 +335,12 @@ export function useTrackLibrary({
     } else {
       const selfStreamed = audio.filter((p) => streamedPaths.current.has(p))
       streamedPaths.current = new Set()
-      const skipped = audio.length - fresh.length - selfStreamed.length
+      const joining = new Set(
+        toFiles ? audio.filter((p) => existing.has(p) && !alreadyInFiles.has(p)) : [],
+      )
+      if (joining.size > 0)
+        mapTracks((t) => (joining.has(t.inputPath) ? { ...t, inFiles: true } : t))
+      const skipped = audio.filter((p) => alreadyInFiles.has(p)).length - selfStreamed.length
       if (skipped > 0) onDuplicatesSkipped(skipped)
     }
     if (fresh.length === 0) return
@@ -336,7 +358,7 @@ export function useTrackLibrary({
     const bases = fresh.map((path) => {
       const seeded = pendingSeed.current.get(path)
       pendingSeed.current.delete(path)
-      return { ...newTrack(path), loadingMeta: true, ...seeded }
+      return { ...newTrack(path), loadingMeta: true, ...(toFiles && { inFiles: true }), ...seeded }
     })
     // Publish the new rows to the live view immediately rather than waiting for the render
     // that setTracks schedules. A folder walk pays out batches back-to-back, so two can land
@@ -545,6 +567,7 @@ export function useTrackLibrary({
       ...newTrack(track.inputPath),
       loadingMeta: true,
       sourcePreview: track.sourcePreview,
+      inFiles: track.inFiles,
     }
     onForget(track.id)
     setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
@@ -704,7 +727,7 @@ export function useTrackLibrary({
       // every file would look "new". This happens on macOS, where closing the window keeps
       // the app (and its watches) alive: a watch from a prior session can fire against the
       // reopened window's empty list. Drop the event and release the orphaned watch.
-      if (tracksRef.current.length === 0) {
+      if (!tracksRef.current.some((t) => t.inFiles)) {
         void window.api.unwatchFolders()
         return
       }
@@ -712,9 +735,10 @@ export function useTrackLibrary({
       // must not offer Surco's own conversions back as "new tracks".
       const fresh = newTrackPaths(
         files,
-        tracksRef.current.flatMap((t) =>
-          t.outputPath ? [t.inputPath, t.outputPath] : [t.inputPath],
-        ),
+        tracksRef.current.flatMap((t) => [
+          ...(t.inFiles ? [t.inputPath] : []),
+          ...(t.outputPath ? [t.outputPath] : []),
+        ]),
       ).filter((p) => !ignoredPaths.current.has(p))
       setPendingNew((prev) => {
         if (fresh.length === 0) return prev?.root === root ? null : prev
@@ -748,10 +772,11 @@ export function useTrackLibrary({
   }, [])
 
   // A playlist opened from a source is browsing, not importing: the files go through the
-  // same add path as a drop so every filter and analysis behaves alike, but only the ones
-  // not already in the crate are passed on. That keeps a track loaded from another
-  // playlist with its edits, and keeps addPaths from reporting it as a skipped duplicate —
-  // going back to a playlist is not something the user did twice.
+  // same add path as a drop so every filter and analysis behaves alike, but stay out of
+  // Files, and only the ones not already in the collection are passed on. That keeps a
+  // track loaded from Files or another playlist with its edits, and keeps addPaths from
+  // reporting it as a skipped duplicate — going back to a playlist is not something the
+  // user did twice.
   //
   // The rows go in at once, without waiting for the disk; expandPaths then stats them in
   // the background and the rows whose file is not there are removed. Resolves how many of
@@ -775,6 +800,7 @@ export function useTrackLibrary({
         ),
       )
     const loaded = loadedNow()
+    for (const e of entries) if (e.path && !e.separator) listedBySource.current.add(same(e.path))
     if (source === 'rekordbox') {
       const previewOf = new Map(
         entries.flatMap((e) =>
@@ -849,7 +875,7 @@ export function useTrackLibrary({
         pendingSeed.current.set(e.path, { sourcePreview: e.preview })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
-    await addPaths(freshPaths)
+    await addPaths(freshPaths, undefined, false, false)
     const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
     const gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
     // A staged path the disk lacks may never have been consumed by a row, and would leak
@@ -860,6 +886,7 @@ export function useTrackLibrary({
       pendingSeed.current.delete(e.path)
     }
     const goneRows = tracksRef.current.filter((t) => gone.has(same(t.inputPath))).map((t) => t.id)
+    for (const p of gone) listedBySource.current.delete(p)
     if (goneRows.length > 0) {
       removeTracks(goneRows)
       const added = new Set(freshPaths.map(same))
@@ -943,11 +970,16 @@ export function useTrackLibrary({
   const removeTrack = useCallback(
     (id: string): void => {
       const removed = tracksRef.current.find((t) => t.id === id)
-      setTracks((prev) => prev.filter((t) => t.id !== id))
+      const stays = !!removed && filesOpenRef.current && listedIn(listedBySource.current, removed)
+      setTracks((prev) =>
+        stays
+          ? prev.map((t) => (t.id === id ? { ...t, inFiles: false } : t))
+          : prev.filter((t) => t.id !== id),
+      )
       setSelection((s) => deselect(s, id))
       if (removed) {
         ignoredPaths.current.add(removed.inputPath)
-        onRemoveRef.current([removed])
+        if (!stays) onRemoveRef.current([removed])
       }
     },
     [setSelection],
@@ -960,13 +992,23 @@ export function useTrackLibrary({
   const removeTracks = useCallback(
     (ids: string[]): void => {
       const drop = new Set(ids)
-      const removed = tracksRef.current.filter((t) => drop.has(t.id))
-      setTracks((prev) => prev.filter((t) => !drop.has(t.id)))
+      const leaving = tracksRef.current.filter((t) => drop.has(t.id))
+      const stays = new Set(
+        filesOpenRef.current
+          ? leaving.filter((t) => listedIn(listedBySource.current, t)).map((t) => t.id)
+          : [],
+      )
+      const removed = leaving.filter((t) => !stays.has(t.id))
+      setTracks((prev) =>
+        prev.flatMap((t) =>
+          stays.has(t.id) ? [{ ...t, inFiles: false }] : drop.has(t.id) ? [] : [t],
+        ),
+      )
       setSelection((s) => ({
         ids: s.ids.filter((id) => !drop.has(id)),
         anchor: s.anchor && drop.has(s.anchor) ? null : s.anchor,
       }))
-      for (const track of removed) ignoredPaths.current.add(track.inputPath)
+      for (const track of leaving) ignoredPaths.current.add(track.inputPath)
       onRemoveRef.current(removed)
     },
     [setSelection],
@@ -974,6 +1016,10 @@ export function useTrackLibrary({
 
   function clearTracks(): void {
     const cleared = tracksRef.current
+    if (filesOpenRef.current && cleared.some((t) => listedIn(listedBySource.current, t))) {
+      removeTracks(cleared.map((t) => t.id))
+      return
+    }
     // An import still reading is reading for a crate that no longer exists: without
     // this the pill kept counting toward a total whose rows had just been emptied out.
     cancelImport()

@@ -67,6 +67,7 @@ export interface TrackItem {
   // probe failed or has not run yet, so the row simply omits the time.
   duration?: number
   sourcePreview?: SourcePreview
+  inFiles?: boolean
   coverUrl?: string
   coverPath?: string
   // The artwork embedded in the file itself, captured once when the file is added

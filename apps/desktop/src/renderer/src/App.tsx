@@ -184,6 +184,8 @@ import type { CopiedTags, TrackItem } from './types'
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 
+const inFiles = (t: TrackItem): boolean => !!t.inFiles
+
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
@@ -510,6 +512,21 @@ export default function App(): React.JSX.Element {
     [],
   )
 
+  // Which DJ library and playlist the list is narrowed to. The playlist's files join the
+  // collection as they arrive, outside Files, so its rows exist to be shown; a refocus
+  // re-read lands here again and only loads what is new. Stable so that re-read, not every
+  // render, runs it.
+  const browser = useSourceBrowser({
+    onPlaylistGone: (name, source) =>
+      pushToast(store, {
+        key: 'source-playlist-gone',
+        tone: 'neutral',
+        message: tr(`sources.gone.${source}`, { name }),
+        duration: 4000,
+        testid: 'app-notice',
+      }),
+  })
+
   // The track collection (import pipeline, write paths, removal) lives in the hook;
   // App supplies the per-track registry cleanup and the auto-match opt-in, which is
   // gated on a token and only fires once a file's own metadata is read so the search
@@ -623,21 +640,9 @@ export default function App(): React.JSX.Element {
       void seedCachedAnalyses(queryClient, paths)
       noticeOnPathsAdded(paths)
     },
+    filesOpen: browser.source === null,
   })
 
-  // Which DJ library and playlist the list is narrowed to. The playlist's files join the
-  // working list as they arrive, so its rows exist to be shown; a refocus re-read lands here
-  // again and only loads what is new. Stable so that re-read, not every render, runs it.
-  const browser = useSourceBrowser({
-    onPlaylistGone: (name, source) =>
-      pushToast(store, {
-        key: 'source-playlist-gone',
-        tone: 'neutral',
-        message: tr(`sources.gone.${source}`, { name }),
-        duration: 4000,
-        testid: 'app-notice',
-      }),
-  })
   // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
   // edits leaves the latest answer, not a stack.
   const notifyEdit = useCallback(
@@ -764,7 +769,7 @@ export default function App(): React.JSX.Element {
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
   const selectionBySource = useRef(new Map<PlaylistSource | null, Selection>())
   // Another playlist of the same source hides the rows of the one left, which stay in the
-  // working list: a selection kept across the switch let the editor, the row menu (a
+  // collection: a selection kept across the switch let the editor, the row menu (a
   // rekordbox write among its items) and the bulk actions act on rows no longer on screen.
   // It is set aside while the new rows load and comes back narrowed to them once they land.
   const heldSelection = useRef<Selection | null>(null)
@@ -780,7 +785,7 @@ export default function App(): React.JSX.Element {
     heldSelection.current = null
     selectionBySource.current.set(browser.source, selection)
     const kept = selectionBySource.current.get(next)
-    const alive = new Set(tracks.map((t) => t.id))
+    const alive = new Set(tracks.filter((t) => next || t.inFiles).map((t) => t.id))
     setSelection({
       ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
       anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
@@ -1435,20 +1440,22 @@ export default function App(): React.JSX.Element {
     return () => dismissToast(store, id)
   }, [libraryFailed, librarySource, store])
   // The list narrowed to the open playlist, in its order. Only what the list shows and
-  // counts reads it: the whole working list is still what is persisted.
+  // counts reads it: the Files rows are what is persisted.
   const playlistScope = useMemo(
     () => (browser.playlist && browser.entries ? playlistView(tracksView, browser.entries) : null),
     [browser.playlist, browser.entries, tracksView],
   )
+  const filesView = useMemo(() => tracksView.filter(inFiles), [tracksView])
   // A source with no playlist applied yet (none picked, or its entries still loading) shows
   // nothing: the working list's rows there read as tracks of that library.
   const scopeTracks = useMemo(
-    () => playlistScope?.tracks ?? (browser.source ? [] : tracksView),
-    [playlistScope, browser.source, tracksView],
+    () => playlistScope?.tracks ?? (browser.source ? [] : filesView),
+    [playlistScope, browser.source, filesView],
   )
+  const listedCount = browser.source ? tracks.length : filesView.length
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
-  // the others stay in the working list, and selected they would reach the row menu and
+  // the others stay in the collection, and selected they would reach the row menu and
   // the bulk actions unseen.
   useEffect(() => {
     if (!playlistScope) return
@@ -1473,14 +1480,16 @@ export default function App(): React.JSX.Element {
     () => playlistScope?.tracks.map((t) => t.id).join('\n') ?? '',
     [playlistScope],
   )
-  // The background sweeps work on the open playlist only: the working list keeps every
+  // The background sweeps work on the open playlist only: the collection keeps every
   // playlist passed through, and sweeping all of it spent Discogs and ffmpeg on sets the
   // user had left. Narrowed from the moment a playlist is picked, before its entries land
   // (nothing is its work yet), so the one left behind does not start more in the meantime.
   // A source with no playlist open shows no rows, so it has no work either.
   const sweepScope = useMemo(
     () =>
-      browser.source ? playlistMembership(browser.playlist ? (browser.entries ?? []) : []) : null,
+      browser.source
+        ? playlistMembership(browser.playlist ? (browser.entries ?? []) : [])
+        : inFiles,
     [browser.source, browser.playlist, browser.entries],
   )
   useEffect(() => {
@@ -2519,7 +2528,7 @@ export default function App(): React.JSX.Element {
     return listReviewSource({
       rows: reviewPaths
         ? () => tracksViewRef.current.filter((t) => reviewPaths.has(t.inputPath))
-        : () => tracksViewRef.current,
+        : () => tracksViewRef.current.filter(inFiles),
       mac: isMac,
       launchMusic: () =>
         !!settingsRef.current?.addToAppleMusic ||
@@ -2539,7 +2548,7 @@ export default function App(): React.JSX.Element {
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
   const showList =
-    (browser.source ? browser.playlist !== null : tracks.length > 0) || review !== null
+    (browser.source ? browser.playlist !== null : filesView.length > 0) || review !== null
   const progress = topBarProgress(
     [analysis, matching, batchProgress, importProgress],
     anyLoadingMeta,
@@ -2606,7 +2615,7 @@ export default function App(): React.JSX.Element {
                 />
                 <Toolbar
                   hintFor={hintFor}
-                  trackCount={tracks.length}
+                  trackCount={listedCount}
                   convertibleCount={eligibleCount}
                   batchSize={bulkTracks.length}
                   canConvertAll={canProcessAll}
@@ -2716,7 +2725,7 @@ export default function App(): React.JSX.Element {
                         >
                           {tr(`sources.failed.${browser.source}`)}
                         </p>
-                      ) : tracks.length ===
+                      ) : listedCount ===
                         0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the
                       // column that has nothing in it yet.
@@ -2858,8 +2867,8 @@ export default function App(): React.JSX.Element {
                     onPointerDown={sidebar.onPointerDown}
                     // Fitting to content only means something once there are track names to
                     // measure; on an empty list the gesture is a no-op, so drop it and its hint.
-                    onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
-                    title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
+                    onDoubleClick={listedCount > 0 ? autoFitSidebar : undefined}
+                    title={listedCount > 0 ? tr('sidebar.fitHint') : undefined}
                   />
                 )}
 

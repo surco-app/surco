@@ -817,3 +817,123 @@ describe('the light read of a rekordbox row', () => {
     expect(result.current.tracks[0].metaPartial).toBeFalsy()
   })
 })
+
+describe('Files and the source playlists keep their own tracks', () => {
+  const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
+
+  it('keeps a playlist row out of Files and puts a dropped one in it', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/b.aiff'])
+    })
+    const byPath = (p: string) => result.current.tracks.find((t) => t.inputPath === p)
+    expect(byPath('/m/a.aiff')?.inFiles).toBeFalsy()
+    expect(byPath('/m/b.aiff')?.inFiles).toBe(true)
+  })
+
+  it('brings a restored session back into Files', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'], {})
+    })
+    expect(result.current.tracks[0].inFiles).toBe(true)
+  })
+
+  it('puts a dropped file that is already in an open playlist in Files as the same row, without a duplicate notice', async () => {
+    const onDuplicatesSkipped = vi.fn()
+    const { result } = setup({}, { onDuplicatesSkipped })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'appleMusic')
+    })
+    const id = result.current.tracks[0].id
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    expect(result.current.tracks).toHaveLength(1)
+    expect(result.current.tracks[0]).toMatchObject({ id, inFiles: true })
+    expect(onDuplicatesSkipped).not.toHaveBeenCalled()
+  })
+
+  it('still reports a file dropped twice into Files as a skipped duplicate', async () => {
+    const onDuplicatesSkipped = vi.fn()
+    const { result } = setup({}, { onDuplicatesSkipped })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    expect(onDuplicatesSkipped).toHaveBeenCalledWith(1)
+  })
+
+  it('does not put a playlist row in Files when its own disk check streams it back', async () => {
+    let stream: (paths: string[]) => void = () => {}
+    const { result } = setup({
+      onExpandedBatch: vi.fn<Api['onExpandedBatch']>((cb) => {
+        stream = cb
+        return () => {}
+      }),
+      expandPaths: vi.fn<Api['expandPaths']>(async (paths) => {
+        stream(paths)
+        return paths
+      }),
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+    })
+    expect(result.current.tracks[0].inFiles).toBeFalsy()
+  })
+
+  it('takes rows removed in Files out of Files only while a playlist lists them', async () => {
+    const onRemove = vi.fn()
+    const { result } = setup({}, { onRemove, filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff', '/m/b.aiff'])
+    })
+    const [a, b] = result.current.tracks
+    act(() => result.current.removeTracks([a.id, b.id]))
+    expect(result.current.tracks).toEqual([expect.objectContaining({ id: a.id, inFiles: false })])
+    expect(onRemove).toHaveBeenCalledWith([expect.objectContaining({ id: b.id })])
+  })
+
+  it('keeps a row removed from Files by its ✕ for the playlist that lists it', async () => {
+    const { result } = setup({}, { filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'appleMusic')
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    act(() => result.current.removeTrack(result.current.tracks[0].id))
+    expect(result.current.tracks).toEqual([expect.objectContaining({ inFiles: false })])
+  })
+
+  it('removes a row from a source view as before, Files included', async () => {
+    const { result } = setup({}, { filesOpen: false })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    act(() => result.current.removeTrack(result.current.tracks[0].id))
+    expect(result.current.tracks).toHaveLength(0)
+  })
+
+  it('keeps a row started over in Files', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    act(() => result.current.startOverTrack(result.current.tracks[0]))
+    expect(result.current.tracks[0].inFiles).toBe(true)
+  })
+
+  it('empties Files without dropping the rows a playlist lists', async () => {
+    const { result } = setup({}, { filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff', '/m/b.aiff'])
+    })
+    act(() => result.current.clearTracks())
+    expect(result.current.tracks).toEqual([
+      expect.objectContaining({ inputPath: '/m/a.aiff', inFiles: false }),
+    ])
+  })
+})
