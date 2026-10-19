@@ -281,7 +281,7 @@ describe('TrackList', () => {
 
   // Title and artist truncate in the narrow column, but they shared the row through two
   // separate tooltips that could both show as the pointer crossed between the stacked
-  // lines. Title and artist now share one line and one tooltip, scoped to their text — not
+  // lines. Title and artist now carry the same tooltip, each copy scoped to its text — not
   // the flex-1 layout slot, which stretches past a short title and used to fire the tooltip
   // across the empty tail. Hovering either the frozen label or the artist reveals both.
   it('reveals the label and artist by hovering either the title or the artist', () => {
@@ -439,7 +439,7 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-duration')).toHaveTextContent('4:47')
   })
 
-  it('puts title, artist, duration and format on one line and the wave under it, as rekordbox does', () => {
+  it('gives the artist its own line under the title so it fits a narrow list, with the wave below and the cover beside all three', () => {
     renderList([
       track({
         id: 'a',
@@ -455,14 +455,25 @@ describe('TrackList', () => {
         },
       }),
     ])
-    const line = screen.getByTestId('track-title-line')
-    expect(line).toContainElement(screen.getByTestId('track-artist'))
-    expect(line).toContainElement(screen.getByTestId('track-duration'))
-    expect(line).toContainElement(screen.getByTestId('track-format'))
-    expect(screen.getByTestId('track-artist')).toHaveTextContent('DJ Miguel')
-    expect(screen.getByTestId('track-wave-line')).toContainElement(
-      screen.getByTestId('track-hot-cue'),
-    )
+    const titleLine = screen.getByTestId('track-title-line')
+    const detailLine = screen.getByTestId('track-detail-line')
+    const waveLine = screen.getByTestId('track-wave-line')
+    expect(titleLine).toContainElement(screen.getByTestId('track-duration'))
+    expect(titleLine).not.toContainElement(screen.getByTestId('track-artist'))
+    expect(detailLine).toContainElement(screen.getByTestId('track-artist'))
+    expect(detailLine).toContainElement(screen.getByTestId('track-format'))
+    expect(screen.getByTestId('track-artist')).toHaveTextContent(/^DJ Miguel$/)
+    expect(waveLine).toContainElement(screen.getByTestId('track-hot-cue'))
+    expect(
+      titleLine.compareDocumentPosition(detailLine) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      detailLine.compareDocumentPosition(waveLine) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    const column = waveLine.parentElement as HTMLElement
+    expect(column).toContainElement(titleLine)
+    expect(column).toContainElement(detailLine)
+    expect(column.parentElement).toBe(screen.getByTestId('track-status').parentElement)
   })
 
   it('keeps the wave line for a row with no wave, so the list does not jump', () => {

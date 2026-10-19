@@ -74,7 +74,7 @@ export function RowWave({
           aria-hidden="true"
           viewBox={`0 0 ${bars.length} ${WAVE_HEIGHT}`}
           preserveAspectRatio="none"
-          className="absolute inset-x-0 bottom-0 h-5 w-full fill-[var(--color-accent)] opacity-70"
+          className="absolute inset-x-0 bottom-0 h-[18px] w-full fill-[var(--color-accent)] opacity-70"
         >
           <path d={wavePath(bars)} />
         </svg>

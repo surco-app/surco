@@ -37,7 +37,7 @@ export function CoverPlaceholder({
   return (
     <span
       data-testid={testid}
-      className={`flex ${large ? 'h-12 w-12' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+      className={`flex ${large ? 'h-16 w-16' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
         round ? 'rounded-full' : 'rounded-md'
       }`}
     >
