@@ -59,7 +59,9 @@ describe.skipIf(!copy)('Learn the flow from the DJ’s own collection', () => {
           },
           matching: d.matching,
           mismatches: examples(d.mismatches),
-          myFlow: { matching: d.myFlow.matching, mismatches: examples(d.myFlow.mismatches) },
+          withExtraHot: d.withExtraHot,
+          withExtraCall: d.withExtraCall,
+          myFlow: { ...d.myFlow, mismatches: examples(d.myFlow.mismatches) },
         }),
       )
     } finally {

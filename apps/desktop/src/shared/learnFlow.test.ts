@@ -103,7 +103,7 @@ describe('learnFlow', () => {
     const odd = withExtraHot(64, 8)
     const learned = learnFlow([...clean, odd])
     expect(learned?.flow.rules).toEqual([MY_FLOW.rules[0]])
-    expect(learned?.coverage).toEqual({ matching: 19, marked: 20 })
+    expect(learned?.coverage).toEqual({ matching: 20, marked: 20 })
   })
 
   it('ignores tracks with no drop, since a cue only measures against where the track breaks', () => {
@@ -123,7 +123,7 @@ describe('learnFlow', () => {
 
   it('proposes a flow when 30 % of the marked tracks follow it and nothing below, so a loose habit is never sold as a pattern', () => {
     const noisy = (count: number) =>
-      Array.from({ length: count }, (_, i) => withExtraHot(64, i + 1))
+      Array.from({ length: count }, () => edited(track([64]), at(32, 'any', null)))
     expect(
       learnFlow([...Array.from({ length: 6 }, () => track([64])), ...noisy(14)])?.coverage,
     ).toEqual({ matching: 6, marked: 20 })
@@ -208,7 +208,39 @@ describe('learnFlow on collections shaped like the real one', () => {
     ]
     const learned = learnFlow(tracks)
     expect(learned?.flow.rules).toEqual([MY_FLOW.rules[0]])
-    expect(learned?.coverage).toEqual({ matching: 10, marked: 20 })
+    expect(learned?.coverage).toEqual({ matching: 20, marked: 20 })
+  })
+})
+
+describe('coverage counts a track when the plan of the flow is inside its cues', () => {
+  const collection = (odd: LearnTrack) => [
+    ...Array.from({ length: 10 }, () => track([64, 128])),
+    odd,
+  ]
+
+  it('still counts a track with cues beyond the flow after the drop, since DJs add later drops and mix points', () => {
+    const t = track([64])
+    const extras: LearnTrack = {
+      ...t,
+      cues: [
+        ...t.cues,
+        { ms: bar(80), kind: 4, color: 56 },
+        { ms: bar(80), kind: 0, color: null },
+        { ms: bar(150), kind: 0, color: null },
+        { ms: bar(150), kind: 5, color: 1 },
+        { ms: bar(170), kind: 6, color: 9 },
+      ],
+    }
+    expect(learnFlow(collection(extras))?.coverage).toEqual({ matching: 11, marked: 11 })
+  })
+
+  it('does not count a track missing the 32 cue the flow places', () => {
+    const missing = edited(track([64]), at(32, 'any', null))
+    expect(learnFlow(collection(missing))?.coverage).toEqual({ matching: 10, marked: 11 })
+    expect(diagnoseLearnFlow(collection(missing)).mismatches).toEqual({
+      'missing-hot-cue': [10],
+      'call-missing': [10],
+    })
   })
 })
 
@@ -253,7 +285,9 @@ describe('diagnoseLearnFlow', () => {
       flow: { rules: MY_FLOW.rules },
       countdownPaired: 1,
       start: { open: 4, withStart: 4 },
-      matching: 25,
+      matching: 26,
+      withExtraHot: 1,
+      withExtraCall: 0,
     })
     expect(d.support[48]).toEqual({ tracks: 27, eligible: 28 })
     expect(d.support[8]).toEqual({ tracks: 1, eligible: 29 })
@@ -262,14 +296,13 @@ describe('diagnoseLearnFlow', () => {
       'colour-differs': [first + 2],
       'missing-hot-cue': [first + 3],
       'call-missing': [first + 3],
-      'extra-hot-cue': [first + 4],
       'several-drops': [first + 5, first + 9],
       'start-cue-differs': [first + 6],
       moved: [first + 7],
       'too-many': [first + 9],
     }
     expect(d.mismatches).toEqual(mismatches)
-    expect(d.myFlow).toEqual({ matching: 25, mismatches })
+    expect(d.myFlow).toEqual({ matching: 26, mismatches, withExtraHot: 1, withExtraCall: 0 })
   })
 
   it('measures Mi flujo on the same tracks as the reference when the collection learns another flow', () => {

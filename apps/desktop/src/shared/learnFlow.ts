@@ -40,9 +40,7 @@ export interface LearnedFlow {
 export type MismatchReason =
   | 'too-many'
   | 'missing-hot-cue'
-  | 'extra-hot-cue'
   | 'call-missing'
-  | 'call-extra'
   | 'colour-null'
   | 'colour-differs'
   | 'start-cue-differs'
@@ -60,7 +58,16 @@ export interface LearnDiagnosis {
   start: { open: number; withStart: number }
   matching: number
   mismatches: Partial<Record<MismatchReason, number[]>>
-  myFlow: { matching: number; mismatches: Partial<Record<MismatchReason, number[]>> }
+  withExtraHot: number
+  withExtraCall: number
+  myFlow: Coverage
+}
+
+export interface Coverage {
+  matching: number
+  mismatches: Partial<Record<MismatchReason, number[]>>
+  withExtraHot: number
+  withExtraCall: number
 }
 
 interface HotBefore {
@@ -214,7 +221,11 @@ interface Placed {
 
 const placedOf = (c: LearnCue): Placed => ({ ms: c.ms, hot: c.kind !== 0, color: c.color })
 
-function compareCues(beats: number[], wanted: Placed[], actual: Placed[]): MismatchReason[] {
+function compareCues(
+  beats: number[],
+  wanted: Placed[],
+  actual: Placed[],
+): { reasons: MismatchReason[]; extra: Placed[] } {
   const reasons: MismatchReason[] = []
   const left = [...actual]
   const missed: Placed[] = []
@@ -240,11 +251,10 @@ function compareCues(beats: number[], wanted: Placed[], actual: Placed[]): Misma
       reasons.push(hotReason(w, 'moved'))
     } else reasons.push(w.hot ? hotReason(w, 'missing-hot-cue') : 'call-missing')
   }
-  for (const a of left) reasons.push(a.hot ? hotReason(a, 'extra-hot-cue') : 'call-extra')
-  return reasons
+  return { reasons, extra: left }
 }
 
-function mismatchOf(flow: CueFlow, t: Marked): MismatchReason[] {
+function mismatchOf(flow: CueFlow, t: Marked): { reasons: MismatchReason[]; extra: Placed[] } {
   const out = flowOutcome({
     existing: [],
     drops: t.drops,
@@ -254,27 +264,24 @@ function mismatchOf(flow: CueFlow, t: Marked): MismatchReason[] {
     phrases: t.track.phrases,
     flow,
   })
-  const reasons: MismatchReason[] =
+  const { reasons, extra } =
     out.status === 'too-many'
-      ? ['too-many']
+      ? { reasons: ['too-many' as const], extra: [] }
       : compareCues(t.track.beats, out.wanted.map(placedOf), t.track.cues.map(placedOf))
-  if (reasons.length === 0) return []
-  if (t.drops.length > 1) reasons.push('several-drops')
-  return [...new Set(reasons)]
+  if (reasons.length > 0 && t.drops.length > 1) reasons.push('several-drops')
+  return { reasons: [...new Set(reasons)], extra }
 }
 
-function mismatchesOf(
-  marked: Marked[],
-  flow: CueFlow,
-): { matching: number; mismatches: Partial<Record<MismatchReason, number[]>> } {
-  const mismatches: Partial<Record<MismatchReason, number[]>> = {}
-  let matching = 0
+function mismatchesOf(marked: Marked[], flow: CueFlow): Coverage {
+  const out: Coverage = { matching: 0, mismatches: {}, withExtraHot: 0, withExtraCall: 0 }
   for (const t of marked) {
-    const reasons = mismatchOf(flow, t)
-    if (reasons.length === 0) matching++
-    for (const r of reasons) mismatches[r] = [...(mismatches[r] ?? []), t.index]
+    const { reasons, extra } = mismatchOf(flow, t)
+    if (reasons.length === 0) out.matching++
+    if (extra.some((c) => c.hot)) out.withExtraHot++
+    if (extra.some((c) => !c.hot)) out.withExtraCall++
+    for (const r of reasons) out.mismatches[r] = [...(out.mismatches[r] ?? []), t.index]
   }
-  return { matching, mismatches }
+  return out
 }
 
 function learnMarked(marked: Marked[]) {
@@ -294,6 +301,7 @@ export function learnFlow(tracks: LearnTrack[]): LearnedFlow | null {
   const marked = tracks.flatMap((t, i) => markedOf(t, i) ?? [])
   if (marked.length === 0) return null
   const { flow } = learnMarked(marked)
+  if (flow.rules.length === 0) return null
   const { matching } = mismatchesOf(marked, flow)
   if (matching < PATTERN_SHARE * marked.length) return null
   return { flow, coverage: { matching, marked: marked.length } }
@@ -315,6 +323,8 @@ export function diagnoseLearnFlow(tracks: LearnTrack[]): LearnDiagnosis {
     start: { open: open.length, withStart: starts.length },
     matching: learned.matching,
     mismatches: learned.mismatches,
+    withExtraHot: learned.withExtraHot,
+    withExtraCall: learned.withExtraCall,
     myFlow: mismatchesOf(marked, MY_FLOW),
   }
 }
