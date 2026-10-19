@@ -82,3 +82,22 @@ Medido con el mismo método que el 19/10 (driver, copia `rb-b`, caché vacía, N
 - Análisis, comprobado igual sobre una copia de `share/PIONEER/USBANLZ` (749 MB): los 1001 temas de All tienen `.DAT` con PWAV, 9 MB en total, y leerlos todos cuesta 98 ms. La onda puede ir en la misma respuesta que la playlist o pedirse por filas visibles; el plan elige por medida.
 - Un tema sin análisis en rekordbox no tiene `.DAT`: va sin onda, como una pista que no está en rekordbox.
 - Abrir de nuevo una playlist tras editarla en rekordbox debe refrescar la vista previa, igual que hoy refresca las entradas al volver el foco.
+
+## Medido tras el plan (19/10)
+
+Mismo método que el 19/10 (driver sobre el build, copia `rb-b`, audio en el NAS por SMB, `analysis-cache` borrada antes de cada pasada fría). Dos pasadas frías de la apertura y dos del editor. La caché de ficheros del sistema y del SMB no se puede vaciar, así que la segunda pasada lee el NAS ya caliente.
+
+| Objetivo | Antes | Después | Veredicto |
+|---|---|---|---|
+| All (999) completa en menos de 0,5 s | 133,5 s | 0,37 s y 0,28 s con todas las filas completas en el DOM; las carátulas y ondas de las filas en pantalla se pintan a 7,1 s y 7,6 s en dos aperturas frías y a 0,72 s en otra | no cumple, en pantalla 7,1 s |
+| MDT (33) completa en menos de 0,3 s | 6,1 s | 0,14 s y 0,13 s en el DOM; carátulas y ondas en pantalla a 0,16 s y 0,15 s, y a 3,6 s en una apertura | no cumple siempre, una apertura de tres a 3,6 s |
+| Main nunca bloqueado más de 200 ms seguidos | 59 s seguidos, 113 s en total (All) | All 251 ms y 154 ms seguidos, 451 ms y 144 ms en total; MDT 128 ms y 121 ms | no cumple, 251 ms en una de dos pasadas |
+| Editor en menos de 10 s con la caché fría | sin medir | espectro a 4,9 s y 1,0 s (MDT) y a 4,0 s y 1,0 s (All) desde el clic en la fila | cumple, 4,9 s el peor |
+| Ninguna fila modificada sin tocarla | sin medir | 0 filas con la marca ámbar y 0 `data-dirty` en las ocho aperturas | cumple |
+
+- El bloqueo de 251 ms es la propia lectura de la playlist (`rekordbox:playlist`), que corre síncrona en el main y costó 240 ms y 151 ms en All.
+- Las carátulas en pantalla llegan a la vez que la respuesta de `list:rowWaves`, que se pidió para 985 filas y no solo para las visibles y tardó 6,7 s y 6,9 s. En pantalla se ven los marcos vacíos hasta entonces.
+- Las lecturas de ficheros de All terminaron a 58,7 s y a 16,9 s (NAS ya caliente); las de MDT a 4,4 s y 0,5 s. Ninguna búsqueda a Discogs ni MusicBrainz durante las lecturas; la primera salió entre 3 ms y 18 ms después de la última. Después sí corren todas (247 búsquedas para MDT, 1697 en 25 min para All).
+- Las 10 filas visibles muestran onda y cues (MDT 58 hot cues y 87 memory cues; All 28 y 43 en 8 de las 10).
+- Dos filas de All pierden el artista cuando llega la lectura del fichero, porque el fichero no lo lleva; es lo que pide el diseño.
+- El renderer tiene un hueco de 400 a 420 ms hacia 1,4 s después del clic en All, en frío y en caliente.
