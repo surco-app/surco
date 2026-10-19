@@ -64,6 +64,10 @@ describe('matchingOptions', () => {
       matchingOptions(OPTIONS, 'todas', [{ id: '2000', name: 'Todas' }]).map((o) => o.id),
     ).toEqual(['1101'])
   })
+
+  it('hides the root playlist an id-less chosen name already resolves to', () => {
+    expect(matchingOptions(OPTIONS, 'makina', [{ name: 'Makina' }]).map((o) => o.id)).toEqual([])
+  })
 })
 
 describe('canCreate', () => {
@@ -107,6 +111,15 @@ describe('effectivePlaylists', () => {
       rekordboxPlaylists: [{ name: 'Bolos de verano' }],
     })
     expect(effectivePlaylists(t, {}, OPTIONS)).toEqual([{ name: 'Bolos de verano' }])
+  })
+
+  it('is not pending when an id-less and an id target resolve to the one playlist the track holds', () => {
+    const t = track({
+      id: 'a',
+      inputPath: '/m/a.wav',
+      rekordboxPlaylists: [{ name: 'Makina' }, { id: '3000', name: 'Makina' }],
+    })
+    expect(isPlaylistsPending(t, { '/m/a.wav': ['3000'] }, OPTIONS)).toBe(false)
   })
 
   it('answers nothing while options or membership are still loading, so a pick can never shrink the set', () => {

@@ -36,7 +36,12 @@ export function matchingOptions(
   text: string,
   chosen: readonly RekordboxPlaylistTarget[],
 ): PlaylistOption[] {
-  const taken = new Set(chosen.flatMap((t) => (t.id ? [t.id] : [])))
+  const taken = new Set(
+    chosen.flatMap((t) => {
+      const id = resolveTarget(t, options).id
+      return id ? [id] : []
+    }),
+  )
   const query = fold(text.trim())
   return options.filter((o) => !taken.has(o.id) && (query === '' || fold(o.name).includes(query)))
 }
@@ -91,7 +96,12 @@ export function isPlaylistsPending(
   if (!track.rekordboxPlaylists) return false
   const want = track.rekordboxPlaylists.map((t) => resolveTarget(t, options))
   const held = new Set(membership[rekordboxPathOf(track)] ?? [])
-  return want.length !== held.size || want.some((t) => !t.id || !held.has(t.id))
+  const wantedIds = new Set(want.flatMap((t) => (t.id ? [t.id] : [])))
+  return (
+    want.some((t) => !t.id) ||
+    wantedIds.size !== held.size ||
+    [...wantedIds].some((id) => !held.has(id))
+  )
 }
 
 export function bulkPlaylistState(
