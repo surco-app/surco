@@ -20,11 +20,14 @@ describe.skipIf(!copy)('Learn the flow from the DJ’s own collection', () => {
       openRekordboxDb(path, { readonly: true, key: await rekordboxRawKey(path) })
     if (!db) throw new Error('the copy did not open')
     try {
+      const started = performance.now()
       const read = readLearnTracks(db, rekordboxShareDir(path))
       const tracks = read.tracks.map((t) => t.track)
       const learned = learnFlow(tracks)
+      const ms = Math.round(performance.now() - started)
       console.log(
         JSON.stringify({
+          ms,
           learned,
           isMyFlow: learned ? isDeepStrictEqual(learned.flow.rules, MY_FLOW.rules) : false,
         }),
