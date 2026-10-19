@@ -73,6 +73,10 @@ EOF
 12. **The field's options come from the tree query** (`['source-tree', 'rekordbox']`), enabled whenever a collection exists, so a tree edit, an apply or a refocus refreshes the field and the tree together.
 13. **Membership for dots and the field's initial value** comes from `rekordbox:membership`, one read for the visible rows; `findTrackByPath` gets an optional `quiet` flag so this read does not log a miss for every working-list track rekordbox never had.
 14. **The "rekordbox open" dialog after a conversion run is no longer shown for rekordbox** (the repoint is queued and the pill says so). The review's tag sync keeps its dialog.
+15. **Deleting a playlist or folder deletes its `djmdPlaylist` rows** (and their links) instead of setting `rb_local_deleted`, as rekordbox does with links (medidas: nobody soft-deletes). A real delete in rekordbox was not measured; Task 16 has Vicent check one.
+16. **Rename and delete are new kinds of `RekordboxPlaylistEdit`** (Decision 4), so `editProblem`, the writer and `editMessage` stay one switch each.
+17. **Link edits move the node `Timestamp`, tree edits included.** Phase 2a wrote that link edits never touch `masterPlaylists6.xml`; the spike measured rekordbox moving it (Makina, 19:00:36.518), so 2a's moves, removes, separators and adds now move it too, and the XML is backed up whenever it exists and something is written. Replaces the 2a test that asserted the XML untouched.
+18. **Phases are per operation.** Each queued operation runs whole inside its own `SAVEPOINT`, operations sorted by the spec's phase (tracks, creates, links, renames, cues, deletes). A track operation does its own add, new playlists and links in that order. The one cross-operation dependency, the same new playlist name on two tracks, is one map per batch (Task 5).
 
 ## Review Focus
 
@@ -759,6 +763,927 @@ npm exec --workspace apps/desktop -- biome check --write src
 npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
 git add apps/desktop/src/main/rekordboxPlaylistsFixture.ts apps/desktop/src/main/rekordboxContentAdd.ts apps/desktop/src/main/rekordboxContentAdd.test.ts
 git commit -m "Add a converted track to the rekordbox collection in the measured mould"
+```
+
+---
+
+### Task 3: Rename, delete, a track's playlists, a quiet lookup
+
+**Files:**
+- Modify: `src/shared/types.ts` (`RekordboxPlaylistEdit`, ~line 1046)
+- Modify: `src/main/rekordboxDb.ts` (`FindOptions` and the miss log in `findTrackByPath`)
+- Modify: `src/main/rekordboxPlaylistEdit.ts` (append; extend `editProblem`)
+- Test: `src/main/rekordboxPlaylistEdit.test.ts` (append), `src/main/rekordboxDb.test.ts` (append)
+
+**Interfaces:**
+- Consumes: `links`, `writeOrder`, `nodeAttribute`, `EditRefused`, `EditContext` (same file), `takeLocalUsn`, `rekordboxStamp`.
+- Produces:
+  - `RekordboxPlaylistEdit` gains `{ kind: 'rename'; playlistId: string; name: string }` and `{ kind: 'delete'; playlistId: string }` (`playlistId` names a playlist or a folder)
+  - `FindOptions` gains `quiet?: boolean` (no miss line in the log)
+  - `renameNode(db: Db, id: string, name: string, ctx: EditContext): void`
+  - `deleteNode(db: Db, id: string, ctx: EditContext): string[]` (every deleted `djmdPlaylist.ID`, the node first, for the XML)
+  - `nodeSubtree(db: Db, id: string): string[]`
+  - `trackPlaylists(db: Db, contentId: string): string[]` (live normal playlists, `Attribute` 0, that link the entry)
+  - `removeTrackFromPlaylist(db: Db, playlistId: string, contentId: string, ctx: EditContext): number` (links deleted)
+
+Deleting removes rows the way rekordbox removes links with cloud sync off (measured for links, not for playlists: medidas has no line on a deleted playlist). The Task 16 checklist asks Vicent to delete a folder from Surco and look in rekordbox; Decision 15 below records it.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `src/main/rekordboxPlaylistEdit.test.ts` (add `deleteNode`, `nodeSubtree`, `removeTrackFromPlaylist`, `renameNode`, `trackPlaylists` to the import from `./rekordboxPlaylistEdit`):
+
+```ts
+const NESTED: PlaylistFixture = {
+  ...ORGANISE_FIXTURE,
+  playlists: [
+    ...ORGANISE_FIXTURE.playlists,
+    { ID: '1100', Name: 'SUB', Attribute: 1, ParentID: '1000', Seq: 2 },
+    { ID: '1110', Name: 'Deep', Attribute: 0, ParentID: '1100', Seq: 1 },
+  ],
+  links: [...ORGANISE_FIXTURE.links, { ID: 'd1', PlaylistID: '1110', ContentID: '101', TrackNo: 1 }],
+}
+
+const live = (id: string) =>
+  db.prepare('SELECT ID, Name, Seq, rb_local_usn AS usn, updated_at FROM djmdPlaylist WHERE ID = ?').get(id) as
+    | { ID: string; Name: string; Seq: number; usn: number; updated_at: string }
+    | undefined
+
+describe('renameNode', () => {
+  it('renames the row and stamps it as a change of its own', () => {
+    renameNode(db, '3000', '  House 2026 ', ctx)
+    expect(live('3000')).toMatchObject({ Name: 'House 2026', usn: 501, updated_at: STAMP })
+  })
+
+  it('renames a folder too', () => {
+    renameNode(db, '1000', 'COMBOS VIEJOS', ctx)
+    expect(live('1000')?.Name).toBe('COMBOS VIEJOS')
+  })
+
+  it('refuses a node that is gone or a blank name', () => {
+    expect(() => renameNode(db, '9999', 'X', ctx)).toThrow(EditRefused)
+    expect(() => renameNode(db, '3000', '  ', ctx)).toThrow(EditRefused)
+  })
+})
+
+describe('deleteNode', () => {
+  // A folder holds playlists the DJ cannot see from the menu that deletes it; leaving them
+  // would keep rows rekordbox shows nowhere and still exports.
+  it('takes a folder, its nested folders and playlists and all their links', async () => {
+    db.close()
+    db = await openFixture(NESTED)
+    expect(nodeSubtree(db, '1000').sort()).toEqual(['1000', '1100', '1110', '2000'])
+    expect(deleteNode(db, '1000', ctx)).toEqual(['1000', '2000', '1100', '1110'])
+    for (const id of ['1000', '1100', '1110', '2000']) expect(live(id)).toBeUndefined()
+    expect(rows('2000')).toEqual([])
+    expect(rows('1110')).toEqual([])
+    expect(contents('3000')).toEqual(['102', '110'])
+  })
+
+  // The spec's one promise in the confirmation: the tracks stay in the collection.
+  it('never deletes a collection entry', async () => {
+    db.close()
+    db = await openFixture(NESTED)
+    const before = db.prepare('SELECT count(*) AS n FROM djmdContent').get()
+    deleteNode(db, '1000', ctx)
+    expect(db.prepare('SELECT count(*) AS n FROM djmdContent').get()).toEqual(before)
+  })
+
+  // rekordbox keeps Seq 1..n per parent (measured); a gap reorders nothing but every later
+  // creation would compute its place from it.
+  it('closes the gap among the siblings that followed', () => {
+    deleteNode(db, '1000', ctx)
+    expect(live('3000')).toMatchObject({ Seq: 1, updated_at: STAMP })
+    expect(live('4000')?.Seq).toBe(2)
+  })
+
+  it('refuses a node that is gone', () => {
+    expect(() => deleteNode(db, '9999', ctx)).toThrow(EditRefused)
+  })
+})
+
+describe('trackPlaylists', () => {
+  // The field's initial value: where rekordbox has the track today, normal playlists only.
+  it('lists the playlists that link the entry, once each', () => {
+    expect(trackPlaylists(db, '102').sort()).toEqual(['2000', '3000'])
+    expect(trackPlaylists(db, '103')).toEqual([])
+  })
+})
+
+describe('removeTrackFromPlaylist', () => {
+  it('removes every link of the entry and renumbers the rest', () => {
+    expect(removeTrackFromPlaylist(db, '2000', '102', ctx)).toBe(2)
+    expect(contents('2000')).toEqual(['101', '109', '201', '109', '104'])
+    expect(trackNos('2000')).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('removes nothing when the playlist does not hold the entry', () => {
+    expect(removeTrackFromPlaylist(db, '3000', '101', ctx)).toBe(0)
+    expect(contents('3000')).toEqual(['102', '110'])
+  })
+})
+
+describe('editProblem for rename and delete', () => {
+  it('flags a node that is gone and a blank name', () => {
+    expect(editProblem(db, { kind: 'rename', playlistId: '9999', name: 'X' })).toBe('stale')
+    expect(editProblem(db, { kind: 'rename', playlistId: '3000', name: ' ' })).toBe('stale')
+    expect(editProblem(db, { kind: 'delete', playlistId: '9999' })).toBe('stale')
+  })
+
+  it('passes a folder and a playlist', () => {
+    expect(editProblem(db, { kind: 'rename', playlistId: '1000', name: 'X' })).toBeNull()
+    expect(editProblem(db, { kind: 'delete', playlistId: '3000' })).toBeNull()
+  })
+})
+```
+
+In `src/main/rekordboxDb.test.ts`, add `vi` to the `vitest` import, add `import log from 'electron-log/main'`, put this mock right under the imports:
+
+```ts
+vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }))
+```
+
+and append:
+
+```ts
+describe('findTrackByPath quiet', () => {
+  // The membership read asks for every row of the working list; most were never in
+  // rekordbox, and a miss line for each would bury the misses that matter.
+  it('logs no miss when asked to be quiet', () => {
+    const db = openRekordboxDb(dbPath)
+    if (!db) throw new Error('fixture did not open')
+    vi.mocked(log.info).mockClear()
+    expect(findTrackByPath(db, '/nowhere/x.wav', { quiet: true })).toBeNull()
+    expect(log.info).not.toHaveBeenCalled()
+    findTrackByPath(db, '/nowhere/x.wav')
+    expect(log.info).toHaveBeenCalled()
+    db.close()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxPlaylistEdit.test.ts src/main/rekordboxDb.test.ts`
+Expected: FAIL, `renameNode is not a function` (and the rest); the quiet test fails on `log.info` having been called.
+
+- [ ] **Step 3: Types and the quiet flag**
+
+In `src/shared/types.ts`, add to the `RekordboxPlaylistEdit` union:
+
+```ts
+  | { kind: 'rename'; playlistId: string; name: string }
+  | { kind: 'delete'; playlistId: string }
+```
+
+In `src/main/rekordboxDb.ts`:
+
+```ts
+export type FindOptions = PathMatchOptions & { quiet?: boolean }
+```
+
+and guard the miss log in `findTrackByPath`:
+
+```ts
+  if (matches.length === 0) {
+    if (!options.quiet)
+      log.info(
+        `rekordbox lookup miss: name=${JSON.stringify(fileName)} target=${JSON.stringify(target)} rows=${rows.length}` +
+          rows.map((r) => ` | row ${r.ID} -> ${JSON.stringify(safeResolve(r.FolderPath))}`).join(''),
+      )
+    return null
+  }
+```
+
+- [ ] **Step 4: Implement the edits**
+
+Append to `src/main/rekordboxPlaylistEdit.ts`:
+
+```ts
+function requireNode(db: Db, id: string): void {
+  const attribute = nodeAttribute(db, id)
+  if (attribute !== 0 && attribute !== 1) throw new EditRefused('stale')
+}
+
+export function renameNode(db: Db, id: string, name: string, ctx: EditContext): void {
+  requireNode(db, id)
+  if (name.trim() === '') throw new EditRefused('stale')
+  const stamp = rekordboxStamp(ctx.now)
+  db.prepare('UPDATE djmdPlaylist SET Name = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?').run(
+    name.trim(),
+    takeLocalUsn(db, stamp),
+    stamp,
+    id,
+  )
+}
+
+export function nodeSubtree(db: Db, id: string): string[] {
+  const children = db.prepare(
+    `SELECT ID FROM djmdPlaylist WHERE ParentID = ? AND coalesce(rb_local_deleted, 0) = 0 ORDER BY Seq`,
+  )
+  const found = [id]
+  for (let i = 0; i < found.length; i++) {
+    for (const row of children.all(found[i]) as { ID: string }[]) found.push(String(row.ID))
+  }
+  return found
+}
+
+export function deleteNode(db: Db, id: string, ctx: EditContext): string[] {
+  requireNode(db, id)
+  const { ParentID, Seq } = db.prepare('SELECT ParentID, Seq FROM djmdPlaylist WHERE ID = ?').get(id) as {
+    ParentID: string
+    Seq: number
+  }
+  const doomed = nodeSubtree(db, id)
+  const unlink = db.prepare('DELETE FROM djmdSongPlaylist WHERE PlaylistID = ?')
+  const drop = db.prepare('DELETE FROM djmdPlaylist WHERE ID = ?')
+  for (const node of doomed) {
+    unlink.run(node)
+    drop.run(node)
+  }
+  const stamp = rekordboxStamp(ctx.now)
+  const after = db
+    .prepare(
+      `SELECT ID, Seq FROM djmdPlaylist WHERE ParentID = ? AND Seq > ? AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .all(ParentID, Seq) as { ID: string; Seq: number }[]
+  const renumber = db.prepare(
+    'UPDATE djmdPlaylist SET Seq = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  )
+  for (const sibling of after) renumber.run(sibling.Seq - 1, takeLocalUsn(db, stamp), stamp, sibling.ID)
+  return doomed
+}
+
+export function trackPlaylists(db: Db, contentId: string): string[] {
+  return (
+    db
+      .prepare(
+        `SELECT DISTINCT p.ID FROM djmdSongPlaylist s JOIN djmdPlaylist p ON p.ID = s.PlaylistID
+          WHERE s.ContentID = ? AND coalesce(s.rb_local_deleted, 0) = 0
+            AND coalesce(p.rb_local_deleted, 0) = 0 AND p.Attribute = 0`,
+      )
+      .all(contentId) as { ID: string }[]
+  ).map((r) => String(r.ID))
+}
+
+export function removeTrackFromPlaylist(
+  db: Db,
+  playlistId: string,
+  contentId: string,
+  ctx: EditContext,
+): number {
+  requirePlaylist(db, playlistId)
+  const order = links(db, playlistId)
+  const doomed = order.filter((l) => l.ContentID === contentId)
+  if (doomed.length === 0) return 0
+  const remove = db.prepare('DELETE FROM djmdSongPlaylist WHERE ID = ?')
+  for (const l of doomed) remove.run(l.ID)
+  writeOrder(
+    db,
+    order.filter((l) => l.ContentID !== contentId),
+    rekordboxStamp(ctx.now),
+  )
+  return doomed.length
+}
+```
+
+In `editProblem`, right after the `create` branch, add:
+
+```ts
+  if (edit.kind === 'rename' || edit.kind === 'delete') {
+    const attribute = nodeAttribute(db, edit.playlistId)
+    if (attribute !== 0 && attribute !== 1) return 'stale'
+    return edit.kind === 'rename' && edit.name.trim() === '' ? 'stale' : null
+  }
+```
+
+`links` returns `ContentID` as stored; the fixture and rekordbox store IDs as text, so the strict comparison holds.
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxPlaylistEdit.test.ts src/main/rekordboxDb.test.ts`
+Expected: PASS.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+`editRekordboxPlaylist`'s final `else` now also receives `rename`/`delete`; until Task 4 replaces that dispatch, `tsc` reports them on `edit.parentId`. Make the existing `else` explicit so this commit compiles, in `rekordboxPlaylistWrite.ts`:
+
+```ts
+    else if (edit.kind === 'create')
+      created = createNode(db, edit.parentId, edit.name, edit.folder, {
+        now,
+        newPlaylistId: freeId,
+      })
+    else if (edit.kind === 'rename') renameNode(db, edit.playlistId, edit.name, { now })
+    else deleteNode(db, edit.playlistId, { now })
+```
+
+(import `renameNode`, `deleteNode`). Task 4 adds the XML side of both.
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxDb.ts apps/desktop/src/main/rekordboxDb.test.ts apps/desktop/src/main/rekordboxPlaylistEdit.ts apps/desktop/src/main/rekordboxPlaylistEdit.test.ts apps/desktop/src/main/rekordboxPlaylistWrite.ts
+git commit -m "Rename and delete rekordbox playlists and folders, and read a track's playlists"
+```
+
+If `tsc -p tsconfig.web.json` reports a non-exhaustive switch over `RekordboxPlaylistEdit['kind']` in the renderer (`playlistEdits.ts` has none today), add the two kinds to that switch returning `null`; Task 15 gives them their messages.
+
+---
+
+### Task 4: The batch writer
+
+**Files:**
+- Create: `src/main/rekordboxQueueOps.ts`
+- Modify: `src/shared/types.ts` (append `RekordboxQueueNotice` after `RekordboxEditResult`)
+- Modify: `src/main/rekordboxPlaylistWrite.ts` (imports; `xmlTakesNode`; replace everything from `function refuse` to the end of the file)
+- Test: `src/main/rekordboxPlaylistWrite.test.ts` (replace one test, append a `describe`)
+
+**Interfaces:**
+- Consumes: Task 1 `nodeTimestamp`, `withNodeTimestamp`, `withoutNodes`; Task 3 `renameNode`, `deleteNode`; existing `editProblem`, `resolveTracks`, `playlistContents`, `moveChangesOrder`, `addToPlaylist`, `moveInPlaylist`, `removeFromPlaylist`, `insertSeparator`, `createNode`, `randomPlaylistId`, `EditRefused`.
+- Produces:
+  - `shared/types.ts`: `type RekordboxQueueNotice = { code: 'ambiguous' | 'file-missing' | 'not-added'; track: string } | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string } | { code: 'edit-changed'; playlist: string }`
+  - `rekordboxQueueOps.ts`: `interface EditOp { id: string; kind: 'edit'; edit: RekordboxPlaylistEdit; stamps: Record<string, number> }`, `type QueueOp = EditOp` (Task 5 widens it), `interface OpOutcome { id: string; applied: boolean; reason?: RekordboxEditRefusal; report?: PlaylistAddReport; createdId?: string; notices: RekordboxQueueNotice[] }`, `type BatchResult = { ok: true; wrote: boolean; outcomes: OpOutcome[] } | { ok: false; reason: RekordboxEditRefusal }`, `opRank(op: QueueOp): number`, `interface XmlDraft { xml: string | null; taken: Set<string>; now: number }`, `bumpNode(draft: XmlDraft, playlistId: string): void`
+  - `rekordboxPlaylistWrite.ts`: `applyRekordboxBatch(collectionPath: string, ops: QueueOp[], deps: PlaylistWriteDeps): Promise<BatchResult>` (outcomes in the order of `ops`); `editRekordboxPlaylist` keeps its signature and answers.
+
+Ranks (the spec's order, per operation; each operation runs whole inside its own `SAVEPOINT`): track 0, `create` 1, `add`/`move`/`remove`/`insertSeparator` 2, `rename` 3, cues 4 (plan B), `delete` 5. A refusal inside one operation (`EditRefused`) rolls back that savepoint only and its XML changes with it; any other error rolls back the whole batch (spec "Falla a mitad").
+
+Decision 17 applies here: every write that changes a playlist's links, or renames it, moves its node `Timestamp`, so the XML is backed up and written whenever it exists and something is written.
+
+- [ ] **Step 1: Write the failing tests**
+
+In `src/main/rekordboxPlaylistWrite.test.ts`, replace the test `'leaves the XML alone for an edit of tracks'` with:
+
+```ts
+  // Measured 18/10: rekordbox moves the node Timestamp of a playlist whose tracks change,
+  // and its USB sync reads it; a reorder that left it would never reach the stick.
+  it('moves only the Timestamp of the playlist whose tracks changed', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
+    await editRekordboxPlaylist(path, MOVE, deps())
+    expect(await readFile(xmlPath, 'utf8')).toBe(
+      before.replace(
+        /(<NODE Id="7D0" [^>]*Timestamp=")\d+/,
+        `$1${NOW.getTime()}`,
+      ),
+    )
+    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(true)
+  })
+```
+
+Add `applyRekordboxBatch` to the import from `./rekordboxPlaylistWrite`, `type QueueOp` from `./rekordboxQueueOps`, and append:
+
+```ts
+const edit = (id: string, e: RekordboxPlaylistEdit, stamps: Record<string, number> = {}): QueueOp => ({
+  id,
+  kind: 'edit',
+  edit: e,
+  stamps,
+})
+
+function playlistRow(path: string, id: string): { Name: string } | undefined {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return db.prepare('SELECT Name FROM djmdPlaylist WHERE ID = ?').get(id) as
+      | { Name: string }
+      | undefined
+  } finally {
+    db.close()
+  }
+}
+
+describe('applyRekordboxBatch', () => {
+  // A queue that waited for rekordbox to close is one gesture for the user: one dialog,
+  // one copy, one transaction.
+  it('writes several operations behind one question and one copy', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('a', MOVE), edit('b', { kind: 'rename', playlistId: '3000', name: 'House 26' })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [
+        { id: 'a', applied: true, notices: [] },
+        { id: 'b', applied: true, notices: [] },
+      ],
+    })
+    expect(d.ensureClosed).toHaveBeenCalledTimes(1)
+    expect(d.sessionBackup).toHaveBeenCalledWith(path)
+    expect(linkIds(path, '2000')[0]).toBe('f6')
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House 26' })
+  })
+
+  // Deleting a folder takes its playlists; an operation on one of them, queued earlier,
+  // no longer applies, and only that one is dropped.
+  it('drops only the operation that no longer applies inside the batch', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('folder', { kind: 'delete', playlistId: '1000' }), edit('child', { kind: 'delete', playlistId: '2000' })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes).toEqual([
+      { id: 'folder', applied: true, notices: [] },
+      { id: 'child', applied: false, reason: 'stale', notices: [] },
+    ])
+    expect(playlistRow(path, '1000')).toBeUndefined()
+  })
+
+  it('removes the deleted nodes from the XML and keeps the rest', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    await applyRekordboxBatch(path, [edit('x', { kind: 'delete', playlistId: '1000' })], deps())
+    const xml = await readFile(xmlPath, 'utf8')
+    expect(xml).not.toContain('Id="3E8"')
+    expect(xml).not.toContain('Id="7D0"')
+    expect(xml).toContain('Id="BB8"')
+  })
+
+  // The spec's order: links before deletes, whatever order the queue holds them in.
+  it('applies links before deletes', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [
+        edit('del', { kind: 'delete', playlistId: '3000' }),
+        edit('add', { kind: 'add', playlistId: '3000', tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }] }),
+      ],
+      deps(),
+    )
+    expect(result.ok && result.outcomes.map((o) => o.applied)).toEqual([true, true])
+  })
+
+  // rekordbox wins: a playlist touched there since the operation was queued is left as
+  // rekordbox has it, the user is told, and nothing is asked or written for it.
+  it('drops an operation on a playlist rekordbox changed since it was queued', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('r', { kind: 'rename', playlistId: '3000', name: 'X' }, { '3000': 1 })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        { id: 'r', applied: false, reason: 'stale', notices: [{ code: 'edit-changed', playlist: 'House' }] },
+      ],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House' })
+  })
+
+  it('applies an operation whose recorded Timestamp still matches', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('r', { kind: 'rename', playlistId: '3000', name: 'X' }, { '3000': 1767225600000 })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0].applied).toBe(true)
+  })
+
+  it('undoes every operation of the batch when the write dies halfway', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('a', MOVE), edit('b', { kind: 'rename', playlistId: '3000', name: 'House 26' })],
+      deps({
+        onWrite: () => {
+          throw new Error('disk gone')
+        },
+      }),
+    )
+    expect(result).toEqual({ ok: false, reason: 'write-failed' })
+    expect(linkIds(path, '2000')).toEqual(FACTORY)
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House' })
+  })
+
+  it('asks nothing when no operation has anything to write', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('m', { kind: 'move', playlistId: '2000', linkIds: ['f1'], beforeLinkId: 'f2' })],
+      d,
+    )
+    expect(result).toEqual({ ok: true, wrote: false, outcomes: [{ id: 'm', applied: true, notices: [] }] })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxPlaylistWrite.test.ts`
+Expected: FAIL, `Cannot find module './rekordboxQueueOps'`; once it exists, `applyRekordboxBatch is not a function` and the Timestamp test sees the XML untouched.
+
+- [ ] **Step 3: The operation types**
+
+Append to `src/shared/types.ts`, after `RekordboxEditResult`:
+
+```ts
+export type RekordboxQueueNotice =
+  | { code: 'ambiguous' | 'file-missing' | 'not-added'; track: string }
+  | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
+  | { code: 'edit-changed'; playlist: string }
+```
+
+Create `src/main/rekordboxQueueOps.ts`:
+
+```ts
+import type {
+  PlaylistAddReport,
+  RekordboxEditRefusal,
+  RekordboxPlaylistEdit,
+  RekordboxQueueNotice,
+} from '../shared/types'
+import { withNodeTimestamp } from './rekordboxMasterXml'
+
+export interface EditOp {
+  id: string
+  kind: 'edit'
+  edit: RekordboxPlaylistEdit
+  stamps: Record<string, number>
+}
+
+export type QueueOp = EditOp
+
+export interface OpOutcome {
+  id: string
+  applied: boolean
+  reason?: RekordboxEditRefusal
+  report?: PlaylistAddReport
+  createdId?: string
+  notices: RekordboxQueueNotice[]
+}
+
+export type BatchResult =
+  | { ok: true; wrote: boolean; outcomes: OpOutcome[] }
+  | { ok: false; reason: RekordboxEditRefusal }
+
+const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
+  create: 1,
+  add: 2,
+  move: 2,
+  remove: 2,
+  insertSeparator: 2,
+  rename: 3,
+  delete: 5,
+}
+
+export function opRank(op: QueueOp): number {
+  return EDIT_RANK[op.edit.kind]
+}
+
+export interface XmlDraft {
+  xml: string | null
+  taken: Set<string>
+  now: number
+}
+
+export function bumpNode(draft: XmlDraft, playlistId: string): void {
+  if (draft.xml !== null) draft.xml = withNodeTimestamp(draft.xml, playlistId, draft.now)
+}
+```
+
+- [ ] **Step 4: The batch writer**
+
+In `src/main/rekordboxPlaylistWrite.ts`:
+
+Imports become:
+
+```ts
+import { existsSync } from 'node:fs'
+import { chmod, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import log from 'electron-log/main'
+import type {
+  PlaylistAddReport,
+  RekordboxEditRefusal,
+  RekordboxEditResult,
+  RekordboxPlaylistEdit,
+} from '../shared/types'
+import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import {
+  hexId,
+  nodeTimestamp,
+  playlistXmlPath,
+  withoutNodes,
+  withPlaylistNode,
+  xmlNodeIds,
+} from './rekordboxMasterXml'
+import {
+  addToPlaylist,
+  createNode,
+  deleteNode,
+  EditRefused,
+  editProblem,
+  insertSeparator,
+  moveChangesOrder,
+  moveInPlaylist,
+  playlistContents,
+  randomPlaylistId,
+  removeFromPlaylist,
+  renameNode,
+  resolveTracks,
+} from './rekordboxPlaylistEdit'
+import { isRekordboxRunning } from './rekordboxProcess'
+import {
+  type BatchResult,
+  bumpNode,
+  type EditOp,
+  type OpOutcome,
+  opRank,
+  type QueueOp,
+  type XmlDraft,
+} from './rekordboxQueueOps'
+import { writeBackup } from './rekordboxSessionBackup'
+```
+
+`xmlTakesNode` loses its `parentId` parameter (the placeholder node goes under the root; only the layout is checked):
+
+```ts
+async function xmlTakesNode(xmlPath: string): Promise<boolean> {
+  try {
+    withPlaylistNode(await readFile(xmlPath, 'utf8'), {
+      id: '100',
+      parentId: 'root',
+      attribute: 0,
+      timestamp: 0,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+```
+
+Replace everything from `function refuse(` to the end of the file with:
+
+```ts
+function refuse(reason: RekordboxEditRefusal, report?: PlaylistAddReport): RekordboxEditResult {
+  return report ? { applied: false, reason, report } : { applied: false, reason }
+}
+
+type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
+
+interface Planned {
+  op: QueueOp
+  contentIds?: string[]
+  unresolved?: { notInCollection: number; ambiguous: number }
+}
+
+type Plan = Planned | { outcome: OpOutcome }
+
+function playlistName(db: Db, id: string): string {
+  const row = db.prepare('SELECT Name FROM djmdPlaylist WHERE ID = ?').get(id) as
+    | { Name: string }
+    | undefined
+  return row?.Name ?? id
+}
+
+function planEdit(probe: Db, xml: string | null, op: EditOp, find: FindOptions): Plan {
+  const { edit } = op
+  const refused = (reason: RekordboxEditRefusal, report?: PlaylistAddReport): Plan => ({
+    outcome: report
+      ? { id: op.id, applied: false, reason, report, notices: [] }
+      : { id: op.id, applied: false, reason, notices: [] },
+  })
+  const problem = editProblem(probe, edit)
+  if (problem) return refused(problem)
+  for (const [playlistId, stamp] of Object.entries(op.stamps)) {
+    if (xml !== null && nodeTimestamp(xml, playlistId) !== stamp)
+      return {
+        outcome: {
+          id: op.id,
+          applied: false,
+          reason: 'stale',
+          notices: [{ code: 'edit-changed', playlist: playlistName(probe, playlistId) }],
+        },
+      }
+  }
+  if (
+    edit.kind === 'move' &&
+    !moveChangesOrder(probe, edit.playlistId, edit.linkIds, edit.beforeLinkId)
+  )
+    return { outcome: { id: op.id, applied: true, notices: [] } }
+  if (edit.kind === 'add') {
+    const resolved = resolveTracks(probe, edit.tracks, find)
+    const unresolved = { notInCollection: resolved.notInCollection, ambiguous: resolved.ambiguous }
+    const present = playlistContents(probe, edit.playlistId)
+    const already = resolved.contentIds.filter((id) => present.has(id)).length
+    if (already === resolved.contentIds.length)
+      return refused('nothing-to-add', { added: 0, already, ...unresolved })
+    return { op, contentIds: resolved.contentIds, unresolved }
+  }
+  return { op }
+}
+
+function planOp(probe: Db, xml: string | null, op: QueueOp, find: FindOptions): Plan {
+  return planEdit(probe, xml, op, find)
+}
+
+function freeId(draft: XmlDraft): string {
+  for (;;) {
+    const id = randomPlaylistId()
+    if (!draft.taken.has(hexId(id))) return id
+  }
+}
+
+function writeEdit(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  const op = planned.op as EditOp
+  const { edit } = op
+  const ctx = { now, newPlaylistId: () => freeId(draft) }
+  const done = (extra: Partial<OpOutcome> = {}): OpOutcome => ({
+    id: op.id,
+    applied: true,
+    notices: [],
+    ...extra,
+  })
+  if (edit.kind === 'add') {
+    const counts = addToPlaylist(db, edit.playlistId, planned.contentIds ?? [], ctx)
+    bumpNode(draft, edit.playlistId)
+    return done({ report: { ...counts, notInCollection: 0, ambiguous: 0, ...planned.unresolved } })
+  }
+  if (edit.kind === 'move') {
+    moveInPlaylist(db, edit.playlistId, edit.linkIds, edit.beforeLinkId, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'remove') {
+    removeFromPlaylist(db, edit.playlistId, edit.linkIds, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'insertSeparator') {
+    insertSeparator(db, edit.playlistId, edit.beforeLinkId, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'create') {
+    const created = createNode(db, edit.parentId, edit.name, edit.folder, ctx)
+    if (draft.xml !== null)
+      draft.xml = withPlaylistNode(draft.xml, {
+        id: created.id,
+        parentId: edit.parentId,
+        attribute: created.attribute,
+        timestamp: draft.now,
+      })
+    draft.taken.add(hexId(created.id))
+    return done({ createdId: created.id })
+  }
+  if (edit.kind === 'rename') {
+    renameNode(db, edit.playlistId, edit.name, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  const gone = deleteNode(db, edit.playlistId, ctx)
+  if (draft.xml !== null) draft.xml = withoutNodes(draft.xml, gone)
+  return done()
+}
+
+function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  return writeEdit(db, draft, planned, now)
+}
+
+function needsNode(planned: Planned): boolean {
+  return planned.op.kind === 'edit' && planned.op.edit.kind === 'create'
+}
+
+export async function applyRekordboxBatch(
+  collectionPath: string,
+  ops: QueueOp[],
+  deps: PlaylistWriteDeps,
+): Promise<BatchResult> {
+  if (!collectionPath) return { ok: false, reason: 'unreadable' }
+  const xmlPath = playlistXmlPath(collectionPath)
+  const hasXml = existsSync(xmlPath)
+  const outcomes = new Map<string, OpOutcome>()
+  const planned: Planned[] = []
+  const probe = openRekordboxDb(collectionPath, { readonly: true })
+  if (!probe) return { ok: false, reason: 'unreadable' }
+  try {
+    const current = hasXml ? await readFile(xmlPath, 'utf8') : null
+    for (const op of ops) {
+      const plan = planOp(probe, current, op, deps)
+      if ('outcome' in plan) outcomes.set(op.id, plan.outcome)
+      else planned.push(plan)
+    }
+  } finally {
+    probe.close()
+  }
+  const inOrder = (): OpOutcome[] => ops.map((op) => outcomes.get(op.id) as OpOutcome)
+  if (planned.length === 0) return { ok: true, wrote: false, outcomes: inOrder() }
+
+  if (hasXml && planned.some(needsNode) && !(await xmlTakesNode(xmlPath)))
+    return { ok: false, reason: 'unreadable' }
+
+  if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+
+  const touched = hasXml ? [collectionPath, xmlPath] : [collectionPath]
+  let xml: string | null = null
+  try {
+    checkpoint(collectionPath)
+    for (const path of touched) {
+      await deps.sessionBackup(path)
+      await writeBackup(path, `${path}${BACKUP_SUFFIX}`)
+    }
+    if (hasXml) xml = await readFile(xmlPath, 'utf8')
+  } catch (err) {
+    return { ok: false, reason: isReadOnly(err) ? 'read-only' : 'backup-failed' }
+  }
+
+  if (await isRekordboxRunning()) return { ok: false, reason: 'rekordbox-running' }
+
+  const db = openRekordboxDb(collectionPath)
+  if (!db) return { ok: false, reason: 'unreadable' }
+  const now = deps.now?.() ?? new Date()
+  const draft: XmlDraft = {
+    xml,
+    taken: xml === null ? new Set<string>() : xmlNodeIds(xml),
+    now: now.getTime(),
+  }
+  let xmlWritten = false
+  try {
+    db.exec('BEGIN')
+    for (const p of [...planned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
+      const saved = draft.xml
+      db.exec('SAVEPOINT surco_op')
+      try {
+        outcomes.set(p.op.id, writeOp(db, draft, p, now))
+        db.exec('RELEASE surco_op')
+      } catch (err) {
+        if (!(err instanceof EditRefused)) throw err
+        db.exec('ROLLBACK TO surco_op')
+        db.exec('RELEASE surco_op')
+        draft.xml = saved
+        outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: err.reason, notices: [] })
+      }
+    }
+    deps.onWrite?.()
+    if (draft.xml !== null && draft.xml !== xml) {
+      await (deps.writeXml ?? replaceFile)(xmlPath, draft.xml)
+      xmlWritten = true
+    }
+    db.exec('COMMIT')
+  } catch (err) {
+    const known = rollback(db, deps.onRollback)
+    db.close()
+    if (xmlWritten) await restoreFile(xmlPath)
+    if (!known && !(await restoreCollection(collectionPath)))
+      return { ok: false, reason: 'write-unknown' }
+    if (isReadOnly(err)) return { ok: false, reason: 'read-only' }
+    log.warn(`rekordbox batch failed: ${String(err)}`)
+    return { ok: false, reason: 'write-failed' }
+  }
+  db.close()
+  return { ok: true, wrote: true, outcomes: inOrder() }
+}
+
+export async function editRekordboxPlaylist(
+  collectionPath: string,
+  edit: RekordboxPlaylistEdit,
+  deps: PlaylistWriteDeps,
+): Promise<RekordboxEditResult> {
+  const result = await applyRekordboxBatch(
+    collectionPath,
+    [{ id: 'edit', kind: 'edit', edit, stamps: {} }],
+    deps,
+  )
+  if (!result.ok) return refuse(result.reason)
+  const [outcome] = result.outcomes
+  if (!outcome.applied) return refuse(outcome.reason ?? 'write-failed', outcome.report)
+  if (outcome.report) return { applied: true, report: outcome.report }
+  return outcome.createdId ? { applied: true, createdId: outcome.createdId } : { applied: true }
+}
+```
+
+The rename branch Task 3 put in the old dispatch goes away with it.
+
+- [ ] **Step 5: Run the writer's whole suite**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxPlaylistWrite.test.ts src/main/rekordboxPlaylistsIpc.test.ts src/main/rekordboxPlaylistEdit.test.ts`
+Expected: PASS, every 2a test unchanged except the replaced Timestamp one. If `'never gives a new playlist an ID the XML already holds'` fails, check that `freeId` reads `draft.taken` (filled from the XML read after the backups).
+
+- [ ] **Step 6: Mutation check**
+
+Change `if (!(err instanceof EditRefused)) throw err` to `throw err` and rerun the file: `'drops only the operation that no longer applies inside the batch'` must fail (it now reports `write-failed`). Change `opRank(a.op) - opRank(b.op)` to `0`: `'applies links before deletes'` must fail. Restore both.
+
+- [ ] **Step 7: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxQueueOps.ts apps/desktop/src/main/rekordboxPlaylistWrite.ts apps/desktop/src/main/rekordboxPlaylistWrite.test.ts
+git commit -m "Write a batch of rekordbox operations in one transaction with a savepoint each"
 ```
 
 ---
