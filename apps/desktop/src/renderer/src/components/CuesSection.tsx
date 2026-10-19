@@ -349,7 +349,7 @@ export function CuesSection({
             </p>
           ) : (
             <Editing
-              key={`${read.fingerprint}|${JSON.stringify(queued)}|${round}`}
+              key={`${cue.contentId}|${read.fingerprint}|${JSON.stringify(queued)}|${round}`}
               read={read}
               queued={queued}
               cue={cue}

@@ -66,20 +66,21 @@ function setup(
     logError,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const tree = (current: Partial<Settings> | null) => (
+  const tree = (
+    current: Partial<Settings> | null,
+    cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' },
+  ) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={current}>
-        <CuesSection
-          cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
-          open
-          onToggle={vi.fn()}
-        />
+        <CuesSection cue={cue} open onToggle={vi.fn()} />
       </SettingsProvider>
     </QueryClientProvider>
   )
   const { rerender } = render(tree(settings ?? null))
   return {
     changeSettings: (next: Partial<Settings>) => rerender(tree(next)),
+    changeTrack: (cue: { contentId: string; path: string; label: string }) =>
+      rerender(tree(settings ?? null, cue)),
     logError,
     saveRekordboxCues,
     undoRekordboxCues,
@@ -403,6 +404,21 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-letter')).toBeNull()
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Backspace' })
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+  })
+
+  it('starts afresh on another track whose read looks the same, so a draft never saves onto the wrong track', async () => {
+    const empty = { ...READ, fingerprint: '' }
+    const { changeTrack, client, saveRekordboxCues } = setup(empty)
+    client.setQueryData(['rekordbox-track-cues', '104'], { ...empty, contentId: '104' })
+    client.setQueryData(['rekordbox-queued-cues', '104'], null)
+    await ready()
+    clickAt(bar(64))
+    expect(screen.getByTestId('cues-save')).toBeEnabled()
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(screen.getByTestId('cues-save')).toBeDisabled()
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+    expect(saveRekordboxCues).not.toHaveBeenCalled()
   })
 
   it('offers no marking on a track rekordbox has not analysed', async () => {
