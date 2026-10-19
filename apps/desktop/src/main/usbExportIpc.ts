@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readdir, realpath, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
@@ -75,10 +75,9 @@ export function registerUsbExportIpc(opts: {
         shareDir: join(dirname(opts.collection()), 'share'),
         settingsSource,
         dir,
-        stickHasDevSetting: await stat(join(targetRoot, 'PIONEER', 'DEVSETTING.DAT')).then(
-          () => true,
-          () => false,
-        ),
+        identity: null,
+        deviceIds: new Map(),
+        stickHas: await readdir(join(targetRoot, 'PIONEER')).catch(() => []),
       }),
     makeStageDir: () => mkdtemp(join(tmpdir(), 'surco-usb-')),
     removeDir: (dir) => rm(dir, { recursive: true, force: true }),

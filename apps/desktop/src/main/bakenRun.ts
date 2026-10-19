@@ -120,6 +120,7 @@ export function bakenArgs(input: BakenArgsInput): string[] {
     stage.anlzDir,
     stage.artworkDir,
     stage.settingsDir ?? stage.dir,
+    stage.masterIds ?? stage.dir,
   ])
     if (inside(dir, input.pioneerDir) || inside(input.pioneerDir, dir))
       throw new BakenGuardError(`refusing to stage inside ${input.pioneerDir}`)
@@ -140,6 +141,9 @@ export function bakenArgs(input: BakenArgsInput): string[] {
     '--device-name',
     '',
     '--json',
+    ...(stage.masterIds ? ['--master-ids', stage.masterIds] : []),
+    // Patch 0006: exportExt.pdb holds rekordbox's My Tag rows, which baken cannot write.
+    '--keep-rekordbox-ext',
     ...(prune && target === 'volume' ? ['--prune'] : []),
     ...(dryRun ? ['--dry-run'] : []),
   ]

@@ -24,6 +24,7 @@ const stage = (dir: string, settings: string | null = `${dir}/settings`): Stage 
   sizes: new Map(),
   waves: new Map(),
   covers: new Map(),
+  masterIds: null,
 })
 
 const MAC: BakenArgsInput = {
@@ -72,7 +73,18 @@ describe('bakenArgs', () => {
       '--device-name',
       '',
       '--json',
+      '--keep-rekordbox-ext',
     ])
+  })
+
+  // exportExt.pdb holds rekordbox's My Tag rows, which baken cannot write; removing it
+  // would lose them, on a dry run's plan as much as on the real one.
+  it("passes the identity and keeps rekordbox's files", () => {
+    const withIds = { ...stage('/tmp/s'), masterIds: '/tmp/s/master-ids.json' }
+    const args = bakenArgs({ ...MAC, stage: withIds })
+    expect(args[args.indexOf('--master-ids') + 1]).toBe('/tmp/s/master-ids.json')
+    expect(bakenArgs({ ...MAC, dryRun: true })).toContain('--keep-rekordbox-ext')
+    expect(bakenArgs(MAC)).not.toContain('--master-ids')
   })
 
   // My Settings are opt-in: unticked (or none staged), the player keeps its own.
@@ -131,6 +143,11 @@ describe('bakenArgs', () => {
       BakenGuardError,
     )
     expect(() => bakenArgs({ ...WIN, device: 'C:\\Users' })).toThrow(BakenGuardError)
+  })
+
+  it('refuses an identity file inside the rekordbox folder', () => {
+    const s = { ...stage('/tmp/s'), masterIds: '/Users/dj/Library/Pioneer/master-ids.json' }
+    expect(() => bakenArgs({ ...MAC, stage: s })).toThrow(BakenGuardError)
   })
 
   it('refuses an XML staged inside the Pioneer folder', () => {

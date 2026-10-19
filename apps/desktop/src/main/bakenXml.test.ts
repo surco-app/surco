@@ -76,8 +76,15 @@ describe('buildBakenXml', () => {
   const gone = track({ id: '103', title: 'Gone' })
   const sel: ExportSelection = {
     playlists: [
-      { id: '2000', name: 'Makina', folders: ['BASES'], trackIds: ['101', '103', '102'] },
-      { id: '3000', name: 'House', folders: [], trackIds: ['102'] },
+      {
+        id: '2000',
+        name: 'Makina',
+        folders: ['BASES'],
+        folderIds: ['1000'],
+        updatedAt: 0,
+        trackIds: ['101', '103', '102'],
+      },
+      { id: '3000', name: 'House', folders: [], folderIds: [], updatedAt: 0, trackIds: ['102'] },
     ],
     tracks: [a, gone, b],
   }
@@ -130,7 +137,9 @@ describe('buildBakenXml', () => {
   it('writes a Windows path as rekordbox does on Windows', () => {
     const win = buildBakenXml(
       {
-        playlists: [{ id: 'p', name: 'P', folders: [], trackIds: ['9'] }],
+        playlists: [
+          { id: 'p', name: 'P', folders: [], folderIds: [], updatedAt: 0, trackIds: ['9'] },
+        ],
         tracks: [track({ id: '9', path: 'E:\\Musica\\No Fear.aiff' })],
       },
       new Map([['9', { size: 1, grid: [] }]]),
@@ -162,6 +171,51 @@ describe('buildBakenXml', () => {
       '<NODE Name="Makina" Type="1" KeyType="0" Entries="2"><TRACK Key="101"/><TRACK Key="102"/></NODE>',
     )
     expect(playlists.indexOf('BASES')).toBeLessThan(playlists.indexOf('House'))
+    expect(xml).not.toContain('DeviceId')
+  })
+
+  // baken numbers the stick's playlists 1..N unless told; the stick's own numbers are what
+  // rekordbox's playlists3.sync points at, so every node carries the one it already has.
+  it('puts the stick id on each node', () => {
+    const withIds = buildBakenXml(
+      sel,
+      facts,
+      'darwin',
+      new Map([
+        ['1000', 1],
+        ['2000', 2],
+        ['3000', 3],
+      ]),
+    )
+    expect(withIds).toContain('<NODE Type="0" Name="BASES" Count="1" DeviceId="1">')
+    expect(withIds).toContain('<NODE Name="Makina" Type="1" KeyType="0" Entries="2" DeviceId="2">')
+    expect(withIds).toContain('<NODE Name="House" Type="1" KeyType="0" Entries="1" DeviceId="3">')
+    expect(withIds).toContain('<NODE Type="0" Name="ROOT" Count="2">')
+  })
+
+  // Two folders may share a name; merging them by name would hand one folder's playlists to
+  // the other and leave one id unused.
+  it('keeps two folders with one name apart', () => {
+    const twins = buildBakenXml(
+      {
+        playlists: [
+          { id: 'a', name: 'A', folders: ['X'], folderIds: ['f1'], updatedAt: 0, trackIds: ['9'] },
+          { id: 'b', name: 'B', folders: ['X'], folderIds: ['f2'], updatedAt: 0, trackIds: ['9'] },
+        ],
+        tracks: [track({ id: '9' })],
+      },
+      new Map([['9', { size: 1, grid: [] }]]),
+      'darwin',
+      new Map([
+        ['f1', 1],
+        ['a', 2],
+        ['f2', 3],
+        ['b', 4],
+      ]),
+    )
+    expect(twins).toContain('<NODE Type="0" Name="ROOT" Count="2">')
+    expect(twins).toContain('<NODE Type="0" Name="X" Count="1" DeviceId="1">')
+    expect(twins).toContain('<NODE Type="0" Name="X" Count="1" DeviceId="3">')
   })
 
   // Kinds 10-12 exist in master.db but have no letter; exporting them would put a cue on a

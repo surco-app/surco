@@ -100,23 +100,36 @@ function trackXml(t: ExportTrack, f: XmlTrackFacts, platform: NodeJS.Platform): 
 }
 
 interface Folder {
+  id: string
   name: string
   children: (Folder | string)[]
+}
+
+// baken numbers the stick's playlists itself unless each NODE carries the DeviceId the
+// stick already knows it by (patch 0005); rekordbox's playlists3.sync points at those.
+const deviceId = (
+  deviceIds: ReadonlyMap<string, number> | undefined,
+  id: string,
+): [string, number][] => {
+  const n = deviceIds?.get(id)
+  return n === undefined ? [] : [['DeviceId', n]]
 }
 
 export function buildBakenXml(
   sel: ExportSelection,
   facts: ReadonlyMap<string, XmlTrackFacts>,
   platform: NodeJS.Platform = process.platform,
+  deviceIds?: ReadonlyMap<string, number>,
 ): string {
   const tracks = sel.tracks.filter((t) => facts.has(t.id))
-  const root: Folder = { name: 'ROOT', children: [] }
+  const root: Folder = { id: 'root', name: 'ROOT', children: [] }
   for (const p of sel.playlists) {
     let at = root
-    for (const name of p.folders) {
-      let next = at.children.find((c): c is Folder => typeof c !== 'string' && c.name === name)
+    // By id, not name: two folders may share a name and each has its own DeviceId.
+    for (const [i, id] of p.folderIds.entries()) {
+      let next = at.children.find((c): c is Folder => typeof c !== 'string' && c.id === id)
       if (!next) {
-        next = { name, children: [] }
+        next = { id, name: p.folders[i], children: [] }
         at.children.push(next)
       }
       at = next
@@ -128,6 +141,7 @@ export function buildBakenXml(
         ['Type', 1],
         ['KeyType', 0],
         ['Entries', ids.length],
+        ...deviceId(deviceIds, p.id),
       ])}>${ids.map((id) => `<TRACK Key="${escapeXml(id)}"/>`).join('')}</NODE>`,
     )
   }
@@ -137,6 +151,7 @@ export function buildBakenXml(
         ['Type', 0],
         ['Name', f.name],
         ['Count', f.children.length],
+        ...deviceId(deviceIds, f.id),
       ])}>`,
       ...f.children.map((c) => (typeof c === 'string' ? c : node(c))),
       '</NODE>',

@@ -5,7 +5,8 @@ import { type PlaylistFixture, writeRekordboxPlaylistFixture } from './rekordbox
 // The playlist fixture plus what the USB export reads: the name tables, the djmdContent
 // columns baken's XML carries, and djmdCue. Column names as measured on rekordbox 7.2.19
 // (docs/export-usb-medidas.md). Added on top rather than folded into the shared fixture so
-// the organising tests keep the minimal schema they were written against.
+// the organising tests keep the minimal schema they were written against. The identity
+// tables (djmdProperty, djmdCloudProperty, djmdMyTag) are what the stick's identity reads.
 export interface ContentDetails {
   ArtistID?: string
   AlbumID?: string
@@ -48,10 +49,23 @@ export interface FixtureCue {
   deleted?: boolean
 }
 
+export interface FixtureMyTag {
+  ID: string
+  Seq: number
+  Name: string
+  Attribute: number
+  ParentID: string
+  deleted?: boolean
+}
+
 export interface ExportFixture extends PlaylistFixture {
   details?: Record<string, ContentDetails>
   names?: FixtureNames
   cues?: FixtureCue[]
+  // djmdProperty.DBID, a single row in rekordbox 7.2.19, stored as text.
+  dbId?: string
+  cloudProperties?: { ID: string; Reserved1: string; Reserved2: string }[]
+  myTags?: FixtureMyTag[]
 }
 
 const DETAIL_COLUMNS: [keyof ContentDetails, string][] = [
@@ -91,7 +105,22 @@ export function writeRekordboxExportFixture(path: string, data: ExportFixture): 
     CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), InMsec INTEGER,
       OutMsec INTEGER, Kind INTEGER, Comment TEXT, Color INTEGER DEFAULT -1,
       ColorTableIndex INTEGER, rb_local_deleted INTEGER DEFAULT 0);
+    CREATE TABLE djmdProperty (DBID VARCHAR(255) PRIMARY KEY);
+    CREATE TABLE djmdCloudProperty (ID VARCHAR(255) PRIMARY KEY, Reserved1 TEXT, Reserved2 TEXT);
+    CREATE TABLE djmdMyTag (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
+      Attribute INTEGER, ParentID VARCHAR(255), rb_local_deleted TINYINT(1) DEFAULT 0);
   `)
+  if (data.dbId) db.prepare('INSERT INTO djmdProperty (DBID) VALUES (?)').run(data.dbId)
+  const cloud = db.prepare(
+    'INSERT INTO djmdCloudProperty (ID, Reserved1, Reserved2) VALUES (?, ?, ?)',
+  )
+  for (const c of data.cloudProperties ?? []) cloud.run(c.ID, c.Reserved1, c.Reserved2)
+  const tag = db.prepare(
+    `INSERT INTO djmdMyTag (ID, Seq, Name, Attribute, ParentID, rb_local_deleted)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  )
+  for (const t of data.myTags ?? [])
+    tag.run(t.ID, t.Seq, t.Name, t.Attribute, t.ParentID, t.deleted ? 1 : 0)
   const tables: [keyof FixtureNames, string][] = [
     ['artists', 'djmdArtist'],
     ['albums', 'djmdAlbum'],

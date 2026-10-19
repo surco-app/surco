@@ -52,6 +52,11 @@ export interface ExportPlaylist {
   id: string
   name: string
   folders: string[]
+  // Master IDs of the same folders, outermost first: the stick's sync file names them.
+  folderIds: string[]
+  // djmdPlaylist.updated_at in ms, the sync file's stamp for a playlist masterPlaylists6.xml
+  // does not have yet.
+  updatedAt: number
   trackIds: string[]
 }
 
@@ -63,17 +68,30 @@ export interface ExportSelection {
 export function selectedPlaylists(
   tree: SourceNode[],
   ids: ReadonlySet<string>,
-): { node: SourceNode; folders: string[] }[] {
-  const out: { node: SourceNode; folders: string[] }[] = []
-  const walk = (nodes: SourceNode[], folders: string[], inside: boolean): void => {
+): { node: SourceNode; folders: string[]; folderIds: string[] }[] {
+  const out: { node: SourceNode; folders: string[]; folderIds: string[] }[] = []
+  const walk = (
+    nodes: SourceNode[],
+    folders: string[],
+    folderIds: string[],
+    inside: boolean,
+  ): void => {
     for (const n of nodes) {
       const on = inside || ids.has(n.id)
-      if (n.kind === 'folder') walk(n.children ?? [], [...folders, n.name], on)
-      else if (on) out.push({ node: n, folders })
+      if (n.kind === 'folder')
+        walk(n.children ?? [], [...folders, n.name], [...folderIds, n.id], on)
+      else if (on) out.push({ node: n, folders, folderIds })
     }
   }
-  walk(tree, [], false)
+  walk(tree, [], [], false)
   return out
+}
+
+// rekordbox 7 stamps every row '2026-10-15 18:00:00.000 +00:00' (all 95 playlists of
+// Vicent's collection, 19/10); dropping the two spaces makes it ISO 8601, which every
+// engine parses the same.
+function rekordboxStampMs(stamp: string): number {
+  return Date.parse(stamp.replace(' ', 'T').replace(' ', '')) || 0
 }
 
 interface Row {
@@ -198,10 +216,19 @@ export function readExportSelection(db: RekordboxDb, ids: string[]): ExportSelec
   const picked = selectedPlaylists(readRekordboxTree(db), new Set(ids))
   const tracks = new Map<string, ExportTrack>()
   const statement = db.prepare(TRACKS_OF)
-  const playlists = picked.map(({ node, folders }) => {
+  const stamp = db.prepare('SELECT updated_at FROM djmdPlaylist WHERE ID = ?')
+  const playlists = picked.map(({ node, folders, folderIds }) => {
     const rows = statement.all(node.id) as Row[]
     for (const r of rows) if (!tracks.has(String(r.ID))) tracks.set(String(r.ID), trackOf(r))
-    return { id: node.id, name: node.name, folders, trackIds: rows.map((r) => String(r.ID)) }
+    const updated = stamp.get(node.id) as { updated_at: string | null } | undefined
+    return {
+      id: node.id,
+      name: node.name,
+      folders,
+      folderIds,
+      updatedAt: rekordboxStampMs(updated?.updated_at ?? ''),
+      trackIds: rows.map((r) => String(r.ID)),
+    }
   })
   readCues(db, tracks)
   return { playlists, tracks: [...tracks.values()] }

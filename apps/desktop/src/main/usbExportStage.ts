@@ -2,13 +2,15 @@ import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, extname, join, posix } from 'node:path'
 import { beatGrid, maskVocals, wavePreview } from './anlz'
 import { buildBakenXml, type XmlTrackFacts } from './bakenXml'
+import type { MasterIdentity } from './rekordboxStickSync'
 import type { ExportSelection } from './usbExportSource'
 
 // The folder baken works from, so that baken never looks into ~/Library/Pioneer itself and
 // nothing there is ever written: the XML, a copy of rekordbox's analysis for the selected
 // tracks only (with the vocal section masked as rekordbox's export does), the artwork named
-// by TrackID for --artwork-dir, and a copy of the My Settings. Staged fresh each time: a
-// cache would let analysis of unselected tracks into baken's filename matching.
+// by TrackID for --artwork-dir, a copy of the My Settings, and the collection's identity
+// for --master-ids. Staged fresh each time: a cache would let analysis of unselected tracks
+// into baken's filename matching.
 
 export interface Stage {
   dir: string
@@ -21,6 +23,7 @@ export interface Stage {
   sizes: Map<string, number>
   waves: Map<string, number[]>
   covers: Map<string, string>
+  masterIds: string | null
 }
 
 export interface StageInput {
@@ -28,8 +31,11 @@ export interface StageInput {
   shareDir: string
   settingsSource: string | null
   dir: string
-  // The stick already has PIONEER/DEVSETTING.DAT: baken's settings copy would overwrite it.
-  stickHasDevSetting: boolean
+  identity: MasterIdentity | null
+  deviceIds: ReadonlyMap<string, number>
+  // The names already in the stick's PIONEER/: baken's settings copy overwrites whatever it
+  // is given, so a DEVSETTING.DAT listed here is never staged.
+  stickHas: string[]
 }
 
 const REQUIRED_SETTINGS = ['MYSETTING.DAT', 'MYSETTING2.DAT', 'DJMMYSETTING.DAT']
@@ -120,7 +126,9 @@ export async function stageExport(input: StageInput): Promise<Stage> {
     facts.set(t.id, { size, grid })
   }
   const xml = join(dir, 'collection.xml')
-  await writeFile(xml, buildBakenXml(sel, facts))
+  await writeFile(xml, buildBakenXml(sel, facts, process.platform, input.deviceIds))
+  const masterIds = input.identity ? join(dir, 'master-ids.json') : null
+  if (masterIds) await writeFile(masterIds, JSON.stringify(input.identity))
   return {
     dir,
     xml,
@@ -129,12 +137,14 @@ export async function stageExport(input: StageInput): Promise<Stage> {
     settingsDir: await stageSettings(
       input.settingsSource,
       join(dir, 'settings'),
-      input.stickHasDevSetting,
+      // FAT32 and exFAT ignore case: devsetting.dat is the same file.
+      input.stickHas.some((n) => n.toUpperCase() === 'DEVSETTING.DAT'),
     ),
     included: [...facts.keys()],
     missing,
     sizes: new Map([...facts].map(([id, f]) => [id, f.size])),
     waves,
     covers,
+    masterIds,
   }
 }

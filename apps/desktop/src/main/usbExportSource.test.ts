@@ -132,9 +132,11 @@ describe('selectedPlaylists', () => {
 
   // Ticking a folder means everything under it, nested folders included, in rekordbox's order.
   it('expands a ticked folder to every playlist beneath it', () => {
-    expect(selectedPlaylists(tree, new Set(['f'])).map((p) => [p.node.id, p.folders])).toEqual([
-      ['p1', ['BASES']],
-      ['p2', ['BASES', '90s']],
+    expect(
+      selectedPlaylists(tree, new Set(['f'])).map((p) => [p.node.id, p.folders, p.folderIds]),
+    ).toEqual([
+      ['p1', ['BASES'], ['f']],
+      ['p2', ['BASES', '90s'], ['f', 'f2']],
     ])
   })
 
@@ -154,6 +156,16 @@ describe('readExportSelection', () => {
     expect(sel.playlists.map((p) => [p.name, p.folders, p.trackIds])).toEqual([
       ['Makina', ['BASES'], ['101', '109', '102']],
       ['House', [], ['102', '105']],
+    ])
+  })
+
+  // The stick's sync file names folders by their master id, and stamps each playlist; two
+  // folders with one name are still two folders there.
+  it('gives each playlist its folder ids and updated_at', () => {
+    const sel = read(['3000', '1000'])
+    expect(sel.playlists.map((p) => [p.name, p.folderIds, p.updatedAt])).toEqual([
+      ['Makina', ['1000'], Date.UTC(2026, 0, 1)],
+      ['House', [], Date.UTC(2026, 0, 1)],
     ])
   })
 

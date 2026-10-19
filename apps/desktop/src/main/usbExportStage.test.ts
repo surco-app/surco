@@ -100,7 +100,16 @@ const SEL = (): ExportSelection => {
   const gone = track({ id: '102', path: join(music, 'gone.wav') })
   const stream = track({ id: '103', path: 'spotify:x', streaming: true })
   return {
-    playlists: [{ id: 'p', name: 'Makina', folders: [], trackIds: ['101', '102', '103'] }],
+    playlists: [
+      {
+        id: 'p',
+        name: 'Makina',
+        folders: [],
+        folderIds: [],
+        updatedAt: 0,
+        trackIds: ['101', '102', '103'],
+      },
+    ],
     tracks: [a, gone, stream],
   }
 }
@@ -108,7 +117,9 @@ const SEL = (): ExportSelection => {
 describe('stageExport', () => {
   it('copies the analysis for baken under USBANLZ, masking the vocal section', async () => {
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -124,7 +135,9 @@ describe('stageExport', () => {
   it('never changes rekordbox own files', async () => {
     const before = readFileSync(join(share, 'PIONEER/USBANLZ/51d/3f604/ANLZ0000.2EX'))
     await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -135,7 +148,9 @@ describe('stageExport', () => {
 
   it('names the artwork by TrackID for baken', async () => {
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -151,7 +166,9 @@ describe('stageExport', () => {
   // XML; the rest still exports.
   it('leaves out what has no file, and says which', async () => {
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -168,7 +185,9 @@ describe('stageExport', () => {
 
   it('keeps the waveform preview for the export list', async () => {
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -180,7 +199,9 @@ describe('stageExport', () => {
 
   it('copies only the My Settings files baken reads', async () => {
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -195,7 +216,9 @@ describe('stageExport', () => {
   // with --no-settings and the player keeps its own.
   it('has no settings folder when rekordbox wrote none', async () => {
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: join(root, 'nowhere'),
@@ -206,10 +229,12 @@ describe('stageExport', () => {
 
   // baken's settings copy overwrites whatever it is given, so a DEVSETTING.DAT the stick
   // already has must never be among the staged files.
-  it('leaves DEVSETTING.DAT out when the stick already has one', async () => {
+  it("never stages DEVSETTING.DAT over the stick's own", async () => {
     writeFileSync(join(settings, 'DEVSETTING.DAT'), 'dev')
     const fresh = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -217,7 +242,9 @@ describe('stageExport', () => {
     })
     expect(existsSync(join(fresh.settingsDir as string, 'DEVSETTING.DAT'))).toBe(true)
     const kept = await stageExport({
-      stickHasDevSetting: true,
+      stickHas: ['DEVSETTING.DAT'],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -232,7 +259,9 @@ describe('stageExport', () => {
   it('copies a 2EX that is not a PMAI file unchanged', async () => {
     writeFileSync(join(share, 'PIONEER/USBANLZ/51d/3f604/ANLZ0000.2EX'), 'junk')
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -247,7 +276,9 @@ describe('stageExport', () => {
     const bad = anlzFile(Buffer.concat([Buffer.from('PQTZ'), u32(12), u32(12)]))
     writeFileSync(join(share, 'PIONEER/USBANLZ/51d/3f604/ANLZ0000.DAT'), bad)
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel: SEL(),
       shareDir: share,
       settingsSource: settings,
@@ -265,7 +296,9 @@ describe('stageExport', () => {
     mkdirSync(join(root, 'escape'), { recursive: true })
     writeFileSync(join(root, 'escape', 'ANLZ0000.DAT'), anlzFile(pwav))
     const s = await stageExport({
-      stickHasDevSetting: false,
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
       sel,
       shareDir: share,
       settingsSource: settings,
@@ -274,6 +307,40 @@ describe('stageExport', () => {
     expect(existsSync(join(root, 'stage', 'escape'))).toBe(false)
     expect(s.waves.has('101')).toBe(false)
     expect(s.included).toEqual(['101'])
+  })
+
+  // baken writes the collection's DBID, cloud id, My Tags and master FileSize from this file
+  // into export.pdb and OneLibrary, as rekordbox's own export carries them (18/10).
+  it('stages the identity for baken', async () => {
+    const identity = {
+      dbId: 3942308644,
+      myTagMasterDbId: 4278116378,
+      myTags: [{ id: 1, seq: 10000, name: 'Genre', attribute: 1, parent: 0 }],
+      fileSizes: { '101': 53680358 },
+    }
+    const s = await stageExport({
+      stickHas: [],
+      identity,
+      deviceIds: new Map([['p', 7]]),
+      sel: SEL(),
+      shareDir: share,
+      settingsSource: settings,
+      dir: join(root, 'stage'),
+    })
+    expect(s.masterIds).toBe(join(root, 'stage', 'master-ids.json'))
+    expect(JSON.parse(readFileSync(s.masterIds as string, 'utf8'))).toEqual(identity)
+    expect(readFileSync(s.xml, 'utf8')).toContain('DeviceId="7"')
+    const none = await stageExport({
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
+      sel: SEL(),
+      shareDir: share,
+      settingsSource: settings,
+      dir: join(root, 'stage-none'),
+    })
+    expect(none.masterIds).toBeNull()
+    expect(existsSync(join(root, 'stage-none', 'master-ids.json'))).toBe(false)
   })
 
   it('finds rekordbox small thumbnail beside the cover', () => {
