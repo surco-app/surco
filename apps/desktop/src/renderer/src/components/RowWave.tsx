@@ -51,7 +51,9 @@ export function RowWave({
           .map((c) => ({ ...c, at: (c.ms / span) * 100 }))
       : []
   const hot = placed.filter((c) => c.kind !== 0)
-  const memory = placed.filter((c) => c.kind === 0)
+  const memory = placed.filter(
+    (c, i) => c.kind === 0 && placed.findIndex((o) => o.kind === 0 && o.ms === c.ms) === i,
+  )
   const awaiting = pending && hot.length === 0
   let label: string | undefined
   if (hot.length > 0) {

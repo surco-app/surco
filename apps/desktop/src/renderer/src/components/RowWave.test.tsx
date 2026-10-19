@@ -53,6 +53,19 @@ describe('RowWave', () => {
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName('2 hot cues')
   })
 
+  it('draws one triangle for memory cues stacked at the same spot, as collections passed through Traktor carry them', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const stacked = [
+      { ms: 32000, kind: 0, color: null },
+      { ms: 32000, kind: 0, color: null },
+      { ms: 48000, kind: 0, color: null },
+    ]
+    render(<RowWave request={request} cues={stacked} durationSec={128} pending={false} active />)
+    expect(screen.getAllByTestId('track-memory-cue')).toHaveLength(2)
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+
   it('draws no cue it cannot place, for a track with no length or a cue past the end', () => {
     const { rerender } = render(
       <RowWave request={request} cues={cues} durationSec={0} pending={false} active />,
