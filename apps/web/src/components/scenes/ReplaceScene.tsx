@@ -322,29 +322,6 @@ export default function ReplaceScene() {
           </div>
         </div>
       </div>
-
-      <p className="flex flex-wrap items-baseline justify-center gap-3.5 text-[15px] text-muted lg:col-span-2">
-        <span className="relative text-faint">
-          {t('home.replace.before')}
-          <span
-            className="absolute -inset-x-0.5 top-[55%] h-[1.5px] origin-left bg-red"
-            style={{
-              transform: frame.saved ? 'scaleX(1)' : 'scaleX(0)',
-              transition: `transform 0.6s ${EASE}`,
-            }}
-          />
-        </span>
-        <span
-          className="font-semibold text-fg"
-          style={{
-            opacity: frame.saved ? 1 : 0,
-            transform: frame.saved ? 'none' : 'translateY(6px)',
-            transition: `opacity 0.4s ease 0.25s, transform 0.6s ${EASE} 0.25s`,
-          }}
-        >
-          {t('home.replace.after')}
-        </span>
-      </p>
     </div>
   )
 }
