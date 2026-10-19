@@ -503,6 +503,8 @@ function createWindow(): BrowserWindow {
     count: activeConversions.count,
     exporting: () => usbExport?.busy() ?? false,
     settle: () => usbExport?.stop() ?? Promise.resolve(),
+    writing: rekordboxQueue.busy,
+    finishWriting: rekordboxQueue.settled,
     confirm: async (running, exporting) => {
       const t = createMenuT(menuLocale())
       const details = [

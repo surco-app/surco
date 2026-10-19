@@ -9,6 +9,8 @@ interface QuitGuardDeps {
   settle?: () => Promise<void>
   // How long the close waits for settle before going ahead anyway.
   settleMs?: number
+  writing?: () => boolean
+  finishWriting?: () => Promise<void>
 }
 
 export interface QuitGuard {
@@ -35,20 +37,25 @@ export function createQuitGuard(deps: QuitGuardDeps): QuitGuard {
   // ⌘Q can land on the window while the X's dialog is already up. Sharing the one
   // promise keeps that from stacking a second dialog over the first.
   let asking: Promise<boolean> | null = null
-  const settle = async (): Promise<void> => {
-    if (!deps.settle) return
+  const writing = (): boolean => deps.writing?.() ?? false
+  const within = async (work: (() => Promise<void>) | undefined): Promise<void> => {
+    if (!work) return
     let timer: NodeJS.Timeout | undefined
     const timeout = new Promise<void>((r) => {
       timer = setTimeout(r, deps.settleMs ?? SETTLE_MS)
     })
-    await Promise.race([deps.settle(), timeout])
+    await Promise.race([work(), timeout])
     clearTimeout(timer)
   }
+  const settle = async (): Promise<void> => {
+    await within(deps.settle)
+    if (writing()) await within(deps.finishWriting)
+  }
   return {
-    mustAsk: () => !confirmed && (deps.count() > 0 || exporting()),
+    mustAsk: () => !confirmed && (deps.count() > 0 || exporting() || writing()),
     async ask() {
-      asking ??= deps
-        .confirm(deps.count(), exporting())
+      const quiet = deps.count() === 0 && !exporting()
+      asking ??= (quiet ? Promise.resolve(true) : deps.confirm(deps.count(), exporting()))
         .then(async (quit) => {
           if (quit) await settle()
           return quit

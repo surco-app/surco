@@ -79,6 +79,43 @@ describe('createQuitGuard', () => {
     }
   })
 
+  it('waits for a rekordbox write to finish without asking, so the XML never lands without its rows', async () => {
+    let writing = true
+    let finish: () => void = () => {}
+    const confirm = vi.fn()
+    const guard = createQuitGuard({
+      count: () => 0,
+      writing: () => writing,
+      finishWriting: () =>
+        new Promise<void>((r) => {
+          finish = () => {
+            writing = false
+            r()
+          }
+        }),
+      confirm,
+    })
+    expect(guard.mustAsk()).toBe(true)
+    const quitting = guard.ask()
+    await new Promise((r) => setTimeout(r, 5))
+    finish()
+    expect(await quitting).toBe(true)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(guard.mustAsk()).toBe(false)
+  })
+
+  it('also waits for the rekordbox write after the user confirms quitting a conversion', async () => {
+    const finishWriting = vi.fn(async () => {})
+    const guard = createQuitGuard({
+      count: () => 1,
+      writing: () => true,
+      finishWriting,
+      confirm: async () => true,
+    })
+    expect(await guard.ask()).toBe(true)
+    expect(finishWriting).toHaveBeenCalledTimes(1)
+  })
+
   // Declining must not touch the export.
   it('does not stop the export when the user stays', async () => {
     const settle = vi.fn(async () => {})

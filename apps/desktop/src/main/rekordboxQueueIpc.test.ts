@@ -31,6 +31,8 @@ function queue(result: QueueApply = APPLIED) {
     isEmpty: vi.fn(() => false),
     discard: vi.fn(),
     drop: vi.fn(),
+    busy: vi.fn(() => false),
+    settled: vi.fn(async () => {}),
     apply: vi.fn<RekordboxQueue['apply']>(async (ensureClosed) => {
       await ensureClosed()
       return result

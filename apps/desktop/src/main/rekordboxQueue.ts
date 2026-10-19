@@ -66,6 +66,8 @@ export interface RekordboxQueue {
   isEmpty: () => boolean
   discard: () => void
   drop: (id: string) => void
+  busy: () => boolean
+  settled: () => Promise<void>
   apply: (ensureClosed: () => Promise<boolean>) => Promise<QueueApply>
 }
 
@@ -137,6 +139,7 @@ export function withoutOp(result: Applied, id: string): Applied {
 export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
   const q = load(deps.store)
   let chain: Promise<unknown> = Promise.resolve()
+  let pending = 0
 
   const save = (): void => {
     deps.store.write(JSON.stringify(q))
@@ -257,8 +260,15 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       q.ops = q.ops.filter((o) => o.id !== id)
       save()
     },
+    busy: () => pending > 0,
+    settled: () => chain.then(() => undefined),
     apply(ensureClosed) {
-      const next = chain.then(() => run(ensureClosed))
+      pending += 1
+      const next = chain
+        .then(() => run(ensureClosed))
+        .finally(() => {
+          pending -= 1
+        })
       chain = next.catch(() => undefined)
       return next
     },

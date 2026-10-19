@@ -107,6 +107,30 @@ describe('rekordbox queue', () => {
     })
   })
 
+  it('says it is writing while an apply runs and lets a quit wait for it to finish', async () => {
+    let finish: (r: BatchResult) => void = () => {}
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(
+        () => new Promise<BatchResult>((r) => (finish = r)),
+      ),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    expect(q.busy()).toBe(false)
+    const running = q.apply(closed)
+    let idle = false
+    const waiting = q.settled().then(() => {
+      idle = true
+    })
+    await new Promise((r) => setTimeout(r, 5))
+    expect(q.busy()).toBe(true)
+    expect(idle).toBe(false)
+    finish(applied([rename]))
+    await running
+    await waiting
+    expect(q.busy()).toBe(false)
+  })
+
   it('tells the window every time the queue changes', () => {
     const d = deps()
     const q = createRekordboxQueue(d)
