@@ -1,10 +1,11 @@
+import { type CueFlow, type CueRule, type FlowPhrase, type FlowPlace, MY_FLOW } from './cueFlows'
+
 export const SAME_POSITION_MS = 50
 export const START_MS = 3000
 export const BAR_TOLERANCE = 0.25
 export const BEATS_PER_BAR = 4
 export const DISTANCES = [16, 32, 48] as const
 export const MAX_HOT_CUES = 8
-export const TRIM_ORDER = [48, 32] as const
 export const CHORUS_BY_MOOD: Record<number, number> = { 1: 5, 2: 9, 3: 9 }
 
 export type CountdownKind = 16 | 32 | 48 | 'inicio'
@@ -65,38 +66,140 @@ export function planCues(
   beatsMs: number[],
   strong: StrongPart[] = [],
 ): PlannedCue[] {
-  let plan: PlannedCue[] = []
-  let previous: number | null = null
-  for (const drop of [...dropsMs].sort((a, b) => a - b)) {
-    const index = nearestBeat(beatsMs, drop)
-    for (const bars of DISTANCES) {
-      const back = index - bars * BEATS_PER_BAR
-      if (back < 0 || (previous !== null && beatsMs[back] <= previous + SAME_POSITION_MS)) break
-      if (strong.some((s) => s.start <= beatsMs[back] && beatsMs[back] < s.end)) break
-      plan.push({ ms: beatsMs[back], kind: bars })
-    }
-    previous = drop
-  }
-  const firstDrop = dropsMs.length > 0 ? Math.min(...dropsMs) : null
-  if (
-    firstDrop !== null &&
-    !plan.some((p) => p.ms < firstDrop) &&
-    beatsMs[0] < firstDrop - SAME_POSITION_MS
+  return evaluateFlow(MY_FLOW, { beats: beatsMs, drops: dropsMs, strong, phrases: [] }).cues.map(
+    (c) => ({ ms: c.ms, kind: c.rule === 0 ? (c.bars as 16 | 32 | 48) : 'inicio' }),
   )
-    plan.push({ ms: beatsMs[0], kind: 'inicio' })
-  for (const kind of TRIM_ORDER) {
-    while (plan.length > MAX_HOT_CUES && plan.some((p) => p.kind === kind)) {
-      const earliest = plan.filter((p) => p.kind === kind).reduce((a, b) => (b.ms < a.ms ? b : a))
-      plan = plan.filter((p) => p !== earliest)
-    }
-  }
-  return plan.sort((a, b) => a.ms - b.ms)
 }
 
-export function fitsPlan(existingHotMs: number[], plan: PlannedCue[]): boolean {
+export function fitsPlan(existingHotMs: number[], plan: { ms: number }[]): boolean {
   return existingHotMs.every(
     (ms) => ms < START_MS || plan.some((p) => Math.abs(ms - p.ms) <= SAME_POSITION_MS),
   )
+}
+
+export interface FlowTrack {
+  beats: number[]
+  drops: number[]
+  strong: StrongPart[]
+  phrases: FlowPhrase[]
+}
+
+export interface FlowCue {
+  ms: number
+  place: FlowPlace
+  color: number | null
+  rule: number
+  repetition: number
+  bars: number
+}
+
+export interface FlowPlan {
+  cues: FlowCue[]
+  trimmed: FlowCue[]
+}
+
+const isPlannedHot = (c: FlowCue): boolean => c.place !== 'call'
+
+export function ruleColor(rule: CueRule, repetition: number): number {
+  return 'fixed' in rule.color
+    ? rule.color.fixed
+    : rule.color.each[Math.min(repetition, rule.color.each.length) - 1]
+}
+
+function originsOf(rule: CueRule, track: FlowTrack, drops: number[]): number[] {
+  if (rule.from === 'drop') return drops
+  if (rule.from === 'first-beat') return [track.beats[0]]
+  if (rule.from === 'last-beat') return [track.beats[track.beats.length - 1]]
+  return track.phrases
+    .filter((p) => p.kind === rule.from)
+    .map((p) => p.ms)
+    .sort((a, b) => a - b)
+}
+
+function fitsAround(
+  ms: number,
+  rule: CueRule,
+  previous: number | null,
+  next: number | null,
+  strong: StrongPart[],
+): boolean {
+  if (rule.direction === 'forward') return next === null || ms < next - SAME_POSITION_MS
+  if (previous !== null && ms <= previous + SAME_POSITION_MS) return false
+  return !strong.some((s) => s.start <= ms && ms < s.end)
+}
+
+function allowed(
+  rule: CueRule,
+  ms: number,
+  earlier: FlowCue[],
+  drops: number[],
+  beats: number[],
+): boolean {
+  if (rule.when === 'first')
+    return (
+      drops.length > 0 && ms < drops[0] - SAME_POSITION_MS && !earlier.some((c) => c.ms < drops[0])
+    )
+  if (rule.when === 'clear') {
+    const at = nearestBeat(beats, ms)
+    return earlier.every((c) => Math.abs(nearestBeat(beats, c.ms) - at) >= BEATS_PER_BAR)
+  }
+  return true
+}
+
+function trimToLimit(cues: FlowCue[]): FlowPlan {
+  let kept = cues
+  const trimmed: FlowCue[] = []
+  const candidates = cues
+    .filter((c) => isPlannedHot(c) && c.repetition > 1)
+    .sort((a, b) => b.bars - a.bars || a.ms - b.ms)
+  for (const c of candidates) {
+    if (kept.filter(isPlannedHot).length <= MAX_HOT_CUES) break
+    kept = kept.filter((k) => k !== c)
+    trimmed.push(c)
+  }
+  return { cues: [...kept].sort((a, b) => a.ms - b.ms), trimmed }
+}
+
+export function evaluateFlow(flow: CueFlow, track: FlowTrack): FlowPlan {
+  const { beats } = track
+  if (beats.length === 0) return { cues: [], trimmed: [] }
+  const drops = [...track.drops].sort((a, b) => a - b)
+  const placed: FlowCue[] = []
+  flow.rules.forEach((rule, index) => {
+    const own: FlowCue[] = []
+    const add = (ms: number, repetition: number): void => {
+      if ([...placed, ...own].some((c) => Math.abs(c.ms - ms) <= SAME_POSITION_MS)) return
+      own.push({
+        ms,
+        place: rule.place,
+        color: rule.place === 'call' ? null : ruleColor(rule, repetition),
+        rule: index,
+        repetition,
+        bars: repetition * rule.bars,
+      })
+    }
+    const origins = originsOf(rule, track, drops)
+    origins.forEach((origin, i) => {
+      const start = nearestBeat(beats, origin)
+      if (rule.bars === 0) {
+        if (allowed(rule, beats[start], placed, drops, beats)) add(beats[start], 1)
+        return
+      }
+      const previous = i > 0 ? origins[i - 1] : null
+      const next = i + 1 < origins.length ? origins[i + 1] : null
+      const step = rule.bars * BEATS_PER_BAR * (rule.direction === 'back' ? -1 : 1)
+      const times = rule.repeat === 'edge' ? beats.length : rule.repeat
+      for (let k = 1; k <= times; k++) {
+        const at = start + k * step
+        if (at < 0 || at >= beats.length) break
+        const ms = beats[at]
+        if (rule.when === 'fits' && !fitsAround(ms, rule, previous, next, track.strong)) break
+        if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
+      }
+    })
+    placed.push(...own)
+  })
+  return trimToLimit(placed)
 }
 
 export const COLOR_BY_KIND: Record<CountdownKind, number> = { 16: 1, 32: 22, 48: 42, inicio: 32 }

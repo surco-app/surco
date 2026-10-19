@@ -1,0 +1,105 @@
+import { describe, expect, it } from 'vitest'
+import { type CueFlow, type CueRule, MY_FLOW } from './cueFlows'
+import { evaluateFlow, type FlowTrack } from './cueRules'
+
+const grid = (bars: number): number[] => Array.from({ length: bars * 4 }, (_, i) => i * 500)
+const beat = (bars: number): number => bars * 2000
+const track = (over: Partial<FlowTrack> = {}): FlowTrack => ({
+  beats: grid(200),
+  drops: [beat(64)],
+  strong: [],
+  phrases: [],
+  ...over,
+})
+const rule = (over: Partial<CueRule> = {}): CueRule => ({
+  from: 'drop',
+  direction: 'back',
+  bars: 16,
+  repeat: 1,
+  when: 'fits',
+  place: 'hot',
+  color: { fixed: 1 },
+  ...over,
+})
+const flow = (...rules: CueRule[]): CueFlow => ({ id: 't', name: '', rules })
+
+describe('evaluateFlow', () => {
+  it('runs Mi flujo as the 16, 32, 48 countdown with a colour per repetition', () => {
+    expect(evaluateFlow(MY_FLOW, track()).cues).toEqual([
+      { ms: beat(16), place: 'both', color: 42, rule: 0, repetition: 3, bars: 48 },
+      { ms: beat(32), place: 'both', color: 22, rule: 0, repetition: 2, bars: 32 },
+      { ms: beat(48), place: 'both', color: 1, rule: 0, repetition: 1, bars: 16 },
+    ])
+  })
+
+  it('goes forward from the drop and stops before the next one, so it never lands on it', () => {
+    const forward = flow(rule({ direction: 'forward', repeat: 3 }))
+    expect(
+      evaluateFlow(forward, track({ drops: [beat(64), beat(112)] })).cues.map((c) => c.ms),
+    ).toEqual([beat(80), beat(96), beat(128), beat(144), beat(160)])
+  })
+
+  it('repeats to the edge of the track when asked, whatever is in the way, with always', () => {
+    const edge = flow(rule({ repeat: 'edge', when: 'always', color: { each: [1, 22] } }))
+    const cues = evaluateFlow(edge, track()).cues
+    expect(cues.map((c) => c.ms)).toEqual([beat(0), beat(16), beat(32), beat(48)])
+    expect(cues.map((c) => c.color)).toEqual([22, 22, 22, 1])
+  })
+
+  it('counts from each phrase of a type rekordbox analysed', () => {
+    const fromChorus = flow(rule({ from: 'chorus', bars: 8, place: 'call' }))
+    const phrases = [
+      { ms: beat(32), kind: 'chorus' as const },
+      { ms: beat(40), kind: 'up' as const },
+      { ms: beat(96), kind: 'chorus' as const },
+    ]
+    expect(evaluateFlow(fromChorus, track({ phrases })).cues).toEqual([
+      { ms: beat(24), place: 'call', color: null, rule: 0, repetition: 1, bars: 8 },
+      { ms: beat(88), place: 'call', color: null, rule: 0, repetition: 1, bars: 8 },
+    ])
+  })
+
+  it('places a cue on the first or the last beat with distance zero', () => {
+    const ends = flow(
+      rule({ from: 'first-beat', bars: 0, when: 'always' }),
+      rule({ from: 'last-beat', bars: 0, when: 'always', color: { fixed: 42 } }),
+    )
+    expect(evaluateFlow(ends, track()).cues.map((c) => [c.ms, c.color])).toEqual([
+      [0, 1],
+      [grid(200)[799], 42],
+    ])
+  })
+
+  it('skips a cue that would share a bar with an earlier rule cue, with si no cuadra', () => {
+    const clear = flow(
+      rule({ bars: 16 }),
+      rule({ from: 'first-beat', bars: 0, when: 'clear' }),
+      rule({ bars: 0, when: 'clear', place: 'call' }),
+    )
+    const out = evaluateFlow(clear, track({ drops: [beat(16) + 1500] }))
+    expect(out.cues.map((c) => c.rule)).toEqual([0, 2])
+  })
+
+  it('keeps the earlier rule when two rules land on the same spot', () => {
+    const twice = flow(rule({ color: { fixed: 1 } }), rule({ color: { fixed: 42 } }))
+    expect(evaluateFlow(twice, track()).cues.map((c) => c.color)).toEqual([1])
+  })
+
+  it('leaves the farthest hot cues out first past 8 and says which', () => {
+    const drops = Array.from({ length: 4 }, (_, i) => beat(48 + 48 * i))
+    const out = evaluateFlow(MY_FLOW, track({ beats: grid(400), drops }))
+    expect(out.cues).toHaveLength(8)
+    expect(out.trimmed.map((c) => [c.ms, c.bars])).toEqual([[beat(0), 48]])
+  })
+
+  it('never counts loose CALLs against the 8 hot cues', () => {
+    const calls = flow(rule({ repeat: 'edge', when: 'always', place: 'call' }))
+    expect(
+      evaluateFlow(calls, track({ beats: grid(400), drops: [beat(400) - 500] })).trimmed,
+    ).toEqual([])
+  })
+
+  it('plans nothing on a track without a grid', () => {
+    expect(evaluateFlow(MY_FLOW, track({ beats: [] }))).toEqual({ cues: [], trimmed: [] })
+  })
+})
