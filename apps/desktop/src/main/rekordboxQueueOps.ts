@@ -13,6 +13,7 @@ export interface EditOp {
   kind: 'edit'
   edit: RekordboxPlaylistEdit
   stamps: Record<string, number>
+  label?: string
 }
 
 export interface TrackOp {

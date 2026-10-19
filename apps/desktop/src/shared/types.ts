@@ -1570,3 +1570,25 @@ export interface RekordboxPlaylistTarget {
   id?: string
   name: string
 }
+
+export type RekordboxQueuePart =
+  | { kind: 'repoint' }
+  | { kind: 'collection' }
+  | { kind: 'playlists'; names: string[] }
+  | { kind: 'tree'; edit: RekordboxPlaylistEdit['kind'] }
+
+export interface RekordboxQueueItem {
+  key: string
+  label: string
+  parts: RekordboxQueuePart[]
+}
+
+export interface RekordboxQueueState {
+  tracks: number
+  changes: number
+  items: RekordboxQueueItem[]
+}
+
+export type RekordboxQueueApplied =
+  | { tracks: number; changes: number; notices: RekordboxQueueNotice[] }
+  | { refused: RekordboxEditRefusal }
