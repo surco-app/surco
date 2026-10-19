@@ -1,7 +1,7 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { openRekordboxDb } from './rekordboxDb'
 import { writeRekordboxExportFixture } from './rekordboxExportFixture'
 import {
@@ -12,6 +12,9 @@ import {
   syncedPlaylists,
   syncFileText,
 } from './rekordboxStickSync'
+
+const warn = vi.fn()
+vi.mock('electron-log/main', () => ({ default: { warn: (...a: unknown[]) => warn(...a) } }))
 
 const BASES = { id: '1401397687', parentId: 'root', folder: true }
 const MAKINA = { id: '3965545314', parentId: '1401397687', folder: false }
@@ -101,6 +104,29 @@ describe('stickDeviceIds', () => {
     expect(ids.get(NEW.id)).toBe(3)
   })
 
+  // Every Dev_ID in the file is taken on the stick, whatever its node's Id looks like and
+  // however often that Id repeats: a new node must clear all of them.
+  it('gives a new node an id above every Dev_ID in the file', () => {
+    const NEW = { id: '200', parentId: 'root', folder: false }
+    const odd = REKORDBOX_SYNC.replace(
+      '  </Playlists>',
+      [
+        '    <NODE Id="itunes-1" ParentId="0" Attribute="0" Lib_Type="1" Dev_ID="9" Timestamp="0" CheckType="1"/>',
+        '  </Playlists>',
+      ].join('\r\n'),
+    )
+    expect(stickDeviceIds([BASES, NEW], odd).get(NEW.id)).toBe(10)
+    const twice = REKORDBOX_SYNC.replace(
+      '  </Playlists>',
+      [
+        '    <NODE Id="5387A1B7" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="12" Timestamp="0" CheckType="2"/>',
+        '    <NODE Id="5387A1B7" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="4" Timestamp="0" CheckType="2"/>',
+        '  </Playlists>',
+      ].join('\r\n'),
+    )
+    expect(stickDeviceIds([BASES, NEW], twice).get(NEW.id)).toBe(13)
+  })
+
   // baken refuses a new id past u32::MAX; Surco must say so before running it.
   it('refuses when no id is left after the stick highest', () => {
     const full = REKORDBOX_SYNC.replace('Dev_ID="2"', 'Dev_ID="4294967295"')
@@ -138,6 +164,18 @@ describe('nodeTimestamps', () => {
 describe('syncedPlaylists', () => {
   it('lists the ticked playlists by their master id, not the folders', () => {
     expect(syncedPlaylists(REKORDBOX_SYNC)).toEqual(['3965545314'])
+  })
+
+  // A ticked node whose Id is not a master row id names no playlist of the collection.
+  it('skips a ticked node whose Id is not hex', () => {
+    const odd = REKORDBOX_SYNC.replace(
+      '  </Playlists>',
+      [
+        '    <NODE Id="itunes-1" ParentId="0" Attribute="0" Lib_Type="1" Dev_ID="9" Timestamp="0" CheckType="1"/>',
+        '  </Playlists>',
+      ].join('\r\n'),
+    )
+    expect(syncedPlaylists(odd)).toEqual(['3965545314'])
   })
 })
 
@@ -177,6 +215,8 @@ describe('readMasterIdentity', () => {
         { ID: '2170819288', Seq: 1, Name: 'Acid House', Attribute: 0, ParentID: '1' },
         { ID: '1', Seq: 10001, Name: 'Genre', Attribute: 1, ParentID: 'root' },
         { ID: '77', Seq: 2, Name: 'Gone', Attribute: 0, ParentID: '1', deleted: true },
+        { ID: '3000', Seq: 0, Name: 'Zero', Attribute: 0, ParentID: '1' },
+        { ID: '3001', Seq: null, Name: 'Blank', Attribute: 0, ParentID: '1' },
       ],
     })
     const db = openRekordboxDb(path, { readonly: true })
@@ -187,10 +227,28 @@ describe('readMasterIdentity', () => {
         myTagMasterDbId: 4278116378,
         myTags: [
           { id: 1, seq: 10000, name: 'Genre', attribute: 1, parent: 0 },
+          { id: 3000, seq: 0, name: 'Zero', attribute: 0, parent: 1 },
+          { id: 3001, seq: 0, name: 'Blank', attribute: 0, parent: 1 },
           { id: 2170819288, seq: 0, name: 'Acid House', attribute: 0, parent: 1 },
         ],
         fileSizes: { '101': 53680358 },
       })
+    } finally {
+      db.close()
+    }
+  })
+
+  // baken loads the ids as u32: a collection without its DBID row still exports, but the
+  // stick will not carry rekordbox's identity, which the log must say.
+  it('logs a collection without its DBID', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'stick-identity-')), 'master.db')
+    writeRekordboxExportFixture(path, { content: [], keys: [], playlists: [], links: [] })
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('fixture did not open')
+    warn.mockClear()
+    try {
+      expect(readMasterIdentity(db, []).dbId).toBe(0)
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('DBID'))
     } finally {
       db.close()
     }

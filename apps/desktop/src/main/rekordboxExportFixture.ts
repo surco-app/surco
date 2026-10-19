@@ -51,7 +51,7 @@ export interface FixtureCue {
 
 export interface FixtureMyTag {
   ID: string
-  Seq: number
+  Seq: number | null
   Name: string
   Attribute: number
   ParentID: string

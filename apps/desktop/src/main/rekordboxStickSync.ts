@@ -49,12 +49,14 @@ const SYNC_NODE = /<NODE Id="([0-9A-F]+)"[^>]*\bDev_ID="(\d+)"/g
 
 // rekordbox knows the stick's playlists by these ids: a re-export keeps every one the stick
 // already has, and a new node takes the next above every id in the file, those of
-// playlists left out of this export included, so none can ever be taken twice. baken's own
-// fallback (above the ids it is given) is never relied on.
+// playlists left out of this export included, so none can ever be taken twice. The highest
+// is read from every Dev_ID in the file, whatever its node's Id and however often that Id
+// repeats. baken's own fallback (above the ids it is given) is never relied on.
 export function stickDeviceIds(nodes: StickNode[], syncText: string | null): Map<string, number> {
   const onStick = new Map<string, number>()
   for (const m of (syncText ?? '').matchAll(SYNC_NODE)) onStick.set(masterId(m[1]), Number(m[2]))
-  let next = Math.max(0, ...onStick.values()) + 1
+  const taken = [...(syncText ?? '').matchAll(/\bDev_ID="(\d+)"/g)].map((m) => Number(m[1]))
+  let next = Math.max(0, ...taken) + 1
   const ids = new Map<string, number>()
   for (const n of nodes) {
     const kept = onStick.get(n.id)
@@ -107,12 +109,13 @@ export function syncFileText(
   return lines.join('\r\n')
 }
 
-// The playlists (never the folders) a stick's sync file has ticked, by master ID.
+// The playlists (never the folders) a stick's sync file has ticked, by master ID. A node
+// whose Id is not a master row's hex ID names no playlist of the collection.
 export function syncedPlaylists(syncText: string): string[] {
-  return [...syncText.matchAll(/<NODE [^>]*>/g)]
-    .map((m) => m[0])
-    .filter((tag) => /\bAttribute="0"/.test(tag) && /\bCheckType="1"/.test(tag))
-    .map((tag) => masterId((/<NODE Id="([0-9A-F]+)"/.exec(tag) as RegExpExecArray)[1]))
+  return [...syncText.matchAll(/<NODE [^>]*>/g)].flatMap(([tag]) => {
+    const id = /<NODE Id="([0-9A-F]+)"/.exec(tag)
+    return id && /\bAttribute="0"/.test(tag) && /\bCheckType="1"/.test(tag) ? [masterId(id[1])] : []
+  })
 }
 
 // What rekordbox's own export writes from master.db: the DBID on every track row and in
@@ -128,6 +131,7 @@ export function readMasterIdentity(db: RekordboxDb, trackIds: string[]): MasterI
       `SELECT ID FROM djmdCloudProperty WHERE Reserved1 = 'SyncService' AND Reserved2 = 'Google'`,
     )
     .get() as { ID: string | number } | undefined
+  if (!property) log.warn('rekordbox collection has no DBID in djmdProperty')
   if (!cloud) log.warn('rekordbox collection has no SyncService cloud property')
   const tags = db
     .prepare(
@@ -137,7 +141,7 @@ export function readMasterIdentity(db: RekordboxDb, trackIds: string[]): MasterI
     )
     .all() as {
     ID: string
-    Seq: number
+    Seq: number | null
     Name: string | null
     Attribute: number
     ParentID: string
@@ -157,7 +161,8 @@ export function readMasterIdentity(db: RekordboxDb, trackIds: string[]): MasterI
     myTagMasterDbId: Number(cloud?.ID ?? 0),
     myTags: tags.map((t) => ({
       id: Number(t.ID),
-      seq: t.Seq - 1,
+      // baken loads it as u32: a Seq of 0 or none must not become -1 or NaN.
+      seq: Math.max(0, Math.trunc(Number(t.Seq) || 0) - 1),
       name: t.Name ?? '',
       attribute: t.Attribute,
       parent: t.ParentID === 'root' ? 0 : Number(t.ParentID),
