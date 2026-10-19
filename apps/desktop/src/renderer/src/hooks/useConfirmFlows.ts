@@ -108,7 +108,7 @@ function decideLossyReencode(
 
 interface Params {
   settings: Settings | null
-  removeTrack: (id: string) => void
+  removeTrack: (id: string, everywhere?: boolean) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   // Empties the given rows: App routes the whole-list case to clearTracks (start over, drops
   // the folder watch) and the filtered-visible subset to removeTracks, so a format filter never
@@ -288,7 +288,7 @@ export function useConfirmFlows({
         for (const [i, track] of targets.entries()) {
           window.api
             .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
-            .then(() => removeTrack(track.id))
+            .then(() => removeTrack(track.id, true))
             // The user confirmed a destructive dialog; a silent failure here reads
             // as "the file is in the trash" when it isn't.
             .catch(() => reportTrashFailure(track.fileName))

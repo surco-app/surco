@@ -213,6 +213,17 @@ describe('useConfirmFlows move to Trash', () => {
 // Under "Never" Surco keeps nothing, so a file on a disk with no Trash is deleted for
 // good. The dialog has to say that before the click, and only that click carries the
 // confirmation main needs to delete it.
+describe('useConfirmFlows trashed row', () => {
+  it('drops a trashed file’s row from every list, a playlist that listed it included', async () => {
+    installApi({ trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined) })
+    const a = track('a')
+    const { flows, opened, removeTrack } = setup([a])
+    await flows.askTrash([a])
+    opened[0].onConfirm()
+    await waitFor(() => expect(removeTrack).toHaveBeenCalledWith('a', true))
+  })
+})
+
 describe('useConfirmFlows delete for good', () => {
   const never = { backupPolicy: 'never' } as Settings
 

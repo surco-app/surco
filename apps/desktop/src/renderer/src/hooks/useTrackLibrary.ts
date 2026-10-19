@@ -169,7 +169,7 @@ interface TrackLibrary {
   // The review rewrote these fields on the file: rows of that file take the new values
   // and their disk snapshot moves with them, so the fix is not left looking like an edit.
   patchReviewedFields: (path: string, fields: LibraryTagUpdate['fields']) => void
-  removeTrack: (id: string) => void
+  removeTrack: (id: string, everywhere?: boolean) => void
   removeTracks: (ids: string[]) => void
   clearTracks: () => void
 }
@@ -994,9 +994,13 @@ export function useTrackLibrary({
   // changed. The functional update deselects iff the removed track was selected,
   // which is what the explicit selectedId check did before.
   const removeTrack = useCallback(
-    (id: string): void => {
+    (id: string, everywhere = false): void => {
       const removed = tracksRef.current.find((t) => t.id === id)
-      const stays = !!removed && filesOpenRef.current && listedIn(listedBySource.current, removed)
+      const stays =
+        !everywhere &&
+        !!removed &&
+        filesOpenRef.current &&
+        listedIn(listedBySource.current, removed)
       setTracks((prev) =>
         stays
           ? prev.map((t) => (t.id === id ? { ...t, inFiles: false } : t))

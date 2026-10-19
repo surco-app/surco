@@ -906,6 +906,18 @@ describe('Files and the source playlists keep their own tracks', () => {
     expect(result.current.tracks).toEqual([expect.objectContaining({ inFiles: false })])
   })
 
+  it('drops a row from everywhere when asked to, even in Files and listed by a playlist', async () => {
+    const onRemove = vi.fn()
+    const { result } = setup({}, { onRemove, filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    act(() => result.current.removeTrack(result.current.tracks[0].id, true))
+    expect(result.current.tracks).toHaveLength(0)
+    expect(onRemove).toHaveBeenCalledTimes(1)
+  })
+
   it('removes a row from a source view as before, Files included', async () => {
     const { result } = setup({}, { filesOpen: false })
     await act(async () => {
