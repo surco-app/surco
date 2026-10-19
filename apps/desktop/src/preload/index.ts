@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
-import type { WantedCue } from '../shared/cueRules'
 import type { LearnedFlow } from '../shared/learnFlow'
 import type {
   ActivityEvent,
@@ -21,6 +20,7 @@ import type {
   MusicReviewField,
   PairFacts,
   ProcessProgress,
+  QueuedCues,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxQueueApplied,
@@ -198,7 +198,7 @@ const api: Api = {
   rekordboxCountCompletable: (): Promise<number> =>
     ipcRenderer.invoke('rekordbox:countCompletable'),
   rekordboxLearnFlow: (): Promise<LearnedFlow | null> => ipcRenderer.invoke('rekordbox:learnFlow'),
-  rekordboxQueuedCues: (contentId: string): Promise<WantedCue[] | null> =>
+  rekordboxQueuedCues: (contentId: string): Promise<QueuedCues | null> =>
     ipcRenderer.invoke('rekordbox:queuedCues', contentId),
   undoRekordboxCues: (contentId: string): Promise<void> =>
     ipcRenderer.invoke('rekordbox:undoCues', contentId),

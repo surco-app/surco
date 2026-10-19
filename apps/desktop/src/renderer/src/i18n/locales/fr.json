@@ -784,7 +784,8 @@
       "menuAddCall": "Ajouter un CALL ici",
       "menuMarkDrop": "Marquer le drop ici",
       "trimmed_one": "{{count}} hot cue reste dehors à cause de la limite de 8",
-      "trimmed_other": "{{count}} hot cues restent dehors à cause de la limite de 8"
+      "trimmed_other": "{{count}} hot cues restent dehors à cause de la limite de 8",
+      "queuedStale": "L'enregistrement en attente date d'avant la modification du morceau dans rekordbox et n'est plus à jour. Vous voyez ce que contient rekordbox maintenant."
     }
   },
   "fields": {

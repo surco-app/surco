@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import type { SaveCuesRequest } from '../shared/types'
+import type { QueuedCues, SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readTrackCues } from './rekordboxCues'
 import { learnFromCollection } from './rekordboxLearnFlow'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
+import { queuedWanted } from './rekordboxPlaylistWrite'
 import type { RekordboxQueue } from './rekordboxQueue'
 
 export function registerRekordboxCuesIpc(host: {
@@ -43,7 +44,20 @@ export function registerRekordboxCuesIpc(host: {
   })
   ipcMain.handle(
     'rekordbox:queuedCues',
-    (_e, contentId: string) => host.queue.cuesOp(contentId)?.wanted ?? null,
+    async (_e, contentId: string): Promise<QueuedCues | null> => {
+      const op = host.queue.cuesOp(contentId)
+      if (!op) return null
+      if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint }
+      const path = host.collection()
+      const read = withCollection(
+        path,
+        (db) => readTrackCues(db, rekordboxShareDir(path), contentId, { wave: false }),
+        null,
+        await keyOf(path),
+      )
+      const wanted = read ? (queuedWanted(op, read) ?? read.cues) : []
+      return { wanted, fingerprint: op.fingerprint }
+    },
   )
   ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {
     const op = host.queue.cuesOp(contentId)

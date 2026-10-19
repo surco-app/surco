@@ -13,10 +13,13 @@ vi.mock('./rekordboxDb', async (actual) => {
 
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
 import { flowOutcome } from '../shared/cueRules'
+import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection } from './anlzFixture'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+import type { RekordboxQueue } from './rekordboxQueue'
+import type { CuesOp } from './rekordboxQueueOps'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
   const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
@@ -162,21 +165,75 @@ describe('registerRekordboxCuesIpc', () => {
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
   })
 
-  it('reports the cues queued for a track, or null when nothing waits or the save predates wanted sets', () => {
+  it('reports the cues queued for a track with the fingerprint they were built on, or null when nothing waits', () => {
     const wanted = [{ ms: 1000, kind: 0, color: null }]
-    const ops: Record<string, unknown> = {
-      '103': { id: 'c1', wanted },
-      '105': { id: 'c2', drops: [1000], previousDrops: [] },
+    const queued: CuesOp = {
+      id: 'c1',
+      kind: 'cues',
+      contentId: '103',
+      path: '/m/a.wav',
+      label: 'a',
+      wanted,
+      fingerprint: 'F1',
     }
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
-      queue: { enqueue: vi.fn(), cuesOp: vi.fn((id: string) => ops[id]) as never, drop: vi.fn() },
+      queue: {
+        enqueue: vi.fn<RekordboxQueue['enqueue']>(),
+        cuesOp: vi.fn<RekordboxQueue['cuesOp']>((id) => (id === '103' ? queued : undefined)),
+        drop: vi.fn<RekordboxQueue['drop']>(),
+      },
       applyQuietly: vi.fn(),
       flow: () => MY_FLOW,
     })
-    expect(handler('rekordbox:queuedCues')({}, '103')).toEqual(wanted)
-    expect(handler('rekordbox:queuedCues')({}, '104')).toBeNull()
-    expect(handler('rekordbox:queuedCues')({}, '105')).toBeNull()
+    return Promise.all([
+      expect(handler('rekordbox:queuedCues')({}, '103')).resolves.toEqual({
+        wanted,
+        fingerprint: 'F1',
+      }),
+      expect(handler('rekordbox:queuedCues')({}, '104')).resolves.toBeNull(),
+    ])
+  })
+
+  it('shows a save queued before wanted sets as the set it would write, so the section can see and discard it', async () => {
+    const path = await completableCollection()
+    const host = (cuesOp: RekordboxQueue['cuesOp']) => ({
+      collection: () => path,
+      queue: {
+        enqueue: vi.fn<RekordboxQueue['enqueue']>(),
+        cuesOp: vi.fn<RekordboxQueue['cuesOp']>(cuesOp),
+        drop: vi.fn<RekordboxQueue['drop']>(),
+      },
+      applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
+    })
+    registerRekordboxCuesIpc(host(() => undefined))
+    const read = (await handler('rekordbox:trackCues')({}, '101')) as TrackCues
+    const legacy: CuesOp = {
+      id: 'c2',
+      kind: 'cues',
+      contentId: '101',
+      path: '/m/a.wav',
+      label: 'a',
+      drops: [128000],
+      previousDrops: [128000],
+      fingerprint: read.fingerprint,
+    }
+    registerRekordboxCuesIpc(host(() => legacy))
+    const out = flowOutcome({
+      existing: read.cues,
+      drops: [128000],
+      previousDrops: [128000],
+      beats: read.grid.map((b) => b.ms),
+      strong: read.strong,
+      phrases: read.phrases,
+      flow: MY_FLOW,
+    })
+    if (out.status !== 'plan') throw new Error('the legacy save must plan')
+    expect(await handler('rekordbox:queuedCues')({}, '101')).toEqual({
+      wanted: out.wanted,
+      fingerprint: read.fingerprint,
+    })
   })
 
   it('takes a queued save back by dropping its operation', () => {

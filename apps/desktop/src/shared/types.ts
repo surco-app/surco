@@ -1677,6 +1677,11 @@ export interface TrackCues {
   fingerprint: string
 }
 
+export interface QueuedCues {
+  wanted: WantedCue[]
+  fingerprint: string
+}
+
 export interface SaveCuesRequest {
   contentId: string
   path: string

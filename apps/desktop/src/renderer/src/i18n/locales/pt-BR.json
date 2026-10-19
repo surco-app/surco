@@ -784,7 +784,8 @@
       "menuAddCall": "Adicionar CALL aqui",
       "menuMarkDrop": "Marcar drop aqui",
       "trimmed_one": "{{count}} hot cue fica de fora pelo limite de 8",
-      "trimmed_other": "{{count}} hot cues ficam de fora pelo limite de 8"
+      "trimmed_other": "{{count}} hot cues ficam de fora pelo limite de 8",
+      "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no rekordbox e está desatualizado. Você vê o que o rekordbox tem agora."
     }
   },
   "fields": {

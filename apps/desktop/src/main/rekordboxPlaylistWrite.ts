@@ -318,7 +318,7 @@ function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions
   return { op, track: { entry, adds, removes, names, notices } }
 }
 
-function wantedOf(op: CuesOp, read: TrackCues): WantedCue[] | null {
+export function queuedWanted(op: CuesOp, read: TrackCues): WantedCue[] | null {
   if (op.wanted) return op.wanted
   const out = flowOutcome({
     existing: read.cues,
@@ -338,7 +338,7 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   })
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
   if (!read?.analysed || read.fingerprint !== op.fingerprint) return changed('cues-changed')
-  const wanted = wantedOf(op, read)
+  const wanted = queuedWanted(op, read)
   if (wanted === null || wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES)
     return changed('cues-too-many')
   const valid = validWantedSet(wanted, read.cues)

@@ -3,8 +3,8 @@ import type React from 'react'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow } from '../../../shared/cueFlows'
-import { MAX_HOT_CUES, type WantedCue } from '../../../shared/cueRules'
-import type { TrackCues } from '../../../shared/types'
+import { MAX_HOT_CUES } from '../../../shared/cueRules'
+import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
 import {
   type CueDraft,
@@ -39,7 +39,7 @@ function Editing({
   onDiscard,
 }: {
   read: TrackCues
-  queued: WantedCue[] | null
+  queued: QueuedCues | null
   cue: CueTarget
   onDiscard: () => void
 }): React.JSX.Element {
@@ -61,7 +61,8 @@ function Editing({
     () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
     [read],
   )
-  const baseline = queued ?? inRekordbox
+  const fresh = queued !== null && queued.fingerprint === read.fingerprint
+  const baseline = fresh ? queued.wanted : inRekordbox
   const [state, dispatch] = useReducer(
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
     undefined,
@@ -210,6 +211,11 @@ function Editing({
             {tr('editor.cues.delete')}
           </button>
         </div>
+      )}
+      {queued !== null && !fresh && (
+        <p data-testid="cues-queued-stale" className="mt-2 text-xs text-warn">
+          {tr('editor.cues.queuedStale')}
+        </p>
       )}
       {state.notice === 'manual' && (
         <p data-testid="cues-manual" className="mt-2 text-xs text-fg-dim">

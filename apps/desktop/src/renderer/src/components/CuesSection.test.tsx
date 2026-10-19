@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
-import type { Settings, TrackCues } from '../../../shared/types'
+import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
@@ -43,7 +43,7 @@ beforeEach(() => {
 
 function setup(
   read: TrackCues | null | Error = READ,
-  queued: WantedCue[] | null | Error = null,
+  queued: QueuedCues | null | Error = null,
   settings?: Partial<Settings>,
 ) {
   const logError = vi.fn<Api['logError']>()
@@ -330,7 +330,7 @@ describe('CuesSection', () => {
   })
 
   it('starts from a queued save and drops it with Descartar cambios', async () => {
-    const queued = [{ ms: bar(64), kind: 0, color: null }]
+    const queued = { wanted: [{ ms: bar(64), kind: 0, color: null }], fingerprint: 'f0' }
     const { undoRekordboxCues, rekordboxQueuedCues } = setup(READ, queued)
     await ready()
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
@@ -338,6 +338,30 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-undo'))
     await waitFor(() => expect(undoRekordboxCues).toHaveBeenCalledWith('103'))
     await waitFor(() => expect(screen.queryByTestId(`cue-wave-call-${bar(64)}`)).toBeNull())
+  })
+
+  it('starts from what rekordbox holds when the queued save was built on an older read, so a cue added in rekordbox since is never deleted', async () => {
+    const extra = { id: 'x', ms: bar(100), kind: 1, color: 1 }
+    const { saveRekordboxCues } = setup(
+      { ...READ, fingerprint: 'f2', cues: [extra] },
+      { wanted: [{ ms: bar(64), kind: 0, color: null }], fingerprint: 'f1' },
+    )
+    await ready()
+    expect(screen.getByTestId('cues-queued-stale')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'false')
+    expect(screen.queryByTestId(`cue-wave-call-${bar(64)}`)).toBeNull()
+    clickAt(bar(32))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const req = saveRekordboxCues.mock.calls[0][0]
+    expect(req.fingerprint).toBe('f2')
+    expect(req.wanted).toContainEqual(extra)
+  })
+
+  it('says nothing about an old save when the queued one was built on the read it shows', async () => {
+    setup(READ, { wanted: [{ ms: bar(64), kind: 0, color: null }], fingerprint: 'f0' })
+    await ready()
+    expect(screen.queryByTestId('cues-queued-stale')).toBeNull()
   })
 
   it('offers no marking on a track rekordbox has not analysed', async () => {
@@ -365,7 +389,10 @@ describe('CuesSection', () => {
   })
 
   it('draws what rekordbox now holds as written once the queue landed and the cues were re-read', async () => {
-    const { rekordboxTrackCues, rekordboxQueuedCues, client } = setup(READ, writtenPlan())
+    const { rekordboxTrackCues, rekordboxQueuedCues, client } = setup(READ, {
+      wanted: writtenPlan(),
+      fingerprint: 'f0',
+    })
     await waitFor(() =>
       expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true'),
     )
