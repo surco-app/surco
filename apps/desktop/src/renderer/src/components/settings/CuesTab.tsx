@@ -186,7 +186,10 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
             </button>
           </div>
           <p data-testid="cue-learned-coverage" className="text-xs text-fg-dim">
-            {tr('settings.cueFlows.learnedCoverage', learning.coverage)}
+            {tr('settings.cueFlows.learnedCoverage', {
+              ...learning.coverage,
+              count: learning.coverage.marked,
+            })}
           </p>
           <CueFlowPreview flow={learning.flow} />
         </div>

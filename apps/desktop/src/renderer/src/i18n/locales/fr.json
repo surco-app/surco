@@ -1435,10 +1435,11 @@
       },
       "learn": "Apprendre de ma collection",
       "learnedName": "Appris de ma collection",
-      "learnedCoverage": "Correspond à {{matching}} pistes sur {{marked}}",
       "discard": "Ignorer",
       "learnNone": "Votre collection n’a pas de schéma clair",
-      "learnFailed": "Impossible de lire la collection rekordbox"
+      "learnFailed": "Impossible de lire la collection rekordbox",
+      "learnedCoverage_one": "Correspond à {{matching}} piste sur {{marked}}",
+      "learnedCoverage_other": "Correspond à {{matching}} pistes sur {{marked}}"
     }
   },
   "errorBoundary": {

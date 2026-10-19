@@ -1435,10 +1435,11 @@
       },
       "learn": "Learn from my collection",
       "learnedName": "Learned from my collection",
-      "learnedCoverage": "Fits {{matching}} of {{marked}} tracks",
       "discard": "Discard",
       "learnNone": "Your collection has no clear pattern",
-      "learnFailed": "The rekordbox collection could not be read"
+      "learnFailed": "The rekordbox collection could not be read",
+      "learnedCoverage_one": "Fits {{matching}} of {{marked}} track",
+      "learnedCoverage_other": "Fits {{matching}} of {{marked}} tracks"
     }
   },
   "errorBoundary": {

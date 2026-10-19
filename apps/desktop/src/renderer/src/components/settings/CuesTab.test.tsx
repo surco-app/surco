@@ -170,6 +170,17 @@ describe('CuesTab', () => {
       expect(screen.queryByTestId('cue-learned')).toBeNull()
     })
 
+    it('says pista in the singular when a single track is marked', async () => {
+      await i18n.changeLanguage('es')
+      afterTest = () => i18n.changeLanguage('en')
+      learnable(Promise.resolve({ ...LEARNED, coverage: { matching: 1, marked: 1 } }))
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      expect(await screen.findByTestId('cue-learned-coverage')).toHaveTextContent(
+        'Encaja con 1 de 1 pista',
+      )
+      expect(screen.getByTestId('cue-learned-coverage')).not.toHaveTextContent('pistas')
+    })
+
     it('discards the proposal without touching the flows', async () => {
       learnable(Promise.resolve(LEARNED))
       fireEvent.click(screen.getByTestId('cue-learn'))

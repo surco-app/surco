@@ -1435,10 +1435,11 @@
       },
       "learn": "Aprender com minha coleção",
       "learnedName": "Aprendido com minha coleção",
-      "learnedCoverage": "Combina com {{matching}} de {{marked}} faixas",
       "discard": "Descartar",
       "learnNone": "Sua coleção não tem um padrão claro",
-      "learnFailed": "Não foi possível ler a coleção do rekordbox"
+      "learnFailed": "Não foi possível ler a coleção do rekordbox",
+      "learnedCoverage_one": "Combina com {{matching}} de {{marked}} faixa",
+      "learnedCoverage_other": "Combina com {{matching}} de {{marked}} faixas"
     }
   },
   "errorBoundary": {
