@@ -1688,3 +1688,983 @@ git commit -m "Write a batch of rekordbox operations in one transaction with a s
 
 ---
 
+### Task 5: Track operations inside the batch: add to collection, diff, conflicts
+
+**Files:**
+- Modify: `src/shared/types.ts` (append `RekordboxPlaylistTarget`)
+- Modify: `src/main/rekordboxQueueOps.ts` (`TrackOp`, `QueueOp`, `OpOutcome.contentId`, `opRank`, `XmlDraft.created`)
+- Modify: `src/main/rekordboxPlaylistWrite.ts` (`planOp`, `writeOp`, `needsNode`, the draft and the savepoint loop)
+- Test: `src/main/rekordboxQueueTrack.test.ts`
+
+**Interfaces:**
+- Consumes: Task 2 `ContentFacts`, `insertContent`; Task 3 `trackPlaylists`, `removeTrackFromPlaylist`; Task 4 `applyRekordboxBatch`, `Plan`, `Planned`, `playlistName`, `freeId`, `bumpNode`; existing `resolveTracks`, `nodeAttribute`, `createNode`, `addToPlaylist`, `withPlaylistNode`, `nodeTimestamp`.
+- Produces:
+  - `shared/types.ts`: `interface RekordboxPlaylistTarget { id?: string; name: string }` (no `id`: a playlist to create at the root under `name`)
+  - `rekordboxQueueOps.ts`: `interface TrackOp { id: string; kind: 'track'; path: string; label: string; contentId?: string; facts: ContentFacts | null; wanted: RekordboxPlaylistTarget[]; known: string[]; stamps: Record<string, number> }`; `type QueueOp = EditOp | TrackOp` (plan B adds its cues kind with rank 4); `OpOutcome.contentId?: string`; `XmlDraft.created: Map<string, string>` (new playlist name to its ID, one per batch)
+
+Rules (spec "Al convertir o actualizar", "Conflictos"):
+- The entry: `contentId` when it is live, else `findTrackByPath` on `path` (through `resolveTracks`, which also refuses the separator and streaming rows). Two rows: notice `ambiguous`, nothing written. None and `wanted` empty: nothing to do. None and the file gone (or no facts): notice `file-missing` (`not-added` without facts), nothing written. None otherwise: `insertContent`.
+- Adds: wanted IDs the entry is not in, at the end (`addToPlaylist`). Removes: playlists the entry is in that are not wanted (`removeTrackFromPlaylist`, all its links there). Each touched playlist's node `Timestamp` moves.
+- A wanted playlist that is gone or no longer a normal playlist: notice `playlist-gone`, the rest applies. A playlist whose node `Timestamp` differs from `stamps`: notice `playlist-changed`, that part dropped. A remove from a playlist not in `known` (rekordbox added the track there after Surco queued): notice `playlist-changed`, not removed. Without an XML there is no Timestamp check.
+- New names: one `createNode` per name per batch (`draft.created`), root, last among siblings, node appended.
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/main/rekordboxQueueTrack.test.ts`:
+
+```ts
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
+import type { ContentFacts } from './rekordboxContentAdd'
+import { openRekordboxDb } from './rekordboxDb'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
+import {
+  ORGANISE_FIXTURE,
+  type PlaylistFixture,
+  TWIN_PATHS,
+  writeRekordboxPlaylistFixture,
+} from './rekordboxPlaylistsFixture'
+import type { TrackOp } from './rekordboxQueueOps'
+
+vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+
+import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
+
+const NOW = new Date('2026-10-18T19:00:00.000Z')
+let dir: string
+
+beforeEach(async () => {
+  dir = await mkdtemp(join(tmpdir(), 'surco-rbtrack-'))
+})
+
+async function collection(over: Partial<PlaylistFixture> = {}): Promise<string> {
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true, ...over })
+  return path
+}
+
+const deps = () => ({
+  ensureClosed: vi.fn(async () => true),
+  sessionBackup: vi.fn(async () => {}),
+  now: () => NOW,
+  ...TWIN_PATHS,
+})
+
+async function newFile(name: string): Promise<string> {
+  const path = join(dir, name)
+  await writeFile(path, Buffer.alloc(100))
+  return path
+}
+
+function facts(path: string): ContentFacts {
+  return {
+    path,
+    fileType: 11,
+    fileSize: 100,
+    inode: '12345',
+    createdMs: NOW.getTime(),
+    durationSec: 300,
+    sampleRate: 44100,
+    bitDepth: 16,
+    bitRateKbps: 1411,
+    meta: rekordboxMetaFrom({ ...emptyMetadata(), title: 'Bam Bam', artist: 'Sister Nancy' }),
+  }
+}
+
+function op(over: Partial<TrackOp>): TrackOp {
+  return {
+    id: 't',
+    kind: 'track',
+    path: '/Volumes/Public/Music/Gowan.wav',
+    label: 'Bam Bam',
+    facts: null,
+    wanted: [],
+    known: [],
+    stamps: { '2000': 1767225600000, '3000': 1767225600000 },
+    ...over,
+  }
+}
+
+function read<T>(path: string, sql: string, ...args: string[]): T[] {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return db.prepare(sql).all(...args) as T[]
+  } finally {
+    db.close()
+  }
+}
+
+const contentsOf = (path: string, playlistId: string) =>
+  read<{ ContentID: string }>(
+    path,
+    'SELECT ContentID FROM djmdSongPlaylist WHERE PlaylistID = ? ORDER BY TrackNo',
+    playlistId,
+  ).map((r) => r.ContentID)
+
+const named = (path: string, name: string) =>
+  read<{ ID: string; ParentID: string }>(path, 'SELECT ID, ParentID FROM djmdPlaylist WHERE Name = ?', name)
+
+describe('track operations', () => {
+  // Flow 1: a track rekordbox never had ends up in the collection and in its playlists,
+  // a new one included, without Music in between.
+  it('adds a new track to the collection, to an existing playlist and to a new one', async () => {
+    const path = await collection()
+    const file = await newFile('Bam Bam.wav')
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: file, facts: facts(file), wanted: [{ id: '3000', name: 'House' }, { name: 'Bolos' }] })],
+      deps(),
+    )
+    const entry = result.ok ? result.outcomes[0].contentId : undefined
+    expect(result.ok && result.outcomes[0]).toMatchObject({ applied: true, notices: [] })
+    expect(contentsOf(path, '3000')).toEqual(['102', '110', entry])
+    const [bolos] = named(path, 'Bolos')
+    expect(bolos.ParentID).toBe('root')
+    expect(contentsOf(path, bolos.ID)).toEqual([entry])
+    const xml = await readFile(join(dir, 'masterPlaylists6.xml'), 'utf8')
+    expect(xml).toContain(`Id="${BigInt(bolos.ID).toString(16).toUpperCase()}" ParentId="0"`)
+    expect(xml).toMatch(new RegExp(`Id="BB8" [^>]*Timestamp="${NOW.getTime()}"`))
+    expect(xml).toMatch(/Id="7D0" [^>]*Timestamp="1767225600000"/)
+  })
+
+  // Never a second row for one file: the DJ's cues and history live on the first.
+  it('reuses the entry rekordbox already has for the file', async () => {
+    const path = await collection()
+    const before = read(path, 'SELECT ID FROM djmdContent').length
+    await applyRekordboxBatch(path, [op({ wanted: [{ id: '3000', name: 'House' }] })], deps())
+    expect(read(path, 'SELECT ID FROM djmdContent')).toHaveLength(before)
+    expect(contentsOf(path, '3000')).toEqual(['102', '110', '103'])
+  })
+
+  // Removing a token means "not in this playlist": every link of the track there goes,
+  // the collection entry stays.
+  it('takes the track out of the playlists it is no longer wanted in', async () => {
+    const path = await collection()
+    await applyRekordboxBatch(
+      path,
+      [
+        op({
+          path: '/Volumes/Public/Music/Play This Song.wav',
+          wanted: [{ id: '3000', name: 'House' }],
+          known: ['2000', '3000'],
+        }),
+      ],
+      deps(),
+    )
+    expect(contentsOf(path, '2000')).toEqual(['101', '109', '201', '109', '104'])
+    expect(contentsOf(path, '3000')).toEqual(['102', '110'])
+  })
+
+  it('leaves alone a playlist rekordbox changed since the track was queued, and says so', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ wanted: [{ id: '3000', name: 'House' }], stamps: { '3000': 1 } })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0].notices).toEqual([
+      { code: 'playlist-changed', track: 'Bam Bam', playlist: 'House' },
+    ])
+    expect(contentsOf(path, '3000')).toEqual(['102', '110'])
+  })
+
+  // The track was dragged into Factory in rekordbox after Surco queued its playlists;
+  // removing it would undo the DJ's own gesture.
+  it('never removes the track from a playlist it joined in rekordbox after queueing', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: '/Volumes/Public/Music/Play This Song.wav', wanted: [{ id: '3000', name: 'House' }], known: ['3000'] })],
+      deps(),
+    )
+    expect(contentsOf(path, '2000')).toContain('102')
+    expect(result.ok && result.outcomes[0].notices).toEqual([
+      { code: 'playlist-changed', track: 'Bam Bam', playlist: 'Factory' },
+    ])
+  })
+
+  it('says a wanted playlist is gone and applies the rest', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ wanted: [{ id: '9999', name: 'Makina' }, { id: '3000', name: 'House' }] })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0].notices).toEqual([
+      { code: 'playlist-gone', track: 'Bam Bam', playlist: 'Makina' },
+    ])
+    expect(contentsOf(path, '3000')).toContain('103')
+  })
+
+  it('skips a file the collection holds twice and says so', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: '/Users/dj/Music/Music/Ekkah.wav', wanted: [{ id: '3000', name: 'House' }] })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 't', applied: false, notices: [{ code: 'ambiguous', track: 'Bam Bam' }] }],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+  })
+
+  it('adds nothing for a file deleted before rekordbox closed', async () => {
+    const path = await collection()
+    const gone = join(dir, 'gone.wav')
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: gone, facts: facts(gone), wanted: [{ id: '3000', name: 'House' }] })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0]).toEqual({
+      id: 't',
+      applied: false,
+      notices: [{ code: 'file-missing', track: 'Bam Bam' }],
+    })
+  })
+
+  // Two tracks converted in one run with the same new name typed: one playlist, both in it.
+  it('creates a new playlist name once per batch', async () => {
+    const path = await collection()
+    const a = await newFile('a.wav')
+    const b = await newFile('b.wav')
+    await applyRekordboxBatch(
+      path,
+      [
+        op({ id: 'a', path: a, facts: facts(a), wanted: [{ name: 'Bolos' }] }),
+        op({ id: 'b', path: b, facts: { ...facts(b), inode: '6789' }, wanted: [{ name: 'Bolos' }] }),
+      ],
+      deps(),
+    )
+    const rows = named(path, 'Bolos')
+    expect(rows).toHaveLength(1)
+    expect(contentsOf(path, rows[0].ID)).toHaveLength(2)
+  })
+
+  it('checks no Timestamp when the collection has no XML (rekordbox 5)', async () => {
+    const path = await collection({ xml: false })
+    await applyRekordboxBatch(
+      path,
+      [op({ wanted: [{ id: '3000', name: 'House' }], stamps: { '3000': 1 } })],
+      deps(),
+    )
+    expect(contentsOf(path, '3000')).toContain('103')
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueueTrack.test.ts`
+Expected: FAIL, type errors on `kind: 'track'` and every batch refusing the operation (`planOp` only knows edits).
+
+- [ ] **Step 3: Types**
+
+Append to `src/shared/types.ts`:
+
+```ts
+export interface RekordboxPlaylistTarget {
+  id?: string
+  name: string
+}
+```
+
+In `src/main/rekordboxQueueOps.ts` add the imports `import type { RekordboxPlaylistTarget } from '../shared/types'` (merge with the existing type import) and `import type { ContentFacts } from './rekordboxContentAdd'`, then:
+
+```ts
+export interface TrackOp {
+  id: string
+  kind: 'track'
+  path: string
+  label: string
+  contentId?: string
+  facts: ContentFacts | null
+  wanted: RekordboxPlaylistTarget[]
+  known: string[]
+  stamps: Record<string, number>
+}
+
+export type QueueOp = EditOp | TrackOp
+```
+
+(replacing `export type QueueOp = EditOp`), add `contentId?: string` to `OpOutcome`, `created: Map<string, string>` to `XmlDraft`, and change `opRank`:
+
+```ts
+export function opRank(op: QueueOp): number {
+  return op.kind === 'track' ? 0 : EDIT_RANK[op.edit.kind]
+}
+```
+
+- [ ] **Step 4: Plan and write a track operation**
+
+In `src/main/rekordboxPlaylistWrite.ts`, add to the imports `insertContent` and `type ContentFacts` from `./rekordboxContentAdd`, `nodeAttribute`, `removeTrackFromPlaylist`, `trackPlaylists` from `./rekordboxPlaylistEdit`, `type TrackOp` from `./rekordboxQueueOps` and `type RekordboxQueueNotice` from `../shared/types`.
+
+Add to `Planned`:
+
+```ts
+  track?: { entry?: string; adds: string[]; removes: string[]; names: string[]; notices: RekordboxQueueNotice[] }
+```
+
+Add, after `planEdit`:
+
+```ts
+function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions): Plan {
+  const notices: RekordboxQueueNotice[] = []
+  const finish = (applied: boolean): Plan => ({ outcome: { id: op.id, applied, notices } })
+  const resolved = resolveTracks(probe, [{ contentId: op.contentId, paths: [op.path] }], find)
+  if (resolved.ambiguous > 0) {
+    notices.push({ code: 'ambiguous', track: op.label })
+    return finish(false)
+  }
+  const entry = resolved.contentIds[0]
+  if (!entry && op.wanted.length === 0) return finish(true)
+  if (!entry && (!op.facts || !existsSync(op.path))) {
+    notices.push({ code: op.facts ? 'file-missing' : 'not-added', track: op.label })
+    return finish(false)
+  }
+  const changed = (pid: string): boolean =>
+    xml !== null && op.stamps[pid] !== undefined && nodeTimestamp(xml, pid) !== op.stamps[pid]
+  const current = entry ? trackPlaylists(probe, entry) : []
+  const wantedIds = op.wanted.flatMap((t) => (t.id ? [t.id] : []))
+  const names = [...new Set(op.wanted.flatMap((t) => (t.id ? [] : [t.name.trim()])))].filter(
+    (n) => n !== '',
+  )
+  const adds: string[] = []
+  for (const target of op.wanted) {
+    if (!target.id || current.includes(target.id)) continue
+    if (nodeAttribute(probe, target.id) !== 0)
+      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
+    else if (changed(target.id))
+      notices.push({ code: 'playlist-changed', track: op.label, playlist: target.name })
+    else adds.push(target.id)
+  }
+  const removes: string[] = []
+  for (const pid of current) {
+    if (wantedIds.includes(pid)) continue
+    if (!op.known.includes(pid) || changed(pid))
+      notices.push({ code: 'playlist-changed', track: op.label, playlist: playlistName(probe, pid) })
+    else removes.push(pid)
+  }
+  if (entry && adds.length === 0 && removes.length === 0 && names.length === 0)
+    return finish(true)
+  return { op, track: { entry, adds, removes, names, notices } }
+}
+
+function writeTrack(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  const op = planned.op as TrackOp
+  const plan = planned.track as NonNullable<Planned['track']>
+  const ctx = { now, newPlaylistId: () => freeId(draft) }
+  const entry = plan.entry ?? insertContent(db, op.facts as ContentFacts, { now })
+  const adds = [...plan.adds]
+  for (const name of plan.names) {
+    let pid = draft.created.get(name)
+    if (!pid) {
+      pid = createNode(db, 'root', name, false, ctx).id
+      if (draft.xml !== null)
+        draft.xml = withPlaylistNode(draft.xml, {
+          id: pid,
+          parentId: 'root',
+          attribute: 0,
+          timestamp: draft.now,
+        })
+      draft.taken.add(hexId(pid))
+      draft.created.set(name, pid)
+    }
+    adds.push(pid)
+  }
+  for (const pid of adds) {
+    addToPlaylist(db, pid, [entry], ctx)
+    bumpNode(draft, pid)
+  }
+  for (const pid of plan.removes) {
+    removeTrackFromPlaylist(db, pid, entry, ctx)
+    bumpNode(draft, pid)
+  }
+  return { id: op.id, applied: true, notices: plan.notices, contentId: entry }
+}
+```
+
+Replace `planOp`, `writeOp` and `needsNode`:
+
+```ts
+function planOp(probe: Db, xml: string | null, op: QueueOp, find: FindOptions): Plan {
+  return op.kind === 'track' ? planTrack(probe, xml, op, find) : planEdit(probe, xml, op, find)
+}
+
+function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  return planned.op.kind === 'track'
+    ? writeTrack(db, draft, planned, now)
+    : writeEdit(db, draft, planned, now)
+}
+
+function needsNode(planned: Planned): boolean {
+  if (planned.op.kind === 'track') return (planned.track?.names.length ?? 0) > 0
+  return planned.op.edit.kind === 'create'
+}
+```
+
+In `applyRekordboxBatch`, the draft gains `created: new Map<string, string>()`, and the savepoint loop keeps a full snapshot so a refused operation leaves no name, ID or node behind:
+
+```ts
+    for (const p of [...planned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
+      const saved = { xml: draft.xml, taken: new Set(draft.taken), created: new Map(draft.created) }
+      db.exec('SAVEPOINT surco_op')
+      try {
+        outcomes.set(p.op.id, writeOp(db, draft, p, now))
+        db.exec('RELEASE surco_op')
+      } catch (err) {
+        if (!(err instanceof EditRefused)) throw err
+        db.exec('ROLLBACK TO surco_op')
+        db.exec('RELEASE surco_op')
+        Object.assign(draft, saved)
+        outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: err.reason, notices: [] })
+      }
+    }
+```
+
+`writeEdit` reads `planned.op as EditOp`; with the widened union that cast still compiles.
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueueTrack.test.ts src/main/rekordboxPlaylistWrite.test.ts src/main/rekordboxContentAdd.test.ts`
+Expected: PASS.
+
+- [ ] **Step 6: Mutation check**
+
+Delete `!op.known.includes(pid) ||` and rerun: `'never removes the track from a playlist it joined in rekordbox after queueing'` must fail. Replace `draft.created.get(name)` with `undefined`: `'creates a new playlist name once per batch'` must fail. Restore both.
+
+- [ ] **Step 7: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxQueueOps.ts apps/desktop/src/main/rekordboxPlaylistWrite.ts apps/desktop/src/main/rekordboxQueueTrack.test.ts
+git commit -m "Add a track to rekordbox and to the playlists it should be in, rekordbox winning conflicts"
+```
+
+---
+
+### Task 6: The queue file and its apply
+
+**Files:**
+- Modify: `src/shared/types.ts` (append the queue state types)
+- Modify: `src/main/rekordboxQueueOps.ts` (`EditOp.label?`)
+- Create: `src/main/rekordboxQueue.ts`
+- Test: `src/main/rekordboxQueue.test.ts`
+
+**Interfaces:**
+- Consumes: Task 4/5 `QueueOp`, `OpOutcome`, `BatchResult`, `RekordboxQueueNotice`; `RekordboxRepoint` (`rekordboxBatch.ts`); `LibraryRepointResult` (`libraryRepointFlush.ts`).
+- Produces:
+  - `shared/types.ts`: `type RekordboxQueuePart = { kind: 'repoint' } | { kind: 'collection' } | { kind: 'playlists'; names: string[] } | { kind: 'tree'; edit: RekordboxPlaylistEdit['kind'] }`; `interface RekordboxQueueItem { key: string; label: string; parts: RekordboxQueuePart[] }`; `interface RekordboxQueueState { tracks: number; changes: number; items: RekordboxQueueItem[] }`; `type RekordboxQueueApplied = { tracks: number; changes: number; notices: RekordboxQueueNotice[] } | { refused: RekordboxEditRefusal }`
+  - `EditOp.label?: string` (the playlist's name, for the pill and the notices)
+  - `rekordboxQueue.ts`: `interface QueueStore { read(): string | null; write(text: string): void; setAside(): void }`, `fileStore(path: string): QueueStore`, `interface QueueDeps { store; collection(): string; applyBatch(collectionPath: string, ops: QueueOp[], ensureClosed: () => Promise<boolean>): Promise<BatchResult>; repoint(collectionPath: string, repoints: RekordboxRepoint[]): Promise<LibraryRepointResult[]>; onChange(state: RekordboxQueueState): void }`, `type QueueApply = { status: 'empty' } | { status: 'refused'; reason: RekordboxEditRefusal } | { status: 'applied'; tracks: number; changes: number; notices: RekordboxQueueNotice[]; outcomes: OpOutcome[] }`, `createRekordboxQueue(deps: QueueDeps): RekordboxQueue` with `enqueue(ops: QueueOp[], repoints?: RekordboxRepoint[]): void`, `state(): RekordboxQueueState`, `isEmpty(): boolean`, `discard(): void`, `apply(ensureClosed: () => Promise<boolean>): Promise<QueueApply>`
+  - `keyOf(op: QueueOp): string` (a later operation with the same key replaces the earlier one; plan B adds its cues key)
+
+Behaviour:
+- The file is `rekordbox-queue.json` in userData, `{ "version": 1, "repoints": [...], "ops": [...] }`, rewritten (temp file and rename) after every change. Unreadable: set aside as `rekordbox-queue.json.unreadable`, logged, the queue starts empty.
+- A track operation for a path already queued replaces it (`track:<path>`); an edit never replaces another (`edit:<id>`). A repoint with the same `from` replaces the earlier one, as `recordRekordboxRepoint` does.
+- `apply`: repoints first (asking `ensureClosed` once before them), then the operations in one batch (the batch asks, when there were no repoints, only if it has something to write). A collection-wide repoint failure, or a refused batch, keeps everything. A finished batch removes the operations it was given, applied or dropped by a conflict (rekordbox won; the notice says so), never one queued meanwhile. Applies never overlap.
+- Counts: `tracks` = distinct track keys, `changes` = tree edits. An edit refused without a notice of its own (`stale` from `editProblem`) gets `{ code: 'edit-changed', playlist: label }`.
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/main/rekordboxQueue.test.ts`:
+
+```ts
+import { describe, expect, it, vi } from 'vitest'
+import type { RekordboxQueueState } from '../shared/types'
+import type { LibraryRepointResult } from './libraryRepointFlush'
+import type { RekordboxRepoint } from './rekordboxBatch'
+import { createRekordboxQueue, type QueueDeps, type QueueStore } from './rekordboxQueue'
+import type { BatchResult, QueueOp, TrackOp } from './rekordboxQueueOps'
+
+vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
+
+function memoryStore(initial: string | null = null): QueueStore & { text: string | null; aside: boolean } {
+  const store = {
+    text: initial,
+    aside: false,
+    read: () => store.text,
+    write: (text: string) => {
+      store.text = text
+    },
+    setAside: () => {
+      store.aside = true
+      store.text = null
+    },
+  }
+  return store
+}
+
+const track = (id: string, path: string, over: Partial<TrackOp> = {}): TrackOp => ({
+  id,
+  kind: 'track',
+  path,
+  label: path.split('/').pop() ?? path,
+  facts: null,
+  wanted: [{ id: '3000', name: 'Makina' }],
+  known: [],
+  stamps: {},
+  ...over,
+})
+
+const rename: QueueOp = {
+  id: 'e1',
+  kind: 'edit',
+  edit: { kind: 'rename', playlistId: '3000', name: 'Makina 26' },
+  stamps: {},
+  label: 'Makina',
+}
+
+const applied = (ops: QueueOp[]): BatchResult => ({
+  ok: true,
+  wrote: true,
+  outcomes: ops.map((o) => ({ id: o.id, applied: true, notices: [] })),
+})
+
+function deps(over: Partial<QueueDeps> = {}) {
+  return {
+    store: memoryStore(),
+    collection: () => '/c/master.db',
+    applyBatch: vi.fn<QueueDeps['applyBatch']>(async (_c, ops) => applied(ops)),
+    repoint: vi.fn<QueueDeps['repoint']>(async (_c, list) =>
+      list.map((): LibraryRepointResult => ({ written: true })),
+    ),
+    onChange: vi.fn<(s: RekordboxQueueState) => void>(),
+    ...over,
+  }
+}
+
+const closed = async () => true
+
+describe('rekordbox queue', () => {
+  // The spec's promise: what waits for rekordbox to close survives closing Surco.
+  it('survives a restart', () => {
+    const d = deps()
+    createRekordboxQueue(d).enqueue([track('a', '/m/a.wav')])
+    const again = createRekordboxQueue({ ...d, onChange: vi.fn() })
+    expect(again.state().tracks).toBe(1)
+  })
+
+  // Converting a track twice before rekordbox closes must leave one wish, the last one.
+  it('keeps only the latest operation for one track', () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([track('a', '/m/a.wav')])
+    q.enqueue([track('b', '/m/a.wav', { wanted: [{ name: 'Cierre' }] })])
+    expect(q.state().items).toEqual([
+      {
+        key: 'track:/m/a.wav',
+        label: 'a.wav',
+        parts: [
+          { kind: 'collection' },
+          { kind: 'playlists', names: ['Cierre'] },
+        ],
+      },
+    ])
+  })
+
+  it('counts tracks apart from tree changes, and names what happens to each', () => {
+    const q = createRekordboxQueue(deps())
+    const repoint: RekordboxRepoint = { from: '/m/b.mp3', to: '/m/b.wav' }
+    q.enqueue([track('a', '/m/a.wav', { contentId: '101' }), rename], [repoint])
+    expect(q.state()).toEqual({
+      tracks: 2,
+      changes: 1,
+      items: [
+        { key: 'track:/m/b.wav', label: 'b.wav', parts: [{ kind: 'repoint' }] },
+        { key: 'track:/m/a.wav', label: 'a.wav', parts: [{ kind: 'playlists', names: ['Makina'] }] },
+        { key: 'edit:e1', label: 'Makina', parts: [{ kind: 'tree', edit: 'rename' }] },
+      ],
+    })
+  })
+
+  it('tells the window every time the queue changes', () => {
+    const d = deps()
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    q.discard()
+    expect(d.onChange).toHaveBeenCalledTimes(2)
+    expect(d.onChange).toHaveBeenLastCalledWith({ tracks: 0, changes: 0, items: [] })
+  })
+
+  // Spec order: the conversion's repoint before the batch, so a track converted to WAV is
+  // found under its new path when its playlists are written.
+  it('applies the repoints, then the batch, and empties the queue', async () => {
+    const d = deps()
+    const q = createRekordboxQueue(d)
+    const calls: string[] = []
+    d.repoint.mockImplementation(async (_c, list) => {
+      calls.push('repoint')
+      return list.map(() => ({ written: true }))
+    })
+    d.applyBatch.mockImplementation(async (_c, ops) => {
+      calls.push('batch')
+      return applied(ops)
+    })
+    q.enqueue([track('a', '/m/b.wav')], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    expect(await q.apply(closed)).toEqual({
+      status: 'applied',
+      tracks: 1,
+      changes: 0,
+      notices: [],
+      outcomes: [{ id: 'a', applied: true, notices: [] }],
+    })
+    expect(calls).toEqual(['repoint', 'batch'])
+    expect(q.isEmpty()).toBe(true)
+  })
+
+  // A conflict is rekordbox winning: the operation is done with, and the user is told.
+  it('drops an operation the batch refused for a conflict and passes its notice on', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({
+        ok: true,
+        wrote: false,
+        outcomes: [{ id: 'e1', applied: false, reason: 'stale', notices: [] }],
+      })),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    const result = await q.apply(closed)
+    expect(result.status === 'applied' && result.notices).toEqual([
+      { code: 'edit-changed', playlist: 'Makina' },
+    ])
+    expect(q.isEmpty()).toBe(true)
+  })
+
+  // Nothing written means nothing lost: the queue waits for the next close.
+  it('keeps everything when the batch is refused', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({ ok: false, reason: 'backup-failed' })),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'backup-failed' })
+    expect(q.state().changes).toBe(1)
+  })
+
+  it('writes no batch when the repoints stop for the whole collection', async () => {
+    const d = deps({
+      repoint: vi.fn<QueueDeps['repoint']>(async () => [{ written: false, reason: 'rekordbox-running' }]),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/b.wav')], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'rekordbox-running' })
+    expect(d.applyBatch).not.toHaveBeenCalled()
+    expect(q.state().items[0].parts).toContainEqual({ kind: 'repoint' })
+  })
+
+  it('asks nothing and writes nothing when the user keeps rekordbox open', async () => {
+    const d = deps()
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/b.wav')], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
+    expect(await q.apply(async () => false)).toEqual({ status: 'refused', reason: 'cancelled' })
+    expect(d.repoint).not.toHaveBeenCalled()
+  })
+
+  // A conversion finishing while the queue applies must not be swept away by that apply.
+  it('keeps operations queued while an apply is running', async () => {
+    const d = deps()
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    d.applyBatch.mockImplementationOnce(async (_c, ops) => {
+      q.enqueue([track('b', '/m/b.wav')])
+      return applied(ops)
+    })
+    await q.apply(closed)
+    expect(q.state().items.map((i) => i.key)).toEqual(['track:/m/b.wav'])
+  })
+
+  it('never runs two applies at once', async () => {
+    const d = deps()
+    const q = createRekordboxQueue(d)
+    let inFlight = 0
+    let most = 0
+    d.applyBatch.mockImplementation(async (_c, ops) => {
+      inFlight++
+      most = Math.max(most, inFlight)
+      await new Promise((r) => setTimeout(r, 5))
+      inFlight--
+      return applied(ops)
+    })
+    q.enqueue([track('a', '/m/a.wav')])
+    await Promise.all([q.apply(closed), q.apply(closed)])
+    expect(most).toBe(1)
+  })
+
+  it('sets an unreadable file aside and starts empty', () => {
+    const store = memoryStore('{ not json')
+    const q = createRekordboxQueue(deps({ store }))
+    expect(q.isEmpty()).toBe(true)
+    expect(store.aside).toBe(true)
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueue.test.ts`
+Expected: FAIL, `Cannot find module './rekordboxQueue'`.
+
+- [ ] **Step 3: Types**
+
+In `src/main/rekordboxQueueOps.ts`, add `label?: string` to `EditOp`.
+
+Append to `src/shared/types.ts`:
+
+```ts
+export type RekordboxQueuePart =
+  | { kind: 'repoint' }
+  | { kind: 'collection' }
+  | { kind: 'playlists'; names: string[] }
+  | { kind: 'tree'; edit: RekordboxPlaylistEdit['kind'] }
+
+export interface RekordboxQueueItem {
+  key: string
+  label: string
+  parts: RekordboxQueuePart[]
+}
+
+export interface RekordboxQueueState {
+  tracks: number
+  changes: number
+  items: RekordboxQueueItem[]
+}
+
+export type RekordboxQueueApplied =
+  | { tracks: number; changes: number; notices: RekordboxQueueNotice[] }
+  | { refused: RekordboxEditRefusal }
+```
+
+- [ ] **Step 4: Implement**
+
+Create `src/main/rekordboxQueue.ts`:
+
+```ts
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { basename } from 'node:path'
+import log from 'electron-log/main'
+import type {
+  RekordboxEditRefusal,
+  RekordboxQueueItem,
+  RekordboxQueueNotice,
+  RekordboxQueueState,
+} from '../shared/types'
+import type { LibraryRepointResult } from './libraryRepointFlush'
+import type { RekordboxRepoint } from './rekordboxBatch'
+import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
+
+interface QueueFile {
+  version: 1
+  repoints: RekordboxRepoint[]
+  ops: QueueOp[]
+}
+
+export interface QueueStore {
+  read: () => string | null
+  write: (text: string) => void
+  setAside: () => void
+}
+
+export function fileStore(path: string): QueueStore {
+  return {
+    read: () => (existsSync(path) ? readFileSync(path, 'utf8') : null),
+    write: (text) => {
+      writeFileSync(`${path}.tmp`, text, 'utf8')
+      renameSync(`${path}.tmp`, path)
+    },
+    setAside: () => renameSync(path, `${path}.unreadable`),
+  }
+}
+
+export interface QueueDeps {
+  store: QueueStore
+  collection: () => string
+  applyBatch: (
+    collectionPath: string,
+    ops: QueueOp[],
+    ensureClosed: () => Promise<boolean>,
+  ) => Promise<BatchResult>
+  repoint: (collectionPath: string, repoints: RekordboxRepoint[]) => Promise<LibraryRepointResult[]>
+  onChange: (state: RekordboxQueueState) => void
+}
+
+export type QueueApply =
+  | { status: 'empty' }
+  | { status: 'refused'; reason: RekordboxEditRefusal }
+  | {
+      status: 'applied'
+      tracks: number
+      changes: number
+      notices: RekordboxQueueNotice[]
+      outcomes: OpOutcome[]
+    }
+
+export interface RekordboxQueue {
+  enqueue: (ops: QueueOp[], repoints?: RekordboxRepoint[]) => void
+  state: () => RekordboxQueueState
+  isEmpty: () => boolean
+  discard: () => void
+  apply: (ensureClosed: () => Promise<boolean>) => Promise<QueueApply>
+}
+
+const COLLECTION_WIDE: ReadonlySet<string> = new Set([
+  'rekordbox-running',
+  'backup-failed',
+  'read-only',
+  'unreadable',
+  'write-failed',
+])
+
+export function keyOf(op: QueueOp): string {
+  return op.kind === 'track' ? `track:${op.path}` : `edit:${op.id}`
+}
+
+function load(store: QueueStore): QueueFile {
+  const empty: QueueFile = { version: 1, repoints: [], ops: [] }
+  const text = store.read()
+  if (text === null) return empty
+  let parsed: QueueFile | null
+  try {
+    parsed = JSON.parse(text) as QueueFile
+  } catch {
+    parsed = null
+  }
+  if (parsed?.version === 1 && Array.isArray(parsed.ops) && Array.isArray(parsed.repoints))
+    return parsed
+  log.warn('rekordbox queue file unreadable, set aside as .unreadable')
+  store.setAside()
+  return empty
+}
+
+function stateOf(q: QueueFile): RekordboxQueueState {
+  const items = new Map<string, RekordboxQueueItem>()
+  const item = (key: string, label: string): RekordboxQueueItem => {
+    const found = items.get(key)
+    if (found) return found
+    const made: RekordboxQueueItem = { key, label, parts: [] }
+    items.set(key, made)
+    return made
+  }
+  for (const r of q.repoints) item(`track:${r.to}`, basename(r.to)).parts.push({ kind: 'repoint' })
+  for (const op of q.ops) {
+    const it = item(keyOf(op), op.kind === 'track' ? op.label : (op.label ?? ''))
+    if (op.kind === 'track') {
+      it.label = op.label
+      if (!op.contentId) it.parts.push({ kind: 'collection' })
+      it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
+    } else it.parts.push({ kind: 'tree', edit: op.edit.kind })
+  }
+  const all = [...items.values()]
+  const tracks = all.filter((i) => i.key.startsWith('track:')).length
+  return { tracks, changes: all.length - tracks, items: all }
+}
+
+export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
+  const q = load(deps.store)
+  let chain: Promise<unknown> = Promise.resolve()
+
+  const save = (): void => {
+    deps.store.write(JSON.stringify(q))
+    deps.onChange(stateOf(q))
+  }
+
+  const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })
+
+  const run = async (ensureClosed: () => Promise<boolean>): Promise<QueueApply> => {
+    if (q.repoints.length === 0 && q.ops.length === 0) return { status: 'empty' }
+    const collectionPath = deps.collection()
+    if (!collectionPath) return refused('unreadable')
+    const repoints = [...q.repoints]
+    let askBatch = ensureClosed
+    if (repoints.length > 0) {
+      if (!(await ensureClosed())) return refused('cancelled')
+      askBatch = async () => true
+      const results = await deps.repoint(collectionPath, repoints)
+      const wide = results.find((r) => !r.written && COLLECTION_WIDE.has(r.reason))
+      if (wide && !wide.written) return refused(wide.reason as RekordboxEditRefusal)
+      q.repoints = q.repoints.filter((r) => !repoints.includes(r))
+      save()
+    }
+    const ops = [...q.ops]
+    if (ops.length === 0)
+      return { status: 'applied', tracks: repoints.length, changes: 0, notices: [], outcomes: [] }
+    const result = await deps.applyBatch(collectionPath, ops, askBatch)
+    if (!result.ok) return refused(result.reason)
+    const given = new Set(ops.map((o) => o.id))
+    q.ops = q.ops.filter((o) => !given.has(o.id))
+    save()
+    const byId = new Map(ops.map((o) => [o.id, o]))
+    const notices = result.outcomes.flatMap((o) => {
+      const op = byId.get(o.id)
+      if (op?.kind === 'edit' && !o.applied && o.notices.length === 0 && o.reason !== 'nothing-to-add')
+        return [{ code: 'edit-changed' as const, playlist: op.label ?? '' }]
+      return o.notices
+    })
+    const appliedOps = result.outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
+    const tracks = new Set([
+      ...repoints.map((r) => r.to),
+      ...appliedOps.flatMap((op) => (op?.kind === 'track' ? [op.path] : [])),
+    ]).size
+    const changes = appliedOps.filter((op) => op?.kind === 'edit').length
+    return { status: 'applied', tracks, changes, notices, outcomes: result.outcomes }
+  }
+
+  return {
+    enqueue(ops, repoints = []) {
+      for (const r of repoints) {
+        const at = q.repoints.findIndex((x) => x.from === r.from)
+        if (at === -1) q.repoints.push(r)
+        else q.repoints[at] = r
+      }
+      for (const op of ops) {
+        const at = q.ops.findIndex((x) => keyOf(x) === keyOf(op))
+        if (at === -1) q.ops.push(op)
+        else q.ops[at] = op
+      }
+      save()
+    },
+    state: () => stateOf(q),
+    isEmpty: () => q.repoints.length === 0 && q.ops.length === 0,
+    discard() {
+      q.repoints = []
+      q.ops = []
+      save()
+    },
+    apply(ensureClosed) {
+      const next = chain.then(() => run(ensureClosed))
+      chain = next.catch(() => undefined)
+      return next
+    },
+  }
+}
+```
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueue.test.ts`
+Expected: PASS.
+
+- [ ] **Step 6: Mutation check**
+
+Replace `q.ops = q.ops.filter((o) => !given.has(o.id))` with `q.ops = []`: `'keeps operations queued while an apply is running'` must fail. Replace `else q.ops[at] = op` with `else q.ops.push(op)`: `'keeps only the latest operation for one track'` must fail. Restore both.
+
+- [ ] **Step 7: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxQueueOps.ts apps/desktop/src/main/rekordboxQueue.ts apps/desktop/src/main/rekordboxQueue.test.ts
+git commit -m "Keep rekordbox writes in a persistent queue and apply it as one batch"
+```
+
+---
+
