@@ -103,7 +103,11 @@ import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { trashRecoverably } from './recoverableTrash'
-import { beginRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
+import {
+  attachRekordboxPlaylists,
+  beginRekordboxBatch,
+  redirectRekordboxRepoint,
+} from './rekordboxBatch'
 import { findRekordboxCollection } from './rekordboxPath'
 import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
@@ -948,7 +952,10 @@ function registerIpc(): void {
   // Queued behind any review sync still writing, and the other way round.
   ipcMain.on('process:batch-end', (e) =>
     serialLibraryFlush(() =>
-      flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), sessions),
+      flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), sessions, {
+        enqueue: () => {},
+        applyQuietly: () => {},
+      }),
     ),
   )
 
@@ -1166,6 +1173,7 @@ function registerIpc(): void {
         )
       },
       allowMedia: (path) => mediaAccess.allow(path),
+      attachRekordboxPlaylists,
       existsSync,
       isSameFile,
       mkdir,

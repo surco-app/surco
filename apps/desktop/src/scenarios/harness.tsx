@@ -369,7 +369,12 @@ function scenarioApi(
       sessions.engine.reset()
     },
     endConversionBatch: () => {
-      flushes.push(flushConversionBatch(libraryHost(errors), sessions))
+      flushes.push(
+        flushConversionBatch(libraryHost(errors), sessions, {
+          enqueue: () => {},
+          applyQuietly: () => {},
+        }),
+      )
     },
     processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusicSends),
   }

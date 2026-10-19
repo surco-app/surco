@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import {
   abandonRekordboxBatch,
+  attachRekordboxPlaylists,
   beginRekordboxBatch,
   endRekordboxBatch,
   recordRekordboxRepoint,
@@ -155,5 +156,24 @@ describe('rekordbox batch redirecting to where the file really landed', () => {
     redirectRekordboxRepoint('/tmp/surco-x/one.mp3', '/m/one.mp3')
 
     expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/m/one.mp3', meta }])
+  })
+})
+
+describe('playlists on a repoint', () => {
+  it('attaches the wanted playlists to the repoint of the file just written', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }])
+    expect(endRekordboxBatch()).toEqual([{ ...a, playlists: [{ id: '3000', name: 'Makina' }] }])
+  })
+
+  it('keeps the playlists when Apple Music moves the file and the repoint is redirected', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachRekordboxPlaylists('/m/one.wav', [{ name: 'Bolos' }])
+    redirectRekordboxRepoint('/m/one.wav', '/Media/one.wav')
+    expect(endRekordboxBatch()).toEqual([
+      { ...a, to: '/Media/one.wav', playlists: [{ name: 'Bolos' }] },
+    ])
   })
 })

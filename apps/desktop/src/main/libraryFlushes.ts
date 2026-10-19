@@ -11,7 +11,7 @@ import { replaceEngineDuplicates } from './engineDuplicates'
 import { repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
-import { toNmlLocation } from './ffmpeg'
+import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
 import { usedByDjLibrary } from './libraryFileUse'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
@@ -23,6 +23,8 @@ import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
+import type { RekordboxQueue } from './rekordboxQueue'
+import { queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { getSettings } from './settings'
@@ -120,6 +122,7 @@ export function logLibraryFlush(label: string, result: FlushResult): void {
 export async function flushConversionBatch(
   host: LibraryHost,
   sessions: { rekordbox: SessionBackup; engine: SessionBackup },
+  queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
 ): Promise<void> {
   await flushTraktorSync({ ...traktorFlushDeps(host), endNmlBatch })
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
@@ -127,20 +130,40 @@ export async function flushConversionBatch(
   const repoints = endRekordboxBatch()
   // rekordbox next, and independently: the two collections are separate libraries, so
   // one being open or unwritable must not stop the other from being updated.
-  const result = await flushRekordboxSync({
-    ...rekordboxFlushDeps(host),
-    endBatch: () => repoints,
-    repointTracks: (collectionPath, repoints) =>
-      repointTracks(
-        collectionPath,
-        repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-        {
-          sessionBackup: (path) => sessions.rekordbox.ensure(path),
-          readCover: readEmbeddedCover,
-        },
-      ),
+  const rekordbox = rekordboxFlushDeps(host)
+  const collectionPath = currentLibraryStatus().rekordbox.found
+    ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+    : ''
+  await queueConversionRun(repoints, {
+    collectionPath,
+    repointing: rekordbox.collectionPath !== '',
+    flushRepoints: async (list) => {
+      const result = await flushRekordboxSync({
+        ...rekordbox,
+        showBlockedDialog: () => {},
+        endBatch: () => list,
+        repointTracks: (path, items) =>
+          repointTracks(
+            path,
+            items.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+            {
+              sessionBackup: (db) => sessions.rekordbox.ensure(db),
+              readCover: readEmbeddedCover,
+            },
+          ),
+      })
+      logLibraryFlush('rekordbox repoint', result)
+      return result
+    },
+    readOps: (list) =>
+      trackOpsFromRun(collectionPath, list, {
+        repointing: rekordbox.collectionPath !== '',
+        probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
+        find: { realPath: (p: string) => realpathSync(p) },
+      }),
+    enqueue: queue.enqueue,
+    apply: queue.applyQuietly,
   })
-  logLibraryFlush('rekordbox repoint', result)
   // Engine DJ last, again independently. Its library is the one the Engine destination
   // writes to.
   const engineResult = await flushEngineSync({

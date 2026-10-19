@@ -701,6 +701,7 @@ export interface ProcessJob {
   // checked against this name, never against the new tags: the copy was matched by score,
   // so the two rarely spell the same.
   replacesLabel?: string
+  rekordboxPlaylists?: RekordboxPlaylistTarget[]
 }
 
 export interface CoverExportJob {

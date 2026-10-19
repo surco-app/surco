@@ -156,6 +156,23 @@ describe('runProcessTrack — plain conversion', () => {
     const result = await runProcessTrack(job(), deps)
     expect(result.normalizeSkipped).toBe(true)
   })
+
+  it('attaches the job playlists to the file it wrote so the rekordbox batch can queue them', async () => {
+    const attachRekordboxPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({ rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] }),
+      makeDeps({ attachRekordboxPlaylists }),
+    )
+    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(result.outputPath, [
+      { id: '3000', name: 'Makina' },
+    ])
+  })
+
+  it('attaches nothing when the field was never touched', async () => {
+    const attachRekordboxPlaylists = vi.fn()
+    await runProcessTrack(job(), makeDeps({ attachRekordboxPlaylists }))
+    expect(attachRekordboxPlaylists).not.toHaveBeenCalled()
+  })
 })
 
 // A row whose tag read failed carries a name-parsed title and artist and nothing else. It
