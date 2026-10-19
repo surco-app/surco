@@ -370,9 +370,6 @@
     "exportUsb": "Export to USB…"
   },
   "trackList": {
-    "cuesUnanalysed": "not analysed",
-    "cuesNone": "no cues",
-    "cuesPendingNone": "Cues waiting for rekordbox",
     "cuesAria_one": "{{count}} hot cue",
     "cuesAria_other": "{{count}} hot cues",
     "cuesAriaPending_one": "{{count}} hot cue waiting for rekordbox",

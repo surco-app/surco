@@ -12,6 +12,7 @@ const api = {
   startTrackDrag: vi.fn(),
   pathAliases: vi.fn(async (paths: string[]) => paths),
   getPathForFile: vi.fn((f: File) => `/music/${f.name}`),
+  rowWaves: vi.fn(async () => ({})),
 }
 vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {}
@@ -24,6 +25,7 @@ import i18n from '../i18n'
 import { trackSignature } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { clearDraggedRows, draggedRows } from '../lib/reorderDrag'
+import { resetRowWaves } from '../lib/rowWaves'
 import * as triage from '../lib/triage'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import type { TrackItem } from '../types'
@@ -38,6 +40,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 afterEach(cleanup)
+afterEach(resetRowWaves)
 beforeAll(installDragEvent)
 afterEach(clearDraggedRows)
 
@@ -99,6 +102,7 @@ function renderList(
     separatorBefore,
     trailingSeparators,
     reorder,
+    pendingCuePaths,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -109,6 +113,7 @@ function renderList(
       onMove: (keys: string[], beforeKey: string | null) => void
       onRemoveSeparator: (key: string) => void
     }
+    pendingCuePaths?: ReadonlySet<string>
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -141,6 +146,7 @@ function renderList(
       separatorBefore={separatorBefore}
       trailingSeparators={trailingSeparators}
       reorder={reorder}
+      pendingCuePaths={pendingCuePaths}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -201,7 +207,7 @@ describe('TrackList', () => {
   it('shows the track title and artist', () => {
     renderList([track({ id: 'a', meta: { title: 'Song A', artist: 'Artist A' } })])
     expect(screen.getByText('Song A')).toBeInTheDocument()
-    expect(screen.getByText('Artist A')).toBeInTheDocument()
+    expect(screen.getByTestId('track-artist')).toHaveTextContent('Artist A')
   })
 
   // A high-confidence auto-match shows the applied sparkle; a review-tier one shows a
@@ -269,16 +275,15 @@ describe('TrackList', () => {
   it('falls back to the file name and a no-artist label when metadata is empty', () => {
     renderList([track({ id: 'untitled' })])
     expect(screen.getByText('untitled.wav')).toBeInTheDocument()
-    expect(screen.getByText('No artist')).toBeInTheDocument()
+    expect(screen.getByTestId('track-artist')).toHaveTextContent('No artist')
   })
 
   // Title and artist truncate in the narrow column, but they shared the row through two
   // separate tooltips that could both show as the pointer crossed between the stacked
-  // lines. Each line carries the same tooltip, scoped to its own text — not the flex-1
-  // layout slot, which stretches past a short title and used to fire the tooltip across the
-  // empty tail. Hovering either the frozen label or the artist reveals both; the two never
-  // double up because a width-fit title and a width-fit artist don't overlap.
-  it('reveals the label and artist by hovering either text line', () => {
+  // lines. Title and artist now share one line and one tooltip, scoped to their text — not
+  // the flex-1 layout slot, which stretches past a short title and used to fire the tooltip
+  // across the empty tail. Hovering either the frozen label or the artist reveals both.
+  it('reveals the label and artist by hovering either the title or the artist', () => {
     renderList([
       track({
         id: 'a',
@@ -291,7 +296,7 @@ describe('TrackList', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name · Boards of Canada')
     fireEvent.focusOut(titleTrigger)
 
-    const artistTrigger = screen.getByText('Boards of Canada')
+    const artistTrigger = screen.getByTestId('track-artist')
     fireEvent.focusIn(artistTrigger)
     expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name · Boards of Canada')
   })
@@ -433,10 +438,7 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-duration')).toHaveTextContent('4:47')
   })
 
-  // Six fixed columns on the artist line left the artist ~68px of a 290px sidebar
-  // ("DJ Miguel…"). The duration moves up beside the title, the way Mail puts the time
-  // beside the sender, and the format pill sits under it as one trailing column.
-  it('puts the duration on the title line and the format under it', () => {
+  it('puts title, artist, duration and format on one line and the wave under it, as rekordbox does', () => {
     renderList([
       track({
         id: 'a',
@@ -444,17 +446,39 @@ describe('TrackList', () => {
         fileName: 'a',
         duration: 287,
         meta: { title: 'Dance 4 Me', artist: 'DJ Miguel' } as TrackMetadata,
+        sourcePreview: {
+          title: 'Dance 4 Me',
+          artist: 'DJ Miguel',
+          durationSec: 287,
+          cues: [{ ms: 1000, kind: 1 }],
+        },
       }),
     ])
-    expect(screen.getByTestId('track-title-line')).toContainElement(
-      screen.getByTestId('track-duration'),
+    const line = screen.getByTestId('track-title-line')
+    expect(line).toContainElement(screen.getByTestId('track-artist'))
+    expect(line).toContainElement(screen.getByTestId('track-duration'))
+    expect(line).toContainElement(screen.getByTestId('track-format'))
+    expect(screen.getByTestId('track-artist')).toHaveTextContent('DJ Miguel')
+    expect(screen.getByTestId('track-wave-line')).toContainElement(
+      screen.getByTestId('track-hot-cue'),
     )
-    expect(screen.getByTestId('track-detail-line')).toContainElement(
-      screen.getByTestId('track-format'),
-    )
-    expect(screen.getByTestId('track-detail-line')).not.toContainElement(
-      screen.getByTestId('track-duration'),
-    )
+  })
+
+  it('keeps the wave line for a row with no wave, so the list does not jump', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.getByTestId('track-wave-line')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-wave-bars')).toBeNull()
+  })
+
+  it('draws the cues of a track waiting for rekordbox hollow', () => {
+    const t = track({
+      id: 'a',
+      inputPath: '/music/a.mp3',
+      duration: 200,
+      sourcePreview: { title: 'A', artist: '', durationSec: 200, cues: [{ ms: 1000, kind: 1 }] },
+    })
+    renderList([t], null, [], { pendingCuePaths: new Set(['/music/a.mp3']) })
+    expect(screen.getByTestId('track-wave')).toHaveAttribute('data-pending', 'true')
   })
 
   it('omits the duration until it has been probed', () => {

@@ -14,7 +14,6 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
-  CueSummary,
   DeclickConfig,
   DockIconFrames,
   DuplicatePair,
@@ -210,7 +209,6 @@ export interface Api {
   discardRekordboxQueue: () => Promise<void>
   rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
-  rekordboxCueSummary: (contentIds: string[]) => Promise<Record<string, CueSummary>>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>

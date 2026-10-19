@@ -27,7 +27,6 @@ import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { activeCleanups } from '../lib/autoClean'
-import type { CueSwatch } from '../lib/cueSwatches'
 import { isStale } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { formatTime } from '../lib/duration'
@@ -48,17 +47,16 @@ import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
-import { CueSwatches } from './CueSwatches'
 import {
   CoverPlaceholder,
   listRowClass,
   PILL_TEXT,
-  ROW_DETAIL,
   ROW_TITLE,
   ROW_TRAILING,
   ToneBadge,
   TonePill,
 } from './ListRow'
+import { RowWave } from './RowWave'
 import { Tooltip } from './Tooltip'
 
 const isMac = isMacOS()
@@ -99,7 +97,7 @@ interface Props {
   // When each file was last backed up (lib/trashView latestBackupByPath), so a row can
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
-  cueSwatches?: ReadonlyMap<string, CueSwatch>
+  pendingCuePaths?: ReadonlySet<string>
   onOpenBackup?: (track: TrackItem) => void
   // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
   duplicateRankById?: ReadonlyMap<string, DuplicateRank>
@@ -331,7 +329,7 @@ interface RowProps {
   onVisible?: (id: string, visible: boolean) => void
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
   backupAt?: number
-  cueSwatch?: CueSwatch
+  cuesPending: boolean
   onOpenBackup?: (track: TrackItem) => void
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
@@ -363,7 +361,7 @@ const TrackRow = memo(function TrackRow({
   onVisible,
   rowRegistry,
   backupAt,
-  cueSwatch,
+  cuesPending,
   onOpenBackup,
   duplicate,
   outsideFilter,
@@ -527,7 +525,7 @@ const TrackRow = memo(function TrackRow({
         // min-h-0 lets the slot's grid row actually shrink; overflow-hidden only while
         // collapsing, so it never clips the row the rest of its life.
         className={`group relative min-h-0 ${removing ? 'overflow-hidden' : ''} ${
-          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]' : ''
+          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_68px]' : ''
         }`}
         draggable
         onWheel={onSwipeWheel}
@@ -669,12 +667,12 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+                className={`h-12 w-12 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
             ) : (
-              <CoverPlaceholder testid="track-cover-placeholder" round={converting} />
+              <CoverPlaceholder testid="track-cover-placeholder" round={converting} large />
             )}
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />
@@ -685,166 +683,164 @@ const TrackRow = memo(function TrackRow({
           {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
               what the row shows) is scoped to the text itself, not this flex-1 layout slot:
               anchored to the slot, it fired across the whole empty tail to the right of a
-              short title. Each text line carries its own copy, each width-fit to its words, so
-              hovering the gap beside the text raises nothing. The two never double up — a fit
-              title and a fit artist don't overlap, and the vertical gap between the stacked
-              lines belongs to neither. */}
-          <span data-fit className="relative min-w-0 flex-1">
+              short title. The title and its artist share one copy, width-fit to their words, so
+              hovering the gap beside the text, or the wave under it, raises nothing. */}
+          <span data-fit className="relative flex min-w-0 flex-1 flex-col gap-[3px]">
             {/* The duration rides the title line, the way Mail puts the time beside the
                 sender: on the artist line it was one of six fixed columns that left the
                 artist a few letters. */}
-            <span data-testid="track-title-line" className="flex items-center gap-2">
+            <span data-testid="track-title-line" className="flex h-5 items-center gap-2">
               <span className="relative block min-w-0 flex-1 truncate">
                 <span className={ROW_TITLE}>
                   <Tooltip label={rowTooltip(t, tr)} />
                   {shown.title}
+                  <span data-testid="track-artist" className="font-normal text-fg-dim">
+                    {` · ${shown.artist || tr('trackList.noArtist')}`}
+                  </span>
                 </span>
               </span>
-              {cueSwatch && <CueSwatches summary={cueSwatch.summary} pending={cueSwatch.pending} />}
-              <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
+              {/* A failed tag read leaves the row showing only its file-name parse; the mark
+                    tells that apart from a file that genuinely carries no tags. */}
+              {t.metaReadFailed && (
+                <span
+                  data-testid="track-meta-failed"
+                  className="group/dot relative flex shrink-0 items-center text-warn"
+                >
+                  <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+                  <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
+                  <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
+                </span>
+              )}
+              {backupAt !== undefined && (
+                <span
+                  data-testid="track-backup"
+                  data-backup-mark
+                  className="group/dot relative flex shrink-0 items-center text-fg-faint"
+                >
+                  <Undo2 className="h-3 w-3" aria-hidden="true" />
+                  <Tooltip label={backupLabel} align="end" scope="dot" />
+                  <span className="sr-only">{backupLabel}</span>
+                </span>
+              )}
+              {t.autoMatched ? (
+                <span
+                  data-testid="track-automatched"
+                  data-confidence="high"
+                  className="group/dot relative flex shrink-0 items-center text-fg-dim"
+                >
+                  <Spark />
+                  <Tooltip label={autoMatchLabel} align="end" scope="dot" />
+                  <span className="sr-only">{autoMatchLabel}</span>
+                </span>
+              ) : (
+                reviewPending && <span className="w-3 shrink-0" />
+              )}
+              {cleaned && (
+                <span
+                  data-testid="track-cleaned"
+                  className="group/dot relative flex shrink-0 items-center text-good"
+                >
+                  <CleanSpark />
+                  <Tooltip label={tr('trackList.cleaned')} align="end" scope="dot" />
+                  <span className="sr-only">{tr('trackList.cleaned')}</span>
+                </span>
+              )}
+              {duplicate && (
+                <span
+                  data-testid="track-duplicate"
+                  data-rank={duplicate.rank}
+                  className={`group/dot relative flex shrink-0 items-center ${duplicate.rank === 'best' ? 'text-good' : 'text-fg-faint'}`}
+                >
+                  {duplicate.rank === 'best' ? (
+                    <CopyCheck className="h-3 w-3" aria-hidden="true" />
+                  ) : duplicate.rank === 'worse' ? (
+                    <Copy className="h-3 w-3" aria-hidden="true" />
+                  ) : (
+                    <CopyMinus className="h-3 w-3" aria-hidden="true" />
+                  )}
+                  <Tooltip label={duplicateLabel} align="end" scope="dot" />
+                  <span className="sr-only">{duplicateLabel}</span>
+                </span>
+              )}
+              <span data-testid="track-duration-slot" className={`w-[44px] ${ROW_TRAILING}`}>
                 {shown.duration !== undefined && (
                   <span data-testid="track-duration">{formatTime(shown.duration)}</span>
                 )}
               </span>
-            </span>
-            {shown.waiting ? (
-              <span
-                data-testid="track-loading"
-                className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
-              />
-            ) : converting ? (
-              <span data-testid="track-stage" className="mt-0.5 block">
-                <span className="block truncate text-xs text-[var(--color-accent)]">
-                  {tr(`trackList.stage.${stage}`, {
-                    format: (t.format ?? outputFormat).toUpperCase(),
-                  })}
-                </span>
-                {/* Text, not role="progressbar": an option's children are presentational,
-                    so a nested role would be flattened away and the amount never spoken. */}
-                <span className="sr-only">
-                  {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
-                </span>
-              </span>
-            ) : (
-              <span data-testid="track-detail-line" className="flex items-center gap-2">
-                <span className={ROW_DETAIL}>
-                  <span className="relative block w-fit max-w-full truncate">
-                    <Tooltip label={rowTooltip(t, tr)} />
-                    {shown.artist || tr('trackList.noArtist')}
-                  </span>
-                </span>
-                {/* A failed tag read leaves the row showing only its file-name parse; the mark
-                    tells that apart from a file that genuinely carries no tags. */}
-                {t.metaReadFailed && (
-                  <span
-                    data-testid="track-meta-failed"
-                    className="group/dot relative flex shrink-0 items-center text-warn"
-                  >
-                    <TriangleAlert className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
-                    <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
-                  </span>
-                )}
-                {backupAt !== undefined && (
-                  <span
-                    data-testid="track-backup"
-                    data-backup-mark
-                    className="group/dot relative flex shrink-0 items-center text-fg-faint"
-                  >
-                    <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={backupLabel} align="end" scope="dot" />
-                    <span className="sr-only">{backupLabel}</span>
-                  </span>
-                )}
-                {t.autoMatched ? (
-                  <span
-                    data-testid="track-automatched"
-                    data-confidence="high"
-                    className="group/dot relative flex shrink-0 items-center text-fg-dim"
-                  >
-                    <Spark />
-                    <Tooltip label={autoMatchLabel} align="end" scope="dot" />
-                    <span className="sr-only">{autoMatchLabel}</span>
-                  </span>
-                ) : (
-                  reviewPending && <span className="w-3 shrink-0" />
-                )}
-                {cleaned && (
-                  <span
-                    data-testid="track-cleaned"
-                    className="group/dot relative flex shrink-0 items-center text-good"
-                  >
-                    <CleanSpark />
-                    <Tooltip label={tr('trackList.cleaned')} align="end" scope="dot" />
-                    <span className="sr-only">{tr('trackList.cleaned')}</span>
-                  </span>
-                )}
-                {duplicate && (
-                  <span
-                    data-testid="track-duplicate"
-                    data-rank={duplicate.rank}
-                    className={`group/dot relative flex shrink-0 items-center ${duplicate.rank === 'best' ? 'text-good' : 'text-fg-faint'}`}
-                  >
-                    {duplicate.rank === 'best' ? (
-                      <CopyCheck className="h-3 w-3" aria-hidden="true" />
-                    ) : duplicate.rank === 'worse' ? (
-                      <Copy className="h-3 w-3" aria-hidden="true" />
-                    ) : (
-                      <CopyMinus className="h-3 w-3" aria-hidden="true" />
-                    )}
-                    <Tooltip label={duplicateLabel} align="end" scope="dot" />
-                    <span className="sr-only">{duplicateLabel}</span>
-                  </span>
-                )}
-                {/* A fixed slot, right-aligned under the duration, so the two read as one
+              {/* A fixed slot, right-aligned beside the duration, so the two read as one
                     trailing column and the review sparkle's place never moves. Wide enough for
                     the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
-                <span
-                  data-testid="track-format-slot"
-                  className="flex w-[46px] shrink-0 justify-end"
-                >
-                  {quality !== 'unanalyzed' ? (
-                    <QualityPill
-                      verdict={quality}
-                      format={format}
-                      label={tr(qualityLabel[quality])}
-                    />
-                  ) : t.analyzing ? (
+              <span data-testid="track-format-slot" className="flex w-[46px] shrink-0 justify-end">
+                {quality !== 'unanalyzed' ? (
+                  <QualityPill
+                    verdict={quality}
+                    format={format}
+                    label={tr(qualityLabel[quality])}
+                  />
+                ) : t.analyzing ? (
+                  <span
+                    data-testid="track-quality-loading"
+                    className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
+                  >
+                    {format ? (
+                      <span className="text-[10px] font-semibold leading-4">{format}</span>
+                    ) : (
+                      <span className="h-2 w-2 rounded-full ring-[1.5px] ring-current ring-inset" />
+                    )}
+                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                  </span>
+                ) : (
+                  format && (
                     <span
-                      data-testid="track-quality-loading"
-                      className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
+                      data-testid="track-format"
+                      className="text-[10px] font-medium leading-4 text-fg-dim"
                     >
-                      {format ? (
-                        <span className="text-[10px] font-semibold leading-4">{format}</span>
-                      ) : (
-                        <span className="h-2 w-2 rounded-full ring-[1.5px] ring-current ring-inset" />
-                      )}
-                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                      {format}
                     </span>
-                  ) : (
-                    format && (
-                      <span
-                        data-testid="track-format"
-                        className="text-[10px] font-medium leading-4 text-fg-dim"
-                      >
-                        {format}
-                      </span>
-                    )
-                  )}
-                </span>
+                  )
+                )}
               </span>
-            )}
+            </span>
+            <span data-testid="track-wave-line" className="block h-[28px]">
+              {shown.waiting ? (
+                <span
+                  data-testid="track-loading"
+                  className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
+                />
+              ) : converting ? (
+                <span data-testid="track-stage" className="mt-0.5 block">
+                  <span className="block truncate text-xs text-[var(--color-accent)]">
+                    {tr(`trackList.stage.${stage}`, {
+                      format: (t.format ?? outputFormat).toUpperCase(),
+                    })}
+                  </span>
+                  {/* Text, not role="progressbar": an option's children are presentational,
+                    so a nested role would be flattened away and the amount never spoken. */}
+                  <span className="sr-only">
+                    {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
+                  </span>
+                </span>
+              ) : (
+                <RowWave
+                  request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
+                  cues={t.sourcePreview?.cues ?? []}
+                  durationSec={shown.duration}
+                  pending={cuesPending}
+                />
+              )}
+            </span>
           </span>
         </button>
         {/* A review-tier suggestion the user hasn't acted on yet: amber, distinct from the
             applied accent sparkle, and gone the moment the track is actually matched. A
             sibling of the row button, not a child, since a button inside the option button
             is invalid and folds the action into the row's name. It is placed over the empty
-            slot the artist line keeps for it before the pill: that slot ends 64px from the
-            right edge (the row padding, the 46px pill slot and its gap), and its centre sits
-            17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
-            so the 12px glyph lands where the slot would have drawn it. Shown under the same
-            conditions as that line. */}
+            slot the title line keeps for it before the duration: that slot ends 116px from the
+            right edge (the 10px row padding, the 46px pill slot, its 8px gap, the 44px
+            duration slot and its 8px gap), so its centre is 122px in, and it sits 18px down
+            from the top (the 8px padding and half the 20px line). The button is a 24px target
+            (WCAG 2.5.8) centred there, at 110px and 6px, so the 12px glyph lands where the
+            slot would have drawn it. Hidden while the file is read or converted. */}
         {!t.loadingMeta && !converting && reviewPending && swipe === 0 && (
           <button
             type="button"
@@ -852,7 +848,7 @@ const TrackRow = memo(function TrackRow({
             data-confidence="review"
             aria-label={tr('commands.acceptReview')}
             onClick={() => onAcceptReview(t.id)}
-            className="group/dot press absolute right-[58px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
+            className="group/dot press absolute right-[110px] top-[6px] flex h-6 w-6 items-center justify-center text-warn"
           >
             <Spark />
             <Tooltip
@@ -877,9 +873,9 @@ const TrackRow = memo(function TrackRow({
             // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
             // layers inside the scroller are a known compositor jank source. A slightly
             // denser plain fill keeps the glyph readable over any cover.
-            className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-opacity pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
+            className="absolute top-1/2 left-3 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-opacity pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
           >
-            <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+            <Play className="h-5 w-5 fill-current" aria-hidden="true" />
           </button>
         )}
         {/* What the swipe uncovers, in the strip the row slid out of. Grey, not Mail's red:
@@ -931,7 +927,7 @@ export const TrackList = memo(function TrackList({
   onVisible,
   rowRegistry,
   backupAtByPath,
-  cueSwatches,
+  pendingCuePaths,
   onOpenBackup,
   duplicateRankById,
   outsideFilter,
@@ -1198,7 +1194,7 @@ export const TrackList = memo(function TrackList({
               onVisible={onVisible}
               rowRegistry={rowRegistry}
               backupAt={backupAtByPath?.get(t.inputPath)}
-              cueSwatch={cueSwatches?.get(t.id)}
+              cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
               onOpenBackup={onOpenBackup}
               duplicate={duplicateRankById?.get(t.id)}
               outsideFilter={outsideFilter?.has(t.id) ?? false}

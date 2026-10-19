@@ -86,7 +86,6 @@ describe('useRekordboxQueue', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['source-playlist'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-queued-cues'] })
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-cue-summary'] })
   })
 
   it('hands back what landed so the fields the collection now holds are cleared', async () => {

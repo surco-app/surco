@@ -28,18 +28,20 @@ export const PILL_TEXT = 'text-[10px] font-semibold leading-4'
 export function CoverPlaceholder({
   testid,
   round = false,
+  large = false,
 }: {
   testid: string
   round?: boolean
+  large?: boolean
 }): React.JSX.Element {
   return (
     <span
       data-testid={testid}
-      className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+      className={`flex ${large ? 'h-12 w-12' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
         round ? 'rounded-full' : 'rounded-md'
       }`}
     >
-      <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
+      <Music className={`${large ? 'h-5 w-5' : 'h-3.5 w-3.5'} text-fg-faint`} aria-hidden="true" />
     </span>
   )
 }

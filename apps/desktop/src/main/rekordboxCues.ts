@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRules'
-import type { CueSummary, CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
+import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, colorWaveSpanMs, phrases, wavePreview } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
@@ -109,43 +109,6 @@ export function readTrackCues(
   if (!analysis) return { ...base, analysed: false, grid: [], strong: [], wave: null }
   const { spanMs, ...found } = analysis
   return { ...base, durationMs: spanMs ?? base.durationMs, analysed: true, ...found }
-}
-
-function hasGrid(shareDir: string, analysisPath: string | null): boolean {
-  if (!analysisPath) return false
-  try {
-    const datPath = resolve(shareDir, `.${analysisPath}`)
-    if (!insideShare(shareDir, datPath)) return false
-    const dat = read(datPath)
-    return dat !== null && beatGrid(dat).length > 0
-  } catch {
-    return false
-  }
-}
-
-export function cueSummaries(
-  db: Db,
-  shareDir: string,
-  contentIds: string[],
-): Record<string, CueSummary> {
-  const row = db.prepare(
-    `SELECT AnalysisDataPath FROM djmdContent
-      WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-  )
-  const cues = liveCuesQuery(db)
-  const out: Record<string, CueSummary> = {}
-  for (const id of contentIds) {
-    const found = row.get(id) as { AnalysisDataPath: string | null } | undefined
-    if (!found) continue
-    out[id] = {
-      analysed: hasGrid(shareDir, found.AnalysisDataPath),
-      hot: cues(id)
-        .filter((c) => c.kind !== 0)
-        .sort((a, b) => a.ms - b.ms)
-        .map((c) => ({ ms: c.ms, color: c.color })),
-    }
-  }
-  return out
 }
 
 const CUE_JSON_KEYS = [

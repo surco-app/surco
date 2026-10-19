@@ -40,7 +40,6 @@ describe('registerRekordboxCuesIpc', () => {
       applyQuietly: vi.fn(),
     })
     expect(handler('rekordbox:trackCues')({}, '103')).toBeNull()
-    expect(handler('rekordbox:cueSummary')({}, ['103'])).toEqual({})
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
   })
 
