@@ -15,6 +15,7 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
 })
 
 import type { SourcePlaylistEntry } from '../shared/types'
+import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
@@ -24,6 +25,7 @@ import {
 } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { createRekordboxQueue, type RekordboxQueue } from './rekordboxQueue'
+import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 
 describe('withCollection', () => {
   it('falls back when there is no collection, the normal case for a user without rekordbox', () => {
@@ -148,6 +150,29 @@ describe('registerRekordboxPlaylistsIpc', () => {
     vi.mocked(openRekordboxDb).mockClear()
     await handler('rekordbox:tree')()
     await handler('rekordbox:hasSeparator')()
+    expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
+      [path, { readonly: true, key }],
+      [path, { readonly: true, key }],
+    ])
+  })
+
+  it('reads a track opened in the editor, its cues and its playlists, with the stretched key, since the two back to back held the main process for 210 ms', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const queue = queueFor(path)
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+      applyQuietly: vi.fn(),
+    })
+    registerRekordboxQueueIpc(queue, {
+      collection: () => path,
+      ensureClosed: vi.fn(async () => true),
+    })
+    const key = await rekordboxRawKey(path)
+    vi.mocked(openRekordboxDb).mockClear()
+    await Promise.resolve(handler('rekordbox:trackCues')({}, 'c1')).catch(() => null)
+    await Promise.resolve(handler('rekordbox:membership')({}, ['/m/a.wav'])).catch(() => null)
     expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
       [path, { readonly: true, key }],
       [path, { readonly: true, key }],

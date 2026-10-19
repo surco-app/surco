@@ -3,7 +3,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { RekordboxQueueApplied } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { readMembership } from './rekordboxMembership'
-import { withCollection } from './rekordboxPlaylistsIpc'
+import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { stillWaiting } from './rekordboxQueueWatch'
 
@@ -42,11 +42,13 @@ export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcH
   )
   ipcMain.handle('rekordbox:discardQueue', () => queue.discard())
   ipcMain.handle('rekordbox:queueReady', () => host.onReady?.())
-  ipcMain.handle('rekordbox:membership', (_e, paths: string[]) =>
-    withCollection(
-      host.collection(),
+  ipcMain.handle('rekordbox:membership', async (_e, paths: string[]) => {
+    const path = host.collection()
+    return withCollection(
+      path,
       (db) => readMembership(db, paths, { realPath: (p: string) => realpathSync(p) }),
       {},
-    ),
-  )
+      await keyOf(path),
+    )
+  })
 }

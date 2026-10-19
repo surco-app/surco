@@ -33,13 +33,13 @@ describe('registerRekordboxCuesIpc', () => {
     expect(applyQuietly).toHaveBeenCalled()
   })
 
-  it('reads nothing without a collection', () => {
+  it('reads nothing without a collection', async () => {
     registerRekordboxCuesIpc({
       collection: () => '',
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly: vi.fn(),
     })
-    expect(handler('rekordbox:trackCues')({}, '103')).toBeNull()
+    expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
   })
 

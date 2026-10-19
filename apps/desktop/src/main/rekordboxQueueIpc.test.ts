@@ -119,11 +119,11 @@ describe('registerRekordboxQueueIpc', () => {
     expect(handler('rekordbox:queue')()).toEqual({ tracks: 1, changes: 0, items: [] })
   })
 
-  it('answers no membership without a collection', () => {
+  it('answers no membership without a collection', async () => {
     registerRekordboxQueueIpc(queue(), {
       collection: () => '',
       ensureClosed: vi.fn(async () => true),
     })
-    expect(handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
+    expect(await handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
   })
 })

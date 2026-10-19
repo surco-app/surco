@@ -64,7 +64,7 @@ function editStamps(collectionPath: string, edit: RekordboxPlaylistEdit): Record
   return stamp === undefined ? {} : { [edit.playlistId]: stamp }
 }
 
-async function keyOf(path: string): Promise<string | undefined> {
+export async function keyOf(path: string): Promise<string | undefined> {
   return path ? rekordboxRawKey(path).catch(() => undefined) : undefined
 }
 

@@ -4,7 +4,7 @@ import type { SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readTrackCues } from './rekordboxCues'
-import { withCollection } from './rekordboxPlaylistsIpc'
+import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import type { RekordboxQueue } from './rekordboxQueue'
 
 export function registerRekordboxCuesIpc(host: {
@@ -12,9 +12,14 @@ export function registerRekordboxCuesIpc(host: {
   queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
   applyQuietly: () => void
 }): void {
-  ipcMain.handle('rekordbox:trackCues', (_e, contentId: string) => {
+  ipcMain.handle('rekordbox:trackCues', async (_e, contentId: string) => {
     const path = host.collection()
-    return withCollection(path, (db) => readTrackCues(db, rekordboxShareDir(path), contentId), null)
+    return withCollection(
+      path,
+      (db) => readTrackCues(db, rekordboxShareDir(path), contentId),
+      null,
+      await keyOf(path),
+    )
   })
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
