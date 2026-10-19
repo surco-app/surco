@@ -1440,6 +1440,8 @@ export interface UsbVolume {
   freeBytes: number
   holder: UsbHolder
   remembered: UsbRemembered | null
+  // Master IDs of the playlists the stick's playlists3.sync ticks; null without one.
+  stickPlaylists: string[] | null
 }
 
 export type UsbTarget = { kind: 'volume'; uuid: string } | { kind: 'folder'; path: string }
@@ -1473,6 +1475,11 @@ export type UsbWarning =
   | { kind: 'cdj2000'; titles: string[] }
   | { kind: 'unexportable'; tracks: { title: string; reason: UsbUnexportableReason }[] }
   | { kind: 'noSpace'; neededBytes: number; freeBytes: number }
+  // The volume's name (/Volumes/<name>, or E: and \\server\share on Windows) and how many
+  // selected tracks are on it.
+  | { kind: 'sourcesUnreachable'; volume: string; tracks: number }
+  | { kind: 'rekordboxOpen' }
+  | { kind: 'emptyPlaylist'; names: string[] }
 
 export interface UsbPlan {
   tracks: UsbPlanTrack[]
@@ -1507,6 +1514,12 @@ export type UsbFailure =
   | 'device-write'
   | 'no-space'
   | 'busy'
+  | 'rekordbox-open'
+  | 'sources-unreachable'
+  | 'playlist-empty'
+  | 'source-lost'
+  // The stick's playlists3.sync already uses the last playlist id a new one could take.
+  | 'sync-files'
 
 export type UsbPlanResult = { ok: true; plan: UsbPlan } | { ok: false; reason: UsbFailure }
 
@@ -1531,6 +1544,15 @@ export type UsbExportEvent =
   | { type: 'failed'; index: number; reason: UsbTrackFailure }
   | { type: 'cancelling' }
   | { type: 'database' }
-  | { type: 'finished'; outcome: 'done'; tracks: number; failed: number; ms: number }
+  // syncFiles false: the library on the stick is new, but rekordbox's playlists3.sync and
+  // playlists3Plus.sync could not be written.
+  | {
+      type: 'finished'
+      outcome: 'done'
+      tracks: number
+      failed: number
+      ms: number
+      syncFiles: boolean
+    }
   | { type: 'finished'; outcome: 'cancelled' }
   | { type: 'finished'; outcome: 'error'; reason: UsbFailure }

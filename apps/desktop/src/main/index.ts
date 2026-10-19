@@ -878,6 +878,7 @@ function registerIpc(): void {
         appPath: app.getAppPath(),
         exists: existsSync,
       }),
+    ensureRekordboxClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs

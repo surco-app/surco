@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { UsbExportEvent, UsbExportRequest, UsbVolume } from '../shared/types'
 import type { BakenEvent, BakenHandle } from './bakenRun'
-import { createUsbExporter, failureReason, type UsbExporterDeps } from './usbExport'
+import { type MasterIdentity, STALE_STICK_FILES, syncFileText } from './rekordboxStickSync'
+import { createUsbExporter, failureReason, sourceRoot, type UsbExporterDeps } from './usbExport'
 import { createUsbMemory, type UsbMemory } from './usbExportMemory'
 import type { ExportSelection, ExportTrack } from './usbExportSource'
 import type { Stage } from './usbExportStage'
@@ -76,6 +77,7 @@ const volume = (over: Partial<UsbVolume> = {}): UsbVolume => ({
   freeBytes: 20e9,
   holder: { by: 'empty', at: null },
   remembered: null,
+  stickPlaylists: null,
   ...over,
 })
 
@@ -116,6 +118,10 @@ let sent: UsbExportEvent[]
 let calls: string[][]
 let cancels: number
 let logged: string[]
+let removed: string[]
+let writes: [string, string][]
+
+const IDENTITY: MasterIdentity = { dbId: 3942308644, myTagMasterDbId: 7, myTags: [], fileSizes: {} }
 
 beforeEach(async () => {
   memory = createUsbMemory(join(await mkdtemp(join(tmpdir(), 'usb-exp-')), 'usb-exports.json'))
@@ -123,6 +129,8 @@ beforeEach(async () => {
   calls = []
   cancels = 0
   logged = []
+  removed = []
+  writes = []
 })
 
 const dryPlan: Script = async (emit) => emit(PLAN)
@@ -169,6 +177,18 @@ function deps(
     fileSize: async () => 35,
     pdbFacts: async () => ({ size: 9, mtimeMs: 5 }),
     log: (m) => logged.push(m),
+    rekordboxRunning: async () => false,
+    ensureRekordboxClosed: async () => true,
+    exists: async () => true,
+    readText: async () => null,
+    writeAtomic: async (path, text) => {
+      writes.push([path, text])
+    },
+    removeFile: async (path) => {
+      removed.push(path)
+    },
+    identity: () => IDENTITY,
+    masterPlaylistsXml: async () => null,
     pollMs: 2,
     devPollMs: 2,
     run: (_cmd, args, onEvent): BakenHandle => {
@@ -207,6 +227,19 @@ const finished = async () => {
   return sent.find((e) => e.type === 'finished')
 }
 const realCalls = () => calls.filter((a) => !a.includes('--dry-run'))
+
+const happy: Script = async (emit) => {
+  emit(PLAN)
+  emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+  await tick(20)
+  emit({ event: 'written', index: 0, kept: false })
+  emit({ event: 'start', index: 1, usbPath: '/Contents/U/B/_.mp3', size: 5 })
+  emit({ event: 'written', index: 1, kept: true })
+  emit({ event: 'start', index: 2, usbPath: '/Contents/A/UnknownAlbum/102.wav', size: 30 })
+  emit({ event: 'written', index: 2, kept: true })
+  emit({ event: 'database' })
+  emit(REPORT)
+}
 
 describe('plan', () => {
   it('asks baken for a dry run and summarises what it would copy, separators not counted', async () => {
@@ -341,9 +374,9 @@ describe('staging', () => {
     })
     const ex = createUsbExporter({
       ...base,
-      stage: (sel, dir, root) => {
+      stage: (sel, dir, root, stick) => {
         roots.push(root)
-        return base.stage(sel, dir, root)
+        return base.stage(sel, dir, root, stick)
       },
     })
     await ex.plan(REQ)
@@ -374,19 +407,6 @@ describe('staging', () => {
 })
 
 describe('start', () => {
-  const happy: Script = async (emit) => {
-    emit(PLAN)
-    emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
-    await tick(20)
-    emit({ event: 'written', index: 0, kept: false })
-    emit({ event: 'start', index: 1, usbPath: '/Contents/U/B/_.mp3', size: 5 })
-    emit({ event: 'written', index: 1, kept: true })
-    emit({ event: 'start', index: 2, usbPath: '/Contents/A/UnknownAlbum/102.wav', size: 30 })
-    emit({ event: 'written', index: 2, kept: true })
-    emit({ event: 'database' })
-    emit(REPORT)
-  }
-
   // The mount point names whatever is mounted there now; a different stick there must get
   // nothing written, not even a started baken.
   it('writes nothing when another stick sits at the mount point', async () => {
@@ -477,6 +497,7 @@ describe('start', () => {
       tracks: 2,
       failed: 0,
       ms: 0,
+      syncFiles: true,
     })
     const types = sent
       .filter((e) => e.type !== 'progress')
@@ -715,5 +736,370 @@ describe('Windows paths', () => {
     expect(await ex.start({ ...REQ, target: { kind: 'volume', uuid: guid } })).toEqual({ ok: true })
     expect((await finished())?.type).toBe('finished')
     expect(realCalls()[0]).toContain('E:\\')
+  })
+})
+
+describe('sharing the stick with rekordbox', () => {
+  const STICK_DIR = '/Volumes/Surco/PIONEER/rekordbox'
+  // rekordbox 7.2.19's own playlists3.sync on the test stick (18/10): BASES 1, Makina 2.
+  const REKORDBOX_SYNC = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '',
+    '<Sync DBID="-352658652" AutomaticSync="1" AllPlaylists="0" IncludeCue="1" ForcedSync="0" Timestamp="0">',
+    '  <Playlists>',
+    '    <NODE Id="0" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="0" Timestamp="0" CheckType="2"/>',
+    '    <NODE Id="5387A1B7" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="1" Timestamp="1787178676095" CheckType="2"/>',
+    '    <NODE Id="EC5D6B62" ParentId="5387A1B7" Attribute="0" Lib_Type="0" Dev_ID="2" Timestamp="1792349372735" CheckType="1"/>',
+    '  </Playlists>',
+    '</Sync>',
+    '',
+  ].join('\r\n')
+  const onPublic: ExportSelection = {
+    playlists: SEL.playlists,
+    tracks: [
+      track('101', { path: '/Volumes/Public/Musica/101.wav' }),
+      track('109', { separator: true, title: '', path: '/Users/dj/Music/PioneerDJ/sep.mp3' }),
+      track('102', { path: '/Volumes/Public/Musica/102.wav' }),
+      track('103', { path: '/Users/dj/Music/103.wav' }),
+      track('105', { streaming: true }),
+    ],
+  }
+
+  // rekordbox holds master.db and rewrites the stick's .sync files while it runs: an export
+  // underneath it could be overwritten or mixed with its own. Cancel in the dialog must
+  // leave the stick exactly as it was.
+  it('asks to close rekordbox before writing and writes nothing if it stays open', async () => {
+    let asked = 0
+    const ex = createUsbExporter(
+      deps(happy, {
+        rekordboxRunning: async () => true,
+        ensureRekordboxClosed: async () => {
+          asked++
+          return false
+        },
+      }),
+    )
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'rekordbox-open' })
+    expect(asked).toBe(1)
+    expect(calls).toEqual([])
+    expect(removed).toEqual([])
+    expect(ex.busy()).toBe(false)
+  })
+
+  it('exports once rekordbox is closed through the dialog', async () => {
+    const ex = createUsbExporter(deps(happy, { rekordboxRunning: async () => true }))
+    expect(await ex.start(REQ)).toEqual({ ok: true })
+    expect((await finished()) as UsbExportEvent).toMatchObject({ outcome: 'done' })
+  })
+
+  // The summary only reads, so it works with rekordbox open and never closes it; it says
+  // the export will ask.
+  it('plans with rekordbox open and says so', async () => {
+    let asked = 0
+    const r = await createUsbExporter(
+      deps(happy, {
+        rekordboxRunning: async () => true,
+        ensureRekordboxClosed: async () => {
+          asked++
+          return true
+        },
+      }),
+    ).plan(REQ)
+    expect(asked).toBe(0)
+    expect(r.ok && r.plan.warnings).toContainEqual({ kind: 'rekordboxOpen' })
+  })
+
+  // A NAS or disk that is not mounted makes every one of its tracks "missing": the stick
+  // would lose them all. Better to stop and name the volume to mount.
+  it("refuses when the music's volume is not mounted", async () => {
+    const asked: string[] = []
+    const ex = createUsbExporter(
+      deps(happy, {
+        readSelection: () => onPublic,
+        exists: async (p) => {
+          asked.push(p)
+          return p !== '/Volumes/Public'
+        },
+      }),
+    )
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'sources-unreachable' })
+    expect(calls).toEqual([])
+    const r = await ex.plan(REQ)
+    expect(r.ok && r.plan.warnings).toContainEqual({
+      kind: 'sourcesUnreachable',
+      volume: 'Public',
+      tracks: 2,
+    })
+    // The system disk is always there: never asked, never blamed.
+    expect(asked.every((p) => p === '/Volumes/Public')).toBe(true)
+  })
+
+  it("refuses on Windows when the music's drive is not there", async () => {
+    const guid = '{6f1c2a7e-3b4d-11f0-9c2a-806e6f6e6963}'
+    const ex = createUsbExporter(
+      deps(happy, {
+        platform: 'win32',
+        volumes: async () => [volume({ uuid: guid, mountPoint: 'F:\\', filesystem: 'fat32' })],
+        idAt: async () => guid,
+        home: 'C:\\Users\\dj',
+        pioneerDir: 'C:\\Users\\dj\\AppData\\Roaming\\Pioneer',
+        systemRoot: 'C:\\',
+        readSelection: () => ({
+          playlists: SEL.playlists,
+          tracks: [track('101', { path: 'e:\\Musica\\101.wav' }), track('102')],
+        }),
+        exists: async (p) => p !== 'E:\\',
+      }),
+    )
+    const req = { ...REQ, target: { kind: 'volume' as const, uuid: guid } }
+    expect(await ex.start(req)).toEqual({ ok: false, reason: 'sources-unreachable' })
+    expect(calls).toEqual([])
+    const r = await ex.plan(req)
+    expect(r.ok && r.plan.warnings).toContainEqual({
+      kind: 'sourcesUnreachable',
+      volume: 'E:',
+      tracks: 1,
+    })
+  })
+
+  it('finds the root of the volume a track is on', () => {
+    expect(sourceRoot('/Volumes/Public/Musica/a.wav', 'darwin')).toBe('/Volumes/Public')
+    expect(sourceRoot('/Users/dj/Music/a.wav', 'darwin')).toBeNull()
+    expect(sourceRoot('e:\\Musica\\a.wav', 'win32')).toBe('E:\\')
+    expect(sourceRoot('\\\\nas\\music\\Techno\\a.wav', 'win32')).toBe('\\\\nas\\music\\')
+  })
+
+  // A playlist whose every track is gone would reach the players empty, and the stick's
+  // previous copy of it would be lost: stop and name it.
+  it('refuses a playlist that would be empty', async () => {
+    const sel: ExportSelection = {
+      playlists: [
+        ...SEL.playlists,
+        { id: '3000', name: 'Gone', folders: [], folderIds: [], updatedAt: 0, trackIds: ['103'] },
+      ],
+      tracks: SEL.tracks,
+    }
+    const base = deps(happy, { readSelection: () => sel })
+    const ex = createUsbExporter({
+      ...base,
+      stage: async (s, dir, root, stick) => ({
+        ...(await base.stage(s, dir, root, stick)),
+        included: ['101', '109', '102'],
+        missing: ['103'],
+      }),
+    })
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'playlist-empty' })
+    expect(realCalls()).toEqual([])
+    const r = await ex.plan(REQ)
+    expect(r.ok && r.plan.warnings).toContainEqual({ kind: 'emptyPlaylist', names: ['Gone'] })
+  })
+
+  // A NAS dropping mid-copy would fail every remaining track: stop at the next one and say
+  // why, the same way as a stick pulled out.
+  it("cancels when the music's volume goes away mid-run", async () => {
+    let mounted = true
+    const ex = createUsbExporter(
+      deps(
+        async (emit, cancelled) => {
+          emit(PLAN)
+          emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+          mounted = false
+          await cancelled
+          emit({ ...REPORT, cancelled: true } as BakenEvent)
+        },
+        { readSelection: () => onPublic, exists: async () => mounted },
+      ),
+    )
+    expect(await ex.start(REQ)).toEqual({ ok: true })
+    expect(await finished()).toEqual({ type: 'finished', outcome: 'error', reason: 'source-lost' })
+    expect(cancels).toBe(1)
+    expect(sent).toContainEqual({ type: 'cancelling' })
+  })
+
+  // A stale WAL beside the new exportLibrary.db would replay rekordbox's pages onto it.
+  // Those four names, on the stick that was checked, and only for a run that writes.
+  it('removes only the four stale files, before baken, and only on a real run', async () => {
+    let idAts = 0
+    const at: { idAts: number; realRuns: number }[] = []
+    const ex = createUsbExporter(
+      deps(happy, {
+        idAt: async () => {
+          idAts++
+          return UUID
+        },
+        removeFile: async (path) => {
+          removed.push(path)
+          at.push({ idAts, realRuns: realCalls().length })
+        },
+      }),
+    )
+    await ex.plan(REQ)
+    expect(removed).toEqual([])
+    await ex.start(REQ)
+    await finished()
+    expect(removed).toEqual(STALE_STICK_FILES.map((f) => `${STICK_DIR}/${f}`))
+    expect(at.every((a) => a.idAts === idAts && a.realRuns === 0)).toBe(true)
+  })
+
+  it('removes nothing when the stick changed before the real run', async () => {
+    let asked = 0
+    const ex = createUsbExporter(
+      deps(happy, { idAt: async () => (asked++ === 0 ? UUID : 'OTHER') }),
+    )
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'volume-changed' })
+    expect(removed).toEqual([])
+  })
+
+  // rekordbox learns from these files which of its playlists the stick holds and keeps
+  // them in sync; they describe the new library, so they follow baken's success. The
+  // memory comes last, so export.pdb's remembered facts are the final ones.
+  it('writes both sync files after a successful run', async () => {
+    let writesAtPdb = -1
+    const xml = [
+      '<NODE Id="3E8" ParentId="0" Attribute="1" Timestamp="555" Name="BASES"/>',
+      '<NODE Id="7D0" ParentId="3E8" Attribute="0" Timestamp="777" Name="Makina"/>',
+    ].join('\r\n')
+    const ex = createUsbExporter(
+      deps(happy, {
+        masterPlaylistsXml: async () => xml,
+        pdbFacts: async () => {
+          writesAtPdb = writes.length
+          return { size: 9, mtimeMs: 5 }
+        },
+      }),
+    )
+    await ex.start(REQ)
+    expect((await finished()) as UsbExportEvent).toMatchObject({ outcome: 'done', syncFiles: true })
+    const text = syncFileText(
+      IDENTITY.dbId,
+      [
+        { id: '1000', parentId: 'root', folder: true },
+        { id: '2000', parentId: '1000', folder: false },
+      ],
+      new Map([
+        ['1000', 1],
+        ['2000', 2],
+      ]),
+      new Map([
+        ['3E8', 555],
+        ['7D0', 777],
+      ]),
+      new Map([['2000', 0]]),
+    )
+    expect(text).toContain('Dev_ID="2" Timestamp="777"')
+    expect(writes).toEqual([
+      [`${STICK_DIR}/playlists3.sync`, text],
+      [`${STICK_DIR}/playlists3Plus.sync`, text],
+    ])
+    expect(writesAtPdb).toBe(2)
+  })
+
+  it('writes no sync file when baken fails or is cancelled', async () => {
+    const failing = createUsbExporter(
+      deps(async (emit) => {
+        emit(PLAN)
+        emit({ event: 'error', kind: 'other', message: 'boom' })
+      }),
+    )
+    await failing.start(REQ)
+    await finished()
+    sent = []
+    const cancelled = createUsbExporter(
+      deps(async (emit, c) => {
+        emit(PLAN)
+        emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+        await c
+        emit({ ...REPORT, cancelled: true } as BakenEvent)
+      }),
+    )
+    await cancelled.start(REQ)
+    await tick()
+    cancelled.cancel()
+    expect(await finished()).toEqual({ type: 'finished', outcome: 'cancelled' })
+    expect(writes).toEqual([])
+  })
+
+  // The library on the stick is new and complete; only rekordbox's view of which playlists
+  // it holds is stale. That is not a failed export.
+  it('says the sync files failed without calling the export failed', async () => {
+    const ex = createUsbExporter(
+      deps(happy, {
+        writeAtomic: async () => {
+          throw new Error('EROFS: read-only file system')
+        },
+      }),
+    )
+    await ex.start(REQ)
+    expect((await finished()) as UsbExportEvent).toMatchObject({
+      outcome: 'done',
+      syncFiles: false,
+    })
+    expect(logged.join('\n')).toContain('EROFS')
+    expect(memory.get(`volume:${UUID}`)).not.toBeNull()
+  })
+
+  // rekordbox knows the stick's playlists by these ids; a renumbered one is a different
+  // playlist to it, so a re-export keeps them even when a new one sorts first.
+  it("keeps the stick's playlist ids across exports", async () => {
+    const read: string[] = []
+    let given: { identity: MasterIdentity | null; deviceIds: ReadonlyMap<string, number> } | null =
+      null
+    const base = deps(happy, {
+      readSelection: () => ({
+        playlists: [
+          { id: '77', name: 'New', folders: [], folderIds: [], updatedAt: 0, trackIds: ['101'] },
+          {
+            id: '3965545314',
+            name: 'Makina',
+            folders: ['BASES'],
+            folderIds: ['1401397687'],
+            updatedAt: 0,
+            trackIds: ['102'],
+          },
+        ],
+        tracks: [track('101'), track('102')],
+      }),
+      readText: async (p) => {
+        read.push(p)
+        return p === `${STICK_DIR}/playlists3.sync` ? REKORDBOX_SYNC : null
+      },
+    })
+    const ex = createUsbExporter({
+      ...base,
+      stage: (s, dir, root, stick) => {
+        given = stick
+        return base.stage(s, dir, root, stick)
+      },
+    })
+    await ex.plan(REQ)
+    expect(read).toContain(`${STICK_DIR}/playlists3.sync`)
+    expect(given).not.toBeNull()
+    const { identity, deviceIds } = given as unknown as {
+      identity: MasterIdentity
+      deviceIds: ReadonlyMap<string, number>
+    }
+    expect(identity).toEqual(IDENTITY)
+    expect([...deviceIds]).toEqual([
+      ['77', 3],
+      ['1401397687', 1],
+      ['3965545314', 2],
+    ])
+  })
+
+  // baken stores the ids as u32; a stick whose file already used the last one cannot take
+  // a new playlist rekordbox would follow.
+  it('refuses when the stick has no playlist id left', async () => {
+    const full = REKORDBOX_SYNC.replace('Dev_ID="2"', 'Dev_ID="4294967295"')
+    const ex = createUsbExporter(deps(happy, { readText: async () => full }))
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'sync-files' })
+    expect(calls).toEqual([])
+  })
+
+  // Without rekordbox's identity the stick would not be recognised as its own.
+  it('refuses an unreadable identity', async () => {
+    const ex = createUsbExporter(deps(happy, { identity: () => 'unreadable' }))
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'unreadable' })
+    expect(await ex.plan(REQ)).toEqual({ ok: false, reason: 'unreadable' })
+    expect(calls).toEqual([])
   })
 })

@@ -20,6 +20,15 @@ import {
   bakenArgs,
   runBaken,
 } from './bakenRun'
+import {
+  type MasterIdentity,
+  nodeTimestamps,
+  STALE_STICK_FILES,
+  type StickNode,
+  SYNC_FILES,
+  stickDeviceIds,
+  syncFileText,
+} from './rekordboxStickSync'
 import { targetKey, type UsbMemory } from './usbExportMemory'
 import type { ExportSelection } from './usbExportSource'
 import type { Stage } from './usbExportStage'
@@ -41,7 +50,12 @@ export interface UsbExporterDeps {
   baken: () => { file: string; prefixArgs: string[] } | null
   // targetRoot is where baken writes PIONEER/: a DEVSETTING.DAT already there is the
   // stick's own and the staged My Settings must not carry one over it.
-  stage: (sel: ExportSelection, dir: string, targetRoot: string) => Promise<Stage>
+  stage: (
+    sel: ExportSelection,
+    dir: string,
+    targetRoot: string,
+    stick: { identity: MasterIdentity; deviceIds: ReadonlyMap<string, number> },
+  ) => Promise<Stage>
   makeStageDir: () => Promise<string>
   removeDir: (dir: string) => Promise<void>
   memory: UsbMemory
@@ -53,6 +67,17 @@ export interface UsbExporterDeps {
   fileSize: (path: string) => Promise<number | null>
   pdbFacts: (root: string) => Promise<{ size: number; mtimeMs: number } | null>
   log: (message: string) => void
+  rekordboxRunning: () => Promise<boolean>
+  // The close dialog: true once rekordbox is gone, false when the user kept it open.
+  ensureRekordboxClosed: () => Promise<boolean>
+  exists: (path: string) => Promise<boolean>
+  readText: (path: string) => Promise<string | null>
+  // Written beside and renamed over, so rekordbox never reads half a file.
+  writeAtomic: (path: string, text: string) => Promise<void>
+  // A missing file is fine.
+  removeFile: (path: string) => Promise<void>
+  identity: (dbPath: string, trackIds: string[]) => MasterIdentity | 'unreadable'
+  masterPlaylistsXml: () => Promise<string | null>
   pollMs?: number
   devPollMs?: number
   run?: typeof runBaken
@@ -69,6 +94,14 @@ interface Prepared {
   target: Target
   sel: ExportSelection
   stage: Stage
+  identity: MasterIdentity
+  nodes: StickNode[]
+  deviceIds: Map<string, number>
+  // The roots of the volumes holding the selected music, all mounted when it was prepared.
+  sources: string[]
+  unreachable: { volume: string; tracks: number } | null
+  // Names of the selected playlists left with no exportable track.
+  empty: string[]
 }
 
 const CDJ2000_FLAC = 5
@@ -100,9 +133,73 @@ async function resolveTarget(deps: UsbExporterDeps, t: UsbTarget): Promise<Targe
   }
 }
 
+// The root of the volume a track is on, the one that has to be mounted for it to be read:
+// /Volumes/<name> on macOS (anything else is the system disk, always there), the drive root
+// or the \\server\share\ of a UNC path on Windows.
+export function sourceRoot(path: string, platform: NodeJS.Platform): string | null {
+  if (platform === 'win32') {
+    const unc = /^[\\/]{2}([^\\/]+)[\\/]([^\\/]+)/.exec(path)
+    if (unc) return `\\\\${unc[1]}\\${unc[2]}\\`
+    const drive = /^([A-Za-z]):/.exec(path)
+    return drive ? `${drive[1].toUpperCase()}:\\` : null
+  }
+  const mount = /^\/Volumes\/([^/]+)/.exec(path)
+  return mount ? `/Volumes/${mount[1]}` : null
+}
+
+const volumeName = (root: string, platform: NodeJS.Platform): string =>
+  platform === 'win32' ? root.replace(/\\$/, '') : posix.basename(root)
+
+// The tracks counted per root leave separators out, as every count the user sees does.
+function sourcesOf(sel: ExportSelection, platform: NodeJS.Platform): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const t of sel.tracks) {
+    if (t.streaming) continue
+    const root = sourceRoot(t.path, platform)
+    if (root) out.set(root, (out.get(root) ?? 0) + (t.separator ? 0 : 1))
+  }
+  return out
+}
+
+// Folders before the playlists inside them, in tree order, each once: the order new
+// stick ids are handed out and the sync file lists them.
+function stickNodes(sel: ExportSelection): StickNode[] {
+  const out: StickNode[] = []
+  const seen = new Set<string>()
+  const add = (n: StickNode): void => {
+    if (seen.has(n.id)) return
+    seen.add(n.id)
+    out.push(n)
+  }
+  for (const p of sel.playlists) {
+    p.folderIds.forEach((id, i) => {
+      add({ id, parentId: p.folderIds[i - 1] ?? 'root', folder: true })
+    })
+    add({ id: p.id, parentId: p.folderIds.at(-1) ?? 'root', folder: false })
+  }
+  return out
+}
+
+// A playlist with tracks of which none reaches the stick. A playlist empty in rekordbox
+// too loses nothing and is left alone; separators alone are no music.
+function emptyPlaylists(sel: ExportSelection, stage: Stage): string[] {
+  const included = new Set(stage.included)
+  const separators = new Set(sel.tracks.filter((t) => t.separator).map((t) => t.id))
+  return sel.playlists
+    .filter((p) => {
+      const music = p.trackIds.filter((id) => !separators.has(id))
+      return music.length > 0 && !music.some((id) => included.has(id))
+    })
+    .map((p) => p.name)
+}
+
+const joinFor = (platform: NodeJS.Platform) => (platform === 'win32' ? win32 : posix).join
+
+// strict is the export: what the summary only warns about refuses it.
 async function prepare(
   deps: UsbExporterDeps,
   req: UsbExportRequest,
+  strict: boolean,
 ): Promise<Prepared | UsbFailure> {
   if (req.playlistIds.length === 0) return 'nothing-selected'
   const db = deps.collection()
@@ -113,9 +210,41 @@ async function prepare(
   const sel = deps.readSelection(db, req.playlistIds)
   if (sel === 'unreadable') return 'unreadable'
   if (sel.tracks.length === 0) return 'nothing-selected'
+  const identity = deps.identity(
+    db,
+    sel.tracks.map((t) => t.id),
+  )
+  if (identity === 'unreadable') return 'unreadable'
+  // An unmounted NAS or disk would make every one of its tracks "missing" and the stick
+  // would lose them all.
+  const sources: string[] = []
+  let unreachable: Prepared['unreachable'] = null
+  for (const [root, tracks] of sourcesOf(sel, deps.platform)) {
+    if (await deps.exists(root)) sources.push(root)
+    else unreachable ??= { volume: volumeName(root, deps.platform), tracks }
+  }
+  if (unreachable && strict) return 'sources-unreachable'
+  const join = joinFor(deps.platform)
+  const nodes = stickNodes(sel)
+  let deviceIds: Map<string, number>
+  try {
+    deviceIds = stickDeviceIds(
+      nodes,
+      await deps.readText(join(target.root, 'PIONEER', 'rekordbox', 'playlists3.sync')),
+    )
+  } catch (err) {
+    deps.log(`usb export has no stick playlist id left: ${String(err)}`)
+    return 'sync-files'
+  }
   const dir = await deps.makeStageDir()
   try {
-    return { target, sel, stage: await deps.stage(sel, dir, target.root) }
+    const stage = await deps.stage(sel, dir, target.root, { identity, deviceIds })
+    const empty = emptyPlaylists(sel, stage)
+    if (empty.length && strict) {
+      await deps.removeDir(dir)
+      return 'playlist-empty'
+    }
+    return { target, sel, stage, identity, nodes, deviceIds, sources, unreachable, empty }
   } catch (err) {
     await deps.removeDir(dir)
     throw err
@@ -150,8 +279,12 @@ function warningsOf(
   p: Prepared,
   plan: BakenPlan | null,
   noSpace: { neededBytes: number; freeBytes: number } | null,
+  rekordboxOpen: boolean,
 ): UsbWarning[] {
   const out: UsbWarning[] = []
+  if (rekordboxOpen) out.push({ kind: 'rekordboxOpen' })
+  if (p.unreachable) out.push({ kind: 'sourcesUnreachable', ...p.unreachable })
+  if (p.empty.length) out.push({ kind: 'emptyPlaylist', names: p.empty })
   const v = p.target.volume
   if (v?.holder.by === 'rekordbox' && p.target.kind === 'volume')
     out.push({ kind: 'rekordboxExport' })
@@ -217,6 +350,28 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   // Claimed synchronously at the top of start(), before any await: two quick presses must
   // never start two bakens on one stick.
   let running: RunState | null = null
+  const stickFile = (p: Prepared, name: string): string =>
+    joinFor(deps.platform)(p.target.root, 'PIONEER', 'rekordbox', name)
+
+  // rekordbox reads these to know which of its playlists the stick holds and keeps them in
+  // sync. They describe the library baken just wrote, so they come only after its success;
+  // failing them leaves that library intact, which is not a failed export.
+  async function writeSyncFiles(p: Prepared): Promise<boolean> {
+    try {
+      const text = syncFileText(
+        p.identity.dbId,
+        p.nodes,
+        p.deviceIds,
+        nodeTimestamps((await deps.masterPlaylistsXml()) ?? ''),
+        new Map(p.sel.playlists.map((pl) => [pl.id, pl.updatedAt])),
+      )
+      for (const name of SYNC_FILES) await deps.writeAtomic(stickFile(p, name), text)
+      return true
+    } catch (err) {
+      deps.log(`usb export could not write the sync files: ${String(err)}`)
+      return false
+    }
+  }
 
   const argsFor = (p: Prepared, req: UsbExportRequest, dryRun: boolean): string[] | null => {
     try {
@@ -270,8 +425,10 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     }
   }
 
+  // Only reads, so it works with rekordbox open and never asks to close it.
   async function summarise(req: UsbExportRequest): Promise<UsbPlanResult> {
-    const p = await prepare(deps, req)
+    const rekordboxOpen = await deps.rekordboxRunning()
+    const p = await prepare(deps, req, false)
     if (typeof p === 'string') return { ok: false, reason: p }
     try {
       const d = await dryRun(p, req)
@@ -286,7 +443,10 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       if (d.plan && !d.plan.volumeRoot && p.target.kind === 'volume')
         return { ok: false, reason: 'not-volume-root' }
       const tracks = planTracks(p, d.plan)
-      return { ok: true, plan: summary(deps, p, req, tracks, warningsOf(deps, p, d.plan, short)) }
+      return {
+        ok: true,
+        plan: summary(deps, p, req, tracks, warningsOf(deps, p, d.plan, short, rekordboxOpen)),
+      }
     } finally {
       await deps.removeDir(p.stage.dir)
     }
@@ -339,7 +499,10 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       return { ok: false, reason, ...extra }
     }
     try {
-      const p = await prepare(deps, req)
+      // rekordbox holds master.db and rewrites the stick's .sync files while it runs.
+      if ((await deps.rekordboxRunning()) && !(await deps.ensureRekordboxClosed()))
+        return refuse('rekordbox-open')
+      const p = await prepare(deps, req, true)
       if (typeof p === 'string') return refuse(p)
       staged = p
       const dev = await volumeAt(p, req, null)
@@ -356,6 +519,9 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       // The dry run takes a while: a stick swapped meanwhile must not get the real run.
       const still = await volumeAt(p, req, dev)
       if (typeof still === 'string') return refuse(still)
+      // Only now, on the stick just checked: a WAL left beside the new exportLibrary.db
+      // would replay rekordbox's pages onto it. These four names and nothing else.
+      for (const name of STALE_STICK_FILES) await deps.removeFile(stickFile(p, name))
       return launch(p, req, args, dev, state)
     } catch (err) {
       deps.log(`usb export did not start: ${String(err)}`)
@@ -379,6 +545,8 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     let report: BakenReport | null = null
     let error: BakenError | null = null
     let lostVolume = false
+    let lostSource = false
+    let checkingSources = false
     state.phase = 'tracks'
     const stopPoll = (): void => {
       if (poll) clearInterval(poll)
@@ -431,11 +599,21 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     const handle = run(deps.baken() as { file: string; prefixArgs: string[] }, args, onEvent)
     state.cancel = handle.cancel
     // Another volume under the same mount point or drive letter changes the device number
-    // (on Windows it is the volume serial): stop at the next track.
+    // (on Windows it is the volume serial): stop at the next track. So does a music volume
+    // going away, which would fail every track left; one check of those at a time, as a
+    // sleeping NAS can hold a stat for seconds.
     const watch = setInterval(() => {
       void deps.devOf(p.target.root).then((now) => {
         if (now === dev || lostVolume) return
         lostVolume = true
+        requestCancel(state)
+      })
+      if (checkingSources || lostSource) return
+      checkingSources = true
+      void Promise.all(p.sources.map((root) => deps.exists(root))).then((up) => {
+        checkingSources = false
+        if (up.every(Boolean) || lostSource) return
+        lostSource = true
         requestCancel(state)
       })
     }, deps.devPollMs ?? 1000)
@@ -450,6 +628,8 @@ export function createUsbExporter(deps: UsbExporterDeps) {
         if (lostVolume) deps.send({ type: 'finished', outcome: 'error', reason: 'volume-gone' })
         else if (r && !r.cancelled) {
           for (const f of r.failures) deps.log(`usb export failed ${f.name}: ${f.message}`)
+          const syncFiles = await writeSyncFiles(p)
+          // After the .sync files, so export.pdb's remembered facts are the final ones.
           deps.memory.remember(targetKey(req.target), {
             playlistIds: req.playlistIds,
             trackIds: tracks.map((t) => t.id),
@@ -465,8 +645,14 @@ export function createUsbExporter(deps: UsbExporterDeps) {
             tracks: counted,
             failed: r.failures.length,
             ms: deps.now() - startedAt,
+            syncFiles,
           })
-        } else if (r?.cancelled) deps.send({ type: 'finished', outcome: 'cancelled' })
+        }
+        // A report that was not cancelled above is a whole export even if a source went
+        // meanwhile; otherwise the lost source is why it stopped.
+        else if (lostSource)
+          deps.send({ type: 'finished', outcome: 'error', reason: 'source-lost' })
+        else if (r?.cancelled) deps.send({ type: 'finished', outcome: 'cancelled' })
         else
           deps.send({
             type: 'finished',

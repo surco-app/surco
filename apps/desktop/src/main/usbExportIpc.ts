@@ -1,10 +1,23 @@
-import { mkdtemp, readdir, realpath, rm, stat } from 'node:fs/promises'
+import {
+  access,
+  mkdtemp,
+  readdir,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { UsbExportRequest, UsbFolderPick, UsbVolumeList } from '../shared/types'
 import { openRekordboxDb } from './rekordboxDb'
+import { playlistXmlPath } from './rekordboxMasterXml'
+import { isRekordboxRunning } from './rekordboxProcess'
+import { readMasterIdentity } from './rekordboxStickSync'
 import { createUsbExporter } from './usbExport'
 import { createUsbMemory, targetKey } from './usbExportMemory'
 import { readExportSelection } from './usbExportSource'
@@ -20,6 +33,8 @@ export function registerUsbExportIpc(opts: {
   // %APPDATA% on Windows (app.getPath('appData')); unused on macOS.
   appData: string
   baken: () => { file: string; prefixArgs: string[] } | null
+  // The close dialog the playlist writer uses; true once rekordbox is gone.
+  ensureRekordboxClosed: (win: BrowserWindow | null) => Promise<boolean>
 }): void {
   const platform = process.platform
   const source = systemVolumeSource(platform)
@@ -42,6 +57,8 @@ export function registerUsbExportIpc(opts: {
   const broadcast = (channel: string, payload: unknown): void => {
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(channel, payload)
   }
+  // The window that pressed Exportar, for the close dialog: one export at a time.
+  let asking: BrowserWindow | null = null
   const list = async (): Promise<UsbVolumeList> => ({
     volumes: await readVolumes(source, memory),
     lastKey: memory.last(),
@@ -69,14 +86,14 @@ export function registerUsbExportIpc(opts: {
     realPath: (p) => realpath(p).catch(() => null),
     baken: opts.baken,
     // rekordbox keeps the analysis and artwork beside master.db, in share/.
-    stage: async (sel, dir, targetRoot) =>
+    stage: async (sel, dir, targetRoot, stick) =>
       stageExport({
         sel,
         shareDir: join(dirname(opts.collection()), 'share'),
         settingsSource,
         dir,
-        identity: null,
-        deviceIds: new Map(),
+        identity: stick.identity,
+        deviceIds: stick.deviceIds,
         stickHas: await readdir(join(targetRoot, 'PIONEER')).catch(() => []),
       }),
     makeStageDir: () => mkdtemp(join(tmpdir(), 'surco-usb-')),
@@ -96,6 +113,41 @@ export function registerUsbExportIpc(opts: {
         .then((s) => ({ size: s.size, mtimeMs: s.mtimeMs }))
         .catch(() => null),
     log: (m) => log.info(m),
+    rekordboxRunning: isRekordboxRunning,
+    ensureRekordboxClosed: () => opts.ensureRekordboxClosed(asking),
+    exists: (path) =>
+      access(path).then(
+        () => true,
+        () => false,
+      ),
+    readText: (path) => readFile(path, 'utf8').catch(() => null),
+    // Beside and renamed over, so rekordbox never reads half a file; no chmod, which FAT
+    // and exFAT do not keep.
+    writeAtomic: async (path, text) => {
+      const temp = `${path}.surco-tmp`
+      try {
+        await writeFile(temp, text, 'utf8')
+        await rename(temp, path)
+      } catch (err) {
+        await rm(temp, { force: true })
+        throw err
+      }
+    },
+    removeFile: (path) => rm(path, { force: true }),
+    // Read-only, which works with rekordbox open: the summary reads it then.
+    identity: (path, trackIds) => {
+      const db = openRekordboxDb(path, { readonly: true })
+      if (!db) return 'unreadable'
+      try {
+        return readMasterIdentity(db, trackIds)
+      } catch {
+        return 'unreadable'
+      } finally {
+        db.close()
+      }
+    },
+    masterPlaylistsXml: () =>
+      readFile(playlistXmlPath(opts.collection()), 'utf8').catch(() => null),
   })
   // Watching starts with the first request for the list (the rail offers the export only
   // with a rekordbox collection), not at launch for every user.
@@ -134,6 +186,9 @@ export function registerUsbExportIpc(opts: {
     }
   })
   ipcMain.handle('usb:plan', (_e, req: UsbExportRequest) => exporter.plan(req))
-  ipcMain.handle('usb:export', (_e, req: UsbExportRequest) => exporter.start(req))
+  ipcMain.handle('usb:export', (e, req: UsbExportRequest) => {
+    asking = BrowserWindow.fromWebContents(e.sender)
+    return exporter.start(req)
+  })
   ipcMain.handle('usb:cancel', () => exporter.cancel())
 }

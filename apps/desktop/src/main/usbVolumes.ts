@@ -1,9 +1,10 @@
 import { execFile } from 'node:child_process'
 import { watch } from 'node:fs'
-import { access, readdir, stat } from 'node:fs/promises'
+import { access, readdir, readFile, stat } from 'node:fs/promises'
 import { join, posix, win32 } from 'node:path'
 import { promisify } from 'node:util'
 import type { UsbFilesystem, UsbHolder, UsbVolume } from '../shared/types'
+import { syncedPlaylists } from './rekordboxStickSync'
 import { targetKey, type UsbMemory } from './usbExportMemory'
 import windowsVolumesScript from './windowsVolumes.ps1?raw'
 
@@ -11,7 +12,7 @@ import windowsVolumesScript from './windowsVolumes.ps1?raw'
 // network share, never a disk image. macOS asks diskutil one volume at a time; Windows asks
 // one PowerShell query. Both come out as RawVolume, keyed by a stable identifier.
 
-export type RawVolume = Omit<UsbVolume, 'holder' | 'remembered'>
+export type RawVolume = Omit<UsbVolume, 'holder' | 'remembered' | 'stickPlaylists'>
 
 export interface VolumeSource {
   list: () => Promise<RawVolume[]>
@@ -242,14 +243,17 @@ export async function stickHolder(
   const dir = join(root, 'PIONEER', 'rekordbox')
   const current = await stat(join(dir, 'export.pdb')).catch(() => null)
   if (!current) return { by: 'empty', at: null }
-  const ext = await stat(join(dir, 'exportExt.pdb')).catch(() => null)
-  if (ext) return { by: 'rekordbox', at: current.mtimeMs }
+  // Surco keeps exportExt.pdb and writes the .sync files itself, so only an export.pdb
+  // that is no longer the one Surco wrote can be rekordbox's.
   if (
     pdb &&
     pdb.size === current.size &&
     Math.abs(pdb.mtimeMs - current.mtimeMs) <= FAT_RESOLUTION_MS
   )
     return { by: 'surco', at: current.mtimeMs }
+  const ext = await stat(join(dir, 'exportExt.pdb')).catch(() => null)
+  const sync = await stat(join(dir, 'playlists3.sync')).catch(() => null)
+  if (ext || sync) return { by: 'rekordbox', at: current.mtimeMs }
   return { by: 'other', at: current.mtimeMs }
 }
 
@@ -257,13 +261,17 @@ export async function readVolumes(
   source: VolumeSource,
   memory: UsbMemory,
   holder: typeof stickHolder = stickHolder,
+  syncText: (root: string) => Promise<string | null> = (root) =>
+    readFile(join(root, 'PIONEER', 'rekordbox', 'playlists3.sync'), 'utf8').catch(() => null),
 ): Promise<UsbVolume[]> {
   const out: UsbVolume[] = []
   for (const v of await source.list()) {
     const entry = memory.get(targetKey({ kind: 'volume', uuid: v.uuid }))
+    const sync = await syncText(v.mountPoint)
     out.push({
       ...v,
       holder: await holder(v.mountPoint, entry?.pdb ?? null),
+      stickPlaylists: sync === null ? null : syncedPlaylists(sync),
       remembered: entry
         ? {
             playlistIds: entry.playlistIds,

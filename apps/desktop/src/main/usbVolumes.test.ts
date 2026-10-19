@@ -11,6 +11,7 @@ import {
   isUsbVolume,
   parsePlist,
   parseWindowsVolumes,
+  type RawVolume,
   readVolumes,
   schemeOf,
   stickHolder,
@@ -30,6 +31,30 @@ const WIN = JSON.parse(fixture('win32-volumes.json')) as unknown
 const memory = async () => createUsbMemory(join(await mkdtemp(join(tmpdir(), 'mem-')), 'm.json'))
 // Tests never touch a real stick: who wrote it is answered by a stand-in.
 const holder = async () => ({ by: 'empty' as const, at: null })
+const noSync = async () => null
+
+// rekordbox 7.2.19's own playlists3.sync on the test stick (18/10): BASES and Makina in it.
+const REKORDBOX_SYNC = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '',
+  '<Sync DBID="-352658652" AutomaticSync="1" AllPlaylists="0" IncludeCue="1" ForcedSync="0" Timestamp="0">',
+  '  <Playlists>',
+  '    <NODE Id="0" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="0" Timestamp="0" CheckType="2"/>',
+  '    <NODE Id="5387A1B7" ParentId="0" Attribute="1" Lib_Type="0" Dev_ID="1" Timestamp="1787178676095" CheckType="2"/>',
+  '    <NODE Id="EC5D6B62" ParentId="5387A1B7" Attribute="0" Lib_Type="0" Dev_ID="2" Timestamp="1792349372735" CheckType="1"/>',
+  '  </Playlists>',
+  '</Sync>',
+  '',
+].join('\r\n')
+const RAW: RawVolume = {
+  uuid: 'U',
+  name: 'Stick',
+  mountPoint: '/Volumes/Stick',
+  filesystem: 'fat32',
+  partitionScheme: 'mbr',
+  totalBytes: 1,
+  freeBytes: 1,
+}
 
 describe('parsePlist', () => {
   it('reads dicts, arrays, strings, integers and booleans', () => {
@@ -112,13 +137,31 @@ describe('macOS: darwinSource and readVolumes', () => {
         [String(STICK.ParentWholeDisk)]: WHOLE,
       }),
     )
-    const vols = await readVolumes(source, await memory(), holder)
+    const vols = await readVolumes(source, await memory(), holder, noSync)
     expect(vols.map((v) => [v.uuid, v.mountPoint])).toEqual([
       ['B10C96EF-51C2-344E-B78D-DAFC319D973E', '/Volumes/Surco'],
       ['OTHER-UUID', '/Volumes/Vicent 1'],
     ])
     expect(vols[0].filesystem).toBe('exfat')
     expect(vols[0].totalBytes).toBeGreaterThan(0)
+  })
+
+  // The tree shows which of the collection's playlists the stick keeps in sync for
+  // rekordbox, so a re-export can tick the same ones.
+  it("reads the playlists the stick's sync file ticks", async () => {
+    const root = await mkdtemp(join(tmpdir(), 'stick-'))
+    mkdirSync(join(root, 'PIONEER/rekordbox'), { recursive: true })
+    writeFileSync(join(root, 'PIONEER/rekordbox/playlists3.sync'), REKORDBOX_SYNC)
+    const bare = await mkdtemp(join(tmpdir(), 'stick-'))
+    const source = {
+      list: async () => [
+        { ...RAW, uuid: 'A', mountPoint: root },
+        { ...RAW, uuid: 'B', mountPoint: bare },
+      ],
+      idAt: async () => null,
+    }
+    const vols = await readVolumes(source, await memory(), holder)
+    expect(vols.map((v) => v.stickPlaylists)).toEqual([['3965545314'], null])
   })
 
   it('reads the UUID at a mount point right now', async () => {
@@ -226,9 +269,20 @@ describe('stickHolder', () => {
     expect(await stickHolder(await stick([]), null)).toEqual({ by: 'empty', at: null })
   })
 
-  // baken always removes exportExt.pdb, rekordbox always writes it.
-  it('is rekordbox when exportExt.pdb is there', async () => {
-    expect((await stickHolder(await stick(['export.pdb', 'exportExt.pdb']), null)).by).toBe(
+  // Surco keeps rekordbox's exportExt.pdb and writes the .sync files itself (18/10), so
+  // their presence no longer says who wrote last: Surco's remembered export.pdb is
+  // checked first, and only a stick that is not Surco's last write is rekordbox's.
+  it('is Surco when export.pdb is the one Surco wrote, even with rekordbox files beside it', async () => {
+    const root = await stick(['export.pdb', 'exportExt.pdb', 'playlists3.sync'])
+    utimesSync(join(root, 'PIONEER/rekordbox/export.pdb'), 1000, 1000)
+    expect((await stickHolder(root, { size: 9, mtimeMs: 1_000_000 })).by).toBe('surco')
+  })
+
+  it('is rekordbox when it wrote after Surco, by exportExt.pdb or playlists3.sync', async () => {
+    expect(
+      (await stickHolder(await stick(['export.pdb', 'exportExt.pdb']), { size: 1, mtimeMs: 0 })).by,
+    ).toBe('rekordbox')
+    expect((await stickHolder(await stick(['export.pdb', 'playlists3.sync']), null)).by).toBe(
       'rekordbox',
     )
   })
