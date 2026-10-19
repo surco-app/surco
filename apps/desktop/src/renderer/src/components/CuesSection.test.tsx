@@ -208,6 +208,14 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-save')).toBeNull()
   })
 
+  it('keeps Guardar and Deshacer on one line each, letting the legend wrap instead', async () => {
+    setup()
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-save')).toHaveClass('whitespace-nowrap')
+    expect(screen.getByTestId('cues-undo')).toHaveClass('whitespace-nowrap')
+    expect(screen.getByTestId('cues-actions')).toHaveClass('flex-wrap')
+  })
+
   it('shows the legend', async () => {
     setup()
     await waitFor(() => expect(screen.getByTestId('cues-legend')).toHaveTextContent('16 bars'))

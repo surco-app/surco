@@ -81,7 +81,7 @@ function Marking({
           {tr('editor.cues.tooMany')}
         </p>
       )}
-      <div className="mt-3 flex items-center gap-3">
+      <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
         <ul
           data-testid="cues-legend"
           className="flex flex-wrap items-center gap-3 text-[11px] text-fg-dim"
@@ -107,7 +107,7 @@ function Marking({
               if (queued !== null)
                 void window.api.undoRekordboxCues(cue.contentId).then(refreshQueued)
             }}
-            className="press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)] disabled:opacity-40"
+            className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)] disabled:opacity-40"
           >
             {tr('editor.cues.undo')}
           </button>
@@ -127,7 +127,7 @@ function Marking({
                 })
                 .then(refreshQueued)
             }
-            className="press rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            className="press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
           >
             {tr('editor.cues.save')}
           </button>
