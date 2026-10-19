@@ -68,40 +68,13 @@ export interface ExportFixture extends PlaylistFixture {
   myTags?: FixtureMyTag[]
 }
 
-const DETAIL_COLUMNS: [keyof ContentDetails, string][] = [
-  ['ArtistID', 'VARCHAR(255)'],
-  ['AlbumID', 'VARCHAR(255)'],
-  ['GenreID', 'VARCHAR(255)'],
-  ['LabelID', 'VARCHAR(255)'],
-  ['RemixerID', 'VARCHAR(255)'],
-  ['ComposerID', 'VARCHAR(255)'],
-  ['Subtitle', 'VARCHAR(255)'],
-  ['BitRate', 'INTEGER'],
-  ['SampleRate', 'INTEGER'],
-  ['BitDepth', 'INTEGER'],
-  ['ReleaseYear', 'INTEGER'],
-  ['TrackNo', 'INTEGER'],
-  ['DiscNo', 'INTEGER'],
-  ['DateCreated', 'VARCHAR(255)'],
-  ['DJPlayCount', 'INTEGER'],
-  ['Commnt', 'TEXT'],
-  ['AnalysisDataPath', 'VARCHAR(255)'],
-  ['ImagePath', 'VARCHAR(255)'],
-]
-
 export function writeRekordboxExportFixture(path: string, data: ExportFixture): void {
   writeRekordboxPlaylistFixture(path, data)
   const db = new Database(path)
   db.pragma(`cipher='sqlcipher'`)
   db.pragma('legacy=4')
   db.pragma(`key='${REKORDBOX_KEY}'`)
-  for (const [name, type] of DETAIL_COLUMNS)
-    db.exec(`ALTER TABLE djmdContent ADD COLUMN ${name} ${type}`)
   db.exec(`
-    CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));
-    CREATE TABLE djmdAlbum (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));
-    CREATE TABLE djmdGenre (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));
-    CREATE TABLE djmdLabel (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));
     CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), InMsec INTEGER,
       OutMsec INTEGER, Kind INTEGER, Comment TEXT, Color INTEGER DEFAULT -1,
       ColorTableIndex INTEGER, rb_local_deleted INTEGER DEFAULT 0);

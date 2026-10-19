@@ -22,6 +22,7 @@ export interface FixtureContent {
   // findTrackByPath reads it; 0 unless a test cares.
   FileSize?: number
   deleted?: boolean
+  UUID?: string
 }
 
 export interface FixturePlaylist {
@@ -56,10 +57,18 @@ export interface PlaylistFixture {
   xml?: boolean
   // Leaves the database in WAL mode, as rekordbox keeps it.
   wal?: boolean
+  device?: { ID: string; MasterDBID: string }
+  artists?: { ID: string; Name: string }[]
+  xmlTimestamps?: Record<string, number>
 }
 
 // Every fixture row is older than any edit a test makes.
 export const FIXTURE_STAMP = '2026-01-01 00:00:00.000 +00:00'
+
+const LOOKUP_COLUMNS = `UUID VARCHAR(255), rb_data_status INTEGER DEFAULT 0,
+  rb_local_data_status INTEGER DEFAULT 0, rb_local_deleted TINYINT(1) DEFAULT 0,
+  rb_local_synced TINYINT(1) DEFAULT 0, usn BIGINT, rb_local_usn BIGINT, created_at DATETIME,
+  updated_at DATETIME`
 
 export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixture): void {
   const db = new Database(path)
@@ -69,8 +78,34 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   if (data.wal) db.pragma('journal_mode = WAL')
   db.exec(`
     CREATE TABLE djmdContent (ID VARCHAR(255) PRIMARY KEY, FolderPath VARCHAR(255),
-      FileNameL VARCHAR(255), FileType INTEGER, FileSize INTEGER, Title VARCHAR(255), Length INTEGER,
-      BPM INTEGER, Rating INTEGER, KeyID VARCHAR(255), rb_local_deleted INTEGER DEFAULT 0);
+      FileNameL VARCHAR(255), FileNameS VARCHAR(255), Title VARCHAR(255), ArtistID VARCHAR(255),
+      AlbumID VARCHAR(255), GenreID VARCHAR(255), BPM INTEGER, Length INTEGER, TrackNo INTEGER,
+      BitRate INTEGER, BitDepth INTEGER, Commnt TEXT, FileType INTEGER, Rating INTEGER,
+      ReleaseYear INTEGER, RemixerID VARCHAR(255), LabelID VARCHAR(255), OrgArtistID VARCHAR(255),
+      KeyID VARCHAR(255), StockDate VARCHAR(255), ColorID VARCHAR(255), DJPlayCount INTEGER,
+      ImagePath VARCHAR(255), MasterDBID VARCHAR(255), MasterSongID VARCHAR(255),
+      AnalysisDataPath VARCHAR(255), SearchStr VARCHAR(255), FileSize INTEGER, DiscNo INTEGER,
+      ComposerID VARCHAR(255), Subtitle VARCHAR(255), SampleRate INTEGER, DisableQuantize INTEGER,
+      Analysed INTEGER, ReleaseDate VARCHAR(255), DateCreated VARCHAR(255), ContentLink INTEGER,
+      Tag VARCHAR(255), ModifiedByRBM VARCHAR(255), HotCueAutoLoad VARCHAR(255),
+      DeliveryControl VARCHAR(255), DeliveryComment VARCHAR(255), CueUpdated VARCHAR(255),
+      AnalysisUpdated VARCHAR(255), TrackInfoUpdated VARCHAR(255), Lyricist VARCHAR(255),
+      ISRC VARCHAR(255), SamplerTrackInfo INTEGER, SamplerPlayOffset INTEGER, SamplerGain FLOAT,
+      VideoAssociate VARCHAR(255), LyricStatus INTEGER, ServiceID INTEGER,
+      OrgFolderPath VARCHAR(255), Reserved1 TEXT, ExtInfo TEXT, rb_file_id VARCHAR(255),
+      DeviceID VARCHAR(255), UUID VARCHAR(255), rb_data_status INTEGER DEFAULT 0,
+      rb_local_data_status INTEGER DEFAULT 0, rb_local_deleted INTEGER DEFAULT 0,
+      rb_local_synced INTEGER DEFAULT 0, usn BIGINT, rb_local_usn BIGINT, created_at DATETIME,
+      updated_at DATETIME);
+    CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
+      SearchStr VARCHAR(255), ${LOOKUP_COLUMNS});
+    CREATE TABLE djmdAlbum (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
+      AlbumArtistID VARCHAR(255), ImagePath VARCHAR(255), Compilation INTEGER,
+      SearchStr VARCHAR(255), ${LOOKUP_COLUMNS});
+    CREATE TABLE djmdGenre (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255), ${LOOKUP_COLUMNS});
+    CREATE TABLE djmdLabel (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255), ${LOOKUP_COLUMNS});
+    CREATE TABLE djmdDevice (ID VARCHAR(255) PRIMARY KEY, MasterDBID VARCHAR(255),
+      Name VARCHAR(255), ${LOOKUP_COLUMNS});
     CREATE TABLE djmdKey (ID VARCHAR(255) PRIMARY KEY, ScaleName VARCHAR(255));
     CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
       ImagePath VARCHAR(255), Attribute INTEGER, ParentID VARCHAR(255), SmartList TEXT,
@@ -91,7 +126,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   ).run(data.usn ?? 1, FIXTURE_STAMP, FIXTURE_STAMP)
   const content = db.prepare(
     `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, Length, BPM,
-       Rating, KeyID, rb_local_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       Rating, KeyID, UUID, rb_local_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   for (const c of data.content) {
     content.run(
@@ -105,9 +140,18 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       c.BPM ?? 0,
       c.Rating ?? 0,
       c.KeyID ?? null,
+      c.UUID ?? `uuid-c-${c.ID}`,
       c.deleted ? 1 : 0,
     )
   }
+  const device = data.device ?? { ID: '7', MasterDBID: '3216549870' }
+  db.prepare(
+    `INSERT INTO djmdDevice (ID, MasterDBID, Name, created_at, updated_at) VALUES (?, ?, 'Mac', ?, ?)`,
+  ).run(device.ID, device.MasterDBID, FIXTURE_STAMP, FIXTURE_STAMP)
+  const artist = db.prepare(
+    `INSERT INTO djmdArtist (ID, Name, rb_local_deleted, created_at, updated_at) VALUES (?, ?, 0, ?, ?)`,
+  )
+  for (const a of data.artists ?? []) artist.run(a.ID, a.Name, FIXTURE_STAMP, FIXTURE_STAMP)
   const key = db.prepare('INSERT INTO djmdKey VALUES (?, ?)')
   for (const k of data.keys) key.run(k.ID, k.ScaleName)
   const playlist = db.prepare(
@@ -153,7 +197,7 @@ function fixtureXml(data: PlaylistFixture): string {
     .filter((p) => !p.deleted)
     .map(
       (p) =>
-        `    <NODE Id="${hexId(p.ID)}" ParentId="${hexId(p.ParentID)}" Attribute="${p.Attribute}" Timestamp="1767225600000" Lib_Type="0" CheckType="0"/>`,
+        `    <NODE Id="${hexId(p.ID)}" ParentId="${hexId(p.ParentID)}" Attribute="${p.Attribute}" Timestamp="${data.xmlTimestamps?.[p.ID] ?? 1767225600000}" Lib_Type="0" CheckType="0"/>`,
     )
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
