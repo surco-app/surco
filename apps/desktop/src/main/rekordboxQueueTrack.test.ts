@@ -292,15 +292,55 @@ describe('track operations', () => {
     expect(contentsOf(path, '2000')).toContain('103')
   })
 
-  it('keeps the track in the playlist created by an earlier batch instead of creating the name again', async () => {
+  it('keeps the track in the playlist created by an earlier batch and writes nothing the second time', async () => {
     const path = await collection()
     const file = await newFile('Bam Bam.wav')
     const track = op({ path: file, facts: facts(file), wanted: [{ name: 'Bolos' }] })
     await applyRekordboxBatch(path, [track], deps())
-    await applyRekordboxBatch(path, [track], deps())
+    const second = deps()
+    const result = await applyRekordboxBatch(path, [track], second)
     const rows = named(path, 'Bolos')
     expect(rows).toHaveLength(1)
     expect(contentsOf(path, rows[0].ID)).toHaveLength(1)
+    expect(result).toMatchObject({ ok: true, wrote: false })
+    expect(result.ok && result.outcomes[0].notices).toEqual([])
+    expect(second.ensureClosed).not.toHaveBeenCalled()
+  })
+
+  it('does not take the track out of an existing playlist it asked for by name even when it was known there', async () => {
+    const path = await collection()
+    const file = await newFile('Bam Bam.wav')
+    await applyRekordboxBatch(
+      path,
+      [op({ path: file, facts: facts(file), wanted: [{ name: 'Bolos' }] })],
+      deps(),
+    )
+    const [bolos] = named(path, 'Bolos')
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: file, wanted: [{ name: 'Bolos' }], known: [bolos.ID] })],
+      deps(),
+    )
+    expect(contentsOf(path, bolos.ID)).toHaveLength(1)
+    expect(result).toMatchObject({ ok: true, wrote: false })
+    expect(result.ok && result.outcomes[0].notices).toEqual([])
+  })
+
+  it('links the track once when the same playlist is listed twice', async () => {
+    const path = await collection()
+    await applyRekordboxBatch(
+      path,
+      [
+        op({
+          wanted: [
+            { id: '3000', name: 'House' },
+            { id: '3000', name: 'House' },
+          ],
+        }),
+      ],
+      deps(),
+    )
+    expect(contentsOf(path, '3000')).toEqual(['102', '110', '103'])
   })
 
   it('does not add a new track to the collection when every playlist it wanted is gone', async () => {

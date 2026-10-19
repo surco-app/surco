@@ -270,18 +270,25 @@ function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions
   const changed = (pid: string): boolean =>
     xml !== null && op.stamps[pid] !== undefined && nodeTimestamp(xml, pid) !== op.stamps[pid]
   const current = entry ? trackPlaylists(probe, entry) : []
-  const wantedIds = op.wanted.flatMap((t) => (t.id ? [t.id] : []))
-  const names = [...new Set(op.wanted.flatMap((t) => (t.id ? [] : [t.name.trim()])))].filter(
+  const targetIds = [...new Set(op.wanted.flatMap((t) => (t.id ? [t.id] : [])))]
+  const typed = [...new Set(op.wanted.flatMap((t) => (t.id ? [] : [t.name.trim()])))].filter(
     (n) => n !== '',
   )
+  const existing = typed.flatMap((n) => {
+    const pid = liveRootPlaylist(probe, n)
+    return pid ? [pid] : []
+  })
+  const names = typed.filter((n) => !liveRootPlaylist(probe, n))
+  const wantedIds = [...new Set([...targetIds, ...existing])]
   const adds: string[] = []
-  for (const target of op.wanted) {
-    if (!target.id || current.includes(target.id)) continue
-    if (nodeAttribute(probe, target.id) !== 0)
-      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
-    else if (changed(target.id))
-      notices.push({ code: 'playlist-changed', track: op.label, playlist: target.name })
-    else adds.push(target.id)
+  for (const pid of existing) if (!current.includes(pid) && !targetIds.includes(pid)) adds.push(pid)
+  for (const pid of targetIds) {
+    if (current.includes(pid)) continue
+    const playlist = op.wanted.find((t) => t.id === pid)?.name ?? pid
+    if (nodeAttribute(probe, pid) !== 0)
+      notices.push({ code: 'playlist-gone', track: op.label, playlist })
+    else if (changed(pid)) notices.push({ code: 'playlist-changed', track: op.label, playlist })
+    else adds.push(pid)
   }
   const removes: string[] = []
   for (const pid of current) {
