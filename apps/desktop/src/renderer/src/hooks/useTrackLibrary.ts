@@ -151,6 +151,7 @@ interface TrackLibrary {
   // name-parsed value) and clearing the failed mark. Resolves true once the row holds the
   // file's tags; false leaves the mark in place, and the conversion refuses the row.
   rereadTrackMeta: (id: string) => Promise<boolean>
+  completeTrackMeta: (id: string) => Promise<void>
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
   // bytes that no longer exist. Only the fields the row renders — everything the user
   // staged in the editor is left alone.
@@ -429,8 +430,10 @@ export function useTrackLibrary({
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
     try {
-      const { tags, duration, cover, foreignTags, failed, reviewRaw } =
-        await window.api.readMeta(path)
+      const read = base.sourcePreview
+        ? await window.api.readMetaLight(path)
+        : { ...(await window.api.readMeta(path)), partial: false }
+      const { tags, duration, cover, foreignTags, failed, reviewRaw } = read
       const s = searchFromTags(parseFileName(path), tags)
       // Whatever Music knows that this file does not. Consumed once, like the restored
       // edit above: a later start-over must rebuild from the file alone.
@@ -463,6 +466,7 @@ export function useTrackLibrary({
           cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
         listLabel: s.title || base.fileName,
         loadingMeta: false,
+        metaPartial: read.partial,
         // The pure read IS the file's state: everything staged on top of this
         // snapshot exists nowhere on disk, which is what the session store persists.
         // Stamped before the restored overlay below, so restored edits keep counting
@@ -560,6 +564,48 @@ export function useTrackLibrary({
     if (!current) return false
     return loadTrackMeta({ ...newTrack(current.inputPath), id: current.id })
   })
+
+  const completing = useRef(new Map<string, Promise<void>>())
+  const completeTrackMeta = useStableCallback((id: string): Promise<void> => {
+    const inFlight = completing.current.get(id)
+    if (inFlight) return inFlight
+    const current = tracksRef.current.find((t) => t.id === id)
+    if (!current?.metaPartial) return Promise.resolve()
+    const completion = completeFromFullRead(id, current.inputPath)
+    completing.current.set(id, completion)
+    return completion
+  })
+
+  async function completeFromFullRead(id: string, path: string): Promise<void> {
+    try {
+      const read = await window.api.readMeta(path).catch(() => null)
+      if (!read || read.failed) return
+      const { cover, foreignTags } = read
+      enqueueMetaPatch(id, (t) => {
+        const untouched = t.diskSignature === trackSignature(t)
+        const completed: TrackItem = {
+          ...t,
+          metaPartial: false,
+          foreignTags,
+          embeddedCover: cover?.thumbUrl ?? t.embeddedCover,
+          embeddedCoverDims:
+            cover && cover.width > 0 ? { w: cover.width, h: cover.height } : t.embeddedCoverDims,
+          ...(untouched && t.coverUrl === undefined && !t.coverRemoved && cover?.thumbUrl
+            ? { coverUrl: cover.thumbUrl }
+            : {}),
+        }
+        const before = trackSignature(t)
+        const after = trackSignature(completed)
+        return {
+          ...completed,
+          ...(t.processedSignature === before && { processedSignature: after }),
+          ...(t.diskSignature === before && { diskSignature: after }),
+        }
+      })
+    } finally {
+      completing.current.delete(id)
+    }
+  }
 
   // An in-place export rewrote the file this row describes (possibly under a new name),
   // so the row's frozen label and the file's own artwork both went stale. Deliberately
@@ -972,6 +1018,7 @@ export function useTrackLibrary({
     deriveTracks,
     startOverTrack,
     rereadTrackMeta,
+    completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTrack,

@@ -43,6 +43,7 @@ import {
   probeDuration,
   probeProperties,
   readMeta,
+  readMetaLight,
   readTags,
   renderDeclickRepaired,
   tagsFromProbe,
@@ -165,6 +166,16 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // never as the base64 the renderer used to keep in every track's state.
   ipcMain.handle('audio:meta', async (_e, inputPath: string) => {
     const read = await readMeta(inputPath)
+    const meta = { ...read, tags: withSettingsYear(read.tags) }
+    if (!meta.cover) return meta
+    return {
+      ...meta,
+      cover: { ...meta.cover, thumbUrl: await coverThumbUrlFor(meta.cover.thumbUrl) },
+    }
+  })
+
+  ipcMain.handle('audio:metaLight', async (_e, inputPath: string) => {
+    const read = await readMetaLight(inputPath)
     const meta = { ...read, tags: withSettingsYear(read.tags) }
     if (!meta.cover) return meta
     return {

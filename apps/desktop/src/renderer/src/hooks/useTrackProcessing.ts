@@ -68,6 +68,7 @@ interface Params {
   // empty over the file; the read has to succeed first. Without this wired up the job
   // still tells main the metadata never came from the file, and main refuses it.
   rereadTrackMeta?: (id: string) => Promise<boolean>
+  completeTrackMeta?: (id: string) => Promise<void>
   // Fired once after a convert-all run that produced at least one conversion — the
   // moment of value the donate nudge rides. Fires per run, never per track, so a
   // thirty-track batch triggers one evaluation, not thirty.
@@ -130,6 +131,7 @@ export function useTrackProcessing({
   onFormatSkipped,
   onKeptAsIs,
   rereadTrackMeta,
+  completeTrackMeta,
   onConversion,
   onProcessError,
   concurrency = CONVERT_CONCURRENCY,
@@ -191,6 +193,19 @@ export function useTrackProcessing({
       // A read that failed must never become a write (see Params.rereadTrackMeta). The row
       // is re-resolved after the read because the library patches it in place; a row still
       // flagged afterwards, or with no re-read available, is refused rather than written.
+      if (track.metaPartial && completeTrackMeta) {
+        await completeTrackMeta(id)
+        const fresh = tracksRef.current.find((t) => t.id === id)
+        if (!fresh || fresh.metaPartial) {
+          updateTrack(id, {
+            status: 'error',
+            error: tr('errors.sourceTagsUnread'),
+            stage: undefined,
+          })
+          return 'failed'
+        }
+        track = fresh
+      }
       if (track.metaReadFailed && rereadTrackMeta) {
         const ok = await rereadTrackMeta(id)
         const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined

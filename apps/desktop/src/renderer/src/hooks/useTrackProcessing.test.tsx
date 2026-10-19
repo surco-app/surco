@@ -5,8 +5,8 @@ import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { Settings, TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import type { TrackItem } from '../types'
-import '../i18n'
 import { useTrackProcessing } from './useTrackProcessing'
 
 function meta(over: Partial<TrackMetadata> = {}): TrackMetadata {
@@ -376,6 +376,69 @@ describe('useTrackProcessing', () => {
       })
       expect(processTrack).toHaveBeenCalledTimes(1)
       expect(processTrack.mock.calls[0][0].metaUnread).toBe(true)
+    })
+  })
+
+  describe('a track listed from a light read', () => {
+    it('completes the read before converting, so the foreign tags the write keeps are known', async () => {
+      const order: string[] = []
+      const processTrack = vi.fn<Api['processTrack']>().mockImplementation(async () => {
+        order.push('processTrack')
+        return { outputPath: '/out/a.aiff', inPlace: false }
+      })
+      setApi({ processTrack })
+      const tracksRef = { current: [track({ id: 'a', metaPartial: true })] }
+      const completeTrackMeta = vi.fn(async (id: string) => {
+        order.push(`complete:${id}`)
+        tracksRef.current = tracksRef.current.map((t) =>
+          t.id === id ? { ...t, metaPartial: false } : t,
+        )
+      })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: tracksRef.current,
+            tracksRef,
+            settings: null,
+            updateTrack: vi.fn(),
+            completeTrackMeta,
+          }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(outcome).toBe('converted')
+      expect(order).toEqual(['complete:a', 'processTrack'])
+    })
+
+    it('refuses the conversion when the read stays partial, so a partial read never becomes a write', async () => {
+      const processTrack = vi.fn()
+      setApi({ processTrack })
+      const updateTrack = vi.fn()
+      const tracksRef = { current: [track({ id: 'a', metaPartial: true })] }
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: tracksRef.current,
+            tracksRef,
+            settings: null,
+            updateTrack,
+            completeTrackMeta: vi.fn(async () => {}),
+          }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(outcome).toBe('failed')
+      expect(processTrack).not.toHaveBeenCalled()
+      expect(updateTrack).toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({ status: 'error', error: i18n.t('errors.sourceTagsUnread') }),
+      )
     })
   })
 

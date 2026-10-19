@@ -289,6 +289,13 @@ export function stubApi(over: Partial<Api> = {}): Api {
       cover: null,
       foreignTags: [],
     }),
+    readMetaLight: async () => ({
+      tags: emptyMetadata(),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+      partial: false,
+    }),
     readCover: async () => null,
     readCoverFull: async () => null,
     onMenuCommand: unsubscribe,

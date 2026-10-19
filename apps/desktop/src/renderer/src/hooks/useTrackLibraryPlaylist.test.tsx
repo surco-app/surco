@@ -606,3 +606,108 @@ describe('opening a rekordbox playlist with previews', () => {
     expect(after.diskSignature).toBe(trackSignature(after))
   })
 })
+
+describe('the light read of a rekordbox row', () => {
+  const entry = {
+    path: '/m/a.aiff',
+    separator: false,
+    meta: {},
+    contentId: 'c1',
+    preview: { title: 'A', artist: 'R', durationSec: 256, cues: [] },
+  }
+  const light = {
+    tags: tags({ title: 'A' }),
+    duration: 255,
+    cover: null,
+    foreignTags: [],
+    partial: true,
+  }
+  const full = {
+    tags: tags({ title: 'A' }),
+    duration: 255,
+    cover: { thumbUrl: 'surco://cover/a.jpg', width: 600, height: 600 },
+    foreignTags: [{ name: 'ENERGY', value: '7' }],
+  }
+
+  it('lists the row from the light read and leaves it marked as partial', async () => {
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMeta = vi.fn().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(result.current.tracks[0].metaPartial).toBe(true)
+  })
+
+  it('completes the cover and foreign tags without the row reading as edited', async () => {
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMeta = vi.fn().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.completeTrackMeta(result.current.tracks[0].id)
+    })
+    const row = result.current.tracks[0]
+    expect(row.metaPartial).toBe(false)
+    expect(row.embeddedCover).toBe('surco://cover/a.jpg')
+    expect(row.coverUrl).toBe('surco://cover/a.jpg')
+    expect(row.foreignTags).toEqual([{ name: 'ENERGY', value: '7' }])
+    expect(row.diskSignature).toBe(trackSignature(row))
+  })
+
+  it('lets a conversion wait for the completion the selection already started, instead of refusing the row', async () => {
+    let answer: (read: typeof full) => void = () => {}
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMeta = vi.fn(() => new Promise<typeof full>((r) => (answer = r)))
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const id = result.current.tracks[0].id
+    let partialWhenSecondSettled: boolean | undefined
+    await act(async () => {
+      void result.current.completeTrackMeta(id)
+      const second = result.current.completeTrackMeta(id).then(() => {
+        partialWhenSecondSettled = result.current.tracksRef.current[0].metaPartial
+      })
+      answer(full)
+      await second
+    })
+    expect(readMeta).toHaveBeenCalledTimes(1)
+    expect(partialWhenSecondSettled).toBe(false)
+  })
+
+  it('leaves the row partial when the full read throws, so the conversion refuses it instead of crashing', async () => {
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMeta = vi.fn().mockRejectedValue(new Error('gone'))
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await expect(result.current.completeTrackMeta(result.current.tracks[0].id)).resolves.toBe(
+        undefined,
+      )
+    })
+    expect(result.current.tracks[0].metaPartial).toBe(true)
+  })
+
+  it('reads a dropped file fully, as before', async () => {
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMeta = vi.fn().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.addPaths(['/m/b.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    expect(readMetaLight).not.toHaveBeenCalled()
+    expect(result.current.tracks[0].metaPartial).toBeFalsy()
+  })
+})

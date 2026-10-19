@@ -537,6 +537,7 @@ export default function App(): React.JSX.Element {
     deriveTracks,
     startOverTrack,
     rereadTrackMeta,
+    completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTrack,
@@ -1210,6 +1211,7 @@ export default function App(): React.JSX.Element {
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
     onKeptAsIs: (name) => setNotice(tr('notices.keptAsIs', { name })),
     rereadTrackMeta,
+    completeTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast. The card names the track
     // because the key collapses the run: without a name the user reads why a conversion
@@ -1240,6 +1242,14 @@ export default function App(): React.JSX.Element {
       })
     },
   })
+
+  const partialSelected = useMemo(
+    () => tracks.filter((t) => t.metaPartial && selectedIdSet.has(t.id)).map((t) => t.id),
+    [tracks, selectedIdSet],
+  )
+  useEffect(() => {
+    for (const id of partialSelected) void completeTrackMeta(id)
+  }, [partialSelected, completeTrackMeta])
 
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
   // the filtered-visible subset removes those rows and keeps watching, so the hidden FLAC/WAV

@@ -52,7 +52,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { clearAnalysisCache } from './analysisCache'
-import { readMeta } from './ffmpeg'
+import { readMeta, readMetaLight } from './ffmpeg'
 
 const work = mkdtempSync(join(tmpdir(), 'surco-readmetacache-src-'))
 const src = join(work, 'in.flac')
@@ -134,5 +134,31 @@ describe('readMeta caching', () => {
 
     expect(read.failed, 'a good read must not be flagged').toBeUndefined()
     expect(read.tags.title, 'the fixture no longer returns tags').toBe('Test Track')
+  })
+})
+
+describe('readMetaLight', () => {
+  it('reads tags and length without the cover thumbnail or the ffmetadata pass', async () => {
+    const read = await readMetaLight(src)
+    expect(read.tags.title).toBe('Test Track')
+    expect(read.partial).toBe(true)
+    expect(read.cover).toBeNull()
+    expect(calls.some((c) => c.args.includes('ffmetadata'))).toBe(false)
+    expect(calls.some((c) => c.args.some((a) => a.endsWith('.jpg')))).toBe(false)
+  })
+
+  it('answers the full read when one is already cached, so a known file is never partial', async () => {
+    await readMeta(src)
+    calls.length = 0
+    const read = await readMetaLight(src)
+    expect(read.partial).toBe(false)
+    expect(calls).toHaveLength(0)
+  })
+
+  it('caches the light read too, so reopening the playlist costs nothing', async () => {
+    await readMetaLight(src)
+    calls.length = 0
+    await readMetaLight(src)
+    expect(calls).toHaveLength(0)
   })
 })

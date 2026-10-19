@@ -57,6 +57,7 @@ export interface TrackItem {
   // shows only its file-name parse, and the warning mark tells that apart from a file
   // that genuinely carries no tags. Cleared by rebuilding the row (start over).
   metaReadFailed?: boolean
+  metaPartial?: boolean
   // Set when the quality sweep could not measure this file (ffmpeg refused it, the
   // mount went away mid-run). The sweep used to report only how many failed, which
   // named none of them: with six hundred rows, "12 could not be analyzed" left the

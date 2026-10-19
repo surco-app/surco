@@ -37,7 +37,7 @@ import type {
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
-import { cachedAnalysis, LOUDNESS_NAMESPACE } from './analysisCache'
+import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { isAbortError } from './analysisCancel'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
@@ -594,6 +594,25 @@ export async function extractCover(
   }
 }
 
+const READMETA_NAMESPACE = 'readmeta-v5'
+const READMETA_LIGHT_NAMESPACE = 'readmeta-light-v1'
+
+const FAILED_READ: MetaRead = {
+  tags: {} as TrackMetadata,
+  duration: null,
+  cover: null,
+  foreignTags: [],
+  failed: true,
+}
+
+function composed(result: MetaRead): MetaRead {
+  return {
+    ...result,
+    tags: composeMeta(result.tags),
+    ...(result.reviewRaw && { reviewRaw: composeMeta(result.reviewRaw) }),
+  }
+}
+
 // Reads tags, duration and the cover thumbnail in one go for the import path. A single
 // ffprobe pulls tags + duration + the art's pixel size, then one ffmpeg extracts the
 // thumbnail — two processes instead of the four the separate readTags/probeDuration/
@@ -606,28 +625,26 @@ export async function readMeta(input: string): Promise<MetaRead> {
   // namespace is part of the cache key, so without this bump every library already probed
   // would keep serving the value cached before. v5: reads carry reviewRaw, the untrimmed
   // review fields; a v4 entry would leave the list review blind to stray spaces.
-  const result = await cachedAnalysis('readmeta-v5', input, () => readMetaUncached(input))
-  if (result)
-    return {
-      ...result,
-      tags: composeMeta(result.tags),
-      ...(result.reviewRaw && { reviewRaw: composeMeta(result.reviewRaw) }),
-    }
+  const result = await cachedAnalysis(READMETA_NAMESPACE, input, () => readMetaUncached(input))
+  if (result) return composed(result)
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
-  return {
-    tags: {} as TrackMetadata,
-    duration: null,
-    cover: null,
-    foreignTags: [],
-    failed: true,
-  }
+  return FAILED_READ
+}
+
+export async function readMetaLight(input: string): Promise<MetaRead & { partial: boolean }> {
+  const full = await peekAnalysis<MetaRead>(READMETA_NAMESPACE, input)
+  if (full) return { ...composed(full), partial: false }
+  const light = await cachedAnalysis(READMETA_LIGHT_NAMESPACE, input, () =>
+    readMetaUncached(input, false),
+  )
+  return light ? { ...composed(light), partial: true } : { ...FAILED_READ, partial: false }
 }
 
 // The actual probe/decode work behind readMeta, split out so cachedAnalysis can tell a
 // successful read (an object, cached) from a failed one (null, never pinned — retried on
 // the next call rather than serving the degraded result forever).
-async function readMetaUncached(input: string): Promise<MetaRead | null> {
+async function readMetaUncached(input: string, full = true): Promise<MetaRead | null> {
   try {
     const { stdout } = await run(
       ffprobePath,
@@ -670,11 +687,11 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
     return {
       tags,
       duration: Number.isFinite(seconds) ? seconds : await measureDurationByDecoding(input),
-      cover: await extractCover(input, dims),
+      cover: full ? await extractCover(input, dims) : null,
       // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a
       // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
       // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
-      foreignTags: await readForeignTags(input),
+      foreignTags: full ? await readForeignTags(input) : [],
       ...(reviewRaw && { reviewRaw }),
     }
   } catch {

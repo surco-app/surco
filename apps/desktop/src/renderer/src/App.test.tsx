@@ -1133,6 +1133,44 @@ describe('App source rail', () => {
     expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
   })
 
+  it('lists a rekordbox row from the light read and completes it once the row is selected', async () => {
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue({
+      tags: { ...emptyMetadata(), title: 'Charlie' },
+      duration: 200,
+      cover: null,
+      foreignTags: [{ name: 'ENERGY', value: '7' }],
+    })
+    rekordboxWithFactory({
+      readMeta,
+      readMetaLight: vi.fn<Api['readMetaLight']>().mockResolvedValue({
+        tags: { ...emptyMetadata(), title: 'Charlie' },
+        duration: 200,
+        cover: null,
+        foreignTags: [],
+        partial: true,
+      }),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([
+        {
+          path: '/m/c.wav',
+          separator: false,
+          meta: {},
+          contentId: 'c',
+          preview: { title: 'Charlie', artist: 'DJ', durationSec: 200, cues: [] },
+        },
+      ]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[0]).toHaveTextContent('Charlie'))
+    await act(async () => {})
+    expect(readMeta).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+
+    await waitFor(() => expect(readMeta).toHaveBeenCalledWith('/m/c.wav'))
+  })
+
   // A read that failed is not an empty playlist either: it says why, as the tree does.
   it('says the playlist could not be read when reading its entries fails', async () => {
     rekordboxWithFactory({
