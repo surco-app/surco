@@ -176,3 +176,5 @@ Las que no encajan: a 389 les falta una hot cue de la cuenta atrás, a 401 un CA
 Auto no usa calibración: medida en §"Medido: botón Auto", calibrar con sus marcas no mejora la regla general.
 
 Un flujo sin reglas encaja con cualquier pista si se permiten cues de más, así que nunca se propone: una colección que solo tiene CALL recibe "Tu colección no tiene un patrón claro" y le queda "Solo CALL" entre los incluidos.
+
+Tiempo de lectura y aprendizaje sobre la copia: 906 ms la primera vez y unos 257 ms con la caché caliente. Corre en el proceso principal: al pulsar el botón, la app puede tardar en responder alrededor de un segundo. Si se nota, se mueve a un worker.
