@@ -1329,6 +1329,31 @@ describe('App source playlists', () => {
 
   // Removing from Tracks is about Tracks: the playlist still lists the file, so its row
   // stays there with what the user typed on it.
+  // "pedimos restaurar las de files": browsing a playlist at launch is not starting a new
+  // Tracks list, so the offer to bring the last one back stays until it is answered.
+  it('still offers the last Tracks list after a playlist is opened, and restores it', async () => {
+    factoryWithAlpha({
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/m/b.wav'], edits: {} }),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await act(async () => {})
+    expect(screen.getByTestId('last-session')).not.toHaveAttribute('aria-hidden')
+
+    fireEvent.click(screen.getByTestId('last-session-action'))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row').map((r) => r.textContent)).toEqual([
+        expect.stringContaining('Bravo'),
+      ]),
+    )
+  })
+
   it('keeps a row removed from Tracks, edits included, in the open playlist that lists it', async () => {
     const pickFiles = vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav'])
     factoryWithAlpha({ pickFiles })

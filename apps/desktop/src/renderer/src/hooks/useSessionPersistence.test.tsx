@@ -87,4 +87,35 @@ describe('useSessionPersistence', () => {
     vi.useRealTimers()
     expect(saveLastSession).toHaveBeenCalledWith(['/music/files.wav'], {})
   })
+
+  it('keeps offering Files back while only a source playlist has rows', async () => {
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      saveLastSession: vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined),
+    }
+    const playlistRow = {
+      id: 'p',
+      inputPath: '/music/p.wav',
+      meta: emptyMetadata(),
+    } as TrackItem
+    const store = createAppStore()
+    const tracksRef = { current: [playlistRow] }
+    const { rerender } = renderHook(
+      ({ tracks }) =>
+        useSessionPersistence({
+          tracks,
+          tracksRef,
+          addPaths: vi.fn(),
+          seedRestoredEdits: vi.fn(),
+          store,
+          withdrawOffer: false,
+        }),
+      { initialProps: { tracks: [playlistRow] } },
+    )
+    await waitFor(() => expect(store.getState().toasts).toHaveLength(1))
+    rerender({ tracks: [{ ...playlistRow }] })
+    expect(store.getState().toasts).toHaveLength(1)
+  })
 })

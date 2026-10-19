@@ -37,9 +37,9 @@ export function useSessionPersistence({
   store,
   withdrawOffer,
 }: Params): void {
-  // The launch-time "reopen last session" offer. Asked once, and only while the list is
+  // The launch-time "reopen last session" offer. Asked once, and only while Files is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
-  // so the offer withdraws itself the moment rows exist (the effect below). Accepting
+  // so the offer withdraws itself the moment Files has rows (the effect below). Accepting
   // routes through the same expand pipeline as a drop, so media access and metadata
   // reads behave exactly like a fresh import. The ✕ and (for a paths-only session)
   // the countdown expiring are both an answer: they clear the stored session so the
@@ -74,7 +74,12 @@ export function useSessionPersistence({
     lastSessionToastId.current = null
   })
   const offerLastSession = useStableCallback((session: SessionData) => {
-    if (session.paths.length === 0 || tracksRef.current.length > 0 || withdrawnRef.current) return
+    if (
+      session.paths.length === 0 ||
+      tracksRef.current.some((t) => t.inFiles) ||
+      withdrawnRef.current
+    )
+      return
     // Two stakes, two expiries: a paths-only session loses nothing, so aging out is a no.
     // Staged edits exist nowhere but in this saved session, so aging out only hides the
     // offer and the next launch asks again; only the ✕ is a deliberate no.
@@ -108,7 +113,7 @@ export function useSessionPersistence({
     lastSessionToastId.current = null
   }, [withdrawOffer, store])
   useEffect(() => {
-    if (tracks.length === 0 || !lastSessionToastId.current) return
+    if (!tracks.some((t) => t.inFiles) || !lastSessionToastId.current) return
     dismissToast(store, lastSessionToastId.current)
     lastSessionToastId.current = null
   }, [tracks, store])
