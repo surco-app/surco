@@ -1,3 +1,4 @@
+import log from 'electron-log/main'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 
 export interface WatchDeps {
@@ -27,12 +28,27 @@ export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: 
     if (!deps.collection()) return
     busy = true
     try {
-      if (await deps.isRunning()) {
+      let running: boolean
+      try {
+        running = await deps.isRunning()
+      } catch (error) {
+        log.warn('rekordbox queue watch could not check whether rekordbox runs', error)
+        return
+      }
+      if (running) {
         armed = true
         return
       }
       if (!armed) return
-      const result = await deps.queue.apply(async () => !(await deps.isRunning()))
+      let result: QueueApply
+      try {
+        result = await deps.queue.apply(async () => !(await deps.isRunning()))
+      } catch (error) {
+        log.warn('rekordbox queue apply threw', error)
+        armed = false
+        deps.onApplied({ status: 'refused', reason: 'write-failed' })
+        return
+      }
       if (
         result.status === 'refused' &&
         (result.reason === 'cancelled' || result.reason === 'rekordbox-running')
