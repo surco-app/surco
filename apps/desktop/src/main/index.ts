@@ -27,6 +27,7 @@ import {
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { trashLimits } from '../shared/backupPolicy'
+import { activeCueFlow } from '../shared/cueFlows'
 import {
   isRecoveryUrl,
   MEDIA_SCHEME,
@@ -234,6 +235,7 @@ const rekordboxQueueWatch = watchRekordboxQueue({
     completeOnClose({
       enabled: () => getSettings().completeCuesOnClose,
       collection: rekordboxCollectionPath,
+      flow: () => activeCueFlow(getSettings()),
       queue: rekordboxQueue,
     }),
 })
@@ -962,6 +964,7 @@ function registerIpc(): void {
     collection: rekordboxCollectionPath,
     queue: rekordboxQueue,
     applyQuietly: applyRekordboxQueueQuietly,
+    flow: () => activeCueFlow(getSettings()),
   })
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({

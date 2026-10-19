@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
+import { MY_FLOW } from '../shared/cueFlows'
 
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
@@ -164,6 +165,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
       collection: () => path,
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
     })
     registerRekordboxQueueIpc(queue, {
       collection: () => path,

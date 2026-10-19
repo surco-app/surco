@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import log from 'electron-log/main'
-import { cueChanges, findDrops, isEmptyChange } from '../shared/cueRules'
+import type { CueFlow } from '../shared/cueFlows'
+import { diffCues, findDrops, flowOutcome, isEmptyChange } from '../shared/cueRules'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readTrackCues } from './rekordboxCues'
 import { withCollection } from './rekordboxPlaylistsIpc'
@@ -13,6 +14,7 @@ type Db = InstanceType<typeof Database>
 export function completableOps(
   db: Db,
   shareDir: string,
+  flow: CueFlow,
   newId: () => string = randomUUID,
 ): CuesOp[] {
   const ids = (
@@ -36,22 +38,23 @@ export function completableOps(
       read.cues.map((c) => c.ms),
       [],
     )
-    const out = cueChanges(
-      read.cues,
+    const out = flowOutcome({
+      existing: read.cues,
       drops,
-      drops,
-      read.grid.map((b) => b.ms),
-      read.strong,
-    )
-    if (out.status !== 'plan' || isEmptyChange(out.changes)) continue
+      previousDrops: drops,
+      beats: read.grid.map((b) => b.ms),
+      strong: read.strong,
+      phrases: read.phrases,
+      flow,
+    })
+    if (out.status !== 'plan' || isEmptyChange(diffCues(read.cues, out.wanted))) continue
     ops.push({
       id: newId(),
       kind: 'cues',
       contentId,
       path: row.FolderPath,
       label: row.Title || row.FolderPath,
-      drops,
-      previousDrops: drops,
+      wanted: out.wanted,
       fingerprint: read.fingerprint,
     })
   }
@@ -61,6 +64,7 @@ export function completableOps(
 export function completeOnClose(deps: {
   enabled: () => boolean
   collection: () => string
+  flow: () => CueFlow
   queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'state'>
   newId?: () => string
 }): void {
@@ -72,7 +76,7 @@ export function completeOnClose(deps: {
   try {
     const ops = withCollection(
       path,
-      (db) => completableOps(db, rekordboxShareDir(path), deps.newId),
+      (db) => completableOps(db, rekordboxShareDir(path), deps.flow(), deps.newId),
       [],
     ).filter((op) => !deps.queue.cuesOp(op.contentId))
     if (ops.length > 0) deps.queue.enqueue(ops)

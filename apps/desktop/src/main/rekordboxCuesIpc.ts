@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
+import type { CueFlow } from '../shared/cueFlows'
 import type { SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
@@ -11,6 +12,7 @@ export function registerRekordboxCuesIpc(host: {
   collection: () => string
   queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
   applyQuietly: () => void
+  flow: () => CueFlow
 }): void {
   ipcMain.handle('rekordbox:trackCues', async (_e, contentId: string) => {
     const path = host.collection()
@@ -23,7 +25,11 @@ export function registerRekordboxCuesIpc(host: {
   })
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
-    return withCollection(path, (db) => completableOps(db, rekordboxShareDir(path)).length, 0)
+    return withCollection(
+      path,
+      (db) => completableOps(db, rekordboxShareDir(path), host.flow()).length,
+      0,
+    )
   })
   ipcMain.handle(
     'rekordbox:queuedCues',

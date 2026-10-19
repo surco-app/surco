@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
+import { MY_FLOW } from '../shared/cueFlows'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
@@ -19,6 +20,7 @@ describe('registerRekordboxCuesIpc', () => {
       collection: () => '/c/master.db',
       queue: { enqueue, cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly,
+      flow: () => MY_FLOW,
     })
     const req = {
       contentId: '103',
@@ -37,6 +39,7 @@ describe('registerRekordboxCuesIpc', () => {
       collection: () => '',
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
     })
     expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
@@ -52,6 +55,7 @@ describe('registerRekordboxCuesIpc', () => {
       collection: () => '/c/master.db',
       queue: { enqueue: vi.fn(), cuesOp: vi.fn((id: string) => ops[id]) as never, drop: vi.fn() },
       applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
     })
     expect(handler('rekordbox:queuedCues')({}, '103')).toEqual(wanted)
     expect(handler('rekordbox:queuedCues')({}, '104')).toBeNull()
@@ -64,6 +68,7 @@ describe('registerRekordboxCuesIpc', () => {
       collection: () => '/c/master.db',
       queue: { enqueue: vi.fn(), cuesOp: (() => ({ id: 'c1', drops: [1000] })) as never, drop },
       applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).toHaveBeenCalledWith('c1')
@@ -75,6 +80,7 @@ describe('registerRekordboxCuesIpc', () => {
       collection: () => '/c/master.db',
       queue: { enqueue: vi.fn(), cuesOp: () => undefined, drop },
       applyQuietly: vi.fn(),
+      flow: () => MY_FLOW,
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).not.toHaveBeenCalled()

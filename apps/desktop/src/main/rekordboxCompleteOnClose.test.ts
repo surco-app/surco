@@ -3,6 +3,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { CALLS_ONLY, MY_FLOW, ONE_AT_32 } from '../shared/cueFlows'
 import type { RekordboxQueueState } from '../shared/types'
 import { anlzFile, pqtzSection } from './anlzFixture'
 import { completableOps, completeOnClose } from './rekordboxCompleteOnClose'
@@ -49,19 +50,45 @@ describe('completableOps', () => {
     const path = await collection()
     const db = openRekordboxDb(path, { readonly: true })
     if (!db) throw new Error('did not open')
-    const ops = completableOps(db, join(path, '../share'), () => 'op')
+    const ops = completableOps(db, join(path, '../share'), MY_FLOW, () => 'op')
     expect(ops).toEqual([
-      expect.objectContaining({
+      {
         id: 'op',
         kind: 'cues',
         contentId: '101',
         path: '/Volumes/Public/Music/Night Train.aiff',
         label: 'Night Train',
-        drops: [128000],
-        previousDrops: [128000],
+        wanted: [
+          { id: '11', ms: 128000, kind: 0, color: null },
+          { ms: 32000, kind: 1, color: 42 },
+          { ms: 32000, kind: 0, color: null },
+          { ms: 64000, kind: 2, color: 22 },
+          { ms: 64000, kind: 0, color: null },
+          { ms: 96000, kind: 3, color: 1 },
+          { ms: 96000, kind: 0, color: null },
+        ],
         fingerprint: '11|0|128000|',
-      }),
+      },
     ])
+    db.close()
+  })
+
+  it('completes with the flow the DJ chose, one green cue at 32 bars and no CALL under it', async () => {
+    const path = await collection()
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    expect(completableOps(db, join(path, '../share'), ONE_AT_32, () => 'op')[0].wanted).toEqual([
+      { id: '11', ms: 128000, kind: 0, color: null },
+      { ms: 64000, kind: 1, color: 22 },
+    ])
+    db.close()
+  })
+
+  it('has nothing to complete with Solo CALL, since the drops already are the CALLs', async () => {
+    const path = await collection()
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    expect(completableOps(db, join(path, '../share'), CALLS_ONLY)).toEqual([])
     db.close()
   })
 })
@@ -70,7 +97,7 @@ describe('completeOnClose', () => {
   it('queues the completion of the collection it reads when the option is on', async () => {
     const path = await collection()
     const q = queue()
-    completeOnClose({ enabled: () => true, collection: () => path, queue: q })
+    completeOnClose({ enabled: () => true, collection: () => path, queue: q, flow: () => MY_FLOW })
     expect(q.enqueue).toHaveBeenCalledWith([expect.objectContaining({ contentId: '101' })])
   })
 
@@ -82,43 +109,43 @@ describe('completeOnClose', () => {
       contentId: '101',
       path: '/Volumes/Public/Music/Night Train.aiff',
       label: 'Night Train',
-      drops: [64000, 128000],
-      previousDrops: [128000],
+      wanted: [{ id: '11', ms: 128000, kind: 0, color: null }],
       fingerprint: '11|0|128000|',
     }
     const q = queue(EMPTY, { '101': mine })
-    completeOnClose({ enabled: () => true, collection: () => path, queue: q })
+    completeOnClose({ enabled: () => true, collection: () => path, queue: q, flow: () => MY_FLOW })
     expect(q.enqueue).not.toHaveBeenCalled()
   })
 
   it('adds nothing to a halted queue, whose next write would replace the only good backup', async () => {
     const path = await collection()
     const q = queue({ ...EMPTY, halted: true })
-    completeOnClose({ enabled: () => true, collection: () => path, queue: q })
+    completeOnClose({ enabled: () => true, collection: () => path, queue: q, flow: () => MY_FLOW })
     expect(q.enqueue).not.toHaveBeenCalled()
   })
 
   it('adds nothing to a queue held for another collection', async () => {
     const path = await collection()
     const q = queue({ ...EMPTY, elsewhere: true })
-    completeOnClose({ enabled: () => true, collection: () => path, queue: q })
+    completeOnClose({ enabled: () => true, collection: () => path, queue: q, flow: () => MY_FLOW })
     expect(q.enqueue).not.toHaveBeenCalled()
   })
 
   it('does nothing when the option is off, which is the default', async () => {
     const path = await collection()
     const q = queue()
-    completeOnClose({ enabled: () => false, collection: () => path, queue: q })
+    completeOnClose({ enabled: () => false, collection: () => path, queue: q, flow: () => MY_FLOW })
     expect(q.enqueue).not.toHaveBeenCalled()
   })
 
   it('does nothing without a collection and survives one that cannot be opened', () => {
     const q = queue()
-    completeOnClose({ enabled: () => true, collection: () => '', queue: q })
+    completeOnClose({ enabled: () => true, collection: () => '', queue: q, flow: () => MY_FLOW })
     completeOnClose({
       enabled: () => true,
       collection: () => join(tmpdir(), 'surco-missing', 'master.db'),
       queue: q,
+      flow: () => MY_FLOW,
     })
     expect(q.enqueue).not.toHaveBeenCalled()
   })
