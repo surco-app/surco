@@ -1,8 +1,10 @@
 import type {
   UsbExportEvent,
   UsbFailure,
+  UsbHolder,
   UsbPlanTrack,
   UsbTrackFailure,
+  UsbVolume,
 } from '../../../shared/types'
 
 // The running USB export as the renderer sees it, folded from the main process's events.
@@ -186,3 +188,28 @@ export function wavePath(bars: number[]): string {
 
 // A track rekordbox never analysed has no preview: a flat bar stands in for it.
 export const FLAT_WAVE: number[] = Array.from({ length: 100 }, () => 0.12)
+
+const two = (n: number): string => String(n).padStart(2, '0')
+
+// "exportado por Surco hoy 09:12" / "exportado por rekordbox el 15/10 08:27": the day only
+// when it is not today, in the order the user reads dates (day/month).
+export function holderText(
+  h: UsbHolder,
+  tr: (k: string, o?: Record<string, unknown>) => string,
+  now: Date,
+): string {
+  if (h.by === 'empty' || h.at === null) return tr('usbExport.holder.empty')
+  const d = new Date(h.at)
+  const time = `${two(d.getHours())}:${two(d.getMinutes())}`
+  const today = d.toDateString() === now.toDateString()
+  const when = today
+    ? tr('usbExport.holder.today', { time })
+    : tr('usbExport.holder.on', { date: `${two(d.getDate())}/${two(d.getMonth() + 1)}`, time })
+  return tr(`usbExport.holder.${h.by}`, { when })
+}
+
+export function newlyMounted(prev: UsbVolume[] | null, next: UsbVolume[]): UsbVolume[] {
+  if (!prev) return []
+  const known = new Set(prev.map((v) => v.uuid))
+  return next.filter((v) => !known.has(v.uuid))
+}

@@ -366,7 +366,8 @@
     "importApplePlaylist": "Ouvrir les playlists Apple Music",
     "musicReview": "Vérifier les métadonnées dans Apple Music…",
     "musicDuplicates": "Afficher les doublons dans Apple Music…",
-    "listReview": "Vérifier les métadonnées…"
+    "listReview": "Vérifier les métadonnées…",
+    "exportUsb": "Exporter vers USB…"
   },
   "trackList": {
     "backup": "Revenir à l'original… (copie du {{when}})",
@@ -1731,7 +1732,8 @@
       "newFolderInside": "Nouveau dossier dedans",
       "name": "Nom",
       "dropCount": "+{{count}} au lâcher",
-      "folderMenu": "Actions du dossier"
+      "folderMenu": "Actions du dossier",
+      "exportUsb": "Exporter vers USB"
     },
     "reorder": {
       "removeSeparator": "Retirer le séparateur",
@@ -2083,6 +2085,61 @@
       "unreadable": "lecture impossible",
       "device": "écriture impossible sur la clé USB"
     },
-    "pill": "USB {{done}}/{{total}}"
+    "pill": "USB {{done}}/{{total}}",
+    "title": "Exporter vers USB",
+    "connected": "USB {{name}} connectée",
+    "connectedAction": "Exporter",
+    "holder": {
+      "empty": "vide",
+      "today": "aujourd’hui {{time}}",
+      "on": "le {{date}} {{time}}",
+      "rekordbox": "exportée par rekordbox {{when}}",
+      "surco": "exportée par Surco {{when}}",
+      "other": "contient un export, {{when}}"
+    },
+    "choose": {
+      "tick": "Cocher {{name}}",
+      "sticks": "USB",
+      "none": "Branche une clé USB",
+      "other": "Autre destination…",
+      "capacity": "{{total}} · {{free}} libres",
+      "pick": "Coche des playlists et choisis une clé USB.",
+      "calculating": "Calcul en cours…",
+      "prune": "Supprimer de la clé la musique qui n’est plus exportée",
+      "cancel": "Annuler",
+      "export": "Exporter",
+      "settings": "Copier My Settings"
+    },
+    "summary": {
+      "tracks_one": "{{count}} piste",
+      "tracks_other": "{{count}} pistes",
+      "new_one": "{{count}} nouvelle · {{size}}",
+      "new_other": "{{count}} nouvelles · {{size}}",
+      "kept_one": "{{count}} déjà là",
+      "kept_other": "{{count}} déjà là",
+      "removed_one": "{{count}} retirée depuis la dernière fois",
+      "removed_other": "{{count}} retirées depuis la dernière fois"
+    },
+    "warnings": {
+      "rekordboxExport": "rekordbox a synchronisé cette clé en dernier. Surco la refait avec ces playlists et réutilise la musique déjà présente.",
+      "exfat": "exFAT. Le CDJ-2000 ne le lit pas.",
+      "gpt": "GPT. Le CDJ-2000 et les NXS2 ne le lisent pas.",
+      "notVolumeRoot": "Les lecteurs ne lisent que la racine d’une clé USB.",
+      "cdj2000_one": "{{count}} piste risque de ne pas jouer sur un CDJ-2000",
+      "cdj2000_other": "{{count}} pistes risquent de ne pas jouer sur un CDJ-2000",
+      "noSpace": "Ça ne tient pas. Il faut {{needed}} et il reste {{free}}.",
+      "ntfs": "NTFS. Les lecteurs ne le lisent pas.",
+      "unexportable_one": "{{count}} piste ne peut pas être exportée",
+      "unexportable_other": "{{count}} pistes ne peuvent pas être exportées",
+      "rekordboxOpen": "rekordbox est ouvert. Il te sera demandé de le fermer à l’export.",
+      "sourcesUnreachable_one": "{{volume}} est introuvable, et la musique de {{count}} piste s’y trouve. Monte-le et exporte à nouveau.",
+      "sourcesUnreachable_other": "{{volume}} est introuvable, et la musique de {{count}} pistes s’y trouve. Monte-le et exporte à nouveau.",
+      "emptyPlaylist": "Aucune piste de {{names}} n’a été trouvée."
+    },
+    "unexportable": {
+      "missing-file": "fichier introuvable",
+      "streaming": "piste en streaming",
+      "skipped": "baken ne la prend pas"
+    }
   }
 }

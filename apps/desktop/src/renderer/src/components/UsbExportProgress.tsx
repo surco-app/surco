@@ -85,6 +85,11 @@ export function UsbExportProgress({
             ` ${tr('usbExport.progress.failedCount', { count: state.result.failed })}`}
         </p>
       )}
+      {state.phase === 'done' && state.result?.syncFiles === false && (
+        <p data-testid="usb-sync-files" role="alert" className="px-4 pt-1 text-sm text-danger">
+          {tr('usbExport.errors.sync-files')}
+        </p>
+      )}
       {state.phase === 'cancelled' && (
         <p data-testid="usb-cancelled" role="status" className="px-4 pt-3 text-sm">
           {tr('usbExport.progress.cancelled')}

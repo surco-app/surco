@@ -154,6 +154,15 @@ describe('Music review commands', () => {
     runCommand(ready, 'list-review')
     expect(open).toHaveBeenCalledTimes(1)
   })
+
+  // Off macOS and Windows, or without a rekordbox collection, nothing would make it work:
+  // not registered rather than shown disabled.
+  it('offers the USB export only where it exists', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'export-usb')).toBe(false)
+    const open = vi.fn()
+    commandById(makeDeps({ openUsbExport: open }), 'export-usb').run()
+    expect(open).toHaveBeenCalled()
+  })
 })
 
 describe('guideUrl', () => {

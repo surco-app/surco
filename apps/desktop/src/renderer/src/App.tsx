@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import {
   lazy,
@@ -33,6 +33,7 @@ import type {
   ThemePref,
   TrackMetadata,
   TrashEntry,
+  UsbVolume,
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
@@ -57,6 +58,9 @@ import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackCont
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
 import { TrashPanel } from './components/TrashPanel'
+import { UsbExportModal } from './components/UsbExportModal'
+import { UsbExportPill } from './components/UsbExportPill'
+import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
@@ -84,6 +88,7 @@ import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackL
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
+import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
@@ -160,6 +165,8 @@ import {
   type TrackSort,
 } from './lib/triage'
 import { detectTrim } from './lib/trim'
+import { formatSpan, isRunning, newlyMounted } from './lib/usbExport'
+import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
 import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
@@ -626,6 +633,88 @@ export default function App(): React.JSX.Element {
     [store],
   )
   const editRekordbox = useRekordboxEdits(notifyEdit)
+  // The USB export: macOS and Windows, with a rekordbox collection. Its state lives in
+  // usbExportStore, outside React; App reads only the phase (for the notices), so a byte
+  // tick never re-renders the app.
+  const usbAvailable =
+    (isMac || window.api.platform === 'win32') && browser.sources.includes('rekordbox')
+  useEffect(() => connectUsbExportFeed(), [])
+  const usbPhase = useUsbExportState((s) => s.phase)
+  const usbRunning = usbPhase === 'copying' || usbPhase === 'database'
+  const { list: usbVolumes } = useUsbVolumes(usbAvailable)
+  const [usbModal, setUsbModal] = useState<{ preselect: string | null } | null>(null)
+  // Opening after a finished background export starts again at the chooser: its result was
+  // already announced.
+  const openUsbExport = useCallback((preselect: string | null = null) => {
+    if (!isRunning(usbExportStore.getState()) && usbExportStore.getState().phase !== 'idle')
+      usbExportStore.dispatch({ type: 'reset' })
+    setUsbModal({ preselect })
+  }, [])
+  const closeUsbExport = useCallback(() => {
+    setUsbModal(null)
+    if (!isRunning(usbExportStore.getState())) usbExportStore.dispatch({ type: 'reset' })
+  }, [])
+  // The same query key the source browser uses for rekordbox's tree, so an open tree is
+  // reused and a tree read here is there when the user opens rekordbox in the rail.
+  const usbTree = useQuery({
+    queryKey: ['source-tree', 'rekordbox'],
+    queryFn: () => window.api.loadRekordboxTree(),
+    enabled: usbModal !== null,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  // A stick plugged in while Surco runs, holding an export, is offered in one click. Not
+  // while the chooser is open (it lists it already) or an export runs.
+  const prevVolumes = useRef<UsbVolume[] | null>(null)
+  useEffect(() => {
+    if (!usbVolumes) return
+    const appeared = newlyMounted(prevVolumes.current, usbVolumes.volumes)
+    prevVolumes.current = usbVolumes.volumes
+    if (usbModal || usbRunning) return
+    for (const v of appeared.filter((x) => x.holder.by !== 'empty'))
+      pushToast(store, {
+        key: `usb-connected-${v.uuid}`,
+        tone: 'neutral',
+        message: { key: 'usbExport.connected', values: { name: v.name } },
+        action: {
+          label: { key: 'usbExport.connectedAction' },
+          onAction: () => openUsbExport(v.uuid),
+        },
+        duration: 8000,
+        testid: 'usb-connected',
+      })
+  }, [usbVolumes, usbModal, usbRunning, store, openUsbExport])
+  // An export that ends with its modal closed says so in a notice; with the modal open, the
+  // modal says it.
+  const lastUsbPhase = useRef(usbPhase)
+  useEffect(() => {
+    const was = lastUsbPhase.current
+    lastUsbPhase.current = usbPhase
+    if (usbModal || was === usbPhase) return
+    const s = usbExportStore.getState()
+    if (usbPhase === 'done' && s.result) {
+      pushToast(store, {
+        tone: 'neutral',
+        message: {
+          key: 'usbExport.progress.done',
+          values: { count: s.result.tracks, time: formatSpan(s.result.ms, tr) },
+        },
+        duration: 10000,
+        testid: 'usb-done-notice',
+      })
+      if (!s.result.syncFiles)
+        pushToast(store, {
+          tone: 'danger',
+          message: { key: 'usbExport.errors.sync-files' },
+          testid: 'usb-sync-files-notice',
+        })
+    }
+    if (usbPhase === 'error' && s.reason)
+      pushToast(store, {
+        tone: 'danger',
+        message: { key: `usbExport.errors.${s.reason}` },
+        testid: 'usb-error-notice',
+      })
+  }, [usbPhase, usbModal, store, tr])
   // Each source is its own list with its own selection: the row picked in Tracks is not in
   // Music, and leaving it selected there kept its editor open beside a list without it.
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
@@ -2176,6 +2265,7 @@ export default function App(): React.JSX.Element {
       openApplePlaylist: isMac ? () => selectSource('appleMusic') : undefined,
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview: () => openTargetReview('all'),
+      openUsbExport: usbAvailable ? () => openUsbExport() : undefined,
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
@@ -2246,6 +2336,10 @@ export default function App(): React.JSX.Element {
       setTrashOpen(false)
       return
     }
+    if (usbModal) {
+      closeUsbExport()
+      return
+    }
     if (review !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
@@ -2257,7 +2351,7 @@ export default function App(): React.JSX.Element {
 
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
-  const overlayOpen = activeModal !== null || trashOpen || review !== null
+  const overlayOpen = activeModal !== null || trashOpen || review !== null || usbModal !== null
 
   useKeyboardShortcuts({
     isMac,
@@ -2402,7 +2496,9 @@ export default function App(): React.JSX.Element {
             >
               <div className="relative">
                 <MusicReviewTopProgress
-                  fallback={progress && <TopProgressBar fraction={progress.fraction} />}
+                  fallback={
+                    progress ? <TopProgressBar fraction={progress.fraction} /> : <UsbTopProgress />
+                  }
                 />
                 <Toolbar
                   hintFor={hintFor}
@@ -2436,6 +2532,9 @@ export default function App(): React.JSX.Element {
                   activityRunning={activityRunning}
                   onSettings={onOpenSettings}
                   primary={reviewAction}
+                  usbPill={
+                    <UsbExportPill hidden={usbModal !== null} onOpen={() => openUsbExport()} />
+                  }
                 />
               </div>
 
@@ -2457,6 +2556,11 @@ export default function App(): React.JSX.Element {
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={selectPlaylist}
                     edit={browser.source === 'rekordbox' ? treeEdit : undefined}
+                    onExportUsb={
+                      usbAvailable && browser.source === 'rekordbox'
+                        ? () => openUsbExport()
+                        : undefined
+                    }
                   />
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -2844,6 +2948,16 @@ export default function App(): React.JSX.Element {
                     },
                   })
                 }
+              />
+            )}
+            {usbModal && (
+              <UsbExportModal
+                nodes={usbTree.data}
+                volumes={usbVolumes}
+                preselect={usbModal.preselect}
+                onStart={(req) => window.api.usbExport(req)}
+                onCancelExport={() => void window.api.usbCancel()}
+                onClose={closeUsbExport}
               />
             )}
             {confettiBurst > 0 && <Confetti key={confettiBurst} />}

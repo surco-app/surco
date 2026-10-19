@@ -78,6 +78,9 @@ interface Props {
   // Takes the main action's place while another view owns the screen (the Music review),
   // so Convert never acts on a list that is out of sight.
   primary?: React.ReactNode
+  // The USB export's pill (UsbExportPill), which subscribes to the export itself; the
+  // toolbar only places it, so a byte tick never re-renders the toolbar.
+  usbPill?: React.ReactNode
 }
 
 // The window's title-bar toolbar: the convert-the-list action, the auto-match and
@@ -117,6 +120,7 @@ export const Toolbar = memo(function Toolbar({
   activityRunning,
   onSettings,
   primary,
+  usbPill,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const convertLabel =
@@ -190,6 +194,7 @@ export const Toolbar = memo(function Toolbar({
             )}
           </span>
         )}
+        {usbPill}
         {importing && (
           // A live pill matching the auto-match/analyze sweeps (accent text, spinning
           // glyph, done/total), so a big drop reads as active work rather than a static

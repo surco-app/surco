@@ -147,6 +147,25 @@ describe('SourceTree', () => {
       'Surco is allowed to control it',
     )
   })
+
+  // The export reads rekordbox's tree, so it is offered from that tree's header, and only
+  // where App says it can run.
+  it('offers the USB export only when asked to', () => {
+    const onExportUsb = vi.fn()
+    const props = {
+      title: 'rekordbox',
+      source: 'rekordbox' as const,
+      nodes: NODES,
+      failed: false,
+      selectedId: null,
+      onSelect: () => {},
+    }
+    const { rerender } = render(<SourceTree {...props} />)
+    expect(screen.queryByTestId('source-tree-export-usb')).toBeNull()
+    rerender(<SourceTree {...props} onExportUsb={onExportUsb} />)
+    fireEvent.click(screen.getByTestId('source-tree-export-usb'))
+    expect(onExportUsb).toHaveBeenCalled()
+  })
 })
 
 describe('SourceTree organising', () => {

@@ -7,7 +7,15 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type { Api } from '../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
-import type { ActivityEvent, RekordboxSyncIssue, Release, Settings } from '../../shared/types'
+import type {
+  ActivityEvent,
+  RekordboxSyncIssue,
+  Release,
+  Settings,
+  UsbExportEvent,
+  UsbVolume,
+  UsbVolumeList,
+} from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
@@ -15,6 +23,7 @@ import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows } from './lib/reorderDrag'
+import { usbExportStore } from './lib/usbExportStore'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
@@ -253,6 +262,9 @@ function setApi(over: Record<string, unknown> = {}): void {
       .fn<Api['editRekordboxPlaylist']>()
       .mockResolvedValue({ applied: true }),
     onWindowFocus: () => () => {},
+    usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
+    onUsbVolumesChanged: () => () => {},
+    onUsbEvent: () => () => {},
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
     readTags: vi.fn().mockResolvedValue({}),
@@ -759,6 +771,106 @@ afterEach(clearDraggedRows)
 
 // The draggable wrapper of the row at this position in the list.
 const rowWrapper = (index: number): HTMLElement => screen.getAllByTestId(/^track-drag-/)[index]
+
+describe('App USB export', () => {
+  // The export's state lives outside React for the whole renderer; a run one test ends must
+  // not leak into the next.
+  afterEach(() => usbExportStore.dispatch({ type: 'reset' }))
+  const stick = (uuid: string, by: UsbVolume['holder']['by']): UsbVolume => ({
+    uuid,
+    name: `Stick ${uuid}`,
+    mountPoint: `E:\\`,
+    filesystem: 'fat32',
+    partitionScheme: 'mbr',
+    totalBytes: 32e9,
+    freeBytes: 20e9,
+    holder: { by, at: by === 'empty' ? null : 1 },
+    remembered: null,
+    stickPlaylists: null,
+  })
+  function usbApi() {
+    const feed: {
+      volumes?: (l: UsbVolumeList) => void
+      event?: (e: UsbExportEvent) => void
+    } = {}
+    setApi({
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      usbVolumes: vi
+        .fn<Api['usbVolumes']>()
+        .mockResolvedValue({ volumes: [stick('A', 'surco')], lastKey: null }),
+      onUsbVolumesChanged: (cb: (l: UsbVolumeList) => void) => {
+        feed.volumes = cb
+        return () => {}
+      },
+      onUsbEvent: (cb: (e: UsbExportEvent) => void) => {
+        feed.event = cb
+        return () => {}
+      },
+      usbPlan: vi.fn<Api['usbPlan']>().mockResolvedValue({ ok: false, reason: 'nothing-selected' }),
+    })
+    return feed
+  }
+
+  // A stick plugged in with an export on it is what the DJ wants to refresh before a gig:
+  // the notice opens the chooser on that very stick. Sticks already in at launch and empty
+  // ones get no notice.
+  it('offers to export to a stick holding an export when it is plugged in', async () => {
+    const feed = usbApi()
+    await renderApp()
+    await waitFor(() => expect(window.api.usbVolumes).toHaveBeenCalled())
+    await act(async () => {})
+    expect(screen.queryByTestId('usb-connected')).not.toBeInTheDocument()
+    act(() =>
+      feed.volumes?.({
+        volumes: [stick('A', 'surco'), stick('B', 'rekordbox'), stick('C', 'empty')],
+        lastKey: null,
+      }),
+    )
+    expect(screen.getAllByTestId('usb-connected')).toHaveLength(1)
+    expect(screen.getByTestId('usb-connected')).toHaveTextContent('Stick B')
+    fireEvent.click(screen.getByTestId('usb-connected-action'))
+    expect(await screen.findByTestId('usb-export-modal')).toBeInTheDocument()
+    expect(screen.getByTestId('usb-volume-pick-B')).toBeChecked()
+  })
+
+  // Closed, the modal is not there to say how the export ended, so a notice does; a stick
+  // whose sync files failed must say rekordbox may not see its playlists.
+  it('says how a background export ended', async () => {
+    const feed = usbApi()
+    await renderApp()
+    await waitFor(() => expect(feed.event).toBeDefined())
+    act(() => {
+      feed.event?.({ type: 'started', tracks: [], targetName: 'Stick A', startedAt: 0 })
+      feed.event?.({
+        type: 'finished',
+        outcome: 'done',
+        tracks: 12,
+        failed: 0,
+        ms: 64000,
+        syncFiles: false,
+      })
+    })
+    expect(screen.getByTestId('usb-done-notice')).toHaveTextContent('12 tracks')
+    expect(screen.getByTestId('usb-sync-files-notice')).toHaveTextContent(
+      'rekordbox may not recognise its playlists',
+    )
+  })
+
+  // Escape closes the chooser like any other dialog, and the list's shortcuts stay off
+  // while it is open.
+  it('opens from the rekordbox tree and closes with Escape', async () => {
+    usbApi()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-tree-export-usb'))
+    expect(await screen.findByTestId('usb-export-modal')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('usb-export-modal')).not.toBeInTheDocument())
+  })
+})
 
 describe('App source rail', () => {
   // A rail holding only "Tracks" offers nothing to switch to; drawn anyway it is a column

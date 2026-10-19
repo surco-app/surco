@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search, Usb } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -40,6 +40,7 @@ export function SourceTree({
   selectedId,
   onSelect,
   edit,
+  onExportUsb,
 }: {
   title: string
   source: PlaylistSource
@@ -54,6 +55,8 @@ export function SourceTree({
     onCreate: (parentId: string, name: string, folder: boolean) => void
     onDropTracks: (node: SourceNode, files: File[]) => void
   }
+  // The USB export, offered where it exists: rekordbox's tree on macOS and Windows.
+  onExportUsb?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -275,28 +278,44 @@ export function SourceTree({
     >
       <div className="flex items-center gap-1 px-3 pt-3 pb-2">
         <span className="font-semibold">{title}</span>
-        {edit && (
+        {(edit || onExportUsb) && (
           <span className="ml-auto flex gap-0.5">
-            <button
-              type="button"
-              data-testid="source-tree-new-playlist"
-              aria-label={tr('sources.tree.newPlaylist')}
-              onClick={() => startCreating('root', false)}
-              className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
-            >
-              <ListPlus size={14} aria-hidden="true" />
-              <Tooltip label={tr('sources.tree.newPlaylist')} />
-            </button>
-            <button
-              type="button"
-              data-testid="source-tree-new-folder"
-              aria-label={tr('sources.tree.newFolder')}
-              onClick={() => startCreating('root', true)}
-              className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
-            >
-              <FolderPlus size={14} aria-hidden="true" />
-              <Tooltip label={tr('sources.tree.newFolder')} />
-            </button>
+            {onExportUsb && (
+              <button
+                type="button"
+                data-testid="source-tree-export-usb"
+                aria-label={tr('sources.tree.exportUsb')}
+                onClick={onExportUsb}
+                className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+              >
+                <Usb size={14} aria-hidden="true" />
+                <Tooltip label={tr('sources.tree.exportUsb')} />
+              </button>
+            )}
+            {edit && (
+              <>
+                <button
+                  type="button"
+                  data-testid="source-tree-new-playlist"
+                  aria-label={tr('sources.tree.newPlaylist')}
+                  onClick={() => startCreating('root', false)}
+                  className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+                >
+                  <ListPlus size={14} aria-hidden="true" />
+                  <Tooltip label={tr('sources.tree.newPlaylist')} />
+                </button>
+                <button
+                  type="button"
+                  data-testid="source-tree-new-folder"
+                  aria-label={tr('sources.tree.newFolder')}
+                  onClick={() => startCreating('root', true)}
+                  className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+                >
+                  <FolderPlus size={14} aria-hidden="true" />
+                  <Tooltip label={tr('sources.tree.newFolder')} />
+                </button>
+              </>
+            )}
           </span>
         )}
       </div>

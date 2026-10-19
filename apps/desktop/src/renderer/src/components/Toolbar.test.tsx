@@ -49,6 +49,13 @@ function renderBar(over: Partial<Props> = {}): Props {
 }
 
 describe('Toolbar', () => {
+  // The pill subscribes to the export itself; the toolbar only places it, so a byte tick
+  // never re-renders the toolbar.
+  it('places the USB export pill it is given', () => {
+    renderBar({ usbPill: <span data-testid="pill-slot">USB 7/12</span> })
+    expect(screen.getByTestId('pill-slot')).toHaveTextContent('USB 7/12')
+  })
+
   // Nothing to click: unlike the auto-match pill there is no run to cancel, only staged edits.
   it('counts the tracks holding a load-time clean-up, and stays out of the way at zero', () => {
     renderBar({ cleanedCount: 3 })

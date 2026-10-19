@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import type { UsbPlanTrack } from '../../../shared/types'
+import type { UsbPlanTrack, UsbVolume } from '../../../shared/types'
 import {
   bytesDone,
   bytesToCopy,
   exportCounts,
   formatSpan,
+  holderText,
   IDLE_EXPORT,
   isRunning,
+  newlyMounted,
   speed,
   timeLeft,
   type UsbExportAction,
@@ -196,5 +198,41 @@ describe('wavePath', () => {
     expect(d.match(/M/g)).toHaveLength(2)
     // two bars split the 100-wide box: the second starts at 50, full height from the top
     expect(d).toContain('M50 0h35v16')
+  })
+})
+
+describe('holderText', () => {
+  const tr = (k: string, o?: Record<string, unknown>) => `${k}${o ? JSON.stringify(o) : ''}`
+  const now = new Date(2026, 9, 16, 12, 0)
+  it('says who exported the stick and when, today by the time only', () => {
+    expect(holderText({ by: 'empty', at: null }, tr, now)).toBe('usbExport.holder.empty')
+    expect(holderText({ by: 'surco', at: new Date(2026, 9, 16, 9, 12).getTime() }, tr, now)).toBe(
+      'usbExport.holder.surco{"when":"usbExport.holder.today{\\"time\\":\\"09:12\\"}"}',
+    )
+    expect(
+      holderText({ by: 'rekordbox', at: new Date(2026, 9, 15, 8, 27).getTime() }, tr, now),
+    ).toBe(
+      'usbExport.holder.rekordbox{"when":"usbExport.holder.on{\\"date\\":\\"15/10\\",\\"time\\":\\"08:27\\"}"}',
+    )
+  })
+})
+
+describe('newlyMounted', () => {
+  const v = (uuid: string): UsbVolume => ({
+    uuid,
+    name: uuid,
+    mountPoint: `/Volumes/${uuid}`,
+    filesystem: 'fat32',
+    partitionScheme: 'mbr',
+    totalBytes: 1,
+    freeBytes: 1,
+    holder: { by: 'surco', at: 1 },
+    remembered: null,
+    stickPlaylists: null,
+  })
+  // The first list after launch is not "connected now": no notice for sticks already in.
+  it('reports only sticks that appeared since the last list', () => {
+    expect(newlyMounted(null, [v('A')])).toEqual([])
+    expect(newlyMounted([v('A')], [v('A'), v('B')]).map((x) => x.uuid)).toEqual(['B'])
   })
 })

@@ -366,7 +366,8 @@
     "importApplePlaylist": "Open Apple Music playlists",
     "musicReview": "Review metadata in Apple Music…",
     "musicDuplicates": "Show duplicates in Apple Music…",
-    "listReview": "Review metadata…"
+    "listReview": "Review metadata…",
+    "exportUsb": "Export to USB…"
   },
   "trackList": {
     "backup": "Back to the original… (backup from {{when}})",
@@ -1731,7 +1732,8 @@
       "newFolderInside": "New folder inside",
       "name": "Name",
       "dropCount": "+{{count}} on drop",
-      "folderMenu": "Folder actions"
+      "folderMenu": "Folder actions",
+      "exportUsb": "Export to USB"
     },
     "reorder": {
       "removeSeparator": "Remove separator",
@@ -2083,6 +2085,61 @@
       "unreadable": "could not be read",
       "device": "could not write to the USB"
     },
-    "pill": "USB {{done}}/{{total}}"
+    "pill": "USB {{done}}/{{total}}",
+    "title": "Export to USB",
+    "connected": "USB {{name}} connected",
+    "connectedAction": "Export",
+    "holder": {
+      "empty": "empty",
+      "today": "today {{time}}",
+      "on": "on {{date}} {{time}}",
+      "rekordbox": "exported by rekordbox {{when}}",
+      "surco": "exported by Surco {{when}}",
+      "other": "holds an export, {{when}}"
+    },
+    "choose": {
+      "tick": "Tick {{name}}",
+      "sticks": "USB",
+      "none": "Connect a USB",
+      "other": "Other destination…",
+      "capacity": "{{total}} · {{free}} free",
+      "pick": "Tick playlists and choose a USB.",
+      "calculating": "Calculating…",
+      "prune": "Delete music from the USB that is no longer exported",
+      "cancel": "Cancel",
+      "export": "Export",
+      "settings": "Copy My Settings"
+    },
+    "summary": {
+      "tracks_one": "{{count}} track",
+      "tracks_other": "{{count}} tracks",
+      "new_one": "{{count}} new · {{size}}",
+      "new_other": "{{count}} new · {{size}}",
+      "kept_one": "{{count}} already there",
+      "kept_other": "{{count}} already there",
+      "removed_one": "{{count}} removed since last time",
+      "removed_other": "{{count}} removed since last time"
+    },
+    "warnings": {
+      "rekordboxExport": "rekordbox synced this USB last. Surco rebuilds it with these playlists and reuses the music already on it.",
+      "exfat": "exFAT. The CDJ-2000 cannot read it.",
+      "gpt": "GPT. The CDJ-2000 and the NXS2 cannot read it.",
+      "notVolumeRoot": "Players only read the root of a USB.",
+      "cdj2000_one": "{{count}} track may not play on a CDJ-2000",
+      "cdj2000_other": "{{count}} tracks may not play on a CDJ-2000",
+      "noSpace": "It does not fit. {{needed}} needed and {{free}} free.",
+      "ntfs": "NTFS. Players cannot read it.",
+      "unexportable_one": "{{count}} track cannot be exported",
+      "unexportable_other": "{{count}} tracks cannot be exported",
+      "rekordboxOpen": "rekordbox is open. You will be asked to close it when exporting.",
+      "sourcesUnreachable_one": "{{volume}} cannot be found, and the music of {{count}} track is there. Mount it and export again.",
+      "sourcesUnreachable_other": "{{volume}} cannot be found, and the music of {{count}} tracks is there. Mount it and export again.",
+      "emptyPlaylist": "No track of {{names}} can be found."
+    },
+    "unexportable": {
+      "missing-file": "file not found",
+      "streaming": "streaming track",
+      "skipped": "baken does not take it"
+    }
   }
 }

@@ -161,6 +161,9 @@ export interface CommandDeps {
   openMusicReview?: (filter: 'all' | 'duplicates') => void
   // Opens the review of the loaded tracks. Every platform: it reads the list, not Music.
   openListReview: () => void
+  // Undefined where the USB export does not exist (off macOS and Windows, or without a
+  // rekordbox collection): not registered rather than shown disabled.
+  openUsbExport?: () => void
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
@@ -307,6 +310,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openApplePlaylist,
     openMusicReview,
     openListReview,
+    openUsbExport,
     selectAll,
     askFillAll,
     moveSelection,
@@ -407,6 +411,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: canReviewList,
       run: openListReview,
     },
+    ...(openUsbExport
+      ? [
+          {
+            id: 'export-usb',
+            group: 'library' as const,
+            title: tr('commands.exportUsb'),
+            hint: hintFor('export-usb'),
+            enabled: true,
+            run: openUsbExport,
+          },
+        ]
+      : []),
     {
       id: 'find-replace',
       group: 'tags',
