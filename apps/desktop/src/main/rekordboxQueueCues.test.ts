@@ -154,17 +154,29 @@ describe('cues operations', () => {
   })
 
   it('writes nothing and says so when the wanted set has more than 8 hot cues', async () => {
-    const path = await collection()
-    const wanted = Array.from({ length: 9 }, (_, i) => ({
-      ms: bar(8 * i + 8),
-      kind: HOT_KINDS[i] ?? 10,
-      color: 1,
-    }))
+    const path = await collection([{ ID: 'k', InMsec: bar(72), Kind: 10, ColorTableIndex: 1 }])
+    const wanted = Array.from({ length: 9 }, (_, i) =>
+      i < HOT_KINDS.length
+        ? { ms: bar(8 * i + 8), kind: HOT_KINDS[i], color: 1 }
+        : { id: 'k', ms: bar(72), kind: 10, color: 1 },
+    )
     const result = await applyRekordboxBatch(path, [op(path, { wanted })], deps())
     expect(result.ok && result.outcomes[0].notices).toEqual([
       { code: 'cues-too-many', track: 'Gowan' },
     ])
-    expect(cuesOf(path)).toEqual([])
+    expect(cuesOf(path).map((c) => c.id)).toEqual(['k'])
+  })
+
+  it('refuses a malformed set as invalid instead of throwing, so the rest of the batch still lands', async () => {
+    const path = await collection()
+    const malformed = op(path, { id: 'bad', wanted: [null] as unknown as WantedCue[] })
+    const good = op(path, { id: 'good', contentId: '103' })
+    const result = await applyRekordboxBatch(path, [malformed, good], deps())
+    expect(result.ok && result.outcomes).toEqual([
+      { id: 'bad', applied: false, notices: [{ code: 'cues-invalid', track: 'Gowan' }] },
+      { id: 'good', applied: true, notices: [] },
+    ])
+    expect(cuesOf(path)).toHaveLength(COUNTDOWN.length)
   })
 
   it('moves a cue rekordbox already has instead of adding a second one', async () => {

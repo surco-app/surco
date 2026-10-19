@@ -339,13 +339,13 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
   if (!read?.analysed || read.fingerprint !== op.fingerprint) return changed('cues-changed')
   const wanted = queuedWanted(op, read)
-  if (wanted === null || wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES)
-    return changed('cues-too-many')
+  if (wanted === null) return changed('cues-too-many')
   const valid = validWantedSet(wanted, read.cues)
   if (!valid.ok) {
     log.warn(`rekordbox cues: refused the queued set for ${op.contentId} (${valid.reason})`)
     return changed('cues-invalid')
   }
+  if (wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES) return changed('cues-too-many')
   const cues = diffCues(read.cues, wanted)
   if (isEmptyChange(cues)) return { outcome: { id: op.id, applied: true, notices: [] } }
   return { op, cues }
