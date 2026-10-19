@@ -3290,6 +3290,19 @@ The existing comments of this function stay on the lines that stay (the Traktor 
       ),
 ```
 
+and the same in `src/scenarios/harness.tsx` (`endConversionBatch`), where no scenario has a collection:
+
+```ts
+    endConversionBatch: () => {
+      flushes.push(
+        flushConversionBatch(libraryHost(errors), sessions, {
+          enqueue: () => {},
+          applyQuietly: () => {},
+        }),
+      )
+    },
+```
+
 - [ ] **Step 6: Run them to see them pass**
 
 Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxBatch.test.ts src/main/processTrack.test.ts src/main/rekordboxQueueFromRun.test.ts src/main/rekordboxFlush.test.ts`
@@ -3301,8 +3314,926 @@ Expected: PASS.
 npm exec --workspace apps/desktop -- biome check --write src
 npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
 npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
-git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxBatch.ts apps/desktop/src/main/rekordboxBatch.test.ts apps/desktop/src/main/processTrack.ts apps/desktop/src/main/processTrack.test.ts apps/desktop/src/main/rekordboxQueueFromRun.ts apps/desktop/src/main/rekordboxQueueFromRun.test.ts apps/desktop/src/main/libraryFlushes.ts apps/desktop/src/main/index.ts
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxBatch.ts apps/desktop/src/main/rekordboxBatch.test.ts apps/desktop/src/main/processTrack.ts apps/desktop/src/main/processTrack.test.ts apps/desktop/src/main/rekordboxQueueFromRun.ts apps/desktop/src/main/rekordboxQueueFromRun.test.ts apps/desktop/src/main/libraryFlushes.ts apps/desktop/src/main/index.ts apps/desktop/src/scenarios/harness.tsx
 git commit -m "Queue a converted track's rekordbox playlists and the repoints rekordbox kept from running"
+```
+
+---
+
+### Task 9: Membership, IPC, preload and wiring
+
+**Files:**
+- Create: `src/main/rekordboxMembership.ts`, `src/main/rekordboxQueueIpc.ts`
+- Modify: `src/main/rekordboxPlaylistsIpc.ts` (`PlaylistEditHost.queue`, `rekordbox:edit` through the queue)
+- Modify: `src/main/index.ts` (the queue, the watcher, broadcasts, the batch-end call)
+- Modify: `src/preload/api.ts`, `src/preload/index.ts`, `src/renderer/src/test/api.ts`, `src/scenarios/harness.tsx`
+- Test: `src/main/rekordboxMembership.test.ts`, `src/main/rekordboxQueueIpc.test.ts`, `src/main/rekordboxPlaylistsIpc.test.ts`
+
+**Interfaces:**
+- Consumes: Task 3 `trackPlaylists`, `FindOptions.quiet`; Task 4 `applyRekordboxBatch`, `EditOp`; Task 6 `createRekordboxQueue`, `fileStore`, `RekordboxQueue`, `QueueApply`; Task 7 `watchRekordboxQueue`; Task 8 `flushConversionBatch(host, sessions, queue)`; existing `withCollection`, `serialLibraryFlush`, `findTrackByPath`, `isAmbiguous`, `repointTracks`.
+- Produces:
+  - `readMembership(db: Db, paths: string[], find: FindOptions): Record<string, string[]>` (path to the IDs of the normal playlists its entry is in; a path with no single entry is left out)
+  - `appliedNotice(result: QueueApply): RekordboxQueueApplied | null` (null for nothing applied and for rekordbox still open, which the pill already shows)
+  - `editResultOf(result: QueueApply, opId: string): RekordboxEditResult`
+  - `registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcHost): void` with `interface QueueIpcHost { collection: () => string; ensureClosed: (win: BrowserWindow | null) => Promise<boolean>; onApplied: (notice: RekordboxQueueApplied) => void }`; channels `rekordbox:queue`, `rekordbox:applyNow`, `rekordbox:discardQueue`, `rekordbox:membership`
+  - `PlaylistEditHost.queue: Pick<RekordboxQueue, 'enqueue' | 'apply'>`; `rekordbox:edit (edit, label?)`
+  - events to every window: `rekordbox:queueChanged` (`RekordboxQueueState`), `rekordbox:queueApplied` (`RekordboxQueueApplied`)
+  - `Api` (preload): `rekordboxQueue(): Promise<RekordboxQueueState>`, `applyRekordboxQueue(): Promise<RekordboxQueueApplied | null>`, `discardRekordboxQueue(): Promise<void>`, `rekordboxMembership(paths: string[]): Promise<Record<string, string[]>>`, `onRekordboxQueueChanged(cb: (s: RekordboxQueueState) => void): () => void`, `onRekordboxQueueApplied(cb: (a: RekordboxQueueApplied) => void): () => void`, `editRekordboxPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>`
+
+A tree edit (Decision 4) is queued with the `Timestamp` its playlist has now and applied at once with today's dialog. Cancel leaves it queued (`{ applied: false, reason: 'cancelled' }`, which Task 15 words as "se aplicará al cerrar rekordbox"); the watcher applies it later. The applied notice is broadcast for the watcher, "Aplicar ahora" and conversions; a tree edit broadcasts it only when its apply also wrote other waiting work (Decision 9).
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/main/rekordboxMembership.test.ts`:
+
+```ts
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { openRekordboxDb } from './rekordboxDb'
+import { readMembership } from './rekordboxMembership'
+import { ORGANISE_FIXTURE, TWIN_PATHS, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+
+describe('readMembership', () => {
+  // The field's starting value and the row dots: where rekordbox has each file today.
+  it('lists the playlists of each file the collection holds once', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbmember-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    const read = readMembership(
+      db,
+      [
+        '/Volumes/Public/Music/Play This Song.wav',
+        '/Volumes/Public/Music/Gowan.wav',
+        '/Users/dj/Music/Music/Ekkah.wav',
+        '/nowhere/x.wav',
+      ],
+      TWIN_PATHS,
+    )
+    expect(read['/Volumes/Public/Music/Play This Song.wav'].sort()).toEqual(['2000', '3000'])
+    expect(read['/Volumes/Public/Music/Gowan.wav']).toEqual([])
+    expect('/Users/dj/Music/Music/Ekkah.wav' in read).toBe(false)
+    expect('/nowhere/x.wav' in read).toBe(false)
+    db.close()
+  })
+})
+```
+
+Create `src/main/rekordboxQueueIpc.test.ts`:
+
+```ts
+import { ipcMain } from 'electron'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({
+  ipcMain: { handle: vi.fn() },
+  BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
+}))
+
+import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+import { appliedNotice, editResultOf, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
+
+function handler(channel: string): (...args: unknown[]) => unknown {
+  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
+  if (!call) throw new Error(`${channel} not registered`)
+  return call[1] as (...args: unknown[]) => unknown
+}
+
+const APPLIED: QueueApply = {
+  status: 'applied',
+  tracks: 3,
+  changes: 0,
+  notices: [{ code: 'ambiguous', track: 'Ekkah' }],
+  outcomes: [{ id: 'e', applied: true, createdId: '77', notices: [] }],
+}
+
+function queue(result: QueueApply = APPLIED) {
+  return {
+    enqueue: vi.fn(),
+    state: vi.fn(() => ({ tracks: 1, changes: 0, items: [] })),
+    isEmpty: vi.fn(() => false),
+    discard: vi.fn(),
+    apply: vi.fn<RekordboxQueue['apply']>(async (ensureClosed) => {
+      await ensureClosed()
+      return result
+    }),
+  }
+}
+
+describe('appliedNotice', () => {
+  it('tells what was written and what rekordbox kept', () => {
+    expect(appliedNotice(APPLIED)).toEqual({
+      tracks: 3,
+      changes: 0,
+      notices: [{ code: 'ambiguous', track: 'Ekkah' }],
+    })
+  })
+
+  // rekordbox still open is what the pill already says; a second line would be noise.
+  it('says nothing when rekordbox is still open or nothing was queued', () => {
+    expect(appliedNotice({ status: 'refused', reason: 'cancelled' })).toBeNull()
+    expect(appliedNotice({ status: 'refused', reason: 'rekordbox-running' })).toBeNull()
+    expect(appliedNotice({ status: 'empty' })).toBeNull()
+  })
+
+  it('names a refusal the user has to know about', () => {
+    expect(appliedNotice({ status: 'refused', reason: 'backup-failed' })).toEqual({
+      refused: 'backup-failed',
+    })
+  })
+})
+
+describe('editResultOf', () => {
+  it('answers a tree edit with its own outcome', () => {
+    expect(editResultOf(APPLIED, 'e')).toEqual({ applied: true, createdId: '77' })
+  })
+
+  it('answers a refused apply with its reason', () => {
+    expect(editResultOf({ status: 'refused', reason: 'cancelled' }, 'e')).toEqual({
+      applied: false,
+      reason: 'cancelled',
+    })
+  })
+})
+
+describe('registerRekordboxQueueIpc', () => {
+  // "Aplicar ahora" closes rekordbox with today's dialog, over the window it came from.
+  it('applies now behind the close dialog and answers with the notice', async () => {
+    const q = queue()
+    const ensureClosed = vi.fn(async () => true)
+    const onApplied = vi.fn()
+    registerRekordboxQueueIpc(q, { collection: () => '/c/master.db', ensureClosed, onApplied })
+    expect(await handler('rekordbox:applyNow')({ sender: {} })).toEqual(appliedNotice(APPLIED))
+    expect(ensureClosed).toHaveBeenCalledWith('window')
+    expect(onApplied).not.toHaveBeenCalled()
+  })
+
+  it('discards and reports the state', async () => {
+    const q = queue()
+    registerRekordboxQueueIpc(q, {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onApplied: vi.fn(),
+    })
+    await handler('rekordbox:discardQueue')()
+    expect(q.discard).toHaveBeenCalled()
+    expect(handler('rekordbox:queue')()).toEqual({ tracks: 1, changes: 0, items: [] })
+  })
+
+  it('answers no membership without a collection', () => {
+    registerRekordboxQueueIpc(queue(), {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onApplied: vi.fn(),
+    })
+    expect(handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
+  })
+})
+```
+
+In `src/main/rekordboxPlaylistsIpc.test.ts`, every `registerRekordboxPlaylistsIpc(() => path, { ensureClosed, sessionBackup })` gains `queue: queueFor(path, sessionBackup)`, with this helper above the `describe('registerRekordboxPlaylistsIpc'`:
+
+```ts
+import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
+import { createRekordboxQueue } from './rekordboxQueue'
+
+function queueFor(path: string, sessionBackup = vi.fn(async () => {})) {
+  let text: string | null = null
+  return createRekordboxQueue({
+    store: {
+      read: () => text,
+      write: (t) => {
+        text = t
+      },
+      setAside: () => {
+        text = null
+      },
+    },
+    collection: () => path,
+    applyBatch: (c, ops, ensureClosed) => applyRekordboxBatch(c, ops, { ensureClosed, sessionBackup }),
+    repoint: async () => [],
+    onChange: () => {},
+  })
+}
+```
+
+and append:
+
+```ts
+  // Cancel used to throw the edit away; now it waits for rekordbox to close.
+  it('keeps a cancelled edit queued', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
+    const queue = queueFor(path)
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => false),
+      sessionBackup: vi.fn(async () => {}),
+      queue,
+    })
+    const result = await handler('rekordbox:edit')(
+      { sender: {} },
+      { kind: 'rename', playlistId: '3000', name: 'House 26' },
+      'House',
+    )
+    expect(result).toEqual({ applied: false, reason: 'cancelled' })
+    expect(queue.state().items).toEqual([
+      { key: expect.stringMatching(/^edit:/), label: 'House', parts: [{ kind: 'tree', edit: 'rename' }] },
+    ])
+  })
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxMembership.test.ts src/main/rekordboxQueueIpc.test.ts src/main/rekordboxPlaylistsIpc.test.ts`
+Expected: FAIL, missing modules, and the playlists IPC tests failing on the unknown `queue` host field (type) and the cancelled edit leaving no queued item.
+
+- [ ] **Step 3: Membership and the queue channels**
+
+Create `src/main/rekordboxMembership.ts`:
+
+```ts
+import { type FindOptions, findTrackByPath, isAmbiguous, type openRekordboxDb } from './rekordboxDb'
+import { trackPlaylists } from './rekordboxPlaylistEdit'
+
+type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
+
+export function readMembership(
+  db: Db,
+  paths: string[],
+  find: FindOptions,
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const path of paths) {
+    const match = findTrackByPath(db, path, { ...find, quiet: true })
+    if (match === null || isAmbiguous(match)) continue
+    out[path] = trackPlaylists(db, match.id)
+  }
+  return out
+}
+```
+
+Create `src/main/rekordboxQueueIpc.ts`:
+
+```ts
+import { realpathSync } from 'node:fs'
+import { BrowserWindow, ipcMain } from 'electron'
+import type { RekordboxEditResult, RekordboxQueueApplied } from '../shared/types'
+import { serialLibraryFlush } from './libraryTagSync'
+import { readMembership } from './rekordboxMembership'
+import { withCollection } from './rekordboxPlaylistsIpc'
+import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+
+export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null {
+  if (result.status === 'empty') return null
+  if (result.status === 'refused')
+    return result.reason === 'cancelled' || result.reason === 'rekordbox-running'
+      ? null
+      : { refused: result.reason }
+  return { tracks: result.tracks, changes: result.changes, notices: result.notices }
+}
+
+export function editResultOf(result: QueueApply, opId: string): RekordboxEditResult {
+  if (result.status === 'refused') return { applied: false, reason: result.reason }
+  const outcome = result.status === 'applied' ? result.outcomes.find((o) => o.id === opId) : undefined
+  if (!outcome) return { applied: false, reason: 'write-failed' }
+  if (!outcome.applied) {
+    const reason = outcome.reason ?? 'stale'
+    return outcome.report ? { applied: false, reason, report: outcome.report } : { applied: false, reason }
+  }
+  if (outcome.report) return { applied: true, report: outcome.report }
+  return outcome.createdId ? { applied: true, createdId: outcome.createdId } : { applied: true }
+}
+
+export interface QueueIpcHost {
+  collection: () => string
+  ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
+  onApplied: (notice: RekordboxQueueApplied) => void
+}
+
+export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcHost): void {
+  ipcMain.handle('rekordbox:queue', () => queue.state())
+  ipcMain.handle('rekordbox:applyNow', (e) =>
+    serialLibraryFlush(async () =>
+      appliedNotice(
+        await queue.apply(() => host.ensureClosed(BrowserWindow.fromWebContents(e.sender))),
+      ),
+    ),
+  )
+  ipcMain.handle('rekordbox:discardQueue', () => queue.discard())
+  ipcMain.handle('rekordbox:membership', (_e, paths: string[]) =>
+    withCollection(
+      host.collection(),
+      (db) => readMembership(db, paths, { realPath: (p: string) => realpathSync(p) }),
+      {},
+    ),
+  )
+}
+```
+
+The applied notice of "Aplicar ahora" goes back as the call's answer, so `onApplied` is not called for it (the pill shows it once).
+
+- [ ] **Step 4: Tree edits through the queue**
+
+In `src/main/rekordboxPlaylistsIpc.ts`, replace the `editRekordboxPlaylist` import with:
+
+```ts
+import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { nodeTimestamp, playlistXmlPath } from './rekordboxMasterXml'
+import type { RekordboxQueue } from './rekordboxQueue'
+import { editResultOf } from './rekordboxQueueIpc'
+import type { EditOp } from './rekordboxQueueOps'
+```
+
+(merge `readFileSync` into the existing `node:fs` import), add to `PlaylistEditHost`:
+
+```ts
+  queue: Pick<RekordboxQueue, 'enqueue' | 'apply'>
+```
+
+add above `registerRekordboxPlaylistsIpc`:
+
+```ts
+function editStamps(collectionPath: string, edit: RekordboxPlaylistEdit): Record<string, number> {
+  if (edit.kind === 'create' || !existsSync(playlistXmlPath(collectionPath))) return {}
+  const stamp = nodeTimestamp(readFileSync(playlistXmlPath(collectionPath), 'utf8'), edit.playlistId)
+  return stamp === null ? {} : { [edit.playlistId]: stamp }
+}
+```
+
+and replace the `rekordbox:edit` handler with:
+
+```ts
+  ipcMain.handle('rekordbox:edit', (e, edit: RekordboxPlaylistEdit, label?: string) =>
+    serialLibraryFlush(async () => {
+      const path = collection()
+      if (!path) return { applied: false as const, reason: 'unreadable' as const }
+      const op: EditOp = {
+        id: randomUUID(),
+        kind: 'edit',
+        edit,
+        stamps: editStamps(path, edit),
+        ...(label ? { label } : {}),
+      }
+      host.queue.enqueue([op])
+      const result = await host.queue.apply(() =>
+        host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+      )
+      if (result.status === 'applied' && (result.tracks > 0 || result.changes > 1))
+        host.onApplied?.(result)
+      return editResultOf(result, op.id)
+    }),
+  )
+```
+
+with `onApplied?: (result: QueueApply) => void` added to `PlaylistEditHost` (import `type QueueApply` from `./rekordboxQueue`). `editRekordboxPlaylist` stays exported from the writer for any other caller; this handler no longer uses it.
+
+- [ ] **Step 5: Wire the queue in `index.ts`**
+
+At module level, after `const sessions = ...`:
+
+```ts
+const broadcast = (channel: string, payload: unknown): void => {
+  for (const win of BrowserWindow.getAllWindows())
+    if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
+}
+const rekordboxCollectionPath = (): string =>
+  currentLibraryStatus().rekordbox.found
+    ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+    : ''
+const rekordboxQueue = createRekordboxQueue({
+  store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
+  collection: rekordboxCollectionPath,
+  applyBatch: (collectionPath, ops, ensureClosed) =>
+    applyRekordboxBatch(collectionPath, ops, {
+      ensureClosed,
+      sessionBackup: (path) => sessions.rekordbox.ensure(path),
+      realPath: (p: string) => realpathSync(p),
+    }),
+  repoint: (collectionPath, list) =>
+    repointTracks(
+      collectionPath,
+      list.map((r) => ({ ...r, realPath: (p: string) => realpathSync(p) })),
+      { sessionBackup: (path) => sessions.rekordbox.ensure(path), readCover: readEmbeddedCover },
+    ),
+  onChange: (state) => {
+    broadcast('rekordbox:queueChanged', state)
+    rekordboxQueueWatch.poke()
+  },
+})
+const announceApplied = (result: QueueApply): void => {
+  const notice = appliedNotice(result)
+  if (notice) broadcast('rekordbox:queueApplied', notice)
+}
+const rekordboxQueueWatch = watchRekordboxQueue({
+  queue: {
+    isEmpty: () => rekordboxQueue.isEmpty(),
+    apply: (ensureClosed) => serialLibraryFlush(() => rekordboxQueue.apply(ensureClosed)),
+  },
+  isRunning: isRekordboxRunning,
+  onApplied: announceApplied,
+})
+const applyRekordboxQueueQuietly = (): void => {
+  void serialLibraryFlush(() =>
+    rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
+  ).then(announceApplied)
+}
+```
+
+`rekordboxQueueWatch` is used inside `onChange` only after both exist (the queue calls `onChange` on its first change, never while being created). Imports to add: `createRekordboxQueue`, `fileStore`, `type QueueApply` from `./rekordboxQueue`; `watchRekordboxQueue` from `./rekordboxQueueWatch`; `appliedNotice`, `registerRekordboxQueueIpc` from `./rekordboxQueueIpc`; `applyRekordboxBatch` from `./rekordboxPlaylistWrite`; `repointTracks` from `./rekordboxLibrary`; `readEmbeddedCover` from `./tags`; `currentLibraryStatus` from `./libraryFlushes`; `serialLibraryFlush` from `./libraryTagSync` (whichever of these `index.ts` does not import yet; `realpathSync`, `join`, `getSettings`, `findRekordboxCollection`, `isRekordboxRunning` are already there).
+
+In the `registerRekordboxPlaylistsIpc` call add `queue: rekordboxQueue` and `onApplied: announceApplied`. Right after it:
+
+```ts
+  registerRekordboxQueueIpc(rekordboxQueue, {
+    collection: rekordboxCollectionPath,
+    ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+    onApplied: (notice) => broadcast('rekordbox:queueApplied', notice),
+  })
+```
+
+Replace the `process:batch-end` stand-in from Task 8 with:
+
+```ts
+      flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), sessions, {
+        enqueue: rekordboxQueue.enqueue,
+        applyQuietly: applyRekordboxQueueQuietly,
+      }),
+```
+
+`applyRekordboxQueueQuietly` queues behind the flush that called it (`serialLibraryFlush` chains), so it never deadlocks on it.
+
+In `app.whenReady().then(...)`, right after `createWindow()` (line ~1466): `rekordboxQueueWatch.poke()` (spec: "y al arrancar Surco").
+
+- [ ] **Step 6: Preload, test api, harness**
+
+`src/preload/api.ts` (add the four new types to the import from `../shared/types`), next to `editRekordboxPlaylist`:
+
+```ts
+  editRekordboxPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
+  rekordboxQueue: () => Promise<RekordboxQueueState>
+  applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
+  discardRekordboxQueue: () => Promise<void>
+  rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
+  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+```
+
+`src/preload/index.ts`:
+
+```ts
+  editRekordboxPlaylist: (edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult> =>
+    ipcRenderer.invoke('rekordbox:edit', edit, label),
+  rekordboxQueue: () => ipcRenderer.invoke('rekordbox:queue'),
+  applyRekordboxQueue: () => ipcRenderer.invoke('rekordbox:applyNow'),
+  discardRekordboxQueue: () => ipcRenderer.invoke('rekordbox:discardQueue'),
+  rekordboxMembership: (paths: string[]) => ipcRenderer.invoke('rekordbox:membership', paths),
+  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
+    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
+    ipcRenderer.on('rekordbox:queueChanged', listener)
+    return () => ipcRenderer.removeListener('rekordbox:queueChanged', listener)
+  },
+  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
+    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
+    ipcRenderer.on('rekordbox:queueApplied', listener)
+    return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
+  },
+```
+
+`src/renderer/src/test/api.ts` and `src/scenarios/harness.tsx`, next to `editRekordboxPlaylist`:
+
+```ts
+    rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
+    applyRekordboxQueue: async () => null,
+    discardRekordboxQueue: async () => {},
+    rekordboxMembership: async () => ({}),
+    onRekordboxQueueChanged: () => () => {},
+    onRekordboxQueueApplied: () => () => {},
+```
+
+(in `test/api.ts` use its `unsubscribe` helper for the two `on...` entries, as its other listeners do).
+
+- [ ] **Step 7: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxMembership.test.ts src/main/rekordboxQueueIpc.test.ts src/main/rekordboxPlaylistsIpc.test.ts src/main/rekordboxPlaylistWrite.test.ts`
+Expected: PASS.
+
+- [ ] **Step 8: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/main/rekordboxMembership.ts apps/desktop/src/main/rekordboxMembership.test.ts apps/desktop/src/main/rekordboxQueueIpc.ts apps/desktop/src/main/rekordboxQueueIpc.test.ts apps/desktop/src/main/rekordboxPlaylistsIpc.ts apps/desktop/src/main/rekordboxPlaylistsIpc.test.ts apps/desktop/src/main/index.ts apps/desktop/src/preload/api.ts apps/desktop/src/preload/index.ts apps/desktop/src/renderer/src/test/api.ts apps/desktop/src/scenarios/harness.tsx
+git commit -m "Expose the rekordbox queue, membership and queued tree edits to the window"
+```
+
+---
+
+### Task 10: The renderer's playlist model and the track's wanted set
+
+**Files:**
+- Create: `src/renderer/src/lib/rekordboxPlaylists.ts`
+- Modify: `src/renderer/src/types.ts` (`TrackItem.rekordboxPlaylists?`)
+- Modify: `src/shared/types.ts` (`SessionEdit.rekordboxPlaylists?`)
+- Modify: `src/renderer/src/lib/dirty.ts` (`trackSignature`, its `SignatureFields`)
+- Modify: `src/renderer/src/lib/sessionEdits.ts`, `src/renderer/src/hooks/useTrackLibrary.ts` (`restoredPatch`)
+- Modify: `src/renderer/src/hooks/useTrackProcessing.ts` (the job)
+- Test: `src/renderer/src/lib/rekordboxPlaylists.test.ts`, `src/renderer/src/lib/dirty.test.ts`, `src/renderer/src/lib/sessionEdits.test.ts`, `src/renderer/src/hooks/useTrackProcessing.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 5 `RekordboxPlaylistTarget`; Task 8 `ProcessJob.rekordboxPlaylists`; `SourceNode`.
+- Produces (all in `lib/rekordboxPlaylists.ts`):
+  - `interface PlaylistOption { id: string; name: string; path: string }` (`path`: the folders above it, outermost first, joined with ` › `; '' at the root)
+  - `type Membership = Record<string, string[]>` (path to playlist IDs, as `rekordbox:membership` answers)
+  - `playlistOptions(tree: readonly SourceNode[]): PlaylistOption[]`
+  - `matchingOptions(options: readonly PlaylistOption[], text: string, chosen: readonly RekordboxPlaylistTarget[]): PlaylistOption[]`
+  - `canCreate(options: readonly PlaylistOption[], text: string, chosen: readonly RekordboxPlaylistTarget[]): boolean`
+  - `rekordboxPathOf(track: Pick<TrackItem, 'inputPath' | 'outputPath'>): string`
+  - `effectivePlaylists(track: TrackItem, membership: Membership, options: readonly PlaylistOption[]): RekordboxPlaylistTarget[]`
+  - `isPlaylistsPending(track: TrackItem, membership: Membership): boolean`
+  - `targetKey(target: RekordboxPlaylistTarget): string`
+  - `bulkPlaylistState(tracks: readonly TrackItem[], membership: Membership, options: readonly PlaylistOption[]): { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]`
+  - `withTarget(tracks: readonly TrackItem[], membership: Membership, options: readonly PlaylistOption[], target: RekordboxPlaylistTarget, on: boolean): { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[]`
+- `TrackItem.rekordboxPlaylists?: RekordboxPlaylistTarget[]` and `SessionEdit.rekordboxPlaylists?` (absent: never touched, rekordbox's own membership is the value)
+
+The track's value lives with its other staged edits (spec: "Las ediciones viven en el estado de la pista que Surco ya guarda por ruta"): it is in the session file and in the signature, so editing it brings back "Actualizar" on a converted track, which is how it gets written (Decision 3 of the spec). The signature gains the field only when it is set, so every signature stored before this change still compares equal and no converted track turns stale on upgrade.
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/renderer/src/lib/rekordboxPlaylists.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { emptyMetadata } from '../../../shared/metadata'
+import type { SourceNode } from '../../../shared/types'
+import type { TrackItem } from '../types'
+import {
+  bulkPlaylistState,
+  canCreate,
+  effectivePlaylists,
+  isPlaylistsPending,
+  matchingOptions,
+  playlistOptions,
+  withTarget,
+} from './rekordboxPlaylists'
+
+function track(over: Partial<TrackItem> & { id: string }): TrackItem {
+  return {
+    inputPath: `/m/${over.id}.wav`,
+    fileName: `${over.id}.wav`,
+    listLabel: over.id,
+    query: '',
+    status: 'idle',
+    meta: emptyMetadata(),
+    ...over,
+  }
+}
+
+const TREE: SourceNode[] = [
+  {
+    id: '1000',
+    name: 'BOLOS',
+    kind: 'folder',
+    count: 2,
+    children: [
+      { id: '1001', name: 'Bolos de verano', kind: 'playlist', count: 3 },
+      {
+        id: '1100',
+        name: 'FIJAS',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: '1101', name: 'Todas', kind: 'playlist', count: 9 }],
+      },
+    ],
+  },
+  { id: '2000', name: 'Todas', kind: 'playlist', count: 40 },
+  { id: '3000', name: 'Makina', kind: 'playlist', count: 10 },
+]
+const OPTIONS = playlistOptions(TREE)
+
+describe('playlistOptions', () => {
+  // The collection repeats names ("Todas"); only the folder path tells them apart.
+  it('lists playlists only, each with the folders above it', () => {
+    expect(OPTIONS).toEqual([
+      { id: '1001', name: 'Bolos de verano', path: 'BOLOS' },
+      { id: '1101', name: 'Todas', path: 'BOLOS › FIJAS' },
+      { id: '2000', name: 'Todas', path: '' },
+      { id: '3000', name: 'Makina', path: '' },
+    ])
+  })
+})
+
+describe('matchingOptions', () => {
+  it('filters by name ignoring case and accents, without the chosen ones', () => {
+    expect(matchingOptions(OPTIONS, 'MAKÍNA', []).map((o) => o.id)).toEqual(['3000'])
+    expect(matchingOptions(OPTIONS, 'todas', [{ id: '2000', name: 'Todas' }]).map((o) => o.id)).toEqual([
+      '1101',
+    ])
+  })
+})
+
+describe('canCreate', () => {
+  // The spec offers "Crear playlist" unless the text is exactly an existing name.
+  it('offers a new name only when no playlist is called exactly that', () => {
+    expect(canCreate(OPTIONS, 'Makina', [])).toBe(false)
+    expect(canCreate(OPTIONS, 'makina', [])).toBe(true)
+    expect(canCreate(OPTIONS, '  ', [])).toBe(false)
+    expect(canCreate(OPTIONS, 'Cierre', [{ name: 'Cierre' }])).toBe(false)
+  })
+})
+
+describe('effectivePlaylists', () => {
+  // Untouched, the field shows where rekordbox has the track today.
+  it('starts from what rekordbox holds for the file', () => {
+    const t = track({ id: 'a', inputPath: '/m/a.wav' })
+    expect(effectivePlaylists(t, { '/m/a.wav': ['3000'] }, OPTIONS)).toEqual([
+      { id: '3000', name: 'Makina' },
+    ])
+  })
+
+  it('follows the converted file, where the entry now points', () => {
+    const t = track({ id: 'a', inputPath: '/m/a.mp3', outputPath: '/m/a.wav' })
+    expect(effectivePlaylists(t, { '/m/a.wav': ['3000'] }, OPTIONS)).toEqual([
+      { id: '3000', name: 'Makina' },
+    ])
+  })
+
+  it('uses the edit once the user touched the field', () => {
+    const t = track({ id: 'a', inputPath: '/m/a.wav', rekordboxPlaylists: [{ name: 'Cierre' }] })
+    expect(effectivePlaylists(t, { '/m/a.wav': ['3000'] }, OPTIONS)).toEqual([{ name: 'Cierre' }])
+  })
+})
+
+describe('isPlaylistsPending', () => {
+  // Hollow dots: the wish is not yet what rekordbox holds.
+  it('is pending until rekordbox holds exactly the wanted set', () => {
+    const want = track({ id: 'a', inputPath: '/m/a.wav', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] })
+    expect(isPlaylistsPending(want, {})).toBe(true)
+    expect(isPlaylistsPending(want, { '/m/a.wav': ['3000'] })).toBe(false)
+    expect(isPlaylistsPending(want, { '/m/a.wav': ['3000', '2000'] })).toBe(true)
+    expect(isPlaylistsPending(track({ id: 'b' }), {})).toBe(false)
+  })
+})
+
+describe('bulk', () => {
+  const a = track({ id: 'a', inputPath: '/m/a.wav' })
+  const b = track({ id: 'b', inputPath: '/m/b.wav' })
+  const membership = { '/m/a.wav': ['3000', '2000'], '/m/b.wav': ['3000'] }
+
+  it('says which playlists every track is in and which only some', () => {
+    expect(bulkPlaylistState([a, b], membership, OPTIONS)).toEqual([
+      { target: { id: '3000', name: 'Makina' }, state: 'all' },
+      { target: { id: '2000', name: 'Todas' }, state: 'some' },
+    ])
+  })
+
+  it('completes a half token for every track, and removes it from all', () => {
+    const todas = { id: '2000', name: 'Todas' }
+    expect(withTarget([a, b], membership, OPTIONS, todas, true)).toEqual([
+      { id: 'a', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }, todas] },
+      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }, todas] },
+    ])
+    expect(withTarget([a, b], membership, OPTIONS, todas, false)).toEqual([
+      { id: 'a', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
+      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
+    ])
+  })
+})
+```
+
+Append to `src/renderer/src/lib/dirty.test.ts` (it builds tracks with its own `converted` helper):
+
+```ts
+describe('trackSignature with rekordbox playlists', () => {
+  // Every converted track carries a stored signature; one that changed shape on upgrade
+  // would flip all of them to "Actualizar" at once.
+  it('reads the same as before for a track whose playlists were never touched', () => {
+    const t = converted()
+    expect(trackSignature(t)).toBe(trackSignature({ ...t, rekordboxPlaylists: undefined }))
+    expect(JSON.parse(trackSignature(t))).toHaveLength(6)
+  })
+
+  // Editing the field must bring "Actualizar" back: that is when it is written.
+  it('changes when the wanted playlists change', () => {
+    const t = converted()
+    expect(trackSignature({ ...t, rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] })).not.toBe(
+      trackSignature(t),
+    )
+  })
+})
+```
+
+Append to `src/renderer/src/lib/sessionEdits.test.ts` (its local `track` builder takes overrides):
+
+```ts
+// Switching source or playlist, or relaunching, must not lose the wish (spec "El campo").
+it('keeps the wanted rekordbox playlists of a staged track', () => {
+  const t = track({
+    id: 'a',
+    inputPath: '/m/a.wav',
+    diskSignature: 'x',
+    rekordboxPlaylists: [{ name: 'Cierre' }],
+  })
+  expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylists).toEqual([{ name: 'Cierre' }])
+})
+```
+
+Append to `src/renderer/src/hooks/useTrackProcessing.test.tsx`, inside the last `describe` (it has `track`, `setApi`, `withClient`):
+
+```ts
+  it('sends the wanted rekordbox playlists with the job', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const live = { current: [track({ id: 'a', rekordboxPlaylists: [{ name: 'Cierre' }] })] }
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: live.current, tracksRef: live, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ rekordboxPlaylists: [{ name: 'Cierre' }] }),
+    )
+  })
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/rekordboxPlaylists.test.ts src/renderer/src/lib/dirty.test.ts src/renderer/src/lib/sessionEdits.test.ts src/renderer/src/hooks/useTrackProcessing.test.tsx`
+Expected: FAIL, missing module, the signature unchanged by the field, the session edit without it, the job without it.
+
+- [ ] **Step 3: Types and plumbing**
+
+`src/renderer/src/types.ts`, in `TrackItem` after `replacesPath`:
+
+```ts
+  rekordboxPlaylists?: RekordboxPlaylistTarget[]
+```
+
+`src/shared/types.ts`, in `SessionEdit`: `rekordboxPlaylists?: RekordboxPlaylistTarget[]`.
+
+`src/renderer/src/lib/dirty.ts`: add `'rekordboxPlaylists'` to the `Pick` in `SignatureFields`, and end the array in `trackSignature` with:
+
+```ts
+    track.foreignRemoved ?? [],
+    ...(track.rekordboxPlaylists ? [track.rekordboxPlaylists] : []),
+  ])
+```
+
+`src/renderer/src/lib/sessionEdits.ts`, in `sessionEdit` after `declick`:
+
+```ts
+  if (track.rekordboxPlaylists) edit.rekordboxPlaylists = track.rekordboxPlaylists
+```
+
+`src/renderer/src/hooks/useTrackLibrary.ts`, in `restoredPatch` after `trim`:
+
+```ts
+    if (saved.rekordboxPlaylists) patch.rekordboxPlaylists = saved.rekordboxPlaylists
+```
+
+`src/renderer/src/hooks/useTrackProcessing.ts`, in the `window.api.processTrack({...})` job after `replacesLabel`:
+
+```ts
+          rekordboxPlaylists: track.rekordboxPlaylists,
+```
+
+- [ ] **Step 4: The model**
+
+Create `src/renderer/src/lib/rekordboxPlaylists.ts`:
+
+```ts
+import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
+import type { TrackItem } from '../types'
+
+export interface PlaylistOption {
+  id: string
+  name: string
+  path: string
+}
+
+export type Membership = Record<string, string[]>
+
+export function playlistOptions(tree: readonly SourceNode[]): PlaylistOption[] {
+  const out: PlaylistOption[] = []
+  const walk = (nodes: readonly SourceNode[], trail: string[]): void => {
+    for (const node of nodes) {
+      if (node.kind === 'folder') walk(node.children ?? [], [...trail, node.name])
+      else out.push({ id: node.id, name: node.name, path: trail.join(' › ') })
+    }
+  }
+  walk(tree, [])
+  return out
+}
+
+const fold = (text: string): string =>
+  text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase()
+
+export function targetKey(target: RekordboxPlaylistTarget): string {
+  return target.id ?? `new:${target.name}`
+}
+
+export function matchingOptions(
+  options: readonly PlaylistOption[],
+  text: string,
+  chosen: readonly RekordboxPlaylistTarget[],
+): PlaylistOption[] {
+  const taken = new Set(chosen.flatMap((t) => (t.id ? [t.id] : [])))
+  const query = fold(text.trim())
+  return options.filter((o) => !taken.has(o.id) && (query === '' || fold(o.name).includes(query)))
+}
+
+export function canCreate(
+  options: readonly PlaylistOption[],
+  text: string,
+  chosen: readonly RekordboxPlaylistTarget[],
+): boolean {
+  const name = text.trim()
+  return (
+    name !== '' &&
+    !options.some((o) => o.name === name) &&
+    !chosen.some((t) => !t.id && t.name === name)
+  )
+}
+
+export function rekordboxPathOf(track: Pick<TrackItem, 'inputPath' | 'outputPath'>): string {
+  return track.outputPath || track.inputPath
+}
+
+export function effectivePlaylists(
+  track: TrackItem,
+  membership: Membership,
+  options: readonly PlaylistOption[],
+): RekordboxPlaylistTarget[] {
+  if (track.rekordboxPlaylists) return track.rekordboxPlaylists
+  const byId = new Map(options.map((o) => [o.id, o.name]))
+  return (membership[rekordboxPathOf(track)] ?? []).flatMap((id) => {
+    const name = byId.get(id)
+    return name === undefined ? [] : [{ id, name }]
+  })
+}
+
+export function isPlaylistsPending(track: TrackItem, membership: Membership): boolean {
+  const want = track.rekordboxPlaylists
+  if (!want) return false
+  const held = new Set(membership[rekordboxPathOf(track)] ?? [])
+  return want.length !== held.size || want.some((t) => !t.id || !held.has(t.id))
+}
+
+export function bulkPlaylistState(
+  tracks: readonly TrackItem[],
+  membership: Membership,
+  options: readonly PlaylistOption[],
+): { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[] {
+  const seen = new Map<string, { target: RekordboxPlaylistTarget; n: number }>()
+  for (const t of tracks) {
+    for (const target of effectivePlaylists(t, membership, options)) {
+      const entry = seen.get(targetKey(target)) ?? { target, n: 0 }
+      entry.n += 1
+      seen.set(targetKey(target), entry)
+    }
+  }
+  return [...seen.values()].map(({ target, n }) => ({
+    target,
+    state: n === tracks.length ? 'all' : 'some',
+  }))
+}
+
+export function withTarget(
+  tracks: readonly TrackItem[],
+  membership: Membership,
+  options: readonly PlaylistOption[],
+  target: RekordboxPlaylistTarget,
+  on: boolean,
+): { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[] {
+  return tracks.map((t) => {
+    const rest = effectivePlaylists(t, membership, options).filter(
+      (x) => targetKey(x) !== targetKey(target),
+    )
+    return { id: t.id, rekordboxPlaylists: on ? [...rest, target] : rest }
+  })
+}
+```
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/rekordboxPlaylists.test.ts src/renderer/src/lib/dirty.test.ts src/renderer/src/lib/sessionEdits.test.ts src/renderer/src/hooks/useTrackProcessing.test.tsx src/renderer/src/hooks/useTrackLibrary.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/renderer/src/lib/rekordboxPlaylists.ts apps/desktop/src/renderer/src/lib/rekordboxPlaylists.test.ts apps/desktop/src/renderer/src/types.ts apps/desktop/src/shared/types.ts apps/desktop/src/renderer/src/lib/dirty.ts apps/desktop/src/renderer/src/lib/dirty.test.ts apps/desktop/src/renderer/src/lib/sessionEdits.ts apps/desktop/src/renderer/src/lib/sessionEdits.test.ts apps/desktop/src/renderer/src/hooks/useTrackLibrary.ts apps/desktop/src/renderer/src/hooks/useTrackProcessing.ts apps/desktop/src/renderer/src/hooks/useTrackProcessing.test.tsx
+git commit -m "Keep a track's wanted rekordbox playlists with its staged edits and send them with the job"
 ```
 
 ---
