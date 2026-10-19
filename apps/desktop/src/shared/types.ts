@@ -1,4 +1,5 @@
 import type { BackupPolicy } from './backupPolicy'
+import type { StrongPart } from './cueRules'
 import type { EditorSectionPref } from './editorSections'
 import type { Chord } from './shortcuts'
 
@@ -1614,4 +1615,22 @@ export type RekordboxQueueApplied =
 export interface CueWaveColumn {
   h: number
   rgb: [number, number, number] | null
+}
+
+export interface TrackCueRow {
+  id: string
+  ms: number
+  kind: number
+  color: number | null
+}
+
+export interface TrackCues {
+  contentId: string
+  analysed: boolean
+  grid: { ms: number; beat: number }[]
+  strong: StrongPart[]
+  cues: TrackCueRow[]
+  wave: CueWaveColumn[] | null
+  durationMs: number
+  fingerprint: string
 }

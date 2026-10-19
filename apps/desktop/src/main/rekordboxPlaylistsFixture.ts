@@ -23,6 +23,7 @@ export interface FixtureContent {
   FileSize?: number
   deleted?: boolean
   UUID?: string
+  AnalysisDataPath?: string
 }
 
 export interface FixturePlaylist {
@@ -60,6 +61,13 @@ export interface PlaylistFixture {
   device?: { ID: string; MasterDBID: string }
   artists?: { ID: string; Name: string }[]
   xmlTimestamps?: Record<string, number>
+  cueRows?: {
+    ID: string
+    ContentID: string
+    InMsec: number
+    Kind: number
+    ColorTableIndex: number | null
+  }[]
 }
 
 // Every fixture row is older than any edit a test makes.
@@ -117,6 +125,14 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       rb_data_status INTEGER DEFAULT 0, rb_local_data_status INTEGER DEFAULT 0,
       rb_local_deleted TINYINT(1) DEFAULT 0, rb_local_synced TINYINT(1) DEFAULT 0, usn BIGINT,
       rb_local_usn BIGINT, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL);
+    CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), InMsec INTEGER,
+      InFrame INTEGER, InMpegFrame INTEGER, InMpegAbs INTEGER, OutMsec INTEGER, OutFrame INTEGER,
+      OutMpegFrame INTEGER, OutMpegAbs INTEGER, Kind INTEGER, Color INTEGER DEFAULT -1,
+      ColorTableIndex INTEGER, ActiveLoop INTEGER, Comment VARCHAR(255), BeatLoopSize INTEGER,
+      CueMicrosec INTEGER, InPointSeekInfo VARCHAR(255), OutPointSeekInfo VARCHAR(255),
+      ContentUUID VARCHAR(255), ${LOOKUP_COLUMNS});
+    CREATE TABLE contentCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), Cues TEXT,
+      rb_cue_count INTEGER, ${LOOKUP_COLUMNS});
     CREATE TABLE agentRegistry (registry_id VARCHAR(255) PRIMARY KEY, int_1 BIGINT,
       created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL);
   `)
@@ -126,7 +142,8 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   ).run(data.usn ?? 1, FIXTURE_STAMP, FIXTURE_STAMP)
   const content = db.prepare(
     `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, Length, BPM,
-       Rating, KeyID, UUID, rb_local_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       Rating, KeyID, UUID, AnalysisDataPath, rb_local_deleted)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   for (const c of data.content) {
     content.run(
@@ -141,6 +158,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       c.Rating ?? 0,
       c.KeyID ?? null,
       c.UUID ?? `uuid-c-${c.ID}`,
+      c.AnalysisDataPath ?? '',
       c.deleted ? 1 : 0,
     )
   }
@@ -152,6 +170,22 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     `INSERT INTO djmdArtist (ID, Name, rb_local_deleted, created_at, updated_at) VALUES (?, ?, 0, ?, ?)`,
   )
   for (const a of data.artists ?? []) artist.run(a.ID, a.Name, FIXTURE_STAMP, FIXTURE_STAMP)
+  const cue = db.prepare(
+    `INSERT INTO djmdCue (ID, ContentID, InMsec, InFrame, Kind, Color, ColorTableIndex, OutMsec,
+       ContentUUID, rb_local_deleted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, -1, ?, -1, ?, 0, ?, ?)`,
+  )
+  for (const q of data.cueRows ?? [])
+    cue.run(
+      q.ID,
+      q.ContentID,
+      q.InMsec,
+      Math.floor((q.InMsec * 150) / 1000),
+      q.Kind,
+      q.ColorTableIndex,
+      `uuid-c-${q.ContentID}`,
+      FIXTURE_STAMP,
+      FIXTURE_STAMP,
+    )
   const key = db.prepare('INSERT INTO djmdKey VALUES (?, ?)')
   for (const k of data.keys) key.run(k.ID, k.ScaleName)
   const playlist = db.prepare(

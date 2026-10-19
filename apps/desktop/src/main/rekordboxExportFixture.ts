@@ -73,9 +73,6 @@ export function writeRekordboxExportFixture(path: string, data: ExportFixture): 
   db.pragma('legacy=4')
   db.pragma(`key='${REKORDBOX_KEY}'`)
   db.exec(`
-    CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255), InMsec INTEGER,
-      OutMsec INTEGER, Kind INTEGER, Comment TEXT, Color INTEGER DEFAULT -1,
-      ColorTableIndex INTEGER, rb_local_deleted INTEGER DEFAULT 0);
     CREATE TABLE djmdProperty (DBID VARCHAR(255) PRIMARY KEY);
     CREATE TABLE djmdCloudProperty (ID VARCHAR(255) PRIMARY KEY, Reserved1 TEXT, Reserved2 TEXT);
     CREATE TABLE djmdMyTag (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
