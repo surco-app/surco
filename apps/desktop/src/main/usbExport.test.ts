@@ -956,7 +956,8 @@ describe('sharing the stick with rekordbox', () => {
     await ex.start(REQ)
     await finished()
     expect(removed).toEqual(STALE_STICK_FILES.map((f) => `${STICK_DIR}/${f}`))
-    expect(at.every((a) => a.idAts === idAts && a.realRuns === 0)).toBe(true)
+    // After every check before the run; the one left is the check before the .sync files.
+    expect(at.every((a) => a.idAts === idAts - 1 && a.realRuns === 0)).toBe(true)
   })
 
   it('removes nothing when the stick changed before the real run', async () => {
@@ -1158,6 +1159,186 @@ describe('sharing the stick with rekordbox', () => {
     const ex = createUsbExporter(deps(happy, { identity: () => 'unreadable' }))
     expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'unreadable' })
     expect(await ex.plan(REQ)).toEqual({ ok: false, reason: 'unreadable' })
+    expect(calls).toEqual([])
+  })
+})
+
+describe('after baken reports', () => {
+  // The modal and the pill wait for finished with no Cancel left; a throw in the writes
+  // after baken's success used to leave them at "database" until a restart.
+  it('still says done when remembering the stick fails, and logs why', async () => {
+    const ex = createUsbExporter(
+      deps(happy, {
+        memory: {
+          ...memory,
+          remember: () => {
+            throw new Error('ENOSPC: no space left on device')
+          },
+        },
+      }),
+    )
+    await ex.start(REQ)
+    expect((await finished()) as UsbExportEvent).toMatchObject({ outcome: 'done', syncFiles: true })
+    expect(logged.some((m) => m.includes('ENOSPC'))).toBe(true)
+    expect(ex.busy()).toBe(false)
+  })
+
+  // While the .sync files are still being written a second export would delete the stale
+  // names and spawn another baken on the same stick.
+  it('stays busy until finished is sent', async () => {
+    let release: () => void = () => {}
+    const held = new Promise<void>((r) => {
+      release = r
+    })
+    const ex = createUsbExporter(deps(happy, { writeAtomic: () => held }))
+    await ex.start(REQ)
+    for (let i = 0; i < 100 && !sent.some((e) => e.type === 'database'); i++) await tick(5)
+    await tick(20)
+    expect(ex.busy()).toBe(true)
+    expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'busy' })
+    release()
+    expect((await finished()) as UsbExportEvent).toMatchObject({ outcome: 'done' })
+    expect(ex.busy()).toBe(false)
+  })
+
+  // The 1 s device poll may not have run since the last track: the .sync files are
+  // Surco's last write and go only to the stick that was chosen.
+  it('writes no sync file when another stick took the mount point at the end', async () => {
+    let swapped = false
+    const ex = createUsbExporter(
+      deps(
+        async (emit) => {
+          await happy(emit, new Promise(() => {}))
+          swapped = true
+        },
+        { idAt: async () => (swapped ? 'OTHER' : UUID) },
+      ),
+    )
+    await ex.start(REQ)
+    expect((await finished()) as UsbExportEvent).toMatchObject({
+      outcome: 'done',
+      syncFiles: false,
+    })
+    expect(writes).toEqual([])
+    expect(memory.get(`volume:${UUID}`)).toBeNull()
+  })
+
+  it('writes no sync file when the device number changed before the poll saw it', async () => {
+    let swapped = false
+    const ex = createUsbExporter(
+      deps(
+        async (emit) => {
+          await happy(emit, new Promise(() => {}))
+          swapped = true
+        },
+        { devOf: async () => (swapped ? 7 : 42), devPollMs: 60_000 },
+      ),
+    )
+    await ex.start(REQ)
+    expect((await finished()) as UsbExportEvent).toMatchObject({
+      outcome: 'done',
+      syncFiles: false,
+    })
+    expect(writes).toEqual([])
+  })
+})
+
+describe('track indexes', () => {
+  // baken numbers its events by position in its plan; a row dropped from the list would
+  // shift every later index onto the wrong track.
+  it('keeps one row per plan track, even one the selection does not know', async () => {
+    const plan = {
+      ...PLAN,
+      tracks: [
+        { id: 999, usbPath: '/Contents/X/x.wav', size: 1, onStick: false },
+        ...(PLAN as { tracks: unknown[] }).tracks,
+      ],
+    } as BakenEvent
+    const ex = createUsbExporter(
+      deps(async (emit) => {
+        emit(plan)
+        emit({ event: 'start', index: 1, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+        emit({ event: 'written', index: 1, kept: false })
+        emit({ event: 'database' })
+        emit(REPORT)
+      }),
+    )
+    await ex.start(REQ)
+    await finished()
+    const started = sent.find((e) => e.type === 'started')
+    expect(started?.type === 'started' && started.tracks.map((t) => t.id)).toEqual([
+      '999',
+      '101',
+      '109',
+      '102',
+    ])
+  })
+})
+
+describe('while an export runs', () => {
+  // A reload of the renderer mid-export reopens the chooser; its summary must not run a
+  // second baken against the stick being written.
+  it('answers busy to a summary', async () => {
+    const ex = createUsbExporter(
+      deps(async (emit, cancelled) => {
+        emit(PLAN)
+        await cancelled
+        emit({ ...REPORT, cancelled: true } as BakenEvent)
+      }),
+    )
+    await ex.start(REQ)
+    const before = calls.length
+    expect(await ex.plan(REQ)).toEqual({ ok: false, reason: 'busy' })
+    expect(calls.length).toBe(before)
+    ex.cancel()
+    await finished()
+  })
+})
+
+describe('stopping for quit', () => {
+  // Quitting must not leave baken writing the stick with no .sync and no memory: during
+  // the tracks it is asked to stop, and the quit waits for its report.
+  it('cancels during the tracks and settles once finished is sent', async () => {
+    const ex = createUsbExporter(
+      deps(async (emit, cancelled) => {
+        emit(PLAN)
+        emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+        await cancelled
+        emit({ event: 'written', index: 0, kept: false })
+        emit({ ...REPORT, cancelled: true } as BakenEvent)
+      }),
+    )
+    await ex.start(REQ)
+    await tick()
+    await ex.stop()
+    expect(cancels).toBe(1)
+    expect(sent.find((e) => e.type === 'finished')).toEqual({
+      type: 'finished',
+      outcome: 'cancelled',
+    })
+    expect(ex.busy()).toBe(false)
+  })
+
+  // Cutting between export.pdb and exportLibrary.db leaves two libraries: wait instead.
+  it('waits for the database without cancelling it', async () => {
+    const ex = createUsbExporter(
+      deps(async (emit) => {
+        emit(PLAN)
+        emit({ event: 'database' })
+        await tick(30)
+        emit(REPORT)
+      }),
+    )
+    await ex.start(REQ)
+    await tick()
+    await ex.stop()
+    expect(cancels).toBe(0)
+    expect(sent.find((e) => e.type === 'finished')).toMatchObject({ outcome: 'done' })
+    expect(writes).toHaveLength(2)
+  })
+
+  it('settles at once when nothing runs', async () => {
+    await createUsbExporter(deps(happy)).stop()
     expect(calls).toEqual([])
   })
 })

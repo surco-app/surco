@@ -260,21 +260,20 @@ function planTracks(p: Prepared, plan: BakenPlan | null): UsbPlanTrack[] {
   const rows = plan
     ? plan.tracks.map((b) => ({ id: String(b.id), size: b.size, onStick: b.onStick }))
     : p.stage.included.map((id) => ({ id, size: p.stage.sizes.get(id) ?? 0, onStick: false }))
-  return rows.flatMap((r) => {
+  // One row per plan track, known or not: baken's events carry the position in its plan,
+  // and a dropped row would shift every later one onto the wrong track.
+  return rows.map((r) => {
     const t = byId.get(r.id)
-    if (!t) return []
-    return [
-      {
-        id: r.id,
-        title: t.title,
-        artist: t.artist,
-        size: r.size,
-        onStick: r.onStick,
-        separator: t.separator,
-        cover: p.stage.covers.get(r.id) ?? null,
-        wave: p.stage.waves.get(r.id) ?? null,
-      },
-    ]
+    return {
+      id: r.id,
+      title: t?.title ?? '',
+      artist: t?.artist ?? '',
+      size: r.size,
+      onStick: r.onStick,
+      separator: t?.separator ?? false,
+      cover: p.stage.covers.get(r.id) ?? null,
+      wave: p.stage.waves.get(r.id) ?? null,
+    }
   })
 }
 
@@ -354,6 +353,15 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   // Claimed synchronously at the top of start(), before any await: two quick presses must
   // never start two bakens on one stick.
   let running: RunState | null = null
+  // Who waits for the run to end: a quit holds until finished is sent.
+  let waiters: Array<() => void> = []
+  let stopping = false
+  const release = (): void => {
+    running = null
+    stopping = false
+    for (const w of waiters) w()
+    waiters = []
+  }
   const stickFile = (p: Prepared, name: string): string =>
     joinFor(deps.platform)(p.target.root, 'PIONEER', 'rekordbox', name)
 
@@ -425,6 +433,8 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   }
 
   async function plan(req: UsbExportRequest): Promise<UsbPlanResult> {
+    // A renderer reloaded mid-export reopens the chooser: no second baken on that stick.
+    if (running) return { ok: false, reason: 'busy' }
     try {
       return await summarise(req)
     } catch (err) {
@@ -502,7 +512,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       reason: UsbFailure,
       extra: { neededBytes?: number; freeBytes?: number } = {},
     ): Promise<UsbStartResult> => {
-      running = null
+      release()
       if (staged) await deps.removeDir(staged.stage.dir)
       return { ok: false, reason, ...extra }
     }
@@ -606,6 +616,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     }
     const handle = run(deps.baken() as { file: string; prefixArgs: string[] }, args, onEvent)
     state.cancel = handle.cancel
+    if (stopping) requestCancel(state)
     // Another volume under the same mount point or drive letter changes the device number
     // (on Windows it is the volume serial): stop at the next track. So does a music volume
     // going away, which would fail every track left; one check of those at a time, as a
@@ -625,51 +636,77 @@ export function createUsbExporter(deps: UsbExporterDeps) {
         requestCancel(state)
       })
     }, deps.devPollMs ?? 1000)
+    // The stick is not this export's once its identifier or device number moved; the poll
+    // above may not have run since the last track, and the .sync files are the last write.
+    const stillOurs = async (): Promise<boolean> => {
+      const now = await volumeAt(p, req, dev)
+      if (typeof now === 'number') return true
+      deps.log(`usb export wrote no sync file: ${now} at ${p.target.root}`)
+      return false
+    }
+    // What a whole export leaves besides baken's library. Neither failing makes the export
+    // a failed one: the library on the stick is complete either way.
+    const afterSuccess = async (r: BakenReport): Promise<boolean> => {
+      for (const f of r.failures) deps.log(`usb export failed ${f.name}: ${f.message}`)
+      if (!(await stillOurs())) return false
+      const syncFiles = await writeSyncFiles(p)
+      try {
+        // After the .sync files, so export.pdb's remembered facts are the final ones.
+        deps.memory.remember(targetKey(req.target), {
+          playlistIds: req.playlistIds,
+          trackIds: tracks.map((t) => t.id),
+          at: deps.now(),
+          pdb: await deps.pdbFacts(p.target.root),
+          prune: req.prune,
+          settings: req.settings,
+        })
+      } catch (err) {
+        deps.log(`usb export could not remember the stick: ${String(err)}`)
+      }
+      return syncFiles
+    }
+    const outcome = async (started: boolean): Promise<UsbExportEvent> => {
+      const r = report as BakenReport | null
+      // Checked first: even a run baken finished may have written part of itself to
+      // whatever took the stick's place, so it is never remembered as this stick's.
+      if (lostVolume) return { type: 'finished', outcome: 'error', reason: 'volume-gone' }
+      if (r && !r.cancelled) {
+        const syncFiles = await afterSuccess(r)
+        const counted = tracks.filter((t, i) => !t.separator && written.has(i)).length
+        return {
+          type: 'finished',
+          outcome: 'done',
+          tracks: counted,
+          failed: r.failures.length,
+          ms: deps.now() - startedAt,
+          syncFiles,
+        }
+      }
+      // A report that was not cancelled above is a whole export even if a source went
+      // meanwhile; otherwise the lost source is why it stopped.
+      if (lostSource) return { type: 'finished', outcome: 'error', reason: 'source-lost' }
+      if (r?.cancelled) return { type: 'finished', outcome: 'cancelled' }
+      return {
+        type: 'finished',
+        outcome: 'error',
+        reason: started ? await failureAfter(error, req) : 'no-baken',
+      }
+    }
     void handle.done.then(async ({ started }) => {
       stopPoll()
       clearInterval(watch)
-      running = null
+      // finished always goes out: the modal and the pill wait for it with no Cancel left.
+      // The claim is released only once it is sent, so no second baken starts on the stick
+      // while the .sync files are still being written.
       try {
-        const r = report as BakenReport | null
-        // Checked first: even a run baken finished may have written part of itself to
-        // whatever took the stick's place, so it is never remembered as this stick's.
-        if (lostVolume) deps.send({ type: 'finished', outcome: 'error', reason: 'volume-gone' })
-        else if (r && !r.cancelled) {
-          for (const f of r.failures) deps.log(`usb export failed ${f.name}: ${f.message}`)
-          const syncFiles = await writeSyncFiles(p)
-          // After the .sync files, so export.pdb's remembered facts are the final ones.
-          deps.memory.remember(targetKey(req.target), {
-            playlistIds: req.playlistIds,
-            trackIds: tracks.map((t) => t.id),
-            at: deps.now(),
-            pdb: await deps.pdbFacts(p.target.root),
-            prune: req.prune,
-            settings: req.settings,
-          })
-          const counted = tracks.filter((t, i) => !t.separator && written.has(i)).length
-          deps.send({
-            type: 'finished',
-            outcome: 'done',
-            tracks: counted,
-            failed: r.failures.length,
-            ms: deps.now() - startedAt,
-            syncFiles,
-          })
-        }
-        // A report that was not cancelled above is a whole export even if a source went
-        // meanwhile; otherwise the lost source is why it stopped.
-        else if (lostSource)
-          deps.send({ type: 'finished', outcome: 'error', reason: 'source-lost' })
-        else if (r?.cancelled) deps.send({ type: 'finished', outcome: 'cancelled' })
-        else
-          deps.send({
-            type: 'finished',
-            outcome: 'error',
-            reason: started ? await failureAfter(error, req) : 'no-baken',
-          })
+        deps.send(await outcome(started))
+      } catch (err) {
+        deps.log(`usb export could not report its outcome: ${String(err)}`)
+        deps.send({ type: 'finished', outcome: 'error', reason: 'baken-failed' })
       } finally {
-        await deps.removeDir(p.stage.dir)
+        release()
       }
+      await deps.removeDir(p.stage.dir)
     })
     return { ok: true }
   }
@@ -690,5 +727,14 @@ export function createUsbExporter(deps: UsbExporterDeps) {
     return requestCancel(running)
   }
 
-  return { plan, start, cancel, busy: () => running !== null }
+  // Quitting: stop at the next track as Cancel does, or let the databases finish, and
+  // settle once finished is sent. An export still starting is cancelled as it launches.
+  function stop(): Promise<void> {
+    if (!running) return Promise.resolve()
+    stopping = true
+    requestCancel(running)
+    return new Promise((r) => waiters.push(r))
+  }
+
+  return { plan, start, cancel, stop, busy: () => running !== null }
 }
