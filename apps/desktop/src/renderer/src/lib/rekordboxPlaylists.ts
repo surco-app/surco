@@ -103,23 +103,6 @@ export function effectivePlaylists(
   })
 }
 
-export function isPlaylistsPending(
-  track: TrackItem,
-  membership: Membership | undefined,
-  options: readonly PlaylistOption[] | undefined,
-): boolean | undefined {
-  if (!membership || !options) return undefined
-  if (!track.rekordboxPlaylists) return false
-  const want = track.rekordboxPlaylists.map((t) => resolveTarget(t, options))
-  const held = new Set(membership[rekordboxPathOf(track)] ?? [])
-  const wantedIds = new Set(want.flatMap((t) => (t.id ? [t.id] : [])))
-  return (
-    want.some((t) => !t.id) ||
-    wantedIds.size !== held.size ||
-    [...wantedIds].some((id) => !held.has(id))
-  )
-}
-
 export function bulkPlaylistState(
   tracks: readonly TrackItem[],
   membership: Membership | undefined,
@@ -171,33 +154,6 @@ export function withTarget(
     )
     return { id: t.id, ...playlistsEdit(t, membership, on ? [...rest, target] : rest) }
   })
-}
-
-export interface PlaylistDot {
-  names: string[]
-  pending: boolean
-}
-
-export function playlistDotsOf(
-  tracks: readonly TrackItem[],
-  membership: Membership | undefined,
-  options: readonly PlaylistOption[] | undefined,
-  previous: ReadonlyMap<string, PlaylistDot>,
-): Map<string, PlaylistDot> {
-  const out = new Map<string, PlaylistDot>()
-  for (const t of tracks) {
-    const names = effectivePlaylists(t, membership, options)?.map((p) => p.name)
-    if (!names || names.length === 0) continue
-    const pending = isPlaylistsPending(t, membership, options) ?? false
-    const before = previous.get(t.id)
-    const same =
-      before !== undefined &&
-      before.pending === pending &&
-      before.names.length === names.length &&
-      before.names.every((n, i) => n === names[i])
-    out.set(t.id, same ? before : { names, pending })
-  }
-  return out
 }
 
 function withoutPlaylistEdit(t: TrackItem): TrackItem {

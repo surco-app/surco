@@ -35,7 +35,6 @@ import { prefersReducedMotion } from '../lib/motion'
 import { isMacOS } from '../lib/platform'
 import { moveBefore } from '../lib/playlistEdits'
 import { STAGE_PROGRESS } from '../lib/progress'
-import type { PlaylistDot } from '../lib/rekordboxPlaylists'
 import {
   clearDraggedRows,
   draggedRows,
@@ -59,7 +58,6 @@ import {
   ToneBadge,
   TonePill,
 } from './ListRow'
-import { PlaylistDots } from './PlaylistDots'
 import { Tooltip } from './Tooltip'
 
 const isMac = isMacOS()
@@ -100,7 +98,6 @@ interface Props {
   // When each file was last backed up (lib/trashView latestBackupByPath), so a row can
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
-  playlistDots?: ReadonlyMap<string, PlaylistDot>
   cueSwatches?: ReadonlyMap<string, CueSwatch>
   onOpenBackup?: (track: TrackItem) => void
   // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
@@ -333,7 +330,6 @@ interface RowProps {
   onVisible?: (id: string, visible: boolean) => void
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
   backupAt?: number
-  playlistDot?: PlaylistDot
   cueSwatch?: CueSwatch
   onOpenBackup?: (track: TrackItem) => void
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
@@ -366,7 +362,6 @@ const TrackRow = memo(function TrackRow({
   onVisible,
   rowRegistry,
   backupAt,
-  playlistDot,
   cueSwatch,
   onOpenBackup,
   duplicate,
@@ -703,7 +698,6 @@ const TrackRow = memo(function TrackRow({
                   {t.listLabel}
                 </span>
               </span>
-              {playlistDot && <PlaylistDots dot={playlistDot} />}
               {cueSwatch && <CueSwatches summary={cueSwatch.summary} pending={cueSwatch.pending} />}
               <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
                 {t.duration !== undefined && (
@@ -935,7 +929,6 @@ export const TrackList = memo(function TrackList({
   onVisible,
   rowRegistry,
   backupAtByPath,
-  playlistDots,
   cueSwatches,
   onOpenBackup,
   duplicateRankById,
@@ -1203,7 +1196,6 @@ export const TrackList = memo(function TrackList({
               onVisible={onVisible}
               rowRegistry={rowRegistry}
               backupAt={backupAtByPath?.get(t.inputPath)}
-              playlistDot={playlistDots?.get(t.id)}
               cueSwatch={cueSwatches?.get(t.id)}
               onOpenBackup={onOpenBackup}
               duplicate={duplicateRankById?.get(t.id)}

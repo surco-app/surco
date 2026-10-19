@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { SourceNode } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -9,9 +9,7 @@ import {
   clearWrittenPlaylists,
   discardPlaylistEdits,
   effectivePlaylists,
-  isPlaylistsPending,
   matchingOptions,
-  playlistDotsOf,
   playlistOptions,
   playlistsEdit,
   withTarget,
@@ -119,49 +117,10 @@ describe('effectivePlaylists', () => {
     expect(effectivePlaylists(t, {}, OPTIONS)).toEqual([{ name: 'Bolos de verano' }])
   })
 
-  it('is not pending when an id-less and an id target resolve to the one playlist the track holds', () => {
-    const t = track({
-      id: 'a',
-      inputPath: '/m/a.wav',
-      rekordboxPlaylists: [{ name: 'Makina' }, { id: '3000', name: 'Makina' }],
-    })
-    expect(isPlaylistsPending(t, { '/m/a.wav': ['3000'] }, OPTIONS)).toBe(false)
-  })
-
   it('answers nothing while options or membership are still loading, so a pick can never shrink the set', () => {
     const t = track({ id: 'a', inputPath: '/m/a.wav' })
     expect(effectivePlaylists(t, undefined, OPTIONS)).toBeUndefined()
     expect(effectivePlaylists(t, {}, undefined)).toBeUndefined()
-  })
-})
-
-describe('isPlaylistsPending', () => {
-  it('is pending until rekordbox holds exactly the wanted set, shown as hollow dots', () => {
-    const want = track({
-      id: 'a',
-      inputPath: '/m/a.wav',
-      rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
-    })
-    expect(isPlaylistsPending(want, {}, OPTIONS)).toBe(true)
-    expect(isPlaylistsPending(want, { '/m/a.wav': ['3000'] }, OPTIONS)).toBe(false)
-    expect(isPlaylistsPending(want, { '/m/a.wav': ['3000', '2000'] }, OPTIONS)).toBe(true)
-    expect(isPlaylistsPending(track({ id: 'b' }), {}, OPTIONS)).toBe(false)
-  })
-
-  it('is not pending for an id-less target when a root playlist of that name already holds the track', () => {
-    const t = track({ id: 'a', inputPath: '/m/a.wav', rekordboxPlaylists: [{ name: 'Makina' }] })
-    expect(isPlaylistsPending(t, { '/m/a.wav': ['3000'] }, OPTIONS)).toBe(false)
-  })
-
-  it('stays pending for an id-less target with no root playlist of that name', () => {
-    const t = track({ id: 'a', inputPath: '/m/a.wav', rekordboxPlaylists: [{ name: 'Cierre' }] })
-    expect(isPlaylistsPending(t, {}, OPTIONS)).toBe(true)
-  })
-
-  it('answers nothing while options or membership are still loading', () => {
-    const t = track({ id: 'a', rekordboxPlaylists: [{ name: 'Makina' }] })
-    expect(isPlaylistsPending(t, undefined, OPTIONS)).toBeUndefined()
-    expect(isPlaylistsPending(t, {}, undefined)).toBeUndefined()
   })
 })
 
@@ -238,47 +197,6 @@ describe('playlistsEdit', () => {
   it('records an empty base for a track rekordbox does not hold', () => {
     const t = track({ id: 'a', inputPath: '/m/a.wav' })
     expect(playlistsEdit(t, {}, [{ name: 'Fijas' }]).rekordboxPlaylistsBase).toEqual([])
-  })
-})
-
-describe('playlistDotsOf', () => {
-  const a = track({ id: 'a', inputPath: '/m/a.wav' })
-  const b = track({ id: 'b', inputPath: '/m/b.wav' })
-  const membership = { '/m/a.wav': ['3000'] }
-
-  it('names the playlists of each track and says when they are not written yet', () => {
-    const pending = track({
-      id: 'c',
-      inputPath: '/m/c.wav',
-      rekordboxPlaylists: [{ name: 'Cierre' }],
-    })
-    const dots = playlistDotsOf([a, b, pending], membership, OPTIONS, new Map())
-    expect(dots.get('a')).toEqual({ names: ['Makina'], pending: false })
-    expect(dots.has('b')).toBe(false)
-    expect(dots.get('c')).toEqual({ names: ['Cierre'], pending: true })
-  })
-
-  it('keeps the same object for a row whose dots did not change, so an edit does not re-render the whole list', () => {
-    const first = playlistDotsOf([a], membership, OPTIONS, new Map())
-    const second = playlistDotsOf([{ ...a }], membership, OPTIONS, first)
-    expect(second.get('a')).toBe(first.get('a'))
-  })
-
-  it('draws no dots while the membership or the options are still unknown', () => {
-    expect(playlistDotsOf([a], undefined, OPTIONS, new Map()).size).toBe(0)
-    expect(playlistDotsOf([a], membership, undefined, new Map()).size).toBe(0)
-  })
-
-  it('builds the id lookup once per call, not once per track', () => {
-    const many = Array.from({ length: 200 }, (_, n) =>
-      track({ id: `t${n}`, inputPath: `/m/${n}.wav` }),
-    )
-    const all = Object.fromEntries(many.map((t) => [t.inputPath, ['3000']]))
-    const set = vi.spyOn(Map.prototype, 'set')
-    playlistDotsOf(many, all, OPTIONS, new Map())
-    const writes = set.mock.calls.length
-    set.mockRestore()
-    expect(writes).toBeLessThan(many.length + OPTIONS.length * 3)
   })
 })
 

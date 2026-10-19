@@ -1836,26 +1836,3 @@ describe('TrackList reorder', () => {
     expect(reorder.onMove).toHaveBeenCalledWith(['c'], 'a')
   })
 })
-
-describe('TrackList rekordbox playlists', () => {
-  it('shows the dots of the rows that have playlists', () => {
-    render(
-      <TrackList
-        tracks={[track({ id: 'a' }), track({ id: 'b' })]}
-        selectedId={null}
-        selectedIds={new Set()}
-        outputFormat="aiff"
-        bindings={bindings}
-        onSelect={vi.fn()}
-        onActivate={vi.fn()}
-        onRemove={vi.fn()}
-        onSwipeRemove={vi.fn()}
-        onAcceptReview={vi.fn()}
-        onPrefetch={vi.fn()}
-        renderMenu={() => null}
-        playlistDots={new Map([['a', { names: ['Makina'], pending: false }]])}
-      />,
-    )
-    expect(screen.getAllByTestId('track-playlist-dots')).toHaveLength(1)
-  })
-})

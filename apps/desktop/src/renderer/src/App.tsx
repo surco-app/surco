@@ -82,12 +82,7 @@ import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
-import {
-  useOfferRekordboxField,
-  useRekordboxAvailable,
-  useRekordboxListMembership,
-  useRekordboxPlaylistOptions,
-} from './hooks/useRekordboxPlaylists'
+import { useOfferRekordboxField, useRekordboxAvailable } from './hooks/useRekordboxPlaylists'
 import { useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
@@ -135,9 +130,7 @@ import { applyProgress, topBarProgress } from './lib/progress'
 import {
   clearWrittenPlaylists,
   discardPlaylistEdits,
-  type PlaylistDot,
   type PlaylistsEdit,
-  playlistDotsOf,
 } from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
@@ -630,15 +623,6 @@ export default function App(): React.JSX.Element {
       noticeOnPathsAdded(paths)
     },
   })
-
-  const rekordboxOptionsForDots = useRekordboxPlaylistOptions(rekordboxAvailable)
-  const listMembership = useRekordboxListMembership(tracks, rekordboxAvailable)
-  const dotsRef = useRef<Map<string, PlaylistDot>>(new Map())
-  const playlistDots = useMemo(() => {
-    const next = playlistDotsOf(tracks, listMembership, rekordboxOptionsForDots, dotsRef.current)
-    dotsRef.current = next
-    return next
-  }, [tracks, listMembership, rekordboxOptionsForDots])
 
   // Which DJ library and playlist the list is narrowed to. The playlist's files join the
   // working list as they arrive, so its rows exist to be shown; a refocus re-read lands here
@@ -2835,7 +2819,6 @@ export default function App(): React.JSX.Element {
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               backupAtByPath={backupAtByPath}
-                              playlistDots={playlistDots}
                               cueSwatches={cueSwatches}
                               onOpenBackup={onOpenBackup}
                               duplicateRankById={duplicateRankById}
