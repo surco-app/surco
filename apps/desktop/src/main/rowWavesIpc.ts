@@ -34,7 +34,12 @@ async function fromRekordbox(
   const file = request.analysisPath
   if (!file || !sources.share || !insideShare(sources.share, file)) return null
   const dat = await sources.readDat(file)
-  return dat ? wavePreview(dat, ROW_WAVE_BARS) : null
+  if (!dat) return null
+  try {
+    return wavePreview(dat, ROW_WAVE_BARS)
+  } catch {
+    return null
+  }
 }
 
 async function fromSurco(

@@ -52,6 +52,26 @@ describe('rowWaves', () => {
     expect(Math.max(...found[dat])).toBe(0.3)
   })
 
+  it('keeps the rest of the batch when one analysis file is cut short, and draws Surco wave for that row', async () => {
+    const good = `${share}/PIONEER/USBANLZ/g/h/ANLZ0000.DAT`
+    const whole = anlzFile(pwavSection(Array(400).fill(31)))
+    const cut = Buffer.from(whole.subarray(0, 40))
+    cut.writeUInt32BE(12, 36)
+    const s = sources({
+      readDat: vi.fn(async (file: string) => (file === dat ? cut : whole)),
+      peekWave: vi.fn(async () => ({ peaks: [0.3], rms: [], durationSec: 1 })),
+    })
+    const found = await rowWaves(
+      [
+        { path: '/m/a.wav', analysisPath: dat },
+        { path: '/m/g.wav', analysisPath: good },
+      ],
+      s,
+    )
+    expect(Math.max(...found[dat])).toBe(0.3)
+    expect(found[good].every((v) => v === 1)).toBe(true)
+  })
+
   it('answers nothing for a track with no wave anywhere, so the row stays empty', async () => {
     const found = await rowWaves([{ path: '/m/c.wav' }], sources())
     expect(found).toEqual({})
