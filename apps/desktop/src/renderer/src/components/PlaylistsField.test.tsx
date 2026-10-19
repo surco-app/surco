@@ -43,6 +43,33 @@ describe('PlaylistsField', () => {
     expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
   })
 
+  it('shows each suggestion as its full path on one line', () => {
+    render(<Harness />)
+    fireEvent.change(input(), { target: { value: 'tod' } })
+    expect(screen.getByTestId('playlists-option-1101').textContent).toBe('BOLOS › FIJAS › Todas')
+    expect(screen.getByTestId('playlists-option-2000').textContent).toBe('Todas')
+  })
+
+  it('narrows identical names by typing part of their folders', () => {
+    render(<Harness />)
+    fireEvent.change(input(), { target: { value: 'fijas todas' } })
+    expect(screen.getByTestId('playlists-option-1101')).toBeInTheDocument()
+    expect(screen.queryByTestId('playlists-option-2000')).toBeNull()
+  })
+
+  it('names a chip with its parent folder only when the name is duplicated', () => {
+    render(
+      <Harness
+        initial={[
+          { id: '1101', name: 'Todas' },
+          { id: '3000', name: 'Makina' },
+        ]}
+      />,
+    )
+    expect(screen.getByTestId('playlists-token-1101')).toHaveTextContent('FIJAS › Todas')
+    expect(screen.getByTestId('playlists-token-3000').textContent).toBe('Makina')
+  })
+
   it('picks the highlighted option with Enter, as Mail does', () => {
     const spy = vi.fn()
     render(<Harness spy={spy} />)

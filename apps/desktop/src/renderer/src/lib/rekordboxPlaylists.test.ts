@@ -6,6 +6,7 @@ import { isStale, trackSignature } from './dirty'
 import {
   bulkPlaylistState,
   canCreate,
+  chipLabel,
   clearWrittenPlaylists,
   discardPlaylistEdits,
   effectivePlaylists,
@@ -71,6 +72,25 @@ describe('matchingOptions', () => {
 
   it('hides the root playlist an id-less chosen name already resolves to', () => {
     expect(matchingOptions(OPTIONS, 'makina', [{ name: 'Makina' }]).map((o) => o.id)).toEqual([])
+  })
+
+  it('needs every word of the query in the folders or the name, so a path narrows identical names', () => {
+    expect(matchingOptions(OPTIONS, 'bolos fijas', []).map((o) => o.id)).toEqual(['1101'])
+    expect(matchingOptions(OPTIONS, '  TODAS   fíjas ', []).map((o) => o.id)).toEqual(['1101'])
+    expect(matchingOptions(OPTIONS, 'fijas makina', []).map((o) => o.id)).toEqual([])
+  })
+
+  it('matches a folder name alone, listing everything inside it', () => {
+    expect(matchingOptions(OPTIONS, 'bolos', []).map((o) => o.id)).toEqual(['1001', '1101'])
+  })
+})
+
+describe('chipLabel', () => {
+  it('adds the parent folder only when the name repeats in the tree', () => {
+    expect(chipLabel(OPTIONS, { id: '1101', name: 'Todas' })).toBe('FIJAS › Todas')
+    expect(chipLabel(OPTIONS, { id: '2000', name: 'Todas' })).toBe('Todas')
+    expect(chipLabel(OPTIONS, { id: '3000', name: 'Makina' })).toBe('Makina')
+    expect(chipLabel(OPTIONS, { name: 'Nueva' })).toBe('Nueva')
   })
 })
 

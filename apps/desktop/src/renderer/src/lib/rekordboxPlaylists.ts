@@ -47,8 +47,22 @@ export function matchingOptions(
       return id ? [id] : []
     }),
   )
-  const query = fold(text.trim())
-  return options.filter((o) => !taken.has(o.id) && (query === '' || fold(o.name).includes(query)))
+  const words = fold(text).split(/\s+/).filter(Boolean)
+  return options.filter((o) => {
+    if (taken.has(o.id)) return false
+    const haystack = fold(`${o.path} ${o.name}`)
+    return words.every((w) => haystack.includes(w))
+  })
+}
+
+export function chipLabel(
+  options: readonly PlaylistOption[],
+  target: RekordboxPlaylistTarget,
+): string {
+  const option = target.id ? options.find((o) => o.id === target.id) : undefined
+  if (!option || option.path === '') return target.name
+  const repeated = options.some((o) => o.id !== option.id && o.name === option.name)
+  return repeated ? `${option.path.split(' › ').at(-1)} › ${option.name}` : target.name
 }
 
 export function canCreate(

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { RekordboxPlaylistTarget } from '../../../shared/types'
 import {
   canCreate,
+  chipLabel,
   matchingOptions,
   type PlaylistOption,
   targetKey,
@@ -64,7 +65,7 @@ function Picker({
     } else if (e.key === 'Backspace' && text === '') onBackspace?.()
   }
   return (
-    <div className="relative min-w-[8rem] flex-1">
+    <div className="min-w-[8rem] flex-1">
       <input
         id={inputId}
         data-testid="playlists-input"
@@ -88,7 +89,7 @@ function Picker({
           id={listId}
           role="listbox"
           aria-label={tr('editor.playlists.options')}
-          className="absolute top-full left-0 z-20 mt-1 max-h-64 w-72 overflow-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 shadow-[var(--shadow-float)]"
+          className="absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 shadow-[var(--shadow-float)]"
         >
           {rows.map((row, i) => {
             const path = row.id ? options.find((o) => o.id === row.id)?.path : undefined
@@ -104,18 +105,18 @@ function Picker({
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(row)}
                 onMouseEnter={() => setActive(i)}
-                className={`flex w-full items-center gap-3 px-2.5 py-1 text-left text-xs ${
+                className={`flex w-full items-center px-2.5 py-1 text-left text-xs ${
                   i === at ? 'bg-[var(--color-hover)] text-fg' : 'text-fg-muted'
                 }`}
               >
-                <span className="truncate">
-                  {row.id ? row.name : tr('editor.playlists.create', { name: row.name })}
-                </span>
                 {path && (
-                  <span className="ml-auto shrink-0 truncate text-[10px] text-fg-faint">
-                    {path}
+                  <span className="flex min-w-0 justify-end overflow-hidden text-fg-faint">
+                    <span className="whitespace-nowrap">{`${path} › `}</span>
                   </span>
                 )}
+                <span className={path ? 'shrink-0 truncate' : 'truncate'}>
+                  {row.id ? row.name : tr('editor.playlists.create', { name: row.name })}
+                </span>
               </button>
             )
           })}
@@ -127,11 +128,13 @@ function Picker({
 
 function TokenChip({
   token,
+  label,
   path,
   onRemove,
   onComplete,
 }: {
   token: Token
+  label: string
   path: string
   onRemove: () => void
   onComplete?: () => void
@@ -165,10 +168,10 @@ function TokenChip({
           onClick={onComplete}
           className="truncate"
         >
-          {token.target.name}
+          {label}
         </button>
       ) : (
-        <span className="truncate">{token.target.name}</span>
+        <span className="truncate">{label}</span>
       )}
       <button
         type="button"
@@ -203,7 +206,7 @@ function Shell({
         {label}
         <RekordboxIcon size={12} />
       </label>
-      <div className="flex min-h-[34px] flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2 py-1 focus-within:border-[var(--color-accent)] @[24rem]:col-start-2">
+      <div className="relative flex min-h-[34px] flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2 py-1 focus-within:border-[var(--color-accent)] @[24rem]:col-start-2">
         {children}
       </div>
     </div>
@@ -231,6 +234,7 @@ export function PlaylistsField({
         <TokenChip
           key={targetKey(target)}
           token={{ target, state: 'all' }}
+          label={chipLabel(options, target)}
           path={pathOf(options, target)}
           onRemove={() => onChange(value.filter((t) => targetKey(t) !== targetKey(target)))}
         />
@@ -266,6 +270,7 @@ export function PlaylistsBulkField({
         <TokenChip
           key={targetKey(token.target)}
           token={token}
+          label={chipLabel(options, token.target)}
           path={pathOf(options, token.target)}
           onRemove={() => onToggle(token.target, false)}
           onComplete={token.state === 'some' ? () => onToggle(token.target, true) : undefined}
