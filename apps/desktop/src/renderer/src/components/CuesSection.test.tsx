@@ -189,7 +189,7 @@ describe('CuesSection', () => {
       cues: [
         { id: 'a', ms: bar(40), kind: 1, color: 0 },
         { id: 'b', ms: bar(80), kind: 2, color: null },
-        { id: 'i', ms: bar(120), kind: 3, color: null },
+        { id: 'i', ms: bar(120), kind: 10, color: null },
       ],
     })
     await waitFor(() => expect(screen.getByTestId('cues-manual')).toBeInTheDocument())
@@ -199,8 +199,8 @@ describe('CuesSection', () => {
       'var(--color-danger)',
       'var(--color-warn)',
     ]
-    const expected = { A: 0, B: null, C: null }
-    for (const letter of ['A', 'B', 'C'] as const) {
+    const expected = { A: 0, B: null, I: null }
+    for (const letter of ['A', 'B', 'I'] as const) {
       const cueLine = screen.getByTestId(`cue-wave-hot-${letter}`)
       expect(cueLine).toHaveTextContent(letter)
       expect(cueLine).toHaveStyle({ backgroundColor: hotCueColor(expected[letter]) })

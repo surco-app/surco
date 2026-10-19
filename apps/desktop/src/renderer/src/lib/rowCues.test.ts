@@ -6,6 +6,10 @@ describe('cueLetter', () => {
     expect([1, 2, 3, 5, 6, 7, 8, 9].map(cueLetter).join('')).toBe('ABCDEFGH')
   })
 
+  it('keeps naming the hot cues rekordbox numbers past H, so a hand-placed one is not left blank', () => {
+    expect(cueLetter(10)).toBe('I')
+  })
+
   it('gives no letter to a kind that is not a hot cue', () => {
     expect(cueLetter(0)).toBe('')
     expect(cueLetter(4)).toBe('')

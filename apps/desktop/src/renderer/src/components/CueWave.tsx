@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
@@ -53,32 +53,41 @@ export function CueWave({
   const rootRef = useRef<HTMLDivElement>(null)
   const swallowClick = useRef(false)
   const [ghost, setGhost] = useState<number | null>(null)
-  const [drag, setDrag] = useState<{ key: string; x0: number; ms: number | null } | null>(null)
+  const dragRef = useRef<{ key: string; x0: number; ms: number | null } | null>(null)
+  const [dragMs, setDragMs] = useState<number | null>(null)
+  const [armed, setArmed] = useState(false)
   const beatsMs = grid.map((b) => b.ms)
+  const latest = useRef({ beatsMs, durationMs, onMove })
+  latest.current = { beatsMs, durationMs, onMove }
   useEffect(() => {
     if (readOnly) setGhost(null)
   }, [readOnly])
-  const msAtX = (clientX: number): number => {
+  const msAtX = useCallback((clientX: number): number => {
     const rect = rootRef.current?.getBoundingClientRect()
     if (!rect) return 0
     const x = Math.min(Math.max(clientX - rect.left, 0), rect.width)
-    return (x / Math.max(rect.width, 1)) * durationMs
-  }
+    return (x / Math.max(rect.width, 1)) * latest.current.durationMs
+  }, [])
   useEffect(() => {
-    if (!drag) return
+    if (!armed) return
     const move = (e: MouseEvent) => {
-      if (Math.abs(e.clientX - drag.x0) <= DRAG_PX) return
-      setDrag({ ...drag, ms: beatsMs[nearestBeat(beatsMs, msAtX(e.clientX))] })
+      const d = dragRef.current
+      if (!d || Math.abs(e.clientX - d.x0) <= DRAG_PX) return
+      const beats = latest.current.beatsMs
+      d.ms = beats[nearestBeat(beats, msAtX(e.clientX))]
+      setDragMs(d.ms)
     }
     const up = () => {
-      if (drag.ms !== null) {
-        swallowClick.current = true
-        setTimeout(() => {
-          swallowClick.current = false
-        }, 0)
-        onMove?.(drag.key, drag.ms)
-      }
-      setDrag(null)
+      const d = dragRef.current
+      dragRef.current = null
+      setArmed(false)
+      setDragMs(null)
+      if (!d || d.ms === null) return
+      swallowClick.current = true
+      setTimeout(() => {
+        swallowClick.current = false
+      }, 0)
+      latest.current.onMove?.(d.key, d.ms)
     }
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
@@ -86,7 +95,7 @@ export function CueWave({
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
     }
-  })
+  }, [armed, msAtX])
   if (grid.length === 0) {
     return (
       <div
@@ -122,9 +131,15 @@ export function CueWave({
     return { ...action, key: drops.find((d) => d.ms === action.ms)?.key }
   }
   const startDrag = (key: string, e: React.MouseEvent) => {
+    if (e.button !== 0 || e.ctrlKey) return
     e.stopPropagation()
     onSelect?.(key)
-    setDrag({ key, x0: e.clientX, ms: null })
+    dragRef.current = { key, x0: e.clientX, ms: null }
+    setArmed(true)
+  }
+  const selectMark = (key: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelect?.(key)
   }
   return (
     <div
@@ -142,7 +157,7 @@ export function CueWave({
         else onMarkDrop?.(action.ms)
       }}
       onKeyDown={(e) => {
-        if (readOnly || e.key !== 'Enter' || ghost === null) return
+        if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || ghost === null) return
         onMarkDrop?.(ghost)
       }}
       onContextMenu={(e) => {
@@ -233,6 +248,21 @@ export function CueWave({
           className="absolute h-3.5 w-3.5 rounded-[3px] border border-dashed border-[var(--color-fg-faint)]"
         />
       ))}
+      {!readOnly &&
+        (proposals ?? []).map((ms) => (
+          <button
+            key={`p${ms}`}
+            type="button"
+            data-testid={`cue-wave-proposal-${ms}`}
+            aria-label={t('cueWave.proposal', { bar: cuePosition(ms, grid).bar })}
+            style={{ left: pct(ms) }}
+            className="absolute top-0 bottom-0 w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
+            onClick={(e) => {
+              e.stopPropagation()
+              onAcceptProposal?.(ms)
+            }}
+          />
+        ))}
       {calls.map((c) => {
         const pending = pendingOf.get(c.key) ?? false
         const isSelected = selected === c.key
@@ -253,7 +283,7 @@ export function CueWave({
             type="button"
             aria-label={t('cueWave.call')}
             onMouseDown={(e) => startDrag(c.key, e)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => selectMark(c.key, e)}
             {...common}
           />
         )
@@ -285,33 +315,18 @@ export function CueWave({
             type="button"
             aria-label={t('cueWave.hotCue', { letter: h.letter })}
             onMouseDown={(e) => startDrag(h.key, e)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => selectMark(h.key, e)}
             {...common}
           >
             {h.letter}
           </button>
         )
       })}
-      {!readOnly &&
-        (proposals ?? []).map((ms) => (
-          <button
-            key={`p${ms}`}
-            type="button"
-            data-testid={`cue-wave-proposal-${ms}`}
-            aria-label={t('cueWave.proposal', { bar: cuePosition(ms, grid).bar })}
-            style={{ left: pct(ms) }}
-            className="absolute top-0 bottom-0 w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
-            onClick={(e) => {
-              e.stopPropagation()
-              onAcceptProposal?.(ms)
-            }}
-          />
-        ))}
-      {drag?.ms != null && (
+      {dragMs !== null && (
         <span
           data-testid="cue-wave-drag-ghost"
           aria-hidden="true"
-          style={{ left: pct(drag.ms) }}
+          style={{ left: pct(dragMs) }}
           className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
         />
       )}

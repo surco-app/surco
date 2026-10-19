@@ -105,6 +105,46 @@ describe('CueWave', () => {
     expect(h.onMove).toHaveBeenCalledWith('a', 24500)
   })
 
+  it('does not arm a drag from a right-click or a ctrl-click, whose mouseup may never arrive', () => {
+    const h = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160, button: 2 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160, ctrlKey: true })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(h.onMove).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cue-wave-drag-ghost')).toBeNull()
+  })
+
+  it('selects a focused mark with Enter without marking a drop under the ghost', () => {
+    const h = setup()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-ghost')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cue-wave-hot-A'))
+    fireEvent.keyDown(screen.getByTestId('cue-wave-hot-A'), { key: 'Enter' })
+    expect(h.onSelect).toHaveBeenCalledWith('a')
+    expect(h.onMarkDrop).not.toHaveBeenCalled()
+  })
+
+  it('swallows the click that follows a drag so the release does not mark a drop', () => {
+    vi.useFakeTimers()
+    const h = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
+    fireEvent.mouseMove(window, { clientX: 243 })
+    fireEvent.mouseUp(window, { clientX: 243 })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 243 })
+    expect(h.onMarkDrop).not.toHaveBeenCalled()
+    vi.runAllTimers()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100 })
+    expect(h.onMarkDrop).toHaveBeenCalledWith(10000)
+    vi.useRealTimers()
+  })
+
+  it('keeps a proposal clickable under a mark at the same place', () => {
+    setup({ proposals: [16000] })
+    const all = screen.getAllByTestId(/^cue-wave-(proposal|hot)-/)
+    expect(all.map((e) => e.dataset.testid)).toEqual(['cue-wave-proposal-16000', 'cue-wave-hot-A'])
+  })
+
   it('opens the menu on a right-click with the beat under it', () => {
     const h = setup()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 30 })
