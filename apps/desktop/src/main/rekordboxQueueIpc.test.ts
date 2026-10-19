@@ -73,6 +73,18 @@ describe('registerRekordboxQueueIpc', () => {
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
+  it('starts the queue only once the window listens, so the startup apply is never announced to nobody', async () => {
+    const onReady = vi.fn()
+    registerRekordboxQueueIpc(queue(), {
+      collection: () => '/c/master.db',
+      ensureClosed: vi.fn(async () => true),
+      onReady,
+    })
+    expect(onReady).not.toHaveBeenCalled()
+    await handler('rekordbox:queueReady')()
+    expect(onReady).toHaveBeenCalledTimes(1)
+  })
+
   it('wakes the watcher when the apply is cancelled and the work keeps waiting', async () => {
     const onWaiting = vi.fn()
     registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {

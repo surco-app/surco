@@ -188,6 +188,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,
     discardRekordboxQueue: async () => {},
+    rekordboxQueueReady: async () => {},
     rekordboxMembership: async () => ({}),
     onRekordboxQueueChanged: unsubscribe,
     onRekordboxQueueApplied: unsubscribe,

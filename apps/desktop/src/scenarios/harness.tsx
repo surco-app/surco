@@ -290,6 +290,7 @@ function scenarioApi(
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,
     discardRekordboxQueue: async () => {},
+    rekordboxQueueReady: async () => {},
     rekordboxMembership: async () => ({}),
     onRekordboxQueueChanged: () => () => {},
     onRekordboxQueueApplied: () => () => {},

@@ -204,6 +204,7 @@ export interface Api {
   rekordboxQueue: () => Promise<RekordboxQueueState>
   applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
   discardRekordboxQueue: () => Promise<void>
+  rekordboxQueueReady: () => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void

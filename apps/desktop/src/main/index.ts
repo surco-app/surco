@@ -936,6 +936,7 @@ function registerIpc(): void {
     collection: rekordboxCollectionPath,
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
     onWaiting: rekordboxQueueWatch.poke,
+    onReady: rekordboxQueueWatch.poke,
   })
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
@@ -1541,7 +1542,6 @@ app.whenReady().then(() => {
   migrateBackupLimits()
   migrateImportFields()
   createWindow()
-  rekordboxQueueWatch.poke()
 
   // Downloads a newer version in the background, then tells the renderer so it can
   // show a "restart to update" toast (which calls quitAndInstall via update:install).

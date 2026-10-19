@@ -25,6 +25,7 @@ export interface QueueIpcHost {
   collection: () => string
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onWaiting?: () => void
+  onReady?: () => void
 }
 
 export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcHost): void {
@@ -40,6 +41,7 @@ export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcH
     }),
   )
   ipcMain.handle('rekordbox:discardQueue', () => queue.discard())
+  ipcMain.handle('rekordbox:queueReady', () => host.onReady?.())
   ipcMain.handle('rekordbox:membership', (_e, paths: string[]) =>
     withCollection(
       host.collection(),

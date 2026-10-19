@@ -54,6 +54,22 @@ function setup(over: Partial<Api> = {}) {
 }
 
 describe('useRekordboxQueue', () => {
+  it('tells main it listens only after subscribing to what lands, so the startup apply reaches the window', async () => {
+    let listening = false
+    const seen: boolean[] = []
+    const rekordboxQueueReady = vi.fn<Api['rekordboxQueueReady']>(async () => {
+      seen.push(listening)
+    })
+    setup({
+      rekordboxQueueReady,
+      onRekordboxQueueApplied: () => {
+        listening = true
+        return () => {}
+      },
+    })
+    await waitFor(() => expect(seen).toEqual([true]))
+  })
+
   it('reads the queue and follows its changes', async () => {
     const { hook, changed } = setup()
     await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))

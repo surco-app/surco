@@ -66,6 +66,10 @@ export function useRekordboxQueue(
 
   useEffect(() => window.api.onRekordboxQueueApplied(announce), [announce])
 
+  useEffect(() => {
+    void window.api.rekordboxQueueReady().catch(() => undefined)
+  }, [])
+
   const applyNow = useCallback(async () => {
     try {
       announce(await window.api.applyRekordboxQueue())

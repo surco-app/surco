@@ -185,6 +185,7 @@ const api: Api = {
   applyRekordboxQueue: (): Promise<RekordboxQueueApplied | null> =>
     ipcRenderer.invoke('rekordbox:applyNow'),
   discardRekordboxQueue: (): Promise<void> => ipcRenderer.invoke('rekordbox:discardQueue'),
+  rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
   rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('rekordbox:membership', paths),
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
