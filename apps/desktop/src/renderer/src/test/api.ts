@@ -184,6 +184,13 @@ export function stubApi(over: Partial<Api> = {}): Api {
     loadRekordboxPlaylist: async () => [],
     rekordboxHasSeparator: async () => false,
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
+    usbVolumes: async () => ({ volumes: [], lastKey: null }),
+    onUsbVolumesChanged: unsubscribe,
+    usbPickFolder: async () => null,
+    usbPlan: async () => ({ ok: false, reason: 'nothing-selected' }),
+    usbExport: async () => ({ ok: false, reason: 'nothing-selected' }),
+    usbCancel: async () => false,
+    onUsbEvent: unsubscribe,
     loadAppleMusicPlaylistTracks: async () => ({
       paths: [],
       persistentIds: {},

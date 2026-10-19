@@ -33,6 +33,12 @@ import type {
   SpectrumVerdict,
   TrackProperties,
   TrashEntry,
+  UsbExportEvent,
+  UsbExportRequest,
+  UsbFolderPick,
+  UsbPlanResult,
+  UsbStartResult,
+  UsbVolumeList,
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
@@ -172,6 +178,22 @@ const api: Api = {
   editRekordboxPlaylist: (edit: RekordboxPlaylistEdit): Promise<RekordboxEditResult> =>
     ipcRenderer.invoke('rekordbox:edit', edit),
   rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
+  usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
+  onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {
+    const listener = (_e: unknown, list: UsbVolumeList): void => cb(list)
+    ipcRenderer.on('usb:volumesChanged', listener)
+    return () => ipcRenderer.removeListener('usb:volumesChanged', listener)
+  },
+  usbPickFolder: (): Promise<UsbFolderPick | null> => ipcRenderer.invoke('usb:pickFolder'),
+  usbPlan: (req: UsbExportRequest): Promise<UsbPlanResult> => ipcRenderer.invoke('usb:plan', req),
+  usbExport: (req: UsbExportRequest): Promise<UsbStartResult> =>
+    ipcRenderer.invoke('usb:export', req),
+  usbCancel: (): Promise<boolean> => ipcRenderer.invoke('usb:cancel'),
+  onUsbEvent: (cb: (e: UsbExportEvent) => void) => {
+    const listener = (_e: unknown, event: UsbExportEvent): void => cb(event)
+    ipcRenderer.on('usb:event', listener)
+    return () => ipcRenderer.removeListener('usb:event', listener)
+  },
   loadEngineLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('engine:library'),
   addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),

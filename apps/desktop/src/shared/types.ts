@@ -1449,3 +1449,88 @@ export interface UsbVolumeList {
   // targetKey of the last export, to preselect it.
   lastKey: string | null
 }
+
+export interface UsbPlanTrack {
+  id: string
+  title: string
+  artist: string
+  size: number
+  // baken's size check, what is left to copy.
+  onStick: boolean
+  separator: boolean
+  cover: string | null
+  wave: number[] | null
+}
+
+export type UsbUnexportableReason = 'missing-file' | 'streaming' | 'skipped'
+
+export type UsbWarning =
+  | { kind: 'rekordboxExport' }
+  | { kind: 'exfat' }
+  | { kind: 'gpt' }
+  | { kind: 'ntfs' }
+  | { kind: 'notVolumeRoot' }
+  | { kind: 'cdj2000'; titles: string[] }
+  | { kind: 'unexportable'; tracks: { title: string; reason: UsbUnexportableReason }[] }
+  | { kind: 'noSpace'; neededBytes: number; freeBytes: number }
+
+export interface UsbPlan {
+  tracks: UsbPlanTrack[]
+  // Without separators, as the tree counts.
+  trackCount: number
+  newCount: number
+  newBytes: number
+  keptCount: number
+  removedSinceLast: number | null
+  warnings: UsbWarning[]
+}
+
+export interface UsbExportRequest {
+  playlistIds: string[]
+  target: UsbTarget
+  prune: boolean
+  settings: boolean
+}
+
+export type UsbFailure =
+  | 'unsupported'
+  | 'no-collection'
+  | 'unreadable'
+  | 'nothing-selected'
+  | 'volume-gone'
+  | 'volume-changed'
+  | 'not-removable'
+  | 'not-volume-root'
+  | 'no-baken'
+  | 'refused'
+  | 'baken-failed'
+  | 'device-write'
+  | 'no-space'
+  | 'busy'
+
+export type UsbPlanResult = { ok: true; plan: UsbPlan } | { ok: false; reason: UsbFailure }
+
+export type UsbStartResult =
+  | { ok: true }
+  | { ok: false; reason: UsbFailure; neededBytes?: number; freeBytes?: number }
+
+export interface UsbFolderPick {
+  path: string
+  remembered: UsbRemembered | null
+}
+
+// baken's English failure text mapped to something the UI translates; the raw text goes to
+// the log.
+export type UsbTrackFailure = 'missing-file' | 'unreadable' | 'device'
+
+export type UsbExportEvent =
+  | { type: 'started'; tracks: UsbPlanTrack[]; targetName: string; startedAt: number }
+  // Bytes of the track being copied, polled from the stick.
+  | { type: 'progress'; index: number; bytes: number }
+  | { type: 'track'; index: number; state: 'done' | 'kept' }
+  | { type: 'failed'; index: number; reason: UsbTrackFailure }
+  | { type: 'cancelling' }
+  | { type: 'database' }
+  | { type: 'finished'; outcome: 'done'; tracks: number; failed: number; ms: number }
+  | { type: 'finished'; outcome: 'cancelled' }
+  | { type: 'finished'; outcome: 'error'; reason: UsbFailure }

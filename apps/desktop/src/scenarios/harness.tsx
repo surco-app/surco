@@ -287,6 +287,9 @@ function scenarioApi(
     loadRekordboxPlaylist: async () => [],
     rekordboxHasSeparator: async () => false,
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
+    usbVolumes: async () => ({ volumes: [], lastKey: null }),
+    onUsbVolumesChanged: () => () => {},
+    onUsbEvent: () => () => {},
     expandPaths: async (paths) => {
       const expanded = await expandPaths(paths, (batch) => {
         mediaAccess.allowAll(batch)

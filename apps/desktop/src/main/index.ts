@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
@@ -58,6 +58,7 @@ import {
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
 import { registerAudioIpc } from './audioIpc'
+import { bakenCommand } from './bakenPath'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
@@ -136,6 +137,7 @@ import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
+import { registerUsbExportIpc } from './usbExportIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 
@@ -863,6 +865,20 @@ function registerIpc(): void {
       sessionBackup: (path) => sessions.rekordbox.ensure(path),
     },
   )
+  registerUsbExportIpc({
+    collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+    userData: app.getPath('userData'),
+    home: homedir(),
+    appData: app.getPath('appData'),
+    baken: () =>
+      bakenCommand({
+        platform: process.platform,
+        packaged: app.isPackaged,
+        resourcesPath: process.resourcesPath,
+        appPath: app.getAppPath(),
+        exists: existsSync,
+      }),
+  })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
   // not yet started, so a stalled network mount would otherwise keep a batch (and

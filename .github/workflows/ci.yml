@@ -79,7 +79,7 @@ jobs:
 
       - name: USB export tests
         working-directory: apps/desktop
-        run: npx vitest run src/main/usbVolumes.test.ts src/main/usbExportMemory.test.ts src/main/bakenPath.test.ts src/main/bakenRun.test.ts src/main/bakenXml.test.ts src/main/usbExportStage.test.ts
+        run: npx vitest run src/main/usbVolumes.test.ts src/main/usbExportMemory.test.ts src/main/bakenPath.test.ts src/main/bakenRun.test.ts src/main/bakenXml.test.ts src/main/usbExportStage.test.ts src/main/usbExport.test.ts
 
       - name: The volume query runs and answers JSON
         shell: pwsh

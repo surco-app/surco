@@ -59,6 +59,12 @@ import type {
   TrackMetadata,
   TrackProperties,
   TrashEntry,
+  UsbExportEvent,
+  UsbExportRequest,
+  UsbFolderPick,
+  UsbPlanResult,
+  UsbStartResult,
+  UsbVolumeList,
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
@@ -192,6 +198,15 @@ export interface Api {
   editRekordboxPlaylist: (edit: RekordboxPlaylistEdit) => Promise<RekordboxEditResult>
   // Whether the collection has a separator track that can be copied into a playlist.
   rekordboxHasSeparator: () => Promise<boolean>
+  // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
+  // the progress list and the toolbar pill, also with the modal closed.
+  usbVolumes: () => Promise<UsbVolumeList>
+  onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => () => void
+  usbPickFolder: () => Promise<UsbFolderPick | null>
+  usbPlan: (req: UsbExportRequest) => Promise<UsbPlanResult>
+  usbExport: (req: UsbExportRequest) => Promise<UsbStartResult>
+  usbCancel: () => Promise<boolean>
+  onUsbEvent: (cb: (e: UsbExportEvent) => void) => () => void
   // The Engine DJ library's rows in the same candidate shape, for the same membership
   // check when Engine DJ is the conversion destination. Empty when no library exists.
   loadEngineLibrary: () => Promise<AppleMusicLookupCandidate[]>
