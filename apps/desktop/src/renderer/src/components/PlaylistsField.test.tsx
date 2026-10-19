@@ -131,6 +131,40 @@ describe('PlaylistsField', () => {
   })
 })
 
+describe('PlaylistsField suggestion list', () => {
+  it('closes when the input loses focus, so it does not hang over the fields below', () => {
+    render(<Harness />)
+    fireEvent.change(input(), { target: { value: 'mak' } })
+    expect(screen.getByTestId('playlists-option-3000')).toBeInTheDocument()
+    fireEvent.blur(input())
+    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+  })
+
+  it('keeps Escape inside the field so the editor Escape handler does not also react', () => {
+    const onWindowKey = vi.fn()
+    window.addEventListener('keydown', onWindowKey)
+    render(<Harness />)
+    fireEvent.change(input(), { target: { value: 'mak' } })
+    fireEvent.keyDown(input(), { key: 'Escape' })
+    window.removeEventListener('keydown', onWindowKey)
+    expect(onWindowKey).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+  })
+
+  it('never points at a row that no longer exists after the list shrinks', () => {
+    const onToggle = vi.fn()
+    const bulk = (states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]) => (
+      <PlaylistsBulkField label="Playlists" options={OPTIONS} states={states} onToggle={onToggle} />
+    )
+    const { rerender } = render(bulk([]))
+    fireEvent.change(input(), { target: { value: 'Todas' } })
+    fireEvent.keyDown(input(), { key: 'ArrowDown' })
+    rerender(bulk([{ target: { id: '2000', name: 'Todas' }, state: 'all' }]))
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(onToggle).toHaveBeenCalledWith({ id: '1101', name: 'Todas' }, true)
+  })
+})
+
 describe('PlaylistsBulkField', () => {
   const states = [
     { target: { id: '3000', name: 'Makina' }, state: 'all' as const },

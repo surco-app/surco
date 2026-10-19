@@ -41,6 +41,7 @@ function Picker({
     ...matches.map((o) => ({ id: o.id, name: o.name })),
     ...(canCreate(options, text, chosen) ? [{ name: text.trim() }] : []),
   ]
+  const at = Math.max(0, Math.min(active, rows.length - 1))
   const pick = (target: RekordboxPlaylistTarget): void => {
     onPick(target)
     setText('')
@@ -49,15 +50,18 @@ function Picker({
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActive((i) => Math.min(i + 1, rows.length - 1))
+      setActive(Math.min(at + 1, rows.length - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setActive((i) => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter' && rows[active]) {
+      setActive(Math.max(at - 1, 0))
+    } else if (e.key === 'Enter' && rows[at]) {
       e.preventDefault()
-      pick(rows[active])
-    } else if (e.key === 'Escape') setText('')
-    else if (e.key === 'Backspace' && text === '') onBackspace?.()
+      pick(rows[at])
+    } else if (e.key === 'Escape') {
+      e.stopPropagation()
+      setText('')
+      setActive(0)
+    } else if (e.key === 'Backspace' && text === '') onBackspace?.()
   }
   return (
     <div className="relative min-w-[8rem] flex-1">
@@ -68,7 +72,7 @@ function Picker({
         aria-expanded={rows.length > 0}
         aria-controls={listId}
         aria-autocomplete="list"
-        aria-activedescendant={rows.length > 0 ? `${listId}-${active}` : undefined}
+        aria-activedescendant={rows.length > 0 ? `${listId}-${at}` : undefined}
         value={text}
         placeholder={tr('editor.playlists.placeholder')}
         onChange={(e) => {
@@ -76,6 +80,7 @@ function Picker({
           setActive(0)
         }}
         onKeyDown={onKeyDown}
+        onBlur={() => setText('')}
         className="w-full bg-transparent py-0.5 text-sm text-fg outline-none placeholder:text-fg-faint"
       />
       {rows.length > 0 && (
@@ -94,13 +99,13 @@ function Picker({
                 role="option"
                 id={`${listId}-${i}`}
                 tabIndex={-1}
-                aria-selected={i === active}
+                aria-selected={i === at}
                 data-testid={row.id ? `playlists-option-${row.id}` : 'playlists-create'}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(row)}
                 onMouseEnter={() => setActive(i)}
                 className={`flex w-full items-center gap-3 px-2.5 py-1 text-left text-xs ${
-                  i === active ? 'bg-[var(--color-hover)] text-fg' : 'text-fg-muted'
+                  i === at ? 'bg-[var(--color-hover)] text-fg' : 'text-fg-muted'
                 }`}
               >
                 <span className="truncate">
