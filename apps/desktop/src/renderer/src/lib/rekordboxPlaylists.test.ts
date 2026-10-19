@@ -86,8 +86,11 @@ describe('matchingOptions', () => {
 })
 
 describe('chipLabel', () => {
-  it('adds the parent folder only when the name repeats in the tree', () => {
+  it('names the folder a playlist sits in, since a bare "All" does not say which one it is', () => {
     expect(chipLabel(OPTIONS, { id: '1101', name: 'Todas' })).toBe('FIJAS › Todas')
+    expect(chipLabel(OPTIONS, { id: '1001', name: 'Bolos de verano' })).toBe(
+      'BOLOS › Bolos de verano',
+    )
     expect(chipLabel(OPTIONS, { id: '2000', name: 'Todas' })).toBe('Todas')
     expect(chipLabel(OPTIONS, { id: '3000', name: 'Makina' })).toBe('Makina')
     expect(chipLabel(OPTIONS, { name: 'Nueva' })).toBe('Nueva')

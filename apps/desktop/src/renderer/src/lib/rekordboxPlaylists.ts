@@ -61,8 +61,7 @@ export function chipLabel(
 ): string {
   const option = target.id ? options.find((o) => o.id === target.id) : undefined
   if (!option || option.path === '') return target.name
-  const repeated = options.some((o) => o.id !== option.id && o.name === option.name)
-  return repeated ? `${option.path.split(' › ').at(-1)} › ${option.name}` : target.name
+  return `${option.path.split(' › ').at(-1)} › ${option.name}`
 }
 
 export function canCreate(
