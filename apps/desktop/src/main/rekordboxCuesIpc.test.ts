@@ -29,6 +29,27 @@ function handler(channel: string): (...args: unknown[]) => unknown {
 
 const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
 
+function queue(over: Partial<Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>> = {}) {
+  return {
+    enqueue: vi.fn<RekordboxQueue['enqueue']>(),
+    cuesOp: vi.fn<RekordboxQueue['cuesOp']>(() => undefined),
+    drop: vi.fn<RekordboxQueue['drop']>(),
+    ...over,
+  }
+}
+
+const quietly = () => vi.fn<() => void>()
+
+const savedOp = (over: Partial<CuesOp> = {}): CuesOp => ({
+  id: 'c1',
+  kind: 'cues',
+  contentId: '103',
+  path: '/m/a.wav',
+  label: 'a',
+  fingerprint: 'F1',
+  ...over,
+})
+
 async function completableCollection(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbcount-'))
   const path = join(dir, 'master.db')
@@ -95,8 +116,8 @@ describe('registerRekordboxCuesIpc', () => {
     vi.mocked(openRekordboxDb).mockClear()
     registerRekordboxCuesIpc({
       collection: () => path,
-      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-      applyQuietly: vi.fn(),
+      queue: queue(),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     const learned = await handler('rekordbox:learnFlow')({})
@@ -112,8 +133,8 @@ describe('registerRekordboxCuesIpc', () => {
   it('learns nothing without a collection', async () => {
     registerRekordboxCuesIpc({
       collection: () => '',
-      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-      applyQuietly: vi.fn(),
+      queue: queue(),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     expect(await handler('rekordbox:learnFlow')({})).toBeNull()
@@ -123,8 +144,8 @@ describe('registerRekordboxCuesIpc', () => {
     const path = await completableCollection()
     const host = (flow: () => typeof MY_FLOW) => ({
       collection: () => path,
-      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-      applyQuietly: vi.fn(),
+      queue: queue(),
+      applyQuietly: quietly(),
       flow,
     })
     registerRekordboxCuesIpc(host(() => MY_FLOW))
@@ -134,11 +155,11 @@ describe('registerRekordboxCuesIpc', () => {
   })
 
   it('queues the cues and applies quietly, since "Guardar en rekordbox" never asks', async () => {
-    const enqueue = vi.fn()
-    const applyQuietly = vi.fn()
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>()
+    const applyQuietly = quietly()
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
-      queue: { enqueue, cuesOp: vi.fn(), drop: vi.fn() },
+      queue: queue({ enqueue }),
       applyQuietly,
       flow: () => MY_FLOW,
     })
@@ -157,8 +178,8 @@ describe('registerRekordboxCuesIpc', () => {
   it('reads nothing without a collection', async () => {
     registerRekordboxCuesIpc({
       collection: () => '',
-      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-      applyQuietly: vi.fn(),
+      queue: queue(),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
@@ -167,23 +188,11 @@ describe('registerRekordboxCuesIpc', () => {
 
   it('reports the cues queued for a track with the fingerprint they were built on, or null when nothing waits', () => {
     const wanted = [{ ms: 1000, kind: 0, color: null }]
-    const queued: CuesOp = {
-      id: 'c1',
-      kind: 'cues',
-      contentId: '103',
-      path: '/m/a.wav',
-      label: 'a',
-      wanted,
-      fingerprint: 'F1',
-    }
+    const queued = savedOp({ wanted })
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
-      queue: {
-        enqueue: vi.fn<RekordboxQueue['enqueue']>(),
-        cuesOp: vi.fn<RekordboxQueue['cuesOp']>((id) => (id === '103' ? queued : undefined)),
-        drop: vi.fn<RekordboxQueue['drop']>(),
-      },
-      applyQuietly: vi.fn(),
+      queue: queue({ cuesOp: (id) => (id === '103' ? queued : undefined) }),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     return Promise.all([
@@ -199,26 +208,19 @@ describe('registerRekordboxCuesIpc', () => {
     const path = await completableCollection()
     const host = (cuesOp: RekordboxQueue['cuesOp']) => ({
       collection: () => path,
-      queue: {
-        enqueue: vi.fn<RekordboxQueue['enqueue']>(),
-        cuesOp: vi.fn<RekordboxQueue['cuesOp']>(cuesOp),
-        drop: vi.fn<RekordboxQueue['drop']>(),
-      },
-      applyQuietly: vi.fn(),
+      queue: queue({ cuesOp }),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     registerRekordboxCuesIpc(host(() => undefined))
     const read = (await handler('rekordbox:trackCues')({}, '101')) as TrackCues
-    const legacy: CuesOp = {
+    const legacy = savedOp({
       id: 'c2',
-      kind: 'cues',
       contentId: '101',
-      path: '/m/a.wav',
-      label: 'a',
       drops: [128000],
       previousDrops: [128000],
       fingerprint: read.fingerprint,
-    }
+    })
     registerRekordboxCuesIpc(host(() => legacy))
     const out = flowOutcome({
       existing: read.cues,
@@ -237,11 +239,11 @@ describe('registerRekordboxCuesIpc', () => {
   })
 
   it('takes a queued save back by dropping its operation', () => {
-    const drop = vi.fn()
+    const drop = vi.fn<RekordboxQueue['drop']>()
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
-      queue: { enqueue: vi.fn(), cuesOp: (() => ({ id: 'c1', drops: [1000] })) as never, drop },
-      applyQuietly: vi.fn(),
+      queue: queue({ cuesOp: () => savedOp({ drops: [1000] }), drop }),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     handler('rekordbox:undoCues')({}, '103')
@@ -249,11 +251,11 @@ describe('registerRekordboxCuesIpc', () => {
   })
 
   it('does nothing when no save waits for the track', () => {
-    const drop = vi.fn()
+    const drop = vi.fn<RekordboxQueue['drop']>()
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
-      queue: { enqueue: vi.fn(), cuesOp: () => undefined, drop },
-      applyQuietly: vi.fn(),
+      queue: queue({ drop }),
+      applyQuietly: quietly(),
       flow: () => MY_FLOW,
     })
     handler('rekordbox:undoCues')({}, '103')
