@@ -66,7 +66,12 @@ function Editing({
   const [state, dispatch] = useReducer(
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
     undefined,
-    () => startDraft(baseline, active.id),
+    () =>
+      startDraft(
+        baseline,
+        active.id,
+        read.cues.filter((c) => c.loop).map((c) => c.id),
+      ),
   )
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [chosen, setChosen] = useState(state.flowId)
@@ -127,7 +132,11 @@ function Editing({
         wave={read.wave}
         grid={read.grid}
         durationMs={read.durationMs}
-        cues={state.cues.map((c) => ({ ...c, pending: pending(c) }))}
+        cues={state.cues.map((c) => ({
+          ...c,
+          pending: pending(c),
+          locked: state.locked.includes(c.key),
+        }))}
         selected={state.selected}
         trimmed={state.trimmed}
         onMarkDrop={(ms) => dispatch({ type: 'mark-drop', ms })}
@@ -184,7 +193,12 @@ function Editing({
               ? tr('editor.cues.selectedCall')
               : tr('editor.cues.selectedHot', { letter: cueLetter(selected.kind) })}
           </span>
-          {selected.kind !== 0 && (
+          {state.locked.includes(selected.key) && (
+            <span data-testid="cues-loop" className="text-fg-dim">
+              {tr('editor.cues.loop')}
+            </span>
+          )}
+          {selected.kind !== 0 && !state.locked.includes(selected.key) && (
             <>
               <CuePalette
                 value={selected.color}
@@ -210,14 +224,16 @@ function Editing({
               </select>
             </>
           )}
-          <button
-            type="button"
-            data-testid="cues-delete"
-            onClick={() => dispatch({ type: 'remove', key: selected.key })}
-            className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1 hover:bg-[var(--color-hover)]"
-          >
-            {tr('editor.cues.delete')}
-          </button>
+          {!state.locked.includes(selected.key) && (
+            <button
+              type="button"
+              data-testid="cues-delete"
+              onClick={() => dispatch({ type: 'remove', key: selected.key })}
+              className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1 hover:bg-[var(--color-hover)]"
+            >
+              {tr('editor.cues.delete')}
+            </button>
+          )}
         </div>
       )}
       {queued !== null && !fresh && (

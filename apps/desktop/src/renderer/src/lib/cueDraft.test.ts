@@ -98,6 +98,30 @@ describe('reduceDraft', () => {
     expect(applied.cues.find((x) => x.key === c)).toMatchObject({ kind: 7 })
   })
 
+  it('leaves a loop as rekordbox holds it, whatever the DJ or the flow tries', () => {
+    const live = [
+      { id: 'l', ms: bar(16), kind: 1, color: 1 },
+      { id: 'm', ms: bar(80), kind: 0, color: null },
+    ]
+    const s = startDraft(live, 'mine', ['l', 'm'])
+    for (const a of [
+      { type: 'move', key: 'l', ms: bar(20) },
+      { type: 'remove', key: 'l' },
+      { type: 'recolour', key: 'l', color: 5 },
+      { type: 'reletter', key: 'l', kind: 9 },
+      { type: 'move', key: 'm', ms: bar(84) },
+      { type: 'remove', key: 'm' },
+    ] as DraftAction[])
+      expect(run(s, a)).toBe(s)
+    const marked = run(
+      s,
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'apply-flow', flowId: 'one-at-32' },
+    )
+    expect(marked.cues.find((c) => c.key === 'l')).toMatchObject({ ms: bar(16), kind: 1, color: 1 })
+    expect(marked.cues.find((c) => c.key === 'm')).toMatchObject({ ms: bar(80), kind: 0 })
+  })
+
   it('refuses a move onto another hot cue so two never share a spot', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const a = at(marked, bar(16), true)

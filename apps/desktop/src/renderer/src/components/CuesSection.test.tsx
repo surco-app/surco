@@ -390,6 +390,21 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-queued-stale')).toBeNull()
   })
 
+  it('shows a loop read-only, with no drag, delete, colour or letter', async () => {
+    setup({ ...READ, cues: [{ id: 'l', ms: bar(32), kind: 1, color: 1, loop: true }] })
+    await ready()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: bar(32) / 1000 })
+    fireEvent.mouseMove(window, { clientX: bar(36) / 1000 })
+    fireEvent.mouseUp(window, { clientX: bar(36) / 1000 })
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toBe(`${(bar(32) / 400000) * 100}%`)
+    fireEvent.click(screen.getByTestId('cue-wave-hot-A'))
+    expect(screen.getByTestId('cues-loop')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-delete')).toBeNull()
+    expect(screen.queryByTestId('cues-letter')).toBeNull()
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Backspace' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+  })
+
   it('offers no marking on a track rekordbox has not analysed', async () => {
     setup({ ...READ, analysed: false, grid: [] })
     await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())

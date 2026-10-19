@@ -20,7 +20,7 @@ export function cueFingerprint(cues: TrackCueRow[]): string {
 
 function liveCuesQuery(db: Db): (contentId: string) => TrackCueRow[] {
   const statement = db.prepare(
-    `SELECT ID, InMsec, Kind, ColorTableIndex FROM djmdCue
+    `SELECT ID, InMsec, OutMsec, Kind, ColorTableIndex FROM djmdCue
       WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
   )
   return (contentId) =>
@@ -28,10 +28,17 @@ function liveCuesQuery(db: Db): (contentId: string) => TrackCueRow[] {
       statement.all(contentId) as {
         ID: string
         InMsec: number
+        OutMsec: number | null
         Kind: number
         ColorTableIndex: number | null
       }[]
-    ).map((r) => ({ id: String(r.ID), ms: r.InMsec, kind: r.Kind, color: r.ColorTableIndex }))
+    ).map((r) => ({
+      id: String(r.ID),
+      ms: r.InMsec,
+      kind: r.Kind,
+      color: r.ColorTableIndex,
+      ...(r.OutMsec !== null && r.OutMsec !== -1 ? { loop: true } : {}),
+    }))
 }
 
 export function liveCues(db: Db, contentId: string): TrackCueRow[] {

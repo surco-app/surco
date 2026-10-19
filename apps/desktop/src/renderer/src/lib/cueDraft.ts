@@ -34,6 +34,7 @@ export interface CueDraft {
   notice: DraftNotice
   trimmed: number[]
   edited: string[]
+  locked: string[]
   nextKey: number
 }
 
@@ -61,7 +62,7 @@ export type DraftAction =
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 const isHot = (c: { kind: number }): boolean => c.kind !== 0
 
-export function startDraft(cues: WantedCue[], flowId: string): CueDraft {
+export function startDraft(cues: WantedCue[], flowId: string, locked: string[] = []): CueDraft {
   return {
     cues: cues.map((c, i) => ({ ...c, key: c.id ?? `n${i}` })),
     flowId,
@@ -71,6 +72,7 @@ export function startDraft(cues: WantedCue[], flowId: string): CueDraft {
     notice: null,
     trimmed: [],
     edited: [],
+    locked,
     nextKey: cues.length,
   }
 }
@@ -166,7 +168,8 @@ function regenerate(
 }
 
 function keepEdited(state: CueDraft, generated: DraftCue[]): DraftCue[] | null {
-  const edited = state.cues.filter((c) => state.edited.includes(c.key))
+  const mine = (key: string): boolean => state.edited.includes(key) || state.locked.includes(key)
+  const edited = state.cues.filter((c) => mine(c.key))
   if (edited.length === 0) return generated
   const kept = generated.map((c) => edited.find((e) => e.key === c.key) ?? c)
   for (const e of edited) {
@@ -177,9 +180,7 @@ function keepEdited(state: CueDraft, generated: DraftCue[]): DraftCue[] | null {
   }
   const held = new Set(edited.filter(isHot).map((e) => e.kind))
   const free = HOT_KINDS.filter((k) => !held.has(k))
-  const others = kept
-    .filter((c) => isHot(c) && !state.edited.includes(c.key))
-    .sort((a, b) => a.ms - b.ms)
+  const others = kept.filter((c) => isHot(c) && !mine(c.key)).sort((a, b) => a.ms - b.ms)
   if (others.length > free.length) return null
   const letter = new Map(others.map((c, i) => [c.key, free[i]]))
   return kept.map((c) => (letter.has(c.key) ? { ...c, kind: letter.get(c.key) as number } : c))
@@ -228,7 +229,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     return commit(state, [...state.cues, cue], { nextKey: state.nextKey + 1, selected: key })
   }
   const target = state.cues.find((c) => c.key === action.key)
-  if (!target) return state
+  if (!target || state.locked.includes(target.key)) return state
   if (action.type === 'unmark-drop') {
     const drops = draftDrops(state.cues)
     if (!drops.some((d) => near(d, target.ms))) return state
@@ -242,9 +243,10 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   }
   if (action.type === 'remove') {
     const pair = pairOf(state.cues, target)
+    const gone = pair && !state.locked.includes(pair.key) ? pair.key : undefined
     return commit(
       state,
-      state.cues.filter((c) => c.key !== target.key && c.key !== pair?.key),
+      state.cues.filter((c) => c.key !== target.key && c.key !== gone),
       { selected: null },
     )
   }
@@ -266,6 +268,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   }
   const ms = snap(ctx, action.ms)
   const pair = pairOf(state.cues, target)
+  if (pair && state.locked.includes(pair.key)) return state
   const moving = new Set([target.key, pair?.key])
   const taken = (hot: boolean): boolean =>
     state.cues.some((c) => !moving.has(c.key) && isHot(c) === hot && near(c.ms, ms))

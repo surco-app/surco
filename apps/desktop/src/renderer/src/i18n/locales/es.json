@@ -785,7 +785,8 @@
       "menuMarkDrop": "Marcar donde rompe aquí",
       "trimmed_one": "{{count}} hot cue se queda fuera por el límite de 8",
       "trimmed_other": "{{count}} hot cues se quedan fuera por el límite de 8",
-      "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en rekordbox y ya no vale. Ves lo que tiene rekordbox ahora."
+      "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en rekordbox y ya no vale. Ves lo que tiene rekordbox ahora.",
+      "loop": "Es un bucle. Surco no lo mueve ni lo cambia."
     }
   },
   "fields": {

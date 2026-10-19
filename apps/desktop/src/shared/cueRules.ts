@@ -209,6 +209,7 @@ export interface ExistingCue {
   ms: number
   kind: number
   color: number | null
+  loop?: boolean
 }
 
 export interface CueChangeSet {
@@ -238,6 +239,7 @@ export type InvalidWantedReason =
   | 'kind'
   | 'duplicate-letter'
   | 'color'
+  | 'loop'
 
 const COLOR_TABLE_SIZE = 62
 
@@ -275,6 +277,9 @@ export function validWantedSet(
       letters.add(w.kind)
     }
   }
+  const untouched = (l: ExistingCue): boolean =>
+    wanted.some((w) => w.id === l.id && w.ms === l.ms && w.kind === l.kind && w.color === l.color)
+  if (!existing.filter((c) => c.loop).every(untouched)) return { ok: false, reason: 'loop' }
   return { ok: true }
 }
 

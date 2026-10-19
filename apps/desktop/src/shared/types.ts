@@ -1663,6 +1663,7 @@ export interface TrackCueRow {
   ms: number
   kind: number
   color: number | null
+  loop?: boolean
 }
 
 export interface TrackCues {

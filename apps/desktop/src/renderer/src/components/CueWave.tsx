@@ -13,6 +13,7 @@ export interface WaveCue {
   kind: number
   color: number | null
   pending: boolean
+  locked?: boolean
 }
 
 const HIT_PX = 6
@@ -134,6 +135,7 @@ export function CueWave({
     if (e.button !== 0 || e.ctrlKey) return
     e.stopPropagation()
     onSelect?.(key)
+    if (cues.some((c) => c.key === key && c.locked)) return
     dragRef.current = { key, x0: e.clientX, ms: null }
     setArmed(true)
   }

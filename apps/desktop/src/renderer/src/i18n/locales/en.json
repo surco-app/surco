@@ -785,7 +785,8 @@
       "menuMarkDrop": "Mark drop here",
       "trimmed_one": "{{count}} hot cue is left out by the limit of 8",
       "trimmed_other": "{{count}} hot cues are left out by the limit of 8",
-      "queuedStale": "The queued save was made before the track changed in rekordbox and is out of date. You see what rekordbox holds now."
+      "queuedStale": "The queued save was made before the track changed in rekordbox and is out of date. You see what rekordbox holds now.",
+      "loop": "This is a loop. Surco neither moves nor changes it."
     }
   },
   "fields": {

@@ -69,6 +69,7 @@ export interface PlaylistFixture {
     InMsec: number
     Kind: number
     ColorTableIndex: number | null
+    OutMsec?: number | null
   }[]
 }
 
@@ -176,7 +177,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   for (const a of data.artists ?? []) artist.run(a.ID, a.Name, FIXTURE_STAMP, FIXTURE_STAMP)
   const cue = db.prepare(
     `INSERT INTO djmdCue (ID, ContentID, InMsec, InFrame, Kind, Color, ColorTableIndex, OutMsec,
-       ContentUUID, rb_local_deleted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, -1, ?, -1, ?, 0, ?, ?)`,
+       ContentUUID, rb_local_deleted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, -1, ?, ?, ?, 0, ?, ?)`,
   )
   for (const q of data.cueRows ?? [])
     cue.run(
@@ -186,6 +187,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       Math.floor((q.InMsec * 150) / 1000),
       q.Kind,
       q.ColorTableIndex,
+      q.OutMsec === undefined ? -1 : q.OutMsec,
       `uuid-c-${q.ContentID}`,
       FIXTURE_STAMP,
       FIXTURE_STAMP,

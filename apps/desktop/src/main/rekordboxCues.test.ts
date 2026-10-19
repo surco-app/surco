@@ -20,7 +20,13 @@ const ANLZ = '/PIONEER/USBANLZ/219/e40e4/ANLZ0000.DAT'
 const BEATS = Array.from({ length: 64 }, (_, i) => i * 500)
 
 async function collection(
-  over: { analysed?: boolean; ext?: Buffer | null; dat?: Buffer; path?: string } = {},
+  over: {
+    analysed?: boolean
+    ext?: Buffer | null
+    dat?: Buffer
+    path?: string
+    extraRows?: { ID: string; InMsec: number; Kind: number; OutMsec: number | null }[]
+  } = {},
 ) {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbcues-'))
   const path = join(dir, 'master.db')
@@ -36,6 +42,7 @@ async function collection(
       { ID: 'q2', ContentID: '103', InMsec: 8000, Kind: 1, ColorTableIndex: 1 },
       { ID: 'q1', ContentID: '103', InMsec: 8000, Kind: 0, ColorTableIndex: null },
       { ID: 'q3', ContentID: '103', InMsec: 16000, Kind: 0, ColorTableIndex: null },
+      ...(over.extraRows ?? []).map((r) => ({ ...r, ContentID: '103', ColorTableIndex: null })),
     ],
   })
   const share = join(dir, 'share')
@@ -189,6 +196,22 @@ describe('readTrackCues', () => {
     const { db, share } = await collection()
     const existing: ExistingCue[] = readTrackCues(db, share, '103')?.cues ?? []
     expect(existing.find((c) => c.id === 'q2')).toEqual({ id: 'q2', ms: 8000, kind: 1, color: 1 })
+    db.close()
+  })
+})
+
+describe('readTrackCues on loops', () => {
+  it('marks a row with an out point as a loop, so the editor never moves only its start', async () => {
+    const { db, share } = await collection({
+      extraRows: [
+        { ID: 'l1', InMsec: 20000, Kind: 0, OutMsec: 24000 },
+        { ID: 'l2', InMsec: 22000, Kind: 2, OutMsec: 23000 },
+        { ID: 'n1', InMsec: 26000, Kind: 0, OutMsec: null },
+      ],
+    })
+    const cues = readTrackCues(db, share, '103')?.cues ?? []
+    expect(cues.filter((c) => c.loop).map((c) => c.id)).toEqual(['l1', 'l2'])
+    expect(cues.find((c) => c.id === 'n1')).toEqual({ id: 'n1', ms: 26000, kind: 0, color: null })
     db.close()
   })
 })

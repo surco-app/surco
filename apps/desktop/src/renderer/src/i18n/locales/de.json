@@ -785,7 +785,8 @@
       "menuMarkDrop": "Drop hier markieren",
       "trimmed_one": "{{count}} Hot Cue fällt wegen der Grenze von 8 weg",
       "trimmed_other": "{{count}} Hot Cues fallen wegen der Grenze von 8 weg",
-      "queuedStale": "Die vorgemerkte Speicherung stammt von vor der Änderung des Titels in rekordbox und ist veraltet. Du siehst, was rekordbox jetzt enthält."
+      "queuedStale": "Die vorgemerkte Speicherung stammt von vor der Änderung des Titels in rekordbox und ist veraltet. Du siehst, was rekordbox jetzt enthält.",
+      "loop": "Das ist ein Loop. Surco verschiebt und ändert ihn nicht."
     }
   },
   "fields": {

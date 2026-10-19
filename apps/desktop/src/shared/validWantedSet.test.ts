@@ -103,4 +103,20 @@ describe('validWantedSet, the only gate before a hand-edited set reaches master.
     expect(check([{ id: 7, ms: 1000, kind: 0, color: null }])).toEqual({ ok: false, reason: 'id' })
     expect(check([{ id: 'gone', ms: 1000, kind: 0, color: null }])).toEqual({ ok: true })
   })
+
+  it('refuses any change to a loop rekordbox holds, since a move would shift only its start', () => {
+    const loops: ExistingCue[] = [
+      { id: 'l', ms: 20000, kind: 0, color: null, loop: true },
+      { id: 'h', ms: 30000, kind: 2, color: 1, loop: true },
+    ]
+    const same = loops.map(({ loop: _loop, ...c }) => c)
+    expect(check(same, loops)).toEqual({ ok: true })
+    expect(check([same[1]], loops)).toEqual({ ok: false, reason: 'loop' })
+    expect(check([{ ...same[0], ms: 21000 }, same[1]], loops)).toEqual({
+      ok: false,
+      reason: 'loop',
+    })
+    expect(check([same[0], { ...same[1], kind: 3 }], loops)).toEqual({ ok: false, reason: 'loop' })
+    expect(check([same[0], { ...same[1], color: 5 }], loops)).toEqual({ ok: false, reason: 'loop' })
+  })
 })
