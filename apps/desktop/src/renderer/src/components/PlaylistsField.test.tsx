@@ -215,6 +215,23 @@ describe('PlaylistsField search', () => {
     expect(spy).toHaveBeenLastCalledWith([...SEVEN, { name: 'Cierre' }])
   })
 
+  it('does nothing with Enter on an empty box, even with a single playlist on screen, so no rekordbox write is queued by accident', () => {
+    const spy = vi.fn()
+    render(
+      <PlaylistsField
+        label="Playlists"
+        tree={[playlist('house', 'House')]}
+        options={playlistOptions([playlist('house', 'House')])}
+        value={[]}
+        onChange={spy}
+      />,
+    )
+    open()
+    expect(visiblePlaylists()).toEqual(['playlists-check-house'])
+    fireEvent.keyDown(search(), { key: 'Enter' })
+    expect(spy).not.toHaveBeenCalled()
+  })
+
   it('does nothing with Enter while several playlists match', () => {
     const spy = vi.fn()
     render(<Harness spy={spy} />)

@@ -153,7 +153,7 @@ function TreePopover({
     } else if (row?.kind === 'playlist' && e.key === ' ') {
       e.preventDefault()
       toggle(row.target)
-    } else if (at === 0 && e.key === 'Enter') {
+    } else if (at === 0 && hits && e.key === 'Enter') {
       const found = rows.flatMap((r) => (r.kind === 'playlist' ? [r.target] : []))
       const offer = rows.find((r) => r.kind === 'create')
       if (found.length === 1) toggle(found[0])
