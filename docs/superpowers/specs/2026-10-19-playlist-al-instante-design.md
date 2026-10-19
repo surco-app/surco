@@ -24,7 +24,7 @@ Abrir una playlist de rekordbox en Surco tiene que ser inmediato. Vicent: "la ve
 1. La fila de una playlist de rekordbox es la misma que la de Pistas. Fuera los puntitos de playlists (ya quitados) y los cuadraditos de cues.
 2. La fila nueva es la variante B del boceto "Filas con onda": título y artista en la primera línea con duración y formato a la derecha, y debajo una mini onda a todo el ancho con las hot cues (cuadradito con su letra) y las memory cues (triángulo). Alto de fila unos 68 px. Vale para todas las listas.
 3. La onda de una pista que está en rekordbox sale de su análisis (PWAV del `.DAT`). Una pista que no está en rekordbox usa la onda que ya haya calculado Surco; si no hay ninguna, la fila va sin onda. Nunca se calcula una onda solo para la lista.
-4. Colores de Surco: la onda en el acento, las hot cues en el azul de botón, las memory cues en un tono cálido. Nada de los hex de rekordbox.
+4. La onda en el acento de Surco. Las cues, del mismo color que en rekordbox (Vicent, 19/10 durante la ejecución: "fíjate que los cues salgan del mismo color que en rekordbox"): cada hot cue con el color de su `ColorTableIndex` en la tabla de rekordbox, y las memory cues en rojo, como las pinta rekordbox.
 
 ## Diseño
 

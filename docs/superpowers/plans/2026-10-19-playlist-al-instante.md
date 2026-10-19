@@ -2265,3 +2265,139 @@ Clear Surco's analysis cache in that userData (`analysis-cache` folder) for the 
 - [ ] **Step 3: Compare and record**
 
 Targets (spec "Cómo sabremos que está"): All under 0.5 s, MDT under 0.3 s, main never blocked 200 ms in a row, editor under 10 s cold, no row modified. Write the numbers with the before column (6.1 s / 133.5 s / 113 s blocked) into a new section "Medido tras el plan (fecha)" at the end of the spec, commit it as "Record the instant playlist measurements after the implementation", and report any target missed with its number, not rounded into a pass.
+
+---
+
+### Task 11: Cues in rekordbox's own colours
+
+Vicent, 19/10 during execution: "fíjate que los cues salgan del mismo color que en rekordbox". This overrides spec decision 4 **for the cues of the list row only**: the wave stays `var(--color-accent)` at 70 %; hot cue squares and memory cue triangles take the colour rekordbox draws.
+
+**Measured source of truth.** rekordbox stores a hot cue's colour as `djmdCue.ColorTableIndex` (1..62). The RGB for each index is rekordbox's colour table as documented by Deep Symmetry (beat-link `CueList.findRekordboxColor`, codes 0x01..0x3e). It agrees with Surco's own rules (`cues.py`): 1 blue `#305aff`, 22 green `#28e214`, 32 yellow `#c3af04`, 42 red `#e62828`, which Vicent saw in rekordbox after the spike. Vicent's collection (copy `rb-b`) has memory cues only with index NULL (12209) or 0 (210): rekordbox draws them red.
+
+**Files:**
+- Create: `src/shared/rekordboxCueColors.ts`, test `src/shared/rekordboxCueColors.test.ts`
+- Modify: `src/shared/types.ts` (`RowCue`), `src/main/rekordboxPlaylists.ts` (cue query), `src/renderer/src/components/RowWave.tsx`
+- Test: `src/main/rekordboxPlaylists.test.ts`, `src/renderer/src/components/RowWave.test.tsx`, plus every test that builds a `RowCue` literal (tsc lists them)
+
+**Interfaces:**
+- `RowCue` becomes `{ ms: number; kind: number; color: number | null }` (`color` = `ColorTableIndex`).
+- `hotCueColor(index: number | null): string` and `MEMORY_CUE_COLOR` from `src/shared/rekordboxCueColors.ts`.
+
+- [ ] **Step 1: Failing tests**
+
+`src/shared/rekordboxCueColors.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { HOT_CUE_DEFAULT_COLOR, hotCueColor, MEMORY_CUE_COLOR } from './rekordboxCueColors'
+
+describe('rekordbox cue colours', () => {
+  it('paints the four countdown colours as rekordbox shows them', () => {
+    expect(hotCueColor(1)).toBe('#305aff')
+    expect(hotCueColor(22)).toBe('#28e214')
+    expect(hotCueColor(32)).toBe('#c3af04')
+    expect(hotCueColor(42)).toBe('#e62828')
+  })
+
+  it('covers rekordbox whole table, first to last', () => {
+    expect(hotCueColor(2)).toBe('#5073ff')
+    expect(hotCueColor(62)).toBe('#6473ff')
+  })
+
+  it('falls back to rekordbox default for a cue with no colour or an unknown index', () => {
+    expect(hotCueColor(null)).toBe(HOT_CUE_DEFAULT_COLOR)
+    expect(hotCueColor(0)).toBe(HOT_CUE_DEFAULT_COLOR)
+    expect(hotCueColor(63)).toBe(HOT_CUE_DEFAULT_COLOR)
+  })
+
+  it('draws memory cues red, as rekordbox does', () => {
+    expect(MEMORY_CUE_COLOR).toBe('#e62828')
+  })
+})
+```
+
+In `src/main/rekordboxPlaylists.test.ts` (`readRekordboxPlaylistWithPreview` describe), the expected `cues` become:
+
+```ts
+      cues: [
+        { ms: 1000, kind: 1, color: 1 },
+        { ms: 32000, kind: 0, color: null },
+        { ms: 64000, kind: 2, color: 22 },
+      ],
+```
+
+In `src/renderer/src/components/RowWave.test.tsx` give every cue a `color` (`{ ms: 0, kind: 1, color: 42 }`, `{ ms: 32000, kind: 0, color: null }`, `{ ms: 64000, kind: 2, color: 22 }`) and add:
+
+```tsx
+  it('paints each cue in the colour rekordbox gives it', () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} />)
+    const [a, b] = screen.getAllByTestId('track-hot-cue')
+    expect(a).toHaveStyle({ backgroundColor: '#e62828' })
+    expect(b).toHaveStyle({ backgroundColor: '#28e214' })
+    expect(screen.getByTestId('track-memory-cue')).toHaveStyle({ borderTopColor: '#e62828' })
+  })
+
+  it('keeps a waiting cue hollow in its own colour', () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending />)
+    const [a] = screen.getAllByTestId('track-hot-cue')
+    expect(a).toHaveStyle({ borderColor: '#e62828', color: '#e62828' })
+  })
+```
+
+(jsdom normalises hex to `rgb(...)` in computed styles; `toHaveStyle` with hex compares equivalently. If it does not in this setup, assert the `style` attribute instead.)
+
+- [ ] **Step 2: Run them, see them fail**
+
+Run: `npm --prefix $WT/apps/desktop exec -- vitest run --root $WT/apps/desktop src/shared/rekordboxCueColors.test.ts src/main/rekordboxPlaylists.test.ts src/renderer/src/components/RowWave.test.tsx`
+
+- [ ] **Step 3: Implement**
+
+`src/shared/rekordboxCueColors.ts`:
+
+```ts
+const TABLE = [
+  '#305aff', '#5073ff', '#508cff', '#50a0ff', '#50b4ff', '#50b0f2', '#50aee8', '#45acdb',
+  '#00e0ff', '#19daf0', '#32d2e6', '#21b4b9', '#20aaa0', '#1fa392', '#19a08c', '#14a584',
+  '#14aa7d', '#10b176', '#30d26e', '#37de5a', '#3ceb50', '#28e214', '#7dc13d', '#8cc832',
+  '#9bd723', '#a5e116', '#a5dc0a', '#aad208', '#b4c805', '#b4be04', '#bab404', '#c3af04',
+  '#e1aa00', '#ffa000', '#ff9600', '#ff8c00', '#ff7500', '#e0641b', '#e0461e', '#e0301e',
+  '#e02823', '#e62828', '#ff376f', '#ff2d6f', '#ff127b', '#f51e8c', '#eb2da0', '#e637b4',
+  '#de44cf', '#de448d', '#e630b4', '#e619dc', '#e600ff', '#dc00ff', '#cc00ff', '#b432ff',
+  '#b93cff', '#c542ff', '#aa5aff', '#aa72ff', '#8272ff', '#6473ff',
+]
+
+export const HOT_CUE_DEFAULT_COLOR = '#28e214'
+export const MEMORY_CUE_COLOR = '#e62828'
+
+export function hotCueColor(index: number | null): string {
+  return (index !== null && index >= 1 ? TABLE[index - 1] : undefined) ?? HOT_CUE_DEFAULT_COLOR
+}
+```
+
+(Index n is `TABLE[n - 1]`: the table holds codes 0x01..0x3e in order. Biome will reflow the array; that is fine.)
+
+`src/shared/types.ts`: `RowCue` gains `color: number | null`.
+
+`src/main/rekordboxPlaylists.ts`: the cue query selects `ColorTableIndex` too (`SELECT ContentID AS contentId, InMsec, Kind, ColorTableIndex FROM djmdCue ...`), `CueRow` gains `ColorTableIndex: number | null`, and the push becomes `list.push({ ms: c.InMsec, kind: c.Kind, color: c.ColorTableIndex })`.
+
+`src/renderer/src/components/RowWave.tsx`:
+- memory triangle: drop `border-t-[var(--color-warn)]` from the class and add `borderTopColor: MEMORY_CUE_COLOR` to its `style`.
+- hot square: the colour moves from classes to `style`. Not pending: `style={{ left: …, backgroundColor: colour, color: '#000' }}` and no colour classes; pending: `style={{ left: …, borderColor: colour, color: colour }}` with the `border` class kept. `colour = hotCueColor(c.color)`.
+- The wave keeps `fill-[var(--color-accent)] opacity-70`.
+
+Update every other test that builds a `RowCue` literal to carry `color` (tsc names them; use `color: null` where the colour does not matter).
+
+- [ ] **Step 4: Run tests, types, lint**
+
+The three files above, plus `src/renderer/src/components/TrackList.test.tsx`, `src/renderer/src/hooks/useTrackLibraryPlaylist.test.tsx`, `src/renderer/src/lib/rowDisplay.test.ts`, `src/renderer/src/App.test.tsx`: PASS. Both `tsc`, `npm --prefix $WT/apps/desktop run check`: clean, `git status` only your files.
+
+- [ ] **Step 5: Look at it**
+
+Build (`npm --prefix $WT/apps/desktop run build`) and, with the run-desktop driver as Task 9 did, open the House playlist of the test copy and screenshot the list at 560 px into `/private/tmp/claude-501/-Users-vicent-code-surco/60b03f2f-5add-4da8-8475-3fe0dd5d1e8d/scratchpad/row-b/cue-colours.png`. The cues should read blue A, green B, red C (Surco's countdown rows) and red memory triangles.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/shared/rekordboxCueColors.ts src/shared/rekordboxCueColors.test.ts src/shared/types.ts src/main/rekordboxPlaylists.ts src/main/rekordboxPlaylists.test.ts src/renderer/src/components/RowWave.tsx src/renderer/src/components/RowWave.test.tsx <other tests you touched>
+git commit -m "Paint the list's cues in the colours rekordbox gives them"
+```
