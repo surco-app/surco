@@ -446,3 +446,37 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(specs.map((s) => s.key)).toEqual(['grouping'])
   })
 })
+
+describe('the rekordbox Playlists field', () => {
+  const playlists = {
+    options: [{ id: '3000', name: 'Makina', path: '' }],
+    single: { value: [{ id: '3000', name: 'Makina' }], onChange: vi.fn() },
+    bulk: { states: [], onToggle: vi.fn() },
+  }
+
+  it('takes its place among the shown fields in the user order from Campos', () => {
+    const specs = buildFieldSpecs(
+      params({ visibleFields: ['title', 'rekordboxPlaylists', 'genre'], playlists }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(['title', 'rekordboxPlaylists', 'genre'])
+    expect(specs[1].playlists).toMatchObject({ multi: false, options: playlists.options })
+    expect(specs[1].required).toBeUndefined()
+  })
+
+  it('is left out without a collection although the key stays in visibleFields for later', () => {
+    const specs = buildFieldSpecs(params({ visibleFields: ['title', 'rekordboxPlaylists'] }))
+    expect(specs.map((s) => s.key)).toEqual(['title'])
+  })
+
+  it('is offered in bulk for a selection', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a'), track('b')],
+        visibleFields: ['genre', 'rekordboxPlaylists'],
+        playlists,
+      }),
+    )
+    expect(specs.at(-1)).toMatchObject({ key: 'rekordboxPlaylists', playlists: { multi: true } })
+  })
+})

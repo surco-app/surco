@@ -26,6 +26,7 @@ import type {
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
+  RekordboxPlaylistTarget,
   SearchHints,
   SearchProviderId,
   Settings,
@@ -1786,6 +1787,12 @@ export default function App(): React.JSX.Element {
     editingRef.current = id
   })
 
+  const onChangeTracksPlaylists = useStableCallback(
+    (patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[]) => {
+      for (const p of patches) patchTracks([p.id], { rekordboxPlaylists: p.rekordboxPlaylists })
+    },
+  )
+
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
     if (!selected) return
     // A cover change or removal may strand the selected track's old blob; free it only
@@ -2813,6 +2820,7 @@ export default function App(): React.JSX.Element {
                           onClearExtras={onClearExtras}
                           onFieldFocusChange={onFieldFocusChange}
                           onChange={onEditorChange}
+                          onChangeTracksPlaylists={onChangeTracksPlaylists}
                           onProcess={onProcessSelected}
                           onCancel={onCancelSelected}
                           onFormatChange={onFormatChange}

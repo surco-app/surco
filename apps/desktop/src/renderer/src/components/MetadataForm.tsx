@@ -6,6 +6,7 @@ import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
+import { PlaylistsBulkField, PlaylistsField } from './PlaylistsField'
 import { StarRating } from './StarRating'
 import { TagListBulkField } from './TagListBulkField'
 
@@ -22,6 +23,23 @@ function renderField(
   f: FieldSpec,
   row: { inline?: boolean; trailing?: React.ReactNode } = {},
 ): React.JSX.Element {
+  if (f.playlists) {
+    return f.playlists.multi ? (
+      <PlaylistsBulkField
+        label={f.label}
+        options={f.playlists.options}
+        states={f.playlists.bulk.states}
+        onToggle={f.playlists.bulk.onToggle}
+      />
+    ) : (
+      <PlaylistsField
+        label={f.label}
+        options={f.playlists.options}
+        value={f.playlists.single.value}
+        onChange={f.playlists.single.onChange}
+      />
+    )
+  }
   if (f.perTrack) {
     return (
       <TagListBulkField

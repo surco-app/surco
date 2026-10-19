@@ -48,6 +48,11 @@ vi.mock('./TagListBulkField', () => ({
   ),
 }))
 
+vi.mock('./PlaylistsField', () => ({
+  PlaylistsField: () => <div data-testid="playlists-field" />,
+  PlaylistsBulkField: () => <div data-testid="playlists-bulk" />,
+}))
+
 const spec = (key: string, value = ''): FieldSpec =>
   ({ key, label: key, value, placeholder: '', onChange: vi.fn() }) as unknown as FieldSpec
 
@@ -207,5 +212,21 @@ describe('MetadataForm', () => {
   it('names the star group by the rating caption', () => {
     renderForm([])
     expect(screen.getByRole('group', { name: 'fields.rating' })).toBe(screen.getByTestId('stars'))
+  })
+})
+
+describe('the rekordbox Playlists field', () => {
+  const playlists = {
+    options: [],
+    single: { value: [], onChange: vi.fn() },
+    bulk: { states: [], onToggle: vi.fn() },
+  }
+
+  it('draws the single field for one track and the bulk one for a selection', () => {
+    renderForm([{ ...spec('rekordboxPlaylists'), playlists: { ...playlists, multi: false } }])
+    expect(screen.getByTestId('playlists-field')).toBeInTheDocument()
+    cleanup()
+    renderForm([{ ...spec('rekordboxPlaylists'), playlists: { ...playlists, multi: true } }])
+    expect(screen.getByTestId('playlists-bulk')).toBeInTheDocument()
   })
 })

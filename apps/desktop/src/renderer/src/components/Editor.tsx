@@ -24,6 +24,7 @@ import type {
   FormatSetting,
   NormalizeConfig,
   OutputFormat,
+  RekordboxPlaylistTarget,
   ReleaseTrack,
   SearchProviderId,
   TrackMetadata,
@@ -38,6 +39,11 @@ import type { RememberedPick } from '../hooks/useEditorPicks'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
+import {
+  useRekordboxAvailable,
+  useRekordboxMembership,
+  useRekordboxPlaylistOptions,
+} from '../hooks/useRekordboxPlaylists'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
@@ -53,8 +59,14 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
-import { buildFieldSpecs } from '../lib/fieldSpecs'
-import { FIELD_DEFS, labeledFields, missingRequired, missingRequiredOf } from '../lib/fields'
+import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
+import {
+  FIELD_DEFS,
+  labeledFields,
+  missingRequired,
+  missingRequiredOf,
+  REKORDBOX_PLAYLISTS_FIELD,
+} from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
@@ -65,6 +77,12 @@ import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { jobAudio } from '../lib/reapply'
+import {
+  bulkPlaylistState,
+  effectivePlaylists,
+  rekordboxPathOf,
+  withTarget,
+} from '../lib/rekordboxPlaylists'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -131,6 +149,9 @@ interface Props {
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  onChangeTracksPlaylists?: (
+    patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[],
+  ) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
   // nothing" notices; the editor's T button is just a second trigger for it.
@@ -226,6 +247,7 @@ export const Editor = memo(function Editor({
   onApplyCoverAll,
   onDeriveTags,
   onChangeTracksMeta,
+  onChangeTracksPlaylists,
   onApplyTitleFormat,
   onRecordUndo,
   onClearExtras,
@@ -1006,6 +1028,40 @@ export const Editor = memo(function Editor({
     [isMulti, item.meta, item.cleaned, tr, onChange],
   )
 
+  const rekordboxAvailable = useRekordboxAvailable()
+  const showPlaylists = rekordboxAvailable && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
+  const rekordboxOptions = useRekordboxPlaylistOptions(showPlaylists)
+  const playlistTracks = useMemo(
+    () => (isMulti && selectedTracks ? selectedTracks : [item]),
+    [isMulti, selectedTracks, item],
+  )
+  const membership = useRekordboxMembership(playlistTracks.map(rekordboxPathOf), showPlaylists)
+  const playlistsSpec = useMemo<PlaylistsSpec | undefined>(() => {
+    if (!showPlaylists || !rekordboxOptions || !membership) return undefined
+    return {
+      options: rekordboxOptions,
+      single: {
+        value: effectivePlaylists(item, membership, rekordboxOptions) ?? [],
+        onChange: (next) => onChange({ rekordboxPlaylists: next }),
+      },
+      bulk: {
+        states: bulkPlaylistState(playlistTracks, membership, rekordboxOptions) ?? [],
+        onToggle: (target, on) => {
+          const patches = withTarget(playlistTracks, membership, rekordboxOptions, target, on)
+          if (patches) onChangeTracksPlaylists?.(patches)
+        },
+      },
+    }
+  }, [
+    showPlaylists,
+    rekordboxOptions,
+    item,
+    membership,
+    playlistTracks,
+    onChange,
+    onChangeTracksPlaylists,
+  ])
+
   // Built once per real input change. setField and tr are identity-stable, so a
   // keystroke only rebuilds the specs because item.meta changed — and the form's
   // memoized fields re-render just for the keys whose value actually moved.
@@ -1038,6 +1094,7 @@ export const Editor = memo(function Editor({
         fullReleaseDate,
         onChangeTracksMeta,
         cleanedNotes,
+        playlists: playlistsSpec,
       }),
     [
       isMulti,
@@ -1065,6 +1122,7 @@ export const Editor = memo(function Editor({
       onChangeTracksMeta,
       fullReleaseDate,
       cleanedNotes,
+      playlistsSpec,
     ],
   )
 

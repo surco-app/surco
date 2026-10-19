@@ -112,6 +112,7 @@ beforeEach(() => {
     // whether to show its paste button; default to empty and a no-op unsubscribe.
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     onWindowFocus: vi.fn(() => () => {}),
+    rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
   }
   // Section fold state persists in a module store across editor remounts; reset it so a
   // section a previous test toggled doesn't start the next one in the opposite state.
@@ -562,6 +563,31 @@ describe('Editor field edit after clear', () => {
     fireEvent.blur(title)
     const patch = onChange.mock.calls.at(-1)?.[0]
     expect(patch).not.toHaveProperty('metaCleared', false)
+  })
+})
+
+describe('Editor rekordbox Playlists field', () => {
+  const tree = [{ id: '3000', name: 'Makina', kind: 'playlist' as const, count: 1 }]
+  const apiWith = (membership: Api['rekordboxMembership']): void => {
+    Object.assign(window.api, {
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(tree),
+      rekordboxMembership: membership,
+    })
+  }
+
+  it('stays absent while the membership loads, so a token picked then cannot shrink the track playlists to itself', async () => {
+    apiWith(vi.fn<Api['rekordboxMembership']>(() => new Promise(() => {})))
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
+    await waitFor(() => expect(window.api.rekordboxMembership).toHaveBeenCalled())
+    expect(screen.queryByTestId('playlists-field')).toBeNull()
+  })
+
+  it('appears with the playlists the track already holds once options and membership resolve', async () => {
+    apiWith(vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }))
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
+    expect(await screen.findByTestId('playlists-field')).toBeInTheDocument()
+    expect(screen.getByTestId('playlists-token-3000')).toBeInTheDocument()
   })
 })
 

@@ -5,11 +5,13 @@ import type {
   KeyNotation,
   KeyResult,
   MetaTextKey,
+  RekordboxPlaylistTarget,
   TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { BULK_FIELDS, commonValue, type TagList } from './bulkEdit'
-import { FIELD_DEFS, type FieldWidth } from './fields'
+import { FIELD_DEFS, type FieldWidth, REKORDBOX_PLAYLISTS_FIELD } from './fields'
+import type { PlaylistOption } from './rekordboxPlaylists'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
 // a comment can pull in the artist or title without retyping.
@@ -17,6 +19,18 @@ export interface InsertSource {
   key: string
   label: string
   value: string
+}
+
+export interface PlaylistsSpec {
+  options: PlaylistOption[]
+  single: {
+    value: RekordboxPlaylistTarget[]
+    onChange: (next: RekordboxPlaylistTarget[]) => void
+  }
+  bulk: {
+    states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]
+    onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
+  }
 }
 
 // One renderable form field. The editor builds these per mode — bulk specs read the
@@ -50,6 +64,7 @@ export interface FieldSpec {
     tracks: TrackItem[]
     onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   }
+  playlists?: PlaylistsSpec & { multi: boolean }
 }
 
 // What the load-time clean-up did to this field, and how to put the value as read back.
@@ -117,6 +132,7 @@ export interface BuildFieldSpecsParams {
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
+  playlists?: PlaylistsSpec
 }
 
 // The fields whose chips add a tag rather than replace the value.
@@ -128,6 +144,20 @@ function tagListFor(
   if (key === 'grouping') return groupingTags
   if (key === 'genre') return genreTags
   return undefined
+}
+
+function playlistsField(
+  playlists: PlaylistsSpec,
+  multi: boolean,
+  tr: (key: string) => string,
+): FieldSpec {
+  return {
+    key: REKORDBOX_PLAYLISTS_FIELD,
+    label: tr('fields.rekordboxPlaylists'),
+    value: '',
+    onChange: () => {},
+    playlists: { ...playlists, multi },
+  }
 }
 
 // The bulk and single forms render the same tree; only where a field's value comes
@@ -162,6 +192,7 @@ export function buildFieldSpecs({
   onChangeTracksMeta,
   fullReleaseDate,
   cleanedNotes,
+  playlists,
 }: BuildFieldSpecsParams): FieldSpec[] {
   const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
     key === 'year' && fullReleaseDate ? 'medium' : FIELD_DEFS.find((d) => d.key === key)?.width
@@ -217,8 +248,13 @@ export function buildFieldSpecs({
               onChange: customBulkOnChange.get(f.key) ?? (() => {}),
             }
           }),
+        ...(playlists && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
+          ? [playlistsField(playlists, true, tr)]
+          : []),
       ]
     : visibleFields.flatMap((key) => {
+        if (key === REKORDBOX_PLAYLISTS_FIELD)
+          return playlists ? [playlistsField(playlists, false, tr)] : []
         const def = FIELD_DEFS.find((d) => d.key === key)
         if (!def) {
           // A field the user added: no chips or menus of its own, just its name, value and
