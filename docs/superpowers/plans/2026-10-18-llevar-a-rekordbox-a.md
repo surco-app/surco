@@ -6314,3 +6314,539 @@ git commit -m "Show what waits for rekordbox to close, with Apply now and Discar
 
 ---
 
+### Task 17: Rename and Delete in the tree, and Cancel that waits
+
+**Files:**
+- Modify: `src/renderer/src/components/SourceTree.tsx` (`edit.onRename`, `edit.onDelete`, the menu on playlists too, the inline rename, the delete confirmation)
+- Modify: `src/renderer/src/lib/playlistEdits.ts` (`subtreeCounts`; `cancelled` and `rekordbox-running` now say the edit waits)
+- Modify: `src/renderer/src/App.tsx` (`treeEdit`)
+- Modify: `src/renderer/src/hooks/useRekordboxEdits.ts` (sends the playlist name as the queue label)
+- Modify: `src/renderer/src/i18n/locales/*.json` (`sources.tree.*`, `sources.edit.queued`)
+- Test: `src/renderer/src/components/SourceTree.test.tsx`, `src/renderer/src/lib/playlistEdits.test.ts`, `src/renderer/src/hooks/useRekordboxEdits.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 3 edit kinds `rename`/`delete`; Task 9 `editRekordboxPlaylist(edit, label?)` and the queued answer `{ applied: false, reason: 'cancelled' }`; `ConfirmDialog`.
+- Produces:
+  - `SourceTree` `edit` gains `onRename: (node: SourceNode, name: string) => void` and `onDelete: (node: SourceNode) => void`
+  - `subtreeCounts(node: SourceNode): { playlists: number; folders: number }` (everything under the node, the node itself left out)
+  - test ids `source-tree-rename`, `source-tree-delete`, `source-tree-rename-field`
+
+Spec "Organizar playlists desde el árbol": Rename is inline on the node; Delete always confirms ("¿Borrar la playlist «Makina»? Las pistas siguen en la colección." / "¿Borrar la carpeta «BASES» y lo que lleva dentro? 3 playlists y 1 carpeta. Las pistas siguen en la colección."); both go through the queue, and Cancel in the close dialog leaves them queued.
+
+- [ ] **Step 1: Locale strings**
+
+Merge with the helper:
+
+```json
+{
+  "es": { "sources": {
+    "tree": {
+      "rename": "Renombrar", "delete": "Borrar", "menu": "Acciones de la playlist",
+      "deleteTitle": "Borrar de rekordbox",
+      "deletePlaylist": "¿Borrar la playlist «{{name}}»? Las pistas siguen en la colección.",
+      "deleteFolder": "¿Borrar la carpeta «{{name}}» y lo que lleva dentro? {{contents}}. Las pistas siguen en la colección.",
+      "deleteFolderEmpty": "¿Borrar la carpeta «{{name}}»? Las pistas siguen en la colección.",
+      "playlists_one": "1 playlist", "playlists_other": "{{count}} playlists",
+      "folders_one": "1 carpeta", "folders_other": "{{count}} carpetas",
+      "and": " y "
+    },
+    "edit": { "refused": { "cancelled": "rekordbox sigue abierto. El cambio se aplicará al cerrarlo", "running": "rekordbox se abrió antes de guardar. El cambio se aplicará al cerrarlo" } }
+  } },
+  "en": { "sources": {
+    "tree": {
+      "rename": "Rename", "delete": "Delete", "menu": "Playlist actions",
+      "deleteTitle": "Delete from rekordbox",
+      "deletePlaylist": "Delete the playlist “{{name}}”? The tracks stay in the collection.",
+      "deleteFolder": "Delete the folder “{{name}}” and what is inside? {{contents}}. The tracks stay in the collection.",
+      "deleteFolderEmpty": "Delete the folder “{{name}}”? The tracks stay in the collection.",
+      "playlists_one": "1 playlist", "playlists_other": "{{count}} playlists",
+      "folders_one": "1 folder", "folders_other": "{{count}} folders",
+      "and": " and "
+    },
+    "edit": { "refused": { "cancelled": "rekordbox is still open. The change will apply when you close it", "running": "rekordbox opened before saving. The change will apply when you close it" } }
+  } },
+  "de": { "sources": {
+    "tree": {
+      "rename": "Umbenennen", "delete": "Löschen", "menu": "Playlist-Aktionen",
+      "deleteTitle": "Aus rekordbox löschen",
+      "deletePlaylist": "Playlist „{{name}}“ löschen? Die Titel bleiben in der Sammlung.",
+      "deleteFolder": "Ordner „{{name}}“ mit Inhalt löschen? {{contents}}. Die Titel bleiben in der Sammlung.",
+      "deleteFolderEmpty": "Ordner „{{name}}“ löschen? Die Titel bleiben in der Sammlung.",
+      "playlists_one": "1 Playlist", "playlists_other": "{{count}} Playlists",
+      "folders_one": "1 Ordner", "folders_other": "{{count}} Ordner",
+      "and": " und "
+    },
+    "edit": { "refused": { "cancelled": "rekordbox ist noch geöffnet. Die Änderung wird beim Schließen angewendet", "running": "rekordbox wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet" } }
+  } },
+  "fr": { "sources": {
+    "tree": {
+      "rename": "Renommer", "delete": "Supprimer", "menu": "Actions de la playlist",
+      "deleteTitle": "Supprimer de rekordbox",
+      "deletePlaylist": "Supprimer la playlist « {{name}} » ? Les morceaux restent dans la collection.",
+      "deleteFolder": "Supprimer le dossier « {{name}} » et son contenu ? {{contents}}. Les morceaux restent dans la collection.",
+      "deleteFolderEmpty": "Supprimer le dossier « {{name}} » ? Les morceaux restent dans la collection.",
+      "playlists_one": "1 playlist", "playlists_other": "{{count}} playlists",
+      "folders_one": "1 dossier", "folders_other": "{{count}} dossiers",
+      "and": " et "
+    },
+    "edit": { "refused": { "cancelled": "rekordbox est encore ouvert. Le changement s’appliquera à sa fermeture", "running": "rekordbox s’est ouvert avant l’enregistrement. Le changement s’appliquera à sa fermeture" } }
+  } },
+  "pt-BR": { "sources": {
+    "tree": {
+      "rename": "Renomear", "delete": "Apagar", "menu": "Ações da playlist",
+      "deleteTitle": "Apagar do rekordbox",
+      "deletePlaylist": "Apagar a playlist “{{name}}”? As faixas continuam na coleção.",
+      "deleteFolder": "Apagar a pasta “{{name}}” e o que tem dentro? {{contents}}. As faixas continuam na coleção.",
+      "deleteFolderEmpty": "Apagar a pasta “{{name}}”? As faixas continuam na coleção.",
+      "playlists_one": "1 playlist", "playlists_other": "{{count}} playlists",
+      "folders_one": "1 pasta", "folders_other": "{{count}} pastas",
+      "and": " e "
+    },
+    "edit": { "refused": { "cancelled": "O rekordbox continua aberto. A mudança será aplicada ao fechá-lo", "running": "O rekordbox abriu antes de salvar. A mudança será aplicada ao fechá-lo" } }
+  } }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+In `src/renderer/src/lib/playlistEdits.test.ts`, the test `'says nothing changed when rekordbox stayed open'` becomes (Cancel no longer throws the edit away):
+
+```ts
+  // Cancel in the close dialog now leaves the edit queued; the line says it will land.
+  it('says the edit waits for rekordbox to close', () => {
+    expect(
+      editMessage(
+        tr,
+        { kind: 'remove', playlistId: 'f', linkIds: ['l1'] },
+        { applied: false, reason: 'cancelled' },
+        'Factory',
+      ),
+    ).toEqual({
+      text: 'rekordbox is still open. The change will apply when you close it',
+      tone: 'neutral',
+    })
+  })
+```
+
+and append (add `subtreeCounts` to the import):
+
+```ts
+describe('subtreeCounts', () => {
+  it('counts every playlist and folder under a node', () => {
+    expect(
+      subtreeCounts({
+        id: 'b',
+        name: 'BASES',
+        kind: 'folder',
+        count: 2,
+        children: [
+          { id: 'p1', name: 'A', kind: 'playlist', count: 1 },
+          { id: 'f1', name: 'F', kind: 'folder', count: 2, children: [
+            { id: 'p2', name: 'B', kind: 'playlist', count: 1 },
+            { id: 'p3', name: 'C', kind: 'playlist', count: 1 },
+          ] },
+        ],
+      }),
+    ).toEqual({ playlists: 3, folders: 1 })
+  })
+})
+```
+
+In `src/renderer/src/hooks/useRekordboxEdits.test.tsx`, the cancelled test's last line becomes:
+
+```ts
+    expect(notify).toHaveBeenCalledWith(
+      'rekordbox is still open. The change will apply when you close it',
+      'neutral',
+    )
+```
+
+and add, in the same file, a check that the label travels:
+
+```ts
+  it('sends the playlist name with the edit, for the queue to show', async () => {
+    const { result } = setup(Promise.resolve({ applied: true }))
+    await act(async () => {
+      await result.current.edit({ kind: 'rename', playlistId: 'f', name: 'Factory 26' }, 'Factory')
+    })
+    expect(window.api.editRekordboxPlaylist).toHaveBeenCalledWith(
+      { kind: 'rename', playlistId: 'f', name: 'Factory 26' },
+      'Factory',
+    )
+  })
+```
+
+(`setup` returns the `renderHook` result spread with `notify`, so `result` is there.)
+
+In `src/renderer/src/components/SourceTree.test.tsx`, `setup`'s `edit` gains `onRename: vi.fn(), onDelete: vi.fn()`, and append:
+
+```tsx
+describe('SourceTree rename and delete', () => {
+  const openMenu = (id: string) =>
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${id}`), { clientX: 10, clientY: 10 })
+
+  // Playlists get the menu too now: renaming and deleting are about playlists first.
+  it('offers Rename and Delete on a playlist', () => {
+    setup(null, true)
+    openMenu('house')
+    expect(screen.getByTestId('source-tree-rename')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-playlist-inside')).toBeNull()
+  })
+
+  it('renames in place, Enter keeps the name and Escape drops it', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    expect(field).toHaveValue('House')
+    fireEvent.change(field, { target: { value: 'House 26' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(edit.onRename).toHaveBeenCalledWith(expect.objectContaining({ id: 'house' }), 'House 26')
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    fireEvent.keyDown(screen.getByTestId('source-tree-rename-field'), { key: 'Escape' })
+    expect(edit.onRename).toHaveBeenCalledTimes(1)
+  })
+
+  it('writes nothing for an unchanged or empty name', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    fireEvent.keyDown(screen.getByTestId('source-tree-rename-field'), { key: 'Enter' })
+    expect(edit.onRename).not.toHaveBeenCalled()
+  })
+
+  // The confirmation says what goes and what stays: the tracks never leave the collection.
+  it('confirms a folder delete with what it holds', () => {
+    const { edit } = setup(null, true)
+    openMenu('cant')
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    expect(
+      screen.getByText(
+        'Delete the folder “CANTADITAS” and what is inside? 1 playlist and 1 folder. The tracks stay in the collection.',
+      ),
+    ).toBeInTheDocument()
+    expect(edit.onDelete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(edit.onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'cant' }))
+  })
+})
+```
+
+(`confirm-ok` is `ConfirmDialog`'s confirm button.)
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/playlistEdits.test.ts src/renderer/src/hooks/useRekordboxEdits.test.tsx src/renderer/src/components/SourceTree.test.tsx`
+Expected: FAIL: old wording and tone, missing `subtreeCounts`, no label sent, no menu on playlists.
+
+- [ ] **Step 4: Messages and counts**
+
+In `src/renderer/src/lib/playlistEdits.ts`, add `type SourceNode` to the shared types import, and:
+
+```ts
+const WAITING: ReadonlySet<RekordboxEditRefusal> = new Set(['cancelled', 'rekordbox-running'])
+
+export function subtreeCounts(node: SourceNode): { playlists: number; folders: number } {
+  let playlists = 0
+  let folders = 0
+  const walk = (nodes: readonly SourceNode[]): void => {
+    for (const n of nodes) {
+      if (n.kind === 'folder') {
+        folders += 1
+        walk(n.children ?? [])
+      } else playlists += 1
+    }
+  }
+  walk(node.children ?? [])
+  return { playlists, folders }
+}
+```
+
+and in `editMessage`, the refusal line becomes:
+
+```ts
+  if (!result.applied && result.reason !== 'nothing-to-add')
+    return {
+      text: tr(REFUSED[result.reason]),
+      tone: WAITING.has(result.reason) ? 'neutral' : 'danger',
+    }
+```
+
+In `src/renderer/src/hooks/useRekordboxEdits.ts`, send the name and re-read the membership too (a deleted playlist changes the dots and the field):
+
+```ts
+        result = await window.api.editRekordboxPlaylist(edit, playlistName)
+```
+
+```ts
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
+        queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
+        queryClient.invalidateQueries({ queryKey: ['source-separator'] }),
+        queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
+      ])
+```
+
+- [ ] **Step 5: The tree**
+
+In `src/renderer/src/components/SourceTree.tsx`, import `ConfirmDialog` from `./ConfirmDialog` and `subtreeCounts` from `../lib/playlistEdits`. `edit` gains:
+
+```ts
+    onRename: (node: SourceNode, name: string) => void
+    onDelete: (node: SourceNode) => void
+```
+
+State and helpers, after `cancel`:
+
+```tsx
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const renameTarget = useRef<string | null>(null)
+  const [deleting, setDeleting] = useState<SourceNode | null>(null)
+  const startRename = (node: SourceNode): void => {
+    setMenu(null)
+    renameTarget.current = node.id
+    setRenaming(node.id)
+    setQuery('')
+  }
+  const commitRename = (node: SourceNode, value: string): void => {
+    if (renameTarget.current !== node.id) return
+    renameTarget.current = null
+    setRenaming(null)
+    const name = value.trim()
+    if (name && name !== node.name) edit?.onRename(node, name)
+  }
+  const cancelRename = (): void => {
+    renameTarget.current = null
+    setRenaming(null)
+  }
+  const deleteMessage = (node: SourceNode): string => {
+    if (node.kind === 'playlist') return tr('sources.tree.deletePlaylist', { name: node.name })
+    const { playlists, folders } = subtreeCounts(node)
+    const contents = [
+      ...(playlists > 0 ? [tr('sources.tree.playlists', { count: playlists })] : []),
+      ...(folders > 0 ? [tr('sources.tree.folders', { count: folders })] : []),
+    ].join(tr('sources.tree.and'))
+    return contents
+      ? tr('sources.tree.deleteFolder', { name: node.name, contents })
+      : tr('sources.tree.deleteFolderEmpty', { name: node.name })
+  }
+```
+
+At the top of `row(...)`'s body, after the `const`s, the node being renamed is a field in its place:
+
+```tsx
+    if (renaming === node.id)
+      return (
+        <li key={node.id} style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
+          <input
+            ref={focusField}
+            data-testid="source-tree-rename-field"
+            aria-label={tr('sources.tree.name')}
+            defaultValue={node.name}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename(node, e.currentTarget.value)
+              if (e.key === 'Escape') cancelRename()
+            }}
+            onBlur={(e) => {
+              if (!document.hasFocus()) return
+              commitRename(node, e.currentTarget.value)
+            }}
+            className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
+          />
+        </li>
+      )
+```
+
+The context menu opens on playlists too: in `onContextMenu`, `if (!edit || !isFolder) return` becomes `if (!edit) return`. In the menu, the two "inside" items render only for a folder, followed by Rename and Delete for both kinds, and the menu's name follows the kind:
+
+```tsx
+            aria-label={tr(menu.node.kind === 'folder' ? 'sources.tree.folderMenu' : 'sources.tree.menu')}
+```
+
+```tsx
+            {menu.node.kind === 'folder' && (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="source-tree-new-playlist-inside"
+                  onClick={() => createInside(menu.node, false)}
+                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                >
+                  {tr('sources.tree.newPlaylistInside')}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="source-tree-new-folder-inside"
+                  onClick={() => createInside(menu.node, true)}
+                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                >
+                  {tr('sources.tree.newFolderInside')}
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="source-tree-rename"
+              onClick={() => startRename(menu.node)}
+              className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+            >
+              {tr('sources.tree.rename')}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="source-tree-delete"
+              onClick={() => {
+                setDeleting(menu.node)
+                setMenu(null)
+              }}
+              className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-danger hover:bg-[var(--color-hover)]"
+            >
+              {tr('sources.tree.delete')}
+            </button>
+```
+
+(the two existing buttons move inside the fragment unchanged).
+
+After the menu block, before the closing `</div>` of the component:
+
+```tsx
+      {deleting && (
+        <ConfirmDialog
+          title={tr('sources.tree.deleteTitle')}
+          message={deleteMessage(deleting)}
+          confirmLabel={tr('sources.tree.delete')}
+          destructive
+          onConfirm={() => edit?.onDelete(deleting)}
+          onClose={() => setDeleting(null)}
+        />
+      )}
+```
+
+In `src/renderer/src/App.tsx`, next to `createInRekordbox`:
+
+```tsx
+  const renameInRekordbox = useStableCallback((node: SourceNode, name: string) => {
+    void editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
+  })
+  const deleteInRekordbox = useStableCallback((node: SourceNode) => {
+    void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
+  })
+  const treeEdit = useMemo(
+    () => ({
+      onCreate: createInRekordbox,
+      onDropTracks: dropOnRekordbox,
+      onRename: renameInRekordbox,
+      onDelete: deleteInRekordbox,
+    }),
+    [createInRekordbox, dropOnRekordbox, renameInRekordbox, deleteInRekordbox],
+  )
+```
+
+A deleted playlist that was open closes through `useSourceBrowser`'s existing `onPlaylistGone` once the tree is re-read.
+
+- [ ] **Step 6: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/playlistEdits.test.ts src/renderer/src/hooks/useRekordboxEdits.test.tsx src/renderer/src/components/SourceTree.test.tsx src/renderer/src/i18n`
+Expected: PASS.
+
+- [ ] **Step 7: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/components/SourceTree.tsx apps/desktop/src/renderer/src/components/SourceTree.test.tsx apps/desktop/src/renderer/src/lib/playlistEdits.ts apps/desktop/src/renderer/src/lib/playlistEdits.test.ts apps/desktop/src/renderer/src/hooks/useRekordboxEdits.ts apps/desktop/src/renderer/src/hooks/useRekordboxEdits.test.tsx apps/desktop/src/renderer/src/App.tsx apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Rename and delete rekordbox playlists from the tree, waiting for rekordbox to close"
+```
+
+---
+
+### Task 18: Verify on a copy, then Vicent's checklist in real rekordbox
+
+**Files:** none of the repo (scripts in the scratchpad). Findings go to the final summary.
+
+**Interfaces:**
+- Consumes: the whole of plan A.
+- Produces: measured evidence, and the checklist Vicent runs if he decides to.
+
+- [ ] **Step 1: The whole suite, types and lint**
+
+From `apps/desktop`: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run` (whole suite, never filtered from the repo root). From the worktree root: both `tsc` commands and `biome check --write src`. Expected: every test passes, no type error, no lint warning. Any skipped or failing test is reported by name, never left out.
+
+- [ ] **Step 2: A copy of the collection, and the app pointed at it**
+
+```bash
+mkdir -p "$SCRATCH/rb-a"
+pgrep -x rekordbox && echo "rekordbox OPEN: copy the -wal too" || echo "rekordbox closed"
+for f in master.db master.db-wal master.db-shm masterPlaylists6.xml; do
+  [ -f ~/Library/Pioneer/rekordbox/$f ] && cp ~/Library/Pioneer/rekordbox/$f "$SCRATCH/rb-a/$f"
+done
+cp "$SCRATCH/rb-a/masterPlaylists6.xml" "$SCRATCH/rb-a/masterPlaylists6.before.xml"
+```
+
+Build and drive the app with `.claude/skills/run-desktop/SKILL.md` of THIS worktree. Back up `~/Library/Application Support/Electron/settings.json` to `$SCRATCH/rb-a/settings.before.json`, set `"rekordboxDbPath"` to `$SCRATCH/rb-a/master.db`, and `"syncRekordbox": true`. Remove `~/Library/Application Support/Electron/rekordbox-queue.json` if a previous run left one (save it aside first if it is not empty, and say so). Restore the settings file in Step 6 whatever happens.
+
+- [ ] **Step 3: Drive Flow 1 and the tree**
+
+With `node driver.mjs repl`: `launch`; drop two files rekordbox does not have (pick them with `find /Volumes/Public/Music -name '*.wav' -newer ~/Library/Pioneer/rekordbox/master.db | head`, and check with the Task 9 membership call through `eval window.api.rekordboxMembership([...])` that both answer absent). For the first, in the Playlists field type `Makina`, Enter, then `Surco prueba A` and pick "Crear playlist «Surco prueba A»"; for the second, only `Surco prueba A`. `ss field`. Convert both. Then:
+1. If the real rekordbox is closed, the queue applies at once: the notice says "Listo en rekordbox · 2 pistas"; `ss applied`; the rows show filled dots.
+2. If it is open (or Vicent opens it now, reading his real collection, untouched since Surco points at the copy): the pill says "2 pistas esperan a que cierres rekordbox"; `ss pill`; open it, `ss pill-menu`; Vicent closes rekordbox; within 5 s the notice appears; `ss applied`.
+3. In the tree, rename `Surco prueba A` to `Surco prueba A2` (`ss rename`), create a folder `Surco carpeta`, then delete it (`ss delete-confirm` with the dialog open).
+
+Open and look at every screenshot.
+
+- [ ] **Step 4: Read the copy back**
+
+```bash
+cat > "$SCRATCH/rb-a/check.cjs" <<'EOF'
+const fs = require('fs')
+const Database = require('/Users/vicent/code/surco/node_modules/better-sqlite3-multiple-ciphers')
+const dir = process.argv[2]
+const db = new Database(`${dir}/master.db`, { readonly: true, fileMustExist: true })
+db.pragma(`cipher='sqlcipher'`)
+db.pragma('legacy=4')
+db.pragma(`key='402fd482c38817c35ffa8ffb8c7d93143b749e7d315df7a81732a1ff43608497'`)
+console.log('integrity', db.pragma('integrity_check', { simple: true }))
+const pl = db.prepare(`SELECT * FROM djmdPlaylist WHERE Name LIKE 'Surco prueba A%'`).get()
+console.log('playlist', pl)
+const added = db.prepare(`SELECT c.* FROM djmdSongPlaylist s JOIN djmdContent c ON c.ID = s.ContentID WHERE s.PlaylistID = ? ORDER BY s.TrackNo`).all(pl.ID)
+for (const c of added) console.log('content', { ID: c.ID, MasterSongID: c.MasterSongID, FolderPath: c.FolderPath, rb_file_id: c.rb_file_id, FileType: c.FileType, Length: c.Length, BitRate: c.BitRate, BitDepth: c.BitDepth, SampleRate: c.SampleRate, DateCreated: c.DateCreated, StockDate: c.StockDate, ContentLink: c.ContentLink, Analysed: c.Analysed, AnalysisDataPath: c.AnalysisDataPath, ExtInfo: c.ExtInfo })
+const dup = db.prepare(`SELECT FolderPath, count(*) n FROM djmdContent WHERE coalesce(rb_local_deleted,0)=0 GROUP BY FolderPath HAVING n > 1`).all()
+console.log('duplicate paths', dup.length)
+const gaps = db.prepare(`SELECT PlaylistID FROM djmdSongPlaylist GROUP BY PlaylistID HAVING max(TrackNo) <> count(*)`).all()
+console.log('playlists with TrackNo gaps', gaps.length)
+console.log('folder gone', db.prepare(`SELECT count(*) n FROM djmdPlaylist WHERE Name = 'Surco carpeta'`).get())
+EOF
+node "$SCRATCH/rb-a/check.cjs" "$SCRATCH/rb-a"
+diff <(tr -d '\r' < "$SCRATCH/rb-a/masterPlaylists6.before.xml") <(tr -d '\r' < "$SCRATCH/rb-a/masterPlaylists6.xml")
+ls -la "$SCRATCH/rb-a"/*.surco-*
+```
+
+Expected: `integrity ok`; two content rows in the mould of the Global Constraints (`MasterSongID` = `ID`, `rb_file_id` = `stat -f %i` of the file, `Analysed` 0, `AnalysisDataPath` '', `ExtInfo` 'null', `ContentLink` 2950670); `duplicate paths` and `TrackNo gaps` the same as before Surco wrote (run the script on a fresh copy for the "before" numbers if they are not 0); the XML diff shows one new node for `Surco prueba A`, the `Timestamp` of Makina's node and of the renamed node moved, a node added and removed for `Surco carpeta`, and nothing else; `.surco-session` and `.surco-backup` copies beside both files.
+
+- [ ] **Step 5: Vicent's checklist in real rekordbox (only if he decides to)**
+
+He swaps the collection for the copy with rekordbox closed, keeping his own aside (`master.db`, `-wal`, `-shm`, `masterPlaylists6.xml`, sha256 of each written down), opens rekordbox, looks, closes it and puts his back (sha256 identical). What to look at:
+1. The two tracks appear once each, in Makina (at the end) and in `Surco prueba A2`; rekordbox analyses them on open; they play. Decision 2: does a track with embedded artwork show it after the analysis?
+2. The rename shows in rekordbox and, synced to a test USB from rekordbox, the USB shows the new name (Decision 6).
+3. `Surco carpeta` is not there (Decision 15).
+4. Back in Surco after closing rekordbox: the field shows Makina and `Surco prueba A2` for both tracks, the dots are filled, the pill is gone.
+5. Decision 19: with "Sincronizar rekordbox" off, an MP3 converted to WAV with a playlist in the field is added beside the MP3 entry. Is that what he wants, or should the entry follow the file whatever the toggle?
+6. Decision 13: on his biggest crate, how long the dots take to appear after a launch (one `rekordbox:membership` call for the whole list).
+
+- [ ] **Step 6: Restore the shared setting**
+
+```bash
+cp "$SCRATCH/rb-a/settings.before.json" ~/Library/Application\ Support/Electron/settings.json
+rm -f ~/Library/Application\ Support/Electron/rekordbox-queue.json
+```
+
+(and put back the queue file saved aside in Step 2, if there was one).
+
+---
+
