@@ -122,8 +122,9 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
 // process for one stat round trip per track — ~4s measured for 622 paths — with the window
 // created but unable to paint, which is the black window at launch. Worse, it was spent
 // before the user had answered the reopen prompt at all: work for a decision not yet made.
-// The awaits let the event loop (and the paint) run; the concurrent stats collapse the
-// round trips into one wait instead of N.
+// The awaits let the event loop (and the paint) run. The network volume answers the stats
+// one after another however many are in flight, so sending them all at once saved nothing
+// and held every other file read behind them.
 export async function loadLastSession(): Promise<SessionData> {
   try {
     const raw = JSON.parse(await readFile(sessionPath(), 'utf-8')) as {
@@ -132,8 +133,9 @@ export async function loadLastSession(): Promise<SessionData> {
     }
     if (!Array.isArray(raw.paths)) return { paths: [], edits: {} }
     // Files deleted or unmounted since last quit would come back as broken rows;
-    // dropping them here keeps the reopen offer's count honest. Checked concurrently so a
-    // slow volume costs one round trip, not one per track, and never blocks the paint.
+    // dropping them here keeps the reopen offer's count honest. Checked at most three at
+    // a time through sourceStat, so local reads are not queued behind the network, and
+    // never blocks the paint.
     const candidates = raw.paths.filter((p): p is string => typeof p === 'string')
     const present = await Promise.all(
       candidates.map((p) =>

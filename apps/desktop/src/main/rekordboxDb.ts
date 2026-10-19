@@ -65,10 +65,6 @@ export const STREAMING_FILE_TYPE = 25
 
 type RekordboxDb = InstanceType<typeof Database>
 
-// Opens the collection read-write but touches nothing; callers that only read simply
-// never write. Returns null instead of throwing for every reason the file may not be
-// usable — absent, not a rekordbox database, a future cipher — because a user who does
-// not run rekordbox is the normal case, not an error to report.
 const pbkdf2Async = promisify(pbkdf2)
 const rawKeys = new Map<string, Promise<string>>()
 
@@ -91,6 +87,10 @@ export async function rekordboxRawKey(path: string): Promise<string> {
   return key
 }
 
+// Opens the collection read-write but touches nothing; callers that only read simply
+// never write. Returns null instead of throwing for every reason the file may not be
+// usable — absent, not a rekordbox database, a future cipher — because a user who does
+// not run rekordbox is the normal case, not an error to report.
 export function openRekordboxDb(
   path: string,
   options: { readonly?: boolean; key?: string } = {},
