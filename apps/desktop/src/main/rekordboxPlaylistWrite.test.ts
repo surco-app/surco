@@ -24,8 +24,14 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
 })
 
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
-import { editRekordboxPlaylist, replaceFile, restoreCollection } from './rekordboxPlaylistWrite'
+import {
+  applyRekordboxBatch,
+  editRekordboxPlaylist,
+  replaceFile,
+  restoreCollection,
+} from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
+import type { QueueOp } from './rekordboxQueueOps'
 import { createSessionBackup } from './rekordboxSessionBackup'
 
 const NOW = new Date('2026-10-15T18:00:00.000Z')
@@ -466,13 +472,15 @@ describe('editRekordboxPlaylist', () => {
     expect(playlistNamed(path, 'Bolo')).toBeUndefined()
   })
 
-  it('leaves the XML alone for an edit of tracks', async () => {
+  it('moves only the Timestamp of the playlist whose tracks changed, because the USB sync reads it', async () => {
     const path = await collection()
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
     const before = await readFile(xmlPath, 'utf8')
     await editRekordboxPlaylist(path, MOVE, deps())
-    expect(await readFile(xmlPath, 'utf8')).toBe(before)
-    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(false)
+    expect(await readFile(xmlPath, 'utf8')).toBe(
+      before.replace(/(<NODE Id="7D0" [^>]*Timestamp=")\d+/, `$1${NOW.getTime()}`),
+    )
+    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(true)
   })
 
   // rekordbox keeps the collection in WAL mode: committed changes can still be in the -wal
@@ -630,5 +638,177 @@ describe('restoreCollection', () => {
     expect(await restoreCollection(path)).toBe(false)
     expect(await readFile(path, 'utf8')).toBe('live')
     expect(await readFile(`${path}.surco-backup`, 'utf8')).toBe('copy')
+  })
+})
+
+const edit = (
+  id: string,
+  e: RekordboxPlaylistEdit,
+  stamps: Record<string, number> = {},
+): QueueOp => ({
+  id,
+  kind: 'edit',
+  edit: e,
+  stamps,
+})
+
+function playlistRow(path: string, id: string): { Name: string } | undefined {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return db.prepare('SELECT Name FROM djmdPlaylist WHERE ID = ?').get(id) as
+      | { Name: string }
+      | undefined
+  } finally {
+    db.close()
+  }
+}
+
+describe('applyRekordboxBatch', () => {
+  it('writes several operations behind one question and one copy', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('a', MOVE), edit('b', { kind: 'rename', playlistId: '3000', name: 'House 26' })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [
+        { id: 'a', applied: true, notices: [] },
+        { id: 'b', applied: true, notices: [] },
+      ],
+    })
+    expect(d.ensureClosed).toHaveBeenCalledTimes(1)
+    expect(d.sessionBackup).toHaveBeenCalledWith(path)
+    expect(linkIds(path, '2000')[0]).toBe('f6')
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House 26' })
+  })
+
+  it('drops only the operation that no longer applies inside the batch, because deleting a folder takes its playlists', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [
+        edit('folder', { kind: 'delete', playlistId: '1000' }),
+        edit('child', { kind: 'delete', playlistId: '2000' }),
+      ],
+      deps(),
+    )
+    expect(result.ok && result.outcomes).toEqual([
+      { id: 'folder', applied: true, notices: [] },
+      { id: 'child', applied: false, reason: 'stale', notices: [] },
+    ])
+    expect(playlistRow(path, '1000')).toBeUndefined()
+  })
+
+  it('removes the deleted nodes from the XML and keeps the rest', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    await applyRekordboxBatch(path, [edit('x', { kind: 'delete', playlistId: '1000' })], deps())
+    const xml = await readFile(xmlPath, 'utf8')
+    expect(xml).not.toContain('Id="3E8"')
+    expect(xml).not.toContain('Id="7D0"')
+    expect(xml).toContain('Id="BB8"')
+  })
+
+  it('moves the Timestamp of a renamed playlist so the USB sync sees it', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
+    await applyRekordboxBatch(
+      path,
+      [edit('r', { kind: 'rename', playlistId: '3000', name: 'X' })],
+      deps(),
+    )
+    expect(await readFile(xmlPath, 'utf8')).toBe(
+      before.replace(/(<NODE Id="BB8" [^>]*Timestamp=")\d+/, `$1${NOW.getTime()}`),
+    )
+    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(true)
+  })
+
+  it('applies links before deletes whatever order the queue holds them in', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [
+        edit('del', { kind: 'delete', playlistId: '3000' }),
+        edit('add', {
+          kind: 'add',
+          playlistId: '3000',
+          tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+        }),
+      ],
+      deps(),
+    )
+    expect(result.ok && result.outcomes.map((o) => o.applied)).toEqual([true, true])
+  })
+
+  it('drops an operation on a playlist rekordbox changed since it was queued and asks nothing', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('r', { kind: 'rename', playlistId: '3000', name: 'X' }, { '3000': 1 })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        {
+          id: 'r',
+          applied: false,
+          reason: 'stale',
+          notices: [{ code: 'edit-changed', playlist: 'House' }],
+        },
+      ],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House' })
+  })
+
+  it('applies an operation whose recorded Timestamp still matches', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('r', { kind: 'rename', playlistId: '3000', name: 'X' }, { '3000': 1767225600000 })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0].applied).toBe(true)
+  })
+
+  it('undoes every operation of the batch when the write dies halfway', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('a', MOVE), edit('b', { kind: 'rename', playlistId: '3000', name: 'House 26' })],
+      deps({
+        onWrite: () => {
+          throw new Error('disk gone')
+        },
+      }),
+    )
+    expect(result).toEqual({ ok: false, reason: 'write-failed' })
+    expect(linkIds(path, '2000')).toEqual(FACTORY)
+    expect(playlistRow(path, '3000')).toEqual({ Name: 'House' })
+  })
+
+  it('asks nothing when no operation has anything to write', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [edit('m', { kind: 'move', playlistId: '2000', linkIds: ['f1'], beforeLinkId: 'f2' })],
+      d,
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'm', applied: true, notices: [] }],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
   })
 })

@@ -1081,6 +1081,11 @@ export type RekordboxEditResult =
   | { applied: true; createdId?: string; report?: PlaylistAddReport }
   | { applied: false; reason: RekordboxEditRefusal; report?: PlaylistAddReport }
 
+export type RekordboxQueueNotice =
+  | { code: 'ambiguous' | 'file-missing' | 'not-added'; track: string }
+  | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
+  | { code: 'edit-changed'; playlist: string }
+
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
 
 export interface ProcessProgress {

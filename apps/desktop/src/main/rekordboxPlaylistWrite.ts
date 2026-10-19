@@ -8,7 +8,14 @@ import type {
   RekordboxPlaylistEdit,
 } from '../shared/types'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
-import { hexId, playlistXmlPath, withPlaylistNode, xmlNodeIds } from './rekordboxMasterXml'
+import {
+  hexId,
+  nodeTimestamp,
+  playlistXmlPath,
+  withoutNodes,
+  withPlaylistNode,
+  xmlNodeIds,
+} from './rekordboxMasterXml'
 import {
   addToPlaylist,
   createNode,
@@ -25,6 +32,15 @@ import {
   resolveTracks,
 } from './rekordboxPlaylistEdit'
 import { isRekordboxRunning } from './rekordboxProcess'
+import {
+  type BatchResult,
+  bumpNode,
+  type EditOp,
+  type OpOutcome,
+  opRank,
+  type QueueOp,
+  type XmlDraft,
+} from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
 
 // Writes one organising edit into the user's rekordbox collection, the one library they
@@ -98,13 +114,13 @@ const isReadOnly = (err: unknown): boolean =>
   String((err as { code?: unknown })?.code).startsWith('SQLITE_READONLY')
 
 // Whether the XML can take a new node at all, decided before rekordbox is asked to close.
-// The text edit refuses a layout it would have to guess at; the ID is a placeholder, only
-// the layout is being checked.
-async function xmlTakesNode(xmlPath: string, parentId: string): Promise<boolean> {
+// The text edit refuses a layout it would have to guess at; the ID and the parent are
+// placeholders, only the layout is being checked.
+async function xmlTakesNode(xmlPath: string): Promise<boolean> {
   try {
     withPlaylistNode(await readFile(xmlPath, 'utf8'), {
       id: '100',
-      parentId,
+      parentId: 'root',
       attribute: 0,
       timestamp: 0,
     })
@@ -165,107 +181,204 @@ function refuse(reason: RekordboxEditRefusal, report?: PlaylistAddReport): Rekor
   return report ? { applied: false, reason, report } : { applied: false, reason }
 }
 
-export async function editRekordboxPlaylist(
-  collectionPath: string,
-  edit: RekordboxPlaylistEdit,
-  deps: PlaylistWriteDeps,
-): Promise<RekordboxEditResult> {
-  if (!collectionPath) return refuse('unreadable')
+type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
 
+interface Planned {
+  op: QueueOp
+  contentIds?: string[]
+  unresolved?: { notInCollection: number; ambiguous: number }
+}
+
+type Plan = Planned | { outcome: OpOutcome }
+
+function playlistName(db: Db, id: string): string {
+  const row = db.prepare('SELECT Name FROM djmdPlaylist WHERE ID = ?').get(id) as
+    | { Name: string }
+    | undefined
+  return row?.Name ?? id
+}
+
+function planEdit(probe: Db, xml: string | null, op: EditOp, find: FindOptions): Plan {
+  const { edit } = op
+  const refused = (reason: RekordboxEditRefusal, report?: PlaylistAddReport): Plan => ({
+    outcome: report
+      ? { id: op.id, applied: false, reason, report, notices: [] }
+      : { id: op.id, applied: false, reason, notices: [] },
+  })
+  const problem = editProblem(probe, edit)
+  if (problem) return refused(problem)
+  for (const [playlistId, stamp] of Object.entries(op.stamps)) {
+    if (xml !== null && nodeTimestamp(xml, playlistId) !== stamp)
+      return {
+        outcome: {
+          id: op.id,
+          applied: false,
+          reason: 'stale',
+          notices: [{ code: 'edit-changed', playlist: playlistName(probe, playlistId) }],
+        },
+      }
+  }
+  if (
+    edit.kind === 'move' &&
+    !moveChangesOrder(probe, edit.playlistId, edit.linkIds, edit.beforeLinkId)
+  )
+    return { outcome: { id: op.id, applied: true, notices: [] } }
+  if (edit.kind === 'add') {
+    const resolved = resolveTracks(probe, edit.tracks, find)
+    const unresolved = { notInCollection: resolved.notInCollection, ambiguous: resolved.ambiguous }
+    const present = playlistContents(probe, edit.playlistId)
+    const already = resolved.contentIds.filter((id) => present.has(id)).length
+    if (already === resolved.contentIds.length)
+      return refused('nothing-to-add', { added: 0, already, ...unresolved })
+    return { op, contentIds: resolved.contentIds, unresolved }
+  }
+  return { op }
+}
+
+function planOp(probe: Db, xml: string | null, op: QueueOp, find: FindOptions): Plan {
+  return planEdit(probe, xml, op, find)
+}
+
+function freeId(draft: XmlDraft): string {
+  for (;;) {
+    const id = randomPlaylistId()
+    if (!draft.taken.has(hexId(id))) return id
+  }
+}
+
+function writeEdit(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  const op = planned.op as EditOp
+  const { edit } = op
+  const ctx = { now, newPlaylistId: () => freeId(draft) }
+  const done = (extra: Partial<OpOutcome> = {}): OpOutcome => ({
+    id: op.id,
+    applied: true,
+    notices: [],
+    ...extra,
+  })
+  if (edit.kind === 'add') {
+    const counts = addToPlaylist(db, edit.playlistId, planned.contentIds ?? [], ctx)
+    bumpNode(draft, edit.playlistId)
+    return done({ report: { ...counts, notInCollection: 0, ambiguous: 0, ...planned.unresolved } })
+  }
+  if (edit.kind === 'move') {
+    moveInPlaylist(db, edit.playlistId, edit.linkIds, edit.beforeLinkId, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'remove') {
+    removeFromPlaylist(db, edit.playlistId, edit.linkIds, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'insertSeparator') {
+    insertSeparator(db, edit.playlistId, edit.beforeLinkId, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'create') {
+    const created = createNode(db, edit.parentId, edit.name, edit.folder, ctx)
+    if (draft.xml !== null)
+      draft.xml = withPlaylistNode(draft.xml, {
+        id: created.id,
+        parentId: edit.parentId,
+        attribute: created.attribute,
+        timestamp: draft.now,
+      })
+    draft.taken.add(hexId(created.id))
+    return done({ createdId: created.id })
+  }
+  if (edit.kind === 'rename') {
+    renameNode(db, edit.playlistId, edit.name, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  const gone = deleteNode(db, edit.playlistId, ctx)
+  if (draft.xml !== null) draft.xml = withoutNodes(draft.xml, gone)
+  return done()
+}
+
+function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  return writeEdit(db, draft, planned, now)
+}
+
+function needsNode(planned: Planned): boolean {
+  return planned.op.kind === 'edit' && planned.op.edit.kind === 'create'
+}
+
+export async function applyRekordboxBatch(
+  collectionPath: string,
+  ops: QueueOp[],
+  deps: PlaylistWriteDeps,
+): Promise<BatchResult> {
+  if (!collectionPath) return { ok: false, reason: 'unreadable' }
+  const xmlPath = playlistXmlPath(collectionPath)
+  const hasXml = existsSync(xmlPath)
+  const outcomes = new Map<string, OpOutcome>()
+  const planned: Planned[] = []
   const probe = openRekordboxDb(collectionPath, { readonly: true })
-  if (!probe) return refuse('unreadable')
-  let contentIds: string[] = []
-  let unresolved = { notInCollection: 0, ambiguous: 0 }
+  if (!probe) return { ok: false, reason: 'unreadable' }
   try {
-    const problem = editProblem(probe, edit)
-    if (problem) return refuse(problem)
-    // Already in the order asked for: the list shows it, and there is nothing to write.
-    if (
-      edit.kind === 'move' &&
-      !moveChangesOrder(probe, edit.playlistId, edit.linkIds, edit.beforeLinkId)
-    )
-      return { applied: true }
-    if (edit.kind === 'add') {
-      const resolved = resolveTracks(probe, edit.tracks, deps)
-      contentIds = resolved.contentIds
-      unresolved = { notInCollection: resolved.notInCollection, ambiguous: resolved.ambiguous }
-      const present = playlistContents(probe, edit.playlistId)
-      const already = contentIds.filter((id) => present.has(id)).length
-      if (already === contentIds.length)
-        return refuse('nothing-to-add', { added: 0, already, ...unresolved })
+    const current = hasXml ? await readFile(xmlPath, 'utf8') : null
+    for (const op of ops) {
+      const plan = planOp(probe, current, op, deps)
+      if ('outcome' in plan) outcomes.set(op.id, plan.outcome)
+      else planned.push(plan)
     }
   } finally {
     probe.close()
   }
+  const inOrder = (): OpOutcome[] => ops.map((op) => outcomes.get(op.id) as OpOutcome)
+  if (planned.length === 0) return { ok: true, wrote: false, outcomes: inOrder() }
 
-  const xmlPath = playlistXmlPath(collectionPath)
-  // Only a creation touches the XML; a file rekordbox never wrote (rekordbox 5) is left
-  // absent rather than invented.
-  const withXml = edit.kind === 'create' && existsSync(xmlPath)
-  if (withXml && !(await xmlTakesNode(xmlPath, edit.parentId))) return refuse('unreadable')
+  if (hasXml && planned.some(needsNode) && !(await xmlTakesNode(xmlPath)))
+    return { ok: false, reason: 'unreadable' }
 
-  if (!(await deps.ensureClosed())) return refuse('cancelled')
+  if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
 
-  const touched = withXml ? [collectionPath, xmlPath] : [collectionPath]
+  const touched = hasXml ? [collectionPath, xmlPath] : [collectionPath]
   let xml: string | null = null
   try {
     checkpoint(collectionPath)
     for (const path of touched) {
-      // The session's copy first: it must describe the collection before Surco's first
-      // edit. Then the copy a failed write is restored from.
       await deps.sessionBackup(path)
       await writeBackup(path, `${path}${BACKUP_SUFFIX}`)
     }
-    // Read now, so nothing waits between the second check below and the transaction.
-    if (withXml) xml = await readFile(xmlPath, 'utf8')
+    if (hasXml) xml = await readFile(xmlPath, 'utf8')
   } catch (err) {
-    return refuse(isReadOnly(err) ? 'read-only' : 'backup-failed')
+    return { ok: false, reason: isReadOnly(err) ? 'read-only' : 'backup-failed' }
   }
 
-  // Second check, right before the write: the user can launch rekordbox again after the
-  // dialog closed it.
-  if (await isRekordboxRunning()) return refuse('rekordbox-running')
+  if (await isRekordboxRunning()) return { ok: false, reason: 'rekordbox-running' }
 
   const db = openRekordboxDb(collectionPath)
-  if (!db) return refuse('unreadable')
+  if (!db) return { ok: false, reason: 'unreadable' }
   const now = deps.now?.() ?? new Date()
-  const taken = xml === null ? new Set<string>() : xmlNodeIds(xml)
-  const freeId = (): string => {
-    for (;;) {
-      const id = randomPlaylistId()
-      if (!taken.has(hexId(id))) return id
-    }
+  const draft: XmlDraft = {
+    xml,
+    taken: xml === null ? new Set<string>() : xmlNodeIds(xml),
+    now: now.getTime(),
   }
-  let created: { id: string; attribute: 0 | 1 } | undefined
-  let counts = { added: 0, already: 0 }
   let xmlWritten = false
   try {
     db.exec('BEGIN')
-    if (edit.kind === 'add') counts = addToPlaylist(db, edit.playlistId, contentIds, { now })
-    else if (edit.kind === 'move')
-      moveInPlaylist(db, edit.playlistId, edit.linkIds, edit.beforeLinkId, { now })
-    else if (edit.kind === 'remove') removeFromPlaylist(db, edit.playlistId, edit.linkIds, { now })
-    else if (edit.kind === 'insertSeparator')
-      insertSeparator(db, edit.playlistId, edit.beforeLinkId, { now })
-    else if (edit.kind === 'create')
-      created = createNode(db, edit.parentId, edit.name, edit.folder, {
-        now,
-        newPlaylistId: freeId,
-      })
-    else if (edit.kind === 'rename') renameNode(db, edit.playlistId, edit.name, { now })
-    else deleteNode(db, edit.playlistId, { now })
-    // After the statements, so a test can fail the write once it really changed something.
+    for (const p of [...planned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
+      const saved = draft.xml
+      db.exec('SAVEPOINT surco_op')
+      try {
+        outcomes.set(p.op.id, writeOp(db, draft, p, now))
+        db.exec('RELEASE surco_op')
+      } catch (err) {
+        if (!(err instanceof EditRefused)) throw err
+        db.exec('ROLLBACK TO surco_op')
+        db.exec('RELEASE surco_op')
+        draft.xml = saved
+        outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: err.reason, notices: [] })
+      }
+    }
     deps.onWrite?.()
-    // The node goes in before the row commits: an XML that cannot be written is then a
-    // rollback, and the row never exists without its node, whoever else has the file open.
-    if (created && xml !== null && edit.kind === 'create') {
-      const next = withPlaylistNode(xml, {
-        id: created.id,
-        parentId: edit.parentId,
-        attribute: created.attribute,
-        timestamp: now.getTime(),
-      })
-      await (deps.writeXml ?? replaceFile)(xmlPath, next)
+    if (draft.xml !== null && draft.xml !== xml) {
+      await (deps.writeXml ?? replaceFile)(xmlPath, draft.xml)
       xmlWritten = true
     }
     db.exec('COMMIT')
@@ -273,16 +386,29 @@ export async function editRekordboxPlaylist(
     const known = rollback(db, deps.onRollback)
     db.close()
     if (xmlWritten) await restoreFile(xmlPath)
-    // Neither rolled back nor copied back: nothing can say the collection is as it was.
-    if (!known && !(await restoreCollection(collectionPath))) return refuse('write-unknown')
-    // Refused inside the transaction: it rolled back, nothing was written.
-    if (err instanceof EditRefused) return refuse(err.reason)
-    if (isReadOnly(err)) return refuse('read-only')
-    log.warn(`rekordbox playlist edit failed: ${String(err)}`)
-    return refuse('write-failed')
+    if (!known && !(await restoreCollection(collectionPath)))
+      return { ok: false, reason: 'write-unknown' }
+    if (isReadOnly(err)) return { ok: false, reason: 'read-only' }
+    log.warn(`rekordbox batch failed: ${String(err)}`)
+    return { ok: false, reason: 'write-failed' }
   }
   db.close()
+  return { ok: true, wrote: true, outcomes: inOrder() }
+}
 
-  if (edit.kind === 'add') return { applied: true, report: { ...counts, ...unresolved } }
-  return created ? { applied: true, createdId: created.id } : { applied: true }
+export async function editRekordboxPlaylist(
+  collectionPath: string,
+  edit: RekordboxPlaylistEdit,
+  deps: PlaylistWriteDeps,
+): Promise<RekordboxEditResult> {
+  const result = await applyRekordboxBatch(
+    collectionPath,
+    [{ id: 'edit', kind: 'edit', edit, stamps: {} }],
+    deps,
+  )
+  if (!result.ok) return refuse(result.reason)
+  const [outcome] = result.outcomes
+  if (!outcome.applied) return refuse(outcome.reason ?? 'write-failed', outcome.report)
+  if (outcome.report) return { applied: true, report: outcome.report }
+  return outcome.createdId ? { applied: true, createdId: outcome.createdId } : { applied: true }
 }
