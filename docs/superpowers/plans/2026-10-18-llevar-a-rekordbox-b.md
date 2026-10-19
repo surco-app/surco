@@ -1944,3 +1944,803 @@ git commit -m "Queue a track's cues for rekordbox, dropping them if rekordbox ch
 
 ---
 
+### Task 7: The waveform with grid and cues
+
+**Files:**
+- Create: `src/renderer/src/lib/cueWave.ts`
+- Create: `src/renderer/src/components/CueWave.tsx`
+- Test: `src/renderer/src/lib/cueWave.test.ts`, `src/renderer/src/components/CueWave.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 1 `nearestBeat`, `SAME_POSITION_MS`; Task 3 `CueWaveColumn`; Task 2 `DrawnHotCue`.
+- Produces:
+  - `lib/cueWave.ts`: `CUE_COLOR: Record<number, string>` (1, 22, 42, 32 to CSS colours), `HOT_LETTER: Record<number, string>` (1..9 without 4 to A..H), `barLines(grid: { ms: number; beat: number }[]): { ms: number; strong: boolean }[]` (one per downbeat, `strong` every 16 bars from the first), `clickAction(ms: number, beatsMs: number[], drops: number[], toleranceMs: number): { kind: 'add' | 'remove'; ms: number }`
+  - `CueWave({ wave, grid, durationMs, hot, drops, disabled, onAddDrop, onRemoveDrop }: { wave: CueWaveColumn[] | null; grid: { ms: number; beat: number }[]; durationMs: number; hot: (DrawnHotCue & { pending: boolean })[]; drops: { ms: number; pending: boolean }[]; disabled?: boolean; onAddDrop: (ms: number) => void; onRemoveDrop: (ms: number) => void })`
+  - test ids `cue-wave`, `cue-wave-hot-<letter>`, `cue-wave-drop-<ms>`, `cue-wave-ghost`, `cue-wave-bar` (`data-strong`)
+
+Spec "Qué se ve": rekordbox's waveform; a mark every bar and a stronger one every 16; hot cues with their letter and colour; existing drops as white lines with "DROP"; a click on the wave adds a drop on the nearest beat, a click on a drop removes it; the hover ghost "+ drop" says where it will land; unsaved cues drawn faint. Colours are rekordbox's own (not Surco's accent): the DJ reads them as he will on the CDJ. The CSS values approximate rekordbox's palette entries 1, 22, 42 and 32; Task 11 has Vicent compare them.
+
+- [ ] **Step 1: Write the failing tests**
+
+Create `src/renderer/src/lib/cueWave.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { barLines, clickAction } from './cueWave'
+
+const GRID = Array.from({ length: 160 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+const BEATS = GRID.map((b) => b.ms)
+
+describe('barLines', () => {
+  // A mark per bar and a stronger one every 16: the DJ counts phrases of 16 bars.
+  it('marks every bar and every 16th strongly', () => {
+    const lines = barLines(GRID)
+    expect(lines).toHaveLength(40)
+    expect(lines[0]).toEqual({ ms: 0, strong: true })
+    expect(lines[1]).toEqual({ ms: 2000, strong: false })
+    expect(lines[16]).toEqual({ ms: 32000, strong: true })
+  })
+})
+
+describe('clickAction', () => {
+  it('adds a drop on the nearest beat', () => {
+    expect(clickAction(1240, BEATS, [], 100)).toEqual({ kind: 'add', ms: 1000 })
+  })
+
+  // A click on a drop takes it away instead of adding a second one beside it.
+  it('removes the drop under the click', () => {
+    expect(clickAction(10040, BEATS, [10000], 100)).toEqual({ kind: 'remove', ms: 10000 })
+  })
+
+  it('snaps a click before the grid to its first beat', () => {
+    const late = BEATS.map((ms) => ms + 300)
+    expect(clickAction(10, late, [], 100)).toEqual({ kind: 'add', ms: 300 })
+  })
+})
+```
+
+Create `src/renderer/src/components/CueWave.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import '../i18n'
+import { CueWave } from './CueWave'
+
+afterEach(cleanup)
+
+const GRID = Array.from({ length: 160 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+
+beforeEach(() => {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 800,
+    height: 80,
+    right: 800,
+    bottom: 80,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  })
+})
+
+function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
+  const onAddDrop = vi.fn()
+  const onRemoveDrop = vi.fn()
+  render(
+    <CueWave
+      wave={[{ h: 1, rgb: [255, 0, 0] }]}
+      grid={GRID}
+      durationMs={80000}
+      hot={[{ ms: 16000, kind: 1, color: 42, pending: false }]}
+      drops={[{ ms: 40000, pending: true }]}
+      onAddDrop={onAddDrop}
+      onRemoveDrop={onRemoveDrop}
+      {...over}
+    />,
+  )
+  return { onAddDrop, onRemoveDrop }
+}
+
+describe('CueWave', () => {
+  it('draws hot cues with their letter and drops with DROP', () => {
+    setup()
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveTextContent('A')
+    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('DROP')
+    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveAttribute('data-pending', 'true')
+    expect(screen.getAllByTestId('cue-wave-bar').filter((b) => b.dataset.strong === 'true')).toHaveLength(3)
+  })
+
+  // 100 px of 800 is 10 s of 80 s: the click lands on the beat at 10000 ms.
+  it('adds a drop on the beat under the click', () => {
+    const { onAddDrop } = setup()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(onAddDrop).toHaveBeenCalledWith(10000)
+  })
+
+  it('removes the drop under the click', () => {
+    const { onRemoveDrop, onAddDrop } = setup()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400, clientY: 40 })
+    expect(onRemoveDrop).toHaveBeenCalledWith(40000)
+    expect(onAddDrop).not.toHaveBeenCalled()
+  })
+
+  it('shows where the drop will land while hovering', () => {
+    setup()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('+ drop')
+  })
+
+  it('takes no clicks when disabled', () => {
+    const { onAddDrop } = setup({ disabled: true })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(onAddDrop).not.toHaveBeenCalled()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/cueWave.test.ts src/renderer/src/components/CueWave.test.tsx`
+Expected: FAIL, missing modules.
+
+- [ ] **Step 3: Implement**
+
+Create `src/renderer/src/lib/cueWave.ts`:
+
+```ts
+import { nearestBeat } from '../../../shared/cueRules'
+
+export const CUE_COLOR: Record<number, string> = {
+  1: '#305aff',
+  22: '#10b24f',
+  42: '#e8243c',
+  32: '#f2c40c',
+}
+
+export const HOT_LETTER: Record<number, string> = {
+  1: 'A',
+  2: 'B',
+  3: 'C',
+  5: 'D',
+  6: 'E',
+  7: 'F',
+  8: 'G',
+  9: 'H',
+}
+
+export function barLines(grid: { ms: number; beat: number }[]): { ms: number; strong: boolean }[] {
+  const downbeats = grid.filter((b) => b.beat === 1)
+  return downbeats.map((b, i) => ({ ms: b.ms, strong: i % 16 === 0 }))
+}
+
+export function clickAction(
+  ms: number,
+  beatsMs: number[],
+  drops: number[],
+  toleranceMs: number,
+): { kind: 'add' | 'remove'; ms: number } {
+  const hit = drops.find((d) => Math.abs(d - ms) <= toleranceMs)
+  if (hit !== undefined) return { kind: 'remove', ms: hit }
+  return { kind: 'add', ms: beatsMs[nearestBeat(beatsMs, ms)] }
+}
+```
+
+Create `src/renderer/src/components/CueWave.tsx`:
+
+```tsx
+import type React from 'react'
+import { useState } from 'react'
+import type { DrawnHotCue } from '../../../shared/cueRules'
+import type { CueWaveColumn } from '../../../shared/types'
+import { barLines, CUE_COLOR, clickAction, HOT_LETTER } from '../lib/cueWave'
+
+const HIT_PX = 6
+
+export function CueWave({
+  wave,
+  grid,
+  durationMs,
+  hot,
+  drops,
+  disabled,
+  onAddDrop,
+  onRemoveDrop,
+}: {
+  wave: CueWaveColumn[] | null
+  grid: { ms: number; beat: number }[]
+  durationMs: number
+  hot: (DrawnHotCue & { pending: boolean })[]
+  drops: { ms: number; pending: boolean }[]
+  disabled?: boolean
+  onAddDrop: (ms: number) => void
+  onRemoveDrop: (ms: number) => void
+}): React.JSX.Element {
+  const [ghost, setGhost] = useState<number | null>(null)
+  const beatsMs = grid.map((b) => b.ms)
+  const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
+  const at = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width)
+    const ms = (x / Math.max(rect.width, 1)) * durationMs
+    const tolerance = (HIT_PX / Math.max(rect.width, 1)) * durationMs
+    return clickAction(
+      ms,
+      beatsMs,
+      drops.map((d) => d.ms),
+      tolerance,
+    )
+  }
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: marking a drop is a pointer gesture on the waveform; the section's buttons are the keyboard path
+    // biome-ignore lint/a11y/noStaticElementInteractions: same as above
+    <div
+      data-testid="cue-wave"
+      onClick={(e) => {
+        if (disabled || beatsMs.length === 0) return
+        const action = at(e)
+        if (action.kind === 'remove') onRemoveDrop(action.ms)
+        else onAddDrop(action.ms)
+      }}
+      onMouseMove={(e) => {
+        if (disabled || beatsMs.length === 0) return
+        const action = at(e)
+        setGhost(action.kind === 'add' ? action.ms : null)
+      }}
+      onMouseLeave={() => setGhost(null)}
+      className={`relative h-20 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
+        disabled ? 'cursor-default' : 'cursor-crosshair'
+      }`}
+    >
+      {wave && (
+        <svg
+          viewBox={`0 0 ${wave.length} 100`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full"
+        >
+          {wave.map((c, i) => (
+            <rect
+              // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
+              key={i}
+              x={i}
+              width={1}
+              y={50 - c.h * 50}
+              height={Math.max(c.h * 100, 0.5)}
+              fill={c.rgb ? `rgb(${c.rgb.join(',')})` : 'var(--color-fg-faint)'}
+            />
+          ))}
+        </svg>
+      )}
+      {barLines(grid).map((b) => (
+        <span
+          key={b.ms}
+          data-testid="cue-wave-bar"
+          data-strong={b.strong ? 'true' : 'false'}
+          aria-hidden="true"
+          style={{ left: pct(b.ms) }}
+          className={`absolute top-0 bottom-0 w-px ${
+            b.strong ? 'bg-[var(--color-fg)]/40' : 'bg-[var(--color-fg)]/10'
+          }`}
+        />
+      ))}
+      {drops.map((d) => (
+        <span
+          key={`d${d.ms}`}
+          data-testid={`cue-wave-drop-${d.ms}`}
+          data-pending={d.pending ? 'true' : undefined}
+          style={{ left: pct(d.ms) }}
+          className={`absolute top-0 bottom-0 w-0.5 bg-white ${d.pending ? 'opacity-60' : ''}`}
+        >
+          <span className="absolute top-0 left-1 text-[9px] font-semibold text-white">DROP</span>
+        </span>
+      ))}
+      {hot.map((h) => (
+        <span
+          key={`h${h.kind}`}
+          data-testid={`cue-wave-hot-${HOT_LETTER[h.kind]}`}
+          data-pending={h.pending ? 'true' : undefined}
+          style={{ left: pct(h.ms), backgroundColor: CUE_COLOR[h.color] }}
+          className={`absolute top-0 bottom-0 w-0.5 ${h.pending ? 'opacity-50' : ''}`}
+        >
+          <span
+            style={{ backgroundColor: CUE_COLOR[h.color] }}
+            className="absolute bottom-0 left-0 rounded-sm px-1 text-[9px] font-bold text-black"
+          >
+            {HOT_LETTER[h.kind]}
+          </span>
+        </span>
+      ))}
+      {ghost !== null && (
+        <span
+          data-testid="cue-wave-ghost"
+          style={{ left: pct(ghost) }}
+          className="pointer-events-none absolute top-0 bottom-0 w-px border-l border-dashed border-white/70"
+        >
+          <span className="absolute top-3 left-1 text-[9px] text-white/80">+ drop</span>
+        </span>
+      )}
+    </div>
+  )
+}
+```
+
+The two `biome-ignore` lines are directives, not comments: biome needs them and the repo already uses them the same way (`FieldsEditor.tsx`, `LayoutTab.tsx`). Their reasons are required text.
+
+- [ ] **Step 4: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/renderer/src/lib/cueWave.test.ts src/renderer/src/components/CueWave.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 5: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/renderer/src/lib/cueWave.ts apps/desktop/src/renderer/src/lib/cueWave.test.ts apps/desktop/src/renderer/src/components/CueWave.tsx apps/desktop/src/renderer/src/components/CueWave.test.tsx
+git commit -m "Draw rekordbox's waveform with its grid and cues, and mark drops on the nearest beat"
+```
+
+---
+
+### Task 8: The Cues section
+
+**Files:**
+- Modify: `src/shared/editorSections.ts` (`cues` section, after `quality`, open by default, group `metadata`)
+- Create: `src/renderer/src/hooks/useTrackCues.ts`
+- Create: `src/renderer/src/components/CuesSection.tsx`
+- Modify: `src/renderer/src/components/Editor.tsx` (`rekordboxCue` prop, the `cues` case, `singleTrackOnly` id type)
+- Modify: `src/renderer/src/App.tsx` (passes the open row's rekordbox entry)
+- Modify: `src/renderer/src/hooks/useRekordboxQueue.ts` (re-reads `['rekordbox-track-cues']` too)
+- Modify: `src/renderer/src/i18n/locales/*.json` (`editor.cues.*`, `settings.sections.cues`)
+- Test: `src/shared/editorSections.test.ts`, `src/renderer/src/components/CuesSection.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 2 `cueChanges`, `findDrops`; Task 6 `window.api.rekordboxTrackCues`, `saveRekordboxCues`, `SaveCuesRequest`; Task 7 `CueWave`, `CUE_COLOR`; `SectionHeader` (`help`), `SectionBody`.
+- Produces:
+  - `useTrackCues(contentId: string | undefined): { data: TrackCues | null | undefined; isError: boolean }` (query `['rekordbox-track-cues', contentId]`)
+  - `CuesSection({ cue, open, onToggle }: { cue: { contentId: string; path: string; label: string }; open: boolean; onToggle: () => void })`
+  - `Editor` prop `rekordboxCue?: { contentId: string; path: string; label: string }`
+  - test ids `cues-section`, `cues-unanalysed`, `cues-manual`, `cues-too-many`, `cues-undo`, `cues-save`, `cues-legend`
+
+Spec "Qué se ve" and Decision 9: a section, not a tab, shown only for a track of an open rekordbox playlist; help once in the header (i); legend blue 16, green 32, red 48, yellow start; Deshacer back to what rekordbox says; Guardar en rekordbox queues; the manual hot cues line; "rekordbox aún no ha analizado esta pista" with no marking. Each change redraws the countdown at once with the shared rules, faint while unsaved.
+
+- [ ] **Step 1: Locale strings**
+
+Merge with the helper:
+
+```json
+{
+  "es": {
+    "settings": { "sections": { "cues": "Cues" } },
+    "editor": { "cues": {
+      "title": "Cues",
+      "help": "Haz clic en la onda para marcar un drop. Surco pone la cuenta atrás a 16, 32 y 48 compases sobre la rejilla de rekordbox.",
+      "unanalysed": "rekordbox aún no ha analizado esta pista",
+      "manual": "Esta pista tiene hot cues puestos a mano. Surco guarda los drops y no toca los hot cues.",
+      "tooMany": "Necesitaría más de 8 hot cues. Quita un drop.",
+      "undo": "Deshacer",
+      "save": "Guardar en rekordbox",
+      "legend16": "16 compases", "legend32": "32 compases", "legend48": "48 compases", "legendStart": "Inicio",
+      "unreadable": "No se pudieron leer los cues de rekordbox"
+    } }
+  },
+  "en": {
+    "settings": { "sections": { "cues": "Cues" } },
+    "editor": { "cues": {
+      "title": "Cues",
+      "help": "Click the waveform to mark a drop. Surco sets the countdown at 16, 32 and 48 bars on rekordbox's grid.",
+      "unanalysed": "rekordbox has not analysed this track yet",
+      "manual": "This track has hot cues set by hand. Surco saves the drops and leaves the hot cues alone.",
+      "tooMany": "It would need more than 8 hot cues. Remove a drop.",
+      "undo": "Undo",
+      "save": "Save to rekordbox",
+      "legend16": "16 bars", "legend32": "32 bars", "legend48": "48 bars", "legendStart": "Start",
+      "unreadable": "Could not read the cues from rekordbox"
+    } }
+  },
+  "de": {
+    "settings": { "sections": { "cues": "Cues" } },
+    "editor": { "cues": {
+      "title": "Cues",
+      "help": "Klicke in die Wellenform, um einen Drop zu markieren. Surco setzt den Countdown bei 16, 32 und 48 Takten auf das Raster von rekordbox.",
+      "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
+      "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco speichert die Drops und lässt die Hot Cues unverändert.",
+      "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Drop.",
+      "undo": "Rückgängig",
+      "save": "In rekordbox speichern",
+      "legend16": "16 Takte", "legend32": "32 Takte", "legend48": "48 Takte", "legendStart": "Start",
+      "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden"
+    } }
+  },
+  "fr": {
+    "settings": { "sections": { "cues": "Cues" } },
+    "editor": { "cues": {
+      "title": "Cues",
+      "help": "Cliquez sur la forme d’onde pour marquer un drop. Surco place le compte à rebours à 16, 32 et 48 mesures sur la grille de rekordbox.",
+      "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
+      "manual": "Ce morceau a des hot cues placés à la main. Surco enregistre les drops et ne touche pas aux hot cues.",
+      "tooMany": "Il faudrait plus de 8 hot cues. Retirez un drop.",
+      "undo": "Annuler",
+      "save": "Enregistrer dans rekordbox",
+      "legend16": "16 mesures", "legend32": "32 mesures", "legend48": "48 mesures", "legendStart": "Début",
+      "unreadable": "Impossible de lire les cues de rekordbox"
+    } }
+  },
+  "pt-BR": {
+    "settings": { "sections": { "cues": "Cues" } },
+    "editor": { "cues": {
+      "title": "Cues",
+      "help": "Clique na forma de onda para marcar um drop. O Surco põe a contagem regressiva a 16, 32 e 48 compassos na grade do rekordbox.",
+      "unanalysed": "O rekordbox ainda não analisou esta faixa",
+      "manual": "Esta faixa tem hot cues postos à mão. O Surco salva os drops e não mexe nos hot cues.",
+      "tooMany": "Precisaria de mais de 8 hot cues. Tire um drop.",
+      "undo": "Desfazer",
+      "save": "Salvar no rekordbox",
+      "legend16": "16 compassos", "legend32": "32 compassos", "legend48": "48 compassos", "legendStart": "Início",
+      "unreadable": "Não foi possível ler os cues do rekordbox"
+    } }
+  }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Append to `src/shared/editorSections.test.ts`:
+
+```ts
+// An install upgraded from before the section gets it right after Quality, open.
+it('inserts the Cues section after Quality in an older stored order', () => {
+  const stored = DEFAULT_EDITOR_SECTIONS.filter((s) => s.id !== 'cues')
+  const ids = normalizeEditorSections(stored).map((s) => s.id)
+  expect(ids.indexOf('cues')).toBe(ids.indexOf('quality') + 1)
+})
+```
+
+Create `src/renderer/src/components/CuesSection.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
+import type { TrackCues } from '../../../shared/types'
+import '../i18n'
+import { installApi } from '../test/api'
+import { CuesSection } from './CuesSection'
+
+afterEach(cleanup)
+
+const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+const bar = (n: number) => n * 2000
+const READ: TrackCues = {
+  contentId: '103',
+  analysed: true,
+  grid: GRID,
+  strong: [],
+  cues: [],
+  wave: null,
+  durationMs: 400000,
+  fingerprint: 'f0',
+}
+
+beforeEach(() => {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0, top: 0, width: 400, height: 80, right: 400, bottom: 80, x: 0, y: 0, toJSON: () => ({}),
+  })
+})
+
+function setup(read: TrackCues = READ) {
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+  installApi({ rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read), saveRekordboxCues })
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <CuesSection cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }} open onToggle={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  return { saveRekordboxCues }
+}
+
+const clickAt = (ms: number) =>
+  fireEvent.click(screen.getByTestId('cue-wave'), { clientX: (ms / 400000) * 400, clientY: 40 })
+
+describe('CuesSection', () => {
+  // Flow 2: one click on the drop draws its countdown at once, faint until saved.
+  it('draws the countdown live after marking a drop', async () => {
+    setup()
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    clickAt(bar(64))
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true')
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(screen.getByTestId(`cue-wave-drop-${bar(64)}`)).toBeInTheDocument()
+  })
+
+  it('saves the drops with the fingerprint it read', async () => {
+    const { saveRekordboxCues } = setup()
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-save')).toBeDisabled()
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(saveRekordboxCues).toHaveBeenCalledWith({
+      contentId: '103',
+      path: '/m/g.wav',
+      label: 'Gowan',
+      drops: [bar(64)],
+      previousDrops: [],
+      fingerprint: 'f0',
+    })
+  })
+
+  it('goes back to what rekordbox says with Undo', async () => {
+    setup()
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-undo'))
+    expect(screen.queryByTestId(`cue-wave-drop-${bar(64)}`)).toBeNull()
+    expect(screen.getByTestId('cues-save')).toBeDisabled()
+  })
+
+  it('says hand-placed hot cues stay as they are', async () => {
+    setup({ ...READ, cues: [{ id: 'm', ms: bar(40), kind: 1, color: 1 }] })
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    clickAt(bar(64))
+    expect(screen.getByTestId('cues-manual')).toBeInTheDocument()
+  })
+
+  it('offers no marking on a track rekordbox has not analysed', async () => {
+    setup({ ...READ, analysed: false, grid: [] })
+    await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
+    expect(screen.queryByTestId('cue-wave')).toBeNull()
+  })
+
+  it('shows the legend', async () => {
+    setup()
+    await waitFor(() => expect(screen.getByTestId('cues-legend')).toHaveTextContent('16 bars'))
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/shared/editorSections.test.ts src/renderer/src/components/CuesSection.test.tsx`
+Expected: FAIL, unknown section id and missing module.
+
+- [ ] **Step 4: The section id**
+
+In `src/shared/editorSections.ts`: add `'cues'` to `EDITOR_SECTION_IDS` after `'quality'`; `cues: 'metadata'` in `EDITOR_SECTION_GROUP`; and in `DEFAULT_EDITOR_SECTIONS`, right after the `quality` entry, `{ id: 'cues', open: true },`. `normalizeEditorSections` already inserts a missing default after its nearest surviving neighbour.
+
+- [ ] **Step 5: Data and section**
+
+Create `src/renderer/src/hooks/useTrackCues.ts`:
+
+```ts
+import { useQuery } from '@tanstack/react-query'
+import type { TrackCues } from '../../../shared/types'
+
+export function useTrackCues(contentId: string | undefined): {
+  data: TrackCues | null | undefined
+  isError: boolean
+} {
+  const { data, isError } = useQuery({
+    queryKey: ['rekordbox-track-cues', contentId],
+    queryFn: () => window.api.rekordboxTrackCues(contentId as string),
+    enabled: contentId !== undefined,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return { data, isError }
+}
+```
+
+In `src/renderer/src/hooks/useRekordboxQueue.ts`, add `queryClient.invalidateQueries({ queryKey: ['rekordbox-track-cues'] }),` to `reread`'s list, so a section open while the queue lands shows what rekordbox now has.
+
+Create `src/renderer/src/components/CuesSection.tsx`:
+
+```tsx
+import type React from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { cueChanges, findDrops } from '../../../shared/cueRules'
+import type { TrackCues } from '../../../shared/types'
+import { useTrackCues } from '../hooks/useTrackCues'
+import { CUE_COLOR } from '../lib/cueWave'
+import { CueWave } from './CueWave'
+import { SectionBody } from './SectionBody'
+import { SectionHeader } from './SectionHeader'
+
+const LEGEND: [number, string][] = [
+  [1, 'editor.cues.legend16'],
+  [22, 'editor.cues.legend32'],
+  [42, 'editor.cues.legend48'],
+  [32, 'editor.cues.legendStart'],
+]
+
+function Marking({
+  read,
+  cue,
+}: {
+  read: TrackCues
+  cue: { contentId: string; path: string; label: string }
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const hot = read.cues.filter((c) => c.kind !== 0)
+  const initial = useMemo(
+    () =>
+      findDrops(
+        read.cues.filter((c) => c.kind === 0).map((c) => c.ms),
+        hot.map((c) => c.ms),
+      ),
+    [read, hot],
+  )
+  const [drops, setDrops] = useState<number[]>(initial)
+  const beats = read.grid.map((b) => b.ms)
+  const outcome = cueChanges(read.cues, drops, initial, beats, read.strong)
+  const dirty = drops.length !== initial.length || drops.some((d) => !initial.includes(d))
+  const same = (ms: number, kind: number, color: number) =>
+    hot.some((h) => Math.abs(h.ms - ms) <= 50 && h.kind === kind && h.color === color)
+  const drawnHot =
+    outcome.status === 'plan'
+      ? outcome.hot.map((h) => ({ ...h, pending: !same(h.ms, h.kind, h.color) }))
+      : hot.map((h) => ({ ms: h.ms, kind: h.kind, color: h.color ?? 1, pending: false }))
+  return (
+    <>
+      <CueWave
+        wave={read.wave}
+        grid={read.grid}
+        durationMs={read.durationMs}
+        hot={drawnHot}
+        drops={drops.map((ms) => ({ ms, pending: !initial.includes(ms) }))}
+        onAddDrop={(ms) => setDrops((d) => [...d, ms].sort((a, b) => a - b))}
+        onRemoveDrop={(ms) => setDrops((d) => d.filter((x) => x !== ms))}
+      />
+      {outcome.status === 'manual' && (
+        <p data-testid="cues-manual" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.manual')}
+        </p>
+      )}
+      {outcome.status === 'too-many' && (
+        <p data-testid="cues-too-many" className="mt-2 text-xs text-warn">
+          {tr('editor.cues.tooMany')}
+        </p>
+      )}
+      <div className="mt-3 flex items-center gap-3">
+        <ul data-testid="cues-legend" className="flex flex-wrap items-center gap-3 text-[11px] text-fg-dim">
+          {LEGEND.map(([color, key]) => (
+            <li key={key} className="flex items-center gap-1">
+              <span
+                aria-hidden="true"
+                style={{ backgroundColor: CUE_COLOR[color] }}
+                className="h-2 w-2 rounded-sm"
+              />
+              {tr(key)}
+            </li>
+          ))}
+        </ul>
+        <div className="ml-auto flex gap-2">
+          <button
+            type="button"
+            data-testid="cues-undo"
+            disabled={!dirty}
+            onClick={() => setDrops(initial)}
+            className="press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)] disabled:opacity-40"
+          >
+            {tr('editor.cues.undo')}
+          </button>
+          <button
+            type="button"
+            data-testid="cues-save"
+            disabled={!dirty || outcome.status === 'too-many'}
+            onClick={() =>
+              void window.api.saveRekordboxCues({
+                contentId: cue.contentId,
+                path: cue.path,
+                label: cue.label,
+                drops,
+                previousDrops: initial,
+                fingerprint: read.fingerprint,
+              })
+            }
+            className="press rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+          >
+            {tr('editor.cues.save')}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+export function CuesSection({
+  cue,
+  open,
+  onToggle,
+}: {
+  cue: { contentId: string; path: string; label: string }
+  open: boolean
+  onToggle: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const { data: read, isError } = useTrackCues(cue.contentId)
+  return (
+    <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
+      <SectionHeader
+        sectionId="cues"
+        title={tr('editor.cues.title')}
+        open={open}
+        onToggle={onToggle}
+        help={tr('editor.cues.help')}
+      />
+      <SectionBody open={open}>
+        <div className="mt-3">
+          {isError || read === null ? (
+            <p className="text-xs text-fg-dim">{tr('editor.cues.unreadable')}</p>
+          ) : read === undefined ? null : !read.analysed ? (
+            <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
+              {tr('editor.cues.unanalysed')}
+            </p>
+          ) : (
+            <Marking key={read.fingerprint} read={read} cue={cue} />
+          )}
+        </div>
+      </SectionBody>
+    </div>
+  )
+}
+```
+
+`Marking` is keyed by the fingerprint, so once the queue lands (or rekordbox changes the cues) the re-read starts the marking again from what rekordbox has. `text-warn` and `--color-on-accent` are existing theme tokens (`Field.tsx`, `ConfirmDialog.tsx`).
+
+- [ ] **Step 6: In the editor**
+
+In `src/renderer/src/components/Editor.tsx`: add `rekordboxCue?: { contentId: string; path: string; label: string }` to the props and destructuring; widen `singleTrackOnly(id: 'quality' | 'properties' | 'cues', ...)`; import `CuesSection`; and add, next to `case 'properties':`:
+
+```tsx
+                    case 'cues':
+                      if (!rekordboxCue) return false
+                      if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
+                      return (
+                        <CuesSection
+                          key={id}
+                          cue={rekordboxCue}
+                          open={sectionOpen.cues}
+                          onToggle={() => setSectionOpen('cues', !sectionOpen.cues)}
+                        />
+                      )
+```
+
+In `src/renderer/src/App.tsx`, on `<Editor`:
+
+```tsx
+                          rekordboxCue={
+                            rekordboxOpen && playlistScope?.contentOf.get(selected.id)
+                              ? {
+                                  contentId: playlistScope.contentOf.get(selected.id) as string,
+                                  path: selected.inputPath,
+                                  label: selected.listLabel,
+                                }
+                              : undefined
+                          }
+```
+
+- [ ] **Step 7: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/shared/editorSections.test.ts src/renderer/src/components/CuesSection.test.tsx src/renderer/src/components/Editor.test.tsx src/renderer/src/components/settings src/renderer/src/hooks/useRekordboxQueue.test.tsx src/renderer/src/i18n`
+Expected: PASS. If a settings test lists the section ids in order, it now sees `cues` after `quality`; update its expected list in the same commit, since the new order is the intended one.
+
+- [ ] **Step 8: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/shared/editorSections.ts apps/desktop/src/shared/editorSections.test.ts apps/desktop/src/renderer/src/hooks/useTrackCues.ts apps/desktop/src/renderer/src/hooks/useRekordboxQueue.ts apps/desktop/src/renderer/src/components/CuesSection.tsx apps/desktop/src/renderer/src/components/CuesSection.test.tsx apps/desktop/src/renderer/src/components/Editor.tsx apps/desktop/src/renderer/src/App.tsx apps/desktop/src/renderer/src/i18n/locales apps/desktop/src/renderer/src/components/settings
+git commit -m "Mark drops on rekordbox's waveform and save the countdown to rekordbox"
+```
+
+---
+
