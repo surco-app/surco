@@ -16,6 +16,7 @@ function setup(
     importFields?: string[]
     customFields?: CustomField[]
     separators?: { genre: string; grouping: string }
+    rekordboxField?: boolean
   } = {},
 ) {
   const onChangeVisible = vi.fn()
@@ -35,6 +36,7 @@ function setup(
       onChangeCustom={onChangeCustom}
       separators={over.separators}
       onChangeSeparator={onChangeSeparator}
+      rekordboxField={over.rekordboxField}
     />,
   )
   return { onChangeVisible, onChangeRequired, onChangeImport, onChangeCustom, onChangeSeparator }
@@ -534,5 +536,24 @@ describe('FieldsEditor tag separators', () => {
       />,
     )
     expect(screen.queryByTestId('field-separator-genre')).not.toBeInTheDocument()
+  })
+})
+
+describe('the rekordbox Playlists row', () => {
+  it('lists the field with no Required toggle when there is a collection, since it is not a tag', () => {
+    setup({ visibleFields: ['title', 'rekordboxPlaylists'], rekordboxField: true })
+    expect(screen.getByTestId('field-row-rekordboxPlaylists')).toBeInTheDocument()
+    expect(screen.queryByTestId('field-required-rekordboxPlaylists')).toBeNull()
+  })
+
+  it('leaves the field out entirely without a collection', () => {
+    setup({ visibleFields: ['title', 'rekordboxPlaylists'] })
+    expect(screen.queryByTestId('field-row-rekordboxPlaylists')).toBeNull()
+    expect(screen.queryByTestId('hidden-field-rekordboxPlaylists')).toBeNull()
+  })
+
+  it('offers it among the hidden fields when the user hid it', () => {
+    setup({ visibleFields: ['title'], rekordboxField: true })
+    expect(screen.getByTestId('hidden-field-rekordboxPlaylists')).toBeInTheDocument()
   })
 })

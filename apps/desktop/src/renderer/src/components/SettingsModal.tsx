@@ -46,6 +46,7 @@ interface Props {
   // prefs, so the app's settings state is replaced outside the Save flow.
   onSettingsReplaced: (next: Settings) => void
   initialTab?: SettingsTab
+  rekordboxField?: boolean
 }
 
 export function SettingsModal({
@@ -55,6 +56,7 @@ export function SettingsModal({
   onPreviewTheme,
   onSettingsReplaced,
   initialTab,
+  rekordboxField,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'general')
@@ -402,6 +404,7 @@ export function SettingsModal({
                 onChangeSeparator={(key, separator) =>
                   patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
                 }
+                rekordboxField={rekordboxField}
               />
             )}
             {tab === 'shortcuts' && (

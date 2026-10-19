@@ -79,6 +79,7 @@ import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
+import { useOfferRekordboxField, useRekordboxAvailable } from './hooks/useRekordboxPlaylists'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -310,6 +311,9 @@ export default function App(): React.JSX.Element {
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
   })
+  const rekordboxAvailable = useRekordboxAvailable()
+  const saveSettingsStable = useStableCallback(saveSettings)
+  useOfferRekordboxField(settings, rekordboxAvailable, saveSettingsStable)
   const { decideOnLoad, maybeShowDonateNudge, finishOnboarding } = useLaunchModals({
     overlays,
     saveSettings,
@@ -2913,6 +2917,7 @@ export default function App(): React.JSX.Element {
               deriveTracksUndoable={deriveTracksUndoable}
               updateTrack={updateTrack}
               revealSelection={revealSelection}
+              rekordboxField={rekordboxAvailable}
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />

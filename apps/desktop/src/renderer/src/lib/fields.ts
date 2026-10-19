@@ -125,10 +125,28 @@ export {
 export function labeledFields(
   customFields: readonly CustomField[],
   tr: (key: string) => string,
+  rekordbox = false,
 ): { key: string; label: string }[] {
   return [
     ...FIELD_DEFS.map((d) => ({ key: d.key as string, label: tr(`fields.${d.key}`) })),
     ...customFields.map((f) => ({ key: f.key, label: f.label })),
+    ...(rekordbox
+      ? [{ key: REKORDBOX_PLAYLISTS_FIELD, label: tr('fields.rekordboxPlaylists') }]
+      : []),
+  ]
+}
+
+export const REKORDBOX_PLAYLISTS_FIELD = 'rekordboxPlaylists'
+
+export function withRekordboxField(
+  visibleFields: string[],
+  offered: boolean,
+  available: boolean,
+): string[] | null {
+  if (!available || offered) return null
+  return [
+    ...visibleFields.filter((k) => k !== REKORDBOX_PLAYLISTS_FIELD),
+    REKORDBOX_PLAYLISTS_FIELD,
   ]
 }
 

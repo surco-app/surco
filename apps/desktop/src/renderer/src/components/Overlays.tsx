@@ -68,6 +68,7 @@ interface Props {
   deriveTracksUndoable: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   revealSelection: (id: string) => void
+  rekordboxField?: boolean
 }
 
 // Every overlay the app can raise, and the one place that decides which is up. Split out of
@@ -91,6 +92,7 @@ export function Overlays({
   deriveTracksUndoable,
   updateTrack,
   revealSelection,
+  rekordboxField,
 }: Props): React.JSX.Element {
   // Each run bumps its command's counter, so the palette can float the user's habits up the
   // filtered list. It lived inline in the JSX prop below — a state write dressed as markup.
@@ -112,6 +114,7 @@ export function Overlays({
           onPreviewTheme={setThemePreview}
           onSettingsReplaced={setSettings}
           initialTab={activeModal.tab}
+          rekordboxField={rekordboxField}
         />
       )}
 

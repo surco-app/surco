@@ -216,6 +216,7 @@ export interface Settings {
   // below: a path says WHERE the collection is, never whether to touch it.
   syncTraktor: boolean
   syncRekordbox: boolean
+  rekordboxPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
   rekordboxDbPath: string

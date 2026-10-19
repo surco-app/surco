@@ -13,9 +13,12 @@ import {
   FIELD_GROUPS,
   groupOfField,
   IMPORTABLE_FIELDS,
+  labeledFields,
   missingRequired,
   moveItem,
+  REKORDBOX_PLAYLISTS_FIELD,
   sortFieldsByGroup,
+  withRekordboxField,
 } from './fields'
 
 const meta: TrackMetadata = {
@@ -200,5 +203,29 @@ describe('field labels', () => {
     const labels: Record<string, string> = locale.fields
     const tooLong = FIELD_DEFS.map((d) => labels[d.key]).filter((label) => label.length > 18)
     expect(tooLong).toEqual([])
+  })
+})
+
+describe('the rekordbox Playlists field', () => {
+  it('is appended once when a collection is first found', () => {
+    expect(withRekordboxField(['title', 'artist'], false, true)).toEqual([
+      'title',
+      'artist',
+      REKORDBOX_PLAYLISTS_FIELD,
+    ])
+  })
+
+  it('is never added again once offered, nor without a collection, so a field the user hid stays hidden', () => {
+    expect(withRekordboxField(['title'], true, true)).toBeNull()
+    expect(withRekordboxField(['title'], false, false)).toBeNull()
+  })
+
+  it('is a labelled field only where the caller asks for it, because it is not a tag for names or find and replace', () => {
+    const tr = (k: string) => k
+    expect(labeledFields([], tr).some((f) => f.key === REKORDBOX_PLAYLISTS_FIELD)).toBe(false)
+    expect(labeledFields([], tr, true)).toContainEqual({
+      key: REKORDBOX_PLAYLISTS_FIELD,
+      label: 'fields.rekordboxPlaylists',
+    })
   })
 })
