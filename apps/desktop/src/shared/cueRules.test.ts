@@ -319,6 +319,15 @@ describe('cueChanges', () => {
       { ms: 0, kind: 1, color: 42 },
       { ms: 0, kind: 0, color: null },
     ])
+    expect(out.changes.update).toEqual([
+      { id: hot16.id, kind: 2, color: 22 },
+      { id: hot32.id, kind: 3, color: 1 },
+    ])
+    expect(out.hot).toEqual([
+      { ms: 0, kind: 1, color: 42 },
+      { ms: beat(16), kind: 2, color: 22 },
+      { ms: beat(32), kind: 3, color: 1 },
+    ])
   })
 
   it('refuses a plan that needs more than 8 hot cues and writes nothing', () => {
