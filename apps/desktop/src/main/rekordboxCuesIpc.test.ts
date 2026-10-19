@@ -238,6 +238,16 @@ describe('registerRekordboxCuesIpc', () => {
     })
   })
 
+  it('reports no queued save for an operation with neither a wanted set nor drops, which apply refuses', async () => {
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ cuesOp: () => savedOp() }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:queuedCues')({}, '103')).toBeNull()
+  })
+
   it('takes a queued save back by dropping its operation', () => {
     const drop = vi.fn<RekordboxQueue['drop']>()
     registerRekordboxCuesIpc({

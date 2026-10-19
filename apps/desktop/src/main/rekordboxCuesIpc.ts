@@ -46,7 +46,7 @@ export function registerRekordboxCuesIpc(host: {
     'rekordbox:queuedCues',
     async (_e, contentId: string): Promise<QueuedCues | null> => {
       const op = host.queue.cuesOp(contentId)
-      if (!op) return null
+      if (!op || (op.wanted === undefined && op.drops === undefined)) return null
       if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint }
       const path = host.collection()
       const read = withCollection(
