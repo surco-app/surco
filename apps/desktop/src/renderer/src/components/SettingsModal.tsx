@@ -23,6 +23,7 @@ import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { ArtworkTab } from './settings/ArtworkTab'
 import { ConversionTab } from './settings/ConversionTab'
+import { CuesTab } from './settings/CuesTab'
 import { DestinationTab } from './settings/DestinationTab'
 import { EditorTab } from './settings/EditorTab'
 import { GeneralTab } from './settings/GeneralTab'
@@ -390,6 +391,7 @@ export function SettingsModal({
             {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
             {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
             {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
+            {tab === 'cues' && <CuesTab synced={synced} patch={patch} />}
             {tab === 'fields' && (
               <FieldsEditor
                 visibleFields={synced.visibleFields}

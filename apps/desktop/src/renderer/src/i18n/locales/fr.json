@@ -1012,7 +1012,8 @@
       "artwork": "Pochette",
       "fields": "Champs",
       "shortcuts": "Raccourcis",
-      "stats": "Statistiques"
+      "stats": "Statistiques",
+      "cues": "Cues"
     },
     "tabGroups": {
       "editing": "Édition",
@@ -1369,7 +1370,70 @@
     "completeCuesCount_other": "{{count}} morceaux seront complétés à la fermeture de rekordbox.",
     "completeCuesYes": "Activer",
     "completeCuesNo": "Annuler",
-    "completeCuesFailed": "Impossible de compter les morceaux dans rekordbox. L'option reste désactivée."
+    "completeCuesFailed": "Impossible de compter les morceaux dans rekordbox. L'option reste désactivée.",
+    "cueFlows": {
+      "flows": "Flux",
+      "newFlow": "Nouveau flux",
+      "newFlowName": "Flux {{n}}",
+      "name": "Nom",
+      "use": "Utiliser ce flux",
+      "inUse": "Utilisé",
+      "delete": "Supprimer le flux",
+      "restore": "Rétablir",
+      "rules": "Règles",
+      "addRule": "Ajouter une règle",
+      "removeRule": "Retirer la règle",
+      "noRules": "Aucune règle. Marquer un drop ne laisse que son CALL.",
+      "preview": "Aperçu",
+      "previewHint": "Morceau d’exemple à 128 BPM avec le drop à la mesure 64",
+      "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
+      "looseCall": "Un CALL seul se lit comme un drop la fois suivante",
+      "block": {
+        "from": "Depuis",
+        "direction": "Sens",
+        "bars": "Distance",
+        "repeat": "Répéter",
+        "when": "Condition",
+        "place": "Placer",
+        "colorMode": "Couleur",
+        "color": "Couleur {{n}}"
+      },
+      "from": {
+        "drop": "Depuis le drop",
+        "first-beat": "Depuis le premier temps",
+        "last-beat": "Depuis le dernier temps",
+        "intro": "Depuis chaque intro",
+        "up": "Depuis chaque montée",
+        "down": "Depuis chaque descente",
+        "chorus": "Depuis chaque refrain",
+        "outro": "Depuis chaque outro"
+      },
+      "direction": {
+        "back": "en arrière",
+        "forward": "en avant"
+      },
+      "bars_one": "{{count}} mesure",
+      "bars_other": "{{count}} mesures",
+      "barsZero": "sur le même temps",
+      "repeat_one": "1 fois",
+      "repeat_other": "{{count}} fois",
+      "repeatEdge": "jusqu’au bord",
+      "when": {
+        "always": "toujours",
+        "fits": "si ça rentre",
+        "clear": "si ça ne tombe pas sur une autre règle",
+        "first": "s’il n’y en a pas avant le drop"
+      },
+      "place": {
+        "hot": "hot cue",
+        "call": "CALL",
+        "both": "hot cue + CALL"
+      },
+      "colorMode": {
+        "fixed": "une couleur",
+        "each": "une couleur par répétition"
+      }
+    }
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",

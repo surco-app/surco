@@ -1012,7 +1012,8 @@
       "artwork": "Carátula",
       "fields": "Campos",
       "shortcuts": "Atajos",
-      "stats": "Estadísticas"
+      "stats": "Estadísticas",
+      "cues": "Cues"
     },
     "tabGroups": {
       "editing": "Edición",
@@ -1369,7 +1370,70 @@
     "completeCuesCount_other": "Se completarán {{count}} pistas al cerrar rekordbox.",
     "completeCuesYes": "Encender",
     "completeCuesNo": "Cancelar",
-    "completeCuesFailed": "No se han podido contar las pistas de rekordbox. Sigue apagado."
+    "completeCuesFailed": "No se han podido contar las pistas de rekordbox. Sigue apagado.",
+    "cueFlows": {
+      "flows": "Flujos",
+      "newFlow": "Nuevo flujo",
+      "newFlowName": "Flujo {{n}}",
+      "name": "Nombre",
+      "use": "Usar este flujo",
+      "inUse": "En uso",
+      "delete": "Borrar flujo",
+      "restore": "Restablecer",
+      "rules": "Reglas",
+      "addRule": "Añadir regla",
+      "removeRule": "Quitar regla",
+      "noRules": "Sin reglas. Marcar donde rompe deja solo el CALL.",
+      "preview": "Vista previa",
+      "previewHint": "Pista de ejemplo a 128 BPM con donde rompe en el compás 64",
+      "tooMany": "Este flujo pide {{count}} hot cues y rekordbox admite 8",
+      "looseCall": "Un CALL suelto se lee como donde rompe la próxima vez",
+      "block": {
+        "from": "Desde",
+        "direction": "Sentido",
+        "bars": "Distancia",
+        "repeat": "Repetir",
+        "when": "Condición",
+        "place": "Pon",
+        "colorMode": "Color",
+        "color": "Color {{n}}"
+      },
+      "from": {
+        "drop": "Desde donde rompe",
+        "first-beat": "Desde el primer golpe",
+        "last-beat": "Desde el último golpe",
+        "intro": "Desde cada intro",
+        "up": "Desde cada subida",
+        "down": "Desde cada bajada",
+        "chorus": "Desde cada estribillo",
+        "outro": "Desde cada outro"
+      },
+      "direction": {
+        "back": "hacia atrás",
+        "forward": "hacia delante"
+      },
+      "bars_one": "{{count}} compás",
+      "bars_other": "{{count}} compases",
+      "barsZero": "en el mismo golpe",
+      "repeat_one": "1 vez",
+      "repeat_other": "{{count}} veces",
+      "repeatEdge": "hasta el borde",
+      "when": {
+        "always": "siempre",
+        "fits": "si cabe",
+        "clear": "si no cuadra con otra regla",
+        "first": "si no hay otra antes de donde rompe"
+      },
+      "place": {
+        "hot": "hot cue",
+        "call": "CALL",
+        "both": "hot cue + CALL"
+      },
+      "colorMode": {
+        "fixed": "un color",
+        "each": "un color por repetición"
+      }
+    }
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",

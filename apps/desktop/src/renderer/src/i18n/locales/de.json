@@ -1012,7 +1012,8 @@
       "artwork": "Cover",
       "fields": "Felder",
       "shortcuts": "Kürzel",
-      "stats": "Statistiken"
+      "stats": "Statistiken",
+      "cues": "Cues"
     },
     "tabGroups": {
       "editing": "Bearbeitung",
@@ -1369,7 +1370,70 @@
     "completeCuesCount_other": "{{count}} Titel werden beim Schließen von rekordbox ergänzt.",
     "completeCuesYes": "Einschalten",
     "completeCuesNo": "Abbrechen",
-    "completeCuesFailed": "Die Tracks in rekordbox konnten nicht gezählt werden. Es bleibt aus."
+    "completeCuesFailed": "Die Tracks in rekordbox konnten nicht gezählt werden. Es bleibt aus.",
+    "cueFlows": {
+      "flows": "Abläufe",
+      "newFlow": "Neuer Ablauf",
+      "newFlowName": "Ablauf {{n}}",
+      "name": "Name",
+      "use": "Diesen Ablauf verwenden",
+      "inUse": "Aktiv",
+      "delete": "Ablauf löschen",
+      "restore": "Zurücksetzen",
+      "rules": "Regeln",
+      "addRule": "Regel hinzufügen",
+      "removeRule": "Regel entfernen",
+      "noRules": "Keine Regeln. Ein markierter Drop setzt nur seinen CALL.",
+      "preview": "Vorschau",
+      "previewHint": "Beispieltitel mit 128 BPM und Drop in Takt 64",
+      "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
+      "looseCall": "Ein einzelner CALL wird beim nächsten Mal als Drop gelesen",
+      "block": {
+        "from": "Ab",
+        "direction": "Richtung",
+        "bars": "Abstand",
+        "repeat": "Wiederholen",
+        "when": "Bedingung",
+        "place": "Setzen",
+        "colorMode": "Farbe",
+        "color": "Farbe {{n}}"
+      },
+      "from": {
+        "drop": "Ab dem Drop",
+        "first-beat": "Ab dem ersten Schlag",
+        "last-beat": "Ab dem letzten Schlag",
+        "intro": "Ab jedem Intro",
+        "up": "Ab jedem Aufbau",
+        "down": "Ab jedem Breakdown",
+        "chorus": "Ab jedem Refrain",
+        "outro": "Ab jedem Outro"
+      },
+      "direction": {
+        "back": "rückwärts",
+        "forward": "vorwärts"
+      },
+      "bars_one": "{{count}} Takt",
+      "bars_other": "{{count}} Takte",
+      "barsZero": "auf demselben Schlag",
+      "repeat_one": "einmal",
+      "repeat_other": "{{count}} Mal",
+      "repeatEdge": "bis zum Rand",
+      "when": {
+        "always": "immer",
+        "fits": "wenn es passt",
+        "clear": "wenn es mit keiner anderen Regel kollidiert",
+        "first": "wenn vor dem Drop keins ist"
+      },
+      "place": {
+        "hot": "Hot Cue",
+        "call": "CALL",
+        "both": "Hot Cue + CALL"
+      },
+      "colorMode": {
+        "fixed": "eine Farbe",
+        "each": "eine Farbe pro Wiederholung"
+      }
+    }
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",

@@ -1,6 +1,7 @@
 import {
   AudioWaveform,
   ChartColumn,
+  Flag,
   FolderOutput,
   Image,
   Keyboard,
@@ -29,6 +30,7 @@ export type SettingsTab =
   | 'layout'
   | 'fields'
   | 'artwork'
+  | 'cues'
   | 'shortcuts'
   | 'stats'
 
@@ -40,7 +42,7 @@ export type SettingsTab =
 // never drift apart.
 export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] }[] = [
   { heading: null, tabs: ['general', 'search'] },
-  { heading: 'editing', tabs: ['editor', 'layout', 'fields', 'artwork'] },
+  { heading: 'editing', tabs: ['editor', 'layout', 'fields', 'artwork', 'cues'] },
   { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination'] },
   { heading: 'app', tabs: ['shortcuts', 'stats'] },
 ]
@@ -60,6 +62,7 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   layout: LayoutList,
   fields: List,
   artwork: Image,
+  cues: Flag,
   shortcuts: Keyboard,
   stats: ChartColumn,
 }

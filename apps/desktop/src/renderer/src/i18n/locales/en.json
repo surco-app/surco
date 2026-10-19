@@ -1012,7 +1012,8 @@
       "artwork": "Artwork",
       "fields": "Fields",
       "shortcuts": "Shortcuts",
-      "stats": "Stats"
+      "stats": "Stats",
+      "cues": "Cues"
     },
     "tabGroups": {
       "editing": "Editing",
@@ -1369,7 +1370,70 @@
     "completeCuesCount_other": "{{count}} tracks will be completed when rekordbox closes.",
     "completeCuesYes": "Turn on",
     "completeCuesNo": "Cancel",
-    "completeCuesFailed": "Could not count the tracks in rekordbox. It stays off."
+    "completeCuesFailed": "Could not count the tracks in rekordbox. It stays off.",
+    "cueFlows": {
+      "flows": "Flows",
+      "newFlow": "New flow",
+      "newFlowName": "Flow {{n}}",
+      "name": "Name",
+      "use": "Use this flow",
+      "inUse": "In use",
+      "delete": "Delete flow",
+      "restore": "Restore",
+      "rules": "Rules",
+      "addRule": "Add rule",
+      "removeRule": "Remove rule",
+      "noRules": "No rules. Marking a drop leaves only its CALL.",
+      "preview": "Preview",
+      "previewHint": "Example track at 128 BPM with the drop at bar 64",
+      "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
+      "looseCall": "A loose CALL reads as a drop the next time",
+      "block": {
+        "from": "From",
+        "direction": "Direction",
+        "bars": "Distance",
+        "repeat": "Repeat",
+        "when": "Condition",
+        "place": "Place",
+        "colorMode": "Colour",
+        "color": "Colour {{n}}"
+      },
+      "from": {
+        "drop": "From the drop",
+        "first-beat": "From the first beat",
+        "last-beat": "From the last beat",
+        "intro": "From each intro",
+        "up": "From each build",
+        "down": "From each breakdown",
+        "chorus": "From each chorus",
+        "outro": "From each outro"
+      },
+      "direction": {
+        "back": "backwards",
+        "forward": "forwards"
+      },
+      "bars_one": "{{count}} bar",
+      "bars_other": "{{count}} bars",
+      "barsZero": "on the same beat",
+      "repeat_one": "once",
+      "repeat_other": "{{count}} times",
+      "repeatEdge": "to the edge",
+      "when": {
+        "always": "always",
+        "fits": "if it fits",
+        "clear": "if it does not clash with another rule",
+        "first": "if there is none before the drop"
+      },
+      "place": {
+        "hot": "hot cue",
+        "call": "CALL",
+        "both": "hot cue + CALL"
+      },
+      "colorMode": {
+        "fixed": "one colour",
+        "each": "a colour per repeat"
+      }
+    }
   },
   "errorBoundary": {
     "title": "Something failed to render",
