@@ -21,6 +21,7 @@ export interface DraftSnapshot {
   cues: DraftCue[]
   flowId: string
   trimmed: number[]
+  edited: string[]
 }
 
 export interface CueDraft {
@@ -30,6 +31,7 @@ export interface CueDraft {
   selected: string | null
   notice: DraftNotice
   trimmed: number[]
+  edited: string[]
   nextKey: number
 }
 
@@ -64,6 +66,7 @@ export function startDraft(cues: WantedCue[], flowId: string): CueDraft {
     selected: null,
     notice: null,
     trimmed: [],
+    edited: [],
     nextKey: cues.length,
   }
 }
@@ -101,7 +104,10 @@ function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {})
     trimmed: [],
     ...over,
     cues,
-    past: [...state.past, { cues: state.cues, flowId: state.flowId, trimmed: state.trimmed }],
+    past: [
+      ...state.past,
+      { cues: state.cues, flowId: state.flowId, trimmed: state.trimmed, edited: state.edited },
+    ],
   }
 }
 
@@ -131,12 +137,14 @@ function regenerate(
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
   let nextKey = state.nextKey
-  const cues = out.wanted.map((w): DraftCue => {
+  const generated = out.wanted.map((w): DraftCue => {
     const was = w.id === undefined ? undefined : byKey.get(w.id)
     if (was) return { ...was, ms: w.ms, kind: w.kind, color: w.color }
     nextKey += 1
     return { key: `n${nextKey}`, ms: w.ms, kind: w.kind, color: w.color }
   })
+  const cues = out.status === 'plan' ? keepEdited(state, generated) : generated
+  if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,
     nextKey,
@@ -144,6 +152,26 @@ function regenerate(
     notice: out.status === 'manual' ? 'manual' : null,
     trimmed: out.status === 'plan' ? out.trimmed : [],
   })
+}
+
+function keepEdited(state: CueDraft, generated: DraftCue[]): DraftCue[] | null {
+  const edited = state.cues.filter((c) => state.edited.includes(c.key))
+  if (edited.length === 0) return generated
+  const kept = generated.map((c) => edited.find((e) => e.key === c.key) ?? c)
+  for (const e of edited) {
+    if (kept.some((c) => c.key === e.key)) continue
+    const pair = pairOf(state.cues, e)
+    kept.push(e)
+    if (pair && !kept.some((c) => c.key === pair.key)) kept.push(pair)
+  }
+  const held = new Set(edited.filter(isHot).map((e) => e.kind))
+  const free = HOT_KINDS.filter((k) => !held.has(k))
+  const others = kept
+    .filter((c) => isHot(c) && !state.edited.includes(c.key))
+    .sort((a, b) => a.ms - b.ms)
+  if (others.length > free.length) return null
+  const letter = new Map(others.map((c, i) => [c.key, free[i]]))
+  return kept.map((c) => (letter.has(c.key) ? { ...c, kind: letter.get(c.key) as number } : c))
 }
 
 function pairOf(cues: DraftCue[], target: DraftCue): DraftCue | undefined {
@@ -161,6 +189,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       cues: previous.cues,
       flowId: previous.flowId,
       trimmed: previous.trimmed,
+      edited: previous.edited,
       past: state.past.slice(0, -1),
       selected: null,
       notice: null,
@@ -210,6 +239,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     return commit(
       state,
       state.cues.map((c) => (c.key === target.key ? { ...c, color: action.color } : c)),
+      { edited: [...state.edited, target.key] },
     )
   }
   if (action.type === 'reletter') {
@@ -217,6 +247,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     return commit(
       state,
       state.cues.map((c) => (c.key === target.key ? { ...c, kind: action.kind } : c)),
+      { edited: [...state.edited, target.key] },
     )
   }
   const ms = snap(ctx, action.ms)
@@ -230,5 +261,6 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   return commit(
     state,
     state.cues.map((c) => (moving.has(c.key) ? { ...c, ms } : c)),
+    { edited: [...state.edited, target.key] },
   )
 }

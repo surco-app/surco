@@ -75,6 +75,29 @@ describe('reduceDraft', () => {
     expect(at(s, bar(32), false)).toBeUndefined()
   })
 
+  it('keeps a hot cue the DJ moved, recoloured or relettered when the next drop regenerates the flow', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const a = at(marked, bar(16), true)?.key as string
+    const b = at(marked, bar(32), true)?.key as string
+    const c = at(marked, bar(48), true)?.key as string
+    const edited = run(
+      marked,
+      { type: 'move', key: a, ms: bar(0) },
+      { type: 'recolour', key: b, color: 5 },
+      { type: 'reletter', key: c, kind: 7 },
+    )
+    const s = run(edited, { type: 'mark-drop', ms: bar(128) })
+    expect(s.cues.find((x) => x.key === a)).toMatchObject({ ms: bar(0), kind: 1, color: 42 })
+    expect(s.cues.find((x) => x.key === b)).toMatchObject({ ms: bar(32), kind: 2, color: 5 })
+    expect(s.cues.find((x) => x.key === c)).toMatchObject({ ms: bar(48), kind: 7, color: 1 })
+    const hot = s.cues.filter((x) => x.kind !== 0)
+    expect(new Set(hot.map((x) => x.kind)).size).toBe(hot.length)
+    expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
+    const applied = run(edited, { type: 'apply-flow', flowId: 'mine' })
+    expect(applied.cues.find((x) => x.key === b)).toMatchObject({ kind: 2, color: 5 })
+    expect(applied.cues.find((x) => x.key === c)).toMatchObject({ kind: 7 })
+  })
+
   it('refuses a move onto another hot cue so two never share a spot', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const a = at(marked, bar(16), true)
