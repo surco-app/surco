@@ -1,10 +1,12 @@
+import { randomInt, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
-import { type StrongPart, strongParts } from '../shared/cueRules'
+import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRules'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, phrases, wavePreview } from './anlz'
 import { insideShare } from './rekordboxArtwork'
+import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 type Db = InstanceType<typeof Database>
 
@@ -100,4 +102,125 @@ export function readTrackCues(
   }
   if (!analysis) return { ...base, analysed: false, grid: [], strong: [], wave: null }
   return { ...base, analysed: true, ...analysis }
+}
+
+const CUE_JSON_KEYS = [
+  'ID',
+  'ContentID',
+  'ContentUUID',
+  'InMsec',
+  'InFrame',
+  'InMpegFrame',
+  'InMpegAbs',
+  'OutMsec',
+  'OutFrame',
+  'OutMpegFrame',
+  'OutMpegAbs',
+  'Kind',
+  'Color',
+  'UUID',
+  'created_at',
+  'updated_at',
+] as const
+
+const randomCueId = (): string => String(randomInt(100, 2 ** 32))
+
+export function applyCueChanges(
+  db: Db,
+  contentId: string,
+  changes: CueChangeSet,
+  ctx: { now: Date; newCueId?: () => string },
+): number {
+  const count = changes.insert.length + changes.update.length + changes.remove.length
+  if (count === 0) return 0
+  const stamp = rekordboxStamp(ctx.now)
+  const iso = ctx.now.toISOString().replace('Z', '+00:00')
+  const track = db
+    .prepare('SELECT UUID, CueUpdated FROM djmdContent WHERE ID = ?')
+    .get(contentId) as { UUID: string; CueUpdated: string | null }
+
+  const inserted: Record<string, string | number | null>[] = []
+  for (const c of changes.insert) {
+    const row: Record<string, string | number | null> = {
+      ID: unusedRowId(db, 'djmdCue', ctx.newCueId ?? randomCueId),
+      ContentID: contentId,
+      InMsec: c.ms,
+      InFrame: Math.floor((c.ms * 150) / 1000),
+      InMpegFrame: 0,
+      InMpegAbs: 0,
+      OutMsec: -1,
+      OutFrame: 0,
+      OutMpegFrame: 0,
+      OutMpegAbs: 0,
+      Kind: c.kind,
+      Color: -1,
+      ColorTableIndex: c.color,
+      ContentUUID: track.UUID,
+      UUID: randomUUID(),
+      rb_data_status: 0,
+      rb_local_data_status: 0,
+      rb_local_deleted: 0,
+      rb_local_synced: 0,
+      usn: null,
+      rb_local_usn: null,
+      created_at: stamp,
+      updated_at: stamp,
+    }
+    const names = Object.keys(row)
+    db.prepare(
+      `INSERT INTO djmdCue (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`,
+    ).run(...Object.values(row))
+    inserted.push(row)
+  }
+  const update = db.prepare(
+    'UPDATE djmdCue SET Kind = ?, ColorTableIndex = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  )
+  for (const u of changes.update) update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id)
+  const remove = db.prepare('DELETE FROM djmdCue WHERE ID = ?')
+  for (const id of changes.remove) remove.run(id)
+
+  const cc = db.prepare('SELECT ID, Cues FROM contentCue WHERE ContentID = ?').get(contentId) as
+    | { ID: string; Cues: string | null }
+    | undefined
+  const gone = new Set(changes.remove)
+  const entries = (cc?.Cues ? (JSON.parse(cc.Cues) as Record<string, unknown>[]) : []).filter(
+    (e) => !gone.has(String(e.ID)),
+  )
+  for (const u of changes.update) {
+    const e = entries.find((x) => String(x.ID) === u.id)
+    if (e) {
+      e.Kind = u.kind
+      e.updated_at = iso
+    }
+  }
+  for (const row of inserted)
+    entries.push(
+      Object.fromEntries(
+        CUE_JSON_KEYS.map((k) => [k, k === 'created_at' || k === 'updated_at' ? iso : row[k]]),
+      ),
+    )
+  const ccUsn = takeLocalUsn(db, stamp)
+  if (cc)
+    db.prepare(
+      'UPDATE contentCue SET Cues = ?, rb_cue_count = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+    ).run(JSON.stringify(entries), entries.length, ccUsn, stamp, cc.ID)
+  else
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count, UUID, rb_data_status,
+         rb_local_data_status, rb_local_deleted, rb_local_synced, usn, rb_local_usn, created_at,
+         updated_at) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, NULL, ?, ?, ?)`,
+    ).run(
+      track.UUID,
+      contentId,
+      JSON.stringify(entries),
+      entries.length,
+      randomUUID(),
+      ccUsn,
+      stamp,
+      stamp,
+    )
+  db.prepare(
+    'UPDATE djmdContent SET CueUpdated = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  ).run(String(Number(track.CueUpdated ?? 0) + count), takeLocalUsn(db, stamp), stamp, contentId)
+  return count
 }

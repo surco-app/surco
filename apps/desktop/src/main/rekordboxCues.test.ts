@@ -12,7 +12,7 @@ import {
   pwv5Section,
   section,
 } from './anlzFixture'
-import { cueFingerprint, readTrackCues } from './rekordboxCues'
+import { applyCueChanges, cueFingerprint, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
@@ -169,5 +169,135 @@ describe('cueFingerprint', () => {
     expect(cueFingerprint([a, b])).toBe(cueFingerprint([b, a]))
     expect(cueFingerprint([a, { ...b, color: 22 }])).not.toBe(cueFingerprint([a, b]))
     expect(cueFingerprint([a])).not.toBe(cueFingerprint([a, b]))
+  })
+})
+
+describe('applyCueChanges', () => {
+  const NOW = new Date('2026-10-18T19:00:00.000Z')
+  const STAMP = '2026-10-18 19:00:00.000 +00:00'
+
+  async function writable() {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbcuew-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      cueRows: [
+        { ID: 'q2', ContentID: '103', InMsec: 8000, Kind: 1, ColorTableIndex: 1 },
+        { ID: 'q1', ContentID: '103', InMsec: 8000, Kind: 0, ColorTableIndex: null },
+        { ID: 'q3', ContentID: '103', InMsec: 16000, Kind: 0, ColorTableIndex: null },
+        { ID: 'other', ContentID: '104', InMsec: 1000, Kind: 0, ColorTableIndex: null },
+      ],
+    })
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    return db
+  }
+
+  const changes = {
+    insert: [
+      { ms: 4000, kind: 2, color: 22 },
+      { ms: 4000, kind: 0, color: null },
+    ],
+    update: [{ id: 'q2', kind: 3, color: 1 }],
+    remove: ['q3'],
+  }
+
+  it('writes the cue rows the way the spike did and rekordbox accepted', async () => {
+    const db = await writable()
+    const ids = ['70001', '70002', '70003']
+    expect(
+      applyCueChanges(db, '103', changes, { now: NOW, newCueId: () => ids.shift() as string }),
+    ).toBe(4)
+    const row = (id: string) =>
+      db.prepare('SELECT * FROM djmdCue WHERE ID = ?').get(id) as Record<string, unknown>
+    expect(row('70001')).toMatchObject({
+      ContentID: '103',
+      ContentUUID: 'uuid-c-103',
+      InMsec: 4000,
+      InFrame: 600,
+      OutMsec: -1,
+      OutFrame: 0,
+      InMpegFrame: 0,
+      Kind: 2,
+      Color: -1,
+      ColorTableIndex: 22,
+      rb_local_usn: null,
+      rb_local_deleted: 0,
+      created_at: STAMP,
+    })
+    expect(row('70002')).toMatchObject({ Kind: 0, ColorTableIndex: null })
+    expect(row('q2')).toMatchObject({ Kind: 3, ColorTableIndex: 1, updated_at: STAMP })
+    expect(Number(row('q2').rb_local_usn)).toBeGreaterThan(500)
+    expect(db.prepare(`SELECT ID FROM djmdCue WHERE ID = 'q3'`).get()).toBeUndefined()
+    db.close()
+  })
+
+  it('keeps contentCue and the track counters in step', async () => {
+    const db = await writable()
+    const ids = ['70001', '70002', '70003']
+    applyCueChanges(db, '103', changes, { now: NOW, newCueId: () => ids.shift() as string })
+    const cc = db.prepare(`SELECT * FROM contentCue WHERE ContentID = '103'`).get() as {
+      ID: string
+      Cues: string
+      rb_cue_count: number
+      rb_local_usn: number
+    }
+    expect(cc.ID).toBe('uuid-c-103')
+    const entries = JSON.parse(cc.Cues) as { ID: string; Kind: number; updated_at: string }[]
+    expect(entries.map((e) => e.ID).sort()).toEqual(['70001', '70002'])
+    expect(cc.rb_cue_count).toBe(2)
+    const content = db
+      .prepare(`SELECT CueUpdated, rb_local_usn, updated_at FROM djmdContent WHERE ID = '103'`)
+      .get() as {
+      CueUpdated: string
+      rb_local_usn: number
+      updated_at: string
+    }
+    expect(content.CueUpdated).toBe('4')
+    expect(content.rb_local_usn).toBe(cc.rb_local_usn + 1)
+    expect(content.updated_at).toBe(STAMP)
+    db.close()
+  })
+
+  it('updates an existing contentCue entry and drops the removed one', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 2)`,
+    ).run(
+      JSON.stringify([
+        { ID: 'q2', Kind: 1, InMsec: 8000 },
+        { ID: 'q3', Kind: 0, InMsec: 16000 },
+      ]),
+    )
+    applyCueChanges(
+      db,
+      '103',
+      { insert: [], update: [{ id: 'q2', kind: 3, color: 1 }], remove: ['q3'] },
+      { now: NOW },
+    )
+    const cc = db
+      .prepare(`SELECT Cues, rb_cue_count FROM contentCue WHERE ContentID = '103'`)
+      .get() as {
+      Cues: string
+      rb_cue_count: number
+    }
+    expect(JSON.parse(cc.Cues)).toEqual([
+      { ID: 'q2', Kind: 3, InMsec: 8000, updated_at: '2026-10-18T19:00:00.000+00:00' },
+    ])
+    expect(cc.rb_cue_count).toBe(1)
+    db.close()
+  })
+
+  it('never touches another track nor writes anything for an empty change', async () => {
+    const db = await writable()
+    expect(applyCueChanges(db, '103', { insert: [], update: [], remove: [] }, { now: NOW })).toBe(0)
+    expect(db.prepare(`SELECT CueUpdated FROM djmdContent WHERE ID = '103'`).get()).toEqual({
+      CueUpdated: null,
+    })
+    applyCueChanges(db, '103', changes, { now: NOW })
+    expect(db.prepare(`SELECT ID FROM djmdCue WHERE ContentID = '104'`).all()).toEqual([
+      { ID: 'other' },
+    ])
+    db.close()
   })
 })
