@@ -63,6 +63,13 @@ describe('SourceTree', () => {
     expect(screen.getByTestId('source-node-ct')).toHaveTextContent('448')
   })
 
+  it('counts tracks only on playlists, since a folder holds playlists and its number read as tracks', () => {
+    setup()
+    expect(screen.getByTestId('source-node-house')).toHaveTextContent('32')
+    expect(screen.getByTestId('source-node-cant')).toHaveTextContent(/^CANTADITAS$/)
+    expect(screen.getByTestId('source-node-bases')).toHaveTextContent(/^BASES$/)
+  })
+
   it('opens the folders holding the selected playlist, so the selection is never hidden', () => {
     setup('ct')
     expect(screen.getByTestId('source-node-ct')).toHaveAttribute('aria-current', 'true')

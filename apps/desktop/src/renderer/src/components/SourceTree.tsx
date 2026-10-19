@@ -282,7 +282,9 @@ export function SourceTree({
                 {tr('sources.tree.dropCount', { count: dropOn.count })}
               </span>
             ) : (
-              <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+              !isFolder && (
+                <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+              )
             )}
           </button>
         )}
