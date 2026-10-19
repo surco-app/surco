@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from './cueFlows'
 import { diffCues, flowOutcome, isEmptyChange } from './cueRules'
-import { type LearnTrack, learnFlow } from './learnFlow'
+import { diagnoseLearnFlow, type LearnTrack, learnFlow } from './learnFlow'
 
 const BEATS = Array.from({ length: 1000 }, (_, i) => i * 500)
 const bar = (n: number): number => BEATS[n * 4]
@@ -150,5 +150,70 @@ describe('learnFlow', () => {
 
   it('returns null when nothing is marked', () => {
     expect(learnFlow([])).toBeNull()
+  })
+})
+
+type Cue = LearnTrack['cues'][number]
+
+function edited(t: LearnTrack, change: (c: Cue) => Cue[]): LearnTrack {
+  return { ...t, cues: t.cues.flatMap(change) }
+}
+
+const at =
+  (barNumber: number, kind: 'hot' | 'any', patch: Partial<Cue> | null) =>
+  (c: Cue): Cue[] => {
+    const hit = c.ms === bar(barNumber) && (kind === 'any' || c.kind !== 0)
+    if (!hit) return [c]
+    return patch === null ? [] : [{ ...c, ...patch }]
+  }
+
+describe('diagnoseLearnFlow', () => {
+  it('names why each marked track misses the learned flow, so a low coverage can be explained before it is judged', () => {
+    const clean = Array.from({ length: 20 }, () => track([64]))
+    const starts = Array.from({ length: 3 }, () => track([8]))
+    const odd: LearnTrack[] = [
+      edited(track([64]), (c) =>
+        c.kind === 1 ? [{ ...c, kind: 3 }] : c.kind === 3 ? [{ ...c, kind: 1 }] : [c],
+      ),
+      edited(track([64]), at(32, 'hot', { color: null })),
+      edited(track([64]), at(32, 'hot', { color: 56 })),
+      edited(track([64]), at(16, 'any', null)),
+      withExtraHot(64, 8),
+      edited(track([64, 160]), at(32, 'hot', { color: null })),
+      edited(track([8]), at(0, 'hot', { color: 56 })),
+      {
+        beats: BEATS,
+        cues: [
+          { ms: bar(4), kind: 0, color: null },
+          { ms: bar(4), kind: 1, color: 1 },
+        ],
+        strong: [],
+        phrases: [],
+      },
+      { beats: [], cues: [{ ms: bar(4), kind: 0, color: null }], strong: [], phrases: [] },
+    ]
+    const first = clean.length + starts.length
+    const d = diagnoseLearnFlow([...clean, ...starts, ...odd])
+    expect(d).toMatchObject({
+      tracks: 32,
+      noGrid: 1,
+      noDrop: 1,
+      marked: 30,
+      flow: { rules: MY_FLOW.rules },
+      countdownPaired: 1,
+      start: { open: 4, withStart: 4 },
+      matching: 23,
+    })
+    expect(d.support).toEqual({ 8: 1, 16: 26, 32: 26, 48: 25 })
+    expect(d.mismatches).toEqual({
+      'letter-order': [first],
+      'colour-null': [first + 1, first + 5],
+      'colour-differs': [first + 2],
+      'missing-hot-cue': [first + 3],
+      'call-missing': [first + 3],
+      manual: [first + 4],
+      'several-drops': [first + 5],
+      'start-cue-differs': [first + 6],
+    })
   })
 })
