@@ -1,8 +1,12 @@
 // rekordbox's analysis files (ANLZ0000.DAT/.EXT/.2EX): a PMAI header and tagged sections,
-// all big-endian. Surco reads two things from the local copies (the beat grid for baken's
-// XML and the small waveform preview for the export list) and fixes one before baken copies
+// all big-endian. Surco reads four things from the local copies (the beat grid for baken's
+// XML, the small waveform preview for the export list, the phrases and the colour waveform)
+// and fixes one before baken copies
 // it to the stick: rekordbox masks the vocal section (PVDI) when it exports and baken does
 // not, so Surco masks the staged copy and baken carries it over byte for byte.
+
+import type { Phrase } from '../shared/cueRules'
+import type { CueWaveColumn } from '../shared/types'
 
 export interface AnlzSection {
   tag: string
@@ -83,4 +87,57 @@ export function maskVocals(twoEx: Buffer): Buffer {
   out[s.start + 12] |= 0x80
   for (let i = 24; i < s.length; i++) out[s.start + i] ^= PVDI_KEY[(i - 24) % PVDI_KEY.length]
   return out
+}
+
+export const PSSI_KEY = [
+  0xcb, 0xe1, 0xee, 0xfa, 0xe5, 0xee, 0xad, 0xee, 0xe9, 0xd2, 0xe9, 0xeb, 0xe1, 0xe9, 0xf3, 0xe8,
+  0xe9, 0xf4, 0xe1,
+]
+
+export function phrases(ext: Buffer): { mood: number; masked: boolean; entries: Phrase[] } | null {
+  const s = anlzSections(ext).find((x) => x.tag === 'PSSI')
+  if (!s) return null
+  const t = Buffer.from(ext.subarray(s.start, s.start + s.length))
+  const count = t.readUInt16BE(16)
+  const rawMood = t.readUInt16BE(18)
+  const masked = rawMood < 1 || rawMood > 3
+  if (masked) for (let x = 18; x < t.length; x++) t[x] ^= (PSSI_KEY[(x - 18) % 19] + count) & 0xff
+  const mood = t.readUInt16BE(18)
+  if (mood < 1 || mood > 3) return null
+  const header = t.readUInt32BE(4)
+  const entries: Phrase[] = []
+  for (let i = 0; i < count; i++) {
+    const at = header + i * 24
+    if (at + 6 > t.length) break
+    entries.push({ beat: t.readUInt16BE(at + 2), kind: t.readUInt16BE(at + 4) })
+  }
+  return { mood, masked, entries }
+}
+
+export function colorWave(ext: Buffer, columns = 1200): CueWaveColumn[] | null {
+  const s = anlzSections(ext).find((x) => x.tag === 'PWV5')
+  if (!s) return null
+  const header = ext.readUInt32BE(s.start + 4)
+  const count = Math.min(ext.readUInt32BE(s.start + 16), Math.floor((s.length - header) / 2))
+  if (count <= 0) return null
+  const width = Math.min(columns, count)
+  const scale = (v: number): number => Math.round((v / 7) * 255)
+  return Array.from({ length: width }, (_, i) => {
+    const from = Math.floor((i * count) / width)
+    const to = Math.max(from + 1, Math.floor(((i + 1) * count) / width))
+    let best = -1
+    let word = 0
+    for (let e = from; e < to; e++) {
+      const w = ext.readUInt16BE(s.start + header + e * 2)
+      const h = (w >> 2) & 0x1f
+      if (h > best) {
+        best = h
+        word = w
+      }
+    }
+    return {
+      h: best / 31,
+      rgb: [scale((word >> 13) & 7), scale((word >> 10) & 7), scale((word >> 7) & 7)],
+    }
+  })
 }

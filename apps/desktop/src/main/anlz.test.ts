@@ -1,61 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { anlzSections, beatGrid, maskVocals, wavePreview } from './anlz'
-
-const u32 = (n: number): Buffer => {
-  const b = Buffer.alloc(4)
-  b.writeUInt32BE(n)
-  return b
-}
-
-// A section as rekordbox lays it out: tag, header length, total length, then the rest of
-// the header and the body.
-function section(tag: string, headerRest: Buffer, body: Buffer): Buffer {
-  const header = 12 + headerRest.length
-  return Buffer.concat([
-    Buffer.from(tag, 'latin1'),
-    u32(header),
-    u32(header + body.length),
-    headerRest,
-    body,
-  ])
-}
-
-function file(...sections: Buffer[]): Buffer {
-  const head = Buffer.concat([
-    Buffer.from('PMAI'),
-    u32(28),
-    u32(0),
-    Buffer.from('00000001000100000001000000000000', 'hex'),
-  ])
-  const out = Buffer.concat([head, ...sections])
-  out.writeUInt32BE(out.length, 8)
-  return out
-}
+import { anlzSections, beatGrid, colorWave, maskVocals, phrases, wavePreview } from './anlz'
+import { anlzFile, pqtzSection, pssiSection, pwv5Section, section, u32 } from './anlzFixture'
 
 const ppth = section('PPTH', u32(4), Buffer.from('?/a\0', 'latin1'))
 
-function pqtz(beats: [number, number, number][]): Buffer {
-  const body = Buffer.concat(
-    beats.map(([beat, bpm100, ms]) => {
-      const e = Buffer.alloc(8)
-      e.writeUInt16BE(beat, 0)
-      e.writeUInt16BE(bpm100, 2)
-      e.writeUInt32BE(ms, 4)
-      return e
-    }),
-  )
-  return section('PQTZ', Buffer.concat([u32(0), u32(0x80000), u32(beats.length)]), body)
-}
-
 describe('anlzSections', () => {
   it('walks the sections after the PMAI header', () => {
-    const f = file(ppth, pqtz([[1, 15400, 50]]))
+    const f = anlzFile(ppth, pqtzSection([50], 154))
     expect(anlzSections(f).map((s) => s.tag)).toEqual(['PPTH', 'PQTZ'])
   })
 
   // A truncated file (rekordbox mid-write, a copy cut short) must not throw or loop.
   it('stops at a section that runs past the end', () => {
-    const f = file(ppth, pqtz([[1, 15400, 50]]))
+    const f = anlzFile(ppth, pqtzSection([50], 154))
     expect(anlzSections(f.subarray(0, f.length - 3)).map((s) => s.tag)).toEqual(['PPTH'])
     expect(anlzSections(Buffer.from('nope'))).toEqual([])
   })
@@ -65,14 +22,7 @@ describe('beatGrid', () => {
   // The XML's TEMPO lines come from this: a tempo change at 50 s (Hands Of Fate) must
   // survive, or the grid drifts off the beats after it.
   it('reads every beat with its tempo and time', () => {
-    const f = file(
-      ppth,
-      pqtz([
-        [1, 15400, 50],
-        [2, 15400, 440],
-        [3, 15000, 830],
-      ]),
-    )
+    const f = anlzFile(ppth, pqtzSection([50, 440, 830], [154, 154, 150]))
     expect(beatGrid(f)).toEqual([
       { beat: 1, bpm: 154, ms: 50 },
       { beat: 2, bpm: 154, ms: 440 },
@@ -81,7 +31,7 @@ describe('beatGrid', () => {
   })
 
   it('has no grid without a PQTZ', () => {
-    expect(beatGrid(file(ppth))).toEqual([])
+    expect(beatGrid(anlzFile(ppth))).toEqual([])
   })
 })
 
@@ -97,14 +47,14 @@ describe('wavePreview', () => {
   // the top three bits are rekordbox's whiteness, not height.
   it('keeps the highest column of each group, scaled to 0..1', () => {
     const heights = Array.from({ length: 400 }, (_, i) => (i === 5 ? 31 : 0))
-    const bars = wavePreview(file(ppth, pwav(heights)))
+    const bars = wavePreview(anlzFile(ppth, pwav(heights)))
     expect(bars).toHaveLength(100)
     expect(bars?.[1]).toBe(1)
     expect(bars?.[0]).toBe(0)
   })
 
   it('answers null without a preview, so the row draws a flat bar', () => {
-    expect(wavePreview(file(ppth))).toBeNull()
+    expect(wavePreview(anlzFile(ppth))).toBeNull()
   })
 })
 
@@ -125,7 +75,7 @@ describe('maskVocals', () => {
   ])
 
   it('masks the vocal section as rekordbox does when it exports', () => {
-    const out = maskVocals(file(ppth, plain))
+    const out = maskVocals(anlzFile(ppth, plain))
     expect(anlzSections(out).map((s) => s.tag)).toEqual(['PPTH', 'PVDI'])
     const s = anlzSections(out)[1]
     expect(out.subarray(s.start, s.start + s.length)).toEqual(masked)
@@ -133,14 +83,14 @@ describe('maskVocals', () => {
 
   // A staged copy masked twice would come out plain again: XOR undoes itself.
   it('leaves an already masked section alone', () => {
-    const once = maskVocals(file(ppth, plain))
+    const once = maskVocals(anlzFile(ppth, plain))
     expect(maskVocals(once)).toEqual(once)
   })
 
   // rekordbox writes an empty 24-byte PVDI for a track without vocal data, last in the file,
   // and the file's total length has to grow with it.
   it('appends the empty section when there is none', () => {
-    const before = file(ppth)
+    const before = anlzFile(ppth)
     const out = maskVocals(before)
     expect(out.subarray(before.length).toString('hex')).toBe(
       '505644490000001800000018000004005622000100000000',
@@ -149,9 +99,66 @@ describe('maskVocals', () => {
   })
 
   it('never changes the buffer it was given', () => {
-    const input = file(ppth, plain)
+    const input = anlzFile(ppth, plain)
     const copy = Buffer.from(input)
     maskVocals(input)
     expect(input).toEqual(copy)
+  })
+})
+
+describe('phrases', () => {
+  const PHRASES = [
+    { beat: 1, kind: 1 },
+    { beat: 33, kind: 5 },
+    { beat: 65, kind: 3 },
+  ]
+
+  it('reads mood and phrases from a local analysis, which rekordbox leaves in the clear', () => {
+    expect(phrases(anlzFile(pssiSection(1, PHRASES)))).toEqual({
+      mood: 1,
+      masked: false,
+      entries: PHRASES,
+    })
+  })
+
+  it('unmasks a masked section so the strong parts do not depend on where it came from', () => {
+    expect(phrases(anlzFile(pssiSection(2, PHRASES, true)))).toEqual({
+      mood: 2,
+      masked: true,
+      entries: PHRASES,
+    })
+  })
+
+  it('is null without a PSSI', () => {
+    expect(phrases(anlzFile())).toBeNull()
+  })
+
+  it('is null for a mood rekordbox does not define, so no strong part is guessed', () => {
+    expect(phrases(anlzFile(pssiSection(7, PHRASES)))).toBeNull()
+    expect(phrases(anlzFile(pssiSection(7, PHRASES, true)))).toBeNull()
+  })
+})
+
+describe('colorWave', () => {
+  it('keeps the tallest entry of each column with its colour, as the CDJ draws it', () => {
+    const wave = colorWave(
+      anlzFile(
+        pwv5Section([
+          { r: 7, g: 0, b: 0, h: 31 },
+          { r: 0, g: 7, b: 0, h: 10 },
+          { r: 0, g: 0, b: 7, h: 0 },
+          { r: 0, g: 0, b: 7, h: 16 },
+        ]),
+      ),
+      2,
+    )
+    expect(wave).toEqual([
+      { h: 1, rgb: [255, 0, 0] },
+      { h: 16 / 31, rgb: [0, 0, 255] },
+    ])
+  })
+
+  it('is null without a PWV5', () => {
+    expect(colorWave(anlzFile())).toBeNull()
   })
 })

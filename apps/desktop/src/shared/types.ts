@@ -1610,3 +1610,8 @@ export type RekordboxQueueApplied =
       written: RekordboxQueueWritten[]
     }
   | { refused: RekordboxEditRefusal }
+
+export interface CueWaveColumn {
+  h: number
+  rgb: [number, number, number] | null
+}
