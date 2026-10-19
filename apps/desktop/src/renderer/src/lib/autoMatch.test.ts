@@ -5,6 +5,7 @@ import {
   acceptReviewOf,
   acceptReviewPatch,
   autoMatchRelease,
+  holdsAutoMatch,
   MAX_AUTO_PROBE,
   matchActivityReport,
   matchTargetOf,
@@ -1035,5 +1036,27 @@ describe('matchActivityReport', () => {
     const empty = matchActivityReport('My Song', undefined, [], 80)
     expect(empty.detailKey).toBe('activity.autoMatchNoCandidates')
     expect(empty.detailParams).toBeUndefined()
+  })
+})
+
+describe('holdsAutoMatch', () => {
+  const preview = { title: 'Song', artist: 'Artist', durationSec: 200, cues: [] }
+  const row = (over: Partial<TrackItem>): TrackItem => ({ id: 'r', ...over }) as TrackItem
+
+  it('does not hold for a folder drop, which matches its visible rows as they read', () => {
+    expect(holdsAutoMatch([row({ loadingMeta: true }), row({ loadingMeta: false })])).toBe(false)
+  })
+
+  it('holds while a row opened from a rekordbox playlist is still being read', () => {
+    expect(holdsAutoMatch([row({ loadingMeta: true, sourcePreview: preview })])).toBe(true)
+  })
+
+  it('releases once every rekordbox row is read, even while a drop is still reading', () => {
+    expect(
+      holdsAutoMatch([
+        row({ loadingMeta: false, sourcePreview: preview }),
+        row({ loadingMeta: true }),
+      ]),
+    ).toBe(false)
   })
 })

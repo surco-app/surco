@@ -27,6 +27,10 @@ import {
   type TrackMatchTarget,
 } from './release'
 
+export function holdsAutoMatch(tracks: readonly TrackItem[]): boolean {
+  return tracks.some((t) => t.sourcePreview && t.loadingMeta)
+}
+
 // The tracks an auto-match sweep should attempt: those not already carrying a Discogs
 // match and holding the title plus search query a probe needs. Skipping tracks already
 // matched or under review means a re-run only fills the gaps instead of re-tagging — and

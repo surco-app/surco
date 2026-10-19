@@ -101,6 +101,7 @@ import { type AppError, type AppStore, createAppStore, useAppStore } from './lib
 import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewOf,
+  holdsAutoMatch,
   type MatchCleanup,
   searchHintsFor,
   tracksToAutoMatch,
@@ -1080,9 +1081,10 @@ export default function App(): React.JSX.Element {
     reportActivity,
   })
 
+  const readingSourcePlaylist = useMemo(() => holdsAutoMatch(tracks), [tracks])
   useEffect(() => {
-    holdAutoMatch(importProgress !== null)
-  }, [importProgress, holdAutoMatch])
+    holdAutoMatch(readingSourcePlaylist)
+  }, [readingSourcePlaylist, holdAutoMatch])
 
   // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
   // high-priority lane), so the track you're looking at resolves now instead of waiting its
