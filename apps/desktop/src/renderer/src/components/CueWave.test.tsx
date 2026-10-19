@@ -85,4 +85,61 @@ describe('CueWave', () => {
     fireEvent.click(screen.getByTestId('cue-wave-not-analysed'), { clientX: 100, clientY: 40 })
     expect(onAddDrop).not.toHaveBeenCalled()
   })
+
+  it.each([800, 1600])(
+    'removes a drop 5 px away and adds beside it 8 px away at %i px wide',
+    (width) => {
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        width,
+        height: 80,
+        right: width,
+        bottom: 80,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      })
+      const centre = width / 2
+      const { onAddDrop, onRemoveDrop } = setup()
+      fireEvent.click(screen.getByTestId('cue-wave'), { clientX: centre + 5, clientY: 40 })
+      expect(onRemoveDrop).toHaveBeenCalledWith(40000)
+      expect(onAddDrop).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByTestId('cue-wave'), { clientX: centre + 8, clientY: 40 })
+      expect(onAddDrop).toHaveBeenCalledTimes(1)
+      expect(onAddDrop.mock.calls[0][0]).not.toBe(40000)
+    },
+  )
+
+  it('shows no ghost over an existing drop', () => {
+    setup()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 400, clientY: 40 })
+    expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
+  })
+
+  it('clears the ghost after a click', () => {
+    setup()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
+  })
+
+  it('clears the ghost when it becomes disabled and does not bring it back on enabling', () => {
+    const props = {
+      wave: null,
+      grid: GRID,
+      durationMs: 80000,
+      hot: [],
+      drops: [],
+      onAddDrop: vi.fn(),
+      onRemoveDrop: vi.fn(),
+    }
+    const { rerender } = render(<CueWave {...props} />)
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-ghost')).toBeInTheDocument()
+    rerender(<CueWave {...props} disabled />)
+    expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
+    rerender(<CueWave {...props} />)
+    expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
+  })
 })

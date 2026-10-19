@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DrawnHotCue } from '../../../shared/cueRules'
 import type { CueWaveColumn } from '../../../shared/types'
@@ -28,6 +28,9 @@ export function CueWave({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const [ghost, setGhost] = useState<number | null>(null)
+  useEffect(() => {
+    if (disabled) setGhost(null)
+  }, [disabled])
   if (grid.length === 0) {
     return (
       <div
@@ -59,6 +62,7 @@ export function CueWave({
       data-testid="cue-wave"
       onClick={(e) => {
         if (disabled) return
+        setGhost(null)
         const action = at(e)
         if (action.kind === 'remove') onRemoveDrop(action.ms)
         else onAddDrop(action.ms)

@@ -1,4 +1,4 @@
-import { nearestBeat } from '../../../shared/cueRules'
+import { nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 
 export const CUE_COLOR: Record<number, string> = {
   1: 'var(--color-accent)',
@@ -29,7 +29,14 @@ export function clickAction(
   drops: number[],
   toleranceMs: number,
 ): { kind: 'add' | 'remove'; ms: number } {
-  const hit = drops.find((d) => Math.abs(d - ms) <= toleranceMs)
+  const nearestTo = (target: number, within: number): number | undefined =>
+    drops
+      .filter((d) => Math.abs(d - target) <= within)
+      .sort((a, b) => Math.abs(a - target) - Math.abs(b - target))[0]
+  const hit = nearestTo(ms, toleranceMs)
   if (hit !== undefined) return { kind: 'remove', ms: hit }
-  return { kind: 'add', ms: beatsMs[nearestBeat(beatsMs, ms)] }
+  const beat = beatsMs[nearestBeat(beatsMs, ms)]
+  const same = nearestTo(beat, SAME_POSITION_MS)
+  if (same !== undefined) return { kind: 'remove', ms: same }
+  return { kind: 'add', ms: beat }
 }
