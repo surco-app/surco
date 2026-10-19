@@ -284,6 +284,57 @@ describe('useTrackLibrary cancelling an import', () => {
   })
 })
 
+// Opening a rekordbox playlist streams its files one per batch, and each batch is its own
+// addPaths. A cap per call let a 999-track playlist fire 985 reads at once: the NAS
+// stalled, no row filled for 100 s, and the TagLib reads blocked the main process for a
+// minute. The cap has to hold across calls.
+describe('useTrackLibrary read cap across imports', () => {
+  it('reads at most six files at once however many batches arrive', async () => {
+    const pending: (() => void)[] = []
+    let inFlight = 0
+    let peak = 0
+    const { fireBatch } = setApi({
+      readMeta: vi.fn(() => {
+        inFlight++
+        peak = Math.max(peak, inFlight)
+        return new Promise((resolve) => {
+          pending.push(() => {
+            inFlight--
+            resolve({ tags: { title: '', artist: '' }, duration: 180, cover: null })
+          })
+        })
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      for (let i = 0; i < 20; i++) fireBatch([`/m/${i}.wav`])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.tracks.length).toBe(20)
+    expect(peak).toBe(6)
+
+    for (let round = 0; round < 5; round++) {
+      await act(async () => {
+        for (const r of pending.splice(0)) r()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+    }
+    expect(peak).toBe(6)
+    expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
+  })
+})
+
 describe('useTrackLibrary removed tracks vs watcher', () => {
   // Removing a track with the X takes it out of the crate but not off the disk, so the
   // watcher's next report (a folder change, or the 60s safety poll) still lists its file.

@@ -10,7 +10,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { fillFromAppleMusic } from '../lib/appleMusicFill'
-import { mapWithConcurrency } from '../lib/concurrency'
+import { createConcurrencyLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
@@ -186,6 +186,7 @@ export function useTrackLibrary({
   // (thousands of files on a NAS, one tag read each) and was the only one with no way
   // out. Cleared when the next import starts.
   const importCancel = useRef(false)
+  const readSlot = useRef(createConcurrencyLimit(READ_CONCURRENCY))
   // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   // Paths the user said no to: removed from the crate (row X or the multi-delete button) or
@@ -356,27 +357,31 @@ export function useTrackLibrary({
     // that look like tracks with no metadata. Rows already read are finished work and
     // stay — cancel means "stop working", not "undo".
     const unread = new Set(bases.map((b) => b.id))
-    void mapWithConcurrency(bases, READ_CONCURRENCY, async (base) => {
-      // Checked before the read, not after: the point is to not start the ones still
-      // queued behind the handful already in flight.
-      if (importCancel.current) return
-      const ok = await loadTrackMeta(base)
-      unread.delete(base.id)
-      if (!ok) importFailed.current += 1
-      importDone.current += 1
-      if (importCancel.current) return
-      if (importDone.current >= importTotal.current) {
-        importDone.current = 0
-        importTotal.current = 0
-        setImportProgress(null)
-        if (importFailed.current > 0) {
-          onMetaReadFailed(importFailed.current)
-          importFailed.current = 0
-        }
-      } else {
-        setImportProgress({ done: importDone.current, total: importTotal.current })
-      }
-    }).then(() => {
+    void Promise.all(
+      bases.map((base) =>
+        readSlot.current(async () => {
+          // Checked before the read, not after: the point is to not start the ones still
+          // queued behind the handful already in flight.
+          if (importCancel.current) return
+          const ok = await loadTrackMeta(base)
+          unread.delete(base.id)
+          if (!ok) importFailed.current += 1
+          importDone.current += 1
+          if (importCancel.current) return
+          if (importDone.current >= importTotal.current) {
+            importDone.current = 0
+            importTotal.current = 0
+            setImportProgress(null)
+            if (importFailed.current > 0) {
+              onMetaReadFailed(importFailed.current)
+              importFailed.current = 0
+            }
+          } else {
+            setImportProgress({ done: importDone.current, total: importTotal.current })
+          }
+        }),
+      ),
+    ).then(() => {
       if (!importCancel.current || unread.size === 0) return
       // Dropped only once every worker has settled, so a row is never removed while its
       // own read is still running and about to patch it.
