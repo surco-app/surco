@@ -1,0 +1,65 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
+import '../i18n'
+import { resetRowWaves } from '../lib/rowWaves'
+import { RowWave } from './RowWave'
+
+beforeEach(() => {
+  ;(window as unknown as { api: Partial<Api> }).api = {
+    rowWaves: vi.fn<Api['rowWaves']>(async () => ({ '/a.DAT': Array(100).fill(0.5) })),
+  }
+})
+afterEach(() => {
+  cleanup()
+  resetRowWaves()
+})
+
+const request = { path: '/m/a.wav', analysisPath: '/a.DAT' }
+const cues = [
+  { ms: 0, kind: 1 },
+  { ms: 32000, kind: 0 },
+  { ms: 64000, kind: 2 },
+]
+
+describe('RowWave', () => {
+  it('draws the wave once it arrives', async () => {
+    render(<RowWave request={request} cues={[]} durationSec={128} pending={false} />)
+    expect(await screen.findByTestId('track-wave-bars')).toBeInTheDocument()
+  })
+
+  it('places hot cues as lettered squares and memory cues as triangles along the track', () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} />)
+    const hot = screen.getAllByTestId('track-hot-cue')
+    expect(hot.map((h) => h.textContent)).toEqual(['A', 'B'])
+    expect(hot[1].style.left).toBe('calc(50% - 6px)')
+    expect(screen.getAllByTestId('track-memory-cue')).toHaveLength(1)
+    expect(screen.getByTestId('track-wave')).toHaveAccessibleName('2 hot cues')
+  })
+
+  it('draws no cue it cannot place, for a track with no length or a cue past the end', () => {
+    const { rerender } = render(
+      <RowWave request={request} cues={cues} durationSec={0} pending={false} />,
+    )
+    expect(screen.queryAllByTestId('track-hot-cue')).toHaveLength(0)
+    rerender(
+      <RowWave
+        request={request}
+        cues={[{ ms: 999000, kind: 1 }]}
+        durationSec={128}
+        pending={false}
+      />,
+    )
+    expect(screen.queryAllByTestId('track-hot-cue')).toHaveLength(0)
+  })
+
+  it('draws cues still waiting for rekordbox hollow', () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending />)
+    expect(screen.getByTestId('track-wave')).toHaveAttribute('data-pending', 'true')
+    expect(screen.getByTestId('track-wave')).toHaveAccessibleName(
+      '2 hot cues waiting for rekordbox',
+    )
+  })
+})
