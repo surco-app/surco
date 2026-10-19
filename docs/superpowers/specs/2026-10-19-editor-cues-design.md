@@ -104,6 +104,15 @@ En la lista, la sección Cues y el configurador:
 
 Hoy, en la lista, el triángulo de un CALL en la misma posición que su hot cue queda tapado por el cuadrado.
 
+### 7. Aprender de mi colección
+
+Vicent, 19/10: "el auto, esta feature no podría analizar la db de cada usuario y buscar sus patrones?" y "así le haría la configuración Surco en los settings".
+
+- En Ajustes › Cues, un botón "Aprender de mi colección" lee las cues de la colección de rekordbox (solo lectura, como el resto de lecturas) y deduce el flujo dominante del DJ: a qué distancias de donde rompe pone hot cues, con qué color en cada distancia, si cada hot cue lleva su CALL al lado y si hay una cue de inicio.
+- Lo muestra como un flujo propuesto con su vista previa y cuántas pistas de la colección lo cumplen. El DJ lo acepta (se guarda como un flujo más y pasa a activo), lo edita o lo descarta. Nunca sustituye un flujo sin su clic.
+- Si la medición del botón Auto (§4) muestra que calibrar con las marcas del propio DJ acierta más que la regla general, Auto usa lo aprendido: dónde suele romper para ese DJ respecto a las frases de rekordbox. La calibración se guarda con el flujo aprendido.
+- Si la colección no tiene un patrón claro (ningún flujo cubre una parte suficiente de las pistas marcadas), el botón lo dice y no propone nada.
+
 ## Fuera de alcance
 
 - Detección automática que escriba sin confirmar.
