@@ -32,9 +32,9 @@ Una **regla** son estos bloques, en este orden:
 |---|---|
 | Desde | donde rompe · primer golpe · último golpe · cada frase de rekordbox de un tipo (intro, subida, bajada, estribillo, outro) |
 | Sentido | hacia atrás · hacia delante |
-| Distancia | N compases (1 a 128) |
+| Distancia | N compases (0 a 128; 0 es en el mismo golpe) |
 | Repetir | 1 vez · N veces · hasta el borde de la pista |
-| Condición | siempre · si cabe (no antes del primer golpe ni después del último) · si no cuadra con otra regla (la cue que pondría esa regla no cae en el mismo compás) |
+| Condición | siempre · si cabe (no antes del primer golpe ni después del último) · si no cuadra con otra regla (la cue que pondría esa regla no cae en el mismo compás) · si no hay otra antes de donde rompe (ninguna regla anterior puso una cue antes del primer donde rompe) |
 | Pon | hot cue · CALL · hot cue + CALL |
 | Color (hot cue) | uno fijo · uno por repetición (primera, segunda, tercera…) |
 
@@ -50,7 +50,7 @@ Reglas globales del motor, iguales que hoy en `cueRules.ts`:
 
 - **Mi flujo** (el de `rules.py`):
   1. Desde donde rompe, hacia atrás, 16 compases, 3 veces, si cabe: hot cue + CALL, colores azul (1), verde (22) y rojo (42) por repetición.
-  2. Desde el primer golpe, si no cuadra con la regla 1: hot cue, amarillo (32).
+  2. Desde el primer golpe, en el mismo golpe, si no hay otra antes de donde rompe: hot cue + CALL, amarillo (32). (Así lo hace hoy `planCues`: la condición "no cuadra" leída como "otro compás" rompería la paridad.)
 - **Una cue a 32**: desde donde rompe, hacia atrás, 32 compases, 1 vez, si cabe: hot cue, verde.
 - **Solo CALL**: ninguna regla. Marcar donde rompe deja solo el CALL.
 
