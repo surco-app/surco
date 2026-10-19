@@ -250,11 +250,17 @@ export function FieldsEditor({
     listRef.current?.querySelector<HTMLElement>(`[data-arrow="${refocusArrow.current}"]`)?.focus()
     refocusArrow.current = null
   }, [visibleFields])
+  const hiddenOfferedKey = rekordboxField
+    ? []
+    : visibleFields.filter((k) => k === REKORDBOX_PLAYLISTS_FIELD)
+  const shownFields = rekordboxField
+    ? visibleFields
+    : visibleFields.filter((k) => k !== REKORDBOX_PLAYLISTS_FIELD)
   function move(i: number, delta: -1 | 1): void {
     const to = i + delta
-    if (to === 0) refocusArrow.current = `down-${visibleFields[i]}`
-    else if (to === visibleFields.length - 1) refocusArrow.current = `up-${visibleFields[i]}`
-    onChangeVisible(moveItem(visibleFields, i, delta))
+    if (to === 0) refocusArrow.current = `down-${shownFields[i]}`
+    else if (to === shownFields.length - 1) refocusArrow.current = `up-${shownFields[i]}`
+    onChangeVisible([...moveItem(shownFields, i, delta), ...hiddenOfferedKey])
   }
   function autoOrganize(): void {
     onChangeVisible(sortFieldsByGroup(visibleFields))
@@ -328,108 +334,106 @@ export function FieldsEditor({
           <span />
         </div>
         <div ref={listRef} className="space-y-1.5">
-          {visibleFields.map((key, i) =>
-            key === REKORDBOX_PLAYLISTS_FIELD && !rekordboxField ? null : (
-              // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder.
-              <div
-                key={key}
-                data-testid={`field-row-${key}`}
-                draggable={dragKey === key}
-                onDragStart={(e) => {
-                  e.dataTransfer.effectAllowed = 'move'
-                  e.dataTransfer.setData('text/plain', key)
-                }}
-                onDragOver={(e) => {
-                  if (dragKey && dragKey !== key) {
-                    e.preventDefault()
-                    setDropKey(key)
-                  }
-                }}
-                onDragLeave={() => setDropKey((k) => (k === key ? null : k))}
-                onDrop={(e) => {
+          {shownFields.map((key, i) => (
+            // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder.
+            <div
+              key={key}
+              data-testid={`field-row-${key}`}
+              draggable={dragKey === key}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text/plain', key)
+              }}
+              onDragOver={(e) => {
+                if (dragKey && dragKey !== key) {
                   e.preventDefault()
-                  if (dragKey && dragKey !== key)
-                    onChangeVisible(reorder(visibleFields, dragKey, key))
-                  setDragKey(null)
-                  setDropKey(null)
-                }}
-                onDragEnd={() => {
-                  setDragKey(null)
-                  setDropKey(null)
-                }}
-                onMouseUp={() => setDragKey(null)}
-                className={`${ROW_GRID} rounded-lg border bg-[var(--color-field)] py-1.5 pl-2 pr-2 ${
-                  dropKey === key ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]'
-                } ${dragKey === key ? 'opacity-40' : ''}`}
+                  setDropKey(key)
+                }
+              }}
+              onDragLeave={() => setDropKey((k) => (k === key ? null : k))}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragKey && dragKey !== key)
+                  onChangeVisible(reorder(visibleFields, dragKey, key))
+                setDragKey(null)
+                setDropKey(null)
+              }}
+              onDragEnd={() => {
+                setDragKey(null)
+                setDropKey(null)
+              }}
+              onMouseUp={() => setDragKey(null)}
+              className={`${ROW_GRID} rounded-lg border bg-[var(--color-field)] py-1.5 pl-2 pr-2 ${
+                dropKey === key ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]'
+              } ${dragKey === key ? 'opacity-40' : ''}`}
+            >
+              <span className="flex items-center gap-1.5 text-sm">
+                <GripVertical
+                  data-testid={`field-grip-${key}`}
+                  onMouseDown={() => setDragKey(key)}
+                  className="h-4 w-4 cursor-grab text-fg-dim"
+                  aria-hidden="true"
+                />
+                {nameCell(key)}
+              </span>
+              {autoToggle(key)}
+              {key === REKORDBOX_PLAYLISTS_FIELD ? (
+                <span aria-hidden="true" />
+              ) : (
+                <button
+                  type="button"
+                  data-testid={`field-required-${key}`}
+                  aria-pressed={requiredFields.includes(key)}
+                  onClick={() =>
+                    onChangeRequired(
+                      requiredFields.includes(key)
+                        ? requiredFields.filter((k) => k !== key)
+                        : [...requiredFields, key],
+                    )
+                  }
+                  aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
+                  className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
+                >
+                  {requiredFields.includes(key) ? (
+                    <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <CircleDashed className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </button>
+              )}
+              <button
+                type="button"
+                data-arrow={`up-${key}`}
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
               >
-                <span className="flex items-center gap-1.5 text-sm">
-                  <GripVertical
-                    data-testid={`field-grip-${key}`}
-                    onMouseDown={() => setDragKey(key)}
-                    className="h-4 w-4 cursor-grab text-fg-dim"
-                    aria-hidden="true"
-                  />
-                  {nameCell(key)}
-                </span>
-                {autoToggle(key)}
-                {key === REKORDBOX_PLAYLISTS_FIELD ? (
-                  <span aria-hidden="true" />
-                ) : (
-                  <button
-                    type="button"
-                    data-testid={`field-required-${key}`}
-                    aria-pressed={requiredFields.includes(key)}
-                    onClick={() =>
-                      onChangeRequired(
-                        requiredFields.includes(key)
-                          ? requiredFields.filter((k) => k !== key)
-                          : [...requiredFields, key],
-                      )
-                    }
-                    aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
-                    className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
-                  >
-                    {requiredFields.includes(key) ? (
-                      <CircleCheck className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <CircleDashed className="h-4 w-4" aria-hidden="true" />
-                    )}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  data-arrow={`up-${key}`}
-                  onClick={() => move(i, -1)}
-                  disabled={i === 0}
-                  className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                  aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
-                >
-                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  data-arrow={`down-${key}`}
-                  onClick={() => move(i, 1)}
-                  disabled={i === visibleFields.length - 1}
-                  className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                  aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
-                >
-                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                </button>
-                {/* The eye Sections toggles visibility with, so both tabs say it the same way. */}
-                <button
-                  type="button"
-                  data-testid={`field-hide-${key}`}
-                  onClick={() => hide(key)}
-                  aria-label={tr('fields.rowHide', { name: labelOf(key) })}
-                  className={`${TOGGLE_BOX} ${TOGGLE_ON}`}
-                >
-                  <Eye className="h-4 w-4" aria-hidden="true" />
-                  <Tooltip label={tr('settings.hide')} />
-                </button>
-              </div>
-            ),
-          )}
+                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                data-arrow={`down-${key}`}
+                onClick={() => move(i, 1)}
+                disabled={i === shownFields.length - 1}
+                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
+              >
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              </button>
+              {/* The eye Sections toggles visibility with, so both tabs say it the same way. */}
+              <button
+                type="button"
+                data-testid={`field-hide-${key}`}
+                onClick={() => hide(key)}
+                aria-label={tr('fields.rowHide', { name: labelOf(key) })}
+                className={`${TOGGLE_BOX} ${TOGGLE_ON}`}
+              >
+                <Eye className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr('settings.hide')} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

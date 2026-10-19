@@ -313,7 +313,11 @@ export default function App(): React.JSX.Element {
   })
   const rekordboxAvailable = useRekordboxAvailable()
   const saveSettingsStable = useStableCallback(saveSettings)
-  useOfferRekordboxField(settings, rekordboxAvailable, saveSettingsStable)
+  useOfferRekordboxField(
+    settings?.hasSeenOnboarding && !settingsOpen ? settings : null,
+    rekordboxAvailable,
+    saveSettingsStable,
+  )
   const { decideOnLoad, maybeShowDonateNudge, finishOnboarding } = useLaunchModals({
     overlays,
     saveSettings,

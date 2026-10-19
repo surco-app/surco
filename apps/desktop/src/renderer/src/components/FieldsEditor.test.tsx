@@ -556,4 +556,15 @@ describe('the rekordbox Playlists row', () => {
     setup({ visibleFields: ['title'], rekordboxField: true })
     expect(screen.getByTestId('hidden-field-rekordboxPlaylists')).toBeInTheDocument()
   })
+
+  it('moves the shown rows only, so the arrow of the last shown row is disabled even with the hidden key after it', () => {
+    setup({ visibleFields: ['title', 'artist', 'rekordboxPlaylists'] })
+    expect(screen.getByLabelText('Move Artist down')).toBeDisabled()
+  })
+
+  it('reorders around the hidden key and keeps it in the list', () => {
+    const { onChangeVisible } = setup({ visibleFields: ['title', 'rekordboxPlaylists', 'artist'] })
+    fireEvent.click(screen.getByLabelText('Move Title down'))
+    expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'rekordboxPlaylists'])
+  })
 })

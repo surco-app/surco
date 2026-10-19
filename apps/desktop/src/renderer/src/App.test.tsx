@@ -4576,6 +4576,49 @@ describe("App what's new popup", () => {
   })
 })
 
+describe('App offers the rekordbox Playlists field', () => {
+  it('offers it once settings (onboarding seen) and availability arrive, appended to the shown fields', async () => {
+    const saveSettings = vi
+      .fn()
+      .mockResolvedValue(settings({ rekordboxPlaylistsFieldOffered: true }))
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ rekordboxPlaylistsFieldOffered: false, visibleFields: ['title'] }),
+        ),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      saveSettings,
+    })
+    await renderApp()
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith({
+        visibleFields: ['title', 'rekordboxPlaylists'],
+        rekordboxPlaylistsFieldOffered: true,
+      }),
+    )
+  })
+
+  it('waits for onboarding to finish, because the wizard would overwrite the offered fields with its own draft', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ hasSeenOnboarding: false, rekordboxPlaylistsFieldOffered: false }),
+        ),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      saveSettings,
+    })
+    await renderApp()
+    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await act(async () => {})
+    expect(saveSettings).not.toHaveBeenCalledWith(
+      expect.objectContaining({ rekordboxPlaylistsFieldOffered: true }),
+    )
+  })
+})
+
 describe('App Apple Music library filter', () => {
   // The whole point of the filter: after importing a crate, the user wants to see only
   // the tracks they don't already own in Apple Music, so they don't re-import duplicates.

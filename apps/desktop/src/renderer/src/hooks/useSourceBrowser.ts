@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import { distinctTracks, musicEntries, musicTree, withReadCounts } from '../lib/appleMusicSource'
+import { useRekordboxAvailable } from './useRekordboxPlaylists'
 import { useWindowFocus } from './useWindowFocus'
 
 export interface SourceBrowser {
@@ -55,11 +56,7 @@ export function useSourceBrowser({
   const playlist = source ? (playlists[source] ?? null) : null
   const isMac = window.api.platform === 'darwin'
 
-  const { data: rekordbox = false } = useQuery({
-    queryKey: ['source-available', 'rekordbox'],
-    queryFn: () => window.api.rekordboxAvailable(),
-    staleTime: Number.POSITIVE_INFINITY,
-  })
+  const rekordbox = useRekordboxAvailable()
   const sources: PlaylistSource[] = [
     ...(isMac ? (['appleMusic'] as const) : []),
     ...(rekordbox ? (['rekordbox'] as const) : []),

@@ -79,4 +79,15 @@ describe('useRekordboxPlaylists', () => {
     )
     expect(save).not.toHaveBeenCalled()
   })
+
+  it('tries the offer once per session even if the save is rolled back', () => {
+    const save = vi.fn()
+    const settings = { visibleFields: ['title'], rekordboxPlaylistsFieldOffered: false } as Settings
+    const { rerender } = renderHook(({ current }) => useOfferRekordboxField(current, true, save), {
+      initialProps: { current: settings },
+    })
+    rerender({ current: { ...settings } })
+    rerender({ current: { ...settings } })
+    expect(save).toHaveBeenCalledTimes(1)
+  })
 })

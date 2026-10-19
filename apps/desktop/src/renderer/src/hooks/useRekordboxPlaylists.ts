@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { Settings } from '../../../shared/types'
 import { withRekordboxField } from '../lib/fields'
 import { type Membership, type PlaylistOption, playlistOptions } from '../lib/rekordboxPlaylists'
@@ -39,13 +39,16 @@ export function useOfferRekordboxField(
   available: boolean,
   save: (patch: Partial<Settings>) => void,
 ): void {
+  const tried = useRef(false)
   useEffect(() => {
-    if (!settings) return
+    if (!settings || tried.current) return
     const next = withRekordboxField(
       settings.visibleFields,
       settings.rekordboxPlaylistsFieldOffered,
       available,
     )
-    if (next) save({ visibleFields: next, rekordboxPlaylistsFieldOffered: true })
+    if (!next) return
+    tried.current = true
+    save({ visibleFields: next, rekordboxPlaylistsFieldOffered: true })
   }, [settings, available, save])
 }
