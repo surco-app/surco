@@ -1794,7 +1794,7 @@
     "menu": {
       "addTo": "Add to playlist",
       "insertSeparator": "Insert separator above",
-      "removeFrom": "Remove from “{{name}}” in rekordbox",
+      "removeFrom": "Remove from “{{name}}”",
       "removeSeparatorAbove": "Remove separator above"
     }
   },

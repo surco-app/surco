@@ -1935,7 +1935,7 @@ describe('App source playlists', () => {
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.contextMenu(rows[1])
     expect(await screen.findByTestId('track-menu-remove-from')).toHaveTextContent(
-      'Remove from “Factory” in rekordbox',
+      /^Remove from “Factory”$/,
     )
     fireEvent.click(screen.getByTestId('track-menu-remove-from'))
     expect(edit).not.toHaveBeenCalled()
