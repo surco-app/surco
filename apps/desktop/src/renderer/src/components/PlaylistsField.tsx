@@ -258,7 +258,7 @@ function TreePopover({
       onKeyDown={onKeyDown}
       className="absolute top-full right-0 left-0 z-20 mt-1 flex flex-col overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
     >
-      <label className="m-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs">
+      <label className="m-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs focus-within:border-[var(--color-accent)]">
         <Search size={13} className="shrink-0 text-fg-faint" aria-hidden="true" />
         <input
           ref={(el) => {
@@ -270,7 +270,7 @@ function TreePopover({
           placeholder={tr('editor.playlists.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-fg outline-none placeholder:text-fg-faint"
+          className="min-w-0 flex-1 bg-transparent text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
         />
       </label>
       <div className="max-h-[300px] overflow-y-auto px-1.5 pb-2">
