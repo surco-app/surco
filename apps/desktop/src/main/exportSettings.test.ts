@@ -10,8 +10,9 @@ const dir = vi.hoisted(() => {
 vi.mock('electron', () => ({ app: { getPath: () => dir } }))
 
 import { rmSync } from 'node:fs'
-import { serializeSettingsForExport } from './exportIpc'
-import { saveSettings } from './settings'
+import type { CueFlow } from '../shared/cueFlows'
+import { applyImportedSettings, serializeSettingsForExport } from './exportIpc'
+import { getSettings, saveSettings } from './settings'
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
@@ -33,5 +34,29 @@ describe('serializeSettingsForExport', () => {
     const parsed = JSON.parse(serializeSettingsForExport())
     expect(parsed).not.toHaveProperty('beatportUsername')
     expect(parsed).not.toHaveProperty('beatportPassword')
+  })
+
+  it('carries a flow the DJ built to another install and back', () => {
+    const flow: CueFlow = {
+      id: 'x',
+      name: 'Una a 64',
+      rules: [
+        {
+          from: 'drop',
+          direction: 'back',
+          bars: 64,
+          repeat: 1,
+          when: 'fits',
+          place: 'hot',
+          color: { fixed: 42 },
+        },
+      ],
+    }
+    saveSettings({ cueFlows: [...getSettings().cueFlows, flow], activeCueFlow: 'x' })
+    const exported = JSON.parse(serializeSettingsForExport())
+    saveSettings({ cueFlows: [], activeCueFlow: 'mine' })
+    const back = applyImportedSettings(exported)
+    expect(back.cueFlows.find((f) => f.id === 'x')).toEqual(flow)
+    expect(back.activeCueFlow).toBe('x')
   })
 })

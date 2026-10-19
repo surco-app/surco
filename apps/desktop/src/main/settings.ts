@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { autoMatchAvailable } from '../shared/autoMatch'
 import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
+import { BUNDLED_FLOWS, MY_FLOW_ID, normalizeCueFlows } from '../shared/cueFlows'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
@@ -67,6 +68,8 @@ export const defaults: Settings = {
   syncTraktor: false,
   syncRekordbox: false,
   completeCuesOnClose: false,
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: MY_FLOW_ID,
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
@@ -290,6 +293,9 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
       patch.backupRetentionDays ?? base.backupRetentionDays,
     ),
     backupMaxGb: sanitizeMaxGb(patch.backupMaxGb ?? base.backupMaxGb),
+    cueFlows: normalizeCueFlows(patch.cueFlows ?? base.cueFlows),
+    activeCueFlow:
+      typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow,
   }
 }
 

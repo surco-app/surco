@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { BUNDLED_FLOWS } from '../../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -17,6 +18,8 @@ afterEach(cleanup)
 
 const synced: SyncedDraft = {
   theme: 'system',
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: 'mine',
   language: 'system',
   outputFormat: 'aiff',
   keepMp3Sources: false,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS, type EditorSectionId } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import {
@@ -20,6 +21,8 @@ import {
 // (pickSynced/pickLocal); each test overrides only the fields its assertion is about.
 const settings: Settings = {
   theme: 'system',
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: 'mine',
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

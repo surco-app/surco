@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -27,6 +28,8 @@ afterEach(cleanup)
 
 const settings: Settings = {
   theme: 'system',
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: 'mine',
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

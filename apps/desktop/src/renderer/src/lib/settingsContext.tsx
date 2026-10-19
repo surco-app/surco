@@ -1,5 +1,11 @@
 import type React from 'react'
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
+import {
+  BUNDLED_FLOWS,
+  type CueFlow,
+  MY_FLOW_ID,
+  normalizeCueFlows,
+} from '../../../shared/cueFlows'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../../../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
@@ -75,6 +81,8 @@ interface ResolvedSettings {
   declick: DeclickConfig
   // Always complete and form-first, whatever an older settings.json stored.
   editorSections: EditorSectionPref[]
+  cueFlows: CueFlow[]
+  activeCueFlow: string
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -117,6 +125,8 @@ const DEFAULTS: ResolvedSettings = {
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   declick: DEFAULT_DECLICK,
   editorSections: DEFAULT_EDITOR_SECTIONS,
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: MY_FLOW_ID,
 }
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -159,6 +169,8 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     normalize: settings.normalize ?? DEFAULTS.normalize,
     declick: normalizeDeclick(settings.declick),
     editorSections: normalizeEditorSections(settings.editorSections),
+    cueFlows: normalizeCueFlows(settings.cueFlows),
+    activeCueFlow: settings.activeCueFlow ?? DEFAULTS.activeCueFlow,
   }
 }
 

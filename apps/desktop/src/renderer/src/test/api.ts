@@ -1,4 +1,5 @@
 import type { Api } from '../../../preload/api'
+import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { Settings } from '../../../shared/types'
@@ -33,6 +34,8 @@ export const testSettings: Settings = {
   syncTraktor: false,
   syncRekordbox: false,
   completeCuesOnClose: false,
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: 'mine',
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   betaUpdates: false,

@@ -1003,3 +1003,32 @@ describe('complete cues on close is per machine', () => {
     expect(getSettings().completeCuesOnClose).toBe(true)
   })
 })
+
+describe('cue flows', () => {
+  it('gives a settings file from before flows the bundled ones with Mi flujo active', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32', 'calls-only'])
+    expect(getSettings().activeCueFlow).toBe('mine')
+  })
+
+  it('puts Mi flujo back into a synced file that lost it, so the section always has a flow', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlows: [{ id: 'x', name: 'Solo 64', rules: [] }], activeCueFlow: 'x' }),
+    )
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mine', 'x'])
+    expect(getSettings().activeCueFlow).toBe('x')
+  })
+
+  it('follows the person to another Mac like the cue offset, not this Mac only', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ activeCueFlow: 'one-at-32' })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.activeCueFlow).toBe('one-at-32')
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+})

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { BUNDLED_FLOWS } from '../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -116,6 +117,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     editorSections: DEFAULT_EDITOR_SECTIONS,
     resultsWidth: null,
     theme: 'system',
+    cueFlows: BUNDLED_FLOWS,
+    activeCueFlow: 'mine',
     language: 'system',
     discogsToken: '',
     beatportUsername: '',

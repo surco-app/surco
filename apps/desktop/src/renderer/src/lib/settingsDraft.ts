@@ -24,6 +24,8 @@ export interface SyncedDraft {
   syncTraktor: boolean
   syncRekordbox: boolean
   completeCuesOnClose: boolean
+  cueFlows: Settings['cueFlows']
+  activeCueFlow: string
   syncEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
@@ -122,6 +124,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,
     completeCuesOnClose: s.completeCuesOnClose,
+    cueFlows: s.cueFlows,
+    activeCueFlow: s.activeCueFlow,
     syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,

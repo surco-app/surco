@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import { buildSettingsPatch, type LocalDraft, pickSynced } from './settingsDraft'
@@ -77,6 +78,8 @@ const settings: Settings = {
   commandUsage: {},
   musicReviewIgnored: [],
   listReviewIgnored: [],
+  cueFlows: BUNDLED_FLOWS,
+  activeCueFlow: 'mine',
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
@@ -246,5 +249,13 @@ describe('buildSettingsPatch', () => {
   it('saves an empty import-field selection instead of dropping it', () => {
     const draft = pickSynced({ ...settings, importFields: [] })
     expect(buildSettingsPatch(draft, local).importFields).toEqual([])
+  })
+})
+
+describe('cue flows in the draft', () => {
+  it('saves the flows and the active flow the Cues tab staged', () => {
+    const synced = { ...pickSynced(settings), activeCueFlow: 'calls-only' }
+    expect(buildSettingsPatch(synced, local).activeCueFlow).toBe('calls-only')
+    expect(buildSettingsPatch(synced, local).cueFlows).toBe(settings.cueFlows)
   })
 })
