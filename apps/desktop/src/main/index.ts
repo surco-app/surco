@@ -84,7 +84,9 @@ import {
   engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
+  rekordboxCollectionPath,
   rekordboxFlushDeps,
+  repointRekordbox,
   syncTagsInLibraries,
   traktorFlushDeps,
 } from './libraryFlushes'
@@ -108,9 +110,19 @@ import {
   beginRekordboxBatch,
   redirectRekordboxRepoint,
 } from './rekordboxBatch'
+import { readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
 import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
+import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
+import {
+  createRekordboxQueue,
+  fileStore,
+  type QueueApply,
+  type RekordboxQueue,
+} from './rekordboxQueue'
+import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
+import { watchRekordboxQueue } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { loadLastSession, saveLastSession } from './session'
 import {
@@ -189,6 +201,45 @@ const rekordboxSessionBackup = createSessionBackup({})
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({})
 const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
+const broadcast = (channel: string, payload: unknown): void => {
+  for (const win of BrowserWindow.getAllWindows())
+    if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
+}
+const rekordboxQueue = createRekordboxQueue({
+  store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
+  collection: rekordboxCollectionPath,
+  applyBatch: (collectionPath, ops, ensureClosed) =>
+    applyRekordboxBatch(collectionPath, ops, {
+      ensureClosed,
+      sessionBackup: (path) => sessions.rekordbox.ensure(path),
+      realPath: (p: string) => realpathSync(p),
+    }),
+  repoint: (collectionPath, list) => repointRekordbox(collectionPath, list, sessions),
+  nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
+  onChange: (state) => broadcast('rekordbox:queueChanged', state),
+})
+const announceApplied = (result: QueueApply): void => {
+  const notice = appliedNotice(result)
+  if (notice) broadcast('rekordbox:queueApplied', notice)
+}
+const rekordboxQueueWatch = watchRekordboxQueue({
+  queue: {
+    isEmpty: () => rekordboxQueue.isEmpty(),
+    apply: (ensureClosed) => serialLibraryFlush(() => rekordboxQueue.apply(ensureClosed)),
+  },
+  collection: rekordboxCollectionPath,
+  isRunning: isRekordboxRunning,
+  onApplied: announceApplied,
+})
+const enqueueRekordbox: RekordboxQueue['enqueue'] = (ops, repoints) => {
+  rekordboxQueue.enqueue(ops, repoints)
+  rekordboxQueueWatch.poke()
+}
+const applyRekordboxQueueQuietly = (): void => {
+  void serialLibraryFlush(() =>
+    rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
+  ).then(announceApplied)
+}
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
 // concurrent process:track calls a batch fans out into — same module-scoped-per-run
@@ -880,11 +931,15 @@ function registerIpc(): void {
     () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     {
       ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
-      // The same per-session copy the conversion run uses: until the next run starts, it
-      // holds the collection as it was before Surco's first write of the session.
-      sessionBackup: (path) => sessions.rekordbox.ensure(path),
+      queue: { enqueue: enqueueRekordbox, apply: rekordboxQueue.apply },
+      onApplied: announceApplied,
     },
   )
+  registerRekordboxQueueIpc(rekordboxQueue, {
+    collection: rekordboxCollectionPath,
+    ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+    onApplied: (notice) => broadcast('rekordbox:queueApplied', notice),
+  })
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     userData: app.getPath('userData'),
@@ -953,8 +1008,8 @@ function registerIpc(): void {
   ipcMain.on('process:batch-end', (e) =>
     serialLibraryFlush(() =>
       flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), sessions, {
-        enqueue: () => {},
-        applyQuietly: () => {},
+        enqueue: enqueueRekordbox,
+        applyQuietly: applyRekordboxQueueQuietly,
       }),
     ),
   )
@@ -1489,6 +1544,7 @@ app.whenReady().then(() => {
   migrateBackupLimits()
   migrateImportFields()
   createWindow()
+  rekordboxQueueWatch.poke()
 
   // Downloads a newer version in the background, then tells the renderer so it can
   // show a "restart to update" toast (which calls quitAndInstall via update:install).

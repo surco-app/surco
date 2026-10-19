@@ -1,8 +1,13 @@
+import { mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   hexId,
   nodeTimestamp,
+  nodeTimestamps,
   playlistXmlPath,
+  readNodeStamps,
   withNodeTimestamp,
   withoutNodes,
   withPlaylistNode,
@@ -149,5 +154,22 @@ describe('masterPlaylists6.xml node removal', () => {
 
   it('keeps a node whose ParentId names a removed one, for the caller to name too', () => {
     expect(withoutNodes(THREE, ['1000'])).toContain('Id="7D0"')
+  })
+})
+
+describe('node timestamps', () => {
+  it('reads every node by its decimal playlist id and skips ids that are not rekordbox rows', () => {
+    expect(nodeTimestamps(THREE)).toEqual({
+      '1000': 1767225600000,
+      '2000': 1767225600001,
+      '3000': 1767225600002,
+    })
+  })
+
+  it('reads them from the file beside the collection and answers none without one', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbstamps-'))
+    expect(readNodeStamps(join(dir, 'master.db'))).toEqual({})
+    await writeFile(join(dir, 'masterPlaylists6.xml'), THREE)
+    expect(readNodeStamps(join(dir, 'master.db'))).toEqual(nodeTimestamps(THREE))
   })
 })

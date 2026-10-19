@@ -1,14 +1,17 @@
-import { existsSync, realpathSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { BrowserWindow, ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { RekordboxPlaylistEdit } from '../shared/types'
+import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
 import { openRekordboxDb } from './rekordboxDb'
+import { readNodeStamps } from './rekordboxMasterXml'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import { readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
-import { editRekordboxPlaylist } from './rekordboxPlaylistWrite'
+import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 
 // Opens the collection read-only for one read and always closes it: rekordbox may be
 // running, and a handle left open is a lock it never asked for. No collection on this
@@ -45,7 +48,14 @@ export function collectionAvailable(path: string): boolean {
 export interface PlaylistEditHost {
   // The "rekordbox is open" dialog, over the window the edit came from.
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
-  sessionBackup: (path: string) => Promise<void>
+  queue: Pick<RekordboxQueue, 'enqueue' | 'apply'>
+  onApplied?: (result: QueueApply) => void
+}
+
+function editStamps(collectionPath: string, edit: RekordboxPlaylistEdit): Record<string, number> {
+  if (edit.kind === 'create') return {}
+  const stamp = readNodeStamps(collectionPath)[edit.playlistId]
+  return stamp === undefined ? {} : { [edit.playlistId]: stamp }
 }
 
 // The collection path is resolved on every call, not captured once: the user can change
@@ -70,13 +80,27 @@ export function registerRekordboxPlaylistsIpc(
   // Queued behind any other library write (a conversion's repoint, a review's sync): they
   // touch the same master.db, and the write's transaction spans an await, so two at once
   // would block each other on SQLite's busy timeout.
-  ipcMain.handle('rekordbox:edit', (e, edit: RekordboxPlaylistEdit) =>
-    serialLibraryFlush(() =>
-      editRekordboxPlaylist(collection(), edit, {
-        ensureClosed: () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
-        sessionBackup: host.sessionBackup,
-        realPath: (p: string) => realpathSync(p),
-      }),
-    ),
+  ipcMain.handle('rekordbox:edit', (e, edit: RekordboxPlaylistEdit, label?: string) =>
+    serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
+      const path = collection()
+      if (!path) return { applied: false, reason: 'unreadable' }
+      const op: EditOp = {
+        id: randomUUID(),
+        kind: 'edit',
+        edit,
+        stamps: editStamps(path, edit),
+        ...(label ? { label } : {}),
+      }
+      host.queue.enqueue([op])
+      const result = await host.queue.apply(() =>
+        host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+      )
+      if (result.status === 'applied' && (result.tracks > 0 || result.changes > 1))
+        host.onApplied?.(result)
+      if (result.status === 'refused') return { applied: false, reason: result.reason }
+      const outcome =
+        result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
+      return editResultOfOutcome(outcome)
+    }),
   )
 }

@@ -21,6 +21,8 @@ import type {
   ProcessProgress,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  RekordboxQueueApplied,
+  RekordboxQueueState,
   RekordboxSyncIssue,
   ScanVerdict,
   SearchHints,
@@ -175,8 +177,26 @@ const api: Api = {
   loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
   loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('rekordbox:playlist', id),
-  editRekordboxPlaylist: (edit: RekordboxPlaylistEdit): Promise<RekordboxEditResult> =>
-    ipcRenderer.invoke('rekordbox:edit', edit),
+  editRekordboxPlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('rekordbox:edit', edit, label),
+  rekordboxQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('rekordbox:queue'),
+  applyRekordboxQueue: (): Promise<RekordboxQueueApplied | null> =>
+    ipcRenderer.invoke('rekordbox:applyNow'),
+  discardRekordboxQueue: (): Promise<void> => ipcRenderer.invoke('rekordbox:discardQueue'),
+  rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
+    ipcRenderer.invoke('rekordbox:membership', paths),
+  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
+    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
+    ipcRenderer.on('rekordbox:queueChanged', listener)
+    return () => ipcRenderer.removeListener('rekordbox:queueChanged', listener)
+  },
+  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
+    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
+    ipcRenderer.on('rekordbox:queueApplied', listener)
+    return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
+  },
   rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {

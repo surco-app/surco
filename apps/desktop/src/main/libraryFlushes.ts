@@ -18,7 +18,7 @@ import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags, tagSyncOf } from './libraryTagSync'
 import { endNmlBatch } from './nmlBatch'
-import { endRekordboxBatch } from './rekordboxBatch'
+import { endRekordboxBatch, type RekordboxRepoint } from './rekordboxBatch'
 import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
@@ -52,6 +52,27 @@ export function currentLibraryStatus(): LibraryStatus {
   return libraryStatus(getSettings(), existsSync)
 }
 
+export function rekordboxCollectionPath(): string {
+  return currentLibraryStatus().rekordbox.found
+    ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+    : ''
+}
+
+export function repointRekordbox(
+  collectionPath: string,
+  list: RekordboxRepoint[],
+  sessions: Pick<Sessions, 'rekordbox'>,
+) {
+  return repointTracks(
+    collectionPath,
+    list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+    {
+      sessionBackup: (db) => sessions.rekordbox.ensure(db),
+      readCover: readEmbeddedCover,
+    },
+  )
+}
+
 export function traktorFlushDeps(host: LibraryHost) {
   return {
     // Same rule as rekordbox below: the toggle grants permission, the path only says
@@ -73,10 +94,7 @@ export function rekordboxFlushDeps(host: LibraryHost) {
   return {
     // The toggle decides, not the path: a collection sitting in its standard location is
     // not permission to write to it. An empty path here skips the flush entirely.
-    collectionPath:
-      getSettings().syncRekordbox && currentLibraryStatus().rekordbox.found
-        ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
-        : '',
+    collectionPath: getSettings().syncRekordbox ? rekordboxCollectionPath() : '',
     collectionMissing: getSettings().syncRekordbox && !currentLibraryStatus().rekordbox.found,
     ensureClosed: host.ensureRekordboxClosed,
     track: activity.track.bind(activity),
@@ -131,26 +149,15 @@ export async function flushConversionBatch(
   // rekordbox next, and independently: the two collections are separate libraries, so
   // one being open or unwritable must not stop the other from being updated.
   const rekordbox = rekordboxFlushDeps(host)
-  const collectionPath = currentLibraryStatus().rekordbox.found
-    ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
-    : ''
+  const collectionPath = rekordboxCollectionPath()
   await queueConversionRun(repoints, {
     collectionPath,
-    repointing: rekordbox.collectionPath !== '',
     flushRepoints: async (list) => {
       const result = await flushRekordboxSync({
         ...rekordbox,
         showBlockedDialog: () => {},
         endBatch: () => list,
-        repointTracks: (path, items) =>
-          repointTracks(
-            path,
-            items.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-            {
-              sessionBackup: (db) => sessions.rekordbox.ensure(db),
-              readCover: readEmbeddedCover,
-            },
-          ),
+        repointTracks: (path, items) => repointRekordbox(path, items, sessions),
       })
       logLibraryFlush('rekordbox repoint', result)
       return result

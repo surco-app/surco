@@ -1,0 +1,92 @@
+import { ipcMain } from 'electron'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({
+  ipcMain: { handle: vi.fn() },
+  BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
+}))
+
+import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
+
+function handler(channel: string): (...args: unknown[]) => unknown {
+  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
+  if (!call) throw new Error(`${channel} not registered`)
+  return call[1] as (...args: unknown[]) => unknown
+}
+
+const APPLIED: QueueApply = {
+  status: 'applied',
+  tracks: 3,
+  changes: 0,
+  notices: [{ code: 'ambiguous', track: 'Ekkah' }],
+  outcomes: [{ id: 'e', applied: true, createdId: '77', notices: [] }],
+}
+
+function queue(result: QueueApply = APPLIED) {
+  return {
+    enqueue: vi.fn(),
+    state: vi.fn(() => ({ tracks: 1, changes: 0, items: [] })),
+    isEmpty: vi.fn(() => false),
+    discard: vi.fn(),
+    apply: vi.fn<RekordboxQueue['apply']>(async (ensureClosed) => {
+      await ensureClosed()
+      return result
+    }),
+  }
+}
+
+describe('appliedNotice', () => {
+  it('tells what was written and what rekordbox kept', () => {
+    expect(appliedNotice(APPLIED)).toEqual({
+      tracks: 3,
+      changes: 0,
+      notices: [{ code: 'ambiguous', track: 'Ekkah' }],
+    })
+  })
+
+  it('says nothing when rekordbox is still open or nothing was queued', () => {
+    expect(appliedNotice({ status: 'refused', reason: 'cancelled' })).toBeNull()
+    expect(appliedNotice({ status: 'refused', reason: 'rekordbox-running' })).toBeNull()
+    expect(appliedNotice({ status: 'empty' })).toBeNull()
+  })
+
+  it('names a refusal the user has to know about', () => {
+    expect(appliedNotice({ status: 'refused', reason: 'backup-failed' })).toEqual({
+      refused: 'backup-failed',
+    })
+  })
+})
+
+describe('registerRekordboxQueueIpc', () => {
+  it('applies now behind the close dialog and answers with the notice', async () => {
+    const q = queue()
+    const ensureClosed = vi.fn(async () => true)
+    const onApplied = vi.fn()
+    registerRekordboxQueueIpc(q, { collection: () => '/c/master.db', ensureClosed, onApplied })
+    expect(await handler('rekordbox:applyNow')({ sender: {} })).toEqual(appliedNotice(APPLIED))
+    expect(ensureClosed).toHaveBeenCalledWith('window')
+    expect(onApplied).not.toHaveBeenCalled()
+  })
+
+  it('discards and reports the state', async () => {
+    const q = queue()
+    registerRekordboxQueueIpc(q, {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onApplied: vi.fn(),
+    })
+    await handler('rekordbox:discardQueue')()
+    expect(q.discard).toHaveBeenCalled()
+    expect(handler('rekordbox:queue')()).toEqual({ tracks: 1, changes: 0, items: [] })
+  })
+
+  it('answers no membership without a collection', () => {
+    registerRekordboxQueueIpc(queue(), {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onApplied: vi.fn(),
+    })
+    expect(handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
+  })
+})

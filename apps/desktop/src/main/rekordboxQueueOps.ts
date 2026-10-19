@@ -1,6 +1,7 @@
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
+  RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxPlaylistTarget,
   RekordboxQueueNotice,
@@ -67,4 +68,16 @@ export interface XmlDraft {
 
 export function bumpNode(draft: XmlDraft, playlistId: string): void {
   if (draft.xml !== null) draft.xml = withNodeTimestamp(draft.xml, playlistId, draft.now)
+}
+
+export function editResultOfOutcome(outcome: OpOutcome | undefined): RekordboxEditResult {
+  if (!outcome) return { applied: false, reason: 'write-failed' }
+  if (!outcome.applied) {
+    const reason = outcome.reason ?? 'write-failed'
+    return outcome.report
+      ? { applied: false, reason, report: outcome.report }
+      : { applied: false, reason }
+  }
+  if (outcome.report) return { applied: true, report: outcome.report }
+  return outcome.createdId ? { applied: true, createdId: outcome.createdId } : { applied: true }
 }

@@ -73,7 +73,6 @@ export async function trackOpsFromRun(
 
 export interface RunQueueDeps {
   collectionPath: string
-  repointing: boolean
   flushRepoints: (repoints: RekordboxRepoint[]) => Promise<FlushResult>
   readOps: (repoints: RekordboxRepoint[]) => Promise<TrackOp[]>
   enqueue: (ops: TrackOp[], repoints: RekordboxRepoint[]) => void

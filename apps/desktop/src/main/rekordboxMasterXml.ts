@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 // rekordbox 6 and 7 keep every playlist and folder twice: as a row in master.db and as a
@@ -67,4 +68,19 @@ export function withoutNodes(xml: string, ids: string[]): string {
       return !(id && doomed.has(id[1]))
     })
     .join('')
+}
+
+export function nodeTimestamps(xml: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const tag of xml.matchAll(/<NODE [^>]*>/g)) {
+    const id = /\bId="([0-9A-F]+)"/.exec(tag[0])
+    const stamp = /\bTimestamp="(\d+)"/.exec(tag[0])
+    if (id && stamp) out[BigInt(`0x${id[1]}`).toString()] = Number(stamp[1])
+  }
+  return out
+}
+
+export function readNodeStamps(collectionPath: string): Record<string, number> {
+  const path = playlistXmlPath(collectionPath)
+  return existsSync(path) ? nodeTimestamps(readFileSync(path, 'utf8')) : {}
 }

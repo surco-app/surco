@@ -40,6 +40,8 @@ import type {
   ProcessResult,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  RekordboxQueueApplied,
+  RekordboxQueueState,
   RekordboxSyncIssue,
   Release,
   RemoveCopyResult,
@@ -195,7 +197,16 @@ export interface Api {
   loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
   // open; the result says whether the edit was written, and why not.
-  editRekordboxPlaylist: (edit: RekordboxPlaylistEdit) => Promise<RekordboxEditResult>
+  editRekordboxPlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+  ) => Promise<RekordboxEditResult>
+  rekordboxQueue: () => Promise<RekordboxQueueState>
+  applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
+  discardRekordboxQueue: () => Promise<void>
+  rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
+  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // Whether the collection has a separator track that can be copied into a playlist.
   rekordboxHasSeparator: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds

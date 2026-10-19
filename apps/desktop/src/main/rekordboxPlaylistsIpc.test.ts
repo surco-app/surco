@@ -16,6 +16,8 @@ import {
   registerRekordboxPlaylistsIpc,
   withCollection,
 } from './rekordboxPlaylistsIpc'
+import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
+import { createRekordboxQueue } from './rekordboxQueue'
 
 describe('withCollection', () => {
   it('falls back when there is no collection, the normal case for a user without rekordbox', () => {
@@ -67,6 +69,27 @@ describe('collectionAvailable', () => {
   })
 })
 
+function queueFor(path: string, sessionBackup = vi.fn(async () => {})) {
+  let text: string | null = null
+  return createRekordboxQueue({
+    store: {
+      read: () => text,
+      write: (t) => {
+        text = t
+      },
+      setAside: () => {
+        text = null
+      },
+    },
+    collection: () => path,
+    applyBatch: (c, ops, ensureClosed) =>
+      applyRekordboxBatch(c, ops, { ensureClosed, sessionBackup }),
+    repoint: async () => [],
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+  })
+}
+
 function handler(channel: string): (...args: unknown[]) => unknown {
   const call = [...vi.mocked(ipcMain.handle).mock.calls]
     .reverse()
@@ -83,7 +106,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const ensureClosed = vi.fn(async () => true)
     registerRekordboxPlaylistsIpc(() => path, {
       ensureClosed,
-      sessionBackup: vi.fn(async () => {}),
+      queue: queueFor(path),
     })
     const result = await handler('rekordbox:edit')(
       { sender: {} },
@@ -98,7 +121,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
     registerRekordboxPlaylistsIpc(() => path, {
       ensureClosed: vi.fn(async () => true),
-      sessionBackup: vi.fn(async () => {}),
+      queue: queueFor(path),
     })
     expect(handler('rekordbox:hasSeparator')()).toBe(true)
   })
@@ -121,7 +144,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
     })
     registerRekordboxPlaylistsIpc(() => path, {
       ensureClosed,
-      sessionBackup: vi.fn(async () => {}),
+      queue: queueFor(path),
     })
     const edit = handler('rekordbox:edit')
     const first = edit(
@@ -137,5 +160,28 @@ describe('registerRekordboxPlaylistsIpc', () => {
     release()
     await Promise.all([first, second])
     expect(order).toEqual(['start1', 'end1', 'start2', 'end2'])
+  })
+
+  it('keeps a cancelled edit queued', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
+    const queue = queueFor(path)
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => false),
+      queue,
+    })
+    const result = await handler('rekordbox:edit')(
+      { sender: {} },
+      { kind: 'rename', playlistId: '3000', name: 'House 26' },
+      'House',
+    )
+    expect(result).toEqual({ applied: false, reason: 'cancelled' })
+    expect(queue.state().items).toEqual([
+      {
+        key: expect.stringMatching(/^edit:/),
+        label: 'House',
+        parts: [{ kind: 'tree', edit: 'rename' }],
+      },
+    ])
   })
 })

@@ -41,6 +41,7 @@ import {
   type BatchResult,
   bumpNode,
   type EditOp,
+  editResultOfOutcome,
   type OpOutcome,
   opRank,
   type QueueOp,
@@ -181,10 +182,6 @@ function rollback(
     log.error(`rekordbox playlist edit rollback failed: ${String(err)}`)
     return false
   }
-}
-
-function refuse(reason: RekordboxEditRefusal, report?: PlaylistAddReport): RekordboxEditResult {
-  return report ? { applied: false, reason, report } : { applied: false, reason }
 }
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
@@ -546,9 +543,6 @@ export async function editRekordboxPlaylist(
     [{ id: 'edit', kind: 'edit', edit, stamps: {} }],
     deps,
   )
-  if (!result.ok) return refuse(result.reason)
-  const [outcome] = result.outcomes
-  if (!outcome.applied) return refuse(outcome.reason ?? 'write-failed', outcome.report)
-  if (outcome.report) return { applied: true, report: outcome.report }
-  return outcome.createdId ? { applied: true, createdId: outcome.createdId } : { applied: true }
+  if (!result.ok) return { applied: false, reason: result.reason }
+  return editResultOfOutcome(result.outcomes[0])
 }

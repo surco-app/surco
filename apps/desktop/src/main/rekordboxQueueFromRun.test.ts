@@ -117,7 +117,6 @@ describe('queueConversionRun', () => {
   const repoint: RekordboxRepoint = { from: '/m/a.mp3', to: '/m/a.wav', meta: META }
   const deps = (over: Partial<RunQueueDeps> = {}) => ({
     collectionPath: '/c/master.db',
-    repointing: true,
     flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({ written: 1, skipped: [] })),
     readOps: vi.fn<RunQueueDeps['readOps']>(async () => []),
     enqueue: vi.fn<RunQueueDeps['enqueue']>(),
