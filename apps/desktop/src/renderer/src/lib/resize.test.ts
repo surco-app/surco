@@ -1,25 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { contentDeficit, nextWidth } from './resize'
-
-describe('nextWidth', () => {
-  it('adds the drag delta to the width the user started from', () => {
-    expect(nextWidth(300, 40, 200, 480)).toBe(340)
-    expect(nextWidth(300, -40, 200, 480)).toBe(260)
-  })
-
-  it('clamps to the minimum so a panel can never collapse out of reach', () => {
-    expect(nextWidth(300, -500, 200, 480)).toBe(200)
-  })
-
-  it('clamps to the maximum so a panel can never swallow the rest of the window', () => {
-    expect(nextWidth(300, 500, 200, 480)).toBe(480)
-  })
-})
+import { contentDeficit } from './resize'
 
 describe('contentDeficit', () => {
   // Double-click-to-fit measures every truncating row as scrollWidth − clientWidth: how
   // many pixels it's clipped by (positive) or has to spare (negative). Feeding the max of
-  // those into nextWidth sizes the column to the widest row, growing or shrinking to fit.
+  // those into the column layout sizes the column to the widest row, growing or shrinking to fit.
   it('returns how much the most-clipped row overflows so the column grows to it', () => {
     const rows = [
       { scrollWidth: 240, clientWidth: 200 }, // clipped by 40

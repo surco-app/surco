@@ -104,6 +104,43 @@ describe('useColumnLayout', () => {
     expect(onCommit).toHaveBeenCalledWith({ list: 380 / 1380 })
   })
 
+  it('saves the width the drag shows, so the form keeps its minimum on a wider window too', () => {
+    const { result, onCommit } = setup()
+    act(() => result.current.startResize('results', pointerDown(500)))
+    act(() => pointer('pointermove', 600))
+    flushFrames()
+    const shown = result.current.widths
+    expect(shown.form).toBe(420)
+    act(() => pointer('pointerup', 600))
+    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(shown.results / 1380)
+  })
+
+  it.each(['results', 'list'] as const)(
+    'saves nothing when the %s divider is dragged while the form is already at its floor',
+    (column) => {
+      setWindowWidth(1280)
+      const { result, onCommit } = setup()
+      const before = result.current.widths
+      act(() => result.current.startResize(column, pointerDown(500)))
+      act(() => pointer('pointermove', 600))
+      flushFrames()
+      expect(result.current.widths).toEqual(before)
+      act(() => pointer('pointerup', 600))
+      expect(onCommit).not.toHaveBeenCalled()
+      expect(result.current.widths).toEqual(before)
+    },
+  )
+
+  it.each(['results', 'list'] as const)(
+    'saves nothing when the %s fit asks for room the form cannot give',
+    (column) => {
+      setWindowWidth(1280)
+      const { result, onCommit } = setup()
+      act(() => result.current.fit(column, 100))
+      expect(onCommit).not.toHaveBeenCalled()
+    },
+  )
+
   it('leaves the width alone when the fit has nothing to measure', () => {
     const { result, onCommit } = setup()
     act(() => result.current.fit('list', 0))

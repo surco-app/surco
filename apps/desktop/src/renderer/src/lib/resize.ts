@@ -1,7 +1,3 @@
-export function nextWidth(startWidth: number, deltaX: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, startWidth + deltaX))
-}
-
 // The extra width (or negative slack) the widest truncating row needs to show its content
 // in full: max over rows of scrollWidth − clientWidth. Positive means a row is clipped and
 // the column must grow; negative means every row fits with room to spare, so it can shrink

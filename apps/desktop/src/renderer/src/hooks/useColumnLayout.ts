@@ -2,14 +2,12 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { ColumnShares } from '../../../shared/types'
 import {
-  COLUMN_LIMITS,
   type ColumnWidths,
   columnWidths,
   RAIL_WIDTH,
   type ResizableColumn,
   shareFor,
 } from '../lib/columnLayout'
-import { nextWidth } from '../lib/resize'
 import { useStableCallback } from './useStableCallback'
 
 interface Params {
@@ -51,22 +49,25 @@ export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): 
   const available = windowWidth - (hasRail ? RAIL_WIDTH : 0)
   const widths = columnWidths(available, hasTree, shares)
 
+  const settle = (
+    column: ResizableColumn,
+    requested: number,
+    base: ColumnShares | undefined,
+  ): { width: number; shares: ColumnShares } => {
+    const asked = { ...base, [column]: shareFor(column, requested, available, hasTree, base) }
+    const width = columnWidths(available, hasTree, asked)[column]
+    return {
+      width,
+      shares: { ...base, [column]: shareFor(column, width, available, hasTree, base) },
+    }
+  }
+
   const startResize = useStableCallback((column: ResizableColumn, e: React.PointerEvent): void => {
     e.preventDefault()
-    const { min, max } = COLUMN_LIMITS[column]
     const startX = e.clientX
     const startWidth = widths[column]
     const base = shares
-    const sharesAt = (x: number): ColumnShares => ({
-      ...base,
-      [column]: shareFor(
-        column,
-        nextWidth(startWidth, x - startX, min, max),
-        available,
-        hasTree,
-        base,
-      ),
-    })
+    const settleAt = (x: number) => settle(column, startWidth + x - startX, base)
     let frame = 0
     let latestX = startX
     function onMove(ev: PointerEvent): void {
@@ -74,7 +75,7 @@ export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): 
       if (frame) return
       frame = requestAnimationFrame(() => {
         frame = 0
-        setDraft(sharesAt(latestX))
+        setDraft(settleAt(latestX).shares)
       })
     }
     function cleanup(): void {
@@ -84,8 +85,8 @@ export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): 
       document.body.style.cursor = ''
       endDrag.current = null
       setDraft(null)
-      if (nextWidth(startWidth, latestX - startX, min, max) !== startWidth)
-        onCommit(sharesAt(latestX))
+      const end = settleAt(latestX)
+      if (end.width !== startWidth) onCommit(end.shares)
     }
     endDrag.current = cleanup
     document.body.style.cursor = 'col-resize'
@@ -95,10 +96,8 @@ export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): 
 
   const fit = useStableCallback((column: ResizableColumn, deficit: number): void => {
     if (deficit === 0) return
-    const { min, max } = COLUMN_LIMITS[column]
-    const next = nextWidth(widths[column], deficit, min, max)
-    if (next === widths[column]) return
-    onCommit({ ...shares, [column]: shareFor(column, next, available, hasTree, shares) })
+    const end = settle(column, widths[column] + deficit, shares)
+    if (end.width !== widths[column]) onCommit(end.shares)
   })
 
   return { widths, startResize, fit }
