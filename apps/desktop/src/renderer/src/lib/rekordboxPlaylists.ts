@@ -55,15 +55,6 @@ export function matchingOptions(
   })
 }
 
-export function chipLabel(
-  options: readonly PlaylistOption[],
-  target: RekordboxPlaylistTarget,
-): string {
-  const option = target.id ? options.find((o) => o.id === target.id) : undefined
-  if (!option || option.path === '') return target.name
-  return `${option.path} › ${option.name}`
-}
-
 export function canCreate(
   options: readonly PlaylistOption[],
   text: string,

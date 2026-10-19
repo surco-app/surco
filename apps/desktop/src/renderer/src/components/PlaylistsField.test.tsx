@@ -1,27 +1,58 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import type { RekordboxPlaylistTarget } from '../../../shared/types'
-import type { PlaylistOption } from '../lib/rekordboxPlaylists'
+import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
+import { playlistOptions } from '../lib/rekordboxPlaylists'
 import { PlaylistsBulkField, PlaylistsField } from './PlaylistsField'
 
 afterEach(cleanup)
 
-const OPTIONS: PlaylistOption[] = [
-  { id: '1001', name: 'Bolos de verano', path: 'BOLOS' },
-  { id: '1101', name: 'Todas', path: 'BOLOS › FIJAS' },
-  { id: '2000', name: 'Todas', path: '' },
-  { id: '3000', name: 'Makina', path: '' },
-]
+const playlist = (id: string, name: string, count = 10): SourceNode => ({
+  id,
+  name,
+  kind: 'playlist',
+  count,
+})
 
-function Harness({ initial = [] as RekordboxPlaylistTarget[], spy = vi.fn() }) {
+const folder = (id: string, name: string, children: SourceNode[]): SourceNode => ({
+  id,
+  name,
+  kind: 'folder',
+  count: children.length,
+  children,
+})
+
+const BOLOS = Array.from({ length: 20 }, (_, i) => playlist(`b${i + 1}`, `Bolo ${i + 1}`))
+
+const TREE: SourceNode[] = [
+  folder('bolos', 'BOLOS', BOLOS),
+  folder('can', 'CANTADITAS', [
+    folder('can90', '90s', [playlist('c90t', 'Todas', 41), playlist('c90l', 'Lentas')]),
+    folder('can2k', '2ks', [playlist('c2kt', 'Todas')]),
+  ]),
+  folder('bases', 'BASES', [playlist('bt', 'Todas')]),
+  playlist('house', 'House', 32),
+  playlist('mash', 'Mashups', 9),
+]
+const OPTIONS = playlistOptions(TREE)
+
+const target = (id: string): RekordboxPlaylistTarget => {
+  const o = OPTIONS.find((x) => x.id === id)
+  if (!o) throw new Error(id)
+  return { id: o.id, name: o.name }
+}
+
+const SEVEN = ['b1', 'b2', 'b3', 'b4', 'b5', 'c90t', 'house'].map(target)
+
+function Harness({ initial = SEVEN, spy = vi.fn() }) {
   const [value, setValue] = useState(initial)
   return (
     <PlaylistsField
       label="Playlists"
+      tree={TREE}
       options={OPTIONS}
       value={value}
       onChange={(next) => {
@@ -32,213 +63,246 @@ function Harness({ initial = [] as RekordboxPlaylistTarget[], spy = vi.fn() }) {
   )
 }
 
-const input = () => screen.getByTestId('playlists-input')
+const summary = () => screen.getByTestId('playlists-summary')
+const search = () => screen.getByTestId('playlists-search')
+const open = () => fireEvent.click(summary())
+const visiblePlaylists = () =>
+  screen.queryAllByTestId(/^playlists-check-/).map((el) => el.getAttribute('data-testid'))
 
-describe('PlaylistsField', () => {
-  it('filters by name and shows each option with its folder path, since two playlists can share a name', () => {
+describe('PlaylistsField closed', () => {
+  it('fits nine playlists on one line by counting them and naming each top folder once', () => {
     render(<Harness />)
-    fireEvent.change(input(), { target: { value: 'tod' } })
-    expect(screen.getByTestId('playlists-option-1101')).toHaveTextContent('BOLOS › FIJAS')
-    expect(screen.getByTestId('playlists-option-2000')).toBeInTheDocument()
-    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+    expect(screen.getByTestId('playlists-count')).toHaveTextContent('In 7 playlists')
+    expect(screen.getByTestId('playlists-where').textContent).toBe('BOLOS (5) · CANTADITAS · House')
+    expect(screen.queryByTestId('playlists-popover')).toBeNull()
   })
 
-  it('shows each suggestion as its full path on one line', () => {
-    render(<Harness />)
-    fireEvent.change(input(), { target: { value: 'tod' } })
-    expect(screen.getByTestId('playlists-option-1101').textContent).toBe('BOLOS › FIJAS › Todas')
-    expect(screen.getByTestId('playlists-option-2000').textContent).toBe('Todas')
+  it('says one playlist in the singular', () => {
+    render(<Harness initial={[target('house')]} />)
+    expect(screen.getByTestId('playlists-count')).toHaveTextContent('In 1 playlist')
+    expect(screen.getByTestId('playlists-count')).not.toHaveTextContent('playlists')
   })
 
-  it('narrows identical names by typing part of their folders', () => {
-    render(<Harness />)
-    fireEvent.change(input(), { target: { value: 'fijas todas' } })
-    expect(screen.getByTestId('playlists-option-1101')).toBeInTheDocument()
-    expect(screen.queryByTestId('playlists-option-2000')).toBeNull()
+  it('invites to add one when the track is in none', () => {
+    render(<Harness initial={[]} />)
+    expect(summary()).toHaveTextContent('Add to a playlist')
+    expect(screen.queryByTestId('playlists-count')).toBeNull()
   })
 
-  it('names a chip with its parent folder only when the name is duplicated', () => {
-    render(
-      <Harness
-        initial={[
-          { id: '1101', name: 'Todas' },
-          { id: '3000', name: 'Makina' },
-        ]}
-      />,
-    )
-    expect(screen.getByTestId('playlists-token-1101')).toHaveTextContent('FIJAS › Todas')
-    expect(screen.getByTestId('playlists-token-3000').textContent).toBe('Makina')
-  })
-
-  it('picks the highlighted option with Enter, as Mail does', () => {
-    const spy = vi.fn()
-    render(<Harness spy={spy} />)
-    fireEvent.change(input(), { target: { value: 'mak' } })
-    fireEvent.keyDown(input(), { key: 'Enter' })
-    expect(spy).toHaveBeenLastCalledWith([{ id: '3000', name: 'Makina' }])
-    expect(screen.getByTestId('playlists-token-3000')).toHaveTextContent('Makina')
-    expect(input()).toHaveValue('')
-  })
-
-  it('moves the highlight with the arrows', () => {
-    const spy = vi.fn()
-    render(<Harness spy={spy} />)
-    fireEvent.change(input(), { target: { value: 'tod' } })
-    fireEvent.keyDown(input(), { key: 'ArrowDown' })
-    fireEvent.keyDown(input(), { key: 'Enter' })
-    expect(spy).toHaveBeenLastCalledWith([{ id: '2000', name: 'Todas' }])
-  })
-
-  it('picks an option by clicking it', () => {
-    const spy = vi.fn()
-    render(<Harness spy={spy} />)
-    fireEvent.change(input(), { target: { value: 'mak' } })
-    fireEvent.click(screen.getByTestId('playlists-option-3000'))
-    expect(spy).toHaveBeenLastCalledWith([{ id: '3000', name: 'Makina' }])
-  })
-
-  it('removes the last token with Backspace on an empty box', () => {
-    const spy = vi.fn()
-    render(
-      <Harness
-        spy={spy}
-        initial={[
-          { id: '3000', name: 'Makina' },
-          { id: '2000', name: 'Todas' },
-        ]}
-      />,
-    )
-    fireEvent.keyDown(input(), { key: 'Backspace' })
-    expect(spy).toHaveBeenLastCalledWith([{ id: '3000', name: 'Makina' }])
-  })
-
-  it('removes one token with its own button', () => {
-    const spy = vi.fn()
-    render(
-      <Harness
-        spy={spy}
-        initial={[
-          { id: '3000', name: 'Makina' },
-          { id: '2000', name: 'Todas' },
-        ]}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('playlists-token-remove-3000'))
-    expect(spy).toHaveBeenLastCalledWith([{ id: '2000', name: 'Todas' }])
-  })
-
-  it('puts the folder path in the token tooltip', () => {
-    render(<Harness initial={[{ id: '1101', name: 'Todas' }]} />)
-    expect(screen.getByTestId('playlists-token-1101')).toHaveAttribute('title', 'BOLOS › FIJAS')
-  })
-
-  it('offers to create a playlist the text does not name exactly, and marks it pending until the track is written', () => {
-    const spy = vi.fn()
-    render(<Harness spy={spy} />)
-    fireEvent.change(input(), { target: { value: 'Makina' } })
-    expect(screen.queryByTestId('playlists-create')).toBeNull()
-    fireEvent.change(input(), { target: { value: 'Cierre' } })
-    fireEvent.click(screen.getByTestId('playlists-create'))
-    expect(spy).toHaveBeenLastCalledWith([{ name: 'Cierre' }])
-    expect(screen.getByTestId('playlists-token-new:Cierre')).toHaveAttribute('data-pending', 'true')
-  })
-
-  it('creates with Enter when the create row is the only one', () => {
-    const spy = vi.fn()
-    render(<Harness spy={spy} />)
-    fireEvent.change(input(), { target: { value: 'Cierre' } })
-    fireEvent.keyDown(input(), { key: 'Enter' })
-    expect(spy).toHaveBeenLastCalledWith([{ name: 'Cierre' }])
-  })
-
-  it('does not offer again the root playlist an id-less chosen name already stands for', () => {
-    render(<Harness initial={[{ name: 'Makina' }]} />)
-    fireEvent.change(input(), { target: { value: 'mak' } })
-    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+  it('counts a playlist still to be created and marks it pending, since rekordbox does not have it yet', () => {
+    render(<Harness initial={[target('house'), { name: 'Cierre' }]} />)
+    expect(screen.getByTestId('playlists-count')).toHaveTextContent('In 2 playlists')
+    expect(screen.getByTestId('playlists-where').textContent).toBe('House · Cierre')
+    expect(screen.getByTestId('playlists-pending-Cierre')).toHaveAttribute('data-pending', 'true')
   })
 })
 
-describe('PlaylistsField suggestion list', () => {
-  it('closes when the input loses focus, so it does not hang over the fields below', () => {
+describe('PlaylistsField open', () => {
+  it('shows the rekordbox tree with the folders holding the track open and the rest closed', () => {
     render(<Harness />)
-    fireEvent.change(input(), { target: { value: 'mak' } })
-    expect(screen.getByTestId('playlists-option-3000')).toBeInTheDocument()
-    fireEvent.blur(input())
-    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+    open()
+    expect(screen.getByTestId('playlists-popover')).toBeInTheDocument()
+    expect(search()).toHaveFocus()
+    expect(screen.getByTestId('playlists-folder-bolos')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('playlists-folder-can')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('playlists-folder-can90')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('playlists-folder-can2k')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByTestId('playlists-folder-bases')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('playlists-check-bt')).toBeNull()
   })
 
-  it('keeps Escape inside the field so the editor Escape handler does not also react', () => {
+  it('tells how many playlists of each folder hold the track, counting the ones in subfolders', () => {
+    render(<Harness />)
+    open()
+    expect(screen.getByTestId('playlists-folder-count-bolos').textContent).toBe('5 of 20')
+    expect(screen.getByTestId('playlists-folder-count-can').textContent).toBe('1 of 3')
+    expect(screen.getByTestId('playlists-folder-count-bases').textContent).toBe('1')
+  })
+
+  it('shows each playlist ticked when the track is in it, with its track count', () => {
+    render(<Harness />)
+    open()
+    expect(screen.getByTestId('playlists-check-b1')).toBeChecked()
+    expect(screen.getByTestId('playlists-check-b6')).not.toBeChecked()
+    expect(screen.getByTestId('playlists-row-c90t')).toHaveTextContent('41')
+  })
+
+  it('adds the track to a playlist when ticked, the same way picking a suggestion did', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.click(screen.getByTestId('playlists-check-b6'))
+    expect(spy).toHaveBeenLastCalledWith([...SEVEN, target('b6')])
+    expect(screen.getByTestId('playlists-check-b6')).toBeChecked()
+  })
+
+  it('takes the track out of a playlist when unticked, the same way removing a chip did', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.click(screen.getByTestId('playlists-check-b1'))
+    expect(spy).toHaveBeenLastCalledWith(SEVEN.slice(1))
+  })
+
+  it('gives folders no checkbox, so one click never puts the track in a whole folder of playlists', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    const bases = screen.getByTestId('playlists-folder-bases')
+    expect(bases).not.toHaveAttribute('role', 'checkbox')
+    expect(within(bases).queryByRole('checkbox', { hidden: true })).toBeNull()
+    fireEvent.click(bases)
+    expect(spy).not.toHaveBeenCalled()
+    expect(bases).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('playlists-check-bt')).toBeInTheDocument()
+  })
+
+  it('lets a playlist still to be created be unticked, as its chip could be removed', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} initial={[{ name: 'Cierre' }]} />)
+    open()
+    fireEvent.click(screen.getByTestId('playlists-check-new:Cierre'))
+    expect(spy).toHaveBeenLastCalledWith([])
+  })
+
+  it('closes on a click outside, so it does not hang over the fields below', () => {
+    render(<Harness />)
+    open()
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByTestId('playlists-popover')).toBeNull()
+  })
+})
+
+describe('PlaylistsField search', () => {
+  it('matches every word against the folder path, opening the folders above each hit', () => {
+    render(<Harness />)
+    open()
+    fireEvent.change(search(), { target: { value: '90 todas' } })
+    expect(visiblePlaylists()).toEqual(['playlists-check-c90t'])
+    expect(screen.getByTestId('playlists-folder-can')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('playlists-folder-can90')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.queryByTestId('playlists-folder-bolos')).toBeNull()
+  })
+
+  it('offers to create a playlist no name matches exactly, and adds it pending', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.change(search(), { target: { value: 'House' } })
+    expect(screen.queryByTestId('playlists-create')).toBeNull()
+    fireEvent.change(search(), { target: { value: 'Cierre' } })
+    fireEvent.click(screen.getByTestId('playlists-create'))
+    expect(spy).toHaveBeenLastCalledWith([...SEVEN, { name: 'Cierre' }])
+    expect(search()).toHaveValue('')
+    expect(screen.getByTestId('playlists-pending-Cierre')).toBeInTheDocument()
+  })
+
+  it('toggles the one matching playlist with Enter', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.change(search(), { target: { value: 'mash' } })
+    fireEvent.keyDown(search(), { key: 'Enter' })
+    expect(spy).toHaveBeenLastCalledWith([...SEVEN, target('mash')])
+  })
+
+  it('creates with Enter when only the create row is offered', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.change(search(), { target: { value: 'Cierre' } })
+    fireEvent.keyDown(search(), { key: 'Enter' })
+    expect(spy).toHaveBeenLastCalledWith([...SEVEN, { name: 'Cierre' }])
+  })
+
+  it('does nothing with Enter while several playlists match', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.change(search(), { target: { value: 'todas' } })
+    fireEvent.keyDown(search(), { key: 'Enter' })
+    expect(spy).not.toHaveBeenCalled()
+  })
+})
+
+describe('PlaylistsField keyboard', () => {
+  it('closes with Escape, gives the focus back to the field and keeps the key from the editor', () => {
     const onWindowKey = vi.fn()
     window.addEventListener('keydown', onWindowKey)
     render(<Harness />)
-    fireEvent.change(input(), { target: { value: 'mak' } })
-    fireEvent.keyDown(input(), { key: 'Escape' })
+    open()
+    fireEvent.keyDown(search(), { key: 'Escape' })
     window.removeEventListener('keydown', onWindowKey)
     expect(onWindowKey).not.toHaveBeenCalled()
-    expect(screen.queryByTestId('playlists-option-3000')).toBeNull()
+    expect(screen.queryByTestId('playlists-popover')).toBeNull()
+    expect(summary()).toHaveFocus()
   })
 
-  it('never points at a row that no longer exists after the list shrinks', () => {
-    const onToggle = vi.fn()
-    const bulk = (states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]) => (
-      <PlaylistsBulkField label="Playlists" options={OPTIONS} states={states} onToggle={onToggle} />
-    )
-    const { rerender } = render(bulk([]))
-    fireEvent.change(input(), { target: { value: 'Todas' } })
-    fireEvent.keyDown(input(), { key: 'ArrowDown' })
-    rerender(bulk([{ target: { id: '2000', name: 'Todas' }, state: 'all' }]))
-    fireEvent.keyDown(input(), { key: 'Enter' })
-    expect(onToggle).toHaveBeenCalledWith({ id: '1101', name: 'Todas' }, true)
+  it('walks the visible rows with the arrows and toggles the focused playlist with Space', () => {
+    const spy = vi.fn()
+    render(<Harness spy={spy} />)
+    open()
+    fireEvent.keyDown(search(), { key: 'ArrowDown' })
+    expect(screen.getByTestId('playlists-folder-bolos')).toHaveFocus()
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
+    expect(screen.getByTestId('playlists-check-b1')).toHaveFocus()
+    fireEvent.keyDown(document.activeElement as Element, { key: ' ' })
+    expect(spy).toHaveBeenLastCalledWith(SEVEN.slice(1))
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowUp' })
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowUp' })
+    expect(search()).toHaveFocus()
+  })
+
+  it('closes and opens a folder with the left and right arrows', () => {
+    render(<Harness />)
+    open()
+    fireEvent.keyDown(search(), { key: 'ArrowDown' })
+    const bolos = screen.getByTestId('playlists-folder-bolos')
+    fireEvent.keyDown(bolos, { key: 'ArrowLeft' })
+    expect(bolos).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('playlists-check-b1')).toBeNull()
+    fireEvent.keyDown(bolos, { key: 'ArrowRight' })
+    expect(bolos).toHaveAttribute('aria-expanded', 'true')
   })
 })
 
 describe('PlaylistsBulkField', () => {
   const states = [
-    { target: { id: '3000', name: 'Makina' }, state: 'all' as const },
-    { target: { id: '2000', name: 'Todas' }, state: 'some' as const },
+    { target: target('house'), state: 'all' as const },
+    { target: target('c90t'), state: 'some' as const },
   ]
-
-  it('completes a half token for all the tracks on click, like the Grouping chips in bulk', () => {
-    const onToggle = vi.fn()
+  const renderBulk = (onToggle = vi.fn()) => {
     render(
       <PlaylistsBulkField
         label="Playlists"
+        tree={TREE}
         options={OPTIONS}
         states={states}
         onToggle={onToggle}
       />,
     )
-    expect(screen.getByTestId('playlists-token-2000')).toHaveAttribute('data-state', 'some')
-    fireEvent.click(screen.getByTestId('playlists-token-complete-2000'))
-    expect(onToggle).toHaveBeenCalledWith({ id: '2000', name: 'Todas' }, true)
+    open()
+    return onToggle
+  }
+
+  it('shows a playlist only some of the tracks hold as half ticked', () => {
+    renderBulk()
+    expect(screen.getByTestId('playlists-check-c90t')).toBePartiallyChecked()
+    expect(screen.getByTestId('playlists-check-house')).toBeChecked()
+    expect(screen.getByTestId('playlists-check-mash')).not.toBeChecked()
   })
 
-  it('removes a token from every track', () => {
-    const onToggle = vi.fn()
-    render(
-      <PlaylistsBulkField
-        label="Playlists"
-        options={OPTIONS}
-        states={states}
-        onToggle={onToggle}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('playlists-token-remove-3000'))
-    expect(onToggle).toHaveBeenCalledWith({ id: '3000', name: 'Makina' }, false)
+  it('completes a half ticked playlist for every track on click', () => {
+    const onToggle = renderBulk()
+    fireEvent.click(screen.getByTestId('playlists-check-c90t'))
+    expect(onToggle).toHaveBeenCalledWith(target('c90t'), true)
   })
 
-  it('adds a picked playlist to every track', () => {
-    const onToggle = vi.fn()
-    render(
-      <PlaylistsBulkField
-        label="Playlists"
-        options={OPTIONS}
-        states={states}
-        onToggle={onToggle}
-      />,
-    )
-    fireEvent.change(input(), { target: { value: 'bolos' } })
-    fireEvent.keyDown(input(), { key: 'Enter' })
-    expect(onToggle).toHaveBeenCalledWith({ id: '1001', name: 'Bolos de verano' }, true)
+  it('takes a ticked playlist off every track and adds an unticked one to all', () => {
+    const onToggle = renderBulk()
+    fireEvent.click(screen.getByTestId('playlists-check-house'))
+    expect(onToggle).toHaveBeenCalledWith(target('house'), false)
+    fireEvent.click(screen.getByTestId('playlists-check-mash'))
+    expect(onToggle).toHaveBeenCalledWith(target('mash'), true)
   })
 })

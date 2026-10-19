@@ -10,6 +10,7 @@ import {
   useOfferRekordboxField,
   useRekordboxMembership,
   useRekordboxPlaylistOptions,
+  useRekordboxPlaylistTree,
 } from './useRekordboxPlaylists'
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -33,6 +34,21 @@ describe('useRekordboxPlaylists', () => {
     await waitFor(() =>
       expect(result.current).toEqual([{ id: '2', name: 'Verano', path: 'BOLOS' }]),
     )
+  })
+
+  it('hands the tree as rekordbox draws it, since the field shows its folders and counts', async () => {
+    const tree = [
+      {
+        id: '1',
+        name: 'BOLOS',
+        kind: 'folder' as const,
+        count: 1,
+        children: [{ id: '2', name: 'Verano', kind: 'playlist' as const, count: 3 }],
+      },
+    ]
+    installApi({ loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>(async () => tree) })
+    const { result } = renderHook(() => useRekordboxPlaylistTree(true), { wrapper })
+    await waitFor(() => expect(result.current).toEqual(tree))
   })
 
   it('has no options while the tree has not arrived, so the field is not drawn half-known', () => {

@@ -43,6 +43,7 @@ import {
   useRekordboxAvailable,
   useRekordboxMembership,
   useRekordboxPlaylistOptions,
+  useRekordboxPlaylistTree,
 } from '../hooks/useRekordboxPlaylists'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useCachedSpectrum } from '../hooks/useSpectrogram'
@@ -1039,6 +1040,7 @@ export const Editor = memo(function Editor({
 
   const rekordboxAvailable = useRekordboxAvailable()
   const showPlaylists = rekordboxAvailable && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
+  const rekordboxTree = useRekordboxPlaylistTree(showPlaylists)
   const rekordboxOptions = useRekordboxPlaylistOptions(showPlaylists)
   const playlistTracks = useMemo(
     () => (isMulti && selectedTracks ? selectedTracks : [item]),
@@ -1046,8 +1048,9 @@ export const Editor = memo(function Editor({
   )
   const membership = useRekordboxMembership(playlistTracks.map(rekordboxPathOf), showPlaylists)
   const playlistsSpec = useMemo<PlaylistsSpec | undefined>(() => {
-    if (!showPlaylists || !rekordboxOptions || !membership) return undefined
+    if (!showPlaylists || !rekordboxTree || !rekordboxOptions || !membership) return undefined
     return {
+      tree: rekordboxTree,
       options: rekordboxOptions,
       single: {
         value: effectivePlaylists(item, membership, rekordboxOptions) ?? [],
@@ -1063,6 +1066,7 @@ export const Editor = memo(function Editor({
     }
   }, [
     showPlaylists,
+    rekordboxTree,
     rekordboxOptions,
     item,
     membership,

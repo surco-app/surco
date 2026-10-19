@@ -755,7 +755,10 @@
     "suggestedStatus": "Sugerido: {{title}}",
     "playlists": {
       "placeholder": "Añadir a una playlist",
-      "remove": "Quitar {{name}}",
+      "count_one": "En {{count}} playlist",
+      "count_other": "En {{count}} playlists",
+      "search": "Buscar o crear playlist",
+      "ofTotal": "{{chosen}} de {{total}}",
       "create": "Crear playlist «{{name}}»",
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",

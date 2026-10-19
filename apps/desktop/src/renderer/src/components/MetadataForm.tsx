@@ -27,6 +27,7 @@ function renderField(
     return f.playlists.multi ? (
       <PlaylistsBulkField
         label={f.label}
+        tree={f.playlists.tree}
         options={f.playlists.options}
         states={f.playlists.bulk.states}
         onToggle={f.playlists.bulk.onToggle}
@@ -34,6 +35,7 @@ function renderField(
     ) : (
       <PlaylistsField
         label={f.label}
+        tree={f.playlists.tree}
         options={f.playlists.options}
         value={f.playlists.single.value}
         onChange={f.playlists.single.onChange}

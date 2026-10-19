@@ -755,7 +755,10 @@
     "suggestedStatus": "Vorgeschlagen: {{title}}",
     "playlists": {
       "placeholder": "Zu einer Playlist hinzufügen",
-      "remove": "{{name}} entfernen",
+      "count_one": "In {{count}} Playlist",
+      "count_other": "In {{count}} Playlists",
+      "search": "Playlist suchen oder erstellen",
+      "ofTotal": "{{chosen}} von {{total}}",
       "create": "Playlist „{{name}}“ erstellen",
       "pending": "Wird beim Schreiben des Titels erstellt",
       "some": "Nur bei einigen Titeln. Klicken, um sie allen hinzuzufügen",

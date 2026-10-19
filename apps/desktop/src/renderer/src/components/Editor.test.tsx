@@ -609,7 +609,7 @@ describe('Editor rekordbox Playlists field', () => {
     )
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
     expect(await screen.findByTestId('playlists-field')).toBeInTheDocument()
-    expect(screen.getByTestId('playlists-token-3000')).toBeInTheDocument()
+    expect(screen.getByTestId('playlists-where')).toHaveTextContent('Makina')
   })
 
   it('writes the picked playlist to the track as its chosen set', async () => {
@@ -617,8 +617,8 @@ describe('Editor rekordbox Playlists field', () => {
     const { onChange } = renderEditor({ id: 'a' }, 'wav', {
       visibleFields: ['rekordboxPlaylists'],
     })
-    fireEvent.change(await screen.findByTestId('playlists-input'), { target: { value: 'mak' } })
-    fireEvent.click(screen.getByTestId('playlists-option-3000'))
+    fireEvent.click(await screen.findByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-3000'))
     expect(onChange).toHaveBeenCalledWith({
       rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
       rekordboxPlaylistsBase: [],
@@ -1431,7 +1431,8 @@ describe('Editor multi-select', () => {
       vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
     )
     const { onChangeTracksPlaylists } = renderMulti({ visibleFields: ['rekordboxPlaylists'] })
-    fireEvent.click(await screen.findByTestId('playlists-token-complete-3000'))
+    fireEvent.click(await screen.findByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-3000'))
     expect(onChangeTracksPlaylists).toHaveBeenCalledWith([
       {
         id: 'a',

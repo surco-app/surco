@@ -449,6 +449,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
 
 describe('the rekordbox Playlists field', () => {
   const playlists = {
+    tree: [],
     options: [{ id: '3000', name: 'Makina', path: '' }],
     single: { value: [{ id: '3000', name: 'Makina' }], onChange: vi.fn() },
     bulk: { states: [], onToggle: vi.fn() },

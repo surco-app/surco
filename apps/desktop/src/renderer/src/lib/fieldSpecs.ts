@@ -6,6 +6,7 @@ import type {
   KeyResult,
   MetaTextKey,
   RekordboxPlaylistTarget,
+  SourceNode,
   TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -22,6 +23,7 @@ export interface InsertSource {
 }
 
 export interface PlaylistsSpec {
+  tree: SourceNode[]
   options: PlaylistOption[]
   single: {
     value: RekordboxPlaylistTarget[]

@@ -6,7 +6,6 @@ import { isStale, trackSignature } from './dirty'
 import {
   bulkPlaylistState,
   canCreate,
-  chipLabel,
   clearWrittenPlaylists,
   discardPlaylistEdits,
   effectivePlaylists,
@@ -82,18 +81,6 @@ describe('matchingOptions', () => {
 
   it('matches a folder name alone, listing everything inside it', () => {
     expect(matchingOptions(OPTIONS, 'bolos', []).map((o) => o.id)).toEqual(['1001', '1101'])
-  })
-})
-
-describe('chipLabel', () => {
-  it('shows the whole folder path, since a bare "All" or its parent alone does not say which one it is', () => {
-    expect(chipLabel(OPTIONS, { id: '1101', name: 'Todas' })).toBe('BOLOS › FIJAS › Todas')
-    expect(chipLabel(OPTIONS, { id: '1001', name: 'Bolos de verano' })).toBe(
-      'BOLOS › Bolos de verano',
-    )
-    expect(chipLabel(OPTIONS, { id: '2000', name: 'Todas' })).toBe('Todas')
-    expect(chipLabel(OPTIONS, { id: '3000', name: 'Makina' })).toBe('Makina')
-    expect(chipLabel(OPTIONS, { name: 'Nueva' })).toBe('Nueva')
   })
 })
 

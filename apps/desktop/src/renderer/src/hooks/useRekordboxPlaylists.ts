@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
-import type { Settings } from '../../../shared/types'
+import type { Settings, SourceNode } from '../../../shared/types'
 import { withRekordboxField } from '../lib/fields'
 import { type Membership, type PlaylistOption, playlistOptions } from '../lib/rekordboxPlaylists'
 
@@ -13,13 +13,18 @@ export function useRekordboxAvailable(): boolean {
   return data
 }
 
-export function useRekordboxPlaylistOptions(enabled: boolean): PlaylistOption[] | undefined {
+export function useRekordboxPlaylistTree(enabled: boolean): SourceNode[] | undefined {
   const { data } = useQuery({
     queryKey: ['source-tree', 'rekordbox'],
     queryFn: () => window.api.loadRekordboxTree(),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  return data
+}
+
+export function useRekordboxPlaylistOptions(enabled: boolean): PlaylistOption[] | undefined {
+  const data = useRekordboxPlaylistTree(enabled)
   return useMemo(() => (data ? playlistOptions(data) : undefined), [data])
 }
 
