@@ -2070,7 +2070,13 @@
       "no-space": "Passt nicht auf den USB-Stick.",
       "busy": "Es läuft bereits ein Export.",
       "not-removable": "Wähle einen Ordner auf einem USB-Stick oder einer Karte.",
-      "not-volume-root": "Player lesen nur das Hauptverzeichnis eines USB-Sticks."
+      "not-volume-root": "Player lesen nur das Hauptverzeichnis eines USB-Sticks.",
+      "rekordbox-open": "rekordbox ist noch geöffnet. Es wurde nichts exportiert.",
+      "sources-unreachable": "Die Musik ist nicht auffindbar. Binde ihr Laufwerk ein und exportiere erneut.",
+      "playlist-empty": "Eine Playlist wäre leer. Es wurde nichts exportiert.",
+      "source-lost": "Das Musiklaufwerk wurde mittendrin ausgeworfen. Der USB-Stick behält seine vorherige Bibliothek.",
+      "sync-files": "Der USB-Stick funktioniert auf den Playern, aber rekordbox erkennt seine Playlists eventuell nicht. Exportiere erneut.",
+      "stick-ids-full": "Der USB-Stick hat keine freien Nummern für neue Playlists mehr. Erneutes Exportieren behebt das nicht."
     },
     "trackFailure": {
       "missing-file": "Datei nicht gefunden",

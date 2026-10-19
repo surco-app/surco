@@ -2070,7 +2070,13 @@
       "no-space": "Ça ne tient pas sur la clé USB.",
       "busy": "Un export est déjà en cours.",
       "not-removable": "Choisis un dossier sur une clé USB ou une carte.",
-      "not-volume-root": "Les lecteurs ne lisent que la racine d’une clé USB."
+      "not-volume-root": "Les lecteurs ne lisent que la racine d’une clé USB.",
+      "rekordbox-open": "rekordbox est toujours ouvert. Rien n’a été exporté.",
+      "sources-unreachable": "La musique est introuvable. Monte son disque et exporte à nouveau.",
+      "playlist-empty": "Une playlist se retrouverait vide. Rien n’a été exporté.",
+      "source-lost": "Le disque de la musique a été démonté en cours de route. La clé garde sa bibliothèque précédente.",
+      "sync-files": "La clé fonctionne sur les lecteurs, mais rekordbox risque de ne pas reconnaître ses playlists. Exporte à nouveau.",
+      "stick-ids-full": "La clé n’a plus de numéros libres pour de nouvelles playlists. Exporter à nouveau n’y changera rien."
     },
     "trackFailure": {
       "missing-file": "fichier introuvable",

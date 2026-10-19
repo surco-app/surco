@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ERROR_KEYS } from '../../../shared/errorKeys'
+import type { UsbFailure } from '../../../shared/types'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -63,6 +64,42 @@ describe('locale parity', () => {
       if (enText === undefined) continue
       expect({ key, ph: placeholders(text) }).toEqual({ key, ph: placeholders(enText) })
     }
+  })
+})
+
+// Every view of the USB export renders `usbExport.errors.<reason>`; a code main can send
+// with no string there shows the user the raw key. The Record makes a new UsbFailure fail
+// to compile until it is listed here.
+const USB_FAILURES: Record<UsbFailure, true> = {
+  unsupported: true,
+  'no-collection': true,
+  unreadable: true,
+  'nothing-selected': true,
+  'volume-gone': true,
+  'volume-changed': true,
+  'not-removable': true,
+  'not-volume-root': true,
+  'no-baken': true,
+  refused: true,
+  'baken-failed': true,
+  'device-write': true,
+  'no-space': true,
+  busy: true,
+  'rekordbox-open': true,
+  'sources-unreachable': true,
+  'playlist-empty': true,
+  'source-lost': true,
+  'sync-files': true,
+  'stick-ids-full': true,
+}
+
+describe('USB export failures', () => {
+  it.each([['en', en], ...LOCALES])('%s says every reason an export can fail', (_, locale) => {
+    const catalogue = new Map(leaves(locale))
+    const missing = Object.keys(USB_FAILURES).filter(
+      (reason) => !catalogue.has(`usbExport.errors.${reason}`),
+    )
+    expect(missing).toEqual([])
   })
 })
 

@@ -2070,7 +2070,13 @@
       "no-space": "No cabe en el USB.",
       "busy": "Ya hay una exportación en marcha.",
       "not-removable": "Elige una carpeta de un USB o una tarjeta.",
-      "not-volume-root": "Los reproductores solo leen la raíz de un USB."
+      "not-volume-root": "Los reproductores solo leen la raíz de un USB.",
+      "rekordbox-open": "rekordbox sigue abierto. No se ha exportado nada.",
+      "sources-unreachable": "No se encuentra la música. Monta su disco y vuelve a exportar.",
+      "playlist-empty": "Una playlist se quedaría vacía. No se ha exportado nada.",
+      "source-lost": "Se desmontó el disco de la música a mitad. El USB tiene su biblioteca anterior.",
+      "sync-files": "El USB quedó bien para los reproductores, pero rekordbox puede no reconocer sus playlists. Exporta otra vez.",
+      "stick-ids-full": "El USB no tiene más números libres para playlists nuevas. Exportar otra vez no lo arregla."
     },
     "trackFailure": {
       "missing-file": "no se encuentra el fichero",
