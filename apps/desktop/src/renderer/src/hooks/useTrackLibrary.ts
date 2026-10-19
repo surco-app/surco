@@ -938,11 +938,11 @@ export function useTrackLibrary({
     onClear(cleared)
   }
 
+  const prioritizeReads = useCallback((ids: string[]): void => readSlot.current.prioritize(ids), [])
+
   // Stops an import mid-flight: the reads already running finish (their results are
   // worth keeping), nothing further is picked off the queue, and the rows that never
   // got read are dropped by the settle handler in addPaths.
-  const prioritizeReads = useCallback((ids: string[]): void => readSlot.current.prioritize(ids), [])
-
   function cancelImport(): void {
     importCancel.current = true
     importDone.current = 0

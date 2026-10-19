@@ -98,6 +98,28 @@ describe('createPriorityLimit', () => {
     expect(started).toEqual(['a', 'd', 'b', 'c'])
   })
 
+  it('keeps every slot when the same key is prioritized twice', async () => {
+    const limit = createPriorityLimit(1)
+    let releaseFirst: () => void = () => {}
+    const first = limit.run('a', () => new Promise<void>((r) => (releaseFirst = r)))
+    const started: string[] = []
+    const rest = ['b', 'c'].map((k) =>
+      limit.run(k, async () => {
+        started.push(k)
+      }),
+    )
+    limit.prioritize(['c', 'c'])
+    releaseFirst()
+    await Promise.all([first, ...rest])
+    expect(started).toEqual(['c', 'b'])
+    let ranNow = false
+    const next = limit.run('d', async () => {
+      ranNow = true
+    })
+    expect(ranNow).toBe(true)
+    await next
+  })
+
   it('ignores keys that are running or not queued', async () => {
     const limit = createPriorityLimit(1)
     const started: string[] = []
