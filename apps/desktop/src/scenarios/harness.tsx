@@ -293,6 +293,7 @@ function scenarioApi(
     discardRekordboxQueue: async () => {},
     rekordboxQueueReady: async () => {},
     rekordboxTrackCues: async () => null,
+    rekordboxCueSummary: async () => ({}),
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},

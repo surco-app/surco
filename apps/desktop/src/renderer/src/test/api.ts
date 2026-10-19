@@ -190,6 +190,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     discardRekordboxQueue: async () => {},
     rekordboxQueueReady: async () => {},
     rekordboxTrackCues: async () => null,
+    rekordboxCueSummary: async () => ({}),
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},

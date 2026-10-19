@@ -7,6 +7,7 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
   BpmResult,
+  CueSummary,
   DockIconFrames,
   KeyResult,
   ListFixRequest,
@@ -190,6 +191,8 @@ const api: Api = {
   rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
   rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
+  rekordboxCueSummary: (contentIds: string[]): Promise<Record<string, CueSummary>> =>
+    ipcRenderer.invoke('rekordbox:cueSummary', contentIds),
   rekordboxQueuedCues: (contentId: string): Promise<number[] | null> =>
     ipcRenderer.invoke('rekordbox:queuedCues', contentId),
   undoRekordboxCues: (contentId: string): Promise<void> =>

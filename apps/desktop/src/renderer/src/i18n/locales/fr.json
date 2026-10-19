@@ -370,6 +370,8 @@
     "exportUsb": "Exporter vers USB…"
   },
   "trackList": {
+    "cuesUnanalysed": "non analysé",
+    "cuesNone": "sans cues",
     "backup": "Revenir à l'original… (copie du {{when}})",
     "label": "Morceaux",
     "noArtist": "Sans artiste",

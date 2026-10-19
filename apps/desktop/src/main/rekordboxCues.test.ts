@@ -12,7 +12,7 @@ import {
   pwv5Section,
   section,
 } from './anlzFixture'
-import { applyCueChanges, cueFingerprint, readTrackCues } from './rekordboxCues'
+import { applyCueChanges, cueFingerprint, cueSummaries, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
@@ -158,6 +158,26 @@ describe('readTrackCues', () => {
     const { db, share } = await collection()
     const existing: ExistingCue[] = readTrackCues(db, share, '103')?.cues ?? []
     expect(existing.find((c) => c.id === 'q2')).toEqual({ id: 'q2', ms: 8000, kind: 1, color: 1 })
+    db.close()
+  })
+})
+
+describe('cueSummaries', () => {
+  it('says per track whether it is analysed and which hot cues it has', async () => {
+    const { db, share } = await collection()
+    expect(cueSummaries(db, share, ['103', '104'])).toEqual({
+      '103': { analysed: true, hot: [{ ms: 8000, color: 1 }] },
+      '104': { analysed: false, hot: [] },
+    })
+    db.close()
+  })
+
+  it('calls a track without a beat grid not analysed, since the rules need the grid', async () => {
+    const { db, share } = await collection({ dat: anlzFile(pwavSection([31, 0, 16])) })
+    expect(cueSummaries(db, share, ['103'])['103']).toEqual({
+      analysed: false,
+      hot: [{ ms: 8000, color: 1 }],
+    })
     db.close()
   })
 })

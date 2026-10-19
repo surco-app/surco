@@ -370,6 +370,8 @@
     "exportUsb": "Export to USB…"
   },
   "trackList": {
+    "cuesUnanalysed": "not analysed",
+    "cuesNone": "no cues",
     "backup": "Back to the original… (backup from {{when}})",
     "label": "Tracks",
     "noArtist": "No artist",

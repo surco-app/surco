@@ -40,6 +40,7 @@ describe('registerRekordboxCuesIpc', () => {
       applyQuietly: vi.fn(),
     })
     expect(handler('rekordbox:trackCues')({}, '103')).toBeNull()
+    expect(handler('rekordbox:cueSummary')({}, ['103'])).toEqual({})
   })
 
   it('reports the drops queued for a track, or null when nothing waits', () => {

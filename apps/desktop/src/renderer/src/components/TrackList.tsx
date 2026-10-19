@@ -27,6 +27,7 @@ import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { activeCleanups } from '../lib/autoClean'
+import type { CueSwatch } from '../lib/cueSwatches'
 import { isStale } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { formatTime } from '../lib/duration'
@@ -47,6 +48,7 @@ import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
+import { CueSwatches } from './CueSwatches'
 import {
   CoverPlaceholder,
   listRowClass,
@@ -99,6 +101,7 @@ interface Props {
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
   playlistDots?: ReadonlyMap<string, PlaylistDot>
+  cueSwatches?: ReadonlyMap<string, CueSwatch>
   onOpenBackup?: (track: TrackItem) => void
   // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
   duplicateRankById?: ReadonlyMap<string, DuplicateRank>
@@ -331,6 +334,7 @@ interface RowProps {
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
   backupAt?: number
   playlistDot?: PlaylistDot
+  cueSwatch?: CueSwatch
   onOpenBackup?: (track: TrackItem) => void
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
@@ -363,6 +367,7 @@ const TrackRow = memo(function TrackRow({
   rowRegistry,
   backupAt,
   playlistDot,
+  cueSwatch,
   onOpenBackup,
   duplicate,
   outsideFilter,
@@ -699,6 +704,7 @@ const TrackRow = memo(function TrackRow({
                 </span>
               </span>
               {playlistDot && <PlaylistDots dot={playlistDot} />}
+              {cueSwatch && <CueSwatches summary={cueSwatch.summary} pending={cueSwatch.pending} />}
               <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
                 {t.duration !== undefined && (
                   <span data-testid="track-duration">{formatTime(t.duration)}</span>
@@ -930,6 +936,7 @@ export const TrackList = memo(function TrackList({
   rowRegistry,
   backupAtByPath,
   playlistDots,
+  cueSwatches,
   onOpenBackup,
   duplicateRankById,
   outsideFilter,
@@ -1197,6 +1204,7 @@ export const TrackList = memo(function TrackList({
               rowRegistry={rowRegistry}
               backupAt={backupAtByPath?.get(t.inputPath)}
               playlistDot={playlistDots?.get(t.id)}
+              cueSwatch={cueSwatches?.get(t.id)}
               onOpenBackup={onOpenBackup}
               duplicate={duplicateRankById?.get(t.id)}
               outsideFilter={outsideFilter?.has(t.id) ?? false}

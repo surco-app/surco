@@ -1628,6 +1628,11 @@ export interface TrackCueRow {
   color: number | null
 }
 
+export interface CueSummary {
+  analysed: boolean
+  hot: { ms: number; color: number | null }[]
+}
+
 export interface TrackCues {
   contentId: string
   analysed: boolean

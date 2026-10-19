@@ -66,6 +66,7 @@ import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
+import { useCueSummaries } from './hooks/useCueSummaries'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useDuplicateRanks } from './hooks/useDuplicateRanks'
 import { useEditorPicks } from './hooks/useEditorPicks'
@@ -114,6 +115,7 @@ import { baseName } from './lib/baseName'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
+import { type CueSwatch, cueSwatchesOf } from './lib/cueSwatches'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
@@ -1992,6 +1994,35 @@ export default function App(): React.JSX.Element {
   // afterwards is re-read and shown (useRekordboxEdits).
   const rekordboxOpen =
     browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
+  const rekordboxContentIds = useMemo(
+    () => (rekordboxOpen && playlistScope ? [...playlistScope.contentOf.values()] : []),
+    [rekordboxOpen, playlistScope],
+  )
+  const cueSummaries = useCueSummaries(rekordboxContentIds, rekordboxOpen)
+  const pendingCuePaths = useMemo(
+    () =>
+      new Set(
+        rekordboxQueue.state.items
+          .filter((i) => i.parts.some((p) => p.kind === 'cues'))
+          .map((i) => i.key.slice('track:'.length)),
+      ),
+    [rekordboxQueue.state],
+  )
+  const cueSwatchesRef = useRef<Map<string, CueSwatch>>(new Map())
+  const cueSwatches = useMemo(() => {
+    const next =
+      rekordboxOpen && playlistScope
+        ? cueSwatchesOf(
+            playlistScope.tracks,
+            playlistScope.contentOf,
+            cueSummaries,
+            pendingCuePaths,
+            cueSwatchesRef.current,
+          )
+        : new Map<string, CueSwatch>()
+    cueSwatchesRef.current = next
+    return next
+  }, [rekordboxOpen, playlistScope, cueSummaries, pendingCuePaths])
   const selectedContentId =
     rekordboxOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
@@ -2805,6 +2836,7 @@ export default function App(): React.JSX.Element {
                               rowRegistry={rowEls}
                               backupAtByPath={backupAtByPath}
                               playlistDots={playlistDots}
+                              cueSwatches={cueSwatches}
                               onOpenBackup={onOpenBackup}
                               duplicateRankById={duplicateRankById}
                             />
