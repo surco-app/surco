@@ -2573,9 +2573,9 @@ function Marking({
     () =>
       findDrops(
         read.cues.filter((c) => c.kind === 0).map((c) => c.ms),
-        hot.map((c) => c.ms),
+        read.cues.filter((c) => c.kind !== 0).map((c) => c.ms),
       ),
-    [read, hot],
+    [read],
   )
   const [drops, setDrops] = useState<number[]>(initial)
   const beats = read.grid.map((b) => b.ms)
