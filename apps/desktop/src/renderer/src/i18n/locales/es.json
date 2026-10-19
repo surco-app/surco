@@ -2207,8 +2207,8 @@
     "discardYes": "Descartar",
     "discardNo": "Cancelar",
     "pillHalted": "Cambios de rekordbox en pausa",
-    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar",
-    "pillElsewhere": "Espera otra colección de rekordbox",
+    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia master.db.surco-backup, así que si algo no cuadra, restaura antes desde ella",
+    "pillElsewhere": "Pendiente de otra colección de rekordbox",
     "elsewhere": "Esto se preparó para otra colección de rekordbox. Surco no lo aplicará a la que usas ahora"
   }
 }

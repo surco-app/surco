@@ -38,7 +38,7 @@ describe('RekordboxQueuePill', () => {
     setup({ ...STATE, halted: true })
     fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
     expect(screen.getByTestId('rekordbox-queue-halted')).toHaveTextContent(
-      'The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard',
+      'The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy master.db.surco-backup, so if anything looks wrong, restore from it first',
     )
   })
 

@@ -1735,7 +1735,7 @@
         "stale": "La playlist a changé dans rekordbox. Vérifie-la et réessaie",
         "noSeparator": "Ta collection n’a aucun séparateur à copier",
         "writeUnknown": "Le changement n'a pu être ni enregistré ni annulé, la collection a donc pu changer. Avant d'ouvrir rekordbox, sors master.db-wal et master.db-shm de son dossier, puis remplace master.db par la copie master.db.surco-backup qui se trouve à côté",
-        "otherCollection": "Ce qui attend appartient à une autre collection rekordbox, rien n’a donc été modifié. Revenez à cette collection ou abandonnez ce qui attend"
+        "otherCollection": "Ce qui attend appartient à une autre collection rekordbox, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend"
       }
     },
     "tree": {
@@ -2207,8 +2207,8 @@
     "discardYes": "Abandonner",
     "discardNo": "Annuler",
     "pillHalted": "Changements rekordbox en pause",
-    "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que vous n’aurez pas choisi Appliquer maintenant ou Abandonner",
+    "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours master.db.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
     "pillElsewhere": "En attente d’une autre collection rekordbox",
-    "elsewhere": "Ceci a été préparé pour une autre collection rekordbox. Surco ne l’appliquera pas à celle que vous utilisez maintenant"
+    "elsewhere": "Ceci a été préparé pour une autre collection rekordbox. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   }
 }

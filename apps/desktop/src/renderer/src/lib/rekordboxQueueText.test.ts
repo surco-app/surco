@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import i18n from '../i18n'
+import de from '../i18n/locales/de.json'
+import es from '../i18n/locales/es.json'
+import fr from '../i18n/locales/fr.json'
+import ptBR from '../i18n/locales/pt-BR.json'
 import { appliedMessage, noticeText, partText, pillText } from './rekordboxQueueText'
 
 const tr = i18n.getFixedT('en')
@@ -19,6 +23,23 @@ describe('rekordbox queue text', () => {
     expect(pillText(tr, { tracks: 3, changes: 0, items: [], halted: true })).toBe(
       'rekordbox changes on hold',
     )
+  })
+
+  it.each([
+    ['es', es.rekordboxQueue.halted],
+    ['en', tr('rekordboxQueue.halted')],
+    ['de', de.rekordboxQueue.halted],
+    ['fr', fr.rekordboxQueue.halted],
+    ['pt-BR', ptBR.rekordboxQueue.halted],
+  ])(
+    'warns in %s that Apply now on a held queue replaces the backup copy the user may need',
+    (_lng, text) => {
+      expect(text).toContain('master.db.surco-backup')
+    },
+  )
+
+  it('says in Spanish that the queue is pending for another collection', () => {
+    expect(es.rekordboxQueue.pillElsewhere).toBe('Pendiente de otra colección de rekordbox')
   })
 
   it('says the queue waits for another collection rather than for rekordbox to close', () => {
