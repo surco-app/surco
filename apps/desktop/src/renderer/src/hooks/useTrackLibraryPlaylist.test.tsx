@@ -699,6 +699,76 @@ describe('the light read of a rekordbox row', () => {
     expect(result.current.tracks[0].metaPartial).toBe(true)
   })
 
+  it('removes the foreign tags the full read finds when the row was cleared before it landed', async () => {
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const readMeta = vi.fn().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const id = result.current.tracks[0].id
+    act(() => result.current.clearExtrasTracks([id]))
+    const cleared = result.current.tracks[0]
+    expect(cleared.foreignRemoved).toEqual([])
+    expect(cleared.metaCleared).toBe(true)
+    await act(async () => {
+      await result.current.completeTrackMeta(id)
+    })
+    const row = result.current.tracks[0]
+    expect(row.foreignRemoved).toEqual(['ENERGY'])
+    expect(row.metaCleared).toBe(true)
+    expect(row.coverUrl).toBeUndefined()
+    expect(row.diskSignature).toBe(cleared.diskSignature)
+    expect(trackSignature(row)).not.toBe(row.diskSignature)
+  })
+
+  it('completes a large selection through the shared read cap, never more than six reads at once', async () => {
+    const entries = Array.from({ length: 10 }, (_, i) => ({
+      ...entry,
+      path: `/m/${i}.aiff`,
+      contentId: `c${i}`,
+    }))
+    const readMetaLight = vi.fn().mockResolvedValue(light)
+    const pending: Array<() => void> = []
+    let inFlight = 0
+    let peak = 0
+    const readMeta = vi.fn(
+      () =>
+        new Promise<typeof full>((resolve) => {
+          inFlight += 1
+          peak = Math.max(peak, inFlight)
+          pending.push(() => {
+            inFlight -= 1
+            resolve(full)
+          })
+        }),
+    )
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries, 'rekordbox')
+    })
+    await waitFor(() =>
+      expect(result.current.tracks.every((t) => t.metaPartial === true)).toBe(true),
+    )
+    let all: Promise<unknown> = Promise.resolve()
+    await act(async () => {
+      all = Promise.all(result.current.tracks.map((t) => result.current.completeTrackMeta(t.id)))
+    })
+    expect(readMeta).toHaveBeenCalledTimes(6)
+    await act(async () => {
+      while (pending.length) {
+        pending.shift()?.()
+        await Promise.resolve()
+        await Promise.resolve()
+      }
+      await all
+    })
+    expect(peak).toBe(6)
+    expect(readMeta).toHaveBeenCalledTimes(10)
+    expect(result.current.tracks.every((t) => t.metaPartial === false)).toBe(true)
+  })
+
   it('reads a dropped file fully, as before', async () => {
     const readMetaLight = vi.fn().mockResolvedValue(light)
     const readMeta = vi.fn().mockResolvedValue(full)

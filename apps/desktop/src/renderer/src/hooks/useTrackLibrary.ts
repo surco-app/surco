@@ -571,7 +571,8 @@ export function useTrackLibrary({
     if (inFlight) return inFlight
     const current = tracksRef.current.find((t) => t.id === id)
     if (!current?.metaPartial) return Promise.resolve()
-    const completion = completeFromFullRead(id, current.inputPath)
+    const completion = readSlot.current.run(id, () => completeFromFullRead(id, current.inputPath))
+    readSlot.current.prioritize([id])
     completing.current.set(id, completion)
     return completion
   })
@@ -600,6 +601,12 @@ export function useTrackLibrary({
           ...completed,
           ...(t.processedSignature === before && { processedSignature: after }),
           ...(t.diskSignature === before && { diskSignature: after }),
+          ...(t.metaCleared &&
+            t.foreignRemoved && {
+              foreignRemoved: [
+                ...new Set([...t.foreignRemoved, ...foreignTags.map((tag) => tag.name)]),
+              ],
+            }),
         }
       })
     } finally {
