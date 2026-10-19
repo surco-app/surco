@@ -1918,7 +1918,15 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       .fn<Api['processTrack']>()
       .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     setApi({ processTrack })
-    const live = { current: [track({ id: 'a', rekordboxPlaylists: [{ name: 'Cierre' }] })] }
+    const live = {
+      current: [
+        track({
+          id: 'a',
+          rekordboxPlaylists: [{ name: 'Cierre' }],
+          rekordboxPlaylistsBase: ['3000'],
+        }),
+      ],
+    }
     const { result } = renderHook(
       () =>
         useTrackProcessing({
@@ -1933,7 +1941,10 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       await result.current.processOne('a')
     })
     expect(processTrack).toHaveBeenCalledWith(
-      expect.objectContaining({ rekordboxPlaylists: [{ name: 'Cierre' }] }),
+      expect.objectContaining({
+        rekordboxPlaylists: [{ name: 'Cierre' }],
+        rekordboxPlaylistsBase: ['3000'],
+      }),
     )
   })
 })

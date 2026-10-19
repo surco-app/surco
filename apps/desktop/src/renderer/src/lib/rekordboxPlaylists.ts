@@ -140,19 +140,36 @@ export function bulkPlaylistState(
   }))
 }
 
+export interface PlaylistsEdit {
+  rekordboxPlaylists: RekordboxPlaylistTarget[]
+  rekordboxPlaylistsBase: string[]
+}
+
+export function playlistsEdit(
+  track: TrackItem,
+  membership: Membership,
+  next: RekordboxPlaylistTarget[],
+): PlaylistsEdit {
+  return {
+    rekordboxPlaylists: next,
+    rekordboxPlaylistsBase:
+      track.rekordboxPlaylistsBase ?? membership[rekordboxPathOf(track)] ?? [],
+  }
+}
+
 export function withTarget(
   tracks: readonly TrackItem[],
   membership: Membership | undefined,
   options: readonly PlaylistOption[] | undefined,
   target: RekordboxPlaylistTarget,
   on: boolean,
-): { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[] | undefined {
+): ({ id: string } & PlaylistsEdit)[] | undefined {
   if (!membership || !options) return undefined
   return tracks.map((t) => {
     const rest = (effectivePlaylists(t, membership, options) ?? []).filter(
       (x) => targetKey(x) !== targetKey(target),
     )
-    return { id: t.id, rekordboxPlaylists: on ? [...rest, target] : rest }
+    return { id: t.id, ...playlistsEdit(t, membership, on ? [...rest, target] : rest) }
   })
 }
 
@@ -185,7 +202,11 @@ export function playlistDotsOf(
 
 function withoutPlaylistEdit(t: TrackItem): TrackItem {
   const before = trackSignature(t)
-  const cleared: TrackItem = { ...t, rekordboxPlaylists: undefined }
+  const cleared: TrackItem = {
+    ...t,
+    rekordboxPlaylists: undefined,
+    rekordboxPlaylistsBase: undefined,
+  }
   const after = trackSignature(cleared)
   return {
     ...cleared,

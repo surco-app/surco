@@ -163,9 +163,27 @@ describe('runProcessTrack — plain conversion', () => {
       job({ rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] }),
       makeDeps({ attachRekordboxPlaylists }),
     )
-    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(result.outputPath, [
-      { id: '3000', name: 'Makina' },
-    ])
+    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(
+      result.outputPath,
+      [{ id: '3000', name: 'Makina' }],
+      undefined,
+    )
+  })
+
+  it('attaches the membership the user edited against with the playlists', async () => {
+    const attachRekordboxPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({
+        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+        rekordboxPlaylistsBase: ['2000'],
+      }),
+      makeDeps({ attachRekordboxPlaylists }),
+    )
+    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(
+      result.outputPath,
+      [{ id: '3000', name: 'Makina' }],
+      ['2000'],
+    )
   })
 
   it('attaches nothing when the field was never touched', async () => {

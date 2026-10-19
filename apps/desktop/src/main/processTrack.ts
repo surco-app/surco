@@ -93,7 +93,11 @@ export interface ProcessTrackDeps {
   ) => Promise<void>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
-  attachRekordboxPlaylists?: (to: string, playlists: RekordboxPlaylistTarget[]) => void
+  attachRekordboxPlaylists?: (
+    to: string,
+    playlists: RekordboxPlaylistTarget[],
+    playlistsBase?: string[],
+  ) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
@@ -349,7 +353,8 @@ export async function runProcessTrack(
       // to sweep and the manifest entry is stale.
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
-    if (job.rekordboxPlaylists) deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists)
+    if (job.rekordboxPlaylists)
+      deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
     if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)
     deps.recordConversion()
 

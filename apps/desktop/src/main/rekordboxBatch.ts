@@ -8,6 +8,7 @@ export interface RekordboxRepoint {
   to: string
   meta?: RekordboxMeta
   playlists?: RekordboxPlaylistTarget[]
+  playlistsBase?: string[]
 }
 
 import type { RekordboxPlaylistTarget } from '../shared/types'
@@ -83,7 +84,12 @@ export function endRekordboxBatch(): RekordboxRepoint[] {
   return result
 }
 
-export function attachRekordboxPlaylists(to: string, playlists: RekordboxPlaylistTarget[]): void {
+export function attachRekordboxPlaylists(
+  to: string,
+  playlists: RekordboxPlaylistTarget[],
+  playlistsBase?: string[],
+): void {
   const index = repoints.findIndex((r) => r.to === to)
-  if (index !== -1) repoints[index] = { ...repoints[index], playlists }
+  if (index !== -1)
+    repoints[index] = { ...repoints[index], playlists, ...(playlistsBase ? { playlistsBase } : {}) }
 }

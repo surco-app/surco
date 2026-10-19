@@ -24,7 +24,6 @@ import type {
   FormatSetting,
   NormalizeConfig,
   OutputFormat,
-  RekordboxPlaylistTarget,
   ReleaseTrack,
   SearchProviderId,
   TrackMetadata,
@@ -80,6 +79,8 @@ import { jobAudio } from '../lib/reapply'
 import {
   bulkPlaylistState,
   effectivePlaylists,
+  type PlaylistsEdit,
+  playlistsEdit,
   rekordboxPathOf,
   withTarget,
 } from '../lib/rekordboxPlaylists'
@@ -149,9 +150,7 @@ interface Props {
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
-  onChangeTracksPlaylists?: (
-    patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[],
-  ) => void
+  onChangeTracksPlaylists?: (patches: ({ id: string } & PlaylistsEdit)[]) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
   // nothing" notices; the editor's T button is just a second trigger for it.
@@ -1042,7 +1041,7 @@ export const Editor = memo(function Editor({
       options: rekordboxOptions,
       single: {
         value: effectivePlaylists(item, membership, rekordboxOptions) ?? [],
-        onChange: (next) => onChange({ rekordboxPlaylists: next }),
+        onChange: (next) => onChange(playlistsEdit(item, membership, next)),
       },
       bulk: {
         states: bulkPlaylistState(playlistTracks, membership, rekordboxOptions) ?? [],

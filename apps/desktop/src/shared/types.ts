@@ -513,6 +513,7 @@ export interface SessionEdit {
   normalize?: NormalizeConfig
   declick?: DeclickConfig
   rekordboxPlaylists?: RekordboxPlaylistTarget[]
+  rekordboxPlaylistsBase?: string[]
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
@@ -704,6 +705,7 @@ export interface ProcessJob {
   // so the two rarely spell the same.
   replacesLabel?: string
   rekordboxPlaylists?: RekordboxPlaylistTarget[]
+  rekordboxPlaylistsBase?: string[]
 }
 
 export interface CoverExportJob {

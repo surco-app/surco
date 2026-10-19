@@ -37,7 +37,7 @@ export async function trackOpsFromRun(
     for (const r of wanted) {
       const paths = opts.repointing && r.from !== r.to ? [r.to, r.from] : [r.to]
       const contentId = resolveTracks(db, [{ paths }], { ...opts.find, quiet: true }).contentIds[0]
-      const known = contentId ? trackPlaylists(db, contentId) : []
+      const known = !contentId ? [] : (r.playlistsBase ?? trackPlaylists(db, contentId))
       const stamps: Record<string, number> = {}
       const touched = new Set([
         ...known,

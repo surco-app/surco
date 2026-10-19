@@ -167,6 +167,15 @@ describe('playlists on a repoint', () => {
     expect(endRekordboxBatch()).toEqual([{ ...a, playlists: [{ id: '3000', name: 'Makina' }] }])
   })
 
+  it('carries the membership the user edited against so the queue judges removals by it', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }], ['3000'])
+    expect(endRekordboxBatch()).toEqual([
+      { ...a, playlists: [{ id: '3000', name: 'Makina' }], playlistsBase: ['3000'] },
+    ])
+  })
+
   it('keeps the playlists when Apple Music moves the file and the repoint is redirected', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)

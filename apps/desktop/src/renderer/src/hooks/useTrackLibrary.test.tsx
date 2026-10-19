@@ -796,6 +796,41 @@ describe('useTrackLibrary foreign tags', () => {
     })
   })
 
+  it('restores the wanted rekordbox playlists with the membership they were edited against', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          rekordboxPlaylists: [{ name: 'Fijas' }],
+          rekordboxPlaylistsBase: ['3000'],
+        },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.rekordboxPlaylists).toEqual([{ name: 'Fijas' }])
+    expect(result.current.tracks[0]?.rekordboxPlaylistsBase).toEqual(['3000'])
+  })
+
   it('restores which library copy a track belongs to', async () => {
     setApi({
       readMeta: vi.fn().mockResolvedValue({

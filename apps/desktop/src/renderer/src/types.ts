@@ -207,6 +207,7 @@ export interface TrackItem {
   // The name Music showed for that copy, which retiring it is verified against.
   replacesLabel?: string
   rekordboxPlaylists?: RekordboxPlaylistTarget[]
+  rekordboxPlaylistsBase?: string[]
   // Set when a conversion registered this track in the Engine DJ library — the Engine
   // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
   // so the row reads in-library before the Engine snapshot refreshes.

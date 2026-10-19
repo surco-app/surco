@@ -13,6 +13,7 @@ import {
   matchingOptions,
   playlistDotsOf,
   playlistOptions,
+  playlistsEdit,
   withTarget,
 } from './rekordboxPlaylists'
 import { hasStagedEdits } from './sessionEdits'
@@ -179,12 +180,28 @@ describe('bulk', () => {
   it('completes a half token for every track, and removes it from all', () => {
     const todas = { id: '2000', name: 'Todas' }
     expect(withTarget([a, b], membership, OPTIONS, todas, true)).toEqual([
-      { id: 'a', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }, todas] },
-      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }, todas] },
+      {
+        id: 'a',
+        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }, todas],
+        rekordboxPlaylistsBase: ['3000', '2000'],
+      },
+      {
+        id: 'b',
+        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }, todas],
+        rekordboxPlaylistsBase: ['3000'],
+      },
     ])
     expect(withTarget([a, b], membership, OPTIONS, todas, false)).toEqual([
-      { id: 'a', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
-      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
+      {
+        id: 'a',
+        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+        rekordboxPlaylistsBase: ['3000', '2000'],
+      },
+      {
+        id: 'b',
+        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+        rekordboxPlaylistsBase: ['3000'],
+      },
     ])
   })
 
@@ -194,6 +211,33 @@ describe('bulk', () => {
     expect(bulkPlaylistState([a, b], membership, undefined)).toBeUndefined()
     expect(withTarget([a, b], undefined, OPTIONS, todas, true)).toBeUndefined()
     expect(withTarget([a, b], membership, undefined, todas, true)).toBeUndefined()
+  })
+})
+
+describe('playlistsEdit', () => {
+  it('records the membership shown at the first edit, so the queue judges removals by what the user saw', () => {
+    const t = track({ id: 'a', inputPath: '/m/a.wav' })
+    expect(playlistsEdit(t, { '/m/a.wav': ['3000'] }, [{ name: 'Fijas' }])).toEqual({
+      rekordboxPlaylists: [{ name: 'Fijas' }],
+      rekordboxPlaylistsBase: ['3000'],
+    })
+  })
+
+  it('keeps the first base on later edits, so a refreshed view does not hide what changed in between', () => {
+    const t = track({
+      id: 'a',
+      inputPath: '/m/a.wav',
+      rekordboxPlaylists: [{ name: 'Fijas' }],
+      rekordboxPlaylistsBase: ['3000'],
+    })
+    expect(
+      playlistsEdit(t, { '/m/a.wav': ['3000', '2000'] }, [{ name: 'Otra' }]).rekordboxPlaylistsBase,
+    ).toEqual(['3000'])
+  })
+
+  it('records an empty base for a track rekordbox does not hold', () => {
+    const t = track({ id: 'a', inputPath: '/m/a.wav' })
+    expect(playlistsEdit(t, {}, [{ name: 'Fijas' }]).rekordboxPlaylistsBase).toEqual([])
   })
 })
 
@@ -253,8 +297,12 @@ describe('discardPlaylistEdits', () => {
   }
 
   it('clears a converted row matched by its output path without making it stale or unsaved', () => {
-    const [out] = discardPlaylistEdits([converted()], ['/out/a.aiff'])
+    const [out] = discardPlaylistEdits(
+      [converted({ rekordboxPlaylistsBase: ['1001'] })],
+      ['/out/a.aiff'],
+    )
     expect(out.rekordboxPlaylists).toBeUndefined()
+    expect(out.rekordboxPlaylistsBase).toBeUndefined()
     expect(isStale(out)).toBe(false)
     expect(hasStagedEdits(out)).toBe(false)
   })
@@ -294,10 +342,11 @@ describe('clearWrittenPlaylists', () => {
 
   it('clears a field the collection now holds without making the row stale or unsaved, so a later rename cannot orphan it', () => {
     const [out] = clearWrittenPlaylists(
-      [written()],
+      [written({ rekordboxPlaylistsBase: [] })],
       [{ path: '/out/a.aiff', wanted: [{ name: 'Surco prueba A' }] }],
     )
     expect(out.rekordboxPlaylists).toBeUndefined()
+    expect(out.rekordboxPlaylistsBase).toBeUndefined()
     expect(isStale(out)).toBe(false)
     expect(hasStagedEdits(out)).toBe(false)
   })

@@ -26,7 +26,6 @@ import type {
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
-  RekordboxPlaylistTarget,
   RekordboxQueueWritten,
   SearchHints,
   SearchProviderId,
@@ -135,6 +134,7 @@ import {
   clearWrittenPlaylists,
   discardPlaylistEdits,
   type PlaylistDot,
+  type PlaylistsEdit,
   playlistDotsOf,
 } from './lib/rekordboxPlaylists'
 import type { ReleaseMetaPatch } from './lib/release'
@@ -1829,8 +1829,8 @@ export default function App(): React.JSX.Element {
   })
 
   const onChangeTracksPlaylists = useStableCallback(
-    (patches: { id: string; rekordboxPlaylists: RekordboxPlaylistTarget[] }[]) => {
-      for (const p of patches) patchTracks([p.id], { rekordboxPlaylists: p.rekordboxPlaylists })
+    (patches: ({ id: string } & PlaylistsEdit)[]) => {
+      for (const { id, ...edit } of patches) patchTracks([id], edit)
     },
   )
 

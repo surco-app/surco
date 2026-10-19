@@ -57,6 +57,24 @@ describe('trackOpsFromRun', () => {
     expect(op.stamps).toEqual({ '2000': 1767225600111, '3000': 1767225600000 })
   })
 
+  it('takes as known only the playlists the user saw when editing, so one rekordbox gained since is never removed silently', async () => {
+    const { path } = await collection()
+    const [op] = await trackOpsFromRun(
+      path,
+      [
+        {
+          from: '/Volumes/Public/Music/Play This Song.wav',
+          to: '/Volumes/Public/Music/Play This Song (24).wav',
+          meta: META,
+          playlists: [{ id: '3000', name: 'House' }],
+          playlistsBase: ['3000'],
+        },
+      ],
+      { repointing: true, probe, find: TWIN_PATHS, newId },
+    )
+    expect(op.known).toEqual(['3000'])
+  })
+
   it('looks a converted file up by its new path only when the repoint is off so it is added beside the old entry', async () => {
     const { path } = await collection()
     const [op] = await trackOpsFromRun(

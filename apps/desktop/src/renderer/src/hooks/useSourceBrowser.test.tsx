@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
 afterEach(cleanup)
@@ -82,6 +83,25 @@ describe('useSourceBrowser', () => {
     )
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
     expect(window.api.loadRekordboxPlaylist).toHaveBeenCalledWith('house')
+  })
+
+  it('re-reads which playlists the tracks are in when Surco gets the focus back, so an edit starts from what rekordbox holds now', async () => {
+    const rekordboxMembership = vi.fn().mockResolvedValue({ '/m/a.wav': ['3000'] })
+    const { focus } = setup({ rekordboxMembership })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    renderHook(
+      () => {
+        useSourceBrowser({ onPlaylistGone: () => {} })
+        return useRekordboxMembership(['/m/a.wav'], true)
+      },
+      { wrapper },
+    )
+    await waitFor(() => expect(rekordboxMembership).toHaveBeenCalledTimes(1))
+    act(() => focus())
+    await waitFor(() => expect(rekordboxMembership).toHaveBeenCalledTimes(2))
   })
 
   it('re-reads the tree and the open playlist when Surco gets the focus back, to show what changed in rekordbox', async () => {

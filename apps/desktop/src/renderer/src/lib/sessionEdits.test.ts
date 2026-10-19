@@ -178,6 +178,8 @@ it('keeps the wanted rekordbox playlists of a staged track, so switching source 
     inputPath: '/m/a.wav',
     diskSignature: 'x',
     rekordboxPlaylists: [{ name: 'Cierre' }],
+    rekordboxPlaylistsBase: ['3000'],
   })
   expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylists).toEqual([{ name: 'Cierre' }])
+  expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylistsBase).toEqual(['3000'])
 })

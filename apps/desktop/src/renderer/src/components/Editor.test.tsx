@@ -594,6 +594,7 @@ describe('Editor rekordbox Playlists field', () => {
     fireEvent.click(screen.getByTestId('playlists-option-3000'))
     expect(onChange).toHaveBeenCalledWith({
       rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+      rekordboxPlaylistsBase: [],
     })
   })
 })
@@ -1401,8 +1402,12 @@ describe('Editor multi-select', () => {
     const { onChangeTracksPlaylists } = renderMulti({ visibleFields: ['rekordboxPlaylists'] })
     fireEvent.click(await screen.findByTestId('playlists-token-complete-3000'))
     expect(onChangeTracksPlaylists).toHaveBeenCalledWith([
-      { id: 'a', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
-      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
+      {
+        id: 'a',
+        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+        rekordboxPlaylistsBase: ['3000'],
+      },
+      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }], rekordboxPlaylistsBase: [] },
     ])
   })
 
