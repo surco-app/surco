@@ -165,6 +165,7 @@ describe('CuesTab', () => {
         rules: ONE_AT_32.rules,
       })
       expect(made?.id).not.toBe('learned')
+      expect(last?.cueFlows.slice(0, 3)).toEqual(BUNDLED_FLOWS)
       expect(last?.activeCueFlow).toBe(made?.id)
       expect(screen.queryByTestId('cue-learned')).toBeNull()
     })
@@ -187,6 +188,24 @@ describe('CuesTab', () => {
         'Tu colección no tiene un patrón claro',
       )
       expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+    })
+
+    it('drops a result that arrives after the DJ moved to another flow and keeps the button busy until it does', async () => {
+      let finish: (value: LearnedFlow | null) => void = () => {}
+      const rekordboxLearnFlow = learnable(
+        new Promise((done) => {
+          finish = done
+        }),
+      )
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      fireEvent.click(screen.getByTestId('cue-flow-one-at-32'))
+      expect(screen.getByTestId('cue-learn')).toBeDisabled()
+      fireEvent.click(screen.getByTestId('cue-learn'))
+      expect(rekordboxLearnFlow).toHaveBeenCalledTimes(1)
+      await act(async () => finish(LEARNED))
+      expect(screen.queryByTestId('cue-learned')).toBeNull()
+      expect(screen.getByTestId('cue-flow-name')).toBeInTheDocument()
+      expect(screen.getByTestId('cue-learn')).toBeEnabled()
     })
 
     it('says the collection could not be read instead of spinning forever', async () => {

@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
@@ -22,7 +22,7 @@ interface Props {
   rekordboxCollection: string
 }
 
-type Learning = LearnedFlow | 'idle' | 'running' | 'none' | 'failed'
+type Learning = LearnedFlow | 'idle' | 'none' | 'failed'
 
 const NEW_RULE: CueRule = {
   from: 'drop',
@@ -41,6 +41,8 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
   const [learning, setLearning] = useState<Learning>('idle')
+  const [reading, setReading] = useState(false)
+  const request = useRef(0)
   const [removals, setRemovals] = useState(0)
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
@@ -65,19 +67,26 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const select = (id: string) => {
     setCurrent(id)
     setLearning('idle')
+    request.current++
   }
 
   const learn = () => {
-    setLearning('running')
+    const asked = ++request.current
+    const fresh = () => asked === request.current
+    setLearning('idle')
+    setReading(true)
     window.api
       .rekordboxLearnFlow()
-      .then((found) => setLearning(found ?? 'none'))
+      .then((found) => {
+        if (fresh()) setLearning(found ?? 'none')
+      })
       .catch((e: unknown) => {
         window.api.logError(
           `rekordbox cues: learning the flow failed (${e instanceof Error ? e.message : String(e)})`,
         )
-        setLearning('failed')
+        if (fresh()) setLearning('failed')
       })
+      .finally(() => setReading(false))
   }
 
   const adopt = (found: LearnedFlow) => {
@@ -129,11 +138,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
         <button
           type="button"
           data-testid="cue-learn"
-          disabled={!rekordboxCollection || learning === 'running'}
+          disabled={!rekordboxCollection || reading}
           onClick={learn}
           className={`${BUTTON_CLASS} mt-1 inline-flex items-center gap-1.5 disabled:opacity-60`}
         >
-          {learning === 'running' && (
+          {reading && (
             <Loader2
               data-testid="cue-learn-spinner"
               className="h-3.5 w-3.5 shrink-0 animate-spin"
