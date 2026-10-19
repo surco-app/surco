@@ -4,7 +4,13 @@ import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import log from 'electron-log/main'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { findTrackByPath, isAmbiguous, openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
+import {
+  findTrackByPath,
+  isAmbiguous,
+  openRekordboxDb,
+  REKORDBOX_KEY,
+  rekordboxRawKey,
+} from './rekordboxDb'
 
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }))
 
@@ -153,6 +159,27 @@ describe('openRekordboxDb', () => {
 
   it('returns null when the file does not exist', () => {
     expect(openRekordboxDb('/nonexistent/master.db')).toBeNull()
+  })
+})
+
+describe('rekordboxRawKey', () => {
+  it('opens the collection with the key stretched once from its salt, so a read skips the 80 ms derivation that held the main process', async () => {
+    const db = openRekordboxDb(dbPath, { readonly: true, key: await rekordboxRawKey(dbPath) })
+    expect(db?.prepare('SELECT count(*) c FROM djmdContent').get()).toEqual({ c: 6 })
+    db?.close()
+  })
+
+  it('stretches a key per collection, since each file has its own salt', async () => {
+    const other = join(await mkdtemp(join(tmpdir(), 'surco-rb-')), 'master.db')
+    const db = new Database(other)
+    db.pragma(`cipher='sqlcipher'`)
+    db.pragma('legacy=4')
+    db.pragma(`key='${REKORDBOX_KEY}'`)
+    db.exec('CREATE TABLE djmdContent (ID VARCHAR(255))')
+    db.close()
+    const key = await rekordboxRawKey(other)
+    expect(key).not.toBe(await rekordboxRawKey(dbPath))
+    expect(openRekordboxDb(dbPath, { readonly: true, key })).toBeNull()
   })
 })
 

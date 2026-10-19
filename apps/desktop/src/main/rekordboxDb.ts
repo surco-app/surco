@@ -1,3 +1,6 @@
+import { pbkdf2 } from 'node:crypto'
+import { open } from 'node:fs/promises'
+import { promisify } from 'node:util'
 import Database from 'better-sqlite3-multiple-ciphers'
 import log from 'electron-log/main'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
@@ -66,9 +69,31 @@ type RekordboxDb = InstanceType<typeof Database>
 // never write. Returns null instead of throwing for every reason the file may not be
 // usable — absent, not a rekordbox database, a future cipher — because a user who does
 // not run rekordbox is the normal case, not an error to report.
+const pbkdf2Async = promisify(pbkdf2)
+const rawKeys = new Map<string, Promise<string>>()
+
+export async function rekordboxRawKey(path: string): Promise<string> {
+  const salt = Buffer.alloc(16)
+  const file = await open(path, 'r')
+  try {
+    await file.read(salt, 0, 16, 0)
+  } finally {
+    await file.close()
+  }
+  const id = salt.toString('hex')
+  let key = rawKeys.get(id)
+  if (!key) {
+    key = pbkdf2Async(REKORDBOX_KEY, salt, 256000, 32, 'sha512').then(
+      (derived) => `x'${derived.toString('hex')}${id}'`,
+    )
+    rawKeys.set(id, key)
+  }
+  return key
+}
+
 export function openRekordboxDb(
   path: string,
-  options: { readonly?: boolean } = {},
+  options: { readonly?: boolean; key?: string } = {},
 ): RekordboxDb | null {
   let db: RekordboxDb
   try {
@@ -79,7 +104,7 @@ export function openRekordboxDb(
   try {
     db.pragma(`cipher='sqlcipher'`)
     db.pragma('legacy=4')
-    db.pragma(`key='${REKORDBOX_KEY}'`)
+    db.pragma(options.key ? `key="${options.key}"` : `key='${REKORDBOX_KEY}'`)
     // The pragmas above succeed even with the wrong key; the first real read is what
     // proves the file decrypted.
     db.prepare('SELECT count(*) FROM sqlite_master').get()

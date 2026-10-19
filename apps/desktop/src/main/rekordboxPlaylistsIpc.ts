@@ -8,7 +8,7 @@ import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types
 import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
 import { rekordboxShareDir } from './rekordboxArtwork'
-import { openRekordboxDb } from './rekordboxDb'
+import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import { readRekordboxPlaylistWithPreview, readRekordboxTree } from './rekordboxPlaylists'
@@ -26,9 +26,10 @@ export function withCollection<T>(
   path: string,
   read: (db: NonNullable<ReturnType<typeof openRekordboxDb>>) => T,
   fallback: T,
+  key?: string,
 ): T {
   if (!path) return fallback
-  const db = openRekordboxDb(path, { readonly: true })
+  const db = openRekordboxDb(path, key ? { readonly: true, key } : { readonly: true })
   if (!db) throw new Error('rekordbox collection could not be opened')
   try {
     return read(db)
@@ -71,12 +72,14 @@ export function registerRekordboxPlaylistsIpc(
 ): void {
   ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
   ipcMain.handle('rekordbox:tree', () => withCollection(collection(), readRekordboxTree, []))
-  ipcMain.handle('rekordbox:playlist', (_e, id: string) => {
+  ipcMain.handle('rekordbox:playlist', async (_e, id: string) => {
     const path = collection()
+    const key = path ? await rekordboxRawKey(path).catch(() => undefined) : undefined
     const entries = withCollection(
       path,
       (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
       [],
+      key,
     )
     host.allowMedia?.(
       entries.flatMap((e) => [

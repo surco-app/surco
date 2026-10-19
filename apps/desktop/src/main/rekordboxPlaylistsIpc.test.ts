@@ -9,8 +9,13 @@ vi.mock('electron', () => ({
   BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
 }))
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+vi.mock('./rekordboxDb', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./rekordboxDb')>()
+  return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
+})
 
 import type { SourcePlaylistEntry } from '../shared/types'
+import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
   collectionAvailable,
@@ -115,6 +120,21 @@ describe('registerRekordboxPlaylistsIpc', () => {
     expect(paths.length).toBeGreaterThan(0)
     expect(entries.every((e) => e.separator || e.path === null || e.preview)).toBe(true)
     expect(allowMedia).toHaveBeenCalledWith(expect.arrayContaining(paths))
+  })
+
+  it('opens the playlist with the key already stretched, since stretching the passphrase on every open held the main process for 80 ms', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+    })
+    vi.mocked(openRekordboxDb).mockClear()
+    await handler('rekordbox:playlist')({}, '2000')
+    expect(openRekordboxDb).toHaveBeenCalledWith(path, {
+      readonly: true,
+      key: await rekordboxRawKey(path),
+    })
   })
 
   // The dialog asking to close rekordbox must sit over the window the user was dragging in.
