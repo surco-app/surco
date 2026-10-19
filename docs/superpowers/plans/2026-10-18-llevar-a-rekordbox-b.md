@@ -2744,3 +2744,664 @@ git commit -m "Mark drops on rekordbox's waveform and save the countdown to reko
 
 ---
 
+### Task 9: Swatches in the rekordbox list
+
+**Files:**
+- Modify: `src/shared/types.ts` (`CueSummary`)
+- Modify: `src/main/rekordboxCues.ts` (`cueSummaries`), `src/main/rekordboxCuesIpc.ts` (`rekordbox:cueSummary`), preload, `test/api.ts`, `harness.tsx`
+- Create: `src/renderer/src/components/CueSwatches.tsx`, `src/renderer/src/hooks/useCueSummaries.ts`
+- Modify: `src/renderer/src/components/TrackList.tsx` (`cueSwatches` prop), `src/renderer/src/App.tsx`, `src/renderer/src/hooks/useRekordboxQueue.ts` (re-read), `src/renderer/src/i18n/locales/*.json` (`trackList.cues*`)
+- Test: `src/main/rekordboxCues.test.ts` (append), `src/renderer/src/components/CueSwatches.test.tsx`
+
+**Interfaces:**
+- Consumes: Task 4 `liveCues`; `anlzSections` (`anlz.ts`); Task 7 `CUE_COLOR`; plan A `RekordboxQueueState` (an item `track:<path>` with a `cues` part means pending cues).
+- Produces:
+  - `interface CueSummary { analysed: boolean; hot: { ms: number; color: number | null }[] }` (hot cues in time order)
+  - `cueSummaries(db: Db, shareDir: string, contentIds: string[]): Record<string, CueSummary>`
+  - IPC `rekordbox:cueSummary (contentIds: string[]) → Record<string, CueSummary>`; `Api.rekordboxCueSummary(contentIds: string[]): Promise<Record<string, CueSummary>>`
+  - `useCueSummaries(contentIds: string[], enabled: boolean): Record<string, CueSummary>` (query `['rekordbox-cue-summary', sortedIds]`)
+  - `CueSwatches({ summary, pending }: { summary: CueSummary; pending: boolean })`, test id `track-cue-swatches` with `data-pending`
+  - `TrackList` prop `cueSwatches?: ReadonlyMap<string, { summary: CueSummary; pending: boolean }>`
+
+Spec "En la lista": in the rows of a rekordbox playlist, "sin analizar" (no `AnalysisDataPath` or no `PQTZ`), "sin cues" (analysed, no hot cue), or one small square per hot cue in its colour, in time order; hollow while cues wait in the queue.
+
+- [ ] **Step 1: Locale strings**
+
+```json
+{
+  "es": { "trackList": { "cuesUnanalysed": "sin analizar", "cuesNone": "sin cues" } },
+  "en": { "trackList": { "cuesUnanalysed": "not analysed", "cuesNone": "no cues" } },
+  "de": { "trackList": { "cuesUnanalysed": "nicht analysiert", "cuesNone": "keine Cues" } },
+  "fr": { "trackList": { "cuesUnanalysed": "non analysé", "cuesNone": "sans cues" } },
+  "pt-BR": { "trackList": { "cuesUnanalysed": "sem análise", "cuesNone": "sem cues" } }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Append to `src/main/rekordboxCues.test.ts` (add `cueSummaries` to the import; the `collection` helper of Task 4 writes an analysed track 103 with cues q1..q3):
+
+```ts
+describe('cueSummaries', () => {
+  it('says per track whether it is analysed and which hot cues it has', async () => {
+    const { db, share } = await collection()
+    expect(cueSummaries(db, share, ['103', '104'])).toEqual({
+      '103': { analysed: true, hot: [{ ms: 8000, color: 1 }] },
+      '104': { analysed: false, hot: [] },
+    })
+    db.close()
+  })
+})
+```
+
+Create `src/renderer/src/components/CueSwatches.test.tsx`:
+
+```tsx
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import '../i18n'
+import { CueSwatches } from './CueSwatches'
+
+afterEach(cleanup)
+
+describe('CueSwatches', () => {
+  // The DJ scans a playlist for what still needs cues; the three states read at a glance.
+  it('says when the track is not analysed or has no cues', () => {
+    render(<CueSwatches summary={{ analysed: false, hot: [] }} pending={false} />)
+    expect(screen.getByTestId('track-cue-swatches')).toHaveTextContent('not analysed')
+    cleanup()
+    render(<CueSwatches summary={{ analysed: true, hot: [] }} pending={false} />)
+    expect(screen.getByTestId('track-cue-swatches')).toHaveTextContent('no cues')
+  })
+
+  it('draws one square per hot cue, hollow while waiting for rekordbox', () => {
+    render(
+      <CueSwatches
+        summary={{ analysed: true, hot: [{ ms: 1000, color: 1 }, { ms: 2000, color: 42 }] }}
+        pending
+      />,
+    )
+    const swatches = screen.getByTestId('track-cue-swatches')
+    expect(swatches.querySelectorAll('[data-swatch]')).toHaveLength(2)
+    expect(swatches).toHaveAttribute('data-pending', 'true')
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCues.test.ts src/renderer/src/components/CueSwatches.test.tsx`
+Expected: FAIL, missing export and module.
+
+- [ ] **Step 4: Implement**
+
+`src/shared/types.ts`:
+
+```ts
+export interface CueSummary {
+  analysed: boolean
+  hot: { ms: number; color: number | null }[]
+}
+```
+
+Append to `src/main/rekordboxCues.ts` (import `anlzSections` from `./anlz` and `type CueSummary`):
+
+```ts
+export function cueSummaries(
+  db: Db,
+  shareDir: string,
+  contentIds: string[],
+): Record<string, CueSummary> {
+  const row = db.prepare(
+    `SELECT AnalysisDataPath FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+  )
+  const out: Record<string, CueSummary> = {}
+  for (const id of contentIds) {
+    const found = row.get(id) as { AnalysisDataPath: string | null } | undefined
+    if (!found) continue
+    const dat = found.AnalysisDataPath ? read(`${shareDir}${found.AnalysisDataPath}`) : null
+    const analysed = dat !== null && anlzSections(dat).some((s) => s.tag === 'PQTZ')
+    out[id] = {
+      analysed,
+      hot: liveCues(db, id)
+        .filter((c) => c.kind !== 0)
+        .sort((a, b) => a.ms - b.ms)
+        .map((c) => ({ ms: c.ms, color: c.color })),
+    }
+  }
+  return out
+}
+```
+
+In `src/main/rekordboxCuesIpc.ts`:
+
+```ts
+  ipcMain.handle('rekordbox:cueSummary', (_e, contentIds: string[]) => {
+    const path = host.collection()
+    return withCollection(path, (db) => cueSummaries(db, rekordboxShareDir(path), contentIds), {})
+  })
+```
+
+Preload: `rekordboxCueSummary: (contentIds: string[]) => Promise<Record<string, CueSummary>>` in `api.ts`, `rekordboxCueSummary: (contentIds: string[]) => ipcRenderer.invoke('rekordbox:cueSummary', contentIds)` in `index.ts`; stubs `rekordboxCueSummary: async () => ({})` in `test/api.ts` and `harness.tsx`.
+
+Create `src/renderer/src/hooks/useCueSummaries.ts`:
+
+```ts
+import { useQuery } from '@tanstack/react-query'
+import type { CueSummary } from '../../../shared/types'
+
+const NONE: Record<string, CueSummary> = {}
+
+export function useCueSummaries(contentIds: string[], enabled: boolean): Record<string, CueSummary> {
+  const key = [...new Set(contentIds)].sort()
+  const { data } = useQuery({
+    queryKey: ['rekordbox-cue-summary', key],
+    queryFn: () => window.api.rekordboxCueSummary(key),
+    enabled: enabled && key.length > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return data ?? NONE
+}
+```
+
+Create `src/renderer/src/components/CueSwatches.tsx`:
+
+```tsx
+import type React from 'react'
+import { useTranslation } from 'react-i18next'
+import type { CueSummary } from '../../../shared/types'
+import { CUE_COLOR } from '../lib/cueWave'
+
+export function CueSwatches({
+  summary,
+  pending,
+}: {
+  summary: CueSummary
+  pending: boolean
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  return (
+    <span
+      data-testid="track-cue-swatches"
+      data-pending={pending ? 'true' : undefined}
+      className="flex shrink-0 items-center gap-0.5 text-[10px] text-fg-faint"
+    >
+      {!summary.analysed
+        ? tr('trackList.cuesUnanalysed')
+        : summary.hot.length === 0
+          ? tr('trackList.cuesNone')
+          : summary.hot.map((h) => (
+              <span
+                key={h.ms}
+                data-swatch
+                aria-hidden="true"
+                style={{
+                  borderColor: CUE_COLOR[h.color ?? 1],
+                  backgroundColor: pending ? 'transparent' : CUE_COLOR[h.color ?? 1],
+                }}
+                className="h-2 w-2 rounded-[2px] border"
+              />
+            ))}
+    </span>
+  )
+}
+```
+
+`src/renderer/src/components/TrackList.tsx`: `cueSwatches?: ReadonlyMap<string, { summary: CueSummary; pending: boolean }>` on `Props`, `cueSwatch?: { summary: CueSummary; pending: boolean }` on `RowProps`, passed as `cueSwatch={cueSwatches?.get(t.id)}`, and rendered right after the playlist dots of plan A's Task 14:
+
+```tsx
+              {cueSwatch && <CueSwatches summary={cueSwatch.summary} pending={cueSwatch.pending} />}
+```
+
+`src/renderer/src/App.tsx`, next to plan A's `playlistDots`:
+
+```tsx
+  const rekordboxContentIds = useMemo(
+    () => (rekordboxOpen && playlistScope ? [...playlistScope.contentOf.values()] : []),
+    [rekordboxOpen, playlistScope],
+  )
+  const cueSummaries = useCueSummaries(rekordboxContentIds, rekordboxOpen)
+  const pendingCuePaths = useMemo(
+    () =>
+      new Set(
+        rekordboxQueue.state.items
+          .filter((i) => i.parts.some((p) => p.kind === 'cues'))
+          .map((i) => i.key.slice('track:'.length)),
+      ),
+    [rekordboxQueue.state],
+  )
+  const cueSwatches = useMemo(() => {
+    const out = new Map<string, { summary: CueSummary; pending: boolean }>()
+    if (!rekordboxOpen || !playlistScope) return out
+    for (const [trackId, contentId] of playlistScope.contentOf) {
+      const summary = cueSummaries[contentId]
+      const t = tracksRef.current.find((x) => x.id === trackId)
+      if (summary && t) out.set(trackId, { summary, pending: pendingCuePaths.has(t.inputPath) })
+    }
+    return out
+  }, [rekordboxOpen, playlistScope, cueSummaries, pendingCuePaths, tracksRef])
+```
+
+and `cueSwatches={cueSwatches}` on `<TrackList`. `rekordboxOpen` and `playlistScope` are defined further down in App today (line ~1841); move this block below them. The map changes only when the summaries, the open playlist or the queue change, not on every edit, so the memoized rows stay put.
+
+`src/renderer/src/hooks/useRekordboxQueue.ts`: add `queryClient.invalidateQueries({ queryKey: ['rekordbox-cue-summary'] }),` to `reread`.
+
+- [ ] **Step 5: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCues.test.ts src/main/rekordboxCuesIpc.test.ts src/renderer/src/components/CueSwatches.test.tsx src/renderer/src/components/TrackList.test.tsx src/renderer/src/i18n`
+Expected: PASS.
+
+- [ ] **Step 6: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxCues.ts apps/desktop/src/main/rekordboxCues.test.ts apps/desktop/src/main/rekordboxCuesIpc.ts apps/desktop/src/preload/api.ts apps/desktop/src/preload/index.ts apps/desktop/src/renderer/src/test/api.ts apps/desktop/src/scenarios/harness.tsx apps/desktop/src/renderer/src/components/CueSwatches.tsx apps/desktop/src/renderer/src/components/CueSwatches.test.tsx apps/desktop/src/renderer/src/hooks/useCueSummaries.ts apps/desktop/src/renderer/src/components/TrackList.tsx apps/desktop/src/renderer/src/App.tsx apps/desktop/src/renderer/src/hooks/useRekordboxQueue.ts apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Show each rekordbox row's hot cues as swatches, or that it is not analysed"
+```
+
+---
+
+### Task 10: Complete on close
+
+**Files:**
+- Modify: `src/shared/types.ts` (`Settings.completeCuesOnClose`), `src/main/settings.ts`, `src/renderer/src/test/api.ts`, `src/renderer/src/lib/settingsDraft.ts`
+- Create: `src/main/rekordboxCompleteOnClose.ts`
+- Modify: `src/main/rekordboxQueueWatch.ts` (`alwaysWatch`, `onClosed`)
+- Modify: `src/main/rekordboxCuesIpc.ts` (`rekordbox:countCompletable`), `src/main/index.ts` (watcher deps, poke after a settings save), preload, `harness.tsx`
+- Modify: `src/renderer/src/components/settings/DestinationTab.tsx` (the toggle and its count)
+- Modify: `src/renderer/src/i18n/locales/*.json` (`settings.completeCues*`)
+- Test: `src/main/rekordboxCompleteOnClose.test.ts`, `src/main/rekordboxQueueWatch.test.ts` (append), `src/renderer/src/components/settings/DestinationTab.test.tsx` (append)
+
+**Interfaces:**
+- Consumes: Task 4 `readTrackCues`; Task 2 `cueChanges`, `findDrops`, `isEmptyChange`; Task 6 `CuesOp`; plan A Task 7 `watchRekordboxQueue`.
+- Produces:
+  - `Settings.completeCuesOnClose: boolean` (default false; spec "Apagada por defecto")
+  - `completableOps(db: Db, shareDir: string, newId?: () => string): CuesOp[]` (tracks with at least one drop, no hot cue and a grid, whose plan writes something)
+  - `WatchDeps.alwaysWatch?: () => boolean` (poll even with an empty queue) and `WatchDeps.onClosed?: () => void` (called once each time rekordbox goes from running to closed, before the apply)
+  - IPC `rekordbox:countCompletable → number`; `Api.rekordboxCountCompletable(): Promise<number>`
+  - test ids `settings-complete-cues`, `settings-complete-cues-confirm`, `settings-complete-cues-yes`, `settings-complete-cues-no`
+
+Spec "Completar solo": only tracks with drops, no hot cue (so `fits_plan` holds) and a grid; same queue, backup and transaction; the notice counts the tracks completed; turning it on first counts and says "Se completarán 312 pistas al cerrar rekordbox." before the setting is kept. Decision 7: the watcher calls it the moment it sees rekordbox closed, then applies.
+
+- [ ] **Step 1: Locale strings**
+
+```json
+{
+  "es": { "settings": { "completeCues": "Al cerrar rekordbox, poner la cuenta atrás en las pistas con drops y sin hot cues", "completeCuesHint": "Escribe en tu colección pistas que no has mirado en Surco. Apagado, la cuenta atrás solo se guarda desde la sección Cues.", "completeCuesCount_one": "Se completará 1 pista al cerrar rekordbox.", "completeCuesCount_other": "Se completarán {{count}} pistas al cerrar rekordbox.", "completeCuesYes": "Encender", "completeCuesNo": "Cancelar" } },
+  "en": { "settings": { "completeCues": "When rekordbox closes, set the countdown on tracks with drops and no hot cues", "completeCuesHint": "It writes to your collection on tracks you have not looked at in Surco. Off, the countdown is only saved from the Cues section.", "completeCuesCount_one": "1 track will be completed when rekordbox closes.", "completeCuesCount_other": "{{count}} tracks will be completed when rekordbox closes.", "completeCuesYes": "Turn on", "completeCuesNo": "Cancel" } },
+  "de": { "settings": { "completeCues": "Beim Schließen von rekordbox den Countdown in Titeln mit Drops und ohne Hot Cues setzen", "completeCuesHint": "Schreibt in deine Sammlung, auch in Titel, die du in Surco nicht angesehen hast. Aus wird der Countdown nur im Abschnitt Cues gespeichert.", "completeCuesCount_one": "1 Titel wird beim Schließen von rekordbox ergänzt.", "completeCuesCount_other": "{{count}} Titel werden beim Schließen von rekordbox ergänzt.", "completeCuesYes": "Einschalten", "completeCuesNo": "Abbrechen" } },
+  "fr": { "settings": { "completeCues": "À la fermeture de rekordbox, placer le compte à rebours sur les morceaux avec drops et sans hot cues", "completeCuesHint": "Écrit dans votre collection sur des morceaux que vous n’avez pas regardés dans Surco. Désactivé, le compte à rebours ne s’enregistre que depuis la section Cues.", "completeCuesCount_one": "1 morceau sera complété à la fermeture de rekordbox.", "completeCuesCount_other": "{{count}} morceaux seront complétés à la fermeture de rekordbox.", "completeCuesYes": "Activer", "completeCuesNo": "Annuler" } },
+  "pt-BR": { "settings": { "completeCues": "Ao fechar o rekordbox, pôr a contagem regressiva nas faixas com drops e sem hot cues", "completeCuesHint": "Grava na sua coleção em faixas que você não viu no Surco. Desligado, a contagem só é salva pela seção Cues.", "completeCuesCount_one": "1 faixa será completada ao fechar o rekordbox.", "completeCuesCount_other": "{{count}} faixas serão completadas ao fechar o rekordbox.", "completeCuesYes": "Ligar", "completeCuesNo": "Cancelar" } }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Create `src/main/rekordboxCompleteOnClose.test.ts`:
+
+```ts
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { anlzFile, pqtzSection } from './anlzFixture'
+import { completableOps } from './rekordboxCompleteOnClose'
+import { openRekordboxDb } from './rekordboxDb'
+import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+
+const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
+const BEATS = Array.from({ length: 800 }, (_, i) => i * 500)
+
+describe('completableOps', () => {
+  // Only what fits_plan allows by definition: drops, no hot cue at all, and a grid.
+  it('completes tracks with drops and no hot cues, and only those', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbcomplete-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c) =>
+        ['101', '102', '103'].includes(c.ID) ? { ...c, AnalysisDataPath: ANLZ } : c,
+      ),
+      cues: [
+        { ID: 'a', ContentID: '101', InMsec: 128000, Kind: 0, ColorTableIndex: null },
+        { ID: 'b', ContentID: '102', InMsec: 128000, Kind: 0, ColorTableIndex: null },
+        { ID: 'c', ContentID: '102', InMsec: 1000, Kind: 1, ColorTableIndex: 32 },
+        { ID: 'd', ContentID: '104', InMsec: 128000, Kind: 0, ColorTableIndex: null },
+      ],
+    })
+    mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+    writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    const ops = completableOps(db, join(dir, 'share'), () => 'op')
+    expect(ops).toEqual([
+      expect.objectContaining({
+        kind: 'cues',
+        contentId: '101',
+        path: '/Volumes/Public/Music/Night Train.aiff',
+        label: 'Night Train',
+        drops: [128000],
+        previousDrops: [128000],
+      }),
+    ])
+    db.close()
+  })
+})
+```
+
+Append to `src/main/rekordboxQueueWatch.test.ts`:
+
+```ts
+describe('watchRekordboxQueue on close', () => {
+  // The option has to see rekordbox close even when nothing is queued yet.
+  it('calls onClosed when rekordbox goes from open to closed, with an empty queue', async () => {
+    const { deps, setEmpty } = setup([true, false, false])
+    setEmpty(true)
+    const onClosed = vi.fn(() => setEmpty(false))
+    const watch = watchRekordboxQueue({ ...deps, alwaysWatch: () => true, onClosed })
+    watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(onClosed).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    expect(deps.queue.apply).toHaveBeenCalledTimes(1)
+    watch.stop()
+  })
+
+  it('never calls onClosed when rekordbox was not seen open', async () => {
+    const { deps } = setup([false, false])
+    const onClosed = vi.fn()
+    watchRekordboxQueue({ ...deps, alwaysWatch: () => true, onClosed }).poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(onClosed).not.toHaveBeenCalled()
+  })
+})
+```
+
+In `src/renderer/src/components/settings/DestinationTab.test.tsx`, add `completeCuesOnClose: false,` to its `synced` constant (the type gains the field in Step 4) and append:
+
+```tsx
+describe('complete on close', () => {
+  function renderRekordbox(completeCuesOnClose: boolean, count = 312) {
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'darwin',
+      rekordboxCountCompletable: vi.fn(async () => count),
+    }
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, completeCuesOnClose }}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection="/rb/master.db"
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+    return patch
+  }
+
+  // Off by default; turning it on first says how many tracks it will touch.
+  it('counts the tracks before turning on', async () => {
+    const patch = renderRekordbox(false)
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    expect(await screen.findByTestId('settings-complete-cues-confirm')).toHaveTextContent(
+      '312 tracks will be completed when rekordbox closes.',
+    )
+    expect(patch).not.toHaveBeenCalledWith('completeCuesOnClose', true)
+    fireEvent.click(screen.getByTestId('settings-complete-cues-yes'))
+    expect(patch).toHaveBeenCalledWith('completeCuesOnClose', true)
+  })
+
+  it('keeps it off when the count is declined', async () => {
+    const patch = renderRekordbox(false)
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    fireEvent.click(await screen.findByTestId('settings-complete-cues-no'))
+    expect(patch).not.toHaveBeenCalled()
+  })
+
+  it('turns off without asking', () => {
+    const patch = renderRekordbox(true)
+    fireEvent.click(screen.getByTestId('settings-complete-cues'))
+    expect(patch).toHaveBeenCalledWith('completeCuesOnClose', false)
+  })
+})
+```
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCompleteOnClose.test.ts src/main/rekordboxQueueWatch.test.ts src/renderer/src/components/settings/DestinationTab.test.tsx`
+Expected: FAIL, missing module, unknown deps, missing toggle.
+
+- [ ] **Step 4: The setting**
+
+`src/shared/types.ts`, in `Settings` next to `syncRekordbox`: `completeCuesOnClose: boolean`. `src/main/settings.ts` defaults: `completeCuesOnClose: false,`. `src/renderer/src/test/api.ts` defaults: `completeCuesOnClose: false,`. `src/renderer/src/lib/settingsDraft.ts`: `completeCuesOnClose: boolean` in `SyncedDraft` after `syncRekordbox`, and `completeCuesOnClose: s.completeCuesOnClose,` where the draft is seeded (after `syncRekordbox: s.syncRekordbox,`). It is a synced key like `syncRekordbox`, not one of `LOCAL_KEYS`.
+
+- [ ] **Step 5: The completable tracks**
+
+Create `src/main/rekordboxCompleteOnClose.ts`:
+
+```ts
+import { randomUUID } from 'node:crypto'
+import type Database from 'better-sqlite3-multiple-ciphers'
+import { cueChanges, findDrops, isEmptyChange } from '../shared/cueRules'
+import { readTrackCues } from './rekordboxCues'
+import type { CuesOp } from './rekordboxQueueOps'
+
+type Db = InstanceType<typeof Database>
+
+export function completableOps(db: Db, shareDir: string, newId: () => string = randomUUID): CuesOp[] {
+  const ids = (
+    db
+      .prepare(
+        `SELECT ContentID FROM djmdCue WHERE coalesce(rb_local_deleted, 0) = 0
+          GROUP BY ContentID HAVING sum(CASE WHEN Kind <> 0 THEN 1 ELSE 0 END) = 0`,
+      )
+      .all() as { ContentID: string }[]
+  ).map((r) => String(r.ContentID))
+  const info = db.prepare(
+    `SELECT FolderPath, Title FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+  )
+  const ops: CuesOp[] = []
+  for (const contentId of ids) {
+    const row = info.get(contentId) as { FolderPath: string; Title: string | null } | undefined
+    if (!row) continue
+    const read = readTrackCues(db, shareDir, contentId)
+    if (!read || !read.analysed) continue
+    const drops = findDrops(
+      read.cues.map((c) => c.ms),
+      [],
+    )
+    const out = cueChanges(
+      read.cues,
+      drops,
+      drops,
+      read.grid.map((b) => b.ms),
+      read.strong,
+    )
+    if (out.status !== 'plan' || isEmptyChange(out.changes)) continue
+    ops.push({
+      id: newId(),
+      kind: 'cues',
+      contentId,
+      path: row.FolderPath,
+      label: row.Title ?? row.FolderPath,
+      drops,
+      previousDrops: drops,
+      fingerprint: read.fingerprint,
+    })
+  }
+  return ops
+}
+```
+
+In `src/main/rekordboxCuesIpc.ts`:
+
+```ts
+  ipcMain.handle('rekordbox:countCompletable', () => {
+    const path = host.collection()
+    return withCollection(path, (db) => completableOps(db, rekordboxShareDir(path)).length, 0)
+  })
+```
+
+Preload: `rekordboxCountCompletable: () => Promise<number>` / `rekordboxCountCompletable: () => ipcRenderer.invoke('rekordbox:countCompletable')`; stubs `rekordboxCountCompletable: async () => 0` in `test/api.ts` and `harness.tsx`.
+
+- [ ] **Step 6: The watcher sees rekordbox close**
+
+In `src/main/rekordboxQueueWatch.ts`, `WatchDeps` gains `alwaysWatch?: () => boolean` and `onClosed?: () => void`, and the body becomes:
+
+```ts
+export function watchRekordboxQueue(deps: WatchDeps): { poke: () => void; stop: () => void } {
+  let timer: ReturnType<typeof setInterval> | null = null
+  let armed = true
+  let busy = false
+  let seenRunning = false
+  const shouldWatch = (): boolean => !deps.queue.isEmpty() || (deps.alwaysWatch?.() ?? false)
+
+  const stop = (): void => {
+    if (timer) clearInterval(timer)
+    timer = null
+  }
+
+  const tick = async (): Promise<void> => {
+    if (busy) return
+    if (!shouldWatch()) {
+      stop()
+      return
+    }
+    busy = true
+    try {
+      if (await deps.isRunning()) {
+        armed = true
+        seenRunning = true
+        return
+      }
+      if (seenRunning) {
+        seenRunning = false
+        deps.onClosed?.()
+      }
+      if (deps.queue.isEmpty() || !armed) return
+      const result = await deps.queue.apply(async () => !(await deps.isRunning()))
+      if (
+        result.status === 'refused' &&
+        (result.reason === 'cancelled' || result.reason === 'rekordbox-running')
+      )
+        return
+      if (result.status === 'refused') armed = false
+      if (result.status !== 'empty') deps.onApplied(result)
+      if (!shouldWatch()) stop()
+    } finally {
+      busy = false
+    }
+  }
+
+  return {
+    poke() {
+      if (!shouldWatch()) return
+      if (!timer) timer = setInterval(() => void tick(), deps.intervalMs ?? 5000)
+      void tick()
+    },
+    stop,
+  }
+}
+```
+
+In `src/main/index.ts`, the watcher gets:
+
+```ts
+  alwaysWatch: () => getSettings().completeCuesOnClose,
+  onClosed: () => {
+    if (!getSettings().completeCuesOnClose) return
+    const path = rekordboxCollectionPath()
+    if (!path) return
+    try {
+      const ops = withCollection(path, (db) => completableOps(db, rekordboxShareDir(path)), [])
+      if (ops.length > 0) rekordboxQueue.enqueue(ops)
+    } catch (err) {
+      log.warn(`rekordbox complete on close skipped: ${String(err)}`)
+    }
+  },
+```
+
+(imports `completableOps`, `withCollection`, `rekordboxShareDir`), and the `settings:set` handler pokes it after saving: `if (patch.completeCuesOnClose !== undefined) rekordboxQueueWatch.poke()`.
+
+- [ ] **Step 7: The toggle**
+
+In `src/renderer/src/components/settings/DestinationTab.tsx` (import `useState`), inside the rekordbox `SettingsSection`, after the `rekordboxDbPathHint` hint:
+
+```tsx
+        <CheckboxRow
+          testid="settings-complete-cues"
+          className="mt-4"
+          checked={synced.completeCuesOnClose}
+          disabled={!rekordboxCollection}
+          onChange={(v) => {
+            if (!v) {
+              setCompleteCount(null)
+              patch('completeCuesOnClose', false)
+              return
+            }
+            void window.api.rekordboxCountCompletable().then(setCompleteCount)
+          }}
+          label={tr('settings.completeCues')}
+        />
+        {completeCount !== null && (
+          <div
+            data-testid="settings-complete-cues-confirm"
+            className="mt-2 rounded-lg border border-[var(--color-line-strong)] p-3 text-xs"
+          >
+            <p className="text-fg">{tr('settings.completeCuesCount', { count: completeCount })}</p>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                data-testid="settings-complete-cues-no"
+                onClick={() => setCompleteCount(null)}
+                className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+              >
+                {tr('settings.completeCuesNo')}
+              </button>
+              <button
+                type="button"
+                data-testid="settings-complete-cues-yes"
+                onClick={() => {
+                  patch('completeCuesOnClose', true)
+                  setCompleteCount(null)
+                }}
+                className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+              >
+                {tr('settings.completeCuesYes')}
+              </button>
+            </div>
+          </div>
+        )}
+        <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
+```
+
+with `const [completeCount, setCompleteCount] = useState<number | null>(null)` at the top of the component.
+
+- [ ] **Step 8: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCompleteOnClose.test.ts src/main/rekordboxQueueWatch.test.ts src/main/rekordboxCuesIpc.test.ts src/renderer/src/components/settings/DestinationTab.test.tsx src/renderer/src/lib/settingsDraft.test.ts src/renderer/src/i18n`
+Expected: PASS.
+
+- [ ] **Step 9: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/settings.ts apps/desktop/src/renderer/src/test/api.ts apps/desktop/src/renderer/src/lib/settingsDraft.ts apps/desktop/src/main/rekordboxCompleteOnClose.ts apps/desktop/src/main/rekordboxCompleteOnClose.test.ts apps/desktop/src/main/rekordboxQueueWatch.ts apps/desktop/src/main/rekordboxQueueWatch.test.ts apps/desktop/src/main/rekordboxCuesIpc.ts apps/desktop/src/main/index.ts apps/desktop/src/preload/api.ts apps/desktop/src/preload/index.ts apps/desktop/src/scenarios/harness.tsx apps/desktop/src/renderer/src/components/settings/DestinationTab.tsx apps/desktop/src/renderer/src/components/settings/DestinationTab.test.tsx apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Optionally complete the countdown on close for tracks with drops and no hot cues"
+```
+
+---
+
