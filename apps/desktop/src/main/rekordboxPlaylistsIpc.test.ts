@@ -137,6 +137,23 @@ describe('registerRekordboxPlaylistsIpc', () => {
     })
   })
 
+  it('reads the tree and the separator check with the stretched key too, since both run back to back on every focus and held the main process for 226 ms', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+    })
+    const key = await rekordboxRawKey(path)
+    vi.mocked(openRekordboxDb).mockClear()
+    await handler('rekordbox:tree')()
+    await handler('rekordbox:hasSeparator')()
+    expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
+      [path, { readonly: true, key }],
+      [path, { readonly: true, key }],
+    ])
+  })
+
   // The dialog asking to close rekordbox must sit over the window the user was dragging in.
   it('asks to close rekordbox over the window that made the edit, then writes', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
@@ -161,7 +178,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
       ensureClosed: vi.fn(async () => true),
       queue: queueFor(path),
     })
-    expect(handler('rekordbox:hasSeparator')()).toBe(true)
+    expect(await handler('rekordbox:hasSeparator')()).toBe(true)
   })
 
   // The write's transaction spans an await: two at once would fight over SQLite's busy

@@ -64,6 +64,10 @@ function editStamps(collectionPath: string, edit: RekordboxPlaylistEdit): Record
   return stamp === undefined ? {} : { [edit.playlistId]: stamp }
 }
 
+async function keyOf(path: string): Promise<string | undefined> {
+  return path ? rekordboxRawKey(path).catch(() => undefined) : undefined
+}
+
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
 export function registerRekordboxPlaylistsIpc(
@@ -71,15 +75,17 @@ export function registerRekordboxPlaylistsIpc(
   host: PlaylistEditHost,
 ): void {
   ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
-  ipcMain.handle('rekordbox:tree', () => withCollection(collection(), readRekordboxTree, []))
+  ipcMain.handle('rekordbox:tree', async () => {
+    const path = collection()
+    return withCollection(path, readRekordboxTree, [], await keyOf(path))
+  })
   ipcMain.handle('rekordbox:playlist', async (_e, id: string) => {
     const path = collection()
-    const key = path ? await rekordboxRawKey(path).catch(() => undefined) : undefined
     const entries = withCollection(
       path,
       (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
       [],
-      key,
+      await keyOf(path),
     )
     host.allowMedia?.(
       entries.flatMap((e) => [
@@ -94,9 +100,10 @@ export function registerRekordboxPlaylistsIpc(
   ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>
     pathAliasesOf(paths, { realPath: (p: string) => realpath(p) }),
   )
-  ipcMain.handle('rekordbox:hasSeparator', () =>
-    withCollection(collection(), (db) => separatorContent(db) !== null, false),
-  )
+  ipcMain.handle('rekordbox:hasSeparator', async () => {
+    const path = collection()
+    return withCollection(path, (db) => separatorContent(db) !== null, false, await keyOf(path))
+  })
   // Queued behind any other library write (a conversion's repoint, a review's sync): they
   // touch the same master.db, and the write's transaction spans an await, so two at once
   // would block each other on SQLite's busy timeout.
