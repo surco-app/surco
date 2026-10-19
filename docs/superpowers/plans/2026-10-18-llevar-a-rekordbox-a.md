@@ -81,7 +81,7 @@ EOF
 
 ## Review Focus
 
-1. **A track converted twice before rekordbox closes, or the same new playlist name typed on two tracks.** One alta, one new playlist, both tracks in it. Pinned in Task 5 (one `createNode` per name in a batch) and Task 7 (a later track operation for the same path replaces the earlier one).
+1. **A track converted twice before rekordbox closes, or the same new playlist name typed on two tracks.** One alta, one new playlist, both tracks in it. Pinned in Task 5 (one `createNode` per name in a batch) and Task 6 (a later track operation for the same path replaces the earlier one).
 2. **Two rows in the collection for the converted file (the symlinked twins), or the file deleted before rekordbox closes.** Nothing written for that track, the notice names it, the rest of the batch applies. Pinned in Task 5.
 3. **rekordbox reopened between the dialog and the write, or the backup failing.** Nothing written, the queue keeps everything, the watcher does not hammer. Pinned in Task 4 (writer), Task 6 (queue) and Task 7 (watcher disarm).
 4. **A playlist changed in rekordbox while Surco waited (added to, reordered, renamed, deleted).** Surco drops only its own part for that playlist and says so; a track added in rekordbox meanwhile to a playlist Surco wants to remove it from is not removed. Pinned in Task 5.
@@ -117,9 +117,10 @@ EOF
 | `src/renderer/src/components/PlaylistDots.tsx` (new) | the row's dots |
 | `src/renderer/src/components/RekordboxQueuePill.tsx` (new) | the pill and its menu |
 | `src/renderer/src/hooks/useRekordboxQueue.ts` (new) | queue state, events, notices, apply, discard |
-| `src/renderer/src/hooks/useRekordboxMembership.ts` (new) | membership query |
+| `src/renderer/src/lib/rekordboxQueueText.ts` (new) | the pill, item and notice wording |
+| `src/renderer/src/hooks/useRekordboxPlaylists.ts` (new) | availability, options from the tree, membership, the first offer of the field |
 | `src/renderer/src/lib/fields.ts`, `lib/fieldSpecs.ts`, `components/MetadataForm.tsx`, `components/FieldsEditor.tsx`, `components/Editor.tsx`, `components/TrackList.tsx`, `components/Toolbar.tsx`, `components/SourceTree.tsx`, `lib/playlistEdits.ts`, `hooks/useRekordboxEdits.ts`, `lib/dirty.ts`, `lib/sessionEdits.ts`, `hooks/useTrackLibrary.ts`, `hooks/useTrackProcessing.ts`, `types.ts`, `App.tsx`, `components/SettingsModal.tsx` (mod) | wiring |
-| `src/renderer/src/i18n/locales/*.json` (mod) | `fields.rekordboxPlaylists`, `editor.playlists`, `trackList.playlists*`, `rekordboxQueue`, `sources.tree`, `sources.edit.refused.queued` |
+| `src/renderer/src/i18n/locales/*.json` (mod) | `fields.rekordboxPlaylists`, `editor.playlists`, `trackList.playlists*`, `rekordboxQueue`, `sources.tree`, `sources.edit.refused.cancelled` and `.running` reworded |
 
 All paths below are relative to `apps/desktop/` unless they start with `docs/`.
 
@@ -138,13 +139,15 @@ All paths below are relative to `apps/desktop/` unless they start with `docs/`.
 | 7 | Apply when rekordbox closes | `rekordboxQueueWatch.ts` |
 | 8 | A conversion run fills the queue | `rekordboxBatch.ts`, `processTrack.ts`, `rekordboxQueueFromRun.ts`, `libraryFlushes.ts` |
 | 9 | Membership, IPC, preload and wiring | `rekordboxMembership.ts`, `rekordboxQueueIpc.ts`, `rekordboxPlaylistsIpc.ts`, `index.ts`, preload |
-| 10 | The renderer's playlist model and the track's wanted set | `lib/rekordboxPlaylists.ts`, `types.ts`, `lib/dirty.ts`, `lib/sessionEdits.ts`, `useTrackProcessing.ts` |
+| 10 | The renderer's playlist model and the track's wanted set | `lib/rekordboxPlaylists.ts`, `types.ts`, `lib/dirty.ts`, `lib/sessionEdits.ts`, `useTrackLibrary.ts`, `useTrackProcessing.ts` |
 | 11 | The Playlists field | `components/PlaylistsField.tsx` |
-| 12 | The field in the form and in Campos | `lib/fields.ts`, `lib/fieldSpecs.ts`, `MetadataForm.tsx`, `FieldsEditor.tsx`, `Editor.tsx`, `App.tsx` |
-| 13 | Dots in the list | `PlaylistDots.tsx`, `useRekordboxMembership.ts`, `TrackList.tsx` |
-| 14 | The pending pill | `RekordboxQueuePill.tsx`, `useRekordboxQueue.ts`, `Toolbar.tsx` |
-| 15 | Rename and Delete in the tree | `SourceTree.tsx`, `playlistEdits.ts`, `useRekordboxEdits.ts` |
-| 16 | Verify on a copy, then Vicent in real rekordbox | none (checklist) |
+| 12 | The field's data, its row in Campos and its first appearance | `lib/fields.ts`, `hooks/useRekordboxPlaylists.ts`, `FieldsEditor.tsx`, `SettingsModal.tsx`, `App.tsx`, settings |
+| 13 | The field in the editor | `lib/fieldSpecs.ts`, `MetadataForm.tsx`, `Editor.tsx`, `App.tsx` |
+| 14 | Dots in the list | `PlaylistDots.tsx`, `lib/rekordboxPlaylists.ts`, `TrackList.tsx`, `App.tsx` |
+| 15 | The queue in the renderer: state, notices, apply and discard | `lib/rekordboxQueueText.ts`, `hooks/useRekordboxQueue.ts`, `lib/playlistEdits.ts` |
+| 16 | The pending pill | `RekordboxQueuePill.tsx`, `Toolbar.tsx`, `App.tsx` |
+| 17 | Rename and Delete in the tree, and Cancel that waits | `SourceTree.tsx`, `playlistEdits.ts`, `useRekordboxEdits.ts`, `App.tsx` |
+| 18 | Verify on a copy, then Vicent in real rekordbox | none (checklist) |
 
 ---
 
@@ -5050,7 +5053,22 @@ In `src/renderer/src/components/FieldsEditor.tsx`: import `REKORDBOX_PLAYLISTS_F
                 <button
                   type="button"
                   data-testid={`field-required-${key}`}
-                  ...the existing button unchanged...
+                  aria-pressed={requiredFields.includes(key)}
+                  onClick={() =>
+                    onChangeRequired(
+                      requiredFields.includes(key)
+                        ? requiredFields.filter((k) => k !== key)
+                        : [...requiredFields, key],
+                    )
+                  }
+                  aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
+                  className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
+                >
+                  {requiredFields.includes(key) ? (
+                    <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <CircleDashed className="h-4 w-4" aria-hidden="true" />
+                  )}
                 </button>
               )}
 ```
@@ -6850,3 +6868,34 @@ rm -f ~/Library/Application\ Support/Electron/rekordbox-queue.json
 
 ---
 
+## What plan B builds on
+
+Plan B (`docs/superpowers/plans/2026-10-18-llevar-a-rekordbox-b.md`) adds a third operation kind to this queue. The seams it extends, exactly as this plan leaves them:
+
+- `rekordboxQueueOps.ts`: `type QueueOp = EditOp | TrackOp` (B adds `CuesOp`, `kind: 'cues'`), `opRank(op)` (B returns 4 for cues), `OpOutcome`, `XmlDraft`.
+- `rekordboxPlaylistWrite.ts`: `planOp(probe, xml, op, find): Plan` and `writeOp(db, draft, planned, now): OpOutcome` dispatch on `op.kind` (B adds `planCues`/`writeCues` branches); `Planned` (B adds `cues?`); the savepoint loop and `EditRefused` (a cues refusal drops that operation only).
+- `rekordboxQueue.ts`: `keyOf(op)` (B: `cues:<contentId>`, a later save replaces an earlier one), `stateOf` (B adds the `{ kind: 'cues' }` part; the item key for a cues operation is `track:<path>` so a track's playlists and cues share one line and one count).
+- `shared/types.ts`: `RekordboxQueueNotice` (B adds `{ code: 'cues-changed' | 'cues-too-many'; track: string }`), `RekordboxQueuePart` (B adds `{ kind: 'cues' }`).
+- `rekordboxQueueWatch.ts`: `WatchDeps.onApplied`; B's "complete on close" hooks the moment the watcher sees rekordbox closed, before it applies.
+- Renderer: `rekordboxQueueText.ts` `NOTICE_KEY` and `partText` (B adds the cues entries), `useRekordboxQueue` (unchanged; B reuses its `state` to draw pending cues hollow).
+
+## Self-review
+
+**Spec coverage.** Decision 1 (field in Campos, appears once): Task 12. Decision 2 (not a tag, diff on write): Tasks 5, 10, 12. Decision 3 (written on convert or Update, not on typing, not gated by the toggle): Tasks 8, 10. Decision 4 (add to the collection, reuse, ambiguous skipped): Tasks 2, 5. Decision 5 (one persistent queue; field writes never ask; tree Cancel queues): Tasks 6, 8, 9, 17. The field (tokens, path, Backspace, Enter, create, Attribute 0 only, bulk, initial value, edits kept per path): Tasks 10 to 13. The list dots: Task 14. Convert/Update order and one batch per run: Tasks 4, 5, 8. The pill and the applied notice: Tasks 15, 16. Adding a track (search first, path as Surco has it, NFC, the measured mould, no analysis): Tasks 2, 5. Rename and Delete with confirmation, through the queue: Tasks 3, 4, 17. The queue file, when and how it applies, Timestamp bump, conflicts, repoints: Tasks 1, 4 to 9. Errors table: ambiguous, file gone, playlist changed (Task 5), no backup (Tasks 4, 6, 7), failure halfway (Task 4), no collection (Tasks 6, 12). Cues, swatches, "complete on close" and the cues errors are plan B. Spec items deliberately changed: artwork on a new track (Decision 2 of this plan), separate rename/delete channels (Decision 4), XML Timestamp instead of `updated_at` (Decision 1), repoint folded into the queue only when blocked (Decision 5).
+
+**Placeholder scan.** Searched for TBD, TODO, "similar to", "add appropriate" and conditional instructions; none left. Two instructions keep existing code by reference on purpose: Task 12 Step 6 wraps the existing Required button (shown in full) and Task 17 moves the two existing "inside" buttons into a fragment (shown in full).
+
+**Type consistency.** `RekordboxPlaylistTarget` is `{ id?: string; name: string }` everywhere (Tasks 5, 8, 10 to 13). `QueueOp`, `TrackOp`, `EditOp.label?`, `OpOutcome.contentId?` are defined in Tasks 4 to 6 and used with those names in 8, 9. `appliedNotice`, `editResultOf` (Task 9) feed `RekordboxQueueApplied` (Task 6) into `appliedMessage` (Task 15). `useRekordboxMembership` lives in `hooks/useRekordboxPlaylists.ts` (Task 12), used by Tasks 13 and 14. `flushConversionBatch(host, sessions, queue)` gets its third argument in Task 8 (stand-ins in `index.ts` and `harness.tsx`) and the real queue in Task 9.
+
+**Review Focus.** Each of the five lines has its test: same new name in one batch and a later track operation replacing an earlier one (Task 5 `'creates a new playlist name once per batch'`, Task 6 `'keeps only the latest operation for one track'`); twins and a deleted file (Task 5); rekordbox reopened or the backup failing (Task 4 inherited 2a tests, Task 6 `'keeps everything when the batch is refused'`, Task 7 `'waits for the next close after a failure that is not rekordbox'`); a playlist changed in rekordbox (Task 5 `'leaves alone a playlist rekordbox changed...'`, `'never removes the track from a playlist it joined in rekordbox after queueing'`); nested folder delete and odd XML (Task 1, Task 3 `'takes a folder, its nested folders and playlists...'`).
+
+**Open, for Vicent (Task 18 Step 5):** artwork after analysis (Decision 2), rename and USB sync (Decision 6), real delete (Decision 15), toggle-off format change (Decision 19), dots latency on a big crate (Decision 13).
+
+## Execution handoff
+
+Plan complete and saved to `docs/superpowers/plans/2026-10-18-llevar-a-rekordbox-a.md`. Please review the plan. Which execution approach would you prefer?
+
+- **Subagent-driven**: a fresh subagent implements each task and a fresh reviewer checks it before the next one starts, then a whole-branch review at the end. Most thorough; costs a fresh context per task and per review.
+- **Native**: one session implements every task, then one fresh reviewer on the most capable model checks the whole branch. Cheapest and fastest; no independent review until the end.
+
+For this plan I recommend **Subagent-driven**, because Tasks 4 to 9 chain exact interfaces through the one writer that touches Vicent's only collection, where a shipped mistake costs his library.
