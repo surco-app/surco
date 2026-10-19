@@ -60,6 +60,14 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-no-rules')).toBeInTheDocument()
   })
 
+  it('closes an open colour popover when a rule is removed so it never lands on another rule', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
+    expect(screen.getByTestId('cue-palette')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cue-rule-0-remove'))
+    expect(screen.queryByTestId('cue-palette')).toBeNull()
+  })
+
   it('hides direction and repeat for a cue on the origin itself', () => {
     render(<Harness />)
     expect(screen.queryByTestId('cue-rule-1-direction')).toBeNull()

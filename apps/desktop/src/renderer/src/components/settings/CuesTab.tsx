@@ -35,6 +35,7 @@ const BUTTON_CLASS =
 export function CuesTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
+  const [removals, setRemovals] = useState(0)
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -139,11 +140,14 @@ export function CuesTab({ synced, patch }: Props): React.JSX.Element {
           <h3 className="text-xs font-medium text-fg-dim">{tr('settings.cueFlows.rules')}</h3>
           {rows.map(({ rule, position }) => (
             <CueRuleRow
-              key={position}
+              key={`${flow.id}-${removals}-${position}`}
               rule={rule}
               index={position}
               onChange={(next) => setRules(flow.rules.map((r, j) => (j === position ? next : r)))}
-              onRemove={() => setRules(flow.rules.filter((_, j) => j !== position))}
+              onRemove={() => {
+                setRules(flow.rules.filter((_, j) => j !== position))
+                setRemovals(removals + 1)
+              }}
             />
           ))}
           {flow.rules.length === 0 && (

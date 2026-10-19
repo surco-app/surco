@@ -10,12 +10,12 @@ export const EXAMPLE_GRID = Array.from({ length: BARS * 4 }, (_, i) => ({
   beat: (i % 4) + 1,
 }))
 
-export const exampleBar = (n: number): number => EXAMPLE_GRID[n * 4].ms
+export const exampleBar = (n: number): number => EXAMPLE_GRID[(n - 1) * 4].ms
 export const EXAMPLE_DROP = exampleBar(64)
 export const EXAMPLE_DURATION_MS = Math.round(BARS * 4 * BEAT_MS)
 
 const SECTIONS: [number, PhraseKind][] = [
-  [0, 'intro'],
+  [1, 'intro'],
   [32, 'up'],
   [64, 'chorus'],
   [96, 'down'],
@@ -43,7 +43,7 @@ const LEVEL: Record<PhraseKind, number> = {
 }
 
 export const EXAMPLE_WAVE: CueWaveColumn[] = Array.from({ length: BARS }, (_, bar) => {
-  const kind = [...SECTIONS].reverse().find(([start]) => start <= bar)?.[1] ?? 'intro'
+  const kind = [...SECTIONS].reverse().find(([start]) => start <= bar + 1)?.[1] ?? 'intro'
   return { h: LEVEL[kind] * (bar % 4 === 0 ? 1 : 0.85), rgb: null }
 })
 

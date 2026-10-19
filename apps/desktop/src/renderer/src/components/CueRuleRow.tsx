@@ -71,7 +71,7 @@ export function CueRuleRow({
   return (
     <div
       data-testid={id}
-      className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-line)] px-2 py-1.5 text-xs"
+      className="relative flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-line)] py-1.5 pl-2 pr-8 text-xs"
     >
       <select
         data-testid={`${id}-from`}
@@ -165,7 +165,7 @@ export function CueRuleRow({
         ))}
       </select>
       {rule.place !== 'call' && (
-        <>
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
           <select
             data-testid={`${id}-color-mode`}
             aria-label={tr('settings.cueFlows.block.colorMode')}
@@ -201,14 +201,14 @@ export function CueRuleRow({
               )}
             </span>
           ))}
-        </>
+        </span>
       )}
       <button
         type="button"
         data-testid={`${id}-remove`}
         aria-label={tr('settings.cueFlows.removeRule')}
         onClick={onRemove}
-        className="press ml-auto rounded-md p-1 text-fg-dim hover:text-fg"
+        className="press absolute right-1 top-1 rounded-md p-1 text-fg-dim hover:text-fg"
       >
         <X size={14} />
       </button>

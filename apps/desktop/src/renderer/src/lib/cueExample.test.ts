@@ -16,6 +16,13 @@ describe('the example track', () => {
     expect(EXAMPLE_DURATION_MS).toBe(360000)
   })
 
+  it('numbers bars from 1 so the drop reads bar 64 beat 1', () => {
+    const at = EXAMPLE_GRID.findIndex((b) => b.ms === EXAMPLE_DROP)
+    expect(Math.floor(at / 4) + 1).toBe(64)
+    expect(EXAMPLE_GRID[at].beat).toBe(1)
+    expect(exampleBar(1)).toBe(0)
+  })
+
   it('shows Mi flujo as the countdown Vicent knows', () => {
     const out = examplePlan(MY_FLOW)
     expect(out.status === 'plan' && out.hot.map((h) => [h.ms, h.color])).toEqual([
