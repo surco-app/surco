@@ -488,7 +488,7 @@ describe('App column widths', () => {
     fireEvent(window, at(createEvent.pointerMove(window), 420))
     fireEvent(window, at(createEvent.pointerUp(window), 420))
     const saved = saveSettings.mock.calls.find(([patch]) => patch.columnShares)?.[0]
-    expect(saved?.columnShares?.list).toBeCloseTo((420 * 0.83) / 1280)
+    expect(saved?.columnShares?.list).toBeCloseTo((420 * 0.83) / 1278)
     expect(saved?.resultsWidth).toBeUndefined()
   })
 
@@ -502,7 +502,7 @@ describe('App column widths', () => {
     await addTwoTracks()
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveStyle({
-        width: `${Math.round((1280 * 0.3) / 0.83)}px`,
+        width: `${Math.round((1278 * 0.3) / 0.83)}px`,
       }),
     )
   })

@@ -4,6 +4,7 @@ import type { ColumnShares } from '../../../shared/types'
 import {
   type ColumnWidths,
   columnWidths,
+  DIVIDERS_WIDTH,
   RAIL_WIDTH,
   type ResizableColumn,
   shareFor,
@@ -46,7 +47,7 @@ export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): 
   useEffect(() => () => endDrag.current?.(), [])
 
   const shares = draft ?? saved
-  const available = windowWidth - (hasRail ? RAIL_WIDTH : 0)
+  const available = windowWidth - (hasRail ? RAIL_WIDTH : 0) - DIVIDERS_WIDTH
   const widths = columnWidths(available, hasTree, shares)
 
   const settle = (

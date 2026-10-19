@@ -11,6 +11,7 @@ export interface ColumnWidths {
 }
 
 export const RAIL_WIDTH = 60
+export const DIVIDERS_WIDTH = 2
 export const FORM_MIN = 420
 
 export const COLUMN_LIMITS: Record<SharedColumn, { share: number; min: number; max: number }> = {
