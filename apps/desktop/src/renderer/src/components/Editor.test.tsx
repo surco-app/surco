@@ -567,27 +567,34 @@ describe('Editor field edit after clear', () => {
 })
 
 describe('Editor rekordbox Playlists field', () => {
-  const tree = [{ id: '3000', name: 'Makina', kind: 'playlist' as const, count: 1 }]
-  const apiWith = (membership: Api['rekordboxMembership']): void => {
-    Object.assign(window.api, {
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(tree),
-      rekordboxMembership: membership,
-    })
-  }
-
   it('stays absent while the membership loads, so a token picked then cannot shrink the track playlists to itself', async () => {
-    apiWith(vi.fn<Api['rekordboxMembership']>(() => new Promise(() => {})))
+    rekordboxApiWith(vi.fn<Api['rekordboxMembership']>(() => new Promise(() => {})))
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
+    await waitFor(() => expect(window.api.loadRekordboxTree).toHaveBeenCalled())
     await waitFor(() => expect(window.api.rekordboxMembership).toHaveBeenCalled())
+    await act(async () => {})
     expect(screen.queryByTestId('playlists-field')).toBeNull()
   })
 
   it('appears with the playlists the track already holds once options and membership resolve', async () => {
-    apiWith(vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }))
+    rekordboxApiWith(
+      vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
+    )
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
     expect(await screen.findByTestId('playlists-field')).toBeInTheDocument()
     expect(screen.getByTestId('playlists-token-3000')).toBeInTheDocument()
+  })
+
+  it('writes the picked playlist to the track as its chosen set', async () => {
+    rekordboxApiWith(vi.fn<Api['rekordboxMembership']>().mockResolvedValue({}))
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', {
+      visibleFields: ['rekordboxPlaylists'],
+    })
+    fireEvent.change(await screen.findByTestId('playlists-input'), { target: { value: 'mak' } })
+    fireEvent.click(screen.getByTestId('playlists-option-3000'))
+    expect(onChange).toHaveBeenCalledWith({
+      rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+    })
   })
 })
 
@@ -1289,6 +1296,16 @@ describe('Editor multi-select sequential edits', () => {
   })
 })
 
+const rekordboxTree = [{ id: '3000', name: 'Makina', kind: 'playlist' as const, count: 1 }]
+
+function rekordboxApiWith(membership: Api['rekordboxMembership']): void {
+  Object.assign(window.api, {
+    rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+    loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(rekordboxTree),
+    rekordboxMembership: membership,
+  })
+}
+
 describe('Editor multi-select', () => {
   function renderMulti(
     opts: {
@@ -1312,6 +1329,7 @@ describe('Editor multi-select', () => {
     const onAddAllToAppleMusic = vi.fn()
     const onDeriveTags = vi.fn()
     const onChangeTracksMeta = vi.fn()
+    const onChangeTracksPlaylists = vi.fn()
     const status = opts.done ? ('done' as const) : ('idle' as const)
     const a = item({
       id: 'a',
@@ -1343,6 +1361,7 @@ describe('Editor multi-select', () => {
         onApplyCoverAll={vi.fn()}
         onDeriveTags={onDeriveTags}
         onChangeTracksMeta={onChangeTracksMeta}
+        onChangeTracksPlaylists={onChangeTracksPlaylists}
         onChange={vi.fn()}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
@@ -1365,8 +1384,27 @@ describe('Editor multi-select', () => {
         showLoudness: opts.loudness ?? false,
       },
     )
-    return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags, onChangeTracksMeta }
+    return {
+      onChangeAllMeta,
+      onProcessAll,
+      onAddAllToAppleMusic,
+      onDeriveTags,
+      onChangeTracksMeta,
+      onChangeTracksPlaylists,
+    }
   }
+
+  it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
+    rekordboxApiWith(
+      vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
+    )
+    const { onChangeTracksPlaylists } = renderMulti({ visibleFields: ['rekordboxPlaylists'] })
+    fireEvent.click(await screen.findByTestId('playlists-token-complete-3000'))
+    expect(onChangeTracksPlaylists).toHaveBeenCalledWith([
+      { id: 'a', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
+      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] },
+    ])
+  })
 
   // WHY: with two tracks selected, a grouping chip used to write the same value to
   // both through onChangeAllMeta, erasing each one's own tags. A vocal cut and a beat
