@@ -1,8 +1,9 @@
 import { ChevronDown, ChevronRight, Plus, Search } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
+import { type PopoverPlacement, popoverPlacement } from '../lib/popoverPlacement'
 import {
   canCreate,
   matchingOptions,
@@ -24,6 +25,15 @@ type Row =
 
 const ROW =
   'flex h-7 w-full items-center gap-2 rounded-md pr-2 text-left text-xs outline-none hover:bg-[var(--color-hover)] focus:bg-[var(--color-hover)]'
+
+const POPOVER_GAP = 12
+
+function visibleAreaOf(el: HTMLElement): { top: number; bottom: number } {
+  for (let at = el.parentElement; at; at = at.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(at).overflowY)) return at.getBoundingClientRect()
+  }
+  return { top: 0, bottom: window.innerHeight }
+}
 
 const chosenIdsOf = (tokens: readonly Token[]): Set<string> =>
   new Set(tokens.flatMap((t) => (t.target.id ? [t.target.id] : [])))
@@ -97,6 +107,22 @@ function TreePopover({
   )
   const searchRef = useRef<HTMLInputElement>(null)
   const rowRefs = useRef<(HTMLElement | null)[]>([])
+  const boxRef = useRef<HTMLDivElement>(null)
+  const [place, setPlace] = useState<PopoverPlacement | null>(null)
+  useLayoutEffect(() => {
+    const box = boxRef.current
+    const field = box?.parentElement
+    if (!box || !field) return
+    const at = field.getBoundingClientRect()
+    const area = visibleAreaOf(field)
+    setPlace(
+      popoverPlacement({
+        above: at.top - area.top - POPOVER_GAP,
+        below: area.bottom - at.bottom - POPOVER_GAP,
+        height: box.offsetHeight,
+      }),
+    )
+  }, [])
   useEffect(() => {
     searchRef.current?.focus()
   }, [])
@@ -252,13 +278,18 @@ function TreePopover({
 
   return (
     <div
+      ref={boxRef}
       data-testid="playlists-popover"
+      data-side={place?.side ?? 'down'}
       role="dialog"
       aria-label={tr('editor.playlists.options')}
       onKeyDown={onKeyDown}
-      className="absolute top-full right-0 left-0 z-20 mt-1 flex flex-col overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
+      style={{ maxHeight: place?.maxHeight }}
+      className={`absolute right-0 left-0 z-20 flex flex-col overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)] ${
+        place?.side === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
+      }`}
     >
-      <label className="m-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs focus-within:border-[var(--color-accent)]">
+      <label className="m-2 flex h-[30px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs focus-within:border-[var(--color-accent)]">
         <Search size={13} className="shrink-0 text-fg-faint" aria-hidden="true" />
         <input
           ref={(el) => {
@@ -273,7 +304,7 @@ function TreePopover({
           className="min-w-0 flex-1 bg-transparent text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
         />
       </label>
-      <div className="max-h-[300px] overflow-y-auto px-1.5 pb-2">
+      <div className="max-h-[300px] min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
         {rows.map((row, i) => draw(row, i + 1))}
       </div>
     </div>
