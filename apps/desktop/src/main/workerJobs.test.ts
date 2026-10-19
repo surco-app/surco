@@ -1,3 +1,8 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { runWorkerJob } from './workerJobs'
@@ -11,7 +16,11 @@ vi.mock('./tempo', () => ({
 vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence: 0.8 })) }))
 vi.mock('./clickDetect', () => ({ detectClicks: vi.fn(() => [1.5, 3.2]) }))
 vi.mock('./waveform', () => ({ computePeaks: vi.fn(() => [0.1, 0.9]) }))
-vi.mock('./tags', () => ({ writeTags: vi.fn(), copyCueFrames: vi.fn() }))
+vi.mock('./tags', async (importActual) => ({
+  ...(await importActual<typeof import('./tags')>()),
+  writeTags: vi.fn(),
+  copyCueFrames: vi.fn(),
+}))
 vi.mock('./tagFieldSet', () => ({ setTagFields: vi.fn(() => ['written']) }))
 vi.mock('./channelScan', () => ({
   runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
@@ -21,7 +30,7 @@ import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { detectKey } from './musicalKey'
 import { setTagFields } from './tagFieldSet'
-import { copyCueFrames, writeTags } from './tags'
+import { copyCueFrames, type TagLibRead, writeTags } from './tags'
 import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
 
@@ -145,5 +154,36 @@ describe('runWorkerJob', () => {
       shiftMs: 1300,
       maxMs: 240000,
     })
+  })
+})
+
+describe('tagLibRead', () => {
+  it('reads every TagLib field readMeta needs in one job, off the main process', async () => {
+    const file = join(mkdtempSync(join(tmpdir(), 'surco-tlread-')), 'a.mp3')
+    execFileSync(ffmpegStatic as unknown as string, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-c:a',
+      'libmp3lame',
+      '-metadata',
+      'grouping=Peak Time',
+      '-metadata',
+      'album=Bright Days ',
+      file,
+    ])
+    const read = (await runWorkerJob({ type: 'tagLibRead', file })) as TagLibRead
+    expect(read.grouping).toBe('Peak Time')
+    expect(read.reviewRaw.album).toBe('Bright Days ')
+    expect(read.popm).toBe('')
+  })
+
+  it('answers empty fields for a file TagLib cannot open, as the inline read did', async () => {
+    const read = (await runWorkerJob({ type: 'tagLibRead', file: '/no/such.mp3' })) as TagLibRead
+    expect(read).toEqual({ grouping: '', extras: {}, popm: '', reviewRaw: {} })
   })
 })

@@ -290,6 +290,27 @@ export function popmRatingOf(f: TagFile): string {
   return stars > 0 ? String(stars) : ''
 }
 
+export interface TagLibRead {
+  grouping: string
+  extras: Partial<TrackMetadata>
+  popm: string
+  reviewRaw: ReviewRawFields
+}
+
+export function readTagLibFields(file: string): TagLibRead {
+  const taglib = lazyTagLibFile(file)
+  try {
+    return {
+      grouping: taglib.use(itunesGroupingOf, ''),
+      extras: taglib.use(tagLibExtrasOf, {}),
+      popm: taglib.use(popmRatingOf, ''),
+      reviewRaw: taglib.use(tagLibReviewRawOf, {}),
+    }
+  } finally {
+    taglib.dispose()
+  }
+}
+
 // A trim moved the audio under the stored cues: shift every position back by
 // shiftMs and clamp what remains to maxMs (the trimmed length) when the tail
 // was cut too. Millisecond units, like Traktor's own cue positions. `bpm` is the

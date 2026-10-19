@@ -10,8 +10,10 @@ import {
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
+  readTagLibFields,
   setFlacComment,
   shiftFlacCues,
+  type TagLibRead,
   writeTags,
 } from './tags'
 import { detectBpm } from './tempo'
@@ -75,6 +77,7 @@ export type WorkerJob =
   // does not survive the structured clone into the worker.
   | { type: 'killChannelScan'; input: string }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
+  | { type: 'tagLibRead'; file: string }
 
 export type WorkerJobResult =
   | BpmResult
@@ -83,6 +86,7 @@ export type WorkerJobResult =
   | FieldWrite[]
   | { peaks: number[]; rms: number[] }
   | FullScan
+  | TagLibRead
   | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
@@ -131,6 +135,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'setTagFields':
       return setTagFields(job.file, job.changes)
+    case 'tagLibRead':
+      return readTagLibFields(job.file)
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)
       return null
