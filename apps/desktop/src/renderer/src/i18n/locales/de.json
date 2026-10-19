@@ -766,17 +766,25 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Klicke in die Wellenform, um einen Drop zu markieren. Surco setzt den Countdown bei 16, 32 und 48 Takten auf das Raster von rekordbox.",
+      "help": "Klicke auf die Wellenform, um einen Drop zu markieren, dein Ablauf setzt den Rest. Wähle ein Cue, um es zu verschieben, zu löschen oder Farbe und Buchstaben zu ändern. Mit Rechtsklick fügst du eins hinzu.",
       "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
       "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco speichert die Drops und lässt die Hot Cues unverändert.",
       "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Drop.",
-      "undo": "Rückgängig",
       "save": "In rekordbox speichern",
-      "legend16": "16 Takte",
-      "legend32": "32 Takte",
-      "legend48": "48 Takte",
-      "legendStart": "Start",
-      "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden"
+      "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden",
+      "discard": "Änderungen verwerfen",
+      "applyFlow": "Ablauf anwenden",
+      "flow": "Ablauf",
+      "delete": "Löschen",
+      "colour": "Farbe {{index}}",
+      "letter": "Buchstabe",
+      "selectedHot": "Hot Cue {{letter}}",
+      "selectedCall": "CALL",
+      "menuAddHot": "Hot Cue hier hinzufügen",
+      "menuAddCall": "CALL hier hinzufügen",
+      "menuMarkDrop": "Drop hier markieren",
+      "trimmed_one": "{{count}} Hot Cue fällt wegen der Grenze von 8 weg",
+      "trimmed_other": "{{count}} Hot Cues fallen wegen der Grenze von 8 weg"
     }
   },
   "fields": {
@@ -2251,5 +2259,13 @@
     "call": "CALL",
     "proposal": "Vorgeschlagener Drop in Takt {{bar}}",
     "label": "Cue-Wellenform"
+  },
+  "cueFlows": {
+    "unnamed": "Ablauf ohne Namen",
+    "builtIn": {
+      "mine": "Mein Ablauf",
+      "one-at-32": "Ein Cue bei 32",
+      "calls-only": "Nur CALL"
+    }
   }
 }

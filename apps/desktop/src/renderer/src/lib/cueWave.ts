@@ -1,12 +1,5 @@
 import { nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 
-export const CUE_COLOR: Record<number, string> = {
-  1: 'var(--color-accent)',
-  22: 'var(--color-good)',
-  42: 'var(--color-danger)',
-  32: 'var(--color-warn)',
-}
-
 export const HOT_LETTER: Record<number, string> = {
   1: 'A',
   2: 'B',
@@ -24,12 +17,6 @@ export const HOT_LETTER: Record<number, string> = {
   15: 'N',
   16: 'O',
   17: 'P',
-}
-
-export const UNKNOWN_CUE_COLOR = 'var(--color-fg-faint)'
-
-export function cueColor(color: number | null): string {
-  return (color === null ? undefined : CUE_COLOR[color]) ?? UNKNOWN_CUE_COLOR
 }
 
 export function barLines(grid: { ms: number; beat: number }[]): { ms: number; strong: boolean }[] {

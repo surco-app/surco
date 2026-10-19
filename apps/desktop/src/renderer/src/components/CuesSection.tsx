@@ -1,29 +1,27 @@
 import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MY_FLOW } from '../../../shared/cueFlows'
-import {
-  diffCues,
-  findDrops,
-  flowOutcome,
-  isEmptyChange,
-  SAME_POSITION_MS,
-  type WantedCue,
-} from '../../../shared/cueRules'
+import { activeCueFlow } from '../../../shared/cueFlows'
+import { MAX_HOT_CUES, type WantedCue } from '../../../shared/cueRules'
 import type { TrackCues } from '../../../shared/types'
 import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
-import { CUE_COLOR } from '../lib/cueWave'
+import {
+  type CueDraft,
+  type DraftAction,
+  type DraftCue,
+  freeLetters,
+  reduceDraft,
+  startDraft,
+  wantedOfDraft,
+} from '../lib/cueDraft'
+import { flowName } from '../lib/cueFlowName'
+import { cueLetter } from '../lib/rowCues'
+import { useAppSettings } from '../lib/settingsContext'
+import { CuePalette } from './CuePalette'
 import { CueWave } from './CueWave'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
-
-const LEGEND: [number, string][] = [
-  [1, 'editor.cues.legend16'],
-  [22, 'editor.cues.legend32'],
-  [42, 'editor.cues.legend48'],
-  [32, 'editor.cues.legendStart'],
-]
 
 interface CueTarget {
   contentId: string
@@ -31,136 +29,246 @@ interface CueTarget {
   label: string
 }
 
-function Marking({
+const MENU_ITEM =
+  'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] disabled:opacity-40'
+
+function Editing({
   read,
   queued,
   cue,
+  onDiscard,
 }: {
   read: TrackCues
   queued: WantedCue[] | null
   cue: CueTarget
+  onDiscard: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
-  const hot = read.cues.filter((c) => c.kind !== 0)
-  const initial = useMemo(
-    () =>
-      findDrops(
-        read.cues.filter((c) => c.kind === 0).map((c) => c.ms),
-        read.cues.filter((c) => c.kind !== 0).map((c) => c.ms),
-      ),
+  const settings = useAppSettings()
+  const flows = settings.cueFlows
+  const active = activeCueFlow(settings)
+  const ctx = useMemo(
+    () => ({
+      beats: read.grid.map((b) => b.ms),
+      strong: read.strong,
+      phrases: read.phrases,
+      flows,
+    }),
+    [read, flows],
+  )
+  const inRekordbox = useMemo(
+    () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
     [read],
   )
-  const [drops, setDrops] = useState<number[]>(
-    queued
-      ? findDrops(
-          queued.filter((c) => c.kind === 0).map((c) => c.ms),
-          queued.filter((c) => c.kind !== 0).map((c) => c.ms),
-        )
-      : initial,
+  const baseline = queued ?? inRekordbox
+  const [state, dispatch] = useReducer(
+    (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
+    undefined,
+    () => startDraft(baseline, active.id),
   )
-  const beats = read.grid.map((b) => b.ms)
-  const outcome = flowOutcome({
-    existing: read.cues,
-    drops,
-    previousDrops: initial,
-    beats,
-    strong: read.strong,
-    phrases: read.phrases,
-    flow: MY_FLOW,
-  })
-  const changes = outcome.status === 'too-many' ? null : diffCues(read.cues, outcome.wanted)
-  const dirty = drops.length !== initial.length || drops.some((d) => !initial.includes(d))
+  const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
+  const [chosen, setChosen] = useState(state.flowId)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const wanted = wantedOfDraft(state.cues)
+  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
+  const pending = (c: DraftCue): boolean =>
+    !inRekordbox.some(
+      (r) => r.id === c.id && r.ms === c.ms && r.kind === c.kind && r.color === c.color,
+    )
+  const selected = state.cues.find((c) => c.key === state.selected)
   const refreshQueued = () => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
-  const same = (ms: number, kind: number, color: number | null) =>
-    hot.some((h) => Math.abs(h.ms - ms) <= SAME_POSITION_MS && h.kind === kind && h.color === color)
-  const drawnHot =
-    outcome.status === 'plan'
-      ? outcome.hot.map((h) => ({ ...h, pending: !same(h.ms, h.kind, h.color) }))
-      : hot.map((h) => ({ ms: h.ms, kind: h.kind, color: h.color, pending: false }))
+  useEffect(() => {
+    if (menu === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenu(null)
+    }
+    const onDown = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(null)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [menu])
+  const onKey = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
+      e.preventDefault()
+      dispatch({ type: 'remove', key: selected.key })
+    } else if (e.key === 'z' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      dispatch({ type: 'undo' })
+    }
+  }
+  const fromMenu = (action: DraftAction) => {
+    dispatch(action)
+    setMenu(null)
+  }
+  const letters = selected ? freeLetters(state.cues, selected.kind) : []
   return (
-    <>
+    <fieldset
+      data-testid="cues-editor"
+      aria-label={tr('editor.cues.title')}
+      className="relative m-0 min-w-0 border-0 p-0"
+      onKeyDown={onKey}
+    >
       <CueWave
         wave={read.wave}
         grid={read.grid}
         durationMs={read.durationMs}
-        cues={[
-          ...drawnHot.map((h) => ({
-            key: `h${h.kind}`,
-            ms: h.ms,
-            kind: h.kind,
-            color: h.color,
-            pending: h.pending,
-          })),
-          ...drops.map((ms) => ({
-            key: `d${ms}`,
-            ms,
-            kind: 0,
-            color: null,
-            pending: !initial.includes(ms),
-          })),
-        ]}
-        onMarkDrop={(ms) =>
-          setDrops((d) =>
-            d.some((x) => Math.abs(x - ms) <= SAME_POSITION_MS)
-              ? d
-              : [...d, ms].sort((a, b) => a - b),
-          )
-        }
-        onUnmarkDrop={(key) => setDrops((d) => d.filter((x) => `d${x}` !== key))}
+        cues={state.cues.map((c) => ({ ...c, pending: pending(c) }))}
+        selected={state.selected}
+        trimmed={state.trimmed}
+        onMarkDrop={(ms) => dispatch({ type: 'mark-drop', ms })}
+        onUnmarkDrop={(key) => dispatch({ type: 'unmark-drop', key })}
+        onSelect={(key) => dispatch({ type: 'select', key })}
+        onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
+        onMenu={setMenu}
       />
-      {outcome.status === 'manual' && (
+      {menu !== null && (
+        <div
+          ref={menuRef}
+          data-testid="cues-menu"
+          role="menu"
+          style={{ left: menu.x, top: menu.y }}
+          className="absolute z-20 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs shadow-[var(--shadow-float)]"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="cues-menu-add-hot"
+            disabled={state.cues.filter((c) => c.kind !== 0).length >= MAX_HOT_CUES}
+            onClick={() => fromMenu({ type: 'add-hot', ms: menu.ms })}
+            className={MENU_ITEM}
+          >
+            {tr('editor.cues.menuAddHot')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="cues-menu-add-call"
+            onClick={() => fromMenu({ type: 'add-call', ms: menu.ms })}
+            className={MENU_ITEM}
+          >
+            {tr('editor.cues.menuAddCall')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="cues-menu-mark-drop"
+            onClick={() => fromMenu({ type: 'mark-drop', ms: menu.ms })}
+            className={MENU_ITEM}
+          >
+            {tr('editor.cues.menuMarkDrop')}
+          </button>
+        </div>
+      )}
+      {selected && (
+        <div
+          data-testid="cues-selection"
+          className="mt-2 flex flex-wrap items-center gap-3 text-xs"
+        >
+          <span className="font-medium">
+            {selected.kind === 0
+              ? tr('editor.cues.selectedCall')
+              : tr('editor.cues.selectedHot', { letter: cueLetter(selected.kind) })}
+          </span>
+          {selected.kind !== 0 && (
+            <>
+              <CuePalette
+                value={selected.color}
+                onPick={(color) => dispatch({ type: 'recolour', key: selected.key, color })}
+                label={(index) => tr('editor.cues.colour', { index })}
+              />
+              <select
+                data-testid="cues-letter"
+                aria-label={tr('editor.cues.letter')}
+                value={selected.kind}
+                onChange={(e) =>
+                  dispatch({ type: 'reletter', key: selected.key, kind: Number(e.target.value) })
+                }
+                className="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2 py-1"
+              >
+                {(letters.includes(selected.kind) ? letters : [selected.kind, ...letters]).map(
+                  (kind) => (
+                    <option key={kind} value={kind}>
+                      {cueLetter(kind)}
+                    </option>
+                  ),
+                )}
+              </select>
+            </>
+          )}
+          <button
+            type="button"
+            data-testid="cues-delete"
+            onClick={() => dispatch({ type: 'remove', key: selected.key })}
+            className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1 hover:bg-[var(--color-hover)]"
+          >
+            {tr('editor.cues.delete')}
+          </button>
+        </div>
+      )}
+      {state.notice === 'manual' && (
         <p data-testid="cues-manual" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.manual')}
         </p>
       )}
-      {outcome.status === 'too-many' && (
+      {state.notice === 'too-many' && (
         <p data-testid="cues-too-many" className="mt-2 text-xs text-warn">
           {tr('editor.cues.tooMany')}
         </p>
       )}
+      {state.trimmed.length > 0 && (
+        <p data-testid="cues-trimmed" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.trimmed', { count: state.trimmed.length })}
+        </p>
+      )}
       <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
-        <ul
-          data-testid="cues-legend"
-          className="flex flex-wrap items-center gap-3 text-[11px] text-fg-dim"
+        <select
+          data-testid="cues-flow"
+          aria-label={tr('editor.cues.flow')}
+          value={chosen}
+          onChange={(e) => setChosen(e.target.value)}
+          className="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2 py-1.5 text-xs"
         >
-          {LEGEND.map(([color, key]) => (
-            <li key={key} className="flex items-center gap-1">
-              <span
-                aria-hidden="true"
-                style={{ backgroundColor: CUE_COLOR[color] }}
-                className="h-2 w-2 rounded-sm"
-              />
-              {tr(key)}
-            </li>
+          {flows.map((f) => (
+            <option key={f.id} value={f.id}>
+              {flowName(f, tr)}
+            </option>
           ))}
-        </ul>
+        </select>
+        <button
+          type="button"
+          data-testid="cues-apply-flow"
+          onClick={() => dispatch({ type: 'apply-flow', flowId: chosen })}
+          className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)]"
+        >
+          {tr('editor.cues.applyFlow')}
+        </button>
         <div className="ml-auto flex gap-2">
           <button
             type="button"
             data-testid="cues-undo"
-            disabled={!dirty && queued === null}
-            onClick={() => {
-              setDrops(initial)
-              if (queued !== null)
-                void window.api.undoRekordboxCues(cue.contentId).then(refreshQueued)
-            }}
+            disabled={unchanged && queued === null}
+            onClick={onDiscard}
             className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)] disabled:opacity-40"
           >
-            {tr('editor.cues.undo')}
+            {tr('editor.cues.discard')}
           </button>
           <button
             type="button"
             data-testid="cues-save"
-            disabled={changes === null || (!dirty && isEmptyChange(changes))}
+            disabled={unchanged}
             onClick={() => {
-              if (outcome.status === 'too-many') return
               void window.api
                 .saveRekordboxCues({
                   contentId: cue.contentId,
                   path: cue.path,
                   label: cue.label,
-                  wanted: outcome.wanted,
+                  wanted,
                   fingerprint: read.fingerprint,
                 })
                 .then(refreshQueued)
@@ -171,7 +279,7 @@ function Marking({
           </button>
         </div>
       </div>
-    </>
+    </fieldset>
   )
 }
 
@@ -185,8 +293,10 @@ export function CuesSection({
   onToggle: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const queryClient = useQueryClient()
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
+  const [round, setRound] = useState(0)
   return (
     <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
@@ -208,11 +318,20 @@ export function CuesSection({
               {tr('editor.cues.unanalysed')}
             </p>
           ) : (
-            <Marking
-              key={`${read.fingerprint}|${JSON.stringify(queued)}`}
+            <Editing
+              key={`${read.fingerprint}|${JSON.stringify(queued)}|${round}`}
               read={read}
               queued={queued}
               cue={cue}
+              onDiscard={() => {
+                setRound((n) => n + 1)
+                if (queued !== null)
+                  void window.api
+                    .undoRekordboxCues(cue.contentId)
+                    .then(() =>
+                      queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }),
+                    )
+              }}
             />
           )}
         </div>

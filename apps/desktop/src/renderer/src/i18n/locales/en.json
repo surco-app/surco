@@ -766,17 +766,25 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Click the waveform to mark a drop. Surco sets the countdown at 16, 32 and 48 bars on rekordbox's grid.",
+      "help": "Click the waveform to mark a drop and your flow sets the rest. Select a cue to move it, delete it or change its colour or letter. Right-click to add one.",
       "unanalysed": "rekordbox has not analysed this track yet",
       "manual": "This track has hot cues set by hand. Surco saves the drops and leaves the hot cues alone.",
       "tooMany": "It would need more than 8 hot cues. Remove a drop.",
-      "undo": "Undo",
       "save": "Save to rekordbox",
-      "legend16": "16 bars",
-      "legend32": "32 bars",
-      "legend48": "48 bars",
-      "legendStart": "Start",
-      "unreadable": "Could not read the cues from rekordbox"
+      "unreadable": "Could not read the cues from rekordbox",
+      "discard": "Discard changes",
+      "applyFlow": "Apply flow",
+      "flow": "Flow",
+      "delete": "Delete",
+      "colour": "Colour {{index}}",
+      "letter": "Letter",
+      "selectedHot": "Hot cue {{letter}}",
+      "selectedCall": "CALL",
+      "menuAddHot": "Add hot cue here",
+      "menuAddCall": "Add CALL here",
+      "menuMarkDrop": "Mark drop here",
+      "trimmed_one": "{{count}} hot cue is left out by the limit of 8",
+      "trimmed_other": "{{count}} hot cues are left out by the limit of 8"
     }
   },
   "fields": {
@@ -2251,5 +2259,13 @@
     "call": "CALL",
     "proposal": "Suggested drop at bar {{bar}}",
     "label": "Cue waveform"
+  },
+  "cueFlows": {
+    "unnamed": "Unnamed flow",
+    "builtIn": {
+      "mine": "My flow",
+      "one-at-32": "One cue at 32",
+      "calls-only": "CALL only"
+    }
   }
 }

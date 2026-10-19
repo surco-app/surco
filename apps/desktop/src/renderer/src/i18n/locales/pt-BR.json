@@ -766,17 +766,25 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Clique na forma de onda para marcar um drop. O Surco põe a contagem regressiva a 16, 32 e 48 compassos na grade do rekordbox.",
+      "help": "Clique na forma de onda para marcar um drop e seu fluxo põe o resto. Selecione um cue para movê-lo, apagá-lo ou mudar a cor ou a letra. Com o clique direito você adiciona um.",
       "unanalysed": "O rekordbox ainda não analisou esta faixa",
       "manual": "Esta faixa tem hot cues postos à mão. O Surco salva os drops e não mexe nos hot cues.",
       "tooMany": "Precisaria de mais de 8 hot cues. Tire um drop.",
-      "undo": "Desfazer",
       "save": "Salvar no rekordbox",
-      "legend16": "16 compassos",
-      "legend32": "32 compassos",
-      "legend48": "48 compassos",
-      "legendStart": "Início",
-      "unreadable": "Não foi possível ler os cues do rekordbox"
+      "unreadable": "Não foi possível ler os cues do rekordbox",
+      "discard": "Descartar alterações",
+      "applyFlow": "Aplicar fluxo",
+      "flow": "Fluxo",
+      "delete": "Apagar",
+      "colour": "Cor {{index}}",
+      "letter": "Letra",
+      "selectedHot": "Hot cue {{letter}}",
+      "selectedCall": "CALL",
+      "menuAddHot": "Adicionar hot cue aqui",
+      "menuAddCall": "Adicionar CALL aqui",
+      "menuMarkDrop": "Marcar drop aqui",
+      "trimmed_one": "{{count}} hot cue fica de fora pelo limite de 8",
+      "trimmed_other": "{{count}} hot cues ficam de fora pelo limite de 8"
     }
   },
   "fields": {
@@ -2251,5 +2259,13 @@
     "call": "CALL",
     "proposal": "Drop sugerido no compasso {{bar}}",
     "label": "Forma de onda dos cues"
+  },
+  "cueFlows": {
+    "unnamed": "Fluxo sem nome",
+    "builtIn": {
+      "mine": "Meu fluxo",
+      "one-at-32": "Um cue a 32",
+      "calls-only": "Só CALL"
+    }
   }
 }
