@@ -1025,6 +1025,20 @@ export interface SourceNode {
 // DJ drops between blocks (measured: one blank 1 s MP3 linked 345 times), kept so the list
 // can draw the break but never loaded as a track. A null path is a row with no file
 // (streaming), counted but not loadable.
+export interface RowCue {
+  ms: number
+  kind: number
+}
+
+export interface SourcePreview {
+  title: string
+  artist: string
+  durationSec: number
+  coverUrl?: string
+  analysisPath?: string
+  cues: RowCue[]
+}
+
 export interface SourcePlaylistEntry {
   path: string | null
   separator: boolean
@@ -1037,6 +1051,7 @@ export interface SourcePlaylistEntry {
   // names the entry, which keeps the symlinked twins apart without guessing by path.
   linkId?: string
   contentId?: string
+  preview?: SourcePreview
 }
 
 // A track to put in a rekordbox playlist: the collection entry when Surco already knows it

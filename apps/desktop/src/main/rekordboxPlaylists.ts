@@ -1,5 +1,14 @@
-import path from 'node:path'
-import type { AppleMusicTrackMeta, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import { existsSync } from 'node:fs'
+import path, { resolve } from 'node:path'
+import { mediaUrl } from '../shared/media'
+import type {
+  AppleMusicTrackMeta,
+  RowCue,
+  SourceNode,
+  SourcePlaylistEntry,
+  SourcePreview,
+} from '../shared/types'
+import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
 
 // Reads the user's rekordbox playlists as a source of tracks: the folder tree and one
@@ -109,5 +118,87 @@ export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlayli
     if (row.FileType === STREAMING_FILE_TYPE)
       return { path: null, separator: false, meta: {}, ...ids }
     return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row), ...ids }
+  })
+}
+
+interface PreviewRow {
+  contentId: string
+  Title: string | null
+  Artist: string | null
+  Length: number | null
+  ImagePath: string | null
+  AnalysisDataPath: string | null
+}
+
+interface CueRow {
+  contentId: string
+  InMsec: number
+  Kind: number
+}
+
+const PLAYLIST_CONTENT = `SELECT s.ContentID FROM djmdSongPlaylist s
+  WHERE s.PlaylistID = ? AND coalesce(s.rb_local_deleted, 0) = 0`
+
+export function shareFile(share: string, stored: string | null): string | null {
+  if (!stored) return null
+  const file = resolve(share, `.${stored}`)
+  return insideShare(share, file) ? file : null
+}
+
+export function coverFileOf(
+  share: string,
+  imagePath: string | null,
+  exists: (p: string) => boolean = existsSync,
+): string | null {
+  const full = shareFile(share, imagePath)
+  if (!full) return null
+  const medium = full.replace(/\.jpg$/i, '_m.jpg')
+  if (medium !== full && exists(medium)) return medium
+  return exists(full) ? full : null
+}
+
+export function readRekordboxPlaylistWithPreview(
+  db: RekordboxDb,
+  share: string,
+  id: string,
+  exists: (p: string) => boolean = existsSync,
+): SourcePlaylistEntry[] {
+  const entries = readRekordboxPlaylist(db, id)
+  const rows = db
+    .prepare(
+      `SELECT c.ID AS contentId, c.Title, a.Name AS Artist, c.Length, c.ImagePath, c.AnalysisDataPath
+         FROM djmdContent c LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
+        WHERE c.ID IN (${PLAYLIST_CONTENT})`,
+    )
+    .all(id) as PreviewRow[]
+  const cueRows = db
+    .prepare(
+      `SELECT ContentID AS contentId, InMsec, Kind FROM djmdCue
+        WHERE coalesce(rb_local_deleted, 0) = 0 AND ContentID IN (${PLAYLIST_CONTENT})
+        ORDER BY InMsec`,
+    )
+    .all(id) as CueRow[]
+  const cues = new Map<string, RowCue[]>()
+  for (const c of cueRows) {
+    const list = cues.get(String(c.contentId)) ?? []
+    list.push({ ms: c.InMsec, kind: c.Kind })
+    cues.set(String(c.contentId), list)
+  }
+  const previews = new Map<string, SourcePreview>()
+  for (const r of rows) {
+    const cover = coverFileOf(share, r.ImagePath, exists)
+    const analysis = shareFile(share, r.AnalysisDataPath)
+    previews.set(String(r.contentId), {
+      title: r.Title?.trim() ?? '',
+      artist: r.Artist?.trim() ?? '',
+      durationSec: r.Length ?? 0,
+      ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
+      ...(analysis ? { analysisPath: analysis } : {}),
+      cues: cues.get(String(r.contentId)) ?? [],
+    })
+  }
+  return entries.map((e) => {
+    const preview = e.contentId ? previews.get(e.contentId) : undefined
+    return e.path && !e.separator && preview ? { ...e, preview } : e
   })
 }

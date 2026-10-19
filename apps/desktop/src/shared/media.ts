@@ -40,6 +40,8 @@ const MIME: Record<string, string> = {
   flac: 'audio/flac',
   aif: 'audio/aiff',
   aiff: 'audio/aiff',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
 }
 
 // A correct Content-Type matters: without it the <audio> element may refuse to

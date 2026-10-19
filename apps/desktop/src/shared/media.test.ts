@@ -53,6 +53,10 @@ describe('mediaMimeType', () => {
     expect(mediaMimeType('/x/a.aif')).toBe('audio/aiff')
   })
 
+  it('serves rekordbox artwork as JPEG, so the row image decodes', () => {
+    expect(mediaMimeType('/share/PIONEER/Artwork/a/b/artwork_m.jpg')).toBe('image/jpeg')
+  })
+
   it('falls back to octet-stream for the unknown', () => {
     expect(mediaMimeType('/x/a.xyz')).toBe('application/octet-stream')
   })

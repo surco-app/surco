@@ -10,6 +10,7 @@ vi.mock('electron', () => ({
 }))
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
+import type { SourcePlaylistEntry } from '../shared/types'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
   collectionAvailable,
@@ -99,6 +100,23 @@ function handler(channel: string): (...args: unknown[]) => unknown {
 }
 
 describe('registerRekordboxPlaylistsIpc', () => {
+  it('grants the files and covers of the playlist it read, so the rows can play and paint before any disk walk', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbipc-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const allowMedia = vi.fn()
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+      allowMedia,
+    })
+    const entries = (await handler('rekordbox:playlist')({}, '2000')) as SourcePlaylistEntry[]
+    const paths = entries.flatMap((e) => (e.path && !e.separator ? [e.path] : []))
+    expect(paths.length).toBeGreaterThan(0)
+    expect(entries.every((e) => e.separator || e.path === null || e.preview)).toBe(true)
+    expect(allowMedia).toHaveBeenCalledWith(expect.arrayContaining(paths))
+  })
+
   // The dialog asking to close rekordbox must sit over the window the user was dragging in.
   it('asks to close rekordbox over the window that made the edit, then writes', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')

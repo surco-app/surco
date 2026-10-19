@@ -948,6 +948,7 @@ function registerIpc(): void {
       queue: rekordboxQueue,
       onApplied: announceApplied,
       onWaiting: rekordboxQueueWatch.poke,
+      allowMedia: (paths) => mediaAccess.allowAll(paths),
     },
   )
   registerRekordboxQueueIpc(rekordboxQueue, {

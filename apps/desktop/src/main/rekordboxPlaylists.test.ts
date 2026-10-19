@@ -2,8 +2,15 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, posix, win32 } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { mediaUrl } from '../shared/media'
 import { openRekordboxDb } from './rekordboxDb'
-import { entryPath, readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
+import {
+  coverFileOf,
+  entryPath,
+  readRekordboxPlaylist,
+  readRekordboxPlaylistWithPreview,
+  readRekordboxTree,
+} from './rekordboxPlaylists'
 import { writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
 // Shapes measured on a real 2067-track collection (15/10): folders nested two deep whose
@@ -192,5 +199,106 @@ describe('entryPath', () => {
 
   it('keeps an empty path empty instead of turning it into the current folder', () => {
     expect(entryPath('', posix)).toBe('')
+  })
+})
+
+describe('readRekordboxPlaylistWithPreview', () => {
+  const share = '/Users/dj/Library/Pioneer/rekordbox/share'
+  let pdb: NonNullable<ReturnType<typeof openRekordboxDb>>
+
+  beforeAll(async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbpv-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      content: [
+        {
+          ...NIGHT,
+          ArtistID: 'a1',
+          ImagePath: '/PIONEER/Artwork/abc/def/artwork.jpg',
+          AnalysisDataPath: '/PIONEER/USBANLZ/p1/q1/ANLZ0000.DAT',
+        },
+        { ...PLAY, ImagePath: '/../../../../etc/artwork.jpg', AnalysisDataPath: '/../x.DAT' },
+        SEP,
+        SPOTIFY,
+      ],
+      keys: [
+        { ID: 'k1', ScaleName: '4B' },
+        { ID: 'k2', ScaleName: '8A' },
+      ],
+      artists: [{ ID: 'a1', Name: 'Rebel Vision' }],
+      playlists: [{ ID: 'p', Name: 'P', Attribute: 0, ParentID: 'root', Seq: 1 }],
+      links: [
+        { PlaylistID: 'p', ContentID: 'c1', TrackNo: 1 },
+        { PlaylistID: 'p', ContentID: 'sep', TrackNo: 2 },
+        { PlaylistID: 'p', ContentID: 'c2', TrackNo: 3 },
+        { PlaylistID: 'p', ContentID: 'c3', TrackNo: 4 },
+      ],
+      cueRows: [
+        { ID: 'q2', ContentID: 'c1', InMsec: 64000, Kind: 2, ColorTableIndex: 22 },
+        { ID: 'q1', ContentID: 'c1', InMsec: 1000, Kind: 1, ColorTableIndex: 1 },
+        { ID: 'q3', ContentID: 'c1', InMsec: 32000, Kind: 0, ColorTableIndex: null },
+      ],
+    })
+    const opened = openRekordboxDb(path, { readonly: true })
+    if (!opened) throw new Error('fixture did not open')
+    pdb = opened
+  })
+
+  afterAll(() => pdb.close())
+
+  const onlyMedium = (p: string): boolean => p.endsWith('artwork_m.jpg')
+
+  it('gives a row what the list paints first, so it never waits for the file', () => {
+    const [night] = readRekordboxPlaylistWithPreview(pdb, share, 'p', onlyMedium)
+    expect(night.preview).toEqual({
+      title: 'Night Train (Extended Mix)',
+      artist: 'Rebel Vision',
+      durationSec: 256,
+      coverUrl: mediaUrl(join(share, 'PIONEER/Artwork/abc/def/artwork_m.jpg')),
+      analysisPath: join(share, 'PIONEER/USBANLZ/p1/q1/ANLZ0000.DAT'),
+      cues: [
+        { ms: 1000, kind: 1 },
+        { ms: 32000, kind: 0 },
+        { ms: 64000, kind: 2 },
+      ],
+    })
+  })
+
+  it('keeps the entries readRekordboxPlaylist gives, separators and streaming rows without a preview', () => {
+    const rows = readRekordboxPlaylistWithPreview(pdb, share, 'p', onlyMedium)
+    expect(rows.map((r) => [r.separator, r.path === null, r.preview !== undefined])).toEqual([
+      [false, false, true],
+      [true, false, false],
+      [false, false, true],
+      [false, true, false],
+    ])
+    expect(rows[0].meta).toEqual({ bpm: '150', key: '4B' })
+  })
+
+  it('names no file outside the share folder, so a crafted row cannot reach the disk', () => {
+    const [, , play] = readRekordboxPlaylistWithPreview(pdb, share, 'p', () => true)
+    expect(play.preview?.coverUrl).toBeUndefined()
+    expect(play.preview?.analysisPath).toBeUndefined()
+    expect(play.preview?.artist).toBe('')
+  })
+})
+
+describe('coverFileOf', () => {
+  const share = '/s'
+
+  it('prefers the 240 px copy rekordbox keeps for its own browser', () => {
+    expect(coverFileOf(share, '/PIONEER/Artwork/a/b/artwork.jpg', () => true)).toBe(
+      join(share, 'PIONEER/Artwork/a/b/artwork_m.jpg'),
+    )
+  })
+
+  it('falls back to the full image when the small one is missing', () => {
+    expect(
+      coverFileOf(share, '/PIONEER/Artwork/a/b/artwork.jpg', (p) => !p.endsWith('_m.jpg')),
+    ).toBe(join(share, 'PIONEER/Artwork/a/b/artwork.jpg'))
+  })
+
+  it('gives nothing when rekordbox has no artwork file for the track', () => {
+    expect(coverFileOf(share, '/PIONEER/Artwork/a/b/artwork.jpg', () => false)).toBeNull()
+    expect(coverFileOf(share, null, () => true)).toBeNull()
   })
 })

@@ -3,13 +3,15 @@ import { existsSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { BrowserWindow, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import { mediaPathFromUrl } from '../shared/media'
 import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
+import { rekordboxShareDir } from './rekordboxArtwork'
 import { openRekordboxDb } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { separatorContent } from './rekordboxPlaylistEdit'
-import { readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
+import { readRekordboxPlaylistWithPreview, readRekordboxTree } from './rekordboxPlaylists'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
@@ -52,6 +54,7 @@ export interface PlaylistEditHost {
   queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop'>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
+  allowMedia?: (paths: string[]) => void
 }
 
 function editStamps(collectionPath: string, edit: RekordboxPlaylistEdit): Record<string, number> {
@@ -68,9 +71,21 @@ export function registerRekordboxPlaylistsIpc(
 ): void {
   ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
   ipcMain.handle('rekordbox:tree', () => withCollection(collection(), readRekordboxTree, []))
-  ipcMain.handle('rekordbox:playlist', (_e, id: string) =>
-    withCollection(collection(), (db) => readRekordboxPlaylist(db, id), []),
-  )
+  ipcMain.handle('rekordbox:playlist', (_e, id: string) => {
+    const path = collection()
+    const entries = withCollection(
+      path,
+      (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
+      [],
+    )
+    host.allowMedia?.(
+      entries.flatMap((e) => [
+        ...(e.path && !e.separator ? [e.path] : []),
+        ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
+      ]),
+    )
+    return entries
+  })
   // Rows dragged out of the list and dropped back in come with the OS's spelling of their
   // files, which may be resolved through the symlinked music folder.
   ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>
