@@ -64,6 +64,13 @@ describe('CueSwatches', () => {
     )
   })
 
+  it('tells screen readers a track is not analysed even when rekordbox lists hot cues for it', () => {
+    render(
+      <CueSwatches summary={{ analysed: false, hot: [{ ms: 1000, color: 1 }] }} pending={false} />,
+    )
+    expect(screen.getByTestId('track-cue-swatches')).toHaveAttribute('aria-label', 'not analysed')
+  })
+
   it('names the count of cues and whether they wait, for screen readers', () => {
     const hot = [
       { ms: 1000, color: 1 },

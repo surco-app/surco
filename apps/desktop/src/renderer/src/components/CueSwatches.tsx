@@ -13,11 +13,13 @@ export function CueSwatches({
   const { t: tr } = useTranslation()
   const count = summary.hot.length
   const waitingEmpty = summary.analysed && count === 0 && pending
-  const label = waitingEmpty
-    ? tr('trackList.cuesPendingNone')
-    : count > 0
-      ? tr(pending ? 'trackList.cuesAriaPending' : 'trackList.cuesAria', { count })
-      : tr(summary.analysed ? 'trackList.cuesNone' : 'trackList.cuesUnanalysed')
+  const label = !summary.analysed
+    ? tr('trackList.cuesUnanalysed')
+    : waitingEmpty
+      ? tr('trackList.cuesPendingNone')
+      : count > 0
+        ? tr(pending ? 'trackList.cuesAriaPending' : 'trackList.cuesAria', { count })
+        : tr('trackList.cuesNone')
   return (
     <span
       data-testid="track-cue-swatches"
