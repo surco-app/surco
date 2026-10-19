@@ -30,9 +30,6 @@ export function UsbExportPill({
     >
       <Usb size={14} aria-hidden="true" />
       {label}
-      <span role="status" className="sr-only">
-        {label}
-      </span>
     </button>
   )
 }

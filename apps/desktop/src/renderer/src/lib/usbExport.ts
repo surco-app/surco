@@ -53,10 +53,15 @@ export function bytesDone(s: UsbExportState): number {
   )
 }
 
+// A track planned as on the stick counts once baken writes it after all (copying or done),
+// so what is done never passes what is to copy.
 export function bytesToCopy(s: UsbExportState): number {
   return s.rows.reduce(
     (sum, r) =>
-      sum + (r.track.onStick || r.state === 'kept' || r.state === 'failed' ? 0 : r.track.size),
+      sum +
+      (r.state === 'kept' || r.state === 'failed' || (r.track.onStick && r.state === 'queued')
+        ? 0
+        : r.track.size),
     0,
   )
 }
@@ -64,11 +69,15 @@ export function bytesToCopy(s: UsbExportState): number {
 const withRow = (s: UsbExportState, index: number, row: Partial<ExportRow>): ExportRow[] =>
   s.rows.map((r, i) => (i === index ? { ...r, ...row } : r))
 
-function sampled(s: UsbExportState, now: number): UsbExportState {
-  const samples = [...s.samples, { at: now, bytes: bytesDone(s) }].filter(
+// The samples count bytes moved, which only grow: a track failing mid-copy takes its
+// partial bytes out of bytesDone, and reading that drop as negative transfer showed a
+// negative speed until it left the window.
+function sampled(prev: UsbExportState, next: UsbExportState, now: number): UsbExportState {
+  const moved = (prev.samples.at(-1)?.bytes ?? 0) + Math.max(0, bytesDone(next) - bytesDone(prev))
+  const samples = [...prev.samples, { at: now, bytes: moved }].filter(
     (x) => now - x.at <= SPEED_WINDOW_MS,
   )
-  return { ...s, samples }
+  return { ...next, samples }
 }
 
 export function usbExportReducer(
@@ -89,9 +98,14 @@ export function usbExportReducer(
         samples: [{ at: now, bytes: 0 }],
       }
     case 'progress':
-      return sampled({ ...s, rows: withRow(s, e.index, { state: 'copying', bytes: e.bytes }) }, now)
+      return sampled(
+        s,
+        { ...s, rows: withRow(s, e.index, { state: 'copying', bytes: e.bytes }) },
+        now,
+      )
     case 'track':
       return sampled(
+        s,
         {
           ...s,
           rows: withRow(s, e.index, {

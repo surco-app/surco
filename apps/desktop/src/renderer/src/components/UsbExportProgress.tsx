@@ -32,6 +32,9 @@ export function UsbExportProgress({
   const rate = speed(state)
   const left = timeLeft(state)
   const running = state.phase === 'copying' || state.phase === 'database'
+  // Speed and time left describe the copy: frozen during the database or a cancel, they
+  // read as a hang.
+  const measuring = state.phase === 'copying' && !state.cancelling
   const copying = state.rows.findIndex((r) => r.state === 'copying')
   const list = useRef<HTMLOListElement>(null)
   // The row being copied stays in view, without moving the list when it already is.
@@ -55,13 +58,15 @@ export function UsbExportProgress({
           <span data-testid="usb-counter">
             {tr('usbExport.progress.counter', { done: counts.done, total: counts.total })}
           </span>
-          {running && rate !== null && (
-            <span>
+          {measuring && rate !== null && (
+            <span data-testid="usb-speed">
               {tr('usbExport.progress.speed', { value: formatFileSize(rate, i18n.language) })}
             </span>
           )}
-          {running && left !== null && (
-            <span>{tr('usbExport.progress.left', { time: formatSpan(left, tr) })}</span>
+          {measuring && left !== null && (
+            <span data-testid="usb-left">
+              {tr('usbExport.progress.left', { time: formatSpan(left, tr) })}
+            </span>
           )}
         </p>
       </header>

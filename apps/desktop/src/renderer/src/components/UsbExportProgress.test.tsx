@@ -109,6 +109,36 @@ describe('UsbExportProgress', () => {
     expect(screen.getByTestId('usb-cancelling')).toHaveTextContent('Cancelando…')
   })
 
+  // Speed and time left describe the copy: once baken writes the database, or while it
+  // finishes the track before a cancel, a frozen rate and "quedan 0 s" read as a hang.
+  it('shows speed and time left only while copying and not cancelling', () => {
+    let clock = 0
+    const store = createUsbExportStore(() => (clock += 1000))
+    for (const e of [
+      STARTED,
+      { type: 'progress', index: 0, bytes: 35e6 },
+      { type: 'progress', index: 0, bytes: 70e6 },
+    ] as UsbExportEvent[])
+      store.dispatch(e)
+    render(
+      <UsbExportProgress
+        store={store}
+        footer={{ name: 'Surco', freeBytes: null, filesystem: null }}
+        onBackground={() => {}}
+        onCancel={() => {}}
+        onClose={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('usb-speed')).toBeInTheDocument()
+    expect(screen.getByTestId('usb-left')).toBeInTheDocument()
+    act(() => store.dispatch({ type: 'cancelling' }))
+    expect(screen.queryByTestId('usb-speed')).toBeNull()
+    expect(screen.queryByTestId('usb-left')).toBeNull()
+    act(() => store.dispatch({ type: 'database' }))
+    expect(screen.queryByTestId('usb-speed')).toBeNull()
+    expect(screen.queryByTestId('usb-left')).toBeNull()
+  })
+
   it('says it is done and the stick can be ejected', () => {
     show([
       STARTED,
@@ -134,6 +164,13 @@ describe('UsbExportPill and UsbTopProgress', () => {
     expect(screen.getByTestId('usb-export-progress')).toHaveTextContent('USB 1/3')
     fireEvent.click(screen.getByTestId('usb-export-progress'))
     expect(onOpen).toHaveBeenCalled()
+  })
+
+  // A screen reader read the pill's name twice: the button's text and a status copy
+  // inside it.
+  it('names the pill once', () => {
+    render(<UsbExportPill store={storeWith(STARTED)} hidden={false} onOpen={() => {}} />)
+    expect(screen.getByRole('button', { name: 'USB 0/3' })).toBeInTheDocument()
   })
 
   it('has no pill while the modal is open or nothing runs', () => {
@@ -168,6 +205,12 @@ describe('TrackWave', () => {
   it('is whole once done', () => {
     render(<TrackWave bars={[0.5]} state="done" fraction={0} />)
     expect(fill().style.clipPath).toBe('inset(0 0% 0 0)')
+  })
+
+  // Nothing of a failed track landed on the stick: its wave shows no fill.
+  it('shows nothing landed for a failed track', () => {
+    render(<TrackWave bars={[0.5]} state="failed" fraction={0.6} />)
+    expect(fill().style.clipPath).toBe('inset(0 100% 0 0)')
   })
 
   it('jumps to the percentage without animating under reduced motion', () => {

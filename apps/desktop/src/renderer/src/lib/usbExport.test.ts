@@ -150,6 +150,36 @@ describe('speed and time left', () => {
     expect(speed(s)).toBeNull()
     expect(timeLeft(s)).toBeNull()
   })
+
+  // A track that fails mid-copy takes its partial bytes out of what is done, but those
+  // bytes did move: counting the drop as negative transfer showed a negative speed (or
+  // none) for the next five seconds.
+  it('never goes backwards when a track fails mid-copy', () => {
+    const s = run(
+      [STARTED, 0],
+      [{ type: 'progress', index: 0, bytes: 50 }, 6000],
+      [{ type: 'progress', index: 0, bytes: 90 }, 7000],
+      [{ type: 'failed', index: 0, reason: 'unreadable' }, 7500],
+      [{ type: 'progress', index: 2, bytes: 10 }, 8000],
+    )
+    expect(speed(s)).toBe(25)
+  })
+
+  // baken's size check said the track was on the stick, but it wrote it after all: its
+  // bytes must count on both sides, or the line passes 100% and the time left goes
+  // negative.
+  it('counts a track planned as on the stick once it is written after all', () => {
+    const s = run(
+      [STARTED, 0],
+      [{ type: 'track', index: 0, state: 'done' }, 1000],
+      [{ type: 'track', index: 1, state: 'done' }, 2000],
+      [{ type: 'progress', index: 2, bytes: 180 }, 3000],
+    )
+    expect(bytesDone(s)).toBeLessThanOrEqual(bytesToCopy(s))
+    expect(timeLeft(s)).toBeGreaterThanOrEqual(0)
+    const all = usbExportReducer(s, { type: 'track', index: 2, state: 'done' }, 4000)
+    expect(bytesDone(all)).toBe(bytesToCopy(all))
+  })
 })
 
 describe('formatSpan', () => {

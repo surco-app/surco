@@ -52,7 +52,7 @@ export function TrackWave({
       <path
         data-testid="track-wave-fill"
         d={d}
-        fill={state === 'failed' ? 'var(--color-danger)' : 'var(--color-accent)'}
+        fill="var(--color-accent)"
         opacity={state === 'kept' ? 0.55 : 1}
         style={{
           clipPath: `inset(0 ${Math.round((1 - shown) * 100)}% 0 0)`,
