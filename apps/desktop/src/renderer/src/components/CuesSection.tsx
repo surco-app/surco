@@ -84,16 +84,30 @@ function Marking({
         wave={read.wave}
         grid={read.grid}
         durationMs={read.durationMs}
-        hot={drawnHot}
-        drops={drops.map((ms) => ({ ms, pending: !initial.includes(ms) }))}
-        onAddDrop={(ms) =>
+        cues={[
+          ...drawnHot.map((h) => ({
+            key: `h${h.kind}`,
+            ms: h.ms,
+            kind: h.kind,
+            color: h.color,
+            pending: h.pending,
+          })),
+          ...drops.map((ms) => ({
+            key: `d${ms}`,
+            ms,
+            kind: 0,
+            color: null,
+            pending: !initial.includes(ms),
+          })),
+        ]}
+        onMarkDrop={(ms) =>
           setDrops((d) =>
             d.some((x) => Math.abs(x - ms) <= SAME_POSITION_MS)
               ? d
               : [...d, ms].sort((a, b) => a - b),
           )
         }
-        onRemoveDrop={(ms) => setDrops((d) => d.filter((x) => x !== ms))}
+        onUnmarkDrop={(key) => setDrops((d) => d.filter((x) => `d${x}` !== key))}
       />
       {outcome.status === 'manual' && (
         <p data-testid="cues-manual" className="mt-2 text-xs text-fg-dim">

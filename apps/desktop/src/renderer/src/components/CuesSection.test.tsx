@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { cueChanges, type WantedCue } from '../../../shared/cueRules'
+import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { installApi } from '../test/api'
@@ -188,7 +189,7 @@ describe('CuesSection', () => {
       cues: [
         { id: 'a', ms: bar(40), kind: 1, color: 0 },
         { id: 'b', ms: bar(80), kind: 2, color: null },
-        { id: 'i', ms: bar(120), kind: 10, color: null },
+        { id: 'i', ms: bar(120), kind: 3, color: null },
       ],
     })
     await waitFor(() => expect(screen.getByTestId('cues-manual')).toBeInTheDocument())
@@ -198,10 +199,11 @@ describe('CuesSection', () => {
       'var(--color-danger)',
       'var(--color-warn)',
     ]
-    for (const letter of ['A', 'B', 'I']) {
+    const expected = { A: 0, B: null, C: null }
+    for (const letter of ['A', 'B', 'C'] as const) {
       const cueLine = screen.getByTestId(`cue-wave-hot-${letter}`)
       expect(cueLine).toHaveTextContent(letter)
-      expect(cueLine.style.backgroundColor).toBe('var(--color-fg-faint)')
+      expect(cueLine).toHaveStyle({ backgroundColor: hotCueColor(expected[letter]) })
       expect(legend).not.toContain(cueLine.style.backgroundColor)
     }
   })

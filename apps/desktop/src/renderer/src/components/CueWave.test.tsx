@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { CueWave } from './CueWave'
+import { CueWave, type WaveCue } from './CueWave'
 
 afterEach(cleanup)
 
@@ -25,45 +25,116 @@ beforeEach(() => {
 })
 
 function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
-  const onAddDrop = vi.fn()
-  const onRemoveDrop = vi.fn()
+  const handlers = {
+    onMarkDrop: vi.fn(),
+    onUnmarkDrop: vi.fn(),
+    onSelect: vi.fn(),
+    onMove: vi.fn(),
+    onMenu: vi.fn(),
+    onAcceptProposal: vi.fn(),
+  }
   render(
     <CueWave
       wave={[{ h: 1, rgb: [255, 0, 0] }]}
       grid={GRID}
       durationMs={80000}
-      hot={[{ ms: 16000, kind: 1, color: 42, pending: false }]}
-      drops={[{ ms: 40000, pending: true }]}
-      onAddDrop={onAddDrop}
-      onRemoveDrop={onRemoveDrop}
+      cues={[
+        { key: 'a', ms: 16000, kind: 1, color: 42, pending: false },
+        { key: 'p', ms: 16000, kind: 0, color: null, pending: false },
+        { key: 'd', ms: 40000, kind: 0, color: null, pending: true },
+      ]}
+      {...handlers}
       {...over}
     />,
   )
-  return { onAddDrop, onRemoveDrop }
+  return handlers
+}
+
+function drop(ms: number, pending = true): WaveCue {
+  return { key: `d${ms}`, ms, kind: 0, color: null, pending }
 }
 
 describe('CueWave', () => {
-  it('draws hot cues with their letter and drops with DROP', () => {
+  it('draws hot cues as lettered squares in rekordbox colours and CALLs under them at one height', () => {
     setup()
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveTextContent('A')
+    const a = screen.getByTestId('cue-wave-hot-A')
+    expect(a).toHaveTextContent('A')
+    expect(a).toHaveStyle({ backgroundColor: '#e62828' })
+    const paired = screen.getByTestId('cue-wave-call-16000')
+    const dropCall = screen.getByTestId('cue-wave-call-40000')
+    expect(paired.style.left).toBe(a.style.left)
+    expect(paired.style.top).toBe('15px')
+    expect(dropCall.style.top).toBe('15px')
     expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('DROP')
     expect(screen.getByTestId('cue-wave-drop-40000')).toHaveAttribute('data-pending', 'true')
+    expect(screen.queryByTestId('cue-wave-drop-16000')).toBeNull()
     expect(
       screen.getAllByTestId('cue-wave-bar').filter((b) => b.dataset.strong === 'true'),
     ).toHaveLength(3)
   })
 
-  it('adds a drop on the beat under the click', () => {
-    const { onAddDrop } = setup()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
-    expect(onAddDrop).toHaveBeenCalledWith(10000)
+  it('marks a drop on the beat under a click on the empty wave and clears the selection', () => {
+    const h = setup()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 60 })
+    expect(h.onMarkDrop).toHaveBeenCalledWith(10000)
+    expect(h.onSelect).toHaveBeenCalledWith(null)
   })
 
-  it('removes the drop under the click', () => {
-    const { onRemoveDrop, onAddDrop } = setup()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400, clientY: 40 })
-    expect(onRemoveDrop).toHaveBeenCalledWith(40000)
-    expect(onAddDrop).not.toHaveBeenCalled()
+  it('takes a drop away with a click on its line', () => {
+    const h = setup()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 402, clientY: 60 })
+    expect(h.onUnmarkDrop).toHaveBeenCalledWith('d')
+  })
+
+  it('selects a cue with a click on its square without marking a drop there', () => {
+    const h = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
+    fireEvent.mouseUp(window, { clientX: 160 })
+    fireEvent.click(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
+    expect(h.onSelect).toHaveBeenCalledWith('a')
+    expect(h.onMarkDrop).not.toHaveBeenCalled()
+    expect(h.onMove).not.toHaveBeenCalled()
+  })
+
+  it('drags a cue to the beat under the pointer', () => {
+    const h = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
+    fireEvent.mouseMove(window, { clientX: 243 })
+    expect(screen.getByTestId('cue-wave-drag-ghost')).toBeInTheDocument()
+    fireEvent.mouseUp(window, { clientX: 243 })
+    expect(h.onMove).toHaveBeenCalledWith('a', 24500)
+  })
+
+  it('opens the menu on a right-click with the beat under it', () => {
+    const h = setup()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 30 })
+    expect(h.onMenu).toHaveBeenCalledWith({ ms: 10000, x: 100, y: 30 })
+  })
+
+  it('draws proposals dashed and accepts one with a click', () => {
+    const h = setup({ proposals: [32000] })
+    fireEvent.click(screen.getByTestId('cue-wave-proposal-32000'))
+    expect(h.onAcceptProposal).toHaveBeenCalledWith(32000)
+    expect(h.onMarkDrop).not.toHaveBeenCalled()
+  })
+
+  it('draws the hot cues the 8 limit left out apart, so the user sees them', () => {
+    setup({ trimmed: [8000] })
+    expect(screen.getByTestId('cue-wave-trimmed-8000')).toBeInTheDocument()
+  })
+
+  it('marks the selected cue', () => {
+    setup({ selected: 'a' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-selected', 'true')
+  })
+
+  it('takes no clicks, drags or menus read-only, as in the settings preview', () => {
+    const h = setup({ readOnly: true })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 60 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 30 })
+    expect(Object.values(h).every((f) => f.mock.calls.length === 0)).toBe(true)
   })
 
   it('shows where the drop will land while hovering', () => {
@@ -86,33 +157,22 @@ describe('CueWave', () => {
   })
 
   it('turns the label of a drop near the end to the left so the edge does not cut it', () => {
-    setup({ drops: [{ ms: 76000, pending: true }] })
+    setup({ cues: [drop(76000)] })
     expect(screen.getByTestId('cue-wave-drop-label-76000')).toHaveAttribute('data-side', 'left')
   })
 
   it('stacks the labels of two close drops instead of drawing them over each other', () => {
-    setup({
-      drops: [
-        { ms: 40000, pending: false },
-        { ms: 42000, pending: true },
-      ],
-    })
+    setup({ cues: [drop(40000, false), drop(42000)] })
     expect(screen.getByTestId('cue-wave-drop-label-40000')).toHaveAttribute('data-row', '0')
     expect(screen.getByTestId('cue-wave-drop-label-42000')).toHaveAttribute('data-row', '1')
   })
 
-  it('takes no clicks when disabled', () => {
-    const { onAddDrop } = setup({ disabled: true })
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
-    expect(onAddDrop).not.toHaveBeenCalled()
-  })
-
   it('says the track is not analysed and takes no clicks when it has no grid', () => {
-    const { onAddDrop } = setup({ grid: [] })
+    const h = setup({ grid: [] })
     expect(screen.getByTestId('cue-wave-not-analysed')).toBeInTheDocument()
     expect(screen.queryByTestId('cue-wave')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('cue-wave-not-analysed'), { clientX: 100, clientY: 40 })
-    expect(onAddDrop).not.toHaveBeenCalled()
+    expect(h.onMarkDrop).not.toHaveBeenCalled()
   })
 
   it.each([800, 1600])(
@@ -130,13 +190,13 @@ describe('CueWave', () => {
         toJSON: () => ({}),
       })
       const centre = width / 2
-      const { onAddDrop, onRemoveDrop } = setup()
+      const h = setup()
       fireEvent.click(screen.getByTestId('cue-wave'), { clientX: centre + 5, clientY: 40 })
-      expect(onRemoveDrop).toHaveBeenCalledWith(40000)
-      expect(onAddDrop).not.toHaveBeenCalled()
+      expect(h.onUnmarkDrop).toHaveBeenCalledWith('d')
+      expect(h.onMarkDrop).not.toHaveBeenCalled()
       fireEvent.click(screen.getByTestId('cue-wave'), { clientX: centre + 8, clientY: 40 })
-      expect(onAddDrop).toHaveBeenCalledTimes(1)
-      expect(onAddDrop.mock.calls[0][0]).not.toBe(40000)
+      expect(h.onMarkDrop).toHaveBeenCalledTimes(1)
+      expect(h.onMarkDrop.mock.calls[0][0]).not.toBe(40000)
     },
   )
 
@@ -153,20 +213,12 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
   })
 
-  it('clears the ghost when it becomes disabled and does not bring it back on enabling', () => {
-    const props = {
-      wave: null,
-      grid: GRID,
-      durationMs: 80000,
-      hot: [],
-      drops: [],
-      onAddDrop: vi.fn(),
-      onRemoveDrop: vi.fn(),
-    }
+  it('clears the ghost when it becomes read-only and does not bring it back on editing again', () => {
+    const props = { wave: null, grid: GRID, durationMs: 80000, cues: [] }
     const { rerender } = render(<CueWave {...props} />)
     fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
     expect(screen.getByTestId('cue-wave-ghost')).toBeInTheDocument()
-    rerender(<CueWave {...props} disabled />)
+    rerender(<CueWave {...props} readOnly />)
     expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
     rerender(<CueWave {...props} />)
     expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()

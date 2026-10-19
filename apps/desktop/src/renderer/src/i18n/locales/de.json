@@ -2246,6 +2246,10 @@
     "elsewhere": "Das wurde für eine andere rekordbox-Sammlung vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
   },
   "cueWave": {
-    "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Drops zu markieren"
+    "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Drops zu markieren",
+    "hotCue": "Hot Cue {{letter}}",
+    "call": "CALL",
+    "proposal": "Vorgeschlagener Drop in Takt {{bar}}",
+    "label": "Cue-Wellenform"
   }
 }

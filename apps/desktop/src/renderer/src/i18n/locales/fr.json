@@ -2246,6 +2246,10 @@
     "elsewhere": "Ceci a été préparé pour une autre collection rekordbox. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
   "cueWave": {
-    "notAnalysed": "Ce morceau n'est pas analysé dans rekordbox. Analyse-le là-bas pour marquer des drops"
+    "notAnalysed": "Ce morceau n'est pas analysé dans rekordbox. Analyse-le là-bas pour marquer des drops",
+    "hotCue": "Hot cue {{letter}}",
+    "call": "CALL",
+    "proposal": "Drop proposé à la mesure {{bar}}",
+    "label": "Forme d'onde des cues"
   }
 }
