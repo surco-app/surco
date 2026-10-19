@@ -17,7 +17,7 @@ import {
   withCollection,
 } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
-import { createRekordboxQueue } from './rekordboxQueue'
+import { createRekordboxQueue, type RekordboxQueue } from './rekordboxQueue'
 
 describe('withCollection', () => {
   it('falls back when there is no collection, the normal case for a user without rekordbox', () => {
@@ -234,6 +234,64 @@ describe('registerRekordboxPlaylistsIpc', () => {
       ),
     ).toEqual({ applied: false, reason: 'backup-failed' })
     expect(queue.state().items.map((i) => i.label)).toEqual(['Factory'])
+  })
+
+  it("tells the window what the other queued operations did, without the route's own edit", async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
+    const other = { code: 'playlist-changed', track: 'Bam Bam', playlist: 'House' } as const
+    const own = { code: 'edit-changed', playlist: 'House' } as const
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>()
+    const ownId = () => enqueue.mock.calls[0][0][0].id
+    const queue = {
+      enqueue,
+      drop: vi.fn(),
+      apply: vi.fn(async () => ({
+        status: 'applied' as const,
+        tracks: 0,
+        changes: 1,
+        notices: [own, other],
+        written: [{ path: '/m/a.wav', wanted: [] }],
+        outcomes: [
+          { id: ownId(), applied: false, reason: 'stale' as const, notices: [own] },
+          { id: 'e2', applied: true, notices: [] },
+          { id: 't', applied: false, notices: [other] },
+        ],
+      })),
+    }
+    const onApplied = vi.fn()
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue,
+      onApplied,
+    })
+    await handler('rekordbox:edit')(
+      { sender: {} },
+      { kind: 'rename', playlistId: '3000', name: 'House 26' },
+    )
+    expect(onApplied).toHaveBeenCalledWith(
+      expect.objectContaining({
+        changes: 1,
+        notices: [other],
+        written: [{ path: '/m/a.wav', wanted: [] }],
+      }),
+    )
+  })
+
+  it('tells the window nothing when only its own edit was in the batch', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
+    const onApplied = vi.fn()
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+      onApplied,
+    })
+    await handler('rekordbox:edit')(
+      { sender: {} },
+      { kind: 'rename', playlistId: '3000', name: 'House 26' },
+    )
+    expect(onApplied).not.toHaveBeenCalled()
   })
 
   it('wakes the watcher when the edit waits for rekordbox to close', async () => {

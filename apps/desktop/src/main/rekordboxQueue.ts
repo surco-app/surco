@@ -121,6 +121,19 @@ function stateOf(q: QueueFile): RekordboxQueueState {
   return { tracks, changes: all.length - tracks, items: all }
 }
 
+type Applied = Extract<QueueApply, { status: 'applied' }>
+
+export function withoutOp(result: Applied, id: string): Applied {
+  const own = result.outcomes.find((o) => o.id === id)
+  if (!own) return result
+  return {
+    ...result,
+    changes: result.changes - (own.applied ? 1 : 0),
+    notices: result.notices.filter((n) => !own.notices.includes(n)),
+    outcomes: result.outcomes.filter((o) => o !== own),
+  }
+}
+
 export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
   const q = load(deps.store)
   let chain: Promise<unknown> = Promise.resolve()
@@ -195,21 +208,19 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
       }
     }
     const byId = new Map(ops.map((o) => [o.id, o]))
-    const notices = [
-      ...repointNotices,
-      ...result.outcomes.flatMap((o) => {
-        const op = byId.get(o.id)
-        if (
-          op?.kind === 'edit' &&
-          !o.applied &&
-          o.notices.length === 0 &&
-          o.reason !== 'nothing-to-add'
-        )
-          return [{ code: 'edit-changed' as const, playlist: op.label ?? '' }]
-        return o.notices
-      }),
-    ]
-    const appliedOps = result.outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
+    const outcomes = result.outcomes.map((o): OpOutcome => {
+      const op = byId.get(o.id)
+      if (
+        op?.kind === 'edit' &&
+        !o.applied &&
+        o.notices.length === 0 &&
+        o.reason !== 'nothing-to-add'
+      )
+        return { ...o, notices: [{ code: 'edit-changed', playlist: op.label ?? '' }] }
+      return o
+    })
+    const notices = [...repointNotices, ...outcomes.flatMap((o) => o.notices)]
+    const appliedOps = outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
     const tracks = new Set([
       ...repointedTo,
       ...appliedOps.flatMap((op) => (op?.kind === 'track' ? [op.path] : [])),
@@ -218,7 +229,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
     const written = appliedOps.flatMap((op) =>
       op?.kind === 'track' ? [{ path: op.path, wanted: op.wanted }] : [],
     )
-    return { status: 'applied', tracks, changes, notices, written, outcomes: result.outcomes }
+    return { status: 'applied', tracks, changes, notices, written, outcomes }
   }
 
   return {

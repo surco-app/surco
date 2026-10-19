@@ -155,6 +155,9 @@ describe('rekordbox queue', () => {
     expect(result.status === 'applied' && result.notices).toEqual([
       { code: 'edit-changed', playlist: 'Makina' },
     ])
+    expect(result.status === 'applied' && result.outcomes[0].notices).toEqual([
+      { code: 'edit-changed', playlist: 'Makina' },
+    ])
     expect(q.isEmpty()).toBe(true)
   })
 

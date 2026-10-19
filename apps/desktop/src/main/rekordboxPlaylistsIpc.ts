@@ -10,7 +10,7 @@ import { openRekordboxDb } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import { readRekordboxPlaylist, readRekordboxTree } from './rekordboxPlaylists'
-import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
 
@@ -97,8 +97,11 @@ export function registerRekordboxPlaylistsIpc(
       const result = await host.queue.apply(() =>
         host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
       )
-      if (result.status === 'applied' && (result.tracks > 0 || result.changes > 1))
-        host.onApplied?.(result)
+      if (result.status === 'applied') {
+        const others = withoutOp(result, op.id)
+        if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
+          host.onApplied?.(others)
+      }
       if (stillWaiting(result)) host.onWaiting?.()
       else if (result.status === 'refused') host.queue.drop(op.id)
       if (result.status === 'refused') return { applied: false, reason: result.reason }
