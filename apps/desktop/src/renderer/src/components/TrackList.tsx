@@ -483,10 +483,14 @@ const TrackRow = memo(function TrackRow({
   )
   // Report this row entering/leaving the scroll pane so App can run auto-match for
   // what's on screen, through the list's single shared observer.
+  const [seen, setSeen] = useState(false)
   useEffect(() => {
     const el = rowRef.current
-    if (!onVisible || !observeRow || !el) return
-    return observeRow(el, (visible) => onVisible(t.id, visible))
+    if (!observeRow || !el) return
+    return observeRow(el, (visible) => {
+      if (visible) setSeen(true)
+      onVisible?.(t.id, visible)
+    })
   }, [t.id, onVisible, observeRow])
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
@@ -826,6 +830,7 @@ const TrackRow = memo(function TrackRow({
                   cues={t.sourcePreview?.cues ?? []}
                   durationSec={shown.duration}
                   pending={cuesPending}
+                  active={seen}
                 />
               )}
             </span>

@@ -18,6 +18,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {}
 })
 
+import type { Api } from '../../../preload/api'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
@@ -1884,5 +1885,70 @@ describe('TrackList reorder', () => {
     fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: -1 })
     fireEvent.drop(wrapperOf('a'), { dataTransfer: dt })
     expect(reorder.onMove).toHaveBeenCalledWith(['c'], 'a')
+  })
+})
+
+describe('TrackList row waves', () => {
+  const observed: Element[] = []
+  let report: IntersectionObserverCallback = () => {}
+  class OnScreen {
+    constructor(cb: IntersectionObserverCallback) {
+      report = cb
+    }
+    observe(el: Element): void {
+      observed.push(el)
+    }
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return []
+    }
+  }
+  const real = globalThis.IntersectionObserver
+  beforeEach(() => {
+    observed.length = 0
+    globalThis.IntersectionObserver = OnScreen as unknown as typeof IntersectionObserver
+  })
+  afterEach(() => {
+    globalThis.IntersectionObserver = real
+  })
+  const show = (rows: Element[]) =>
+    act(() =>
+      report(
+        rows.map((target) => ({ target, isIntersecting: true }) as IntersectionObserverEntry),
+        {} as IntersectionObserver,
+      ),
+    )
+
+  it('asks for the waves of the rows on screen only, since a 985-row playlist asked for all of them and held the covers back for seven seconds', async () => {
+    const rowWaves = vi.fn<Api['rowWaves']>(async () => ({}))
+    Object.assign(window, { api: { ...api, rowWaves } })
+    const tracks = Array.from({ length: 50 }, (_, i) => track({ id: `t${i}` }))
+    render(
+      <TrackList
+        tracks={tracks}
+        selectedId={null}
+        selectedIds={new Set()}
+        outputFormat="aiff"
+        bindings={bindings}
+        onSelect={vi.fn()}
+        onActivate={vi.fn()}
+        onRemove={vi.fn()}
+        onSwipeRemove={vi.fn()}
+        onAcceptReview={vi.fn()}
+        onPrefetch={vi.fn()}
+        onVisible={vi.fn()}
+        renderMenu={() => null}
+      />,
+    )
+    expect(observed).toHaveLength(50)
+    show(observed.slice(0, 5))
+    await vi.waitFor(() => expect(rowWaves).toHaveBeenCalledTimes(1))
+    expect(rowWaves.mock.calls[0][0].map((r) => r.path)).toEqual(
+      tracks.slice(0, 5).map((t) => t.inputPath),
+    )
+    show([observed[30]])
+    await vi.waitFor(() => expect(rowWaves).toHaveBeenCalledTimes(2))
+    expect(rowWaves.mock.calls[1][0].map((r) => r.path)).toEqual([tracks[30].inputPath])
   })
 })

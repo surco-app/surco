@@ -26,18 +26,21 @@ export function RowWave({
   cues,
   durationSec,
   pending,
+  active,
 }: {
   request: RowWaveRequest
   cues: RowCue[]
   durationSec: number | undefined
   pending: boolean
+  active: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const key = rowWaveKey(request)
   const { path, analysisPath } = request
   const subscribe = useCallback(
-    (listener: () => void) => subscribeRowWave({ path, analysisPath }, listener),
-    [path, analysisPath],
+    (listener: () => void) =>
+      active ? subscribeRowWave({ path, analysisPath }, listener) : () => {},
+    [path, analysisPath, active],
   )
   const bars = useSyncExternalStore(subscribe, () => rowWaveOf(key))
   const span = durationSec && durationSec > 0 ? durationSec * 1000 : 0

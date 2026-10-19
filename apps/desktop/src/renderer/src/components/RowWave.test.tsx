@@ -26,12 +26,26 @@ const cues = [
 
 describe('RowWave', () => {
   it('draws the wave once it arrives', async () => {
-    render(<RowWave request={request} cues={[]} durationSec={128} pending={false} />)
+    render(<RowWave request={request} cues={[]} durationSec={128} pending={false} active />)
     expect(await screen.findByTestId('track-wave-bars')).toBeInTheDocument()
   })
 
+  it('asks nothing until its row is on screen, yet draws a wave it already knows', async () => {
+    const { rerender } = render(
+      <RowWave request={request} cues={[]} durationSec={128} pending={false} active={false} />,
+    )
+    await new Promise((r) => setTimeout(r, 30))
+    expect(window.api.rowWaves).not.toHaveBeenCalled()
+    rerender(<RowWave request={request} cues={[]} durationSec={128} pending={false} active />)
+    expect(await screen.findByTestId('track-wave-bars')).toBeInTheDocument()
+    rerender(
+      <RowWave request={request} cues={[]} durationSec={128} pending={false} active={false} />,
+    )
+    expect(screen.getByTestId('track-wave-bars')).toBeInTheDocument()
+  })
+
   it('places hot cues as lettered squares and memory cues as triangles along the track', () => {
-    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} />)
+    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} active />)
     const hot = screen.getAllByTestId('track-hot-cue')
     expect(hot.map((h) => h.textContent)).toEqual(['A', 'B'])
     expect(hot[1].style.left).toBe('calc(50% - 6px)')
@@ -41,7 +55,7 @@ describe('RowWave', () => {
 
   it('draws no cue it cannot place, for a track with no length or a cue past the end', () => {
     const { rerender } = render(
-      <RowWave request={request} cues={cues} durationSec={0} pending={false} />,
+      <RowWave request={request} cues={cues} durationSec={0} pending={false} active />,
     )
     expect(screen.queryAllByTestId('track-hot-cue')).toHaveLength(0)
     rerender(
@@ -50,13 +64,14 @@ describe('RowWave', () => {
         cues={[{ ms: 999000, kind: 1, color: null }]}
         durationSec={128}
         pending={false}
+        active
       />,
     )
     expect(screen.queryAllByTestId('track-hot-cue')).toHaveLength(0)
   })
 
   it('draws cues still waiting for rekordbox hollow', () => {
-    render(<RowWave request={request} cues={cues} durationSec={128} pending />)
+    render(<RowWave request={request} cues={cues} durationSec={128} pending active />)
     expect(screen.getByTestId('track-wave')).toHaveAttribute('data-pending', 'true')
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName(
       '2 hot cues waiting for rekordbox',
@@ -64,7 +79,7 @@ describe('RowWave', () => {
   })
 
   it('paints each cue in the colour rekordbox gives it', () => {
-    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} />)
+    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} active />)
     const [a, b] = screen.getAllByTestId('track-hot-cue')
     expect(a).toHaveStyle({ backgroundColor: '#e62828' })
     expect(b).toHaveStyle({ backgroundColor: '#28e214' })
@@ -72,13 +87,13 @@ describe('RowWave', () => {
   })
 
   it('keeps a waiting cue hollow in its own colour', () => {
-    render(<RowWave request={request} cues={cues} durationSec={128} pending />)
+    render(<RowWave request={request} cues={cues} durationSec={128} pending active />)
     const [a] = screen.getAllByTestId('track-hot-cue')
     expect(a).toHaveStyle({ borderColor: '#e62828', color: '#e62828' })
   })
 
   it('marks a track whose cues wait for rekordbox even before it has any hot cue', () => {
-    render(<RowWave request={request} cues={[]} durationSec={128} pending />)
+    render(<RowWave request={request} cues={[]} durationSec={128} pending active />)
     expect(screen.getByTestId('track-cue-pending')).toBeInTheDocument()
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName('Cues waiting for rekordbox')
   })
