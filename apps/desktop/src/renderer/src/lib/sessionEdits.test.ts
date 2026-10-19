@@ -171,3 +171,13 @@ describe('sessionEdits', () => {
     })
   })
 })
+
+it('keeps the wanted rekordbox playlists of a staged track, so switching source or relaunching does not lose the wish', () => {
+  const t = track({
+    id: 'a',
+    inputPath: '/m/a.wav',
+    diskSignature: 'x',
+    rekordboxPlaylists: [{ name: 'Cierre' }],
+  })
+  expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylists).toEqual([{ name: 'Cierre' }])
+})

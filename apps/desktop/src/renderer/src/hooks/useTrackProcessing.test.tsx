@@ -1912,4 +1912,28 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       expect.objectContaining({ musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' }),
     )
   })
+
+  it('sends the wanted rekordbox playlists with the job', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const live = { current: [track({ id: 'a', rekordboxPlaylists: [{ name: 'Cierre' }] })] }
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: live.current,
+          tracksRef: live,
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ rekordboxPlaylists: [{ name: 'Cierre' }] }),
+    )
+  })
 })

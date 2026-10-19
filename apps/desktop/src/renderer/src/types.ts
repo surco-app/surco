@@ -5,6 +5,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   ProcessStage,
+  RekordboxPlaylistTarget,
   Release,
   ReleaseTrack,
   ReviewRawFields,
@@ -205,6 +206,7 @@ export interface TrackItem {
   replacesPath?: string
   // The name Music showed for that copy, which retiring it is verified against.
   replacesLabel?: string
+  rekordboxPlaylists?: RekordboxPlaylistTarget[]
   // Set when a conversion registered this track in the Engine DJ library — the Engine
   // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
   // so the row reads in-library before the Engine snapshot refreshes.

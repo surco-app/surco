@@ -50,5 +50,6 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.trim) edit.trim = track.trim
   if (track.normalize) edit.normalize = track.normalize
   if (track.declick) edit.declick = track.declick
+  if (track.rekordboxPlaylists) edit.rekordboxPlaylists = track.rekordboxPlaylists
   return edit
 }

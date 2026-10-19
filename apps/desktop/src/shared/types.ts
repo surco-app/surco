@@ -511,6 +511,7 @@ export interface SessionEdit {
   // track: without them a reopened session converted with the Settings defaults.
   normalize?: NormalizeConfig
   declick?: DeclickConfig
+  rekordboxPlaylists?: RekordboxPlaylistTarget[]
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)

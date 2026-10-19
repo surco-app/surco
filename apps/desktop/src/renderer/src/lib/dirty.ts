@@ -4,7 +4,13 @@ import type { TrackItem } from '../types'
 
 type SignatureFields = Pick<
   TrackItem,
-  'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim' | 'foreignRemoved'
+  | 'meta'
+  | 'outputName'
+  | 'coverUrl'
+  | 'coverPath'
+  | 'trim'
+  | 'foreignRemoved'
+  | 'rekordboxPlaylists'
 >
 
 // A change-detecting proxy for the cover, never the cover itself. An embedded cover is a
@@ -34,6 +40,7 @@ export function trackSignature(track: SignatureFields): string {
     // Same normalization: an absent foreignRemoved and an empty array must read
     // identically, like the trim above.
     track.foreignRemoved ?? [],
+    ...(track.rekordboxPlaylists ? [track.rekordboxPlaylists] : []),
   ])
 }
 

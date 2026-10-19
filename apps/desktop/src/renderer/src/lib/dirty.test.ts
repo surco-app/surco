@@ -218,3 +218,18 @@ describe('isDeclickStale', () => {
     expect(isDeclickStale(converted(), { mode: 'strong', noise: 'off' })).toBe(false)
   })
 })
+
+describe('trackSignature with rekordbox playlists', () => {
+  it('reads the same as before for a track whose playlists were never touched, so no converted track turns stale on upgrade', () => {
+    const t = converted()
+    expect(trackSignature(t)).toBe(trackSignature({ ...t, rekordboxPlaylists: undefined }))
+    expect(JSON.parse(trackSignature(t))).toHaveLength(6)
+  })
+
+  it('changes when the wanted playlists change, because that brings Actualizar back and is how they are written', () => {
+    const t = converted()
+    expect(trackSignature({ ...t, rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] })).not.toBe(
+      trackSignature(t),
+    )
+  })
+})

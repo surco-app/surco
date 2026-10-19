@@ -341,6 +341,7 @@ export function useTrackProcessing({
           // has indexed rather than from a download folder it has never seen.
           replacesPath: track.replacesPath,
           replacesLabel: track.replacesLabel,
+          rekordboxPlaylists: track.rekordboxPlaylists,
         })
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.
