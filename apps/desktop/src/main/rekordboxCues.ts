@@ -17,20 +17,24 @@ export function cueFingerprint(cues: TrackCueRow[]): string {
     .join(';')
 }
 
+function liveCuesQuery(db: Db): (contentId: string) => TrackCueRow[] {
+  const statement = db.prepare(
+    `SELECT ID, InMsec, Kind, ColorTableIndex FROM djmdCue
+      WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+  )
+  return (contentId) =>
+    (
+      statement.all(contentId) as {
+        ID: string
+        InMsec: number
+        Kind: number
+        ColorTableIndex: number | null
+      }[]
+    ).map((r) => ({ id: String(r.ID), ms: r.InMsec, kind: r.Kind, color: r.ColorTableIndex }))
+}
+
 export function liveCues(db: Db, contentId: string): TrackCueRow[] {
-  return (
-    db
-      .prepare(
-        `SELECT ID, InMsec, Kind, ColorTableIndex FROM djmdCue
-          WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-      )
-      .all(contentId) as {
-      ID: string
-      InMsec: number
-      Kind: number
-      ColorTableIndex: number | null
-    }[]
-  ).map((r) => ({ id: String(r.ID), ms: r.InMsec, kind: r.Kind, color: r.ColorTableIndex }))
+  return liveCuesQuery(db)(contentId)
 }
 
 function read(path: string): Buffer | null {
@@ -125,13 +129,14 @@ export function cueSummaries(
     `SELECT AnalysisDataPath FROM djmdContent
       WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
   )
+  const cues = liveCuesQuery(db)
   const out: Record<string, CueSummary> = {}
   for (const id of contentIds) {
     const found = row.get(id) as { AnalysisDataPath: string | null } | undefined
     if (!found) continue
     out[id] = {
       analysed: hasGrid(shareDir, found.AnalysisDataPath),
-      hot: liveCues(db, id)
+      hot: cues(id)
         .filter((c) => c.kind !== 0)
         .sort((a, b) => a.ms - b.ms)
         .map((c) => ({ ms: c.ms, color: c.color })),

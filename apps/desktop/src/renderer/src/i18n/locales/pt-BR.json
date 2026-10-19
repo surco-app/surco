@@ -372,6 +372,11 @@
   "trackList": {
     "cuesUnanalysed": "sem análise",
     "cuesNone": "sem cues",
+    "cuesPendingNone": "Cues aguardando o rekordbox",
+    "cuesAria_one": "{{count}} hot cue",
+    "cuesAria_other": "{{count}} hot cues",
+    "cuesAriaPending_one": "{{count}} hot cue aguardando o rekordbox",
+    "cuesAriaPending_other": "{{count}} hot cues aguardando o rekordbox",
     "backup": "Voltar ao original… (cópia de {{when}})",
     "label": "Faixas",
     "noArtist": "Sem artista",
