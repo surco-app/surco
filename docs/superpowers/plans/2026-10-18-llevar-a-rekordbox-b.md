@@ -1244,3 +1244,703 @@ git commit -m "Read a rekordbox track's cues, grid, strong parts and waveform"
 
 ---
 
+### Task 5: Write a change set
+
+**Files:**
+- Modify: `src/main/rekordboxCues.ts` (append `applyCueChanges`)
+- Test: `src/main/rekordboxCues.test.ts` (append)
+
+**Interfaces:**
+- Consumes: Task 2 `CueChangeSet`; `rekordboxStamp`, `takeLocalUsn`, `unusedRowId` (`rekordboxRows.ts`).
+- Produces: `applyCueChanges(db: Db, contentId: string, changes: CueChangeSet, ctx: { now: Date; newCueId?: () => string }): number` (rows inserted, updated and deleted; 0 writes nothing). Runs inside the caller's transaction (Task 6's savepoint).
+
+The rows follow the spike exactly (Global Constraints "Rows as the spike wrote"): what rekordbox opened without complaint on 18/10 and kept after closing.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `src/main/rekordboxCues.test.ts` (add `applyCueChanges` to the import, and `writeRekordboxPlaylistFixture`/`ORGANISE_FIXTURE` are already there):
+
+```ts
+describe('applyCueChanges', () => {
+  const NOW = new Date('2026-10-18T19:00:00.000Z')
+  const STAMP = '2026-10-18 19:00:00.000 +00:00'
+
+  async function writable() {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbcuew-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      cues: [
+        { ID: 'q2', ContentID: '103', InMsec: 8000, Kind: 1, ColorTableIndex: 1 },
+        { ID: 'q1', ContentID: '103', InMsec: 8000, Kind: 0, ColorTableIndex: null },
+        { ID: 'q3', ContentID: '103', InMsec: 16000, Kind: 0, ColorTableIndex: null },
+        { ID: 'other', ContentID: '104', InMsec: 1000, Kind: 0, ColorTableIndex: null },
+      ],
+    })
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    return db
+  }
+
+  const changes = {
+    insert: [
+      { ms: 4000, kind: 2, color: 22 },
+      { ms: 4000, kind: 0, color: null },
+    ],
+    update: [{ id: 'q2', kind: 3, color: 1 }],
+    remove: ['q3'],
+  }
+
+  it('writes the cue rows the way the spike did and rekordbox accepted', async () => {
+    const db = await writable()
+    const ids = ['70001', '70002', '70003']
+    expect(applyCueChanges(db, '103', changes, { now: NOW, newCueId: () => ids.shift() as string })).toBe(4)
+    const row = (id: string) => db.prepare('SELECT * FROM djmdCue WHERE ID = ?').get(id) as Record<string, unknown>
+    expect(row('70001')).toMatchObject({
+      ContentID: '103',
+      ContentUUID: 'uuid-c-103',
+      InMsec: 4000,
+      InFrame: 600,
+      OutMsec: -1,
+      OutFrame: 0,
+      InMpegFrame: 0,
+      Kind: 2,
+      Color: -1,
+      ColorTableIndex: 22,
+      rb_local_usn: null,
+      rb_local_deleted: 0,
+      created_at: STAMP,
+    })
+    expect(row('70002')).toMatchObject({ Kind: 0, ColorTableIndex: null })
+    expect(row('q2')).toMatchObject({ Kind: 3, ColorTableIndex: 1, updated_at: STAMP })
+    expect(Number(row('q2').rb_local_usn)).toBeGreaterThan(500)
+    expect(db.prepare(`SELECT ID FROM djmdCue WHERE ID = 'q3'`).get()).toBeUndefined()
+    db.close()
+  })
+
+  // rekordbox reads djmdCue, but keeps contentCue in step; the spike kept it so and
+  // rekordbox opened the result without a complaint.
+  it('keeps contentCue and the track counters in step', async () => {
+    const db = await writable()
+    const ids = ['70001', '70002', '70003']
+    applyCueChanges(db, '103', changes, { now: NOW, newCueId: () => ids.shift() as string })
+    const cc = db.prepare(`SELECT * FROM contentCue WHERE ContentID = '103'`).get() as {
+      ID: string
+      Cues: string
+      rb_cue_count: number
+      rb_local_usn: number
+    }
+    expect(cc.ID).toBe('uuid-c-103')
+    const entries = JSON.parse(cc.Cues) as { ID: string; Kind: number; updated_at: string }[]
+    expect(entries.map((e) => e.ID).sort()).toEqual(['70001', '70002'])
+    expect(cc.rb_cue_count).toBe(2)
+    const content = db.prepare(`SELECT CueUpdated, rb_local_usn, updated_at FROM djmdContent WHERE ID = '103'`).get() as {
+      CueUpdated: string
+      rb_local_usn: number
+      updated_at: string
+    }
+    expect(content.CueUpdated).toBe('4')
+    expect(content.rb_local_usn).toBe(cc.rb_local_usn + 1)
+    expect(content.updated_at).toBe(STAMP)
+    db.close()
+  })
+
+  it('updates an existing contentCue entry and drops the removed one', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 2)`,
+    ).run(
+      JSON.stringify([
+        { ID: 'q2', Kind: 1, InMsec: 8000 },
+        { ID: 'q3', Kind: 0, InMsec: 16000 },
+      ]),
+    )
+    applyCueChanges(db, '103', { insert: [], update: [{ id: 'q2', kind: 3, color: 1 }], remove: ['q3'] }, { now: NOW })
+    const cc = db.prepare(`SELECT Cues, rb_cue_count FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+      rb_cue_count: number
+    }
+    expect(JSON.parse(cc.Cues)).toEqual([
+      { ID: 'q2', Kind: 3, InMsec: 8000, updated_at: '2026-10-18T19:00:00.000+00:00' },
+    ])
+    expect(cc.rb_cue_count).toBe(1)
+    db.close()
+  })
+
+  it('never touches another track nor writes anything for an empty change', async () => {
+    const db = await writable()
+    expect(applyCueChanges(db, '103', { insert: [], update: [], remove: [] }, { now: NOW })).toBe(0)
+    expect(db.prepare(`SELECT CueUpdated FROM djmdContent WHERE ID = '103'`).get()).toEqual({ CueUpdated: null })
+    applyCueChanges(db, '103', changes, { now: NOW })
+    expect(db.prepare(`SELECT ID FROM djmdCue WHERE ContentID = '104'`).all()).toEqual([{ ID: 'other' }])
+    db.close()
+  })
+})
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCues.test.ts`
+Expected: FAIL, `applyCueChanges is not a function`.
+
+- [ ] **Step 3: Implement**
+
+Append to `src/main/rekordboxCues.ts` (imports: `randomInt`, `randomUUID` from `node:crypto`; `type CueChangeSet` from `../shared/cueRules`; `rekordboxStamp`, `takeLocalUsn`, `unusedRowId` from `./rekordboxRows`):
+
+```ts
+const CUE_JSON_KEYS = [
+  'ID',
+  'ContentID',
+  'ContentUUID',
+  'InMsec',
+  'InFrame',
+  'InMpegFrame',
+  'InMpegAbs',
+  'OutMsec',
+  'OutFrame',
+  'OutMpegFrame',
+  'OutMpegAbs',
+  'Kind',
+  'Color',
+  'UUID',
+  'created_at',
+  'updated_at',
+] as const
+
+const randomCueId = (): string => String(randomInt(100, 2 ** 32))
+
+export function applyCueChanges(
+  db: Db,
+  contentId: string,
+  changes: CueChangeSet,
+  ctx: { now: Date; newCueId?: () => string },
+): number {
+  const count = changes.insert.length + changes.update.length + changes.remove.length
+  if (count === 0) return 0
+  const stamp = rekordboxStamp(ctx.now)
+  const iso = ctx.now.toISOString().replace('Z', '+00:00')
+  const track = db
+    .prepare('SELECT UUID, CueUpdated FROM djmdContent WHERE ID = ?')
+    .get(contentId) as { UUID: string; CueUpdated: string | null }
+
+  const inserted: Record<string, string | number | null>[] = []
+  for (const c of changes.insert) {
+    const row: Record<string, string | number | null> = {
+      ID: unusedRowId(db, 'djmdCue', ctx.newCueId ?? randomCueId),
+      ContentID: contentId,
+      InMsec: c.ms,
+      InFrame: Math.floor((c.ms * 150) / 1000),
+      InMpegFrame: 0,
+      InMpegAbs: 0,
+      OutMsec: -1,
+      OutFrame: 0,
+      OutMpegFrame: 0,
+      OutMpegAbs: 0,
+      Kind: c.kind,
+      Color: -1,
+      ColorTableIndex: c.color,
+      ContentUUID: track.UUID,
+      UUID: randomUUID(),
+      rb_data_status: 0,
+      rb_local_data_status: 0,
+      rb_local_deleted: 0,
+      rb_local_synced: 0,
+      usn: null,
+      rb_local_usn: null,
+      created_at: stamp,
+      updated_at: stamp,
+    }
+    const names = Object.keys(row)
+    db.prepare(
+      `INSERT INTO djmdCue (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`,
+    ).run(...Object.values(row))
+    inserted.push(row)
+  }
+  const update = db.prepare(
+    'UPDATE djmdCue SET Kind = ?, ColorTableIndex = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  )
+  for (const u of changes.update) update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id)
+  const remove = db.prepare('DELETE FROM djmdCue WHERE ID = ?')
+  for (const id of changes.remove) remove.run(id)
+
+  const cc = db.prepare('SELECT ID, Cues FROM contentCue WHERE ContentID = ?').get(contentId) as
+    | { ID: string; Cues: string | null }
+    | undefined
+  const gone = new Set(changes.remove)
+  const entries = (cc?.Cues ? (JSON.parse(cc.Cues) as Record<string, unknown>[]) : []).filter(
+    (e) => !gone.has(String(e.ID)),
+  )
+  for (const u of changes.update) {
+    const e = entries.find((x) => String(x.ID) === u.id)
+    if (e) {
+      e.Kind = u.kind
+      e.updated_at = iso
+    }
+  }
+  for (const row of inserted)
+    entries.push(
+      Object.fromEntries(
+        CUE_JSON_KEYS.map((k) => [k, k === 'created_at' || k === 'updated_at' ? iso : row[k]]),
+      ),
+    )
+  const ccUsn = takeLocalUsn(db, stamp)
+  if (cc)
+    db.prepare(
+      'UPDATE contentCue SET Cues = ?, rb_cue_count = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+    ).run(JSON.stringify(entries), entries.length, ccUsn, stamp, cc.ID)
+  else
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count, UUID, rb_data_status,
+         rb_local_data_status, rb_local_deleted, rb_local_synced, usn, rb_local_usn, created_at,
+         updated_at) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, NULL, ?, ?, ?)`,
+    ).run(track.UUID, contentId, JSON.stringify(entries), entries.length, randomUUID(), ccUsn, stamp, stamp)
+  db.prepare(
+    'UPDATE djmdContent SET CueUpdated = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  ).run(String(Number(track.CueUpdated ?? 0) + count), takeLocalUsn(db, stamp), stamp, contentId)
+  return count
+}
+```
+
+The fresh `contentCue` keeps only Surco's own entries, as the spike's did for a track without one; medidas found rekordbox reading `djmdCue` and opening a track whose `contentCue` lagged behind without trouble.
+
+- [ ] **Step 4: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxCues.test.ts`
+Expected: PASS.
+
+- [ ] **Step 5: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+git add apps/desktop/src/main/rekordboxCues.ts apps/desktop/src/main/rekordboxCues.test.ts
+git commit -m "Write hot cues and drops into rekordbox as the validated spike did"
+```
+
+---
+
+### Task 6: The `cues` operation in the queue, and its IPC
+
+**Files:**
+- Modify: `src/shared/types.ts` (`RekordboxQueueNotice`, `RekordboxQueuePart`, `SaveCuesRequest`)
+- Modify: `src/main/rekordboxQueueOps.ts` (`CuesOp`, `QueueOp`, `opRank`)
+- Modify: `src/main/rekordboxPlaylistWrite.ts` (`planOp`/`writeOp` gain the cues branch; `Planned.cues`)
+- Modify: `src/main/rekordboxQueue.ts` (`keyOf`, the item key in `stateOf`)
+- Create: `src/main/rekordboxCuesIpc.ts`
+- Modify: `src/main/index.ts`, `src/preload/api.ts`, `src/preload/index.ts`, `src/renderer/src/test/api.ts`, `src/scenarios/harness.tsx`
+- Modify: `src/renderer/src/lib/rekordboxQueueText.ts`, `src/renderer/src/i18n/locales/*.json`
+- Test: `src/main/rekordboxQueueCues.test.ts`, `src/main/rekordboxQueue.test.ts` (append), `src/main/rekordboxCuesIpc.test.ts`, `src/renderer/src/lib/rekordboxQueueText.test.ts` (append)
+
+**Interfaces:**
+- Consumes: Task 2 `cueChanges`, `isEmptyChange`; Task 4 `readTrackCues`; Task 5 `applyCueChanges`; plan A `applyRekordboxBatch` internals (`Plan`, `Planned`, `planOp`, `writeOp`), `RekordboxQueue.enqueue`, `applyRekordboxQueueQuietly` (index), `withCollection`, `rekordboxShareDir`.
+- Produces:
+  - `shared/types.ts`: the notice union's first member becomes `{ code: 'ambiguous' | 'file-missing' | 'not-added' | 'cues-changed' | 'cues-too-many'; track: string }`; `RekordboxQueuePart` gains `{ kind: 'cues' }`; `interface SaveCuesRequest { contentId: string; path: string; label: string; drops: number[]; previousDrops: number[]; fingerprint: string }`
+  - `rekordboxQueueOps.ts`: `interface CuesOp extends SaveCuesRequest { id: string; kind: 'cues' }`; `type QueueOp = EditOp | TrackOp | CuesOp`; `opRank` gives cues 4
+  - `rekordboxCuesIpc.ts`: `registerRekordboxCuesIpc(host: { collection: () => string; queue: Pick<RekordboxQueue, 'enqueue'>; applyQuietly: () => void }): void` with `rekordbox:trackCues (contentId) → TrackCues | null` and `rekordbox:saveCues (req: SaveCuesRequest) → void`
+  - `Api`: `rekordboxTrackCues(contentId: string): Promise<TrackCues | null>`, `saveRekordboxCues(req: SaveCuesRequest): Promise<void>`
+
+At apply time the operation re-reads the track: gone, re-analysed without a grid, or a fingerprint that differs is `cues-changed` (rekordbox wins); `too-many` is `cues-too-many` and nothing is written; `manual` writes the drops only; an empty change set is applied with nothing to write. All of it is decided on the read-only probe, before rekordbox is asked to close.
+
+- [ ] **Step 1: Locale strings**
+
+Merge with the helper:
+
+```json
+{
+  "es": { "rekordboxQueue": { "notice": { "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos", "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un drop" }, "part": { "cues": "cues" } } },
+  "en": { "rekordboxQueue": { "notice": { "cuesChanged": "The cues of {{track}} changed in rekordbox. Mark them again", "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a drop" }, "part": { "cues": "cues" } } },
+  "de": { "rekordboxQueue": { "notice": { "cuesChanged": "Die Cues von {{track}} haben sich in rekordbox geändert. Markiere sie erneut", "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne einen Drop" }, "part": { "cues": "Cues" } } },
+  "fr": { "rekordboxQueue": { "notice": { "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marquez-les à nouveau", "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez un drop" }, "part": { "cues": "cues" } } },
+  "pt-BR": { "rekordboxQueue": { "notice": { "cuesChanged": "Os cues de {{track}} mudaram no rekordbox. Marque-os de novo", "cuesTooMany": "{{track}} precisaria de mais de 8 hot cues. Tire um drop" }, "part": { "cues": "cues" } } }
+}
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Create `src/main/rekordboxQueueCues.test.ts`:
+
+```ts
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it, vi } from 'vitest'
+import { anlzFile, pqtzSection } from './anlzFixture'
+import { openRekordboxDb } from './rekordboxDb'
+import { ORGANISE_FIXTURE, TWIN_PATHS, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+import type { CuesOp } from './rekordboxQueueOps'
+
+vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+
+import { cueFingerprint, liveCues } from './rekordboxCues'
+import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
+
+const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
+const BEATS = Array.from({ length: 800 }, (_, i) => i * 500)
+const bar = (n: number) => BEATS[n * 4]
+
+async function collection(cues: { ID: string; InMsec: number; Kind: number; ColorTableIndex: number | null }[] = []) {
+  const dir = await mkdtemp(join(tmpdir(), 'surco-rbqcues-'))
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    content: ORGANISE_FIXTURE.content.map((c) => (c.ID === '103' ? { ...c, AnalysisDataPath: ANLZ } : c)),
+    cues: cues.map((q) => ({ ...q, ContentID: '103' })),
+  })
+  mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+  writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
+  return path
+}
+
+function fingerprintOf(path: string): string {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return cueFingerprint(liveCues(db, '103'))
+  } finally {
+    db.close()
+  }
+}
+
+function cuesOf(path: string) {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return liveCues(db, '103').sort((a, b) => a.ms - b.ms || a.kind - b.kind)
+  } finally {
+    db.close()
+  }
+}
+
+const deps = () => ({
+  ensureClosed: vi.fn(async () => true),
+  sessionBackup: vi.fn(async () => {}),
+  now: () => new Date('2026-10-18T19:00:00.000Z'),
+  ...TWIN_PATHS,
+})
+
+const op = (path: string, over: Partial<CuesOp> = {}): CuesOp => ({
+  id: 'c',
+  kind: 'cues',
+  contentId: '103',
+  path: '/Volumes/Public/Music/Gowan.wav',
+  label: 'Gowan',
+  drops: [bar(64)],
+  previousDrops: [],
+  fingerprint: fingerprintOf(path),
+  ...over,
+})
+
+describe('cues operations', () => {
+  // Flow 2 end to end on the writer: the drop and its countdown land in one batch.
+  it('writes the drop and the countdown', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(path, [op(path)], deps())
+    expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices: [] })
+    expect(cuesOf(path).map((c) => [c.ms, c.kind, c.color])).toEqual([
+      [bar(16), 0, null],
+      [bar(16), 1, 42],
+      [bar(32), 0, null],
+      [bar(32), 2, 22],
+      [bar(48), 0, null],
+      [bar(48), 3, 1],
+      [bar(64), 0, null],
+    ])
+  })
+
+  // rekordbox wins: cues touched there since the section read them are left alone.
+  it('drops the operation when rekordbox changed the cues meanwhile', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(path, [op(path, { fingerprint: 'stale' })], d)
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'c', applied: false, notices: [{ code: 'cues-changed', track: 'Gowan' }] }],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing and says so when the plan needs more than 8 hot cues', async () => {
+    const path = await collection([{ ID: 'y', InMsec: 500, Kind: 1, ColorTableIndex: 32 }])
+    const drops = [bar(48), bar(96), bar(144), bar(192)]
+    const result = await applyRekordboxBatch(path, [op(path, { drops })], deps())
+    expect(result.ok && result.outcomes[0].notices).toEqual([{ code: 'cues-too-many', track: 'Gowan' }])
+    expect(cuesOf(path)).toHaveLength(1)
+  })
+
+  // fits_plan: hand-placed hot cues stay; only the drop is written.
+  it('writes only the drop on a track with hand-placed hot cues', async () => {
+    const path = await collection([{ ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 }])
+    await applyRekordboxBatch(path, [op(path)], deps())
+    expect(cuesOf(path).map((c) => [c.ms, c.kind])).toEqual([
+      [bar(40), 1],
+      [bar(64), 0],
+    ])
+  })
+})
+```
+
+Append to `src/main/rekordboxQueue.test.ts`:
+
+```ts
+describe('cues in the queue', () => {
+  const cues = (id: string, drops: number[]): QueueOp => ({
+    id,
+    kind: 'cues',
+    contentId: '103',
+    path: '/m/a.wav',
+    label: 'a',
+    drops,
+    previousDrops: [],
+    fingerprint: 'f',
+  })
+
+  // Saving twice before rekordbox closes must leave the last marking, not both.
+  it('keeps the latest cues of a track and shows them on the track line', () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([track('t', '/m/a.wav', { contentId: '103' }), cues('c1', [1000])])
+    q.enqueue([cues('c2', [2000])])
+    expect(q.state()).toEqual({
+      tracks: 1,
+      changes: 0,
+      items: [
+        {
+          key: 'track:/m/a.wav',
+          label: 'a.wav',
+          parts: [{ kind: 'playlists', names: ['Makina'] }, { kind: 'cues' }],
+        },
+      ],
+    })
+  })
+})
+```
+
+Create `src/main/rekordboxCuesIpc.test.ts`:
+
+```ts
+import { ipcMain } from 'electron'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
+
+import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
+
+function handler(channel: string): (...args: unknown[]) => unknown {
+  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
+  if (!call) throw new Error(`${channel} not registered`)
+  return call[1] as (...args: unknown[]) => unknown
+}
+
+describe('registerRekordboxCuesIpc', () => {
+  // Spec: "Guardar en rekordbox" never asks; it queues and applies if rekordbox is closed.
+  it('queues the cues and applies quietly', async () => {
+    const enqueue = vi.fn()
+    const applyQuietly = vi.fn()
+    registerRekordboxCuesIpc({ collection: () => '/c/master.db', queue: { enqueue }, applyQuietly })
+    const req = { contentId: '103', path: '/m/a.wav', label: 'a', drops: [1000], previousDrops: [], fingerprint: 'f' }
+    await handler('rekordbox:saveCues')({}, req)
+    expect(enqueue).toHaveBeenCalledWith([expect.objectContaining({ kind: 'cues', ...req })])
+    expect(applyQuietly).toHaveBeenCalled()
+  })
+
+  it('reads nothing without a collection', () => {
+    registerRekordboxCuesIpc({ collection: () => '', queue: { enqueue: vi.fn() }, applyQuietly: vi.fn() })
+    expect(handler('rekordbox:trackCues')({}, '103')).toBeNull()
+  })
+})
+```
+
+Append to `src/renderer/src/lib/rekordboxQueueText.test.ts`:
+
+```ts
+  it('names the cue notices', () => {
+    expect(appliedMessage(tr, { tracks: 0, changes: 0, notices: [{ code: 'cues-changed', track: 'Tengo' }] })?.text).toBe(
+      'The cues of Tengo changed in rekordbox. Mark them again',
+    )
+    expect(partText(tr, { kind: 'cues' })).toBe('cues')
+  })
+```
+
+(inside its existing `describe`).
+
+- [ ] **Step 3: Run them to see them fail**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueueCues.test.ts src/main/rekordboxQueue.test.ts src/main/rekordboxCuesIpc.test.ts src/renderer/src/lib/rekordboxQueueText.test.ts`
+Expected: FAIL, type errors on `kind: 'cues'`, missing module, missing locale keys.
+
+- [ ] **Step 4: Types and the operation**
+
+`src/shared/types.ts`: in `RekordboxQueueNotice` the first member becomes `{ code: 'ambiguous' | 'file-missing' | 'not-added' | 'cues-changed' | 'cues-too-many'; track: string }`; `RekordboxQueuePart` gains `| { kind: 'cues' }`; append:
+
+```ts
+export interface SaveCuesRequest {
+  contentId: string
+  path: string
+  label: string
+  drops: number[]
+  previousDrops: number[]
+  fingerprint: string
+}
+```
+
+`src/main/rekordboxQueueOps.ts` (import `type SaveCuesRequest`):
+
+```ts
+export interface CuesOp extends SaveCuesRequest {
+  id: string
+  kind: 'cues'
+}
+
+export type QueueOp = EditOp | TrackOp | CuesOp
+
+export function opRank(op: QueueOp): number {
+  if (op.kind === 'track') return 0
+  if (op.kind === 'cues') return 4
+  return EDIT_RANK[op.edit.kind]
+}
+```
+
+`src/main/rekordboxQueue.ts`: `keyOf` gains `if (op.kind === 'cues') return `cues:${op.contentId}``; in `stateOf`, the loop over `q.ops` becomes:
+
+```ts
+  for (const op of q.ops) {
+    if (op.kind === 'edit') {
+      item(keyOf(op), op.label ?? '').parts.push({ kind: 'tree', edit: op.edit.kind })
+      continue
+    }
+    const it = item(`track:${op.path}`, op.label)
+    if (op.kind === 'cues') {
+      it.parts.push({ kind: 'cues' })
+      continue
+    }
+    it.label = op.label
+    if (!op.contentId) it.parts.push({ kind: 'collection' })
+    it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
+  }
+```
+
+`src/main/rekordboxPlaylistWrite.ts`: import `cueChanges`, `isEmptyChange`, `type CueChangeSet` from `../shared/cueRules`, `applyCueChanges`, `readTrackCues` from `./rekordboxCues`, `rekordboxShareDir` from `./rekordboxArtwork`, `type CuesOp` from `./rekordboxQueueOps`. `Planned` gains `cues?: CueChangeSet`. Add:
+
+```ts
+function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
+  const changed = (code: 'cues-changed' | 'cues-too-many'): Plan => ({
+    outcome: { id: op.id, applied: false, notices: [{ code, track: op.label }] },
+  })
+  const read = readTrackCues(probe, shareDir, op.contentId)
+  if (!read || !read.analysed || read.fingerprint !== op.fingerprint) return changed('cues-changed')
+  const out = cueChanges(
+    read.cues,
+    op.drops,
+    op.previousDrops,
+    read.grid.map((b) => b.ms),
+    read.strong,
+  )
+  if (out.status === 'too-many') return changed('cues-too-many')
+  if (isEmptyChange(out.changes)) return { outcome: { id: op.id, applied: true, notices: [] } }
+  return { op, cues: out.changes }
+}
+```
+
+`planOp` takes the share folder and dispatches the three kinds:
+
+```ts
+function planOp(
+  probe: Db,
+  xml: string | null,
+  op: QueueOp,
+  find: FindOptions,
+  shareDir: string,
+): Plan {
+  if (op.kind === 'track') return planTrack(probe, xml, op, find)
+  if (op.kind === 'cues') return planCuesOp(probe, op, shareDir)
+  return planEdit(probe, xml, op, find)
+}
+```
+
+and its one call in `applyRekordboxBatch` passes `rekordboxShareDir(collectionPath)`. `writeOp`:
+
+```ts
+function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
+  if (planned.op.kind === 'track') return writeTrack(db, draft, planned, now)
+  if (planned.op.kind === 'cues') {
+    applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
+    return { id: planned.op.id, applied: true, notices: [] }
+  }
+  return writeEdit(db, draft, planned, now)
+}
+```
+
+`needsNode` stays: a cues operation adds no node. `writeEdit`'s `planned.op as EditOp` cast is unchanged.
+
+- [ ] **Step 5: IPC and wiring**
+
+Create `src/main/rekordboxCuesIpc.ts`:
+
+```ts
+import { randomUUID } from 'node:crypto'
+import { ipcMain } from 'electron'
+import type { SaveCuesRequest } from '../shared/types'
+import { rekordboxShareDir } from './rekordboxArtwork'
+import { readTrackCues } from './rekordboxCues'
+import { withCollection } from './rekordboxPlaylistsIpc'
+import type { RekordboxQueue } from './rekordboxQueue'
+
+export function registerRekordboxCuesIpc(host: {
+  collection: () => string
+  queue: Pick<RekordboxQueue, 'enqueue'>
+  applyQuietly: () => void
+}): void {
+  ipcMain.handle('rekordbox:trackCues', (_e, contentId: string) => {
+    const path = host.collection()
+    return withCollection(path, (db) => readTrackCues(db, rekordboxShareDir(path), contentId), null)
+  })
+  ipcMain.handle('rekordbox:saveCues', (_e, req: SaveCuesRequest) => {
+    host.queue.enqueue([{ ...req, id: randomUUID(), kind: 'cues' }])
+    host.applyQuietly()
+  })
+}
+```
+
+`src/main/index.ts`, after `registerRekordboxQueueIpc(...)`:
+
+```ts
+  registerRekordboxCuesIpc({
+    collection: rekordboxCollectionPath,
+    queue: rekordboxQueue,
+    applyQuietly: applyRekordboxQueueQuietly,
+  })
+```
+
+`src/preload/api.ts`: `rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>` and `saveRekordboxCues: (req: SaveCuesRequest) => Promise<void>`; `src/preload/index.ts`: `rekordboxTrackCues: (contentId: string) => ipcRenderer.invoke('rekordbox:trackCues', contentId)`, `saveRekordboxCues: (req: SaveCuesRequest) => ipcRenderer.invoke('rekordbox:saveCues', req)`; `src/renderer/src/test/api.ts` and `src/scenarios/harness.tsx`: `rekordboxTrackCues: async () => null`, `saveRekordboxCues: async () => {}`.
+
+`src/renderer/src/lib/rekordboxQueueText.ts`, in `NOTICE_KEY`:
+
+```ts
+  'cues-changed': 'rekordboxQueue.notice.cuesChanged',
+  'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
+```
+
+(`partText` already reads `rekordboxQueue.part.${part.kind}` for the plain kinds, so `cues` needs no code.)
+
+- [ ] **Step 6: Run them to see them pass**
+
+Run: `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run src/main/rekordboxQueueCues.test.ts src/main/rekordboxQueue.test.ts src/main/rekordboxCuesIpc.test.ts src/main/rekordboxPlaylistWrite.test.ts src/main/rekordboxQueueTrack.test.ts src/renderer/src/lib/rekordboxQueueText.test.ts src/renderer/src/i18n`
+Expected: PASS.
+
+- [ ] **Step 7: Mutation check**
+
+Replace `read.fingerprint !== op.fingerprint` with `false` and rerun `rekordboxQueueCues.test.ts`: `'drops the operation when rekordbox changed the cues meanwhile'` must fail. Restore.
+
+- [ ] **Step 8: Lint, types, commit** (from the worktree root)
+
+```bash
+npm exec --workspace apps/desktop -- biome check --write src
+npm exec --workspace apps/desktop -- tsc -p tsconfig.node.json --noEmit
+npm exec --workspace apps/desktop -- tsc -p tsconfig.web.json --noEmit
+git add apps/desktop/src/shared/types.ts apps/desktop/src/main/rekordboxQueueOps.ts apps/desktop/src/main/rekordboxPlaylistWrite.ts apps/desktop/src/main/rekordboxQueue.ts apps/desktop/src/main/rekordboxQueue.test.ts apps/desktop/src/main/rekordboxQueueCues.test.ts apps/desktop/src/main/rekordboxCuesIpc.ts apps/desktop/src/main/rekordboxCuesIpc.test.ts apps/desktop/src/main/index.ts apps/desktop/src/preload/api.ts apps/desktop/src/preload/index.ts apps/desktop/src/renderer/src/test/api.ts apps/desktop/src/scenarios/harness.tsx apps/desktop/src/renderer/src/lib/rekordboxQueueText.ts apps/desktop/src/renderer/src/lib/rekordboxQueueText.test.ts apps/desktop/src/renderer/src/i18n/locales
+git commit -m "Queue a track's cues for rekordbox, dropping them if rekordbox changed the cues meanwhile"
+```
+
+---
+
