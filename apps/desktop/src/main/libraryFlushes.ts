@@ -43,6 +43,7 @@ export interface LibraryHost {
     channel: 'rekordbox:sync-issue' | 'engine:sync-issue',
     issue: RekordboxSyncIssue,
   ) => void
+  rekordboxHeld: () => boolean
 }
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
@@ -103,6 +104,12 @@ export function rekordboxFlushDeps(host: LibraryHost) {
   }
 }
 
+function rekordboxWriteDeps(host: LibraryHost) {
+  const deps = rekordboxFlushDeps(host)
+  const held = deps.collectionPath !== '' && host.rekordboxHeld()
+  return { ...deps, collectionPath: held ? '' : deps.collectionPath, held }
+}
+
 export function engineFlushDeps(host: LibraryHost) {
   // With no m.db there yet there is nothing to write to.
   const engineDir = getSettings().engineLibraryDir
@@ -148,10 +155,11 @@ export async function flushConversionBatch(
   const repoints = endRekordboxBatch()
   // rekordbox next, and independently: the two collections are separate libraries, so
   // one being open or unwritable must not stop the other from being updated.
-  const rekordbox = rekordboxFlushDeps(host)
+  const rekordbox = rekordboxWriteDeps(host)
   const collectionPath = rekordboxCollectionPath()
   await queueConversionRun(repoints, {
     collectionPath,
+    held: rekordbox.held,
     flushRepoints: async (list) => {
       const result = await flushRekordboxSync({
         ...rekordbox,
@@ -164,7 +172,7 @@ export async function flushConversionBatch(
     },
     readOps: (list) =>
       trackOpsFromRun(collectionPath, list, {
-        repointing: rekordbox.collectionPath !== '',
+        repointing: rekordbox.collectionPath !== '' || rekordbox.held,
         probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
         find: { realPath: (p: string) => realpathSync(p) },
       }),
@@ -209,7 +217,7 @@ export function syncTagsInLibraries(
     rekordbox: async () => {
       const result = await flushLibraryRepoints(
         {
-          ...rekordboxFlushDeps(host),
+          ...rekordboxWriteDeps(host),
           endBatch: () => updates,
           labelOf: (u) => u.path,
           repointTracks: (collectionPath, list) =>
@@ -274,6 +282,7 @@ export function duplicateLibraryDeps(
               replaceRekordboxDuplicates(path, items, {
                 realPath,
                 sessionBackup: (db) => sessions.rekordbox.ensure(db),
+                held: host.rekordboxHeld,
               }),
           ),
       }),

@@ -155,6 +155,18 @@ describe('queueConversionRun', () => {
     expect(d.apply).toHaveBeenCalled()
   })
 
+  it('queues the repoints while the queue is held, so they wait for Apply now instead of being lost', async () => {
+    const d = deps({
+      held: true,
+      flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({
+        written: 0,
+        skipped: [],
+      })),
+    })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).toHaveBeenCalledWith([], [repoint])
+  })
+
   it('queues the run playlists whatever the repoint did', async () => {
     const op = {
       id: 'x',

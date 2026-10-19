@@ -1001,6 +1001,7 @@ function registerIpc(): void {
     reportIssue: (channel, issue) => {
       if (!sender.isDestroyed()) sender.send(channel, issue)
     },
+    rekordboxHeld: () => rekordboxQueue.state().halted === true,
   })
 
   // Queued behind any review sync still writing, and the other way round.

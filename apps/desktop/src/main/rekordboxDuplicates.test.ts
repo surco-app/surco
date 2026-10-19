@@ -191,6 +191,15 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
   })
 
+  it('refuses the whole run while the rekordbox queue is held, so master.db.surco-backup stays the good copy', async () => {
+    expect(await replaceRekordboxDuplicates(dbPath, pair(), { held: () => true })).toEqual([
+      { written: false, reason: 'write-unknown' },
+    ])
+    expect(entry('e1').ContentID).toBe('A')
+    expect(counter()).toBe(100)
+    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+  })
+
   it('refuses to write when rekordbox opened between the read and the write', async () => {
     vi.mocked(isRekordboxRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     expect(await replaceRekordboxDuplicates(dbPath, pair())).toEqual([

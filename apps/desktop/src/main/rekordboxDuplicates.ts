@@ -25,6 +25,7 @@ export type DuplicateReplaceResult =
 
 export interface ReplaceOptions extends FindOptions {
   sessionBackup?: (path: string) => Promise<void>
+  held?: () => boolean
 }
 
 // One run is one operation for rekordbox: every row it touches carries the same usn.
@@ -84,6 +85,7 @@ export async function replaceRekordboxDuplicates(
 ): Promise<DuplicateReplaceResult[]> {
   const results: (DuplicateReplaceResult | undefined)[] = pairs.map(() => undefined)
   const settle = (r: DuplicateReplaceResult) => results.map((x) => x ?? r)
+  if (options.held?.()) return settle({ written: false, reason: 'write-unknown' })
   if (await isRekordboxRunning()) return settle({ written: false, reason: 'rekordbox-running' })
   const db = openRekordboxDb(collectionPath, { readonly: true })
   if (!db) return settle({ written: false, reason: 'unreadable' })

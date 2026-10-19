@@ -253,6 +253,7 @@ function libraryHost(errors: string[]): LibraryHost {
     ensureEngineDjClosed: async () => true,
     showBlockedDialog: (key) => errors.push(`library sync blocked: ${key}`),
     reportIssue: (channel, issue) => errors.push(`${channel}: ${JSON.stringify(issue)}`),
+    rekordboxHeld: () => false,
   }
 }
 

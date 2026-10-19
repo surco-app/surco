@@ -73,6 +73,7 @@ export async function trackOpsFromRun(
 
 export interface RunQueueDeps {
   collectionPath: string
+  held?: boolean
   flushRepoints: (repoints: RekordboxRepoint[]) => Promise<FlushResult>
   readOps: (repoints: RekordboxRepoint[]) => Promise<TrackOp[]>
   enqueue: (ops: TrackOp[], repoints: RekordboxRepoint[]) => void
@@ -84,7 +85,7 @@ export async function queueConversionRun(
   deps: RunQueueDeps,
 ): Promise<void> {
   const result = await deps.flushRepoints(repoints)
-  const waiting = result.blocked === 'rekordbox-running' ? repoints : []
+  const waiting = result.blocked === 'rekordbox-running' || deps.held ? repoints : []
   const ops = deps.collectionPath
     ? await deps.readOps(repoints).catch((e) => {
         log.error('rekordbox queue: reading the run playlists failed', e)
