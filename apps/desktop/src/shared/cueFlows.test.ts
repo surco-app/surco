@@ -129,8 +129,29 @@ describe('activeCueFlow', () => {
   })
 
   it('falls back to Mi flujo when the chosen flow was deleted on another Mac', () => {
-    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'gone' })).toBe(MY_FLOW)
-    expect(activeCueFlow({})).toBe(MY_FLOW)
+    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'gone' })).toEqual(MY_FLOW)
+    expect(activeCueFlow({})).toEqual(MY_FLOW)
+  })
+})
+
+describe('bundled flows stay pristine', () => {
+  const pristine = structuredClone(BUNDLED_FLOWS)
+
+  it('hands out copies from normalizeCueFlows so editing a flow never corrupts the defaults', () => {
+    const fromEmpty = normalizeCueFlows(undefined)
+    fromEmpty[0].rules[0].bars = 99
+    fromEmpty[0].rules.pop()
+    const withoutMine = normalizeCueFlows([{ id: 'x', name: 'A', rules: [] }])
+    withoutMine[0].rules[0].bars = 99
+    expect(BUNDLED_FLOWS).toEqual(pristine)
+    expect(MY_FLOW).toEqual(pristine[0])
+  })
+
+  it('hands out copies from restoreMyFlow and activeCueFlow', () => {
+    restoreMyFlow([MY_FLOW])[0].rules[0].bars = 99
+    activeCueFlow({}).rules[0].bars = 99
+    activeCueFlow({ cueFlows: [], activeCueFlow: 'gone' }).rules[0].bars = 99
+    expect(BUNDLED_FLOWS).toEqual(pristine)
   })
 })
 

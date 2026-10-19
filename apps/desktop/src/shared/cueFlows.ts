@@ -157,7 +157,7 @@ function ruleOf(value: unknown): CueRule | null {
 }
 
 export function normalizeCueFlows(value: unknown): CueFlow[] {
-  if (!Array.isArray(value)) return BUNDLED_FLOWS
+  if (!Array.isArray(value)) return structuredClone(BUNDLED_FLOWS)
   const seen = new Set<string>()
   const flows: CueFlow[] = []
   for (const item of value) {
@@ -175,18 +175,18 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
       }),
     })
   }
-  return seen.has(MY_FLOW_ID) ? flows : [MY_FLOW, ...flows]
+  return seen.has(MY_FLOW_ID) ? flows : [structuredClone(MY_FLOW), ...flows]
 }
 
 export function activeCueFlow(settings: { cueFlows?: CueFlow[]; activeCueFlow?: string }): CueFlow {
-  const flows = settings.cueFlows ?? BUNDLED_FLOWS
+  const flows = settings.cueFlows ?? normalizeCueFlows(undefined)
   return (
     flows.find((f) => f.id === settings.activeCueFlow) ??
     flows.find((f) => f.id === MY_FLOW_ID) ??
-    MY_FLOW
+    structuredClone(MY_FLOW)
   )
 }
 
 export function restoreMyFlow(flows: CueFlow[]): CueFlow[] {
-  return flows.map((f) => (f.id === MY_FLOW_ID ? MY_FLOW : f))
+  return flows.map((f) => (f.id === MY_FLOW_ID ? structuredClone(MY_FLOW) : f))
 }
