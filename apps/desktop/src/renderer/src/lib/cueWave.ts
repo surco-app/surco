@@ -54,3 +54,44 @@ export function clickAction(
   if (same !== undefined) return { kind: 'remove', ms: same }
   return { kind: 'add', ms: beat }
 }
+
+export function cuePosition(
+  ms: number,
+  grid: { ms: number; beat: number }[],
+): { time: string; bar: string } {
+  const index = nearestBeat(
+    grid.map((b) => b.ms),
+    ms,
+  )
+  const bar = grid.slice(0, index + 1).filter((b) => b.beat === 1).length
+  const whole = Math.round(ms)
+  const minutes = Math.floor(whole / 60000)
+  const seconds = String(Math.floor((whole % 60000) / 1000)).padStart(2, '0')
+  const millis = String(whole % 1000).padStart(3, '0')
+  return { time: `${minutes}:${seconds}.${millis}`, bar: `${bar}.${grid[index]?.beat ?? 1}` }
+}
+
+const LABEL_SPAN = 0.12
+
+export function dropLabels(
+  drops: number[],
+  durationMs: number,
+): { ms: number; side: 'left' | 'right'; row: 0 | 1 }[] {
+  const rows: [number, number][][] = [[], []]
+  let previous: 0 | 1 = 1
+  return [...drops]
+    .sort((a, b) => a - b)
+    .map((ms) => {
+      const at = ms / Math.max(durationMs, 1)
+      const side = at > 1 - LABEL_SPAN ? 'left' : 'right'
+      const span: [number, number] =
+        side === 'right' ? [at, at + LABEL_SPAN] : [at - LABEL_SPAN, at]
+      const free = ([0, 1] as const).find((r) =>
+        rows[r].every(([a, b]) => span[1] <= a || span[0] >= b),
+      )
+      const row = free ?? (previous === 0 ? 1 : 0)
+      rows[row].push(span)
+      previous = row
+      return { ms, side, row }
+    })
+}

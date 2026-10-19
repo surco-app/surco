@@ -72,6 +72,35 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('+ drop')
   })
 
+  it('names the beat the hover will take, so the user can tell which of the beats under the pointer it is', () => {
+    setup()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('0:10.000')
+    expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('6.1')
+  })
+
+  it('names where each drop sits', () => {
+    setup()
+    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('0:40.000')
+    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('21.1')
+  })
+
+  it('turns the label of a drop near the end to the left so the edge does not cut it', () => {
+    setup({ drops: [{ ms: 76000, pending: true }] })
+    expect(screen.getByTestId('cue-wave-drop-label-76000')).toHaveAttribute('data-side', 'left')
+  })
+
+  it('stacks the labels of two close drops instead of drawing them over each other', () => {
+    setup({
+      drops: [
+        { ms: 40000, pending: false },
+        { ms: 42000, pending: true },
+      ],
+    })
+    expect(screen.getByTestId('cue-wave-drop-label-40000')).toHaveAttribute('data-row', '0')
+    expect(screen.getByTestId('cue-wave-drop-label-42000')).toHaveAttribute('data-row', '1')
+  })
+
   it('takes no clicks when disabled', () => {
     const { onAddDrop } = setup({ disabled: true })
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })

@@ -3,7 +3,14 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DrawnHotCue } from '../../../shared/cueRules'
 import type { CueWaveColumn } from '../../../shared/types'
-import { barLines, clickAction, cueColor, HOT_LETTER } from '../lib/cueWave'
+import {
+  barLines,
+  clickAction,
+  cueColor,
+  cuePosition,
+  dropLabels,
+  HOT_LETTER,
+} from '../lib/cueWave'
 
 const HIT_PX = 6
 
@@ -42,6 +49,14 @@ export function CueWave({
     )
   }
   const beatsMs = grid.map((b) => b.ms)
+  const labels = new Map(
+    dropLabels(
+      drops.map((d) => d.ms),
+      durationMs,
+    ).map((l) => [l.ms, l]),
+  )
+  const sideClass = (side: 'left' | 'right' | undefined): string =>
+    side === 'left' ? 'right-1 text-right' : 'left-1'
   const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
   const at = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -109,19 +124,31 @@ export function CueWave({
           }`}
         />
       ))}
-      {drops.map((d) => (
-        <span
-          key={`d${d.ms}`}
-          data-testid={`cue-wave-drop-${d.ms}`}
-          data-pending={d.pending ? 'true' : 'false'}
-          style={{ left: pct(d.ms) }}
-          className={`absolute top-0 bottom-0 w-0.5 bg-[var(--color-fg)] ${d.pending ? 'opacity-60' : ''}`}
-        >
-          <span className="absolute top-0 left-1 text-[9px] font-semibold text-[var(--color-fg)]">
-            DROP
+      {drops.map((d) => {
+        const label = labels.get(d.ms)
+        const position = cuePosition(d.ms, grid)
+        return (
+          <span
+            key={`d${d.ms}`}
+            data-testid={`cue-wave-drop-${d.ms}`}
+            data-pending={d.pending ? 'true' : 'false'}
+            style={{ left: pct(d.ms) }}
+            className={`absolute top-0 bottom-0 w-0.5 bg-[var(--color-fg)] ${d.pending ? 'opacity-60' : ''}`}
+          >
+            <span
+              data-testid={`cue-wave-drop-label-${d.ms}`}
+              data-side={label?.side ?? 'right'}
+              data-row={label?.row ?? 0}
+              className={`absolute whitespace-nowrap text-[9px] leading-[11px] text-[var(--color-fg)] ${
+                label?.row === 1 ? 'top-6' : 'top-0'
+              } ${sideClass(label?.side)}`}
+            >
+              <span className="block font-semibold">DROP {position.bar}</span>
+              <span className="block tabular-nums">{position.time}</span>
+            </span>
           </span>
-        </span>
-      ))}
+        )
+      })}
       {hot.map((h) => (
         <span
           key={`h${h.kind}`}
@@ -144,7 +171,14 @@ export function CueWave({
           style={{ left: pct(ghost) }}
           className="pointer-events-none absolute top-0 bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
         >
-          <span className="absolute top-3 left-1 text-[9px] text-[var(--color-fg)]/80">+ drop</span>
+          <span
+            className={`absolute bottom-4 whitespace-nowrap text-[9px] leading-[11px] text-[var(--color-fg)]/80 ${sideClass(
+              dropLabels([ghost], durationMs)[0]?.side,
+            )}`}
+          >
+            <span className="block">+ drop {cuePosition(ghost, grid).bar}</span>
+            <span className="block tabular-nums">{cuePosition(ghost, grid).time}</span>
+          </span>
         </span>
       )}
     </div>
