@@ -285,6 +285,12 @@ export type CueOutcome =
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
+export function proposeDrops(strong: StrongPart[], drops: number[]): number[] {
+  return [...new Set(strong.map((s) => s.start))]
+    .filter((ms) => drops.every((d) => !near(d, ms)))
+    .sort((a, b) => a - b)
+}
+
 export function isEmptyChange(changes: CueChangeSet): boolean {
   return changes.insert.length === 0 && changes.update.length === 0 && changes.remove.length === 0
 }

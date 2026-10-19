@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { CALLS_ONLY, type CueFlow, type CueRule, MY_FLOW, ONE_AT_32 } from './cueFlows'
-import { diffCues, type ExistingCue, evaluateFlow, type FlowTrack, flowOutcome } from './cueRules'
+import {
+  diffCues,
+  type ExistingCue,
+  evaluateFlow,
+  type FlowTrack,
+  flowOutcome,
+  proposeDrops,
+} from './cueRules'
 
 const grid = (bars: number): number[] => Array.from({ length: bars * 4 }, (_, i) => i * 500)
 const beat = (bars: number): number => bars * 2000
@@ -241,5 +248,20 @@ describe('diffCues', () => {
     expect(diffCues(existing, [{ id: 'a', ms: beat(16), kind: 2, color: 42 }]).update).toEqual([
       { id: 'a', kind: 2, color: 42 },
     ])
+  })
+})
+
+describe('proposeDrops', () => {
+  it('proposes where each strong part starts and nothing already marked', () => {
+    const strong = [
+      { start: beat(64), end: beat(96) },
+      { start: beat(128), end: beat(160) },
+      { start: beat(128), end: beat(144) },
+    ]
+    expect(proposeDrops(strong, [beat(64) + 20])).toEqual([beat(128)])
+  })
+
+  it('proposes nothing without phrase analysis', () => {
+    expect(proposeDrops([], [])).toEqual([])
   })
 })
