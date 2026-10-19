@@ -2216,7 +2216,8 @@
       "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
       "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox",
       "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
-      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un drop"
+      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un drop",
+      "cuesInvalid": "No se guardaron los cues de {{track}}. Surco no pudo leerlos como cues"
     },
     "part": {
       "repoint": "nueva ruta",

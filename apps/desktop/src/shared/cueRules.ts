@@ -230,6 +230,54 @@ export interface WantedCue {
   color: number | null
 }
 
+export type InvalidWantedReason =
+  | 'shape'
+  | 'ms'
+  | 'id'
+  | 'duplicate-id'
+  | 'kind'
+  | 'duplicate-letter'
+  | 'color'
+
+const COLOR_TABLE_SIZE = 62
+
+function wantedProblem(w: WantedCue, was: ExistingCue | undefined): InvalidWantedReason | null {
+  if (typeof w !== 'object' || w === null) return 'shape'
+  if (typeof w.ms !== 'number' || !Number.isFinite(w.ms) || w.ms < 0) return 'ms'
+  if (w.id !== undefined && typeof w.id !== 'string') return 'id'
+  if (!(w.kind === 0 || HOT_KINDS.includes(w.kind) || (was && was.kind === w.kind))) return 'kind'
+  const kept = was !== undefined && was.color === w.color
+  const color =
+    w.kind === 0
+      ? w.color === null
+      : w.color === null ||
+        (Number.isInteger(w.color) && w.color >= 1 && w.color <= COLOR_TABLE_SIZE)
+  return color || kept ? null : 'color'
+}
+
+export function validWantedSet(
+  wanted: WantedCue[],
+  existing: ExistingCue[],
+): { ok: true } | { ok: false; reason: InvalidWantedReason } {
+  if (!Array.isArray(wanted)) return { ok: false, reason: 'shape' }
+  const live = new Map(existing.map((c) => [c.id, c]))
+  const ids = new Set<string>()
+  const letters = new Set<number>()
+  for (const w of wanted) {
+    const reason = wantedProblem(w, w?.id === undefined ? undefined : live.get(w.id))
+    if (reason) return { ok: false, reason }
+    if (w.id !== undefined) {
+      if (ids.has(w.id)) return { ok: false, reason: 'duplicate-id' }
+      ids.add(w.id)
+    }
+    if (w.kind !== 0) {
+      if (letters.has(w.kind)) return { ok: false, reason: 'duplicate-letter' }
+      letters.add(w.kind)
+    }
+  }
+  return { ok: true }
+}
+
 export type CueOutcome =
   | { status: 'plan'; changes: CueChangeSet; hot: DrawnHotCue[] }
   | { status: 'manual'; changes: CueChangeSet }

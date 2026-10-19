@@ -8,6 +8,7 @@ import {
   flowOutcome,
   isEmptyChange,
   MAX_HOT_CUES,
+  validWantedSet,
   type WantedCue,
 } from '../shared/cueRules'
 import type {
@@ -332,7 +333,7 @@ function wantedOf(op: CuesOp, read: TrackCues): WantedCue[] | null {
 }
 
 function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
-  const changed = (code: 'cues-changed' | 'cues-too-many'): Plan => ({
+  const changed = (code: 'cues-changed' | 'cues-too-many' | 'cues-invalid'): Plan => ({
     outcome: { id: op.id, applied: false, notices: [{ code, track: op.label }] },
   })
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
@@ -340,6 +341,11 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   const wanted = wantedOf(op, read)
   if (wanted === null || wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES)
     return changed('cues-too-many')
+  const valid = validWantedSet(wanted, read.cues)
+  if (!valid.ok) {
+    log.warn(`rekordbox cues: refused the queued set for ${op.contentId} (${valid.reason})`)
+    return changed('cues-invalid')
+  }
   const cues = diffCues(read.cues, wanted)
   if (isEmptyChange(cues)) return { outcome: { id: op.id, applied: true, notices: [] } }
   return { op, cues }

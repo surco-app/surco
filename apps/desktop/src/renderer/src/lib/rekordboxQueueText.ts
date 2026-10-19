@@ -16,6 +16,7 @@ const NOTICE_KEY: Record<RekordboxQueueNotice['code'], string> = {
   'edit-changed': 'rekordboxQueue.notice.editChanged',
   'cues-changed': 'rekordboxQueue.notice.cuesChanged',
   'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
+  'cues-invalid': 'rekordboxQueue.notice.cuesInvalid',
 }
 
 export function noticeText(tr: TFunction, notice: RekordboxQueueNotice): string {

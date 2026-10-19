@@ -121,6 +121,9 @@ describe('rekordbox queue text', () => {
     expect(noticeText(tr, { code: 'cues-too-many', track: 'Tengo' })).toBe(
       'Tengo would need more than 8 hot cues. Remove a drop',
     )
+    expect(noticeText(tr, { code: 'cues-invalid', track: 'Tengo' })).toBe(
+      'The cues of Tengo were not saved. Surco could not read them as cues',
+    )
     expect(partText(tr, { kind: 'cues' })).toBe('cues')
   })
 

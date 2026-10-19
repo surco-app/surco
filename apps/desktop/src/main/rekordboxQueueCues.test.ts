@@ -210,6 +210,37 @@ describe('cues operations', () => {
     expect(d.ensureClosed).not.toHaveBeenCalled()
   })
 
+  it('refuses a wanted set that would corrupt rekordbox and writes nothing', async () => {
+    const path = await collection([{ ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 }])
+    const d = deps()
+    const wanted = [
+      { id: 'm', ms: bar(40), kind: 1, color: 1 },
+      { ms: bar(44), kind: 1, color: 1 },
+    ]
+    const result = await applyRekordboxBatch(path, [op(path, { wanted })], d)
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'c', applied: false, notices: [{ code: 'cues-invalid', track: 'Gowan' }] }],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+    expect(cuesOf(path).map((c) => c.id)).toEqual(['m'])
+  })
+
+  it('says a queued drops operation from the previous build needs more than 8 hot cues and writes nothing', async () => {
+    const path = await collection([{ ID: 'y', InMsec: 500, Kind: 1, ColorTableIndex: 32 }])
+    const legacy = op(path, {
+      wanted: undefined,
+      drops: [bar(48), bar(96), bar(144), bar(192)],
+      previousDrops: [],
+    })
+    const result = await applyRekordboxBatch(path, [legacy], deps())
+    expect(result.ok && result.outcomes[0].notices).toEqual([
+      { code: 'cues-too-many', track: 'Gowan' },
+    ])
+    expect(cuesOf(path)).toHaveLength(1)
+  })
+
   it('still lands an operation the previous build queued with drops, as Mi flujo and never over manual work', async () => {
     const path = await collection([{ ID: 'm', InMsec: bar(40), Kind: 1, ColorTableIndex: 1 }])
     const legacy = op(path, { wanted: undefined, drops: [bar(64)], previousDrops: [] })

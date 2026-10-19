@@ -2216,7 +2216,8 @@
       "playlistGone": "{{playlist}} is no longer in rekordbox. {{track}} was not added",
       "editChanged": "{{playlist}} was not changed. It changed in rekordbox",
       "cuesChanged": "The cues of {{track}} changed in rekordbox. Mark them again",
-      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a drop"
+      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a drop",
+      "cuesInvalid": "The cues of {{track}} were not saved. Surco could not read them as cues"
     },
     "part": {
       "repoint": "new path",

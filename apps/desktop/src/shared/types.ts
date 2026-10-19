@@ -1121,7 +1121,13 @@ export type RekordboxEditResult =
 
 export type RekordboxQueueNotice =
   | {
-      code: 'ambiguous' | 'file-missing' | 'not-added' | 'cues-changed' | 'cues-too-many'
+      code:
+        | 'ambiguous'
+        | 'file-missing'
+        | 'not-added'
+        | 'cues-changed'
+        | 'cues-too-many'
+        | 'cues-invalid'
       track: string
     }
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
