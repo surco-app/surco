@@ -9,6 +9,7 @@ import {
   renderHook,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -135,6 +136,19 @@ describe('CuesSection maximized', () => {
     seek(100000)
     expect(position()).toBe('1:40.0')
     expect(screen.queryByTestId('cue-wave-drop-100000')).toBeNull()
+  })
+
+  it('recolours a placed hot cue from its pad and puts the default colour back', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    fireEvent.click(within(screen.getByTestId('cues-pad-colours')).getByTestId('cue-palette-42'))
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#e62828' })
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    fireEvent.click(within(screen.getByTestId('cues-pad-colours')).getByTestId('cue-palette-reset'))
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#28e214' })
   })
 
   it('places a hot cue with a pad, and the pad of a placed cue jumps back to it and selects it', async () => {

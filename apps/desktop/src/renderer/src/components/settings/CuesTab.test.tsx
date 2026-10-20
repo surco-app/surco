@@ -85,6 +85,16 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-palette')).toBeNull()
   })
 
+  it('opens rekordbox picker with Restablecer from a rule colour', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
+    expect(screen.getByTestId('cue-palette-reset')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cue-palette-reset'))
+    expect(screen.queryByTestId('cue-palette')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
+    expect(screen.getByTestId('cue-palette-22')).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('hides direction and repeat for a cue on the origin itself', () => {
     render(<Harness />)
     expect(screen.queryByTestId('cue-rule-1-direction')).toBeNull()

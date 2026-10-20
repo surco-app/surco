@@ -460,8 +460,10 @@ function Editing({
         <CueDeck
           cues={state.cues}
           selected={state.selected}
+          locked={state.locked}
           jumpBars={settings.cueJumpBars}
           onPad={pad}
+          onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
           onMemoryRemove={memoryRemove}

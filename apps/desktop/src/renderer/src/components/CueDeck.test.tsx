@@ -10,6 +10,7 @@ import { CueDeck } from './CueDeck'
 function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
   const handlers = {
     onPad: vi.fn<(kind: number) => void>(),
+    onRecolour: vi.fn<(key: string, color: number) => void>(),
     onMemory: vi.fn<() => void>(),
     onMemoryStep: vi.fn<(dir: 1 | -1) => void>(),
     onMemoryRemove: vi.fn<() => void>(),
@@ -22,6 +23,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
         { key: 'p', kind: 0, color: null },
       ]}
       selected="a"
+      locked={[]}
       jumpBars={16}
       canRemoveMemory
       {...handlers}
@@ -53,6 +55,43 @@ describe('CueDeck', () => {
     const { onPad } = setup()
     fireEvent.click(screen.getByTestId('cues-pad-D'))
     expect(onPad).toHaveBeenCalledWith(5)
+  })
+
+  it('opens rekordbox picker on a right click on a pad with a hot cue and recolours it', () => {
+    const { onRecolour } = setup()
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    expect(screen.getByTestId('cues-pad-colours')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-palette-42')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('cue-palette-5'))
+    expect(onRecolour).toHaveBeenCalledWith('a', 5)
+    expect(screen.queryByTestId('cues-pad-colours')).toBeNull()
+  })
+
+  it('opens no picker on an empty pad or on a loop', () => {
+    setup({ locked: ['a'] })
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-B'))
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    expect(screen.queryByTestId('cues-pad-colours')).toBeNull()
+  })
+
+  it('closes the picker with Escape or a click elsewhere', () => {
+    setup()
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByTestId('cues-pad-colours')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByTestId('cues-pad-colours')).toBeNull()
+  })
+
+  it('keeps Escape from the window listener that restores the maximized section', () => {
+    setup()
+    const onWindowKey = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', onWindowKey)
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    window.removeEventListener('keydown', onWindowKey)
+    expect(onWindowKey).not.toHaveBeenCalled()
   })
 
   it('puts, walks and removes CALLs with MEMORY and its arrows', () => {

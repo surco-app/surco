@@ -814,7 +814,8 @@
         "remove": "apagar a selecionada",
         "undo": "desfazer",
         "zoom": "zoom"
-      }
+      },
+      "resetColour": "Redefinir"
     }
   },
   "fields": {
