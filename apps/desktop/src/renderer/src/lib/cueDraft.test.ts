@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
+import { BUNDLED_FLOWS, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import { type ExistingCue, validWantedSet } from '../../../shared/cueRules'
 import {
   type CueDraft,
   type DraftAction,
+  type DraftCue,
   draftDrops,
   freeLetters,
+  ghostOf,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -369,11 +371,174 @@ describe('reduceDraft', () => {
   })
 })
 
+const QUIET: CueFlow = { ...ONE_AT_32, id: 'quiet', markPoint: false }
+const MIXED: CueFlow = {
+  id: 'mixed',
+  name: '',
+  markPoint: false,
+  rules: [ONE_AT_32.rules[0], { ...MY_FLOW.rules[1], when: 'always' }],
+}
+const CHORUS: CueFlow = {
+  id: 'chorus',
+  name: '',
+  markPoint: false,
+  rules: [
+    {
+      from: 'chorus',
+      direction: 'back',
+      bars: 0,
+      repeat: 1,
+      when: 'always',
+      place: 'hot',
+      color: { fixed: 5 },
+    },
+  ],
+}
+const wide = {
+  ...ctx,
+  flows: [...BUNDLED_FLOWS, QUIET, MIXED, CHORUS],
+  phrases: [
+    { ms: bar(64), kind: 'chorus' as const },
+    { ms: bar(128), kind: 'chorus' as const },
+  ],
+}
+const runWide = (state: CueDraft, ...actions: DraftAction[]) =>
+  actions.reduce((s, a) => reduceDraft(s, a, wide), state)
+const hotOf = (s: { cues: DraftCue[] }) =>
+  s.cues
+    .filter((c) => c.kind !== 0)
+    .sort((a, b) => a.ms - b.ms)
+    .map((c) => [c.ms, c.kind, c.color])
+const shape = (cues: DraftCue[]) => cues.map((c) => `${c.key} ${c.ms} ${c.kind} ${c.color}`).sort()
+const throughGhost = (s: CueDraft, a: DraftAction) => {
+  const g = ghostOf(s, a, wide)
+  return [...s.cues.filter((c) => !g.gone.includes(c.key)), ...g.added]
+}
+
+describe('a flow that leaves the point unmarked', () => {
+  it('places the cues of the point with no CALL on it, so nothing reads as a point afterwards', () => {
+    const s = runWide(startDraft([], 'quiet'), { type: 'mark-drop', ms: bar(64) + 120 })
+    expect(hotOf(s)).toEqual([[bar(32), 1, 22]])
+    expect(s.cues.filter((c) => c.kind === 0)).toEqual([])
+    expect(draftDrops(s.cues)).toEqual([])
+  })
+
+  it('places again after a placement that left no CALL, so a DJ who does not mark the point can place on every part of the track', () => {
+    const s = runWide(
+      startDraft([], 'quiet'),
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(160) },
+    )
+    expect(hotOf(s)).toEqual([
+      [bar(32), 1, 22],
+      [bar(128), 2, 22],
+    ])
+    expect(s.notice).toBeNull()
+  })
+
+  it('places the cues of a mixed flow that do not depend on the point too, in time order of letters', () => {
+    const s = runWide(startDraft([], 'mixed'), { type: 'mark-drop', ms: bar(64) })
+    expect(hotOf(s)).toEqual([
+      [0, 1, 32],
+      [bar(32), 2, 22],
+    ])
+    expect(s.cues.filter((c) => c.kind === 0).map((c) => c.ms)).toEqual([0])
+  })
+
+  it('skips a spot already taken and keeps what is there, as a cue placed by hand would', () => {
+    const s = runWide(startDraft([{ id: 'h', ms: bar(32), kind: 5, color: 1 }], 'quiet'), {
+      type: 'mark-drop',
+      ms: bar(64),
+    })
+    expect(s.cues).toHaveLength(1)
+    expect(s.past).toHaveLength(0)
+  })
+
+  it('takes the whole placement away with one undo', () => {
+    const s = runWide(startDraft([], 'mixed'), { type: 'mark-drop', ms: bar(64) }, { type: 'undo' })
+    expect(s.cues).toEqual([])
+    expect(s.past).toEqual([])
+  })
+
+  it('keeps every set main accepts', () => {
+    const s = runWide(
+      startDraft([], 'mixed'),
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(160) },
+    )
+    expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
+  })
+})
+
+describe('ghostOf', () => {
+  it('shows what a click would place with Mi flujo, the CALL of the point and each hot cue with its CALL, and the click places exactly that', () => {
+    const action: DraftAction = { type: 'mark-drop', ms: bar(64) }
+    const g = ghostOf(empty(), action, wide)
+    expect(g.gone).toEqual([])
+    expect(g.added).toHaveLength(7)
+    expect(shape(throughGhost(empty(), action))).toEqual(
+      shape(reduceDraft(empty(), action, wide).cues),
+    )
+  })
+
+  it('shows only the CALL of the point and the hot cue 32 bars before with Una cue a 32', () => {
+    const one = startDraft([], 'one-at-32')
+    const g = ghostOf(one, { type: 'mark-drop', ms: bar(64) }, wide)
+    expect(g.added.map((c) => [c.ms, c.kind]).sort((a, b) => a[0] - b[0])).toEqual([
+      [bar(32), 1],
+      [bar(64), 0],
+    ])
+  })
+
+  it.each([
+    ['a flow that leaves the point unmarked', 'quiet'],
+    ['a flow mixing rules from the point and from the track', 'mixed'],
+  ])('equals the commit for %s', (_name, flowId) => {
+    const action: DraftAction = { type: 'mark-drop', ms: bar(64) }
+    const s = startDraft([], flowId)
+    expect(shape(throughGhost(s, action))).toEqual(shape(reduceDraft(s, action, wide).cues))
+  })
+
+  it('shows the whole result of a flow that does not depend on the point, the same as applying it', () => {
+    const s = startDraft([], 'chorus')
+    const action: DraftAction = { type: 'apply-flow', flowId: 'chorus' }
+    expect(ghostOf(s, action, wide).added.map((c) => c.ms)).toEqual([bar(64), bar(128)])
+    expect(shape(throughGhost(s, action))).toEqual(shape(reduceDraft(s, action, wide).cues))
+  })
+
+  it('shows what switching a marked track to another flow takes away and adds, and changes nothing by itself', () => {
+    const marked = runWide(empty(), { type: 'mark-drop', ms: bar(64) })
+    const before = JSON.stringify(marked)
+    const action: DraftAction = { type: 'apply-flow', flowId: 'one-at-32' }
+    const g = ghostOf(marked, action, wide)
+    expect(g.gone.length).toBeGreaterThan(0)
+    expect(g.added.some((c) => c.kind === 1 && c.ms === bar(32))).toBe(true)
+    expect(shape(throughGhost(marked, action))).toEqual(
+      shape(reduceDraft(marked, action, wide).cues),
+    )
+    expect(JSON.stringify(marked)).toBe(before)
+  })
+
+  it('shows nothing over a point that is already marked, where a click changes nothing', () => {
+    const marked = runWide(empty(), { type: 'mark-drop', ms: bar(64) })
+    expect(ghostOf(marked, { type: 'mark-drop', ms: bar(64) + 10 }, wide)).toEqual({
+      added: [],
+      gone: [],
+    })
+  })
+})
+
 describe('quantize of hand-placed cues', () => {
   const grid = beats.map((ms, i) => ({ ms, beat: (i % 4) + 1 }))
   const quantized = (unit: 'bar' | 'beat') => ({ ...ctx, snapTo: quantizePoints(grid, unit) })
   const runWith = (unit: 'bar' | 'beat', state: CueDraft, ...actions: DraftAction[]) =>
     actions.reduce((s, a) => reduceDraft(s, a, quantized(unit)), state)
+
+  it('draws the flow on the bar start under the cursor, where the click will put it', () => {
+    const g = ghostOf(empty(), { type: 'mark-drop', ms: bar(64) + 600 }, quantized('bar'))
+    expect(g.added.filter((c) => c.kind === 0).map((c) => c.ms)).toContain(bar(64))
+    expect(g.added.some((c) => c.ms === bar(64) + 500)).toBe(false)
+  })
 
   it('marks a drop on the nearest bar start when quantizing to the bar, because drops start phrases', () => {
     expect(

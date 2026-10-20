@@ -192,6 +192,42 @@ function pairOf(cues: DraftCue[], target: DraftCue): DraftCue | undefined {
   return isHot(target) ? cues.find((c) => !isHot(c) && near(c.ms, target.ms)) : undefined
 }
 
+function placeOnce(state: CueDraft, ctx: DraftContext, ms: number, flow: CueFlow): CueDraft {
+  const out = flowOutcome({
+    existing: [],
+    drops: [ms],
+    previousDrops: [],
+    beats: ctx.beats,
+    strong: ctx.strong,
+    phrases: ctx.phrases,
+    flow,
+    point: ms,
+  })
+  if (out.status === 'too-many') return { ...state, notice: 'too-many' }
+  const taken = (c: WantedCue): boolean =>
+    state.cues.some((o) => isHot(o) === isHot(c) && near(o.ms, c.ms))
+  const skipped = out.wanted.filter((c) => isHot(c) && taken(c))
+  const fresh = out.wanted.filter(
+    (c) => !taken(c) && (isHot(c) || !skipped.some((h) => near(h.ms, c.ms))),
+  )
+  if (fresh.length === 0) return state
+  const free = freeLetters(state.cues)
+  const hot = fresh.filter(isHot).sort((a, b) => a.ms - b.ms)
+  if (hot.length > free.length) return { ...state, notice: 'too-many' }
+  const letter = new Map(hot.map((c, i) => [c, free[i]]))
+  let nextKey = state.nextKey
+  const added = fresh.map((c): DraftCue => {
+    nextKey += 1
+    return { key: `n${nextKey}`, ms: c.ms, kind: letter.get(c) ?? 0, color: c.color }
+  })
+  return commit(state, [...state.cues, ...added], {
+    nextKey,
+    selected: null,
+    trimmed: out.status === 'plan' ? out.trimmed : [],
+    edited: [...state.edited, ...added.filter(isHot).map((c) => c.key)],
+  })
+}
+
 export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft {
   const flow = flowById(ctx, state.flowId)
   const generator = flowById(ctx, state.generatedBy)
@@ -215,8 +251,10 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   if (needsGrid(action) && ctx.beats.length === 0) return state
   if (action.type === 'mark-drop') {
     const ms = snap(ctx, action.ms)
-    if (draftDrops(state.cues, state.locked).some((d) => near(d, ms))) return state
-    return regenerate(state, ctx, [...draftDrops(state.cues, state.locked), ms], flow, generator)
+    const drops = draftDrops(state.cues, state.locked)
+    if (drops.some((d) => near(d, ms))) return state
+    if (!flow.markPoint) return placeOnce(state, ctx, ms, flow)
+    return regenerate(state, ctx, [...drops, ms], flow, generator)
   }
   if (action.type === 'apply-flow')
     return regenerate(
@@ -294,4 +332,20 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     state.cues.map((c) => (moving.has(c.key) ? { ...c, ms } : c)),
     { edited: [...state.edited, target.key] },
   )
+}
+
+export interface DraftGhost {
+  added: DraftCue[]
+  gone: string[]
+}
+
+const sameCue = (a: DraftCue, b: DraftCue): boolean =>
+  a.key === b.key && a.ms === b.ms && a.kind === b.kind && a.color === b.color
+
+export function ghostOf(state: CueDraft, action: DraftAction, ctx: DraftContext): DraftGhost {
+  const next = reduceDraft(state, action, ctx)
+  return {
+    added: next.cues.filter((c) => !state.cues.some((s) => sameCue(s, c))),
+    gone: state.cues.filter((s) => !next.cues.some((c) => sameCue(s, c))).map((s) => s.key),
+  }
 }
