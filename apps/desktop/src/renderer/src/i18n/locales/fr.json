@@ -786,7 +786,11 @@
       "trimmed_one": "{{count}} hot cue reste dehors à cause de la limite de 8",
       "trimmed_other": "{{count}} hot cues restent dehors à cause de la limite de 8",
       "queuedStale": "L'enregistrement en attente date d'avant la modification du morceau dans rekordbox et n'est plus à jour. Vous voyez ce que contient rekordbox maintenant.",
-      "loop": "C'est une boucle. Surco ne la déplace pas et ne la modifie pas."
+      "loop": "C'est une boucle. Surco ne la déplace pas et ne la modifie pas.",
+      "detail": "Onde agrandie",
+      "toCall": "{{bars}} mesures avant le CALL",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer"
     }
   },
   "fields": {

@@ -786,7 +786,11 @@
       "trimmed_one": "{{count}} hot cue fica de fora pelo limite de 8",
       "trimmed_other": "{{count}} hot cues ficam de fora pelo limite de 8",
       "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no rekordbox e está desatualizado. Você vê o que o rekordbox tem agora.",
-      "loop": "É um loop. O Surco não o move nem o altera."
+      "loop": "É um loop. O Surco não o move nem o altera.",
+      "detail": "Onda ampliada",
+      "toCall": "{{bars}} compassos até o CALL",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar"
     }
   },
   "fields": {
