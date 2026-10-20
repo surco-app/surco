@@ -32,6 +32,7 @@ export function CueDeck({
   onMemoryRemove,
   canRemoveMemory,
   onJumpBars,
+  onDone,
 }: {
   cues: DeckCue[]
   selected: string | null
@@ -44,6 +45,7 @@ export function CueDeck({
   onMemoryRemove: () => void
   canRemoveMemory: boolean
   onJumpBars: (bars: CueJumpBars) => void
+  onDone?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const at = CUE_JUMP_BARS.indexOf(jumpBars)
@@ -55,6 +57,7 @@ export function CueDeck({
       if (e.key !== 'Escape') return
       e.stopPropagation()
       setColouring(null)
+      onDone?.()
     }
     const onDown = (e: MouseEvent) => {
       if (!popoverRef.current?.contains(e.target as Node)) setColouring(null)
@@ -65,7 +68,7 @@ export function CueDeck({
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('mousedown', onDown)
     }
-  }, [colouring])
+  }, [colouring, onDone])
   return (
     <div data-testid="cues-deck" className="flex flex-wrap items-center gap-x-5 gap-y-3 pb-4">
       <div className="flex items-center gap-1.5">
@@ -116,6 +119,7 @@ export function CueDeck({
                     onPick={(color) => {
                       onRecolour(cue.key, color)
                       setColouring(null)
+                      onDone?.()
                     }}
                     label={(index) => tr('editor.cues.colour', { index })}
                   />

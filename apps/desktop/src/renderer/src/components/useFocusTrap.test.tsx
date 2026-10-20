@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useFocusTrap } from './useFocusTrap'
 
@@ -62,5 +62,48 @@ describe('useFocusTrap', () => {
     fireEvent.click(trigger)
     fireEvent.click(trigger)
     expect(trigger).toHaveFocus()
+  })
+
+  it('gives the focus back to the full cue editor that opened Settings, even though Settings focuses its tab before the trap', () => {
+    function SettingsLike(): React.JSX.Element {
+      const ref = useRef<HTMLDivElement>(null)
+      const tab = useRef<HTMLButtonElement>(null)
+      useFocusTrap(ref)
+      useLayoutEffect(() => tab.current?.focus(), [])
+      return (
+        <div ref={ref} role="dialog">
+          <button ref={tab} type="button" data-testid="tab">
+            tab
+          </button>
+        </div>
+      )
+    }
+    function App(): React.JSX.Element {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <fieldset
+            data-testid="cues-editor"
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === ',') setOpen(true)
+            }}
+          />
+          {open && <SettingsLike />}
+          {open && (
+            <button type="button" data-testid="close" onClick={() => setOpen(false)}>
+              close
+            </button>
+          )}
+        </>
+      )
+    }
+    render(<App />)
+    const editor = screen.getByTestId('cues-editor')
+    editor.focus()
+    fireEvent.keyDown(editor, { key: ',' })
+    expect(screen.getByTestId('tab')).toHaveFocus()
+    fireEvent.click(screen.getByTestId('close'))
+    expect(editor).toHaveFocus()
   })
 })

@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -9,10 +9,10 @@ const FOCUSABLE =
 // the backdrop and the trigger loses focus when the dialog closes — both standard
 // modal accessibility expectations.
 export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
+  const [previouslyFocused] = useState(() => document.activeElement as HTMLElement | null)
   useEffect(() => {
     const node = ref.current
     if (!node) return
-    const previouslyFocused = document.activeElement as HTMLElement | null
     const focusables = (): HTMLElement[] =>
       Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE))
 
@@ -60,5 +60,5 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
       for (const el of inerted) el.removeAttribute('inert')
       previouslyFocused?.focus?.()
     }
-  }, [ref])
+  }, [ref, previouslyFocused])
 }

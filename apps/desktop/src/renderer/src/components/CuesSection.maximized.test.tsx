@@ -151,6 +151,29 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#28e214' })
   })
 
+  it('gives the keys back to the editor after a pad colour, Restablecer or Escape, so Space plays and not the pad', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    const colours = () => within(screen.getByTestId('cues-pad-colours'))
+    const pickFrom = (id: string) => {
+      const button = colours().getByTestId(id)
+      button.focus()
+      fireEvent.click(button)
+    }
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    pickFrom('cue-palette-42')
+    expect(document.activeElement).toBe(editor())
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    pickFrom('cue-palette-reset')
+    expect(document.activeElement).toBe(editor())
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    colours().getByTestId('cue-palette-42').focus()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(screen.queryByTestId('cues-pad-colours')).toBeNull()
+    expect(document.activeElement).toBe(editor())
+  })
+
   it('places a hot cue with a pad, and the pad of a placed cue jumps back to it and selects it', async () => {
     setup()
     await maximize()

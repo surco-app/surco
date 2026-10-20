@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MY_FLOW_ID } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
@@ -278,6 +278,7 @@ function Editing({
     }
   }
   const editorRef = useRef<HTMLFieldSetElement>(null)
+  const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   useEffect(() => {
     if (maximized) editorRef.current?.focus()
   }, [maximized])
@@ -478,6 +479,7 @@ function Editing({
           onMemoryRemove={memoryRemove}
           canRemoveMemory={callHere !== undefined}
           onJumpBars={(bars) => onJumpBars?.(bars)}
+          onDone={focusEditor}
         />
       )}
       <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
