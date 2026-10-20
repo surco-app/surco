@@ -211,7 +211,10 @@ describe('CuesSection', () => {
     await ready()
     clickAt(bar(64))
     pick('cue-wave-hot-A', bar(16))
+    expect(screen.queryByTestId('cue-palette')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-colour'))
     fireEvent.click(screen.getByTestId('cue-palette-5'))
+    expect(screen.queryByTestId('cue-palette')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#50b4ff' })
     const letters = [...(screen.getByTestId('cues-letter') as HTMLSelectElement).options].map(
       (o) => o.text,
@@ -227,8 +230,33 @@ describe('CuesSection', () => {
     clickAt(bar(64))
     pick(`cue-wave-call-${bar(64)}`, bar(64))
     expect(screen.getByTestId('cues-delete')).toBeInTheDocument()
-    expect(screen.queryByTestId('cue-palette')).toBeNull()
+    expect(screen.queryByTestId('cues-colour')).toBeNull()
     expect(screen.queryByTestId('cues-letter')).toBeNull()
+  })
+
+  it('floats the colour picker over the editor and closes it with Escape without leaving the section', async () => {
+    setup()
+    await ready()
+    clickAt(bar(64))
+    pick('cue-wave-hot-A', bar(16))
+    fireEvent.click(screen.getByTestId('cues-colour'))
+    expect(screen.getByTestId('cues-colour-popover').className).toContain('absolute')
+    const reachedWindow = vi.fn()
+    window.addEventListener('keydown', reachedWindow)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    window.removeEventListener('keydown', reachedWindow)
+    expect(screen.queryByTestId('cue-palette')).toBeNull()
+    expect(reachedWindow).not.toHaveBeenCalled()
+  })
+
+  it('closes the floating colour picker on a click outside it', async () => {
+    setup()
+    await ready()
+    clickAt(bar(64))
+    pick('cue-wave-hot-A', bar(16))
+    fireEvent.click(screen.getByTestId('cues-colour'))
+    fireEvent.mouseDown(screen.getByTestId('cues-delete'))
+    expect(screen.queryByTestId('cues-colour-popover')).toBeNull()
   })
 
   it('adds a hot cue from the right-click menu on the first free letter in the default colour', async () => {

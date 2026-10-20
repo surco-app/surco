@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MY_FLOW_ID } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import { BEATS_PER_BAR, MAX_HOT_CUES, nearestBeat } from '../../../shared/cueRules'
+import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
@@ -281,6 +282,27 @@ function Editing({
   }
   const editorRef = useRef<HTMLFieldSetElement>(null)
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
+  const [colourFor, setColourFor] = useState<string | null>(null)
+  const colourOpen = colourFor !== null && colourFor === state.selected
+  const colourRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!colourOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      setColourFor(null)
+      focusEditor()
+    }
+    const onDown = (e: MouseEvent) => {
+      if (!colourRef.current?.contains(e.target as Node)) setColourFor(null)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [colourOpen, focusEditor])
   useEffect(() => {
     if (maximized) editorRef.current?.focus()
   }, [maximized])
@@ -412,11 +434,34 @@ function Editing({
           )}
           {selected.kind !== 0 && !state.locked.includes(selected.key) && (
             <>
-              <CuePalette
-                value={selected.color}
-                onPick={(color) => dispatch({ type: 'recolour', key: selected.key, color })}
-                label={(index) => tr('editor.cues.colour', { index })}
-              />
+              <div ref={colourRef} className="relative">
+                <button
+                  type="button"
+                  data-testid="cues-colour"
+                  aria-label={tr('editor.cues.colourPicker')}
+                  aria-haspopup="true"
+                  aria-expanded={colourOpen}
+                  onClick={() => setColourFor(colourOpen ? null : selected.key)}
+                  style={{ backgroundColor: hotCueColor(selected.color) }}
+                  className="press block h-6 w-6 rounded-[3px] border border-[var(--color-line-strong)]"
+                />
+                {colourOpen && (
+                  <div
+                    data-testid="cues-colour-popover"
+                    className="absolute z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]"
+                  >
+                    <CuePalette
+                      value={selected.color}
+                      onPick={(color) => {
+                        dispatch({ type: 'recolour', key: selected.key, color })
+                        setColourFor(null)
+                        focusEditor()
+                      }}
+                      label={(index) => tr('editor.cues.colour', { index })}
+                    />
+                  </div>
+                )}
+              </div>
               <select
                 data-testid="cues-letter"
                 aria-label={tr('editor.cues.letter')}
