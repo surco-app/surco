@@ -817,6 +817,7 @@
       },
       "resetColour": "Reset",
       "markDrop": "Mark where it drops",
+      "markAnother": "Mark another where it drops",
       "apply": "Apply {{name}}",
       "armHint": "Click where it drops",
       "saveShort": "Save",

@@ -393,6 +393,62 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
   })
 
+  it('offers Marcar otro donde rompe in the flow menu only once a drop exists, since before that the main button already marks', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    expect(screen.queryByTestId('cues-flow-option-mark-another')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    expect(screen.getByTestId('cues-flow-option-mark-another')).toHaveTextContent(
+      'Mark another where it drops',
+    )
+  })
+
+  it('adds exactly one more drop with Marcar otro donde rompe and the click that follows, applying the flow to it', async () => {
+    setup(READ, null, { activeCueFlow: 'one-at-32' })
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
+    expect(screen.getByTestId('cues-arm-hint')).toHaveTextContent('Click where it drops')
+    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName(/One cue at 32/)
+    clickAt(bar(160))
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
+    expect(screen.getByTestId(`cue-wave-call-${bar(160)}`)).toBeInTheDocument()
+    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
+  })
+
+  it('cancels the wait for another drop with Escape, which never reaches the window', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
+    const reachedWindow = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', reachedWindow)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    window.removeEventListener('keydown', reachedWindow)
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    expect(reachedWindow).not.toHaveBeenCalled()
+  })
+
+  it('does not take the drop away when the click that adds another lands on it', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
+    clickAt(bar(64))
+    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
+  })
+
   it('marks with the flow picked from the arrow before any drop is marked', async () => {
     setup()
     await ready()

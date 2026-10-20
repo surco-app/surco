@@ -817,6 +817,7 @@
       },
       "resetColour": "Redefinir",
       "markDrop": "Marcar o drop",
+      "markAnother": "Marcar outro drop",
       "apply": "Aplicar {{name}}",
       "armHint": "Clique onde entra o drop",
       "saveShort": "Salvar",

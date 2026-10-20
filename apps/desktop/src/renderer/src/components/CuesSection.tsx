@@ -68,6 +68,8 @@ export interface CueTrackInfo {
   cover?: string
 }
 
+const MARK_ANOTHER = 'mark-another'
+
 const ignore = () => {}
 
 const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
@@ -248,12 +250,13 @@ function Editing({
     y: number
     palette: boolean
   } | null>(null)
-  const [arming, setArming] = useState(false)
-  const noDrop = draftDrops(state.cues, state.locked).length === 0
-  const armed = arming && noDrop
+  const dropCount = draftDrops(state.cues, state.locked).length
+  const noDrop = dropCount === 0
+  const [arming, setArming] = useState<number | null>(null)
+  const armed = arming === dropCount
   useEffect(() => {
-    if (!noDrop) setArming(false)
-  }, [noDrop])
+    setArming((a) => (a === dropCount ? a : null))
+  }, [dropCount])
   const [chosen, setChosen] = useState(state.flowId)
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
   const shownName = flowName(flows.find((f) => f.id === shownFlow) ?? MY_FLOW, tr)
@@ -262,12 +265,16 @@ function Editing({
     dispatch({ type: 'use-flow', flowId })
   }
   const primary = () => {
-    if (noDrop) setArming(!arming)
+    if (noDrop) setArming(armed ? null : dropCount)
     else dispatch({ type: 'apply-flow', flowId: shownFlow })
   }
   const markDrop = (ms: number) => {
     dispatch({ type: 'mark-drop', ms })
-    setArming(false)
+    setArming(null)
+  }
+  const pickFromFlowMenu = (value: string) => {
+    if (value === MARK_ANOTHER) setArming(dropCount)
+    else pickFlow(value)
   }
   const openedWith = useRef(active.id)
   useEffect(() => {
@@ -441,7 +448,7 @@ function Editing({
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.stopPropagation()
-      setArming(false)
+      setArming(null)
       focusEditor()
     }
     document.addEventListener('keydown', onKey)
@@ -484,8 +491,13 @@ function Editing({
           portal
           label={tr('editor.cues.flow')}
           value={shownFlow}
-          onChange={pickFlow}
-          options={flows.map((f) => ({ value: f.id, label: flowName(f, tr), short: '' }))}
+          onChange={pickFromFlowMenu}
+          options={[
+            ...flows.map((f) => ({ value: f.id, label: flowName(f, tr), short: '' })),
+            ...(noDrop
+              ? []
+              : [{ value: MARK_ANOTHER, label: tr('editor.cues.markAnother'), short: '' }]),
+          ]}
         />
       </div>
       {armed && (
@@ -585,7 +597,7 @@ function Editing({
         selected={state.selected}
         trimmed={state.trimmed}
         onMarkDrop={markDrop}
-        onUnmarkDrop={(key) => dispatch({ type: 'unmark-drop', key })}
+        onUnmarkDrop={armed ? undefined : (key) => dispatch({ type: 'unmark-drop', key })}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={setMenu}
