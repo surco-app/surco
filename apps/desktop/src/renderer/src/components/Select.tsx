@@ -44,6 +44,7 @@ interface Props {
   // that would otherwise trap both below the controls around it.
   portal?: boolean
   split?: boolean
+  onClosed?: () => void
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -63,6 +64,7 @@ export function Select({
   bare = false,
   portal = false,
   split = false,
+  onClosed,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -117,7 +119,8 @@ export function Select({
 
   function close(): void {
     setOpen(false)
-    triggerRef.current?.focus()
+    if (onClosed) onClosed()
+    else triggerRef.current?.focus()
   }
 
   function choose(next: string): void {

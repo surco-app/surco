@@ -310,6 +310,24 @@ describe('CuesSection maximized', () => {
     expect(onJumpBars).toHaveBeenCalledWith(32)
   })
 
+  it('gives the keys back to the editor after picking a jump size, so the arrows work without a click', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-jump'))
+    fireEvent.click(screen.getByTestId('cues-jump-option-32'))
+    expect(document.activeElement).toBe(editor())
+    key('ArrowRight')
+    expect(position()).toBe('0:32.0')
+  })
+
+  it('gives the keys back to the editor when the jump menu is closed with Escape', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-jump'))
+    fireEvent.keyDown(screen.getByTestId('cues-jump-listbox'), { key: 'Escape' })
+    expect(document.activeElement).toBe(editor())
+  })
+
   it('shows the jump set in Settings', async () => {
     setup({ cueJumpBars: 64 })
     await maximize()

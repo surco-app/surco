@@ -169,6 +169,7 @@ export function CueDeck({
           bare
           compact
           portal
+          onClosed={onDone}
           label={tr('editor.cues.jump')}
           value={String(jumpBars)}
           onChange={(value) => {
