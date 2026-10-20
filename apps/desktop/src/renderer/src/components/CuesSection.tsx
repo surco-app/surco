@@ -374,6 +374,16 @@ function Editing({
     const call = callAt(state.cues, to)
     if (call) dispatch({ type: 'select', key: call.key })
   }
+  const removableCall =
+    selected && selected.kind === 0
+      ? selected
+      : (callAt(state.cues, playheadMs) ??
+        callAt(state.cues, ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)]))
+  const memoryRemove = () => {
+    if (!removableCall || state.locked.includes(removableCall.key)) return
+    dispatch({ type: 'remove', key: removableCall.key })
+    focusEditor()
+  }
   const run = (key: CueKey) => {
     if (key.type === 'play') audition.toggle(playheadMs)
     else if (key.type === 'jump')
@@ -783,6 +793,8 @@ function Editing({
           onDelete={(key) => dispatch({ type: 'remove', key })}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
+          onMemoryRemove={memoryRemove}
+          canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
           onJumpBars={(bars) => onJumpBars?.(bars)}
           onQuantize={(unit) => onQuantize?.(unit)}
           onDone={focusEditor}

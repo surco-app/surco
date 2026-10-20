@@ -15,6 +15,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
     onRecolour: vi.fn<(key: string, color: number) => void>(),
     onMemory: vi.fn<() => void>(),
     onMemoryStep: vi.fn<(dir: 1 | -1) => void>(),
+    onMemoryRemove: vi.fn<() => void>(),
     onJumpBars: vi.fn<(bars: CueJumpBars) => void>(),
     onQuantize: vi.fn<(unit: CueQuantize) => void>(),
   }
@@ -29,6 +30,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
       jumpBars={16}
       quantize="bar"
       playing={false}
+      canRemoveMemory
       {...handlers}
       {...over}
     />,
@@ -109,10 +111,22 @@ describe('CueDeck', () => {
     expect(h.onMemoryStep.mock.calls).toEqual([[-1], [1]])
   })
 
-  it('has no MEMORY button and no ✕, since ⌫ deletes the selected CALL', () => {
-    setup()
-    expect(screen.queryByTestId('cues-memory-remove')).toBeNull()
+  it('removes the current CALL with the ✕ after ›, and greys it out when there is none', () => {
+    const h = setup()
+    expect(screen.getByTestId('cues-memory-remove')).toHaveAccessibleName('Delete')
+    expect(screen.getByTestId('cues-memory-next').nextElementSibling).toBe(
+      screen.getByTestId('cues-memory-remove'),
+    )
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(h.onMemoryRemove).toHaveBeenCalledTimes(1)
     expect(screen.getByTestId('cues-deck')).not.toHaveTextContent('MEMORY')
+  })
+
+  it('does nothing from the ✕ and says so with aria-disabled when no CALL is there', () => {
+    const h = setup({ canRemoveMemory: false })
+    expect(screen.getByTestId('cues-memory-remove')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(h.onMemoryRemove).not.toHaveBeenCalled()
   })
 
   it('plays and pauses with its button and says which one it will do', () => {

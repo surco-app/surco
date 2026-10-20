@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Pause, Play, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pause, Play, Plus, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -33,6 +33,8 @@ export function CueDeck({
   onDelete,
   onMemory,
   onMemoryStep,
+  onMemoryRemove,
+  canRemoveMemory,
   onJumpBars,
   onQuantize,
   onDone,
@@ -49,6 +51,8 @@ export function CueDeck({
   onDelete?: (key: string) => void
   onMemory: () => void
   onMemoryStep: (dir: 1 | -1) => void
+  onMemoryRemove: () => void
+  canRemoveMemory: boolean
   onJumpBars: (bars: CueJumpBars) => void
   onQuantize: (unit: CueQuantize) => void
   onDone?: () => void
@@ -192,6 +196,18 @@ export function CueDeck({
           className={STEP}
         >
           <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          data-testid="cues-memory-remove"
+          aria-label={tr('editor.cues.delete')}
+          aria-disabled={!canRemoveMemory}
+          onClick={() => {
+            if (canRemoveMemory) onMemoryRemove()
+          }}
+          className={`${STEP} aria-disabled:opacity-40`}
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <span className="flex-1" />

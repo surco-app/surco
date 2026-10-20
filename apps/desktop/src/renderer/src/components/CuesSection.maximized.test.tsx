@@ -304,6 +304,37 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByTestId('cue-wave-call-64230')).toBeNull()
   })
 
+  it('deletes with the ✕ the CALL reached with ›, brings the focus back to the editor and restores it with ⌘Z', async () => {
+    setup(null, { ...READ, cues: [{ id: 'r', ms: 64000, kind: 0, color: null }] })
+    await maximize()
+    seek(0)
+    fireEvent.click(screen.getByTestId('cues-memory-next'))
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
+    expect(document.activeElement).toBe(editor())
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+  })
+
+  it('deletes with the ✕ the CALL under the playhead when nothing is selected', async () => {
+    setup(null, { ...READ, cues: [{ id: 'r', ms: 64000, kind: 0, color: null }] })
+    await maximize()
+    seek(64000)
+    expect(screen.getByTestId('cue-wave-call-64000')).not.toHaveAttribute('data-selected', 'true')
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
+  })
+
+  it('greys out the ✕ with no CALL there and leaves a hot cue alone', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    expect(screen.getByTestId('cues-memory-remove')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+  })
+
   it('changes the jump from its menu and hands it on to be saved', async () => {
     const { onJumpBars } = setup()
     await maximize()
