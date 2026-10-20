@@ -431,6 +431,7 @@ export const CUES_POINT = 122
 export const CUES_HOVERS = [110, 116, CUES_POINT] as const
 export const CUES_ZOOM = { from: 70, bars: 64 } as const
 export const CUES_SECONDS = 9
+export const CUES_CALL_COLOUR = '#e62828'
 
 export const CUES_FLOW = [
   { back: 48, letter: 'A', colour: '#e62828' },

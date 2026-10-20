@@ -3,6 +3,7 @@ import { PAGES } from '../lib/nav'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
+import CuesScene from './scenes/CuesScene'
 import DeclickScene from './scenes/DeclickScene'
 import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
@@ -130,6 +131,11 @@ export default function Walkthrough() {
         app={<ReplaceScene />}
       >
         {t('home.replace.lede')}
+      </SceneLayout>
+
+      <SceneLayout wide step={t('home.cues.step')} title={t('home.cues.title')} app={<CuesScene />}>
+        <p>{t('home.cues.lede')}</p>
+        <p className="mt-3">{t('home.cues.example')}</p>
       </SceneLayout>
 
       <Reveal>

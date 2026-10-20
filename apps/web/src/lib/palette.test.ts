@@ -50,6 +50,10 @@ const BLENDS: Record<string, [Colour, number, Colour]> = {
 
 const palette = new Set<string>(Object.values(TOKYO_NIGHT))
 
+const REKORDBOX_CUE_COLOURS_BY_FILE: Record<string, string[]> = {
+  'lib/scenes.ts': ['#e62828', '#28e214', '#305aff'],
+}
+
 describe('Tokyo Night palette', () => {
   const theme = css.slice(css.indexOf('@theme'), css.indexOf('\n}', css.indexOf('@theme')))
 
@@ -99,7 +103,10 @@ describe('components paint only Tokyo Night colours', () => {
       const rgbs = [...code.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map((m) =>
         hex(m[1], m[2], m[3]),
       )
-      const foreign = [...hexes, ...rgbs].filter((c) => !palette.has(c.toLowerCase()))
+      const rekordbox = REKORDBOX_CUE_COLOURS_BY_FILE[name] ?? []
+      const foreign = [...hexes, ...rgbs].filter(
+        (c) => !palette.has(c.toLowerCase()) && !rekordbox.includes(c.toLowerCase()),
+      )
       const tailwind = (
         code.match(
           /\b[a-z]+-(white|black|(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})\b(\/\d+)?/g,
