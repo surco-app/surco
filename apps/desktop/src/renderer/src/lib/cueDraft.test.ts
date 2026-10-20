@@ -861,3 +861,58 @@ describe('correcting a point', () => {
     expect(shape(moved)).toBe(shape(run(placed, { type: 'move', key: hot.key, ms: bar(36) })))
   })
 })
+
+describe('correcting a point, by provenance', () => {
+  const callAt = (s: CueDraft, ms: number) =>
+    s.cues.find((c) => c.kind === 0 && c.ms === ms)?.key as string
+  const ahead: CueFlow = {
+    id: 'ahead',
+    name: '',
+    markPoint: true,
+    rules: [
+      {
+        from: 'drop',
+        direction: 'forward',
+        bars: 16,
+        repeat: 1,
+        when: 'fits',
+        place: 'hot',
+        color: { fixed: 5 },
+      },
+    ],
+  }
+  const withAhead = { ...ctx, flows: [...KEPT, ahead] }
+
+  it('takes away only what the flow that placed the point generated, not what the flow now chosen would', () => {
+    const two = [
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(128) },
+      { type: 'use-flow', flowId: 'ahead' },
+    ] as const
+    const s = two.reduce((d, a) => reduceDraft(d, a, withAhead), empty())
+    expect(at(s, bar(80), true)).toBeDefined()
+    const gone = reduceDraft(s, { type: 'remove-point', key: callAt(s, bar(64)) }, withAhead)
+    expect(at(gone, bar(80), true)).toBeDefined()
+    expect(at(gone, bar(48), true)).toBeUndefined()
+  })
+
+  it('never takes away cues the track came with from rekordbox, only the point’s own CALL', () => {
+    const saved = [
+      { id: 'd', ms: bar(64), kind: 0, color: null },
+      ...[16, 32, 48].flatMap((n, i) => [
+        { id: `h${n}`, ms: bar(n), kind: i + 1, color: 1 },
+        { id: `c${n}`, ms: bar(n), kind: 0, color: null },
+      ]),
+    ]
+    const s = run(startDraft(saved, 'mine'), { type: 'remove-point', key: 'd' })
+    expect(s.cues.map((c) => c.key).sort()).toEqual(
+      saved
+        .filter((c) => c.id !== 'd')
+        .map((c) => c.id)
+        .sort(),
+    )
+    const moved = run(startDraft(saved, 'mine'), { type: 'move-point', key: 'd', ms: bar(80) })
+    expect(at(moved, bar(16), true)?.key).toBe('h16')
+    expect(at(moved, bar(48), true)?.key).toBe('h48')
+  })
+})

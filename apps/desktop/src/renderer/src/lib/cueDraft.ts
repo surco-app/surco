@@ -28,6 +28,7 @@ export interface DraftSnapshot {
   trimmed: number[]
   edited: string[]
   placed: string[]
+  origin: Record<string, string>
 }
 
 export interface CueDraft {
@@ -40,6 +41,7 @@ export interface CueDraft {
   trimmed: number[]
   edited: string[]
   placed: string[]
+  origin: Record<string, string>
   locked: string[]
   nextKey: number
 }
@@ -82,6 +84,7 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
     trimmed: [],
     edited: [],
     placed: [],
+    origin: {},
     locked,
     nextKey: cues.length,
   }
@@ -122,6 +125,7 @@ function snapshot(state: CueDraft): DraftSnapshot {
     trimmed: state.trimmed,
     edited: state.edited,
     placed: state.placed,
+    origin: state.origin,
   }
 }
 
@@ -138,34 +142,33 @@ function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {})
 
 function withoutPoint(state: CueDraft, ctx: DraftContext, key: string): DraftCue[] | null {
   const target = state.cues.find((c) => c.key === key)
-  if (!target || isHot(target) || ctx.beats.length === 0) return null
+  const flowId = target && state.origin[target.key]
+  if (!target || isHot(target) || !flowId || ctx.beats.length === 0) return null
   const track = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
-  const generator = flowById(ctx, state.generatedBy)
-  const points = flowDrops(generator, { ...track, drops: draftDrops(state.cues, state.locked) })
+  const flow = flowById(ctx, flowId)
+  const points = flowDrops(flow, { ...track, drops: draftDrops(state.cues, state.locked) })
   if (!points.some((p) => near(p, target.ms))) return null
   const others = points.filter((p) => !near(p, target.ms))
+  const plan = (drops: number[]) =>
+    evaluateFlow(flow, { ...track, drops: flowDrops(flow, { ...track, drops }) }).cues
+  const kept = plan(others)
   const hot: number[] = []
   const calls: number[] = []
-  for (const flow of new Set([generator, flowById(ctx, state.flowId)])) {
-    const plan = (drops: number[]) =>
-      evaluateFlow(flow, { ...track, drops: flowDrops(flow, { ...track, drops }) }).cues
-    const kept = plan(others)
-    for (const c of [...plan(points), ...plan([target.ms])]) {
-      if (kept.some((k) => k.place === c.place && near(k.ms, c.ms))) continue
-      if (c.place !== 'call') hot.push(c.ms)
-      if (c.place !== 'hot') calls.push(c.ms)
-    }
+  for (const c of [...plan(points), ...plan([target.ms])]) {
+    if (kept.some((k) => k.place === c.place && near(k.ms, c.ms))) continue
+    if (c.place !== 'call') hot.push(c.ms)
+    if (c.place !== 'hot') calls.push(c.ms)
   }
   const byHand = new Set([...state.edited, ...state.placed, ...state.locked])
+  const ours = (c: DraftCue): boolean => state.origin[c.key] === flowId && !byHand.has(c.key)
   const gone = new Set<string>([target.key])
   for (const c of state.cues)
-    if (isHot(c) && !byHand.has(c.key) && hot.some((ms) => near(ms, c.ms))) gone.add(c.key)
+    if (isHot(c) && ours(c) && hot.some((ms) => near(ms, c.ms))) gone.add(c.key)
   const held = (ms: number): boolean =>
     others.some((p) => near(p, ms)) ||
     state.cues.some((h) => isHot(h) && !gone.has(h.key) && near(h.ms, ms))
   for (const c of state.cues)
-    if (!isHot(c) && !byHand.has(c.key) && calls.some((ms) => near(ms, c.ms)) && !held(c.ms))
-      gone.add(c.key)
+    if (!isHot(c) && ours(c) && calls.some((ms) => near(ms, c.ms)) && !held(c.ms)) gone.add(c.key)
   return state.cues.filter((c) => !gone.has(c.key))
 }
 
@@ -197,10 +200,15 @@ function regenerate(
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
   let nextKey = state.nextKey
+  const origin = { ...state.origin }
   const generated = out.wanted.map((w): DraftCue => {
     const was = w.id === undefined ? undefined : byKey.get(w.id)
-    if (was) return { ...was, ms: w.ms, kind: w.kind, color: w.color }
+    if (was) {
+      if (origin[was.key]) origin[was.key] = flow.id
+      return { ...was, ms: w.ms, kind: w.kind, color: w.color }
+    }
     nextKey += 1
+    origin[`n${nextKey}`] = flow.id
     return { key: `n${nextKey}`, ms: w.ms, kind: w.kind, color: w.color }
   })
   const cues =
@@ -212,6 +220,7 @@ function regenerate(
     flowId: flow.id,
     generatedBy: flow.id,
     nextKey,
+    origin,
     selected: null,
     notice: out.status === 'manual' ? 'manual' : null,
     trimmed: out.status === 'plan' ? out.trimmed : [],
@@ -307,8 +316,12 @@ function placeOnce(
     return { key: `n${nextKey}`, ms: c.ms, kind: letter.get(c) ?? 0, color: c.color }
   })
   const own = byHand ? added.filter(isHot).map((c) => c.key) : []
+  const origin = byHand
+    ? state.origin
+    : { ...state.origin, ...Object.fromEntries(added.map((c) => [c.key, flow.id])) }
   return commit(state, [...state.cues, ...added], {
     nextKey,
+    origin,
     selected: null,
     trimmed: out.status === 'plan' ? out.trimmed : [],
     edited: [...state.edited, ...own],
@@ -332,6 +345,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       trimmed: previous.trimmed,
       edited: previous.edited,
       placed: previous.placed,
+      origin: previous.origin,
       past: state.past.slice(0, -1),
       selected: null,
       notice: null,
