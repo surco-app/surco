@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { CueWave, type WaveCue } from './CueWave'
 
 afterEach(cleanup)
@@ -82,6 +83,34 @@ describe('CueWave', () => {
     expect(
       screen.getAllByTestId('cue-wave-bar').filter((b) => b.dataset.strong === 'true'),
     ).toHaveLength(3)
+  })
+
+  it('keeps the hot cue and its CALL in a lane above the wave, as rekordbox does, so no mark hides the bars', () => {
+    setup()
+    const lane = WAVE_MARK_LANE_PX
+    expect(
+      Number.parseFloat(screen.getByTestId('cue-wave-hot-A').style.top) + HOT_MARK_PX.wave,
+    ).toBeLessThan(lane)
+    expect(
+      Number.parseFloat(screen.getByTestId('cue-wave-call-16000').style.top) + 10,
+    ).toBeLessThanOrEqual(lane)
+    expect(screen.getByTestId('cue-wave-area').style.top).toBe(`${lane}px`)
+  })
+
+  it('draws a half wave growing up from the baseline, as rekordbox does, instead of mirroring it around the middle', () => {
+    setup({
+      wave: [
+        { h: 1, rgb: null },
+        { h: 0.5, rgb: null },
+        { h: 0, rgb: null },
+      ],
+    })
+    const rects = [...screen.getByTestId('cue-wave-area').querySelectorAll('rect')]
+    expect(rects).toHaveLength(3)
+    for (const r of rects) {
+      expect(Number(r.getAttribute('y')) + Number(r.getAttribute('height'))).toBeCloseTo(100)
+    }
+    expect(Number(rects[1].getAttribute('height'))).toBeCloseTo(50)
   })
 
   it('marks a drop on the beat under a click on the empty wave and clears the selection', () => {

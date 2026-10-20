@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { CueWaveDetail } from './CueWaveDetail'
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
@@ -75,6 +76,24 @@ describe('CueWaveDetail', () => {
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveAttribute('data-selected', 'true')
     expect(screen.getByTestId(`cue-detail-call-${bar(36)}`).style.left).toBe('75%')
     expect(screen.getByTestId(`cue-detail-call-${bar(40)}`).style.left).toBe('100%')
+  })
+
+  it('keeps the cue marks in a lane above the zoomed wave so they never sit on the bars', () => {
+    setup({
+      cues: [
+        { key: 'b', ms: bar(36), kind: 2, color: 22, pending: false },
+        { key: 'p', ms: bar(36), kind: 0, color: null, pending: false },
+      ],
+    })
+    const lane = WAVE_MARK_LANE_PX
+    expect(
+      Number.parseFloat(screen.getByTestId('cue-detail-hot-B').style.top) + HOT_MARK_PX.wave,
+    ).toBeLessThan(lane)
+    expect(
+      Number.parseFloat(screen.getByTestId(`cue-detail-call-${bar(36)}`).style.top) + 7,
+    ).toBeLessThanOrEqual(lane)
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    expect(canvas.style.top).toBe(`${lane}px`)
   })
 
   it('says how many bars are left to the next CALL, as rekordbox does above the playhead', () => {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
-import { markStyle, placeCues } from '../lib/cueMarks'
+import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { barsToNextCall, detailWindow, ZOOM_BARS } from '../lib/cuePlayhead'
 import { barLines } from '../lib/cueWave'
 import type { WaveCue } from './CueWave'
@@ -101,9 +101,14 @@ export function CueWaveDetail({
         const width = rootRef.current?.getBoundingClientRect().width ?? 0
         if (width > 0) setDrag({ x0: e.clientX, ms0: playheadMs, width })
       }}
-      className="relative h-40 w-full cursor-grab select-none overflow-hidden rounded-md bg-[var(--color-panel-2)]"
+      style={{ height: `${HEIGHT + WAVE_MARK_LANE_PX}px` }}
+      className="relative w-full cursor-grab select-none overflow-hidden rounded-md bg-[var(--color-panel-2)]"
     >
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      <canvas
+        ref={canvasRef}
+        style={{ top: `${WAVE_MARK_LANE_PX}px`, height: `${HEIGHT}px` }}
+        className="absolute inset-x-0 w-full"
+      />
       {lines
         .filter((b) => b.ms >= fromMs && b.ms <= toMs)
         .map((b) => (
@@ -111,8 +116,8 @@ export function CueWaveDetail({
             key={b.ms}
             data-testid="cue-detail-bar"
             aria-hidden="true"
-            style={{ left: pct(b.ms) }}
-            className={`absolute top-0 bottom-0 w-px ${
+            style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+            className={`absolute bottom-0 w-px ${
               b.strong ? 'bg-[var(--color-fg)]/40' : 'bg-[var(--color-fg)]/15'
             }`}
           />
@@ -161,13 +166,16 @@ export function CueWaveDetail({
       {toCall !== null && (
         <span
           data-testid="cue-detail-to-call"
-          style={{ color: MEMORY_CUE_COLOR }}
-          className="pointer-events-none absolute top-6 right-1/2 mr-2 whitespace-nowrap font-mono text-[13px] font-semibold tabular-nums"
+          style={{ color: MEMORY_CUE_COLOR, top: `${WAVE_MARK_LANE_PX + 4}px` }}
+          className="pointer-events-none absolute right-1/2 mr-2 whitespace-nowrap rounded-sm bg-[var(--color-panel-2)]/85 px-1 font-mono text-[13px] font-semibold tabular-nums"
         >
           {t('editor.cues.toCall', { bars: `-${toCall.toFixed(1)}` })}
         </span>
       )}
-      <div className="absolute top-1/2 left-2 flex -translate-y-1/2 flex-col gap-1.5">
+      <div
+        style={{ top: `${WAVE_MARK_LANE_PX + HEIGHT / 2}px` }}
+        className="absolute left-2 flex -translate-y-1/2 flex-col gap-1.5"
+      >
         <button
           type="button"
           data-testid="cue-detail-zoom-in"

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
-import { markStyle, placeCues } from '../lib/cueMarks'
+import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { barLines, clickAction, cuePosition, dropLabels } from '../lib/cueWave'
 
 export interface WaveCue {
@@ -18,6 +18,8 @@ export interface WaveCue {
 
 const HIT_PX = 6
 const DRAG_PX = 3
+const LABEL_ROW_PX = 11
+const LABEL_STRIP_PX = LABEL_ROW_PX * 2
 
 export function CueWave({
   wave,
@@ -116,7 +118,7 @@ export function CueWave({
               key={i}
               x={i}
               width={1}
-              y={50 - c.h * 50}
+              y={100 - Math.max(c.h * 100, 0.5)}
               height={Math.max(c.h * 100, 0.5)}
               fill="var(--color-accent)"
             />
@@ -226,12 +228,19 @@ export function CueWave({
         setGhost(action.kind === 'add' ? action.ms : null)
       }}
       onMouseLeave={() => setGhost(null)}
-      className={`relative h-20 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
+      className={`relative h-24 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
         readOnly ? 'cursor-default' : 'cursor-crosshair'
       }`}
     >
-      {waveSvg}
-      {bars}
+      <div
+        data-testid="cue-wave-area"
+        aria-hidden="true"
+        style={{ top: `${WAVE_MARK_LANE_PX}px`, bottom: `${LABEL_STRIP_PX}px` }}
+        className="pointer-events-none absolute inset-x-0"
+      >
+        {waveSvg}
+        {bars}
+      </div>
       {drops.map((d) => {
         const label = labels.get(d.ms)
         const position = cuePosition(d.ms, grid)
@@ -240,8 +249,8 @@ export function CueWave({
             key={`d${d.key}`}
             data-testid={`cue-wave-drop-${d.ms}`}
             data-pending={pendingOf.get(d.key) ? 'true' : 'false'}
-            style={{ left: pct(d.ms) }}
-            className={`absolute top-0 bottom-0 w-0.5 bg-[var(--color-fg)] ${
+            style={{ left: pct(d.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+            className={`absolute bottom-0 w-0.5 bg-[var(--color-fg)] ${
               pendingOf.get(d.key) ? 'opacity-60' : ''
             }`}
           >
@@ -249,12 +258,13 @@ export function CueWave({
               data-testid={`cue-wave-drop-label-${d.ms}`}
               data-side={label?.side ?? 'right'}
               data-row={label?.row ?? 0}
-              className={`absolute whitespace-nowrap text-[9px] leading-[11px] text-[var(--color-fg)] ${
-                label?.row === 1 ? 'bottom-6' : 'bottom-0'
-              } ${sideClass(label?.side)}`}
+              style={{ bottom: `${label?.row === 1 ? 0 : LABEL_ROW_PX}px` }}
+              className={`absolute whitespace-nowrap text-[9px] leading-[11px] text-[var(--color-fg)] ${sideClass(
+                label?.side,
+              )}`}
             >
-              <span className="block font-semibold">DROP {position.bar}</span>
-              <span className="block tabular-nums">{position.time}</span>
+              <span className="font-semibold">DROP {position.bar}</span>{' '}
+              <span className="tabular-nums">{position.time}</span>
             </span>
           </span>
         )
@@ -275,8 +285,8 @@ export function CueWave({
             type="button"
             data-testid={`cue-wave-proposal-${ms}`}
             aria-label={t('cueWave.proposal', { bar: cuePosition(ms, grid).bar })}
-            style={{ left: pct(ms) }}
-            className="absolute top-0 bottom-0 w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
+            style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px`, bottom: `${LABEL_STRIP_PX}px` }}
+            className="absolute w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
             onClick={(e) => {
               e.stopPropagation()
               onAcceptProposal?.(ms)
@@ -361,16 +371,17 @@ export function CueWave({
       {ghost !== null && (
         <span
           data-testid="cue-wave-ghost"
-          style={{ left: pct(ghost) }}
-          className="pointer-events-none absolute top-0 bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
+          style={{ left: pct(ghost), top: `${WAVE_MARK_LANE_PX}px` }}
+          className="pointer-events-none absolute bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
         >
           <span
-            className={`absolute bottom-4 whitespace-nowrap text-[9px] leading-[11px] text-[var(--color-fg)]/80 ${sideClass(
+            style={{ bottom: `${LABEL_ROW_PX}px` }}
+            className={`absolute whitespace-nowrap rounded-sm bg-[var(--color-panel-2)] text-[9px] leading-[11px] text-[var(--color-fg)]/80 ${sideClass(
               dropLabels([ghost], durationMs)[0]?.side,
             )}`}
           >
-            <span className="block">+ drop {cuePosition(ghost, grid).bar}</span>
-            <span className="block tabular-nums">{cuePosition(ghost, grid).time}</span>
+            <span>+ drop {cuePosition(ghost, grid).bar}</span>{' '}
+            <span className="tabular-nums">{cuePosition(ghost, grid).time}</span>
           </span>
         </span>
       )}

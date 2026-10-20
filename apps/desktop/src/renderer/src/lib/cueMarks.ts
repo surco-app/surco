@@ -29,6 +29,10 @@ export type MarkSize = 'row' | 'wave'
 
 export const HOT_MARK_PX: Record<MarkSize, number> = { row: 12, wave: 14 }
 
+const CALL_MARK_MAX_PX = 10
+
+export const WAVE_MARK_LANE_PX = HOT_MARK_PX.wave + 1 + CALL_MARK_MAX_PX + 1
+
 export function placeCues(
   cues: MarkInput[],
   spanMs: number,
