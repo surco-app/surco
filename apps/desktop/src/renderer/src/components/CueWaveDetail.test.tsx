@@ -263,7 +263,29 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('fills the height it is given, so the zoomed wave takes all the free room', () => {
+  it('keeps the zoomed wave a calm height however tall the window, so full screen adds room around it and not a giant wave', () => {
+    setup()
+    const stage = screen.getByTestId('cue-detail')
+    const [, min, max] = stage.style.height.match(/^clamp\((\d+)px, .+, (\d+)px\)$/) ?? []
+    expect(Number(min)).toBe(160)
+    expect(Number(max)).toBeLessThanOrEqual(240)
+    expect(stage.style.flexGrow).not.toBe('1')
+  })
+
+  it('leaves headroom above and below the loudest column, so a loud track never touches the edges', () => {
+    const fillRect = vi.fn<(x: number, y: number, w: number, h: number) => void>()
+    const fake = { clearRect: vi.fn(), fillRect, setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
+    setup({ source: { words }, playheadMs: 150000 })
+    expect(fillRect.mock.calls.length).toBeGreaterThan(0)
+    for (const [, y, , h] of fillRect.mock.calls) {
+      expect(y).toBeGreaterThanOrEqual(16)
+      expect(y + h).toBeLessThanOrEqual(144)
+    }
+  })
+
+  it('sizes the canvas to the stage it measures, so a resized stage never draws stretched', () => {
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
       left: 0,
       top: 0,

@@ -8,6 +8,9 @@ import { barsToNextCall, cueClock, detailWindow, wheelZoom } from '../lib/cuePla
 import { barLines } from '../lib/cueWave'
 import type { WaveCue } from './CueWave'
 
+const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
+const WAVE_SPAN = 0.8
+
 export function CueWaveDetail({
   source,
   grid,
@@ -82,7 +85,7 @@ export function CueWaveDetail({
     g.globalAlpha = 0.7
     visibleColumns(source, fromMs, toMs, width).forEach((column, x) => {
       if (!column) return
-      const h = Math.max(column.h * height, 1)
+      const h = Math.max(column.h * height * WAVE_SPAN, 1)
       g.fillStyle = accent
       g.fillRect(x, (height - h) / 2, 1, h)
     })
@@ -103,7 +106,7 @@ export function CueWaveDetail({
   const toCall = barsToNextCall(beats, cues, playheadMs)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex shrink-0 flex-col">
       <div className="relative h-4 shrink-0 text-xs tabular-nums">
         <span
           data-testid="cues-position"
@@ -132,8 +135,8 @@ export function CueWaveDetail({
           if (onPick) onPick(fromMs + ((e.clientX - rect.left) / rect.width) * span)
           else setDrag({ x0: e.clientX, ms0: playheadMs, width: rect.width })
         }}
-        style={{ cursor: onPick ? 'crosshair' : 'grab' }}
-        className="relative min-h-40 w-full flex-1 select-none overflow-hidden"
+        style={{ cursor: onPick ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
+        className="relative w-full shrink-0 select-none overflow-hidden"
       >
         <canvas
           ref={canvasRef}
