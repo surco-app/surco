@@ -770,6 +770,14 @@ export function CuesSection({
           help={tr('editor.cues.help')}
         />
       )}
+      {full && isMacOS() && (
+        <div
+          data-testid="cues-titlebar-inset"
+          aria-hidden="true"
+          className="h-10 shrink-0"
+          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+        />
+      )}
       {full ? (
         <div className="flex min-h-0 flex-1 flex-col">{body}</div>
       ) : (

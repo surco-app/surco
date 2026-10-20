@@ -61,9 +61,14 @@ beforeEach(() => {
   })
 })
 
-function setup(settings: Partial<Settings> | null = null, read: TrackCues = READ) {
+function setup(
+  settings: Partial<Settings> | null = null,
+  read: TrackCues = READ,
+  api: Partial<Api> = {},
+) {
   const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
   installApi({
+    ...api,
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueWaveDetail,
@@ -135,6 +140,18 @@ describe('CuesSection maximized', () => {
     expect(screen.getAllByTestId('section-maximize')).toHaveLength(1)
     expect(screen.getByTestId('section-maximize')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('cues-save')).toHaveTextContent('Save to rekordbox')
+  })
+
+  it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
+    setup()
+    await maximize()
+    expect(screen.getByTestId('cues-titlebar-inset')).toBeInTheDocument()
+  })
+
+  it('keeps the top bar at the top on Windows, where no traffic lights sit over it', async () => {
+    setup(null, READ, { platform: 'win32' })
+    await maximize()
+    expect(screen.queryByTestId('cues-titlebar-inset')).toBeNull()
   })
 
   it('keeps the restore button when the track cannot be edited, so the full editor is never a dead end', async () => {
