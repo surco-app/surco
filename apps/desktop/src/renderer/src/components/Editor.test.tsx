@@ -6,6 +6,7 @@ import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -354,6 +355,32 @@ describe('Editor cues section', () => {
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
     })
     expect(screen.getByTestId('cues-section')).toBeInTheDocument()
+  })
+
+  const follows = (a: string, b: string) =>
+    (screen.getAllByTestId(a)[0].compareDocumentPosition(screen.getAllByTestId(b)[0]) &
+      Node.DOCUMENT_POSITION_FOLLOWING) !==
+    0
+
+  it('puts Cues first, above Archivo and the metadata form, in a rekordbox playlist with the default order, so no track needs a scroll to reach it', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+    })
+    expect(follows('cues-section', 'editor-group-metadata')).toBe(true)
+    expect(screen.getAllByTestId('cues-section')).toHaveLength(1)
+  })
+
+  it('keeps the order the DJ arranged in Settings, Cues included, instead of lifting it', () => {
+    const custom = [
+      ...DEFAULT_EDITOR_SECTIONS.filter((s) => s.id !== 'cues' && s.id !== 'output'),
+      { id: 'cues' as const, open: true },
+      { id: 'output' as const, open: true },
+    ]
+    renderEditor({ id: 'a' }, 'wav', {
+      rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+      editorSections: custom,
+    })
+    expect(follows('editor-group-metadata', 'cues-section')).toBe(true)
   })
 })
 

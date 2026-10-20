@@ -18,7 +18,11 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
-import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
+import {
+  DEFAULT_EDITOR_SECTIONS,
+  EDITOR_SECTION_GROUP,
+  type EditorSectionPref,
+} from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
@@ -1299,6 +1303,288 @@ export const Editor = memo(function Editor({
     </>
   )
 
+  const column = editorSections.filter((x) => x.id !== 'form' && x.hidden !== true)
+  const cuesFirst =
+    rekordboxCue !== undefined &&
+    !isMulti &&
+    column.some((x) => x.id === 'cues') &&
+    editorSections.map((x) => x.id).join() === DEFAULT_EDITOR_SECTIONS.map((x) => x.id).join()
+  const sectionColumn = (list: EditorSectionPref[]) => {
+    // The pinned form already opened the "File" group, so the walk starts
+    // there; a heading is emitted only when a VISIBLE in-column section
+    // changes the group (a maximized section renders to a portal and a
+    // hidden-by-condition one to null — neither shifts the column's phase).
+    let lastGroup = EDITOR_SECTION_GROUP.form
+    return list.flatMap(({ id }) => {
+      // Typed as element-or-falsy (not the wider ReactNode) so the arrays
+      // returned below are Element lists flatMap accepts, and the `!element`
+      // guard narrows to a real element.
+      const element = ((): React.ReactElement | false | null => {
+        switch (id) {
+          case 'otherTags':
+            // Single-track only, and the inspector returns null when the track
+            // carries no foreign tags, so an enabled-but-empty section shows
+            // nothing. Its fold state rides the section store like the rest.
+            return (
+              !isMulti && (
+                <ForeignTagsInspector
+                  key={id}
+                  foreignTags={(item.foreignTags ?? []).filter(
+                    (t) => !isCustomTag(t.name, customFields),
+                  )}
+                  foreignRemoved={item.foreignRemoved ?? []}
+                  onToggleRemove={(name) => {
+                    const current = item.foreignRemoved ?? []
+                    onChange({
+                      foreignRemoved: current.includes(name)
+                        ? current.filter((n) => n !== name)
+                        : [...current, name],
+                    })
+                  }}
+                  open={sectionOpen.otherTags}
+                  onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}
+                />
+              )
+            )
+          case 'cues':
+            if (!rekordboxCue) return false
+            if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
+            return (
+              <CuesSection
+                key={id}
+                cue={rekordboxCue}
+                open={sectionOpen.cues}
+                onToggle={() => setSectionOpen('cues', !sectionOpen.cues)}
+                track={{
+                  title: item.meta.title || item.listLabel,
+                  artist: item.meta.artist,
+                  bpm: item.meta.bpm,
+                  key: item.meta.key,
+                  cover: item.coverUrl ?? item.embeddedCover,
+                }}
+                onJumpBars={onCueJumpBars}
+                onQuantize={onCueQuantize}
+                onFlow={onCueFlow}
+              />
+            )
+          case 'properties':
+            if (isMulti) return singleTrackOnly(id, tr('editor.propertiesTitle'))
+            return (
+              !isMulti && (
+                <PropertiesSection
+                  key={id}
+                  item={item}
+                  open={propertiesOpen}
+                  onToggle={() => setSectionOpen('properties', !propertiesOpen)}
+                />
+              )
+            )
+          case 'quality':
+            if (isMulti && (showSpectrum || showLoudness))
+              return singleTrackOnly(id, tr('editor.qualityTitle'))
+            return (
+              !isMulti &&
+              (showSpectrum || showLoudness) && (
+                <QualitySection
+                  key={id}
+                  item={item}
+                  showSpectrum={showSpectrum}
+                  showLoudness={showLoudness}
+                  normalize={normalizeCfg}
+                  onShowLoudnessHelp={onShowLoudnessHelp}
+                  open={spectrumOpen}
+                  onToggle={() => setSectionOpen('quality', !spectrumOpen)}
+                  showHints={showEditorHints}
+                  outputSampleRate={outputSampleRate}
+                />
+              )
+            )
+          case 'output':
+            // Overwrite mode pins the name to the original, so the File Name
+            // section is replaced by a notice of what the export will do.
+            if (!isMulti && overwriteOriginal) {
+              return (
+                <OverwriteNotice
+                  key={id}
+                  title={tr('editor.overwriteTitle')}
+                  lossy={lossyOverwrite}
+                  hint={
+                    lossyOverwrite
+                      ? tr(
+                          backupPolicy === 'never'
+                            ? 'editor.overwriteLossyHint'
+                            : 'editor.overwriteLossyHintBackup',
+                        )
+                      : willEditInPlace
+                        ? tr('editor.overwriteHint')
+                        : tr('editor.overwriteAlacHint')
+                  }
+                />
+              )
+            }
+            // Multi-select has no single name to edit, but the bulk rename is
+            // exactly the flow a selection wants: retag a crate, then stamp
+            // every file name from the pattern at once (djotas's ask). One
+            // button in the section's slot instead of hiding it entirely.
+            if (isMulti) {
+              if (overwriteOriginal) return null
+              return (
+                <BulkActionSection
+                  key={id}
+                  testid="output-multi"
+                  buttonTestid="regenerate-output-names-all"
+                  title={tr('editor.outputName')}
+                  label={tr('editor.regenerateAll', { count: multiTracks.length })}
+                  icon={RefreshCw}
+                  onClick={onRegenerateName}
+                />
+              )
+            }
+            return (
+              <OutputNameSection
+                key={id}
+                item={item}
+                format={format}
+                defaultOutputName={defaultOutputName}
+                autoApply={autoApplyFilename}
+                willEditInPlace={willEditInPlace}
+                open={outputOpen}
+                onToggle={() => setSectionOpen('output', !outputOpen)}
+                onChangeName={(outputName) => onChange({ outputName })}
+                onRegenerateName={onRegenerateName}
+                onOpenRename={onOpenRename}
+              />
+            )
+          case 'trim':
+            // The per-track handles have no multi-select story (the anchor's
+            // wave would misrepresent the rest), but the detection does: one
+            // button runs it over the selection and stages each track's own
+            // suggestion — visible and resettable per track afterwards.
+            if (isMulti) {
+              return (
+                <BulkActionSection
+                  key={id}
+                  testid="trim-multi"
+                  buttonTestid="trim-detect-all"
+                  title={tr('trim.title')}
+                  label={tr('trim.applyAll', { count: multiTracks.length })}
+                  icon={Scissors}
+                  onClick={onTrimDetectedAll}
+                />
+              )
+            }
+            return (
+              <TrimSection
+                key={id}
+                value={item.trim}
+                open={trimOpen}
+                onToggle={() => setSectionOpen('trim', !trimOpen)}
+                onChange={(trim) => onChange({ trim })}
+                inputPath={item.inputPath}
+                format={format}
+                showHints={showEditorHints}
+                durationSec={item.duration}
+              />
+            )
+          case 'declick':
+            return (
+              <DeclickSection
+                key={id}
+                value={declickCfg}
+                open={declickOpen}
+                onToggle={() => setSectionOpen('declick', !declickOpen)}
+                onChange={(d) => {
+                  setDeclickCfg(d)
+                  onDeclickChange?.(d)
+                  // Stage it on the track so coming back to it finds the level
+                  // as it was left, the way normalize and the trim already do.
+                  onChange({ declick: d })
+                }}
+                inputPath={item.inputPath}
+                selectedCount={selectedTracks?.length ?? 1}
+                format={format}
+                trim={item.trim}
+              />
+            )
+          case 'normalize':
+            return (
+              <NormalizeSection
+                key={id}
+                value={normalizeCfg}
+                open={normalizeOpen}
+                onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
+                onChange={(n) => {
+                  setNormalizeCfg(n)
+                  onNormalizeChange?.(n)
+                  // Stage it on the track so coming back to it finds the dial
+                  // as it was left, the way the silence trim already does. In
+                  // multi-select the section speaks for every selected track.
+                  if (isMulti && onChangeSelection) onChangeSelection({ normalize: n })
+                  else onChange({ normalize: n })
+                }}
+                item={item}
+                selectedCount={selectedTracks?.length ?? 1}
+                format={format}
+                showHints={showEditorHints}
+                onHideHints={onHideEditorHints}
+              />
+            )
+          default:
+            return null
+        }
+      })()
+      // A maximized section leaves the column (it renders to a portal),
+      // so it neither shows a heading nor shifts the column's phase — the
+      // heading belongs to whatever visible section takes over the flow.
+      if (element && id === maximized) {
+        // Wrapped in an array like every other branch, so flatMap's callback has
+        // one return shape (a node list) instead of a bare portal.
+        return [
+          createPortal(
+            <div
+              data-testid="section-maximized-overlay"
+              className="fixed inset-0 z-[46] overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+            >
+              {element}
+            </div>,
+            document.body,
+            id,
+          ),
+        ]
+      }
+      // A section hidden by its own conditions (null) doesn't advance the
+      // phase either — the next visible section still opens its group.
+      if (!element) return []
+      const group = EDITOR_SECTION_GROUP[id]
+      // Wrapped in an array (like the heading branch below) so flatMap gets a
+      // node list, not a bare ReactNode it would try to treat as iterable.
+      if (group === lastGroup) return [element]
+      lastGroup = group
+      const label =
+        group === 'audio'
+          ? tr('editor.groupAudio')
+          : group === 'output'
+            ? tr('editor.groupOutput')
+            : tr('editor.groupMetadata')
+      // The heading owns the group's top separator, so the section right
+      // under it drops its own `mt-6 border-t pt-6` (targeted at its root
+      // div) — otherwise two hairlines stack a few pixels apart.
+      return [
+        <SectionGroupHeading
+          // Keyed by the section that OPENS this run, not by the group: a
+          // reordered list can re-enter the same phase further down (an audio
+          // section moved above the metadata ones leaves the rest below them),
+          // and a per-group key would collide between the two headings.
+          key={`group-${id}`}
+          label={label}
+          testid={`editor-group-${group}`}
+        />,
+        <div key={`slot-${id}`} className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-3">
+          {element}
+        </div>,
+      ]
+    })
+  }
   return (
     <div className="flex h-full min-h-0">
       <DiscogsPanel
@@ -1329,10 +1615,15 @@ export const Editor = memo(function Editor({
         >
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
+          {cuesFirst && (
+            <div className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-0">
+              {sectionColumn(column.filter((x) => x.id === 'cues'))}
+            </div>
+          )}
           <SectionGroupHeading
             label={tr('editor.groupMetadata')}
             testid="editor-group-metadata"
-            first
+            first={!cuesFirst}
           />
           <SectionHeader
             title={
@@ -1422,284 +1713,7 @@ export const Editor = memo(function Editor({
               (Settings → Editor); the form itself is the editor's fixed header. Each
               section keeps its own visibility conditions, so reordering never makes
               one appear where it wouldn't have. */}
-          {(() => {
-            // The pinned form already opened the "File" group, so the walk starts
-            // there; a heading is emitted only when a VISIBLE in-column section
-            // changes the group (a maximized section renders to a portal and a
-            // hidden-by-condition one to null — neither shifts the column's phase).
-            let lastGroup = EDITOR_SECTION_GROUP.form
-            return editorSections
-              .filter((s) => s.id !== 'form' && s.hidden !== true)
-              .flatMap(({ id }) => {
-                // Typed as element-or-falsy (not the wider ReactNode) so the arrays
-                // returned below are Element lists flatMap accepts, and the `!element`
-                // guard narrows to a real element.
-                const element = ((): React.ReactElement | false | null => {
-                  switch (id) {
-                    case 'otherTags':
-                      // Single-track only, and the inspector returns null when the track
-                      // carries no foreign tags, so an enabled-but-empty section shows
-                      // nothing. Its fold state rides the section store like the rest.
-                      return (
-                        !isMulti && (
-                          <ForeignTagsInspector
-                            key={id}
-                            foreignTags={(item.foreignTags ?? []).filter(
-                              (t) => !isCustomTag(t.name, customFields),
-                            )}
-                            foreignRemoved={item.foreignRemoved ?? []}
-                            onToggleRemove={(name) => {
-                              const current = item.foreignRemoved ?? []
-                              onChange({
-                                foreignRemoved: current.includes(name)
-                                  ? current.filter((n) => n !== name)
-                                  : [...current, name],
-                              })
-                            }}
-                            open={sectionOpen.otherTags}
-                            onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}
-                          />
-                        )
-                      )
-                    case 'cues':
-                      if (!rekordboxCue) return false
-                      if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
-                      return (
-                        <CuesSection
-                          key={id}
-                          cue={rekordboxCue}
-                          open={sectionOpen.cues}
-                          onToggle={() => setSectionOpen('cues', !sectionOpen.cues)}
-                          track={{
-                            title: item.meta.title || item.listLabel,
-                            artist: item.meta.artist,
-                            bpm: item.meta.bpm,
-                            key: item.meta.key,
-                            cover: item.coverUrl ?? item.embeddedCover,
-                          }}
-                          onJumpBars={onCueJumpBars}
-                          onQuantize={onCueQuantize}
-                          onFlow={onCueFlow}
-                        />
-                      )
-                    case 'properties':
-                      if (isMulti) return singleTrackOnly(id, tr('editor.propertiesTitle'))
-                      return (
-                        !isMulti && (
-                          <PropertiesSection
-                            key={id}
-                            item={item}
-                            open={propertiesOpen}
-                            onToggle={() => setSectionOpen('properties', !propertiesOpen)}
-                          />
-                        )
-                      )
-                    case 'quality':
-                      if (isMulti && (showSpectrum || showLoudness))
-                        return singleTrackOnly(id, tr('editor.qualityTitle'))
-                      return (
-                        !isMulti &&
-                        (showSpectrum || showLoudness) && (
-                          <QualitySection
-                            key={id}
-                            item={item}
-                            showSpectrum={showSpectrum}
-                            showLoudness={showLoudness}
-                            normalize={normalizeCfg}
-                            onShowLoudnessHelp={onShowLoudnessHelp}
-                            open={spectrumOpen}
-                            onToggle={() => setSectionOpen('quality', !spectrumOpen)}
-                            showHints={showEditorHints}
-                            outputSampleRate={outputSampleRate}
-                          />
-                        )
-                      )
-                    case 'output':
-                      // Overwrite mode pins the name to the original, so the File Name
-                      // section is replaced by a notice of what the export will do.
-                      if (!isMulti && overwriteOriginal) {
-                        return (
-                          <OverwriteNotice
-                            key={id}
-                            title={tr('editor.overwriteTitle')}
-                            lossy={lossyOverwrite}
-                            hint={
-                              lossyOverwrite
-                                ? tr(
-                                    backupPolicy === 'never'
-                                      ? 'editor.overwriteLossyHint'
-                                      : 'editor.overwriteLossyHintBackup',
-                                  )
-                                : willEditInPlace
-                                  ? tr('editor.overwriteHint')
-                                  : tr('editor.overwriteAlacHint')
-                            }
-                          />
-                        )
-                      }
-                      // Multi-select has no single name to edit, but the bulk rename is
-                      // exactly the flow a selection wants: retag a crate, then stamp
-                      // every file name from the pattern at once (djotas's ask). One
-                      // button in the section's slot instead of hiding it entirely.
-                      if (isMulti) {
-                        if (overwriteOriginal) return null
-                        return (
-                          <BulkActionSection
-                            key={id}
-                            testid="output-multi"
-                            buttonTestid="regenerate-output-names-all"
-                            title={tr('editor.outputName')}
-                            label={tr('editor.regenerateAll', { count: multiTracks.length })}
-                            icon={RefreshCw}
-                            onClick={onRegenerateName}
-                          />
-                        )
-                      }
-                      return (
-                        <OutputNameSection
-                          key={id}
-                          item={item}
-                          format={format}
-                          defaultOutputName={defaultOutputName}
-                          autoApply={autoApplyFilename}
-                          willEditInPlace={willEditInPlace}
-                          open={outputOpen}
-                          onToggle={() => setSectionOpen('output', !outputOpen)}
-                          onChangeName={(outputName) => onChange({ outputName })}
-                          onRegenerateName={onRegenerateName}
-                          onOpenRename={onOpenRename}
-                        />
-                      )
-                    case 'trim':
-                      // The per-track handles have no multi-select story (the anchor's
-                      // wave would misrepresent the rest), but the detection does: one
-                      // button runs it over the selection and stages each track's own
-                      // suggestion — visible and resettable per track afterwards.
-                      if (isMulti) {
-                        return (
-                          <BulkActionSection
-                            key={id}
-                            testid="trim-multi"
-                            buttonTestid="trim-detect-all"
-                            title={tr('trim.title')}
-                            label={tr('trim.applyAll', { count: multiTracks.length })}
-                            icon={Scissors}
-                            onClick={onTrimDetectedAll}
-                          />
-                        )
-                      }
-                      return (
-                        <TrimSection
-                          key={id}
-                          value={item.trim}
-                          open={trimOpen}
-                          onToggle={() => setSectionOpen('trim', !trimOpen)}
-                          onChange={(trim) => onChange({ trim })}
-                          inputPath={item.inputPath}
-                          format={format}
-                          showHints={showEditorHints}
-                          durationSec={item.duration}
-                        />
-                      )
-                    case 'declick':
-                      return (
-                        <DeclickSection
-                          key={id}
-                          value={declickCfg}
-                          open={declickOpen}
-                          onToggle={() => setSectionOpen('declick', !declickOpen)}
-                          onChange={(d) => {
-                            setDeclickCfg(d)
-                            onDeclickChange?.(d)
-                            // Stage it on the track so coming back to it finds the level
-                            // as it was left, the way normalize and the trim already do.
-                            onChange({ declick: d })
-                          }}
-                          inputPath={item.inputPath}
-                          selectedCount={selectedTracks?.length ?? 1}
-                          format={format}
-                          trim={item.trim}
-                        />
-                      )
-                    case 'normalize':
-                      return (
-                        <NormalizeSection
-                          key={id}
-                          value={normalizeCfg}
-                          open={normalizeOpen}
-                          onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
-                          onChange={(n) => {
-                            setNormalizeCfg(n)
-                            onNormalizeChange?.(n)
-                            // Stage it on the track so coming back to it finds the dial
-                            // as it was left, the way the silence trim already does. In
-                            // multi-select the section speaks for every selected track.
-                            if (isMulti && onChangeSelection) onChangeSelection({ normalize: n })
-                            else onChange({ normalize: n })
-                          }}
-                          item={item}
-                          selectedCount={selectedTracks?.length ?? 1}
-                          format={format}
-                          showHints={showEditorHints}
-                          onHideHints={onHideEditorHints}
-                        />
-                      )
-                    default:
-                      return null
-                  }
-                })()
-                // A maximized section leaves the column (it renders to a portal),
-                // so it neither shows a heading nor shifts the column's phase — the
-                // heading belongs to whatever visible section takes over the flow.
-                if (element && id === maximized) {
-                  // Wrapped in an array like every other branch, so flatMap's callback has
-                  // one return shape (a node list) instead of a bare portal.
-                  return [
-                    createPortal(
-                      <div
-                        data-testid="section-maximized-overlay"
-                        className="fixed inset-0 z-[46] overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
-                      >
-                        {element}
-                      </div>,
-                      document.body,
-                      id,
-                    ),
-                  ]
-                }
-                // A section hidden by its own conditions (null) doesn't advance the
-                // phase either — the next visible section still opens its group.
-                if (!element) return []
-                const group = EDITOR_SECTION_GROUP[id]
-                // Wrapped in an array (like the heading branch below) so flatMap gets a
-                // node list, not a bare ReactNode it would try to treat as iterable.
-                if (group === lastGroup) return [element]
-                lastGroup = group
-                const label =
-                  group === 'audio'
-                    ? tr('editor.groupAudio')
-                    : group === 'output'
-                      ? tr('editor.groupOutput')
-                      : tr('editor.groupMetadata')
-                // The heading owns the group's top separator, so the section right
-                // under it drops its own `mt-6 border-t pt-6` (targeted at its root
-                // div) — otherwise two hairlines stack a few pixels apart.
-                return [
-                  <SectionGroupHeading
-                    // Keyed by the section that OPENS this run, not by the group: a
-                    // reordered list can re-enter the same phase further down (an audio
-                    // section moved above the metadata ones leaves the rest below them),
-                    // and a per-group key would collide between the two headings.
-                    key={`group-${id}`}
-                    label={label}
-                    testid={`editor-group-${group}`}
-                  />,
-                  <div key={`slot-${id}`} className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-3">
-                    {element}
-                  </div>,
-                ]
-              })
-          })()}
+          {sectionColumn(cuesFirst ? column.filter((x) => x.id !== 'cues') : column)}
         </div>
 
         <ConvertFooter
