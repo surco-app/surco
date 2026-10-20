@@ -112,8 +112,25 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
     expect(screen.queryByTestId('cue-detail')).toBeNull()
     expect(screen.queryByTestId('cues-deck')).toBeNull()
+  })
+
+  it('opens the full editor with the playhead where the folded strip was clicked, without marking anything', async () => {
+    setup()
+    await ready()
     seek(128000)
-    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    expect(position()).toBe('2:08.0')
+    expect(screen.queryByTestId('cue-wave-call-128000')).toBeNull()
+    expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
+  })
+
+  it('offers no right-click menu on the folded strip, since corrections belong to the full editor', async () => {
+    setup()
+    await ready()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100 })
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
   })
 
   it('opens the full editor with the track header, the zoomed wave and the deck', async () => {

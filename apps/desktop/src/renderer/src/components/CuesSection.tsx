@@ -195,6 +195,7 @@ function Editing({
   onQuantize,
   onDiscard,
   onRestore,
+  onMaximize,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -209,6 +210,7 @@ function Editing({
   onQuantize?: (unit: CueQuantize) => void
   onDiscard: () => void
   onRestore: () => void
+  onMaximize: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -365,6 +367,10 @@ function Editing({
       ? { wave: read.wave, durationMs: read.durationMs }
       : null
   const seekTo = (ms: number) => onPlayhead(Math.min(Math.max(ms, 0), read.durationMs))
+  const openAt = (ms: number) => {
+    seekTo(ms)
+    onMaximize()
+  }
   const pad = (kind: number) => {
     const existing = state.cues.find((c) => c.kind === kind)
     if (!existing) {
@@ -600,10 +606,11 @@ function Editing({
         onUnmarkDrop={armed ? undefined : (key) => dispatch({ type: 'unmark-drop', key })}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
-        onMenu={setMenu}
+        onMenu={maximized ? setMenu : undefined}
         onMarkMenu={openMarkMenu}
         playheadMs={maximized ? playheadMs : undefined}
         onSeek={maximized && !armed ? seekTo : undefined}
+        onOpen={maximized || armed ? undefined : openAt}
         view={maximized ? detailWindow(ctx.beats, playheadMs, zoom) : undefined}
       />
       {!maximized && <div className="mt-3">{actions}</div>}
@@ -892,6 +899,7 @@ export function CuesSection({
         onJumpBars={onJumpBars}
         onQuantize={onQuantize}
         onRestore={() => setMaximized(null)}
+        onMaximize={() => setMaximized('cues')}
         onDiscard={() => {
           forgetDraft()
           setRound((n) => n + 1)

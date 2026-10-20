@@ -340,6 +340,26 @@ describe('CueWave', () => {
     expect(handlers.onMarkDrop).toHaveBeenCalled()
   })
 
+  it('opens the editor at the clicked point instead of marking a drop when the folded strip only opens', () => {
+    const onOpen = vi.fn<(ms: number) => void>()
+    const handlers = setup({ onOpen })
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 200 })
+    expect(screen.queryByTestId('cue-wave-ghost')).toBeNull()
+    expect(screen.getByTestId('cue-wave').className).toContain('cursor-pointer')
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400 })
+    expect(onOpen).toHaveBeenCalledWith(40000)
+    expect(handlers.onMarkDrop).not.toHaveBeenCalled()
+    expect(handlers.onUnmarkDrop).not.toHaveBeenCalled()
+  })
+
+  it('does not take a drop away with a click on its line when the folded strip only opens', () => {
+    const onOpen = vi.fn<(ms: number) => void>()
+    const handlers = setup({ onOpen })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400 })
+    expect(handlers.onUnmarkDrop).not.toHaveBeenCalled()
+    expect(onOpen).toHaveBeenCalled()
+  })
+
   it('shows the part the zoomed wave shows as a soft rectangle', () => {
     setup({
       onSeek: vi.fn<(ms: number) => void>(),

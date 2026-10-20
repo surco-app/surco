@@ -8,6 +8,7 @@ import { CALLS_ONLY, MY_FLOW } from '../../../shared/cueFlows'
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
 import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
+import { resetEditorSections } from '../hooks/useEditorSections'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
@@ -15,6 +16,7 @@ import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
 afterEach(resetCueSession)
+afterEach(resetEditorSections)
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -94,6 +96,23 @@ function setup(
 
 const clickAt = (ms: number) =>
   fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
+const markAt = (ms: number) => {
+  if (!screen.queryByTestId('cues-arm-hint')) {
+    if (screen.getByTestId('cues-apply-flow').textContent === 'Mark where it drops')
+      fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    else {
+      fireEvent.click(screen.getByTestId('cues-flow'))
+      fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
+    }
+  }
+  clickAt(ms)
+}
+const openFull = async () => {
+  fireEvent.click(screen.getByTestId('section-maximize'))
+  await waitFor(() =>
+    expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+  )
+}
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
 const pick = (testId: string, ms: number) => {
   fireEvent.mouseDown(screen.getByTestId(testId), { clientX: ms / 1000 })
@@ -130,7 +149,7 @@ describe('CuesSection', () => {
   it('keeps the unsaved cues when the section is mounted again in another place, as maximizing does', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     cleanup()
     setup()
     await ready()
@@ -140,7 +159,7 @@ describe('CuesSection', () => {
   it('starts from rekordbox again after Descartar cambios, even once the section is mounted again', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-undo'))
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
     cleanup()
@@ -152,7 +171,7 @@ describe('CuesSection', () => {
   it('draws the countdown of the active flow live after marking a drop', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true')
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
   })
@@ -160,7 +179,7 @@ describe('CuesSection', () => {
   it('uses the flow chosen in Settings, one cue at 32 bars with no CALL under it', async () => {
     setup(READ, null, { activeCueFlow: 'one-at-32' })
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
       `${(bar(32) / 400000) * 100}%`,
     )
@@ -171,7 +190,7 @@ describe('CuesSection', () => {
   it('saves the whole wanted set with the fingerprint it read', async () => {
     const { saveRekordboxCues } = setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const req = saveRekordboxCues.mock.calls[0][0]
@@ -197,7 +216,7 @@ describe('CuesSection', () => {
   it('deletes the selected hot cue and its CALL with the button or the backspace key', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     pick('cue-wave-hot-C', bar(48))
     fireEvent.click(screen.getByTestId('cues-delete'))
     expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
@@ -210,7 +229,7 @@ describe('CuesSection', () => {
   it('undoes the last change with cmd Z without letting the metadata undo see the key', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     const event = new KeyboardEvent('keydown', {
       key: 'z',
       metaKey: true,
@@ -225,7 +244,7 @@ describe('CuesSection', () => {
   it('recolours a hot cue from rekordbox picker', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     pick('cue-wave-hot-A', bar(16))
     expect(screen.queryByTestId('cue-palette')).toBeNull()
     fireEvent.click(screen.getByTestId('cues-colour'))
@@ -238,7 +257,7 @@ describe('CuesSection', () => {
   it('shows no colour for a selected CALL, since rekordbox lets neither change', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     pick(`cue-wave-call-${bar(64)}`, bar(64))
     expect(screen.getByTestId('cues-delete')).toBeInTheDocument()
     expect(screen.queryByTestId('cues-colour')).toBeNull()
@@ -247,7 +266,7 @@ describe('CuesSection', () => {
   it('floats the colour picker over the editor and closes it with Escape without leaving the section', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     pick('cue-wave-hot-A', bar(16))
     fireEvent.click(screen.getByTestId('cues-colour'))
     expect(screen.getByTestId('cues-colour-popover').className).toContain('absolute')
@@ -262,7 +281,7 @@ describe('CuesSection', () => {
   it('closes the floating colour picker on a click outside it', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     pick('cue-wave-hot-A', bar(16))
     fireEvent.click(screen.getByTestId('cues-colour'))
     fireEvent.mouseDown(screen.getByTestId('cues-delete'))
@@ -272,6 +291,7 @@ describe('CuesSection', () => {
   it('adds a hot cue from the right-click menu on the first free letter in the default colour', async () => {
     setup()
     await ready()
+    await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(10) / 1000, clientY: 30 })
     fireEvent.click(screen.getByTestId('cues-menu-add-hot'))
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#28e214' })
@@ -281,6 +301,7 @@ describe('CuesSection', () => {
   it('marks a drop from the menu and adds a lone CALL from the menu', async () => {
     setup()
     await ready()
+    await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(64) / 1000, clientY: 30 })
     fireEvent.click(screen.getByTestId('cues-menu-mark-drop'))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
@@ -296,6 +317,7 @@ describe('CuesSection', () => {
   it('closes the menu with Escape or a click elsewhere without adding anything', async () => {
     setup()
     await ready()
+    await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(10) / 1000, clientY: 30 })
     expect(screen.getByTestId('cues-menu')).toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'Escape' })
@@ -316,6 +338,7 @@ describe('CuesSection', () => {
     }))
     setup({ ...READ, cues: full })
     await ready()
+    await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(5) / 1000, clientY: 30 })
     expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
   })
@@ -339,7 +362,7 @@ describe('CuesSection', () => {
     setup()
     await ready()
     expect(screen.queryByTestId('cues-undo')).toBeNull()
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-undo'))
     await waitFor(() => expect(screen.queryByTestId('cues-undo')).toBeNull())
   })
@@ -348,7 +371,7 @@ describe('CuesSection', () => {
     setup()
     await ready()
     expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply My flow')
   })
 
@@ -370,7 +393,7 @@ describe('CuesSection', () => {
     setup()
     await ready()
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
   })
@@ -378,6 +401,7 @@ describe('CuesSection', () => {
   it('stops waiting on a second press or once a drop is marked from the menu, and ⌘Z never brings the wait back', async () => {
     setup()
     await ready()
+    await openFull()
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
     expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
@@ -400,7 +424,7 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-flow-option-mark-another')).toBeNull()
     fireEvent.click(screen.getByTestId('cues-flow'))
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-flow'))
     expect(screen.getByTestId('cues-flow-option-mark-another')).toHaveTextContent(
       'Mark another where it drops',
@@ -411,12 +435,12 @@ describe('CuesSection', () => {
     setup(READ, null, { activeCueFlow: 'one-at-32' })
     await ready()
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-flow'))
     fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
     expect(screen.getByTestId('cues-arm-hint')).toHaveTextContent('Click where it drops')
     expect(screen.getByTestId('cues-flow')).toHaveAccessibleName(/One cue at 32/)
-    clickAt(bar(160))
+    markAt(bar(160))
     expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-call-${bar(160)}`)).toBeInTheDocument()
@@ -427,7 +451,7 @@ describe('CuesSection', () => {
     setup()
     await ready()
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-flow'))
     fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
     const reachedWindow = vi.fn<(e: KeyboardEvent) => void>()
@@ -442,10 +466,10 @@ describe('CuesSection', () => {
     setup()
     await ready()
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-flow'))
     fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
   })
 
@@ -454,7 +478,7 @@ describe('CuesSection', () => {
     await ready()
     chooseFlow('one-at-32')
     expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
       `${(bar(32) / 400000) * 100}%`,
     )
@@ -465,7 +489,7 @@ describe('CuesSection', () => {
   it('applies another flow to the drops already marked', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     chooseFlow('calls-only')
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
@@ -475,14 +499,14 @@ describe('CuesSection', () => {
   it('follows a flow chosen in Settings while the editor is open, keeping the draft and using it for the next drop', async () => {
     const { changeSettings } = setup(READ, null, { activeCueFlow: 'mine' })
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     changeSettings({ activeCueFlow: 'one-at-32' })
     await waitFor(() =>
       expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply One cue at 32'),
     )
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    clickAt(bar(160))
+    markAt(bar(160))
     expect(screen.queryByTestId('cues-manual')).toBeNull()
     expect(
       screen
@@ -530,7 +554,7 @@ describe('CuesSection', () => {
   it('moves a hot cue with its CALL by dragging it', async () => {
     setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-B'), { clientX: bar(32) / 1000 })
     fireEvent.mouseMove(window, { clientX: bar(36) / 1000 })
     fireEvent.mouseUp(window, { clientX: bar(36) / 1000 })
@@ -543,7 +567,7 @@ describe('CuesSection', () => {
   it('says hand-placed hot cues stay as they are and only adds the CALL', async () => {
     setup({ ...READ, cues: [{ id: 'm', ms: bar(40), kind: 1, color: 1 }] })
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cues-manual')).toBeInTheDocument()
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
   })
@@ -562,7 +586,7 @@ describe('CuesSection', () => {
   it('goes back to what rekordbox holds with Descartar cambios', async () => {
     const { undoRekordboxCues } = setup()
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-undo'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
     expect(screen.getByTestId('cues-save')).toBeDisabled()
@@ -590,7 +614,7 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-queued-stale')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'false')
     expect(screen.queryByTestId(`cue-wave-call-${bar(64)}`)).toBeNull()
-    clickAt(bar(32))
+    markAt(bar(32))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const req = saveRekordboxCues.mock.calls[0][0]
@@ -627,7 +651,7 @@ describe('CuesSection', () => {
     client.setQueryData(['rekordbox-track-cues', '104'], { ...empty, contentId: '104' })
     client.setQueryData(['rekordbox-queued-cues', '104'], null)
     await ready()
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId('cues-save')).toBeEnabled()
     changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
     fireEvent.click(screen.getByTestId('cues-save'))

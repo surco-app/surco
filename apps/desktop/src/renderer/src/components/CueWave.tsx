@@ -44,6 +44,7 @@ export function CueWave({
   onAcceptProposal,
   playheadMs,
   onSeek,
+  onOpen,
   view,
 }: {
   wave: CueWaveColumn[] | null
@@ -64,6 +65,7 @@ export function CueWave({
   onAcceptProposal?: (ms: number) => void
   playheadMs?: number
   onSeek?: (ms: number) => void
+  onOpen?: (ms: number) => void
   view?: { fromMs: number; toMs: number }
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -236,6 +238,10 @@ export function CueWave({
           onSeek(msAtX(e.clientX))
           return
         }
+        if (onOpen) {
+          onOpen(msAtX(e.clientX))
+          return
+        }
         setGhost(null)
         onSelect?.(null)
         const action = at(e)
@@ -257,13 +263,13 @@ export function CueWave({
         })
       }}
       onMouseMove={(e) => {
-        if (readOnly || onSeek) return
+        if (readOnly || onSeek || onOpen) return
         const action = at(e)
         setGhost(action.kind === 'add' ? action.ms : null)
       }}
       onMouseLeave={() => setGhost(null)}
       className={`relative h-16 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
-        readOnly ? 'cursor-default' : onSeek ? 'cursor-pointer' : 'cursor-crosshair'
+        readOnly ? 'cursor-default' : onSeek || onOpen ? 'cursor-pointer' : 'cursor-crosshair'
       }`}
     >
       <div
