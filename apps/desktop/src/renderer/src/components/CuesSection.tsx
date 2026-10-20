@@ -689,6 +689,7 @@ function Editing({
           quantize={settings.cueQuantize}
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+          onZoomReset={() => setZoom(DEFAULT_ZOOM_BARS)}
           onPlace={placing ? place : undefined}
           onHover={placing ? setHoverMs : undefined}
           ghost={ghost}

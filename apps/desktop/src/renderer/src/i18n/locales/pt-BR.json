@@ -829,6 +829,9 @@
       "placeHint": "Clique para colocar",
       "applyTrack": "Aplicar a esta faixa",
       "noFit": "Este fluxo não cabe nesta faixa",
+      "zoomIn": "Aproximar",
+      "zoomReset": "Redefinir o zoom",
+      "zoomOut": "Afastar",
       "rejected": {
         "strong_one": "{{count}} não cabe, cai na parte forte",
         "strong_other": "{{count}} não cabem, caem na parte forte",

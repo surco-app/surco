@@ -1,3 +1,4 @@
+import { Minus, Plus, RotateCcw } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,7 +16,15 @@ import {
   placeCues,
   WAVE_MARK_LANE_PX,
 } from '../lib/cueMarks'
-import { barsToNextCall, cueClock, detailWindow, snapToBeat, wheelZoom } from '../lib/cuePlayhead'
+import {
+  barsToNextCall,
+  cueClock,
+  DEFAULT_ZOOM_BARS,
+  detailWindow,
+  snapToBeat,
+  wheelZoom,
+  zoomStep,
+} from '../lib/cuePlayhead'
 import { barLines, quantizePoints } from '../lib/cueWave'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
@@ -23,6 +32,8 @@ import type { WaveCue } from './CueWave'
 const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
 const WAVE_SPAN = 0.8
 const DRAG_PX = 3
+const ZOOM_BUTTON =
+  'press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg disabled:pointer-events-none disabled:opacity-40'
 const CAPS = [
   {
     position: 'top-0',
@@ -48,6 +59,7 @@ export function CueWaveDetail({
   quantize,
   onScrub,
   onZoom,
+  onZoomReset,
   onPlace,
   onMarkMenu,
   onDeleteMark,
@@ -65,6 +77,7 @@ export function CueWaveDetail({
   quantize: CueQuantize
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
+  onZoomReset?: () => void
   onPlace?: (ms: number) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
@@ -277,198 +290,244 @@ export function CueWaveDetail({
           </span>
         )}
       </div>
-      <div
-        ref={stageRef}
-        data-testid="cue-detail"
-        role="img"
-        aria-label={t('editor.cues.detail')}
-        onMouseDown={(e) => {
-          if (e.button !== 0) return
-          const rect = stageRef.current?.getBoundingClientRect()
-          if (!rect || rect.width <= 0) return
-          const onMark = (e.target as HTMLElement).closest('[data-mark]') !== null
-          setCursor(null)
-          onHover?.(null)
-          setDrag({
-            x0: e.clientX,
-            ms0: playheadMs,
-            width: rect.width,
-            pick: onPlace && !onMark ? snapAt(e.clientX, rect) : null,
-          })
-        }}
-        onMouseMove={(e) => {
-          if (!onPlace || drag) return
-          const rect = stageRef.current?.getBoundingClientRect()
-          if (!rect || rect.width <= 0) return
-          const ms = snapAt(e.clientX, rect)
-          setCursor(ms)
-          onHover?.(ms)
-        }}
-        onMouseLeave={() => {
-          setCursor(null)
-          onHover?.(null)
-        }}
-        style={{ cursor: onPlace ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
-        className="relative w-full shrink-0 select-none overflow-hidden"
-      >
-        {quantize === 'beat' &&
-          grid
-            .filter((b) => b.beat !== 1 && b.ms >= fromMs && b.ms <= toMs)
+      <div className="relative">
+        <div data-testid="cue-zoom" className="absolute top-0 right-full mr-1 flex flex-col gap-1">
+          {(
+            [
+              [
+                'cue-zoom-in',
+                'editor.cues.zoomIn',
+                Plus,
+                () => onZoom('in'),
+                zoomStep(bars, 'in') === bars,
+              ],
+              [
+                'cue-zoom-reset',
+                'editor.cues.zoomReset',
+                RotateCcw,
+                () => onZoomReset?.(),
+                bars === DEFAULT_ZOOM_BARS,
+              ],
+              [
+                'cue-zoom-out',
+                'editor.cues.zoomOut',
+                Minus,
+                () => onZoom('out'),
+                zoomStep(bars, 'out') === bars,
+              ],
+            ] as const
+          ).map(([id, label, Icon, act, off]) => (
+            <button
+              key={id}
+              type="button"
+              data-testid={id}
+              aria-label={t(label)}
+              title={t(label)}
+              disabled={off}
+              onClick={act}
+              className={ZOOM_BUTTON}
+            >
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+        <div
+          ref={stageRef}
+          data-testid="cue-detail"
+          role="img"
+          aria-label={t('editor.cues.detail')}
+          onMouseDown={(e) => {
+            if (e.button !== 0) return
+            const rect = stageRef.current?.getBoundingClientRect()
+            if (!rect || rect.width <= 0) return
+            const onMark = (e.target as HTMLElement).closest('[data-mark]') !== null
+            setCursor(null)
+            onHover?.(null)
+            setDrag({
+              x0: e.clientX,
+              ms0: playheadMs,
+              width: rect.width,
+              pick: onPlace && !onMark ? snapAt(e.clientX, rect) : null,
+            })
+          }}
+          onMouseMove={(e) => {
+            if (!onPlace || drag) return
+            const rect = stageRef.current?.getBoundingClientRect()
+            if (!rect || rect.width <= 0) return
+            const ms = snapAt(e.clientX, rect)
+            setCursor(ms)
+            onHover?.(ms)
+          }}
+          onMouseLeave={() => {
+            setCursor(null)
+            onHover?.(null)
+          }}
+          style={{ cursor: onPlace ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
+          className="relative w-full shrink-0 select-none overflow-hidden"
+        >
+          {quantize === 'beat' &&
+            grid
+              .filter((b) => b.beat !== 1 && b.ms >= fromMs && b.ms <= toMs)
+              .map((b) => (
+                <span
+                  key={b.ms}
+                  data-testid="cue-detail-beat"
+                  aria-hidden="true"
+                  style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+                  className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/15"
+                />
+              ))}
+          {lines
+            .filter((b) => b.ms >= fromMs && b.ms <= toMs)
             .map((b) => (
               <span
                 key={b.ms}
-                data-testid="cue-detail-beat"
+                data-testid="cue-detail-bar"
+                data-bar={b.bar}
+                data-phrase={b.phrase ? 'true' : 'false'}
                 aria-hidden="true"
                 style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-                className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/15"
-              />
+                className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/35"
+              >
+                {CAPS.map((cap) => (
+                  <span
+                    key={cap.position}
+                    data-testid="cue-detail-cap"
+                    style={b.phrase ? { [cap.colour]: MEMORY_CUE_COLOR } : undefined}
+                    className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[2.5px] border-x-transparent ${cap.position} ${
+                      b.phrase ? '' : cap.grey
+                    } ${cap.shape}`}
+                  />
+                ))}
+              </span>
             ))}
-        {lines
-          .filter((b) => b.ms >= fromMs && b.ms <= toMs)
-          .map((b) => (
-            <span
-              key={b.ms}
-              data-testid="cue-detail-bar"
-              data-bar={b.bar}
-              data-phrase={b.phrase ? 'true' : 'false'}
-              aria-hidden="true"
-              style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-              className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/35"
-            >
-              {CAPS.map((cap) => (
-                <span
-                  key={cap.position}
-                  data-testid="cue-detail-cap"
-                  style={b.phrase ? { [cap.colour]: MEMORY_CUE_COLOR } : undefined}
-                  className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[2.5px] border-x-transparent ${cap.position} ${
-                    b.phrase ? '' : cap.grey
-                  } ${cap.shape}`}
-                />
-              ))}
-            </span>
+          <canvas
+            ref={canvasRef}
+            style={{
+              top: `${WAVE_MARK_LANE_PX}px`,
+              height: `calc(100% - ${WAVE_MARK_LANE_PX}px)`,
+            }}
+            className="absolute inset-x-0 w-full"
+          />
+          <span
+            data-testid="cue-detail-playhead"
+            aria-hidden="true"
+            style={{ top: `${WAVE_MARK_LANE_PX}px` }}
+            className="pointer-events-none absolute bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
+          />
+          {calls.map((c) => (
+            <Fragment key={`c${c.key}`}>
+              <span
+                role="img"
+                data-testid={`cue-detail-call-${c.ms + fromMs}`}
+                data-mark="true"
+                data-gone={gone.has(c.key) ? 'true' : 'false'}
+                data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
+                aria-hidden="true"
+                onContextMenu={(e) => markMenu(c.key, e)}
+                {...hover(c.key)}
+                {...grab(c.key)}
+                style={{
+                  ...markStyle(c.at),
+                  borderTopColor: MEMORY_CUE_COLOR,
+                  ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
+                  ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+                }}
+                className={`absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
+                  pendingOf.get(c.key) ? 'opacity-60' : ''
+                }`}
+              />
+              {badge(c.key, c.at, t('editor.cues.deleteCallMark'), 9)}
+            </Fragment>
           ))}
-        <canvas
-          ref={canvasRef}
-          style={{
-            top: `${WAVE_MARK_LANE_PX}px`,
-            height: `calc(100% - ${WAVE_MARK_LANE_PX}px)`,
-          }}
-          className="absolute inset-x-0 w-full"
-        />
-        <span
-          data-testid="cue-detail-playhead"
-          aria-hidden="true"
-          style={{ top: `${WAVE_MARK_LANE_PX}px` }}
-          className="pointer-events-none absolute bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
-        />
-        {calls.map((c) => (
-          <Fragment key={`c${c.key}`}>
+          {hot.map((h) => {
+            const pending = pendingOf.get(h.key) ?? false
+            return (
+              <Fragment key={`h${h.key}`}>
+                <span
+                  role="img"
+                  data-testid={`cue-detail-hot-${h.letter}`}
+                  data-mark="true"
+                  data-gone={gone.has(h.key) ? 'true' : 'false'}
+                  data-pending={pending ? 'true' : 'false'}
+                  data-selected={selected === h.key ? 'true' : 'false'}
+                  aria-hidden="true"
+                  onContextMenu={(e) => markMenu(h.key, e)}
+                  {...hover(h.key)}
+                  style={{
+                    ...markStyle(h.at),
+                    ...(pending
+                      ? { borderColor: h.colour, color: h.colour }
+                      : { backgroundColor: h.colour, color: '#000' }),
+                    ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
+                  }}
+                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
+                    pending ? 'border' : ''
+                  } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
+                >
+                  {h.letter}
+                </span>
+                {badge(h.key, h.at, t('editor.cues.deleteHot', { letter: h.letter }), 11)}
+              </Fragment>
+            )
+          })}
+          {ghostMarks?.calls.map((c) => (
             <span
-              role="img"
-              data-testid={`cue-detail-call-${c.ms + fromMs}`}
-              data-mark="true"
-              data-gone={gone.has(c.key) ? 'true' : 'false'}
-              data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
+              key={`gc${c.key}`}
+              data-testid={`cue-detail-ghost-call-${c.ms + fromMs}`}
               aria-hidden="true"
-              onContextMenu={(e) => markMenu(c.key, e)}
-              {...hover(c.key)}
-              {...grab(c.key)}
               style={{
                 ...markStyle(c.at),
                 borderTopColor: MEMORY_CUE_COLOR,
-                ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
-                ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+                opacity: GHOST_OPACITY,
               }}
-              className={`absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
-                pendingOf.get(c.key) ? 'opacity-60' : ''
-              }`}
-            />
-            {badge(c.key, c.at, t('editor.cues.deleteCallMark'), 9)}
-          </Fragment>
-        ))}
-        {hot.map((h) => {
-          const pending = pendingOf.get(h.key) ?? false
-          return (
-            <Fragment key={`h${h.key}`}>
-              <span
-                role="img"
-                data-testid={`cue-detail-hot-${h.letter}`}
-                data-mark="true"
-                data-gone={gone.has(h.key) ? 'true' : 'false'}
-                data-pending={pending ? 'true' : 'false'}
-                data-selected={selected === h.key ? 'true' : 'false'}
-                aria-hidden="true"
-                onContextMenu={(e) => markMenu(h.key, e)}
-                {...hover(h.key)}
-                style={{
-                  ...markStyle(h.at),
-                  ...(pending
-                    ? { borderColor: h.colour, color: h.colour }
-                    : { backgroundColor: h.colour, color: '#000' }),
-                  ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
-                }}
-                className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
-                  pending ? 'border' : ''
-                } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
-              >
-                {h.letter}
-              </span>
-              {badge(h.key, h.at, t('editor.cues.deleteHot', { letter: h.letter }), 11)}
-            </Fragment>
-          )
-        })}
-        {ghostMarks?.calls.map((c) => (
-          <span
-            key={`gc${c.key}`}
-            data-testid={`cue-detail-ghost-call-${c.ms + fromMs}`}
-            aria-hidden="true"
-            style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR, opacity: GHOST_OPACITY }}
-            className="pointer-events-none absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
-          />
-        ))}
-        {ghostMarks?.hot.map((h) => (
-          <span
-            key={`gh${h.key}`}
-            data-testid={`cue-detail-ghost-hot-${h.letter}`}
-            aria-hidden="true"
-            style={{
-              ...markStyle(h.at),
-              backgroundColor: h.colour,
-              color: '#000',
-              opacity: GHOST_OPACITY,
-            }}
-            className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px]"
-          >
-            {h.letter}
-          </span>
-        ))}
-        {(ghost?.rejected ?? [])
-          .filter((r) => r.ms >= fromMs && r.ms <= toMs)
-          .map((r) => (
-            <span
-              key={`gd${r.ms}`}
-              data-testid={`cue-detail-ghost-dropped-${r.ms}`}
-              aria-hidden="true"
-              style={droppedStyle(((r.ms - fromMs) / span) * 100, r)}
-              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
+              className="pointer-events-none absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
             />
           ))}
-        {dragMs !== null && (
-          <span
-            data-testid="cue-detail-drag-ghost"
-            aria-hidden="true"
-            style={{ left: pct(dragMs) }}
-            className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
-          />
-        )}
-        {cursor !== null && cursor >= fromMs && cursor <= toMs && (
-          <span
-            data-testid="cue-detail-cursor"
-            aria-hidden="true"
-            style={{ ...CURSOR_LINE, left: pct(cursor) }}
-            className="pointer-events-none absolute top-0 bottom-0"
-          />
-        )}
+          {ghostMarks?.hot.map((h) => (
+            <span
+              key={`gh${h.key}`}
+              data-testid={`cue-detail-ghost-hot-${h.letter}`}
+              aria-hidden="true"
+              style={{
+                ...markStyle(h.at),
+                backgroundColor: h.colour,
+                color: '#000',
+                opacity: GHOST_OPACITY,
+              }}
+              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px]"
+            >
+              {h.letter}
+            </span>
+          ))}
+          {(ghost?.rejected ?? [])
+            .filter((r) => r.ms >= fromMs && r.ms <= toMs)
+            .map((r) => (
+              <span
+                key={`gd${r.ms}`}
+                data-testid={`cue-detail-ghost-dropped-${r.ms}`}
+                aria-hidden="true"
+                style={droppedStyle(((r.ms - fromMs) / span) * 100, r)}
+                className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
+              />
+            ))}
+          {dragMs !== null && (
+            <span
+              data-testid="cue-detail-drag-ghost"
+              aria-hidden="true"
+              style={{ left: pct(dragMs) }}
+              className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
+            />
+          )}
+          {cursor !== null && cursor >= fromMs && cursor <= toMs && (
+            <span
+              data-testid="cue-detail-cursor"
+              aria-hidden="true"
+              style={{ ...CURSOR_LINE, left: pct(cursor) }}
+              className="pointer-events-none absolute top-0 bottom-0"
+            />
+          )}
+        </div>
       </div>
     </div>
   )

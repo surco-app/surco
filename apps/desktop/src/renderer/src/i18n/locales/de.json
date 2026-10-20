@@ -829,6 +829,9 @@
       "placeHint": "Zum Setzen klicken",
       "applyTrack": "Auf diesen Titel anwenden",
       "noFit": "Dieser Ablauf passt nicht zu diesem Titel",
+      "zoomIn": "Vergrößern",
+      "zoomReset": "Zoom zurücksetzen",
+      "zoomOut": "Verkleinern",
       "rejected": {
         "strong_one": "{{count}} passt nicht, fällt in den starken Teil",
         "strong_other": "{{count}} passen nicht, fallen in den starken Teil",

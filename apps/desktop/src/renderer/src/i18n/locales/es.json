@@ -829,6 +829,9 @@
       "placeHint": "Haz clic para colocar",
       "applyTrack": "Aplicar a esta pista",
       "noFit": "Este flujo no cabe en esta pista",
+      "zoomIn": "Acercar",
+      "zoomReset": "Restablecer el zoom",
+      "zoomOut": "Alejar",
       "rejected": {
         "strong_one": "{{count}} no cabe, cae en la parte fuerte",
         "strong_other": "{{count}} no caben, caen en la parte fuerte",

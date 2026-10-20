@@ -829,6 +829,9 @@
       "placeHint": "Cliquez pour placer",
       "applyTrack": "Appliquer à ce morceau",
       "noFit": "Ce flux ne rentre pas dans ce morceau",
+      "zoomIn": "Zoom avant",
+      "zoomReset": "Réinitialiser le zoom",
+      "zoomOut": "Zoom arrière",
       "rejected": {
         "strong_one": "{{count}} ne rentre pas, tombe dans la partie forte",
         "strong_other": "{{count}} ne rentrent pas, tombent dans la partie forte",

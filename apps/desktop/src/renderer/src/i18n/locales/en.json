@@ -829,6 +829,9 @@
       "placeHint": "Click to place",
       "applyTrack": "Apply to this track",
       "noFit": "This flow doesn't fit this track",
+      "zoomIn": "Zoom in",
+      "zoomReset": "Reset zoom",
+      "zoomOut": "Zoom out",
       "rejected": {
         "strong_one": "{{count}} doesn't fit, it falls in the strong part",
         "strong_other": "{{count}} don't fit, they fall in the strong part",

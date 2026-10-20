@@ -331,6 +331,38 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalled()
   })
 
+  it('stacks zoom in, reset and zoom out at the left of the zoomed wave, outside it so they never take a wave click', () => {
+    const onZoomReset = vi.fn<() => void>()
+    const { onZoom } = setup({ onZoomReset })
+    const ids = ['cue-zoom-in', 'cue-zoom-reset', 'cue-zoom-out']
+    const buttons = ids.map((id) => screen.getByTestId(id))
+    for (const b of buttons) expect(screen.getByTestId('cue-detail')).not.toContainElement(b)
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Zoom in',
+      'Reset zoom',
+      'Zoom out',
+    ])
+    expect(
+      buttons[0].compareDocumentPosition(buttons[2]) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.getByTestId('cue-zoom-reset')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('cue-zoom-in'))
+    fireEvent.click(screen.getByTestId('cue-zoom-out'))
+    expect(onZoom.mock.calls).toEqual([['in'], ['out']])
+  })
+
+  it('disables + and − at the ends of the zoom and offers reset away from the default, never hiding any', () => {
+    const onZoomReset = vi.fn<() => void>()
+    const { rerender } = setup({ bars: 4, onZoomReset })
+    expect(screen.getByTestId('cue-zoom-in')).toBeDisabled()
+    expect(screen.getByTestId('cue-zoom-out')).toBeEnabled()
+    fireEvent.click(screen.getByTestId('cue-zoom-reset'))
+    expect(onZoomReset).toHaveBeenCalledTimes(1)
+    rerender({ bars: 64 })
+    expect(screen.getByTestId('cue-zoom-in')).toBeEnabled()
+    expect(screen.getByTestId('cue-zoom-out')).toBeDisabled()
+  })
+
   it('draws what the flow drops as faint dashed outlines in the cue colour, inside the window only and never clickable', () => {
     setup({
       ghost: {
@@ -440,9 +472,9 @@ describe('CueWaveDetail', () => {
     )
   })
 
-  it('puts no buttons over the wave, zoom lives on the keys and the trackpad', () => {
+  it('puts no buttons over the wave itself, the zoom buttons sit beside it', () => {
     setup()
-    expect(screen.queryAllByRole('button')).toHaveLength(0)
+    expect(within(screen.getByTestId('cue-detail')).queryAllByRole('button')).toHaveLength(0)
   })
 
   it('zooms with a pinch or ⌘ and the wheel, one step per swipe, and leaves a plain wheel alone', () => {

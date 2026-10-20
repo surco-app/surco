@@ -257,6 +257,20 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cue-wave-view').style.width).toBe('4%')
   })
 
+  it('zooms with the buttons beside the zoomed wave as with the keys, and goes back to 16 bars with reset', async () => {
+    setup()
+    await maximize()
+    seek(56000)
+    fireEvent.click(screen.getByTestId('cue-zoom-in'))
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('4%')
+    fireEvent.click(screen.getByTestId('cue-zoom-out'))
+    fireEvent.click(screen.getByTestId('cue-zoom-out'))
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('16%')
+    fireEvent.click(screen.getByTestId('cue-zoom-reset'))
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('8%')
+    expect(screen.getByTestId('cue-zoom-reset')).toBeDisabled()
+  })
+
   it('draws no rectangle on the folded strip, where there is no zoomed wave', async () => {
     setup()
     await ready()
