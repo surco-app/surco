@@ -803,6 +803,7 @@
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Tasten",
+        "button": "Tastenkürzel",
         "space": "Leertaste",
         "play": "abspielen oder stoppen",
         "jump_one": "{{count}} Takt springen",

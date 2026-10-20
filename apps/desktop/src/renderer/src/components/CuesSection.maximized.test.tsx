@@ -260,6 +260,33 @@ describe('CuesSection maximized', () => {
     expect(position()).toBe('1:04.0')
   })
 
+  it('keeps the key list out of the way until its keyboard button asks for it, so the editor stays compact', async () => {
+    setup()
+    await maximize()
+    expect(screen.queryByTestId('cues-legend')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    expect(screen.getByTestId('cues-legend')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    expect(screen.queryByTestId('cues-legend')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'))
+    expect(screen.queryByTestId('cues-legend')).toBeNull()
+  })
+
+  it('closes the key list on Escape without restoring the full editor and gives the keys back to it', async () => {
+    setup()
+    await maximize()
+    const windowKeys = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', windowKeys)
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    fireEvent.keyDown(screen.getByTestId('cues-legend'), { key: 'Escape' })
+    window.removeEventListener('keydown', windowKeys)
+    expect(screen.queryByTestId('cues-legend')).toBeNull()
+    expect(windowKeys).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
+    expect(document.activeElement).toBe(screen.getByTestId('cues-editor'))
+  })
+
   it('closes the cue menu on Escape without restoring the full editor under it', async () => {
     setup()
     await maximize()
@@ -495,6 +522,7 @@ describe('CuesSection maximized keys', () => {
   it('lists the keys with the jump in use', async () => {
     setup()
     await maximize()
+    fireEvent.click(screen.getByTestId('cues-keys'))
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('jump 16 bars')
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
   })

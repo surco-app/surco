@@ -803,6 +803,7 @@
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Teclas",
+        "button": "Atajos de teclado",
         "space": "Espacio",
         "play": "reproducir o parar",
         "jump_one": "saltar {{count}} compás",

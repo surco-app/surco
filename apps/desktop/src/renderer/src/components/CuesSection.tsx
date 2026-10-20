@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { Keyboard } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -92,8 +93,34 @@ const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
 const MENU_ITEM =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] disabled:opacity-40'
 
-function CueKeys({ jumpBars }: { jumpBars: number }): React.JSX.Element {
+function CueKeys({
+  jumpBars,
+  onClose,
+}: {
+  jumpBars: number
+  onClose: () => void
+}): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      setOpen(false)
+      onClose()
+    }
+    const onDown = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [open, onClose])
   const mac = isMacOS()
   const shift = formatShortcut(['shift'], mac)
   const keys: [string, string][] = [
@@ -108,20 +135,38 @@ function CueKeys({ jumpBars }: { jumpBars: number }): React.JSX.Element {
     ['+ −', tr('editor.cues.keys.zoom')],
   ]
   return (
-    <ul
-      data-testid="cues-legend"
-      aria-label={tr('editor.cues.keys.label')}
-      className="flex flex-wrap gap-x-5 gap-y-2 border-t border-[var(--color-line)] pt-3 text-xs text-fg-dim"
-    >
-      {keys.map(([chord, what]) => (
-        <li key={chord} className="flex items-center gap-1.5">
-          <kbd className="rounded border border-b-2 border-[var(--color-line-strong)] px-1.5 font-mono text-[11px] text-fg">
-            {chord}
-          </kbd>
-          {what}
-        </li>
-      ))}
-    </ul>
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        type="button"
+        data-testid="cues-keys"
+        aria-label={tr('editor.cues.keys.button')}
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => {
+          if (open) onClose()
+          setOpen(!open)
+        }}
+        className="press flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:text-fg"
+      >
+        <Keyboard className="h-4 w-4" aria-hidden="true" />
+      </button>
+      {open && (
+        <ul
+          data-testid="cues-legend"
+          aria-label={tr('editor.cues.keys.label')}
+          className="absolute top-full right-0 z-20 mt-1 grid w-max grid-cols-2 gap-x-5 gap-y-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-3 text-xs text-fg-dim shadow-[var(--shadow-float)]"
+        >
+          {keys.map(([chord, what]) => (
+            <li key={chord} className="flex items-center gap-1.5">
+              <kbd className="rounded border border-b-2 border-[var(--color-line-strong)] px-1.5 font-mono text-[11px] text-fg">
+                {chord}
+              </kbd>
+              {what}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
@@ -349,6 +394,7 @@ function Editing({
             )}
             {track?.key && <span data-testid="cues-key">{track.key}</span>}
           </div>
+          <CueKeys jumpBars={settings.cueJumpBars} onClose={focusEditor} />
         </div>
       )}
       <div data-testid="cues-flow-row" className="mb-3 flex flex-wrap items-center gap-3">
@@ -561,7 +607,6 @@ function Editing({
           </button>
         </div>
       </div>
-      {maximized && <CueKeys jumpBars={settings.cueJumpBars} />}
     </fieldset>
   )
 }

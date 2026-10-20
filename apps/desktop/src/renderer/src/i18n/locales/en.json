@@ -803,6 +803,7 @@
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Keys",
+        "button": "Keyboard shortcuts",
         "space": "Space",
         "play": "play or stop",
         "jump_one": "jump {{count}} bar",
