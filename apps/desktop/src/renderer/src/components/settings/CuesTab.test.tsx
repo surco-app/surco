@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
 import { BUNDLED_FLOWS, MY_FLOW, ONE_AT_32 } from '../../../../shared/cueFlows'
+import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { LearnedFlow } from '../../../../shared/learnFlow'
 import i18n from '../../i18n'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -19,10 +20,14 @@ afterEach(async () => {
   afterTest = null
 })
 
-let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow'> | null = null
+let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueJumpBars'> | null = null
 
 function Harness({ active = 'mine', collection = '' }: { active?: string; collection?: string }) {
-  const [draft, setDraft] = useState({ cueFlows: BUNDLED_FLOWS, activeCueFlow: active })
+  const [draft, setDraft] = useState({
+    cueFlows: BUNDLED_FLOWS,
+    activeCueFlow: active,
+    cueJumpBars: 16 as CueJumpBars,
+  })
   last = draft
   return (
     <CuesTab
@@ -34,16 +39,16 @@ function Harness({ active = 'mine', collection = '' }: { active?: string; collec
 }
 
 describe('CuesTab', () => {
-  it('lists the bundled flows by their translated names with Mi flujo in use', async () => {
+  it('shows the flows as tabs, the one in use marked and the current one named in place', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
+    expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('En uso')
     expect(
-      within(screen.getByTestId('cue-flows'))
-        .getAllByRole('button')
-        .map((b) => b.textContent),
-    ).toEqual(expect.arrayContaining(['Mi flujo', 'Una cue a 32', 'Solo CALL']))
-    expect(screen.getByTestId('cue-flow-in-use')).toBeInTheDocument()
+      within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-name'),
+    ).toHaveAttribute('placeholder', 'Mi flujo')
+    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('Una cue a 32')
+    expect(screen.getByTestId('cue-flow-calls-only')).toHaveTextContent('Solo CALL')
   })
 
   it('says Mi flujo is in use when the stored active flow no longer exists, since that is the flow that runs', () => {
@@ -55,9 +60,11 @@ describe('CuesTab', () => {
   it('recalculates the preview live when a block changes', () => {
     render(<Harness />)
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    fireEvent.change(screen.getByTestId('cue-rule-0-repeat'), { target: { value: '1' } })
+    fireEvent.click(screen.getByTestId('cue-rule-0-repeat'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-repeat-option-1'))
     expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
     expect(last?.cueFlows.find((f) => f.id === 'mine')?.rules[0].repeat).toBe(1)
+    expect(screen.queryByTestId('cue-rule-0-repeat-menu')).toBeNull()
   })
 
   it('adds and removes a rule', () => {
@@ -86,7 +93,8 @@ describe('CuesTab', () => {
 
   it('warns that a loose CALL from a rule reads as a drop next time', () => {
     render(<Harness />)
-    fireEvent.change(screen.getByTestId('cue-rule-0-place'), { target: { value: 'call' } })
+    fireEvent.click(screen.getByTestId('cue-rule-0-place'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-place-option-call'))
     expect(screen.getByTestId('cue-rule-0-loose-call')).toBeInTheDocument()
     expect(screen.queryByTestId('cue-rule-0-color-mode')).toBeNull()
   })
@@ -104,7 +112,8 @@ describe('CuesTab', () => {
   it('never offers to delete Mi flujo but restores it to rules.py', () => {
     render(<Harness />)
     expect(screen.queryByTestId('cue-flow-delete')).toBeNull()
-    fireEvent.change(screen.getByTestId('cue-rule-0-bars'), { target: { value: '8' } })
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-8'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
     expect(last?.cueFlows.find((f) => f.id === 'mine')).toEqual(MY_FLOW)
   })
@@ -115,6 +124,55 @@ describe('CuesTab', () => {
     fireEvent.click(screen.getByTestId('cue-flow-delete'))
     expect(last?.cueFlows.map((f) => f.id)).toEqual(['mine', 'calls-only'])
     expect(last?.activeCueFlow).toBe('mine')
+  })
+
+  it('reads each rule as one sentence, the way the DJ would say it', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness />)
+    expect(screen.getByTestId('cue-rule-0')).toHaveTextContent(
+      'Desde donde rompe, hacia atrás, cada 16 compases, 3 veces, si cabe, pon hot cue + CALL',
+    )
+    expect(screen.getByTestId('cue-rule-1')).toHaveTextContent(
+      'Desde el primer golpe, en el mismo golpe, si no hay otra antes de donde rompe, pon hot cue + CALL',
+    )
+  })
+
+  it('opens one block list at a time and closes it with Escape or a click elsewhere', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(screen.getByTestId('cue-rule-0-when-option-always')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+    expect(screen.getByTestId('cue-rule-0-when-option-fits')).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
+    expect(screen.queryByTestId('cue-rule-0-when-menu')).toBeNull()
+    fireEvent.keyDown(screen.getByTestId('cue-rule-0-bars-menu'), { key: 'Escape' })
+    expect(screen.queryByTestId('cue-rule-0-bars-menu')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-rule-0-from'))
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByTestId('cue-rule-0-from-menu')).toBeNull()
+  })
+
+  it('puts the preview first and the rules under it', () => {
+    render(<Harness />)
+    const preview = screen.getByTestId('cue-flow-preview')
+    expect(
+      preview.compareDocumentPosition(screen.getByTestId('cue-rule-0')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('sets the arrow jump of the manual editor in its own card', () => {
+    render(<Harness />)
+    expect(screen.getByTestId('cue-jump-16')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('cue-jump-32'))
+    expect(last?.cueJumpBars).toBe(32)
+    expect(screen.getByTestId('cue-jump-32')).toHaveAttribute('aria-pressed', 'true')
   })
 
   describe('Aprender de mi colección', () => {

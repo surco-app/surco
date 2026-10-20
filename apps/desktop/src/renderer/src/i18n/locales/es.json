@@ -1469,7 +1469,16 @@
       "learnNone": "Tu colección no tiene un patrón claro",
       "learnFailed": "No se pudo leer la colección de rekordbox",
       "learnedCoverage_one": "Encaja con {{matching}} de {{marked}} pista",
-      "learnedCoverage_other": "Encaja con {{matching}} de {{marked}} pistas"
+      "learnedCoverage_other": "Encaja con {{matching}} de {{marked}} pistas",
+      "sentence": {
+        "every": "cada",
+        "put": "pon"
+      },
+      "manual": {
+        "title": "Editor manual",
+        "jump": "Salto de las flechas ← →",
+        "unit": "compases"
+      }
     }
   },
   "errorBoundary": {

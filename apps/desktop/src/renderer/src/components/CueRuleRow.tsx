@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type CueRule,
@@ -17,8 +17,27 @@ import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
 
 const REPEATS = [1, 2, 3, 4, 5, 6, 7, 8]
-const SELECT_CLASS =
-  'rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-1.5 py-1 text-xs outline-none focus:border-[var(--color-accent)]'
+const DIRECTIONS: FlowDirection[] = ['back', 'forward']
+const COLOR_MODES = ['fixed', 'each'] as const
+
+type Block = 'from' | 'direction' | 'bars' | 'repeat' | 'when' | 'place' | 'color-mode'
+
+const BLOCK_LABEL: Record<Block, string> = {
+  from: 'from',
+  direction: 'direction',
+  bars: 'bars',
+  repeat: 'repeat',
+  when: 'when',
+  place: 'place',
+  'color-mode': 'colorMode',
+}
+
+const TOKEN_CLASS =
+  'press rounded-sm border-b border-dashed border-[var(--color-accent)] px-0.5 text-fg hover:bg-[var(--color-hover)]'
+const MENU_CLASS =
+  'absolute left-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
+const ITEM_CLASS =
+  'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-checked:font-semibold aria-checked:text-fg'
 
 function slotCount(rule: CueRule): number {
   if ('fixed' in rule.color) return 1
@@ -42,10 +61,19 @@ export function CueRuleRow({
   onRemove: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [openSlot, setOpenSlot] = useState<number | null>(null)
+  const [open, setOpen] = useState<string | null>(null)
+  const rowRef = useRef<HTMLFieldSetElement>(null)
   const id = `cue-rule-${index}`
   const slots = slotCount(rule)
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
+  useEffect(() => {
+    if (open === null) return
+    const onDown = (e: MouseEvent) => {
+      if (!rowRef.current?.contains(e.target as Node)) setOpen(null)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
 
   const pickColor = (slot: number, color: number) => {
     if ('fixed' in rule.color) {
@@ -55,168 +83,187 @@ export function CueRuleRow({
       each[slot] = color
       onChange({ ...rule, color: { each } })
     }
-    setOpenSlot(null)
+    setOpen(null)
   }
 
-  const setColorMode = (mode: string) => {
+  const setColorMode = (mode: (typeof COLOR_MODES)[number]) => {
     if (mode === 'each') {
       const first = colorAt(rule.color, 0)
       onChange({ ...rule, color: { each: Array.from({ length: 3 }, () => first) } })
     } else {
       onChange({ ...rule, color: { fixed: colorAt(rule.color, 0) } })
     }
-    setOpenSlot(null)
   }
 
+  const barsLabel = (bars: number): string =>
+    bars === 0 ? tr('settings.cueFlows.barsZero') : tr('settings.cueFlows.bars', { count: bars })
+  const repeatLabel = (repeat: FlowRepeat): string =>
+    repeat === 'edge'
+      ? tr('settings.cueFlows.repeatEdge')
+      : tr('settings.cueFlows.repeat', { count: repeat })
+
+  const token = <T extends string | number>(
+    block: Block,
+    options: { value: T; label: string }[],
+    current: T,
+    label: string,
+    pick: (value: T) => void,
+  ): React.JSX.Element => (
+    <span className="relative">
+      <button
+        type="button"
+        data-testid={`${id}-${block}`}
+        aria-label={tr(`settings.cueFlows.block.${BLOCK_LABEL[block]}`)}
+        aria-haspopup="menu"
+        aria-expanded={open === block}
+        onClick={() => setOpen(open === block ? null : block)}
+        className={TOKEN_CLASS}
+      >
+        {label}
+      </button>
+      {open === block && (
+        <div role="menu" data-testid={`${id}-${block}-menu`} className={MENU_CLASS}>
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              role="menuitemradio"
+              aria-checked={o.value === current}
+              data-testid={`${id}-${block}-option-${o.value}`}
+              onClick={() => {
+                pick(o.value)
+                setOpen(null)
+              }}
+              className={ITEM_CLASS}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  )
+
   return (
-    <div
+    <fieldset
+      ref={rowRef}
       data-testid={id}
-      className="relative flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-line)] py-1.5 pl-2 pr-8 text-xs"
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape' || open === null) return
+        e.stopPropagation()
+        setOpen(null)
+      }}
+      className="relative m-0 min-w-0 rounded-md border border-[var(--color-line)] py-2 pl-3 pr-8 text-sm leading-8"
     >
-      <select
-        data-testid={`${id}-from`}
-        aria-label={tr('settings.cueFlows.block.from')}
-        value={rule.from}
-        onChange={(e) => onChange({ ...rule, from: e.target.value as CueRule['from'] })}
-        className={SELECT_CLASS}
-      >
-        {FLOW_ORIGINS.map((o) => (
-          <option key={o} value={o}>
-            {tr(`settings.cueFlows.from.${o}`)}
-          </option>
-        ))}
-      </select>
-      <select
-        data-testid={`${id}-bars`}
-        aria-label={tr('settings.cueFlows.block.bars')}
-        value={rule.bars}
-        onChange={(e) => {
-          const bars = Number(e.target.value)
-          onChange(bars === 0 ? { ...rule, bars, repeat: 1 } : { ...rule, bars })
-        }}
-        className={SELECT_CLASS}
-      >
-        {RULE_BARS.map((b) => (
-          <option key={b} value={b}>
-            {b === 0
-              ? tr('settings.cueFlows.barsZero')
-              : tr('settings.cueFlows.bars', { count: b })}
-          </option>
-        ))}
-      </select>
+      <span aria-hidden="true" className="mr-2 font-mono text-xs text-fg-faint">
+        {index + 1}
+      </span>
+      {token(
+        'from',
+        FLOW_ORIGINS.map((o) => ({ value: o, label: tr(`settings.cueFlows.from.${o}`) })),
+        rule.from,
+        tr(`settings.cueFlows.from.${rule.from}`),
+        (from) => onChange({ ...rule, from }),
+      )}
       {rule.bars > 0 && (
         <>
-          <select
-            data-testid={`${id}-direction`}
-            aria-label={tr('settings.cueFlows.block.direction')}
-            value={rule.direction}
-            onChange={(e) => onChange({ ...rule, direction: e.target.value as FlowDirection })}
-            className={SELECT_CLASS}
-          >
-            {(['back', 'forward'] as const).map((d) => (
-              <option key={d} value={d}>
-                {tr(`settings.cueFlows.direction.${d}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            data-testid={`${id}-repeat`}
-            aria-label={tr('settings.cueFlows.block.repeat')}
-            value={rule.repeat}
-            onChange={(e) => {
-              const repeat: FlowRepeat = e.target.value === 'edge' ? 'edge' : Number(e.target.value)
-              onChange({ ...rule, repeat })
-            }}
-            className={SELECT_CLASS}
-          >
-            {REPEATS.map((r) => (
-              <option key={r} value={r}>
-                {tr('settings.cueFlows.repeat', { count: r })}
-              </option>
-            ))}
-            <option value="edge">{tr('settings.cueFlows.repeatEdge')}</option>
-          </select>
+          {', '}
+          {token(
+            'direction',
+            DIRECTIONS.map((d) => ({ value: d, label: tr(`settings.cueFlows.direction.${d}`) })),
+            rule.direction,
+            tr(`settings.cueFlows.direction.${rule.direction}`),
+            (direction) => onChange({ ...rule, direction }),
+          )}
         </>
       )}
-      <select
-        data-testid={`${id}-when`}
-        aria-label={tr('settings.cueFlows.block.when')}
-        value={rule.when}
-        onChange={(e) => onChange({ ...rule, when: e.target.value as CueRule['when'] })}
-        className={SELECT_CLASS}
-      >
-        {FLOW_CONDITIONS.map((w) => (
-          <option key={w} value={w}>
-            {tr(`settings.cueFlows.when.${w}`)}
-          </option>
-        ))}
-      </select>
-      <select
-        data-testid={`${id}-place`}
-        aria-label={tr('settings.cueFlows.block.place')}
-        value={rule.place}
-        onChange={(e) => onChange({ ...rule, place: e.target.value as CueRule['place'] })}
-        className={SELECT_CLASS}
-      >
-        {FLOW_PLACES.map((p) => (
-          <option key={p} value={p}>
-            {tr(`settings.cueFlows.place.${p}`)}
-          </option>
-        ))}
-      </select>
+      {', '}
+      {rule.bars > 0 && `${tr('settings.cueFlows.sentence.every')} `}
+      {token(
+        'bars',
+        RULE_BARS.map((b) => ({ value: b, label: barsLabel(b) })),
+        rule.bars,
+        barsLabel(rule.bars),
+        (bars) => onChange(bars === 0 ? { ...rule, bars, repeat: 1 } : { ...rule, bars }),
+      )}
+      {rule.bars > 0 && (
+        <>
+          {', '}
+          {token<FlowRepeat>(
+            'repeat',
+            [...REPEATS, 'edge' as const].map((r) => ({ value: r, label: repeatLabel(r) })),
+            rule.repeat,
+            repeatLabel(rule.repeat),
+            (repeat) => onChange({ ...rule, repeat }),
+          )}
+        </>
+      )}
+      {', '}
+      {token(
+        'when',
+        FLOW_CONDITIONS.map((w) => ({ value: w, label: tr(`settings.cueFlows.when.${w}`) })),
+        rule.when,
+        tr(`settings.cueFlows.when.${rule.when}`),
+        (when) => onChange({ ...rule, when }),
+      )}
+      {`, ${tr('settings.cueFlows.sentence.put')} `}
+      {token(
+        'place',
+        FLOW_PLACES.map((p) => ({ value: p, label: tr(`settings.cueFlows.place.${p}`) })),
+        rule.place,
+        tr(`settings.cueFlows.place.${rule.place}`),
+        (place) => onChange({ ...rule, place }),
+      )}
       {rule.place !== 'call' && (
-        <span className="flex items-center gap-1.5 whitespace-nowrap">
-          <select
-            data-testid={`${id}-color-mode`}
-            aria-label={tr('settings.cueFlows.block.colorMode')}
-            value={'fixed' in rule.color ? 'fixed' : 'each'}
-            onChange={(e) => setColorMode(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            {(['fixed', 'each'] as const).map((m) => (
-              <option key={m} value={m}>
-                {tr(`settings.cueFlows.colorMode.${m}`)}
-              </option>
+        <>
+          {' '}
+          {token(
+            'color-mode',
+            COLOR_MODES.map((m) => ({ value: m, label: tr(`settings.cueFlows.colorMode.${m}`) })),
+            'fixed' in rule.color ? 'fixed' : 'each',
+            tr(`settings.cueFlows.colorMode.${'fixed' in rule.color ? 'fixed' : 'each'}`),
+            setColorMode,
+          )}{' '}
+          <span className="inline-flex items-center gap-1 align-middle">
+            {slotNumbers.map((slot) => (
+              <span key={slot} className="relative">
+                <button
+                  type="button"
+                  data-testid={`${id}-color-${slot}`}
+                  aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
+                  aria-expanded={open === `color-${slot}`}
+                  onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
+                  style={{ backgroundColor: hotCueColor(colorAt(rule.color, slot)) }}
+                  className="press block h-[18px] w-[18px] rounded-[3px] border border-[var(--color-line)]"
+                />
+                {open === `color-${slot}` && (
+                  <div className="absolute left-0 top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]">
+                    <CuePalette
+                      value={colorAt(rule.color, slot)}
+                      onPick={(color) => pickColor(slot, color)}
+                      label={(i) => tr('editor.cues.colour', { index: i })}
+                    />
+                  </div>
+                )}
+              </span>
             ))}
-          </select>
-          {slotNumbers.map((slot) => (
-            <span key={slot} className="relative">
-              <button
-                type="button"
-                data-testid={`${id}-color-${slot}`}
-                aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
-                aria-expanded={openSlot === slot}
-                onClick={() => setOpenSlot(openSlot === slot ? null : slot)}
-                style={{ backgroundColor: hotCueColor(colorAt(rule.color, slot)) }}
-                className="press h-5 w-5 rounded-[3px] border border-[var(--color-line)]"
-              />
-              {openSlot === slot && (
-                <div className="absolute left-0 top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]">
-                  <CuePalette
-                    value={colorAt(rule.color, slot)}
-                    onPick={(color) => pickColor(slot, color)}
-                    label={(i) => tr('editor.cues.colour', { index: i })}
-                  />
-                </div>
-              )}
-            </span>
-          ))}
-        </span>
+          </span>
+        </>
       )}
       <button
         type="button"
         data-testid={`${id}-remove`}
         aria-label={tr('settings.cueFlows.removeRule')}
         onClick={onRemove}
-        className="press absolute right-1 top-1 rounded-md p-1 text-fg-dim hover:text-fg"
+        className="press absolute right-1 top-1.5 rounded-md p-1 text-fg-dim hover:text-fg"
       >
         <X size={14} />
       </button>
       {rule.place === 'call' && (
-        <p data-testid={`${id}-loose-call`} className="basis-full text-[11px] text-fg-dim">
+        <p data-testid={`${id}-loose-call`} className="text-[11px] leading-normal text-fg-dim">
           {tr('settings.cueFlows.looseCall')}
         </p>
       )}
-    </div>
+    </fieldset>
   )
 }

@@ -1469,7 +1469,16 @@
       "learnNone": "Your collection has no clear pattern",
       "learnFailed": "The rekordbox collection could not be read",
       "learnedCoverage_one": "Fits {{matching}} of {{marked}} track",
-      "learnedCoverage_other": "Fits {{matching}} of {{marked}} tracks"
+      "learnedCoverage_other": "Fits {{matching}} of {{marked}} tracks",
+      "sentence": {
+        "every": "every",
+        "put": "place"
+      },
+      "manual": {
+        "title": "Manual editor",
+        "jump": "Arrow jump ← →",
+        "unit": "bars"
+      }
     }
   },
   "errorBoundary": {

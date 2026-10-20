@@ -1469,7 +1469,16 @@
       "learnNone": "Votre collection n’a pas de schéma clair",
       "learnFailed": "Impossible de lire la collection rekordbox",
       "learnedCoverage_one": "Correspond à {{matching}} piste sur {{marked}}",
-      "learnedCoverage_other": "Correspond à {{matching}} pistes sur {{marked}}"
+      "learnedCoverage_other": "Correspond à {{matching}} pistes sur {{marked}}",
+      "sentence": {
+        "every": "toutes les",
+        "put": "placez"
+      },
+      "manual": {
+        "title": "Éditeur manuel",
+        "jump": "Saut des flèches ← →",
+        "unit": "mesures"
+      }
     }
   },
   "errorBoundary": {

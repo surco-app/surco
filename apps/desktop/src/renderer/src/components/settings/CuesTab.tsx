@@ -9,6 +9,7 @@ import {
   MY_FLOW_ID,
   restoreMyFlow,
 } from '../../../../shared/cueFlows'
+import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import type { LearnedFlow } from '../../../../shared/learnFlow'
 import { flowName } from '../../lib/cueFlowName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -109,38 +110,67 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
     setCurrent(MY_FLOW_ID)
   }
 
+  const inUse = activeCueFlow(synced).id
   return (
-    <div className="grid grid-cols-[10rem_1fr] gap-4">
-      <div data-testid="cue-flows" className="flex flex-col gap-1">
-        <h3 className="mb-1 text-xs font-medium text-fg-dim">{tr('settings.cueFlows.flows')}</h3>
-        {flows.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            data-testid={`cue-flow-${f.id}`}
-            aria-pressed={f.id === flow.id}
-            onClick={() => select(f.id)}
-            className={`press truncate rounded-md px-2 py-1.5 text-left text-sm ${
-              f.id === flow.id ? 'bg-[var(--color-field)] text-fg' : 'text-fg-dim hover:text-fg'
-            }`}
-          >
-            {flowName(f, tr)}
-          </button>
-        ))}
+    <div className="flex flex-col gap-5">
+      <fieldset
+        data-testid="cue-flows"
+        aria-label={tr('settings.cueFlows.flows')}
+        className="m-0 flex min-w-0 flex-wrap items-center gap-2 border-0 p-0"
+      >
+        {flows.map((f) =>
+          f.id === flow.id && typeof learning !== 'object' ? (
+            <span
+              key={f.id}
+              data-testid={`cue-flow-${f.id}`}
+              aria-current="true"
+              className="inline-flex items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-field)] px-3 py-1 text-sm text-fg"
+            >
+              <input
+                data-testid="cue-flow-name"
+                aria-label={tr('settings.cueFlows.name')}
+                value={flow.name}
+                placeholder={flowName(flow, tr)}
+                size={Math.max(4, (flow.name || flowName(flow, tr)).length)}
+                onChange={(e) => put({ ...flow, name: e.target.value })}
+                className="min-w-0 bg-transparent outline-none placeholder:text-fg"
+              />
+              {inUse === f.id && (
+                <span data-testid="cue-flow-in-use" className="text-fg-dim">
+                  {` · ${tr('settings.cueFlows.inUse')}`}
+                </span>
+              )}
+            </span>
+          ) : (
+            <button
+              key={f.id}
+              type="button"
+              data-testid={`cue-flow-${f.id}`}
+              aria-pressed={false}
+              onClick={() => select(f.id)}
+              className="press rounded-full border border-[var(--color-line-strong)] px-3 py-1 text-sm text-fg-dim hover:text-fg"
+            >
+              {flowName(f, tr)}
+              {inUse === f.id && (
+                <span data-testid="cue-flow-in-use">{` · ${tr('settings.cueFlows.inUse')}`}</span>
+              )}
+            </button>
+          ),
+        )}
         <button
           type="button"
           data-testid="cue-flow-new"
           onClick={create}
-          className={`${BUTTON_CLASS} mt-1`}
+          className="press rounded-full border border-dashed border-[var(--color-line-strong)] px-3 py-1 text-sm text-fg-dim hover:text-fg"
         >
-          {tr('settings.cueFlows.newFlow')}
+          {`+ ${tr('settings.cueFlows.newFlow')}`}
         </button>
         <button
           type="button"
           data-testid="cue-learn"
           disabled={!rekordboxCollection || reading}
           onClick={learn}
-          className={`${BUTTON_CLASS} mt-1 inline-flex items-center gap-1.5 disabled:opacity-60`}
+          className="press inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-line-strong)] px-3 py-1 text-sm text-fg-dim hover:text-fg disabled:opacity-60"
         >
           {reading && (
             <Loader2
@@ -151,17 +181,17 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           )}
           {tr('settings.cueFlows.learn')}
         </button>
-        {learning === 'none' && (
-          <p data-testid="cue-learn-none" className="text-xs text-fg-dim">
-            {tr('settings.cueFlows.learnNone')}
-          </p>
-        )}
-        {learning === 'failed' && (
-          <p data-testid="cue-learn-failed" className="text-xs text-warn">
-            {tr('settings.cueFlows.learnFailed')}
-          </p>
-        )}
-      </div>
+      </fieldset>
+      {learning === 'none' && (
+        <p data-testid="cue-learn-none" className="text-xs text-fg-dim">
+          {tr('settings.cueFlows.learnNone')}
+        </p>
+      )}
+      {learning === 'failed' && (
+        <p data-testid="cue-learn-failed" className="text-xs text-warn">
+          {tr('settings.cueFlows.learnFailed')}
+        </p>
+      )}
       {typeof learning === 'object' ? (
         <div data-testid="cue-learned" className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -194,50 +224,10 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           <CueFlowPreview flow={learning.flow} />
         </div>
       ) : (
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              data-testid="cue-flow-name"
-              aria-label={tr('settings.cueFlows.name')}
-              value={flow.name}
-              placeholder={flowName(flow, tr)}
-              onChange={(e) => put({ ...flow, name: e.target.value })}
-              className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
-            />
-            {activeCueFlow(synced).id === flow.id ? (
-              <span data-testid="cue-flow-in-use" className="text-xs text-fg-dim">
-                {tr('settings.cueFlows.inUse')}
-              </span>
-            ) : (
-              <button
-                type="button"
-                data-testid="cue-flow-use"
-                onClick={() => patch('activeCueFlow', flow.id)}
-                className={BUTTON_CLASS}
-              >
-                {tr('settings.cueFlows.use')}
-              </button>
-            )}
-            {flow.id === MY_FLOW_ID ? (
-              <button
-                type="button"
-                data-testid="cue-flow-restore"
-                onClick={() => patch('cueFlows', restoreMyFlow(flows))}
-                className={BUTTON_CLASS}
-              >
-                {tr('settings.cueFlows.restore')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                data-testid="cue-flow-delete"
-                onClick={remove}
-                className={BUTTON_CLASS}
-              >
-                {tr('settings.cueFlows.delete')}
-              </button>
-            )}
-          </div>
+        <>
+          <section aria-label={tr('settings.cueFlows.preview')}>
+            <CueFlowPreview flow={flow} />
+          </section>
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-medium text-fg-dim">{tr('settings.cueFlows.rules')}</h3>
             {rows.map(({ rule, position }) => (
@@ -257,21 +247,78 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                 {tr('settings.cueFlows.noRules')}
               </p>
             )}
-            <button
-              type="button"
-              data-testid="cue-rule-add"
-              onClick={() => setRules([...flow.rules, NEW_RULE])}
-              className={`${BUTTON_CLASS} self-start`}
-            >
-              {tr('settings.cueFlows.addRule')}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="cue-rule-add"
+                onClick={() => setRules([...flow.rules, NEW_RULE])}
+                className={BUTTON_CLASS}
+              >
+                {`+ ${tr('settings.cueFlows.addRule')}`}
+              </button>
+              <span className="flex-1" />
+              {inUse !== flow.id && (
+                <button
+                  type="button"
+                  data-testid="cue-flow-use"
+                  onClick={() => patch('activeCueFlow', flow.id)}
+                  className={BUTTON_CLASS}
+                >
+                  {tr('settings.cueFlows.use')}
+                </button>
+              )}
+              {flow.id === MY_FLOW_ID ? (
+                <button
+                  type="button"
+                  data-testid="cue-flow-restore"
+                  onClick={() => patch('cueFlows', restoreMyFlow(flows))}
+                  className={BUTTON_CLASS}
+                >
+                  {tr('settings.cueFlows.restore')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="cue-flow-delete"
+                  onClick={remove}
+                  className={BUTTON_CLASS}
+                >
+                  {tr('settings.cueFlows.delete')}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-medium text-fg-dim">{tr('settings.cueFlows.preview')}</h3>
-            <CueFlowPreview flow={flow} />
-          </div>
-        </div>
+        </>
       )}
+      <div
+        data-testid="cue-manual"
+        className="flex flex-wrap items-center gap-3 rounded-md border border-[var(--color-line)] px-3.5 py-3 text-sm"
+      >
+        <span className="font-semibold">{tr('settings.cueFlows.manual.title')}</span>
+        <span className="text-fg-dim">{tr('settings.cueFlows.manual.jump')}</span>
+        <fieldset
+          aria-label={tr('settings.cueFlows.manual.jump')}
+          className="m-0 flex min-w-0 overflow-hidden rounded-md border border-[var(--color-line-strong)] p-0"
+        >
+          {CUE_JUMP_BARS.map((bars) => (
+            <button
+              key={bars}
+              type="button"
+              data-testid={`cue-jump-${bars}`}
+              aria-pressed={synced.cueJumpBars === bars}
+              onClick={() => patch('cueJumpBars', bars)}
+              className={`press px-2.5 py-1 font-mono text-xs ${
+                synced.cueJumpBars === bars
+                  ? 'bg-[var(--color-field)] text-fg'
+                  : 'text-fg-dim hover:text-fg'
+              }`}
+            >
+              {bars}
+            </button>
+          ))}
+        </fieldset>
+        <span className="text-fg-dim">{tr('settings.cueFlows.manual.unit')}</span>
+      </div>
     </div>
   )
 }

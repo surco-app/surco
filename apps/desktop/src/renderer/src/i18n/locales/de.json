@@ -1469,7 +1469,16 @@
       "learnNone": "Deine Sammlung hat kein klares Muster",
       "learnFailed": "Die rekordbox-Sammlung konnte nicht gelesen werden",
       "learnedCoverage_one": "Passt zu {{matching}} von {{marked}} Track",
-      "learnedCoverage_other": "Passt zu {{matching}} von {{marked}} Tracks"
+      "learnedCoverage_other": "Passt zu {{matching}} von {{marked}} Tracks",
+      "sentence": {
+        "every": "alle",
+        "put": "setze"
+      },
+      "manual": {
+        "title": "Manueller Editor",
+        "jump": "Sprung der Pfeiltasten ← →",
+        "unit": "Takte"
+      }
     }
   },
   "errorBoundary": {

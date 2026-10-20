@@ -1469,7 +1469,16 @@
       "learnNone": "Sua coleção não tem um padrão claro",
       "learnFailed": "Não foi possível ler a coleção do rekordbox",
       "learnedCoverage_one": "Combina com {{matching}} de {{marked}} faixa",
-      "learnedCoverage_other": "Combina com {{matching}} de {{marked}} faixas"
+      "learnedCoverage_other": "Combina com {{matching}} de {{marked}} faixas",
+      "sentence": {
+        "every": "a cada",
+        "put": "coloque"
+      },
+      "manual": {
+        "title": "Editor manual",
+        "jump": "Salto das setas ← →",
+        "unit": "compassos"
+      }
     }
   },
   "errorBoundary": {
