@@ -418,6 +418,7 @@ function Editing({
         <Select
           testid="cues-flow"
           split
+          portal
           label={tr('editor.cues.flow')}
           value={shownFlow}
           onChange={pickFlow}

@@ -118,6 +118,15 @@ function chooseFlow(id: string): void {
 }
 
 describe('CuesSection', () => {
+  it('opens the flow list outside the section so the editor column never cuts it off', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    expect(screen.getByTestId('cues-section')).not.toContainElement(
+      screen.getByTestId('cues-flow-listbox'),
+    )
+  })
+
   it('keeps the unsaved cues when the section is mounted again in another place, as maximizing does', async () => {
     setup()
     await ready()
