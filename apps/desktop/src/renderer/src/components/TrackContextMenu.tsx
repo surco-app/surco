@@ -330,6 +330,11 @@ export function TrackContextMenu({
             <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
           </>
         )}
+        <MenuItem
+          testid="track-menu-remove"
+          label={tr('trackList.context.remove')}
+          onClick={() => run(() => onRemove(track.id))}
+        />
         {playlist && playlist.openName !== null && (
           <MenuItem
             testid="track-menu-remove-from"
@@ -338,11 +343,6 @@ export function TrackContextMenu({
             onClick={() => run(playlist.onRemove)}
           />
         )}
-        <MenuItem
-          testid="track-menu-remove"
-          label={tr('trackList.context.remove')}
-          onClick={() => run(() => onRemove(track.id))}
-        />
         <MenuItem
           testid="track-menu-trash"
           danger

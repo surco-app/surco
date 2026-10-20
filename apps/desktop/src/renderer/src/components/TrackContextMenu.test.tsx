@@ -247,6 +247,19 @@ describe('TrackContextMenu playlist actions', () => {
     expect(p.onRemove).toHaveBeenCalled()
   })
 
+  it('keeps the two actions that touch the library together at the end, after the harmless one', () => {
+    renderMenu({ playlist: playlist() })
+    const ids = [...screen.getByTestId('track-menu').querySelectorAll('[data-testid]')]
+      .map((el) => el.getAttribute('data-testid'))
+      .filter(
+        (id) =>
+          id === 'track-menu-remove' ||
+          id === 'track-menu-remove-from' ||
+          id === 'track-menu-trash',
+      )
+    expect(ids).toEqual(['track-menu-remove', 'track-menu-remove-from', 'track-menu-trash'])
+  })
+
   it('offers only adding while no playlist is open', () => {
     renderMenu({ playlist: playlist({ openName: null }) })
     expect(screen.getByTestId('track-menu-add-to')).toBeInTheDocument()
