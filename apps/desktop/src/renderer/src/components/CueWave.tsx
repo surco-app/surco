@@ -28,6 +28,8 @@ export interface WaveCue {
 }
 
 const DRAG_PX = 3
+const PHRASE_BARS = 8
+const PHRASES_PER_STRONG_TICK = 4
 const OVERVIEW_BARS = 300
 const ROW_BAR_PITCH_PX = 3
 const WAVE_HEIGHT = '90%'
@@ -184,14 +186,19 @@ export function CueWave({
   const ticks = useMemo(
     () =>
       barLines(grid)
-        .filter((b) => b.strong)
-        .map((b) => (
+        .filter((_, i) => i % PHRASE_BARS === 0)
+        .map((b, i) => (
           <span
             key={b.ms}
             data-testid="cue-wave-tick"
+            data-strong={i % PHRASES_PER_STRONG_TICK === 0 ? 'true' : 'false'}
             aria-hidden="true"
             style={{ left: `${(b.ms / Math.max(durationMs, 1)) * 100}%` }}
-            className="absolute bottom-0 h-[3px] w-px bg-[var(--color-fg-faint)]"
+            className={`absolute bottom-0 w-px ${
+              i % PHRASES_PER_STRONG_TICK === 0
+                ? 'h-[5px] bg-[var(--color-fg-dim)]'
+                : 'h-[3px] bg-[var(--color-fg-faint)]'
+            }`}
           />
         )),
     [grid, durationMs],

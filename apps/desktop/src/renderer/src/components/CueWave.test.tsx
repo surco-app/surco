@@ -127,14 +127,32 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-bars').style.height).toBe('90%')
   })
 
-  it('marks only every 16 bars with a small tick at the bottom, so the strip reads as a navigator and not a grid', () => {
+  it('draws a scale tick at the bottom every 32 beats from the grid, a rekordbox phrase, stronger every 128 beats', () => {
     setup()
     expect(screen.queryAllByTestId('cue-wave-bar')).toHaveLength(0)
-    expect(screen.getAllByTestId('cue-wave-tick').map((t) => t.style.left)).toEqual([
-      '0%',
-      '40%',
-      '80%',
+    const ticks = screen.getAllByTestId('cue-wave-tick')
+    expect(ticks.map((t) => [t.style.left, t.dataset.strong])).toEqual([
+      ['0%', 'true'],
+      ['20%', 'false'],
+      ['40%', 'false'],
+      ['60%', 'false'],
+      ['80%', 'true'],
     ])
+    for (const t of ticks) {
+      expect(t.className).toContain('bottom-0')
+      expect(t.closest('[data-testid="cue-wave-area"]')).toHaveClass('pointer-events-none')
+    }
+    expect(ticks[0].className).not.toBe(ticks[1].className)
+  })
+
+  it('counts the phrases of the scale from the first downbeat of the grid, as the zoomed wave counts its caps', () => {
+    const offset = [
+      { ms: 0, beat: 3 },
+      { ms: 500, beat: 4 },
+      ...GRID.map((b) => ({ ms: b.ms + 1000, beat: b.beat })),
+    ]
+    setup({ grid: offset })
+    expect(screen.getAllByTestId('cue-wave-tick')[0].style.left).toBe('1.25%')
   })
 
   it('selects a cue with a click on its square without marking a drop there', () => {

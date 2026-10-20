@@ -20,9 +20,8 @@ export const HOT_LETTER: Record<number, string> = {
   17: 'P',
 }
 
-export function barLines(grid: { ms: number; beat: number }[]): { ms: number; strong: boolean }[] {
-  const downbeats = grid.filter((b) => b.beat === 1)
-  return downbeats.map((b, i) => ({ ms: b.ms, strong: i % 16 === 0 }))
+export function barLines(grid: { ms: number; beat: number }[]): { ms: number }[] {
+  return grid.filter((b) => b.beat === 1).map((b) => ({ ms: b.ms }))
 }
 
 export function quantizePoints(grid: { ms: number; beat: number }[], unit: CueQuantize): number[] {

@@ -5,12 +5,11 @@ const GRID = Array.from({ length: 160 }, (_, i) => ({ ms: i * 500, beat: (i % 4)
 const BEATS = GRID.map((b) => b.ms)
 
 describe('barLines', () => {
-  it('marks every bar and every 16th strongly', () => {
+  it('marks every bar on its downbeat', () => {
     const lines = barLines(GRID)
     expect(lines).toHaveLength(40)
-    expect(lines[0]).toEqual({ ms: 0, strong: true })
-    expect(lines[1]).toEqual({ ms: 2000, strong: false })
-    expect(lines[16]).toEqual({ ms: 32000, strong: true })
+    expect(lines[0]).toEqual({ ms: 0 })
+    expect(lines[16]).toEqual({ ms: 32000 })
   })
 })
 
