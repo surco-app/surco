@@ -18,6 +18,7 @@ const synced: SyncedDraft = {
   theme: 'system',
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
+  cueJumpBars: 16,
   language: 'system',
   outputFormat: 'aiff',
   addToAppleMusic: false,

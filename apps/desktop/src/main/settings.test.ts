@@ -1005,6 +1005,31 @@ describe('complete cues on close is per machine', () => {
 })
 
 describe('cue flows', () => {
+  it('jumps 16 bars by default for a settings file from before the manual editor', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueJumpBars).toBe(16)
+  })
+
+  it('repairs a jump the editor does not offer instead of leaving the arrows dead', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueJumpBars: 12 }),
+    )
+    expect(getSettings().cueJumpBars).toBe(16)
+  })
+
+  it('carries the arrow jump to another Mac with the flows', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ cueJumpBars: 32 })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.cueJumpBars).toBe(32)
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('gives a settings file from before flows the bundled ones with Mi flujo active', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32', 'calls-only'])

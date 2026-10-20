@@ -1,5 +1,6 @@
 import type { BackupPolicy } from './backupPolicy'
 import type { CueFlow, FlowPhrase } from './cueFlows'
+import type { CueJumpBars } from './cueJump'
 import type { StrongPart, WantedCue } from './cueRules'
 import type { EditorSectionPref } from './editorSections'
 import type { Chord } from './shortcuts'
@@ -227,6 +228,7 @@ export interface Settings {
   completeCuesOnClose: boolean
   cueFlows: CueFlow[]
   activeCueFlow: string
+  cueJumpBars: CueJumpBars
   rekordboxPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.

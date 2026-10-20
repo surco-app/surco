@@ -27,6 +27,7 @@ const settings: Settings = {
   theme: 'system',
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
+  cueJumpBars: 16,
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

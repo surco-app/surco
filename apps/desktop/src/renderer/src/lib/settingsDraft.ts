@@ -1,5 +1,6 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { BackupPolicy } from '../../../shared/backupPolicy'
+import type { CueJumpBars } from '../../../shared/cueJump'
 import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { CustomField, Settings } from '../../../shared/types'
@@ -26,6 +27,7 @@ export interface SyncedDraft {
   completeCuesOnClose: boolean
   cueFlows: Settings['cueFlows']
   activeCueFlow: string
+  cueJumpBars: CueJumpBars
   syncEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
@@ -126,6 +128,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     completeCuesOnClose: s.completeCuesOnClose,
     cueFlows: s.cueFlows,
     activeCueFlow: s.activeCueFlow,
+    cueJumpBars: s.cueJumpBars,
     syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,

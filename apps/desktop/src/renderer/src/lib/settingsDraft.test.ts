@@ -80,6 +80,7 @@ const settings: Settings = {
   listReviewIgnored: [],
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
+  cueJumpBars: 16,
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
@@ -257,5 +258,10 @@ describe('cue flows in the draft', () => {
     const synced = { ...pickSynced(settings), activeCueFlow: 'calls-only' }
     expect(buildSettingsPatch(synced, local).activeCueFlow).toBe('calls-only')
     expect(buildSettingsPatch(synced, local).cueFlows).toBe(settings.cueFlows)
+  })
+
+  it('saves the arrow jump the Cues tab staged', () => {
+    const synced = { ...pickSynced(settings), cueJumpBars: 64 as const }
+    expect(buildSettingsPatch(synced, local).cueJumpBars).toBe(64)
   })
 })
