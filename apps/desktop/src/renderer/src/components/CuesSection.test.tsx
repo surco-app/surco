@@ -309,16 +309,28 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
   })
 
-  it('puts the flow row before the wave, since applying the flow is the main way to work', async () => {
+  it('puts the strip first and the actions under it while folded, with a short Guardar', async () => {
     setup()
     await ready()
     const order = screen
-      .getByTestId('cues-flow-row')
-      .compareDocumentPosition(screen.getByTestId('cue-wave'))
+      .getByTestId('cue-wave')
+      .compareDocumentPosition(screen.getByTestId('cues-actions'))
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('cues-flow-row')).toContainElement(
+    expect(screen.getByTestId('cues-actions')).toContainElement(
       screen.getByTestId('cues-apply-flow'),
     )
+    expect(screen.getByTestId('cues-actions')).toContainElement(screen.getByTestId('cues-save'))
+    expect(screen.getByTestId('cues-save').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
+  })
+
+  it('offers Descartar only once there is something to discard', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-undo')).toBeNull()
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-undo'))
+    await waitFor(() => expect(screen.queryByTestId('cues-undo')).toBeNull())
   })
 
   it('says Marcar dónde rompe while the track has no drop and Aplicar with the flow name once it has one, so the button never does nothing', async () => {

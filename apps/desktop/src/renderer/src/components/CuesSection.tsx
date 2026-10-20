@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard } from 'lucide-react'
+import { Keyboard, Minimize2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -32,6 +32,7 @@ import {
   zoomStep,
 } from '../lib/cuePlayhead'
 import { forgetDraft, keepDraft, keepPlayhead, keptDraft, keptPlayhead } from '../lib/cueSession'
+import { formatTime } from '../lib/duration'
 import { isTypingTarget } from '../lib/keymap'
 import { isMacOS } from '../lib/platform'
 import { cueLetter } from '../lib/rowCues'
@@ -183,6 +184,7 @@ function Editing({
   audition,
   onJumpBars,
   onDiscard,
+  onRestore,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -195,6 +197,7 @@ function Editing({
   audition: CueAudition
   onJumpBars?: (bars: CueJumpBars) => void
   onDiscard: () => void
+  onRestore: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -387,6 +390,118 @@ function Editing({
     pending: pending(c),
     locked: state.locked.includes(c.key),
   }))
+  const save = () => {
+    void window.api
+      .saveRekordboxCues({
+        contentId: cue.contentId,
+        path: cue.path,
+        label: cue.label,
+        wanted,
+        fingerprint: read.fingerprint,
+      })
+      .then(refreshQueued)
+  }
+  const actions = (
+    <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
+      <div className="flex">
+        <button
+          type="button"
+          data-testid="cues-apply-flow"
+          aria-pressed={noDrop ? armed : undefined}
+          onClick={primary}
+          className="press h-8 whitespace-nowrap rounded-l-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+        >
+          {noDrop ? tr('editor.cues.markDrop') : tr('editor.cues.apply', { name: shownName })}
+        </button>
+        <Select
+          testid="cues-flow"
+          split
+          label={tr('editor.cues.flow')}
+          value={shownFlow}
+          onChange={pickFlow}
+          options={flows.map((f) => ({ value: f.id, label: flowName(f, tr), short: '' }))}
+        />
+      </div>
+      {armed && (
+        <span data-testid="cues-arm-hint" role="status" className="text-xs text-fg-dim">
+          {tr('editor.cues.armHint')}
+        </span>
+      )}
+      <span className="flex-1" />
+      {(!unchanged || queued !== null) && (
+        <button
+          type="button"
+          data-testid="cues-undo"
+          onClick={onDiscard}
+          className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+        >
+          {tr('editor.cues.discard')}
+        </button>
+      )}
+      <button
+        type="button"
+        data-testid="cues-save"
+        disabled={unchanged}
+        aria-label={maximized ? undefined : tr('editor.cues.save')}
+        onClick={save}
+        className="press h-8 whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 text-xs font-semibold text-fg hover:bg-[var(--color-hover)] disabled:opacity-40"
+      >
+        {maximized ? tr('editor.cues.save') : tr('editor.cues.saveShort')}
+      </button>
+    </div>
+  )
+  const header = (
+    <div data-testid="cues-header" className="flex shrink-0 items-center gap-3.5">
+      {track?.cover ? (
+        <img src={track.cover} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+      ) : (
+        <div
+          aria-hidden="true"
+          className="h-10 w-10 shrink-0 rounded-md bg-[var(--color-panel-2)]"
+        />
+      )}
+      <div className="min-w-0">
+        <div className="truncate text-[15px] font-semibold text-fg">
+          {track?.title || cue.label}
+        </div>
+        <div className="truncate text-xs text-fg-dim">{track?.artist}</div>
+      </div>
+      <div
+        data-testid="cues-meta"
+        className="ml-2 flex shrink-0 items-center gap-1.5 text-xs tabular-nums text-fg-faint"
+      >
+        <span data-testid="cues-duration">{formatTime(read.durationMs / 1000)}</span>
+        {track?.bpm && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span data-testid="cues-bpm">{tr('editor.cues.bpm', { bpm: track.bpm })}</span>
+          </>
+        )}
+        {track?.key && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span data-testid="cues-key">{track.key}</span>
+          </>
+        )}
+      </div>
+      <span data-testid="cues-position" className="font-mono text-[13px] tabular-nums text-fg">
+        {cueClock(playheadMs)}
+      </span>
+      <span className="flex-1" />
+      {actions}
+      <CueKeys jumpBars={settings.cueJumpBars} onClose={focusEditor} />
+      <button
+        type="button"
+        data-testid="section-maximize"
+        aria-label={tr('editor.sectionRestore')}
+        aria-pressed="true"
+        onClick={onRestore}
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+      >
+        <Minimize2 className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </div>
+  )
   return (
     <fieldset
       ref={editorRef}
@@ -394,67 +509,10 @@ function Editing({
       data-maximized={maximized ? 'true' : 'false'}
       tabIndex={maximized ? -1 : undefined}
       aria-label={tr('editor.cues.title')}
-      className={`relative m-0 min-w-0 border-0 p-0 outline-none ${maximized ? 'flex flex-col gap-3' : ''}`}
+      className={`relative m-0 min-w-0 border-0 p-0 outline-none ${maximized ? 'flex min-h-0 flex-1 flex-col gap-3' : ''}`}
       onKeyDown={onKey}
     >
-      {maximized && (
-        <div
-          data-testid="cues-header"
-          className="flex items-center gap-4 border-b border-[var(--color-line)] pb-3"
-        >
-          {track?.cover ? (
-            <img src={track.cover} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
-          ) : (
-            <div
-              aria-hidden="true"
-              className="h-10 w-10 shrink-0 rounded-md bg-[var(--color-panel-2)]"
-            />
-          )}
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold text-fg">
-              {track?.title || cue.label}
-            </div>
-            <div className="truncate text-xs text-fg-dim">{track?.artist}</div>
-          </div>
-          <div className="ml-auto flex shrink-0 gap-4 font-mono text-[13px] tabular-nums text-fg-dim">
-            <span data-testid="cues-position" className="text-fg">
-              {cueClock(playheadMs)}
-            </span>
-            <span data-testid="cues-remaining">{`-${cueClock(read.durationMs - playheadMs)}`}</span>
-            {track?.bpm && (
-              <span data-testid="cues-bpm">{tr('editor.cues.bpm', { bpm: track.bpm })}</span>
-            )}
-            {track?.key && <span data-testid="cues-key">{track.key}</span>}
-          </div>
-          <CueKeys jumpBars={settings.cueJumpBars} onClose={focusEditor} />
-        </div>
-      )}
-      <div data-testid="cues-flow-row" className="mb-3 flex flex-wrap items-center gap-3">
-        <div className="flex">
-          <button
-            type="button"
-            data-testid="cues-apply-flow"
-            aria-pressed={noDrop ? armed : undefined}
-            onClick={primary}
-            className="press h-8 whitespace-nowrap rounded-l-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
-          >
-            {noDrop ? tr('editor.cues.markDrop') : tr('editor.cues.apply', { name: shownName })}
-          </button>
-          <Select
-            testid="cues-flow"
-            split
-            label={tr('editor.cues.flow')}
-            value={shownFlow}
-            onChange={pickFlow}
-            options={flows.map((f) => ({ value: f.id, label: flowName(f, tr), short: '' }))}
-          />
-        </div>
-        {armed && (
-          <span data-testid="cues-arm-hint" role="status" className="text-xs text-fg-dim">
-            {tr('editor.cues.armHint')}
-          </span>
-        )}
-      </div>
+      {maximized && header}
       <CueWave
         wave={read.wave}
         grid={read.grid}
@@ -470,6 +528,7 @@ function Editing({
         playheadMs={maximized ? playheadMs : undefined}
         onSeek={maximized && !armed ? seekTo : undefined}
       />
+      {!maximized && <div className="mt-3">{actions}</div>}
       {maximized && (
         <CueWaveDetail
           source={source}
@@ -521,7 +580,7 @@ function Editing({
           </button>
         </div>
       )}
-      {selected && (
+      {selected && !maximized && (
         <div
           data-testid="cues-selection"
           className="mt-2 flex flex-wrap items-center gap-3 text-xs"
@@ -537,36 +596,34 @@ function Editing({
             </span>
           )}
           {selected.kind !== 0 && !state.locked.includes(selected.key) && (
-            <>
-              <div ref={colourRef} className="relative">
-                <button
-                  type="button"
-                  data-testid="cues-colour"
-                  aria-label={tr('editor.cues.colourPicker')}
-                  aria-haspopup="true"
-                  aria-expanded={colourOpen}
-                  onClick={() => setColourFor(colourOpen ? null : selected.key)}
-                  style={{ backgroundColor: hotCueColor(selected.color) }}
-                  className="press block h-6 w-6 rounded-[3px] border border-[var(--color-line-strong)]"
-                />
-                {colourOpen && (
-                  <div
-                    data-testid="cues-colour-popover"
-                    className="absolute z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]"
-                  >
-                    <CuePalette
-                      value={selected.color}
-                      onPick={(color) => {
-                        dispatch({ type: 'recolour', key: selected.key, color })
-                        setColourFor(null)
-                        focusEditor()
-                      }}
-                      label={(index) => tr('editor.cues.colour', { index })}
-                    />
-                  </div>
-                )}
-              </div>
-            </>
+            <div ref={colourRef} className="relative">
+              <button
+                type="button"
+                data-testid="cues-colour"
+                aria-label={tr('editor.cues.colourPicker')}
+                aria-haspopup="true"
+                aria-expanded={colourOpen}
+                onClick={() => setColourFor(colourOpen ? null : selected.key)}
+                style={{ backgroundColor: hotCueColor(selected.color) }}
+                className="press block h-6 w-6 rounded-[3px] border border-[var(--color-line-strong)]"
+              />
+              {colourOpen && (
+                <div
+                  data-testid="cues-colour-popover"
+                  className="absolute z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]"
+                >
+                  <CuePalette
+                    value={selected.color}
+                    onPick={(color) => {
+                      dispatch({ type: 'recolour', key: selected.key, color })
+                      setColourFor(null)
+                      focusEditor()
+                    }}
+                    label={(index) => tr('editor.cues.colour', { index })}
+                  />
+                </div>
+              )}
+            </div>
           )}
           {!state.locked.includes(selected.key) && (
             <button
@@ -616,38 +673,6 @@ function Editing({
           onDone={focusEditor}
         />
       )}
-      <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
-        <div className="ml-auto flex gap-2">
-          <button
-            type="button"
-            data-testid="cues-undo"
-            disabled={unchanged && queued === null}
-            onClick={onDiscard}
-            className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)] disabled:opacity-40"
-          >
-            {tr('editor.cues.discard')}
-          </button>
-          <button
-            type="button"
-            data-testid="cues-save"
-            disabled={unchanged}
-            onClick={() => {
-              void window.api
-                .saveRekordboxCues({
-                  contentId: cue.contentId,
-                  path: cue.path,
-                  label: cue.label,
-                  wanted,
-                  fingerprint: read.fingerprint,
-                })
-                .then(refreshQueued)
-            }}
-            className="press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-          >
-            {tr('editor.cues.save')}
-          </button>
-        </div>
-      </div>
     </fieldset>
   )
 }
@@ -669,7 +694,7 @@ export function CuesSection({
   const queryClient = useQueryClient()
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
-  const { maximized: whole } = useMaximizedSection()
+  const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
   const [round, setRound] = useState(0)
   const draftKey = `${cue.contentId}|${read?.fingerprint ?? ''}|${JSON.stringify(queued)}`
@@ -693,54 +718,70 @@ export function CuesSection({
     if (!maximized) return
     return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() }, { over: true })
   }, [maximized])
-  return (
-    <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
-      <SectionHeader
-        sectionId="cues"
-        maximizable
-        title={tr('editor.cues.title')}
-        open={open}
-        onToggle={onToggle}
-        help={tr('editor.cues.help')}
+  const editable =
+    !isError &&
+    read !== undefined &&
+    read !== null &&
+    queued !== undefined &&
+    read.analysed &&
+    read.grid.length > 0
+  const full = maximized && editable
+  const body =
+    isError || read === null ? (
+      <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
+        {tr('editor.cues.unreadable')}
+      </p>
+    ) : read === undefined || queued === undefined ? null : !read.analysed ||
+      read.grid.length === 0 ? (
+      <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
+        {tr('editor.cues.unanalysed')}
+      </p>
+    ) : (
+      <Editing
+        key={`${draftKey}|${round}`}
+        read={read}
+        queued={queued}
+        cue={cue}
+        draftKey={draftKey}
+        maximized={maximized}
+        track={track}
+        playheadMs={playheadMs}
+        onPlayhead={moveHead}
+        audition={audition}
+        onJumpBars={onJumpBars}
+        onRestore={() => setMaximized(null)}
+        onDiscard={() => {
+          forgetDraft()
+          setRound((n) => n + 1)
+          if (queued !== null)
+            void window.api
+              .undoRekordboxCues(cue.contentId)
+              .then(() => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }))
+        }}
       />
-      <SectionBody open={open}>
-        <div className="mt-3">
-          {isError || read === null ? (
-            <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
-              {tr('editor.cues.unreadable')}
-            </p>
-          ) : read === undefined || queued === undefined ? null : !read.analysed ||
-            read.grid.length === 0 ? (
-            <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
-              {tr('editor.cues.unanalysed')}
-            </p>
-          ) : (
-            <Editing
-              key={`${draftKey}|${round}`}
-              read={read}
-              queued={queued}
-              cue={cue}
-              draftKey={draftKey}
-              maximized={maximized}
-              track={track}
-              playheadMs={playheadMs}
-              onPlayhead={moveHead}
-              audition={audition}
-              onJumpBars={onJumpBars}
-              onDiscard={() => {
-                forgetDraft()
-                setRound((n) => n + 1)
-                if (queued !== null)
-                  void window.api
-                    .undoRekordboxCues(cue.contentId)
-                    .then(() =>
-                      queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }),
-                    )
-              }}
-            />
-          )}
-        </div>
-      </SectionBody>
+    )
+  return (
+    <div
+      data-testid="cues-section"
+      className={full ? 'flex h-full flex-col' : 'mt-6 border-t border-[var(--color-line)] pt-6'}
+    >
+      {!full && (
+        <SectionHeader
+          sectionId="cues"
+          maximizable
+          title={tr('editor.cues.title')}
+          open={open}
+          onToggle={onToggle}
+          help={tr('editor.cues.help')}
+        />
+      )}
+      {full ? (
+        <div className="flex min-h-0 flex-1 flex-col">{body}</div>
+      ) : (
+        <SectionBody open={open}>
+          <div className="mt-3">{body}</div>
+        </SectionBody>
+      )}
     </div>
   )
 }

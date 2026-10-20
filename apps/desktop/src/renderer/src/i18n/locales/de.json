@@ -818,7 +818,8 @@
       "resetColour": "Zurücksetzen",
       "markDrop": "Drop markieren",
       "apply": "{{name}} anwenden",
-      "armHint": "Klicke dort, wo der Drop kommt"
+      "armHint": "Klicke dort, wo der Drop kommt",
+      "saveShort": "Speichern"
     }
   },
   "fields": {

@@ -818,7 +818,8 @@
       "resetColour": "Redefinir",
       "markDrop": "Marcar o drop",
       "apply": "Aplicar {{name}}",
-      "armHint": "Clique onde entra o drop"
+      "armHint": "Clique onde entra o drop",
+      "saveShort": "Salvar"
     }
   },
   "fields": {

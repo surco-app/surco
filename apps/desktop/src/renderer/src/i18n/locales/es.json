@@ -818,7 +818,8 @@
       "resetColour": "Restablecer",
       "markDrop": "Marcar dónde rompe",
       "apply": "Aplicar {{name}}",
-      "armHint": "Haz clic donde rompe"
+      "armHint": "Haz clic donde rompe",
+      "saveShort": "Guardar"
     }
   },
   "fields": {
