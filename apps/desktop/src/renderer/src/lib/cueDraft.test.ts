@@ -394,9 +394,20 @@ const CHORUS: CueFlow = {
     },
   ],
 }
+const BOTH: CueFlow = { ...MY_FLOW, id: 'qb', markPoint: false }
+const MANY: CueFlow = {
+  id: 'many',
+  name: '',
+  markPoint: false,
+  rules: Array.from({ length: 9 }, (_, i) => ({
+    ...ONE_AT_32.rules[0],
+    bars: 4 * (i + 1),
+    when: 'always' as const,
+  })),
+}
 const wide = {
   ...ctx,
-  flows: [...BUNDLED_FLOWS, QUIET, MIXED, CHORUS],
+  flows: [...BUNDLED_FLOWS, QUIET, MIXED, CHORUS, BOTH, MANY],
   phrases: [
     { ms: bar(64), kind: 'chorus' as const },
     { ms: bar(128), kind: 'chorus' as const },
@@ -434,6 +445,8 @@ describe('a flow that leaves the point unmarked', () => {
       [bar(128), 2, 22],
     ])
     expect(s.notice).toBeNull()
+    expect(s.cues.filter((c) => c.kind === 0)).toEqual([])
+    expect(draftDrops(s.cues)).toEqual([])
   })
 
   it('places the cues of a mixed flow that do not depend on the point too, in time order of letters', () => {
@@ -454,18 +467,65 @@ describe('a flow that leaves the point unmarked', () => {
     expect(s.past).toHaveLength(0)
   })
 
+  it('leaves out the CALL of a hot cue it skips, so the hand-placed hot cue does not gain a CALL nobody asked for', () => {
+    const s = runWide(startDraft([{ id: 'h', ms: bar(32), kind: 5, color: 1 }], 'qb'), {
+      type: 'mark-drop',
+      ms: bar(64),
+    })
+    expect(s.cues.some((c) => c.kind === 0 && c.ms === bar(32))).toBe(false)
+    expect(s.cues.some((c) => c.kind === 0 && c.ms === bar(16))).toBe(true)
+  })
+
+  it('counts the placed hot cues as edited, so applying a flow later keeps them like any cue placed by hand', () => {
+    const s = runWide(startDraft([], 'mixed'), { type: 'mark-drop', ms: bar(64) })
+    expect([...s.edited].sort()).toEqual(
+      s.cues
+        .filter((c) => c.kind !== 0)
+        .map((c) => c.key)
+        .sort(),
+    )
+    expect(s.edited).toHaveLength(2)
+  })
+
+  it('warns and changes nothing when the free letters cannot hold the placement', () => {
+    const start = startDraft(
+      [1, 2, 3, 5, 6, 7, 8].map((kind, i) => ({
+        id: `h${kind}`,
+        ms: bar(200 + 8 * i),
+        kind,
+        color: 1,
+      })),
+      'qb',
+    )
+    const s = runWide(start, { type: 'mark-drop', ms: bar(64) })
+    expect(s.notice).toBe('too-many')
+    expect(s.cues).toEqual(start.cues)
+    expect(s.past).toEqual(start.past)
+  })
+
+  it('warns when the flow alone asks for more hot cues than rekordbox has letters', () => {
+    const start = startDraft([], 'many')
+    const s = runWide(start, { type: 'mark-drop', ms: bar(64) })
+    expect(s.notice).toBe('too-many')
+    expect(s.cues).toEqual([])
+  })
+
   it('takes the whole placement away with one undo', () => {
-    const s = runWide(startDraft([], 'mixed'), { type: 'mark-drop', ms: bar(64) }, { type: 'undo' })
+    const placed = runWide(startDraft([], 'mixed'), { type: 'mark-drop', ms: bar(64) })
+    expect(placed.cues).toHaveLength(3)
+    expect(placed.past).toHaveLength(1)
+    const s = reduceDraft(placed, { type: 'undo' }, wide)
     expect(s.cues).toEqual([])
     expect(s.past).toEqual([])
   })
 
-  it('keeps every set main accepts', () => {
+  it('keeps every set main accepts after two unmarked placements', () => {
     const s = runWide(
       startDraft([], 'mixed'),
       { type: 'mark-drop', ms: bar(64) },
       { type: 'mark-drop', ms: bar(160) },
     )
+    expect(wantedOfDraft(s.cues)).toHaveLength(4)
     expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
   })
 })
