@@ -15,6 +15,7 @@ vi.hoisted(() => {
     clearCache: async () => {},
     detectTraktorNmlPath: async () => null,
     rekordboxCollection: async () => '',
+    rekordboxAvailable: async () => false,
   }
 })
 

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PlaylistSource } from '../../../../shared/types'
 import i18n from '../../i18n'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 
@@ -11,20 +12,26 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
   cacheStats: () => Promise.resolve({ entries: 0, bytes: 0 }),
   clearCache: () => Promise.resolve(),
   revealLog: () => {},
+  platform: 'darwin',
+  rekordboxAvailable: () => Promise.resolve(true),
 }
 
 import { GeneralTab } from './GeneralTab'
 
 afterEach(cleanup)
 
-const synced = { theme: 'system', language: 'system' } as unknown as SyncedDraft
+const synced = {
+  theme: 'system',
+  language: 'system',
+  hiddenSources: [],
+} as unknown as SyncedDraft
 const local = { betaUpdates: false } as unknown as LocalDraft
 
-function renderTab(over: Partial<LocalDraft> = {}) {
+function renderTab(over: Partial<LocalDraft> = {}, hiddenSources: PlaylistSource[] = []) {
   const patchLocal = vi.fn()
   render(
     <GeneralTab
-      synced={synced}
+      synced={{ ...synced, hiddenSources }}
       patch={vi.fn()}
       local={{ ...local, ...over }}
       patchLocal={patchLocal}
@@ -96,5 +103,75 @@ describe('GeneralTab beta channel', () => {
 
     const hint = screen.getByText(i18n.t('settings.betaUpdatesHint'))
     expect(hint.textContent).toMatch(/bugs|errores/i)
+  })
+})
+
+describe('GeneralTab sources', () => {
+  function renderSources(
+    { platform, rekordbox }: { platform: string; rekordbox: boolean },
+    hiddenSources: PlaylistSource[] = [],
+  ) {
+    Object.assign((window as unknown as { api: object }).api, {
+      platform,
+      rekordboxAvailable: () => Promise.resolve(rekordbox),
+    })
+    const patch = vi.fn<(key: 'hiddenSources', value: PlaylistSource[]) => void>()
+    render(
+      <GeneralTab
+        synced={{ ...synced, hiddenSources }}
+        patch={patch as never}
+        local={local}
+        patchLocal={vi.fn()}
+        onPreviewTheme={vi.fn()}
+        configDir={null}
+        defaultDir={null}
+        onChangeConfigDir={vi.fn()}
+        onResetConfigDir={vi.fn()}
+        onExportSettings={vi.fn()}
+        onImportSettings={vi.fn()}
+      />,
+    )
+    return patch
+  }
+
+  it('shows one switch per source, on unless the source is hidden', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true }, ['rekordbox'])
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    expect(screen.getByTestId('settings-source-appleMusic')).toBeChecked()
+    expect(screen.getByTestId('settings-source-rekordbox')).not.toBeChecked()
+  })
+
+  it('hides a source when its switch is turned off and shows it again when turned on', async () => {
+    const patch = renderSources({ platform: 'darwin', rekordbox: true }, ['rekordbox'])
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('settings-source-appleMusic'))
+    fireEvent.click(screen.getByTestId('settings-source-rekordbox'))
+    expect(patch.mock.calls).toEqual([
+      ['hiddenSources', ['rekordbox', 'appleMusic']],
+      ['hiddenSources', []],
+    ])
+  })
+
+  it('keeps the Apple Music switch in view on Windows, disabled and saying why', async () => {
+    renderSources({ platform: 'win32', rekordbox: true })
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    expect(screen.getByTestId('settings-source-appleMusic')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.sourceAppleMusicUnavailable'))).toBeInTheDocument()
+  })
+
+  it('keeps the rekordbox switch in view without a collection, disabled and saying why', async () => {
+    renderSources({ platform: 'darwin', rekordbox: false })
+    await waitFor(() =>
+      expect(screen.getByText(i18n.t('settings.sourceRekordboxUnavailable'))).toBeInTheDocument(),
+    )
+    expect(screen.getByTestId('settings-source-rekordbox')).toBeDisabled()
+    expect(screen.getByTestId('settings-source-appleMusic')).toBeEnabled()
+  })
+
+  it('says that hiding a source leaves its sync alone', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true })
+    expect(screen.getByTestId('settings-sources-hint')).toHaveTextContent(
+      i18n.t('settings.sourcesHint'),
+    )
   })
 })

@@ -1,7 +1,8 @@
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LanguagePref, ThemePref } from '../../../../shared/types'
+import type { LanguagePref, PlaylistSource, ThemePref } from '../../../../shared/types'
+import { isMacOS } from '../../lib/platform'
 import { formatFileSize } from '../../lib/properties'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
@@ -17,6 +18,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
+const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox']
 
 interface Props {
   synced: SyncedDraft
@@ -54,6 +56,18 @@ export function GeneralTab({
   useEffect(() => {
     window.api.cacheStats().then(setCacheStats)
   }, [])
+  const [rekordboxFound, setRekordboxFound] = useState<boolean | null>(null)
+  useEffect(() => {
+    window.api.rekordboxAvailable().then(setRekordboxFound)
+  }, [])
+  const unavailable: Record<PlaylistSource, boolean> = {
+    appleMusic: !isMacOS(),
+    rekordbox: rekordboxFound !== true,
+  }
+  const reason: Record<PlaylistSource, string | undefined> = {
+    appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
+    rekordbox: rekordboxFound === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
+  }
   const clearCache = useCallback(async () => {
     setClearing(true)
     await window.api.clearCache()
@@ -180,6 +194,32 @@ export function GeneralTab({
         that folder, when it is about which builds this machine installs. Machine-bound
         (see settings.ts), so it stages through patchLocal — a synced flag would drag a
         tester's laptop channel onto the machine he plays gigs from. */}
+      <SettingsSection eyebrow={tr('settings.sourcesTitle')}>
+        <div className="flex flex-col gap-3">
+          {SOURCES.map((source) => (
+            <SettingsCheckboxField
+              key={source}
+              testid={`settings-source-${source}`}
+              checked={!synced.hiddenSources.includes(source)}
+              onChange={(shown) =>
+                patch(
+                  'hiddenSources',
+                  shown
+                    ? synced.hiddenSources.filter((s) => s !== source)
+                    : [...synced.hiddenSources, source],
+                )
+              }
+              label={tr(`settings.source.${source}`)}
+              hint={reason[source]}
+              disabled={unavailable[source]}
+            />
+          ))}
+          <SettingsHint data-testid="settings-sources-hint">
+            {tr('settings.sourcesHint')}
+          </SettingsHint>
+        </div>
+      </SettingsSection>
+
       <SettingsSection eyebrow={tr('settings.updates')}>
         <SettingsCheckboxField
           testid="settings-beta-updates"
