@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
-import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
-import { barLines, clickAction, cuePosition } from '../lib/cueWave'
+import { markStyle, placeCues } from '../lib/cueMarks'
+import { barLines, clickAction, cuePosition, peakBars } from '../lib/cueWave'
+import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
   key: string
@@ -18,6 +19,9 @@ export interface WaveCue {
 
 const HIT_PX = 6
 const DRAG_PX = 3
+const OVERVIEW_BARS = 300
+const WAVE_HEIGHT = '90%'
+const WAVE_TOP = '10%'
 
 export function CueWave({
   wave,
@@ -118,24 +122,15 @@ export function CueWave({
   const waveSvg = useMemo(
     () =>
       wave && (
-        <svg
-          viewBox={`0 0 ${wave.length} 100`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full opacity-70"
-        >
-          {wave.map((c, i) => (
-            <rect
-              // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
-              key={i}
-              x={i}
-              width={1}
-              y={100 - Math.max(c.h * 100, 0.5)}
-              height={Math.max(c.h * 100, 0.5)}
-              fill="var(--color-accent)"
-            />
-          ))}
-        </svg>
+        <WaveBars
+          bars={peakBars(
+            wave.map((c) => c.h),
+            OVERVIEW_BARS,
+          )}
+          testId="cue-wave-bars"
+          className="absolute inset-x-0 bottom-0 w-full"
+          style={{ height: WAVE_HEIGHT }}
+        />
       ),
     [wave],
   )
@@ -249,7 +244,7 @@ export function CueWave({
       <div
         data-testid="cue-wave-area"
         aria-hidden="true"
-        style={{ top: `${WAVE_MARK_LANE_PX}px`, bottom: '0px' }}
+        style={{ top: '0px', bottom: '0px' }}
         className="pointer-events-none absolute inset-x-0"
       >
         {shown && (
@@ -275,7 +270,7 @@ export function CueWave({
           data-testid={`cue-wave-trimmed-${ms}`}
           aria-hidden="true"
           style={markStyle((ms / Math.max(durationMs, 1)) * 100)}
-          className="absolute h-3.5 w-3.5 rounded-[3px] border border-dashed border-[var(--color-fg-faint)]"
+          className="absolute h-3 w-3 rounded-[3px] border border-dashed border-[var(--color-fg-faint)]"
         />
       ))}
       {!readOnly &&
@@ -285,7 +280,7 @@ export function CueWave({
             type="button"
             data-testid={`cue-wave-proposal-${ms}`}
             aria-label={t('cueWave.proposal', { bar: cuePosition(ms, grid).bar })}
-            style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px` }}
+            style={{ left: pct(ms), top: WAVE_TOP }}
             className="absolute bottom-0 w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
             onClick={(e) => {
               e.stopPropagation()
@@ -302,8 +297,8 @@ export function CueWave({
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
           style: { ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR },
-          className: `absolute h-0 w-0 border-x-[5px] border-x-transparent ${
-            isSelected ? 'border-t-[10px]' : 'border-t-[7px]'
+          className: `absolute h-0 w-0 border-x-4 border-x-transparent ${
+            isSelected ? 'border-t-[9px]' : 'border-t-[6px]'
           } ${pending ? 'opacity-60' : ''}`,
         }
         return readOnly ? (
@@ -332,7 +327,7 @@ export function CueWave({
               ? { borderColor: h.colour, color: h.colour }
               : { backgroundColor: h.colour, color: '#000' }),
           },
-          className: `absolute h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
+          className: `absolute h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
             pending ? 'border' : ''
           } ${isSelected ? 'ring-2 ring-[var(--color-fg)]' : ''}`,
         }
@@ -365,7 +360,7 @@ export function CueWave({
         <span
           data-testid="cue-wave-ghost"
           aria-hidden="true"
-          style={{ left: pct(ghost), top: `${WAVE_MARK_LANE_PX}px` }}
+          style={{ left: pct(ghost), top: WAVE_TOP }}
           className="pointer-events-none absolute bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
         />
       )}

@@ -42,6 +42,15 @@ export function clickAction(
   return { kind: 'add', ms: beat }
 }
 
+export function peakBars(values: number[], count: number): number[] {
+  if (values.length <= count) return values
+  return Array.from({ length: count }, (_, i) => {
+    const from = Math.floor((i * values.length) / count)
+    const to = Math.floor(((i + 1) * values.length) / count)
+    return Math.max(...values.slice(from, to))
+  })
+}
+
 export function cuePosition(
   ms: number,
   grid: { ms: number; beat: number }[],

@@ -5,17 +5,7 @@ import { HOT_CUE_DEFAULT_COLOR, MEMORY_CUE_COLOR } from '../../../shared/rekordb
 import type { RowCue, RowWaveRequest } from '../../../shared/types'
 import { markStyle, placeCues } from '../lib/cueMarks'
 import { rowWaveKey, rowWaveOf, subscribeRowWave } from '../lib/rowWaves'
-
-const WAVE_HEIGHT = 20
-
-function wavePath(bars: number[]): string {
-  return bars
-    .map((v, i) => {
-      const h = Math.max(1, v * WAVE_HEIGHT)
-      return `M${i} ${(WAVE_HEIGHT - h) / 2}h0.7v${h}h-0.7Z`
-    })
-    .join('')
-}
+import { WaveBars } from './WaveBars'
 
 export function RowWave({
   request,
@@ -61,15 +51,11 @@ export function RowWave({
       className="relative block h-full"
     >
       {bars && bars.length > 0 && (
-        <svg
-          data-testid="track-wave-bars"
-          aria-hidden="true"
-          viewBox={`0 0 ${bars.length} ${WAVE_HEIGHT}`}
-          preserveAspectRatio="none"
-          className="absolute inset-x-0 bottom-0 h-[18px] w-full fill-[var(--color-accent)] opacity-70"
-        >
-          <path d={wavePath(bars)} />
-        </svg>
+        <WaveBars
+          bars={bars}
+          testId="track-wave-bars"
+          className="absolute inset-x-0 bottom-0 h-[18px] w-full"
+        />
       )}
       {calls.map((c) => (
         <span

@@ -4,8 +4,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
+import type { Api } from '../../../preload/api'
+import { resetRowWaves } from '../lib/rowWaves'
 import { CueWave } from './CueWave'
+import { RowWave } from './RowWave'
 
 afterEach(cleanup)
 
@@ -52,65 +54,53 @@ function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
 }
 
 describe('CueWave', () => {
-  it('paints the wave in Surco accent like every other wave in the app, not in rekordbox colours', () => {
+  it('draws the overview with the list row’s own mirrored bars, accent and opacity, so the two waves read as one', async () => {
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      rowWaves: vi.fn<Api['rowWaves']>(async () => ({ '/a.DAT': [1, 0.5, 0] })),
+    }
+    render(
+      <RowWave
+        request={{ path: '/m/a.wav', analysisPath: '/a.DAT' }}
+        cues={[]}
+        durationSec={128}
+        pending={false}
+        active
+      />,
+    )
+    const row = await screen.findByTestId('track-wave-bars')
     setup({
       wave: [
         { h: 1, rgb: [255, 0, 0] },
         { h: 0.5, rgb: null },
-      ],
-    })
-    const fills = [...document.querySelectorAll('rect')].map((r) => r.getAttribute('fill'))
-    expect(new Set(fills)).toEqual(new Set(['var(--color-accent)']))
-  })
-
-  it('draws hot cues as lettered squares in rekordbox colours and CALLs behind them at their height', () => {
-    setup()
-    const a = screen.getByTestId('cue-wave-hot-A')
-    expect(a).toHaveTextContent('A')
-    expect(a).toHaveStyle({ backgroundColor: '#e62828' })
-    const paired = screen.getByTestId('cue-wave-call-16000')
-    const dropCall = screen.getByTestId('cue-wave-call-40000')
-    expect(paired.style.left).toBe(a.style.left)
-    expect(paired.style.top).toBe(a.style.top)
-    expect(dropCall.style.top).toBe(a.style.top)
-    expect(paired.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(dropCall).toHaveAttribute('data-pending', 'true')
-    expect(paired).toHaveAttribute('data-pending', 'false')
-    expect(screen.getByTestId('cue-wave')).not.toHaveTextContent('DROP')
-  })
-
-  it('keeps the hot cue and its CALL in a lane above the wave, as rekordbox does, so no mark hides the bars', () => {
-    setup()
-    const lane = WAVE_MARK_LANE_PX
-    expect(
-      Number.parseFloat(screen.getByTestId('cue-wave-hot-A').style.top) + HOT_MARK_PX.wave,
-    ).toBeLessThan(lane)
-    expect(
-      Number.parseFloat(screen.getByTestId('cue-wave-call-16000').style.top) + 10,
-    ).toBeLessThanOrEqual(lane)
-    expect(lane).toBe(HOT_MARK_PX.wave + 1)
-    expect(screen.getByTestId('cue-wave-area').style.top).toBe(`${lane}px`)
-  })
-
-  it('draws a half wave growing up from the baseline, as rekordbox does, instead of mirroring it around the middle', () => {
-    setup({
-      wave: [
-        { h: 1, rgb: null },
-        { h: 0.5, rgb: null },
         { h: 0, rgb: null },
       ],
     })
-    const rects = [...screen.getByTestId('cue-wave-area').querySelectorAll('rect')]
-    expect(rects).toHaveLength(3)
-    for (const r of rects) {
-      expect(Number(r.getAttribute('y')) + Number(r.getAttribute('height'))).toBeCloseTo(100)
-    }
-    expect(Number(rects[1].getAttribute('height'))).toBeCloseTo(50)
+    const strip = screen.getByTestId('cue-wave-bars')
+    expect(strip.getAttribute('viewBox')).toBe(row.getAttribute('viewBox'))
+    expect(strip.querySelector('path')?.getAttribute('d')).toBe(
+      row.querySelector('path')?.getAttribute('d'),
+    )
+    expect(strip.querySelector('path')?.getAttribute('fill')).toBe('var(--color-accent)')
+    expect(strip.getAttribute('opacity')).toBe(row.getAttribute('opacity'))
+    resetRowWaves()
   })
 
-  it('lets the half wave reach the bottom edge, so no band under the wave goes to waste', () => {
+  it('thins a long wave to slim bars with gaps, keeping each bar’s loudest column so no peak is lost', () => {
+    const wave = Array.from({ length: 1200 }, (_, i) => ({ h: i === 601 ? 1 : 0.2, rgb: null }))
+    setup({ wave })
+    const d = screen.getByTestId('cue-wave-bars').querySelector('path')?.getAttribute('d') ?? ''
+    const bars = d.split('Z').filter(Boolean)
+    expect(bars.length).toBeLessThanOrEqual(300)
+    expect(bars.filter((b) => b.includes('v20'))).toHaveLength(1)
+  })
+
+  it('puts the marks on the strip’s top edge over the wave, as the list row does, with the wave filling the rest', () => {
     setup()
+    expect(screen.getByTestId('cue-wave-hot-A').style.top).toBe('0px')
+    expect(screen.getByTestId('cue-wave-call-16000').style.top).toBe('0px')
+    expect(screen.getByTestId('cue-wave-area').style.top).toBe('0px')
     expect(screen.getByTestId('cue-wave-area').style.bottom).toBe('0px')
+    expect(screen.getByTestId('cue-wave-bars').style.height).toBe('90%')
   })
 
   it('marks only every 16 bars with a small tick at the bottom, so the strip reads as a navigator and not a grid', () => {
