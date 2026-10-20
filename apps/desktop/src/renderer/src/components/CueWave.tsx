@@ -19,7 +19,6 @@ export interface WaveCue {
 const HIT_PX = 6
 const DRAG_PX = 3
 const LABEL_ROW_PX = 11
-const LABEL_STRIP_PX = LABEL_ROW_PX * 2
 
 export function CueWave({
   wave,
@@ -235,7 +234,7 @@ export function CueWave({
       <div
         data-testid="cue-wave-area"
         aria-hidden="true"
-        style={{ top: `${WAVE_MARK_LANE_PX}px`, bottom: `${LABEL_STRIP_PX}px` }}
+        style={{ top: `${WAVE_MARK_LANE_PX}px`, bottom: '0px' }}
         className="pointer-events-none absolute inset-x-0"
       >
         {waveSvg}
@@ -258,8 +257,8 @@ export function CueWave({
               data-testid={`cue-wave-drop-label-${d.ms}`}
               data-side={label?.side ?? 'right'}
               data-row={label?.row ?? 0}
-              style={{ bottom: `${label?.row === 1 ? 0 : LABEL_ROW_PX}px` }}
-              className={`absolute whitespace-nowrap text-[9px] leading-[11px] text-[var(--color-fg)] ${sideClass(
+              style={{ top: `${label?.row === 1 ? LABEL_ROW_PX : 0}px` }}
+              className={`absolute whitespace-nowrap rounded-sm bg-[var(--color-panel-2)]/85 px-0.5 text-[9px] leading-[11px] text-[var(--color-fg)] ${sideClass(
                 label?.side,
               )}`}
             >
@@ -285,8 +284,8 @@ export function CueWave({
             type="button"
             data-testid={`cue-wave-proposal-${ms}`}
             aria-label={t('cueWave.proposal', { bar: cuePosition(ms, grid).bar })}
-            style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px`, bottom: `${LABEL_STRIP_PX}px` }}
-            className="absolute w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
+            style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px` }}
+            className="absolute bottom-0 w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
             onClick={(e) => {
               e.stopPropagation()
               onAcceptProposal?.(ms)
@@ -375,8 +374,8 @@ export function CueWave({
           className="pointer-events-none absolute bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
         >
           <span
-            style={{ bottom: `${LABEL_ROW_PX}px` }}
-            className={`absolute whitespace-nowrap rounded-sm bg-[var(--color-panel-2)] text-[9px] leading-[11px] text-[var(--color-fg)]/80 ${sideClass(
+            style={{ top: '0px' }}
+            className={`absolute whitespace-nowrap rounded-sm bg-[var(--color-panel-2)] px-0.5 text-[9px] leading-[11px] text-[var(--color-fg)]/80 ${sideClass(
               dropLabels([ghost], durationMs)[0]?.side,
             )}`}
           >

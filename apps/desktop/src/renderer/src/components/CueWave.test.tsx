@@ -113,6 +113,14 @@ describe('CueWave', () => {
     expect(Number(rects[1].getAttribute('height'))).toBeCloseTo(50)
   })
 
+  it('lets the half wave reach the bottom edge and lays the drop labels over it, so no band under the wave goes to waste', () => {
+    setup()
+    expect(screen.getByTestId('cue-wave-area').style.bottom).toBe('0px')
+    const label = screen.getByTestId('cue-wave-drop-label-40000')
+    expect(label.style.top).toBe('0px')
+    expect(label.style.bottom).toBe('')
+  })
+
   it('marks a drop on the beat under a click on the empty wave and clears the selection', () => {
     const h = setup()
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 60 })
