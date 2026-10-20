@@ -271,11 +271,8 @@ function Editing({
   }
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const switchGhost = useMemo<DraftGhost | null>(
-    () =>
-      manual || (placing && state.generatedBy === shownFlow)
-        ? null
-        : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx),
-    [manual, placing, state, shownFlow, ctx],
+    () => (manual ? null : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx)),
+    [manual, state, shownFlow, ctx],
   )
   const canApply =
     switchGhost !== null && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)

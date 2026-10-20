@@ -505,6 +505,26 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-apply-track')).toBeNull()
   })
 
+  it('offers Aplicar a esta pista with Mi flujo already active on a track rekordbox holds with lone CALLs, and draws the countdown with it', async () => {
+    setup({
+      ...READ,
+      cues: [bar(64), bar(160)].map((ms, i) => ({ id: `d${i}`, ms, kind: 0, color: null })),
+    })
+    await ready()
+    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: My flow')
+    expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    expect(screen.getAllByTestId(/^cue-wave-hot-/).length).toBeGreaterThan(0)
+    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+  })
+
+  it('hides Aplicar a esta pista on a track where applying the active flow changes nothing', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+  })
+
   it('offers Aplicar a esta pista at once for a flow that does not depend on the point, and no hint to click', async () => {
     const chorus: CueFlow = {
       id: 'chorus',
@@ -583,7 +603,7 @@ describe('CuesSection', () => {
       cues: [48, 96, 144, 192].map((n) => ({ id: `d${n}`, ms: bar(n), kind: 0, color: null })),
     })
     await ready()
-    markAt(bar(240))
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
     expect(screen.getByTestId('cues-trimmed')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-trimmed-${bar(0)}`)).toBeInTheDocument()
   })
