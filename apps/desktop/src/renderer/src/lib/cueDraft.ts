@@ -196,7 +196,13 @@ function pairOf(cues: DraftCue[], target: DraftCue): DraftCue | undefined {
   return isHot(target) ? cues.find((c) => !isHot(c) && near(c.ms, target.ms)) : undefined
 }
 
-function placeOnce(state: CueDraft, ctx: DraftContext, ms: number, flow: CueFlow): CueDraft {
+function placeOnce(
+  state: CueDraft,
+  ctx: DraftContext,
+  ms: number,
+  flow: CueFlow,
+  byHand: boolean,
+): CueDraft {
   const out = flowOutcome({
     existing: [],
     drops: [ms],
@@ -224,12 +230,13 @@ function placeOnce(state: CueDraft, ctx: DraftContext, ms: number, flow: CueFlow
     nextKey += 1
     return { key: `n${nextKey}`, ms: c.ms, kind: letter.get(c) ?? 0, color: c.color }
   })
+  const own = byHand ? added.filter(isHot).map((c) => c.key) : []
   return commit(state, [...state.cues, ...added], {
     nextKey,
     selected: null,
     trimmed: out.status === 'plan' ? out.trimmed : [],
-    edited: [...state.edited, ...added.filter(isHot).map((c) => c.key)],
-    placed: [...state.placed, ...added.filter(isHot).map((c) => c.key)],
+    edited: [...state.edited, ...own],
+    placed: [...state.placed, ...own],
   })
 }
 
@@ -259,7 +266,8 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     const ms = snap(ctx, action.ms)
     const drops = draftDrops(state.cues, state.locked)
     if (drops.some((d) => near(d, ms))) return state
-    if (!flow.markPoint) return placeOnce(state, ctx, ms, flow)
+    if (!flow.markPoint) return placeOnce(state, ctx, ms, flow, true)
+    if (flow.id !== generator.id) return placeOnce(state, ctx, ms, flow, false)
     return regenerate(state, ctx, [...drops, ms], flow, generator)
   }
   if (action.type === 'apply-flow')

@@ -245,7 +245,7 @@ describe('reduceDraft', () => {
     expect(draftDrops(s.cues)).toEqual([bar(64)])
   })
 
-  it('switches to a flow chosen in Settings without touching the draft, judging fit by the flow that drew it', () => {
+  it('switches to a flow chosen in Settings without touching the draft, and places the next point with it alone', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const switched = run(marked, { type: 'use-flow', flowId: 'one-at-32' })
     expect(switched.cues).toBe(marked.cues)
@@ -254,9 +254,34 @@ describe('reduceDraft', () => {
     expect(s.notice).toBeNull()
     expect(s.flowId).toBe('one-at-32')
     expect(s.cues.filter((c) => c.kind !== 0).map((c) => [c.ms, c.color])).toEqual([
+      [bar(16), 42],
       [bar(32), 22],
+      [bar(48), 1],
       [bar(128), 22],
     ])
+  })
+
+  it('places a point with a flow picked but not applied without touching the points already marked, so only Aplicar a esta pista changes them', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const switched = run(marked, { type: 'use-flow', flowId: 'one-at-32' })
+    const action: DraftAction = { type: 'mark-drop', ms: bar(160) }
+    const s = run(switched, action)
+    expect(s.cues).toEqual(expect.arrayContaining(marked.cues))
+    const added = s.cues.filter((c) => !marked.cues.includes(c))
+    expect(added.map((c) => [c.ms, c.kind !== 0, c.color]).sort()).toEqual(
+      [
+        [bar(128), true, 22],
+        [bar(160), false, null],
+      ].sort(),
+    )
+    const g = ghostOf(switched, action, ctx)
+    expect(g.gone).toEqual([])
+    expect(g.added).toEqual(added)
+    expect(
+      ghostOf(s, { type: 'apply-flow', flowId: 'one-at-32' }, ctx).gone.length,
+    ).toBeGreaterThan(0)
+    expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
+    expect(run(s, { type: 'undo' }).cues).toEqual(marked.cues)
   })
 
   it('says a plan needs more than 8 hot cues and changes nothing', () => {

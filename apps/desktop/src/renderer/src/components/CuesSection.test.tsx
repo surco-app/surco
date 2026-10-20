@@ -614,6 +614,24 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
   })
 
+  it('places a new point with the flow picked but not applied and leaves the points already marked, still offering Aplicar a esta pista', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    chooseFlow('one-at-32')
+    const before = marks(/^cue-wave-(hot|call)-/)
+    hoverAt(bar(160))
+    expect(screen.queryAllByTestId(/^cue-wave-/).some((el) => el.dataset.gone === 'true')).toBe(
+      false,
+    )
+    const shown = marks(/^cue-wave-ghost-(hot|call)-/)
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: bar(160) / 1000, clientY: 40 })
+    expect(marks(/^cue-wave-(hot|call)-/)).toEqual([...before, ...shown].sort())
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+    expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()
+    expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
+  })
+
   it('brings the flow switch back once the cursor leaves the strip, after the hover drew its own', async () => {
     setup()
     await ready()
