@@ -60,6 +60,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
     const made: CueFlow = {
       id: crypto.randomUUID(),
       name: tr('settings.cueFlows.newFlowName', { n: flows.length + 1 }),
+      markPoint: true,
       rules: [NEW_RULE],
     }
     patch('cueFlows', [...flows, made])

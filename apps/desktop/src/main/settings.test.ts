@@ -1108,4 +1108,10 @@ describe('cue flows', () => {
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })
   })
+
+  it('keeps Manual as the synced mode, so another Mac opens the editor in Manual too', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    saveSettings({ activeCueFlow: 'manual' })
+    expect(getSettings().activeCueFlow).toBe('manual')
+  })
 })

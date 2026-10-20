@@ -259,7 +259,7 @@ describe('CuesTab', () => {
 
   describe('Aprender de mi colección', () => {
     const LEARNED: LearnedFlow = {
-      flow: { id: 'learned', name: '', rules: ONE_AT_32.rules },
+      flow: { id: 'learned', name: '', markPoint: true, rules: ONE_AT_32.rules },
       coverage: { matching: 18, marked: 20 },
     }
 
@@ -308,6 +308,7 @@ describe('CuesTab', () => {
       expect(made).toEqual({
         id: expect.any(String),
         name: 'Aprendido de mi colección',
+        markPoint: true,
         rules: ONE_AT_32.rules,
       })
       expect(made?.id).not.toBe('learned')

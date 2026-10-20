@@ -309,6 +309,7 @@ export interface FlowInput {
   phrases: FlowPhrase[]
   flow: CueFlow
   previousFlow?: CueFlow
+  point?: number
 }
 
 export type FlowOutcome =
@@ -346,8 +347,10 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
   const removed = new Set(
     currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
   )
+  const unmarked = (ms: number): boolean =>
+    !flow.markPoint && input.point !== undefined && near(ms, input.point)
   const added: WantedCue[] = wantedDrops
-    .filter((ms) => !memory.some((m) => near(m.ms, ms)))
+    .filter((ms) => !memory.some((m) => near(m.ms, ms)) && !unmarked(ms))
     .map((ms) => ({ ms, kind: 0, color: null }))
   const plan = evaluateFlow(flow, { beats, drops: wantedDrops, strong, phrases })
   const previousFlow = input.previousFlow ?? flow

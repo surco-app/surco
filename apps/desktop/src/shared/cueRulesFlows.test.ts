@@ -36,7 +36,7 @@ const rule = (over: Partial<CueRule> = {}): CueRule => ({
   color: { fixed: 1 },
   ...over,
 })
-const flow = (...rules: CueRule[]): CueFlow => ({ id: 't', name: '', rules })
+const flow = (...rules: CueRule[]): CueFlow => ({ id: 't', name: '', markPoint: true, rules })
 
 describe('evaluateFlow', () => {
   it('runs Mi flujo as the 16, 32, 48 countdown with a colour per repetition', () => {
@@ -314,5 +314,32 @@ describe('proposeDrops', () => {
 
   it('proposes nothing without phrase analysis', () => {
     expect(proposeDrops([], [])).toEqual([])
+  })
+})
+
+describe('flowOutcome for a flow that leaves the point unmarked', () => {
+  const unmarked = (f: CueFlow): CueFlow => ({ ...f, markPoint: false })
+
+  it('places what the rules draw from the point and no CALL on it, for the DJ who does not mark drops', () => {
+    expect(outcome({ flow: unmarked(ONE_AT_32), point: beat(64) })).toEqual({
+      status: 'plan',
+      wanted: [{ ms: beat(32), kind: 1, color: 22 }],
+      hot: [{ ms: beat(32), kind: 1, color: 22 }],
+      trimmed: [],
+    })
+  })
+
+  it('keeps the CALL a rule itself puts on the point, since the flow asked for it', () => {
+    const onPoint = unmarked(flow(rule({ bars: 0, place: 'both' })))
+    const out = outcome({ flow: onPoint, point: beat(64) })
+    expect(out.status === 'plan' && out.wanted).toEqual([
+      { ms: beat(64), kind: 1, color: 1 },
+      { ms: beat(64), kind: 0, color: null },
+    ])
+  })
+
+  it('marks the point as before when the flow marks it or no point is being placed', () => {
+    expect(outcome({ flow: ONE_AT_32, point: beat(64) })).toEqual(outcome({ flow: ONE_AT_32 }))
+    expect(outcome({ flow: unmarked(ONE_AT_32) })).toEqual(outcome({ flow: ONE_AT_32 }))
   })
 })

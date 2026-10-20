@@ -186,7 +186,12 @@ function startCandidates(
   countdown: CueRule | null,
   distances: number[],
 ): { open: Marked[]; starts: HotBefore[] } {
-  const flow: CueFlow = { id: 'countdown', name: '', rules: countdown ? [countdown] : [] }
+  const flow: CueFlow = {
+    id: 'countdown',
+    name: '',
+    markPoint: true,
+    rules: countdown ? [countdown] : [],
+  }
   const open = tracks.filter(
     (t) =>
       t.before.length > 0 &&
@@ -292,6 +297,7 @@ function learnMarked(marked: Marked[]) {
   const flow: CueFlow = {
     id: 'learned',
     name: '',
+    markPoint: true,
     rules: [countdown, startRule(open, starts)].filter((r): r is CueRule => r !== null),
   }
   return { support, distances, flow, open, starts }

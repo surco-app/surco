@@ -9,6 +9,12 @@ import {
 } from './cueExample'
 
 describe('the example track', () => {
+  it('draws no CALL on the example point for a flow that leaves it unmarked, as placing it would', () => {
+    const out = examplePlan({ ...ONE_AT_32, markPoint: false })
+    expect(out.status === 'plan' && out.wanted.some((c) => c.kind === 0)).toBe(false)
+    expect(out.status === 'plan' && out.wanted.map((c) => c.ms)).toEqual([exampleBar(32)])
+  })
+
   it('is 192 bars at 128 BPM with the drop at bar 64', () => {
     expect(EXAMPLE_GRID).toHaveLength(768)
     expect(EXAMPLE_GRID[1].ms - EXAMPLE_GRID[0].ms).toBe(469)

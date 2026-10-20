@@ -56,5 +56,6 @@ export function examplePlan(flow: CueFlow): FlowOutcome {
     strong: EXAMPLE_STRONG,
     phrases: EXAMPLE_PHRASES,
     flow,
+    point: EXAMPLE_DROP,
   })
 }

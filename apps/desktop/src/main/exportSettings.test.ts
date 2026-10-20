@@ -40,6 +40,7 @@ describe('serializeSettingsForExport', () => {
     const flow: CueFlow = {
       id: 'x',
       name: 'Una a 64',
+      markPoint: true,
       rules: [
         {
           from: 'drop',

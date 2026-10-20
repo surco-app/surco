@@ -115,6 +115,7 @@ describe('completableOps', () => {
     const callBack: CueFlow = {
       id: 'c',
       name: '',
+      markPoint: true,
       rules: [
         {
           from: 'drop',

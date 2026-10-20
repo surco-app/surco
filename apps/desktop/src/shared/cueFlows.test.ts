@@ -4,6 +4,9 @@ import {
   BUNDLED_FLOWS,
   CALLS_ONLY,
   type CueFlow,
+  type CueRule,
+  followsPoint,
+  MANUAL_CUE_FLOW,
   MY_FLOW,
   normalizeCueFlows,
   ONE_AT_32,
@@ -16,6 +19,7 @@ describe('bundled flows', () => {
     expect(MY_FLOW).toEqual({
       id: 'mine',
       name: '',
+      markPoint: true,
       rules: [
         {
           from: 'drop',
@@ -91,7 +95,7 @@ describe('normalizeCueFlows', () => {
   })
 
   it('puts Mi flujo back when a synced file lost it, because the app falls back to it', () => {
-    const mine: CueFlow = { id: 'x', name: 'Solo 64', rules: [] }
+    const mine: CueFlow = { id: 'x', name: 'Solo 64', markPoint: true, rules: [] }
     expect(normalizeCueFlows([mine]).map((f) => f.id)).toEqual(['mine', 'x'])
   })
 
@@ -121,6 +125,27 @@ describe('normalizeCueFlows', () => {
     ])
     expect(flows.filter((f) => f.id === 'x').map((f) => f.name)).toEqual(['A'])
   })
+
+  it('marks the point with a CALL for a flow saved before the option existed, as Surco always did', () => {
+    const flows = normalizeCueFlows([{ id: 'x', name: 'Vieja', rules: [] }])
+    expect(flows.find((f) => f.id === 'x')?.markPoint).toBe(true)
+  })
+
+  it('keeps a flow that leaves the point unmarked and repairs a value that is not a boolean', () => {
+    const flows = normalizeCueFlows([
+      { id: 'a', name: '', markPoint: false, rules: [] },
+      { id: 'b', name: '', markPoint: 'no', rules: [] },
+    ])
+    expect(flows.filter((f) => f.id !== 'mine').map((f) => f.markPoint)).toEqual([false, true])
+  })
+
+  it('drops a flow whose id is the Manual mode, so Manual never stands for a flow', () => {
+    const flows = normalizeCueFlows([
+      MY_FLOW,
+      { id: MANUAL_CUE_FLOW, name: 'Mía', markPoint: true, rules: [] },
+    ])
+    expect(flows.map((f) => f.id)).toEqual(['mine'])
+  })
 })
 
 describe('activeCueFlow', () => {
@@ -131,6 +156,12 @@ describe('activeCueFlow', () => {
   it('falls back to Mi flujo when the chosen flow was deleted on another Mac', () => {
     expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'gone' })).toEqual(MY_FLOW)
     expect(activeCueFlow({})).toEqual(MY_FLOW)
+  })
+
+  it('runs Mi flujo for main while the editor is in Manual, since completing on close is its own switch', () => {
+    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: MANUAL_CUE_FLOW })).toEqual(
+      MY_FLOW,
+    )
   })
 })
 
@@ -159,5 +190,24 @@ describe('restoreMyFlow', () => {
   it('puts Mi flujo back as rules.py has it and leaves the other flows alone', () => {
     const edited = { ...MY_FLOW, name: 'Lo mío', rules: [] }
     expect(restoreMyFlow([edited, ONE_AT_32])).toEqual([MY_FLOW, ONE_AT_32])
+  })
+})
+
+describe('followsPoint', () => {
+  const only = (rules: CueRule[], markPoint: boolean): CueFlow => ({
+    id: 'x',
+    name: '',
+    markPoint,
+    rules,
+  })
+
+  it('follows the cursor when the flow marks the point or counts from it, and not when it only reads the track', () => {
+    expect(followsPoint(MY_FLOW)).toBe(true)
+    expect(followsPoint(CALLS_ONLY)).toBe(true)
+    expect(followsPoint(only([ONE_AT_32.rules[0]], false))).toBe(true)
+    expect(followsPoint(only([MY_FLOW.rules[1]], false))).toBe(true)
+    expect(followsPoint(only([{ ...MY_FLOW.rules[1], when: 'always' }], false))).toBe(false)
+    expect(followsPoint(only([{ ...ONE_AT_32.rules[0], from: 'chorus' }], false))).toBe(false)
+    expect(followsPoint(only([], false))).toBe(false)
   })
 })

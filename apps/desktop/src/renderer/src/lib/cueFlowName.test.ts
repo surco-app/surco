@@ -15,6 +15,6 @@ describe('flowName', () => {
   })
 
   it('calls a flow of the user without a name unnamed instead of showing an empty option', () => {
-    expect(flowName({ id: 'x', name: '', rules: [] }, tr)).toBe('Unnamed flow')
+    expect(flowName({ id: 'x', name: '', markPoint: true, rules: [] }, tr)).toBe('Unnamed flow')
   })
 })

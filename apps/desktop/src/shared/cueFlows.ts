@@ -19,6 +19,7 @@ export interface CueRule {
 export interface CueFlow {
   id: string
   name: string
+  markPoint: boolean
   rules: CueRule[]
 }
 
@@ -28,6 +29,7 @@ export interface FlowPhrase {
 }
 
 export const MY_FLOW_ID = 'mine'
+export const MANUAL_CUE_FLOW = 'manual'
 export const RULE_BARS = [0, 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]
 export const MAX_RULE_REPEAT = 16
 export const FLOW_ORIGINS: FlowOrigin[] = [
@@ -47,6 +49,7 @@ const DIRECTIONS: FlowDirection[] = ['back', 'forward']
 export const MY_FLOW: CueFlow = {
   id: MY_FLOW_ID,
   name: '',
+  markPoint: true,
   rules: [
     {
       from: 'drop',
@@ -72,6 +75,7 @@ export const MY_FLOW: CueFlow = {
 export const ONE_AT_32: CueFlow = {
   id: 'one-at-32',
   name: '',
+  markPoint: true,
   rules: [
     {
       from: 'drop',
@@ -85,7 +89,7 @@ export const ONE_AT_32: CueFlow = {
   ],
 }
 
-export const CALLS_ONLY: CueFlow = { id: 'calls-only', name: '', rules: [] }
+export const CALLS_ONLY: CueFlow = { id: 'calls-only', name: '', markPoint: true, rules: [] }
 
 export const BUNDLED_FLOWS: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
@@ -163,12 +167,19 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
   for (const item of value) {
     if (!item || typeof item !== 'object') continue
     const f = item as Record<string, unknown>
-    if (typeof f.id !== 'string' || f.id === '' || seen.has(f.id) || !Array.isArray(f.rules))
+    if (
+      typeof f.id !== 'string' ||
+      f.id === '' ||
+      f.id === MANUAL_CUE_FLOW ||
+      seen.has(f.id) ||
+      !Array.isArray(f.rules)
+    )
       continue
     seen.add(f.id)
     flows.push({
       id: f.id,
       name: typeof f.name === 'string' ? f.name : '',
+      markPoint: typeof f.markPoint === 'boolean' ? f.markPoint : true,
       rules: f.rules.flatMap((r) => {
         const rule = ruleOf(r)
         return rule ? [rule] : []
@@ -189,4 +200,8 @@ export function activeCueFlow(settings: { cueFlows?: CueFlow[]; activeCueFlow?: 
 
 export function restoreMyFlow(flows: CueFlow[]): CueFlow[] {
   return flows.map((f) => (f.id === MY_FLOW_ID ? structuredClone(MY_FLOW) : f))
+}
+
+export function followsPoint(flow: CueFlow): boolean {
+  return flow.markPoint || flow.rules.some((r) => r.from === 'drop' || r.when === 'first')
 }
