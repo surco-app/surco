@@ -773,8 +773,6 @@
       "save": "Save to rekordbox",
       "unreadable": "Could not read the cues from rekordbox",
       "discard": "Discard changes",
-      "applyFlow": "Apply flow",
-      "needsDrop": "First mark where it drops with M or a click on the wave",
       "flow": "Flow",
       "delete": "Delete",
       "colour": "Colour {{index}}",
@@ -817,7 +815,10 @@
         "undo": "undo",
         "zoom": "zoom"
       },
-      "resetColour": "Reset"
+      "resetColour": "Reset",
+      "markDrop": "Mark where it drops",
+      "apply": "Apply {{name}}",
+      "armHint": "Click where it drops"
     }
   },
   "fields": {

@@ -3,7 +3,7 @@ import { Keyboard } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { activeCueFlow, MY_FLOW_ID } from '../../../shared/cueFlows'
+import { activeCueFlow, MY_FLOW, MY_FLOW_ID } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import { BEATS_PER_BAR, MAX_HOT_CUES, nearestBeat } from '../../../shared/cueRules'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -229,10 +229,27 @@ function Editing({
   )
   useEffect(() => keepDraft(draftKey, state), [draftKey, state])
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
-  const [askedForDrop, setAskedForDrop] = useState(false)
+  const [arming, setArming] = useState(false)
   const noDrop = draftDrops(state.cues, state.locked).length === 0
+  const armed = arming && noDrop
+  useEffect(() => {
+    if (!noDrop) setArming(false)
+  }, [noDrop])
   const [chosen, setChosen] = useState(state.flowId)
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
+  const shownName = flowName(flows.find((f) => f.id === shownFlow) ?? MY_FLOW, tr)
+  const pickFlow = (flowId: string) => {
+    setChosen(flowId)
+    dispatch({ type: 'use-flow', flowId })
+  }
+  const primary = () => {
+    if (noDrop) setArming(!arming)
+    else dispatch({ type: 'apply-flow', flowId: shownFlow })
+  }
+  const markDrop = (ms: number) => {
+    dispatch({ type: 'mark-drop', ms })
+    setArming(false)
+  }
   const openedWith = useRef(active.id)
   useEffect(() => {
     if (openedWith.current === active.id) return
@@ -303,6 +320,7 @@ function Editing({
       seekTo(jumpBeats(ctx.beats, playheadMs, key.dir * settings.cueJumpBars * BEATS_PER_BAR))
     else if (key.type === 'beat') seekTo(jumpBeats(ctx.beats, playheadMs, key.dir))
     else if (key.type === 'centre') seekTo(ctx.beats[nearestBeat(ctx.beats, playheadMs)])
+    else if (key.type === 'memory' && armed) markDrop(playheadMs)
     else if (key.type === 'memory') dispatch({ type: 'add-call', ms: playheadMs })
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch({ type: 'remove', key: selected.key })
@@ -350,6 +368,17 @@ function Editing({
       document.removeEventListener('mousedown', onDown)
     }
   }, [colourOpen, focusEditor])
+  useEffect(() => {
+    if (!armed) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      setArming(false)
+      focusEditor()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [armed, focusEditor])
   useEffect(() => {
     if (maximized) editorRef.current?.focus()
   }, [maximized])
@@ -401,28 +430,28 @@ function Editing({
         </div>
       )}
       <div data-testid="cues-flow-row" className="mb-3 flex flex-wrap items-center gap-3">
-        <span className="text-xs text-fg-dim">{tr('editor.cues.flow')}</span>
-        <Select
-          testid="cues-flow"
-          label={tr('editor.cues.flow')}
-          value={shownFlow}
-          onChange={setChosen}
-          options={flows.map((f) => ({ value: f.id, label: flowName(f, tr) }))}
-        />
-        <button
-          type="button"
-          data-testid="cues-apply-flow"
-          onClick={() => {
-            if (noDrop) setAskedForDrop(true)
-            else dispatch({ type: 'apply-flow', flowId: shownFlow })
-          }}
-          className="press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
-        >
-          {tr('editor.cues.applyFlow')}
-        </button>
-        {askedForDrop && noDrop && (
-          <span data-testid="cues-needs-drop" role="status" className="text-xs text-warn">
-            {tr('editor.cues.needsDrop')}
+        <div className="flex">
+          <button
+            type="button"
+            data-testid="cues-apply-flow"
+            aria-pressed={noDrop ? armed : undefined}
+            onClick={primary}
+            className="press h-8 whitespace-nowrap rounded-l-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+          >
+            {noDrop ? tr('editor.cues.markDrop') : tr('editor.cues.apply', { name: shownName })}
+          </button>
+          <Select
+            testid="cues-flow"
+            split
+            label={tr('editor.cues.flow')}
+            value={shownFlow}
+            onChange={pickFlow}
+            options={flows.map((f) => ({ value: f.id, label: flowName(f, tr), short: '' }))}
+          />
+        </div>
+        {armed && (
+          <span data-testid="cues-arm-hint" role="status" className="text-xs text-fg-dim">
+            {tr('editor.cues.armHint')}
           </span>
         )}
       </div>
@@ -433,13 +462,13 @@ function Editing({
         cues={waveCues}
         selected={state.selected}
         trimmed={state.trimmed}
-        onMarkDrop={(ms) => dispatch({ type: 'mark-drop', ms })}
+        onMarkDrop={markDrop}
         onUnmarkDrop={(key) => dispatch({ type: 'unmark-drop', key })}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={setMenu}
         playheadMs={maximized ? playheadMs : undefined}
-        onSeek={maximized ? seekTo : undefined}
+        onSeek={maximized && !armed ? seekTo : undefined}
       />
       {maximized && (
         <CueWaveDetail
@@ -451,6 +480,7 @@ function Editing({
           bars={zoom}
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+          onPick={armed ? markDrop : undefined}
         />
       )}
       {menu !== null && (

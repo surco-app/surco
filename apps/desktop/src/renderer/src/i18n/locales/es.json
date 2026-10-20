@@ -773,8 +773,6 @@
       "save": "Guardar en rekordbox",
       "unreadable": "No se pudieron leer los cues de rekordbox",
       "discard": "Descartar cambios",
-      "applyFlow": "Aplicar flujo",
-      "needsDrop": "Marca primero dónde rompe con M o con un clic en la onda",
       "flow": "Flujo",
       "delete": "Borrar",
       "colour": "Color {{index}}",
@@ -817,7 +815,10 @@
         "undo": "deshacer",
         "zoom": "zoom"
       },
-      "resetColour": "Restablecer"
+      "resetColour": "Restablecer",
+      "markDrop": "Marcar dónde rompe",
+      "apply": "Aplicar {{name}}",
+      "armHint": "Haz clic donde rompe"
     }
   },
   "fields": {

@@ -773,8 +773,6 @@
       "save": "Salvar no rekordbox",
       "unreadable": "Não foi possível ler os cues do rekordbox",
       "discard": "Descartar alterações",
-      "applyFlow": "Aplicar fluxo",
-      "needsDrop": "Marque primeiro onde entra o drop com M ou um clique na onda",
       "flow": "Fluxo",
       "delete": "Apagar",
       "colour": "Cor {{index}}",
@@ -817,7 +815,10 @@
         "undo": "desfazer",
         "zoom": "zoom"
       },
-      "resetColour": "Redefinir"
+      "resetColour": "Redefinir",
+      "markDrop": "Marcar o drop",
+      "apply": "Aplicar {{name}}",
+      "armHint": "Clique onde entra o drop"
     }
   },
   "fields": {

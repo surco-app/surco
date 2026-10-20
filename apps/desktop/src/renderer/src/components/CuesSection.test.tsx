@@ -321,14 +321,64 @@ describe('CuesSection', () => {
     )
   })
 
-  it('says what Aplicar flujo needs when no drop is marked instead of doing nothing, until one is', async () => {
+  it('says Marcar dónde rompe while the track has no drop and Aplicar with the flow name once it has one, so the button never does nothing', async () => {
     setup()
     await ready()
-    expect(screen.queryByTestId('cues-needs-drop')).toBeNull()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    expect(screen.getByTestId('cues-needs-drop')).toHaveTextContent('First mark where it drops')
+    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
     clickAt(bar(64))
-    expect(screen.queryByTestId('cues-needs-drop')).toBeNull()
+    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply My flow')
+  })
+
+  it('waits for the click on the wave after Marcar dónde rompe and says so, until Escape, which never reaches the window', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    expect(screen.getByTestId('cues-arm-hint')).toHaveTextContent('Click where it drops')
+    const reachedWindow = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', reachedWindow)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    window.removeEventListener('keydown', reachedWindow)
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    expect(reachedWindow).not.toHaveBeenCalled()
+  })
+
+  it('marks the drop with the click that follows and applies the flow in the same step', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    clickAt(bar(64))
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+  })
+
+  it('stops waiting on a second press or once a drop is marked from the menu, and ⌘Z never brings the wait back', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(64) / 1000, clientY: 30 })
+    fireEvent.click(screen.getByTestId('cues-menu-mark-drop'))
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply My flow')
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops'),
+    )
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+  })
+
+  it('marks with the flow picked from the arrow before any drop is marked', async () => {
+    setup()
+    await ready()
+    chooseFlow('one-at-32')
+    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
+    clickAt(bar(64))
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toBe(`${(bar(32) / 400000) * 100}%`)
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply One cue at 32')
   })
 
   it('applies another flow to the drops already marked', async () => {
@@ -347,7 +397,9 @@ describe('CuesSection', () => {
     clickAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     changeSettings({ activeCueFlow: 'one-at-32' })
-    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveTextContent('One cue at 32'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply One cue at 32'),
+    )
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     clickAt(bar(160))
     expect(screen.queryByTestId('cues-manual')).toBeNull()
@@ -361,7 +413,9 @@ describe('CuesSection', () => {
     await ready()
     chooseFlow('one-at-32')
     changeSettings({ cueFlows: [CALLS_ONLY, MY_FLOW] })
-    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveTextContent('My flow'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-flow')).toHaveAttribute('aria-label', 'Flow: My flow'),
+    )
   })
 
   it('names the bundled flows in the flow list instead of showing them blank', async () => {

@@ -526,6 +526,58 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('jump 16 bars')
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
   })
+
+  it('marks where it drops with the main button and one click on the overview, applying the flow, instead of moving the playhead', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    seek(128000)
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(position()).toBe('0:00.0')
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    seek(100000)
+    expect(position()).toBe('1:40.0')
+  })
+
+  it('marks where it drops with a click on the zoomed wave while waiting, without scrubbing it', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+    fireEvent.mouseMove(window, { clientX: 100 })
+    fireEvent.mouseUp(window, { clientX: 100 })
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(position()).toBe('2:08.0')
+  })
+
+  it('marks where it drops at the playhead with M while waiting, and applies the flow', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    key('m')
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+  })
+
+  it('stops waiting with Escape without restoring the full editor, and the overview seeks again', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    const windowKeys = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', windowKeys)
+    fireEvent.keyDown(editor(), { key: 'Escape' })
+    window.removeEventListener('keydown', windowKeys)
+    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    expect(windowKeys).not.toHaveBeenCalled()
+    expect(editor()).toHaveAttribute('data-maximized', 'true')
+    expect(document.activeElement).toBe(editor())
+    seek(100000)
+    expect(position()).toBe('1:40.0')
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
 })
 
 const LIST_COMMANDS = [

@@ -22,6 +22,7 @@ export function CueWaveDetail({
   bars,
   onScrub,
   onZoom,
+  onPick,
 }: {
   source: DetailSource | null
   grid: { ms: number; beat: number }[]
@@ -31,6 +32,7 @@ export function CueWaveDetail({
   bars: number
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
+  onPick?: (ms: number) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -98,8 +100,10 @@ export function CueWaveDetail({
       aria-label={t('editor.cues.detail')}
       onMouseDown={(e) => {
         if (e.button !== 0) return
-        const width = rootRef.current?.getBoundingClientRect().width ?? 0
-        if (width > 0) setDrag({ x0: e.clientX, ms0: playheadMs, width })
+        const rect = rootRef.current?.getBoundingClientRect()
+        if (!rect || rect.width <= 0) return
+        if (onPick) onPick(fromMs + ((e.clientX - rect.left) / rect.width) * span)
+        else setDrag({ x0: e.clientX, ms0: playheadMs, width: rect.width })
       }}
       style={{ height: `${HEIGHT + WAVE_MARK_LANE_PX}px` }}
       className="relative w-full cursor-grab select-none overflow-hidden rounded-md bg-[var(--color-panel-2)]"

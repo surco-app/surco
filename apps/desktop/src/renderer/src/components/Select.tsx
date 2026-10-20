@@ -43,6 +43,7 @@ interface Props {
   // the trigger, for a select inside a layered container (the track list's sticky header)
   // that would otherwise trap both below the controls around it.
   portal?: boolean
+  split?: boolean
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -61,6 +62,7 @@ export function Select({
   heading = false,
   bare = false,
   portal = false,
+  split = false,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -76,6 +78,11 @@ export function Select({
   // the same list.
   const hinted = options.some((o) => o.hint)
   const portaled = fullWidth || portal
+  const look = split
+    ? 'rounded-r-lg border-l border-[var(--color-on-accent)]/25 bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+    : bare
+      ? 'rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg'
+      : 'rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim focus:border-[var(--color-accent)]'
 
   // The focus lands on the chosen option once, when the menu opens: callers rebuild their
   // options on every render, and following them would yank the focus, and the list, back
@@ -257,7 +264,7 @@ export function Select({
           e.stopPropagation()
           if (!open) toggle()
         }}
-        className={`flex min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs text-fg-dim outline-none ${bare ? 'hover:bg-[var(--color-hover)] hover:text-fg' : 'border border-[var(--color-line)] bg-[var(--color-field)] focus:border-[var(--color-accent)]'} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
+        className={`flex min-w-0 items-center gap-1.5 pr-1.5 pl-2 text-xs outline-none ${look} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
         {(selected?.short ?? selected?.label) && (

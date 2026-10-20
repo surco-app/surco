@@ -773,8 +773,6 @@
       "save": "Enregistrer dans rekordbox",
       "unreadable": "Impossible de lire les cues de rekordbox",
       "discard": "Annuler les changements",
-      "applyFlow": "Appliquer le flux",
-      "needsDrop": "Marquez d'abord le drop avec M ou un clic sur la forme d'onde",
       "flow": "Flux",
       "delete": "Supprimer",
       "colour": "Couleur {{index}}",
@@ -817,7 +815,10 @@
         "undo": "annuler",
         "zoom": "zoom"
       },
-      "resetColour": "Réinitialiser"
+      "resetColour": "Réinitialiser",
+      "markDrop": "Marquer le drop",
+      "apply": "Appliquer {{name}}",
+      "armHint": "Cliquez là où arrive le drop"
     }
   },
   "fields": {

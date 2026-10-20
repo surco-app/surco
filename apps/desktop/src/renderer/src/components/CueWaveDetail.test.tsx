@@ -128,6 +128,15 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalledTimes(1)
   })
 
+  it('hands the time under a click to onPick while the editor waits for a drop, instead of scrubbing', () => {
+    const onPick = vi.fn<(ms: number) => void>()
+    const { onScrub } = setup({ onPick })
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 300 })
+    fireEvent.mouseMove(window, { clientX: 100 })
+    expect(onPick).toHaveBeenCalledWith(bar(32) + 8000)
+    expect(onScrub).not.toHaveBeenCalled()
+  })
+
   it('paints at most one column per pixel however long the track, so a 5 minute wave stays smooth', () => {
     const fillRect = vi.fn()
     const fake = { clearRect: vi.fn(), fillRect, setTransform: vi.fn(), fillStyle: '' }
