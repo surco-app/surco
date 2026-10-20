@@ -23,6 +23,7 @@ Boceto aprobado ("vamos a probarlo"): https://claude.ai/artifact/Szq9X6ujtFqNcx7
 6. Abajo, una barra pequeña para corregir: Play/Pausa, pads A a H pequeños (llenos con su color, vacíos con borde punteado; clic derecho cambia el color), "‹ + CALL ›" (anterior, añadir, siguiente) y "Salto 16 compases ▾" como menú. Desaparecen MEMORY en mayúsculas, la ✕ (borrar es ⌫ con la cue seleccionada), los + − flotantes, la leyenda (ya en el botón de teclado) y el espacio vacío.
 7. Cabecera: carátula, título y artista; a la derecha, en gris pequeño, duración · BPM · tono; los botones de teclado y de restaurar.
 8. Plegada, la sección muestra la tira de onda con las marcas, el botón principal (decisión 2) y "Guardar". Para corregir a mano, ⤢.
+   - Vicent, 20/10: plegada, un clic en la tira ya no edita nada, abre el editor completo con el cursor en ese punto. Desde la vista plegada solo se edita con el botón principal: "Marcar dónde rompe" espera el siguiente clic, y con drops ya marcados el menú del botón ofrece "Marcar otro donde rompe". Sin menú de clic derecho en la tira plegada; las correcciones son del editor completo.
 9. Todo sigue igual por debajo: el borrador, la cola de rekordbox, la copia de seguridad, la huella, `validWantedSet`, las teclas y sus reclamaciones a pantalla completa, el sonido.
 
 ## Fuera de alcance
