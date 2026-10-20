@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type CueRule,
@@ -44,6 +44,15 @@ function slotCount(rule: CueRule): number {
   return rule.repeat === 'edge' ? 3 : Math.min(rule.repeat, MAX_RULE_REPEAT, 8)
 }
 
+function clipRight(el: HTMLElement): number {
+  for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
+    const style = getComputedStyle(node)
+    if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`))
+      return node.getBoundingClientRect().right
+  }
+  return window.innerWidth
+}
+
 function colorAt(color: FlowColor, slot: number): number {
   if ('fixed' in color) return color.fixed
   return color.each[slot] ?? color.each[color.each.length - 1] ?? 1
@@ -63,6 +72,8 @@ export function CueRuleRow({
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState<string | null>(null)
   const rowRef = useRef<HTMLFieldSetElement>(null)
+  const paletteRef = useRef<HTMLDivElement>(null)
+  const [paletteRight, setPaletteRight] = useState(false)
   const id = `cue-rule-${index}`
   const slots = slotCount(rule)
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
@@ -73,6 +84,14 @@ export function CueRuleRow({
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  useLayoutEffect(() => {
+    const palette = paletteRef.current
+    const anchor = palette?.parentElement
+    if (!open || !palette || !anchor) return
+    const width = palette.getBoundingClientRect().width
+    setPaletteRight(anchor.getBoundingClientRect().left + width > clipRight(palette))
   }, [open])
 
   const pickColor = (slot: number, color: number) => {
@@ -237,7 +256,12 @@ export function CueRuleRow({
                   className="press block h-[18px] w-[18px] rounded-[3px] border border-[var(--color-line)]"
                 />
                 {open === `color-${slot}` && (
-                  <div className="absolute left-0 top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]">
+                  <div
+                    ref={paletteRef}
+                    data-testid={`${id}-color-${slot}-palette`}
+                    data-align={paletteRight ? 'right' : 'left'}
+                    className={`absolute ${paletteRight ? 'right-0' : 'left-0'} top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                  >
                     <CuePalette
                       value={colorAt(rule.color, slot)}
                       onPick={(color) => pickColor(slot, color)}
