@@ -245,14 +245,13 @@ function Editing({
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
     undefined,
     () =>
-      keptDraft(draftKey) ??
+      keptDraft(cue.contentId, draftKey) ??
       startDraft(
         baseline,
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
       ),
   )
-  useEffect(() => keepDraft(draftKey, state), [draftKey, state])
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [markMenu, setMarkMenu] = useState<{
     key: string
@@ -304,6 +303,10 @@ function Editing({
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
   const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
+  useEffect(() => {
+    if (unchanged) forgetDraft(cue.contentId)
+    else keepDraft(cue.contentId, draftKey, state)
+  }, [cue.contentId, draftKey, state, unchanged])
   const pending = (c: DraftCue): boolean =>
     !inRekordbox.some(
       (r) => r.id === c.id && r.ms === c.ms && r.kind === c.kind && r.color === c.color,
@@ -479,7 +482,10 @@ function Editing({
         wanted,
         fingerprint: read.fingerprint,
       })
-      .then(refreshQueued)
+      .then(() => {
+        forgetDraft(cue.contentId)
+        return refreshQueued()
+      })
   }
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
@@ -919,7 +925,7 @@ export function CuesSection({
         onRestore={() => setMaximized(null)}
         onMaximize={() => setMaximized('cues')}
         onDiscard={() => {
-          forgetDraft()
+          forgetDraft(cue.contentId)
           setRound((n) => n + 1)
           if (queued !== null)
             void window.api

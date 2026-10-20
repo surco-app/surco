@@ -1,29 +1,30 @@
 import type { CueDraft } from './cueDraft'
 
-let draft: { key: string; value: CueDraft } | null = null
-let playhead: { contentId: string; ms: number } | null = null
+const drafts = new Map<string, { draftKey: string; value: CueDraft }>()
+const playheads = new Map<string, number>()
 
-export function keptDraft(key: string): CueDraft | undefined {
-  return draft?.key === key ? draft.value : undefined
+export function keptDraft(contentId: string, draftKey: string): CueDraft | undefined {
+  const kept = drafts.get(contentId)
+  return kept?.draftKey === draftKey ? kept.value : undefined
 }
 
-export function keepDraft(key: string, value: CueDraft): void {
-  draft = { key, value }
+export function keepDraft(contentId: string, draftKey: string, value: CueDraft): void {
+  drafts.set(contentId, { draftKey, value })
 }
 
-export function forgetDraft(): void {
-  draft = null
+export function forgetDraft(contentId: string): void {
+  drafts.delete(contentId)
 }
 
 export function keptPlayhead(contentId: string): number {
-  return playhead?.contentId === contentId ? playhead.ms : 0
+  return playheads.get(contentId) ?? 0
 }
 
 export function keepPlayhead(contentId: string, ms: number): void {
-  playhead = { contentId, ms }
+  playheads.set(contentId, ms)
 }
 
 export function resetCueSession(): void {
-  draft = null
-  playhead = null
+  drafts.clear()
+  playheads.clear()
 }

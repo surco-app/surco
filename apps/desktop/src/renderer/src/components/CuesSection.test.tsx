@@ -878,6 +878,86 @@ describe('CuesSection', () => {
     expect(saveRekordboxCues).not.toHaveBeenCalled()
   })
 
+  it('keeps the unsaved cues of a track while another track is open, so a forgotten Guardar loses nothing', async () => {
+    const { changeTrack, client } = setup()
+    client.setQueryData(['rekordbox-track-cues', '104'], { ...READ, contentId: '104' })
+    client.setQueryData(['rekordbox-queued-cues', '104'], null)
+    await ready()
+    markAt(bar(64))
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    markAt(bar(32))
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await waitFor(() =>
+      expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true'),
+    )
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
+      `${(bar(16) / 400000) * 100}%`,
+    )
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument())
+  })
+
+  it('never brings back a draft once rekordbox changed the cues of the track, even if the old read comes back', async () => {
+    const { changeTrack, client } = setup()
+    client.setQueryData(['rekordbox-track-cues', '104'], { ...READ, contentId: '104' })
+    client.setQueryData(['rekordbox-queued-cues', '104'], null)
+    await ready()
+    markAt(bar(64))
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    const extra = { id: 'x', ms: bar(100), kind: 1, color: 1 }
+    client.setQueryData(['rekordbox-track-cues', '103'], {
+      ...READ,
+      fingerprint: 'f1',
+      cues: [extra],
+    })
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await waitFor(() =>
+      expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'false'),
+    )
+    expect(screen.queryByTestId(`cue-wave-call-${bar(64)}`)).toBeNull()
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    client.setQueryData(['rekordbox-track-cues', '103'], READ)
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeDisabled())
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('never brings back a draft once the queued save of the track changed', async () => {
+    const { changeTrack, client } = setup()
+    client.setQueryData(['rekordbox-track-cues', '104'], { ...READ, contentId: '104' })
+    client.setQueryData(['rekordbox-queued-cues', '104'], null)
+    await ready()
+    markAt(bar(64))
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    client.setQueryData(['rekordbox-queued-cues', '103'], {
+      wanted: [{ ms: bar(80), kind: 0, color: null }],
+      fingerprint: 'f0',
+    })
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await waitFor(() =>
+      expect(screen.getByTestId(`cue-wave-call-${bar(80)}`)).toBeInTheDocument(),
+    )
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('forgets the draft of a track once it is saved', async () => {
+    const { changeTrack, client, saveRekordboxCues } = setup()
+    client.setQueryData(['rekordbox-track-cues', '104'], { ...READ, contentId: '104' })
+    client.setQueryData(['rekordbox-queued-cues', '104'], null)
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    changeTrack({ contentId: '104', path: '/m/b.wav', label: 'Other' })
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await ready()
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
   it('offers no marking on a track rekordbox has not analysed', async () => {
     setup({ ...READ, analysed: false, grid: [] })
     await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
