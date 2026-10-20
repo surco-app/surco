@@ -611,7 +611,7 @@ function Editing({
           quantize={settings.cueQuantize}
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-          onPick={placing ? place : undefined}
+          onPlace={placing ? place : undefined}
           onMarkMenu={openMarkMenu}
           onDeleteMark={(key) => dispatch({ type: 'remove', key })}
         />

@@ -2,16 +2,25 @@ import type React from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
+import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
-import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
+import {
+  type CueGhost,
+  GHOST_OPACITY,
+  GONE_OPACITY,
+  markStyle,
+  placeCues,
+  WAVE_MARK_LANE_PX,
+} from '../lib/cueMarks'
 import { barsToNextCall, cueClock, detailWindow, wheelZoom } from '../lib/cuePlayhead'
-import { barLines } from '../lib/cueWave'
+import { barLines, quantizePoints } from '../lib/cueWave'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
 const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
 const WAVE_SPAN = 0.8
+const DRAG_PX = 3
 const CAPS = [
   {
     position: 'top-0',
@@ -37,9 +46,11 @@ export function CueWaveDetail({
   quantize,
   onScrub,
   onZoom,
-  onPick,
+  onPlace,
   onMarkMenu,
   onDeleteMark,
+  onHover,
+  ghost,
 }: {
   source: DetailSource | null
   grid: { ms: number; beat: number }[]
@@ -50,9 +61,11 @@ export function CueWaveDetail({
   quantize: CueQuantize
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
-  onPick?: (ms: number) => void
+  onPlace?: (ms: number) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
+  onHover?: (ms: number | null) => void
+  ghost?: CueGhost
 }): React.JSX.Element {
   const { t } = useTranslation()
   const stageRef = useRef<HTMLDivElement>(null)
@@ -64,14 +77,28 @@ export function CueWaveDetail({
   )
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
-  const latest = useRef({ span, onScrub, onZoom })
-  latest.current = { span, onScrub, onZoom }
-  const [drag, setDrag] = useState<{ x0: number; ms0: number; width: number } | null>(null)
+  const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
+  const latest = useRef({ span, onScrub, onZoom, onPlace })
+  latest.current = { span, onScrub, onZoom, onPlace }
+  const [drag, setDrag] = useState<{
+    x0: number
+    ms0: number
+    width: number
+    pick: number | null
+  } | null>(null)
+  const moved = useRef(false)
   useEffect(() => {
     if (!drag) return
-    const move = (e: MouseEvent) =>
+    moved.current = false
+    const move = (e: MouseEvent) => {
+      if (!moved.current && drag.pick !== null && Math.abs(e.clientX - drag.x0) <= DRAG_PX) return
+      moved.current = true
       latest.current.onScrub(drag.ms0 - ((e.clientX - drag.x0) / drag.width) * latest.current.span)
-    const up = () => setDrag(null)
+    }
+    const up = () => {
+      if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)
+      setDrag(null)
+    }
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => {
@@ -79,6 +106,9 @@ export function CueWaveDetail({
       window.removeEventListener('mouseup', up)
     }
   }, [drag])
+  const [cursor, setCursor] = useState<number | null>(null)
+  const snapAt = (clientX: number, rect: DOMRect): number =>
+    snapMs[nearestBeat(snapMs, fromMs + ((clientX - rect.left) / rect.width) * span)]
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
@@ -130,6 +160,13 @@ export function CueWaveDetail({
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
   const toCall = barsToNextCall(beats, cues, playheadMs)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
+  const gone = new Set(ghost?.gone ?? [])
+  const ghostMarks = ghost
+    ? placeCues(
+        ghost.added.map((c) => ({ ...c, ms: c.ms - fromMs })),
+        span,
+      )
+    : null
   const [hovered, setHovered] = useState<string | null>(null)
   const lockedKeys = new Set(cues.filter((c) => c.locked).map((c) => c.key))
   const hover = (key: string) => ({
@@ -185,10 +222,29 @@ export function CueWaveDetail({
           if (e.button !== 0) return
           const rect = stageRef.current?.getBoundingClientRect()
           if (!rect || rect.width <= 0) return
-          if (onPick) onPick(fromMs + ((e.clientX - rect.left) / rect.width) * span)
-          else setDrag({ x0: e.clientX, ms0: playheadMs, width: rect.width })
+          const onMark = (e.target as HTMLElement).closest('[data-mark]') !== null
+          setCursor(null)
+          onHover?.(null)
+          setDrag({
+            x0: e.clientX,
+            ms0: playheadMs,
+            width: rect.width,
+            pick: onPlace && !onMark ? snapAt(e.clientX, rect) : null,
+          })
         }}
-        style={{ cursor: onPick ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
+        onMouseMove={(e) => {
+          if (!onPlace || drag) return
+          const rect = stageRef.current?.getBoundingClientRect()
+          if (!rect || rect.width <= 0) return
+          const ms = snapAt(e.clientX, rect)
+          setCursor(ms)
+          onHover?.(ms)
+        }}
+        onMouseLeave={() => {
+          setCursor(null)
+          onHover?.(null)
+        }}
+        style={{ cursor: onPlace ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
         className="relative w-full shrink-0 select-none overflow-hidden"
       >
         {quantize === 'beat' &&
@@ -246,11 +302,17 @@ export function CueWaveDetail({
             <span
               role="img"
               data-testid={`cue-detail-call-${c.ms + fromMs}`}
+              data-mark="true"
+              data-gone={gone.has(c.key) ? 'true' : 'false'}
               data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
               aria-hidden="true"
               onContextMenu={(e) => markMenu(c.key, e)}
               {...hover(c.key)}
-              style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
+              style={{
+                ...markStyle(c.at),
+                borderTopColor: MEMORY_CUE_COLOR,
+                ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+              }}
               className={`absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
                 pendingOf.get(c.key) ? 'opacity-60' : ''
               }`}
@@ -265,6 +327,8 @@ export function CueWaveDetail({
               <span
                 role="img"
                 data-testid={`cue-detail-hot-${h.letter}`}
+                data-mark="true"
+                data-gone={gone.has(h.key) ? 'true' : 'false'}
                 data-pending={pending ? 'true' : 'false'}
                 data-selected={selected === h.key ? 'true' : 'false'}
                 aria-hidden="true"
@@ -275,6 +339,7 @@ export function CueWaveDetail({
                   ...(pending
                     ? { borderColor: h.colour, color: h.colour }
                     : { backgroundColor: h.colour, color: '#000' }),
+                  ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
                 }}
                 className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
                   pending ? 'border' : ''
@@ -286,6 +351,39 @@ export function CueWaveDetail({
             </Fragment>
           )
         })}
+        {ghostMarks?.calls.map((c) => (
+          <span
+            key={`gc${c.key}`}
+            data-testid={`cue-detail-ghost-call-${c.ms + fromMs}`}
+            aria-hidden="true"
+            style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR, opacity: GHOST_OPACITY }}
+            className="pointer-events-none absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
+          />
+        ))}
+        {ghostMarks?.hot.map((h) => (
+          <span
+            key={`gh${h.key}`}
+            data-testid={`cue-detail-ghost-hot-${h.letter}`}
+            aria-hidden="true"
+            style={{
+              ...markStyle(h.at),
+              backgroundColor: h.colour,
+              color: '#000',
+              opacity: GHOST_OPACITY,
+            }}
+            className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px]"
+          >
+            {h.letter}
+          </span>
+        ))}
+        {cursor !== null && cursor >= fromMs && cursor <= toMs && (
+          <span
+            data-testid="cue-detail-cursor"
+            aria-hidden="true"
+            style={{ left: pct(cursor) }}
+            className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/80"
+          />
+        )}
       </div>
     </div>
   )

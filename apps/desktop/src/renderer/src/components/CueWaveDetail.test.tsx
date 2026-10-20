@@ -193,13 +193,62 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalledTimes(1)
   })
 
-  it('hands the time under a click to onPick while the editor waits for a drop, instead of scrubbing', () => {
-    const onPick = vi.fn<(ms: number) => void>()
-    const { onScrub } = setup({ onPick })
-    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 300 })
-    fireEvent.mouseMove(window, { clientX: 100 })
-    expect(onPick).toHaveBeenCalledWith(bar(32) + 8000)
+  it('places on the bar under a click and still scrubs with a drag when a flow is chosen', () => {
+    const onPlace = vi.fn<(ms: number) => void>()
+    const { onScrub } = setup({ onPlace })
+    const stage = screen.getByTestId('cue-detail')
+    fireEvent.mouseDown(stage, { button: 0, clientX: 310 })
+    fireEvent.mouseMove(window, { clientX: 312 })
+    fireEvent.mouseUp(window, { clientX: 312 })
+    expect(onPlace).toHaveBeenCalledWith(bar(36))
     expect(onScrub).not.toHaveBeenCalled()
+    fireEvent.mouseDown(stage, { button: 0, clientX: 400 })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(onScrub).toHaveBeenLastCalledWith(bar(32) + 8000)
+    expect(onPlace).toHaveBeenCalledTimes(1)
+  })
+
+  it('never places on a press that starts on a mark, which belongs to its ✕ and its menu', () => {
+    const onPlace = vi.fn<(ms: number) => void>()
+    setup({ onPlace, cues: [{ key: 'b', ms: bar(36), kind: 2, color: 22, pending: false }] })
+    fireEvent.mouseDown(screen.getByTestId('cue-detail-hot-B'), { button: 0, clientX: 300 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(onPlace).not.toHaveBeenCalled()
+  })
+
+  it('draws a thin line on the bar under the cursor and hands it on, and none without a flow', () => {
+    const onHover = vi.fn<(ms: number | null) => void>()
+    const { rerender } = setup({ onHover })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    expect(onHover).not.toHaveBeenCalled()
+    rerender({ onHover, onPlace: vi.fn<(ms: number) => void>() })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
+    expect(onHover).toHaveBeenLastCalledWith(bar(36))
+    expect(screen.getByTestId('cue-detail-cursor').style.left).toBe('75%')
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(onHover).toHaveBeenLastCalledWith(null)
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+  })
+
+  it('draws the flow see-through and dims what it would take away', () => {
+    setup({
+      cues: [{ key: 'b', ms: bar(30), kind: 2, color: 22, pending: false }],
+      ghost: {
+        added: [
+          { key: 'g', ms: bar(36), kind: 1, color: 42 },
+          { key: 'gc', ms: bar(36), kind: 0, color: null },
+        ],
+        gone: ['b'],
+      },
+    })
+    expect(screen.getByTestId('cue-detail-ghost-hot-A')).toHaveStyle({ opacity: '0.42' })
+    expect(screen.getByTestId(`cue-detail-ghost-call-${bar(36)}`)).toHaveStyle({
+      opacity: '0.42',
+    })
+    expect(screen.getByTestId('cue-detail-hot-B')).toHaveAttribute('data-gone', 'true')
+    expect(screen.getByTestId('cue-detail-hot-B')).toHaveStyle({ opacity: '0.18' })
   })
 
   it('paints at most one column per pixel however long the track, so a 5 minute wave stays smooth', () => {
@@ -349,10 +398,10 @@ describe('CueWaveDetail', () => {
     expect(canvas.height).toBe(300)
   })
 
-  it('shows a crosshair over the wave while it waits for a drop, so the click reads as marking and not as grabbing', () => {
+  it('shows a crosshair over the wave when a flow is chosen, so the click reads as placing and not as grabbing', () => {
     const { rerender } = setup()
     expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
-    rerender({ onPick: vi.fn<(ms: number) => void>() })
+    rerender({ onPlace: vi.fn<(ms: number) => void>() })
     expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
   })
   it('draws the marks in front of the playhead, which starts below the marks lane', () => {
