@@ -775,6 +775,34 @@ describe('CuesSection maximized keys', () => {
     expect(position()).toBe('2:08.0')
   })
 
+  it('draws the flow under the cursor on the zoomed wave and on the strip, and a click places it', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+    expect(screen.getByTestId('cue-detail-cursor')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-detail-ghost-call-128000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-ghost-hot-C')).toBeInTheDocument()
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
+  })
+
+  it('drops the flow under the cursor once a press on the strip turns into moving the playhead, so no stale cues hang over the scrub', async () => {
+    setup()
+    await maximize()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 128 })
+    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    fireEvent.mouseMove(window, { clientX: 200 })
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+    fireEvent.mouseUp(window, { clientX: 200 })
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+  })
+
   it('leaves the zoomed wave to the grab hand in Manual and places nothing with a click', async () => {
     setup({ activeCueFlow: 'manual' })
     await maximize()

@@ -276,6 +276,13 @@ function Editing({
   )
   const canApply =
     switchGhost !== null && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
+  const [hoverMs, setHoverMs] = useState<number | null>(null)
+  const hoverGhost = useMemo<DraftGhost | null>(
+    () =>
+      placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
+    [placing, hoverMs, state, ctx],
+  )
+  const ghost = hoverGhost ?? (canApply && switchGhost !== null ? switchGhost : undefined)
   const openedWith = useRef(settled)
   useEffect(() => {
     if (openedWith.current === settled) return
@@ -590,6 +597,8 @@ function Editing({
         selected={state.selected}
         trimmed={state.trimmed}
         onPlace={placing ? place : undefined}
+        onHover={placing ? setHoverMs : undefined}
+        ghost={ghost}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={maximized ? setMenu : undefined}
@@ -612,6 +621,8 @@ function Editing({
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
           onPlace={placing ? place : undefined}
+          onHover={placing ? setHoverMs : undefined}
+          ghost={ghost}
           onMarkMenu={openMarkMenu}
           onDeleteMark={(key) => dispatch({ type: 'remove', key })}
         />
