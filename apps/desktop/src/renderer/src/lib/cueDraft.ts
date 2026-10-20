@@ -57,6 +57,8 @@ export type DraftAction =
   | { type: 'select'; key: string | null }
   | { type: 'move'; key: string; ms: number }
   | { type: 'remove'; key: string }
+  | { type: 'move-point'; key: string; ms: number }
+  | { type: 'remove-point'; key: string }
   | { type: 'recolour'; key: string; color: number }
   | { type: 'reletter'; key: string; kind: number }
   | { type: 'add-hot'; ms: number; kind?: number }
@@ -104,12 +106,24 @@ const needsGrid = (action: DraftAction): boolean =>
   action.type === 'mark-drop' ||
   action.type === 'add-hot' ||
   action.type === 'add-call' ||
-  action.type === 'move'
+  action.type === 'move' ||
+  action.type === 'move-point'
 
 const flowById = (ctx: DraftContext, id: string): CueFlow =>
   ctx.flows.find((f) => f.id === id) ?? ONE_AT_32
 
 const snap = (ctx: DraftContext, ms: number): number => ctx.snapTo[nearestBeat(ctx.snapTo, ms)]
+
+function snapshot(state: CueDraft): DraftSnapshot {
+  return {
+    cues: state.cues,
+    flowId: state.flowId,
+    generatedBy: state.generatedBy,
+    trimmed: state.trimmed,
+    edited: state.edited,
+    placed: state.placed,
+  }
+}
 
 function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {}): CueDraft {
   return {
@@ -118,18 +132,41 @@ function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {})
     trimmed: [],
     ...over,
     cues,
-    past: [
-      ...state.past,
-      {
-        cues: state.cues,
-        flowId: state.flowId,
-        generatedBy: state.generatedBy,
-        trimmed: state.trimmed,
-        edited: state.edited,
-        placed: state.placed,
-      },
-    ],
+    past: [...state.past, snapshot(state)],
   }
+}
+
+function withoutPoint(state: CueDraft, ctx: DraftContext, key: string): DraftCue[] | null {
+  const target = state.cues.find((c) => c.key === key)
+  if (!target || isHot(target) || ctx.beats.length === 0) return null
+  const track = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
+  const generator = flowById(ctx, state.generatedBy)
+  const points = flowDrops(generator, { ...track, drops: draftDrops(state.cues, state.locked) })
+  if (!points.some((p) => near(p, target.ms))) return null
+  const others = points.filter((p) => !near(p, target.ms))
+  const hot: number[] = []
+  const calls: number[] = []
+  for (const flow of new Set([generator, flowById(ctx, state.flowId)])) {
+    const plan = (drops: number[]) =>
+      evaluateFlow(flow, { ...track, drops: flowDrops(flow, { ...track, drops }) }).cues
+    const kept = plan(others)
+    for (const c of [...plan(points), ...plan([target.ms])]) {
+      if (kept.some((k) => k.place === c.place && near(k.ms, c.ms))) continue
+      if (c.place !== 'call') hot.push(c.ms)
+      if (c.place !== 'hot') calls.push(c.ms)
+    }
+  }
+  const byHand = new Set([...state.edited, ...state.placed, ...state.locked])
+  const gone = new Set<string>([target.key])
+  for (const c of state.cues)
+    if (isHot(c) && !byHand.has(c.key) && hot.some((ms) => near(ms, c.ms))) gone.add(c.key)
+  const held = (ms: number): boolean =>
+    others.some((p) => near(p, ms)) ||
+    state.cues.some((h) => isHot(h) && !gone.has(h.key) && near(h.ms, ms))
+  for (const c of state.cues)
+    if (!isHot(c) && !byHand.has(c.key) && calls.some((ms) => near(ms, c.ms)) && !held(c.ms))
+      gone.add(c.key)
+  return state.cues.filter((c) => !gone.has(c.key))
 }
 
 function regenerate(
@@ -310,6 +347,24 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     })
   }
   if (needsGrid(action) && ctx.beats.length === 0) return state
+  if (action.type === 'remove-point' || action.type === 'move-point') {
+    const cues = withoutPoint(state, ctx, action.key)
+    const plain: DraftAction =
+      action.type === 'move-point'
+        ? { type: 'move', key: action.key, ms: action.ms }
+        : { type: 'remove', key: action.key }
+    if (cues === null) return reduceDraft(state, plain, ctx)
+    if (action.type === 'remove-point') return commit(state, cues, { selected: null })
+    const target = state.cues.find((c) => c.key === action.key) as DraftCue
+    if (near(snap(ctx, action.ms), target.ms)) return state
+    const moved = reduceDraft(
+      { ...state, cues, selected: null },
+      { type: 'mark-drop', ms: action.ms },
+      ctx,
+    )
+    if (moved.cues === cues) return state
+    return { ...moved, past: [...state.past, snapshot(state)] }
+  }
   if (action.type === 'mark-drop') {
     const ms = snap(ctx, action.ms)
     const drops = draftDrops(state.cues, state.locked)

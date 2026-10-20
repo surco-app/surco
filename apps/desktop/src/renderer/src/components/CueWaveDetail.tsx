@@ -53,6 +53,8 @@ export function CueWaveDetail({
   onDeleteMark,
   onHover,
   ghost,
+  movable,
+  onMoveMark,
 }: {
   source: DetailSource | null
   grid: { ms: number; beat: number }[]
@@ -68,6 +70,8 @@ export function CueWaveDetail({
   onDeleteMark?: (key: string) => void
   onHover?: (ms: number | null) => void
   ghost?: CueGhost
+  movable?: string[]
+  onMoveMark?: (key: string, ms: number) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const stageRef = useRef<HTMLDivElement>(null)
@@ -115,6 +119,53 @@ export function CueWaveDetail({
       window.removeEventListener('mouseup', up)
     }
   }, [drag])
+  const [markDrag, setMarkDrag] = useState<{
+    key: string
+    x0: number
+    left: number
+    width: number
+    fromMs: number
+  } | null>(null)
+  const [dragMs, setDragMs] = useState<number | null>(null)
+  const markLatest = useRef({ snapMs, span, onMoveMark })
+  markLatest.current = { snapMs, span, onMoveMark }
+  useEffect(() => {
+    if (!markDrag) return
+    let ms: number | null = null
+    const move = (e: MouseEvent) => {
+      if (ms === null && Math.abs(e.clientX - markDrag.x0) <= DRAG_PX) return
+      const { snapMs: snap, span: width } = markLatest.current
+      const at =
+        markDrag.fromMs + ((e.clientX - markDrag.left) / Math.max(markDrag.width, 1)) * width
+      ms = snap[nearestBeat(snap, at)]
+      setDragMs(ms)
+    }
+    const up = () => {
+      if (ms !== null) markLatest.current.onMoveMark?.(markDrag.key, ms)
+      setDragMs(null)
+      setMarkDrag(null)
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+    }
+  }, [markDrag])
+  const grab = (key: string) =>
+    onMoveMark && movable?.includes(key)
+      ? {
+          onMouseDown: (e: React.MouseEvent) => {
+            if (e.button !== 0) return
+            const rect = stageRef.current?.getBoundingClientRect()
+            if (!rect || rect.width <= 0) return
+            e.stopPropagation()
+            setCursor(null)
+            onHover?.(null)
+            setMarkDrag({ key, x0: e.clientX, left: rect.left, width: rect.width, fromMs })
+          },
+        }
+      : {}
   const [cursor, setCursor] = useState<number | null>(null)
   const canPlace = onPlace !== undefined
   useEffect(() => {
@@ -321,9 +372,11 @@ export function CueWaveDetail({
               aria-hidden="true"
               onContextMenu={(e) => markMenu(c.key, e)}
               {...hover(c.key)}
+              {...grab(c.key)}
               style={{
                 ...markStyle(c.at),
                 borderTopColor: MEMORY_CUE_COLOR,
+                ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                 ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
               }}
               className={`absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
@@ -400,6 +453,14 @@ export function CueWaveDetail({
               className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
             />
           ))}
+        {dragMs !== null && (
+          <span
+            data-testid="cue-detail-drag-ghost"
+            aria-hidden="true"
+            style={{ left: pct(dragMs) }}
+            className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
+          />
+        )}
         {cursor !== null && cursor >= fromMs && cursor <= toMs && (
           <span
             data-testid="cue-detail-cursor"

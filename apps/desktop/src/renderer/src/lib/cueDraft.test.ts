@@ -795,3 +795,69 @@ describe('ghostOf rejected', () => {
     expect(reasons(g)).toEqual([[bar(32), 'strong']])
   })
 })
+
+describe('correcting a point', () => {
+  const shape = (s: CueDraft) =>
+    s.cues
+      .map((c) => `${c.ms}:${c.kind}:${c.color}`)
+      .sort()
+      .join(' ')
+  const callAt = (s: CueDraft, ms: number) =>
+    s.cues.find((c) => c.kind === 0 && c.ms === ms)?.key as string
+  const intro = { ...ctx, strong: [{ start: bar(40), end: bar(60) }] }
+
+  it('takes away the cues the flow generated from a point when its CALL is deleted, in one undo step', () => {
+    const placed = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const s = run(placed, { type: 'remove-point', key: callAt(placed, bar(64)) })
+    expect(s.cues).toEqual([])
+    expect(shape(run(s, { type: 'undo' }))).toBe(shape(placed))
+  })
+
+  it('keeps what the DJ placed or edited by hand, the loops and the cues of the other points', () => {
+    const loop = { id: 'L', ms: bar(100), kind: 0, color: null }
+    const two = run(
+      startDraft([loop], 'mine', ['L']),
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(160) },
+      { type: 'add-call', ms: bar(56) },
+    )
+    const b = at(two, bar(32), true) as DraftCue
+    const recoloured = run(two, { type: 'recolour', key: b.key, color: 5 })
+    const s = run(recoloured, { type: 'remove-point', key: callAt(recoloured, bar(64)) })
+    expect(at(s, bar(32), true)?.color).toBe(5)
+    expect(at(s, bar(32), false)).toBeDefined()
+    expect(at(s, bar(16), true)).toBeUndefined()
+    expect(at(s, bar(48), true)).toBeUndefined()
+    expect(at(s, bar(56), false)).toBeDefined()
+    expect(at(s, bar(100), false)).toBeDefined()
+    expect(at(s, bar(64), false)).toBeUndefined()
+    expect(draftDrops(s.cues, s.locked)).toEqual([bar(56), bar(160)])
+    expect(s.cues.filter((c) => c.kind !== 0)).toHaveLength(4)
+  })
+
+  it('leaves no orphan after place, delete the CALL, place elsewhere, so the result is a clean placement', () => {
+    const placed = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, intro)
+    expect(at(placed, 0, true)).toBeDefined()
+    const gone = reduceDraft(placed, { type: 'remove-point', key: callAt(placed, bar(64)) }, intro)
+    const again = reduceDraft(gone, { type: 'mark-drop', ms: bar(66) }, intro)
+    const clean = reduceDraft(empty(), { type: 'mark-drop', ms: bar(66) }, intro)
+    expect(shape(again)).toBe(shape(clean))
+  })
+
+  it('moves a point by its CALL to the quantized beat and regenerates its cues as a clean placement there, in one undo step', () => {
+    const placed = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const s = run(placed, { type: 'move-point', key: callAt(placed, bar(64)), ms: bar(80) + 200 })
+    expect(shape(s)).toBe(shape(run(empty(), { type: 'mark-drop', ms: bar(80) })))
+    expect(shape(run(s, { type: 'undo' }))).toBe(shape(placed))
+  })
+
+  it('moves and deletes a CALL that is no point as before, so a hot cue’s CALL never takes the countdown with it', () => {
+    const placed = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const paired = callAt(placed, bar(32))
+    const removed = run(placed, { type: 'remove-point', key: paired })
+    expect(shape(removed)).toBe(shape(run(placed, { type: 'remove', key: paired })))
+    const hot = at(placed, bar(32), true) as DraftCue
+    const moved = run(placed, { type: 'move-point', key: hot.key, ms: bar(36) })
+    expect(shape(moved)).toBe(shape(run(placed, { type: 'move', key: hot.key, ms: bar(36) })))
+  })
+})

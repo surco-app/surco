@@ -300,6 +300,37 @@ describe('CueWaveDetail', () => {
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveStyle({ opacity: '0.3' })
   })
 
+  it('hands a point’s CALL dragged on the zoomed wave over at the quantized bar, without scrubbing, and ignores a press that never moves', () => {
+    const onMoveMark = vi.fn<(key: string, ms: number) => void>()
+    const { onScrub } = setup({
+      cues: [
+        { key: 'p', ms: bar(36), kind: 0, color: null, pending: false },
+        { key: 'q', ms: bar(28), kind: 0, color: null, pending: false },
+      ],
+      movable: ['p'],
+      onMoveMark,
+    })
+    const call = screen.getByTestId(`cue-detail-call-${bar(36)}`)
+    fireEvent.mouseDown(call, { button: 0, clientX: 300 })
+    fireEvent.mouseMove(window, { clientX: 302 })
+    fireEvent.mouseUp(window, { clientX: 302 })
+    expect(onMoveMark).not.toHaveBeenCalled()
+    fireEvent.mouseDown(call, { button: 0, clientX: 300 })
+    fireEvent.mouseMove(window, { clientX: 352 })
+    expect(screen.getByTestId('cue-detail-drag-ghost').style.left).toBe('87.5%')
+    fireEvent.mouseUp(window, { clientX: 352 })
+    expect(onMoveMark).toHaveBeenCalledWith('p', bar(38))
+    expect(onScrub).not.toHaveBeenCalled()
+    fireEvent.mouseDown(screen.getByTestId(`cue-detail-call-${bar(28)}`), {
+      button: 0,
+      clientX: 200,
+    })
+    fireEvent.mouseMove(window, { clientX: 100 })
+    fireEvent.mouseUp(window, { clientX: 100 })
+    expect(onMoveMark).toHaveBeenCalledTimes(1)
+    expect(onScrub).toHaveBeenCalled()
+  })
+
   it('draws what the flow drops as faint dashed outlines in the cue colour, inside the window only and never clickable', () => {
     setup({
       ghost: {

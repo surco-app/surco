@@ -285,6 +285,10 @@ function Editing({
     else pickMode(id)
   }
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
+  const removeOf = (key: string): DraftAction =>
+    manual ? { type: 'remove', key } : { type: 'remove-point', key }
+  const moveOf = (key: string, ms: number): DraftAction =>
+    manual ? { type: 'move', key, ms } : { type: 'move-point', key, ms }
   const switchGhost = useMemo<DraftGhost | null>(
     () => (manual ? null : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx)),
     [manual, state, shownFlow, ctx],
@@ -430,7 +434,7 @@ function Editing({
         callAt(state.cues, ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)]))
   const memoryRemove = () => {
     if (!removableCall || state.locked.includes(removableCall.key)) return
-    dispatch({ type: 'remove', key: removableCall.key })
+    dispatch(removeOf(removableCall.key))
     focusEditor()
   }
   const run = (key: CueKey) => {
@@ -441,7 +445,7 @@ function Editing({
     else if (key.type === 'centre') seekTo(ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)])
     else if (key.type === 'memory') dispatch({ type: 'add-call', ms: playheadMs })
     else if (key.type === 'hot') pad(key.kind)
-    else if (key.type === 'remove' && selected) dispatch({ type: 'remove', key: selected.key })
+    else if (key.type === 'remove' && selected) dispatch(removeOf(selected.key))
     else if (key.type === 'undo') dispatch({ type: 'undo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
   }
@@ -457,7 +461,7 @@ function Editing({
     }
     if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
       e.preventDefault()
-      dispatch({ type: 'remove', key: selected.key })
+      dispatch(removeOf(selected.key))
     } else if (e.key === 'z' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
       dispatch({ type: 'undo' })
@@ -487,6 +491,14 @@ function Editing({
   useEffect(() => {
     if (maximized) editorRef.current?.focus()
   }, [maximized])
+  const points = state.cues
+    .filter(
+      (c) =>
+        c.kind === 0 &&
+        !state.locked.includes(c.key) &&
+        !state.cues.some((h) => h.kind !== 0 && Math.abs(h.ms - c.ms) <= SAME_POSITION_MS),
+    )
+    .map((c) => c.key)
   const waveCues = state.cues.map((c) => ({
     ...c,
     pending: pending(c),
@@ -657,7 +669,7 @@ function Editing({
         hoverMs={placing ? hoverMs : null}
         ghost={ghost}
         onSelect={(key) => dispatch({ type: 'select', key })}
-        onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
+        onMove={(key, ms) => dispatch(moveOf(key, ms))}
         onMenu={maximized ? setMenu : undefined}
         onMarkMenu={openMarkMenu}
         playheadMs={maximized ? playheadMs : undefined}
@@ -681,7 +693,9 @@ function Editing({
           onHover={placing ? setHoverMs : undefined}
           ghost={ghost}
           onMarkMenu={openMarkMenu}
-          onDeleteMark={(key) => dispatch({ type: 'remove', key })}
+          onDeleteMark={(key) => dispatch(removeOf(key))}
+          movable={points}
+          onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
         />
       )}
       {menu !== null && (
@@ -746,7 +760,7 @@ function Editing({
                 type="button"
                 role="menuitem"
                 data-testid="cues-menu-delete"
-                onClick={() => fromMarkMenu({ type: 'remove', key: markTarget.key })}
+                onClick={() => fromMarkMenu(removeOf(markTarget.key))}
                 className={MENU_ITEM}
               >
                 {tr('editor.cues.delete')}
@@ -826,7 +840,7 @@ function Editing({
             <button
               type="button"
               data-testid="cues-delete"
-              onClick={() => dispatch({ type: 'remove', key: selected.key })}
+              onClick={() => dispatch(removeOf(selected.key))}
               className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1 hover:bg-[var(--color-hover)]"
             >
               {tr('editor.cues.delete')}
@@ -865,7 +879,7 @@ function Editing({
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
           onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
-          onDelete={(key) => dispatch({ type: 'remove', key })}
+          onDelete={(key) => dispatch(removeOf(key))}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
           onMemoryRemove={memoryRemove}

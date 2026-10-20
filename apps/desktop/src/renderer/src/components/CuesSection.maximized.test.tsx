@@ -1263,3 +1263,62 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
   })
 })
+
+describe('CuesSection maximized point corrections', () => {
+  const placeAtPlayhead = () => {
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+  }
+  const marks = () =>
+    screen
+      .queryAllByTestId(/^cue-wave-(hot|call)-/)
+      .map((el) => `${el.dataset.testid} ${el.style.left}`)
+      .sort()
+
+  it('moves the point by dragging its CALL on the zoomed wave and redraws its flow there, undone in one step', async () => {
+    setup()
+    await maximize()
+    seek(136000)
+    placeAtPlayhead()
+    const clean = marks()
+    key('z', { metaKey: true })
+    seek(128000)
+    placeAtPlayhead()
+    const before = marks()
+    const call = screen.getByTestId('cue-detail-call-128000')
+    fireEvent.mouseDown(call, { button: 0, clientX: 200 })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(marks()).toEqual(clean)
+    expect(position()).toBe('2:08.0')
+    key('z', { metaKey: true })
+    expect(marks()).toEqual(before)
+  })
+
+  it('takes the point’s flow away with its CALL from the ✕, from ⌫ and from the menu, leaving nothing behind', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    const remove = [
+      () => {
+        fireEvent.mouseEnter(screen.getByTestId('cue-detail-call-128000'))
+        fireEvent.click(screen.getByTestId('cue-detail-delete'))
+      },
+      () => {
+        fireEvent.click(screen.getByTestId('cue-wave-call-128000'))
+        editor().focus()
+        key('Backspace')
+      },
+      () => {
+        fireEvent.contextMenu(screen.getByTestId('cue-detail-call-128000'))
+        fireEvent.click(screen.getByTestId('cues-menu-delete'))
+      },
+    ]
+    for (const run of remove) {
+      placeAtPlayhead()
+      expect(marks().length).toBeGreaterThan(1)
+      run()
+      expect(marks()).toEqual([])
+    }
+  })
+})
