@@ -4,7 +4,7 @@ import type { CueFlow } from '../shared/cueFlows'
 import type { QueuedCues, SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
-import { readTrackCues } from './rekordboxCues'
+import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { learnFromCollection } from './rekordboxLearnFlow'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
@@ -21,6 +21,15 @@ export function registerRekordboxCuesIpc(host: {
     return withCollection(
       path,
       (db) => readTrackCues(db, rekordboxShareDir(path), contentId),
+      null,
+      await keyOf(path),
+    )
+  })
+  ipcMain.handle('rekordbox:cueWaveDetail', async (_e, contentId: string) => {
+    const path = host.collection()
+    return withCollection(
+      path,
+      (db) => readCueWaveDetail(db, rekordboxShareDir(path), contentId),
       null,
       await keyOf(path),
     )

@@ -193,6 +193,8 @@ const api: Api = {
   rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
   rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
+  rekordboxCueWaveDetail: (contentId: string): Promise<Uint16Array | null> =>
+    ipcRenderer.invoke('rekordbox:cueWaveDetail', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

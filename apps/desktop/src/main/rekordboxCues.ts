@@ -5,7 +5,7 @@ import type Database from 'better-sqlite3-multiple-ciphers'
 import { type FlowPhrase, phraseKindOf } from '../shared/cueFlows'
 import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRules'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
-import { beatGrid, colorWave, colorWaveSpanMs, phrases, wavePreview } from './anlz'
+import { beatGrid, colorWave, colorWaveSpanMs, colorWaveWords, phrases, wavePreview } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
@@ -125,6 +125,20 @@ export function readTrackCues(
   if (!analysis) return { ...base, analysed: false, grid: [], strong: [], phrases: [], wave: null }
   const { spanMs, ...found } = analysis
   return { ...base, durationMs: spanMs ?? base.durationMs, analysed: true, ...found }
+}
+
+export function readCueWaveDetail(db: Db, shareDir: string, contentId: string): Uint16Array | null {
+  const row = db
+    .prepare(
+      `SELECT AnalysisDataPath FROM djmdContent
+        WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .get(contentId) as { AnalysisDataPath: string | null } | undefined
+  if (!row?.AnalysisDataPath) return null
+  const datPath = resolve(shareDir, `.${row.AnalysisDataPath}`)
+  if (!insideShare(shareDir, datPath)) return null
+  const ext = read(datPath.replace(/\.DAT$/, '.EXT'))
+  return ext ? colorWaveWords(ext) : null
 }
 
 const CUE_JSON_KEYS = [

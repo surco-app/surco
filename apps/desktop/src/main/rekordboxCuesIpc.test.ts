@@ -14,7 +14,7 @@ vi.mock('./rekordboxDb', async (actual) => {
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
 import { flowOutcome } from '../shared/cueRules'
 import type { TrackCues } from '../shared/types'
-import { anlzFile, pqtzSection } from './anlzFixture'
+import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
@@ -110,6 +110,66 @@ async function markedCollection(): Promise<string> {
 }
 
 describe('registerRekordboxCuesIpc', () => {
+  async function detailCollection(withWave: boolean): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbdetail-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c) =>
+        c.ID === '101' ? { ...c, AnalysisDataPath: ANLZ } : c,
+      ),
+    })
+    mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+    writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
+    if (withWave)
+      writeFileSync(
+        join(dir, 'share', ANLZ.replace(/\.DAT$/, '.EXT')),
+        anlzFile(
+          pwv5Section([
+            { r: 7, g: 0, b: 0, h: 31 },
+            { r: 0, g: 0, b: 7, h: 16 },
+          ]),
+        ),
+      )
+    return path
+  }
+
+  it('reads the whole colour wave of a track for the maximized editor and never changes the collection', async () => {
+    const path = await detailCollection(true)
+    const before = readFileSync(path)
+    vi.mocked(openRekordboxDb).mockClear()
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    const words = (await handler('rekordbox:cueWaveDetail')({}, '101')) as Uint16Array
+    expect([...words]).toEqual([(7 << 13) | (31 << 2), (7 << 7) | (16 << 2)])
+    expect(vi.mocked(openRekordboxDb)).toHaveBeenCalled()
+    expect(vi.mocked(openRekordboxDb).mock.calls.every(([, o]) => o?.readonly === true)).toBe(true)
+    expect(readFileSync(path).equals(before)).toBe(true)
+  })
+
+  it('has no detail for a track without PWV5, an unknown track or no collection', async () => {
+    const path = await detailCollection(false)
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
+    expect(await handler('rekordbox:cueWaveDetail')({}, '999')).toBeNull()
+    registerRekordboxCuesIpc({
+      collection: () => '',
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
+  })
+
   it('learns the flow from the marked tracks of the collection, opened read-only and never changed', async () => {
     const path = await markedCollection()
     const before = readFileSync(path)

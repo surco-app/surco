@@ -211,6 +211,7 @@ export interface Api {
   discardRekordboxQueue: () => Promise<void>
   rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
+  rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   rekordboxLearnFlow: () => Promise<LearnedFlow | null>

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { anlzSections, beatGrid, colorWave, maskVocals, phrases, wavePreview } from './anlz'
+import {
+  anlzSections,
+  beatGrid,
+  colorWave,
+  colorWaveWords,
+  maskVocals,
+  phrases,
+  wavePreview,
+} from './anlz'
 import { anlzFile, pqtzSection, pssiSection, pwv5Section, section, u32 } from './anlzFixture'
 
 const ppth = section('PPTH', u32(4), Buffer.from('?/a\0', 'latin1'))
@@ -160,5 +168,29 @@ describe('colorWave', () => {
 
   it('is null without a PWV5', () => {
     expect(colorWave(anlzFile())).toBeNull()
+  })
+})
+
+describe('colorWaveWords', () => {
+  it('hands over every PWV5 entry untouched, 150 a second, for the zoomed wave', () => {
+    const words = colorWaveWords(
+      anlzFile(
+        pwv5Section([
+          { r: 7, g: 0, b: 0, h: 31 },
+          { r: 0, g: 0, b: 7, h: 16 },
+          { r: 1, g: 2, b: 3, h: 4 },
+        ]),
+      ),
+    )
+    expect(words).toBeInstanceOf(Uint16Array)
+    expect([...(words as Uint16Array)]).toEqual([
+      (7 << 13) | (31 << 2),
+      (7 << 7) | (16 << 2),
+      (1 << 13) | (2 << 10) | (3 << 7) | (4 << 2),
+    ])
+  })
+
+  it('is null without a PWV5', () => {
+    expect(colorWaveWords(anlzFile())).toBeNull()
   })
 })
