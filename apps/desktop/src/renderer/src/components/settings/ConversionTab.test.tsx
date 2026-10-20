@@ -20,6 +20,7 @@ const synced: SyncedDraft = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  hiddenSources: [],
   language: 'system',
   outputFormat: 'aiff',
   addToAppleMusic: false,

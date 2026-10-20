@@ -1055,6 +1055,33 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('shows every source for a settings file from before sources could be hidden', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().hiddenSources).toEqual([])
+  })
+
+  it('repairs a hidden-sources value with unknown or repeated entries on every merge', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ hiddenSources: ['rekordbox', 'traktor', 'rekordbox'] }),
+    )
+    expect(getSettings().hiddenSources).toEqual(['rekordbox'])
+    saveSettings({ hiddenSources: ['appleMusic', 'appleMusic', 'x'] as never })
+    expect(getSettings().hiddenSources).toEqual(['appleMusic'])
+  })
+
+  it('carries the hidden sources to another Mac, since the rail is the same wherever the DJ plays', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ hiddenSources: ['rekordbox'] })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.hiddenSources).toEqual(['rekordbox'])
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('gives a settings file from before flows the bundled ones with Mi flujo active', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32', 'calls-only'])

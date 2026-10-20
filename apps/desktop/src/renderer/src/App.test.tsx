@@ -121,6 +121,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     activeCueFlow: 'mine',
     cueJumpBars: 16,
     cueQuantize: 'bar',
+    hiddenSources: [],
     language: 'system',
     discogsToken: '',
     beatportUsername: '',

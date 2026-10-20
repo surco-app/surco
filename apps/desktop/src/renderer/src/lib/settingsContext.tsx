@@ -27,6 +27,7 @@ import {
   type EditorSectionPref,
   normalizeEditorSections,
 } from '../../../shared/editorSections'
+import { normalizeHiddenSources } from '../../../shared/hiddenSources'
 import type {
   CustomField,
   DeclickConfig,
@@ -36,6 +37,7 @@ import type {
   NormalizeConfig,
   OutputBitDepth,
   OutputSampleRate,
+  PlaylistSource,
   SearchProviderId,
   Settings,
 } from '../../../shared/types'
@@ -95,6 +97,7 @@ interface ResolvedSettings {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  hiddenSources: PlaylistSource[]
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -141,6 +144,7 @@ const DEFAULTS: ResolvedSettings = {
   activeCueFlow: MY_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
+  hiddenSources: [],
 }
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -187,6 +191,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     activeCueFlow: settings.activeCueFlow ?? DEFAULTS.activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(settings.cueJumpBars),
     cueQuantize: normalizeCueQuantize(settings.cueQuantize),
+    hiddenSources: normalizeHiddenSources(settings.hiddenSources),
   }
 }
 

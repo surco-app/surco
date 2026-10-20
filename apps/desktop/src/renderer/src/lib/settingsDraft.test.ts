@@ -82,6 +82,7 @@ const settings: Settings = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  hiddenSources: [],
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
@@ -269,5 +270,10 @@ describe('cue flows in the draft', () => {
   it('saves the quantize value the Cues tab staged', () => {
     const synced = { ...pickSynced(settings), cueQuantize: 'beat' as const }
     expect(buildSettingsPatch(synced, local).cueQuantize).toBe('beat')
+  })
+
+  it('saves the hidden sources the General tab staged', () => {
+    const synced = { ...pickSynced(settings), hiddenSources: ['rekordbox' as const] }
+    expect(buildSettingsPatch(synced, local).hiddenSources).toEqual(['rekordbox'])
   })
 })

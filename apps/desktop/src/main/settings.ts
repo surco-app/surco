@@ -15,6 +15,7 @@ import {
   SEARCH_PROVIDERS,
 } from '../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
+import { normalizeHiddenSources } from '../shared/hiddenSources'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { FormatSetting, NormalizeConfig, Settings } from '../shared/types'
@@ -74,6 +75,7 @@ export const defaults: Settings = {
   activeCueFlow: MY_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
+  hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
@@ -302,6 +304,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
       typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
+    hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
   }
 }
 

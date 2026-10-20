@@ -4,7 +4,7 @@ import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
-import type { CustomField, Settings } from '../../../shared/types'
+import type { CustomField, PlaylistSource, Settings } from '../../../shared/types'
 import { DEFAULT_SEPARATOR } from './csv'
 
 // The synced staged fields in their editable forms (presets as comma text, the cover cap
@@ -30,6 +30,7 @@ export interface SyncedDraft {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  hiddenSources: PlaylistSource[]
   syncEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
@@ -132,6 +133,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     activeCueFlow: s.activeCueFlow,
     cueJumpBars: s.cueJumpBars,
     cueQuantize: s.cueQuantize,
+    hiddenSources: s.hiddenSources,
     syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,

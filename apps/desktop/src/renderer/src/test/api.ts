@@ -38,6 +38,7 @@ export const testSettings: Settings = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   betaUpdates: false,

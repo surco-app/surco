@@ -231,6 +231,7 @@ export interface Settings {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  hiddenSources: PlaylistSource[]
   rekordboxPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
