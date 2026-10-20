@@ -376,7 +376,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       { type: 'mark-drop', ms: action.ms },
       ctx,
     )
-    if (moved.cues === cues) return state
+    if (moved.cues === cues) return { ...state, notice: moved.notice }
     return { ...moved, past: [...state.past, snapshot(state)] }
   }
   if (action.type === 'mark-drop') {

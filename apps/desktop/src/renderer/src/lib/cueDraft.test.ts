@@ -916,3 +916,19 @@ describe('correcting a point, by provenance', () => {
     expect(at(moved, bar(48), true)?.key).toBe('h48')
   })
 })
+
+describe('a point move that cannot land', () => {
+  it('keeps the point where it was and says why, instead of snapping back in silence', () => {
+    const s = run(
+      startDraft([], 'calls-only'),
+      { type: 'mark-drop', ms: bar(64) },
+      ...Array.from({ length: 8 }, (_, i): DraftAction => ({ type: 'add-hot', ms: bar(10 + i) })),
+      { type: 'use-flow', flowId: 'one-at-32' },
+    )
+    const key = s.cues.find((c) => c.kind === 0 && c.ms === bar(64))?.key as string
+    const moved = run(s, { type: 'move-point', key, ms: bar(100) })
+    expect(moved.cues).toEqual(s.cues)
+    expect(moved.notice).toBe('too-many')
+    expect(moved.past).toHaveLength(s.past.length)
+  })
+})
