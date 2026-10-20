@@ -803,6 +803,24 @@ describe('CuesSection maximized keys', () => {
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
   })
 
+  it('still plays with Space after a plain click on the zoomed wave, with a flow or in Manual', async () => {
+    for (const mode of ['mine', 'manual']) {
+      stubSound()
+      setup({ activeCueFlow: mode })
+      await maximize()
+      seek(128000)
+      fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+      fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+      fireEvent.mouseUp(window, { clientX: 200 })
+      fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 220 })
+      expect(key(' ')).toBe(false)
+      expect(audios).toHaveLength(1)
+      cleanup()
+      resetEditorSections()
+      resetCueSession()
+    }
+  })
+
   it('leaves the zoomed wave to the grab hand in Manual and places nothing with a click', async () => {
     setup({ activeCueFlow: 'manual' })
     await maximize()
