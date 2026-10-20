@@ -790,6 +790,16 @@ describe('CuesSection maximized keys', () => {
     expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
   })
 
+  it('draws the cursor line on the strip too while the cursor is over the zoomed wave, where the ghost is drawn', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+    expect(screen.getByTestId('cue-wave-cursor').style.left).toBe('32%')
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+  })
+
   it('drops the flow under the cursor once a press on the strip turns into moving the playhead, so no stale cues hang over the scrub', async () => {
     setup()
     await maximize()

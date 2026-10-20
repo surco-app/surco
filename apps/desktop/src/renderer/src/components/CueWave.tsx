@@ -45,6 +45,7 @@ export function CueWave({
   onOpen,
   view,
   onHover,
+  hoverMs,
   ghost,
 }: {
   wave: CueWaveColumn[] | null
@@ -67,6 +68,7 @@ export function CueWave({
   onOpen?: (ms: number) => void
   view?: { fromMs: number; toMs: number }
   onHover?: (ms: number | null) => void
+  hoverMs?: number | null
   ghost?: CueGhost
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -209,6 +211,7 @@ export function CueWave({
   }
   const { hot, calls } = placeCues(cues, durationMs)
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
+  const line = cursor ?? hoverMs ?? null
   const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
   const viewPct = (ms: number): string =>
     `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
@@ -449,11 +452,11 @@ export function CueWave({
           {h.letter}
         </span>
       ))}
-      {cursor !== null && (
+      {line !== null && (
         <span
           data-testid="cue-wave-cursor"
           aria-hidden="true"
-          style={{ left: pct(cursor) }}
+          style={{ left: pct(line) }}
           className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/80"
         />
       )}

@@ -601,6 +601,7 @@ function Editing({
         trimmed={state.trimmed}
         onPlace={placing ? place : undefined}
         onHover={placing ? setHoverMs : undefined}
+        hoverMs={placing ? hoverMs : null}
         ghost={ghost}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
