@@ -233,9 +233,16 @@ function walkFlow(flow: CueFlow, track: FlowTrack): FlowPlan & { rejected: Rejec
     placed.push(...own)
   })
   const plan = trimToLimit(placed)
+  const all = [...rejected, ...plan.trimmed.map((c) => ({ ...c, reason: 'limit' as const }))]
+  const same = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
   return {
     ...plan,
-    rejected: [...rejected, ...plan.trimmed.map((c) => ({ ...c, reason: 'limit' as const }))],
+    rejected: all.filter(
+      (c, i) =>
+        !drops.some((d) => same(d, c.ms)) &&
+        !plan.cues.some((p) => same(p.ms, c.ms)) &&
+        all.findIndex((o) => same(o.ms, c.ms)) === i,
+    ),
   }
 }
 

@@ -57,12 +57,17 @@ describe('rejectedCues', () => {
 
   it('lists the hot cues the 8 limit leaves out with that reason', () => {
     const drops = Array.from({ length: 4 }, (_, i) => beat(48 + 48 * i))
-    expect(brief(MY_FLOW, track({ beats: grid(400), drops }))).toEqual([
-      [beat(48), 48, 'point', 42],
-      [beat(96), 48, 'point', 42],
-      [beat(144), 48, 'point', 42],
-      [beat(0), 48, 'limit', 42],
-    ])
+    expect(brief(MY_FLOW, track({ beats: grid(400), drops }))).toEqual([[beat(0), 48, 'limit', 42]])
+  })
+
+  it('lists one dropped cue per position even when two rules drop the same one', () => {
+    const both = flow(rule(), rule({ place: 'call' }))
+    const t = track({ strong: [{ start: beat(46), end: beat(50) }] })
+    expect(brief(both, t)).toEqual([[beat(48), 16, 'strong', 1]])
+  })
+
+  it('never marks a position that is a point or already holds a placed cue, so the count names only real gaps', () => {
+    expect(rejectedCues(MY_FLOW, track({ drops: [beat(100), beat(116)] }))).toEqual([])
   })
 
   it('reports nothing for a rule that repeats to the edge and simply runs out of track', () => {
