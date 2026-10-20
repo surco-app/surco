@@ -13,6 +13,7 @@ import {
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
@@ -26,6 +27,8 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
+
+const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const READ: TrackCues = {
@@ -79,7 +82,7 @@ function setup(
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={settings}>
+      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...settings }}>
         <CuesSection
           cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
           open

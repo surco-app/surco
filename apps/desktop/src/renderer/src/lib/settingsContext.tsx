@@ -3,7 +3,8 @@ import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
 import {
   BUNDLED_FLOWS,
   type CueFlow,
-  MY_FLOW_ID,
+  DEFAULT_CUE_FLOW_ID,
+  keepLegacyFlow,
   normalizeCueFlows,
 } from '../../../shared/cueFlows'
 import {
@@ -141,7 +142,7 @@ const DEFAULTS: ResolvedSettings = {
   declick: DEFAULT_DECLICK,
   editorSections: DEFAULT_EDITOR_SECTIONS,
   cueFlows: BUNDLED_FLOWS,
-  activeCueFlow: MY_FLOW_ID,
+  activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
   hiddenSources: [],
@@ -149,6 +150,7 @@ const DEFAULTS: ResolvedSettings = {
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
   if (!settings) return DEFAULTS
+  const activeCueFlow = settings.activeCueFlow ?? DEFAULTS.activeCueFlow
   return {
     discogsToken: settings.discogsToken ?? DEFAULTS.discogsToken,
     autoMatch: settings.autoMatch ?? DEFAULTS.autoMatch,
@@ -187,8 +189,8 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     normalize: settings.normalize ?? DEFAULTS.normalize,
     declick: normalizeDeclick(settings.declick),
     editorSections: normalizeEditorSections(settings.editorSections),
-    cueFlows: normalizeCueFlows(settings.cueFlows),
-    activeCueFlow: settings.activeCueFlow ?? DEFAULTS.activeCueFlow,
+    cueFlows: keepLegacyFlow(normalizeCueFlows(settings.cueFlows), activeCueFlow),
+    activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(settings.cueJumpBars),
     cueQuantize: normalizeCueQuantize(settings.cueQuantize),
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),

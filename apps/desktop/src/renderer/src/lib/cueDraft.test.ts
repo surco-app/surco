@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLED_FLOWS, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import { type ExistingCue, validWantedSet } from '../../../shared/cueRules'
 import {
   type CueDraft,
@@ -16,7 +16,8 @@ import { quantizePoints } from './cueWave'
 
 const beats = Array.from({ length: 800 }, (_, i) => i * 500)
 const bar = (n: number) => n * 2000
-const ctx = { beats, snapTo: beats, strong: [], phrases: [], flows: BUNDLED_FLOWS }
+const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
+const ctx = { beats, snapTo: beats, strong: [], phrases: [], flows: KEPT }
 const run = (state: CueDraft, ...actions: DraftAction[]) =>
   actions.reduce((s, a) => reduceDraft(s, a, ctx), state)
 const empty = () => startDraft([], 'mine')
@@ -32,6 +33,11 @@ describe('reduceDraft', () => {
       [bar(32), 2, 22],
       [bar(48), 3, 1],
     ])
+  })
+
+  it('draws with the bundled flow when the flow of the draft was deleted, since that is the flow Surco falls back to', () => {
+    const s = reduceDraft(startDraft([], 'gone'), { type: 'mark-drop', ms: bar(64) }, ctx)
+    expect(s.cues.filter((c) => c.kind !== 0).map((c) => [c.ms, c.color])).toEqual([[bar(32), 22]])
   })
 
   it('keeps one drop when the same position is marked twice', () => {
@@ -295,7 +301,7 @@ describe('reduceDraft', () => {
       id: 'paired',
       rules: [{ ...ONE_AT_32.rules[0], place: 'both' }],
     }
-    const withPaired = { ...ctx, flows: [...BUNDLED_FLOWS, paired] }
+    const withPaired = { ...ctx, flows: [...KEPT, paired] }
     const marked = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, withPaired)
     const applied = reduceDraft(marked, { type: 'apply-flow', flowId: 'paired' }, withPaired)
     expect(at(applied, bar(32), false)?.key).toBe(at(marked, bar(32), false)?.key)
@@ -486,7 +492,7 @@ const MANY: CueFlow = {
 }
 const wide = {
   ...ctx,
-  flows: [...BUNDLED_FLOWS, QUIET, MIXED, CHORUS, BOTH, MANY],
+  flows: [...KEPT, QUIET, MIXED, CHORUS, BOTH, MANY],
   phrases: [
     { ms: bar(64), kind: 'chorus' as const },
     { ms: bar(128), kind: 'chorus' as const },

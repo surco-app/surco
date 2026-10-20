@@ -6,9 +6,9 @@ import {
   activeCueFlow,
   type CueFlow,
   type CueRule,
+  DEFAULT_CUE_FLOW_ID,
   MANUAL_CUE_FLOW,
-  MY_FLOW_ID,
-  restoreMyFlow,
+  restoreDefaultFlow,
 } from '../../../../shared/cueFlows'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
@@ -112,8 +112,8 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
       'cueFlows',
       flows.filter((f) => f.id !== flow.id),
     )
-    if (synced.activeCueFlow === flow.id) patch('activeCueFlow', MY_FLOW_ID)
-    setCurrent(MY_FLOW_ID)
+    if (synced.activeCueFlow === flow.id) patch('activeCueFlow', DEFAULT_CUE_FLOW_ID)
+    setCurrent(DEFAULT_CUE_FLOW_ID)
   }
 
   const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
@@ -284,11 +284,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                   {tr('settings.cueFlows.use')}
                 </button>
               )}
-              {flow.id === MY_FLOW_ID ? (
+              {flow.id === DEFAULT_CUE_FLOW_ID ? (
                 <button
                   type="button"
                   data-testid="cue-flow-restore"
-                  onClick={() => patch('cueFlows', restoreMyFlow(flows))}
+                  onClick={() => patch('cueFlows', restoreDefaultFlow(flows))}
                   className={BUTTON_CLASS}
                 >
                   {tr('settings.cueFlows.restore')}

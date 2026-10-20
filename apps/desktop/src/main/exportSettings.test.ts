@@ -10,7 +10,7 @@ const dir = vi.hoisted(() => {
 vi.mock('electron', () => ({ app: { getPath: () => dir } }))
 
 import { rmSync } from 'node:fs'
-import type { CueFlow } from '../shared/cueFlows'
+import { activeCueFlow, CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../shared/cueFlows'
 import { applyImportedSettings, serializeSettingsForExport } from './exportIpc'
 import { getSettings, saveSettings } from './settings'
 
@@ -59,5 +59,22 @@ describe('serializeSettingsForExport', () => {
     const back = applyImportedSettings(exported)
     expect(back.cueFlows.find((f) => f.id === 'x')).toEqual(flow)
     expect(back.activeCueFlow).toBe('x')
+  })
+
+  it('keeps the Mi flujo of a settings file exported by an earlier Surco, as the active flow', () => {
+    const mine: CueFlow = { ...MY_FLOW, rules: [{ ...MY_FLOW.rules[0], bars: 8 }] }
+    saveSettings({ cueFlows: [ONE_AT_32], activeCueFlow: 'one-at-32' })
+    const back = applyImportedSettings({
+      cueFlows: [mine, ONE_AT_32, CALLS_ONLY],
+      activeCueFlow: 'mine',
+    })
+    expect(back.cueFlows).toEqual([mine, ONE_AT_32, CALLS_ONLY])
+    expect(activeCueFlow(back)).toEqual(mine)
+  })
+
+  it('brings back Mi flujo for an earlier export that has it active without the flows', () => {
+    const back = applyImportedSettings({ activeCueFlow: 'mine' })
+    expect(back.cueFlows).toEqual([ONE_AT_32, MY_FLOW])
+    expect(activeCueFlow(back)).toEqual(MY_FLOW)
   })
 })

@@ -5,10 +5,10 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
+  DEFAULT_CUE_FLOW_ID,
   followsPoint,
   MANUAL_CUE_FLOW,
-  MY_FLOW,
-  MY_FLOW_ID,
+  ONE_AT_32,
 } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
@@ -263,8 +263,8 @@ function Editing({
   const settled = settings.activeCueFlow === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : active.id
   const [chosen, setChosen] = useState(settled === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : state.flowId)
   const manual = chosen === MANUAL_CUE_FLOW
-  const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
-  const placing = !manual && followsPoint(flows.find((f) => f.id === shownFlow) ?? MY_FLOW)
+  const shownFlow = flows.some((f) => f.id === chosen) ? chosen : DEFAULT_CUE_FLOW_ID
+  const placing = !manual && followsPoint(flows.find((f) => f.id === shownFlow) ?? ONE_AT_32)
   const pickMode = (id: string) => {
     setChosen(id)
     if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })

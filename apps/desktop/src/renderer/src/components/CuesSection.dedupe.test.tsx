@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
+import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
@@ -38,11 +40,13 @@ describe('CuesSection drops', () => {
     })
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <CuesSection
-          cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
-          open
-          onToggle={vi.fn()}
-        />
+        <SettingsProvider settings={{ cueFlows: [MY_FLOW, ONE_AT_32], activeCueFlow: 'mine' }}>
+          <CuesSection
+            cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
+            open
+            onToggle={vi.fn()}
+          />
+        </SettingsProvider>
       </QueryClientProvider>,
     )
     await waitFor(() => expect(screen.getByTestId('add-same')).toBeInTheDocument())

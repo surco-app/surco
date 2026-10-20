@@ -5,6 +5,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+
+const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
+
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
 import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
@@ -76,7 +79,7 @@ function setup(
     cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' },
   ) => (
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={current}>
+      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...current }}>
         <CuesSection cue={cue} open onToggle={vi.fn()} onFlow={onFlow} />
       </SettingsProvider>
     </QueryClientProvider>
@@ -433,14 +436,25 @@ describe('CuesSection', () => {
     ).toBe(true)
   })
 
-  it('shows Mi flujo in the flow list once the flow picked there is deleted in Settings', async () => {
+  it('shows the bundled flow in the flow list once the flow picked there is deleted in Settings', async () => {
     const { changeSettings } = setup()
     await ready()
-    chooseFlow('one-at-32')
-    changeSettings({ cueFlows: [CALLS_ONLY, MY_FLOW] })
+    chooseFlow('calls-only')
+    changeSettings({ cueFlows: [MY_FLOW, ONE_AT_32] })
     await waitFor(() =>
-      expect(screen.getByTestId('cues-flow')).toHaveAttribute('aria-label', 'Flow: My flow'),
+      expect(screen.getByTestId('cues-flow')).toHaveAttribute('aria-label', 'Flow: One cue at 32'),
     )
+  })
+
+  it('lists only the bundled flow for a new DJ, already chosen', async () => {
+    setup(READ, null, { cueFlows: undefined, activeCueFlow: undefined })
+    await ready()
+    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: One cue at 32')
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    const names = within(screen.getByTestId('cues-flow-listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(names).toEqual(['One cue at 32', 'Manual', 'Clear all cues'])
   })
 
   it('names the bundled flows in the flow list instead of showing them blank', async () => {

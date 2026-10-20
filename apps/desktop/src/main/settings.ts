@@ -3,7 +3,12 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { autoMatchAvailable } from '../shared/autoMatch'
 import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
-import { BUNDLED_FLOWS, MY_FLOW_ID, normalizeCueFlows } from '../shared/cueFlows'
+import {
+  BUNDLED_FLOWS,
+  DEFAULT_CUE_FLOW_ID,
+  keepLegacyFlow,
+  normalizeCueFlows,
+} from '../shared/cueFlows'
 import { DEFAULT_CUE_JUMP_BARS, normalizeCueJumpBars } from '../shared/cueJump'
 import { DEFAULT_CUE_QUANTIZE, normalizeCueQuantize } from '../shared/cueQuantize'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
@@ -72,7 +77,7 @@ export const defaults: Settings = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   cueFlows: BUNDLED_FLOWS,
-  activeCueFlow: MY_FLOW_ID,
+  activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
   hiddenSources: [],
@@ -283,6 +288,8 @@ function migrateDcOffset(cfg: NormalizeConfig): NormalizeConfig {
 }
 
 function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
+  const activeCueFlow =
+    typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow
   return {
     ...base,
     ...patch,
@@ -299,9 +306,8 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
       patch.backupRetentionDays ?? base.backupRetentionDays,
     ),
     backupMaxGb: sanitizeMaxGb(patch.backupMaxGb ?? base.backupMaxGb),
-    cueFlows: normalizeCueFlows(patch.cueFlows ?? base.cueFlows),
-    activeCueFlow:
-      typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow,
+    cueFlows: keepLegacyFlow(normalizeCueFlows(patch.cueFlows ?? base.cueFlows), activeCueFlow),
+    activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),

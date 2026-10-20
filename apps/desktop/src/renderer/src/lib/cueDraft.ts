@@ -1,4 +1,4 @@
-import { type CueFlow, type FlowPhrase, MY_FLOW } from '../../../shared/cueFlows'
+import { type CueFlow, type FlowPhrase, ONE_AT_32 } from '../../../shared/cueFlows'
 import {
   type ExistingCue,
   evaluateFlow,
@@ -105,7 +105,7 @@ const needsGrid = (action: DraftAction): boolean =>
   action.type === 'move'
 
 const flowById = (ctx: DraftContext, id: string): CueFlow =>
-  ctx.flows.find((f) => f.id === id) ?? MY_FLOW
+  ctx.flows.find((f) => f.id === id) ?? ONE_AT_32
 
 const snap = (ctx: DraftContext, ms: number): number => ctx.snapTo[nearestBeat(ctx.snapTo, ms)]
 

@@ -4,7 +4,13 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
-import { BUNDLED_FLOWS, MY_FLOW, ONE_AT_32 } from '../../../../shared/cueFlows'
+import {
+  BUNDLED_FLOWS,
+  CALLS_ONLY,
+  type CueFlow,
+  MY_FLOW,
+  ONE_AT_32,
+} from '../../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
 import type { LearnedFlow } from '../../../../shared/learnFlow'
@@ -25,9 +31,19 @@ afterEach(async () => {
 let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueJumpBars' | 'cueQuantize'> | null =
   null
 
-function Harness({ active = 'mine', collection = '' }: { active?: string; collection?: string }) {
+const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
+
+function Harness({
+  active = 'mine',
+  collection = '',
+  flows = KEPT,
+}: {
+  active?: string
+  collection?: string
+  flows?: CueFlow[]
+}) {
   const [draft, setDraft] = useState({
-    cueFlows: BUNDLED_FLOWS,
+    cueFlows: flows,
     activeCueFlow: active,
     cueJumpBars: 16 as CueJumpBars,
     cueQuantize: 'bar' as CueQuantize,
@@ -53,14 +69,35 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId(`cue-wave-call-${EXAMPLE_DROP}`)).toBeNull()
   })
 
-  it('marks no flow in use while the editor is in Manual, and Usar este flujo leaves Manual', () => {
+  it('marks no flow as the default while the editor is in Manual, and Usar este flujo leaves Manual', () => {
     render(<Harness active="manual" />)
     expect(screen.queryByTestId('cue-flow-in-use')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     expect(last?.activeCueFlow).toBe('mine')
   })
 
-  it('shows the flows as tabs, the one in use marked and the current one named in place', async () => {
+  it('gives a new DJ the one bundled flow, marked as the default', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness flows={BUNDLED_FLOWS} active="one-at-32" />)
+    expect(screen.getAllByRole('textbox')).toHaveLength(1)
+    expect(screen.queryByTestId('cue-flow-mine')).toBeNull()
+    expect(screen.queryByTestId('cue-flow-calls-only')).toBeNull()
+    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('En uso')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Una cue a 32')
+  })
+
+  it('offers Usar este flujo on a flow that is not the default', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness />)
+    fireEvent.click(screen.getByTestId('cue-flow-one-at-32'))
+    expect(screen.getByTestId('cue-flow-use')).toHaveTextContent('Usar este flujo')
+    fireEvent.click(screen.getByTestId('cue-flow-use'))
+    expect(last?.activeCueFlow).toBe('one-at-32')
+  })
+
+  it('shows the flows an earlier Surco kept as tabs with their names, the default marked', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
@@ -72,9 +109,19 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-calls-only')).toHaveTextContent('Solo CALL')
   })
 
-  it('says Mi flujo is in use when the stored active flow no longer exists, since that is the flow that runs', () => {
+  it('marks the bundled flow as the default when the stored active flow no longer exists, since that is the flow that runs', () => {
+    render(<Harness flows={BUNDLED_FLOWS} active="gone" />)
+    expect(
+      within(screen.getByTestId('cue-flow-one-at-32')).getByTestId('cue-flow-in-use'),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-flow-use')).toBeNull()
+  })
+
+  it('keeps marking the Mi flujo an earlier Surco kept when the stored active flow no longer exists, as main still runs it', () => {
     render(<Harness active="gone" />)
-    expect(screen.getByTestId('cue-flow-in-use')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-in-use'),
+    ).toBeInTheDocument()
     expect(screen.queryByTestId('cue-flow-use')).toBeNull()
   })
 
@@ -221,13 +268,13 @@ describe('CuesTab', () => {
     expect(input).toHaveValue('My flow')
   })
 
-  it('restores the name of Mi flujo with Restablecer', () => {
-    render(<Harness />)
+  it('restores the name of the bundled flow with Restablecer', () => {
+    render(<Harness flows={BUNDLED_FLOWS} active="one-at-32" />)
     fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Otro' } })
     fireEvent.blur(screen.getByTestId('cue-flow-name'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
-    expect(last?.cueFlows.find((f) => f.id === 'mine')?.name).toBe('')
-    expect(screen.getByTestId('cue-flow-name')).toHaveValue('My flow')
+    expect(last?.cueFlows.find((f) => f.id === 'one-at-32')?.name).toBe('')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('One cue at 32')
   })
 
   it('sizes the name input to show the whole name', () => {
@@ -240,21 +287,30 @@ describe('CuesTab', () => {
     )
   })
 
-  it('never offers to delete Mi flujo but restores it to rules.py', () => {
-    render(<Harness />)
+  it('never offers to delete the bundled flow but restores it as Surco ships it', () => {
+    render(<Harness flows={BUNDLED_FLOWS} active="one-at-32" />)
     expect(screen.queryByTestId('cue-flow-delete')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
     fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-8'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
-    expect(last?.cueFlows.find((f) => f.id === 'mine')).toEqual(MY_FLOW)
+    expect(last?.cueFlows).toEqual([ONE_AT_32])
   })
 
-  it('deletes another flow and falls back to Mi flujo when it was in use', () => {
-    render(<Harness active="one-at-32" />)
-    fireEvent.click(screen.getByTestId('cue-flow-one-at-32'))
+  it('treats the Mi flujo an earlier Surco kept as a flow of the DJ, deletable and with nothing to restore', () => {
+    render(<Harness />)
+    expect(screen.queryByTestId('cue-flow-restore')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-flow-delete'))
-    expect(last?.cueFlows.map((f) => f.id)).toEqual(['mine', 'calls-only'])
-    expect(last?.activeCueFlow).toBe('mine')
+    expect(last?.cueFlows.map((f) => f.id)).toEqual(['one-at-32', 'calls-only'])
+    expect(last?.activeCueFlow).toBe('one-at-32')
+    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveAttribute('aria-current', 'true')
+  })
+
+  it('deletes another flow and falls back to the bundled flow when it was the default', () => {
+    render(<Harness active="calls-only" />)
+    fireEvent.click(screen.getByTestId('cue-flow-calls-only'))
+    fireEvent.click(screen.getByTestId('cue-flow-delete'))
+    expect(last?.cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32'])
+    expect(last?.activeCueFlow).toBe('one-at-32')
   })
 
   it('reads each rule as one sentence, the way the DJ would say it', async () => {
@@ -356,17 +412,17 @@ describe('CuesTab', () => {
       expect(proposal).toHaveTextContent('Aprendido de mi colección')
       expect(proposal).toHaveTextContent('Encaja con 18 de 20 pistas')
       expect(within(proposal).getByTestId('cue-flow-preview')).toBeInTheDocument()
-      expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+      expect(last?.cueFlows).toEqual(KEPT)
       expect(last?.activeCueFlow).toBe('mine')
     })
 
-    it('saves the proposal as a new flow in use only on "Usar este flujo"', async () => {
+    it('saves the proposal as a new default flow only on "Usar este flujo"', async () => {
       await i18n.changeLanguage('es')
       afterTest = () => i18n.changeLanguage('en')
       learnable(Promise.resolve(LEARNED))
       fireEvent.click(screen.getByTestId('cue-learn'))
       fireEvent.click(await screen.findByTestId('cue-learned-use'))
-      const made = last?.cueFlows.find((f) => !BUNDLED_FLOWS.some((b) => b.id === f.id))
+      const made = last?.cueFlows.find((f) => !KEPT.some((b) => b.id === f.id))
       expect(made).toEqual({
         id: expect.any(String),
         name: 'Aprendido de mi colección',
@@ -374,7 +430,7 @@ describe('CuesTab', () => {
         rules: ONE_AT_32.rules,
       })
       expect(made?.id).not.toBe('learned')
-      expect(last?.cueFlows.slice(0, 3)).toEqual(BUNDLED_FLOWS)
+      expect(last?.cueFlows.slice(0, 3)).toEqual(KEPT)
       expect(last?.activeCueFlow).toBe(made?.id)
       expect(screen.queryByTestId('cue-learned')).toBeNull()
     })
@@ -395,7 +451,7 @@ describe('CuesTab', () => {
       fireEvent.click(screen.getByTestId('cue-learn'))
       fireEvent.click(await screen.findByTestId('cue-learned-discard'))
       expect(screen.queryByTestId('cue-learned')).toBeNull()
-      expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+      expect(last?.cueFlows).toEqual(KEPT)
       expect(last?.activeCueFlow).toBe('mine')
     })
 
@@ -407,7 +463,7 @@ describe('CuesTab', () => {
       expect(await screen.findByTestId('cue-learn-none')).toHaveTextContent(
         'Tu colección no tiene un patrón claro',
       )
-      expect(last?.cueFlows).toEqual(BUNDLED_FLOWS)
+      expect(last?.cueFlows).toEqual(KEPT)
     })
 
     it('drops a result that arrives after the DJ moved to another flow and keeps the button busy until it does', async () => {
