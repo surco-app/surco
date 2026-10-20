@@ -155,7 +155,7 @@ function CueKeys({
           if (open) onClose()
           setOpen(!open)
         }}
-        className="press flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:text-fg"
+        className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
       >
         <Keyboard className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -549,7 +549,7 @@ function Editing({
         aria-label={tr('editor.sectionRestore')}
         aria-pressed="true"
         onClick={onRestore}
-        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
       >
         <Minimize2 className="h-4 w-4" aria-hidden="true" />
       </button>

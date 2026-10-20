@@ -18,7 +18,7 @@ export interface DeckCue {
 }
 
 const STEP =
-  'press flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg'
+  'press flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg'
 
 export function CueDeck({
   cues,
@@ -82,12 +82,17 @@ export function CueDeck({
         data-testid="cues-play"
         aria-label={playing ? tr('editor.cues.pause') : tr('editor.cues.play')}
         onClick={onPlay}
-        className="press flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-hover)]"
+        className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
       >
         {playing ? (
-          <Pause className="h-3.5 w-3.5" aria-hidden="true" />
+          <Pause className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} aria-hidden="true" />
         ) : (
-          <Play className="h-3.5 w-3.5" aria-hidden="true" />
+          <Play
+            className="h-3.5 w-3.5 translate-x-px"
+            fill="currentColor"
+            strokeWidth={0}
+            aria-hidden="true"
+          />
         )}
       </button>
       <div className="flex items-center gap-1.5">

@@ -161,4 +161,14 @@ describe('CueDeck', () => {
       await i18n.changeLanguage('en')
     }
   })
+
+  it('draws Play and Pause like the player, a rounded square with a soft hover and filled icons', () => {
+    setup()
+    const play = screen.getByTestId('cues-play')
+    expect(play.className).toContain('rounded-md')
+    expect(play.className).not.toContain('rounded-full')
+    expect(play.className).toContain('h-7 w-7')
+    expect(play.className).toContain('hover:bg-[var(--color-line-strong)]')
+    expect(play.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
+  })
 })
