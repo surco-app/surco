@@ -30,7 +30,7 @@ import {
   zoomStep,
 } from '../lib/cuePlayhead'
 import { forgetDraft, keepDraft, keepPlayhead, keptDraft, keptPlayhead } from '../lib/cueSession'
-import { isTypingTarget, pressesOnSpace } from '../lib/keymap'
+import { isTypingTarget } from '../lib/keymap'
 import { isMacOS } from '../lib/platform'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
@@ -262,7 +262,7 @@ function Editing({
   const onKey = (e: React.KeyboardEvent) => {
     if (maximized) {
       const target = e.target as HTMLElement
-      if (isTypingTarget(target) || (e.key === ' ' && pressesOnSpace(target))) return
+      if (isTypingTarget(target)) return
       const key = cueKeyAction(e)
       if (!key) return
       e.preventDefault()

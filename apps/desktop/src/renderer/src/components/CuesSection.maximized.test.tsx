@@ -412,6 +412,17 @@ describe('CuesSection maximized keys', () => {
     shared.remove()
   })
 
+  it('plays with Space after a click left the focus on a pad, instead of pressing the pad again', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    const pad = screen.getByTestId('cues-pad-A')
+    pad.focus()
+    fireEvent.click(pad)
+    expect(key(' ')).toBe(false)
+    expect(audios).toHaveLength(1)
+  })
+
   it('answers the global Space while maximized even with the focus elsewhere', async () => {
     stubSound()
     setup()
