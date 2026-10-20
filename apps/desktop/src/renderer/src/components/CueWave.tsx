@@ -36,7 +36,6 @@ export function CueWave({
   trimmed,
   readOnly,
   onMarkDrop,
-  onUnmarkDrop,
   onSelect,
   onMove,
   onMenu,
@@ -57,7 +56,6 @@ export function CueWave({
   trimmed?: number[]
   readOnly?: boolean
   onMarkDrop?: (ms: number) => void
-  onUnmarkDrop?: (key: string) => void
   onSelect?: (key: string | null) => void
   onMove?: (key: string, ms: number) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
@@ -195,13 +193,12 @@ export function CueWave({
     const rect = e.currentTarget.getBoundingClientRect()
     const ms = msAtX(e.clientX)
     const tolerance = (HIT_PX / Math.max(rect.width, 1)) * durationMs
-    const action = clickAction(
+    return clickAction(
       ms,
       snapMs,
       drops.map((d) => d.ms),
       tolerance,
     )
-    return { ...action, key: drops.find((d) => d.ms === action.ms)?.key }
   }
   const startDrag = (key: string, e: React.MouseEvent) => {
     if (e.button !== 0 || e.ctrlKey) return
@@ -245,8 +242,7 @@ export function CueWave({
         setGhost(null)
         onSelect?.(null)
         const action = at(e)
-        if (action.kind === 'remove' && action.key !== undefined) onUnmarkDrop?.(action.key)
-        else onMarkDrop?.(action.ms)
+        if (action.kind === 'add') onMarkDrop?.(action.ms)
       }}
       onKeyDown={(e) => {
         if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || ghost === null) return

@@ -30,7 +30,6 @@ beforeEach(() => {
 function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
   const handlers = {
     onMarkDrop: vi.fn(),
-    onUnmarkDrop: vi.fn(),
     onSelect: vi.fn(),
     onMove: vi.fn(),
     onMenu: vi.fn(),
@@ -146,10 +145,10 @@ describe('CueWave', () => {
     expect(h.onSelect).toHaveBeenCalledWith(null)
   })
 
-  it('takes a drop away with a click on its line', () => {
+  it('leaves a marked drop alone with a click on its line, so a point is never marked twice', () => {
     const h = setup()
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 402, clientY: 60 })
-    expect(h.onUnmarkDrop).toHaveBeenCalledWith('d')
+    expect(h.onMarkDrop).not.toHaveBeenCalled()
   })
 
   it('selects a cue with a click on its square without marking a drop there', () => {
@@ -274,7 +273,7 @@ describe('CueWave', () => {
   })
 
   it.each([800, 1600])(
-    'removes a drop 5 px away and adds beside it 8 px away at %i px wide',
+    'ignores a click 5 px from a drop and adds beside it 8 px away at %i px wide',
     (width) => {
       vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
         left: 0,
@@ -290,7 +289,6 @@ describe('CueWave', () => {
       const centre = width / 2
       const h = setup()
       fireEvent.click(screen.getByTestId('cue-wave'), { clientX: centre + 5, clientY: 40 })
-      expect(h.onUnmarkDrop).toHaveBeenCalledWith('d')
       expect(h.onMarkDrop).not.toHaveBeenCalled()
       fireEvent.click(screen.getByTestId('cue-wave'), { clientX: centre + 8, clientY: 40 })
       expect(h.onMarkDrop).toHaveBeenCalledTimes(1)
@@ -349,15 +347,6 @@ describe('CueWave', () => {
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400 })
     expect(onOpen).toHaveBeenCalledWith(40000)
     expect(handlers.onMarkDrop).not.toHaveBeenCalled()
-    expect(handlers.onUnmarkDrop).not.toHaveBeenCalled()
-  })
-
-  it('does not take a drop away with a click on its line when the folded strip only opens', () => {
-    const onOpen = vi.fn<(ms: number) => void>()
-    const handlers = setup({ onOpen })
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400 })
-    expect(handlers.onUnmarkDrop).not.toHaveBeenCalled()
-    expect(onOpen).toHaveBeenCalled()
   })
 
   it('shows the part the zoomed wave shows as a soft rectangle', () => {

@@ -50,7 +50,6 @@ export interface DraftContext {
 
 export type DraftAction =
   | { type: 'mark-drop'; ms: number }
-  | { type: 'unmark-drop'; key: string }
   | { type: 'select'; key: string | null }
   | { type: 'move'; key: string; ms: number }
   | { type: 'remove'; key: string }
@@ -289,17 +288,6 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   }
   const target = state.cues.find((c) => c.key === action.key)
   if (!target || state.locked.includes(target.key)) return state
-  if (action.type === 'unmark-drop') {
-    const drops = draftDrops(state.cues, state.locked)
-    if (!drops.some((d) => near(d, target.ms))) return state
-    return regenerate(
-      state,
-      ctx,
-      drops.filter((d) => !near(d, target.ms)),
-      flow,
-      generator,
-    )
-  }
   if (action.type === 'remove') {
     const pair = pairOf(state.cues, target)
     const gone = pair && !state.locked.includes(pair.key) ? pair.key : undefined

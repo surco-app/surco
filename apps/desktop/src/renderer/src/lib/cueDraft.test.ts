@@ -34,13 +34,6 @@ describe('reduceDraft', () => {
     ])
   })
 
-  it('takes the countdown away with the drop when the mark is clicked again', () => {
-    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
-    const drop = at(marked, bar(64), false)
-    const s = run(marked, { type: 'unmark-drop', key: drop?.key as string })
-    expect(s.cues).toEqual([])
-  })
-
   it('keeps one drop when the same position is marked twice', () => {
     const s = run(
       empty(),
@@ -314,12 +307,6 @@ describe('reduceDraft', () => {
     for (const n of [48, 96]) s = run(s, { type: 'mark-drop', ms: bar(n) })
     s = { ...s, trimmed: [bar(1)] }
     expect(run(s, { type: 'add-call', ms: bar(7) }).trimmed).toEqual([])
-  })
-
-  it('ignores an unmark on a cue that is not a drop, leaving no undo step', () => {
-    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
-    const a = at(marked, bar(16), true)
-    expect(run(marked, { type: 'unmark-drop', key: a?.key as string })).toBe(marked)
   })
 
   it('refuses to move an unpaired hot cue onto a drop', () => {
