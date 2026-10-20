@@ -447,7 +447,10 @@ export function CueWave({
         </span>
       ))}
       {(ghost?.rejected ?? [])
-        .filter((r) => r.ms >= 0 && r.ms <= durationMs)
+        .filter(
+          (r, i, all) =>
+            r.ms >= 0 && r.ms <= durationMs && all.findIndex((o) => o.ms === r.ms) === i,
+        )
         .map((r) => (
           <span
             key={`gd${r.ms}`}

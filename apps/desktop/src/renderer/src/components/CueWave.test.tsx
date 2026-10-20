@@ -429,6 +429,22 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
+  it('draws two dropped cues at one position without a key clash', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    setup({
+      ghost: {
+        added: [],
+        gone: [],
+        rejected: [
+          { ms: 32000, place: 'hot', color: 22 },
+          { ms: 32000, place: 'call', color: null },
+        ],
+      },
+    })
+    expect(error.mock.calls.flat().join(' ')).not.toContain('same key')
+    error.mockRestore()
+  })
+
   it('draws the cues the flow would add see-through and dims the ones it would take away, none of them clickable', () => {
     setup({
       ghost: {

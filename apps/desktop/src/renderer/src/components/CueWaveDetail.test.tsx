@@ -354,6 +354,22 @@ describe('CueWaveDetail', () => {
     expect(onMoveMark).toHaveBeenCalledWith('p', bar(38))
   })
 
+  it('draws two dropped cues at one position without a key clash', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    setup({
+      ghost: {
+        added: [],
+        gone: [],
+        rejected: [
+          { ms: bar(28), place: 'hot', color: 22 },
+          { ms: bar(28), place: 'call', color: null },
+        ],
+      },
+    })
+    expect(error.mock.calls.flat().join(' ')).not.toContain('same key')
+    error.mockRestore()
+  })
+
   it('stacks zoom in, reset and zoom out at the left of the zoomed wave, outside it so they never take a wave click', () => {
     const onZoomReset = vi.fn<() => void>()
     const { onZoom } = setup({ onZoomReset })
