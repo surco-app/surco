@@ -3,7 +3,10 @@ import type { sourceStat } from './sourceStat'
 
 const statMock = vi.hoisted(() => vi.fn<typeof sourceStat>())
 
-vi.mock('./sourceStat', () => ({ sourceStat: statMock }))
+vi.mock('./sourceStat', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./sourceStat')>()),
+  sourceStat: statMock,
+}))
 
 import { expandPaths } from './expand'
 

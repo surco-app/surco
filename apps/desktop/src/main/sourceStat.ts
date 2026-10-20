@@ -20,6 +20,10 @@ function release(): void {
   else inFlight--
 }
 
+export function isMissing(err: NodeJS.ErrnoException): boolean {
+  return err.code === 'ENOENT' || err.code === 'ENOTDIR'
+}
+
 export async function sourceStat(path: string): Promise<Stats> {
   await acquire()
   try {
