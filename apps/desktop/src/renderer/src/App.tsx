@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import type { CueJumpBars } from '../../shared/cueJump'
+import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
@@ -1937,6 +1938,9 @@ export default function App(): React.JSX.Element {
   const onCueJumpBars = useStableCallback((cueJumpBars: CueJumpBars) =>
     saveSettings({ cueJumpBars }),
   )
+  const onCueQuantize = useStableCallback((cueQuantize: CueQuantize) =>
+    saveSettings({ cueQuantize }),
+  )
   const onOpenRename = useStableCallback(overlays.openRename)
   // Rebuilds file names from the Settings pattern over the whole selection when there
   // is one (djotas's flow: retag a crate, then stamp every name at once), else the
@@ -2910,6 +2914,7 @@ export default function App(): React.JSX.Element {
                           item={selected}
                           rekordboxCue={rekordboxCue}
                           onCueJumpBars={onCueJumpBars}
+                          onCueQuantize={onCueQuantize}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}

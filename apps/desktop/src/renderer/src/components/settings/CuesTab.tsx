@@ -10,6 +10,7 @@ import {
   restoreMyFlow,
 } from '../../../../shared/cueFlows'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
+import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
 import type { LearnedFlow } from '../../../../shared/learnFlow'
 import { flowName } from '../../lib/cueFlowName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -318,6 +319,28 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           ))}
         </fieldset>
         <span className="text-fg-dim">{tr('settings.cueFlows.manual.unit')}</span>
+        <span className="text-fg-dim">{tr('settings.cueFlows.manual.quantize')}</span>
+        <fieldset
+          aria-label={tr('settings.cueFlows.manual.quantize')}
+          className="m-0 flex min-w-0 overflow-hidden rounded-md border border-[var(--color-line-strong)] p-0"
+        >
+          {CUE_QUANTIZE.map((unit) => (
+            <button
+              key={unit}
+              type="button"
+              data-testid={`cue-quantize-${unit}`}
+              aria-pressed={synced.cueQuantize === unit}
+              onClick={() => patch('cueQuantize', unit)}
+              className={`press px-2.5 py-1 text-xs ${
+                synced.cueQuantize === unit
+                  ? 'bg-[var(--color-field)] text-fg'
+                  : 'text-fg-dim hover:text-fg'
+              }`}
+            >
+              {unit === 'bar' ? tr('editor.cues.quantizeBar') : tr('editor.cues.quantizeBeat')}
+            </button>
+          ))}
+        </fieldset>
       </div>
     </div>
   )

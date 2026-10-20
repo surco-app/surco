@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { CueQuantize } from '../../../shared/cueQuantize'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
@@ -32,6 +33,7 @@ export function CueWaveDetail({
   selected,
   playheadMs,
   bars,
+  quantize,
   onScrub,
   onZoom,
   onPick,
@@ -42,6 +44,7 @@ export function CueWaveDetail({
   selected: string | null
   playheadMs: number
   bars: number
+  quantize: CueQuantize
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
   onPick?: (ms: number) => void
@@ -155,6 +158,18 @@ export function CueWaveDetail({
         style={{ cursor: onPick ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
         className="relative w-full shrink-0 select-none overflow-hidden"
       >
+        {quantize === 'beat' &&
+          grid
+            .filter((b) => b.beat !== 1 && b.ms >= fromMs && b.ms <= toMs)
+            .map((b) => (
+              <span
+                key={b.ms}
+                data-testid="cue-detail-beat"
+                aria-hidden="true"
+                style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+                className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/15"
+              />
+            ))}
         {lines
           .filter((b) => b.ms >= fromMs && b.ms <= toMs)
           .map((b) => (

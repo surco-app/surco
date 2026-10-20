@@ -4,7 +4,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { CueJumpBars } from '../../../shared/cueJump'
-import '../i18n'
+import type { CueQuantize } from '../../../shared/cueQuantize'
+import i18n from '../i18n'
 import { CueDeck } from './CueDeck'
 
 function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
@@ -15,6 +16,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
     onMemory: vi.fn<() => void>(),
     onMemoryStep: vi.fn<(dir: 1 | -1) => void>(),
     onJumpBars: vi.fn<(bars: CueJumpBars) => void>(),
+    onQuantize: vi.fn<(unit: CueQuantize) => void>(),
   }
   render(
     <CueDeck
@@ -25,6 +27,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
       selected="a"
       locked={[]}
       jumpBars={16}
+      quantize="bar"
       playing={false}
       {...handlers}
       {...over}
@@ -134,5 +137,28 @@ describe('CueDeck', () => {
     expect(names).toEqual(['8 bars', '16 bars', '32 bars', '64 bars'])
     fireEvent.click(screen.getByTestId('cues-jump-option-32'))
     expect(onJumpBars).toHaveBeenCalledWith(32)
+  })
+
+  it('shows the quantize as Q and the unit beside the jump, and picks the beat from its menu', () => {
+    const { onQuantize } = setup()
+    expect(screen.getByTestId('cues-quantize-group')).toHaveTextContent('QBar')
+    fireEvent.click(screen.getByTestId('cues-quantize'))
+    const names = within(screen.getByTestId('cues-quantize-listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(names).toEqual(['Bar', 'Beat'])
+    fireEvent.click(screen.getByTestId('cues-quantize-option-beat'))
+    expect(onQuantize).toHaveBeenCalledWith('beat')
+  })
+
+  it('says Q Compás and Q Golpe in Spanish, as Vicent counts', async () => {
+    await i18n.changeLanguage('es')
+    try {
+      setup({ quantize: 'beat' })
+      expect(screen.getByTestId('cues-quantize-group')).toHaveTextContent('QGolpe')
+      expect(screen.getByTestId('cues-quantize')).toHaveAccessibleName(/Cuantizar/)
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 })

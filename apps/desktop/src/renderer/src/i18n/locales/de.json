@@ -792,6 +792,9 @@
       "jump": "Sprung",
       "jumpBars_one": "{{count}} Takt",
       "jumpBars_other": "{{count}} Takte",
+      "quantize": "Quantisieren",
+      "quantizeBar": "Takt",
+      "quantizeBeat": "Schlag",
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Tasten",
@@ -1480,7 +1483,8 @@
       "manual": {
         "title": "Manueller Editor",
         "jump": "Sprung der Pfeiltasten ← →",
-        "unit": "Takte"
+        "unit": "Takte",
+        "quantize": "Quantisieren"
       }
     }
   },

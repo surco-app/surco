@@ -792,6 +792,9 @@
       "jump": "Jump",
       "jumpBars_one": "{{count}} bar",
       "jumpBars_other": "{{count}} bars",
+      "quantize": "Quantize",
+      "quantizeBar": "Bar",
+      "quantizeBeat": "Beat",
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Keys",
@@ -1480,7 +1483,8 @@
       "manual": {
         "title": "Manual editor",
         "jump": "Arrow jump ← →",
-        "unit": "bars"
+        "unit": "bars",
+        "quantize": "Quantize"
       }
     }
   },

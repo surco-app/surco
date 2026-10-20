@@ -14,6 +14,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { CueJumpBars } from '../../../shared/cueJump'
+import type { CueQuantize } from '../../../shared/cueQuantize'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
@@ -74,6 +75,7 @@ function setup(
     rekordboxCueWaveDetail,
   })
   const onJumpBars = vi.fn<(bars: CueJumpBars) => void>()
+  const onQuantize = vi.fn<(unit: CueQuantize) => void>()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
@@ -84,11 +86,12 @@ function setup(
           onToggle={vi.fn()}
           track={TRACK}
           onJumpBars={onJumpBars}
+          onQuantize={onQuantize}
         />
       </SettingsProvider>
     </QueryClientProvider>,
   )
-  return { rekordboxCueWaveDetail, onJumpBars }
+  return { rekordboxCueWaveDetail, onJumpBars, onQuantize }
 }
 
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
@@ -326,6 +329,32 @@ describe('CuesSection maximized', () => {
     fireEvent.click(screen.getByTestId('cues-jump'))
     fireEvent.keyDown(screen.getByTestId('cues-jump-listbox'), { key: 'Escape' })
     expect(document.activeElement).toBe(editor())
+  })
+
+  it('changes the quantize from its Q menu, hands it on to be saved and gives the keys back to the editor', async () => {
+    const { onQuantize } = setup()
+    await maximize()
+    expect(screen.getByTestId('cues-quantize')).toHaveTextContent('Bar')
+    fireEvent.click(screen.getByTestId('cues-quantize'))
+    fireEvent.click(screen.getByTestId('cues-quantize-option-beat'))
+    expect(onQuantize).toHaveBeenCalledWith('beat')
+    expect(document.activeElement).toBe(editor())
+  })
+
+  it('gives the keys back to the editor when the Q menu is closed with Escape, without restoring it', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-quantize'))
+    fireEvent.keyDown(screen.getByTestId('cues-quantize-listbox'), { key: 'Escape' })
+    expect(document.activeElement).toBe(editor())
+    expect(editor()).toHaveAttribute('data-maximized', 'true')
+  })
+
+  it('shows the quantize set in Settings and draws the beats on the zoomed wave only then', async () => {
+    setup({ cueQuantize: 'beat' })
+    await maximize()
+    expect(screen.getByTestId('cues-quantize')).toHaveTextContent('Beat')
+    expect(screen.getAllByTestId('cue-detail-beat').length).toBeGreaterThan(0)
   })
 
   it('shows the jump set in Settings', async () => {

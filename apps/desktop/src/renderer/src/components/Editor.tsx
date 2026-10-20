@@ -16,6 +16,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
+import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
@@ -207,6 +208,7 @@ interface Props {
   onShowLoudnessHelp: () => void
   rekordboxCue?: { contentId: string; path: string; label: string }
   onCueJumpBars?: (bars: CueJumpBars) => void
+  onCueQuantize?: (unit: CueQuantize) => void
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
@@ -274,6 +276,7 @@ export const Editor = memo(function Editor({
   onShowLoudnessHelp,
   rekordboxCue,
   onCueJumpBars,
+  onCueQuantize,
   onHideEditorHints,
   onOpenRename,
   onRegenerateName,
@@ -1473,6 +1476,7 @@ export const Editor = memo(function Editor({
                             cover: item.coverUrl ?? item.embeddedCover,
                           }}
                           onJumpBars={onCueJumpBars}
+                          onQuantize={onCueQuantize}
                         />
                       )
                     case 'properties':

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
 import { BUNDLED_FLOWS, MY_FLOW, ONE_AT_32 } from '../../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../../shared/cueJump'
+import type { CueQuantize } from '../../../../shared/cueQuantize'
 import type { LearnedFlow } from '../../../../shared/learnFlow'
 import i18n from '../../i18n'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -20,13 +21,15 @@ afterEach(async () => {
   afterTest = null
 })
 
-let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueJumpBars'> | null = null
+let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueJumpBars' | 'cueQuantize'> | null =
+  null
 
 function Harness({ active = 'mine', collection = '' }: { active?: string; collection?: string }) {
   const [draft, setDraft] = useState({
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: active,
     cueJumpBars: 16 as CueJumpBars,
+    cueQuantize: 'bar' as CueQuantize,
   })
   last = draft
   return (
@@ -239,6 +242,19 @@ describe('CuesTab', () => {
     fireEvent.click(screen.getByTestId('cue-jump-32'))
     expect(last?.cueJumpBars).toBe(32)
     expect(screen.getByTestId('cue-jump-32')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('sets the quantize of the manual editor in the same card, the bar by default', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness />)
+    const card = screen.getByTestId('cue-manual')
+    expect(within(card).getByTestId('cue-quantize-bar')).toHaveTextContent('Compás')
+    expect(within(card).getByTestId('cue-quantize-bar')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(within(card).getByTestId('cue-quantize-beat'))
+    expect(last?.cueQuantize).toBe('beat')
+    expect(screen.getByTestId('cue-quantize-beat')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('cue-quantize-beat')).toHaveTextContent('Golpe')
   })
 
   describe('Aprender de mi colección', () => {

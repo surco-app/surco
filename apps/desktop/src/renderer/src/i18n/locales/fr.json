@@ -792,6 +792,9 @@
       "jump": "Saut",
       "jumpBars_one": "{{count}} mesure",
       "jumpBars_other": "{{count}} mesures",
+      "quantize": "Quantifier",
+      "quantizeBar": "Mesure",
+      "quantizeBeat": "Temps",
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Touches",
@@ -1480,7 +1483,8 @@
       "manual": {
         "title": "Éditeur manuel",
         "jump": "Saut des flèches ← →",
-        "unit": "mesures"
+        "unit": "mesures",
+        "quantize": "Quantifier"
       }
     }
   },

@@ -792,6 +792,9 @@
       "jump": "Salto",
       "jumpBars_one": "{{count}} compás",
       "jumpBars_other": "{{count}} compases",
+      "quantize": "Cuantizar",
+      "quantizeBar": "Compás",
+      "quantizeBeat": "Golpe",
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Teclas",
@@ -1480,7 +1483,8 @@
       "manual": {
         "title": "Editor manual",
         "jump": "Salto de las flechas ← →",
-        "unit": "compases"
+        "unit": "compases",
+        "quantize": "Cuantizar"
       }
     }
   },

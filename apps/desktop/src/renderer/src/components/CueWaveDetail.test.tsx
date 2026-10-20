@@ -35,6 +35,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueWaveDetail>> = {}) {
     selected: null,
     playheadMs: bar(32),
     bars: 16,
+    quantize: 'bar' as const,
     onScrub,
     onZoom,
     ...over,
@@ -66,6 +67,23 @@ describe('CueWaveDetail', () => {
       expect(line.className).toContain('bg-[var(--color-fg-dim)]/35')
     }
     expect(screen.queryAllByTestId('cue-grid-cap')).toHaveLength(0)
+  })
+
+  it('draws a faint tick on every beat between the bar lines when quantizing to the beat, so a cue on a beat sits on the grid', () => {
+    setup({ quantize: 'beat' })
+    const ticks = screen.getAllByTestId('cue-detail-beat')
+    expect(ticks).toHaveLength(48)
+    const bars = new Set(screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left))
+    for (const tick of ticks) {
+      expect(bars.has(tick.style.left)).toBe(false)
+      expect(tick.className).toContain('bg-[var(--color-fg-dim)]/15')
+      expect(within(tick).queryAllByTestId('cue-detail-cap')).toHaveLength(0)
+    }
+  })
+
+  it('draws no beat ticks when quantizing to the bar, where every cue sits on a bar line', () => {
+    setup()
+    expect(screen.queryAllByTestId('cue-detail-beat')).toHaveLength(0)
   })
 
   it('paints the caps red on bars 1, 5, 9 and so on, counted from the grid and not from the window, and leaves the rest grey', () => {

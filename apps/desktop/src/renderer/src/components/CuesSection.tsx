@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MY_FLOW, MY_FLOW_ID } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
+import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, MAX_HOT_CUES, nearestBeat } from '../../../shared/cueRules'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
@@ -184,6 +185,7 @@ function Editing({
   onPlayhead,
   audition,
   onJumpBars,
+  onQuantize,
   onDiscard,
   onRestore,
 }: {
@@ -197,6 +199,7 @@ function Editing({
   onPlayhead: (ms: number) => void
   audition: CueAudition
   onJumpBars?: (bars: CueJumpBars) => void
+  onQuantize?: (unit: CueQuantize) => void
   onDiscard: () => void
   onRestore: () => void
 }): React.JSX.Element {
@@ -535,6 +538,7 @@ function Editing({
           selected={state.selected}
           playheadMs={playheadMs}
           bars={zoom}
+          quantize={settings.cueQuantize}
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
           onPick={armed ? markDrop : undefined}
@@ -661,6 +665,7 @@ function Editing({
           selected={state.selected}
           locked={state.locked}
           jumpBars={settings.cueJumpBars}
+          quantize={settings.cueQuantize}
           playing={audition.playing}
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
@@ -668,6 +673,7 @@ function Editing({
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
           onJumpBars={(bars) => onJumpBars?.(bars)}
+          onQuantize={(unit) => onQuantize?.(unit)}
           onDone={focusEditor}
         />
       )}
@@ -681,12 +687,14 @@ export function CuesSection({
   onToggle,
   track,
   onJumpBars,
+  onQuantize,
 }: {
   cue: CueTarget
   open: boolean
   onToggle: () => void
   track?: CueTrackInfo
   onJumpBars?: (bars: CueJumpBars) => void
+  onQuantize?: (unit: CueQuantize) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -747,6 +755,7 @@ export function CuesSection({
         onPlayhead={moveHead}
         audition={audition}
         onJumpBars={onJumpBars}
+        onQuantize={onQuantize}
         onRestore={() => setMaximized(null)}
         onDiscard={() => {
           forgetDraft()

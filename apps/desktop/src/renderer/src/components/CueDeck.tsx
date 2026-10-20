@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CUE_JUMP_BARS, type CueJumpBars } from '../../../shared/cueJump'
+import { CUE_QUANTIZE, type CueQuantize } from '../../../shared/cueQuantize'
 import { HOT_KINDS } from '../../../shared/cueRules'
 import { hotCueColor, PAD_LETTER_COLOR } from '../../../shared/rekordboxCueColors'
 import { cueLetter } from '../lib/rowCues'
@@ -23,6 +24,7 @@ export function CueDeck({
   selected,
   locked,
   jumpBars,
+  quantize,
   playing,
   onPlay,
   onPad,
@@ -30,12 +32,14 @@ export function CueDeck({
   onMemory,
   onMemoryStep,
   onJumpBars,
+  onQuantize,
   onDone,
 }: {
   cues: DeckCue[]
   selected: string | null
   locked: string[]
   jumpBars: CueJumpBars
+  quantize: CueQuantize
   playing: boolean
   onPlay: () => void
   onPad: (kind: number) => void
@@ -43,6 +47,7 @@ export function CueDeck({
   onMemory: () => void
   onMemoryStep: (dir: 1 | -1) => void
   onJumpBars: (bars: CueJumpBars) => void
+  onQuantize: (unit: CueQuantize) => void
   onDone?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -179,6 +184,28 @@ export function CueDeck({
           options={CUE_JUMP_BARS.map((b) => ({
             value: String(b),
             label: tr('editor.cues.jumpBars', { count: b }),
+          }))}
+        />
+      </div>
+      <div data-testid="cues-quantize-group" className="flex items-center gap-1 text-xs">
+        <span aria-hidden="true" className="font-semibold text-fg-dim">
+          Q
+        </span>
+        <Select
+          testid="cues-quantize"
+          bare
+          compact
+          portal
+          onClosed={onDone}
+          label={tr('editor.cues.quantize')}
+          value={quantize}
+          onChange={(value) => {
+            const unit = CUE_QUANTIZE.find((u) => u === value)
+            if (unit) onQuantize(unit)
+          }}
+          options={CUE_QUANTIZE.map((u) => ({
+            value: u,
+            label: u === 'bar' ? tr('editor.cues.quantizeBar') : tr('editor.cues.quantizeBeat'),
           }))}
         />
       </div>

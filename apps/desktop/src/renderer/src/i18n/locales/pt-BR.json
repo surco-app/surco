@@ -792,6 +792,9 @@
       "jump": "Salto",
       "jumpBars_one": "{{count}} compasso",
       "jumpBars_other": "{{count}} compassos",
+      "quantize": "Quantizar",
+      "quantizeBar": "Compasso",
+      "quantizeBeat": "Tempo",
       "bpm": "{{bpm}} BPM",
       "keys": {
         "label": "Teclas",
@@ -1480,7 +1483,8 @@
       "manual": {
         "title": "Editor manual",
         "jump": "Salto das setas ← →",
-        "unit": "compassos"
+        "unit": "compassos",
+        "quantize": "Quantizar"
       }
     }
   },
