@@ -12,6 +12,8 @@ export type CueKey =
   | { type: 'zoom'; dir: 'in' | 'out' }
   | { type: 'swallow' }
 
+const LIST_KEYS = ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']
+
 export function cueKeyAction(e: {
   key: string
   shiftKey: boolean
@@ -34,6 +36,6 @@ export function cueKeyAction(e: {
   if (lower === 'c') return { type: 'centre' }
   if (lower === 'm') return { type: 'memory' }
   if (/^[1-8]$/.test(e.key)) return { type: 'hot', kind: HOT_KINDS[Number(e.key) - 1] }
-  if (/^[a-z0-9]$/.test(lower)) return { type: 'swallow' }
+  if (e.key.length === 1 || LIST_KEYS.includes(e.key)) return { type: 'swallow' }
   return null
 }

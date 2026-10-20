@@ -1,16 +1,27 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { CueJumpBars } from '../../../shared/cueJump'
+import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import type { Command } from '../lib/commands'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
-import { runKeyClaim } from '../lib/spaceClaim'
+import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
@@ -227,7 +238,11 @@ describe('CuesSection maximized', () => {
 
 const play = vi.fn<() => Promise<void>>()
 const pause = vi.fn<() => void>()
-const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] = []
+const audios: {
+  onloadedmetadata: (() => void) | null
+  currentTime: number
+  removeAttribute: (name: string) => void
+}[] = []
 
 function stubSound() {
   play.mockReset().mockResolvedValue(undefined)
@@ -385,10 +400,106 @@ describe('CuesSection maximized keys', () => {
     expect(runKeyClaim('play')).toBe(false)
   })
 
+  it('stops the sound on restore even when the section stays mounted where it was', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    const section = screen.getByTestId('cues-section')
+    key(' ')
+    await act(async () => {
+      audios[0].onloadedmetadata?.()
+    })
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    expect(screen.getByTestId('cues-section')).toBe(section)
+    expect(pause).toHaveBeenCalledTimes(1)
+    expect(audios[0].removeAttribute).toHaveBeenCalledWith('src')
+  })
+
   it('lists the keys with the jump in use', async () => {
     setup()
     await maximize()
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('jump 16 bars')
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
+  })
+})
+
+const LIST_COMMANDS = ['next', 'prev', 'list-top', 'list-bottom', 'list-page-down', 'list-page-up']
+
+function app() {
+  const ran = vi.fn<(id: string) => void>()
+  const commands: Command[] = LIST_COMMANDS.map((id) => ({
+    id,
+    title: id,
+    enabled: true,
+    group: 'navigate',
+    run: () => ran(id),
+  }))
+  const trim = {
+    'trim-start-back': vi.fn<() => void>(),
+    'trim-start-clear': vi.fn<() => void>(),
+    'trim-end-clear': vi.fn<() => void>(),
+    'trim-end-zoom-out': vi.fn<() => void>(),
+  }
+  const release = claimKeys(trim)
+  renderHook(() =>
+    useKeyboardShortcuts({
+      isMac: true,
+      overlayOpen: false,
+      bindings: resolveBindings(),
+      getCommands: () => commands,
+      onTogglePalette: () => {},
+      onEscape: () => {},
+      onStepTrack: () => {},
+    }),
+  )
+  return { ran, trim, release }
+}
+
+describe('CuesSection maximized over the rest of the editor', () => {
+  it('keeps . and , from moving Trim’s end cut hidden under the full editor', async () => {
+    const { trim, release } = app()
+    setup()
+    await maximize()
+    expect(key('.')).toBe(false)
+    expect(key(',')).toBe(false)
+    release()
+    expect(trim['trim-end-clear']).not.toHaveBeenCalled()
+    expect(trim['trim-end-zoom-out']).not.toHaveBeenCalled()
+  })
+
+  it('never changes track with ↑ ↓ Home End PageUp PageDown, so the unsaved cues stay', async () => {
+    const { ran, release } = app()
+    setup()
+    await maximize()
+    key('m')
+    for (const k of ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])
+      expect(key(k)).toBe(false)
+    release()
+    expect(ran).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
+  })
+
+  it('leaves ↓ to the track list while folded, as today', async () => {
+    const { ran, release } = app()
+    setup()
+    await ready()
+    editor().focus()
+    fireEvent.keyDown(editor(), { key: 'ArrowDown' })
+    release()
+    expect(ran).toHaveBeenCalledWith('next')
+  })
+
+  it('keeps Trim’s keys from a hidden cut even with the focus outside the full editor', async () => {
+    const { trim, release } = app()
+    setup()
+    await maximize()
+    editor().blur()
+    expect(document.activeElement).toBe(document.body)
+    fireEvent.keyDown(document.body, { key: 'q' })
+    fireEvent.keyDown(document.body, { key: 'z' })
+    fireEvent.keyDown(document.body, { key: '.' })
+    fireEvent.keyDown(document.body, { key: ',' })
+    release()
+    for (const handler of Object.values(trim)) expect(handler).not.toHaveBeenCalled()
   })
 })

@@ -36,8 +36,19 @@ describe('cueKeyAction', () => {
       expect(press(key)).toEqual({ type: 'swallow' })
   })
 
+  it('swallows every other single character, so a symbol bound to Trim never moves a hidden cut', () => {
+    for (const key of ['.', ',', '/', ';', "'", '[', 'ñ', 'Q'])
+      expect(press(key)).toEqual({ type: 'swallow' })
+  })
+
+  it('swallows the list keys, which would change track and drop the unsaved cues', () => {
+    for (const key of ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])
+      expect(press(key)).toEqual({ type: 'swallow' })
+    expect(press('ArrowDown', { shiftKey: true })).toEqual({ type: 'swallow' })
+  })
+
   it('lets Escape, Tab, Enter and every command chord but undo through', () => {
-    for (const key of ['Escape', 'Tab', 'Enter', 'ArrowUp']) expect(press(key)).toBeNull()
+    for (const key of ['Escape', 'Tab', 'Enter', 'F10']) expect(press(key)).toBeNull()
     expect(press('k', { metaKey: true })).toBeNull()
     expect(press(',', { metaKey: true })).toBeNull()
     expect(press('z', { metaKey: true, shiftKey: true })).toBeNull()

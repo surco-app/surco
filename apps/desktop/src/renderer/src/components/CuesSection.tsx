@@ -57,6 +57,26 @@ export interface CueTrackInfo {
   cover?: string
 }
 
+const ignore = () => {}
+
+const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
+  'trim-start-back': ignore,
+  'trim-start-forward': ignore,
+  'trim-start-audition': ignore,
+  'trim-start-clear': ignore,
+  'trim-end-back': ignore,
+  'trim-end-forward': ignore,
+  'trim-end-audition': ignore,
+  'trim-end-clear': ignore,
+  'trim-apply': ignore,
+  'trim-start-zoom-in': ignore,
+  'trim-start-zoom-out': ignore,
+  'trim-end-zoom-in': ignore,
+  'trim-end-zoom-out': ignore,
+  'section-next': ignore,
+  'section-prev': ignore,
+}
+
 const MENU_ITEM =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] disabled:opacity-40'
 
@@ -546,7 +566,7 @@ export function CuesSection({
   toggle.current = () => audition.toggle(playheadMs)
   useEffect(() => {
     if (!maximized) return
-    return claimKeys({ play: () => toggle.current() })
+    return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() })
   }, [maximized])
   return (
     <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
