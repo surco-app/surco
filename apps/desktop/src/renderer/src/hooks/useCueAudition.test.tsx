@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useCueAudition } from './useCueAudition'
 
 const play = vi.fn<() => Promise<void>>()
-const pause = vi.fn<() => void>()
+
 const audios: FakeAudio[] = []
 const frames: FrameRequestCallback[] = []
 
@@ -14,7 +14,10 @@ class FakeAudio {
   onended: (() => void) | null = null
   currentTime = 0
   play = play
-  pause = pause
+  pause = vi.fn<() => void>()
+  load = vi.fn<() => void>()
+  removeAttribute = vi.fn<(name: string) => void>()
+  onerror: (() => void) | null = null
   constructor(src: string) {
     this.src = src
     audios.push(this)
@@ -23,7 +26,7 @@ class FakeAudio {
 
 beforeEach(() => {
   play.mockReset().mockResolvedValue(undefined)
-  pause.mockReset()
+
   audios.length = 0
   frames.length = 0
   vi.stubGlobal('Audio', FakeAudio)
@@ -87,7 +90,7 @@ describe('useCueAudition', () => {
   it('stops on a second toggle and stops following', async () => {
     const { hook, onPosition } = await started()
     act(() => hook.result.current.toggle(0))
-    expect(pause).toHaveBeenCalled()
+    expect(audios[0].pause).toHaveBeenCalled()
     expect(hook.result.current.playing).toBe(false)
     onPosition.mockClear()
     nextFrame()
@@ -97,19 +100,74 @@ describe('useCueAudition', () => {
   it('stops when the editor is no longer maximized', async () => {
     const { hook } = await started()
     hook.rerender({ path: '/m/g.wav', active: false })
-    expect(pause).toHaveBeenCalled()
+    expect(audios[0].pause).toHaveBeenCalled()
     expect(hook.result.current.playing).toBe(false)
   })
 
   it('stops on another track', async () => {
     const { hook } = await started()
     hook.rerender({ path: '/m/other.wav', active: true })
-    expect(pause).toHaveBeenCalled()
+    expect(audios[0].pause).toHaveBeenCalled()
   })
 
   it('stops when the section goes away', async () => {
     const { hook } = await started()
     hook.unmount()
-    expect(pause).toHaveBeenCalled()
+    expect(audios[0].pause).toHaveBeenCalled()
+  })
+
+  it('releases the file of the element it stops so a conversion can replace it', async () => {
+    const { hook } = await started()
+    act(() => hook.result.current.stop())
+    expect(audios[0].pause).toHaveBeenCalled()
+    expect(audios[0].removeAttribute).toHaveBeenCalledWith('src')
+    expect(audios[0].load).toHaveBeenCalled()
+    expect(audios[0].onloadedmetadata).toBeNull()
+    expect(audios[0].onended).toBeNull()
+  })
+
+  it('never sounds an element that was stopped before its metadata arrived', () => {
+    const hook = renderHook(() => useCueAudition('/m/g.wav', true, vi.fn()))
+    act(() => hook.result.current.toggle(64000))
+    const old = audios[0]
+    const late = old.onloadedmetadata
+    act(() => hook.result.current.stop())
+    late?.()
+    expect(play).not.toHaveBeenCalled()
+    expect(old.currentTime).toBe(0)
+  })
+
+  it('stays stopped when the browser refuses to play', async () => {
+    play.mockRejectedValue(new Error('NotAllowed'))
+    const { hook } = await started()
+    expect(hook.result.current.playing).toBe(false)
+  })
+
+  it('ignores a late refusal from an element that was already replaced', async () => {
+    let rejectOld: (e: Error) => void = () => {}
+    play.mockReturnValueOnce(new Promise<void>((_, reject) => (rejectOld = reject)))
+    const { hook } = await started()
+    act(() => hook.result.current.stop())
+    act(() => hook.result.current.toggle(1000))
+    await act(async () => {
+      audios[1].onloadedmetadata?.()
+    })
+    await act(async () => rejectOld(new Error('late')))
+    expect(hook.result.current.playing).toBe(true)
+    expect(audios[1].pause).not.toHaveBeenCalled()
+  })
+
+  it('stops when the element fails to load', async () => {
+    const { hook } = await started()
+    act(() => audios[0].onerror?.())
+    expect(hook.result.current.playing).toBe(false)
+  })
+
+  it('honours a jump asked before the metadata arrived', () => {
+    const hook = renderHook(() => useCueAudition('/m/g.wav', true, vi.fn()))
+    act(() => hook.result.current.toggle(64000))
+    act(() => hook.result.current.seek(96000))
+    act(() => audios[0].onloadedmetadata?.())
+    expect(audios[0].currentTime).toBe(96)
   })
 })

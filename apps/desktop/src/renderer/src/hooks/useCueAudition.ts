@@ -16,6 +16,7 @@ export function useCueAudition(
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const frame = useRef<number | null>(null)
   const soundingPath = useRef(path)
+  const wantedMs = useRef(0)
   const latest = useRef(onPosition)
   latest.current = onPosition
   const [playing, setPlaying] = useState(false)
@@ -23,8 +24,16 @@ export function useCueAudition(
   const stop = useCallback((): void => {
     if (frame.current !== null) cancelAnimationFrame(frame.current)
     frame.current = null
-    audioRef.current?.pause()
+    const audio = audioRef.current
     audioRef.current = null
+    if (audio) {
+      audio.onloadedmetadata = null
+      audio.onended = null
+      audio.onerror = null
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+    }
     setPlaying(false)
   }, [])
 
@@ -44,16 +53,21 @@ export function useCueAudition(
       const audio = new Audio(mediaUrl(path))
       audioRef.current = audio
       soundingPath.current = path
+      wantedMs.current = fromMs
       audio.onloadedmetadata = () => {
-        audio.currentTime = fromMs / 1000
+        if (audioRef.current !== audio) return
+        audio.currentTime = wantedMs.current / 1000
         audio
           .play()
           .then(() => {
             if (audioRef.current === audio) follow(audio)
           })
-          .catch(() => stop())
+          .catch(() => {
+            if (audioRef.current === audio) stop()
+          })
       }
       audio.onended = () => stop()
+      audio.onerror = () => stop()
       setPlaying(true)
     },
     [path, stop, follow],
@@ -65,6 +79,7 @@ export function useCueAudition(
   )
 
   const seek = useCallback((ms: number): void => {
+    wantedMs.current = ms
     if (audioRef.current) audioRef.current.currentTime = ms / 1000
   }, [])
 
