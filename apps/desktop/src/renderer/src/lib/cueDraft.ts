@@ -61,6 +61,7 @@ export type DraftAction =
   | { type: 'add-call'; ms: number }
   | { type: 'apply-flow'; flowId: string }
   | { type: 'use-flow'; flowId: string }
+  | { type: 'clear' }
   | { type: 'undo' }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
@@ -296,6 +297,15 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       selected: null,
       notice: null,
     }
+  }
+  if (action.type === 'clear') {
+    const kept = state.cues.filter((c) => state.locked.includes(c.key))
+    if (kept.length === state.cues.length) return state
+    return commit(state, kept, {
+      selected: null,
+      edited: state.edited.filter((k) => state.locked.includes(k)),
+      placed: state.placed.filter((k) => state.locked.includes(k)),
+    })
   }
   if (needsGrid(action) && ctx.beats.length === 0) return state
   if (action.type === 'mark-drop') {

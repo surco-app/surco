@@ -823,6 +823,7 @@
       "pause": "Pausa",
       "addCall": "Añadir un CALL en el cabezal",
       "manualMode": "Manual",
+      "clearAll": "Borrar todas las cues",
       "placeHint": "Haz clic para colocar",
       "applyTrack": "Aplicar a esta pista"
     }

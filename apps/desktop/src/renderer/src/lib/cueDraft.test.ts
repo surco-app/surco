@@ -94,6 +94,40 @@ describe('reduceDraft', () => {
     expect(applied.cues.find((x) => x.key === c)).toMatchObject({ kind: 7 })
   })
 
+  it('clears every hot cue and CALL but the loops in one undoable step, leaving a valid set', () => {
+    const live = [
+      { id: 'l', ms: bar(16), kind: 1, color: 1 },
+      { id: 'm', ms: bar(80), kind: 0, color: null },
+    ]
+    const marked = run(
+      startDraft(live, 'mine', ['l', 'm']),
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'add-hot', ms: bar(20) },
+      { type: 'add-call', ms: bar(24) },
+    )
+    const cleared = run(marked, { type: 'clear' })
+    expect(cleared.cues.map((c) => c.key).sort()).toEqual(['l', 'm'])
+    expect(cleared.edited).toEqual([])
+    expect(cleared.placed).toEqual([])
+    expect(
+      validWantedSet(
+        wantedOfDraft(cleared.cues),
+        live.map((c) => ({ ...c, loop: true })),
+      ),
+    ).toEqual({
+      ok: true,
+    })
+    const undone = run(cleared, { type: 'undo' })
+    expect(undone.cues).toEqual(marked.cues)
+    expect(undone.edited).toEqual(marked.edited)
+    expect(undone.placed).toEqual(marked.placed)
+  })
+
+  it('has nothing to clear when only loops remain, so no undo step is recorded', () => {
+    const s = startDraft([{ id: 'l', ms: bar(16), kind: 1, color: 1 }], 'mine', ['l'])
+    expect(run(s, { type: 'clear' })).toBe(s)
+  })
+
   it('leaves a loop as rekordbox holds it, whatever the DJ or the flow tries', () => {
     const live = [
       { id: 'l', ms: bar(16), kind: 1, color: 1 },

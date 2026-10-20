@@ -76,6 +76,7 @@ export interface CueTrackInfo {
 }
 
 const ignore = () => {}
+const CLEAR_CUES = 'clear-cues'
 
 const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
   'trim-start-back': ignore,
@@ -269,6 +270,10 @@ function Editing({
     if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })
     onFlow?.(id)
   }
+  const pickOption = (id: string) => {
+    if (id === CLEAR_CUES) dispatch({ type: 'clear' })
+    else pickMode(id)
+  }
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const switchGhost = useMemo<DraftGhost | null>(
     () => (manual ? null : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx)),
@@ -297,6 +302,7 @@ function Editing({
   const editorRef = useRef<HTMLFieldSetElement>(null)
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
+  const clearable = state.cues.some((c) => !state.locked.includes(c.key))
   const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
   const pending = (c: DraftCue): boolean =>
     !inRekordbox.some(
@@ -483,11 +489,17 @@ function Editing({
         lead={tr('editor.cues.flow')}
         label={tr('editor.cues.flow')}
         value={manual ? MANUAL_CUE_FLOW : shownFlow}
-        onChange={pickMode}
+        onChange={pickOption}
         onClosed={maximized ? focusEditor : undefined}
         options={[
           ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
           { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
+          {
+            value: CLEAR_CUES,
+            label: tr('editor.cues.clearAll'),
+            divided: true,
+            disabled: !clearable,
+          },
         ]}
       />
       {canApply && (

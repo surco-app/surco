@@ -233,6 +233,33 @@ describe('CuesSection', () => {
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
   })
 
+  it('clears every cue but the loops from the flow menu, keeps the flow, and cmd Z restores', async () => {
+    const loop = { id: 'l', ms: bar(32), kind: 1, color: 1, loop: true }
+    setup({ ...READ, cues: [loop, { id: 'h', ms: bar(64), kind: 2, color: 1 }] })
+    await ready()
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: My flow')
+    expect(screen.getByTestId('cues-undo')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    await waitFor(() => expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument())
+  })
+
+  it('disables the clear item when the draft has no cue to remove', async () => {
+    setup({ ...READ, cues: [{ id: 'l', ms: bar(32), kind: 1, color: 1, loop: true }] })
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    expect(screen.getByTestId('cues-flow-option-clear-cues')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
+    expect(screen.queryByTestId('cues-undo')).toBeNull()
+  })
+
   it('recolours a hot cue from rekordbox picker', async () => {
     setup()
     await ready()
@@ -423,7 +450,7 @@ describe('CuesSection', () => {
     const names = within(screen.getByTestId('cues-flow-listbox'))
       .getAllByRole('option')
       .map((o) => o.textContent)
-    expect(names).toEqual(['My flow', 'One cue at 32', 'CALL only', 'Manual'])
+    expect(names).toEqual(['My flow', 'One cue at 32', 'CALL only', 'Manual', 'Clear all cues'])
   })
 
   it('reads Flujo and the flow name on the selector, lists Manual apart after the flows and saves the pick', async () => {
@@ -433,7 +460,7 @@ describe('CuesSection', () => {
     expect(within(trigger).getByText('Flow')).toBeInTheDocument()
     expect(trigger).toHaveAccessibleName('Flow: My flow')
     fireEvent.click(trigger)
-    expect(screen.getByTestId('cues-flow-separator').nextElementSibling).toBe(
+    expect(screen.getAllByTestId('cues-flow-separator')[0].nextElementSibling).toBe(
       screen.getByTestId('cues-flow-option-manual'),
     )
     fireEvent.click(screen.getByTestId('cues-flow-option-manual'))

@@ -18,6 +18,7 @@ interface SelectOption {
   // empty leaves the chevron alone. The accessible name keeps the full label.
   short?: string
   divided?: boolean
+  disabled?: boolean
 }
 
 interface Props {
@@ -215,9 +216,12 @@ export function Select({
             type="button"
             role="option"
             aria-selected={o.value === value}
+            aria-disabled={o.disabled || undefined}
             data-testid={`${testid}-option-${o.value}`}
-            onClick={() => choose(o.value)}
-            className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]"
+            onClick={() => {
+              if (!o.disabled) choose(o.value)
+            }}
+            className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-40 aria-disabled:hover:bg-transparent"
           >
             {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
             {hinted ? (

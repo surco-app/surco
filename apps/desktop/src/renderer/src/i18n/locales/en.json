@@ -823,6 +823,7 @@
       "pause": "Pause",
       "addCall": "Add a CALL at the playhead",
       "manualMode": "Manual",
+      "clearAll": "Clear all cues",
       "placeHint": "Click to place",
       "applyTrack": "Apply to this track"
     }

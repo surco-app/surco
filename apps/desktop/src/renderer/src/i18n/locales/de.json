@@ -823,6 +823,7 @@
       "pause": "Pause",
       "addCall": "CALL am Abspielkopf setzen",
       "manualMode": "Manuell",
+      "clearAll": "Alle Cues löschen",
       "placeHint": "Zum Setzen klicken",
       "applyTrack": "Auf diesen Titel anwenden"
     }

@@ -414,4 +414,39 @@ describe('Select portaled menu', () => {
     fireEvent.keyDown(screen.getByTestId('sort-listbox'), { key: 'ArrowDown' })
     expect(document.activeElement).toBe(screen.getByTestId('sort-option-none'))
   })
+
+  it('runs an action option without making it the chosen value', () => {
+    const onChange = vi.fn<(value: string) => void>()
+    render(
+      <Select
+        value="import"
+        options={[...options, { value: 'wipe', label: 'Wipe', divided: true }]}
+        onChange={onChange}
+        label="Sort"
+        testid="sort"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    expect(screen.getByTestId('sort-option-wipe')).toHaveAttribute('aria-selected', 'false')
+    fireEvent.click(screen.getByTestId('sort-option-wipe'))
+    expect(onChange).toHaveBeenCalledWith('wipe')
+    expect(screen.getByTestId('sort')).toHaveTextContent('Default')
+  })
+
+  it('does nothing when a disabled option is picked', () => {
+    const onChange = vi.fn<(value: string) => void>()
+    render(
+      <Select
+        value="import"
+        options={[...options, { value: 'wipe', label: 'Wipe', disabled: true }]}
+        onChange={onChange}
+        label="Sort"
+        testid="sort"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    expect(screen.getByTestId('sort-option-wipe')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(screen.getByTestId('sort-option-wipe'))
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })
