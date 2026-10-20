@@ -94,6 +94,32 @@ describe('CueWave', () => {
     expect(bars.filter((b) => b.includes('v20'))).toHaveLength(1)
   })
 
+  it('draws as many bars as fit at the list row’s bar pitch, so a wide strip is not thicker than the row', () => {
+    const wave = Array.from({ length: 1200 }, () => ({ h: 0.5, rgb: null }))
+    const rect = (width: number) =>
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        width,
+        height: 80,
+        right: width,
+        bottom: 80,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      })
+    const barsAt = (width: number) => {
+      rect(width)
+      const view = render(<CueWave wave={wave} grid={GRID} durationMs={80000} cues={[]} />)
+      const d = screen.getByTestId('cue-wave-bars').querySelector('path')?.getAttribute('d') ?? ''
+      const count = d.split('Z').filter(Boolean).length
+      view.unmount()
+      return count
+    }
+    expect(barsAt(600)).toBe(200)
+    expect(barsAt(1200)).toBe(400)
+  })
+
   it('puts the marks on the strip’s top edge over the wave, as the list row does, with the wave filling the rest', () => {
     setup()
     expect(screen.getByTestId('cue-wave-hot-A').style.top).toBe('0px')

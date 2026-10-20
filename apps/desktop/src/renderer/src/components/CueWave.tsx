@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
@@ -20,6 +20,7 @@ export interface WaveCue {
 const HIT_PX = 6
 const DRAG_PX = 3
 const OVERVIEW_BARS = 300
+const ROW_BAR_PITCH_PX = 3
 const WAVE_HEIGHT = '90%'
 const WAVE_TOP = '10%'
 
@@ -68,9 +69,23 @@ export function CueWave({
   const [dragMs, setDragMs] = useState<number | null>(null)
   const [armed, setArmed] = useState(false)
   const [seeking, setSeeking] = useState(false)
+  const [stripPx, setStripPx] = useState(0)
+  const analysed = grid.length > 0
   const beatsMs = grid.map((b) => b.ms)
   const latest = useRef({ beatsMs, durationMs, onMove, onSeek })
   latest.current = { beatsMs, durationMs, onMove, onSeek }
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const measure = () => setStripPx(root.getBoundingClientRect().width)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    return () => observer.disconnect()
+  }, [analysed])
+  const overviewBars =
+    stripPx > 0 ? Math.max(1, Math.round(stripPx / ROW_BAR_PITCH_PX)) : OVERVIEW_BARS
   useEffect(() => {
     if (readOnly) setGhost(null)
   }, [readOnly])
@@ -125,14 +140,14 @@ export function CueWave({
         <WaveBars
           bars={peakBars(
             wave.map((c) => c.h),
-            OVERVIEW_BARS,
+            overviewBars,
           )}
           testId="cue-wave-bars"
           className="absolute inset-x-0 bottom-0 w-full"
           style={{ height: WAVE_HEIGHT }}
         />
       ),
-    [wave],
+    [wave, overviewBars],
   )
   const ticks = useMemo(
     () =>
