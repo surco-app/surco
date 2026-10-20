@@ -266,6 +266,14 @@
             "d": "After converting, the track is still the same track in rekordbox, with its playlists, cue points and history. Turn it on in Settings. It backs up first and needs rekordbox closed."
           },
           {
+            "t": "Your rekordbox playlists",
+            "d": "Open them in Surco with their folders and in their order, and work on their tracks like any other."
+          },
+          {
+            "t": "rekordbox cues",
+            "d": "Hot cues A to H and CALLs, on the waveform. Build flows from blocks, or let Surco learn yours from your collection, and one click places what the flow asks for and tells you what doesn't fit. Written with rekordbox closed, after a backup."
+          },
+          {
             "t": "Files for rekordbox, Serato, M3U8",
             "d": "Paths and metadata, no cues, no ratings. Serato's crate, paths only."
           },

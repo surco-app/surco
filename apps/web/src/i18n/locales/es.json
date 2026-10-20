@@ -266,6 +266,14 @@
             "d": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists, sus cue points y su historial. Se activa en Ajustes, hace copia de seguridad antes y necesita rekordbox cerrado."
           },
           {
+            "t": "Tus playlists de rekordbox",
+            "d": "Las abres en Surco con sus carpetas y en su orden, y trabajas sus pistas como cualquier otra."
+          },
+          {
+            "t": "Cues de rekordbox",
+            "d": "Hot cues de la A a la H y CALL, sobre la onda. Te montas flujos por bloques, o Surco aprende el tuyo de tu colección, y un clic coloca lo que pide el flujo y te dice lo que no cabe. Se escriben con rekordbox cerrado y con copia de seguridad antes."
+          },
+          {
             "t": "Ficheros para rekordbox, Serato y M3U8",
             "d": "Llevan rutas y metadatos, sin cues ni rating. El crate de Serato, solo rutas."
           },
