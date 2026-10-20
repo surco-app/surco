@@ -84,6 +84,8 @@ const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
   remove: ignore,
   'process-current': ignore,
   'clear-meta': ignore,
+  'process-all': ignore,
+  'derive-tags': ignore,
 }
 
 const MENU_ITEM =

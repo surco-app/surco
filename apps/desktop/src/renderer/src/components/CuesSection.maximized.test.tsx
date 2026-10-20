@@ -498,6 +498,8 @@ const LIST_COMMANDS = [
   'remove',
   'process-current',
   'clear-meta',
+  'process-all',
+  'derive-tags',
 ]
 
 function app() {
@@ -576,6 +578,8 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(key('Backspace', { metaKey: true })).toBe(false)
     expect(key('Enter', { metaKey: true })).toBe(false)
     expect(key('e', { metaKey: true })).toBe(false)
+    expect(key('Enter', { metaKey: true, shiftKey: true })).toBe(false)
+    expect(key('t', { metaKey: true })).toBe(false)
     release()
     expect(onStepTrack).not.toHaveBeenCalled()
     expect(ran).not.toHaveBeenCalled()
@@ -595,6 +599,8 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.keyDown(document.body, { key: 'Backspace', metaKey: true })
     fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
     fireEvent.keyDown(document.body, { key: 'e', metaKey: true })
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true, shiftKey: true })
+    fireEvent.keyDown(document.body, { key: 't', metaKey: true })
     release()
     expect(onStepTrack).not.toHaveBeenCalled()
     expect(ran).not.toHaveBeenCalled()

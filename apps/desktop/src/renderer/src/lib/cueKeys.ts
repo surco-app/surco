@@ -14,13 +14,15 @@ export type CueKey =
 
 const LIST_KEYS = ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']
 const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
-const TRACK_CHORDS = ['z', 'backspace', 'enter', 'e']
+const TRACK_CHORDS = ['backspace', 'enter', 'e', 't']
 
 function commandChord(e: { key: string; shiftKey: boolean; altKey: boolean }): CueKey | null {
   if (ARROWS.includes(e.key)) return { type: 'swallow' }
   const lower = e.key.toLowerCase()
-  if (e.altKey || e.shiftKey || !TRACK_CHORDS.includes(lower)) return null
-  return lower === 'z' ? { type: 'undo' } : { type: 'swallow' }
+  if (e.altKey) return null
+  if (e.shiftKey) return lower === 'enter' ? { type: 'swallow' } : null
+  if (lower === 'z') return { type: 'undo' }
+  return TRACK_CHORDS.includes(lower) ? { type: 'swallow' } : null
 }
 
 export function cueKeyAction(e: {

@@ -55,6 +55,9 @@ describe('cueKeyAction', () => {
     expect(press('Enter', { metaKey: true })).toEqual({ type: 'swallow' })
     expect(press('e', { metaKey: true })).toEqual({ type: 'swallow' })
     expect(press('E', { ctrlKey: true })).toEqual({ type: 'swallow' })
+    expect(press('Enter', { metaKey: true, shiftKey: true })).toEqual({ type: 'swallow' })
+    expect(press('t', { metaKey: true })).toEqual({ type: 'swallow' })
+    expect(press('Backspace', { metaKey: true, shiftKey: true })).toBeNull()
   })
 
   it('lets Escape, Tab, Enter and every command chord but undo through', () => {

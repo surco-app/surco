@@ -37,6 +37,8 @@ type ClaimedKey =
   | 'remove'
   | 'process-current'
   | 'clear-meta'
+  | 'process-all'
+  | 'derive-tags'
 
 // Shift rides along because it is the coarse step for the trim nudges; `play` ignores it.
 export interface ClaimContext {
@@ -71,6 +73,8 @@ const CLAIMABLE: ClaimedKey[] = [
   'remove',
   'process-current',
   'clear-meta',
+  'process-all',
+  'derive-tags',
 ]
 
 // Whether a command id can be answered by an open section, so the global listener only
