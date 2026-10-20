@@ -41,15 +41,19 @@ describe('cueKeyAction', () => {
       expect(press(key)).toEqual({ type: 'swallow' })
   })
 
-  it('swallows the list keys, which would change track and drop the unsaved cues', () => {
+  it('leaves the list keys to the track list, since each track keeps its unsaved cues', () => {
     for (const key of ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])
-      expect(press(key)).toEqual({ type: 'swallow' })
-    expect(press('ArrowDown', { shiftKey: true })).toEqual({ type: 'swallow' })
+      expect(press(key)).toBeNull()
+    expect(press('ArrowDown', { shiftKey: true })).toBeNull()
+    for (const mod of ['metaKey', 'ctrlKey']) {
+      expect(press('ArrowUp', { [mod]: true })).toBeNull()
+      expect(press('ArrowDown', { [mod]: true })).toBeNull()
+    }
   })
 
-  it('swallows the chords that change, remove, process or clear the track under the editor', () => {
+  it('swallows the chords that leave the editor or remove, process or clear the track under it', () => {
     for (const mod of ['metaKey', 'ctrlKey'])
-      for (const key of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+      for (const key of ['ArrowLeft', 'ArrowRight'])
         expect(press(key, { [mod]: true })).toEqual({ type: 'swallow' })
     expect(press('Backspace', { metaKey: true })).toEqual({ type: 'swallow' })
     expect(press('Enter', { metaKey: true })).toEqual({ type: 'swallow' })

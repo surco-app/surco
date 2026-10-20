@@ -11,6 +11,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
@@ -937,16 +938,73 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(trim['trim-end-zoom-out']).not.toHaveBeenCalled()
   })
 
-  it('never changes track with ↑ ↓ Home End PageUp PageDown, so the unsaved cues stay', async () => {
+  it('changes track with ↑ ↓ Home End PageUp PageDown from the full editor, since each track keeps its draft', async () => {
     const { ran, release } = app()
     setup()
     await maximize()
-    key('m')
-    for (const k of ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])
-      expect(key(k)).toBe(false)
+    for (const k of ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']) key(k)
     release()
-    expect(ran).not.toHaveBeenCalled()
+    expect(ran.mock.calls.map(([id]) => id)).toEqual([
+      'prev',
+      'next',
+      'list-top',
+      'list-bottom',
+      'list-page-up',
+      'list-page-down',
+    ])
+  })
+
+  it('keeps the draft and the full editor when ↓ goes to the next track and ↑ comes back', async () => {
+    const tracks = ['103', '104']
+    installApi({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (contentId) => ({
+        ...READ,
+        contentId,
+      })),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    function Player(): React.JSX.Element {
+      const [at, setAt] = useState(0)
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => [
+          { id: 'next', title: 'next', enabled: true, group: 'navigate', run: () => setAt(1) },
+          { id: 'prev', title: 'prev', enabled: true, group: 'navigate', run: () => setAt(0) },
+        ],
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      })
+      const contentId = tracks[at]
+      return (
+        <QueryClientProvider client={client}>
+          <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+            <CuesSection
+              cue={{ contentId, path: `/m/${contentId}.wav`, label: contentId }}
+              open
+              onToggle={vi.fn()}
+              track={TRACK}
+            />
+          </SettingsProvider>
+        </QueryClientProvider>
+      )
+    }
+    render(<Player />)
+    await maximize()
+    key('m')
     expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
+    key('ArrowDown')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeDisabled())
+    expect(screen.queryByTestId('cue-wave-call-0')).toBeNull()
+    expect(editor()).toHaveAttribute('data-maximized', 'true')
+    key('ArrowUp')
+    await waitFor(() => expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument())
+    expect(editor()).toHaveAttribute('data-maximized', 'true')
+    expect(document.activeElement).toBe(editor())
   })
 
   it('leaves ↓ to the track list while folded, as today', async () => {
@@ -959,13 +1017,13 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(ran).toHaveBeenCalledWith('next')
   })
 
-  it('never changes track with Ctrl+↑ ↓ nor runs ⌘⌫ ⌘↵ ⌘E on the list hidden under the editor, so the unsaved cues stay', async () => {
+  it('changes track with Ctrl+↑ ↓ but never runs ⌘⌫ ⌘↵ ⌘E on the list hidden under the editor', async () => {
     const { ran, release, onStepTrack } = app()
     setup()
     await maximize()
     key('m')
-    expect(key('ArrowDown', { ctrlKey: true })).toBe(false)
-    expect(key('ArrowUp', { ctrlKey: true })).toBe(false)
+    key('ArrowDown', { ctrlKey: true })
+    key('ArrowUp', { ctrlKey: true })
     expect(key('ArrowLeft', { metaKey: true })).toBe(false)
     expect(key('Backspace', { metaKey: true })).toBe(false)
     expect(key('Enter', { metaKey: true })).toBe(false)
@@ -973,12 +1031,12 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(key('Enter', { metaKey: true, shiftKey: true })).toBe(false)
     expect(key('t', { metaKey: true })).toBe(false)
     release()
-    expect(onStepTrack).not.toHaveBeenCalled()
+    expect(onStepTrack.mock.calls).toEqual([[1], [-1]])
     expect(ran).not.toHaveBeenCalled()
     expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
   })
 
-  it('never changes track nor removes it from the list with the focus outside the full editor', async () => {
+  it('changes track but never removes or processes it with the focus outside the full editor', async () => {
     const { ran, release, onStepTrack } = app()
     setup()
     await maximize()
@@ -994,8 +1052,10 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true, shiftKey: true })
     fireEvent.keyDown(document.body, { key: 't', metaKey: true })
     release()
-    expect(onStepTrack).not.toHaveBeenCalled()
-    expect(ran).not.toHaveBeenCalled()
+    expect(onStepTrack).toHaveBeenCalledWith(1)
+    expect(new Set(ran.mock.calls.map(([id]) => id))).toEqual(
+      new Set(['next', 'prev', 'list-top', 'list-bottom', 'list-page-up', 'list-page-down']),
+    )
     expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
   })
 
