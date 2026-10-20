@@ -699,7 +699,12 @@ function Editing({
           onMarkMenu={openMarkMenu}
           onDeleteMark={(key) => dispatch(removeOf(key))}
           points={pointMs}
-          movable={points}
+          movable={[
+            ...points,
+            ...state.cues
+              .filter((c) => c.kind !== 0 && !state.locked.includes(c.key))
+              .map((c) => c.key),
+          ]}
           onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
           onMarkDrag={setPointDrag}
         />

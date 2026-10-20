@@ -472,12 +472,14 @@ export function CueWaveDetail({
                   aria-hidden="true"
                   onContextMenu={(e) => markMenu(h.key, e)}
                   {...hover(h.key)}
+                  {...grab(h.key)}
                   style={{
                     ...markStyle(h.at),
                     ...(pending
                       ? { borderColor: h.colour, color: h.colour }
                       : { backgroundColor: h.colour, color: '#000' }),
                     ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
+                    ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   }}
                   className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
                     pending ? 'border' : ''

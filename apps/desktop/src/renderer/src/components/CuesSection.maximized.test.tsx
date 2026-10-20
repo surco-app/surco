@@ -1337,6 +1337,25 @@ describe('CuesSection maximized point corrections', () => {
     expect(screen.getByTestId('cue-detail-call-128000').style.cursor).toBe('ew-resize')
   })
 
+  it('moves a hot cue with its CALL by dragging it on the zoomed wave, on the Quantize grid, undone in one step', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    placeAtPlayhead()
+    const placed = marks()
+    seek(96000)
+    fireEvent.mouseDown(screen.getByTestId('cue-detail-hot-C'), { button: 0, clientX: 200 })
+    fireEvent.mouseMove(window, { clientX: 252 })
+    fireEvent.mouseUp(window, { clientX: 252 })
+    expect(screen.getByTestId('cue-wave-hot-C').style.left).toContain('25%')
+    expect(screen.getByTestId('cue-wave-call-100000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-call-96000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    expect(position()).toBe('1:36.0')
+    key('z', { metaKey: true })
+    expect(marks()).toEqual(placed)
+  })
+
   it('hides the placing hint and the flow ghost while a point’s CALL is dragged, and brings the hint back after', async () => {
     setup()
     await maximize()
