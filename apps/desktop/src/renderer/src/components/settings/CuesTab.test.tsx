@@ -69,7 +69,7 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId(`cue-wave-call-${EXAMPLE_DROP}`)).toBeNull()
   })
 
-  it('marks no flow as the default while the editor is in Manual, and Usar este flujo leaves Manual', () => {
+  it('marks no flow as the default while the editor is in Manual, and Poner por defecto leaves Manual', () => {
     render(<Harness active="manual" />)
     expect(screen.queryByTestId('cue-flow-in-use')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
@@ -83,16 +83,16 @@ describe('CuesTab', () => {
     expect(screen.getAllByRole('textbox')).toHaveLength(1)
     expect(screen.queryByTestId('cue-flow-mine')).toBeNull()
     expect(screen.queryByTestId('cue-flow-calls-only')).toBeNull()
-    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('En uso')
+    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('Por defecto')
     expect(screen.getByTestId('cue-flow-name')).toHaveValue('Una cue a 32')
   })
 
-  it('offers Usar este flujo on a flow that is not the default', async () => {
+  it('offers Poner por defecto on a flow that is not the default', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
     fireEvent.click(screen.getByTestId('cue-flow-one-at-32'))
-    expect(screen.getByTestId('cue-flow-use')).toHaveTextContent('Usar este flujo')
+    expect(screen.getByTestId('cue-flow-use')).toHaveTextContent('Poner por defecto')
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     expect(last?.activeCueFlow).toBe('one-at-32')
   })
@@ -101,7 +101,7 @@ describe('CuesTab', () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
-    expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('En uso')
+    expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('Por defecto')
     expect(
       within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-name'),
     ).toHaveAttribute('placeholder', 'Mi flujo')
@@ -416,7 +416,7 @@ describe('CuesTab', () => {
       expect(last?.activeCueFlow).toBe('mine')
     })
 
-    it('saves the proposal as a new default flow only on "Usar este flujo"', async () => {
+    it('saves the proposal as a new default flow only on "Poner por defecto"', async () => {
       await i18n.changeLanguage('es')
       afterTest = () => i18n.changeLanguage('en')
       learnable(Promise.resolve(LEARNED))
