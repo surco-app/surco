@@ -1310,10 +1310,6 @@ export const Editor = memo(function Editor({
     column.some((x) => x.id === 'cues') &&
     editorSections.map((x) => x.id).join() === DEFAULT_EDITOR_SECTIONS.map((x) => x.id).join()
   const sectionColumn = (list: EditorSectionPref[]) => {
-    // The pinned form already opened the "File" group, so the walk starts
-    // there; a heading is emitted only when a VISIBLE in-column section
-    // changes the group (a maximized section renders to a portal and a
-    // hidden-by-condition one to null — neither shifts the column's phase).
     let lastGroup = EDITOR_SECTION_GROUP.form
     return list.flatMap(({ id }) => {
       // Typed as element-or-falsy (not the wider ReactNode) so the arrays
