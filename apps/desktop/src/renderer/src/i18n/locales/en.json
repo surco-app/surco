@@ -1470,7 +1470,7 @@
       "when": {
         "always": "always",
         "fits": "if it fits",
-        "clear": "if it does not clash with another rule",
+        "clear": "if there is no other cue in that bar",
         "first": "if there is none before the point"
       },
       "place": {

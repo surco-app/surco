@@ -1470,7 +1470,7 @@
       "when": {
         "always": "immer",
         "fits": "wenn es passt",
-        "clear": "wenn es mit keiner anderen Regel kollidiert",
+        "clear": "wenn in diesem Takt keine andere Cue liegt",
         "first": "wenn vor dem Punkt keins ist"
       },
       "place": {

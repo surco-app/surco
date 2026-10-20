@@ -1470,7 +1470,7 @@
       "when": {
         "always": "toujours",
         "fits": "si ça rentre",
-        "clear": "si ça ne tombe pas sur une autre règle",
+        "clear": "si aucune autre cue ne tombe sur cette mesure",
         "first": "s’il n’y en a pas avant le point"
       },
       "place": {

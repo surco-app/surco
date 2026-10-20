@@ -1470,7 +1470,7 @@
       "when": {
         "always": "siempre",
         "fits": "si cabe",
-        "clear": "si no cuadra con otra regla",
+        "clear": "si no hay otra cue en ese compás",
         "first": "si no hay otra antes del punto"
       },
       "place": {
