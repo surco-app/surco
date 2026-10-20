@@ -614,6 +614,21 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
   })
 
+  it('dims the CALL the first flow paired with a hot cue the new flow keeps, and Aplicar a esta pista leaves what a fresh placement would', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    chooseFlow('one-at-32')
+    expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toHaveAttribute('data-gone', 'true')
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    expect(
+      screen
+        .queryAllByTestId(/^cue-wave-(hot|call)-/)
+        .map((el) => el.dataset.testid)
+        .sort(),
+    ).toEqual([`cue-wave-call-${bar(64)}`, 'cue-wave-hot-A'])
+  })
+
   it('places a new point with the flow picked but not applied and leaves the points already marked, still offering Aplicar a esta pista', async () => {
     setup()
     await ready()

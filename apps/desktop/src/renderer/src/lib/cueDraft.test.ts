@@ -245,6 +245,39 @@ describe('reduceDraft', () => {
     expect(draftDrops(s.cues)).toEqual([bar(64)])
   })
 
+  it('applies another flow as placing it afresh on the same points would, taking away the CALLs the first flow paired with its hot cues', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const action: DraftAction = { type: 'apply-flow', flowId: 'one-at-32' }
+    const applied = run(marked, action)
+    const fresh = run(startDraft([], 'one-at-32'), { type: 'mark-drop', ms: bar(64) })
+    const marksOf = (s: CueDraft) => s.cues.map((c) => `${c.ms} ${c.kind} ${c.color}`).sort()
+    expect(marksOf(applied)).toEqual(marksOf(fresh))
+    expect(ghostOf(marked, action, ctx).gone).toContain(at(marked, bar(32), false)?.key)
+  })
+
+  it('keeps the CALL under a hot cue when the applied flow pairs a CALL there too', () => {
+    const paired: CueFlow = {
+      ...ONE_AT_32,
+      id: 'paired',
+      rules: [{ ...ONE_AT_32.rules[0], place: 'both' }],
+    }
+    const withPaired = { ...ctx, flows: [...BUNDLED_FLOWS, paired] }
+    const marked = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, withPaired)
+    const applied = reduceDraft(marked, { type: 'apply-flow', flowId: 'paired' }, withPaired)
+    expect(at(applied, bar(32), false)?.key).toBe(at(marked, bar(32), false)?.key)
+  })
+
+  it('keeps a CALL the DJ put by hand on a hot cue when another flow is applied', () => {
+    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const own = run(
+      marked,
+      { type: 'remove', key: at(marked, bar(32), false)?.key as string },
+      { type: 'add-call', ms: bar(32) },
+    )
+    const applied = run(own, { type: 'apply-flow', flowId: 'one-at-32' })
+    expect(at(applied, bar(32), false)?.key).toBe(at(own, bar(32), false)?.key)
+  })
+
   it('switches to a flow chosen in Settings without touching the draft, and places the next point with it alone', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const switched = run(marked, { type: 'use-flow', flowId: 'one-at-32' })

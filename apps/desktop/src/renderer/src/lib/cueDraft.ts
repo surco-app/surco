@@ -1,7 +1,9 @@
 import { type CueFlow, type FlowPhrase, MY_FLOW } from '../../../shared/cueFlows'
 import {
   type ExistingCue,
+  evaluateFlow,
   findDrops,
+  flowDrops,
   flowOutcome,
   HOT_KINDS,
   nearestBeat,
@@ -161,7 +163,10 @@ function regenerate(
     nextKey += 1
     return { key: `n${nextKey}`, ms: w.ms, kind: w.kind, color: w.color }
   })
-  const cues = out.status === 'plan' ? keepEdited(state, generated) : generated
+  const cues =
+    out.status === 'plan'
+      ? keepEdited(state, withoutOldCalls(state, ctx, drops, flow, previousFlow, generated))
+      : generated
   if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,
@@ -171,6 +176,37 @@ function regenerate(
     notice: out.status === 'manual' ? 'manual' : null,
     trimmed: out.status === 'plan' ? out.trimmed : [],
   })
+}
+
+function withoutOldCalls(
+  state: CueDraft,
+  ctx: DraftContext,
+  drops: number[],
+  flow: CueFlow,
+  previousFlow: CueFlow,
+  cues: DraftCue[],
+): DraftCue[] {
+  if (flow.id === previousFlow.id) return cues
+  const track = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
+  const ruleCalls = (f: CueFlow, points: number[]): number[] =>
+    evaluateFlow(f, { ...track, drops: points })
+      .cues.filter((c) => c.place !== 'hot')
+      .map((c) => c.ms)
+  const oldPoints = flowDrops(previousFlow, {
+    ...track,
+    drops: draftDrops(state.cues, state.locked),
+  })
+  const newPoints = flowDrops(flow, { ...track, drops })
+  const old = ruleCalls(previousFlow, oldPoints)
+  const wanted = [...newPoints, ...ruleCalls(flow, newPoints)]
+  const byHand = [...state.edited, ...state.placed, ...state.locked]
+  return cues.filter(
+    (c) =>
+      isHot(c) ||
+      byHand.includes(c.key) ||
+      !old.some((ms) => near(ms, c.ms)) ||
+      wanted.some((ms) => near(ms, c.ms)),
+  )
 }
 
 function keepEdited(state: CueDraft, generated: DraftCue[]): DraftCue[] | null {
@@ -291,7 +327,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
     return commit(state, [...state.cues, cue], {
       nextKey: state.nextKey + 1,
       selected: key,
-      ...(hot ? { edited: [...state.edited, key] } : {}),
+      ...(hot ? { edited: [...state.edited, key] } : { placed: [...state.placed, key] }),
     })
   }
   const target = state.cues.find((c) => c.key === action.key)
