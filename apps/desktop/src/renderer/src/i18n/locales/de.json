@@ -774,6 +774,7 @@
       "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden",
       "discard": "Änderungen verwerfen",
       "applyFlow": "Ablauf anwenden",
+      "needsDrop": "Markiere zuerst mit M oder einem Klick auf die Welle, wo der Drop kommt",
       "flow": "Ablauf",
       "delete": "Löschen",
       "colour": "Farbe {{index}}",

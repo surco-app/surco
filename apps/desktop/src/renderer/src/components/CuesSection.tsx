@@ -16,6 +16,7 @@ import {
   type CueDraft,
   type DraftAction,
   type DraftCue,
+  draftDrops,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -228,6 +229,8 @@ function Editing({
   )
   useEffect(() => keepDraft(draftKey, state), [draftKey, state])
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
+  const [askedForDrop, setAskedForDrop] = useState(false)
+  const noDrop = draftDrops(state.cues, state.locked).length === 0
   const [chosen, setChosen] = useState(state.flowId)
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
   const openedWith = useRef(active.id)
@@ -409,11 +412,19 @@ function Editing({
         <button
           type="button"
           data-testid="cues-apply-flow"
-          onClick={() => dispatch({ type: 'apply-flow', flowId: shownFlow })}
+          onClick={() => {
+            if (noDrop) setAskedForDrop(true)
+            else dispatch({ type: 'apply-flow', flowId: shownFlow })
+          }}
           className="press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
           {tr('editor.cues.applyFlow')}
         </button>
+        {askedForDrop && noDrop && (
+          <span data-testid="cues-needs-drop" role="status" className="text-xs text-warn">
+            {tr('editor.cues.needsDrop')}
+          </span>
+        )}
       </div>
       <CueWave
         wave={read.wave}

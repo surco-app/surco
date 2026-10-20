@@ -774,6 +774,7 @@
       "unreadable": "Could not read the cues from rekordbox",
       "discard": "Discard changes",
       "applyFlow": "Apply flow",
+      "needsDrop": "First mark where it drops with M or a click on the wave",
       "flow": "Flow",
       "delete": "Delete",
       "colour": "Colour {{index}}",

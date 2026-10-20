@@ -321,6 +321,16 @@ describe('CuesSection', () => {
     )
   })
 
+  it('says what Aplicar flujo needs when no drop is marked instead of doing nothing, until one is', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-needs-drop')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    expect(screen.getByTestId('cues-needs-drop')).toHaveTextContent('First mark where it drops')
+    clickAt(bar(64))
+    expect(screen.queryByTestId('cues-needs-drop')).toBeNull()
+  })
+
   it('applies another flow to the drops already marked', async () => {
     setup()
     await ready()
