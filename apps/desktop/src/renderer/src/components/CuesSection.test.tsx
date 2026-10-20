@@ -118,10 +118,8 @@ const openFull = async () => {
   )
 }
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
-const pick = (testId: string, ms: number) => {
-  fireEvent.mouseDown(screen.getByTestId(testId), { clientX: ms / 1000 })
-  fireEvent.mouseUp(window, { clientX: ms / 1000 })
-}
+const pick = (testId: string, ms: number) =>
+  fireEvent.click(screen.getByTestId(testId), { clientX: ms / 1000 })
 
 const writtenPlan = (): WantedCue[] => {
   const outcome = cueChanges(
@@ -843,19 +841,6 @@ describe('CuesSection', () => {
     const { wanted } = saveRekordboxCues.mock.calls[0][0]
     expect(wanted.every((c) => c.kind === 0 && c.color === null)).toBe(true)
     expect(validWantedSet(wanted, read.cues)).toEqual({ ok: true })
-  })
-
-  it('moves a hot cue with its CALL by dragging it', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-B'), { clientX: bar(32) / 1000 })
-    fireEvent.mouseMove(window, { clientX: bar(36) / 1000 })
-    fireEvent.mouseUp(window, { clientX: bar(36) / 1000 })
-    expect(screen.getByTestId('cue-wave-hot-B').style.left).toContain(
-      `${(bar(36) / 400000) * 100}%`,
-    )
-    expect(screen.getByTestId(`cue-wave-call-${bar(36)}`)).toBeInTheDocument()
   })
 
   it('says hand-placed hot cues stay as they are and only adds the CALL', async () => {

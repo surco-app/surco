@@ -30,7 +30,6 @@ beforeEach(() => {
 function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
   const handlers = {
     onSelect: vi.fn(),
-    onMove: vi.fn(),
     onMenu: vi.fn(),
     onAcceptProposal: vi.fn(),
   }
@@ -161,41 +160,6 @@ describe('CueWave', () => {
     fireEvent.mouseUp(window, { clientX: 160 })
     fireEvent.click(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
     expect(h.onSelect).toHaveBeenCalledWith('a')
-    expect(h.onMove).not.toHaveBeenCalled()
-  })
-
-  it('drags a cue to the beat under the pointer', () => {
-    const h = setup()
-    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
-    fireEvent.mouseMove(window, { clientX: 243 })
-    expect(screen.getByTestId('cue-wave-drag-ghost')).toBeInTheDocument()
-    fireEvent.mouseUp(window, { clientX: 243 })
-    expect(h.onMove).toHaveBeenCalledWith('a', 24500)
-  })
-
-  it('does not arm a drag from a right-click or a ctrl-click, whose mouseup may never arrive', () => {
-    const h = setup()
-    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160, button: 2 })
-    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160, ctrlKey: true })
-    fireEvent.mouseMove(window, { clientX: 300 })
-    fireEvent.mouseUp(window, { clientX: 300 })
-    expect(h.onMove).not.toHaveBeenCalled()
-    expect(screen.queryByTestId('cue-wave-drag-ghost')).toBeNull()
-  })
-
-  it('swallows the click that follows a mark drag so the release does not move the playhead too', () => {
-    vi.useFakeTimers()
-    const onSeek = vi.fn<(ms: number) => void>()
-    setup({ onSeek, playheadMs: 0 })
-    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
-    fireEvent.mouseMove(window, { clientX: 243 })
-    fireEvent.mouseUp(window, { clientX: 243 })
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 243 })
-    expect(onSeek).not.toHaveBeenCalled()
-    vi.runAllTimers()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100 })
-    expect(onSeek).toHaveBeenCalledWith(10000)
-    vi.useRealTimers()
   })
 
   it('keeps a proposal clickable under a mark at the same place', () => {
@@ -219,17 +183,12 @@ describe('CueWave', () => {
     expect(h.onMenu).toHaveBeenCalledWith({ ms: 10000, x: 100, y: 30 })
   })
 
-  it('quantizes a drag, the hover line and the menu to the bar start when quantizing to the bar', () => {
+  it('quantizes the hover line and the menu to the bar start when quantizing to the bar', () => {
     const h = setup({ quantize: 'bar', onHover: vi.fn() })
     fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 40 })
     expect(screen.getByTestId('cue-wave-cursor').style.left).toBe('12.5%')
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 30 })
     expect(h.onMenu).toHaveBeenCalledWith({ ms: 10000, x: 105, y: 30 })
-    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
-    fireEvent.mouseMove(window, { clientX: 243 })
-    expect(screen.getByTestId('cue-wave-drag-ghost').style.left).toBe('30%')
-    fireEvent.mouseUp(window, { clientX: 243 })
-    expect(h.onMove).toHaveBeenCalledWith('a', 24000)
   })
 
   it('draws proposals dashed and accepts one with a click', () => {
@@ -493,16 +452,17 @@ describe('CueWave', () => {
     expect(onSeek.mock.calls).toEqual([[10000], [40000]])
   })
 
-  it('moves a mark instead of the playhead when the drag starts on it', () => {
+  it('moves the playhead and no mark when a drag starts on a mark, since the strip only navigates', () => {
     const onSeek = vi.fn<(ms: number) => void>()
-    const h = setup({ onSeek, playheadMs: 0 })
+    setup({ onSeek, playheadMs: 0 })
     fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { button: 0, clientX: 160 })
     fireEvent.mouseMove(window, { clientX: 243 })
     fireEvent.mouseUp(window, { clientX: 243 })
-    expect(onSeek).not.toHaveBeenCalled()
-    expect(h.onMove).toHaveBeenCalledWith('a', 24500)
+    expect(onSeek.mock.calls).toEqual([[16000], [24500]])
+    expect(screen.queryByTestId('cue-wave-drag-ghost')).toBeNull()
   })
-  it('opens the mark menu on a right-click on a hot cue or a CALL, without the strip menu and without a drag', () => {
+
+  it('opens the mark menu on a right-click on a hot cue or a CALL, without the strip menu', () => {
     const onMarkMenu = vi.fn()
     const h = setup({ onMarkMenu })
     const hot = screen.getByTestId('cue-wave-hot-A')
@@ -513,7 +473,6 @@ describe('CueWave', () => {
     expect(onMarkMenu).toHaveBeenCalledWith({ key: 'a', clientX: 120, clientY: 7 })
     fireEvent.contextMenu(screen.getByTestId('cue-wave-call-40000'), { clientX: 5, clientY: 6 })
     expect(onMarkMenu).toHaveBeenLastCalledWith({ key: 'd', clientX: 5, clientY: 6 })
-    expect(h.onMove).not.toHaveBeenCalled()
     expect(h.onMenu).not.toHaveBeenCalled()
   })
 

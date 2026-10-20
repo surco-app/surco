@@ -1309,6 +1309,19 @@ describe('CuesSection maximized point corrections', () => {
     expect(marks()).toEqual(before)
   })
 
+  it('moves only the playhead when a drag on the strip starts on a mark, since the strip only navigates', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    placeAtPlayhead()
+    const placed = marks()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-call-128000'), { button: 0, clientX: 128 })
+    fireEvent.mouseMove(window, { clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+    expect(marks()).toEqual(placed)
+    expect(position()).toBe('3:20.0')
+  })
+
   it('takes the point’s flow away with its CALL from the ✕, from ⌫ and from the menu, leaving nothing behind', async () => {
     setup()
     await maximize()

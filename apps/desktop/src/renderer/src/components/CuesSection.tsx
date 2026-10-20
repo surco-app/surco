@@ -669,7 +669,6 @@ function Editing({
         hoverMs={placing ? hoverMs : null}
         ghost={ghost}
         onSelect={(key) => dispatch({ type: 'select', key })}
-        onMove={(key, ms) => dispatch(moveOf(key, ms))}
         onMenu={maximized ? setMenu : undefined}
         onMarkMenu={openMarkMenu}
         playheadMs={maximized ? playheadMs : undefined}

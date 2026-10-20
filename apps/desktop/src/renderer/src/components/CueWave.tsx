@@ -27,7 +27,6 @@ export interface WaveCue {
   locked?: boolean
 }
 
-const DRAG_PX = 3
 const PHRASE_BARS = 8
 const PHRASES_PER_STRONG_TICK = 4
 const OVERVIEW_BARS = 300
@@ -46,7 +45,6 @@ export function CueWave({
   trimmed,
   readOnly,
   onSelect,
-  onMove,
   onMenu,
   onMarkMenu,
   onAcceptProposal,
@@ -68,7 +66,6 @@ export function CueWave({
   trimmed?: number[]
   readOnly?: boolean
   onSelect?: (key: string | null) => void
-  onMove?: (key: string, ms: number) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onAcceptProposal?: (ms: number) => void
@@ -82,18 +79,14 @@ export function CueWave({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
-  const swallowClick = useRef(false)
   const [cursor, setCursor] = useState<number | null>(null)
-  const dragRef = useRef<{ key: string; x0: number; ms: number | null } | null>(null)
-  const [dragMs, setDragMs] = useState<number | null>(null)
-  const [armed, setArmed] = useState(false)
   const [seeking, setSeeking] = useState(false)
   const sought = useRef<number | null>(null)
   const [stripPx, setStripPx] = useState(0)
   const analysed = grid.length > 0
   const snapMs = quantizePoints(grid, quantize)
-  const latest = useRef({ snapMs, durationMs, onMove, onSeek, onHover })
-  latest.current = { snapMs, durationMs, onMove, onSeek, onHover }
+  const latest = useRef({ durationMs, onSeek, onHover })
+  latest.current = { durationMs, onSeek, onHover }
   useLayoutEffect(() => {
     const root = rootRef.current
     if (!analysed || !root) return
@@ -124,34 +117,6 @@ export function CueWave({
     (clientX: number): number => snapToBeat(beatsMs, msAtX(clientX)),
     [beatsMs, msAtX],
   )
-  useEffect(() => {
-    if (!armed) return
-    const move = (e: MouseEvent) => {
-      const d = dragRef.current
-      if (!d || Math.abs(e.clientX - d.x0) <= DRAG_PX) return
-      const snap = latest.current.snapMs
-      d.ms = snap[nearestBeat(snap, msAtX(e.clientX))]
-      setDragMs(d.ms)
-    }
-    const up = () => {
-      const d = dragRef.current
-      dragRef.current = null
-      setArmed(false)
-      setDragMs(null)
-      if (!d || d.ms === null) return
-      swallowClick.current = true
-      setTimeout(() => {
-        swallowClick.current = false
-      }, 0)
-      latest.current.onMove?.(d.key, d.ms)
-    }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
-    return () => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', up)
-    }
-  }, [armed, msAtX])
   useEffect(() => {
     if (!seeking) return
     const move = (e: MouseEvent) => {
@@ -226,14 +191,6 @@ export function CueWave({
     from: Math.max(view.fromMs, 0),
     to: Math.min(view.toMs, durationMs),
   }
-  const startDrag = (key: string, e: React.MouseEvent) => {
-    if (e.button !== 0 || e.ctrlKey) return
-    e.stopPropagation()
-    onSelect?.(key)
-    if (cues.some((c) => c.key === key && c.locked)) return
-    dragRef.current = { key, x0: e.clientX, ms: null }
-    setArmed(true)
-  }
   const selectMark = (key: string, e: React.MouseEvent) => {
     e.stopPropagation()
     onSelect?.(key)
@@ -259,7 +216,7 @@ export function CueWave({
         setSeeking(true)
       }}
       onClick={(e) => {
-        if (readOnly || swallowClick.current) return
+        if (readOnly) return
         if (onSeek) {
           if (sought.current === null) onSeek(seekAt(e.clientX))
           sought.current = null
@@ -369,7 +326,6 @@ export function CueWave({
             key={`c${c.key}`}
             type="button"
             aria-label={t('cueWave.call')}
-            onMouseDown={(e) => startDrag(c.key, e)}
             onClick={(e) => selectMark(c.key, e)}
             onContextMenu={(e) => markMenu(c.key, e)}
             {...common}
@@ -404,7 +360,6 @@ export function CueWave({
             key={`h${h.key}`}
             type="button"
             aria-label={t('cueWave.hotCue', { letter: h.letter })}
-            onMouseDown={(e) => startDrag(h.key, e)}
             onClick={(e) => selectMark(h.key, e)}
             onContextMenu={(e) => markMenu(h.key, e)}
             {...common}
@@ -413,14 +368,6 @@ export function CueWave({
           </button>
         )
       })}
-      {dragMs !== null && (
-        <span
-          data-testid="cue-wave-drag-ghost"
-          aria-hidden="true"
-          style={{ left: pct(dragMs) }}
-          className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
-        />
-      )}
       {ghostMarks?.calls.map((c) => (
         <span
           key={`gc${c.key}`}
