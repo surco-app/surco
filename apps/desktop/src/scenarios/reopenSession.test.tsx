@@ -61,9 +61,13 @@ describe('Come back to a crate the next day and find each track as it was left',
     fireEvent.click(
       await screen.findByTestId('last-session-action', undefined, { timeout: 10_000 }),
     )
-    await waitFor(() => expect(screen.queryAllByTestId('track-loading')).toHaveLength(0), {
-      timeout: 30_000,
-    })
+    await waitFor(
+      () => {
+        expect(screen.queryAllByTestId('track-row')).toHaveLength(2)
+        expect(screen.queryAllByTestId('track-loading')).toHaveLength(0)
+      },
+      { timeout: 30_000 },
+    )
   }, 120_000)
 
   afterAll(() => {
