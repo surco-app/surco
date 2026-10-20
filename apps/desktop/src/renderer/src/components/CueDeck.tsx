@@ -3,7 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { CUE_JUMP_BARS, type CueJumpBars } from '../../../shared/cueJump'
 import { HOT_KINDS } from '../../../shared/cueRules'
-import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { hotCueColor, PAD_LETTER_COLOR } from '../../../shared/rekordboxCueColors'
 import { cueLetter } from '../lib/rowCues'
 
 export interface DeckCue {
@@ -55,10 +55,14 @@ export function CueDeck({
               aria-label={tr('editor.cues.selectedHot', { letter })}
               aria-pressed={isSelected}
               onClick={() => onPad(kind)}
-              style={cue ? { backgroundColor: hotCueColor(cue.color) } : undefined}
+              style={
+                cue
+                  ? { backgroundColor: hotCueColor(cue.color), color: PAD_LETTER_COLOR }
+                  : undefined
+              }
               className={`press relative flex h-8 w-9 items-center justify-center rounded-[5px] text-sm font-bold ${
                 cue
-                  ? 'text-white'
+                  ? ''
                   : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg-faint'
               } ${isSelected ? 'outline outline-2 outline-offset-2 outline-[var(--color-fg)]' : ''}`}
             >

@@ -65,6 +65,7 @@ const TABLE = [
 
 export const HOT_CUE_DEFAULT_COLOR = '#28e214'
 export const MEMORY_CUE_COLOR = '#e62828'
+export const PAD_LETTER_COLOR = '#ffffff'
 
 export function hotCueColor(index: number | null): string {
   return (index !== null && index >= 1 ? TABLE[index - 1] : undefined) ?? HOT_CUE_DEFAULT_COLOR

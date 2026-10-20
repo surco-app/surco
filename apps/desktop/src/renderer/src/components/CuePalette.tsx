@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import type React from 'react'
-import { HOT_CUE_PICKER, hotCueColor } from '../../../shared/rekordboxCueColors'
+import { HOT_CUE_PICKER, hotCueColor, PAD_LETTER_COLOR } from '../../../shared/rekordboxCueColors'
 
 export function CuePalette({
   value,
@@ -28,7 +28,9 @@ export function CuePalette({
               : ''
           }`}
         >
-          {value === index && <Check className="h-4 w-4 text-white" aria-hidden="true" />}
+          {value === index && (
+            <Check className="h-4 w-4" style={{ color: PAD_LETTER_COLOR }} aria-hidden="true" />
+          )}
         </button>
       ))}
     </div>
