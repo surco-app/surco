@@ -7,17 +7,19 @@ import type { Api } from '../../../preload/api'
 import { MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
+import { resetEditorSections } from '../hooks/useEditorSections'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
-vi.mock('./CueWave', () => ({
-  CueWave: ({ onPlace }: { onPlace?: (ms: number) => void }) => (
+vi.mock('./CueWaveDetail', () => ({
+  CueWaveDetail: ({ onPlace }: { onPlace?: (ms: number) => void }) => (
     <button type="button" data-testid="add-same" onClick={() => onPlace?.(128000)} />
   ),
 }))
 
 afterEach(cleanup)
+afterEach(resetEditorSections)
 
 const READ: TrackCues = {
   contentId: '103',
@@ -49,7 +51,8 @@ describe('CuesSection drops', () => {
         </SettingsProvider>
       </QueryClientProvider>,
     )
-    await waitFor(() => expect(screen.getByTestId('add-same')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('section-maximize'))
     fireEvent.click(screen.getByTestId('add-same'))
     fireEvent.click(screen.getByTestId('add-same'))
     fireEvent.click(screen.getByTestId('cues-save'))

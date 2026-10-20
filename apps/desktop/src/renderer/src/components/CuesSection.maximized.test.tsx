@@ -218,16 +218,31 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByTestId('cue-wave-call-100000')).toBeNull()
   })
 
-  it('places the flow with a click on the overview and moves the playhead with a drag', async () => {
+  it('moves the playhead to the beat with a click on the overview with a flow chosen and places nothing, so the strip always navigates', async () => {
     setup()
     await maximize()
-    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
-    fireEvent.mouseUp(window, { clientX: 128 })
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128 })
-    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
-    expect(position()).toBe('0:00.0')
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 128 })
+    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128.3 })
+    fireEvent.mouseUp(window, { clientX: 128.3 })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128.3 })
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+    expect(position()).toBe('2:08.5')
     seek(100000)
     expect(position()).toBe('1:40.0')
+  })
+
+  it('opens the full editor at the beat of a folded click with a flow chosen, placing nothing, so the point is chosen where the bars are visible', async () => {
+    setup()
+    await ready()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 128 })
+    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128.3 })
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    expect(position()).toBe('2:08.5')
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
   })
 
   it('shows on the overview the part the zoomed wave shows, and follows the zoom', async () => {

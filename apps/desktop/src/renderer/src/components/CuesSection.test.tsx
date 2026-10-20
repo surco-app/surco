@@ -101,7 +101,16 @@ function setup(
 
 const clickAt = (ms: number) =>
   fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
-const markAt = (ms: number) => clickAt(ms)
+const markAt = (ms: number) => {
+  const full = screen.getByTestId('cues-editor').dataset.maximized === 'true'
+  if (full) {
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 })
+    fireEvent.mouseUp(window, { clientX: ms / 1000 })
+  } else clickAt(ms)
+  fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+  fireEvent.mouseUp(window, { clientX: 200 })
+  if (!full) fireEvent.click(screen.getByTestId('section-maximize'))
+}
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))
   await waitFor(() =>
@@ -399,6 +408,7 @@ describe('CuesSection', () => {
   it('places with the flow picked from the list before anything is placed', async () => {
     setup()
     await ready()
+    await openFull()
     chooseFlow('one-at-32')
     markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
@@ -482,12 +492,18 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: Manual')
   })
 
-  it('places the flow with one click on the folded strip and says so, with no button to press first', async () => {
+  it('opens the full editor from a folded click with a flow chosen and says Haz clic para colocar only there, where a click places', async () => {
     setup()
     await ready()
+    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
+    clickAt(bar(64))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
     expect(screen.getByTestId('cues-place-hint')).toHaveTextContent('Click to place')
     expect(screen.queryByTestId('cues-apply-flow')).toBeNull()
-    clickAt(bar(64))
+    markAt(bar(64))
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
   })
@@ -617,7 +633,7 @@ describe('CuesSection', () => {
     const shown = marks(/^cue-wave-ghost-(hot|call)-/)
     expect(shown).toHaveLength(7)
     expect(marks(/^cue-wave-(hot|call)-/)).toEqual([])
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: bar(64) / 1000, clientY: 40 })
+    markAt(bar(64))
     expect(marks(/^cue-wave-(hot|call)-/)).toEqual(shown)
     expect(marks(/^cue-wave-ghost-/)).toEqual([])
   })
@@ -681,7 +697,7 @@ describe('CuesSection', () => {
       false,
     )
     const shown = marks(/^cue-wave-ghost-(hot|call)-/)
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: bar(160) / 1000, clientY: 40 })
+    markAt(bar(160))
     expect(marks(/^cue-wave-(hot|call)-/)).toEqual([...before, ...shown].sort())
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()

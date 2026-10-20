@@ -531,7 +531,7 @@ function Editing({
           {tr('editor.cues.applyTrack')}
         </button>
       )}
-      {placing && (
+      {placing && maximized && (
         <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
           {tr('editor.cues.placeHint')}
         </span>
@@ -628,7 +628,6 @@ function Editing({
         cues={waveCues}
         selected={state.selected}
         trimmed={state.trimmed}
-        onPlace={placing ? place : undefined}
         onHover={placing ? setHoverMs : undefined}
         hoverMs={placing ? hoverMs : null}
         ghost={ghost}
@@ -638,7 +637,7 @@ function Editing({
         onMarkMenu={openMarkMenu}
         playheadMs={maximized ? playheadMs : undefined}
         onSeek={maximized ? seekTo : undefined}
-        onOpen={maximized || placing ? undefined : openAt}
+        onOpen={maximized ? undefined : openAt}
         view={maximized ? detailWindow(ctx.beats, playheadMs, zoom) : undefined}
       />
       {!maximized && <div className="mt-3">{actions}</div>}

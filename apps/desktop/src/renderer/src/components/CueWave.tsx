@@ -42,7 +42,6 @@ export function CueWave({
   proposals,
   trimmed,
   readOnly,
-  onPlace,
   onSelect,
   onMove,
   onMenu,
@@ -65,7 +64,6 @@ export function CueWave({
   proposals?: number[]
   trimmed?: number[]
   readOnly?: boolean
-  onPlace?: (ms: number) => void
   onSelect?: (key: string | null) => void
   onMove?: (key: string, ms: number) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
@@ -83,8 +81,6 @@ export function CueWave({
   const rootRef = useRef<HTMLDivElement>(null)
   const swallowClick = useRef(false)
   const [cursor, setCursor] = useState<number | null>(null)
-  const [press, setPress] = useState<number | null>(null)
-  const dragged = useRef(false)
   const dragRef = useRef<{ key: string; x0: number; ms: number | null } | null>(null)
   const [dragMs, setDragMs] = useState<number | null>(null)
   const [armed, setArmed] = useState(false)
@@ -109,10 +105,10 @@ export function CueWave({
   useEffect(() => {
     if (readOnly) setCursor(null)
   }, [readOnly])
-  const canPlace = onPlace !== undefined
+  const hovering = onHover !== undefined
   useEffect(() => {
-    if (!canPlace) setCursor(null)
-  }, [canPlace])
+    if (!hovering) setCursor(null)
+  }, [hovering])
   const msAtX = useCallback((clientX: number): number => {
     const rect = rootRef.current?.getBoundingClientRect()
     if (!rect) return 0
@@ -163,25 +159,6 @@ export function CueWave({
       window.removeEventListener('mouseup', up)
     }
   }, [seeking, seekAt])
-  useEffect(() => {
-    if (press === null) return
-    const move = (e: MouseEvent) => {
-      if (Math.abs(e.clientX - press) <= DRAG_PX) return
-      dragged.current = true
-      setPress(null)
-      setCursor(null)
-      latest.current.onHover?.(null)
-      setSeeking(true)
-      latest.current.onSeek?.(seekAt(e.clientX))
-    }
-    const up = () => setPress(null)
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
-    return () => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', up)
-    }
-  }, [press, seekAt])
   const waveSvg = useMemo(
     () =>
       wave && (
@@ -261,36 +238,24 @@ export function CueWave({
       tabIndex={readOnly ? -1 : 0}
       onMouseDown={(e) => {
         if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
-        dragged.current = false
-        if (onPlace) {
-          setPress(e.clientX)
-          return
-        }
+        setCursor(null)
+        onHover?.(null)
         onSeek(seekAt(e.clientX))
         setSeeking(true)
       }}
       onClick={(e) => {
         if (readOnly || swallowClick.current) return
-        if (dragged.current) {
-          dragged.current = false
-          return
-        }
-        if (onPlace) {
-          setCursor(null)
-          onHover?.(null)
-          onSelect?.(null)
-          onPlace(snapAt(e.clientX))
-          return
-        }
         if (onSeek) {
           onSeek(seekAt(e.clientX))
           return
         }
-        onOpen?.(msAtX(e.clientX))
+        setCursor(null)
+        onHover?.(null)
+        onOpen?.(seekAt(e.clientX))
       }}
       onKeyDown={(e) => {
         if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || cursor === null) return
-        onPlace?.(cursor)
+        onOpen?.(cursor)
       }}
       onContextMenu={(e) => {
         if (readOnly) return
@@ -303,7 +268,7 @@ export function CueWave({
         })
       }}
       onMouseMove={(e) => {
-        if (readOnly || !onPlace || seeking) return
+        if (readOnly || !onHover || seeking) return
         const ms = snapAt(e.clientX)
         setCursor(ms)
         onHover?.(ms)
@@ -313,7 +278,7 @@ export function CueWave({
         onHover?.(null)
       }}
       className={`relative h-16 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
-        readOnly ? 'cursor-default' : onPlace ? 'cursor-crosshair' : 'cursor-pointer'
+        readOnly ? 'cursor-default' : 'cursor-pointer'
       }`}
     >
       <div
