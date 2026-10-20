@@ -351,6 +351,24 @@ function Editing({
           </div>
         </div>
       )}
+      <div data-testid="cues-flow-row" className="mb-3 flex flex-wrap items-center gap-3">
+        <span className="text-xs text-fg-dim">{tr('editor.cues.flow')}</span>
+        <Select
+          testid="cues-flow"
+          label={tr('editor.cues.flow')}
+          value={shownFlow}
+          onChange={setChosen}
+          options={flows.map((f) => ({ value: f.id, label: flowName(f, tr) }))}
+        />
+        <button
+          type="button"
+          data-testid="cues-apply-flow"
+          onClick={() => dispatch({ type: 'apply-flow', flowId: shownFlow })}
+          className="press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+        >
+          {tr('editor.cues.applyFlow')}
+        </button>
+      </div>
       <CueWave
         wave={read.wave}
         grid={read.grid}
@@ -512,21 +530,6 @@ function Editing({
         />
       )}
       <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
-        <Select
-          testid="cues-flow"
-          label={tr('editor.cues.flow')}
-          value={shownFlow}
-          onChange={setChosen}
-          options={flows.map((f) => ({ value: f.id, label: flowName(f, tr) }))}
-        />
-        <button
-          type="button"
-          data-testid="cues-apply-flow"
-          onClick={() => dispatch({ type: 'apply-flow', flowId: shownFlow })}
-          className="press whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs hover:bg-[var(--color-hover)]"
-        >
-          {tr('editor.cues.applyFlow')}
-        </button>
         <div className="ml-auto flex gap-2">
           <button
             type="button"

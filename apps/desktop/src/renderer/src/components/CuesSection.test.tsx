@@ -309,6 +309,18 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
   })
 
+  it('puts the flow row before the wave, since applying the flow is the main way to work', async () => {
+    setup()
+    await ready()
+    const order = screen
+      .getByTestId('cues-flow-row')
+      .compareDocumentPosition(screen.getByTestId('cue-wave'))
+    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId('cues-flow-row')).toContainElement(
+      screen.getByTestId('cues-apply-flow'),
+    )
+  })
+
   it('applies another flow to the drops already marked', async () => {
     setup()
     await ready()
