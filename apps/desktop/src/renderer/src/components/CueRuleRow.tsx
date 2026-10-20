@@ -77,6 +77,8 @@ export function CueRuleRow({
   const id = `cue-rule-${index}`
   const slots = slotCount(rule)
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
+  const shownSlots = rule.direction === 'back' ? [...slotNumbers].reverse() : slotNumbers
+  const showDistance = !('fixed' in rule.color)
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
@@ -249,9 +251,9 @@ export function CueRuleRow({
             tr(`settings.cueFlows.colorMode.${'fixed' in rule.color ? 'fixed' : 'each'}`),
             setColorMode,
           )}{' '}
-          <span className="inline-flex items-center gap-1 align-middle">
-            {slotNumbers.map((slot) => (
-              <span key={slot} className="relative">
+          <span className="inline-flex items-start gap-1 align-middle">
+            {shownSlots.map((slot) => (
+              <span key={slot} className="relative flex flex-col items-center">
                 <button
                   type="button"
                   data-testid={`${id}-color-${slot}`}
@@ -261,6 +263,14 @@ export function CueRuleRow({
                   style={{ backgroundColor: hotCueColor(colorAt(rule.color, slot)) }}
                   className="press block h-[18px] w-[18px] rounded-[3px] border border-[var(--color-line)]"
                 />
+                {showDistance && (
+                  <span
+                    data-testid={`${id}-color-${slot}-distance`}
+                    className="text-[10px] leading-none text-fg-dim tabular-nums"
+                  >
+                    {rule.bars * (slot + 1)}
+                  </span>
+                )}
                 {open === `color-${slot}` && (
                   <div
                     ref={paletteRef}
