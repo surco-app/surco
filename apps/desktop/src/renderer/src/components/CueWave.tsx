@@ -108,7 +108,7 @@ export function CueWave({
           viewBox={`0 0 ${wave.length} 100`}
           preserveAspectRatio="none"
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full"
+          className="absolute inset-0 h-full w-full opacity-70"
         >
           {wave.map((c, i) => (
             <rect
@@ -118,7 +118,7 @@ export function CueWave({
               width={1}
               y={50 - c.h * 50}
               height={Math.max(c.h * 100, 0.5)}
-              fill={c.rgb ? `rgb(${c.rgb.join(',')})` : 'var(--color-fg-faint)'}
+              fill="var(--color-accent)"
             />
           ))}
         </svg>

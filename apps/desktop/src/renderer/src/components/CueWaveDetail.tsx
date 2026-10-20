@@ -65,11 +65,12 @@ export function CueWaveDetail({
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.clearRect(0, 0, width, HEIGHT)
     if (!source) return
-    const faint = getComputedStyle(canvas).getPropertyValue('--color-fg-faint')
+    const accent = getComputedStyle(canvas).getPropertyValue('--color-accent').trim()
+    g.globalAlpha = 0.7
     visibleColumns(source, fromMs, toMs, width).forEach((column, x) => {
       if (!column) return
       const h = Math.max(column.h * HEIGHT, 1)
-      g.fillStyle = column.rgb ? `rgb(${column.rgb.join(',')})` : faint
+      g.fillStyle = accent
       g.fillRect(x, (HEIGHT - h) / 2, 1, h)
     })
   }, [source, fromMs, toMs])

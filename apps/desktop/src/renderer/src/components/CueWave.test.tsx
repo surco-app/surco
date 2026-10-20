@@ -55,6 +55,17 @@ function drop(ms: number, pending = true): WaveCue {
 }
 
 describe('CueWave', () => {
+  it('paints the wave in Surco accent like every other wave in the app, not in rekordbox colours', () => {
+    setup({
+      wave: [
+        { h: 1, rgb: [255, 0, 0] },
+        { h: 0.5, rgb: null },
+      ],
+    })
+    const fills = [...document.querySelectorAll('rect')].map((r) => r.getAttribute('fill'))
+    expect(new Set(fills)).toEqual(new Set(['var(--color-accent)']))
+  })
+
   it('draws hot cues as lettered squares in rekordbox colours and CALLs under them at one height', () => {
     setup()
     const a = screen.getByTestId('cue-wave-hot-A')

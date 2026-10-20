@@ -107,6 +107,27 @@ describe('CueWaveDetail', () => {
     expect(fillRect.mock.calls.length).toBeLessThanOrEqual(400)
   })
 
+  it('paints the wave in Surco accent like every other wave in the app, not in rekordbox colours', () => {
+    const styles: string[] = []
+    const fake = {
+      clearRect: vi.fn(),
+      fillRect: vi.fn(),
+      setTransform: vi.fn(),
+      globalAlpha: 1,
+      set fillStyle(v: string) {
+        styles.push(v)
+      },
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+      getPropertyValue: (name: string) => (name === '--color-accent' ? '#7aa2f7' : ''),
+    } as never)
+    const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
+    setup({ source: { words }, playheadMs: 150000 })
+    expect(styles.length).toBeGreaterThan(0)
+    expect(new Set(styles)).toEqual(new Set(['#7aa2f7']))
+  })
+
   it('scales the canvas by the device pixel ratio but still paints one column per CSS pixel', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const fillRect = vi.fn()
