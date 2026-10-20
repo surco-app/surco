@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { markStyle, placeCues } from './cueMarks'
+import { HOT_MARK_PX, markStyle, placeCues, WAVE_MARK_LANE_PX } from './cueMarks'
 
 describe('placeCues', () => {
   it('puts a CALL right under its hot cue even when rekordbox stored it a few ms apart', () => {
@@ -35,17 +35,15 @@ describe('placeCues', () => {
 })
 
 describe('markStyle', () => {
-  it('centres both marks on the same spot and puts every CALL at one height under the squares', () => {
-    expect(markStyle(25, 'hot', 'row')).toEqual({
+  it('centres every mark on its spot at the top, so a CALL sits at the height of its hot cue and is drawn behind it', () => {
+    expect(markStyle(25)).toEqual({
       left: '25%',
       top: '0px',
       transform: 'translateX(-50%)',
     })
-    expect(markStyle(25, 'call', 'row')).toEqual({
-      left: '25%',
-      top: '13px',
-      transform: 'translateX(-50%)',
-    })
-    expect(markStyle(25, 'call', 'wave').top).toBe('15px')
+  })
+
+  it('needs a lane of one row of marks, since CALLs no longer stack under the squares', () => {
+    expect(WAVE_MARK_LANE_PX).toBe(HOT_MARK_PX.wave + 1)
   })
 })

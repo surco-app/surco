@@ -29,9 +29,7 @@ export type MarkSize = 'row' | 'wave'
 
 export const HOT_MARK_PX: Record<MarkSize, number> = { row: 12, wave: 14 }
 
-const CALL_MARK_MAX_PX = 10
-
-export const WAVE_MARK_LANE_PX = HOT_MARK_PX.wave + 1 + CALL_MARK_MAX_PX + 1
+export const WAVE_MARK_LANE_PX = HOT_MARK_PX.wave + 1
 
 export function placeCues(
   cues: MarkInput[],
@@ -62,14 +60,10 @@ export function placeCues(
   return { hot, calls }
 }
 
-export function markStyle(
-  at: number,
-  row: 'hot' | 'call',
-  size: MarkSize,
-): { left: string; top: string; transform: string } {
+export function markStyle(at: number): { left: string; top: string; transform: string } {
   return {
     left: `${at}%`,
-    top: row === 'hot' ? '0px' : `${HOT_MARK_PX[size] + 1}px`,
+    top: '0px',
     transform: 'translateX(-50%)',
   }
 }

@@ -54,7 +54,7 @@ describe('RowWave', () => {
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName('2 hot cues')
   })
 
-  it('draws a CALL under its hot cue, centred, instead of hiding it behind the square', () => {
+  it('draws a CALL at the height of its hot cue, centred, behind the square', () => {
     render(
       <RowWave
         request={request}
@@ -72,10 +72,11 @@ describe('RowWave', () => {
     expect(call.style.left).toBe(hot.style.left)
     expect(call.style.transform).toBe('translateX(-50%)')
     expect(hot.style.transform).toBe('translateX(-50%)')
-    expect(call.style.top).toBe('13px')
+    expect(call.style.top).toBe(hot.style.top)
+    expect(call.compareDocumentPosition(hot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('puts every CALL at one height, the drop alone and the ones under hot cues', () => {
+  it('puts every CALL at the top height, the drop alone and the ones behind hot cues', () => {
     render(
       <RowWave
         request={request}
@@ -90,7 +91,7 @@ describe('RowWave', () => {
       />,
     )
     expect(new Set(screen.getAllByTestId('track-memory-cue').map((c) => c.style.top))).toEqual(
-      new Set(['13px']),
+      new Set(['0px']),
     )
   })
 

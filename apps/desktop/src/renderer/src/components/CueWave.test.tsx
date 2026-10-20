@@ -67,7 +67,7 @@ describe('CueWave', () => {
     expect(new Set(fills)).toEqual(new Set(['var(--color-accent)']))
   })
 
-  it('draws hot cues as lettered squares in rekordbox colours and CALLs under them at one height', () => {
+  it('draws hot cues as lettered squares in rekordbox colours and CALLs behind them at their height', () => {
     setup()
     const a = screen.getByTestId('cue-wave-hot-A')
     expect(a).toHaveTextContent('A')
@@ -75,8 +75,9 @@ describe('CueWave', () => {
     const paired = screen.getByTestId('cue-wave-call-16000')
     const dropCall = screen.getByTestId('cue-wave-call-40000')
     expect(paired.style.left).toBe(a.style.left)
-    expect(paired.style.top).toBe('15px')
-    expect(dropCall.style.top).toBe('15px')
+    expect(paired.style.top).toBe(a.style.top)
+    expect(dropCall.style.top).toBe(a.style.top)
+    expect(paired.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('DROP')
     expect(screen.getByTestId('cue-wave-drop-40000')).toHaveAttribute('data-pending', 'true')
     expect(screen.queryByTestId('cue-wave-drop-16000')).toBeNull()
@@ -94,6 +95,7 @@ describe('CueWave', () => {
     expect(
       Number.parseFloat(screen.getByTestId('cue-wave-call-16000').style.top) + 10,
     ).toBeLessThanOrEqual(lane)
+    expect(lane).toBe(HOT_MARK_PX.wave + 1)
     expect(screen.getByTestId('cue-wave-area').style.top).toBe(`${lane}px`)
   })
 

@@ -76,7 +76,7 @@ export function RowWave({
           key={`m-${c.key}`}
           data-testid="track-memory-cue"
           aria-hidden="true"
-          style={{ ...markStyle(c.at, 'call', 'row'), borderTopColor: MEMORY_CUE_COLOR }}
+          style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
           className="absolute h-0 w-0 border-x-4 border-t-[6px] border-x-transparent"
         />
       ))}
@@ -84,7 +84,7 @@ export function RowWave({
         <span
           data-testid="track-cue-pending"
           aria-hidden="true"
-          style={{ ...markStyle(0, 'hot', 'row'), borderColor: HOT_CUE_DEFAULT_COLOR }}
+          style={{ ...markStyle(0), borderColor: HOT_CUE_DEFAULT_COLOR }}
           className="absolute h-3 w-3 rounded-[3px] border"
         />
       )}
@@ -97,8 +97,8 @@ export function RowWave({
             aria-hidden="true"
             style={
               pending
-                ? { ...markStyle(c.at, 'hot', 'row'), borderColor: colour, color: colour }
-                : { ...markStyle(c.at, 'hot', 'row'), backgroundColor: colour, color: '#000' }
+                ? { ...markStyle(c.at), borderColor: colour, color: colour }
+                : { ...markStyle(c.at), backgroundColor: colour, color: '#000' }
             }
             className={`absolute h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
               pending ? 'border' : ''

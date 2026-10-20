@@ -290,7 +290,7 @@ export function CueWave({
           key={`t${ms}`}
           data-testid={`cue-wave-trimmed-${ms}`}
           aria-hidden="true"
-          style={markStyle((ms / Math.max(durationMs, 1)) * 100, 'hot', 'wave')}
+          style={markStyle((ms / Math.max(durationMs, 1)) * 100)}
           className="absolute h-3.5 w-3.5 rounded-[3px] border border-dashed border-[var(--color-fg-faint)]"
         />
       ))}
@@ -316,7 +316,7 @@ export function CueWave({
           'data-testid': `cue-wave-call-${c.ms}`,
           'data-paired': c.paired ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
-          style: { ...markStyle(c.at, 'call', 'wave'), borderTopColor: MEMORY_CUE_COLOR },
+          style: { ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR },
           className: `absolute h-0 w-0 border-x-[5px] border-x-transparent ${
             isSelected ? 'border-t-[10px]' : 'border-t-[7px]'
           } ${pending ? 'opacity-60' : ''}`,
@@ -342,7 +342,7 @@ export function CueWave({
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
           style: {
-            ...markStyle(h.at, 'hot', 'wave'),
+            ...markStyle(h.at),
             ...(pending
               ? { borderColor: h.colour, color: h.colour }
               : { backgroundColor: h.colour, color: '#000' }),

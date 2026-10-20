@@ -128,7 +128,7 @@ export function CueWaveDetail({
           data-testid={`cue-detail-call-${c.ms + fromMs}`}
           data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
           aria-hidden="true"
-          style={{ ...markStyle(c.at, 'call', 'wave'), borderTopColor: MEMORY_CUE_COLOR }}
+          style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
           className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
             pendingOf.get(c.key) ? 'opacity-60' : ''
           }`}
@@ -144,7 +144,7 @@ export function CueWaveDetail({
             data-selected={selected === h.key ? 'true' : 'false'}
             aria-hidden="true"
             style={{
-              ...markStyle(h.at, 'hot', 'wave'),
+              ...markStyle(h.at),
               ...(pending
                 ? { borderColor: h.colour, color: h.colour }
                 : { backgroundColor: h.colour, color: '#000' }),

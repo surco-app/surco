@@ -101,6 +101,11 @@ describe('CueWaveDetail', () => {
     ).toBeLessThanOrEqual(lane)
     const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
     expect(canvas.style.top).toBe(`${lane}px`)
+    expect(lane).toBe(HOT_MARK_PX.wave + 1)
+    const call = screen.getByTestId(`cue-detail-call-${bar(36)}`)
+    const hot = screen.getByTestId('cue-detail-hot-B')
+    expect(call.style.top).toBe(hot.style.top)
+    expect(call.compareDocumentPosition(hot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('says how many bars are left to the next CALL, as rekordbox does above the playhead', () => {

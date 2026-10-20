@@ -823,7 +823,7 @@ const TrackRow = memo(function TrackRow({
                 </span>
               </span>
             </span>
-            <span data-testid="track-wave-line" className="block h-[26px]">
+            <span data-testid="track-wave-line" className="block h-5">
               {shown.waiting ? (
                 <span
                   data-testid="track-loading"
