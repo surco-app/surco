@@ -685,6 +685,31 @@ describe('CuesSection', () => {
     )
   })
 
+  it('never offers Aplicar a esta pista for a flow that would only take hot cues away, and says it does not fit and why', async () => {
+    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    await ready()
+    markAt(bar(64))
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    chooseFlow('one-at-32')
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+    expect(screen.getByTestId('cues-no-fit')).toHaveTextContent("This flow doesn't fit this track")
+    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
+      "1 doesn't fit, it falls in the strong part",
+    )
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+  })
+
+  it('still offers Aplicar a esta pista when the other flow places a hot cue, or places only CALLs by design, even if it takes hot cues away', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    for (const id of ['one-at-32', 'calls-only']) {
+      chooseFlow(id)
+      expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
+      expect(screen.queryByTestId('cues-no-fit')).toBeNull()
+    }
+  })
+
   it('draws no flow and no cursor in Manual', async () => {
     setup(READ, null, { activeCueFlow: 'manual' })
     await ready()

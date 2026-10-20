@@ -273,7 +273,8 @@ function Editing({
   const [chosen, setChosen] = useState(settled === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : state.flowId)
   const manual = chosen === MANUAL_CUE_FLOW
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : DEFAULT_CUE_FLOW_ID
-  const placing = !manual && followsPoint(flows.find((f) => f.id === shownFlow) ?? ONE_AT_32)
+  const shown = flows.find((f) => f.id === shownFlow) ?? ONE_AT_32
+  const placing = !manual && followsPoint(shown)
   const pickMode = (id: string) => {
     setChosen(id)
     if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })
@@ -288,8 +289,13 @@ function Editing({
     () => (manual ? null : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx)),
     [manual, state, shownFlow, ctx],
   )
+  const noFit =
+    switchGhost !== null &&
+    shown.rules.some((r) => r.place !== 'call') &&
+    !switchGhost.added.some((c) => c.kind !== 0) &&
+    state.cues.some((c) => c.kind !== 0 && switchGhost.gone.includes(c.key))
   const canApply =
-    switchGhost !== null && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
+    switchGhost !== null && !noFit && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
   const [hoverMs, setHoverMs] = useState<number | null>(null)
   useEffect(() => {
     if (!placing) setHoverMs(null)
@@ -299,7 +305,8 @@ function Editing({
       placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
     [placing, hoverMs, state, ctx],
   )
-  const ghost = hoverGhost ?? (canApply && switchGhost !== null ? switchGhost : undefined)
+  const ghost =
+    hoverGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined)
   const rejected = ghost?.rejected ?? []
   const rejectedReasons = [...new Set(rejected.map((r) => r.reason))]
   const openedWith = useRef(settled)
@@ -532,6 +539,11 @@ function Editing({
         >
           {tr('editor.cues.applyTrack')}
         </button>
+      )}
+      {noFit && (
+        <span data-testid="cues-no-fit" className="text-xs text-warn">
+          {tr('editor.cues.noFit')}
+        </span>
       )}
       {placing && maximized && (
         <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">

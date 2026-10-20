@@ -828,6 +828,7 @@
       "clearAll": "Alle Cues löschen",
       "placeHint": "Zum Setzen klicken",
       "applyTrack": "Auf diesen Titel anwenden",
+      "noFit": "Dieser Ablauf passt nicht zu diesem Titel",
       "rejected": {
         "strong_one": "{{count}} passt nicht, fällt in den starken Teil",
         "strong_other": "{{count}} passen nicht, fallen in den starken Teil",

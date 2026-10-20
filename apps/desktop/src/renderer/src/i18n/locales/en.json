@@ -828,6 +828,7 @@
       "clearAll": "Clear all cues",
       "placeHint": "Click to place",
       "applyTrack": "Apply to this track",
+      "noFit": "This flow doesn't fit this track",
       "rejected": {
         "strong_one": "{{count}} doesn't fit, it falls in the strong part",
         "strong_other": "{{count}} don't fit, they fall in the strong part",
