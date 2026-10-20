@@ -53,7 +53,7 @@ export type DraftAction =
   | { type: 'remove'; key: string }
   | { type: 'recolour'; key: string; color: number }
   | { type: 'reletter'; key: string; kind: number }
-  | { type: 'add-hot'; ms: number }
+  | { type: 'add-hot'; ms: number; kind?: number }
   | { type: 'add-call'; ms: number }
   | { type: 'apply-flow'; flowId: string }
   | { type: 'use-flow'; flowId: string }
@@ -228,7 +228,9 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   if (action.type === 'add-hot' || action.type === 'add-call') {
     const ms = snap(ctx, action.ms)
     const hot = action.type === 'add-hot'
-    const kind = hot ? freeLetters(state.cues).at(0) : 0
+    const wanted = action.type === 'add-hot' ? action.kind : undefined
+    const free = freeLetters(state.cues)
+    const kind = !hot ? 0 : wanted === undefined ? free.at(0) : free.find((k) => k === wanted)
     if (kind === undefined || state.cues.some((c) => isHot(c) === hot && near(c.ms, ms)))
       return state
     const key = `n${state.nextKey + 1}`

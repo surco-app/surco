@@ -181,6 +181,29 @@ describe('reduceDraft', () => {
     expect(run(s, { type: 'add-hot', ms: bar(100) })).toBe(s)
   })
 
+  it('puts a hot cue on the letter the DJ pressed, on the beat under the playhead, in the default colour', () => {
+    const s = run(empty(), { type: 'add-hot', ms: bar(10) + 120, kind: 5 })
+    const d = at(s, bar(10), true)
+    expect(d).toMatchObject({ kind: 5, color: 22 })
+    expect(s.selected).toBe(d?.key)
+  })
+
+  it('never puts a second cue on a letter in use, nor a letter rekordbox has no pad for', () => {
+    const placed = run(empty(), { type: 'add-hot', ms: bar(10), kind: 1 })
+    expect(run(placed, { type: 'add-hot', ms: bar(20), kind: 1 })).toBe(placed)
+    expect(run(placed, { type: 'add-hot', ms: bar(20), kind: 4 })).toBe(placed)
+    expect(run(placed, { type: 'add-hot', ms: bar(20), kind: 10 })).toBe(placed)
+  })
+
+  it('keeps every set main accepts when the pads place cues by letter', () => {
+    let s = startDraft([], 'mine')
+    for (const kind of [9, 1, 5, 2]) {
+      s = reduceDraft(s, { type: 'add-hot', ms: bar(8 * kind), kind }, ctx)
+      expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
+    }
+    expect(s.cues.map((c) => c.kind).sort()).toEqual([1, 2, 5, 9])
+  })
+
   it('adds a CALL without asking the flow for anything', () => {
     const s = run(empty(), { type: 'add-call', ms: bar(64) })
     expect(s.cues.map((c) => [c.ms, c.kind])).toEqual([[bar(64), 0]])
