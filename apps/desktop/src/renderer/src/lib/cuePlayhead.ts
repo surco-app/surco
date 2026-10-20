@@ -8,7 +8,7 @@ export function jumpBeats(beats: number[], ms: number, count: number): number {
   const from = nearestBeat(beats, ms)
   const to = from + count
   if (to < 0) return 0
-  if (to >= beats.length) return beats[beats.length - 1]
+  if (to >= beats.length) return Math.max(ms, beats[beats.length - 1])
   return Math.max(0, beats[to] + ms - beats[from])
 }
 
