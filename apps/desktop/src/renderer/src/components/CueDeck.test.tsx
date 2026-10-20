@@ -23,6 +23,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
       ]}
       selected="a"
       jumpBars={16}
+      canRemoveMemory
       {...handlers}
       {...over}
     />,
@@ -63,6 +64,13 @@ describe('CueDeck', () => {
     expect(h.onMemory).toHaveBeenCalledTimes(1)
     expect(h.onMemoryStep.mock.calls).toEqual([[-1], [1]])
     expect(h.onMemoryRemove).toHaveBeenCalledTimes(1)
+  })
+
+  it('greys out ✕ when there is no CALL at the playhead to remove', () => {
+    const h = setup({ canRemoveMemory: false })
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.getByTestId('cues-memory-remove')).toBeDisabled()
+    expect(h.onMemoryRemove).not.toHaveBeenCalled()
   })
 
   it('steps the jump through 8, 16, 32 and 64 bars', () => {

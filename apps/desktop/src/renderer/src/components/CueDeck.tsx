@@ -26,6 +26,7 @@ export function CueDeck({
   onMemory,
   onMemoryStep,
   onMemoryRemove,
+  canRemoveMemory,
   onJumpBars,
 }: {
   cues: DeckCue[]
@@ -35,6 +36,7 @@ export function CueDeck({
   onMemory: () => void
   onMemoryStep: (dir: 1 | -1) => void
   onMemoryRemove: () => void
+  canRemoveMemory: boolean
   onJumpBars: (bars: CueJumpBars) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -104,8 +106,9 @@ export function CueDeck({
           type="button"
           data-testid="cues-memory-remove"
           aria-label={tr('editor.cues.memoryRemove')}
+          disabled={!canRemoveMemory}
           onClick={onMemoryRemove}
-          className={GHOST}
+          className={`${GHOST} disabled:opacity-40`}
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>

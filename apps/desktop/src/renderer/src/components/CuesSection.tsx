@@ -212,9 +212,11 @@ function Editing({
     const to = adjacentCall(state.cues, playheadMs, dir)
     if (to !== null) seekTo(to)
   }
+  const callHere =
+    callAt(state.cues, playheadMs) ??
+    callAt(state.cues, ctx.beats[nearestBeat(ctx.beats, playheadMs)])
   const memoryRemove = () => {
-    const call = callAt(state.cues, playheadMs)
-    if (call) dispatch({ type: 'remove', key: call.key })
+    if (callHere) dispatch({ type: 'remove', key: callHere.key })
   }
   const run = (key: CueKey) => {
     if (key.type === 'play') audition.toggle(playheadMs)
@@ -443,6 +445,7 @@ function Editing({
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
           onMemoryRemove={memoryRemove}
+          canRemoveMemory={callHere !== undefined}
           onJumpBars={(bars) => onJumpBars?.(bars)}
         />
       )}

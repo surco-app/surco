@@ -49,10 +49,10 @@ beforeEach(() => {
   })
 })
 
-function setup(settings: Partial<Settings> | null = null) {
+function setup(settings: Partial<Settings> | null = null, read: TrackCues = READ) {
   const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
+    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueWaveDetail,
   })
@@ -157,6 +157,35 @@ describe('CuesSection maximized', () => {
     fireEvent.click(screen.getByTestId('cues-memory-remove'))
     expect(screen.queryByTestId('cue-wave-call-120000')).toBeNull()
     expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+  })
+
+  it('removes with ✕ the CALL MEMORY just put on the beat when the playhead sat off the grid', async () => {
+    setup()
+    await maximize()
+    seek(64200)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
+  })
+
+  it('still removes with ✕ a CALL from rekordbox that sits off the grid under the playhead', async () => {
+    setup(null, { ...READ, cues: [{ id: 'r', ms: 64230, kind: 0, color: null }] })
+    await maximize()
+    seek(64230)
+    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.queryByTestId('cue-wave-call-64230')).toBeNull()
+  })
+
+  it('disables ✕ while no CALL sits at the playhead, so a click never looks like it did nothing', async () => {
+    setup()
+    await maximize()
+    expect(screen.getByTestId('cues-memory-remove')).toBeDisabled()
+    seek(64200)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    expect(screen.getByTestId('cues-memory-remove')).toBeEnabled()
+    seek(100000)
+    expect(screen.getByTestId('cues-memory-remove')).toBeDisabled()
   })
 
   it('changes the jump with ‹ › and hands it on to be saved', async () => {
