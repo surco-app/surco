@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Haz clic en la onda para marcar donde rompe y tu flujo pone el resto. Selecciona una cue para moverla, borrarla o cambiarle color o letra. Con el clic derecho añades una.",
+      "help": "Elige un flujo y haz clic en la onda para colocarlo, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle color o letra.",
       "unanalysed": "rekordbox aún no ha analizado esta pista",
       "manual": "Esta pista tiene hot cues puestos a mano. Surco guarda los drops y no toca los hot cues.",
       "tooMany": "Necesitaría más de 8 hot cues. Quita un drop.",
@@ -785,7 +785,7 @@
       "selectedCall": "CALL",
       "menuAddHot": "Añadir hot cue aquí",
       "menuAddCall": "Añadir CALL aquí",
-      "menuMarkDrop": "Marcar donde rompe aquí",
+      "menuMarkDrop": "Colocar el flujo aquí",
       "trimmed_one": "{{count}} hot cue se queda fuera por el límite de 8",
       "trimmed_other": "{{count}} hot cues se quedan fuera por el límite de 8",
       "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en rekordbox y ya no vale. Ves lo que tiene rekordbox ahora.",
@@ -1431,11 +1431,11 @@
       "rules": "Reglas",
       "addRule": "Añadir regla",
       "removeRule": "Quitar regla",
-      "noRules": "Sin reglas. Marcar donde rompe deja solo el CALL.",
+      "noRules": "Sin reglas. Colocar el flujo deja solo el CALL del punto.",
       "preview": "Vista previa",
-      "previewHint": "Pista de ejemplo a 128 BPM con donde rompe en el compás 64",
+      "previewHint": "Pista de ejemplo a 128 BPM con el punto en el compás 64",
       "tooMany": "Este flujo pide {{count}} hot cues y rekordbox admite 8",
-      "looseCall": "Un CALL suelto se lee como donde rompe la próxima vez",
+      "looseCall": "Un CALL suelto se lee como un punto la próxima vez",
       "block": {
         "from": "Desde",
         "direction": "Sentido",
@@ -1447,7 +1447,7 @@
         "color": "Color {{n}}"
       },
       "from": {
-        "drop": "Desde donde rompe",
+        "drop": "Desde el punto",
         "first-beat": "Desde el primer golpe",
         "last-beat": "Desde el último golpe",
         "intro": "Desde cada intro",
@@ -1470,7 +1470,7 @@
         "always": "siempre",
         "fits": "si cabe",
         "clear": "si no cuadra con otra regla",
-        "first": "si no hay otra antes de donde rompe"
+        "first": "si no hay otra antes del punto"
       },
       "place": {
         "hot": "hot cue",

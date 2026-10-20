@@ -295,6 +295,7 @@ describe('CuesSection', () => {
     await ready()
     await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(64) / 1000, clientY: 30 })
+    expect(screen.getByTestId('cues-menu-mark-drop')).toHaveTextContent('Place the flow here')
     fireEvent.click(screen.getByTestId('cues-menu-mark-drop'))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), {

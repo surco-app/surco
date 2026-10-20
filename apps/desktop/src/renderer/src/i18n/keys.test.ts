@@ -125,3 +125,13 @@ describe('skipped library activity lines', () => {
     }
   })
 })
+
+describe('cue editor copy', () => {
+  it('never says donde rompe, since a flow is placed on any point and not every DJ marks the drop', () => {
+    expect(
+      leaves(es)
+        .filter(([key, text]) => /rompe/i.test(text) && key !== 'cueWave.proposal')
+        .map(([key]) => key),
+    ).toEqual([])
+  })
+})

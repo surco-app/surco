@@ -218,10 +218,10 @@ describe('CuesTab', () => {
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
     expect(screen.getByTestId('cue-rule-0')).toHaveTextContent(
-      'Desde donde rompe, hacia atrás, cada 16 compases, 3 veces, si cabe, pon hot cue + CALL',
+      'Desde el punto, hacia atrás, cada 16 compases, 3 veces, si cabe, pon hot cue + CALL',
     )
     expect(screen.getByTestId('cue-rule-1')).toHaveTextContent(
-      'Desde el primer golpe, en el mismo golpe, si no hay otra antes de donde rompe, pon hot cue + CALL',
+      'Desde el primer golpe, en el mismo golpe, si no hay otra antes del punto, pon hot cue + CALL',
     )
   })
 

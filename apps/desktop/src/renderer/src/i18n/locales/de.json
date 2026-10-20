@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Klicke auf die Wellenform, um einen Drop zu markieren, dein Ablauf setzt den Rest. Wähle ein Cue, um es zu verschieben, zu löschen oder Farbe und Buchstaben zu ändern. Mit Rechtsklick fügst du eins hinzu.",
+      "help": "Wähle einen Ablauf und klicke auf die Wellenform, um ihn zu setzen, oder wähle Manuell und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder Farbe und Buchstaben zu ändern.",
       "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
       "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco speichert die Drops und lässt die Hot Cues unverändert.",
       "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Drop.",
@@ -785,7 +785,7 @@
       "selectedCall": "CALL",
       "menuAddHot": "Hot Cue hier hinzufügen",
       "menuAddCall": "CALL hier hinzufügen",
-      "menuMarkDrop": "Drop hier markieren",
+      "menuMarkDrop": "Ablauf hier setzen",
       "trimmed_one": "{{count}} Hot Cue fällt wegen der Grenze von 8 weg",
       "trimmed_other": "{{count}} Hot Cues fallen wegen der Grenze von 8 weg",
       "queuedStale": "Die vorgemerkte Speicherung stammt von vor der Änderung des Titels in rekordbox und ist veraltet. Du siehst, was rekordbox jetzt enthält.",
@@ -1431,11 +1431,11 @@
       "rules": "Regeln",
       "addRule": "Regel hinzufügen",
       "removeRule": "Regel entfernen",
-      "noRules": "Keine Regeln. Ein markierter Drop setzt nur seinen CALL.",
+      "noRules": "Keine Regeln. Der Ablauf setzt nur den CALL des Punkts.",
       "preview": "Vorschau",
-      "previewHint": "Beispieltitel mit 128 BPM und Drop in Takt 64",
+      "previewHint": "Beispieltitel mit 128 BPM und dem Punkt in Takt 64",
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
-      "looseCall": "Ein einzelner CALL wird beim nächsten Mal als Drop gelesen",
+      "looseCall": "Ein einzelner CALL wird beim nächsten Mal als Punkt gelesen",
       "block": {
         "from": "Ab",
         "direction": "Richtung",
@@ -1447,7 +1447,7 @@
         "color": "Farbe {{n}}"
       },
       "from": {
-        "drop": "Ab dem Drop",
+        "drop": "Ab dem Punkt",
         "first-beat": "Ab dem ersten Schlag",
         "last-beat": "Ab dem letzten Schlag",
         "intro": "Ab jedem Intro",
@@ -1470,7 +1470,7 @@
         "always": "immer",
         "fits": "wenn es passt",
         "clear": "wenn es mit keiner anderen Regel kollidiert",
-        "first": "wenn vor dem Drop keins ist"
+        "first": "wenn vor dem Punkt keins ist"
       },
       "place": {
         "hot": "Hot Cue",

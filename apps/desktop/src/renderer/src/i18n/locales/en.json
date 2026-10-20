@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Click the waveform to mark a drop and your flow sets the rest. Select a cue to move it, delete it or change its colour or letter. Right-click to add one.",
+      "help": "Pick a flow and click the waveform to place it, or pick Manual and set each cue by hand. Select a cue to move it, delete it or change its colour or letter.",
       "unanalysed": "rekordbox has not analysed this track yet",
       "manual": "This track has hot cues set by hand. Surco saves the drops and leaves the hot cues alone.",
       "tooMany": "It would need more than 8 hot cues. Remove a drop.",
@@ -785,7 +785,7 @@
       "selectedCall": "CALL",
       "menuAddHot": "Add hot cue here",
       "menuAddCall": "Add CALL here",
-      "menuMarkDrop": "Mark drop here",
+      "menuMarkDrop": "Place the flow here",
       "trimmed_one": "{{count}} hot cue is left out by the limit of 8",
       "trimmed_other": "{{count}} hot cues are left out by the limit of 8",
       "queuedStale": "The queued save was made before the track changed in rekordbox and is out of date. You see what rekordbox holds now.",
@@ -1431,11 +1431,11 @@
       "rules": "Rules",
       "addRule": "Add rule",
       "removeRule": "Remove rule",
-      "noRules": "No rules. Marking a drop leaves only its CALL.",
+      "noRules": "No rules. Placing the flow leaves only the CALL of the point.",
       "preview": "Preview",
-      "previewHint": "Example track at 128 BPM with the drop at bar 64",
+      "previewHint": "Example track at 128 BPM with the point at bar 64",
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
-      "looseCall": "A loose CALL reads as a drop the next time",
+      "looseCall": "A loose CALL reads as a point the next time",
       "block": {
         "from": "From",
         "direction": "Direction",
@@ -1447,7 +1447,7 @@
         "color": "Colour {{n}}"
       },
       "from": {
-        "drop": "From the drop",
+        "drop": "From the point",
         "first-beat": "From the first beat",
         "last-beat": "From the last beat",
         "intro": "From each intro",
@@ -1470,7 +1470,7 @@
         "always": "always",
         "fits": "if it fits",
         "clear": "if it does not clash with another rule",
-        "first": "if there is none before the drop"
+        "first": "if there is none before the point"
       },
       "place": {
         "hot": "hot cue",

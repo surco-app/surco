@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Clique sur la forme d’onde pour marquer un drop et ton flux place le reste. Sélectionne un cue pour le déplacer, le supprimer ou changer sa couleur ou sa lettre. Clic droit pour en ajouter un.",
+      "help": "Choisissez un flux et cliquez sur la forme d’onde pour le placer, ou choisissez Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur ou sa lettre.",
       "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
       "manual": "Ce morceau a des hot cues placés à la main. Surco enregistre les drops et ne touche pas aux hot cues.",
       "tooMany": "Il faudrait plus de 8 hot cues. Retirez un drop.",
@@ -785,7 +785,7 @@
       "selectedCall": "CALL",
       "menuAddHot": "Ajouter un hot cue ici",
       "menuAddCall": "Ajouter un CALL ici",
-      "menuMarkDrop": "Marquer le drop ici",
+      "menuMarkDrop": "Placer le flux ici",
       "trimmed_one": "{{count}} hot cue reste dehors à cause de la limite de 8",
       "trimmed_other": "{{count}} hot cues restent dehors à cause de la limite de 8",
       "queuedStale": "L'enregistrement en attente date d'avant la modification du morceau dans rekordbox et n'est plus à jour. Vous voyez ce que contient rekordbox maintenant.",
@@ -1431,11 +1431,11 @@
       "rules": "Règles",
       "addRule": "Ajouter une règle",
       "removeRule": "Retirer la règle",
-      "noRules": "Aucune règle. Marquer un drop ne laisse que son CALL.",
+      "noRules": "Aucune règle. Placer le flux ne laisse que le CALL du point.",
       "preview": "Aperçu",
-      "previewHint": "Morceau d’exemple à 128 BPM avec le drop à la mesure 64",
+      "previewHint": "Morceau d’exemple à 128 BPM avec le point à la mesure 64",
       "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
-      "looseCall": "Un CALL seul se lit comme un drop la fois suivante",
+      "looseCall": "Un CALL seul se lit comme un point la fois suivante",
       "block": {
         "from": "Depuis",
         "direction": "Sens",
@@ -1447,7 +1447,7 @@
         "color": "Couleur {{n}}"
       },
       "from": {
-        "drop": "Depuis le drop",
+        "drop": "Depuis le point",
         "first-beat": "Depuis le premier temps",
         "last-beat": "Depuis le dernier temps",
         "intro": "Depuis chaque intro",
@@ -1470,7 +1470,7 @@
         "always": "toujours",
         "fits": "si ça rentre",
         "clear": "si ça ne tombe pas sur une autre règle",
-        "first": "s’il n’y en a pas avant le drop"
+        "first": "s’il n’y en a pas avant le point"
       },
       "place": {
         "hot": "hot cue",
