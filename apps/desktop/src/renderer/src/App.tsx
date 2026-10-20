@@ -2562,7 +2562,9 @@ export default function App(): React.JSX.Element {
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
   const showList =
-    (browser.source ? browser.playlist !== null : filesView.length > 0) || review !== null
+    (browser.source ? browser.playlist !== null : filesView.length > 0) ||
+    review !== null ||
+    player.mounted
   const progress = topBarProgress(
     [analysis, matching, batchProgress, importProgress],
     anyLoadingMeta,

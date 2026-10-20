@@ -3143,6 +3143,43 @@ describe('App row playback', () => {
     fireEvent.doubleClick(rows[1])
     await waitFor(() => expect(screen.queryByTestId('player')).toBeNull())
   })
+
+  it('keeps the playing card on screen in a source with no list, so closing it there keeps it closed back in Music', async () => {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn(async () => ({ title: 'Bravo', artist: 'DJ' })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: 1 }]),
+      loadAppleMusicPlaylistTracks: vi.fn<Api['loadAppleMusicPlaylistTracks']>().mockResolvedValue({
+        paths: ['/m/b.wav'],
+        persistentIds: {},
+        meta: {},
+        missing: 0,
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    const [row] = await screen.findAllByTestId('track-row')
+    fireEvent.click(row)
+    fireEvent.doubleClick(row)
+    await screen.findByTestId('player')
+
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('source-node-f')
+    fireEvent.click(screen.getByTestId('player-close'))
+    await waitFor(() => expect(screen.queryByTestId('player')).toBeNull())
+
+    fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
+    await screen.findAllByTestId('track-row')
+    await act(async () => {})
+    expect(screen.queryByTestId('player')).toBeNull()
+  })
 })
 
 describe('App track position', () => {
