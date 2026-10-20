@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
-import { CueWave, type WaveCue } from './CueWave'
+import { CueWave } from './CueWave'
 
 afterEach(cleanup)
 
@@ -51,10 +51,6 @@ function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
   return handlers
 }
 
-function drop(ms: number, pending = true): WaveCue {
-  return { key: `d${ms}`, ms, kind: 0, color: null, pending }
-}
-
 describe('CueWave', () => {
   it('paints the wave in Surco accent like every other wave in the app, not in rekordbox colours', () => {
     setup({
@@ -78,12 +74,9 @@ describe('CueWave', () => {
     expect(paired.style.top).toBe(a.style.top)
     expect(dropCall.style.top).toBe(a.style.top)
     expect(paired.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('DROP')
-    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveAttribute('data-pending', 'true')
-    expect(screen.queryByTestId('cue-wave-drop-16000')).toBeNull()
-    expect(
-      screen.getAllByTestId('cue-wave-bar').filter((b) => b.dataset.strong === 'true'),
-    ).toHaveLength(3)
+    expect(dropCall).toHaveAttribute('data-pending', 'true')
+    expect(paired).toHaveAttribute('data-pending', 'false')
+    expect(screen.getByTestId('cue-wave')).not.toHaveTextContent('DROP')
   })
 
   it('keeps the hot cue and its CALL in a lane above the wave, as rekordbox does, so no mark hides the bars', () => {
@@ -115,23 +108,19 @@ describe('CueWave', () => {
     expect(Number(rects[1].getAttribute('height'))).toBeCloseTo(50)
   })
 
-  it('lets the half wave reach the bottom edge and lays the drop labels over it, so no band under the wave goes to waste', () => {
+  it('lets the half wave reach the bottom edge, so no band under the wave goes to waste', () => {
     setup()
     expect(screen.getByTestId('cue-wave-area').style.bottom).toBe('0px')
-    const label = screen.getByTestId('cue-wave-drop-label-40000')
-    expect(label.style.top).toBe('0px')
-    expect(label.style.bottom).toBe('')
   })
 
-  it('caps only the phrase lines of the overview, where a cap on every bar would grey out the whole wave', () => {
+  it('marks only every 16 bars with a small tick at the bottom, so the strip reads as a navigator and not a grid', () => {
     setup()
-    const lines = screen.getAllByTestId('cue-wave-bar')
-    for (const line of lines) {
-      expect(within(line).queryAllByTestId('cue-grid-cap')).toHaveLength(
-        line.dataset.strong === 'true' ? 2 : 0,
-      )
-    }
-    expect(lines.some((l) => l.dataset.strong === 'true')).toBe(true)
+    expect(screen.queryAllByTestId('cue-wave-bar')).toHaveLength(0)
+    expect(screen.getAllByTestId('cue-wave-tick').map((t) => t.style.left)).toEqual([
+      '0%',
+      '40%',
+      '80%',
+    ])
   })
 
   it('marks a drop on the beat under a click on the empty wave and clears the selection', () => {
@@ -238,34 +227,11 @@ describe('CueWave', () => {
     expect(Object.values(h).every((f) => f.mock.calls.length === 0)).toBe(true)
   })
 
-  it('shows where the drop will land while hovering', () => {
+  it('shows where the drop will land while hovering, as a bare line with no label over the wave', () => {
     setup()
     fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
-    expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('+ drop')
-  })
-
-  it('names the beat the hover will take, so the user can tell which of the beats under the pointer it is', () => {
-    setup()
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
-    expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('0:10.000')
-    expect(screen.getByTestId('cue-wave-ghost')).toHaveTextContent('6.1')
-  })
-
-  it('names where each drop sits', () => {
-    setup()
-    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('0:40.000')
-    expect(screen.getByTestId('cue-wave-drop-40000')).toHaveTextContent('21.1')
-  })
-
-  it('turns the label of a drop near the end to the left so the edge does not cut it', () => {
-    setup({ cues: [drop(76000)] })
-    expect(screen.getByTestId('cue-wave-drop-label-76000')).toHaveAttribute('data-side', 'left')
-  })
-
-  it('stacks the labels of two close drops instead of drawing them over each other', () => {
-    setup({ cues: [drop(40000, false), drop(42000)] })
-    expect(screen.getByTestId('cue-wave-drop-label-40000')).toHaveAttribute('data-row', '0')
-    expect(screen.getByTestId('cue-wave-drop-label-42000')).toHaveAttribute('data-row', '1')
+    expect(screen.getByTestId('cue-wave-ghost').style.left).toBe('12.5%')
+    expect(screen.getByTestId('cue-wave-ghost').textContent).toBe('')
   })
 
   it('says the track is not analysed and takes no clicks when it has no grid', () => {
@@ -341,5 +307,45 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 200 })
     expect(handlers.onMarkDrop).toHaveBeenCalled()
+  })
+
+  it('shows the part the zoomed wave shows as a soft rectangle', () => {
+    setup({
+      onSeek: vi.fn<(ms: number) => void>(),
+      playheadMs: 20000,
+      view: { fromMs: 12000, toMs: 28000 },
+    })
+    expect(screen.getByTestId('cue-wave-view').style.left).toBe('15%')
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('20%')
+  })
+
+  it('cuts the rectangle at the start of the track instead of drawing it off the strip', () => {
+    setup({
+      onSeek: vi.fn<(ms: number) => void>(),
+      playheadMs: 0,
+      view: { fromMs: -8000, toMs: 8000 },
+    })
+    expect(screen.getByTestId('cue-wave-view').style.left).toBe('0%')
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('10%')
+  })
+
+  it('moves the playhead while the strip is dragged and stops on release', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ onSeek, playheadMs: 0 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 100 })
+    fireEvent.mouseMove(window, { clientX: 400 })
+    fireEvent.mouseUp(window, { clientX: 400 })
+    fireEvent.mouseMove(window, { clientX: 600 })
+    expect(onSeek.mock.calls).toEqual([[10000], [40000]])
+  })
+
+  it('moves a mark instead of the playhead when the drag starts on it', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    const h = setup({ onSeek, playheadMs: 0 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { button: 0, clientX: 160 })
+    fireEvent.mouseMove(window, { clientX: 243 })
+    fireEvent.mouseUp(window, { clientX: 243 })
+    expect(onSeek).not.toHaveBeenCalled()
+    expect(h.onMove).toHaveBeenCalledWith('a', 24500)
   })
 })

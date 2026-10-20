@@ -28,6 +28,7 @@ import {
   callAt,
   cueClock,
   DEFAULT_ZOOM_BARS,
+  detailWindow,
   jumpBeats,
   zoomStep,
 } from '../lib/cuePlayhead'
@@ -527,6 +528,7 @@ function Editing({
         onMenu={setMenu}
         playheadMs={maximized ? playheadMs : undefined}
         onSeek={maximized && !armed ? seekTo : undefined}
+        view={maximized ? detailWindow(ctx.beats, playheadMs, zoom) : undefined}
       />
       {!maximized && <div className="mt-3">{actions}</div>}
       {maximized && (

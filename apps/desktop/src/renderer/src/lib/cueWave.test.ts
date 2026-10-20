@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { barLines, clickAction, cuePosition, dropLabels } from './cueWave'
+import { barLines, clickAction, cuePosition } from './cueWave'
 
 const GRID = Array.from({ length: 160 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const BEATS = GRID.map((b) => b.ms)
@@ -60,30 +60,5 @@ describe('cuePosition', () => {
     ]
     expect(cuePosition(500, grid).bar).toBe('0.4')
     expect(cuePosition(1000, grid).bar).toBe('1.1')
-  })
-})
-
-describe('dropLabels', () => {
-  it('puts a label right of its drop on one row when nothing is near', () => {
-    expect(dropLabels([10000, 40000], 80000)).toEqual([
-      { ms: 10000, side: 'right', row: 0 },
-      { ms: 40000, side: 'right', row: 0 },
-    ])
-  })
-
-  it('puts the label left of a drop near the end so the edge does not clip it', () => {
-    expect(dropLabels([76000], 80000)).toEqual([{ ms: 76000, side: 'left', row: 0 }])
-  })
-
-  it('moves a label down a row when the drop before is too close for both to read', () => {
-    expect(dropLabels([40000, 42000, 44000], 80000).map((l) => l.row)).toEqual([0, 1, 0])
-  })
-
-  it('stacks an end label that turned left onto the label it would run into', () => {
-    expect(dropLabels([60000, 74000], 80000)).toEqual([
-      { ms: 60000, side: 'right', row: 0 },
-      { ms: 74000, side: 'left', row: 1 },
-    ])
-    expect(dropLabels([40000, 76000], 80000).map((l) => l.row)).toEqual([0, 0])
   })
 })

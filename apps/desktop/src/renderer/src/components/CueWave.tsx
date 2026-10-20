@@ -5,7 +5,7 @@ import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
 import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
-import { barLines, clickAction, cuePosition, dropLabels } from '../lib/cueWave'
+import { barLines, clickAction, cuePosition } from '../lib/cueWave'
 
 export interface WaveCue {
   key: string
@@ -35,7 +35,6 @@ export function GridCaps(): React.JSX.Element {
 
 const HIT_PX = 6
 const DRAG_PX = 3
-const LABEL_ROW_PX = 11
 
 export function CueWave({
   wave,
@@ -54,6 +53,7 @@ export function CueWave({
   onAcceptProposal,
   playheadMs,
   onSeek,
+  view,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -71,6 +71,7 @@ export function CueWave({
   onAcceptProposal?: (ms: number) => void
   playheadMs?: number
   onSeek?: (ms: number) => void
+  view?: { fromMs: number; toMs: number }
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -79,9 +80,10 @@ export function CueWave({
   const dragRef = useRef<{ key: string; x0: number; ms: number | null } | null>(null)
   const [dragMs, setDragMs] = useState<number | null>(null)
   const [armed, setArmed] = useState(false)
+  const [seeking, setSeeking] = useState(false)
   const beatsMs = grid.map((b) => b.ms)
-  const latest = useRef({ beatsMs, durationMs, onMove })
-  latest.current = { beatsMs, durationMs, onMove }
+  const latest = useRef({ beatsMs, durationMs, onMove, onSeek })
+  latest.current = { beatsMs, durationMs, onMove, onSeek }
   useEffect(() => {
     if (readOnly) setGhost(null)
   }, [readOnly])
@@ -119,6 +121,17 @@ export function CueWave({
       window.removeEventListener('mouseup', up)
     }
   }, [armed, msAtX])
+  useEffect(() => {
+    if (!seeking) return
+    const move = (e: MouseEvent) => latest.current.onSeek?.(msAtX(e.clientX))
+    const up = () => setSeeking(false)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+    }
+  }, [seeking, msAtX])
   const waveSvg = useMemo(
     () =>
       wave && (
@@ -143,27 +156,26 @@ export function CueWave({
       ),
     [wave],
   )
-  const bars = useMemo(
+  const ticks = useMemo(
     () =>
-      barLines(grid).map((b) => (
-        <span
-          key={b.ms}
-          data-testid="cue-wave-bar"
-          data-strong={b.strong ? 'true' : 'false'}
-          aria-hidden="true"
-          style={{ left: `${(b.ms / Math.max(durationMs, 1)) * 100}%` }}
-          className={`absolute top-0 bottom-0 w-px ${b.strong ? GRID_LINE : 'bg-[var(--color-fg)]/10'}`}
-        >
-          {b.strong && <GridCaps />}
-        </span>
-      )),
+      barLines(grid)
+        .filter((b) => b.strong)
+        .map((b) => (
+          <span
+            key={b.ms}
+            data-testid="cue-wave-tick"
+            aria-hidden="true"
+            style={{ left: `${(b.ms / Math.max(durationMs, 1)) * 100}%` }}
+            className="absolute bottom-0 h-[3px] w-px bg-[var(--color-fg-faint)]"
+          />
+        )),
     [grid, durationMs],
   )
   if (grid.length === 0) {
     return (
       <div
         data-testid="cue-wave-not-analysed"
-        className="flex h-20 w-full items-center justify-center rounded-md bg-[var(--color-panel-2)] px-4 text-center text-xs text-[var(--color-fg-faint)]"
+        className="flex h-16 w-full items-center justify-center rounded-md bg-[var(--color-panel-2)] px-4 text-center text-xs text-[var(--color-fg-faint)]"
       >
         {t('cueWave.notAnalysed')}
       </div>
@@ -172,15 +184,13 @@ export function CueWave({
   const { hot, calls } = placeCues(cues, durationMs)
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
   const drops = calls.filter((c) => !c.paired)
-  const labels = new Map(
-    dropLabels(
-      drops.map((d) => d.ms),
-      durationMs,
-    ).map((l) => [l.ms, l]),
-  )
-  const sideClass = (side: 'left' | 'right' | undefined): string =>
-    side === 'left' ? 'right-1 text-right' : 'left-1'
   const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
+  const viewPct = (ms: number): string =>
+    `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
+  const shown = view && {
+    from: Math.max(view.fromMs, 0),
+    to: Math.min(view.toMs, durationMs),
+  }
   const at = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const ms = msAtX(e.clientX)
@@ -212,6 +222,11 @@ export function CueWave({
       role="application"
       aria-label={t('cueWave.label')}
       tabIndex={readOnly ? -1 : 0}
+      onMouseDown={(e) => {
+        if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
+        onSeek(msAtX(e.clientX))
+        setSeeking(true)
+      }}
       onClick={(e) => {
         if (readOnly || swallowClick.current) return
         if (onSeek) {
@@ -244,8 +259,8 @@ export function CueWave({
         setGhost(action.kind === 'add' ? action.ms : null)
       }}
       onMouseLeave={() => setGhost(null)}
-      className={`relative h-24 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
-        readOnly ? 'cursor-default' : 'cursor-crosshair'
+      className={`relative h-16 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
+        readOnly ? 'cursor-default' : onSeek ? 'cursor-pointer' : 'cursor-crosshair'
       }`}
     >
       <div
@@ -254,37 +269,23 @@ export function CueWave({
         style={{ top: `${WAVE_MARK_LANE_PX}px`, bottom: '0px' }}
         className="pointer-events-none absolute inset-x-0"
       >
-        {waveSvg}
-        {bars}
-      </div>
-      {drops.map((d) => {
-        const label = labels.get(d.ms)
-        const position = cuePosition(d.ms, grid)
-        return (
+        {shown && (
           <span
-            key={`d${d.key}`}
-            data-testid={`cue-wave-drop-${d.ms}`}
-            data-pending={pendingOf.get(d.key) ? 'true' : 'false'}
-            style={{ left: pct(d.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-            className={`absolute bottom-0 w-0.5 bg-[var(--color-fg)] ${
-              pendingOf.get(d.key) ? 'opacity-60' : ''
-            }`}
-          >
-            <span
-              data-testid={`cue-wave-drop-label-${d.ms}`}
-              data-side={label?.side ?? 'right'}
-              data-row={label?.row ?? 0}
-              style={{ top: `${label?.row === 1 ? LABEL_ROW_PX : 0}px` }}
-              className={`absolute whitespace-nowrap rounded-sm bg-[var(--color-panel-2)]/85 px-0.5 text-[9px] leading-[11px] text-[var(--color-fg)] ${sideClass(
-                label?.side,
-              )}`}
-            >
-              <span className="font-semibold">DROP {position.bar}</span>{' '}
-              <span className="tabular-nums">{position.time}</span>
-            </span>
-          </span>
-        )
-      })}
+            data-testid="cue-wave-view"
+            style={{ left: viewPct(shown.from), width: viewPct(shown.to - shown.from) }}
+            className="absolute top-0 bottom-0 bg-[var(--color-fg)]/10"
+          />
+        )}
+        {waveSvg}
+        {ticks}
+        {playheadMs !== undefined && (
+          <span
+            data-testid="cue-wave-playhead"
+            style={{ left: pct(playheadMs) }}
+            className="absolute top-0 bottom-0 w-px bg-[var(--color-fg)]"
+          />
+        )}
+      </div>
       {(trimmed ?? []).map((ms) => (
         <span
           key={`t${ms}`}
@@ -315,6 +316,7 @@ export function CueWave({
         const common = {
           'data-testid': `cue-wave-call-${c.ms}`,
           'data-paired': c.paired ? 'true' : 'false',
+          'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
           style: { ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR },
           className: `absolute h-0 w-0 border-x-[5px] border-x-transparent ${
@@ -368,14 +370,6 @@ export function CueWave({
           </button>
         )
       })}
-      {playheadMs !== undefined && (
-        <span
-          data-testid="cue-wave-playhead"
-          aria-hidden="true"
-          style={{ left: pct(playheadMs), backgroundColor: MEMORY_CUE_COLOR }}
-          className="pointer-events-none absolute top-0 bottom-0 w-0.5"
-        />
-      )}
       {dragMs !== null && (
         <span
           data-testid="cue-wave-drag-ghost"
@@ -387,19 +381,10 @@ export function CueWave({
       {ghost !== null && (
         <span
           data-testid="cue-wave-ghost"
+          aria-hidden="true"
           style={{ left: pct(ghost), top: `${WAVE_MARK_LANE_PX}px` }}
           className="pointer-events-none absolute bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
-        >
-          <span
-            style={{ top: '0px' }}
-            className={`absolute whitespace-nowrap rounded-sm bg-[var(--color-panel-2)] px-0.5 text-[9px] leading-[11px] text-[var(--color-fg)]/80 ${sideClass(
-              dropLabels([ghost], durationMs)[0]?.side,
-            )}`}
-          >
-            <span>+ drop {cuePosition(ghost, grid).bar}</span>{' '}
-            <span className="tabular-nums">{cuePosition(ghost, grid).time}</span>
-          </span>
-        </span>
+        />
       )}
     </div>
   )

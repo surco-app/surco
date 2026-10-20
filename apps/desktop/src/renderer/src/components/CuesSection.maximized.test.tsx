@@ -105,7 +105,7 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByTestId('cue-detail')).toBeNull()
     expect(screen.queryByTestId('cues-deck')).toBeNull()
     seek(128000)
-    expect(screen.getByTestId('cue-wave-drop-128000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
   })
 
   it('opens the full editor with the track header, the zoomed wave and the deck', async () => {
@@ -170,7 +170,25 @@ describe('CuesSection maximized', () => {
     await maximize()
     seek(100000)
     expect(position()).toBe('1:40.0')
-    expect(screen.queryByTestId('cue-wave-drop-100000')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-call-100000')).toBeNull()
+  })
+
+  it('shows on the overview the part the zoomed wave shows, and follows the zoom', async () => {
+    setup()
+    await maximize()
+    seek(56000)
+    expect(screen.getByTestId('cue-wave-view').style.left).toBe('10%')
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('8%')
+    editor().focus()
+    key('+')
+    expect(screen.getByTestId('cue-wave-view').style.left).toBe('12%')
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('4%')
+  })
+
+  it('draws no rectangle on the folded strip, where there is no zoomed wave', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cue-wave-view')).toBeNull()
   })
 
   it('recolours a placed hot cue from its pad and puts the default colour back', async () => {
