@@ -138,24 +138,26 @@ export function CueWaveDetail({
     left: number
     width: number
     fromMs: number
+    span: number
+    snapMs: number[]
   } | null>(null)
-  const [dragMs, setDragMs] = useState<number | null>(null)
-  const markLatest = useRef({ snapMs, span, onMoveMark })
-  markLatest.current = { snapMs, span, onMoveMark }
+  const [dragAt, setDragAt] = useState<number | null>(null)
+  const markLatest = useRef({ onMoveMark })
+  markLatest.current = { onMoveMark }
   useEffect(() => {
     if (!markDrag) return
     let ms: number | null = null
     const move = (e: MouseEvent) => {
       if (ms === null && Math.abs(e.clientX - markDrag.x0) <= DRAG_PX) return
-      const { snapMs: snap, span: width } = markLatest.current
       const at =
-        markDrag.fromMs + ((e.clientX - markDrag.left) / Math.max(markDrag.width, 1)) * width
-      ms = snap[nearestBeat(snap, at)]
-      setDragMs(ms)
+        markDrag.fromMs +
+        ((e.clientX - markDrag.left) / Math.max(markDrag.width, 1)) * markDrag.span
+      ms = markDrag.snapMs[nearestBeat(markDrag.snapMs, at)]
+      setDragAt(((ms - markDrag.fromMs) / markDrag.span) * 100)
     }
     const up = () => {
       if (ms !== null) markLatest.current.onMoveMark?.(markDrag.key, ms)
-      setDragMs(null)
+      setDragAt(null)
       setMarkDrag(null)
     }
     window.addEventListener('mousemove', move)
@@ -175,7 +177,15 @@ export function CueWaveDetail({
             e.stopPropagation()
             setCursor(null)
             onHover?.(null)
-            setMarkDrag({ key, x0: e.clientX, left: rect.left, width: rect.width, fromMs })
+            setMarkDrag({
+              key,
+              x0: e.clientX,
+              left: rect.left,
+              width: rect.width,
+              fromMs,
+              span,
+              snapMs,
+            })
           },
         }
       : {}
@@ -511,11 +521,11 @@ export function CueWaveDetail({
                 className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
               />
             ))}
-          {dragMs !== null && (
+          {dragAt !== null && (
             <span
               data-testid="cue-detail-drag-ghost"
               aria-hidden="true"
-              style={{ left: pct(dragMs) }}
+              style={{ left: `${dragAt}%` }}
               className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
             />
           )}

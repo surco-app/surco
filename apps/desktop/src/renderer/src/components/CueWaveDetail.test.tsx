@@ -331,6 +331,29 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalled()
   })
 
+  it('drops a dragged CALL by the window it was grabbed in, even if the zoom or the playhead change during the drag', () => {
+    const onMoveMark = vi.fn<(key: string, ms: number) => void>()
+    const { rerender } = setup({
+      cues: [{ key: 'p', ms: bar(36), kind: 0, color: null, pending: false }],
+      movable: ['p'],
+      onMoveMark,
+    })
+    fireEvent.mouseDown(screen.getByTestId(`cue-detail-call-${bar(36)}`), {
+      button: 0,
+      clientX: 300,
+    })
+    rerender({
+      cues: [{ key: 'p', ms: bar(36), kind: 0, color: null, pending: false }],
+      movable: ['p'],
+      onMoveMark,
+      bars: 32,
+      playheadMs: bar(33),
+    })
+    fireEvent.mouseMove(window, { clientX: 352 })
+    fireEvent.mouseUp(window, { clientX: 352 })
+    expect(onMoveMark).toHaveBeenCalledWith('p', bar(38))
+  })
+
   it('stacks zoom in, reset and zoom out at the left of the zoomed wave, outside it so they never take a wave click', () => {
     const onZoomReset = vi.fn<() => void>()
     const { onZoom } = setup({ onZoomReset })
