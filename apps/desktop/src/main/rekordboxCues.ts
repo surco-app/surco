@@ -137,8 +137,12 @@ export function readCueWaveDetail(db: Db, shareDir: string, contentId: string): 
   if (!row?.AnalysisDataPath) return null
   const datPath = resolve(shareDir, `.${row.AnalysisDataPath}`)
   if (!insideShare(shareDir, datPath)) return null
-  const ext = read(datPath.replace(/\.DAT$/, '.EXT'))
-  return ext ? colorWaveWords(ext) : null
+  try {
+    const ext = read(datPath.replace(/\.DAT$/, '.EXT'))
+    return ext ? colorWaveWords(ext) : null
+  } catch {
+    return null
+  }
 }
 
 const CUE_JSON_KEYS = [

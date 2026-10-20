@@ -190,6 +190,10 @@ describe('colorWaveWords', () => {
     ])
   })
 
+  it('is null for a PWV5 cut short before its entry count, instead of throwing on a damaged file', () => {
+    expect(colorWaveWords(anlzFile(section('PWV5', u32(0), Buffer.alloc(0))))).toBeNull()
+  })
+
   it('is null without a PWV5', () => {
     expect(colorWaveWords(anlzFile())).toBeNull()
   })

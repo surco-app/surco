@@ -151,6 +151,26 @@ describe('registerRekordboxCuesIpc', () => {
     expect(readFileSync(path).equals(before)).toBe(true)
   })
 
+  it('reads nothing outside the share folder and survives an unreadable EXT', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbescape-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c) =>
+        c.ID === '101' ? { ...c, AnalysisDataPath: '/../x.DAT' } : c,
+      ),
+    })
+    mkdirSync(join(dir, 'share'), { recursive: true })
+    writeFileSync(join(dir, 'x.EXT'), anlzFile(pwv5Section([{ r: 7, g: 0, b: 0, h: 31 }])))
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
+  })
+
   it('has no detail for a track without PWV5, an unknown track or no collection', async () => {
     const path = await detailCollection(false)
     registerRekordboxCuesIpc({

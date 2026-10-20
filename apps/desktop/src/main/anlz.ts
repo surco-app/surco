@@ -152,7 +152,7 @@ export function colorWave(ext: Buffer, columns = 1200): CueWaveColumn[] | null {
 
 export function colorWaveWords(ext: Buffer): Uint16Array | null {
   const s = anlzSections(ext).find((x) => x.tag === 'PWV5')
-  if (!s) return null
+  if (!s || s.length < 20) return null
   const header = ext.readUInt32BE(s.start + 4)
   const count = Math.min(ext.readUInt32BE(s.start + 16), Math.floor((s.length - header) / 2))
   if (count <= 0) return null
