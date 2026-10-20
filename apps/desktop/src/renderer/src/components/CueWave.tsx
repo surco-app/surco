@@ -322,7 +322,7 @@ export function CueWave({
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
           style: { ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR },
-          className: `absolute h-0 w-0 border-x-4 border-x-transparent ${
+          className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent ${
             isSelected ? 'border-t-[9px]' : 'border-t-[6px]'
           } ${pending ? 'opacity-60' : ''}`,
         }
@@ -353,7 +353,7 @@ export function CueWave({
               ? { borderColor: h.colour, color: h.colour }
               : { backgroundColor: h.colour, color: '#000' }),
           },
-          className: `absolute h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
+          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
             pending ? 'border' : ''
           } ${isSelected ? 'ring-2 ring-[var(--color-fg)]' : ''}`,
         }

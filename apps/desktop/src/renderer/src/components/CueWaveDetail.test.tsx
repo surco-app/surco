@@ -355,6 +355,22 @@ describe('CueWaveDetail', () => {
     rerender({ onPick: vi.fn<(ms: number) => void>() })
     expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
   })
+  it('draws the marks in front of the playhead, which starts below the marks lane', () => {
+    setup({
+      cues: [
+        { key: 'b', ms: bar(32), kind: 2, color: 22, pending: false },
+        { key: 'p', ms: bar(32), kind: 0, color: null, pending: false },
+      ],
+    })
+    const playhead = screen.getByTestId('cue-detail-playhead')
+    expect(playhead.style.top).toBe(`${WAVE_MARK_LANE_PX}px`)
+    for (const id of ['cue-detail-hot-B', `cue-detail-call-${bar(32)}`]) {
+      const mark = screen.getByTestId(id)
+      expect(playhead.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(mark.className).toContain('z-10')
+    }
+  })
+
   it('reports a right-click on a mark and does not scrub', () => {
     const onMarkMenu = vi.fn()
     const { onScrub } = setup({

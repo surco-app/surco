@@ -393,4 +393,14 @@ describe('CueWave', () => {
     expect(h.onMove).not.toHaveBeenCalled()
     expect(h.onMenu).not.toHaveBeenCalled()
   })
+
+  it('draws the marks after the playhead so they sit in front of it', () => {
+    setup({ onSeek: vi.fn(), playheadMs: 16000 })
+    const playhead = screen.getByTestId('cue-wave-playhead')
+    for (const id of ['cue-wave-hot-A', 'cue-wave-call-40000']) {
+      const mark = screen.getByTestId(id)
+      expect(playhead.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(mark.className).toContain('z-10')
+    }
+  })
 })

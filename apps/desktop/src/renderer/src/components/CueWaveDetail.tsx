@@ -235,6 +235,12 @@ export function CueWaveDetail({
           }}
           className="absolute inset-x-0 w-full"
         />
+        <span
+          data-testid="cue-detail-playhead"
+          aria-hidden="true"
+          style={{ top: `${WAVE_MARK_LANE_PX}px` }}
+          className="pointer-events-none absolute bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
+        />
         {calls.map((c) => (
           <Fragment key={`c${c.key}`}>
             <span
@@ -245,7 +251,7 @@ export function CueWaveDetail({
               onContextMenu={(e) => markMenu(c.key, e)}
               {...hover(c.key)}
               style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
-              className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
+              className={`absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
                 pendingOf.get(c.key) ? 'opacity-60' : ''
               }`}
             />
@@ -270,7 +276,7 @@ export function CueWaveDetail({
                     ? { borderColor: h.colour, color: h.colour }
                     : { backgroundColor: h.colour, color: '#000' }),
                 }}
-                className={`absolute h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
+                className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
                   pending ? 'border' : ''
                 } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
               >
@@ -280,11 +286,6 @@ export function CueWaveDetail({
             </Fragment>
           )
         })}
-        <span
-          data-testid="cue-detail-playhead"
-          aria-hidden="true"
-          className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
-        />
       </div>
     </div>
   )
