@@ -10,10 +10,11 @@ import {
   startDraft,
   wantedOfDraft,
 } from './cueDraft'
+import { quantizePoints } from './cueWave'
 
 const beats = Array.from({ length: 800 }, (_, i) => i * 500)
 const bar = (n: number) => n * 2000
-const ctx = { beats, strong: [], phrases: [], flows: BUNDLED_FLOWS }
+const ctx = { beats, snapTo: beats, strong: [], phrases: [], flows: BUNDLED_FLOWS }
 const run = (state: CueDraft, ...actions: DraftAction[]) =>
   actions.reduce((s, a) => reduceDraft(s, a, ctx), state)
 const empty = () => startDraft([], 'mine')
@@ -365,5 +366,62 @@ describe('reduceDraft', () => {
   it('drops the editor keys and keeps every other field of a cue', () => {
     const s = startDraft([{ id: '7', ms: 10, kind: 1, color: 4 }], 'mine')
     expect(wantedOfDraft(s.cues)).toEqual([{ id: '7', ms: 10, kind: 1, color: 4 }])
+  })
+})
+
+describe('quantize of hand-placed cues', () => {
+  const grid = beats.map((ms, i) => ({ ms, beat: (i % 4) + 1 }))
+  const quantized = (unit: 'bar' | 'beat') => ({ ...ctx, snapTo: quantizePoints(grid, unit) })
+  const runWith = (unit: 'bar' | 'beat', state: CueDraft, ...actions: DraftAction[]) =>
+    actions.reduce((s, a) => reduceDraft(s, a, quantized(unit)), state)
+
+  it('marks a drop on the nearest bar start when quantizing to the bar, because drops start phrases', () => {
+    expect(
+      draftDrops(runWith('bar', empty(), { type: 'mark-drop', ms: bar(64) + 600 }).cues),
+    ).toEqual([bar(64)])
+    expect(
+      draftDrops(runWith('bar', empty(), { type: 'mark-drop', ms: bar(64) + 1500 }).cues),
+    ).toEqual([bar(65)])
+  })
+
+  it('marks a drop on the nearest beat when quantizing to the beat', () => {
+    expect(
+      draftDrops(runWith('beat', empty(), { type: 'mark-drop', ms: bar(64) + 600 }).cues),
+    ).toEqual([bar(64) + 500])
+  })
+
+  it('adds a CALL on the bar line instead of between two bar lines', () => {
+    expect(
+      at(runWith('bar', empty(), { type: 'add-call', ms: bar(10) + 900 }), bar(10), false),
+    ).toBeDefined()
+    expect(
+      at(runWith('beat', empty(), { type: 'add-call', ms: bar(10) + 900 }), bar(10) + 1000, false),
+    ).toBeDefined()
+  })
+
+  it('adds a hot cue on the nearest bar start or the nearest beat', () => {
+    expect(
+      at(runWith('bar', empty(), { type: 'add-hot', ms: bar(10) + 1100 }), bar(11), true),
+    ).toBeDefined()
+    expect(
+      at(runWith('beat', empty(), { type: 'add-hot', ms: bar(10) + 1100 }), bar(10) + 1000, true),
+    ).toBeDefined()
+  })
+
+  it('drops a dragged mark on the nearest bar start or the nearest beat', () => {
+    const s = startDraft([{ id: 'a', ms: bar(8), kind: 1, color: 4 }], 'mine')
+    expect(runWith('bar', s, { type: 'move', key: 'a', ms: bar(20) + 700 }).cues[0].ms).toBe(
+      bar(20),
+    )
+    expect(runWith('beat', s, { type: 'move', key: 'a', ms: bar(20) + 700 }).cues[0].ms).toBe(
+      bar(20) + 500,
+    )
+  })
+
+  it('leaves the cues read from rekordbox where they are, even off the bar', () => {
+    const live = [{ id: 'r', ms: bar(5) + 500, kind: 1, color: 4 }]
+    const s = runWith('bar', startDraft(live, 'mine'), { type: 'add-call', ms: bar(30) })
+    expect(at(s, bar(5) + 500, true)).toBeDefined()
+    expect(validWantedSet(wantedOfDraft(s.cues), live)).toEqual({ ok: true })
   })
 })

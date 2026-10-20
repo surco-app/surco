@@ -448,13 +448,43 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
   })
 
-  it('centres the playhead on the nearest beat with C', async () => {
+  it('puts a CALL with M on the bar line by default, where the countdowns and drops of the flow sit', async () => {
     setup()
     await maximize()
-    seek(64200)
+    seek(64600)
+    editor().focus()
+    key('m')
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+    seek(129400)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('32.5%')
+  })
+
+  it('puts a CALL with M on the beat when the quantize is the beat', async () => {
+    setup({ cueQuantize: 'beat' })
+    await maximize()
+    seek(64600)
+    editor().focus()
+    key('m')
+    expect(screen.getByTestId('cue-wave-call-64500')).toBeInTheDocument()
+  })
+
+  it('centres the playhead with C on the nearest bar line by default', async () => {
+    setup()
+    await maximize()
+    seek(65200)
     editor().focus()
     key('c')
-    expect(position()).toBe('1:04.0')
+    expect(position()).toBe('1:06.0')
+  })
+
+  it('centres the playhead with C on the nearest beat when the quantize is the beat', async () => {
+    setup({ cueQuantize: 'beat' })
+    await maximize()
+    seek(65200)
+    editor().focus()
+    key('c')
+    expect(position()).toBe('1:05.0')
   })
 
   it('jumps the bars set in Settings', async () => {

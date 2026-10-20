@@ -217,6 +217,21 @@ describe('CueWave', () => {
     expect(h.onMenu).toHaveBeenCalledWith({ ms: 10000, x: 100, y: 30 })
   })
 
+  it('quantizes a click, a drag, the hover line and the menu to the bar start when quantizing to the bar', () => {
+    const h = setup({ quantize: 'bar' })
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-ghost').style.left).toBe('12.5%')
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 60 })
+    expect(h.onMarkDrop).toHaveBeenCalledWith(10000)
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 30 })
+    expect(h.onMenu).toHaveBeenCalledWith({ ms: 10000, x: 105, y: 30 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: 160 })
+    fireEvent.mouseMove(window, { clientX: 243 })
+    expect(screen.getByTestId('cue-wave-drag-ghost').style.left).toBe('30%')
+    fireEvent.mouseUp(window, { clientX: 243 })
+    expect(h.onMove).toHaveBeenCalledWith('a', 24000)
+  })
+
   it('draws proposals dashed and accepts one with a click', () => {
     const h = setup({ proposals: [32000] })
     fireEvent.click(screen.getByTestId('cue-wave-proposal-32000'))

@@ -32,6 +32,7 @@ import {
   zoomStep,
 } from '../lib/cuePlayhead'
 import { forgetDraft, keepDraft, keepPlayhead, keptDraft, keptPlayhead } from '../lib/cueSession'
+import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { isTypingTarget } from '../lib/keymap'
 import { isMacOS } from '../lib/platform'
@@ -207,11 +208,12 @@ function Editing({
   const ctx = useMemo(
     () => ({
       beats: read.grid.map((b) => b.ms),
+      snapTo: quantizePoints(read.grid, settings.cueQuantize),
       strong: read.strong,
       phrases: read.phrases,
       flows,
     }),
-    [read, flows],
+    [read, flows, settings.cueQuantize],
   )
   const inRekordbox = useMemo(
     () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
@@ -319,7 +321,7 @@ function Editing({
     else if (key.type === 'jump')
       seekTo(jumpBeats(ctx.beats, playheadMs, key.dir * settings.cueJumpBars * BEATS_PER_BAR))
     else if (key.type === 'beat') seekTo(jumpBeats(ctx.beats, playheadMs, key.dir))
-    else if (key.type === 'centre') seekTo(ctx.beats[nearestBeat(ctx.beats, playheadMs)])
+    else if (key.type === 'centre') seekTo(ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)])
     else if (key.type === 'memory' && armed) markDrop(playheadMs)
     else if (key.type === 'memory') dispatch({ type: 'add-call', ms: playheadMs })
     else if (key.type === 'hot') pad(key.kind)
@@ -510,6 +512,7 @@ function Editing({
       <CueWave
         wave={read.wave}
         grid={read.grid}
+        quantize={settings.cueQuantize}
         durationMs={read.durationMs}
         cues={waveCues}
         selected={state.selected}

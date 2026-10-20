@@ -1,11 +1,12 @@
 import type React from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
 import { markStyle, placeCues } from '../lib/cueMarks'
-import { barLines, clickAction, cuePosition, peakBars } from '../lib/cueWave'
+import { barLines, clickAction, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -27,6 +28,7 @@ const WAVE_TOP = '10%'
 export function CueWave({
   wave,
   grid,
+  quantize = 'beat',
   durationMs,
   cues,
   selected,
@@ -45,6 +47,7 @@ export function CueWave({
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
+  quantize?: CueQuantize
   durationMs: number
   cues: WaveCue[]
   selected?: string | null
@@ -71,9 +74,9 @@ export function CueWave({
   const [seeking, setSeeking] = useState(false)
   const [stripPx, setStripPx] = useState(0)
   const analysed = grid.length > 0
-  const beatsMs = grid.map((b) => b.ms)
-  const latest = useRef({ beatsMs, durationMs, onMove, onSeek })
-  latest.current = { beatsMs, durationMs, onMove, onSeek }
+  const snapMs = quantizePoints(grid, quantize)
+  const latest = useRef({ snapMs, durationMs, onMove, onSeek })
+  latest.current = { snapMs, durationMs, onMove, onSeek }
   useLayoutEffect(() => {
     const root = rootRef.current
     if (!analysed || !root) return
@@ -100,8 +103,8 @@ export function CueWave({
     const move = (e: MouseEvent) => {
       const d = dragRef.current
       if (!d || Math.abs(e.clientX - d.x0) <= DRAG_PX) return
-      const beats = latest.current.beatsMs
-      d.ms = beats[nearestBeat(beats, msAtX(e.clientX))]
+      const snap = latest.current.snapMs
+      d.ms = snap[nearestBeat(snap, msAtX(e.clientX))]
       setDragMs(d.ms)
     }
     const up = () => {
@@ -190,7 +193,7 @@ export function CueWave({
     const tolerance = (HIT_PX / Math.max(rect.width, 1)) * durationMs
     const action = clickAction(
       ms,
-      beatsMs,
+      snapMs,
       drops.map((d) => d.ms),
       tolerance,
     )
@@ -241,7 +244,7 @@ export function CueWave({
         e.preventDefault()
         const rect = e.currentTarget.getBoundingClientRect()
         onMenu?.({
-          ms: beatsMs[nearestBeat(beatsMs, msAtX(e.clientX))],
+          ms: snapMs[nearestBeat(snapMs, msAtX(e.clientX))],
           x: e.clientX - rect.left,
           y: e.clientY - rect.top,
         })

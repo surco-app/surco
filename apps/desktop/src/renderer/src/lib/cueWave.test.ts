@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { barLines, clickAction, cuePosition } from './cueWave'
+import { barLines, clickAction, cuePosition, quantizePoints } from './cueWave'
 
 const GRID = Array.from({ length: 160 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const BEATS = GRID.map((b) => b.ms)
@@ -11,6 +11,26 @@ describe('barLines', () => {
     expect(lines[0]).toEqual({ ms: 0, strong: true })
     expect(lines[1]).toEqual({ ms: 2000, strong: false })
     expect(lines[16]).toEqual({ ms: 32000, strong: true })
+  })
+})
+
+describe('quantizePoints', () => {
+  it('offers only the bar starts when quantizing to the bar, so a cue lands where a phrase begins', () => {
+    const points = quantizePoints(GRID, 'bar')
+    expect(points).toHaveLength(40)
+    expect(points.slice(0, 3)).toEqual([0, 2000, 4000])
+  })
+
+  it('offers every beat when quantizing to the beat', () => {
+    expect(quantizePoints(GRID, 'beat')).toEqual(BEATS)
+  })
+
+  it('falls back to the beats when the grid has no bar start, so a cue still lands on the grid', () => {
+    const noDownbeat = [
+      { ms: 0, beat: 2 },
+      { ms: 500, beat: 3 },
+    ]
+    expect(quantizePoints(noDownbeat, 'bar')).toEqual([0, 500])
   })
 })
 

@@ -40,6 +40,7 @@ export interface CueDraft {
 
 export interface DraftContext {
   beats: number[]
+  snapTo: number[]
   strong: StrongPart[]
   phrases: FlowPhrase[]
   flows: CueFlow[]
@@ -101,7 +102,7 @@ const needsGrid = (action: DraftAction): boolean =>
 const flowById = (ctx: DraftContext, id: string): CueFlow =>
   ctx.flows.find((f) => f.id === id) ?? MY_FLOW
 
-const snap = (ctx: DraftContext, ms: number): number => ctx.beats[nearestBeat(ctx.beats, ms)]
+const snap = (ctx: DraftContext, ms: number): number => ctx.snapTo[nearestBeat(ctx.snapTo, ms)]
 
 function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {}): CueDraft {
   return {
