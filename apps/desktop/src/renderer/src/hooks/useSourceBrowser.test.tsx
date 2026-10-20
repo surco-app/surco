@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PlaylistSource } from '../../../shared/types'
 import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
@@ -12,8 +13,10 @@ function setup(
   api: Record<string, unknown>,
   platform = 'darwin',
   onPlaylistGone: (name: string, source: string) => void = () => {},
+  hiddenSources: PlaylistSource[] = [],
 ) {
   let focus: (focused: boolean) => void = () => {}
+  const state = { hidden: hiddenSources }
   ;(window as unknown as { api: unknown }).api = {
     platform,
     rekordboxAvailable: vi.fn().mockResolvedValue(true),
@@ -35,14 +38,44 @@ function setup(
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
-  const hook = renderHook(() => useSourceBrowser({ onPlaylistGone }), { wrapper })
-  return { ...hook, focus: () => focus(true) }
+  const hook = renderHook(() => useSourceBrowser({ onPlaylistGone, hiddenSources: state.hidden }), {
+    wrapper,
+  })
+  return {
+    ...hook,
+    focus: () => focus(true),
+    hide: (next: PlaylistSource[]) => {
+      state.hidden = next
+      hook.rerender()
+    },
+  }
 }
 
 describe('useSourceBrowser', () => {
   it('offers Music on macOS and rekordbox when a collection is readable', async () => {
     const { result } = setup({})
     await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
+  })
+
+  it('leaves out a source the user hid, whichever one it is', async () => {
+    const { result } = setup({}, 'darwin', () => {}, ['appleMusic'])
+    await waitFor(() => expect(result.current.sources).toEqual(['rekordbox']))
+  })
+
+  it('offers nothing when every source is hidden, so no rail is drawn', async () => {
+    const { result } = setup({}, 'darwin', () => {}, ['appleMusic', 'rekordbox'])
+    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    expect(result.current.sources).toEqual([])
+  })
+
+  it('goes back to the working list when the open source gets hidden, so no rows of a source off the rail stay on screen', async () => {
+    const { result, hide } = setup({})
+    await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
+    act(() => result.current.selectSource('rekordbox'))
+    expect(result.current.source).toBe('rekordbox')
+    hide(['rekordbox'])
+    expect(result.current.source).toBeNull()
+    expect(result.current.sources).toEqual(['appleMusic'])
   })
 
   it('offers nothing on Windows without rekordbox, so no rail is drawn', async () => {
@@ -94,7 +127,7 @@ describe('useSourceBrowser', () => {
     )
     renderHook(
       () => {
-        useSourceBrowser({ onPlaylistGone: () => {} })
+        useSourceBrowser({ onPlaylistGone: () => {}, hiddenSources: [] })
         return useRekordboxMembership(['/m/a.wav'], true)
       },
       { wrapper },

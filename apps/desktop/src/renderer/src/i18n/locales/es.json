@@ -1854,6 +1854,10 @@
   },
   "sources": {
     "rail": "Fuentes",
+    "hide": {
+      "appleMusic": "Ocultar Apple Music",
+      "rekordbox": "Ocultar rekordbox"
+    },
     "workingList": "Pistas",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",

@@ -1,5 +1,6 @@
 import { ListMusic } from 'lucide-react'
 import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
 import { AppleMusicIcon, RekordboxIcon } from './SourceIcons'
@@ -20,18 +21,38 @@ export function SourceRail({
   sources,
   active,
   onSelect,
+  onHide,
 }: {
   sources: PlaylistSource[]
   active: PlaylistSource | null
   onSelect: (source: PlaylistSource | null) => void
+  onHide: (source: PlaylistSource) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [menu, setMenu] = useState<{ source: PlaylistSource; x: number; y: number } | null>(null)
+  const itemRef = useRef<HTMLButtonElement>(null)
+  const openerRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!menu) return
+    openerRef.current = document.activeElement as HTMLElement | null
+    itemRef.current?.focus()
+    return () => openerRef.current?.focus?.()
+  }, [menu])
+
+  function hide(source: PlaylistSource): void {
+    if (active === source) onSelect(null)
+    onHide(source)
+    setMenu(null)
+  }
+
   const item = (
     key: string,
     label: string,
     icon: React.ReactNode,
     on: boolean,
     pick: () => void,
+    hideable?: PlaylistSource,
   ) => (
     <button
       key={key}
@@ -40,6 +61,24 @@ export function SourceRail({
       aria-pressed={on}
       aria-label={label}
       onClick={pick}
+      onContextMenu={
+        hideable
+          ? (e) => {
+              e.preventDefault()
+              setMenu({ source: hideable, x: e.clientX, y: e.clientY })
+            }
+          : undefined
+      }
+      onKeyDown={
+        hideable
+          ? (e) => {
+              if (e.key !== 'ContextMenu' && !(e.key === 'F10' && e.shiftKey)) return
+              e.preventDefault()
+              const box = e.currentTarget.getBoundingClientRect()
+              setMenu({ source: hideable, x: box.right, y: box.top })
+            }
+          : undefined
+      }
       className={`flex size-[44px] items-center justify-center rounded-lg ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
       }`}
@@ -69,8 +108,49 @@ export function SourceRail({
           <Icon size={22} data-testid={`source-rail-icon-${s}`} />,
           active === s,
           () => onSelect(s),
+          s,
         )
       })}
+      {menu && (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            data-testid="source-rail-menu-backdrop"
+            aria-label={tr('common.close')}
+            onClick={() => setMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setMenu(null)
+            }}
+            className="absolute inset-0"
+          />
+          <div
+            role="menu"
+            aria-label={tr('sources.rail')}
+            data-testid="source-rail-menu"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || e.key === 'Tab') {
+                e.preventDefault()
+                e.stopPropagation()
+                setMenu(null)
+              }
+            }}
+            style={{ top: menu.y, left: menu.x }}
+            className="absolute min-w-[180px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+          >
+            <button
+              ref={itemRef}
+              type="button"
+              role="menuitem"
+              data-testid="source-rail-hide"
+              onClick={() => hide(menu.source)}
+              className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+            >
+              {tr(`sources.hide.${menu.source}`)}
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

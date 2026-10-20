@@ -1000,6 +1000,31 @@ describe('App source rail', () => {
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
   })
 
+  it('is not drawn when every source this machine has is hidden', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox'] })),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+    })
+    await renderApp()
+    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await act(async () => {})
+    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+  })
+
+  it('hides a source from its right-click menu and keeps the choice in the settings', async () => {
+    const base = settings()
+    const saveSettings = vi.fn((patch: Partial<Settings>) => Promise.resolve({ ...base, ...patch }))
+    setApi({
+      saveSettings,
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+    })
+    await renderApp()
+    fireEvent.contextMenu(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(screen.getByTestId('source-rail-hide'))
+    expect(saveSettings.mock.calls.at(-1)?.[0]).toEqual({ hiddenSources: ['rekordbox'] })
+    await waitFor(() => expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument())
+  })
+
   // A tree with nothing picked in it has no rows to show either: beside it stays the one
   // empty screen, not an empty list column. Picking a playlist is asking for its rows, so
   // the column is back before they have even loaded.

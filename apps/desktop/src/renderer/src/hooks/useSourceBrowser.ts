@@ -43,13 +43,16 @@ function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylis
 // back finds the set where the DJ left it.
 export function useSourceBrowser({
   onPlaylistGone,
+  hiddenSources,
 }: {
   onPlaylistGone: (name: string, source: PlaylistSource) => void
+  hiddenSources: PlaylistSource[]
 }): SourceBrowser {
   const queryClient = useQueryClient()
   const onPlaylistGoneRef = useRef(onPlaylistGone)
   onPlaylistGoneRef.current = onPlaylistGone
-  const [source, setSource] = useState<PlaylistSource | null>(null)
+  const [picked, setSource] = useState<PlaylistSource | null>(null)
+  const source = picked && !hiddenSources.includes(picked) ? picked : null
   const [playlists, setPlaylists] = useState<
     Partial<Record<PlaylistSource, NonNullable<SourceBrowser['playlist']>>>
   >({})
@@ -60,7 +63,7 @@ export function useSourceBrowser({
   const sources: PlaylistSource[] = [
     ...(isMac ? (['appleMusic'] as const) : []),
     ...(rekordbox ? (['rekordbox'] as const) : []),
-  ]
+  ].filter((s) => !hiddenSources.includes(s))
 
   const tree = useQuery({
     queryKey: ['source-tree', source],

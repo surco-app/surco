@@ -1854,6 +1854,10 @@
   },
   "sources": {
     "rail": "Quellen",
+    "hide": {
+      "appleMusic": "Apple Music ausblenden",
+      "rekordbox": "rekordbox ausblenden"
+    },
     "workingList": "Titel",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",

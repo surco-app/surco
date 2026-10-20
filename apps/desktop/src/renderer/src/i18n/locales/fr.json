@@ -1854,6 +1854,10 @@
   },
   "sources": {
     "rail": "Sources",
+    "hide": {
+      "appleMusic": "Masquer Apple Music",
+      "rekordbox": "Masquer rekordbox"
+    },
     "workingList": "Morceaux",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",

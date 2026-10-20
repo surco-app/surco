@@ -184,6 +184,7 @@ import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
+const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 
@@ -520,6 +521,7 @@ export default function App(): React.JSX.Element {
   // re-read lands here again and only loads what is new. Stable so that re-read, not every
   // render, runs it.
   const browser = useSourceBrowser({
+    hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
     onPlaylistGone: (name, source) =>
       pushToast(store, {
         key: 'source-playlist-gone',
@@ -2672,6 +2674,11 @@ export default function App(): React.JSX.Element {
                     sources={browser.sources}
                     active={browser.source}
                     onSelect={selectSource}
+                    onHide={(hidden) =>
+                      saveSettings({
+                        hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
+                      })
+                    }
                   />
                 )}
                 {browser.source && (
