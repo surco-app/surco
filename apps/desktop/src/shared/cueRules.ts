@@ -310,6 +310,7 @@ export interface FlowInput {
   flow: CueFlow
   previousFlow?: CueFlow
   point?: number
+  kept?: string[]
 }
 
 export type FlowOutcome =
@@ -361,7 +362,12 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
     phrases,
   })
   const hotOf = (p: FlowPlan) => p.cues.filter((c) => c.place !== 'call')
-  const fits = hot.every((h) => fitsPlan([h.ms], hotOf(plan)) || fitsPlan([h.ms], hotOf(oldPlan)))
+  const fits = hot.every(
+    (h) =>
+      input.kept?.includes(h.id) ||
+      fitsPlan([h.ms], hotOf(plan)) ||
+      fitsPlan([h.ms], hotOf(oldPlan)),
+  )
   if (!fits)
     return {
       status: 'manual',

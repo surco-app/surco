@@ -519,6 +519,24 @@ describe('a flow that leaves the point unmarked', () => {
     expect(s.past).toEqual([])
   })
 
+  it('draws Mi flujo for a point marked after unmarked placements, keeping those as the DJ placed them', () => {
+    const s = runWide(
+      startDraft([], 'quiet'),
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(160) },
+      { type: 'use-flow', flowId: 'mine' },
+      { type: 'mark-drop', ms: bar(192) },
+    )
+    expect(s.notice).toBeNull()
+    expect(draftDrops(s.cues)).toEqual([bar(192)])
+    expect(hotOf(s).map(([ms]) => ms)).toEqual([bar(32), bar(128), bar(144), bar(160), bar(176)])
+    expect(hotOf(s).slice(0, 2)).toEqual([
+      [bar(32), 1, 22],
+      [bar(128), 2, 22],
+    ])
+    expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
+  })
+
   it('keeps every set main accepts after two unmarked placements', () => {
     const s = runWide(
       startDraft([], 'mixed'),

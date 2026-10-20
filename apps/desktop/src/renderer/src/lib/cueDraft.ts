@@ -23,6 +23,7 @@ export interface DraftSnapshot {
   generatedBy: string
   trimmed: number[]
   edited: string[]
+  placed: string[]
 }
 
 export interface CueDraft {
@@ -34,6 +35,7 @@ export interface CueDraft {
   notice: DraftNotice
   trimmed: number[]
   edited: string[]
+  placed: string[]
   locked: string[]
   nextKey: number
 }
@@ -73,6 +75,7 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
     notice: null,
     trimmed: [],
     edited: [],
+    placed: [],
     locked,
     nextKey: cues.length,
   }
@@ -119,6 +122,7 @@ function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {})
         generatedBy: state.generatedBy,
         trimmed: state.trimmed,
         edited: state.edited,
+        placed: state.placed,
       },
     ],
   }
@@ -147,6 +151,7 @@ function regenerate(
     phrases: ctx.phrases,
     flow,
     previousFlow,
+    kept: state.placed,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
@@ -225,6 +230,7 @@ function placeOnce(state: CueDraft, ctx: DraftContext, ms: number, flow: CueFlow
     selected: null,
     trimmed: out.status === 'plan' ? out.trimmed : [],
     edited: [...state.edited, ...added.filter(isHot).map((c) => c.key)],
+    placed: [...state.placed, ...added.filter(isHot).map((c) => c.key)],
   })
 }
 
@@ -243,6 +249,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       generatedBy: previous.generatedBy,
       trimmed: previous.trimmed,
       edited: previous.edited,
+      placed: previous.placed,
       past: state.past.slice(0, -1),
       selected: null,
       notice: null,
