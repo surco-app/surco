@@ -36,6 +36,10 @@ describe('rekordbox cue colours', () => {
     expect(new Set(HOT_CUE_PICKER.map(hotCueColor)).size).toBe(16)
   })
 
+  it('lays the colours out as rekordbox picker does, four rows from the pinks to the reds', () => {
+    expect(HOT_CUE_PICKER).toEqual([48, 52, 56, 60, 1, 5, 9, 14, 18, 22, 26, 30, 32, 38, 42, 45])
+  })
+
   it('gives a new hot cue the colour rekordbox draws a cue without one', () => {
     expect(hotCueColor(HOT_CUE_DEFAULT_INDEX)).toBe(HOT_CUE_DEFAULT_COLOR)
   })

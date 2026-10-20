@@ -70,5 +70,5 @@ export function hotCueColor(index: number | null): string {
   return (index !== null && index >= 1 ? TABLE[index - 1] : undefined) ?? HOT_CUE_DEFAULT_COLOR
 }
 
-export const HOT_CUE_PICKER = [1, 5, 9, 14, 18, 22, 26, 30, 32, 38, 42, 45, 48, 52, 56, 60]
+export const HOT_CUE_PICKER = [48, 52, 56, 60, 1, 5, 9, 14, 18, 22, 26, 30, 32, 38, 42, 45]
 export const HOT_CUE_DEFAULT_INDEX = 22
