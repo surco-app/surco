@@ -790,7 +790,16 @@
       "detail": "Onda ampliada",
       "toCall": "{{bars}} compassos até o CALL",
       "zoomIn": "Aproximar",
-      "zoomOut": "Afastar"
+      "zoomOut": "Afastar",
+      "memory": "MEMORY",
+      "memoryPrev": "CALL anterior",
+      "memoryNext": "Próximo CALL",
+      "memoryRemove": "Apagar o CALL no cursor",
+      "jump": "Salto",
+      "jumpLess": "Saltar menos compassos",
+      "jumpMore": "Saltar mais compassos",
+      "jumpBars_one": "{{count}} compasso",
+      "jumpBars_other": "{{count}} compassos"
     }
   },
   "fields": {

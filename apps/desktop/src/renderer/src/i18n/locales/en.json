@@ -790,7 +790,16 @@
       "detail": "Zoomed wave",
       "toCall": "{{bars}} bars to the CALL",
       "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out"
+      "zoomOut": "Zoom out",
+      "memory": "MEMORY",
+      "memoryPrev": "Previous CALL",
+      "memoryNext": "Next CALL",
+      "memoryRemove": "Delete the CALL at the playhead",
+      "jump": "Jump",
+      "jumpLess": "Jump fewer bars",
+      "jumpMore": "Jump more bars",
+      "jumpBars_one": "{{count}} bar",
+      "jumpBars_other": "{{count}} bars"
     }
   },
   "fields": {

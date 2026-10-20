@@ -790,7 +790,16 @@
       "detail": "Onde agrandie",
       "toCall": "{{bars}} mesures avant le CALL",
       "zoomIn": "Zoomer",
-      "zoomOut": "Dézoomer"
+      "zoomOut": "Dézoomer",
+      "memory": "MEMORY",
+      "memoryPrev": "CALL précédent",
+      "memoryNext": "CALL suivant",
+      "memoryRemove": "Supprimer le CALL sous la tête de lecture",
+      "jump": "Saut",
+      "jumpLess": "Sauter moins de mesures",
+      "jumpMore": "Sauter plus de mesures",
+      "jumpBars_one": "{{count}} mesure",
+      "jumpBars_other": "{{count}} mesures"
     }
   },
   "fields": {

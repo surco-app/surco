@@ -790,7 +790,16 @@
       "detail": "Vergrößerte Wellenform",
       "toCall": "{{bars}} Takte bis zum CALL",
       "zoomIn": "Vergrößern",
-      "zoomOut": "Verkleinern"
+      "zoomOut": "Verkleinern",
+      "memory": "MEMORY",
+      "memoryPrev": "Vorheriger CALL",
+      "memoryNext": "Nächster CALL",
+      "memoryRemove": "CALL am Abspielkopf löschen",
+      "jump": "Sprung",
+      "jumpLess": "Weniger Takte springen",
+      "jumpMore": "Mehr Takte springen",
+      "jumpBars_one": "{{count}} Takt",
+      "jumpBars_other": "{{count}} Takte"
     }
   },
   "fields": {
