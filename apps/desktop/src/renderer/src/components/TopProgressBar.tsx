@@ -16,7 +16,7 @@ export function TopProgressBar({ fraction }: Props): React.JSX.Element {
     <div
       data-testid="top-progress"
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-50 h-0.5 overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[45] h-0.5 overflow-hidden"
     >
       <div
         className={`h-full bg-[var(--color-accent)] ${
