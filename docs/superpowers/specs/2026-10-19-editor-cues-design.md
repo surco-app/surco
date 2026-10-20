@@ -17,7 +17,7 @@ Se trabaja pista a pista, en el editor.
 1. Reglas por bloques (enfoque A del 19/10): cada regla se lee como una frase hecha de bloques que se eligen, sin escribir. Nada de reglas como código ("la C no la van a entender los djs, como mucho algo con bloques").
 2. El configurador vive en Ajustes, en su propia pestaña: no hace falta tener una pista seleccionada. Su vista previa usa una pista de ejemplo.
 3. Su flujo de hoy es el de partida, idéntico a `rules.py`.
-4. El CALL que acompaña a una hot cue se dibuja debajo de ella, en la misma posición, y todos los CALL a la misma altura (boceto "Configurador de cues", https://claude.ai/artifact/S3bRmjsDFmeNe7ENkYsQFC). Vale para el configurador, la sección Cues y la onda de la lista.
+4. El CALL que acompaña a una hot cue se dibuja a la misma altura que ella, detrás, y la hot cue por delante, como hace rekordbox; un CALL suelto va a esa misma altura (boceto "Configurador de cues", https://claude.ai/artifact/S3bRmjsDFmeNe7ENkYsQFC). Vale para el configurador, la sección Cues y la onda de la lista. Vicent, 20/10: los CUE y CAL deberían solaparse, los CUE por delante como hace rekordbox; sustituye al CALL debajo de la hot cue.
 5. Los CALL no tienen color propio: rekordbox no deja cambiarlo. Siempre rojos.
 
 ## Diseño
@@ -100,8 +100,10 @@ En la lista, la sección Cues y el configurador:
 
 - la hot cue es un cuadrado con su letra, en el color de rekordbox;
 - el CALL es un triángulo rojo;
-- un CALL que acompaña a una hot cue va justo debajo de ella, centrado;
-- todos los CALL a la misma altura, también el de donde rompe.
+- un CALL que acompaña a una hot cue va a la misma altura que ella, centrado y detrás, de modo que solo asoman los bordes del triángulo, y la hot cue se pinta por delante;
+- un CALL suelto, también el de donde rompe, va a esa misma altura.
+
+Vicent, 20/10: los CUE y CAL deberían solaparse, los CUE por delante como hace rekordbox. Cambia la pila de dos filas y el carril de marcas se reduce a una sola fila.
 
 Hoy, en la lista, el triángulo de un CALL en la misma posición que su hot cue queda tapado por el cuadrado.
 
