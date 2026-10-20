@@ -90,6 +90,17 @@ describe('barsToNextCall', () => {
     expect(barsToNextCall(changing, [{ ms: 8000 + 4 * 400, kind: 0 }], 8000 + 200)).toBe(0.875)
   })
 
+  it('counts to the next point, skipping the CALL under a hot cue and a loop, so over a hot cue it reads the bars to the drop', () => {
+    const marked = [
+      { ms: bar(48), kind: 1 },
+      { ms: bar(48), kind: 0 },
+      { ms: bar(56), kind: 0, locked: true },
+      { ms: bar(64), kind: 0 },
+    ]
+    expect(barsToNextCall(beats, marked, bar(48))).toBe(16)
+    expect(barsToNextCall(beats, marked, bar(32))).toBe(32)
+  })
+
   it('reads 0 on the CALL itself and nothing with no CALL ahead or no grid', () => {
     expect(barsToNextCall(beats, [{ ms: bar(48), kind: 0 }], bar(48) - 20)).toBe(0)
     expect(barsToNextCall(beats, [{ ms: bar(48), kind: 1 }], bar(32))).toBeNull()
