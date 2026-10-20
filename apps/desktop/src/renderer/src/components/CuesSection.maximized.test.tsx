@@ -242,7 +242,7 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-pad-B')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('puts one CALL at the playhead with MEMORY, walks the CALLs and deletes the one under the playhead', async () => {
+  it('puts one CALL at the playhead with + CALL, walks the CALLs selecting each and deletes the selected one with ⌫', async () => {
     setup()
     await maximize()
     seek(64000)
@@ -253,54 +253,50 @@ describe('CuesSection maximized', () => {
     fireEvent.click(screen.getByTestId('cues-memory'))
     fireEvent.click(screen.getByTestId('cues-memory-prev'))
     expect(position()).toBe('1:04.0')
+    expect(screen.getByTestId('cue-wave-call-64000')).toHaveAttribute('data-selected', 'true')
     fireEvent.click(screen.getByTestId('cues-memory-next'))
     expect(position()).toBe('2:00.0')
-    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    expect(screen.getByTestId('cue-wave-call-120000')).toHaveAttribute('data-selected', 'true')
+    editor().focus()
+    key('Backspace')
     expect(screen.queryByTestId('cue-wave-call-120000')).toBeNull()
     expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
   })
 
-  it('removes with ✕ the CALL MEMORY just put on the beat when the playhead sat off the grid', async () => {
+  it('deletes with ⌫ the CALL + CALL just put on the beat when the playhead sat off the grid', async () => {
     setup()
     await maximize()
     seek(64200)
     fireEvent.click(screen.getByTestId('cues-memory'))
     expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    editor().focus()
+    key('Backspace')
     expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
   })
 
-  it('still removes with ✕ a CALL from rekordbox that sits off the grid under the playhead', async () => {
+  it('walks to a CALL from rekordbox off the grid with › and deletes it with ⌫', async () => {
     setup(null, { ...READ, cues: [{ id: 'r', ms: 64230, kind: 0, color: null }] })
     await maximize()
-    seek(64230)
-    fireEvent.click(screen.getByTestId('cues-memory-remove'))
+    fireEvent.click(screen.getByTestId('cues-memory-next'))
+    expect(position()).toBe('1:04.2')
+    editor().focus()
+    key('Backspace')
     expect(screen.queryByTestId('cue-wave-call-64230')).toBeNull()
   })
 
-  it('disables ✕ while no CALL sits at the playhead, so a click never looks like it did nothing', async () => {
-    setup()
-    await maximize()
-    expect(screen.getByTestId('cues-memory-remove')).toBeDisabled()
-    seek(64200)
-    fireEvent.click(screen.getByTestId('cues-memory'))
-    expect(screen.getByTestId('cues-memory-remove')).toBeEnabled()
-    seek(100000)
-    expect(screen.getByTestId('cues-memory-remove')).toBeDisabled()
-  })
-
-  it('changes the jump with ‹ › and hands it on to be saved', async () => {
+  it('changes the jump from its menu and hands it on to be saved', async () => {
     const { onJumpBars } = setup()
     await maximize()
-    expect(screen.getByTestId('cues-jump-value')).toHaveTextContent('16 bars')
-    fireEvent.click(screen.getByTestId('cues-jump-more'))
+    expect(screen.getByTestId('cues-jump')).toHaveTextContent('16 bars')
+    fireEvent.click(screen.getByTestId('cues-jump'))
+    fireEvent.click(screen.getByTestId('cues-jump-option-32'))
     expect(onJumpBars).toHaveBeenCalledWith(32)
   })
 
   it('shows the jump set in Settings', async () => {
     setup({ cueJumpBars: 64 })
     await maximize()
-    expect(screen.getByTestId('cues-jump-value')).toHaveTextContent('64 bars')
+    expect(screen.getByTestId('cues-jump')).toHaveTextContent('64 bars')
   })
 
   it('keeps the playhead when the section is mounted again on maximize or restore', async () => {
@@ -520,6 +516,18 @@ describe('CuesSection maximized keys', () => {
     key(' ')
     expect(pause).toHaveBeenCalled()
     shared.remove()
+  })
+
+  it('plays and pauses with the Play button for whoever does not use the keyboard', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    expect(audios).toHaveLength(1)
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Pause')
+    fireEvent.click(screen.getByTestId('cues-play'))
+    expect(pause).toHaveBeenCalled()
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
   })
 
   it('plays with Space after a click left the focus on a pad, instead of pressing the pad again', async () => {

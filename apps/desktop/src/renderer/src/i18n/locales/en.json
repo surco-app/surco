@@ -787,13 +787,9 @@
       "queuedStale": "The queued save was made before the track changed in rekordbox and is out of date. You see what rekordbox holds now.",
       "loop": "This is a loop. Surco neither moves nor changes it.",
       "detail": "Zoomed wave",
-      "memory": "MEMORY",
       "memoryPrev": "Previous CALL",
       "memoryNext": "Next CALL",
-      "memoryRemove": "Delete the CALL at the playhead",
       "jump": "Jump",
-      "jumpLess": "Jump fewer bars",
-      "jumpMore": "Jump more bars",
       "jumpBars_one": "{{count}} bar",
       "jumpBars_other": "{{count}} bars",
       "bpm": "{{bpm}} BPM",
@@ -818,7 +814,10 @@
       "armHint": "Click where it drops",
       "saveShort": "Save",
       "toCall_one": "{{count}} bar to the CALL",
-      "toCall_other": "{{count}} bars to the CALL"
+      "toCall_other": "{{count}} bars to the CALL",
+      "play": "Play",
+      "pause": "Pause",
+      "addCall": "Add a CALL at the playhead"
     }
   },
   "fields": {

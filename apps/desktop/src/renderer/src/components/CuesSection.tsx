@@ -309,13 +309,10 @@ function Editing({
   }
   const memoryStep = (dir: 1 | -1) => {
     const to = adjacentCall(state.cues, playheadMs, dir)
-    if (to !== null) seekTo(to)
-  }
-  const callHere =
-    callAt(state.cues, playheadMs) ??
-    callAt(state.cues, ctx.beats[nearestBeat(ctx.beats, playheadMs)])
-  const memoryRemove = () => {
-    if (callHere) dispatch({ type: 'remove', key: callHere.key })
+    if (to === null) return
+    seekTo(to)
+    const call = callAt(state.cues, to)
+    if (call) dispatch({ type: 'select', key: call.key })
   }
   const run = (key: CueKey) => {
     if (key.type === 'play') audition.toggle(playheadMs)
@@ -661,12 +658,12 @@ function Editing({
           selected={state.selected}
           locked={state.locked}
           jumpBars={settings.cueJumpBars}
+          playing={audition.playing}
+          onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
           onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
-          onMemoryRemove={memoryRemove}
-          canRemoveMemory={callHere !== undefined}
           onJumpBars={(bars) => onJumpBars?.(bars)}
           onDone={focusEditor}
         />

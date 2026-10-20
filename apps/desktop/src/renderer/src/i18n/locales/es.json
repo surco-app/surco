@@ -787,13 +787,9 @@
       "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en rekordbox y ya no vale. Ves lo que tiene rekordbox ahora.",
       "loop": "Es un bucle. Surco no lo mueve ni lo cambia.",
       "detail": "Onda ampliada",
-      "memory": "MEMORY",
       "memoryPrev": "CALL anterior",
       "memoryNext": "CALL siguiente",
-      "memoryRemove": "Borrar el CALL del cabezal",
       "jump": "Salto",
-      "jumpLess": "Saltar menos compases",
-      "jumpMore": "Saltar más compases",
       "jumpBars_one": "{{count}} compás",
       "jumpBars_other": "{{count}} compases",
       "bpm": "{{bpm}} BPM",
@@ -818,7 +814,10 @@
       "armHint": "Haz clic donde rompe",
       "saveShort": "Guardar",
       "toCall_one": "{{count}} compás al CALL",
-      "toCall_other": "{{count}} compases al CALL"
+      "toCall_other": "{{count}} compases al CALL",
+      "play": "Reproducir",
+      "pause": "Pausa",
+      "addCall": "Añadir un CALL en el cabezal"
     }
   },
   "fields": {

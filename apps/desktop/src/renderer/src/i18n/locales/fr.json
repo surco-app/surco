@@ -787,13 +787,9 @@
       "queuedStale": "L'enregistrement en attente date d'avant la modification du morceau dans rekordbox et n'est plus à jour. Vous voyez ce que contient rekordbox maintenant.",
       "loop": "C'est une boucle. Surco ne la déplace pas et ne la modifie pas.",
       "detail": "Onde agrandie",
-      "memory": "MEMORY",
       "memoryPrev": "CALL précédent",
       "memoryNext": "CALL suivant",
-      "memoryRemove": "Supprimer le CALL sous la tête de lecture",
       "jump": "Saut",
-      "jumpLess": "Sauter moins de mesures",
-      "jumpMore": "Sauter plus de mesures",
       "jumpBars_one": "{{count}} mesure",
       "jumpBars_other": "{{count}} mesures",
       "bpm": "{{bpm}} BPM",
@@ -818,7 +814,10 @@
       "armHint": "Cliquez là où arrive le drop",
       "saveShort": "Enregistrer",
       "toCall_one": "{{count}} mesure avant le CALL",
-      "toCall_other": "{{count}} mesures avant le CALL"
+      "toCall_other": "{{count}} mesures avant le CALL",
+      "play": "Lire",
+      "pause": "Pause",
+      "addCall": "Ajouter un CALL sur la tête de lecture"
     }
   },
   "fields": {

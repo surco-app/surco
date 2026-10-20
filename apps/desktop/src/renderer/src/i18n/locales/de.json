@@ -787,13 +787,9 @@
       "queuedStale": "Die vorgemerkte Speicherung stammt von vor der Änderung des Titels in rekordbox und ist veraltet. Du siehst, was rekordbox jetzt enthält.",
       "loop": "Das ist ein Loop. Surco verschiebt und ändert ihn nicht.",
       "detail": "Vergrößerte Wellenform",
-      "memory": "MEMORY",
       "memoryPrev": "Vorheriger CALL",
       "memoryNext": "Nächster CALL",
-      "memoryRemove": "CALL am Abspielkopf löschen",
       "jump": "Sprung",
-      "jumpLess": "Weniger Takte springen",
-      "jumpMore": "Mehr Takte springen",
       "jumpBars_one": "{{count}} Takt",
       "jumpBars_other": "{{count}} Takte",
       "bpm": "{{bpm}} BPM",
@@ -818,7 +814,10 @@
       "armHint": "Klicke dort, wo der Drop kommt",
       "saveShort": "Speichern",
       "toCall_one": "{{count}} Takt bis zum CALL",
-      "toCall_other": "{{count}} Takte bis zum CALL"
+      "toCall_other": "{{count}} Takte bis zum CALL",
+      "play": "Abspielen",
+      "pause": "Pause",
+      "addCall": "CALL am Abspielkopf setzen"
     }
   },
   "fields": {

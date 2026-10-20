@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { CueJumpBars } from '../../../shared/cueJump'
@@ -9,11 +9,11 @@ import { CueDeck } from './CueDeck'
 
 function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
   const handlers = {
+    onPlay: vi.fn<() => void>(),
     onPad: vi.fn<(kind: number) => void>(),
     onRecolour: vi.fn<(key: string, color: number) => void>(),
     onMemory: vi.fn<() => void>(),
     onMemoryStep: vi.fn<(dir: 1 | -1) => void>(),
-    onMemoryRemove: vi.fn<() => void>(),
     onJumpBars: vi.fn<(bars: CueJumpBars) => void>(),
   }
   render(
@@ -25,7 +25,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
       selected="a"
       locked={[]}
       jumpBars={16}
-      canRemoveMemory
+      playing={false}
       {...handlers}
       {...over}
     />,
@@ -34,15 +34,16 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
 }
 
 describe('CueDeck', () => {
-  it('shows pads A to H with the key that sets each, coloured where a hot cue is', () => {
+  it('shows pads A to H, filled with their colour where a hot cue is and empty where none is, with no key hints', () => {
     setup()
     for (const letter of 'ABCDEFGH')
       expect(screen.getByTestId(`cues-pad-${letter}`)).toBeInTheDocument()
     expect(screen.getByTestId('cues-pad-A')).toHaveAttribute('data-set', 'true')
     expect(screen.getByTestId('cues-pad-A')).toHaveStyle({ backgroundColor: '#e62828' })
-    expect(screen.getByTestId('cues-pad-A')).toHaveTextContent('A1')
-    expect(screen.getByTestId('cues-pad-H')).toHaveTextContent('H8')
+    expect(screen.getByTestId('cues-pad-A').textContent).toBe('A')
+    expect(screen.getByTestId('cues-pad-H').textContent).toBe('H')
     expect(screen.getByTestId('cues-pad-B')).toHaveAttribute('data-set', 'false')
+    expect(screen.getByTestId('cues-pad-B').style.backgroundColor).toBe('')
   })
 
   it('marks the pad of the selected hot cue', () => {
@@ -94,39 +95,44 @@ describe('CueDeck', () => {
     expect(onWindowKey).not.toHaveBeenCalled()
   })
 
-  it('puts, walks and removes CALLs with MEMORY and its arrows', () => {
+  it('walks the CALLs with ‹ › and puts one at the playhead with + CALL', () => {
     const h = setup()
+    expect(screen.getByTestId('cues-memory')).toHaveTextContent('CALL')
+    expect(screen.getByTestId('cues-memory')).toHaveAccessibleName('Add a CALL at the playhead')
     fireEvent.click(screen.getByTestId('cues-memory'))
     fireEvent.click(screen.getByTestId('cues-memory-prev'))
     fireEvent.click(screen.getByTestId('cues-memory-next'))
-    fireEvent.click(screen.getByTestId('cues-memory-remove'))
     expect(h.onMemory).toHaveBeenCalledTimes(1)
     expect(h.onMemoryStep.mock.calls).toEqual([[-1], [1]])
-    expect(h.onMemoryRemove).toHaveBeenCalledTimes(1)
   })
 
-  it('greys out ✕ when there is no CALL at the playhead to remove', () => {
-    const h = setup({ canRemoveMemory: false })
-    fireEvent.click(screen.getByTestId('cues-memory-remove'))
-    expect(screen.getByTestId('cues-memory-remove')).toBeDisabled()
-    expect(h.onMemoryRemove).not.toHaveBeenCalled()
+  it('has no MEMORY button and no ✕, since ⌫ deletes the selected CALL', () => {
+    setup()
+    expect(screen.queryByTestId('cues-memory-remove')).toBeNull()
+    expect(screen.getByTestId('cues-deck')).not.toHaveTextContent('MEMORY')
   })
 
-  it('steps the jump through 8, 16, 32 and 64 bars', () => {
+  it('plays and pauses with its button and says which one it will do', () => {
+    const { onPlay } = setup()
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
+    fireEvent.click(screen.getByTestId('cues-play'))
+    expect(onPlay).toHaveBeenCalledTimes(1)
+  })
+
+  it('says Pause while the track sounds', () => {
+    setup({ playing: true })
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Pause')
+  })
+
+  it('picks the jump from a menu of 8, 16, 32 and 64 bars', () => {
     const { onJumpBars } = setup()
-    expect(screen.getByTestId('cues-jump-value')).toHaveTextContent('16 bars')
-    fireEvent.click(screen.getByTestId('cues-jump-less'))
-    fireEvent.click(screen.getByTestId('cues-jump-more'))
-    expect(onJumpBars.mock.calls).toEqual([[8], [32]])
-  })
-
-  it('stops shortening the jump at 8 bars', () => {
-    setup({ jumpBars: 8 })
-    expect(screen.getByTestId('cues-jump-less')).toBeDisabled()
-  })
-
-  it('offers no longer jump than 64 bars', () => {
-    setup({ jumpBars: 64 })
-    expect(screen.getByTestId('cues-jump-more')).toBeDisabled()
+    expect(screen.getByTestId('cues-jump')).toHaveTextContent('16 bars')
+    fireEvent.click(screen.getByTestId('cues-jump'))
+    const names = within(screen.getByTestId('cues-jump-listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(names).toEqual(['8 bars', '16 bars', '32 bars', '64 bars'])
+    fireEvent.click(screen.getByTestId('cues-jump-option-32'))
+    expect(onJumpBars).toHaveBeenCalledWith(32)
   })
 })
