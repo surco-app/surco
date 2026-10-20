@@ -787,9 +787,6 @@
       "queuedStale": "Die vorgemerkte Speicherung stammt von vor der Änderung des Titels in rekordbox und ist veraltet. Du siehst, was rekordbox jetzt enthält.",
       "loop": "Das ist ein Loop. Surco verschiebt und ändert ihn nicht.",
       "detail": "Vergrößerte Wellenform",
-      "toCall": "{{bars}} Takte bis zum CALL",
-      "zoomIn": "Vergrößern",
-      "zoomOut": "Verkleinern",
       "memory": "MEMORY",
       "memoryPrev": "Vorheriger CALL",
       "memoryNext": "Nächster CALL",
@@ -819,7 +816,9 @@
       "markDrop": "Drop markieren",
       "apply": "{{name}} anwenden",
       "armHint": "Klicke dort, wo der Drop kommt",
-      "saveShort": "Speichern"
+      "saveShort": "Speichern",
+      "toCall_one": "{{count}} Takt bis zum CALL",
+      "toCall_other": "{{count}} Takte bis zum CALL"
     }
   },
   "fields": {

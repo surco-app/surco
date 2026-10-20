@@ -56,11 +56,15 @@ describe('CueWaveDetail', () => {
     expect(screen.getByTestId('cue-detail-playhead').style.left).toBe('')
   })
 
-  it('caps every bar line at both ends as rekordbox does, so the grid reads over a loud wave', () => {
+  it('draws a soft line per bar and a notch at the bottom only every 16 bars, with no loose beats', () => {
     setup()
-    for (const line of screen.getAllByTestId('cue-detail-bar')) {
-      expect(within(line).getAllByTestId('cue-grid-cap')).toHaveLength(2)
-    }
+    const lines = screen.getAllByTestId('cue-detail-bar')
+    expect(lines).toHaveLength(17)
+    const strong = lines.filter((l) => l.dataset.strong === 'true')
+    expect(strong).toHaveLength(1)
+    expect(within(strong[0]).getAllByTestId('cue-detail-notch')).toHaveLength(1)
+    expect(screen.getAllByTestId('cue-detail-notch')).toHaveLength(1)
+    expect(screen.queryAllByTestId('cue-grid-cap')).toHaveLength(0)
   })
 
   it('shows fewer bars once zoomed in', () => {
@@ -108,9 +112,25 @@ describe('CueWaveDetail', () => {
     expect(call.compareDocumentPosition(hot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('says how many bars are left to the next CALL, as rekordbox does above the playhead', () => {
+  it('shows the playhead time left of the centre and the bars to the CALL right of it, in a row above the wave so nothing sits on it', () => {
     setup({ cues: [{ key: 'd', ms: bar(48), kind: 0, color: null, pending: false }] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('-16.0 bars to the CALL')
+    expect(screen.getByTestId('cues-position')).toHaveTextContent('1:04.0')
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('16 bars to the CALL')
+    expect(screen.getByTestId('cue-detail')).not.toContainElement(
+      screen.getByTestId('cues-position'),
+    )
+    expect(screen.getByTestId('cue-detail')).not.toContainElement(
+      screen.getByTestId('cue-detail-to-call'),
+    )
+  })
+
+  it('says one bar in the singular and keeps half a bar when the CALL sits off the bar', () => {
+    const { rerender } = setup({
+      cues: [{ key: 'd', ms: bar(33), kind: 0, color: null, pending: false }],
+    })
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('1 bar to the CALL')
+    rerender({ cues: [{ key: 'd', ms: bar(40) + 1000, kind: 0, color: null, pending: false }] })
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('8.5 bars to the CALL')
   })
 
   it('says nothing about a CALL when none lies ahead', () => {
@@ -225,15 +245,47 @@ describe('CueWaveDetail', () => {
     )
   })
 
-  it('zooms with its buttons and stops at 4 and 64 bars', () => {
-    const { onZoom } = setup({ bars: 4 })
-    expect(screen.getByTestId('cue-detail-zoom-in')).toBeDisabled()
-    fireEvent.click(screen.getByTestId('cue-detail-zoom-out'))
-    expect(onZoom).toHaveBeenCalledWith('out')
+  it('puts no buttons over the wave, zoom lives on the keys and the trackpad', () => {
+    setup()
+    expect(screen.queryAllByRole('button')).toHaveLength(0)
   })
 
-  it('stops zooming out at 64 bars', () => {
-    setup({ bars: 64 })
-    expect(screen.getByTestId('cue-detail-zoom-out')).toBeDisabled()
+  it('zooms with a pinch or ⌘ and the wheel, one step per swipe, and leaves a plain wheel alone', () => {
+    const { onZoom } = setup()
+    const stage = screen.getByTestId('cue-detail')
+    expect(fireEvent.wheel(stage, { deltaY: -60, ctrlKey: true })).toBe(false)
+    expect(onZoom.mock.calls).toEqual([['in']])
+    fireEvent.wheel(stage, { deltaY: 25, metaKey: true })
+    expect(onZoom).toHaveBeenCalledTimes(1)
+    fireEvent.wheel(stage, { deltaY: 25, metaKey: true })
+    expect(onZoom.mock.calls).toEqual([['in'], ['out']])
+    expect(fireEvent.wheel(stage, { deltaY: -200 })).toBe(true)
+    expect(onZoom).toHaveBeenCalledTimes(2)
+  })
+
+  it('fills the height it is given, so the zoomed wave takes all the free room', () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 300,
+      right: 400,
+      bottom: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    })
+    const fake = { clearRect: vi.fn(), fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    setup()
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    expect(canvas.height).toBe(300)
+  })
+
+  it('shows a crosshair over the wave while it waits for a drop, so the click reads as marking and not as grabbing', () => {
+    const { rerender } = setup()
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
+    rerender({ onPick: vi.fn<(ms: number) => void>() })
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
   })
 })

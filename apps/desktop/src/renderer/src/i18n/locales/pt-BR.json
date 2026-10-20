@@ -787,9 +787,6 @@
       "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no rekordbox e está desatualizado. Você vê o que o rekordbox tem agora.",
       "loop": "É um loop. O Surco não o move nem o altera.",
       "detail": "Onda ampliada",
-      "toCall": "{{bars}} compassos até o CALL",
-      "zoomIn": "Aproximar",
-      "zoomOut": "Afastar",
       "memory": "MEMORY",
       "memoryPrev": "CALL anterior",
       "memoryNext": "Próximo CALL",
@@ -819,7 +816,9 @@
       "markDrop": "Marcar o drop",
       "apply": "Aplicar {{name}}",
       "armHint": "Clique onde entra o drop",
-      "saveShort": "Salvar"
+      "saveShort": "Salvar",
+      "toCall_one": "{{count}} compasso até o CALL",
+      "toCall_other": "{{count}} compassos até o CALL"
     }
   },
   "fields": {

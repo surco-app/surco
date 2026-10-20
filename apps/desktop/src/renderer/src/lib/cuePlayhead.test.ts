@@ -7,6 +7,8 @@ import {
   DEFAULT_ZOOM_BARS,
   detailWindow,
   jumpBeats,
+  WHEEL_ZOOM_STEP,
+  wheelZoom,
   zoomStep,
 } from './cuePlayhead'
 
@@ -119,5 +121,20 @@ describe('cueClock', () => {
     expect(cueClock(61999)).toBe('1:01.9')
     expect(cueClock(400000)).toBe('6:40.0')
     expect(cueClock(-5)).toBe('0:00.0')
+  })
+})
+
+describe('wheelZoom', () => {
+  it('zooms in one step once a pinch or ⌘ wheel has gone far enough, and starts counting again', () => {
+    expect(WHEEL_ZOOM_STEP).toBe(40)
+    expect(wheelZoom(0, -10)).toEqual({ pending: -10, dir: null })
+    expect(wheelZoom(-10, -10)).toEqual({ pending: -20, dir: null })
+    expect(wheelZoom(-30, -10)).toEqual({ pending: 0, dir: 'in' })
+    expect(wheelZoom(0, 60)).toEqual({ pending: 0, dir: 'out' })
+  })
+
+  it('starts again when the fingers turn back, so a hesitation never zooms the wrong way', () => {
+    expect(wheelZoom(-30, 15)).toEqual({ pending: 15, dir: null })
+    expect(wheelZoom(30, -15)).toEqual({ pending: -15, dir: null })
   })
 })

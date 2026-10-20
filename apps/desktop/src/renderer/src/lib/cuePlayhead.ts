@@ -1,6 +1,6 @@
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 
-export const ZOOM_BARS = [4, 8, 16, 32, 64] as const
+const ZOOM_BARS = [4, 8, 16, 32, 64] as const
 export const DEFAULT_ZOOM_BARS = 16
 
 export function jumpBeats(beats: number[], ms: number, count: number): number {
@@ -76,4 +76,16 @@ export function cueClock(ms: number): string {
   const minutes = Math.floor(tenths / 600)
   const seconds = String(Math.floor((tenths % 600) / 10)).padStart(2, '0')
   return `${minutes}:${seconds}.${tenths % 10}`
+}
+
+export const WHEEL_ZOOM_STEP = 40
+
+export function wheelZoom(
+  pending: number,
+  deltaY: number,
+): { pending: number; dir: 'in' | 'out' | null } {
+  const sum = pending * deltaY < 0 ? deltaY : pending + deltaY
+  if (sum <= -WHEEL_ZOOM_STEP) return { pending: 0, dir: 'in' }
+  if (sum >= WHEEL_ZOOM_STEP) return { pending: 0, dir: 'out' }
+  return { pending: sum, dir: null }
 }

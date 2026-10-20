@@ -26,7 +26,6 @@ import { type CueKey, cueKeyAction } from '../lib/cueKeys'
 import {
   adjacentCall,
   callAt,
-  cueClock,
   DEFAULT_ZOOM_BARS,
   detailWindow,
   jumpBeats,
@@ -485,9 +484,6 @@ function Editing({
           </>
         )}
       </div>
-      <span data-testid="cues-position" className="font-mono text-[13px] tabular-nums text-fg">
-        {cueClock(playheadMs)}
-      </span>
       <span className="flex-1" />
       {actions}
       <CueKeys jumpBars={settings.cueJumpBars} onClose={focusEditor} />

@@ -444,6 +444,24 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(17)
   })
 
+  it('zooms the zoomed wave with a pinch or ⌘ and the wheel', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.wheel(screen.getByTestId('cue-detail'), { deltaY: -60, ctrlKey: true })
+    expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(9)
+    fireEvent.wheel(screen.getByTestId('cue-detail'), { deltaY: 60, metaKey: true })
+    expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(17)
+  })
+
+  it('shows the playhead time beside the playhead instead of in the top bar', async () => {
+    setup()
+    await maximize()
+    expect(screen.getByTestId('cues-header')).not.toContainElement(
+      screen.getByTestId('cues-position'),
+    )
+  })
+
   it('never acts while a field of the editor has the focus', async () => {
     setup()
     await maximize()
@@ -613,6 +631,16 @@ describe('CuesSection maximized keys', () => {
     key('m')
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+  })
+
+  it('shows a crosshair on the zoomed wave while it waits for the drop, and the grab hand again once marked', async () => {
+    setup()
+    await maximize()
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
+    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
+    key('m')
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
   })
 
   it('stops waiting with Escape without restoring the full editor, and the overview seeks again', async () => {

@@ -1,17 +1,12 @@
-import { Minus, Plus } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
-import { barsToNextCall, detailWindow, ZOOM_BARS } from '../lib/cuePlayhead'
+import { barsToNextCall, cueClock, detailWindow, wheelZoom } from '../lib/cuePlayhead'
 import { barLines } from '../lib/cueWave'
-import { GRID_LINE, GridCaps, type WaveCue } from './CueWave'
-
-const HEIGHT = 160
-const ZOOM_BUTTON =
-  'press flex h-6 w-6 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] text-fg-dim hover:text-fg disabled:opacity-40'
+import type { WaveCue } from './CueWave'
 
 export function CueWaveDetail({
   source,
@@ -35,14 +30,14 @@ export function CueWaveDetail({
   onPick?: (ms: number) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const rootRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const beats = useMemo(() => grid.map((b) => b.ms), [grid])
   const lines = useMemo(() => barLines(grid), [grid])
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
-  const latest = useRef({ span, onScrub })
-  latest.current = { span, onScrub }
+  const latest = useRef({ span, onScrub, onZoom })
+  latest.current = { span, onScrub, onZoom }
   const [drag, setDrag] = useState<{ x0: number; ms0: number; width: number } | null>(null)
   useEffect(() => {
     if (!drag) return
@@ -56,32 +51,48 @@ export function CueWaveDetail({
       window.removeEventListener('mouseup', up)
     }
   }, [drag])
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return
+    let pending = 0
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const step = wheelZoom(pending, e.deltaY)
+      pending = step.pending
+      if (step.dir) latest.current.onZoom(step.dir)
+    }
+    stage.addEventListener('wheel', onWheel, { passive: false })
+    return () => stage.removeEventListener('wheel', onWheel)
+  }, [])
   const draw = useCallback(() => {
     const canvas = canvasRef.current
     const g = canvas?.getContext('2d')
     if (!canvas || !g) return
-    const width = Math.max(1, Math.round(canvas.getBoundingClientRect().width))
+    const rect = canvas.getBoundingClientRect()
+    const width = Math.max(1, Math.round(rect.width))
+    const height = Math.max(1, Math.round(rect.height))
     const dpr = window.devicePixelRatio || 1
     canvas.width = width * dpr
-    canvas.height = HEIGHT * dpr
+    canvas.height = height * dpr
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
-    g.clearRect(0, 0, width, HEIGHT)
+    g.clearRect(0, 0, width, height)
     if (!source) return
     const accent = getComputedStyle(canvas).getPropertyValue('--color-accent').trim()
     g.globalAlpha = 0.7
     visibleColumns(source, fromMs, toMs, width).forEach((column, x) => {
       if (!column) return
-      const h = Math.max(column.h * HEIGHT, 1)
+      const h = Math.max(column.h * height, 1)
       g.fillStyle = accent
-      g.fillRect(x, (HEIGHT - h) / 2, 1, h)
+      g.fillRect(x, (height - h) / 2, 1, h)
     })
   }, [source, fromMs, toMs])
   useEffect(draw, [draw])
   useEffect(() => {
-    const root = rootRef.current
-    if (!root || typeof ResizeObserver === 'undefined') return
+    const stage = stageRef.current
+    if (!stage || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(draw)
-    observer.observe(root)
+    observer.observe(stage)
     return () => observer.disconnect()
   }, [draw])
   const { hot, calls } = placeCues(
@@ -90,118 +101,109 @@ export function CueWaveDetail({
   )
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
   const toCall = barsToNextCall(beats, cues, playheadMs)
-  const zoomAt = ZOOM_BARS.findIndex((z) => z === bars)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
   return (
-    <div
-      ref={rootRef}
-      data-testid="cue-detail"
-      role="img"
-      aria-label={t('editor.cues.detail')}
-      onMouseDown={(e) => {
-        if (e.button !== 0) return
-        const rect = rootRef.current?.getBoundingClientRect()
-        if (!rect || rect.width <= 0) return
-        if (onPick) onPick(fromMs + ((e.clientX - rect.left) / rect.width) * span)
-        else setDrag({ x0: e.clientX, ms0: playheadMs, width: rect.width })
-      }}
-      style={{ height: `${HEIGHT + WAVE_MARK_LANE_PX}px` }}
-      className="relative w-full cursor-grab select-none overflow-hidden rounded-md bg-[var(--color-panel-2)]"
-    >
-      <canvas
-        ref={canvasRef}
-        style={{ top: `${WAVE_MARK_LANE_PX}px`, height: `${HEIGHT}px` }}
-        className="absolute inset-x-0 w-full"
-      />
-      {lines
-        .filter((b) => b.ms >= fromMs && b.ms <= toMs)
-        .map((b) => (
-          <span
-            key={b.ms}
-            data-testid="cue-detail-bar"
-            aria-hidden="true"
-            style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-            className={`absolute bottom-0 w-px ${b.strong ? 'bg-[var(--color-fg)]/80' : GRID_LINE}`}
-          >
-            <GridCaps />
-          </span>
-        ))}
-      {calls.map((c) => (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="relative h-4 shrink-0 text-xs tabular-nums">
         <span
-          key={`c${c.key}`}
-          data-testid={`cue-detail-call-${c.ms + fromMs}`}
-          data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
-          aria-hidden="true"
-          style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
-          className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
-            pendingOf.get(c.key) ? 'opacity-60' : ''
-          }`}
-        />
-      ))}
-      {hot.map((h) => {
-        const pending = pendingOf.get(h.key) ?? false
-        return (
-          <span
-            key={`h${h.key}`}
-            data-testid={`cue-detail-hot-${h.letter}`}
-            data-pending={pending ? 'true' : 'false'}
-            data-selected={selected === h.key ? 'true' : 'false'}
-            aria-hidden="true"
-            style={{
-              ...markStyle(h.at),
-              ...(pending
-                ? { borderColor: h.colour, color: h.colour }
-                : { backgroundColor: h.colour, color: '#000' }),
-            }}
-            className={`absolute h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
-              pending ? 'border' : ''
-            } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
-          >
-            {h.letter}
-          </span>
-        )
-      })}
-      <span
-        data-testid="cue-detail-playhead"
-        aria-hidden="true"
-        style={{ backgroundColor: MEMORY_CUE_COLOR }}
-        className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-0.5 -translate-x-1/2"
-      />
-      {toCall !== null && (
-        <span
-          data-testid="cue-detail-to-call"
-          style={{ color: MEMORY_CUE_COLOR, top: `${WAVE_MARK_LANE_PX + 4}px` }}
-          className="pointer-events-none absolute right-1/2 mr-2 whitespace-nowrap rounded-sm bg-[var(--color-panel-2)]/85 px-1 font-mono text-[13px] font-semibold tabular-nums"
+          data-testid="cues-position"
+          className="absolute right-1/2 mr-2 font-semibold whitespace-nowrap text-fg"
         >
-          {t('editor.cues.toCall', { bars: `-${toCall.toFixed(1)}` })}
+          {cueClock(playheadMs)}
         </span>
-      )}
+        {toCall !== null && (
+          <span
+            data-testid="cue-detail-to-call"
+            className="absolute left-1/2 ml-2 whitespace-nowrap text-fg-dim"
+          >
+            {t('editor.cues.toCall', { count: Number(toCall.toFixed(1)) })}
+          </span>
+        )}
+      </div>
       <div
-        style={{ top: `${WAVE_MARK_LANE_PX + HEIGHT / 2}px` }}
-        className="absolute left-2 flex -translate-y-1/2 flex-col gap-1.5"
+        ref={stageRef}
+        data-testid="cue-detail"
+        role="img"
+        aria-label={t('editor.cues.detail')}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return
+          const rect = stageRef.current?.getBoundingClientRect()
+          if (!rect || rect.width <= 0) return
+          if (onPick) onPick(fromMs + ((e.clientX - rect.left) / rect.width) * span)
+          else setDrag({ x0: e.clientX, ms0: playheadMs, width: rect.width })
+        }}
+        style={{ cursor: onPick ? 'crosshair' : 'grab' }}
+        className="relative min-h-40 w-full flex-1 select-none overflow-hidden"
       >
-        <button
-          type="button"
-          data-testid="cue-detail-zoom-in"
-          aria-label={t('editor.cues.zoomIn')}
-          disabled={zoomAt === 0}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onZoom('in')}
-          className={ZOOM_BUTTON}
-        >
-          <Plus className="h-3 w-3" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          data-testid="cue-detail-zoom-out"
-          aria-label={t('editor.cues.zoomOut')}
-          disabled={zoomAt === ZOOM_BARS.length - 1}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onZoom('out')}
-          className={ZOOM_BUTTON}
-        >
-          <Minus className="h-3 w-3" aria-hidden="true" />
-        </button>
+        <canvas
+          ref={canvasRef}
+          style={{
+            top: `${WAVE_MARK_LANE_PX}px`,
+            height: `calc(100% - ${WAVE_MARK_LANE_PX}px)`,
+          }}
+          className="absolute inset-x-0 w-full"
+        />
+        {lines
+          .filter((b) => b.ms >= fromMs && b.ms <= toMs)
+          .map((b) => (
+            <span
+              key={b.ms}
+              data-testid="cue-detail-bar"
+              data-strong={b.strong ? 'true' : 'false'}
+              aria-hidden="true"
+              style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+              className={`absolute bottom-0 w-px ${
+                b.strong ? 'bg-[var(--color-fg-dim)]/60' : 'bg-[var(--color-fg)]/10'
+              }`}
+            >
+              {b.strong && (
+                <span
+                  data-testid="cue-detail-notch"
+                  className="absolute bottom-0 left-1/2 h-[3px] w-[5px] -translate-x-1/2 bg-[var(--color-fg-dim)]"
+                />
+              )}
+            </span>
+          ))}
+        {calls.map((c) => (
+          <span
+            key={`c${c.key}`}
+            data-testid={`cue-detail-call-${c.ms + fromMs}`}
+            data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
+            aria-hidden="true"
+            style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
+            className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
+              pendingOf.get(c.key) ? 'opacity-60' : ''
+            }`}
+          />
+        ))}
+        {hot.map((h) => {
+          const pending = pendingOf.get(h.key) ?? false
+          return (
+            <span
+              key={`h${h.key}`}
+              data-testid={`cue-detail-hot-${h.letter}`}
+              data-pending={pending ? 'true' : 'false'}
+              data-selected={selected === h.key ? 'true' : 'false'}
+              aria-hidden="true"
+              style={{
+                ...markStyle(h.at),
+                ...(pending
+                  ? { borderColor: h.colour, color: h.colour }
+                  : { backgroundColor: h.colour, color: '#000' }),
+              }}
+              className={`absolute h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
+                pending ? 'border' : ''
+              } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
+            >
+              {h.letter}
+            </span>
+          )
+        })}
+        <span
+          data-testid="cue-detail-playhead"
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
+        />
       </div>
     </div>
   )

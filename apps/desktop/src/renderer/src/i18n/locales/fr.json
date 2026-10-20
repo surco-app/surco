@@ -787,9 +787,6 @@
       "queuedStale": "L'enregistrement en attente date d'avant la modification du morceau dans rekordbox et n'est plus à jour. Vous voyez ce que contient rekordbox maintenant.",
       "loop": "C'est une boucle. Surco ne la déplace pas et ne la modifie pas.",
       "detail": "Onde agrandie",
-      "toCall": "{{bars}} mesures avant le CALL",
-      "zoomIn": "Zoomer",
-      "zoomOut": "Dézoomer",
       "memory": "MEMORY",
       "memoryPrev": "CALL précédent",
       "memoryNext": "CALL suivant",
@@ -819,7 +816,9 @@
       "markDrop": "Marquer le drop",
       "apply": "Appliquer {{name}}",
       "armHint": "Cliquez là où arrive le drop",
-      "saveShort": "Enregistrer"
+      "saveShort": "Enregistrer",
+      "toCall_one": "{{count}} mesure avant le CALL",
+      "toCall_other": "{{count}} mesures avant le CALL"
     }
   },
   "fields": {
