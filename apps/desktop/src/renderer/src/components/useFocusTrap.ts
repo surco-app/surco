@@ -13,6 +13,7 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const node = ref.current
     if (!node) return
+    const focusedAtOpen = document.activeElement as HTMLElement | null
     const focusables = (): HTMLElement[] =>
       Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE))
 
@@ -58,7 +59,8 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
       node.removeEventListener('keydown', onKeyDown)
       // Lifted before the focus goes back: an inert trigger refuses focus.
       for (const el of inerted) el.removeAttribute('inert')
-      previouslyFocused?.focus?.()
+      const back = previouslyFocused?.isConnected ? previouslyFocused : focusedAtOpen
+      back?.focus?.()
     }
   }, [ref, previouslyFocused])
 }

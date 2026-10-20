@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useFocusTrap } from './useFocusTrap'
 
@@ -105,5 +105,62 @@ describe('useFocusTrap', () => {
     expect(screen.getByTestId('tab')).toHaveFocus()
     fireEvent.click(screen.getByTestId('close'))
     expect(editor).toHaveFocus()
+  })
+
+  it('gives the focus back to the row when a menu item opened the dialog and closed the menu in one click', () => {
+    function Menu({ onInfo }: { onInfo: () => void }): React.JSX.Element {
+      const item = useRef<HTMLButtonElement>(null)
+      useEffect(() => {
+        const opener = document.activeElement as HTMLElement | null
+        item.current?.focus()
+        return () => opener?.focus()
+      }, [])
+      return (
+        <div role="menu">
+          <button ref={item} type="button" role="menuitem" data-testid="info" onClick={onInfo}>
+            info
+          </button>
+        </div>
+      )
+    }
+    function Info({ onClose }: { onClose: () => void }): React.JSX.Element {
+      const ref = useRef<HTMLDivElement>(null)
+      useFocusTrap(ref)
+      return (
+        <div ref={ref} role="dialog">
+          <button type="button" data-testid="close" onClick={onClose}>
+            close
+          </button>
+        </div>
+      )
+    }
+    function App(): React.JSX.Element {
+      const [menu, setMenu] = useState(false)
+      const [info, setInfo] = useState(false)
+      return (
+        <>
+          <button type="button" data-testid="row" onClick={() => setMenu(true)}>
+            row
+          </button>
+          {menu && (
+            <Menu
+              onInfo={() => {
+                setInfo(true)
+                setMenu(false)
+              }}
+            />
+          )}
+          {info && <Info onClose={() => setInfo(false)} />}
+        </>
+      )
+    }
+    render(<App />)
+    const row = screen.getByTestId('row')
+    row.focus()
+    fireEvent.click(row)
+    expect(screen.getByTestId('info')).toHaveFocus()
+    fireEvent.click(screen.getByTestId('info'))
+    fireEvent.click(screen.getByTestId('close'))
+    expect(row).toHaveFocus()
   })
 })
