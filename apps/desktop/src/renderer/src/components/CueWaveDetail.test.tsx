@@ -355,4 +355,21 @@ describe('CueWaveDetail', () => {
     rerender({ onPick: vi.fn<(ms: number) => void>() })
     expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
   })
+  it('shows a ✕ on a hot cue while hovered, none on a locked loop, and the click neither scrubs nor bubbles', () => {
+    const onDeleteMark = vi.fn()
+    const { onScrub } = setup({
+      cues: [
+        { key: 'b', ms: bar(32), kind: 2, color: 22, pending: false },
+        { key: 'l', ms: bar(34), kind: 3, color: 22, pending: false, locked: true },
+      ],
+      onDeleteMark,
+    })
+    fireEvent.mouseEnter(screen.getByTestId('cue-detail-hot-C'))
+    expect(screen.queryByTestId('cue-detail-delete')).toBeNull()
+    fireEvent.mouseEnter(screen.getByTestId('cue-detail-hot-B'))
+    fireEvent.mouseDown(screen.getByTestId('cue-detail-delete'), { button: 0, clientX: 10 })
+    fireEvent.click(screen.getByTestId('cue-detail-delete'))
+    expect(onDeleteMark).toHaveBeenCalledWith('b')
+    expect(onScrub).not.toHaveBeenCalled()
+  })
 })

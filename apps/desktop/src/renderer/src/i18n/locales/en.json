@@ -775,6 +775,8 @@
       "discard": "Discard changes",
       "flow": "Flow",
       "delete": "Delete",
+      "deleteHot": "Delete hot cue {{letter}}",
+      "deleteCallMark": "Delete the CALL",
       "colour": "Colour {{index}}",
       "colourPicker": "Cue colour",
       "selectedHot": "Hot cue {{letter}}",

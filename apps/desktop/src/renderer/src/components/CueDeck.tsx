@@ -7,6 +7,7 @@ import { CUE_QUANTIZE, type CueQuantize } from '../../../shared/cueQuantize'
 import { HOT_KINDS } from '../../../shared/cueRules'
 import { hotCueColor, PAD_LETTER_COLOR } from '../../../shared/rekordboxCueColors'
 import { cueLetter } from '../lib/rowCues'
+import { CueDeleteBadge } from './CueDeleteBadge'
 import { CuePalette } from './CuePalette'
 import { Select } from './Select'
 
@@ -29,6 +30,7 @@ export function CueDeck({
   onPlay,
   onPad,
   onRecolour,
+  onDelete,
   onMemory,
   onMemoryStep,
   onJumpBars,
@@ -44,6 +46,7 @@ export function CueDeck({
   onPlay: () => void
   onPad: (kind: number) => void
   onRecolour: (key: string, color: number) => void
+  onDelete?: (key: string) => void
   onMemory: () => void
   onMemoryStep: (dir: 1 | -1) => void
   onJumpBars: (bars: CueJumpBars) => void
@@ -52,6 +55,7 @@ export function CueDeck({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [colouring, setColouring] = useState<string | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (colouring === null) return
@@ -100,6 +104,15 @@ export function CueDeck({
                 aria-label={tr('editor.cues.selectedHot', { letter })}
                 aria-pressed={isSelected}
                 onClick={() => onPad(kind)}
+                onMouseEnter={() => setHovered(cue?.key ?? null)}
+                onMouseLeave={() => setHovered(null)}
+                onKeyDown={(e) => {
+                  if (!cue || locked.includes(cue.key)) return
+                  if (e.key !== 'Backspace' && e.key !== 'Delete') return
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onDelete?.(cue.key)
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   if (cue && !locked.includes(cue.key)) setColouring(cue.key)
@@ -115,6 +128,16 @@ export function CueDeck({
               >
                 {letter}
               </button>
+              {cue && onDelete && hovered === cue.key && !locked.includes(cue.key) && (
+                <CueDeleteBadge
+                  testId={`cues-pad-${letter}-delete`}
+                  label={tr('editor.cues.deleteHot', { letter })}
+                  onDelete={() => onDelete(cue.key)}
+                  onMouseEnter={() => setHovered(cue.key)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="-top-1 -right-1"
+                />
+              )}
               {cue && colouring === cue.key && (
                 <div
                   ref={popoverRef}

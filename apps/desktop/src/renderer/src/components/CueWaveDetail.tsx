@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
@@ -7,6 +7,7 @@ import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { barsToNextCall, cueClock, detailWindow, wheelZoom } from '../lib/cuePlayhead'
 import { barLines } from '../lib/cueWave'
+import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
 const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
@@ -37,6 +38,7 @@ export function CueWaveDetail({
   onScrub,
   onZoom,
   onPick,
+  onDeleteMark,
 }: {
   source: DetailSource | null
   grid: { ms: number; beat: number }[]
@@ -48,6 +50,7 @@ export function CueWaveDetail({
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
   onPick?: (ms: number) => void
+  onDeleteMark?: (key: string) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const stageRef = useRef<HTMLDivElement>(null)
@@ -125,6 +128,29 @@ export function CueWaveDetail({
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
   const toCall = barsToNextCall(beats, cues, playheadMs)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
+  const [hovered, setHovered] = useState<string | null>(null)
+  const lockedKeys = new Set(cues.filter((c) => c.locked).map((c) => c.key))
+  const hover = (key: string) => ({
+    onMouseEnter: () => setHovered(key),
+    onMouseLeave: () => setHovered(null),
+  })
+  const badge = (key: string, at: number, label: string, offsetPx: number) =>
+    hovered === key &&
+    !lockedKeys.has(key) &&
+    onDeleteMark && (
+      <CueDeleteBadge
+        key={`x${key}`}
+        testId="cue-detail-delete"
+        label={label}
+        onDelete={() => {
+          setHovered(null)
+          onDeleteMark(key)
+        }}
+        className="top-0"
+        style={{ ...markStyle(at), transform: `translateX(calc(-50% + ${offsetPx}px))` }}
+        {...hover(key)}
+      />
+    )
   return (
     <div className="flex shrink-0 flex-col">
       <div className="relative h-4 shrink-0 text-xs tabular-nums">
@@ -203,38 +229,46 @@ export function CueWaveDetail({
           className="absolute inset-x-0 w-full"
         />
         {calls.map((c) => (
-          <span
-            key={`c${c.key}`}
-            data-testid={`cue-detail-call-${c.ms + fromMs}`}
-            data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
-            aria-hidden="true"
-            style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
-            className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
-              pendingOf.get(c.key) ? 'opacity-60' : ''
-            }`}
-          />
+          <Fragment key={`c${c.key}`}>
+            <span
+              role="img"
+              data-testid={`cue-detail-call-${c.ms + fromMs}`}
+              data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
+              aria-hidden="true"
+              {...hover(c.key)}
+              style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
+              className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
+                pendingOf.get(c.key) ? 'opacity-60' : ''
+              }`}
+            />
+            {badge(c.key, c.at, t('editor.cues.deleteCallMark'), 9)}
+          </Fragment>
         ))}
         {hot.map((h) => {
           const pending = pendingOf.get(h.key) ?? false
           return (
-            <span
-              key={`h${h.key}`}
-              data-testid={`cue-detail-hot-${h.letter}`}
-              data-pending={pending ? 'true' : 'false'}
-              data-selected={selected === h.key ? 'true' : 'false'}
-              aria-hidden="true"
-              style={{
-                ...markStyle(h.at),
-                ...(pending
-                  ? { borderColor: h.colour, color: h.colour }
-                  : { backgroundColor: h.colour, color: '#000' }),
-              }}
-              className={`absolute h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
-                pending ? 'border' : ''
-              } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
-            >
-              {h.letter}
-            </span>
+            <Fragment key={`h${h.key}`}>
+              <span
+                role="img"
+                data-testid={`cue-detail-hot-${h.letter}`}
+                data-pending={pending ? 'true' : 'false'}
+                data-selected={selected === h.key ? 'true' : 'false'}
+                aria-hidden="true"
+                {...hover(h.key)}
+                style={{
+                  ...markStyle(h.at),
+                  ...(pending
+                    ? { borderColor: h.colour, color: h.colour }
+                    : { backgroundColor: h.colour, color: '#000' }),
+                }}
+                className={`absolute h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
+                  pending ? 'border' : ''
+                } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
+              >
+                {h.letter}
+              </span>
+              {badge(h.key, h.at, t('editor.cues.deleteHot', { letter: h.letter }), 11)}
+            </Fragment>
           )
         })}
         <span

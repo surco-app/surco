@@ -543,6 +543,7 @@ function Editing({
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
           onPick={armed ? markDrop : undefined}
+          onDeleteMark={(key) => dispatch({ type: 'remove', key })}
         />
       )}
       {menu !== null && (
@@ -671,6 +672,7 @@ function Editing({
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
           onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
+          onDelete={(key) => dispatch({ type: 'remove', key })}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}
           onJumpBars={(bars) => onJumpBars?.(bars)}

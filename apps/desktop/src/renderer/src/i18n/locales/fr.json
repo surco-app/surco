@@ -775,6 +775,8 @@
       "discard": "Annuler les changements",
       "flow": "Flux",
       "delete": "Supprimer",
+      "deleteHot": "Supprimer le hot cue {{letter}}",
+      "deleteCallMark": "Supprimer le CALL",
       "colour": "Couleur {{index}}",
       "colourPicker": "Couleur du cue",
       "selectedHot": "Hot cue {{letter}}",
