@@ -94,6 +94,12 @@ export function CueRuleRow({
     setPaletteRight(anchor.getBoundingClientRect().left + width > clipRight(palette))
   }, [open])
 
+  const closeToToken = () => {
+    const token = rowRef.current?.querySelector<HTMLElement>(`[data-testid="${id}-${open}"]`)
+    setOpen(null)
+    token?.focus()
+  }
+
   const pickColor = (slot: number, color: number) => {
     if ('fixed' in rule.color) {
       onChange({ ...rule, color: { fixed: color } })
@@ -102,7 +108,7 @@ export function CueRuleRow({
       each[slot] = color
       onChange({ ...rule, color: { each } })
     }
-    setOpen(null)
+    closeToToken()
   }
 
   const setColorMode = (mode: (typeof COLOR_MODES)[number]) => {
@@ -151,7 +157,7 @@ export function CueRuleRow({
               data-testid={`${id}-${block}-option-${o.value}`}
               onClick={() => {
                 pick(o.value)
-                setOpen(null)
+                closeToToken()
               }}
               className={ITEM_CLASS}
             >
@@ -170,7 +176,7 @@ export function CueRuleRow({
       onKeyDown={(e) => {
         if (e.key !== 'Escape' || open === null) return
         e.stopPropagation()
-        setOpen(null)
+        closeToToken()
       }}
       className="relative m-0 min-w-0 rounded-md border border-[var(--color-line)] py-2 pl-3 pr-8 text-sm leading-8"
     >

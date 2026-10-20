@@ -130,6 +130,27 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-rule-1-color-0-palette')).toHaveAttribute('data-align', 'left')
   })
 
+  it('gives the focus back to the token when its list closes, so Escape closes the list first and Settings only after', () => {
+    const settingsEscape = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', settingsEscape)
+    afterTest = () => window.removeEventListener('keydown', settingsEscape)
+    render(<Harness />)
+    const token = screen.getByTestId('cue-rule-0-bars')
+    fireEvent.click(token)
+    screen.getByTestId('cue-rule-0-bars-option-8').focus()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(screen.queryByTestId('cue-rule-0-bars-menu')).toBeNull()
+    expect(settingsEscape).not.toHaveBeenCalled()
+    expect(token).toHaveFocus()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(settingsEscape).toHaveBeenCalledTimes(1)
+    fireEvent.click(token)
+    const option = screen.getByTestId('cue-rule-0-bars-option-8')
+    option.focus()
+    fireEvent.click(option)
+    expect(screen.getByTestId('cue-rule-0-bars')).toHaveFocus()
+  })
+
   it('hides direction and repeat for a cue on the origin itself', () => {
     render(<Harness />)
     expect(screen.queryByTestId('cue-rule-1-direction')).toBeNull()
