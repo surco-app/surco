@@ -11,6 +11,11 @@ import {
   DEFAULT_CUE_JUMP_BARS,
   normalizeCueJumpBars,
 } from '../../../shared/cueJump'
+import {
+  type CueQuantize,
+  DEFAULT_CUE_QUANTIZE,
+  normalizeCueQuantize,
+} from '../../../shared/cueQuantize'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../../../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
@@ -89,6 +94,7 @@ interface ResolvedSettings {
   cueFlows: CueFlow[]
   activeCueFlow: string
   cueJumpBars: CueJumpBars
+  cueQuantize: CueQuantize
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -134,6 +140,7 @@ const DEFAULTS: ResolvedSettings = {
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: MY_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
+  cueQuantize: DEFAULT_CUE_QUANTIZE,
 }
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -179,6 +186,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueFlows: normalizeCueFlows(settings.cueFlows),
     activeCueFlow: settings.activeCueFlow ?? DEFAULTS.activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(settings.cueJumpBars),
+    cueQuantize: normalizeCueQuantize(settings.cueQuantize),
   }
 }
 

@@ -5,6 +5,7 @@ import { autoMatchAvailable } from '../shared/autoMatch'
 import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
 import { BUNDLED_FLOWS, MY_FLOW_ID, normalizeCueFlows } from '../shared/cueFlows'
 import { DEFAULT_CUE_JUMP_BARS, normalizeCueJumpBars } from '../shared/cueJump'
+import { DEFAULT_CUE_QUANTIZE, normalizeCueQuantize } from '../shared/cueQuantize'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
@@ -72,6 +73,7 @@ export const defaults: Settings = {
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: MY_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
+  cueQuantize: DEFAULT_CUE_QUANTIZE,
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
@@ -299,6 +301,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     activeCueFlow:
       typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
+    cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
   }
 }
 

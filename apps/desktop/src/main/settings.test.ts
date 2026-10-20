@@ -1030,6 +1030,31 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('quantizes hand-placed cues to the bar for a settings file from before the quantize choice', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueQuantize).toBe('bar')
+  })
+
+  it('repairs a quantize value the editor does not offer instead of leaving cues unsnapped', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueQuantize: 'half' }),
+    )
+    expect(getSettings().cueQuantize).toBe('bar')
+  })
+
+  it('carries the quantize value to another Mac with the flows', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ cueQuantize: 'beat' })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.cueQuantize).toBe('beat')
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('gives a settings file from before flows the bundled ones with Mi flujo active', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32', 'calls-only'])

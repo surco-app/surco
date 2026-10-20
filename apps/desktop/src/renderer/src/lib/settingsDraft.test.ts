@@ -81,6 +81,7 @@ const settings: Settings = {
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,
+  cueQuantize: 'bar',
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
@@ -263,5 +264,10 @@ describe('cue flows in the draft', () => {
   it('saves the arrow jump the Cues tab staged', () => {
     const synced = { ...pickSynced(settings), cueJumpBars: 64 as const }
     expect(buildSettingsPatch(synced, local).cueJumpBars).toBe(64)
+  })
+
+  it('saves the quantize value the Cues tab staged', () => {
+    const synced = { ...pickSynced(settings), cueQuantize: 'beat' as const }
+    expect(buildSettingsPatch(synced, local).cueQuantize).toBe('beat')
   })
 })

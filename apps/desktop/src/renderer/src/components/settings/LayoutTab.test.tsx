@@ -15,6 +15,7 @@ const synced: SyncedDraft = {
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,
+  cueQuantize: 'bar',
   language: 'system',
   outputFormat: 'aiff',
   keepMp3Sources: false,

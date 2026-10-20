@@ -37,6 +37,7 @@ export const testSettings: Settings = {
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,
+  cueQuantize: 'bar',
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
   betaUpdates: false,
