@@ -1,6 +1,6 @@
 import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
@@ -17,6 +17,7 @@ interface SelectOption {
   // What the trigger shows instead of the label, for a menu in a row too narrow for it;
   // empty leaves the chevron alone. The accessible name keeps the full label.
   short?: string
+  divided?: boolean
 }
 
 interface Props {
@@ -43,7 +44,7 @@ interface Props {
   // the trigger, for a select inside a layered container (the track list's sticky header)
   // that would otherwise trap both below the controls around it.
   portal?: boolean
-  split?: boolean
+  lead?: string
   onClosed?: () => void
 }
 
@@ -63,7 +64,7 @@ export function Select({
   heading = false,
   bare = false,
   portal = false,
-  split = false,
+  lead,
   onClosed,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -80,11 +81,9 @@ export function Select({
   // the same list.
   const hinted = options.some((o) => o.hint)
   const portaled = fullWidth || portal
-  const look = split
-    ? 'rounded-r-lg border-l border-[var(--color-on-accent)]/25 bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
-    : bare
-      ? 'rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg'
-      : 'rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim focus:border-[var(--color-accent)]'
+  const look = bare
+    ? 'rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg'
+    : 'rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim focus:border-[var(--color-accent)]'
 
   // The focus lands on the chosen option once, when the menu opens: callers rebuild their
   // options on every render, and following them would yank the focus, and the list, back
@@ -205,29 +204,36 @@ export function Select({
         </div>
       )}
       {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="option"
-          aria-selected={o.value === value}
-          data-testid={`${testid}-option-${o.value}`}
-          onClick={() => choose(o.value)}
-          className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]"
-        >
-          {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
-          {hinted ? (
-            <>
-              <span className="w-3 shrink-0">{o.hint && o.label}</span>
-              <span className="flex-1 font-mono text-fg-faint">{o.hint ?? o.label}</span>
-            </>
-          ) : (
-            <span className="flex-1">{o.label}</span>
+        <Fragment key={o.value}>
+          {o.divided && (
+            <hr
+              data-testid={`${testid}-separator`}
+              className="my-1 h-px border-0 bg-[var(--color-line)]"
+            />
           )}
-          <Check
-            aria-hidden="true"
-            className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
-          />
-        </button>
+          <button
+            type="button"
+            role="option"
+            aria-selected={o.value === value}
+            data-testid={`${testid}-option-${o.value}`}
+            onClick={() => choose(o.value)}
+            className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]"
+          >
+            {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
+            {hinted ? (
+              <>
+                <span className="w-3 shrink-0">{o.hint && o.label}</span>
+                <span className="flex-1 font-mono text-fg-faint">{o.hint ?? o.label}</span>
+              </>
+            ) : (
+              <span className="flex-1">{o.label}</span>
+            )}
+            <Check
+              aria-hidden="true"
+              className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
+            />
+          </button>
+        </Fragment>
       ))}
     </div>
   )
@@ -270,8 +276,11 @@ export function Select({
         className={`flex min-w-0 items-center gap-1.5 pr-1.5 pl-2 text-xs outline-none ${look} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
+        {lead && <span className="shrink-0 text-fg-dim">{lead}</span>}
         {(selected?.short ?? selected?.label) && (
-          <span className="min-w-0 flex-1 truncate text-left">
+          <span
+            className={`min-w-0 flex-1 truncate text-left ${lead ? 'font-semibold text-fg' : ''}`}
+          >
             {selected?.short ?? selected?.label}
           </span>
         )}

@@ -816,16 +816,15 @@
         "zoom": "zoom"
       },
       "resetColour": "Restablecer",
-      "markDrop": "Marcar dónde rompe",
-      "markAnother": "Marcar otro donde rompe",
-      "apply": "Aplicar {{name}}",
-      "armHint": "Haz clic donde rompe",
       "saveShort": "Guardar",
       "toCall_one": "{{count}} compás al CALL",
       "toCall_other": "{{count}} compases al CALL",
       "play": "Reproducir",
       "pause": "Pausa",
-      "addCall": "Añadir un CALL en el cabezal"
+      "addCall": "Añadir un CALL en el cabezal",
+      "manualMode": "Manual",
+      "placeHint": "Haz clic para colocar",
+      "applyTrack": "Aplicar a esta pista"
     }
   },
   "fields": {

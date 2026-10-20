@@ -380,4 +380,38 @@ describe('Select portaled menu', () => {
     const overlay = screen.getByTestId('shell-backdrop').parentElement as Element
     expect(layer(screen.getByTestId('sort-backdrop'))).toBeGreaterThanOrEqual(layer(overlay))
   })
+
+  it('puts a lead word before the value on the trigger and keeps the accessible name as label and value', () => {
+    render(
+      <Select
+        value="name"
+        options={options}
+        onChange={vi.fn()}
+        label="Sort"
+        testid="sort"
+        lead="By"
+      />,
+    )
+    expect(screen.getByTestId('sort')).toHaveTextContent('ByName')
+    expect(screen.getByTestId('sort')).toHaveAccessibleName('Sort: Name')
+  })
+
+  it('draws a line before an option that starts another group, which the arrows step over', () => {
+    render(
+      <Select
+        value="import"
+        options={[...options, { value: 'none', label: 'None', divided: true }]}
+        onChange={vi.fn()}
+        label="Sort"
+        testid="sort"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    expect(screen.getByTestId('sort-separator').nextElementSibling).toBe(
+      screen.getByTestId('sort-option-none'),
+    )
+    screen.getByTestId('sort-option-artist').focus()
+    fireEvent.keyDown(screen.getByTestId('sort-listbox'), { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(screen.getByTestId('sort-option-none'))
+  })
 })

@@ -3,7 +3,13 @@ import { Keyboard, Minimize2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { activeCueFlow, MY_FLOW, MY_FLOW_ID } from '../../../shared/cueFlows'
+import {
+  activeCueFlow,
+  followsPoint,
+  MANUAL_CUE_FLOW,
+  MY_FLOW,
+  MY_FLOW_ID,
+} from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import {
@@ -22,7 +28,8 @@ import {
   type CueDraft,
   type DraftAction,
   type DraftCue,
-  draftDrops,
+  type DraftGhost,
+  ghostOf,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -67,8 +74,6 @@ export interface CueTrackInfo {
   key: string
   cover?: string
 }
-
-const MARK_ANOTHER = 'mark-another'
 
 const ignore = () => {}
 
@@ -193,6 +198,7 @@ function Editing({
   audition,
   onJumpBars,
   onQuantize,
+  onFlow,
   onDiscard,
   onRestore,
   onMaximize,
@@ -208,6 +214,7 @@ function Editing({
   audition: CueAudition
   onJumpBars?: (bars: CueJumpBars) => void
   onQuantize?: (unit: CueQuantize) => void
+  onFlow?: (id: string) => void
   onDiscard: () => void
   onRestore: () => void
   onMaximize: () => void
@@ -252,39 +259,33 @@ function Editing({
     y: number
     palette: boolean
   } | null>(null)
-  const dropCount = draftDrops(state.cues, state.locked).length
-  const noDrop = dropCount === 0
-  const [arming, setArming] = useState<number | null>(null)
-  const armed = arming === dropCount
-  useEffect(() => {
-    setArming((a) => (a === dropCount ? a : null))
-  }, [dropCount])
-  const [chosen, setChosen] = useState(state.flowId)
+  const settled = settings.activeCueFlow === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : active.id
+  const [chosen, setChosen] = useState(settled === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : state.flowId)
+  const manual = chosen === MANUAL_CUE_FLOW
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
-  const shownName = flowName(flows.find((f) => f.id === shownFlow) ?? MY_FLOW, tr)
-  const pickFlow = (flowId: string) => {
-    setChosen(flowId)
-    dispatch({ type: 'use-flow', flowId })
+  const placing = !manual && followsPoint(flows.find((f) => f.id === shownFlow) ?? MY_FLOW)
+  const pickMode = (id: string) => {
+    setChosen(id)
+    if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })
+    onFlow?.(id)
   }
-  const primary = () => {
-    if (noDrop) setArming(armed ? null : dropCount)
-    else dispatch({ type: 'apply-flow', flowId: shownFlow })
-  }
-  const markDrop = (ms: number) => {
-    dispatch({ type: 'mark-drop', ms })
-    setArming(null)
-  }
-  const pickFromFlowMenu = (value: string) => {
-    if (value === MARK_ANOTHER) setArming(dropCount)
-    else pickFlow(value)
-  }
-  const openedWith = useRef(active.id)
+  const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
+  const switchGhost = useMemo<DraftGhost | null>(
+    () =>
+      manual || (placing && state.generatedBy === shownFlow)
+        ? null
+        : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx),
+    [manual, placing, state, shownFlow, ctx],
+  )
+  const canApply =
+    switchGhost !== null && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
+  const openedWith = useRef(settled)
   useEffect(() => {
-    if (openedWith.current === active.id) return
-    openedWith.current = active.id
-    setChosen(active.id)
-    dispatch({ type: 'use-flow', flowId: active.id })
-  }, [active.id])
+    if (openedWith.current === settled) return
+    openedWith.current = settled
+    setChosen(settled)
+    if (settled !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: settled })
+  }, [settled])
   const menuRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLFieldSetElement>(null)
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
@@ -403,7 +404,6 @@ function Editing({
       seekTo(jumpBeats(ctx.beats, playheadMs, key.dir * settings.cueJumpBars * BEATS_PER_BAR))
     else if (key.type === 'beat') seekTo(jumpBeats(ctx.beats, playheadMs, key.dir))
     else if (key.type === 'centre') seekTo(ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)])
-    else if (key.type === 'memory' && armed) markDrop(playheadMs)
     else if (key.type === 'memory') dispatch({ type: 'add-call', ms: playheadMs })
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch({ type: 'remove', key: selected.key })
@@ -450,17 +450,6 @@ function Editing({
     }
   }, [colourOpen, focusEditor])
   useEffect(() => {
-    if (!armed) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      setArming(null)
-      focusEditor()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [armed, focusEditor])
-  useEffect(() => {
     if (maximized) editorRef.current?.focus()
   }, [maximized])
   const waveCues = state.cues.map((c) => ({
@@ -481,34 +470,35 @@ function Editing({
   }
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
-      <div className="flex">
+      <Select
+        testid="cues-flow"
+        portal
+        lead={tr('editor.cues.flow')}
+        label={tr('editor.cues.flow')}
+        value={manual ? MANUAL_CUE_FLOW : shownFlow}
+        onChange={pickMode}
+        onClosed={maximized ? focusEditor : undefined}
+        options={[
+          ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
+          { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
+        ]}
+      />
+      {canApply && (
         <button
           type="button"
-          data-testid="cues-apply-flow"
-          aria-pressed={noDrop ? armed : undefined}
-          onClick={primary}
-          className="press h-8 whitespace-nowrap rounded-l-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+          data-testid="cues-apply-track"
+          onClick={() => {
+            dispatch({ type: 'apply-flow', flowId: shownFlow })
+            if (maximized) focusEditor()
+          }}
+          className="press h-8 whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
-          {noDrop ? tr('editor.cues.markDrop') : tr('editor.cues.apply', { name: shownName })}
+          {tr('editor.cues.applyTrack')}
         </button>
-        <Select
-          testid="cues-flow"
-          split
-          portal
-          label={tr('editor.cues.flow')}
-          value={shownFlow}
-          onChange={pickFromFlowMenu}
-          options={[
-            ...flows.map((f) => ({ value: f.id, label: flowName(f, tr), short: '' })),
-            ...(noDrop
-              ? []
-              : [{ value: MARK_ANOTHER, label: tr('editor.cues.markAnother'), short: '' }]),
-          ]}
-        />
-      </div>
-      {armed && (
-        <span data-testid="cues-arm-hint" role="status" className="text-xs text-fg-dim">
-          {tr('editor.cues.armHint')}
+      )}
+      {placing && (
+        <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
+          {tr('editor.cues.placeHint')}
         </span>
       )}
       <span className="flex-1" />
@@ -602,15 +592,14 @@ function Editing({
         cues={waveCues}
         selected={state.selected}
         trimmed={state.trimmed}
-        onMarkDrop={markDrop}
-        onUnmarkDrop={armed ? undefined : (key) => dispatch({ type: 'unmark-drop', key })}
+        onMarkDrop={placing ? place : undefined}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={maximized ? setMenu : undefined}
         onMarkMenu={openMarkMenu}
         playheadMs={maximized ? playheadMs : undefined}
-        onSeek={maximized && !armed ? seekTo : undefined}
-        onOpen={maximized || armed ? undefined : openAt}
+        onSeek={maximized ? seekTo : undefined}
+        onOpen={maximized || placing ? undefined : openAt}
         view={maximized ? detailWindow(ctx.beats, playheadMs, zoom) : undefined}
       />
       {!maximized && <div className="mt-3">{actions}</div>}
@@ -625,7 +614,7 @@ function Editing({
           quantize={settings.cueQuantize}
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-          onPick={armed ? markDrop : undefined}
+          onPick={placing ? place : undefined}
           onMarkMenu={openMarkMenu}
           onDeleteMark={(key) => dispatch({ type: 'remove', key })}
         />
@@ -657,15 +646,17 @@ function Editing({
           >
             {tr('editor.cues.menuAddCall')}
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            data-testid="cues-menu-mark-drop"
-            onClick={() => fromMenu({ type: 'mark-drop', ms: menu.ms })}
-            className={MENU_ITEM}
-          >
-            {tr('editor.cues.menuMarkDrop')}
-          </button>
+          {placing && (
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="cues-menu-mark-drop"
+              onClick={() => fromMenu({ type: 'mark-drop', ms: menu.ms })}
+              className={MENU_ITEM}
+            >
+              {tr('editor.cues.menuMarkDrop')}
+            </button>
+          )}
         </div>
       )}
       {markMenu !== null && markTarget && (
@@ -830,6 +821,7 @@ export function CuesSection({
   track,
   onJumpBars,
   onQuantize,
+  onFlow,
 }: {
   cue: CueTarget
   open: boolean
@@ -837,6 +829,7 @@ export function CuesSection({
   track?: CueTrackInfo
   onJumpBars?: (bars: CueJumpBars) => void
   onQuantize?: (unit: CueQuantize) => void
+  onFlow?: (id: string) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -898,6 +891,7 @@ export function CuesSection({
         audition={audition}
         onJumpBars={onJumpBars}
         onQuantize={onQuantize}
+        onFlow={onFlow}
         onRestore={() => setMaximized(null)}
         onMaximize={() => setMaximized('cues')}
         onDiscard={() => {

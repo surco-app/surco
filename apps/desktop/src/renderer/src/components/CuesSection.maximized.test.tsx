@@ -115,7 +115,7 @@ describe('CuesSection maximized', () => {
   })
 
   it('opens the full editor with the playhead where the folded strip was clicked, without marking anything', async () => {
-    setup()
+    setup({ activeCueFlow: 'manual' })
     await ready()
     seek(128000)
     await waitFor(() =>
@@ -148,14 +148,14 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-save')).toBeInTheDocument()
   })
 
-  it('puts the length, BPM and key in grey beside the title and the main action, Guardar, the keys and restore on the same bar', async () => {
+  it('puts the length, BPM and key in grey beside the title and the mode, Guardar, the keys and restore on the same bar', async () => {
     setup()
     await maximize()
     const header = screen.getByTestId('cues-header')
     const meta = within(header).getByTestId('cues-meta')
     for (const id of ['cues-duration', 'cues-bpm', 'cues-key'])
       expect(meta).toContainElement(screen.getByTestId(id))
-    for (const id of ['cues-apply-flow', 'cues-flow', 'cues-save', 'cues-keys', 'section-maximize'])
+    for (const id of ['cues-flow', 'cues-save', 'cues-keys', 'section-maximize'])
       expect(header).toContainElement(screen.getByTestId(id))
     expect(screen.getAllByTestId('section-maximize')).toHaveLength(1)
     expect(screen.getByTestId('section-maximize')).toHaveAttribute('aria-pressed', 'true')
@@ -748,66 +748,35 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
   })
 
-  it('marks where it drops with the main button and one click on the overview, applying the flow, instead of moving the playhead', async () => {
-    setup()
-    await maximize()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    seek(128000)
-    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    expect(position()).toBe('0:00.0')
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    seek(100000)
-    expect(position()).toBe('1:40.0')
-  })
-
-  it('marks where it drops with a click on the zoomed wave while waiting, without scrubbing it', async () => {
+  it('places the flow with a click on the zoomed wave without moving the playhead', async () => {
     setup()
     await maximize()
     seek(128000)
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
-    fireEvent.mouseMove(window, { clientX: 100 })
-    fireEvent.mouseUp(window, { clientX: 100 })
+    fireEvent.mouseUp(window, { clientX: 200 })
     expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     expect(position()).toBe('2:08.0')
   })
 
-  it('marks where it drops at the playhead with M while waiting, and applies the flow', async () => {
-    setup()
+  it('leaves the zoomed wave to the grab hand in Manual and places nothing with a click', async () => {
+    setup({ activeCueFlow: 'manual' })
     await maximize()
     seek(128000)
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    key('m')
-    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+    expect(screen.queryByTestId('cue-wave-call-128000')).toBeNull()
   })
 
-  it('shows a crosshair on the zoomed wave while it waits for the drop, and the grab hand again once marked', async () => {
+  it('gives the keys back to the editor after Manual is picked from the mode list, so M puts a CALL without a click', async () => {
     setup()
     await maximize()
-    expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
-    key('m')
-    expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
-  })
-
-  it('stops waiting with Escape without restoring the full editor, and the overview seeks again', async () => {
-    setup()
-    await maximize()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    const windowKeys = vi.fn<(e: KeyboardEvent) => void>()
-    window.addEventListener('keydown', windowKeys)
-    fireEvent.keyDown(editor(), { key: 'Escape' })
-    window.removeEventListener('keydown', windowKeys)
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    expect(windowKeys).not.toHaveBeenCalled()
-    expect(editor()).toHaveAttribute('data-maximized', 'true')
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-flow-option-manual'))
     expect(document.activeElement).toBe(editor())
-    seek(100000)
-    expect(position()).toBe('1:40.0')
-    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+    key('m')
+    expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
   })
 })
 

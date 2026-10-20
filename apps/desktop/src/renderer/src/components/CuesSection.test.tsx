@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import { CALLS_ONLY, MY_FLOW } from '../../../shared/cueFlows'
+import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
 import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
@@ -52,6 +52,7 @@ function setup(
   settings?: Partial<Settings>,
 ) {
   const logError = vi.fn<Api['logError']>()
+  const onFlow = vi.fn<(id: string) => void>()
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   const undoRekordboxCues = vi.fn<Api['undoRekordboxCues']>(async () => {})
   const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async () => {
@@ -76,7 +77,7 @@ function setup(
   ) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={current}>
-        <CuesSection cue={cue} open onToggle={vi.fn()} />
+        <CuesSection cue={cue} open onToggle={vi.fn()} onFlow={onFlow} />
       </SettingsProvider>
     </QueryClientProvider>
   )
@@ -86,6 +87,7 @@ function setup(
     changeTrack: (cue: { contentId: string; path: string; label: string }) =>
       rerender(tree(settings ?? null, cue)),
     logError,
+    onFlow,
     saveRekordboxCues,
     undoRekordboxCues,
     rekordboxTrackCues,
@@ -96,17 +98,7 @@ function setup(
 
 const clickAt = (ms: number) =>
   fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
-const markAt = (ms: number) => {
-  if (!screen.queryByTestId('cues-arm-hint')) {
-    if (screen.getByTestId('cues-apply-flow').textContent === 'Mark where it drops')
-      fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    else {
-      fireEvent.click(screen.getByTestId('cues-flow'))
-      fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
-    }
-  }
-  clickAt(ms)
-}
+const markAt = (ms: number) => clickAt(ms)
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))
   await waitFor(() =>
@@ -350,9 +342,7 @@ describe('CuesSection', () => {
       .getByTestId('cue-wave')
       .compareDocumentPosition(screen.getByTestId('cues-actions'))
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('cues-actions')).toContainElement(
-      screen.getByTestId('cues-apply-flow'),
-    )
+    expect(screen.getByTestId('cues-actions')).toContainElement(screen.getByTestId('cues-flow'))
     expect(screen.getByTestId('cues-actions')).toContainElement(screen.getByTestId('cues-save'))
     expect(screen.getByTestId('cues-save').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
@@ -367,123 +357,23 @@ describe('CuesSection', () => {
     await waitFor(() => expect(screen.queryByTestId('cues-undo')).toBeNull())
   })
 
-  it('says Marcar dónde rompe while the track has no drop and Aplicar with the flow name once it has one, so the button never does nothing', async () => {
-    setup()
-    await ready()
-    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
-    markAt(bar(64))
-    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply My flow')
-  })
-
-  it('waits for the click on the wave after Marcar dónde rompe and says so, until Escape, which never reaches the window', async () => {
-    setup()
-    await ready()
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    expect(screen.getByTestId('cues-arm-hint')).toHaveTextContent('Click where it drops')
-    const reachedWindow = vi.fn<(e: KeyboardEvent) => void>()
-    window.addEventListener('keydown', reachedWindow)
-    fireEvent.keyDown(document, { key: 'Escape' })
-    window.removeEventListener('keydown', reachedWindow)
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    expect(reachedWindow).not.toHaveBeenCalled()
-  })
-
-  it('marks the drop with the click that follows and applies the flow in the same step', async () => {
-    setup()
-    await ready()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    markAt(bar(64))
-    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-  })
-
-  it('stops waiting on a second press or once a drop is marked from the menu, and ⌘Z never brings the wait back', async () => {
-    setup()
-    await ready()
-    await openFull()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(64) / 1000, clientY: 30 })
-    fireEvent.click(screen.getByTestId('cues-menu-mark-drop'))
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply My flow')
-    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops'),
-    )
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-  })
-
-  it('offers Marcar otro donde rompe in the flow menu only once a drop exists, since before that the main button already marks', async () => {
-    setup()
-    await ready()
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    expect(screen.queryByTestId('cues-flow-option-mark-another')).toBeNull()
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    expect(screen.getByTestId('cues-flow-option-mark-another')).toHaveTextContent(
-      'Mark another where it drops',
-    )
-  })
-
-  it('adds exactly one more drop with Marcar otro donde rompe and the click that follows, applying the flow to it', async () => {
-    setup(READ, null, { activeCueFlow: 'one-at-32' })
-    await ready()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
-    expect(screen.getByTestId('cues-arm-hint')).toHaveTextContent('Click where it drops')
-    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName(/One cue at 32/)
-    markAt(bar(160))
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
-    expect(screen.getByTestId(`cue-wave-call-${bar(160)}`)).toBeInTheDocument()
-    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
-  })
-
-  it('cancels the wait for another drop with Escape, which never reaches the window', async () => {
-    setup()
-    await ready()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
-    markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
-    const reachedWindow = vi.fn<(e: KeyboardEvent) => void>()
-    window.addEventListener('keydown', reachedWindow)
-    fireEvent.keyDown(document, { key: 'Escape' })
-    window.removeEventListener('keydown', reachedWindow)
-    expect(screen.queryByTestId('cues-arm-hint')).toBeNull()
-    expect(reachedWindow).not.toHaveBeenCalled()
-  })
-
   it('does not take the drop away when the click that adds another lands on it', async () => {
     setup()
     await ready()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
     markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    fireEvent.click(screen.getByTestId('cues-flow-option-mark-another'))
     markAt(bar(64))
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
   })
 
-  it('marks with the flow picked from the arrow before any drop is marked', async () => {
+  it('places with the flow picked from the list before anything is placed', async () => {
     setup()
     await ready()
     chooseFlow('one-at-32')
-    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
     markAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
       `${(bar(32) / 400000) * 100}%`,
     )
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
-    expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply One cue at 32')
   })
 
   it('applies another flow to the drops already marked', async () => {
@@ -491,7 +381,7 @@ describe('CuesSection', () => {
     await ready()
     markAt(bar(64))
     chooseFlow('calls-only')
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
   })
@@ -503,7 +393,7 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     changeSettings({ activeCueFlow: 'one-at-32' })
     await waitFor(() =>
-      expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply One cue at 32'),
+      expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: One cue at 32'),
     )
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     markAt(bar(160))
@@ -532,7 +422,122 @@ describe('CuesSection', () => {
     const names = within(screen.getByTestId('cues-flow-listbox'))
       .getAllByRole('option')
       .map((o) => o.textContent)
-    expect(names).toEqual(['My flow', 'One cue at 32', 'CALL only'])
+    expect(names).toEqual(['My flow', 'One cue at 32', 'CALL only', 'Manual'])
+  })
+
+  it('reads Flujo and the flow name on the selector, lists Manual apart after the flows and saves the pick', async () => {
+    const { onFlow } = setup()
+    await ready()
+    const trigger = screen.getByTestId('cues-flow')
+    expect(within(trigger).getByText('Flow')).toBeInTheDocument()
+    expect(trigger).toHaveAccessibleName('Flow: My flow')
+    fireEvent.click(trigger)
+    expect(screen.getByTestId('cues-flow-separator').nextElementSibling).toBe(
+      screen.getByTestId('cues-flow-option-manual'),
+    )
+    fireEvent.click(screen.getByTestId('cues-flow-option-manual'))
+    expect(onFlow).toHaveBeenCalledWith('manual')
+    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: Manual')
+  })
+
+  it('places the flow with one click on the folded strip and says so, with no button to press first', async () => {
+    setup()
+    await ready()
+    expect(screen.getByTestId('cues-place-hint')).toHaveTextContent('Click to place')
+    expect(screen.queryByTestId('cues-apply-flow')).toBeNull()
+    clickAt(bar(64))
+    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+  })
+
+  it('takes the whole placement away with one ⌘Z', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+  })
+
+  it('opens the full editor from a folded click in Manual and places nothing, with no hint', async () => {
+    setup(READ, null, { activeCueFlow: 'manual' })
+    await ready()
+    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
+    clickAt(bar(64))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+  })
+
+  it('places a second point with a second click, each with its own cues', async () => {
+    setup(READ, null, { activeCueFlow: 'one-at-32' })
+    await ready()
+    markAt(bar(64))
+    markAt(bar(160))
+    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
+    expect(screen.getByTestId(`cue-wave-call-${bar(160)}`)).toBeInTheDocument()
+    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
+  })
+
+  it('places a flow that leaves the point unmarked without a CALL there, and a second click places again', async () => {
+    const quiet: CueFlow = { ...ONE_AT_32, id: 'quiet', markPoint: false }
+    setup(READ, null, { cueFlows: [MY_FLOW, quiet], activeCueFlow: 'quiet' })
+    await ready()
+    markAt(bar(64))
+    markAt(bar(160))
+    expect(screen.queryByTestId(`cue-wave-call-${bar(64)}`)).toBeNull()
+    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
+  })
+
+  it('changes nothing when another flow is picked on a marked track until Aplicar a esta pista', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+    chooseFlow('one-at-32')
+    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-apply-track')).toHaveTextContent('Apply to this track')
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
+      `${(bar(32) / 400000) * 100}%`,
+    )
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+  })
+
+  it('offers Aplicar a esta pista at once for a flow that does not depend on the point, and no hint to click', async () => {
+    const chorus: CueFlow = {
+      id: 'chorus',
+      name: 'Estribillos',
+      markPoint: false,
+      rules: [
+        {
+          from: 'chorus',
+          direction: 'back',
+          bars: 0,
+          repeat: 1,
+          when: 'always',
+          place: 'hot',
+          color: { fixed: 5 },
+        },
+      ],
+    }
+    setup(
+      {
+        ...READ,
+        phrases: [
+          { ms: bar(64), kind: 'chorus' },
+          { ms: bar(128), kind: 'chorus' },
+        ],
+      },
+      null,
+      { cueFlows: [MY_FLOW, chorus], activeCueFlow: 'chorus' },
+    )
+    await ready()
+    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
   })
 
   it('saves only sets main accepts, even after turning a written countdown into CALLs', async () => {
@@ -543,7 +548,7 @@ describe('CuesSection', () => {
     const { saveRekordboxCues } = setup(read)
     await ready()
     chooseFlow('calls-only')
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    fireEvent.click(screen.getByTestId('cues-apply-track'))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const { wanted } = saveRekordboxCues.mock.calls[0][0]
@@ -578,7 +583,7 @@ describe('CuesSection', () => {
       cues: [48, 96, 144, 192].map((n) => ({ id: `d${n}`, ms: bar(n), kind: 0, color: null })),
     })
     await ready()
-    fireEvent.click(screen.getByTestId('cues-apply-flow'))
+    markAt(bar(240))
     expect(screen.getByTestId('cues-trimmed')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-trimmed-${bar(0)}`)).toBeInTheDocument()
   })

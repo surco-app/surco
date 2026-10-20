@@ -816,16 +816,15 @@
         "zoom": "Zoom"
       },
       "resetColour": "Zurücksetzen",
-      "markDrop": "Drop markieren",
-      "markAnother": "Weiteren Drop markieren",
-      "apply": "{{name}} anwenden",
-      "armHint": "Klicke dort, wo der Drop kommt",
       "saveShort": "Speichern",
       "toCall_one": "{{count}} Takt bis zum CALL",
       "toCall_other": "{{count}} Takte bis zum CALL",
       "play": "Abspielen",
       "pause": "Pause",
-      "addCall": "CALL am Abspielkopf setzen"
+      "addCall": "CALL am Abspielkopf setzen",
+      "manualMode": "Manuell",
+      "placeHint": "Zum Setzen klicken",
+      "applyTrack": "Auf diesen Titel anwenden"
     }
   },
   "fields": {

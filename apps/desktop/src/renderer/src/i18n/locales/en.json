@@ -816,16 +816,15 @@
         "zoom": "zoom"
       },
       "resetColour": "Reset",
-      "markDrop": "Mark where it drops",
-      "markAnother": "Mark another where it drops",
-      "apply": "Apply {{name}}",
-      "armHint": "Click where it drops",
       "saveShort": "Save",
       "toCall_one": "{{count}} bar to the CALL",
       "toCall_other": "{{count}} bars to the CALL",
       "play": "Play",
       "pause": "Pause",
-      "addCall": "Add a CALL at the playhead"
+      "addCall": "Add a CALL at the playhead",
+      "manualMode": "Manual",
+      "placeHint": "Click to place",
+      "applyTrack": "Apply to this track"
     }
   },
   "fields": {

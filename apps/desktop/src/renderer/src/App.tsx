@@ -1943,6 +1943,7 @@ export default function App(): React.JSX.Element {
   const onCueQuantize = useStableCallback((cueQuantize: CueQuantize) =>
     saveSettings({ cueQuantize }),
   )
+  const onCueFlow = useStableCallback((activeCueFlow: string) => saveSettings({ activeCueFlow }))
   const onOpenRename = useStableCallback(overlays.openRename)
   // Rebuilds file names from the Settings pattern over the whole selection when there
   // is one (djotas's flow: retag a crate, then stamp every name at once), else the
@@ -2924,6 +2925,7 @@ export default function App(): React.JSX.Element {
                           rekordboxCue={rekordboxCue}
                           onCueJumpBars={onCueJumpBars}
                           onCueQuantize={onCueQuantize}
+                          onCueFlow={onCueFlow}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}

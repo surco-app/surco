@@ -209,6 +209,7 @@ interface Props {
   rekordboxCue?: { contentId: string; path: string; label: string }
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void
+  onCueFlow?: (id: string) => void
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
@@ -277,6 +278,7 @@ export const Editor = memo(function Editor({
   rekordboxCue,
   onCueJumpBars,
   onCueQuantize,
+  onCueFlow,
   onHideEditorHints,
   onOpenRename,
   onRegenerateName,
@@ -1477,6 +1479,7 @@ export const Editor = memo(function Editor({
                           }}
                           onJumpBars={onCueJumpBars}
                           onQuantize={onCueQuantize}
+                          onFlow={onCueFlow}
                         />
                       )
                     case 'properties':

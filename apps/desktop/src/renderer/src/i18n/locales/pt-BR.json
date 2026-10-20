@@ -816,16 +816,15 @@
         "zoom": "zoom"
       },
       "resetColour": "Redefinir",
-      "markDrop": "Marcar o drop",
-      "markAnother": "Marcar outro drop",
-      "apply": "Aplicar {{name}}",
-      "armHint": "Clique onde entra o drop",
       "saveShort": "Salvar",
       "toCall_one": "{{count}} compasso até o CALL",
       "toCall_other": "{{count}} compassos até o CALL",
       "play": "Tocar",
       "pause": "Pausar",
-      "addCall": "Adicionar um CALL no cursor"
+      "addCall": "Adicionar um CALL no cursor",
+      "manualMode": "Manual",
+      "placeHint": "Clique para colocar",
+      "applyTrack": "Aplicar a esta faixa"
     }
   },
   "fields": {
