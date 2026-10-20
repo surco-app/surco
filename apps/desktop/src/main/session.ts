@@ -141,7 +141,7 @@ export async function loadLastSession(): Promise<SessionData> {
       candidates.map((p) =>
         sourceStat(p).then(
           () => true,
-          (err: NodeJS.ErrnoException) => !isMissing(err),
+          async (err: NodeJS.ErrnoException) => !(await isMissing(p, err)),
         ),
       ),
     )

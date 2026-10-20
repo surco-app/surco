@@ -63,8 +63,8 @@ export type OnBatch = (paths: string[]) => void
 export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<string[]> {
   const expanded = await Promise.all(
     paths.map(async (p) => {
-      const info = await sourceStat(p).catch((err: NodeJS.ErrnoException) =>
-        isMissing(err) ? null : undefined,
+      const info = await sourceStat(p).catch(async (err: NodeJS.ErrnoException) =>
+        (await isMissing(p, err)) ? null : undefined,
       )
       if (info === null) return []
       if (info?.isDirectory()) return collectAudio(p, onBatch)

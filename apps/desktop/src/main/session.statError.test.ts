@@ -16,6 +16,8 @@ vi.mock('electron', () => {
 })
 
 import { rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { app } from 'electron'
 import { loadLastSession, saveLastSession } from './session'
 
@@ -42,11 +44,18 @@ describe('last session when the stat of a track fails', () => {
   )
 
   it.each(['ENOENT', 'ENOTDIR'])(
-    'drops a track whose stat says %s, the only answers that mean there is no file there',
+    'drops a track whose stat says %s on a disk that is there, the only answers that mean there is no file',
     async (code) => {
       statMock.mockRejectedValue(fsError(code))
-      saveLastSession([track], {})
+      saveLastSession([join(tmpdir(), 'surco-never-there', 'Tengo.aiff')], {})
       expect((await loadLastSession()).paths).toEqual([])
     },
   )
+
+  it('keeps a track whose stat says ENOENT while its network volume is not mounted, since launching during a share remount lost the whole session', async () => {
+    const unmounted = '/Volumes/surco-unmounted-share/Music/Tengo.aiff'
+    statMock.mockRejectedValue(fsError('ENOENT'))
+    saveLastSession([unmounted], {})
+    expect((await loadLastSession()).paths).toEqual([unmounted])
+  })
 })

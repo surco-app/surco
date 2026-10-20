@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { sourceStat } from './sourceStat'
 
@@ -37,10 +39,17 @@ describe('expandPaths when the stat of a track fails', () => {
   })
 
   it.each(['ENOENT', 'ENOTDIR'])(
-    'drops a path whose stat says %s, the only answers that mean there is no file there',
+    'drops a path whose stat says %s on a disk that is there, the only answers that mean there is no file',
     async (code) => {
+      const gone = join(tmpdir(), 'surco-never-there', 'Tengo.aiff')
       statMock.mockRejectedValue(fsError(code))
-      expect(await expandPaths([track])).toEqual([])
+      expect(await expandPaths([gone])).toEqual([])
     },
   )
+
+  it('keeps a file whose stat says ENOENT while its network volume is not mounted, since the share drops for a minute on a network change and the playlist opened empty with every track called missing', async () => {
+    const unmounted = '/Volumes/surco-unmounted-share/Music/Tengo.aiff'
+    statMock.mockRejectedValue(fsError('ENOENT'))
+    expect(await expandPaths([unmounted])).toEqual([unmounted])
+  })
 })
