@@ -67,6 +67,7 @@ export function CueWaveDetail({
   ghost,
   movable,
   onMoveMark,
+  onMarkDrag,
 }: {
   source: DetailSource | null
   grid: { ms: number; beat: number }[]
@@ -85,6 +86,7 @@ export function CueWaveDetail({
   ghost?: CueGhost
   movable?: string[]
   onMoveMark?: (key: string, ms: number) => void
+  onMarkDrag?: (dragging: boolean) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const stageRef = useRef<HTMLDivElement>(null)
@@ -142,8 +144,12 @@ export function CueWaveDetail({
     snapMs: number[]
   } | null>(null)
   const [dragAt, setDragAt] = useState<number | null>(null)
-  const markLatest = useRef({ onMoveMark })
-  markLatest.current = { onMoveMark }
+  const markLatest = useRef({ onMoveMark, onMarkDrag })
+  markLatest.current = { onMoveMark, onMarkDrag }
+  const markDragging = markDrag !== null
+  useEffect(() => {
+    markLatest.current.onMarkDrag?.(markDragging)
+  }, [markDragging])
   useEffect(() => {
     if (!markDrag) return
     let ms: number | null = null
@@ -361,7 +367,7 @@ export function CueWaveDetail({
             })
           }}
           onMouseMove={(e) => {
-            if (!onPlace || drag) return
+            if (!onPlace || drag || markDrag) return
             const rect = stageRef.current?.getBoundingClientRect()
             if (!rect || rect.width <= 0) return
             const ms = snapAt(e.clientX, rect)

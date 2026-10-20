@@ -331,6 +331,30 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalled()
   })
 
+  it('draws no flow under the cursor while a CALL is being dragged, and says when the drag starts and ends', () => {
+    const onHover = vi.fn<(ms: number | null) => void>()
+    const onMarkDrag = vi.fn<(dragging: boolean) => void>()
+    setup({
+      cues: [{ key: 'p', ms: bar(36), kind: 0, color: null, pending: false }],
+      movable: ['p'],
+      onMoveMark: vi.fn(),
+      onPlace: vi.fn(),
+      onHover,
+      onMarkDrag,
+    })
+    fireEvent.mouseDown(screen.getByTestId(`cue-detail-call-${bar(36)}`), {
+      button: 0,
+      clientX: 300,
+    })
+    expect(onMarkDrag).toHaveBeenLastCalledWith(true)
+    fireEvent.mouseMove(window, { clientX: 340 })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 340 })
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    expect(onHover).toHaveBeenLastCalledWith(null)
+    fireEvent.mouseUp(window, { clientX: 340 })
+    expect(onMarkDrag).toHaveBeenLastCalledWith(false)
+  })
+
   it('drops a dragged CALL by the window it was grabbed in, even if the zoom or the playhead change during the drag', () => {
     const onMoveMark = vi.fn<(key: string, ms: number) => void>()
     const { rerender } = setup({

@@ -309,8 +309,10 @@ function Editing({
       placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
     [placing, hoverMs, state, ctx],
   )
-  const ghost =
-    hoverGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined)
+  const [pointDrag, setPointDrag] = useState(false)
+  const ghost = pointDrag
+    ? undefined
+    : (hoverGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
   const rejected = ghost?.rejected ?? []
   const rejectedReasons = [...new Set(rejected.map((r) => r.reason))]
   const openedWith = useRef(settled)
@@ -557,7 +559,7 @@ function Editing({
           {tr('editor.cues.noFit')}
         </span>
       )}
-      {placing && maximized && (
+      {placing && maximized && !pointDrag && (
         <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
           {tr('editor.cues.placeHint')}
         </span>
@@ -696,6 +698,7 @@ function Editing({
           onDeleteMark={(key) => dispatch(removeOf(key))}
           movable={points}
           onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
+          onMarkDrag={setPointDrag}
         />
       )}
       {menu !== null && (

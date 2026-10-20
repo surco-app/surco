@@ -1309,6 +1309,20 @@ describe('CuesSection maximized point corrections', () => {
     expect(marks()).toEqual(before)
   })
 
+  it('hides the placing hint and the flow ghost while a point’s CALL is dragged, and brings the hint back after', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    placeAtPlayhead()
+    fireEvent.mouseDown(screen.getByTestId('cue-detail-call-128000'), { button: 0, clientX: 200 })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(screen.getByTestId('cues-place-hint')).toBeInTheDocument()
+  })
+
   it('moves only the playhead when a drag on the strip starts on a mark, since the strip only navigates', async () => {
     setup()
     await maximize()
