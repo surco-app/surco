@@ -28,6 +28,15 @@ type ClaimedKey =
   | 'trim-end-zoom-out'
   | 'section-next'
   | 'section-prev'
+  | 'next'
+  | 'prev'
+  | 'list-top'
+  | 'list-bottom'
+  | 'list-page-up'
+  | 'list-page-down'
+  | 'remove'
+  | 'process-current'
+  | 'clear-meta'
 
 // Shift rides along because it is the coarse step for the trim nudges; `play` ignores it.
 export interface ClaimContext {
@@ -53,6 +62,15 @@ const CLAIMABLE: ClaimedKey[] = [
   'trim-end-zoom-out',
   'section-next',
   'section-prev',
+  'next',
+  'prev',
+  'list-top',
+  'list-bottom',
+  'list-page-up',
+  'list-page-down',
+  'remove',
+  'process-current',
+  'clear-meta',
 ]
 
 // Whether a command id can be answered by an open section, so the global listener only

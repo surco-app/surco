@@ -47,6 +47,16 @@ describe('cueKeyAction', () => {
     expect(press('ArrowDown', { shiftKey: true })).toEqual({ type: 'swallow' })
   })
 
+  it('swallows the chords that change, remove, process or clear the track under the editor', () => {
+    for (const mod of ['metaKey', 'ctrlKey'])
+      for (const key of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+        expect(press(key, { [mod]: true })).toEqual({ type: 'swallow' })
+    expect(press('Backspace', { metaKey: true })).toEqual({ type: 'swallow' })
+    expect(press('Enter', { metaKey: true })).toEqual({ type: 'swallow' })
+    expect(press('e', { metaKey: true })).toEqual({ type: 'swallow' })
+    expect(press('E', { ctrlKey: true })).toEqual({ type: 'swallow' })
+  })
+
   it('lets Escape, Tab, Enter and every command chord but undo through', () => {
     for (const key of ['Escape', 'Tab', 'Enter', 'F10']) expect(press(key)).toBeNull()
     expect(press('k', { metaKey: true })).toBeNull()

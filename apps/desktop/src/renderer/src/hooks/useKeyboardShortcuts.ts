@@ -52,6 +52,7 @@ export function useKeyboardShortcuts(params: Params): void {
       if (e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         if (p.overlayOpen) return
         e.preventDefault()
+        if (runKeyClaim(e.key === 'ArrowDown' ? 'next' : 'prev')) return
         p.onStepTrack(e.key === 'ArrowDown' ? 1 : -1)
         return
       }

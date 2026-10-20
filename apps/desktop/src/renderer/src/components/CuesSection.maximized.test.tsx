@@ -437,7 +437,17 @@ describe('CuesSection maximized keys', () => {
   })
 })
 
-const LIST_COMMANDS = ['next', 'prev', 'list-top', 'list-bottom', 'list-page-down', 'list-page-up']
+const LIST_COMMANDS = [
+  'next',
+  'prev',
+  'list-top',
+  'list-bottom',
+  'list-page-down',
+  'list-page-up',
+  'remove',
+  'process-current',
+  'clear-meta',
+]
 
 function app() {
   const ran = vi.fn<(id: string) => void>()
@@ -455,6 +465,7 @@ function app() {
     'trim-end-zoom-out': vi.fn<() => void>(),
   }
   const release = claimKeys(trim)
+  const onStepTrack = vi.fn<(dir: -1 | 1) => void>()
   renderHook(() =>
     useKeyboardShortcuts({
       isMac: true,
@@ -463,10 +474,10 @@ function app() {
       getCommands: () => commands,
       onTogglePalette: () => {},
       onEscape: () => {},
-      onStepTrack: () => {},
+      onStepTrack,
     }),
   )
-  return { ran, trim, release }
+  return { ran, trim, release, onStepTrack }
 }
 
 describe('CuesSection maximized over the rest of the editor', () => {
@@ -501,6 +512,55 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.keyDown(editor(), { key: 'ArrowDown' })
     release()
     expect(ran).toHaveBeenCalledWith('next')
+  })
+
+  it('never changes track with Ctrl+↑ ↓ nor runs ⌘⌫ ⌘↵ ⌘E on the list hidden under the editor, so the unsaved cues stay', async () => {
+    const { ran, release, onStepTrack } = app()
+    setup()
+    await maximize()
+    key('m')
+    expect(key('ArrowDown', { ctrlKey: true })).toBe(false)
+    expect(key('ArrowUp', { ctrlKey: true })).toBe(false)
+    expect(key('ArrowLeft', { metaKey: true })).toBe(false)
+    expect(key('Backspace', { metaKey: true })).toBe(false)
+    expect(key('Enter', { metaKey: true })).toBe(false)
+    expect(key('e', { metaKey: true })).toBe(false)
+    release()
+    expect(onStepTrack).not.toHaveBeenCalled()
+    expect(ran).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
+  })
+
+  it('never changes track nor removes it from the list with the focus outside the full editor', async () => {
+    const { ran, release, onStepTrack } = app()
+    setup()
+    await maximize()
+    key('m')
+    editor().blur()
+    expect(document.activeElement).toBe(document.body)
+    for (const k of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageUp', 'PageDown', 'j'])
+      fireEvent.keyDown(document.body, { key: k })
+    fireEvent.keyDown(document.body, { key: 'ArrowDown', ctrlKey: true })
+    fireEvent.keyDown(document.body, { key: 'Backspace', metaKey: true })
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
+    fireEvent.keyDown(document.body, { key: 'e', metaKey: true })
+    release()
+    expect(onStepTrack).not.toHaveBeenCalled()
+    expect(ran).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
+  })
+
+  it('leaves Ctrl+↓ and ⌘⌫ to the track list while folded, as today', async () => {
+    const { ran, release, onStepTrack } = app()
+    setup()
+    await ready()
+    fireEvent.keyDown(document.body, { key: 'ArrowDown', ctrlKey: true })
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' })
+    fireEvent.keyDown(document.body, { key: 'Backspace', metaKey: true })
+    release()
+    expect(onStepTrack).toHaveBeenCalledWith(1)
+    expect(ran).toHaveBeenCalledWith('next')
+    expect(ran).toHaveBeenCalledWith('remove')
   })
 
   it('keeps Trim’s keys from a hidden cut even with the focus outside the full editor', async () => {
