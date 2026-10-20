@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { CueJumpBars } from '../../../shared/cueJump'
@@ -10,6 +10,7 @@ import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
@@ -192,5 +193,173 @@ describe('CuesSection maximized', () => {
     window.removeEventListener('keydown', windowKeys)
     expect(screen.queryByTestId('cues-menu')).toBeNull()
     expect(windowKeys).not.toHaveBeenCalled()
+  })
+})
+
+const play = vi.fn<() => Promise<void>>()
+const pause = vi.fn<() => void>()
+const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] = []
+
+function stubSound() {
+  play.mockReset().mockResolvedValue(undefined)
+  pause.mockReset()
+  audios.length = 0
+  vi.stubGlobal(
+    'Audio',
+    class {
+      onloadedmetadata: (() => void) | null = null
+      onended: (() => void) | null = null
+      currentTime = 0
+      play = play
+      pause = pause
+      load = vi.fn<() => void>()
+      removeAttribute = vi.fn<(name: string) => void>()
+      constructor() {
+        audios.push(this)
+      }
+    },
+  )
+  vi.stubGlobal('requestAnimationFrame', () => 1)
+  vi.stubGlobal('cancelAnimationFrame', vi.fn())
+}
+
+const editor = () => screen.getByTestId('cues-editor')
+const key = (k: string, mods: Record<string, boolean> = {}) =>
+  fireEvent.keyDown(document.activeElement ?? editor(), { key: k, ...mods })
+
+describe('CuesSection maximized keys', () => {
+  it('takes the focus when maximized so the keys work at once', async () => {
+    setup()
+    await maximize()
+    expect(document.activeElement).toBe(editor())
+  })
+
+  it('marks a track with the keyboard only', async () => {
+    setup()
+    await maximize()
+    key('ArrowRight')
+    expect(position()).toBe('0:32.0')
+    key('m')
+    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+    key('ArrowRight')
+    key('2')
+    expect(screen.getByTestId('cue-wave-hot-B').style.left).toBe('16%')
+    key('ArrowLeft', { shiftKey: true })
+    expect(position()).toBe('1:03.5')
+    key('ArrowRight', { shiftKey: true })
+    key('ArrowLeft')
+    key('2')
+    expect(position()).toBe('1:04.0')
+    key('Backspace')
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+  })
+
+  it('centres the playhead on the nearest beat with C', async () => {
+    setup()
+    await maximize()
+    seek(64200)
+    editor().focus()
+    key('c')
+    expect(position()).toBe('1:04.0')
+  })
+
+  it('jumps the bars set in Settings', async () => {
+    setup({ cueJumpBars: 32 })
+    await maximize()
+    key('ArrowRight')
+    expect(position()).toBe('1:04.0')
+  })
+
+  it('zooms the detail with + and −', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    editor().focus()
+    key('+')
+    expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(9)
+    key('-')
+    expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(17)
+  })
+
+  it('never acts while a field of the editor has the focus', async () => {
+    setup()
+    await maximize()
+    const flow = screen.getByTestId('cues-flow')
+    flow.focus()
+    fireEvent.keyDown(flow, { key: 'm' })
+    fireEvent.keyDown(flow, { key: 'ArrowRight' })
+    expect(screen.queryByTestId('cue-wave-call-0')).toBeNull()
+    expect(position()).toBe('0:00.0')
+  })
+
+  it('swallows other single keys so a hidden section never acts under the full editor', async () => {
+    setup()
+    await maximize()
+    expect(fireEvent.keyDown(editor(), { key: 'q' })).toBe(false)
+    expect(fireEvent.keyDown(editor(), { key: 'a' })).toBe(false)
+    expect(fireEvent.keyDown(editor(), { key: 'Escape' })).toBe(true)
+    expect(fireEvent.keyDown(editor(), { key: 'k', metaKey: true })).toBe(true)
+  })
+
+  it('keeps today’s keys only while folded', async () => {
+    setup()
+    await ready()
+    expect(fireEvent.keyDown(editor(), { key: 'm' })).toBe(true)
+    expect(screen.queryByTestId('cue-wave-call-0')).toBeNull()
+  })
+
+  it('Space plays the track from the playhead and never reaches the floating player', async () => {
+    stubSound()
+    const shared = document.body.appendChild(document.createElement('audio'))
+    const pauseShared = vi.fn()
+    shared.pause = pauseShared
+    setup()
+    await maximize()
+    seek(64000)
+    editor().focus()
+    expect(key(' ')).toBe(false)
+    await act(async () => {
+      audios[0].onloadedmetadata?.()
+    })
+    expect(audios[0].currentTime).toBe(64)
+    expect(play).toHaveBeenCalled()
+    expect(pauseShared).toHaveBeenCalled()
+    key(' ')
+    expect(pause).toHaveBeenCalled()
+    shared.remove()
+  })
+
+  it('answers the global Space while maximized even with the focus elsewhere', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    let handled = false
+    act(() => {
+      handled = runKeyClaim('play')
+    })
+    expect(handled).toBe(true)
+    expect(audios).toHaveLength(1)
+  })
+
+  it('stops the sound when the section is restored to its place', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    key(' ')
+    await act(async () => {
+      audios[0].onloadedmetadata?.()
+    })
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    expect(pause).toHaveBeenCalled()
+    expect(runKeyClaim('play')).toBe(false)
+  })
+
+  it('lists the keys with the jump in use', async () => {
+    setup()
+    await maximize()
+    expect(screen.getByTestId('cues-legend')).toHaveTextContent('jump 16 bars')
+    expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
   })
 })

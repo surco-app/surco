@@ -800,7 +800,21 @@
       "jumpMore": "Jump more bars",
       "jumpBars_one": "{{count}} bar",
       "jumpBars_other": "{{count}} bars",
-      "bpm": "{{bpm}} BPM"
+      "bpm": "{{bpm}} BPM",
+      "keys": {
+        "label": "Keys",
+        "space": "Space",
+        "play": "play or stop",
+        "jump_one": "jump {{count}} bar",
+        "jump_other": "jump {{count}} bars",
+        "beat": "one beat",
+        "centre": "centre on the grid",
+        "memory": "CALL at the playhead",
+        "hot": "hot cue A to H at the playhead",
+        "remove": "delete the selected one",
+        "undo": "undo",
+        "zoom": "zoom"
+      }
     }
   },
   "fields": {

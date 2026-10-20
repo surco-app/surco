@@ -800,7 +800,21 @@
       "jumpMore": "Saltar más compases",
       "jumpBars_one": "{{count}} compás",
       "jumpBars_other": "{{count}} compases",
-      "bpm": "{{bpm}} BPM"
+      "bpm": "{{bpm}} BPM",
+      "keys": {
+        "label": "Teclas",
+        "space": "Espacio",
+        "play": "reproducir o parar",
+        "jump_one": "saltar {{count}} compás",
+        "jump_other": "saltar {{count}} compases",
+        "beat": "un golpe",
+        "centre": "centrar en la rejilla",
+        "memory": "CALL en el cabezal",
+        "hot": "hot cue A a H en el cabezal",
+        "remove": "borrar la seleccionada",
+        "undo": "deshacer",
+        "zoom": "zoom"
+      }
     }
   },
   "fields": {

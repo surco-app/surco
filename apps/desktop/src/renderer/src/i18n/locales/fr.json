@@ -800,7 +800,21 @@
       "jumpMore": "Sauter plus de mesures",
       "jumpBars_one": "{{count}} mesure",
       "jumpBars_other": "{{count}} mesures",
-      "bpm": "{{bpm}} BPM"
+      "bpm": "{{bpm}} BPM",
+      "keys": {
+        "label": "Touches",
+        "space": "Espace",
+        "play": "lire ou arrêter",
+        "jump_one": "sauter {{count}} mesure",
+        "jump_other": "sauter {{count}} mesures",
+        "beat": "un temps",
+        "centre": "centrer sur la grille",
+        "memory": "CALL sur la tête de lecture",
+        "hot": "hot cue A à H sur la tête de lecture",
+        "remove": "supprimer la sélection",
+        "undo": "annuler",
+        "zoom": "zoom"
+      }
     }
   },
   "fields": {

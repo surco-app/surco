@@ -800,7 +800,21 @@
       "jumpMore": "Mehr Takte springen",
       "jumpBars_one": "{{count}} Takt",
       "jumpBars_other": "{{count}} Takte",
-      "bpm": "{{bpm}} BPM"
+      "bpm": "{{bpm}} BPM",
+      "keys": {
+        "label": "Tasten",
+        "space": "Leertaste",
+        "play": "abspielen oder stoppen",
+        "jump_one": "{{count}} Takt springen",
+        "jump_other": "{{count}} Takte springen",
+        "beat": "ein Schlag",
+        "centre": "auf das Raster zentrieren",
+        "memory": "CALL am Abspielkopf",
+        "hot": "Hot Cue A bis H am Abspielkopf",
+        "remove": "die ausgewählte löschen",
+        "undo": "rückgängig",
+        "zoom": "Zoom"
+      }
     }
   },
   "fields": {
