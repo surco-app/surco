@@ -310,6 +310,16 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
+  it('snaps the playhead to the nearest beat when the strip is clicked or dragged', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ onSeek, playheadMs: 0, onPlace: undefined })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 403 })
+    fireEvent.mouseMove(window, { clientX: 612 })
+    fireEvent.mouseUp(window, { clientX: 612 })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 403 })
+    expect(onSeek.mock.calls).toEqual([[40500], [61000], [40500]])
+  })
+
   it('draws no playhead and keeps marking drops in the folded section', () => {
     const handlers = setup()
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()

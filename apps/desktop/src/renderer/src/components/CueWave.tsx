@@ -13,6 +13,7 @@ import {
   markStyle,
   placeCues,
 } from '../lib/cueMarks'
+import { snapToBeat } from '../lib/cuePlayhead'
 import { barLines, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
 import { WaveBars } from './WaveBars'
 
@@ -118,6 +119,11 @@ export function CueWave({
     const x = Math.min(Math.max(clientX - rect.left, 0), rect.width)
     return (x / Math.max(rect.width, 1)) * latest.current.durationMs
   }, [])
+  const beatsMs = useMemo(() => grid.map((b) => b.ms), [grid])
+  const seekAt = useCallback(
+    (clientX: number): number => snapToBeat(beatsMs, msAtX(clientX)),
+    [beatsMs, msAtX],
+  )
   useEffect(() => {
     if (!armed) return
     const move = (e: MouseEvent) => {
@@ -148,7 +154,7 @@ export function CueWave({
   }, [armed, msAtX])
   useEffect(() => {
     if (!seeking) return
-    const move = (e: MouseEvent) => latest.current.onSeek?.(msAtX(e.clientX))
+    const move = (e: MouseEvent) => latest.current.onSeek?.(seekAt(e.clientX))
     const up = () => setSeeking(false)
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
@@ -156,7 +162,7 @@ export function CueWave({
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
     }
-  }, [seeking, msAtX])
+  }, [seeking, seekAt])
   useEffect(() => {
     if (press === null) return
     const move = (e: MouseEvent) => {
@@ -166,7 +172,7 @@ export function CueWave({
       setCursor(null)
       latest.current.onHover?.(null)
       setSeeking(true)
-      latest.current.onSeek?.(msAtX(e.clientX))
+      latest.current.onSeek?.(seekAt(e.clientX))
     }
     const up = () => setPress(null)
     window.addEventListener('mousemove', move)
@@ -175,7 +181,7 @@ export function CueWave({
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
     }
-  }, [press, msAtX])
+  }, [press, seekAt])
   const waveSvg = useMemo(
     () =>
       wave && (
@@ -260,7 +266,7 @@ export function CueWave({
           setPress(e.clientX)
           return
         }
-        onSeek(msAtX(e.clientX))
+        onSeek(seekAt(e.clientX))
         setSeeking(true)
       }}
       onClick={(e) => {
@@ -277,7 +283,7 @@ export function CueWave({
           return
         }
         if (onSeek) {
-          onSeek(msAtX(e.clientX))
+          onSeek(seekAt(e.clientX))
           return
         }
         onOpen?.(msAtX(e.clientX))

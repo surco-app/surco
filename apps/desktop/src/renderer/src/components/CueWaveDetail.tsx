@@ -14,7 +14,7 @@ import {
   placeCues,
   WAVE_MARK_LANE_PX,
 } from '../lib/cueMarks'
-import { barsToNextCall, cueClock, detailWindow, wheelZoom } from '../lib/cuePlayhead'
+import { barsToNextCall, cueClock, detailWindow, snapToBeat, wheelZoom } from '../lib/cuePlayhead'
 import { barLines, quantizePoints } from '../lib/cueWave'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
@@ -79,8 +79,8 @@ export function CueWaveDetail({
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
-  const latest = useRef({ span, onScrub, onZoom, onPlace })
-  latest.current = { span, onScrub, onZoom, onPlace }
+  const latest = useRef({ span, beats, onScrub, onZoom, onPlace })
+  latest.current = { span, beats, onScrub, onZoom, onPlace }
   const [drag, setDrag] = useState<{
     x0: number
     ms0: number
@@ -94,7 +94,12 @@ export function CueWaveDetail({
     const move = (e: MouseEvent) => {
       if (!moved.current && drag.pick !== null && Math.abs(e.clientX - drag.x0) <= DRAG_PX) return
       moved.current = true
-      latest.current.onScrub(drag.ms0 - ((e.clientX - drag.x0) / drag.width) * latest.current.span)
+      latest.current.onScrub(
+        snapToBeat(
+          latest.current.beats,
+          drag.ms0 - ((e.clientX - drag.x0) / drag.width) * latest.current.span,
+        ),
+      )
     }
     const up = () => {
       if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)

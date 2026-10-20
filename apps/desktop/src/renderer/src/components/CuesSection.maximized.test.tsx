@@ -568,7 +568,7 @@ describe('CuesSection maximized keys', () => {
   it('centres the playhead with C on the nearest bar line by default', async () => {
     setup()
     await maximize()
-    seek(65200)
+    seek(65500)
     editor().focus()
     key('c')
     expect(position()).toBe('1:06.0')
@@ -577,10 +577,10 @@ describe('CuesSection maximized keys', () => {
   it('centres the playhead with C on the nearest beat when the quantize is the beat', async () => {
     setup({ cueQuantize: 'beat' })
     await maximize()
-    seek(65200)
+    seek(65500)
     editor().focus()
     key('c')
-    expect(position()).toBe('1:05.0')
+    expect(position()).toBe('1:05.5')
   })
 
   it('jumps the bars set in Settings', async () => {
@@ -689,6 +689,31 @@ describe('CuesSection maximized keys', () => {
     fireEvent.click(screen.getByTestId('cues-play'))
     expect(pause).toHaveBeenCalled()
     expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
+  })
+
+  it('lands the playhead on the beat when the overview is clicked, and restarts the audio from that beat while playing', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    seek(65300)
+    expect(position()).toBe('1:05.5')
+    expect(audios[0].currentTime).toBe(65.5)
+  })
+
+  it('lets the playhead follow the playing audio freely instead of snapping it to a beat', async () => {
+    stubSound()
+    const frames: (() => void)[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: () => void) => frames.push(cb))
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    await act(async () => {
+      audios[0].onloadedmetadata?.()
+    })
+    audios[0].currentTime = 70.123
+    act(() => frames[frames.length - 1]())
+    expect(position()).toBe('1:10.1')
   })
 
   it('plays with Space after a click left the focus on a pad, instead of pressing the pad again', async () => {

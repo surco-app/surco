@@ -12,6 +12,10 @@ export function jumpBeats(beats: number[], ms: number, count: number): number {
   return Math.max(0, beats[to] + ms - beats[from])
 }
 
+export function snapToBeat(beats: number[], ms: number): number {
+  return beats.length === 0 ? ms : beats[nearestBeat(beats, ms)]
+}
+
 export function adjacentCall(
   cues: { ms: number; kind: number }[],
   ms: number,

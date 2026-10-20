@@ -193,6 +193,16 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalledTimes(1)
   })
 
+  it('snaps the playhead to the nearest beat while the wave is dragged and on release, so it always rests on a beat', () => {
+    const { onScrub } = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 400 })
+    fireEvent.mouseMove(window, { clientX: 296 })
+    expect(onScrub).toHaveBeenLastCalledWith(bar(32) + 8500)
+    fireEvent.mouseMove(window, { clientX: 290 })
+    fireEvent.mouseUp(window, { clientX: 290 })
+    expect(onScrub.mock.calls.every(([ms]) => ms % 500 === 0)).toBe(true)
+  })
+
   it('places on the bar under a click and still scrubs with a drag when a flow is chosen', () => {
     const onPlace = vi.fn<(ms: number) => void>()
     const { onScrub } = setup({ onPlace })
