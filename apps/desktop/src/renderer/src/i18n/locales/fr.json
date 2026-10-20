@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Choisissez un flux et cliquez sur la forme d’onde pour le placer, ou choisissez Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur ou sa lettre.",
+      "help": "Choisissez un flux et cliquez sur la forme d’onde pour le placer, ou choisissez Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
       "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
       "manual": "Ce morceau a des hot cues placés à la main. Surco enregistre les drops et ne touche pas aux hot cues.",
       "tooMany": "Il faudrait plus de 8 hot cues. Retirez un drop.",

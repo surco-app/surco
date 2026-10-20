@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Elige un flujo y haz clic en la onda para colocarlo, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle color o letra.",
+      "help": "Elige un flujo y haz clic en la onda para colocarlo, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle el color.",
       "unanalysed": "rekordbox aún no ha analizado esta pista",
       "manual": "Esta pista tiene hot cues puestos a mano. Surco guarda los drops y no toca los hot cues.",
       "tooMany": "Necesitaría más de 8 hot cues. Quita un drop.",

@@ -626,6 +626,14 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-gone', 'true')
   })
 
+  it('explains only what a selected cue still lets the user do, since its letter is no longer changed here', async () => {
+    setup()
+    await ready()
+    expect(screen.getByTestId('section-help')).toHaveTextContent(
+      'Select a cue to move it, delete it or change its colour.',
+    )
+  })
+
   it('forgets the hovered point when Settings switches to Manual under the cursor, so switching back draws no old flow', async () => {
     const { changeSettings } = setup()
     await ready()

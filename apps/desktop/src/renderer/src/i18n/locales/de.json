@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Wähle einen Ablauf und klicke auf die Wellenform, um ihn zu setzen, oder wähle Manuell und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder Farbe und Buchstaben zu ändern.",
+      "help": "Wähle einen Ablauf und klicke auf die Wellenform, um ihn zu setzen, oder wähle Manuell und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
       "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
       "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco speichert die Drops und lässt die Hot Cues unverändert.",
       "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Drop.",

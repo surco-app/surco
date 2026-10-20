@@ -766,7 +766,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Escolha um fluxo e clique na forma de onda para colocá-lo, ou escolha Manual e ponha cada cue à mão. Selecione um cue para movê-lo, apagá-lo ou mudar a cor ou a letra.",
+      "help": "Escolha um fluxo e clique na forma de onda para colocá-lo, ou escolha Manual e ponha cada cue à mão. Selecione um cue para movê-lo, apagá-lo ou mudar a cor.",
       "unanalysed": "O rekordbox ainda não analisou esta faixa",
       "manual": "Esta faixa tem hot cues postos à mão. O Surco salva os drops e não mexe nos hot cues.",
       "tooMany": "Precisaria de mais de 8 hot cues. Tire um drop.",
