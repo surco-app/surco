@@ -104,6 +104,7 @@ function renderList(
     trailingSeparators,
     reorder,
     pendingCuePaths,
+    unsavedCueIds,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -115,6 +116,7 @@ function renderList(
       onRemoveSeparator: (key: string) => void
     }
     pendingCuePaths?: ReadonlySet<string>
+    unsavedCueIds?: ReadonlySet<string>
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -148,6 +150,7 @@ function renderList(
       trailingSeparators={trailingSeparators}
       reorder={reorder}
       pendingCuePaths={pendingCuePaths}
+      unsavedCueIds={unsavedCueIds}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -496,6 +499,15 @@ describe('TrackList', () => {
     })
     renderList([t], null, [], { pendingCuePaths: new Set(['/music/a.mp3']) })
     expect(screen.getByTestId('track-wave')).toHaveAttribute('data-pending', 'true')
+  })
+
+  it('marks the row of a track with unsaved cues, so a forgotten Guardar shows in the list', () => {
+    renderList([track({ id: 'a', duration: 200 }), track({ id: 'b', duration: 200 })], null, [], {
+      unsavedCueIds: new Set(['b']),
+    })
+    const rows = screen.getAllByTestId('track-wave-line')
+    expect(within(rows[0]).queryByTestId('track-cues-unsaved')).toBeNull()
+    expect(within(rows[1]).getByTestId('track-cues-unsaved')).toHaveTextContent('Cues not saved')
   })
 
   it('omits the duration until it has been probed', () => {

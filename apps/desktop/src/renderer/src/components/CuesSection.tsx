@@ -44,7 +44,14 @@ import {
   jumpBeats,
   zoomStep,
 } from '../lib/cuePlayhead'
-import { forgetDraft, keepDraft, keepPlayhead, keptDraft, keptPlayhead } from '../lib/cueSession'
+import {
+  forgetDraft,
+  keepDraft,
+  keepPlayhead,
+  keptDraft,
+  keptPlayhead,
+  useUnsavedCueTracks,
+} from '../lib/cueSession'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { isTypingTarget } from '../lib/keymap'
@@ -105,6 +112,15 @@ const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
   'clear-meta': ignore,
   'process-all': ignore,
   'derive-tags': ignore,
+}
+
+function UnsavedMark(): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  return (
+    <span data-testid="cues-unsaved" className="whitespace-nowrap text-xs text-warn">
+      {tr('editor.cues.unsaved')}
+    </span>
+  )
 }
 
 const MENU_ITEM =
@@ -565,6 +581,7 @@ function Editing({
         </div>
         <div className="truncate text-xs text-fg-dim">{track?.artist}</div>
       </div>
+      {!unchanged && <UnsavedMark />}
       <div
         data-testid="cues-meta"
         className="ml-2 flex shrink-0 items-center gap-1.5 text-xs tabular-nums text-fg-faint"
@@ -867,6 +884,7 @@ export function CuesSection({
   const { data: queued } = useQueuedCues(cue.contentId)
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
+  const unsaved = useUnsavedCueTracks().has(cue.contentId)
   const [round, setRound] = useState(0)
   const draftKey = `${cue.contentId}|${read?.fingerprint ?? ''}|${JSON.stringify(queued)}`
   const [head, setHead] = useState(() => ({
@@ -947,6 +965,7 @@ export function CuesSection({
           open={open}
           onToggle={onToggle}
           help={tr('editor.cues.help')}
+          status={unsaved ? <UnsavedMark /> : undefined}
         />
       )}
       {full && isMacOS() && (

@@ -99,6 +99,7 @@ interface Props {
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
   pendingCuePaths?: ReadonlySet<string>
+  unsavedCueIds?: ReadonlySet<string>
   onOpenBackup?: (track: TrackItem) => void
   // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
   duplicateRankById?: ReadonlyMap<string, DuplicateRank>
@@ -331,6 +332,7 @@ interface RowProps {
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
   backupAt?: number
   cuesPending: boolean
+  cuesUnsaved: boolean
   onOpenBackup?: (track: TrackItem) => void
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
@@ -363,6 +365,7 @@ const TrackRow = memo(function TrackRow({
   rowRegistry,
   backupAt,
   cuesPending,
+  cuesUnsaved,
   onOpenBackup,
   duplicate,
   outsideFilter,
@@ -823,7 +826,7 @@ const TrackRow = memo(function TrackRow({
                 </span>
               </span>
             </span>
-            <span data-testid="track-wave-line" className="block h-5">
+            <span data-testid="track-wave-line" className="relative block h-5">
               {shown.waiting ? (
                 <span
                   data-testid="track-loading"
@@ -843,13 +846,23 @@ const TrackRow = memo(function TrackRow({
                   </span>
                 </span>
               ) : (
-                <RowWave
-                  request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
-                  cues={t.sourcePreview?.cues ?? []}
-                  durationSec={shown.duration}
-                  pending={cuesPending}
-                  active={seen}
-                />
+                <>
+                  <RowWave
+                    request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
+                    cues={t.sourcePreview?.cues ?? []}
+                    durationSec={shown.duration}
+                    pending={cuesPending}
+                    active={seen}
+                  />
+                  {cuesUnsaved && (
+                    <span
+                      data-testid="track-cues-unsaved"
+                      className="absolute top-0.5 right-0 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]"
+                    >
+                      <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
+                    </span>
+                  )}
+                </>
               )}
             </span>
           </span>
@@ -951,6 +964,7 @@ export const TrackList = memo(function TrackList({
   rowRegistry,
   backupAtByPath,
   pendingCuePaths,
+  unsavedCueIds,
   onOpenBackup,
   duplicateRankById,
   outsideFilter,
@@ -1218,6 +1232,7 @@ export const TrackList = memo(function TrackList({
               rowRegistry={rowRegistry}
               backupAt={backupAtByPath?.get(t.inputPath)}
               cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
+              cuesUnsaved={unsavedCueIds?.has(t.id) ?? false}
               onOpenBackup={onOpenBackup}
               duplicate={duplicateRankById?.get(t.id)}
               outsideFilter={outsideFilter?.has(t.id) ?? false}

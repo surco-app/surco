@@ -937,9 +937,7 @@ describe('CuesSection', () => {
       fingerprint: 'f0',
     })
     changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
-    await waitFor(() =>
-      expect(screen.getByTestId(`cue-wave-call-${bar(80)}`)).toBeInTheDocument(),
-    )
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-call-${bar(80)}`)).toBeInTheDocument())
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
   })
 
@@ -956,6 +954,18 @@ describe('CuesSection', () => {
     changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
     await ready()
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('says Sin guardar in the header while the track has changes, folded or full, and stops after Descartar', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-unsaved')).toBeNull()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId('cues-unsaved')).toHaveTextContent('Not saved'))
+    await openFull()
+    expect(screen.getByTestId('cues-header')).toContainElement(screen.getByTestId('cues-unsaved'))
+    fireEvent.click(screen.getByTestId('cues-undo'))
+    await waitFor(() => expect(screen.queryByTestId('cues-unsaved')).toBeNull())
   })
 
   it('offers no marking on a track rekordbox has not analysed', async () => {

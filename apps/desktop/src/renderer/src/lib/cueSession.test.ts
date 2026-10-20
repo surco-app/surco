@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startDraft } from './cueDraft'
 import {
   forgetDraft,
@@ -7,6 +7,8 @@ import {
   keptDraft,
   keptPlayhead,
   resetCueSession,
+  subscribeCueDrafts,
+  unsavedCueTracks,
 } from './cueSession'
 
 afterEach(resetCueSession)
@@ -40,6 +42,21 @@ describe('cue session', () => {
     forgetDraft('103')
     expect(keptDraft('103', '103|f0|null')).toBeUndefined()
     expect(keptDraft('104', '104|f0|null')).toBeDefined()
+  })
+
+  it('names the tracks with an unsaved draft and calls back only when that list changes, so the list does not repaint on every edit', () => {
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'))
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'))
+    keepDraft('104', '104|f0|null', startDraft([], 'mine'))
+    expect([...unsavedCueTracks()]).toEqual(['103', '104'])
+    expect(listener).toHaveBeenCalledTimes(2)
+    forgetDraft('103')
+    forgetDraft('103')
+    expect([...unsavedCueTracks()]).toEqual(['104'])
+    expect(listener).toHaveBeenCalledTimes(3)
+    stop()
   })
 
   it('keeps the playhead of every track and starts a track never opened at 0', () => {

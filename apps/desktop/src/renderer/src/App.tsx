@@ -113,6 +113,7 @@ import { baseName } from './lib/baseName'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
+import { useUnsavedCueTracks } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
@@ -2039,6 +2040,14 @@ export default function App(): React.JSX.Element {
       ),
     [rekordboxQueue.state],
   )
+  const unsavedCues = useUnsavedCueTracks()
+  const unsavedCueIds = useMemo(() => {
+    const ids = new Set<string>()
+    if (!rekordboxOpen) return ids
+    for (const [id, contentId] of playlistScope?.contentOf ?? [])
+      if (unsavedCues.has(contentId)) ids.add(id)
+    return ids
+  }, [rekordboxOpen, playlistScope, unsavedCues])
   const selectedContentId =
     rekordboxOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
@@ -2858,6 +2867,7 @@ export default function App(): React.JSX.Element {
                               rowRegistry={rowEls}
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
+                              unsavedCueIds={unsavedCueIds}
                               onOpenBackup={onOpenBackup}
                               duplicateRankById={duplicateRankById}
                             />

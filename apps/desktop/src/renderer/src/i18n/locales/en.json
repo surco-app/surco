@@ -370,6 +370,7 @@
     "exportUsb": "Export to USB…"
   },
   "trackList": {
+    "cuesUnsaved": "Cues not saved",
     "cuesPendingNone": "Cues waiting for rekordbox",
     "cuesAria_one": "{{count}} hot cue",
     "cuesAria_other": "{{count}} hot cues",
@@ -773,6 +774,7 @@
       "save": "Save to rekordbox",
       "unreadable": "Could not read the cues from rekordbox",
       "discard": "Discard changes",
+      "unsaved": "Not saved",
       "flow": "Flow",
       "delete": "Delete",
       "deleteHot": "Delete hot cue {{letter}}",

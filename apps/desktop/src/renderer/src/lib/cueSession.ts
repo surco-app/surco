@@ -1,7 +1,28 @@
+import { useSyncExternalStore } from 'react'
 import type { CueDraft } from './cueDraft'
 
 const drafts = new Map<string, { draftKey: string; value: CueDraft }>()
 const playheads = new Map<string, number>()
+const listeners = new Set<() => void>()
+let unsaved: ReadonlySet<string> = new Set()
+
+function changed(): void {
+  unsaved = new Set(drafts.keys())
+  for (const listener of listeners) listener()
+}
+
+export function subscribeCueDrafts(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+export function unsavedCueTracks(): ReadonlySet<string> {
+  return unsaved
+}
+
+export function useUnsavedCueTracks(): ReadonlySet<string> {
+  return useSyncExternalStore(subscribeCueDrafts, unsavedCueTracks)
+}
 
 export function keptDraft(contentId: string, draftKey: string): CueDraft | undefined {
   const kept = drafts.get(contentId)
@@ -9,11 +30,13 @@ export function keptDraft(contentId: string, draftKey: string): CueDraft | undef
 }
 
 export function keepDraft(contentId: string, draftKey: string, value: CueDraft): void {
+  const fresh = !drafts.has(contentId)
   drafts.set(contentId, { draftKey, value })
+  if (fresh) changed()
 }
 
 export function forgetDraft(contentId: string): void {
-  drafts.delete(contentId)
+  if (drafts.delete(contentId)) changed()
 }
 
 export function keptPlayhead(contentId: string): number {
@@ -27,4 +50,5 @@ export function keepPlayhead(contentId: string, ms: number): void {
 export function resetCueSession(): void {
   drafts.clear()
   playheads.clear()
+  changed()
 }
