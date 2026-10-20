@@ -5,7 +5,7 @@
 // the reduced-motion jump are all the same code path with a different t.
 
 import { CRATE } from './crate'
-import { DECLICK_MARKS, TAIL_CUT } from './waveforms'
+import { DECLICK_MARKS, TAIL_CUT, TRACK_ENVELOPE } from './waveforms'
 
 const clamp = (t: number) => Math.min(Math.max(t, 0), 1)
 
@@ -423,5 +423,65 @@ export function reviewFrame(t: number): ReviewFrame {
     pressed: s >= 6 && s < 6.2,
     applying: s >= 6.2 && s < 6.9,
     applied: s >= 6.9,
+  }
+}
+
+export const CUES_BARS = TRACK_ENVELOPE.length
+export const CUES_POINT = 122
+export const CUES_HOVERS = [110, 116, CUES_POINT] as const
+export const CUES_ZOOM = { from: 70, bars: 64 } as const
+export const CUES_SECONDS = 9
+
+export const CUES_FLOW = [
+  { back: 48, letter: 'A', colour: '#e62828' },
+  { back: 32, letter: 'B', colour: '#28e214' },
+  { back: 16, letter: 'C', colour: '#305aff' },
+] as const
+
+export interface CueMark {
+  bar: number
+  letter: string
+  colour: string
+}
+
+export interface CuePlacement {
+  point: number
+  hot: CueMark[]
+}
+
+export interface CuesFrame {
+  cursor: 'hidden' | 'start' | 'closer' | 'point' | 'save'
+  ghost: CuePlacement | null
+  pressed: boolean
+  placed: CuePlacement | null
+  savePressed: boolean
+  saved: boolean
+}
+
+const placement = (point: number): CuePlacement => ({
+  point,
+  hot: CUES_FLOW.map(({ back, letter, colour }) => ({ bar: point - back, letter, colour })),
+})
+
+export function cuesFrame(t: number): CuesFrame {
+  const s = clamp(t) * CUES_SECONDS
+  const placed = s >= 5.1
+  const hover = placed || s < 1.3 ? null : CUES_HOVERS[s < 3 ? 0 : s < 4.4 ? 1 : 2]
+  return {
+    cursor:
+      s < 0.5 || s >= 7.6
+        ? 'hidden'
+        : s < 2.2
+          ? 'start'
+          : s < 3.6
+            ? 'closer'
+            : s < 5.7
+              ? 'point'
+              : 'save',
+    ghost: hover === null ? null : placement(hover),
+    pressed: s >= 4.9 && s < 5.1,
+    placed: placed ? placement(CUES_POINT) : null,
+    savePressed: s >= 6.9 && s < 7.1,
+    saved: s >= 7.1,
   }
 }

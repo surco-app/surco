@@ -3,6 +3,11 @@ import {
   BATCH_QUEUE,
   BATCH_TOTAL,
   batchFrame,
+  CUES_BARS,
+  CUES_FLOW,
+  CUES_HOVERS,
+  CUES_POINT,
+  cuesFrame,
   DROP_TOTAL,
   DROP_TRACKS,
   declickFrame,
@@ -516,6 +521,101 @@ describe('reviewFrame', () => {
     expect(end.applyCount).toBe(REVIEW_APPLY_AFTER)
     expect(end.applied).toBe(true)
     expect(end.pressed).toBe(false)
+    expect(end.cursor).toBe('hidden')
+  })
+})
+
+describe('cuesFrame', () => {
+  const frames = Array.from({ length: 401 }, (_, i) => cuesFrame(i / 400))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+
+  it('draws one DJ flow as he described it, red at 48 bars, green at 32 and blue at 16', () => {
+    expect(CUES_FLOW.map(({ back, colour }) => [back, colour])).toEqual([
+      [48, '#e62828'],
+      [32, '#28e214'],
+      [16, '#305aff'],
+    ])
+    expect(CUES_FLOW.map((c) => c.letter)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('opens on a track with no cues, no ghost and no pointer', () => {
+    const start = cuesFrame(0)
+    expect(start.placed).toBe(null)
+    expect(start.ghost).toBe(null)
+    expect(start.cursor).toBe('hidden')
+    expect(start.saved).toBe(false)
+  })
+
+  it('shows the ghost only while the pointer is over the wave and nothing is placed yet', () => {
+    for (const f of frames) {
+      if (f.ghost) {
+        expect(['start', 'closer', 'point']).toContain(f.cursor)
+        expect(f.placed).toBe(null)
+      }
+    }
+    expect(firstAt((f) => f.ghost !== null)).toBeGreaterThan(-1)
+  })
+
+  it('places every ghost cue back from the point under the pointer, on whole bars inside the track', () => {
+    for (const f of frames) {
+      if (!f.ghost) continue
+      expect(f.ghost.hot.map((h) => f.ghost && f.ghost.point - h.bar)).toEqual(
+        CUES_FLOW.map((c) => c.back),
+      )
+      for (const bar of [f.ghost.point, ...f.ghost.hot.map((h) => h.bar)]) {
+        expect(Number.isInteger(bar)).toBe(true)
+        expect(bar).toBeGreaterThanOrEqual(0)
+        expect(bar).toBeLessThan(CUES_BARS)
+      }
+    }
+  })
+
+  it('moves the ghost through each hover point in turn, only after the pointer has gone there', () => {
+    const points = frames.map((f) => f.ghost?.point ?? null).filter((p) => p !== null)
+    expect([...new Set(points)]).toEqual([...CUES_HOVERS])
+    expect(firstAt((f) => f.cursor === 'closer')).toBeLessThan(
+      firstAt((f) => f.ghost?.point === CUES_HOVERS[1]),
+    )
+    expect(firstAt((f) => f.cursor === 'point')).toBeLessThan(
+      firstAt((f) => f.ghost?.point === CUES_POINT),
+    )
+  })
+
+  it('places exactly what the ghost showed, with the click on the point', () => {
+    const placed = firstAt((f) => f.placed !== null)
+    const pressed = firstAt((f) => f.pressed)
+    expect(pressed).toBeGreaterThan(firstAt((f) => f.ghost?.point === CUES_POINT))
+    expect(pressed).toBeLessThan(placed)
+    expect(frames[pressed].cursor).toBe('point')
+    expect(frames[placed].placed).toEqual(frames[placed - 1].ghost)
+  })
+
+  it('never takes a placed cue back', () => {
+    const placed = firstAt((f) => f.placed !== null)
+    for (const f of frames.slice(placed)) expect(f.placed).toEqual(frames[placed].placed)
+  })
+
+  it('saves to rekordbox only after placing, with the pointer on the button first', () => {
+    const saved = firstAt((f) => f.saved)
+    const pressed = firstAt((f) => f.savePressed)
+    expect(pressed).toBeGreaterThan(firstAt((f) => f.placed !== null))
+    expect(firstAt((f) => f.cursor === 'save')).toBeLessThan(pressed)
+    expect(saved).toBeGreaterThan(pressed)
+  })
+
+  it('ends with the flow placed on the point and saved, the pointer gone', () => {
+    const end = cuesFrame(1)
+    expect(end.placed).toEqual({
+      point: CUES_POINT,
+      hot: CUES_FLOW.map(({ back, letter, colour }) => ({
+        bar: CUES_POINT - back,
+        letter,
+        colour,
+      })),
+    })
+    expect(end.ghost).toBe(null)
+    expect(end.saved).toBe(true)
+    expect(end.savePressed).toBe(false)
     expect(end.cursor).toBe('hidden')
   })
 })
