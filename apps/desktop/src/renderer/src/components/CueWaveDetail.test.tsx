@@ -232,6 +232,21 @@ describe('CueWaveDetail', () => {
     expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
   })
 
+  it('forgets the bar under the cursor as soon as a press starts, so no flow hangs over a scrub', () => {
+    const onHover = vi.fn<(ms: number | null) => void>()
+    const onScrub = vi.fn<(ms: number) => void>()
+    setup({ onHover, onScrub, onPlace: vi.fn<(ms: number) => void>() })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
+    expect(onHover).toHaveBeenLastCalledWith(bar(36))
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 310 })
+    fireEvent.mouseMove(window, { clientX: 200 })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+    expect(onScrub).toHaveBeenCalled()
+    expect(onHover).toHaveBeenLastCalledWith(null)
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    fireEvent.mouseUp(window, { clientX: 200 })
+  })
+
   it('draws the flow see-through and dims what it would take away', () => {
     setup({
       cues: [{ key: 'b', ms: bar(30), kind: 2, color: 22, pending: false }],

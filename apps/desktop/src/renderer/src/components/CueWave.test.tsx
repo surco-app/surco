@@ -329,6 +329,19 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
+  it('forgets the beat under the cursor once a press turns into moving the playhead, so no flow hangs over the scrub', () => {
+    const onHover = vi.fn<(ms: number | null) => void>()
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ onHover, onSeek, playheadMs: 0 })
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 102, clientY: 40 })
+    expect(onHover).toHaveBeenLastCalledWith(10000)
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 102 })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    expect(onSeek).toHaveBeenLastCalledWith(30000)
+    expect(onHover).toHaveBeenLastCalledWith(null)
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+  })
+
   it('draws the cues the flow would add see-through and dims the ones it would take away, none of them clickable', () => {
     setup({
       ghost: {

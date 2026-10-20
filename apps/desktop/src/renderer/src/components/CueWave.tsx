@@ -82,8 +82,8 @@ export function CueWave({
   const [stripPx, setStripPx] = useState(0)
   const analysed = grid.length > 0
   const snapMs = quantizePoints(grid, quantize)
-  const latest = useRef({ snapMs, durationMs, onMove, onSeek })
-  latest.current = { snapMs, durationMs, onMove, onSeek }
+  const latest = useRef({ snapMs, durationMs, onMove, onSeek, onHover })
+  latest.current = { snapMs, durationMs, onMove, onSeek, onHover }
   useLayoutEffect(() => {
     const root = rootRef.current
     if (!analysed || !root) return
@@ -150,6 +150,8 @@ export function CueWave({
       if (Math.abs(e.clientX - press) <= DRAG_PX) return
       dragged.current = true
       setPress(null)
+      setCursor(null)
+      latest.current.onHover?.(null)
       setSeeking(true)
       latest.current.onSeek?.(msAtX(e.clientX))
     }
