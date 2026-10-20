@@ -16,6 +16,23 @@ export interface WaveCue {
   locked?: boolean
 }
 
+export const GRID_LINE = 'bg-[var(--color-fg-dim)]/60'
+
+export function GridCaps(): React.JSX.Element {
+  return (
+    <>
+      <span
+        data-testid="cue-grid-cap"
+        className="absolute top-0 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[3px] border-t-[4px] border-x-transparent border-t-[var(--color-fg-dim)]"
+      />
+      <span
+        data-testid="cue-grid-cap"
+        className="absolute bottom-0 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[3px] border-b-[4px] border-x-transparent border-b-[var(--color-fg-dim)]"
+      />
+    </>
+  )
+}
+
 const HIT_PX = 6
 const DRAG_PX = 3
 const LABEL_ROW_PX = 11
@@ -135,10 +152,10 @@ export function CueWave({
           data-strong={b.strong ? 'true' : 'false'}
           aria-hidden="true"
           style={{ left: `${(b.ms / Math.max(durationMs, 1)) * 100}%` }}
-          className={`absolute top-0 bottom-0 w-px ${
-            b.strong ? 'bg-[var(--color-fg)]/40' : 'bg-[var(--color-fg)]/10'
-          }`}
-        />
+          className={`absolute top-0 bottom-0 w-px ${b.strong ? GRID_LINE : 'bg-[var(--color-fg)]/10'}`}
+        >
+          {b.strong && <GridCaps />}
+        </span>
       )),
     [grid, durationMs],
   )

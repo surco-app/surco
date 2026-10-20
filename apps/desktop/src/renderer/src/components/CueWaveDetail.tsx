@@ -7,7 +7,7 @@ import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import { markStyle, placeCues, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { barsToNextCall, detailWindow, ZOOM_BARS } from '../lib/cuePlayhead'
 import { barLines } from '../lib/cueWave'
-import type { WaveCue } from './CueWave'
+import { GRID_LINE, GridCaps, type WaveCue } from './CueWave'
 
 const HEIGHT = 160
 const ZOOM_BUTTON =
@@ -117,10 +117,10 @@ export function CueWaveDetail({
             data-testid="cue-detail-bar"
             aria-hidden="true"
             style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-            className={`absolute bottom-0 w-px ${
-              b.strong ? 'bg-[var(--color-fg)]/40' : 'bg-[var(--color-fg)]/15'
-            }`}
-          />
+            className={`absolute bottom-0 w-px ${b.strong ? 'bg-[var(--color-fg)]/80' : GRID_LINE}`}
+          >
+            <GridCaps />
+          </span>
         ))}
       {calls.map((c) => (
         <span

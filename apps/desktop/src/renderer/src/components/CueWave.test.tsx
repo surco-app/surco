@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -119,6 +119,17 @@ describe('CueWave', () => {
     const label = screen.getByTestId('cue-wave-drop-label-40000')
     expect(label.style.top).toBe('0px')
     expect(label.style.bottom).toBe('')
+  })
+
+  it('caps only the phrase lines of the overview, where a cap on every bar would grey out the whole wave', () => {
+    setup()
+    const lines = screen.getAllByTestId('cue-wave-bar')
+    for (const line of lines) {
+      expect(within(line).queryAllByTestId('cue-grid-cap')).toHaveLength(
+        line.dataset.strong === 'true' ? 2 : 0,
+      )
+    }
+    expect(lines.some((l) => l.dataset.strong === 'true')).toBe(true)
   })
 
   it('marks a drop on the beat under a click on the empty wave and clears the selection', () => {

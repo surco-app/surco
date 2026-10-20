@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -54,6 +54,13 @@ describe('CueWaveDetail', () => {
     rerender({ playheadMs: bar(32) + 1000 })
     expect(lefts()).not.toEqual(before)
     expect(screen.getByTestId('cue-detail-playhead').style.left).toBe('')
+  })
+
+  it('caps every bar line at both ends as rekordbox does, so the grid reads over a loud wave', () => {
+    setup()
+    for (const line of screen.getAllByTestId('cue-detail-bar')) {
+      expect(within(line).getAllByTestId('cue-grid-cap')).toHaveLength(2)
+    }
   })
 
   it('shows fewer bars once zoomed in', () => {
