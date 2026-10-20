@@ -411,6 +411,35 @@ describe('applyCueChanges', () => {
     db.close()
   })
 
+  it('recolours the contentCue entry with the row, since rekordbox reads the colour from either and a stale one comes back', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 1)`,
+    ).run(JSON.stringify([{ ID: 'q2', Kind: 1, InMsec: 8000, ColorTableIndex: 1 }]))
+    applyCueChanges(
+      db,
+      '103',
+      { insert: [], update: [{ id: 'q2', kind: 1, color: 42 }], remove: [] },
+      { now: NOW },
+    )
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    expect(JSON.parse(cc.Cues)).toEqual([
+      {
+        ID: 'q2',
+        Kind: 1,
+        InMsec: 8000,
+        ColorTableIndex: 42,
+        updated_at: '2026-10-18T19:00:00.000+00:00',
+      },
+    ])
+    expect(db.prepare(`SELECT ColorTableIndex FROM djmdCue WHERE ID = 'q2'`).get()).toEqual({
+      ColorTableIndex: 42,
+    })
+    db.close()
+  })
+
   it('never updates or deletes a cue of another track even when handed its ID', async () => {
     const db = await writable()
     applyCueChanges(

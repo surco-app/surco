@@ -196,6 +196,7 @@ function changedEntries(
     const e = entries.find((x) => String(x.ID) === u.id)
     if (e) {
       e.Kind = u.kind
+      if ('ColorTableIndex' in e) e.ColorTableIndex = u.color
       if (u.ms !== undefined) {
         e.InMsec = u.ms
         e.InFrame = frameOf(u.ms)
