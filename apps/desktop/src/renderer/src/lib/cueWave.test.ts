@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { barLines, clickAction, cuePosition, quantizePoints } from './cueWave'
+import { barLines, cuePosition, quantizePoints } from './cueWave'
 
 const GRID = Array.from({ length: 160 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const BEATS = GRID.map((b) => b.ms)
@@ -31,30 +31,6 @@ describe('quantizePoints', () => {
       { ms: 500, beat: 3 },
     ]
     expect(quantizePoints(noDownbeat, 'bar')).toEqual([0, 500])
-  })
-})
-
-describe('clickAction', () => {
-  it('adds a drop on the nearest beat', () => {
-    expect(clickAction(1240, BEATS, [], 100)).toEqual({ kind: 'add', ms: 1000 })
-  })
-
-  it('removes the drop under the click', () => {
-    expect(clickAction(10040, BEATS, [10000], 100)).toEqual({ kind: 'remove', ms: 10000 })
-  })
-
-  it('snaps a click before the grid to its first beat', () => {
-    const late = BEATS.map((ms) => ms + 300)
-    expect(clickAction(10, late, [], 100)).toEqual({ kind: 'add', ms: 300 })
-  })
-
-  it('removes the drop whose beat a click snaps to instead of adding a second one there', () => {
-    const wide = Array.from({ length: 100 }, (_, i) => i * 1000)
-    expect(clickAction(10300, wide, [10000], 100)).toEqual({ kind: 'remove', ms: 10000 })
-  })
-
-  it('removes the nearest of two drops under the click', () => {
-    expect(clickAction(40080, BEATS, [40000, 40100], 600)).toEqual({ kind: 'remove', ms: 40100 })
   })
 })
 

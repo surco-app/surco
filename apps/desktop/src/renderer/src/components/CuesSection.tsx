@@ -589,7 +589,7 @@ function Editing({
         cues={waveCues}
         selected={state.selected}
         trimmed={state.trimmed}
-        onMarkDrop={placing ? place : undefined}
+        onPlace={placing ? place : undefined}
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={maximized ? setMenu : undefined}

@@ -1,5 +1,5 @@
 import type { CueQuantize } from '../../../shared/cueQuantize'
-import { nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { nearestBeat } from '../../../shared/cueRules'
 
 export const HOT_LETTER: Record<number, string> = {
   1: 'A',
@@ -29,24 +29,6 @@ export function quantizePoints(grid: { ms: number; beat: number }[], unit: CueQu
   const downbeats = grid.filter((b) => b.beat === 1)
   const points = unit === 'bar' && downbeats.length > 0 ? downbeats : grid
   return points.map((b) => b.ms)
-}
-
-export function clickAction(
-  ms: number,
-  beatsMs: number[],
-  drops: number[],
-  toleranceMs: number,
-): { kind: 'add' | 'remove'; ms: number } {
-  const nearestTo = (target: number, within: number): number | undefined =>
-    drops
-      .filter((d) => Math.abs(d - target) <= within)
-      .sort((a, b) => Math.abs(a - target) - Math.abs(b - target))[0]
-  const hit = nearestTo(ms, toleranceMs)
-  if (hit !== undefined) return { kind: 'remove', ms: hit }
-  const beat = beatsMs[nearestBeat(beatsMs, ms)]
-  const same = nearestTo(beat, SAME_POSITION_MS)
-  if (same !== undefined) return { kind: 'remove', ms: same }
-  return { kind: 'add', ms: beat }
 }
 
 export function peakBars(values: number[], count: number): number[] {

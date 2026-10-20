@@ -5,8 +5,8 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
-import { markStyle, placeCues } from '../lib/cueMarks'
-import { barLines, clickAction, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
+import { type CueGhost, GHOST_OPACITY, GONE_OPACITY, markStyle, placeCues } from '../lib/cueMarks'
+import { barLines, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -18,7 +18,6 @@ export interface WaveCue {
   locked?: boolean
 }
 
-const HIT_PX = 6
 const DRAG_PX = 3
 const OVERVIEW_BARS = 300
 const ROW_BAR_PITCH_PX = 3
@@ -35,7 +34,7 @@ export function CueWave({
   proposals,
   trimmed,
   readOnly,
-  onMarkDrop,
+  onPlace,
   onSelect,
   onMove,
   onMenu,
@@ -45,6 +44,8 @@ export function CueWave({
   onSeek,
   onOpen,
   view,
+  onHover,
+  ghost,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -55,7 +56,7 @@ export function CueWave({
   proposals?: number[]
   trimmed?: number[]
   readOnly?: boolean
-  onMarkDrop?: (ms: number) => void
+  onPlace?: (ms: number) => void
   onSelect?: (key: string | null) => void
   onMove?: (key: string, ms: number) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
@@ -65,11 +66,15 @@ export function CueWave({
   onSeek?: (ms: number) => void
   onOpen?: (ms: number) => void
   view?: { fromMs: number; toMs: number }
+  onHover?: (ms: number | null) => void
+  ghost?: CueGhost
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
   const swallowClick = useRef(false)
-  const [ghost, setGhost] = useState<number | null>(null)
+  const [cursor, setCursor] = useState<number | null>(null)
+  const [press, setPress] = useState<number | null>(null)
+  const dragged = useRef(false)
   const dragRef = useRef<{ key: string; x0: number; ms: number | null } | null>(null)
   const [dragMs, setDragMs] = useState<number | null>(null)
   const [armed, setArmed] = useState(false)
@@ -92,7 +97,7 @@ export function CueWave({
   const overviewBars =
     stripPx > 0 ? Math.max(1, Math.round(stripPx / ROW_BAR_PITCH_PX)) : OVERVIEW_BARS
   useEffect(() => {
-    if (readOnly) setGhost(null)
+    if (readOnly) setCursor(null)
   }, [readOnly])
   const msAtX = useCallback((clientX: number): number => {
     const rect = rootRef.current?.getBoundingClientRect()
@@ -139,6 +144,23 @@ export function CueWave({
       window.removeEventListener('mouseup', up)
     }
   }, [seeking, msAtX])
+  useEffect(() => {
+    if (press === null) return
+    const move = (e: MouseEvent) => {
+      if (Math.abs(e.clientX - press) <= DRAG_PX) return
+      dragged.current = true
+      setPress(null)
+      setSeeking(true)
+      latest.current.onSeek?.(msAtX(e.clientX))
+    }
+    const up = () => setPress(null)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+    }
+  }, [press, msAtX])
   const waveSvg = useMemo(
     () =>
       wave && (
@@ -181,24 +203,15 @@ export function CueWave({
   }
   const { hot, calls } = placeCues(cues, durationMs)
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
-  const drops = calls.filter((c) => !c.paired)
   const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
   const viewPct = (ms: number): string =>
     `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
+  const snapAt = (clientX: number): number => snapMs[nearestBeat(snapMs, msAtX(clientX))]
+  const gone = new Set(ghost?.gone ?? [])
+  const ghostMarks = ghost ? placeCues(ghost.added, durationMs) : null
   const shown = view && {
     from: Math.max(view.fromMs, 0),
     to: Math.min(view.toMs, durationMs),
-  }
-  const at = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const ms = msAtX(e.clientX)
-    const tolerance = (HIT_PX / Math.max(rect.width, 1)) * durationMs
-    return clickAction(
-      ms,
-      snapMs,
-      drops.map((d) => d.ms),
-      tolerance,
-    )
   }
   const startDrag = (key: string, e: React.MouseEvent) => {
     if (e.button !== 0 || e.ctrlKey) return
@@ -226,27 +239,36 @@ export function CueWave({
       tabIndex={readOnly ? -1 : 0}
       onMouseDown={(e) => {
         if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
+        dragged.current = false
+        if (onPlace) {
+          setPress(e.clientX)
+          return
+        }
         onSeek(msAtX(e.clientX))
         setSeeking(true)
       }}
       onClick={(e) => {
         if (readOnly || swallowClick.current) return
+        if (dragged.current) {
+          dragged.current = false
+          return
+        }
+        if (onPlace) {
+          setCursor(null)
+          onHover?.(null)
+          onSelect?.(null)
+          onPlace(snapAt(e.clientX))
+          return
+        }
         if (onSeek) {
           onSeek(msAtX(e.clientX))
           return
         }
-        if (onOpen) {
-          onOpen(msAtX(e.clientX))
-          return
-        }
-        setGhost(null)
-        onSelect?.(null)
-        const action = at(e)
-        if (action.kind === 'add') onMarkDrop?.(action.ms)
+        onOpen?.(msAtX(e.clientX))
       }}
       onKeyDown={(e) => {
-        if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || ghost === null) return
-        onMarkDrop?.(ghost)
+        if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || cursor === null) return
+        onPlace?.(cursor)
       }}
       onContextMenu={(e) => {
         if (readOnly) return
@@ -259,13 +281,17 @@ export function CueWave({
         })
       }}
       onMouseMove={(e) => {
-        if (readOnly || onSeek || onOpen) return
-        const action = at(e)
-        setGhost(action.kind === 'add' ? action.ms : null)
+        if (readOnly || !onPlace || seeking) return
+        const ms = snapAt(e.clientX)
+        setCursor(ms)
+        onHover?.(ms)
       }}
-      onMouseLeave={() => setGhost(null)}
+      onMouseLeave={() => {
+        setCursor(null)
+        onHover?.(null)
+      }}
       className={`relative h-16 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
-        readOnly ? 'cursor-default' : onSeek || onOpen ? 'cursor-pointer' : 'cursor-crosshair'
+        readOnly ? 'cursor-default' : onPlace ? 'cursor-crosshair' : 'cursor-pointer'
       }`}
     >
       <div
@@ -320,10 +346,15 @@ export function CueWave({
         const isSelected = selected === c.key
         const common = {
           'data-testid': `cue-wave-call-${c.ms}`,
+          'data-gone': gone.has(c.key) ? 'true' : 'false',
           'data-paired': c.paired ? 'true' : 'false',
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
-          style: { ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR },
+          style: {
+            ...markStyle(c.at),
+            borderTopColor: MEMORY_CUE_COLOR,
+            ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+          },
           className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent ${
             isSelected ? 'border-t-[9px]' : 'border-t-[6px]'
           } ${pending ? 'opacity-60' : ''}`,
@@ -347,6 +378,7 @@ export function CueWave({
         const isSelected = selected === h.key
         const common = {
           'data-testid': `cue-wave-hot-${h.letter}`,
+          'data-gone': gone.has(h.key) ? 'true' : 'false',
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
           style: {
@@ -354,6 +386,7 @@ export function CueWave({
             ...(pending
               ? { borderColor: h.colour, color: h.colour }
               : { backgroundColor: h.colour, color: '#000' }),
+            ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
           },
           className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
             pending ? 'border' : ''
@@ -385,12 +418,37 @@ export function CueWave({
           className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
         />
       )}
-      {ghost !== null && (
+      {ghostMarks?.calls.map((c) => (
         <span
-          data-testid="cue-wave-ghost"
+          key={`gc${c.key}`}
+          data-testid={`cue-wave-ghost-call-${c.ms}`}
           aria-hidden="true"
-          style={{ left: pct(ghost), top: WAVE_TOP }}
-          className="pointer-events-none absolute bottom-0 w-px border-l border-dashed border-[var(--color-fg)]/70"
+          style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR, opacity: GHOST_OPACITY }}
+          className="pointer-events-none absolute z-10 h-0 w-0 border-x-4 border-x-transparent border-t-[6px]"
+        />
+      ))}
+      {ghostMarks?.hot.map((h) => (
+        <span
+          key={`gh${h.key}`}
+          data-testid={`cue-wave-ghost-hot-${h.letter}`}
+          aria-hidden="true"
+          style={{
+            ...markStyle(h.at),
+            backgroundColor: h.colour,
+            color: '#000',
+            opacity: GHOST_OPACITY,
+          }}
+          className="pointer-events-none absolute z-10 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3"
+        >
+          {h.letter}
+        </span>
+      ))}
+      {cursor !== null && (
+        <span
+          data-testid="cue-wave-cursor"
+          aria-hidden="true"
+          style={{ left: pct(cursor) }}
+          className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/80"
         />
       )}
     </div>

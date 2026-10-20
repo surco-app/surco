@@ -9,6 +9,14 @@ export interface MarkInput {
   color: number | null
 }
 
+export interface CueGhost {
+  added: MarkInput[]
+  gone: string[]
+}
+
+export const GHOST_OPACITY = 0.42
+export const GONE_OPACITY = 0.18
+
 export interface HotMark {
   key: string
   ms: number

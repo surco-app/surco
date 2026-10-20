@@ -102,7 +102,11 @@ const maximize = async () => {
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
   )
 }
-const seek = (ms: number) => fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000 })
+const seek = (ms: number) => {
+  fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 + 10 })
+  fireEvent.mouseMove(window, { clientX: ms / 1000 })
+  fireEvent.mouseUp(window, { clientX: ms / 1000 })
+}
 const position = () => screen.getByTestId('cues-position').textContent
 
 describe('CuesSection maximized', () => {
@@ -117,7 +121,7 @@ describe('CuesSection maximized', () => {
   it('opens the full editor with the playhead where the folded strip was clicked, without marking anything', async () => {
     setup({ activeCueFlow: 'manual' })
     await ready()
-    seek(128000)
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128 })
     await waitFor(() =>
       expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
     )
@@ -202,12 +206,24 @@ describe('CuesSection maximized', () => {
     await waitFor(() => expect(rekordboxCueWaveDetail).toHaveBeenCalledWith('103'))
   })
 
-  it('moves the playhead with a click on the overview instead of marking a drop', async () => {
-    setup()
+  it('moves the playhead with a click on the overview in Manual', async () => {
+    setup({ activeCueFlow: 'manual' })
     await maximize()
-    seek(100000)
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100 })
     expect(position()).toBe('1:40.0')
     expect(screen.queryByTestId('cue-wave-call-100000')).toBeNull()
+  })
+
+  it('places the flow with a click on the overview and moves the playhead with a drag', async () => {
+    setup()
+    await maximize()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    fireEvent.mouseUp(window, { clientX: 128 })
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128 })
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    expect(position()).toBe('0:00.0')
+    seek(100000)
+    expect(position()).toBe('1:40.0')
   })
 
   it('shows on the overview the part the zoomed wave shows, and follows the zoom', async () => {

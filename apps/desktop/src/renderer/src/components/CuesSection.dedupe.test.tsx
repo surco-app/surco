@@ -10,8 +10,8 @@ import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
 vi.mock('./CueWave', () => ({
-  CueWave: ({ onMarkDrop }: { onMarkDrop: (ms: number) => void }) => (
-    <button type="button" data-testid="add-same" onClick={() => onMarkDrop(128000)} />
+  CueWave: ({ onPlace }: { onPlace?: (ms: number) => void }) => (
+    <button type="button" data-testid="add-same" onClick={() => onPlace?.(128000)} />
   ),
 }))
 
