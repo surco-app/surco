@@ -85,6 +85,7 @@ export function CueWave({
   const [dragMs, setDragMs] = useState<number | null>(null)
   const [armed, setArmed] = useState(false)
   const [seeking, setSeeking] = useState(false)
+  const sought = useRef<number | null>(null)
   const [stripPx, setStripPx] = useState(0)
   const analysed = grid.length > 0
   const snapMs = quantizePoints(grid, quantize)
@@ -150,7 +151,12 @@ export function CueWave({
   }, [armed, msAtX])
   useEffect(() => {
     if (!seeking) return
-    const move = (e: MouseEvent) => latest.current.onSeek?.(seekAt(e.clientX))
+    const move = (e: MouseEvent) => {
+      const ms = seekAt(e.clientX)
+      if (ms === sought.current) return
+      sought.current = ms
+      latest.current.onSeek?.(ms)
+    }
     const up = () => setSeeking(false)
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
@@ -240,13 +246,15 @@ export function CueWave({
         if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
         setCursor(null)
         onHover?.(null)
-        onSeek(seekAt(e.clientX))
+        sought.current = seekAt(e.clientX)
+        onSeek(sought.current)
         setSeeking(true)
       }}
       onClick={(e) => {
         if (readOnly || swallowClick.current) return
         if (onSeek) {
-          onSeek(seekAt(e.clientX))
+          if (sought.current === null) onSeek(seekAt(e.clientX))
+          sought.current = null
           return
         }
         setCursor(null)

@@ -203,6 +203,18 @@ describe('CueWaveDetail', () => {
     expect(onScrub.mock.calls.every(([ms]) => ms % 500 === 0)).toBe(true)
   })
 
+  it('scrubs once per beat within one drag, so playing audio is not sent back to the same beat on every small move', () => {
+    const { onScrub } = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 400 })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    fireEvent.mouseMove(window, { clientX: 299.5 })
+    fireEvent.mouseMove(window, { clientX: 300.4 })
+    expect(onScrub.mock.calls).toEqual([[bar(32) + 8000]])
+    fireEvent.mouseMove(window, { clientX: 290 })
+    fireEvent.mouseUp(window, { clientX: 290 })
+    expect(onScrub.mock.calls).toEqual([[bar(32) + 8000], [bar(32) + 9000]])
+  })
+
   it('places on the bar under a click and still scrubs with a drag when a flow is chosen', () => {
     const onPlace = vi.fn<(ms: number) => void>()
     const { onScrub } = setup({ onPlace })

@@ -91,15 +91,17 @@ export function CueWaveDetail({
   useEffect(() => {
     if (!drag) return
     moved.current = false
+    let scrubbed: number | null = null
     const move = (e: MouseEvent) => {
       if (!moved.current && drag.pick !== null && Math.abs(e.clientX - drag.x0) <= DRAG_PX) return
       moved.current = true
-      latest.current.onScrub(
-        snapToBeat(
-          latest.current.beats,
-          drag.ms0 - ((e.clientX - drag.x0) / drag.width) * latest.current.span,
-        ),
+      const ms = snapToBeat(
+        latest.current.beats,
+        drag.ms0 - ((e.clientX - drag.x0) / drag.width) * latest.current.span,
       )
+      if (ms === scrubbed) return
+      scrubbed = ms
+      latest.current.onScrub(ms)
     }
     const up = () => {
       if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)

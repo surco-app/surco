@@ -296,7 +296,25 @@ describe('CueWave', () => {
     fireEvent.mouseMove(window, { clientX: 612 })
     fireEvent.mouseUp(window, { clientX: 612 })
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 403 })
-    expect(onSeek.mock.calls).toEqual([[40500], [61000], [40500]])
+    expect(onSeek.mock.calls).toEqual([[40500], [61000]])
+  })
+
+  it('seeks once per beat within one press, so playing audio is not sent back to the same beat on every small move or on the click that ends it', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ onSeek, playheadMs: 0 })
+    const strip = screen.getByTestId('cue-wave')
+    fireEvent.mouseDown(strip, { button: 0, clientX: 403 })
+    fireEvent.mouseMove(window, { clientX: 403.5 })
+    fireEvent.mouseMove(window, { clientX: 404 })
+    fireEvent.mouseMove(window, { clientX: 402.8 })
+    fireEvent.mouseUp(window, { clientX: 402.8 })
+    fireEvent.click(strip, { clientX: 402.8 })
+    expect(onSeek.mock.calls).toEqual([[40500]])
+    fireEvent.mouseDown(strip, { button: 0, clientX: 403 })
+    fireEvent.mouseMove(window, { clientX: 409 })
+    fireEvent.mouseUp(window, { clientX: 409 })
+    fireEvent.click(strip, { clientX: 409 })
+    expect(onSeek.mock.calls).toEqual([[40500], [40500], [41000]])
   })
 
   it('draws no playhead in the folded section', () => {
