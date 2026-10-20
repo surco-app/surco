@@ -83,10 +83,10 @@ describe('CueWaveDetail', () => {
       selected: 'b',
     })
     expect(screen.queryByTestId('cue-detail-hot-A')).toBeNull()
-    expect(screen.getByTestId('cue-detail-hot-B').style.left).toBe('75%')
+    expect(screen.getByTestId('cue-detail-hot-B').style.left).toContain('75%')
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveAttribute('data-selected', 'true')
-    expect(screen.getByTestId(`cue-detail-call-${bar(36)}`).style.left).toBe('75%')
-    expect(screen.getByTestId(`cue-detail-call-${bar(40)}`).style.left).toBe('100%')
+    expect(screen.getByTestId(`cue-detail-call-${bar(36)}`).style.left).toContain('75%')
+    expect(screen.getByTestId(`cue-detail-call-${bar(40)}`).style.left).toContain('100%')
   })
 
   it('keeps the cue marks in a lane above the zoomed wave so they never sit on the bars', () => {

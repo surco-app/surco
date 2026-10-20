@@ -37,10 +37,15 @@ describe('placeCues', () => {
 describe('markStyle', () => {
   it('centres every mark on its spot at the top, so a CALL sits at the height of its hot cue and is drawn behind it', () => {
     expect(markStyle(25)).toEqual({
-      left: '25%',
+      left: 'clamp(6px, 25%, calc(100% - 6px))',
       top: '0px',
       transform: 'translateX(-50%)',
     })
+  })
+
+  it('keeps a mark at the very start or end fully inside the strip, since half a square hides its letter', () => {
+    expect(markStyle(0).left).toBe('clamp(6px, 0%, calc(100% - 6px))')
+    expect(markStyle(100).left).toBe('clamp(6px, 100%, calc(100% - 6px))')
   })
 
   it('needs a lane of one row of marks, since CALLs no longer stack under the squares', () => {

@@ -60,9 +60,11 @@ export function placeCues(
   return { hot, calls }
 }
 
+const MARK_HALF_PX = 6
+
 export function markStyle(at: number): { left: string; top: string; transform: string } {
   return {
-    left: `${at}%`,
+    left: `clamp(${MARK_HALF_PX}px, ${at}%, calc(100% - ${MARK_HALF_PX}px))`,
     top: '0px',
     transform: 'translateX(-50%)',
   }

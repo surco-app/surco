@@ -48,7 +48,7 @@ describe('RowWave', () => {
     render(<RowWave request={request} cues={cues} durationSec={128} pending={false} active />)
     const hot = screen.getAllByTestId('track-hot-cue')
     expect(hot.map((h) => h.textContent)).toEqual(['A', 'B'])
-    expect(hot[1].style.left).toBe('50%')
+    expect(hot[1].style.left).toContain('50%')
     expect(hot[1].style.transform).toBe('translateX(-50%)')
     expect(screen.getAllByTestId('track-memory-cue')).toHaveLength(1)
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName('2 hot cues')

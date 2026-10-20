@@ -152,7 +152,7 @@ describe('CuesSection', () => {
     setup(READ, null, { activeCueFlow: 'one-at-32' })
     await ready()
     clickAt(bar(64))
-    expect(screen.getByTestId('cue-wave-hot-A').style.left).toBe(`${(bar(32) / 400000) * 100}%`)
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(`${(bar(32) / 400000) * 100}%`)
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
     expect(screen.queryByTestId(`cue-wave-call-${bar(32)}`)).toBeNull()
   })
@@ -388,7 +388,7 @@ describe('CuesSection', () => {
     chooseFlow('one-at-32')
     expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Mark where it drops')
     clickAt(bar(64))
-    expect(screen.getByTestId('cue-wave-hot-A').style.left).toBe(`${(bar(32) / 400000) * 100}%`)
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(`${(bar(32) / 400000) * 100}%`)
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
     expect(screen.getByTestId('cues-apply-flow')).toHaveTextContent('Apply One cue at 32')
   })
@@ -415,9 +415,11 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     clickAt(bar(160))
     expect(screen.queryByTestId('cues-manual')).toBeNull()
-    expect(screen.getAllByTestId(/^cue-wave-hot-/).map((el) => el.style.left)).toContain(
-      `${(bar(128) / 400000) * 100}%`,
-    )
+    expect(
+      screen
+        .getAllByTestId(/^cue-wave-hot-/)
+        .some((el) => el.style.left.includes(`${(bar(128) / 400000) * 100}%`)),
+    ).toBe(true)
   })
 
   it('shows Mi flujo in the flow list once the flow picked there is deleted in Settings', async () => {
@@ -463,7 +465,7 @@ describe('CuesSection', () => {
     fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-B'), { clientX: bar(32) / 1000 })
     fireEvent.mouseMove(window, { clientX: bar(36) / 1000 })
     fireEvent.mouseUp(window, { clientX: bar(36) / 1000 })
-    expect(screen.getByTestId('cue-wave-hot-B').style.left).toBe(`${(bar(36) / 400000) * 100}%`)
+    expect(screen.getByTestId('cue-wave-hot-B').style.left).toContain(`${(bar(36) / 400000) * 100}%`)
     expect(screen.getByTestId(`cue-wave-call-${bar(36)}`)).toBeInTheDocument()
   })
 
@@ -537,7 +539,7 @@ describe('CuesSection', () => {
     fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: bar(32) / 1000 })
     fireEvent.mouseMove(window, { clientX: bar(36) / 1000 })
     fireEvent.mouseUp(window, { clientX: bar(36) / 1000 })
-    expect(screen.getByTestId('cue-wave-hot-A').style.left).toBe(`${(bar(32) / 400000) * 100}%`)
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(`${(bar(32) / 400000) * 100}%`)
     fireEvent.click(screen.getByTestId('cue-wave-hot-A'))
     expect(screen.getByTestId('cues-loop')).toBeInTheDocument()
     expect(screen.queryByTestId('cues-delete')).toBeNull()
