@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { CueWaveDetail } from './CueWaveDetail'
 
@@ -56,15 +57,41 @@ describe('CueWaveDetail', () => {
     expect(screen.getByTestId('cue-detail-playhead').style.left).toBe('')
   })
 
-  it('draws a soft line per bar and a notch at the bottom only every 16 bars, with no loose beats', () => {
+  it('draws a visible line on every bar with a cap at each end, and no loose beats', () => {
     setup()
     const lines = screen.getAllByTestId('cue-detail-bar')
     expect(lines).toHaveLength(17)
-    const strong = lines.filter((l) => l.dataset.strong === 'true')
-    expect(strong).toHaveLength(1)
-    expect(within(strong[0]).getAllByTestId('cue-detail-notch')).toHaveLength(1)
-    expect(screen.getAllByTestId('cue-detail-notch')).toHaveLength(1)
+    for (const line of lines) {
+      expect(within(line).getAllByTestId('cue-detail-cap')).toHaveLength(2)
+      expect(line.className).toContain('bg-[var(--color-fg-dim)]/35')
+    }
     expect(screen.queryAllByTestId('cue-grid-cap')).toHaveLength(0)
+  })
+
+  it('paints the caps red on bars 1, 5, 9 and so on, counted from the grid and not from the window, and leaves the rest grey', () => {
+    setup({ playheadMs: bar(33) })
+    const lines = screen.getAllByTestId('cue-detail-bar')
+    const phrases = lines.filter((l) => l.dataset.phrase === 'true')
+    for (const line of lines) {
+      expect(line.dataset.phrase === 'true').toBe((Number(line.dataset.bar) - 1) % 4 === 0)
+    }
+    expect(phrases.length).toBeGreaterThan(0)
+    for (const line of lines) {
+      const phrase = line.dataset.phrase === 'true'
+      const [top, bottom] = within(line).getAllByTestId('cue-detail-cap')
+      if (phrase) {
+        expect(top.style.borderTopColor).not.toBe('')
+        expect(bottom.style.borderBottomColor).not.toBe('')
+      } else {
+        expect(top.style.borderTopColor).toBe('')
+        expect(bottom.style.borderBottomColor).toBe('')
+      }
+    }
+    const [top, bottom] = within(phrases[0]).getAllByTestId('cue-detail-cap')
+    const probe = document.createElement('i')
+    probe.style.borderTopColor = MEMORY_CUE_COLOR
+    expect(top.style.borderTopColor).toBe(probe.style.borderTopColor)
+    expect(bottom.style.borderBottomColor).toBe(probe.style.borderTopColor)
   })
 
   it('shows fewer bars once zoomed in', () => {

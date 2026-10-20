@@ -10,6 +10,20 @@ import type { WaveCue } from './CueWave'
 
 const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
 const WAVE_SPAN = 0.8
+const CAPS = [
+  {
+    position: 'top-0',
+    colour: 'borderTopColor',
+    grey: 'border-t-[var(--color-fg-dim)]',
+    shape: 'border-t-[3px]',
+  },
+  {
+    position: 'bottom-0',
+    colour: 'borderBottomColor',
+    grey: 'border-b-[var(--color-fg-dim)]',
+    shape: 'border-b-[3px]',
+  },
+] as const
 
 export function CueWaveDetail({
   source,
@@ -36,7 +50,10 @@ export function CueWaveDetail({
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const beats = useMemo(() => grid.map((b) => b.ms), [grid])
-  const lines = useMemo(() => barLines(grid), [grid])
+  const lines = useMemo(
+    () => barLines(grid).map((b, i) => ({ ms: b.ms, bar: i + 1, phrase: i % 4 === 0 })),
+    [grid],
+  )
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
   const latest = useRef({ span, onScrub, onZoom })
@@ -138,6 +155,30 @@ export function CueWaveDetail({
         style={{ cursor: onPick ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
         className="relative w-full shrink-0 select-none overflow-hidden"
       >
+        {lines
+          .filter((b) => b.ms >= fromMs && b.ms <= toMs)
+          .map((b) => (
+            <span
+              key={b.ms}
+              data-testid="cue-detail-bar"
+              data-bar={b.bar}
+              data-phrase={b.phrase ? 'true' : 'false'}
+              aria-hidden="true"
+              style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+              className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/35"
+            >
+              {CAPS.map((cap) => (
+                <span
+                  key={cap.position}
+                  data-testid="cue-detail-cap"
+                  style={b.phrase ? { [cap.colour]: MEMORY_CUE_COLOR } : undefined}
+                  className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[2.5px] border-x-transparent ${cap.position} ${
+                    b.phrase ? '' : cap.grey
+                  } ${cap.shape}`}
+                />
+              ))}
+            </span>
+          ))}
         <canvas
           ref={canvasRef}
           style={{
@@ -146,27 +187,6 @@ export function CueWaveDetail({
           }}
           className="absolute inset-x-0 w-full"
         />
-        {lines
-          .filter((b) => b.ms >= fromMs && b.ms <= toMs)
-          .map((b) => (
-            <span
-              key={b.ms}
-              data-testid="cue-detail-bar"
-              data-strong={b.strong ? 'true' : 'false'}
-              aria-hidden="true"
-              style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-              className={`absolute bottom-0 w-px ${
-                b.strong ? 'bg-[var(--color-fg-dim)]/60' : 'bg-[var(--color-fg)]/10'
-              }`}
-            >
-              {b.strong && (
-                <span
-                  data-testid="cue-detail-notch"
-                  className="absolute bottom-0 left-1/2 h-[3px] w-[5px] -translate-x-1/2 bg-[var(--color-fg-dim)]"
-                />
-              )}
-            </span>
-          ))}
         {calls.map((c) => (
           <span
             key={`c${c.key}`}
