@@ -65,6 +65,7 @@ export function CueWaveDetail({
   onDeleteMark,
   onHover,
   ghost,
+  points,
   movable,
   onMoveMark,
   onMarkDrag,
@@ -84,6 +85,7 @@ export function CueWaveDetail({
   onDeleteMark?: (key: string) => void
   onHover?: (ms: number | null) => void
   ghost?: CueGhost
+  points: number[]
   movable?: string[]
   onMoveMark?: (key: string, ms: number) => void
   onMarkDrag?: (dragging: boolean) => void
@@ -251,7 +253,7 @@ export function CueWaveDetail({
     span,
   )
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
-  const toCall = barsToNextCall(beats, cues, playheadMs)
+  const toCall = barsToNextCall(beats, points, playheadMs)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
   const gone = new Set(ghost?.gone ?? [])
   const ghostMarks = ghost

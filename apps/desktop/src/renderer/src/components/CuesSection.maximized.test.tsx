@@ -1309,6 +1309,34 @@ describe('CuesSection maximized point corrections', () => {
     expect(marks()).toEqual(before)
   })
 
+  it('counts to the point and lets only the point be dragged, not the countdown CALLs its flow generated', async () => {
+    const calls: CueFlow = {
+      id: 'calls16',
+      name: 'CALLs',
+      markPoint: true,
+      rules: [
+        {
+          from: 'drop',
+          direction: 'back',
+          bars: 16,
+          repeat: 2,
+          when: 'always',
+          place: 'call',
+          color: { fixed: 1 },
+        },
+      ],
+    }
+    setup({ cueFlows: [...KEPT, calls], activeCueFlow: 'calls16' })
+    await maximize()
+    seek(128000)
+    placeAtPlayhead()
+    seek(80000)
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('24 bars to the CALL')
+    expect(screen.getByTestId('cue-detail-call-96000').style.cursor).not.toBe('ew-resize')
+    seek(120000)
+    expect(screen.getByTestId('cue-detail-call-128000').style.cursor).toBe('ew-resize')
+  })
+
   it('hides the placing hint and the flow ghost while a point’s CALL is dragged, and brings the hint back after', async () => {
     setup()
     await maximize()

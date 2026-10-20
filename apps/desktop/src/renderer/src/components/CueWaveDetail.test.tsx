@@ -32,6 +32,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueWaveDetail>> = {}) {
     source: null,
     grid: GRID,
     cues: [],
+    points: [],
     selected: null,
     playheadMs: bar(32),
     bars: 16,
@@ -158,7 +159,7 @@ describe('CueWaveDetail', () => {
   })
 
   it('shows the playhead time left of the centre and the bars to the CALL right of it, in a row above the wave so nothing sits on it', () => {
-    setup({ cues: [{ key: 'd', ms: bar(48), kind: 0, color: null, pending: false }] })
+    setup({ points: [bar(48)] })
     expect(screen.getByTestId('cues-position')).toHaveTextContent('1:04.0')
     expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('16 bars to the CALL')
     expect(screen.getByTestId('cue-detail')).not.toContainElement(
@@ -170,16 +171,14 @@ describe('CueWaveDetail', () => {
   })
 
   it('says one bar in the singular and keeps half a bar when the CALL sits off the bar', () => {
-    const { rerender } = setup({
-      cues: [{ key: 'd', ms: bar(33), kind: 0, color: null, pending: false }],
-    })
+    const { rerender } = setup({ points: [bar(33)] })
     expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('1 bar to the CALL')
-    rerender({ cues: [{ key: 'd', ms: bar(40) + 1000, kind: 0, color: null, pending: false }] })
+    rerender({ points: [bar(40) + 1000] })
     expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('8.5 bars to the CALL')
   })
 
   it('says nothing about a CALL when none lies ahead', () => {
-    setup({ cues: [{ key: 'd', ms: bar(8), kind: 0, color: null, pending: false }] })
+    setup({ points: [bar(8)] })
     expect(screen.queryByTestId('cue-detail-to-call')).toBeNull()
   })
 

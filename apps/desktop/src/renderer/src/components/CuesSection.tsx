@@ -29,6 +29,7 @@ import {
   type DraftAction,
   type DraftCue,
   type DraftGhost,
+  draftPoints,
   ghostOf,
   reduceDraft,
   startDraft,
@@ -493,12 +494,13 @@ function Editing({
   useEffect(() => {
     if (maximized) editorRef.current?.focus()
   }, [maximized])
+  const pointMs = draftPoints(state, ctx)
   const points = state.cues
     .filter(
       (c) =>
         c.kind === 0 &&
         !state.locked.includes(c.key) &&
-        !state.cues.some((h) => h.kind !== 0 && Math.abs(h.ms - c.ms) <= SAME_POSITION_MS),
+        pointMs.some((p) => Math.abs(p - c.ms) <= SAME_POSITION_MS),
     )
     .map((c) => c.key)
   const waveCues = state.cues.map((c) => ({
@@ -696,6 +698,7 @@ function Editing({
           ghost={ghost}
           onMarkMenu={openMarkMenu}
           onDeleteMark={(key) => dispatch(removeOf(key))}
+          points={pointMs}
           movable={points}
           onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
           onMarkDrag={setPointDrag}

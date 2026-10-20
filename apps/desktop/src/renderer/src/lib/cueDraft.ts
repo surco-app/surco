@@ -97,6 +97,15 @@ export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {
   )
 }
 
+export function draftPoints(state: CueDraft, ctx: DraftContext): number[] {
+  return flowDrops(flowById(ctx, state.generatedBy), {
+    beats: ctx.beats,
+    strong: ctx.strong,
+    phrases: ctx.phrases,
+    drops: draftDrops(state.cues, state.locked),
+  })
+}
+
 export function freeLetters(cues: WantedCue[], current?: number): number[] {
   return HOT_KINDS.filter((k) => k === current || !cues.some((c) => c.kind === k))
 }

@@ -76,9 +76,9 @@ describe('CALL navigation', () => {
 })
 
 describe('barsToNextCall', () => {
-  it('counts bars of the grid to the next CALL, as rekordbox shows above the playhead', () => {
-    expect(barsToNextCall(beats, [{ ms: bar(48), kind: 0 }], bar(32))).toBe(16)
-    expect(barsToNextCall(beats, [{ ms: bar(48), kind: 0 }], bar(32) - 1000)).toBe(16.5)
+  it('counts bars of the grid to the next point, as rekordbox shows above the playhead', () => {
+    expect(barsToNextCall(beats, [bar(48)], bar(32))).toBe(16)
+    expect(barsToNextCall(beats, [bar(48)], bar(32) - 1000)).toBe(16.5)
   })
 
   it('counts beats of the grid across a tempo change, so the bars match the music', () => {
@@ -86,26 +86,19 @@ describe('barsToNextCall', () => {
       ...Array.from({ length: 16 }, (_, i) => i * 500),
       ...Array.from({ length: 16 }, (_, i) => 8000 + i * 400),
     ]
-    expect(barsToNextCall(changing, [{ ms: 8000 + 8 * 400, kind: 0 }], 4000)).toBe(4)
-    expect(barsToNextCall(changing, [{ ms: 8000 + 4 * 400, kind: 0 }], 8000 + 200)).toBe(0.875)
+    expect(barsToNextCall(changing, [8000 + 8 * 400], 4000)).toBe(4)
+    expect(barsToNextCall(changing, [8000 + 4 * 400], 8000 + 200)).toBe(0.875)
   })
 
-  it('counts to the next point, skipping the CALL under a hot cue and a loop, so over a hot cue it reads the bars to the drop', () => {
-    const marked = [
-      { ms: bar(48), kind: 1 },
-      { ms: bar(48), kind: 0 },
-      { ms: bar(56), kind: 0, locked: true },
-      { ms: bar(64), kind: 0 },
-    ]
-    expect(barsToNextCall(beats, marked, bar(48))).toBe(16)
-    expect(barsToNextCall(beats, marked, bar(32))).toBe(32)
+  it('counts to the nearest point ahead among several', () => {
+    expect(barsToNextCall(beats, [bar(128), bar(64)], bar(48))).toBe(16)
   })
 
-  it('reads 0 on the CALL itself and nothing with no CALL ahead or no grid', () => {
-    expect(barsToNextCall(beats, [{ ms: bar(48), kind: 0 }], bar(48) - 20)).toBe(0)
-    expect(barsToNextCall(beats, [{ ms: bar(48), kind: 1 }], bar(32))).toBeNull()
-    expect(barsToNextCall(beats, [{ ms: bar(8), kind: 0 }], bar(32))).toBeNull()
-    expect(barsToNextCall([], [{ ms: bar(48), kind: 0 }], bar(32))).toBeNull()
+  it('reads 0 on the point itself and nothing with no point ahead or no grid', () => {
+    expect(barsToNextCall(beats, [bar(48)], bar(48) - 20)).toBe(0)
+    expect(barsToNextCall(beats, [], bar(32))).toBeNull()
+    expect(barsToNextCall(beats, [bar(8)], bar(32))).toBeNull()
+    expect(barsToNextCall([], [bar(48)], bar(32))).toBeNull()
   })
 })
 

@@ -6,6 +6,7 @@ import {
   type DraftAction,
   type DraftCue,
   draftDrops,
+  draftPoints,
   freeLetters,
   ghostOf,
   reduceDraft,
@@ -930,5 +931,31 @@ describe('a point move that cannot land', () => {
     expect(moved.cues).toEqual(s.cues)
     expect(moved.notice).toBe('too-many')
     expect(moved.past).toHaveLength(s.past.length)
+  })
+})
+
+describe('draftPoints', () => {
+  const calls: CueFlow = {
+    id: 'calls16',
+    name: '',
+    markPoint: true,
+    rules: [
+      {
+        from: 'drop',
+        direction: 'back',
+        bars: 16,
+        repeat: 2,
+        when: 'always',
+        place: 'call',
+        color: { fixed: 1 },
+      },
+    ],
+  }
+  const withCalls = { ...ctx, flows: [...KEPT, calls] }
+
+  it('names as points only the CALLs the flow keeps as points, not the countdown CALLs it generates', () => {
+    const s = reduceDraft(startDraft([], 'calls16'), { type: 'mark-drop', ms: bar(64) }, withCalls)
+    expect(draftDrops(s.cues, s.locked)).toEqual([bar(32), bar(48), bar(64)])
+    expect(draftPoints(s, withCalls)).toEqual([bar(64)])
   })
 })

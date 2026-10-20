@@ -44,17 +44,9 @@ function beatPosition(beats: number[], ms: number): number {
   return i + (ms - beats[i]) / (beats[i + 1] - beats[i])
 }
 
-export function barsToNextCall(
-  beats: number[],
-  cues: { ms: number; kind: number; locked?: boolean }[],
-  ms: number,
-): number | null {
+export function barsToNextCall(beats: number[], points: number[], ms: number): number | null {
   if (beats.length === 0) return null
-  const point = (c: { ms: number; kind: number; locked?: boolean }): boolean =>
-    c.kind === 0 &&
-    !c.locked &&
-    !cues.some((h) => h.kind !== 0 && Math.abs(h.ms - c.ms) <= SAME_POSITION_MS)
-  const ahead = cues.filter((c) => point(c) && c.ms >= ms - SAME_POSITION_MS).map((c) => c.ms)
+  const ahead = points.filter((p) => p >= ms - SAME_POSITION_MS)
   if (ahead.length === 0) return null
   const next = Math.min(...ahead)
   if (Math.abs(next - ms) <= SAME_POSITION_MS) return 0
