@@ -18,6 +18,15 @@ Boceto aprobado: https://claude.ai/artifact/47sZMkqEzPxz1f296Da2cg
 6. Sigue igual: borrar (✕ al pasar, clic derecho, "‹ + CALL › ✕", ⌫/Supr), Quantize, Guardar, Descartar, cola de rekordbox, copia, huella, `validWantedSet`.
 7. Después, en otra tarea: las propuestas de la detección automática saldrán como fantasmas fijos sobre la onda con el resultado del flujo; clic acepta.
 
+## Genérico, no solo "donde rompe"
+
+Vicent, 20/10: "hay que ser genéricos, no todos los DJs pinchan igual. Y hay usuarios que no marcan donde rompe."
+
+8. En la interfaz no se habla de "donde rompe": el cursor marca un **punto** y el flujo decide qué pone respecto a él. "Donde rompe" es solo cómo lo usa Vicent.
+9. Marcar el punto con un CALL es una opción del flujo ("Marcar el punto con un CALL", sí por defecto en Mi flujo). Un flujo sin esa opción coloca solo lo que generan sus reglas, sin CALL en el punto.
+10. Un flujo cuyas reglas no dependen del punto (por ejemplo, solo "desde el primer golpe" o "desde cada frase de rekordbox") no sigue al cursor: muestra en fantasma el resultado completo en cuanto se elige, con "Aplicar a esta pista". Un flujo que mezcla reglas con y sin punto sigue al cursor y el fantasma incluye también las que no dependen de él.
+11. Al colocar un flujo cuyo punto no queda marcado con un CALL, la colocación es de una vez: Surco no podrá recalcularla después desde ese punto, igual que si se hubiera puesto a mano.
+
 ## Fuera de alcance
 
 - La detección automática (se hace después sobre este mismo mecanismo).
