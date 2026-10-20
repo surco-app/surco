@@ -1361,6 +1361,7 @@
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
       "cues": "Cues",
+      "cuesOnly": "Nur in rekordbox",
       "output": "Dateiname",
       "trim": "Stille kürzen",
       "declick": "Vinyl-Klick-Reparatur",

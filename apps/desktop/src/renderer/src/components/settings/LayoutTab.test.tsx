@@ -85,6 +85,15 @@ function renderTab(over: Partial<SyncedDraft> = {}): ReturnType<typeof vi.fn> {
 // The editor's sections are the user's to arrange: which start open, and in what
 // order they stack below the metadata form. One list in Settings → Editor rules both.
 describe('LayoutTab sections', () => {
+  it('notes quietly on the Cues row that it only shows in rekordbox, and on no other row', () => {
+    renderTab()
+    const note = screen.getByTestId('settings-section-note-cues')
+    expect(note).toHaveTextContent('rekordbox only')
+    expect(screen.getByTestId('settings-section-row-cues')).toContainElement(note)
+    expect(note.className).toContain('text-fg-faint')
+    expect(screen.getAllByTestId(/^settings-section-note-/)).toHaveLength(1)
+  })
+
   it('lists every section in its configured order', () => {
     renderTab()
     const rows = screen.getAllByTestId(/^settings-section-row-/)

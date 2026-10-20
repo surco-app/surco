@@ -145,6 +145,14 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                 <span className={`truncate ${section.hidden ? 'text-fg-dim line-through' : ''}`}>
                   {tr(`settings.sections.${section.id}`)}
                 </span>
+                {section.id === 'cues' && (
+                  <span
+                    data-testid="settings-section-note-cues"
+                    className="shrink-0 truncate text-xs text-fg-faint"
+                  >
+                    {tr('settings.sections.cuesOnly')}
+                  </span>
+                )}
               </span>
               {/* Hidden removes the section from the editor entirely; the form has no
                     toggle — it IS the editor. The open pill goes quiet meanwhile: a fold

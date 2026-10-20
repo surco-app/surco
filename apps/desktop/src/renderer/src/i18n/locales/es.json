@@ -1361,6 +1361,7 @@
       "properties": "Propiedades",
       "quality": "Calidad de audio",
       "cues": "Cues",
+      "cuesOnly": "Solo en rekordbox",
       "output": "Nombre del archivo",
       "trim": "Recorte de silencio",
       "declick": "Reparación de clicks de vinilo",

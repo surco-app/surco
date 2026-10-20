@@ -1361,6 +1361,7 @@
       "properties": "Properties",
       "quality": "Audio quality",
       "cues": "Cues",
+      "cuesOnly": "rekordbox only",
       "output": "File name",
       "trim": "Silence trim",
       "declick": "Vinyl click repair",
