@@ -3,9 +3,12 @@ import type React from 'react'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MY_FLOW_ID } from '../../../shared/cueFlows'
+import type { CueJumpBars } from '../../../shared/cueJump'
 import { MAX_HOT_CUES } from '../../../shared/cueRules'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
-import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
+import { useMaximizedSection } from '../hooks/useEditorSections'
+import { useCueWaveDetail, useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
+import type { DetailSource } from '../lib/cueDetail'
 import {
   type CueDraft,
   type DraftAction,
@@ -16,11 +19,14 @@ import {
   wantedOfDraft,
 } from '../lib/cueDraft'
 import { flowName } from '../lib/cueFlowName'
-import { forgetDraft, keepDraft, keptDraft } from '../lib/cueSession'
+import { adjacentCall, callAt, cueClock, DEFAULT_ZOOM_BARS, zoomStep } from '../lib/cuePlayhead'
+import { forgetDraft, keepDraft, keepPlayhead, keptDraft, keptPlayhead } from '../lib/cueSession'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
+import { CueDeck } from './CueDeck'
 import { CuePalette } from './CuePalette'
 import { CueWave } from './CueWave'
+import { CueWaveDetail } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 
@@ -28,6 +34,14 @@ interface CueTarget {
   contentId: string
   path: string
   label: string
+}
+
+export interface CueTrackInfo {
+  title: string
+  artist: string
+  bpm: string
+  key: string
+  cover?: string
 }
 
 const MENU_ITEM =
@@ -38,12 +52,22 @@ function Editing({
   queued,
   cue,
   draftKey,
+  maximized,
+  track,
+  playheadMs,
+  onPlayhead,
+  onJumpBars,
   onDiscard,
 }: {
   read: TrackCues
   queued: QueuedCues | null
   cue: CueTarget
   draftKey: string
+  maximized: boolean
+  track?: CueTrackInfo
+  playheadMs: number
+  onPlayhead: (ms: number) => void
+  onJumpBars?: (bars: CueJumpBars) => void
   onDiscard: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -100,7 +124,9 @@ function Editing({
   useEffect(() => {
     if (menu === null) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenu(null)
+      if (e.key !== 'Escape') return
+      if (maximized) e.stopPropagation()
+      setMenu(null)
     }
     const onDown = (e: MouseEvent) => {
       if (!menuRef.current?.contains(e.target as Node)) setMenu(null)
@@ -111,7 +137,37 @@ function Editing({
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('mousedown', onDown)
     }
-  }, [menu])
+  }, [menu, maximized])
+  const fromMenu = (action: DraftAction) => {
+    dispatch(action)
+    setMenu(null)
+  }
+  const letters = selected ? freeLetters(state.cues, selected.kind) : []
+  const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
+  const { data: words } = useCueWaveDetail(cue.contentId, maximized)
+  const source: DetailSource | null = words
+    ? { words }
+    : read.wave
+      ? { wave: read.wave, durationMs: read.durationMs }
+      : null
+  const seekTo = (ms: number) => onPlayhead(Math.min(Math.max(ms, 0), read.durationMs))
+  const pad = (kind: number) => {
+    const existing = state.cues.find((c) => c.kind === kind)
+    if (!existing) {
+      dispatch({ type: 'add-hot', ms: playheadMs, kind })
+      return
+    }
+    dispatch({ type: 'select', key: existing.key })
+    seekTo(existing.ms)
+  }
+  const memoryStep = (dir: 1 | -1) => {
+    const to = adjacentCall(state.cues, playheadMs, dir)
+    if (to !== null) seekTo(to)
+  }
+  const memoryRemove = () => {
+    const call = callAt(state.cues, playheadMs)
+    if (call) dispatch({ type: 'remove', key: call.key })
+  }
   const onKey = (e: React.KeyboardEvent) => {
     if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
       e.preventDefault()
@@ -121,27 +177,55 @@ function Editing({
       dispatch({ type: 'undo' })
     }
   }
-  const fromMenu = (action: DraftAction) => {
-    dispatch(action)
-    setMenu(null)
-  }
-  const letters = selected ? freeLetters(state.cues, selected.kind) : []
+  const waveCues = state.cues.map((c) => ({
+    ...c,
+    pending: pending(c),
+    locked: state.locked.includes(c.key),
+  }))
   return (
     <fieldset
       data-testid="cues-editor"
+      data-maximized={maximized ? 'true' : 'false'}
       aria-label={tr('editor.cues.title')}
-      className="relative m-0 min-w-0 border-0 p-0"
+      className={`relative m-0 min-w-0 border-0 p-0 ${maximized ? 'flex flex-col gap-3' : ''}`}
       onKeyDown={onKey}
     >
+      {maximized && (
+        <div
+          data-testid="cues-header"
+          className="flex items-center gap-4 border-b border-[var(--color-line)] pb-3"
+        >
+          {track?.cover ? (
+            <img src={track.cover} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+          ) : (
+            <div
+              aria-hidden="true"
+              className="h-10 w-10 shrink-0 rounded-md bg-[var(--color-panel-2)]"
+            />
+          )}
+          <div className="min-w-0">
+            <div className="truncate text-[15px] font-semibold text-fg">
+              {track?.title || cue.label}
+            </div>
+            <div className="truncate text-xs text-fg-dim">{track?.artist}</div>
+          </div>
+          <div className="ml-auto flex shrink-0 gap-4 font-mono text-[13px] tabular-nums text-fg-dim">
+            <span data-testid="cues-position" className="text-fg">
+              {cueClock(playheadMs)}
+            </span>
+            <span data-testid="cues-remaining">{`-${cueClock(read.durationMs - playheadMs)}`}</span>
+            {track?.bpm && (
+              <span data-testid="cues-bpm">{tr('editor.cues.bpm', { bpm: track.bpm })}</span>
+            )}
+            {track?.key && <span data-testid="cues-key">{track.key}</span>}
+          </div>
+        </div>
+      )}
       <CueWave
         wave={read.wave}
         grid={read.grid}
         durationMs={read.durationMs}
-        cues={state.cues.map((c) => ({
-          ...c,
-          pending: pending(c),
-          locked: state.locked.includes(c.key),
-        }))}
+        cues={waveCues}
         selected={state.selected}
         trimmed={state.trimmed}
         onMarkDrop={(ms) => dispatch({ type: 'mark-drop', ms })}
@@ -149,7 +233,21 @@ function Editing({
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={setMenu}
+        playheadMs={maximized ? playheadMs : undefined}
+        onSeek={maximized ? seekTo : undefined}
       />
+      {maximized && (
+        <CueWaveDetail
+          source={source}
+          grid={read.grid}
+          cues={waveCues}
+          selected={state.selected}
+          playheadMs={playheadMs}
+          bars={zoom}
+          onScrub={seekTo}
+          onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+        />
+      )}
       {menu !== null && (
         <div
           ref={menuRef}
@@ -261,6 +359,18 @@ function Editing({
           {tr('editor.cues.trimmed', { count: state.trimmed.length })}
         </p>
       )}
+      {maximized && (
+        <CueDeck
+          cues={state.cues}
+          selected={state.selected}
+          jumpBars={settings.cueJumpBars}
+          onPad={pad}
+          onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
+          onMemoryStep={memoryStep}
+          onMemoryRemove={memoryRemove}
+          onJumpBars={(bars) => onJumpBars?.(bars)}
+        />
+      )}
       <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
         <select
           data-testid="cues-flow"
@@ -322,21 +432,37 @@ export function CuesSection({
   cue,
   open,
   onToggle,
+  track,
+  onJumpBars,
 }: {
   cue: CueTarget
   open: boolean
   onToggle: () => void
+  track?: CueTrackInfo
+  onJumpBars?: (bars: CueJumpBars) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
+  const { maximized: whole } = useMaximizedSection()
+  const maximized = open && whole === 'cues'
   const [round, setRound] = useState(0)
   const draftKey = `${cue.contentId}|${read?.fingerprint ?? ''}|${JSON.stringify(queued)}`
+  const [head, setHead] = useState(() => ({
+    contentId: cue.contentId,
+    ms: keptPlayhead(cue.contentId),
+  }))
+  const playheadMs = head.contentId === cue.contentId ? head.ms : 0
+  const moveHead = (ms: number) => {
+    setHead({ contentId: cue.contentId, ms })
+    keepPlayhead(cue.contentId, ms)
+  }
   return (
     <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
         sectionId="cues"
+        maximizable
         title={tr('editor.cues.title')}
         open={open}
         onToggle={onToggle}
@@ -360,6 +486,11 @@ export function CuesSection({
               queued={queued}
               cue={cue}
               draftKey={draftKey}
+              maximized={maximized}
+              track={track}
+              playheadMs={playheadMs}
+              onPlayhead={moveHead}
+              onJumpBars={onJumpBars}
               onDiscard={() => {
                 forgetDraft()
                 setRound((n) => n + 1)

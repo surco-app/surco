@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
@@ -34,6 +34,8 @@ export function CueWave({
   onMove,
   onMenu,
   onAcceptProposal,
+  playheadMs,
+  onSeek,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -49,6 +51,8 @@ export function CueWave({
   onMove?: (key: string, ms: number) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
   onAcceptProposal?: (ms: number) => void
+  playheadMs?: number
+  onSeek?: (ms: number) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -97,6 +101,46 @@ export function CueWave({
       window.removeEventListener('mouseup', up)
     }
   }, [armed, msAtX])
+  const waveSvg = useMemo(
+    () =>
+      wave && (
+        <svg
+          viewBox={`0 0 ${wave.length} 100`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full"
+        >
+          {wave.map((c, i) => (
+            <rect
+              // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
+              key={i}
+              x={i}
+              width={1}
+              y={50 - c.h * 50}
+              height={Math.max(c.h * 100, 0.5)}
+              fill={c.rgb ? `rgb(${c.rgb.join(',')})` : 'var(--color-fg-faint)'}
+            />
+          ))}
+        </svg>
+      ),
+    [wave],
+  )
+  const bars = useMemo(
+    () =>
+      barLines(grid).map((b) => (
+        <span
+          key={b.ms}
+          data-testid="cue-wave-bar"
+          data-strong={b.strong ? 'true' : 'false'}
+          aria-hidden="true"
+          style={{ left: `${(b.ms / Math.max(durationMs, 1)) * 100}%` }}
+          className={`absolute top-0 bottom-0 w-px ${
+            b.strong ? 'bg-[var(--color-fg)]/40' : 'bg-[var(--color-fg)]/10'
+          }`}
+        />
+      )),
+    [grid, durationMs],
+  )
   if (grid.length === 0) {
     return (
       <div
@@ -152,6 +196,10 @@ export function CueWave({
       tabIndex={readOnly ? -1 : 0}
       onClick={(e) => {
         if (readOnly || swallowClick.current) return
+        if (onSeek) {
+          onSeek(msAtX(e.clientX))
+          return
+        }
         setGhost(null)
         onSelect?.(null)
         const action = at(e)
@@ -173,7 +221,7 @@ export function CueWave({
         })
       }}
       onMouseMove={(e) => {
-        if (readOnly) return
+        if (readOnly || onSeek) return
         const action = at(e)
         setGhost(action.kind === 'add' ? action.ms : null)
       }}
@@ -182,38 +230,8 @@ export function CueWave({
         readOnly ? 'cursor-default' : 'cursor-crosshair'
       }`}
     >
-      {wave && (
-        <svg
-          viewBox={`0 0 ${wave.length} 100`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full"
-        >
-          {wave.map((c, i) => (
-            <rect
-              // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
-              key={i}
-              x={i}
-              width={1}
-              y={50 - c.h * 50}
-              height={Math.max(c.h * 100, 0.5)}
-              fill={c.rgb ? `rgb(${c.rgb.join(',')})` : 'var(--color-fg-faint)'}
-            />
-          ))}
-        </svg>
-      )}
-      {barLines(grid).map((b) => (
-        <span
-          key={b.ms}
-          data-testid="cue-wave-bar"
-          data-strong={b.strong ? 'true' : 'false'}
-          aria-hidden="true"
-          style={{ left: pct(b.ms) }}
-          className={`absolute top-0 bottom-0 w-px ${
-            b.strong ? 'bg-[var(--color-fg)]/40' : 'bg-[var(--color-fg)]/10'
-          }`}
-        />
-      ))}
+      {waveSvg}
+      {bars}
       {drops.map((d) => {
         const label = labels.get(d.ms)
         const position = cuePosition(d.ms, grid)
@@ -324,6 +342,14 @@ export function CueWave({
           </button>
         )
       })}
+      {playheadMs !== undefined && (
+        <span
+          data-testid="cue-wave-playhead"
+          aria-hidden="true"
+          style={{ left: pct(playheadMs), backgroundColor: MEMORY_CUE_COLOR }}
+          className="pointer-events-none absolute top-0 bottom-0 w-0.5"
+        />
+      )}
       {dragMs !== null && (
         <span
           data-testid="cue-wave-drag-ghost"

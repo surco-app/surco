@@ -799,7 +799,8 @@
       "jumpLess": "Sauter moins de mesures",
       "jumpMore": "Sauter plus de mesures",
       "jumpBars_one": "{{count}} mesure",
-      "jumpBars_other": "{{count}} mesures"
+      "jumpBars_other": "{{count}} mesures",
+      "bpm": "{{bpm}} BPM"
     }
   },
   "fields": {

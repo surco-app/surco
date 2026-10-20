@@ -307,7 +307,40 @@ describe('Editor cues section', () => {
     Object.assign((window as unknown as { api: object }).api, {
       rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
       rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>().mockResolvedValue(null),
+      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>().mockResolvedValue(null),
     })
+  })
+
+  it('maximizes into the full cue editor with the track title, artist, BPM and key', async () => {
+    const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+    Object.assign((window as unknown as { api: object }).api, {
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
+        contentId: '103',
+        analysed: true,
+        grid,
+        strong: [],
+        phrases: [],
+        cues: [],
+        wave: null,
+        durationMs: 400000,
+        fingerprint: 'f0',
+      }),
+    })
+    renderEditor(
+      { id: 'a', meta: { title: 'Pray', artist: 'Gowan', bpm: '120', key: '6A' } },
+      'wav',
+      {
+        rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+      },
+    )
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    fireEvent.click(within(screen.getByTestId('cues-section')).getByTestId('section-maximize'))
+    const header = await screen.findByTestId('cues-header')
+    expect(header).toHaveTextContent('Pray')
+    expect(header).toHaveTextContent('Gowan')
+    expect(header).toHaveTextContent('120 BPM')
+    expect(header).toHaveTextContent('6A')
+    expect(screen.getByTestId('section-maximized-overlay')).toContainElement(header)
   })
 
   it('is absent for a track that is not in an open rekordbox playlist', () => {

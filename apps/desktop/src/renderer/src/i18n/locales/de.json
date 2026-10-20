@@ -799,7 +799,8 @@
       "jumpLess": "Weniger Takte springen",
       "jumpMore": "Mehr Takte springen",
       "jumpBars_one": "{{count}} Takt",
-      "jumpBars_other": "{{count}} Takte"
+      "jumpBars_other": "{{count}} Takte",
+      "bpm": "{{bpm}} BPM"
     }
   },
   "fields": {

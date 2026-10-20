@@ -799,7 +799,8 @@
       "jumpLess": "Jump fewer bars",
       "jumpMore": "Jump more bars",
       "jumpBars_one": "{{count}} bar",
-      "jumpBars_other": "{{count}} bars"
+      "jumpBars_other": "{{count}} bars",
+      "bpm": "{{bpm}} BPM"
     }
   },
   "fields": {

@@ -28,3 +28,16 @@ export function useQueuedCues(contentId: string): { data: QueuedCues | null | un
   })
   return { data }
 }
+
+export function useCueWaveDetail(
+  contentId: string,
+  enabled: boolean,
+): { data: Uint16Array | null | undefined } {
+  const { data } = useQuery({
+    queryKey: ['rekordbox-cue-wave-detail', contentId],
+    queryFn: () => window.api.rekordboxCueWaveDetail(contentId),
+    enabled,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return { data }
+}

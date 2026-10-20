@@ -799,7 +799,8 @@
       "jumpLess": "Saltar menos compases",
       "jumpMore": "Saltar más compases",
       "jumpBars_one": "{{count}} compás",
-      "jumpBars_other": "{{count}} compases"
+      "jumpBars_other": "{{count}} compases",
+      "bpm": "{{bpm}} BPM"
     }
   },
   "fields": {

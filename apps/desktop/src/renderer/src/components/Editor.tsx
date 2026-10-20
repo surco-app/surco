@@ -15,6 +15,7 @@ import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
+import type { CueJumpBars } from '../../../shared/cueJump'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
@@ -205,6 +206,7 @@ interface Props {
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
   rekordboxCue?: { contentId: string; path: string; label: string }
+  onCueJumpBars?: (bars: CueJumpBars) => void
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
@@ -271,6 +273,7 @@ export const Editor = memo(function Editor({
   onResultsFit,
   onShowLoudnessHelp,
   rekordboxCue,
+  onCueJumpBars,
   onHideEditorHints,
   onOpenRename,
   onRegenerateName,
@@ -1462,6 +1465,14 @@ export const Editor = memo(function Editor({
                           cue={rekordboxCue}
                           open={sectionOpen.cues}
                           onToggle={() => setSectionOpen('cues', !sectionOpen.cues)}
+                          track={{
+                            title: item.meta.title || item.listLabel,
+                            artist: item.meta.artist,
+                            bpm: item.meta.bpm,
+                            key: item.meta.key,
+                            cover: item.coverUrl ?? item.embeddedCover,
+                          }}
+                          onJumpBars={onCueJumpBars}
                         />
                       )
                     case 'properties':

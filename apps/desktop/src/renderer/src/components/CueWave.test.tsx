@@ -263,4 +263,22 @@ describe('CueWave', () => {
     rerender(<CueWave {...props} />)
     expect(screen.queryByTestId('cue-wave-ghost')).not.toBeInTheDocument()
   })
+
+  it('moves the playhead instead of marking a drop when the full editor seeks with it', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    const handlers = setup({ onSeek, playheadMs: 20000 })
+    expect(screen.getByTestId('cue-wave-playhead').style.left).toBe('25%')
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400 })
+    expect(onSeek).toHaveBeenCalledWith(40000)
+    expect(handlers.onMarkDrop).not.toHaveBeenCalled()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 200 })
+    expect(screen.queryByTestId('cue-wave-ghost')).toBeNull()
+  })
+
+  it('draws no playhead and keeps marking drops in the folded section', () => {
+    const handlers = setup()
+    expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 200 })
+    expect(handlers.onMarkDrop).toHaveBeenCalled()
+  })
 })
