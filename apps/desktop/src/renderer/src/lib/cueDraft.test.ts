@@ -204,6 +204,36 @@ describe('reduceDraft', () => {
     expect(s.cues.map((c) => c.kind).sort()).toEqual([1, 2, 5, 9])
   })
 
+  it('keeps a hot cue the DJ placed by letter when the next drop or flow regenerates the plan', () => {
+    const placed = run(empty(), { type: 'add-hot', ms: bar(48), kind: 5 })
+    const own = at(placed, bar(48), true)?.key as string
+    const marked = run(placed, { type: 'mark-drop', ms: bar(64) })
+    expect(marked.cues.find((x) => x.key === own)).toMatchObject({
+      ms: bar(48),
+      kind: 5,
+      color: 22,
+    })
+    const applied = run(marked, { type: 'apply-flow', flowId: 'mine' })
+    expect(applied.cues.find((x) => x.key === own)).toMatchObject({
+      ms: bar(48),
+      kind: 5,
+      color: 22,
+    })
+    const hot = marked.cues.filter((x) => x.kind !== 0)
+    expect(new Set(hot.map((x) => x.kind)).size).toBe(hot.length)
+    expect(validWantedSet(wantedOfDraft(marked.cues), [])).toEqual({ ok: true })
+  })
+
+  it('keeps a valid set when a letter placed by the DJ meets a loop holding another letter', () => {
+    const live = [{ id: 'l', ms: bar(16), kind: 2, color: 1 }]
+    let s = startDraft(live, 'mine', ['l'])
+    s = run(s, { type: 'add-hot', ms: bar(100), kind: 2 })
+    expect(s.cues).toHaveLength(1)
+    s = run(s, { type: 'add-hot', ms: bar(100), kind: 3 }, { type: 'mark-drop', ms: bar(64) })
+    expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
+    expect(s.cues.find((c) => c.key === 'l')).toMatchObject({ kind: 2 })
+  })
+
   it('adds a CALL without asking the flow for anything', () => {
     const s = run(empty(), { type: 'add-call', ms: bar(64) })
     expect(s.cues.map((c) => [c.ms, c.kind])).toEqual([[bar(64), 0]])

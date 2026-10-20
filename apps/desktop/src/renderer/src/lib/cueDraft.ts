@@ -235,7 +235,11 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
       return state
     const key = `n${state.nextKey + 1}`
     const cue: DraftCue = { key, ms, kind, color: hot ? HOT_CUE_DEFAULT_INDEX : null }
-    return commit(state, [...state.cues, cue], { nextKey: state.nextKey + 1, selected: key })
+    return commit(state, [...state.cues, cue], {
+      nextKey: state.nextKey + 1,
+      selected: key,
+      ...(hot ? { edited: [...state.edited, key] } : {}),
+    })
   }
   const target = state.cues.find((c) => c.key === action.key)
   if (!target || state.locked.includes(target.key)) return state
