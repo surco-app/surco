@@ -63,9 +63,11 @@ export type OnBatch = (paths: string[]) => void
 export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<string[]> {
   const expanded = await Promise.all(
     paths.map(async (p) => {
-      const info = await sourceStat(p).catch(() => null)
-      if (!info) return []
-      if (info.isDirectory()) return collectAudio(p, onBatch)
+      const info = await sourceStat(p).catch((err: NodeJS.ErrnoException) =>
+        err.code === 'ENOENT' || err.code === 'ENOTDIR' ? null : undefined,
+      )
+      if (info === null) return []
+      if (info?.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)
       if (isHidden(name) || isConversionTemp(name)) return []
       // A 0-byte file has no header, no frames and no tags: every probe fails and the
@@ -76,7 +78,7 @@ export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<s
       // network stat per file — measured on an SMB share at ~340 ms per 100 files even
       // warm, the very round-trip cost collectAudio's streaming exists to avoid. Those
       // surface through the metadata read instead.
-      if (info.size === 0) return []
+      if (info?.size === 0) return []
       // Announced like any walked file: a plain-file drop must reach the consumer
       // through the same channel, or a streaming caller would never see it.
       onBatch?.([p])
