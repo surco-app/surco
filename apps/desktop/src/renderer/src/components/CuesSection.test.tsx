@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, MY_FLOW } from '../../../shared/cueFlows'
@@ -110,6 +110,11 @@ const writtenPlan = (): WantedCue[] => {
   )
   if (outcome.status !== 'plan') throw new Error('expected a plan')
   return outcome.changes.insert
+}
+
+function chooseFlow(id: string): void {
+  fireEvent.click(screen.getByTestId('cues-flow'))
+  fireEvent.click(screen.getByTestId(`cues-flow-option-${id}`))
 }
 
 describe('CuesSection', () => {
@@ -308,7 +313,7 @@ describe('CuesSection', () => {
     setup()
     await ready()
     clickAt(bar(64))
-    fireEvent.change(screen.getByTestId('cues-flow'), { target: { value: 'calls-only' } })
+    chooseFlow('calls-only')
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
@@ -320,7 +325,7 @@ describe('CuesSection', () => {
     clickAt(bar(64))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     changeSettings({ activeCueFlow: 'one-at-32' })
-    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveValue('one-at-32'))
+    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveTextContent('One cue at 32'))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     clickAt(bar(160))
     expect(screen.queryByTestId('cues-manual')).toBeNull()
@@ -332,17 +337,18 @@ describe('CuesSection', () => {
   it('shows Mi flujo in the flow list once the flow picked there is deleted in Settings', async () => {
     const { changeSettings } = setup()
     await ready()
-    fireEvent.change(screen.getByTestId('cues-flow'), { target: { value: 'one-at-32' } })
+    chooseFlow('one-at-32')
     changeSettings({ cueFlows: [CALLS_ONLY, MY_FLOW] })
-    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveValue('mine'))
+    await waitFor(() => expect(screen.getByTestId('cues-flow')).toHaveTextContent('My flow'))
   })
 
   it('names the bundled flows in the flow list instead of showing them blank', async () => {
     setup()
     await ready()
-    const names = [...(screen.getByTestId('cues-flow') as HTMLSelectElement).options].map(
-      (o) => o.text,
-    )
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    const names = within(screen.getByTestId('cues-flow-listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
     expect(names).toEqual(['My flow', 'One cue at 32', 'CALL only'])
   })
 
@@ -353,7 +359,7 @@ describe('CuesSection', () => {
     }
     const { saveRekordboxCues } = setup(read)
     await ready()
-    fireEvent.change(screen.getByTestId('cues-flow'), { target: { value: 'calls-only' } })
+    chooseFlow('calls-only')
     fireEvent.click(screen.getByTestId('cues-apply-flow'))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())

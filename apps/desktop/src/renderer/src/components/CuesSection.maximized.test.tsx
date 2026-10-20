@@ -375,6 +375,18 @@ describe('CuesSection maximized keys', () => {
     expect(position()).toBe('0:00.0')
   })
 
+  it('never acts while the flow list is open and an option has the focus', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    const option = screen.getByTestId('cues-flow-option-mine')
+    option.focus()
+    fireEvent.keyDown(option, { key: 'm' })
+    fireEvent.keyDown(option, { key: 'ArrowRight' })
+    expect(screen.queryByTestId('cue-wave-call-0')).toBeNull()
+    expect(position()).toBe('0:00.0')
+  })
+
   it('swallows other single keys so a hidden section never acts under the full editor', async () => {
     setup()
     await maximize()

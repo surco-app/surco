@@ -42,6 +42,7 @@ import { CueWave } from './CueWave'
 import { CueWaveDetail } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
+import { Select } from './Select'
 
 interface CueTarget {
   contentId: string
@@ -263,7 +264,7 @@ function Editing({
   const onKey = (e: React.KeyboardEvent) => {
     if (maximized) {
       const target = e.target as HTMLElement
-      if (isTypingTarget(target)) return
+      if (isTypingTarget(target) || target.closest('[aria-haspopup="listbox"]')) return
       const key = cueKeyAction(e)
       if (!key) return
       e.preventDefault()
@@ -511,19 +512,13 @@ function Editing({
         />
       )}
       <div data-testid="cues-actions" className="mt-3 flex flex-wrap items-center gap-3">
-        <select
-          data-testid="cues-flow"
-          aria-label={tr('editor.cues.flow')}
+        <Select
+          testid="cues-flow"
+          label={tr('editor.cues.flow')}
           value={shownFlow}
-          onChange={(e) => setChosen(e.target.value)}
-          className="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2 py-1.5 text-xs"
-        >
-          {flows.map((f) => (
-            <option key={f.id} value={f.id}>
-              {flowName(f, tr)}
-            </option>
-          ))}
-        </select>
+          onChange={setChosen}
+          options={flows.map((f) => ({ value: f.id, label: flowName(f, tr) }))}
+        />
         <button
           type="button"
           data-testid="cues-apply-flow"
