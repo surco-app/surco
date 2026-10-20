@@ -503,7 +503,7 @@ function Editing({
       data-maximized={maximized ? 'true' : 'false'}
       tabIndex={maximized ? -1 : undefined}
       aria-label={tr('editor.cues.title')}
-      className={`relative m-0 min-w-0 border-0 p-0 outline-none ${maximized ? 'my-auto flex flex-col gap-3' : ''}`}
+      className={`relative m-0 min-w-0 border-0 p-0 outline-none focus-visible:shadow-none ${maximized ? 'my-auto flex flex-col gap-3' : ''}`}
       onKeyDown={onKey}
     >
       {maximized && header}
