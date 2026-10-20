@@ -29,6 +29,8 @@ import type {
 import { resetEditorSections } from './hooks/useEditorSections'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
+import { startDraft } from './lib/cueDraft'
+import { forgetDraft, keepDraft, resetCueSession } from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
@@ -350,6 +352,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     beginConversionBatch: vi.fn(),
     endConversionBatch: vi.fn(),
     cancelJob: vi.fn(),
+    reportUnsavedCues: vi.fn<Api['reportUnsavedCues']>(),
     ...over,
   }
 }
@@ -411,6 +414,18 @@ async function addOneTrack(): Promise<HTMLElement[]> {
 // BELOW the sidebar. With nothing clipping it that overhang counts as scrollable page,
 // and a vertical scrollbar flashes down the right edge of the window and vanishes. The
 // column has to clip its own children; the animation is fine as it is.
+describe('App unsaved cues', () => {
+  afterEach(resetCueSession)
+
+  it('tells main how many tracks hold unsaved cues, so quitting asks before losing them', async () => {
+    await renderApp()
+    act(() => keepDraft('103', '103|f0|null', startDraft([], 'mine')))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(1))
+    act(() => forgetDraft('103'))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))
+  })
+})
+
 describe('App sidebar clipping', () => {
   it('clips the sidebar so the player cannot animate into page scroll', async () => {
     await renderApp()

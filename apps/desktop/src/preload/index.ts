@@ -247,6 +247,7 @@ const api: Api = {
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),
+  reportUnsavedCues: (tracks: number): void => ipcRenderer.send('cues:unsaved', tracks),
   exportCover: (job) => ipcRenderer.invoke('cover:export', job),
   prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),
   copyCoverImage: (src) => ipcRenderer.invoke('cover:copyImage', src),

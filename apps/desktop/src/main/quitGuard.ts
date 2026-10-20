@@ -3,8 +3,9 @@ interface QuitGuardDeps {
   count: () => number
   // Whether a USB export is running right now.
   exporting?: () => boolean
+  unsavedCues?: () => number
   // Ask the user whether to quit anyway; resolves true to go ahead.
-  confirm: (running: number, exporting: boolean) => Promise<boolean>
+  confirm: (running: number, exporting: boolean, unsavedCues: number) => Promise<boolean>
   // Once the user agreed: stop the USB export and resolve when it has reported.
   settle?: () => Promise<void>
   // How long the close waits for settle before going ahead anyway.
@@ -38,6 +39,7 @@ export function createQuitGuard(deps: QuitGuardDeps): QuitGuard {
   // promise keeps that from stacking a second dialog over the first.
   let asking: Promise<boolean> | null = null
   const writing = (): boolean => deps.writing?.() ?? false
+  const unsavedCues = (): number => deps.unsavedCues?.() ?? 0
   const within = async (work: (() => Promise<void>) | undefined): Promise<void> => {
     if (!work) return
     let timer: NodeJS.Timeout | undefined
@@ -52,10 +54,13 @@ export function createQuitGuard(deps: QuitGuardDeps): QuitGuard {
     if (writing()) await within(deps.finishWriting)
   }
   return {
-    mustAsk: () => !confirmed && (deps.count() > 0 || exporting() || writing()),
+    mustAsk: () =>
+      !confirmed && (deps.count() > 0 || exporting() || writing() || unsavedCues() > 0),
     async ask() {
-      const quiet = deps.count() === 0 && !exporting()
-      asking ??= (quiet ? Promise.resolve(true) : deps.confirm(deps.count(), exporting()))
+      const quiet = deps.count() === 0 && !exporting() && unsavedCues() === 0
+      asking ??= (
+        quiet ? Promise.resolve(true) : deps.confirm(deps.count(), exporting(), unsavedCues())
+      )
         .then(async (quit) => {
           if (quit) await settle()
           return quit

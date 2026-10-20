@@ -187,6 +187,7 @@ const outputReservations = createOutputReservations()
 // Lets process:cancel reach an encode already in flight, not just ones not yet
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
+let unsavedCueTracks = 0
 // A file-name conflict prompts once per collision, so a batch of similarly-named rips used
 // to interrupt N times. When the user ticks "apply to the rest", that decision is remembered
 // here and reused for every later conflict in the same run — module-scoped so it persists
@@ -518,17 +519,27 @@ function createWindow(): BrowserWindow {
     settle: () => usbExport?.stop() ?? Promise.resolve(),
     writing: rekordboxQueue.busy,
     finishWriting: rekordboxQueue.settled,
-    confirm: async (running, exporting) => {
+    unsavedCues: () => unsavedCueTracks,
+    confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
       const details = [
         running > 0 ? t('quitBusyDetail').replace('{n}', String(running)) : null,
         exporting ? t('quitUsbDetail') : null,
+        unsavedCues > 0 ? t('quitCuesDetail') : null,
       ]
       const { response } = await dialog.showMessageBox(win, {
         type: 'warning',
-        message: running > 0 ? t('quitBusyMessage') : t('quitUsbMessage'),
+        message:
+          running > 0
+            ? t('quitBusyMessage')
+            : exporting
+              ? t('quitUsbMessage')
+              : t('quitCuesMessage'),
         detail: details.filter(Boolean).join('\n\n'),
-        buttons: [t('quitBusyConfirm'), running > 0 ? t('quitBusyCancel') : t('quitUsbCancel')],
+        buttons: [
+          t('quitBusyConfirm'),
+          running > 0 ? t('quitBusyCancel') : exporting ? t('quitUsbCancel') : t('quitCuesCancel'),
+        ],
         // Keep converting is the default: an absent-minded Return on this dialog must
         // not be what throws away a batch that has been running for minutes.
         defaultId: 1,
@@ -988,6 +999,10 @@ function registerIpc(): void {
   // the Cancel button) stuck until the app is force-quit.
   ipcMain.on('process:cancel', (_e, jobId: unknown) => {
     if (typeof jobId === 'string') activeConversions.cancel(jobId)
+  })
+
+  ipcMain.on('cues:unsaved', (_e, count: unknown) => {
+    if (typeof count === 'number') unsavedCueTracks = count
   })
 
   // A convert-all run starts: forget any "apply to the rest" conflict choice the previous

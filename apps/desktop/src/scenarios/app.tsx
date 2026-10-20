@@ -91,6 +91,7 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     setDockPlaying: () => {},
     setDockFrames: () => {},
     cancelJob: () => {},
+    reportUnsavedCues: () => {},
   } satisfies Partial<Api>
 }
 

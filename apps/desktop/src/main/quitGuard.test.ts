@@ -19,7 +19,7 @@ describe('createQuitGuard', () => {
     const guard = createQuitGuard({ count: () => 3, confirm })
     expect(guard.mustAsk()).toBe(true)
     expect(await guard.ask()).toBe(false)
-    expect(confirm).toHaveBeenCalledWith(3, false)
+    expect(confirm).toHaveBeenCalledWith(3, false, 0)
   })
 
   // A USB export runs in main: quitting without asking left baken writing the stick with
@@ -29,7 +29,21 @@ describe('createQuitGuard', () => {
     const guard = createQuitGuard({ count: () => 0, exporting: () => true, confirm })
     expect(guard.mustAsk()).toBe(true)
     expect(await guard.ask()).toBe(false)
-    expect(confirm).toHaveBeenCalledWith(0, true)
+    expect(confirm).toHaveBeenCalledWith(0, true, 0)
+  })
+
+  it('asks before closing with unsaved cues, even with nothing converting, so a forgotten Guardar is never lost', async () => {
+    const confirm = vi.fn().mockResolvedValue(false)
+    const guard = createQuitGuard({ count: () => 0, unsavedCues: () => 2, confirm })
+    expect(guard.mustAsk()).toBe(true)
+    expect(await guard.ask()).toBe(false)
+    expect(confirm).toHaveBeenCalledWith(0, false, 2)
+  })
+
+  it('closes without asking once no track has unsaved cues', () => {
+    const confirm = vi.fn()
+    const guard = createQuitGuard({ count: () => 0, unsavedCues: () => 0, confirm })
+    expect(guard.mustAsk()).toBe(false)
   })
 
   // The window closes only once the export has stopped and reported, so its last writes

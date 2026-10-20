@@ -79,6 +79,9 @@ interface MenuStrings {
   quitUsbMessage: string
   quitUsbDetail: string
   quitUsbCancel: string
+  quitCuesMessage: string
+  quitCuesDetail: string
+  quitCuesCancel: string
   dialogConfigDir: string
   dialogPickTracks: string
   dialogOutputDir: string
@@ -180,6 +183,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     quitUsbDetail:
       'Si sales ahora, Surco parará al acabar la canción que está copiando, o esperará a que termine de escribir la base de datos, y después se cerrará.',
     quitUsbCancel: 'Seguir exportando',
+    quitCuesMessage: 'Hay cues sin guardar',
+    quitCuesDetail: 'Si sales ahora se perderán los cambios de cues que no has guardado.',
+    quitCuesCancel: 'Volver a los cues',
     dialogConfigDir: 'Carpeta de configuración',
     dialogPickTracks: 'Selecciona pistas',
     dialogOutputDir: 'Carpeta de salida',
@@ -279,6 +285,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     quitUsbDetail:
       'If you quit now, Surco stops after the track it is copying, or waits until it has finished writing the database, and then closes.',
     quitUsbCancel: 'Keep exporting',
+    quitCuesMessage: 'Some cues are not saved',
+    quitCuesDetail: 'If you quit now, the cue changes you have not saved will be lost.',
+    quitCuesCancel: 'Back to the cues',
     dialogConfigDir: 'Settings folder',
     dialogPickTracks: 'Choose tracks',
     dialogOutputDir: 'Output folder',
@@ -378,6 +387,10 @@ const strings: Record<MenuLang, MenuStrings> = {
     quitUsbDetail:
       'Wenn du jetzt beendest, stoppt Surco nach dem Titel, der gerade kopiert wird, oder wartet, bis die Datenbank geschrieben ist, und schließt sich dann.',
     quitUsbCancel: 'Weiter exportieren',
+    quitCuesMessage: 'Es gibt nicht gespeicherte Cues',
+    quitCuesDetail:
+      'Wenn du jetzt beendest, gehen die nicht gespeicherten Cue-Änderungen verloren.',
+    quitCuesCancel: 'Zurück zu den Cues',
     dialogConfigDir: 'Einstellungsordner',
     dialogPickTracks: 'Tracks auswählen',
     dialogOutputDir: 'Ausgabeordner',
@@ -478,6 +491,10 @@ const strings: Record<MenuLang, MenuStrings> = {
     quitUsbDetail:
       "Si tu quittes maintenant, Surco s'arrête après le morceau en cours de copie, ou attend la fin de l'écriture de la base de données, puis se ferme.",
     quitUsbCancel: "Continuer l'export",
+    quitCuesMessage: 'Des cues ne sont pas enregistrés',
+    quitCuesDetail:
+      'Si vous quittez maintenant, les modifications de cues non enregistrées seront perdues.',
+    quitCuesCancel: 'Revenir aux cues',
     dialogConfigDir: 'Dossier de configuration',
     dialogPickTracks: 'Choisis des morceaux',
     dialogOutputDir: 'Dossier de sortie',
@@ -577,6 +594,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     quitUsbDetail:
       'Se você sair agora, o Surco para depois da faixa que está copiando, ou espera terminar de gravar o banco de dados, e então fecha.',
     quitUsbCancel: 'Continuar exportando',
+    quitCuesMessage: 'Há cues não salvos',
+    quitCuesDetail: 'Se você sair agora, as alterações de cues não salvas serão perdidas.',
+    quitCuesCancel: 'Voltar aos cues',
     dialogConfigDir: 'Pasta de configuração',
     dialogPickTracks: 'Escolha faixas',
     dialogOutputDir: 'Pasta de saída',

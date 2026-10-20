@@ -2041,6 +2041,7 @@ export default function App(): React.JSX.Element {
     [rekordboxQueue.state],
   )
   const unsavedCues = useUnsavedCueTracks()
+  useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])
   const unsavedCueIds = useMemo(() => {
     const ids = new Set<string>()
     if (!rekordboxOpen) return ids

@@ -232,6 +232,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     beginConversionBatch: noop,
     endConversionBatch: noop,
     cancelJob: noop,
+    reportUnsavedCues: noop,
     exportCover: async () => null,
     exportRekordbox: async () => null,
     exportTraktor: async () => null,
