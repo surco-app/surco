@@ -38,6 +38,7 @@ export function CueWaveDetail({
   onScrub,
   onZoom,
   onPick,
+  onMarkMenu,
   onDeleteMark,
 }: {
   source: DetailSource | null
@@ -50,6 +51,7 @@ export function CueWaveDetail({
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
   onPick?: (ms: number) => void
+  onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -151,6 +153,11 @@ export function CueWaveDetail({
         {...hover(key)}
       />
     )
+  const markMenu = (key: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onMarkMenu?.({ key, clientX: e.clientX, clientY: e.clientY })
+  }
   return (
     <div className="flex shrink-0 flex-col">
       <div className="relative h-4 shrink-0 text-xs tabular-nums">
@@ -235,6 +242,7 @@ export function CueWaveDetail({
               data-testid={`cue-detail-call-${c.ms + fromMs}`}
               data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
               aria-hidden="true"
+              onContextMenu={(e) => markMenu(c.key, e)}
               {...hover(c.key)}
               style={{ ...markStyle(c.at), borderTopColor: MEMORY_CUE_COLOR }}
               className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
@@ -254,6 +262,7 @@ export function CueWaveDetail({
                 data-pending={pending ? 'true' : 'false'}
                 data-selected={selected === h.key ? 'true' : 'false'}
                 aria-hidden="true"
+                onContextMenu={(e) => markMenu(h.key, e)}
                 {...hover(h.key)}
                 style={{
                   ...markStyle(h.at),

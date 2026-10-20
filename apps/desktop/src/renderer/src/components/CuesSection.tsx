@@ -6,7 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MY_FLOW, MY_FLOW_ID } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
-import { BEATS_PER_BAR, MAX_HOT_CUES, nearestBeat } from '../../../shared/cueRules'
+import {
+  BEATS_PER_BAR,
+  MAX_HOT_CUES,
+  nearestBeat,
+  SAME_POSITION_MS,
+} from '../../../shared/cueRules'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
@@ -237,6 +242,12 @@ function Editing({
   )
   useEffect(() => keepDraft(draftKey, state), [draftKey, state])
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
+  const [markMenu, setMarkMenu] = useState<{
+    key: string
+    x: number
+    y: number
+    palette: boolean
+  } | null>(null)
   const [arming, setArming] = useState(false)
   const noDrop = draftDrops(state.cues, state.locked).length === 0
   const armed = arming && noDrop
@@ -266,6 +277,8 @@ function Editing({
     dispatch({ type: 'use-flow', flowId: active.id })
   }, [active.id])
   const menuRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLFieldSetElement>(null)
+  const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
   const pending = (c: DraftCue): boolean =>
@@ -274,15 +287,22 @@ function Editing({
     )
   const selected = state.cues.find((c) => c.key === state.selected)
   const refreshQueued = () => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
+  const menuOpen = menu !== null || markMenu !== null
   useEffect(() => {
-    if (menu === null) return
+    if (!menuOpen) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if (maximized) e.stopPropagation()
+      if (maximized || markMenu !== null) e.stopPropagation()
       setMenu(null)
+      if (markMenu !== null) {
+        setMarkMenu(null)
+        focusEditor()
+      }
     }
     const onDown = (e: MouseEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setMenu(null)
+      if (menuRef.current?.contains(e.target as Node)) return
+      setMenu(null)
+      setMarkMenu(null)
     }
     document.addEventListener('keydown', onKey)
     document.addEventListener('mousedown', onDown)
@@ -290,11 +310,46 @@ function Editing({
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('mousedown', onDown)
     }
-  }, [menu, maximized])
+  }, [menuOpen, markMenu, maximized, focusEditor])
   const fromMenu = (action: DraftAction) => {
     dispatch(action)
     setMenu(null)
   }
+  const openMarkMenu = ({
+    key,
+    clientX,
+    clientY,
+  }: {
+    key: string
+    clientX: number
+    clientY: number
+  }) => {
+    if (state.locked.includes(key)) return
+    const rect = editorRef.current?.getBoundingClientRect()
+    setMenu(null)
+    dispatch({ type: 'select', key })
+    setMarkMenu({
+      key,
+      x: clientX - (rect?.left ?? 0),
+      y: clientY - (rect?.top ?? 0),
+      palette: false,
+    })
+  }
+  const fromMarkMenu = (action: DraftAction) => {
+    dispatch(action)
+    setMarkMenu(null)
+    focusEditor()
+  }
+  const markTarget = markMenu !== null ? state.cues.find((c) => c.key === markMenu.key) : undefined
+  const callUnder =
+    markTarget && markTarget.kind !== 0
+      ? state.cues.find(
+          (c) =>
+            c.kind === 0 &&
+            Math.abs(c.ms - markTarget.ms) <= SAME_POSITION_MS &&
+            !state.locked.includes(c.key),
+        )
+      : undefined
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
   const { data: words } = useCueWaveDetail(cue.contentId, maximized)
   const source: DetailSource | null = words
@@ -350,8 +405,6 @@ function Editing({
       dispatch({ type: 'undo' })
     }
   }
-  const editorRef = useRef<HTMLFieldSetElement>(null)
-  const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const [colourFor, setColourFor] = useState<string | null>(null)
   const colourOpen = colourFor !== null && colourFor === state.selected
   const colourRef = useRef<HTMLDivElement>(null)
@@ -526,6 +579,7 @@ function Editing({
         onSelect={(key) => dispatch({ type: 'select', key })}
         onMove={(key, ms) => dispatch({ type: 'move', key, ms })}
         onMenu={setMenu}
+        onMarkMenu={openMarkMenu}
         playheadMs={maximized ? playheadMs : undefined}
         onSeek={maximized && !armed ? seekTo : undefined}
         view={maximized ? detailWindow(ctx.beats, playheadMs, zoom) : undefined}
@@ -543,6 +597,7 @@ function Editing({
           onScrub={seekTo}
           onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
           onPick={armed ? markDrop : undefined}
+          onMarkMenu={openMarkMenu}
           onDeleteMark={(key) => dispatch({ type: 'remove', key })}
         />
       )}
@@ -582,6 +637,59 @@ function Editing({
           >
             {tr('editor.cues.menuMarkDrop')}
           </button>
+        </div>
+      )}
+      {markMenu !== null && markTarget && (
+        <div
+          ref={menuRef}
+          data-testid="cues-menu"
+          role="menu"
+          style={{ left: markMenu.x, top: markMenu.y }}
+          className="absolute z-20 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs shadow-[var(--shadow-float)]"
+        >
+          {markMenu.palette ? (
+            <div className="p-2">
+              <CuePalette
+                value={markTarget.color}
+                onPick={(color) => fromMarkMenu({ type: 'recolour', key: markTarget.key, color })}
+                label={(index) => tr('editor.cues.colour', { index })}
+              />
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="cues-menu-delete"
+                onClick={() => fromMarkMenu({ type: 'remove', key: markTarget.key })}
+                className={MENU_ITEM}
+              >
+                {tr('editor.cues.delete')}
+              </button>
+              {markTarget.kind !== 0 && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cues-menu-colour"
+                  onClick={() => setMarkMenu({ ...markMenu, palette: true })}
+                  className={MENU_ITEM}
+                >
+                  {tr('editor.cues.menuColour')}
+                </button>
+              )}
+              {callUnder && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cues-menu-delete-call"
+                  onClick={() => fromMarkMenu({ type: 'remove', key: callUnder.key })}
+                  className={MENU_ITEM}
+                >
+                  {tr('editor.cues.menuDeleteCall')}
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
       {selected && !maximized && (

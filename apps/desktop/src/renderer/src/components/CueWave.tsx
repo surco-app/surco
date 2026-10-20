@@ -40,6 +40,7 @@ export function CueWave({
   onSelect,
   onMove,
   onMenu,
+  onMarkMenu,
   onAcceptProposal,
   playheadMs,
   onSeek,
@@ -59,6 +60,7 @@ export function CueWave({
   onSelect?: (key: string | null) => void
   onMove?: (key: string, ms: number) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
+  onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onAcceptProposal?: (ms: number) => void
   playheadMs?: number
   onSeek?: (ms: number) => void
@@ -211,6 +213,11 @@ export function CueWave({
     e.stopPropagation()
     onSelect?.(key)
   }
+  const markMenu = (key: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onMarkMenu?.({ key, clientX: e.clientX, clientY: e.clientY })
+  }
   return (
     <div
       ref={rootRef}
@@ -328,6 +335,7 @@ export function CueWave({
             aria-label={t('cueWave.call')}
             onMouseDown={(e) => startDrag(c.key, e)}
             onClick={(e) => selectMark(c.key, e)}
+            onContextMenu={(e) => markMenu(c.key, e)}
             {...common}
           />
         )
@@ -360,6 +368,7 @@ export function CueWave({
             aria-label={t('cueWave.hotCue', { letter: h.letter })}
             onMouseDown={(e) => startDrag(h.key, e)}
             onClick={(e) => selectMark(h.key, e)}
+            onContextMenu={(e) => markMenu(h.key, e)}
             {...common}
           >
             {h.letter}

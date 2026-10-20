@@ -777,6 +777,8 @@
       "delete": "Supprimer",
       "deleteHot": "Supprimer le hot cue {{letter}}",
       "deleteCallMark": "Supprimer le CALL",
+      "menuColour": "Changer la couleur",
+      "menuDeleteCall": "Supprimer son CALL",
       "colour": "Couleur {{index}}",
       "colourPicker": "Couleur du cue",
       "selectedHot": "Hot cue {{letter}}",
