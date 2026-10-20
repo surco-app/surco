@@ -1498,7 +1498,8 @@
         "jump": "Arrow jump ← →",
         "unit": "bars",
         "quantize": "Quantize"
-      }
+      },
+      "markPoint": "Mark the point with a CALL"
     }
   },
   "errorBoundary": {

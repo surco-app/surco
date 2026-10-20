@@ -6,6 +6,7 @@ import {
   activeCueFlow,
   type CueFlow,
   type CueRule,
+  MANUAL_CUE_FLOW,
   MY_FLOW_ID,
   restoreMyFlow,
 } from '../../../../shared/cueFlows'
@@ -17,6 +18,7 @@ import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { CueFlowPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
+import { CheckboxRow } from './CheckboxRow'
 
 interface Props {
   synced: SyncedDraft
@@ -112,7 +114,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
     setCurrent(MY_FLOW_ID)
   }
 
-  const inUse = activeCueFlow(synced).id
+  const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
   return (
     <div className="flex flex-col gap-5">
       <fieldset
@@ -249,6 +251,12 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                 {tr('settings.cueFlows.noRules')}
               </p>
             )}
+            <CheckboxRow
+              testid="cue-flow-mark-point"
+              checked={flow.markPoint}
+              onChange={(markPoint) => put({ ...flow, markPoint })}
+              label={tr('settings.cueFlows.markPoint')}
+            />
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"

@@ -9,6 +9,7 @@ import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
 import type { LearnedFlow } from '../../../../shared/learnFlow'
 import i18n from '../../i18n'
+import { EXAMPLE_DROP } from '../../lib/cueExample'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { installApi } from '../../test/api'
 import { CuesTab } from './CuesTab'
@@ -42,6 +43,23 @@ function Harness({ active = 'mine', collection = '' }: { active?: string; collec
 }
 
 describe('CuesTab', () => {
+  it('marks the point with a CALL by default and lets a DJ who does not mark it turn that off, the preview following', () => {
+    render(<Harness />)
+    expect(screen.getByTestId('cue-flow-mark-point')).toBeChecked()
+    expect(screen.getByTestId(`cue-wave-call-${EXAMPLE_DROP}`)).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cue-flow-mark-point'))
+    expect(last?.cueFlows.find((f) => f.id === 'mine')?.markPoint).toBe(false)
+    expect(screen.getByTestId('cue-flow-mark-point')).not.toBeChecked()
+    expect(screen.queryByTestId(`cue-wave-call-${EXAMPLE_DROP}`)).toBeNull()
+  })
+
+  it('marks no flow in use while the editor is in Manual, and Usar este flujo leaves Manual', () => {
+    render(<Harness active="manual" />)
+    expect(screen.queryByTestId('cue-flow-in-use')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-flow-use'))
+    expect(last?.activeCueFlow).toBe('mine')
+  })
+
   it('shows the flows as tabs, the one in use marked and the current one named in place', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')

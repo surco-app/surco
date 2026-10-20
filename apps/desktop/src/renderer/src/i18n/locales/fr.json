@@ -1498,7 +1498,8 @@
         "jump": "Saut des flèches ← →",
         "unit": "mesures",
         "quantize": "Quantifier"
-      }
+      },
+      "markPoint": "Marquer le point avec un CALL"
     }
   },
   "errorBoundary": {

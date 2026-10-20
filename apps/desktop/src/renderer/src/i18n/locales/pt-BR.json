@@ -1498,7 +1498,8 @@
         "jump": "Salto das setas ← →",
         "unit": "compassos",
         "quantize": "Quantizar"
-      }
+      },
+      "markPoint": "Marcar o ponto com um CALL"
     }
   },
   "errorBoundary": {

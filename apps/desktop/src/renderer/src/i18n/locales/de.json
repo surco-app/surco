@@ -1498,7 +1498,8 @@
         "jump": "Sprung der Pfeiltasten ← →",
         "unit": "Takte",
         "quantize": "Quantisieren"
-      }
+      },
+      "markPoint": "Den Punkt mit einem CALL markieren"
     }
   },
   "errorBoundary": {
