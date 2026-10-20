@@ -48,6 +48,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const [reading, setReading] = useState(false)
   const request = useRef(0)
   const [removals, setRemovals] = useState(0)
+  const [typed, setTyped] = useState<string | null>(null)
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -71,6 +72,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
 
   const select = (id: string) => {
     setCurrent(id)
+    setTyped(null)
     setLearning('idle')
     request.current++
   }
@@ -133,10 +135,15 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               <input
                 data-testid="cue-flow-name"
                 aria-label={tr('settings.cueFlows.name')}
-                value={flow.name}
+                value={typed ?? flowName(flow, tr)}
                 placeholder={flowName(flow, tr)}
-                size={Math.max(4, (flow.name || flowName(flow, tr)).length)}
-                onChange={(e) => put({ ...flow, name: e.target.value })}
+                size={Math.max(4, (typed ?? flowName(flow, tr)).length + 1)}
+                onFocus={() => setTyped((now) => now ?? flowName(flow, tr))}
+                onBlur={() => setTyped(null)}
+                onChange={(e) => {
+                  setTyped(e.target.value)
+                  put({ ...flow, name: e.target.value })
+                }}
                 className="min-w-0 bg-transparent outline-none placeholder:text-fg"
               />
               {inUse === f.id && (

@@ -196,6 +196,50 @@ describe('CuesTab', () => {
     expect(last?.activeCueFlow).toBe(made?.id)
   })
 
+  it('renames Mi flujo and a user flow by typing in the tab, the input showing what was typed', () => {
+    render(<Harness />)
+    fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Mi set' } })
+    expect(last?.cueFlows.find((f) => f.id === 'mine')?.name).toBe('Mi set')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Mi set')
+    fireEvent.click(screen.getByTestId('cue-flow-new'))
+    fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Otro' } })
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Otro')
+    expect(last?.cueFlows.at(-1)?.name).toBe('Otro')
+  })
+
+  it('lets the DJ edit the name Mi flujo shows instead of an unselectable placeholder, and an emptied name falls back', () => {
+    render(<Harness />)
+    const input = screen.getByTestId('cue-flow-name')
+    expect(input).toHaveValue('My flow')
+    fireEvent.change(input, { target: { value: 'Mi flujo 2' } })
+    expect(last?.cueFlows.find((f) => f.id === 'mine')?.name).toBe('Mi flujo 2')
+    fireEvent.change(input, { target: { value: '' } })
+    expect(last?.cueFlows.find((f) => f.id === 'mine')?.name).toBe('')
+    expect(input).toHaveValue('')
+    expect(input).toHaveAttribute('placeholder', 'My flow')
+    fireEvent.blur(input)
+    expect(input).toHaveValue('My flow')
+  })
+
+  it('restores the name of Mi flujo with Restablecer', () => {
+    render(<Harness />)
+    fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Otro' } })
+    fireEvent.blur(screen.getByTestId('cue-flow-name'))
+    fireEvent.click(screen.getByTestId('cue-flow-restore'))
+    expect(last?.cueFlows.find((f) => f.id === 'mine')?.name).toBe('')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('My flow')
+  })
+
+  it('sizes the name input to show the whole name', () => {
+    render(<Harness />)
+    fireEvent.change(screen.getByTestId('cue-flow-name'), {
+      target: { value: 'Un nombre bastante largo' },
+    })
+    expect(Number(screen.getByTestId('cue-flow-name').getAttribute('size'))).toBeGreaterThanOrEqual(
+      'Un nombre bastante largo'.length,
+    )
+  })
+
   it('never offers to delete Mi flujo but restores it to rules.py', () => {
     render(<Harness />)
     expect(screen.queryByTestId('cue-flow-delete')).toBeNull()
