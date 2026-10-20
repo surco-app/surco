@@ -16,6 +16,7 @@ import {
   wantedOfDraft,
 } from '../lib/cueDraft'
 import { flowName } from '../lib/cueFlowName'
+import { forgetDraft, keepDraft, keptDraft } from '../lib/cueSession'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { CuePalette } from './CuePalette'
@@ -36,11 +37,13 @@ function Editing({
   read,
   queued,
   cue,
+  draftKey,
   onDiscard,
 }: {
   read: TrackCues
   queued: QueuedCues | null
   cue: CueTarget
+  draftKey: string
   onDiscard: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -67,12 +70,14 @@ function Editing({
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
     undefined,
     () =>
+      keptDraft(draftKey) ??
       startDraft(
         baseline,
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
       ),
   )
+  useEffect(() => keepDraft(draftKey, state), [draftKey, state])
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [chosen, setChosen] = useState(state.flowId)
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : MY_FLOW_ID
@@ -327,6 +332,7 @@ export function CuesSection({
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
   const [round, setRound] = useState(0)
+  const draftKey = `${cue.contentId}|${read?.fingerprint ?? ''}|${JSON.stringify(queued)}`
   return (
     <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
@@ -349,11 +355,13 @@ export function CuesSection({
             </p>
           ) : (
             <Editing
-              key={`${cue.contentId}|${read.fingerprint}|${JSON.stringify(queued)}|${round}`}
+              key={`${draftKey}|${round}`}
               read={read}
               queued={queued}
               cue={cue}
+              draftKey={draftKey}
               onDiscard={() => {
+                forgetDraft()
                 setRound((n) => n + 1)
                 if (queued !== null)
                   void window.api

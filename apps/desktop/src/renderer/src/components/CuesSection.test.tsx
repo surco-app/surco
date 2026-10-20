@@ -8,11 +8,13 @@ import { CALLS_ONLY, MY_FLOW } from '../../../shared/cueFlows'
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
 import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
+import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
+afterEach(resetCueSession)
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -111,6 +113,28 @@ const writtenPlan = (): WantedCue[] => {
 }
 
 describe('CuesSection', () => {
+  it('keeps the unsaved cues when the section is mounted again in another place, as maximizing does', async () => {
+    setup()
+    await ready()
+    clickAt(bar(64))
+    cleanup()
+    setup()
+    await ready()
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-pending', 'true')
+  })
+
+  it('starts from rekordbox again after Descartar cambios, even once the section is mounted again', async () => {
+    setup()
+    await ready()
+    clickAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-undo'))
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    cleanup()
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
   it('draws the countdown of the active flow live after marking a drop', async () => {
     setup()
     await ready()
