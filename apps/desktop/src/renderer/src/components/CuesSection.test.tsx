@@ -672,6 +672,21 @@ describe('CuesSection', () => {
     )
   })
 
+  it('says what does not fit only while the cursor is over the wave, not all the time on a track that could take the flow', async () => {
+    setup({
+      ...READ,
+      strong: [{ start: bar(30), end: bar(40) }],
+      cues: [bar(64), bar(160)].map((ms, i) => ({ id: `d${i}`, ms, kind: 0, color: null })),
+    })
+    await ready()
+    expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-rejected')).toBeNull()
+    hoverAt(bar(66))
+    expect(screen.getByTestId('cues-rejected')).toBeInTheDocument()
+    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
+    expect(screen.queryByTestId('cues-rejected')).toBeNull()
+  })
+
   it('draws what another flow would drop when it is chosen on a marked track, with the reason', async () => {
     setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
     await ready()

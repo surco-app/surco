@@ -314,7 +314,9 @@ function Editing({
   const ghost = pointDrag
     ? undefined
     : (hoverGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
-  const rejected = ghost?.rejected ?? []
+  const rejected = pointDrag
+    ? []
+    : (hoverGhost?.rejected ?? (noFit && switchGhost !== null ? switchGhost.rejected : []))
   const rejectedReasons = [...new Set(rejected.map((r) => r.reason))]
   const openedWith = useRef(settled)
   useEffect(() => {
