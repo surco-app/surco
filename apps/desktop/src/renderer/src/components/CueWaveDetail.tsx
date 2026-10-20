@@ -1,6 +1,6 @@
 import { Minus, Plus } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
@@ -54,13 +54,15 @@ export function CueWaveDetail({
       window.removeEventListener('mouseup', up)
     }
   }, [drag])
-  useEffect(() => {
+  const draw = useCallback(() => {
     const canvas = canvasRef.current
     const g = canvas?.getContext('2d')
     if (!canvas || !g) return
     const width = Math.max(1, Math.round(canvas.getBoundingClientRect().width))
-    canvas.width = width
-    canvas.height = HEIGHT
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr
+    canvas.height = HEIGHT * dpr
+    g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.clearRect(0, 0, width, HEIGHT)
     if (!source) return
     const faint = getComputedStyle(canvas).getPropertyValue('--color-fg-faint')
@@ -71,6 +73,14 @@ export function CueWaveDetail({
       g.fillRect(x, (HEIGHT - h) / 2, 1, h)
     })
   }, [source, fromMs, toMs])
+  useEffect(draw, [draw])
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(draw)
+    observer.observe(root)
+    return () => observer.disconnect()
+  }, [draw])
   const { hot, calls } = placeCues(
     cues.map((c) => ({ ...c, ms: c.ms - fromMs })),
     span,
@@ -110,6 +120,7 @@ export function CueWaveDetail({
         <span
           key={`c${c.key}`}
           data-testid={`cue-detail-call-${c.ms + fromMs}`}
+          data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
           aria-hidden="true"
           style={{ ...markStyle(c.at, 'call', 'wave'), borderTopColor: MEMORY_CUE_COLOR }}
           className={`absolute h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
@@ -123,6 +134,7 @@ export function CueWaveDetail({
           <span
             key={`h${h.key}`}
             data-testid={`cue-detail-hot-${h.letter}`}
+            data-pending={pending ? 'true' : 'false'}
             data-selected={selected === h.key ? 'true' : 'false'}
             aria-hidden="true"
             style={{

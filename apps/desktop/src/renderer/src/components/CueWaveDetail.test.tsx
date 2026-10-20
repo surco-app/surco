@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -99,12 +99,69 @@ describe('CueWaveDetail', () => {
 
   it('paints at most one column per pixel however long the track, so a 5 minute wave stays smooth', () => {
     const fillRect = vi.fn()
-    const fake = { clearRect: vi.fn(), fillRect, fillStyle: '' }
+    const fake = { clearRect: vi.fn(), fillRect, setTransform: vi.fn(), fillStyle: '' }
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
     const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
     setup({ source: { words }, playheadMs: 150000 })
     expect(fillRect.mock.calls.length).toBeGreaterThan(0)
     expect(fillRect.mock.calls.length).toBeLessThanOrEqual(400)
+  })
+
+  it('scales the canvas by the device pixel ratio but still paints one column per CSS pixel', () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const fillRect = vi.fn()
+    const setTransform = vi.fn()
+    const fake = { clearRect: vi.fn(), fillRect, setTransform, fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
+    setup({ source: { words }, playheadMs: 150000 })
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    expect(canvas.width).toBe(800)
+    expect(canvas.height).toBe(320)
+    expect(setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 0, 0)
+    expect(fillRect.mock.calls.length).toBeLessThanOrEqual(400)
+    vi.unstubAllGlobals()
+  })
+
+  it('redraws when the wave is resized', () => {
+    let notify: () => void = () => {}
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: () => void) {
+          notify = cb
+        }
+        observe() {}
+        disconnect() {}
+      },
+    )
+    const clearRect = vi.fn()
+    const fake = { clearRect, fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    setup()
+    const drawn = clearRect.mock.calls.length
+    act(() => notify())
+    expect(clearRect.mock.calls.length).toBeGreaterThan(drawn)
+    vi.unstubAllGlobals()
+  })
+
+  it('draws a pending hot cue outlined and a pending CALL marked, as the section does', () => {
+    setup({
+      cues: [
+        { key: 'b', ms: bar(36), kind: 2, color: 22, pending: true },
+        { key: 'd', ms: bar(40), kind: 0, color: null, pending: true },
+        { key: 'e', ms: bar(34), kind: 0, color: null, pending: false },
+      ],
+    })
+    const hot = screen.getByTestId('cue-detail-hot-B')
+    expect(hot).toHaveAttribute('data-pending', 'true')
+    expect(hot.style.backgroundColor).toBe('')
+    expect(hot.style.borderColor).not.toBe('')
+    expect(screen.getByTestId(`cue-detail-call-${bar(40)}`)).toHaveAttribute('data-pending', 'true')
+    expect(screen.getByTestId(`cue-detail-call-${bar(34)}`)).toHaveAttribute(
+      'data-pending',
+      'false',
+    )
   })
 
   it('zooms with its buttons and stops at 4 and 64 bars', () => {
