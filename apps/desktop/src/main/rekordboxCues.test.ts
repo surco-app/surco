@@ -411,7 +411,7 @@ describe('applyCueChanges', () => {
     db.close()
   })
 
-  it('recolours the contentCue entry with the row, since rekordbox reads the colour from either and a stale one comes back', async () => {
+  it('keeps contentCue in step with the row when a cue is recoloured', async () => {
     const db = await writable()
     db.prepare(
       `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 1)`,
