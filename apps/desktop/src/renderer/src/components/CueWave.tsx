@@ -5,7 +5,14 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
-import { type CueGhost, GHOST_OPACITY, GONE_OPACITY, markStyle, placeCues } from '../lib/cueMarks'
+import {
+  CURSOR_LINE,
+  type CueGhost,
+  GHOST_OPACITY,
+  GONE_OPACITY,
+  markStyle,
+  placeCues,
+} from '../lib/cueMarks'
 import { barLines, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
 import { WaveBars } from './WaveBars'
 
@@ -456,8 +463,8 @@ export function CueWave({
         <span
           data-testid="cue-wave-cursor"
           aria-hidden="true"
-          style={{ left: pct(line) }}
-          className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/80"
+          style={{ ...CURSOR_LINE, left: pct(line) }}
+          className="pointer-events-none absolute top-0 bottom-0"
         />
       )}
     </div>

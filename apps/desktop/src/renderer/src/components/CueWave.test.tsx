@@ -204,6 +204,15 @@ describe('CueWave', () => {
     expect(all.map((e) => e.dataset.testid)).toEqual(['cue-wave-proposal-16000', 'cue-wave-hot-A'])
   })
 
+  it('draws the line under the cursor dashed in the accent colour, so it never reads as the playhead', () => {
+    setup()
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-cursor')).toHaveStyle({
+      borderLeftStyle: 'dashed',
+      borderLeftColor: 'var(--color-accent)',
+    })
+  })
+
   it('opens the menu on a right-click with the beat under it', () => {
     const h = setup()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 30 })
@@ -371,7 +380,7 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-ghost-hot-B').tagName).toBe('SPAN')
     expect(screen.getByTestId('cue-wave-ghost-call-32000')).toHaveStyle({ opacity: '0.42' })
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-gone', 'true')
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ opacity: '0.18' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ opacity: '0.3' })
     expect(screen.getByTestId('cue-wave-call-40000')).toHaveAttribute('data-gone', 'false')
   })
 

@@ -227,6 +227,10 @@ describe('CueWaveDetail', () => {
     fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
     expect(onHover).toHaveBeenLastCalledWith(bar(36))
     expect(screen.getByTestId('cue-detail-cursor').style.left).toBe('75%')
+    expect(screen.getByTestId('cue-detail-cursor')).toHaveStyle({
+      borderLeftStyle: 'dashed',
+      borderLeftColor: 'var(--color-accent)',
+    })
     fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
     expect(onHover).toHaveBeenLastCalledWith(null)
     expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
@@ -271,7 +275,7 @@ describe('CueWaveDetail', () => {
       opacity: '0.42',
     })
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveAttribute('data-gone', 'true')
-    expect(screen.getByTestId('cue-detail-hot-B')).toHaveStyle({ opacity: '0.18' })
+    expect(screen.getByTestId('cue-detail-hot-B')).toHaveStyle({ opacity: '0.3' })
   })
 
   it('paints at most one column per pixel however long the track, so a 5 minute wave stays smooth', () => {

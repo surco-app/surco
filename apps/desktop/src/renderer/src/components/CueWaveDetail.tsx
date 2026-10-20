@@ -6,6 +6,7 @@ import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import {
+  CURSOR_LINE,
   type CueGhost,
   GHOST_OPACITY,
   GONE_OPACITY,
@@ -384,8 +385,8 @@ export function CueWaveDetail({
           <span
             data-testid="cue-detail-cursor"
             aria-hidden="true"
-            style={{ left: pct(cursor) }}
-            className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/80"
+            style={{ ...CURSOR_LINE, left: pct(cursor) }}
+            className="pointer-events-none absolute top-0 bottom-0"
           />
         )}
       </div>

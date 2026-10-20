@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { SAME_POSITION_MS } from '../../../shared/cueRules'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { cueLetter } from './rowCues'
@@ -15,7 +16,12 @@ export interface CueGhost {
 }
 
 export const GHOST_OPACITY = 0.42
-export const GONE_OPACITY = 0.18
+export const GONE_OPACITY = 0.3
+export const CURSOR_LINE: CSSProperties = {
+  borderLeftWidth: 1,
+  borderLeftStyle: 'dashed',
+  borderLeftColor: 'var(--color-accent)',
+}
 
 export interface HotMark {
   key: string
