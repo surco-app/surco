@@ -362,11 +362,11 @@ describe('Editor cues section', () => {
       Node.DOCUMENT_POSITION_FOLLOWING) !==
     0
 
-  it('puts Cues first, above Archivo and the metadata form, in a rekordbox playlist with the default order, so no track needs a scroll to reach it', () => {
+  it('keeps Cues where Settings › Sections lists it in a rekordbox playlist, after the metadata, so the editor matches that list', () => {
     renderEditor({ id: 'a' }, 'wav', {
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
     })
-    expect(follows('cues-section', 'editor-group-metadata')).toBe(true)
+    expect(follows('editor-group-metadata', 'cues-section')).toBe(true)
     expect(screen.getAllByTestId('cues-section')).toHaveLength(1)
   })
 
