@@ -76,7 +76,7 @@ export function CueWave({
   latest.current = { beatsMs, durationMs, onMove, onSeek }
   useLayoutEffect(() => {
     const root = rootRef.current
-    if (!root) return
+    if (!analysed || !root) return
     const measure = () => setStripPx(root.getBoundingClientRect().width)
     measure()
     if (typeof ResizeObserver === 'undefined') return
