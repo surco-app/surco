@@ -99,6 +99,10 @@ export function CueWave({
   useEffect(() => {
     if (readOnly) setCursor(null)
   }, [readOnly])
+  const canPlace = onPlace !== undefined
+  useEffect(() => {
+    if (!canPlace) setCursor(null)
+  }, [canPlace])
   const msAtX = useCallback((clientX: number): number => {
     const rect = rootRef.current?.getBoundingClientRect()
     if (!rect) return 0

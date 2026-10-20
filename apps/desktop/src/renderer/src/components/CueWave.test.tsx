@@ -329,6 +329,21 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
+  it('takes the line under the cursor away once the editor stops placing, so Manual never shows where a flow would go', () => {
+    const props = {
+      wave: null,
+      grid: GRID,
+      durationMs: 80000,
+      cues: [],
+      onPlace: vi.fn<(ms: number) => void>(),
+    }
+    const { rerender } = render(<CueWave {...props} />)
+    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    expect(screen.getByTestId('cue-wave-cursor')).toBeInTheDocument()
+    rerender(<CueWave {...props} onPlace={undefined} />)
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+  })
+
   it('forgets the beat under the cursor once a press turns into moving the playhead, so no flow hangs over the scrub', () => {
     const onHover = vi.fn<(ms: number | null) => void>()
     const onSeek = vi.fn<(ms: number) => void>()

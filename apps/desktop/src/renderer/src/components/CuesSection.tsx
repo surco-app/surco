@@ -277,6 +277,9 @@ function Editing({
   const canApply =
     switchGhost !== null && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
   const [hoverMs, setHoverMs] = useState<number | null>(null)
+  useEffect(() => {
+    if (!placing) setHoverMs(null)
+  }, [placing])
   const hoverGhost = useMemo<DraftGhost | null>(
     () =>
       placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,

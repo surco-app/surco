@@ -232,6 +232,14 @@ describe('CueWaveDetail', () => {
     expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
   })
 
+  it('takes the line under the cursor away once the editor stops placing, so Manual never shows where a flow would go', () => {
+    const { rerender } = setup({ onPlace: vi.fn<(ms: number) => void>() })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
+    expect(screen.getByTestId('cue-detail-cursor')).toBeInTheDocument()
+    rerender({ onPlace: undefined })
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+  })
+
   it('forgets the bar under the cursor as soon as a press starts, so no flow hangs over a scrub', () => {
     const onHover = vi.fn<(ms: number | null) => void>()
     const onScrub = vi.fn<(ms: number) => void>()

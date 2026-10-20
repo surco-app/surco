@@ -107,6 +107,10 @@ export function CueWaveDetail({
     }
   }, [drag])
   const [cursor, setCursor] = useState<number | null>(null)
+  const canPlace = onPlace !== undefined
+  useEffect(() => {
+    if (!canPlace) setCursor(null)
+  }, [canPlace])
   const snapAt = (clientX: number, rect: DOMRect): number =>
     snapMs[nearestBeat(snapMs, fromMs + ((clientX - rect.left) / rect.width) * span)]
   useEffect(() => {

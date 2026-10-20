@@ -626,6 +626,18 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-gone', 'true')
   })
 
+  it('forgets the hovered point when Settings switches to Manual under the cursor, so switching back draws no old flow', async () => {
+    const { changeSettings } = setup()
+    await ready()
+    hoverAt(bar(64))
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-/).length).toBeGreaterThan(0)
+    changeSettings({ activeCueFlow: 'manual' })
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
+    changeSettings({ activeCueFlow: 'mine' })
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
+  })
+
   it('draws the whole result of a flow that does not depend on the point as soon as it is chosen', async () => {
     const chorus: CueFlow = {
       id: 'chorus',
