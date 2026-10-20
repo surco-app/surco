@@ -27,6 +27,18 @@ Vicent, 20/10: "hay que ser genéricos, no todos los DJs pinchan igual. Y hay us
 10. Un flujo cuyas reglas no dependen del punto (por ejemplo, solo "desde el primer golpe" o "desde cada frase de rekordbox") no sigue al cursor: muestra en fantasma el resultado completo en cuanto se elige, con "Aplicar a esta pista". Un flujo que mezcla reglas con y sin punto sigue al cursor y el fantasma incluye también las que no dependen de él.
 11. Al colocar un flujo cuyo punto no queda marcado con un CALL, la colocación es de una vez: Surco no podrá recalcularla después desde ese punto, igual que si se hubiera puesto a mano.
 
+## Tras el recorrido de DJ
+
+Vicent, 20/10, aprobando las propuestas del recorrido (`.superpowers/sdd/2026-10-20-flujo-fantasma/walkthrough-report.md`). Cambian las decisiones 2, 3, 5 y 6.
+
+12. Vicent, 20/10: la tira general siempre navega y nunca coloca. A pantalla completa, clic o arrastre mueven el cabezal al golpe más cercano. Plegada, un clic abre la pantalla completa en ese golpe con cualquier modo, no solo con Manual. El fantasma del flujo se sigue viendo en la tira al pasar el cursor, pero se coloca solo en la onda ampliada, donde se ven los compases. "Haz clic para colocar" sale solo a pantalla completa, porque plegada el clic abre. La vista previa de Ajustes sigue siendo de solo lectura.
+13. Vicent, 20/10: el fantasma enseña también lo que el flujo no pone, muy apagado y con contorno discontinuo, y una frase corta junto a la ayuda dice cuántas no caben y por qué. Los motivos son caer en la parte fuerte, chocar con otro punto, caer antes del primer golpe o después del último y pasar de 8 hot cues. Lo calcula el mismo motor que coloca, sin cambiar lo que coloca.
+14. Vicent, 20/10: "Aplicar a esta pista" no aparece si el flujo elegido solo quitaría hot cues sin poner ninguna. En su lugar se lee "Este flujo no cabe en esta pista" con el motivo de la decisión 13. Un flujo que por diseño solo pone CALL (Solo CALL) sí se puede aplicar.
+15. Vicent, 20/10: el punto se corrige desde su CALL. Arrastrarlo en la onda ampliada mueve el punto al compás o golpe de Quantize y vuelve a colocar su flujo allí, en un solo paso de deshacer. Borrarlo (✕, ⌫ o el menú) se lleva lo que el flujo generó desde ese punto, pero no lo puesto o cambiado a mano ni los bucles. Colocar, borrar el CALL y colocar en otro sitio da lo mismo que colocar limpio. Con Manual el CALL se mueve y se borra solo, como antes.
+16. Vicent, 20/10: en la fuente rekordbox la sección Cues va la primera del editor, encima de Archivo y Metadatos, y se pliega y despliega como las demás. Si el DJ ordenó las secciones en Ajustes de forma distinta a la de Surco, se respeta su orden.
+17. Vicent, 20/10: "N compases al CALL" cuenta hasta el siguiente punto, no hasta el CALL de una hot cue ni un bucle.
+18. Vicent, 20/10: la tira general lleva una escala abajo con una muesca cada 32 golpes (8 compases, una frase de rekordbox), algo más marcada cada 128 golpes, en lugar de la muesca cada 16 compases de `2026-10-20-editor-cues-calma-design.md`. A la izquierda de la onda ampliada, fuera de ella, van los botones de acercar, restablecer y alejar, como en rekordbox, siempre visibles y desactivados en los extremos.
+
 ## Fuera de alcance
 
 - La detección automática (se hace después sobre este mismo mecanismo).
