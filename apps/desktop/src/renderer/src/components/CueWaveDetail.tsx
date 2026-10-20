@@ -8,6 +8,7 @@ import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import {
   CURSOR_LINE,
   type CueGhost,
+  droppedStyle,
   GHOST_OPACITY,
   GONE_OPACITY,
   markStyle,
@@ -388,6 +389,17 @@ export function CueWaveDetail({
             {h.letter}
           </span>
         ))}
+        {(ghost?.rejected ?? [])
+          .filter((r) => r.ms >= fromMs && r.ms <= toMs)
+          .map((r) => (
+            <span
+              key={`gd${r.ms}`}
+              data-testid={`cue-detail-ghost-dropped-${r.ms}`}
+              aria-hidden="true"
+              style={droppedStyle(((r.ms - fromMs) / span) * 100, r)}
+              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
+            />
+          ))}
         {cursor !== null && cursor >= fromMs && cursor <= toMs && (
           <span
             data-testid="cue-detail-cursor"

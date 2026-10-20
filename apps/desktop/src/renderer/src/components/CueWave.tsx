@@ -8,6 +8,7 @@ import type { CueWaveColumn } from '../../../shared/types'
 import {
   CURSOR_LINE,
   type CueGhost,
+  droppedStyle,
   GHOST_OPACITY,
   GONE_OPACITY,
   markStyle,
@@ -438,6 +439,17 @@ export function CueWave({
           {h.letter}
         </span>
       ))}
+      {(ghost?.rejected ?? [])
+        .filter((r) => r.ms >= 0 && r.ms <= durationMs)
+        .map((r) => (
+          <span
+            key={`gd${r.ms}`}
+            data-testid={`cue-wave-ghost-dropped-${r.ms}`}
+            aria-hidden="true"
+            style={droppedStyle((r.ms / Math.max(durationMs, 1)) * 100, r)}
+            className="pointer-events-none absolute z-10 h-3 w-3 rounded-[3px] border"
+          />
+        ))}
       {line !== null && (
         <span
           data-testid="cue-wave-cursor"

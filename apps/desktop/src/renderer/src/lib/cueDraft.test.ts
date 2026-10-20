@@ -687,6 +687,7 @@ describe('ghostOf', () => {
     expect(ghostOf(marked, { type: 'mark-drop', ms: bar(64) + 10 }, wide)).toEqual({
       added: [],
       gone: [],
+      rejected: [],
     })
   })
 })
@@ -751,5 +752,46 @@ describe('quantize of hand-placed cues', () => {
     const s = runWith('bar', startDraft(live, 'mine'), { type: 'add-call', ms: bar(30) })
     expect(at(s, bar(5) + 500, true)).toBeDefined()
     expect(validWantedSet(wantedOfDraft(s.cues), live)).toEqual({ ok: true })
+  })
+})
+
+describe('ghostOf rejected', () => {
+  const strong = { ...ctx, strong: [{ start: bar(30), end: bar(40) }] }
+  const reasons = (g: { rejected: { ms: number; reason: string }[] }) =>
+    g.rejected.map((c) => [c.ms, c.reason])
+
+  it('lists what the flow drops at the hovered point and why, so the ghost can show it', () => {
+    const g = ghostOf(empty(), { type: 'mark-drop', ms: bar(64) }, strong)
+    expect(reasons(g)).toEqual([
+      [bar(32), 'strong'],
+      [bar(16), 'strong'],
+    ])
+  })
+
+  it('lists only what the new point drops, not what earlier points already dropped', () => {
+    const s = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, strong)
+    expect(reasons(ghostOf(s, { type: 'mark-drop', ms: bar(160) }, strong))).toEqual([])
+  })
+
+  it('lists the drops of a flow that leaves the point unmarked even when it places nothing there', () => {
+    const quiet: CueFlow = { ...ONE_AT_32, id: 'quiet', markPoint: false }
+    const g = ghostOf(
+      startDraft([], 'quiet'),
+      { type: 'mark-drop', ms: bar(64) },
+      { ...strong, flows: [...KEPT, quiet] },
+    )
+    expect(g.added).toEqual([])
+    expect(reasons(g)).toEqual([[bar(32), 'strong']])
+  })
+
+  it('lists nothing on a point already marked, where a click changes nothing', () => {
+    const s = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, strong)
+    expect(ghostOf(s, { type: 'mark-drop', ms: bar(64) }, strong).rejected).toEqual([])
+  })
+
+  it('lists what another flow would drop over the whole track when it is applied', () => {
+    const s = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, strong)
+    const g = ghostOf(s, { type: 'apply-flow', flowId: 'one-at-32' }, strong)
+    expect(reasons(g)).toEqual([[bar(32), 'strong']])
   })
 })

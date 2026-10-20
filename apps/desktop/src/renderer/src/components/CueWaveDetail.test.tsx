@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
+import { hotCueColor, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { CueWaveDetail } from './CueWaveDetail'
 
@@ -298,6 +298,27 @@ describe('CueWaveDetail', () => {
     })
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveAttribute('data-gone', 'true')
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveStyle({ opacity: '0.3' })
+  })
+
+  it('draws what the flow drops as faint dashed outlines in the cue colour, inside the window only and never clickable', () => {
+    setup({
+      ghost: {
+        added: [],
+        gone: [],
+        rejected: [
+          { ms: bar(28), place: 'both', color: 22 },
+          { ms: bar(36), place: 'call', color: null },
+          { ms: bar(4), place: 'hot', color: 42 },
+        ],
+      },
+    })
+    const hot = screen.getByTestId(`cue-detail-ghost-dropped-${bar(28)}`)
+    expect(hot).toHaveStyle({ borderStyle: 'dashed', borderColor: hotCueColor(22), opacity: '0.3' })
+    expect(hot.className).toContain('pointer-events-none')
+    expect(screen.getByTestId(`cue-detail-ghost-dropped-${bar(36)}`)).toHaveStyle({
+      borderColor: MEMORY_CUE_COLOR,
+    })
+    expect(screen.queryByTestId(`cue-detail-ghost-dropped-${bar(4)}`)).toBeNull()
   })
 
   it('paints at most one column per pixel however long the track, so a 5 minute wave stays smooth', () => {

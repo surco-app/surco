@@ -827,7 +827,19 @@
       "manualMode": "Manual",
       "clearAll": "Borrar todas las cues",
       "placeHint": "Haz clic para colocar",
-      "applyTrack": "Aplicar a esta pista"
+      "applyTrack": "Aplicar a esta pista",
+      "rejected": {
+        "strong_one": "{{count}} no cabe, cae en la parte fuerte",
+        "strong_other": "{{count}} no caben, caen en la parte fuerte",
+        "point_one": "{{count}} no cabe, choca con otro punto",
+        "point_other": "{{count}} no caben, chocan con otro punto",
+        "start_one": "{{count}} no cabe, cae antes del primer golpe",
+        "start_other": "{{count}} no caben, caen antes del primer golpe",
+        "end_one": "{{count}} no cabe, cae después del último golpe",
+        "end_other": "{{count}} no caben, caen después del último golpe",
+        "limit_one": "{{count}} no cabe, pasaría de 8 hot cues",
+        "limit_other": "{{count}} no caben, pasarían de 8 hot cues"
+      }
     }
   },
   "fields": {

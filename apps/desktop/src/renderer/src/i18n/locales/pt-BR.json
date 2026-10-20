@@ -827,7 +827,19 @@
       "manualMode": "Manual",
       "clearAll": "Apagar todas as cues",
       "placeHint": "Clique para colocar",
-      "applyTrack": "Aplicar a esta faixa"
+      "applyTrack": "Aplicar a esta faixa",
+      "rejected": {
+        "strong_one": "{{count}} não cabe, cai na parte forte",
+        "strong_other": "{{count}} não cabem, caem na parte forte",
+        "point_one": "{{count}} não cabe, bate em outro ponto",
+        "point_other": "{{count}} não cabem, batem em outro ponto",
+        "start_one": "{{count}} não cabe, cai antes da primeira batida",
+        "start_other": "{{count}} não cabem, caem antes da primeira batida",
+        "end_one": "{{count}} não cabe, cai depois da última batida",
+        "end_other": "{{count}} não cabem, caem depois da última batida",
+        "limit_one": "{{count}} não cabe, passaria de 8 hot cues",
+        "limit_other": "{{count}} não cabem, passariam de 8 hot cues"
+      }
     }
   },
   "fields": {

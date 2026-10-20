@@ -827,7 +827,19 @@
       "manualMode": "Manuell",
       "clearAll": "Alle Cues löschen",
       "placeHint": "Zum Setzen klicken",
-      "applyTrack": "Auf diesen Titel anwenden"
+      "applyTrack": "Auf diesen Titel anwenden",
+      "rejected": {
+        "strong_one": "{{count}} passt nicht, fällt in den starken Teil",
+        "strong_other": "{{count}} passen nicht, fallen in den starken Teil",
+        "point_one": "{{count}} passt nicht, stößt an einen anderen Punkt",
+        "point_other": "{{count}} passen nicht, stoßen an einen anderen Punkt",
+        "start_one": "{{count}} passt nicht, liegt vor dem ersten Schlag",
+        "start_other": "{{count}} passen nicht, liegen vor dem ersten Schlag",
+        "end_one": "{{count}} passt nicht, liegt nach dem letzten Schlag",
+        "end_other": "{{count}} passen nicht, liegen nach dem letzten Schlag",
+        "limit_one": "{{count}} passt nicht, wäre mehr als 8 Hot Cues",
+        "limit_other": "{{count}} passen nicht, wären mehr als 8 Hot Cues"
+      }
     }
   },
   "fields": {

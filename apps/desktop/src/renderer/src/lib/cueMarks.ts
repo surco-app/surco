@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
+import type { FlowPlace } from '../../../shared/cueFlows'
 import { SAME_POSITION_MS } from '../../../shared/cueRules'
-import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { hotCueColor, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { cueLetter } from './rowCues'
 
 export interface MarkInput {
@@ -10,13 +11,30 @@ export interface MarkInput {
   color: number | null
 }
 
+export interface DroppedMark {
+  ms: number
+  place: FlowPlace
+  color: number | null
+}
+
 export interface CueGhost {
   added: MarkInput[]
   gone: string[]
+  rejected?: DroppedMark[]
 }
 
 export const GHOST_OPACITY = 0.42
 export const GONE_OPACITY = 0.3
+export const DROPPED_OPACITY = 0.3
+
+export function droppedStyle(at: number, mark: DroppedMark): CSSProperties {
+  return {
+    ...markStyle(at),
+    borderStyle: 'dashed',
+    borderColor: mark.place === 'call' ? MEMORY_CUE_COLOR : hotCueColor(mark.color),
+    opacity: DROPPED_OPACITY,
+  }
+}
 export const CURSOR_LINE: CSSProperties = {
   borderLeftWidth: 1,
   borderLeftStyle: 'dashed',

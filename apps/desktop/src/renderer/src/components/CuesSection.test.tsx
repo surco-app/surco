@@ -650,6 +650,41 @@ describe('CuesSection', () => {
     ).toEqual([`cue-wave-ghost-call-${bar(64)}`, 'cue-wave-ghost-hot-A'])
   })
 
+  it('draws dimmed and dashed what the flow drops at the hovered point and says why, so a lone hot cue is no mystery', async () => {
+    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    await ready()
+    hoverAt(bar(64))
+    for (const ms of [bar(32), bar(16)])
+      expect(screen.getByTestId(`cue-wave-ghost-dropped-${ms}`)).toHaveStyle({
+        borderStyle: 'dashed',
+        opacity: '0.3',
+      })
+    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
+      "2 don't fit, they fall in the strong part",
+    )
+    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
+    expect(screen.queryByTestId('cues-rejected')).toBeNull()
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(0)
+    await openFull()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: bar(40) / 1000 })
+    fireEvent.mouseUp(window, { clientX: bar(40) / 1000 })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
+      "1 doesn't fit, it falls before the first beat",
+    )
+  })
+
+  it('draws what another flow would drop when it is chosen on a marked track, with the reason', async () => {
+    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    await ready()
+    markAt(bar(64))
+    chooseFlow('one-at-32')
+    expect(screen.getByTestId(`cue-wave-ghost-dropped-${bar(32)}`)).toBeInTheDocument()
+    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
+      "1 doesn't fit, it falls in the strong part",
+    )
+  })
+
   it('draws no flow and no cursor in Manual', async () => {
     setup(READ, null, { activeCueFlow: 'manual' })
     await ready()

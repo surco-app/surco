@@ -7,6 +7,8 @@ import {
   flowOutcome,
   HOT_KINDS,
   nearestBeat,
+  type RejectedCue,
+  rejectedCues,
   SAME_POSITION_MS,
   type StrongPart,
   type WantedCue,
@@ -386,15 +388,38 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
 export interface DraftGhost {
   added: DraftCue[]
   gone: string[]
+  rejected: RejectedCue[]
 }
 
 const sameCue = (a: DraftCue, b: DraftCue): boolean =>
   a.key === b.key && a.ms === b.ms && a.kind === b.kind && a.color === b.color
+
+function rejectsOf(state: CueDraft, action: DraftAction, ctx: DraftContext): RejectedCue[] {
+  const track = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
+  const drops = draftDrops(state.cues, state.locked)
+  if (action.type === 'apply-flow') {
+    const flow = flowById(ctx, action.flowId)
+    return rejectedCues(flow, { ...track, drops: flowDrops(flow, { ...track, drops }) })
+  }
+  if (action.type !== 'mark-drop' || ctx.beats.length === 0) return []
+  const ms = snap(ctx, action.ms)
+  if (drops.some((d) => near(d, ms))) return []
+  const flow = flowById(ctx, state.flowId)
+  const once = !flow.markPoint || flow.id !== state.generatedBy
+  const base = once ? [] : flowDrops(flow, { ...track, drops })
+  const before = rejectedCues(flow, { ...track, drops: base })
+  const same = (a: RejectedCue, b: RejectedCue): boolean =>
+    a.rule === b.rule && a.reason === b.reason && near(a.ms, b.ms)
+  return rejectedCues(flow, { ...track, drops: [...base, ms] }).filter(
+    (c) => !before.some((b) => same(b, c)),
+  )
+}
 
 export function ghostOf(state: CueDraft, action: DraftAction, ctx: DraftContext): DraftGhost {
   const next = reduceDraft(state, action, ctx)
   return {
     added: next.cues.filter((c) => !state.cues.some((s) => sameCue(s, c))),
     gone: state.cues.filter((s) => !next.cues.some((c) => sameCue(s, c))).map((s) => s.key),
+    rejected: rejectsOf(state, action, ctx),
   }
 }

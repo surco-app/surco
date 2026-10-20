@@ -98,6 +98,12 @@ export interface FlowPlan {
   trimmed: FlowCue[]
 }
 
+export type RejectReason = 'strong' | 'point' | 'start' | 'end' | 'limit'
+
+export interface RejectedCue extends FlowCue {
+  reason: RejectReason
+}
+
 const isPlannedHot = (c: FlowCue): boolean => c.place !== 'call'
 
 export function ruleColor(rule: CueRule, repetition: number): number {
@@ -116,16 +122,23 @@ function originsOf(rule: CueRule, track: FlowTrack, drops: number[]): number[] {
     .sort((a, b) => a - b)
 }
 
-function fitsAround(
+function misfit(
   ms: number,
   rule: CueRule,
   previous: number | null,
   next: number | null,
   strong: StrongPart[],
-): boolean {
-  if (rule.direction === 'forward') return next === null || ms < next - SAME_POSITION_MS
-  if (previous !== null && ms <= previous + SAME_POSITION_MS) return false
-  return !strong.some((s) => s.start <= ms && ms < s.end)
+): RejectReason | null {
+  if (rule.direction === 'forward')
+    return next === null || ms < next - SAME_POSITION_MS ? null : 'point'
+  if (previous !== null && ms <= previous + SAME_POSITION_MS) return 'point'
+  return strong.some((s) => s.start <= ms && ms < s.end) ? 'strong' : null
+}
+
+function beatMsAt(beats: number[], at: number): number {
+  if (at >= 0 && at < beats.length) return beats[at]
+  const step = beats.length > 1 ? beats[1] - beats[0] : 500
+  return at < 0 ? beats[0] + at * step : beats[beats.length - 1] + (at - beats.length + 1) * step
 }
 
 function allowed(
@@ -160,23 +173,35 @@ function trimToLimit(cues: FlowCue[]): FlowPlan {
   return { cues: [...kept].sort((a, b) => a.ms - b.ms), trimmed }
 }
 
-export function evaluateFlow(flow: CueFlow, track: FlowTrack): FlowPlan {
+function walkFlow(flow: CueFlow, track: FlowTrack): FlowPlan & { rejected: RejectedCue[] } {
   const { beats } = track
-  if (beats.length === 0) return { cues: [], trimmed: [] }
+  if (beats.length === 0) return { cues: [], trimmed: [], rejected: [] }
   const drops = [...track.drops].sort((a, b) => a - b)
   const placed: FlowCue[] = []
+  const rejected: RejectedCue[] = []
   flow.rules.forEach((rule, index) => {
     const own: FlowCue[] = []
+    const cueOf = (ms: number, repetition: number): FlowCue => ({
+      ms,
+      place: rule.place,
+      color: rule.place === 'call' ? null : ruleColor(rule, repetition),
+      rule: index,
+      repetition,
+      bars: repetition * rule.bars,
+    })
     const add = (ms: number, repetition: number): void => {
       if ([...placed, ...own].some((c) => Math.abs(c.ms - ms) <= SAME_POSITION_MS)) return
-      own.push({
-        ms,
-        place: rule.place,
-        color: rule.place === 'call' ? null : ruleColor(rule, repetition),
-        rule: index,
-        repetition,
-        bars: repetition * rule.bars,
-      })
+      own.push(cueOf(ms, repetition))
+    }
+    const reject = (
+      start: number,
+      step: number,
+      from: number,
+      to: number,
+      reason: RejectReason,
+    ) => {
+      for (let k = from; k <= to; k++)
+        rejected.push({ ...cueOf(beatMsAt(beats, start + k * step), k), reason })
     }
     const origins = originsOf(rule, track, drops)
     origins.forEach((origin, i) => {
@@ -189,17 +214,38 @@ export function evaluateFlow(flow: CueFlow, track: FlowTrack): FlowPlan {
       const next = i + 1 < origins.length ? origins[i + 1] : null
       const step = rule.bars * BEATS_PER_BAR * (rule.direction === 'back' ? -1 : 1)
       const times = rule.repeat === 'edge' ? beats.length : rule.repeat
+      const last = rule.repeat === 'edge' ? null : rule.repeat
       for (let k = 1; k <= times; k++) {
         const at = start + k * step
-        if (at < 0 || at >= beats.length) break
+        if (at < 0 || at >= beats.length) {
+          if (last !== null) reject(start, step, k, last, at < 0 ? 'start' : 'end')
+          break
+        }
         const ms = beats[at]
-        if (rule.when === 'fits' && !fitsAround(ms, rule, previous, next, track.strong)) break
+        const reason = rule.when === 'fits' ? misfit(ms, rule, previous, next, track.strong) : null
+        if (reason) {
+          reject(start, step, k, last ?? k, reason)
+          break
+        }
         if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
       }
     })
     placed.push(...own)
   })
-  return trimToLimit(placed)
+  const plan = trimToLimit(placed)
+  return {
+    ...plan,
+    rejected: [...rejected, ...plan.trimmed.map((c) => ({ ...c, reason: 'limit' as const }))],
+  }
+}
+
+export function evaluateFlow(flow: CueFlow, track: FlowTrack): FlowPlan {
+  const { cues, trimmed } = walkFlow(flow, track)
+  return { cues, trimmed }
+}
+
+export function rejectedCues(flow: CueFlow, track: FlowTrack): RejectedCue[] {
+  return walkFlow(flow, track).rejected
 }
 
 export const HOT_KINDS = [1, 2, 3, 5, 6, 7, 8, 9]

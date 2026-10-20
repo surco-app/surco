@@ -827,7 +827,19 @@
       "manualMode": "Manuel",
       "clearAll": "Effacer toutes les cues",
       "placeHint": "Cliquez pour placer",
-      "applyTrack": "Appliquer à ce morceau"
+      "applyTrack": "Appliquer à ce morceau",
+      "rejected": {
+        "strong_one": "{{count}} ne rentre pas, tombe dans la partie forte",
+        "strong_other": "{{count}} ne rentrent pas, tombent dans la partie forte",
+        "point_one": "{{count}} ne rentre pas, touche un autre point",
+        "point_other": "{{count}} ne rentrent pas, touchent un autre point",
+        "start_one": "{{count}} ne rentre pas, tombe avant le premier temps",
+        "start_other": "{{count}} ne rentrent pas, tombent avant le premier temps",
+        "end_one": "{{count}} ne rentre pas, tombe après le dernier temps",
+        "end_other": "{{count}} ne rentrent pas, tombent après le dernier temps",
+        "limit_one": "{{count}} ne rentre pas, dépasserait 8 hot cues",
+        "limit_other": "{{count}} ne rentrent pas, dépasseraient 8 hot cues"
+      }
     }
   },
   "fields": {

@@ -300,6 +300,8 @@ function Editing({
     [placing, hoverMs, state, ctx],
   )
   const ghost = hoverGhost ?? (canApply && switchGhost !== null ? switchGhost : undefined)
+  const rejected = ghost?.rejected ?? []
+  const rejectedReasons = [...new Set(rejected.map((r) => r.reason))]
   const openedWith = useRef(settled)
   useEffect(() => {
     if (openedWith.current === settled) return
@@ -534,6 +536,17 @@ function Editing({
       {placing && maximized && (
         <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
           {tr('editor.cues.placeHint')}
+        </span>
+      )}
+      {rejectedReasons.length > 0 && (
+        <span data-testid="cues-rejected" className="text-xs text-fg-faint">
+          {rejectedReasons
+            .map((reason) =>
+              tr(`editor.cues.rejected.${reason}`, {
+                count: rejected.filter((r) => r.reason === reason).length,
+              }),
+            )
+            .join(' · ')}
         </span>
       )}
       <span className="flex-1" />
