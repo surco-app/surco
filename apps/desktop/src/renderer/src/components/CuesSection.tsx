@@ -15,7 +15,6 @@ import {
   type CueDraft,
   type DraftAction,
   type DraftCue,
-  freeLetters,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -222,7 +221,6 @@ function Editing({
     dispatch(action)
     setMenu(null)
   }
-  const letters = selected ? freeLetters(state.cues, selected.kind) : []
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
   const { data: words } = useCueWaveDetail(cue.contentId, maximized)
   const source: DetailSource | null = words
@@ -462,23 +460,6 @@ function Editing({
                   </div>
                 )}
               </div>
-              <select
-                data-testid="cues-letter"
-                aria-label={tr('editor.cues.letter')}
-                value={selected.kind}
-                onChange={(e) =>
-                  dispatch({ type: 'reletter', key: selected.key, kind: Number(e.target.value) })
-                }
-                className="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2 py-1"
-              >
-                {(letters.includes(selected.kind) ? letters : [selected.kind, ...letters]).map(
-                  (kind) => (
-                    <option key={kind} value={kind}>
-                      {cueLetter(kind)}
-                    </option>
-                  ),
-                )}
-              </select>
             </>
           )}
           {!state.locked.includes(selected.key) && (

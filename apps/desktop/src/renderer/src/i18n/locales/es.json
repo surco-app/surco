@@ -778,7 +778,6 @@
       "delete": "Borrar",
       "colour": "Color {{index}}",
       "colourPicker": "Color del cue",
-      "letter": "Letra",
       "selectedHot": "Hot cue {{letter}}",
       "selectedCall": "CALL",
       "menuAddHot": "Añadir hot cue aquí",

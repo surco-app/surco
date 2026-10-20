@@ -206,7 +206,7 @@ describe('CuesSection', () => {
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
   })
 
-  it('recolours a hot cue from rekordbox picker and changes its letter only to a free one', async () => {
+  it('recolours a hot cue from rekordbox picker', async () => {
     setup()
     await ready()
     clickAt(bar(64))
@@ -216,22 +216,16 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cue-palette-5'))
     expect(screen.queryByTestId('cue-palette')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#50b4ff' })
-    const letters = [...(screen.getByTestId('cues-letter') as HTMLSelectElement).options].map(
-      (o) => o.text,
-    )
-    expect(letters).toEqual(['A', 'D', 'E', 'F', 'G', 'H'])
-    fireEvent.change(screen.getByTestId('cues-letter'), { target: { value: '9' } })
-    expect(screen.getByTestId('cue-wave-hot-H')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-letter')).toBeNull()
   })
 
-  it('shows no colour or letter for a selected CALL, since rekordbox lets neither change', async () => {
+  it('shows no colour for a selected CALL, since rekordbox lets neither change', async () => {
     setup()
     await ready()
     clickAt(bar(64))
     pick(`cue-wave-call-${bar(64)}`, bar(64))
     expect(screen.getByTestId('cues-delete')).toBeInTheDocument()
     expect(screen.queryByTestId('cues-colour')).toBeNull()
-    expect(screen.queryByTestId('cues-letter')).toBeNull()
   })
 
   it('floats the colour picker over the editor and closes it with Escape without leaving the section', async () => {
@@ -443,7 +437,7 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-queued-stale')).toBeNull()
   })
 
-  it('shows a loop read-only, with no drag, delete, colour or letter', async () => {
+  it('shows a loop read-only, with no drag, delete or colour', async () => {
     setup({ ...READ, cues: [{ id: 'l', ms: bar(32), kind: 1, color: 1, loop: true }] })
     await ready()
     fireEvent.mouseDown(screen.getByTestId('cue-wave-hot-A'), { clientX: bar(32) / 1000 })
@@ -453,7 +447,7 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cue-wave-hot-A'))
     expect(screen.getByTestId('cues-loop')).toBeInTheDocument()
     expect(screen.queryByTestId('cues-delete')).toBeNull()
-    expect(screen.queryByTestId('cues-letter')).toBeNull()
+    expect(screen.queryByTestId('cues-colour')).toBeNull()
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Backspace' })
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
   })
