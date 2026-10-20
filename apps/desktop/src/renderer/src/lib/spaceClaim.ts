@@ -85,21 +85,24 @@ export function isClaimable(id: string): id is ClaimedKey {
 // through to the GLOBAL command: Space starting the mini-player underneath a section
 // that still had its own transport open, precisely what claiming exists to prevent.
 const claims: Handlers[] = []
+const over = new Set<Handlers>()
 const claimed = new Set<string>()
 
 // Registers the section's handlers and returns the release. A release removes its
 // OWN entry wherever it sits, so it can neither resurrect a dead claim nor drop a
 // live one.
-export function claimKeys(handlers: Handlers): () => void {
+export function claimKeys(handlers: Handlers, options: { over?: boolean } = {}): () => void {
   // The tag rides on the live stack so minification keeps it (a dead constant is shaken
   // out). It is what spaceClaim.bundle.test.ts counts: one chunk carrying it means one
   // copy of this stack, and a second copy would make a section's claims invisible to the
   // global listener.
   claimed.add('surco/key-claims/single-instance')
   claims.push(handlers)
+  if (options.over) over.add(handlers)
   return () => {
     const i = claims.indexOf(handlers)
     if (i !== -1) claims.splice(i, 1)
+    over.delete(handlers)
   }
 }
 
@@ -118,8 +121,9 @@ export function runKeyClaim(key: ClaimedKey, ctx: ClaimContext = {}): boolean {
 }
 
 function nearest(key: ClaimedKey): ((ctx: ClaimContext) => void) | undefined {
-  for (let i = claims.length - 1; i >= 0; i--) {
-    const handler = claims[i][key]
+  const order = [...claims.filter((c) => !over.has(c)), ...claims.filter((c) => over.has(c))]
+  for (let i = order.length - 1; i >= 0; i--) {
+    const handler = order[i][key]
     if (handler) return handler
   }
   return undefined

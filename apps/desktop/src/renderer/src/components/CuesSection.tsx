@@ -579,7 +579,7 @@ export function CuesSection({
   toggle.current = () => audition.toggle(playheadMs)
   useEffect(() => {
     if (!maximized) return
-    return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() })
+    return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() }, { over: true })
   }, [maximized])
   return (
     <div data-testid="cues-section" className="mt-6 border-t border-[var(--color-line)] pt-6">

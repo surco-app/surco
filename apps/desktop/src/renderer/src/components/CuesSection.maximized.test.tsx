@@ -435,6 +435,23 @@ describe('CuesSection maximized keys', () => {
     expect(audios).toHaveLength(1)
   })
 
+  it('keeps Space and Trim’s keys when Click repair or Trim claim again under the full editor', async () => {
+    stubSound()
+    setup()
+    await maximize()
+    const declickPlay = vi.fn<() => void>()
+    const trimBack = vi.fn<() => void>()
+    const release = claimKeys({ play: declickPlay, 'trim-start-back': trimBack })
+    act(() => {
+      runKeyClaim('play')
+      runKeyClaim('trim-start-back')
+    })
+    release()
+    expect(audios).toHaveLength(1)
+    expect(declickPlay).not.toHaveBeenCalled()
+    expect(trimBack).not.toHaveBeenCalled()
+  })
+
   it('stops the sound when the section is restored to its place', async () => {
     stubSound()
     setup()

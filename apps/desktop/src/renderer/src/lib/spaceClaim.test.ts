@@ -10,6 +10,20 @@ describe('spaceClaim', () => {
     release()
   })
 
+  it('keeps a claim made over everything on top when another section claims after it', () => {
+    const cues = vi.fn()
+    const declick = vi.fn()
+    const releaseCues = claimKeys({ play: cues }, { over: true })
+    const releaseDeclick = claimKeys({ play: declick })
+    runKeyClaim('play')
+    expect(cues).toHaveBeenCalled()
+    expect(declick).not.toHaveBeenCalled()
+    releaseCues()
+    runKeyClaim('play')
+    expect(declick).toHaveBeenCalled()
+    releaseDeclick()
+  })
+
   it('leaves the key to the global command when nothing is claimed', () => {
     expect(runKeyClaim('play')).toBe(false)
   })
