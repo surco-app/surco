@@ -19,7 +19,7 @@ export interface DraftCue extends WantedCue {
   key: string
 }
 
-export type DraftNotice = 'manual' | 'too-many' | null
+export type DraftNotice = 'too-many' | null
 
 export interface DraftSnapshot {
   cues: DraftCue[]
@@ -188,6 +188,7 @@ function regenerate(
   drops: number[],
   flow: CueFlow,
   previousFlow: CueFlow,
+  point?: number,
 ): CueDraft {
   const existing: ExistingCue[] = state.cues.map((c) => ({
     id: c.key,
@@ -208,6 +209,7 @@ function regenerate(
     kept: state.placed,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
+  if (out.status === 'manual') return fillMissing(state, ctx, drops, flow, point)
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
   let nextKey = state.nextKey
   const origin = { ...state.origin }
@@ -221,13 +223,7 @@ function regenerate(
     origin[`n${nextKey}`] = flow.id
     return { key: `n${nextKey}`, ms: w.ms, kind: w.kind, color: w.color }
   })
-  const cues =
-    out.status === 'plan'
-      ? keepEdited(state, withoutOldCalls(state, ctx, drops, flow, previousFlow, generated))
-      : [
-          ...generated,
-          ...state.cues.filter((c) => !isHot(c) && !generated.some((g) => g.key === c.key)),
-        ]
+  const cues = keepEdited(state, withoutOldCalls(state, ctx, drops, flow, previousFlow, generated))
   if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,
@@ -235,8 +231,68 @@ function regenerate(
     nextKey,
     origin,
     selected: null,
-    notice: out.status === 'manual' ? 'manual' : null,
-    trimmed: out.status === 'plan' ? out.trimmed : [],
+    notice: null,
+    trimmed: out.trimmed,
+  })
+}
+
+function fillMissing(
+  state: CueDraft,
+  ctx: DraftContext,
+  drops: number[],
+  flow: CueFlow,
+  point?: number,
+): CueDraft {
+  const wantedOf = (points: number[]): WantedCue[] => {
+    const out = flowOutcome({
+      existing: [],
+      drops: points,
+      previousDrops: [],
+      beats: ctx.beats,
+      strong: ctx.strong,
+      phrases: ctx.phrases,
+      flow,
+    })
+    return out.status === 'too-many' ? [] : out.wanted
+  }
+  const same = (a: WantedCue, b: WantedCue): boolean => isHot(a) === isHot(b) && near(a.ms, b.ms)
+  const before = point === undefined ? [] : wantedOf(drops.filter((d) => !near(d, point)))
+  const planned = wantedOf(drops).filter((c) => !before.some((b) => same(b, c)))
+  const skipped = planned.filter((c) => isHot(c) && state.cues.some((o) => same(o, c)))
+  const fresh = planned.filter(
+    (c) =>
+      !state.cues.some((o) => same(o, c)) && (isHot(c) || !skipped.some((h) => near(h.ms, c.ms))),
+  )
+  const points = point === undefined ? drops : [point]
+  const away = (ms: number): number => Math.min(...points.map((p) => Math.abs(p - ms)))
+  const free = freeLetters(state.cues)
+  const hot = fresh.filter(isHot).sort((a, b) => away(a.ms) - away(b.ms))
+  const left = hot.slice(free.length)
+  const placed = fresh.filter(
+    (c) =>
+      !left.includes(c) &&
+      (isHot(c) || points.some((p) => near(p, c.ms)) || !left.some((h) => near(h.ms, c.ms))),
+  )
+  const letter = new Map(
+    hot
+      .slice(0, free.length)
+      .sort((a, b) => a.ms - b.ms)
+      .map((c, i) => [c, free[i]]),
+  )
+  if (placed.length === 0)
+    return left.length > 0 ? { ...state, trimmed: left.map((c) => c.ms) } : state
+  let nextKey = state.nextKey
+  const added = placed.map((c): DraftCue => {
+    nextKey += 1
+    return { key: `n${nextKey}`, ms: c.ms, kind: letter.get(c) ?? 0, color: c.color }
+  })
+  return commit(state, [...state.cues, ...added], {
+    flowId: flow.id,
+    generatedBy: flow.id,
+    nextKey,
+    origin: { ...state.origin, ...Object.fromEntries(added.map((c) => [c.key, flow.id])) },
+    selected: null,
+    trimmed: left.map((c) => c.ms).sort((a, b) => a - b),
   })
 }
 
@@ -429,7 +485,7 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     if (drops.some((d) => near(d, ms))) return state
     if (!flow.markPoint) return placeOnce(state, ctx, ms, flow, true)
     if (flow.id !== generator.id) return placeOnce(state, ctx, ms, flow, false)
-    return regenerate(state, ctx, [...drops, ms], flow, generator)
+    return regenerate(state, ctx, [...drops, ms], flow, generator, ms)
   }
   if (action.type === 'apply-flow')
     return regenerate(

@@ -769,8 +769,6 @@
       "title": "Cues",
       "help": "Pick a flow, bring the playhead to the point and press Mark here, or pick Manual and set each cue by hand. Select a cue to move it, delete it or change its colour.",
       "unanalysed": "rekordbox has not analysed this track yet",
-      "manual": "This track has hot cues set by hand. Surco adds a CALL at each point and does not add or move hot cues.",
-      "manualLetters": "This track has hot cues set by hand. Surco adds a CALL at each point and does not add or move hot cues, it only puts their letters in order.",
       "tooMany": "It would need more than 8 hot cues. Remove a point.",
       "save": "Save to rekordbox",
       "unreadable": "Could not read the cues from rekordbox",

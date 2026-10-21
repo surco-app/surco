@@ -1016,11 +1016,6 @@ function Editing({
           {noFitText}
         </p>
       )}
-      {state.notice === 'manual' && (
-        <p data-testid="cues-manual" className="mt-2 text-xs text-fg-dim">
-          {tr(settings.cueLettersByTime ? 'editor.cues.manualLetters' : 'editor.cues.manual')}
-        </p>
-      )}
       {state.notice === 'too-many' && (
         <p data-testid="cues-too-many" className="mt-2 text-xs text-warn">
           {tr('editor.cues.tooMany')}

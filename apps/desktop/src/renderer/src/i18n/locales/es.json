@@ -769,8 +769,6 @@
       "title": "Cues",
       "help": "Elige un flujo, lleva el cabezal al punto y pulsa Marcar aquí, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle el color.",
       "unanalysed": "rekordbox aún no ha analizado esta pista",
-      "manual": "Esta pista tiene hot cues puestas a mano. Surco pone un CALL en cada punto y no añade ni mueve hot cues.",
-      "manualLetters": "Esta pista tiene hot cues puestas a mano. Surco pone un CALL en cada punto y no añade ni mueve hot cues, solo ordena sus letras.",
       "tooMany": "Necesitaría más de 8 hot cues. Quita un punto.",
       "save": "Guardar en rekordbox",
       "unreadable": "No se pudieron leer los cues de rekordbox",

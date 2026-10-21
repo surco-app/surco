@@ -769,8 +769,6 @@
       "title": "Cues",
       "help": "Escolha um fluxo, leve o cursor de reprodução ao ponto e toque em Marcar aqui, ou escolha Manual e ponha cada cue à mão. Selecione um cue para movê-lo, apagá-lo ou mudar a cor.",
       "unanalysed": "O rekordbox ainda não analisou esta faixa",
-      "manual": "Esta faixa tem hot cues postos à mão. O Surco põe um CALL em cada ponto e não adiciona nem move hot cues.",
-      "manualLetters": "Esta faixa tem hot cues postos à mão. O Surco põe um CALL em cada ponto e não adiciona nem move hot cues, só põe as letras em ordem.",
       "tooMany": "Precisaria de mais de 8 hot cues. Tire um ponto.",
       "save": "Salvar no rekordbox",
       "unreadable": "Não foi possível ler os cues do rekordbox",

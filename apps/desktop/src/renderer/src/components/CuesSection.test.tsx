@@ -475,7 +475,6 @@ describe('CuesSection', () => {
     )
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     markAt(bar(160))
-    expect(screen.queryByTestId('cues-manual')).toBeNull()
     expect(
       screen
         .getAllByTestId(/^cue-wave-hot-/)
@@ -931,19 +930,8 @@ describe('CuesSection', () => {
     expect(validWantedSet(wanted, read.cues)).toEqual({ ok: true })
   })
 
-  for (const [lettersByTime, kind, notice] of [
-    [
-      false,
-      2,
-      'This track has hot cues set by hand. Surco adds a CALL at each point and does not add or move hot cues.',
-    ],
-    [
-      true,
-      1,
-      'This track has hot cues set by hand. Surco adds a CALL at each point and does not add or move hot cues, it only puts their letters in order.',
-    ],
-  ] as const)
-    it(`says exactly what saving does to hand-placed hot cues with the letters in track order ${lettersByTime ? 'on' : 'off'}, since the notice used to promise they stay untouched while the letters changed`, async () => {
+  for (const lettersByTime of [false, true])
+    it(`saves the flow’s missing hot cues beside a hand-placed one and leaves that one where it is with its colour, its letter in track order only with that setting ${lettersByTime ? 'on' : 'off'}`, async () => {
       const { saveRekordboxCues } = setup(
         { ...READ, cues: [{ id: 'm', ms: bar(40), kind: 2, color: 1 }] },
         null,
@@ -951,12 +939,22 @@ describe('CuesSection', () => {
       )
       await ready()
       markAt(bar(64))
-      expect(screen.getByTestId('cues-manual')).toHaveTextContent(notice)
       fireEvent.click(screen.getByTestId('cues-save'))
       await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
       const { wanted } = saveRekordboxCues.mock.calls[0][0]
-      expect(wanted.filter((c) => c.kind !== 0)).toEqual([{ id: 'm', ms: bar(40), kind, color: 1 }])
+      const hot = wanted.filter((c) => c.kind !== 0).sort((a, b) => a.ms - b.ms)
+      expect(hot.map((c) => c.ms)).toEqual([bar(16), bar(32), bar(40), bar(48)])
+      expect(hot.find((c) => c.id === 'm')).toEqual({
+        id: 'm',
+        ms: bar(40),
+        kind: lettersByTime ? 3 : 2,
+        color: 1,
+      })
+      expect(new Set(hot.map((c) => c.kind)).size).toBe(4)
       expect(wanted).toEqual(expect.arrayContaining([{ ms: bar(64), kind: 0, color: null }]))
+      expect(validWantedSet(wanted, [{ id: 'm', ms: bar(40), kind: 2, color: 1 }])).toEqual({
+        ok: true,
+      })
     })
 
   it('keeps every CALL already on a track with hand-placed hot cues when a new point is marked and saved, even one the new point’s CALL rule would land on, since that CALL was lost', async () => {
@@ -989,7 +987,6 @@ describe('CuesSection', () => {
     })
     await ready()
     markAt(bar(64))
-    expect(screen.getByTestId('cues-manual')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
@@ -1049,7 +1046,7 @@ describe('CuesSection', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const req = saveRekordboxCues.mock.calls[0][0]
     expect(req.fingerprint).toBe('f2')
-    expect(req.wanted).toContainEqual(extra)
+    expect(req.wanted).toContainEqual({ ...extra, kind: expect.any(Number) })
   })
 
   it('says nothing about an old save when the queued one was built on the read it shows', async () => {

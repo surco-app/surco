@@ -25,6 +25,12 @@ const empty = () => startDraft([], 'mine')
 const at = (s: CueDraft, ms: number, hot: boolean) =>
   s.cues.find((c) => c.ms === ms && (c.kind !== 0) === hot)
 
+const hotOf = (s: { cues: DraftCue[] }) =>
+  s.cues
+    .filter((c) => c.kind !== 0)
+    .sort((a, b) => a.ms - b.ms)
+    .map((c) => [c.ms, c.kind, c.color])
+
 describe('reduceDraft', () => {
   it('marks a drop on the nearest beat and lets the flow draw the countdown', () => {
     const s = run(empty(), { type: 'mark-drop', ms: bar(64) + 120 })
@@ -50,15 +56,101 @@ describe('reduceDraft', () => {
     expect(draftDrops(s.cues)).toEqual([bar(64)])
   })
 
-  it('marking a drop after moving a countdown cue keeps the move and only adds the CALL', () => {
+  it('marking a point after moving a countdown cue keeps the move and adds the new point’s cues into the free letters', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const a = at(marked, bar(16), true)
     const moved = run(marked, { type: 'move', key: a?.key as string, ms: bar(20) })
     const s = run(moved, { type: 'mark-drop', ms: bar(128) })
-    expect(s.notice).toBe('manual')
-    expect(at(s, bar(20), true)).toBeDefined()
+    expect(s.notice).toBeNull()
     expect(draftDrops(s.cues)).toEqual([bar(64), bar(128)])
-    expect(s.cues.filter((c) => c.kind !== 0)).toHaveLength(3)
+    expect(hotOf(s)).toEqual([
+      [bar(20), 1, 42],
+      [bar(32), 2, 22],
+      [bar(48), 3, 1],
+      [bar(80), 5, 42],
+      [bar(96), 6, 22],
+      [bar(112), 7, 1],
+    ])
+    for (const ms of [bar(80), bar(96), bar(112), bar(128)]) expect(at(s, ms, false)).toBeDefined()
+  })
+
+  describe('a track with hand-placed hot cues the flow does not match', () => {
+    const hand = (...cues: [string, number, number, number][]) =>
+      startDraft(
+        cues.map(([id, ms, kind, color]) => ({ id, ms, kind, color })),
+        'mine',
+      )
+
+    it('adds the flow’s missing hot cues with their CALLs into the free letters and never touches a hand cue', () => {
+      const start = hand(['h', bar(40), 2, 9])
+      const s = run(start, { type: 'mark-drop', ms: bar(64) })
+      expect(s.notice).toBeNull()
+      expect(s.cues.find((c) => c.key === 'h')).toEqual({
+        key: 'h',
+        id: 'h',
+        ms: bar(40),
+        kind: 2,
+        color: 9,
+      })
+      expect(hotOf(s)).toEqual([
+        [bar(16), 1, 42],
+        [bar(32), 3, 22],
+        [bar(40), 2, 9],
+        [bar(48), 5, 1],
+      ])
+      for (const ms of [bar(16), bar(32), bar(48), bar(64)]) expect(at(s, ms, false)).toBeDefined()
+    })
+
+    it('skips a flow hot cue where a hand cue already sits, keeping that one with its letter and colour and adding no CALL under it', () => {
+      const s = run(hand(['h', bar(40), 2, 9], ['k', bar(48), 5, 7]), {
+        type: 'mark-drop',
+        ms: bar(64),
+      })
+      expect(hotOf(s)).toEqual([
+        [bar(16), 1, 42],
+        [bar(32), 3, 22],
+        [bar(40), 2, 9],
+        [bar(48), 5, 7],
+      ])
+      expect(at(s, bar(48), false)).toBeUndefined()
+    })
+
+    it('places what fits nearest the point when the free letters run out and says which were left out', () => {
+      const start = hand(
+        ['a', bar(2), 1, 9],
+        ['b', bar(4), 2, 9],
+        ['c', bar(6), 3, 9],
+        ['d', bar(8), 5, 9],
+        ['e', bar(10), 6, 9],
+        ['f', bar(12), 7, 9],
+      )
+      const s = run(start, { type: 'mark-drop', ms: bar(64) })
+      expect(s.notice).toBeNull()
+      expect(hotOf(s).slice(6)).toEqual([
+        [bar(32), 8, 22],
+        [bar(48), 9, 1],
+      ])
+      expect(s.trimmed).toEqual([bar(16)])
+      expect(at(s, bar(16), false)).toBeUndefined()
+      expect(at(s, bar(64), false)).toBeDefined()
+    })
+
+    it('adds the missing cues of every point on Aplicar, leaving the hand cue and the CALLs in place', () => {
+      const start = startDraft(
+        [
+          { id: 'h', ms: bar(40), kind: 2, color: 9 },
+          { id: 'p', ms: bar(64), kind: 0, color: null },
+        ],
+        'mine',
+      )
+      const s = run(start, { type: 'apply-flow', flowId: 'one-at-32' })
+      expect(s.notice).toBeNull()
+      expect(hotOf(s)).toEqual([
+        [bar(32), 1, 22],
+        [bar(40), 2, 9],
+      ])
+      expect(s.cues.find((c) => c.key === 'p')?.ms).toBe(bar(64))
+    })
   })
 
   it('marks a drop on a countdown cue and keeps that CALL as the drop', () => {
@@ -501,11 +593,6 @@ const wide = {
 }
 const runWide = (state: CueDraft, ...actions: DraftAction[]) =>
   actions.reduce((s, a) => reduceDraft(s, a, wide), state)
-const hotOf = (s: { cues: DraftCue[] }) =>
-  s.cues
-    .filter((c) => c.kind !== 0)
-    .sort((a, b) => a.ms - b.ms)
-    .map((c) => [c.ms, c.kind, c.color])
 const shape = (cues: DraftCue[]) => cues.map((c) => `${c.key} ${c.ms} ${c.kind} ${c.color}`).sort()
 const throughGhost = (s: CueDraft, a: DraftAction) => {
   const g = ghostOf(s, a, wide)
