@@ -25,6 +25,26 @@ const cues = [
 ]
 
 describe('RowWave', () => {
+  it('says rekordbox has not analysed the track yet, so an empty slot does not read as a broken wave', () => {
+    render(
+      <RowWave
+        request={{ path: '/m/new.aiff' }}
+        cues={[]}
+        durationSec={370}
+        pending={false}
+        active
+        unanalyzed
+      />,
+    )
+    expect(screen.getByTestId('track-unanalyzed')).toHaveTextContent('Not analyzed in rekordbox')
+  })
+
+  it('stays quiet about analysis for a track rekordbox has analysed', async () => {
+    render(<RowWave request={request} cues={[]} durationSec={128} pending={false} active />)
+    await screen.findByTestId('track-wave-bars')
+    expect(screen.queryByTestId('track-unanalyzed')).not.toBeInTheDocument()
+  })
+
   it('draws the wave once it arrives', async () => {
     render(<RowWave request={request} cues={[]} durationSec={128} pending={false} active />)
     expect(await screen.findByTestId('track-wave-bars')).toBeInTheDocument()

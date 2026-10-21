@@ -13,12 +13,14 @@ export function RowWave({
   durationSec,
   pending,
   active,
+  unanalyzed = false,
 }: {
   request: RowWaveRequest
   cues: RowCue[]
   durationSec: number | undefined
   pending: boolean
   active: boolean
+  unanalyzed?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const key = rowWaveKey(request)
@@ -50,7 +52,15 @@ export function RowWave({
       aria-hidden={label ? undefined : true}
       className="relative block h-full"
     >
-      {bars && bars.length > 0 && (
+      {unanalyzed && (
+        <span
+          data-testid="track-unanalyzed"
+          className="absolute inset-x-0 bottom-0 block truncate text-xs text-fg-dim"
+        >
+          {tr('trackList.rekordboxUnanalyzed')}
+        </span>
+      )}
+      {!unanalyzed && bars && bars.length > 0 && (
         <WaveBars
           bars={bars}
           testId="track-wave-bars"

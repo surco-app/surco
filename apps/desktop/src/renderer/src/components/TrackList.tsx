@@ -853,6 +853,7 @@ const TrackRow = memo(function TrackRow({
                     durationSec={shown.duration}
                     pending={cuesPending}
                     active={seen}
+                    unanalyzed={Boolean(t.sourcePreview) && !t.sourcePreview?.analysisPath}
                   />
                   {cuesUnsaved && (
                     <span
