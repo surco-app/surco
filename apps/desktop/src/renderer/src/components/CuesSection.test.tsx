@@ -465,6 +465,27 @@ describe('CuesSection', () => {
     expect(names).toEqual(['Mix in', 'Manual', 'Clear all cues'])
   })
 
+  it('lists two flows that share a name apart and picks the one chosen, since flows are told apart by id', async () => {
+    const twin: CueFlow = { ...ONE_AT_32, id: 'twin', name: 'Subidón' }
+    const { onFlow } = setup(READ, null, {
+      cueFlows: [{ ...MY_FLOW, name: 'Subidón' }, twin],
+      activeCueFlow: 'mine',
+    })
+    await ready()
+    await openFull()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    const names = within(screen.getByTestId('cues-flow-listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(names.filter((n) => n === 'Subidón')).toHaveLength(2)
+    fireEvent.click(screen.getByTestId('cues-flow-option-twin'))
+    expect(onFlow).toHaveBeenLastCalledWith('twin')
+    markAt(bar(64))
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
+      `${(bar(32) / 400000) * 100}%`,
+    )
+  })
+
   it('names the bundled flows in the flow list instead of showing them blank', async () => {
     setup()
     await ready()
