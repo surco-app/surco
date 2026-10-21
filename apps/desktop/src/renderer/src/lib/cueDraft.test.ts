@@ -134,19 +134,6 @@ describe('reduceDraft', () => {
       expect(at(s, bar(16), false)).toBeUndefined()
       expect(at(s, bar(64), false)).toBeDefined()
     })
-
-    it('fills in nothing on Aplicar, which keeps the hand cue and the CALLs as they are, since only placing a point fills in what is missing', () => {
-      const start = startDraft(
-        [
-          { id: 'h', ms: bar(40), kind: 2, color: 9 },
-          { id: 'p', ms: bar(64), kind: 0, color: null },
-        ],
-        'mine',
-      )
-      const s = run(start, { type: 'apply-flow', flowId: 'one-at-32' })
-      expect(hotOf(s)).toEqual([[bar(40), 2, 9]])
-      expect(s.cues.find((c) => c.key === 'p')?.ms).toBe(bar(64))
-    })
   })
 
   it('marks a drop on a countdown cue and keeps that CALL as the drop', () => {
@@ -184,9 +171,6 @@ describe('reduceDraft', () => {
     const hot = s.cues.filter((x) => x.kind !== 0)
     expect(new Set(hot.map((x) => x.kind)).size).toBe(hot.length)
     expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
-    const applied = run(edited, { type: 'apply-flow', flowId: 'mine' })
-    expect(applied.cues.find((x) => x.key === b)).toMatchObject({ kind: 2, color: 5 })
-    expect(applied.cues.find((x) => x.key === c)).toMatchObject({ kind: 7 })
   })
 
   it('clears every hot cue and CALL but the loops in one undoable step, leaving a valid set', () => {
@@ -241,7 +225,8 @@ describe('reduceDraft', () => {
     const marked = run(
       s,
       { type: 'mark-drop', ms: bar(64) },
-      { type: 'apply-flow', flowId: 'one-at-32' },
+      { type: 'use-flow', flowId: 'one-at-32' },
+      { type: 'mark-drop', ms: bar(160) },
     )
     expect(marked.cues.find((c) => c.key === 'l')).toMatchObject({ ms: bar(16), kind: 1, color: 1 })
     expect(marked.cues.find((c) => c.key === 'm')).toMatchObject({ ms: bar(80), kind: 0 })
@@ -329,17 +314,11 @@ describe('reduceDraft', () => {
     expect(s.cues.map((c) => c.kind).sort()).toEqual([1, 2, 5, 9])
   })
 
-  it('keeps a hot cue the DJ placed by letter when the next drop or flow regenerates the plan', () => {
+  it('keeps a hot cue the DJ placed by letter when the next drop regenerates the plan', () => {
     const placed = run(empty(), { type: 'add-hot', ms: bar(48), kind: 5 })
     const own = at(placed, bar(48), true)?.key as string
     const marked = run(placed, { type: 'mark-drop', ms: bar(64) })
     expect(marked.cues.find((x) => x.key === own)).toMatchObject({
-      ms: bar(48),
-      kind: 5,
-      color: 22,
-    })
-    const applied = run(marked, { type: 'apply-flow', flowId: 'mine' })
-    expect(applied.cues.find((x) => x.key === own)).toMatchObject({
       ms: bar(48),
       kind: 5,
       color: 22,
@@ -364,49 +343,6 @@ describe('reduceDraft', () => {
     expect(s.cues.map((c) => [c.ms, c.kind])).toEqual([[bar(64), 0]])
   })
 
-  it('applies another flow to the drops already marked, replacing what the first flow drew', () => {
-    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
-    const s = run(marked, { type: 'apply-flow', flowId: 'one-at-32' })
-    expect(s.flowId).toBe('one-at-32')
-    expect(s.cues.filter((c) => c.kind !== 0).map((c) => [c.ms, c.kind, c.color])).toEqual([
-      [bar(32), 1, 22],
-    ])
-    expect(draftDrops(s.cues)).toEqual([bar(64)])
-  })
-
-  it('applies another flow as placing it afresh on the same points would, taking away the CALLs the first flow paired with its hot cues', () => {
-    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
-    const action: DraftAction = { type: 'apply-flow', flowId: 'one-at-32' }
-    const applied = run(marked, action)
-    const fresh = run(startDraft([], 'one-at-32'), { type: 'mark-drop', ms: bar(64) })
-    const marksOf = (s: CueDraft) => s.cues.map((c) => `${c.ms} ${c.kind} ${c.color}`).sort()
-    expect(marksOf(applied)).toEqual(marksOf(fresh))
-    expect(ghostOf(marked, action, ctx).gone).toContain(at(marked, bar(32), false)?.key)
-  })
-
-  it('keeps the CALL under a hot cue when the applied flow pairs a CALL there too', () => {
-    const paired: CueFlow = {
-      ...ONE_AT_32,
-      id: 'paired',
-      rules: [{ ...ONE_AT_32.rules[0], place: 'both' }],
-    }
-    const withPaired = { ...ctx, flows: [...KEPT, paired] }
-    const marked = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, withPaired)
-    const applied = reduceDraft(marked, { type: 'apply-flow', flowId: 'paired' }, withPaired)
-    expect(at(applied, bar(32), false)?.key).toBe(at(marked, bar(32), false)?.key)
-  })
-
-  it('keeps a CALL the DJ put by hand on a hot cue when another flow is applied', () => {
-    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
-    const own = run(
-      marked,
-      { type: 'remove', key: at(marked, bar(32), false)?.key as string },
-      { type: 'add-call', ms: bar(32) },
-    )
-    const applied = run(own, { type: 'apply-flow', flowId: 'one-at-32' })
-    expect(at(applied, bar(32), false)?.key).toBe(at(own, bar(32), false)?.key)
-  })
-
   it('switches to a flow chosen in Settings without touching the draft, and places the next point with it alone', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const switched = run(marked, { type: 'use-flow', flowId: 'one-at-32' })
@@ -423,7 +359,7 @@ describe('reduceDraft', () => {
     ])
   })
 
-  it('places a point with a flow picked but not applied without touching the points already marked, so only Aplicar a esta pista changes them', () => {
+  it('places a point with another flow picked without touching the points already marked, since picking a flow changes nothing by itself', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const switched = run(marked, { type: 'use-flow', flowId: 'one-at-32' })
     const action: DraftAction = { type: 'mark-drop', ms: bar(160) }
@@ -439,9 +375,6 @@ describe('reduceDraft', () => {
     const g = ghostOf(switched, action, ctx)
     expect(g.gone).toEqual([])
     expect(g.added).toEqual(added)
-    expect(
-      ghostOf(s, { type: 'apply-flow', flowId: 'one-at-32' }, ctx).gone.length,
-    ).toBeGreaterThan(0)
     expect(validWantedSet(wantedOfDraft(s.cues), [])).toEqual({ ok: true })
     expect(run(s, { type: 'undo' }).cues).toEqual(marked.cues)
   })
@@ -491,17 +424,6 @@ describe('reduceDraft', () => {
     ])
   })
 
-  it('undoes a flow change with its flow and trimmed cues, so the next mark uses the first flow again', () => {
-    const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
-    const switched = run(marked, { type: 'apply-flow', flowId: 'one-at-32' })
-    const back = run(switched, { type: 'undo' })
-    expect(back.flowId).toBe('mine')
-    expect(back.trimmed).toEqual(marked.trimmed)
-    const again = run(back, { type: 'mark-drop', ms: bar(128) })
-    expect(again.notice).toBeNull()
-    expect(again.flowId).toBe('mine')
-  })
-
   it('clears the trimmed cues once a manual edit makes them stale', () => {
     let s = startDraft([{ id: 'y', ms: 500, kind: 1, color: 32 }], 'mine')
     for (const n of [48, 96]) s = run(s, { type: 'mark-drop', ms: bar(n) })
@@ -547,7 +469,7 @@ describe('reduceDraft', () => {
     step({ type: 'add-hot', ms: bar(12) })
     step({ type: 'add-call', ms: bar(13) })
     step({ type: 'remove', key: '2' })
-    step({ type: 'apply-flow', flowId: 'one-at-32' })
+    step({ type: 'use-flow', flowId: 'one-at-32' })
     step({ type: 'mark-drop', ms: bar(140) })
     step({ type: 'undo' })
   })
@@ -759,24 +681,11 @@ describe('ghostOf', () => {
     expect(shape(throughGhost(s, action))).toEqual(shape(reduceDraft(s, action, wide).cues))
   })
 
-  it('shows the whole result of a flow that does not depend on the point, the same as applying it', () => {
+  it('shows and places the whole result of a flow that does not depend on the point wherever the mark lands', () => {
     const s = startDraft([], 'chorus')
-    const action: DraftAction = { type: 'apply-flow', flowId: 'chorus' }
+    const action: DraftAction = { type: 'mark-drop', ms: bar(200) }
     expect(ghostOf(s, action, wide).added.map((c) => c.ms)).toEqual([bar(64), bar(128)])
     expect(shape(throughGhost(s, action))).toEqual(shape(reduceDraft(s, action, wide).cues))
-  })
-
-  it('shows what switching a marked track to another flow takes away and adds, and changes nothing by itself', () => {
-    const marked = runWide(empty(), { type: 'mark-drop', ms: bar(64) })
-    const before = JSON.stringify(marked)
-    const action: DraftAction = { type: 'apply-flow', flowId: 'one-at-32' }
-    const g = ghostOf(marked, action, wide)
-    expect(g.gone.length).toBeGreaterThan(0)
-    expect(g.added.some((c) => c.kind === 1 && c.ms === bar(32))).toBe(true)
-    expect(shape(throughGhost(marked, action))).toEqual(
-      shape(reduceDraft(marked, action, wide).cues),
-    )
-    expect(JSON.stringify(marked)).toBe(before)
   })
 
   it('shows nothing over a point that is already marked, where a click changes nothing', () => {
@@ -884,12 +793,6 @@ describe('ghostOf rejected', () => {
   it('lists nothing on a point already marked, where a click changes nothing', () => {
     const s = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, strong)
     expect(ghostOf(s, { type: 'mark-drop', ms: bar(64) }, strong).rejected).toEqual([])
-  })
-
-  it('lists what another flow would drop over the whole track when it is applied', () => {
-    const s = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, strong)
-    const g = ghostOf(s, { type: 'apply-flow', flowId: 'one-at-32' }, strong)
-    expect(reasons(g)).toEqual([[bar(32), 'strong']])
   })
 })
 

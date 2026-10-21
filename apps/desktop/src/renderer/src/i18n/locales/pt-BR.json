@@ -828,16 +828,6 @@
       "clearAll": "Apagar todas as cues",
       "undo": "Desfazer",
       "addCallShort": "+ CALL",
-      "applyTrack": "Aplicar a esta faixa",
-      "noFit": "Este fluxo não cabe nesta faixa",
-      "noFitBecause": "Não cabe nesta faixa, {{reason}}",
-      "noFitReason": {
-        "strong": "cai na parte forte",
-        "point": "bate em outro ponto",
-        "start": "cai antes da primeira batida",
-        "end": "cai depois da última batida",
-        "limit": "passaria de 8 hot cues"
-      },
       "zoomIn": "Aproximar",
       "zoomReset": "Redefinir o zoom",
       "zoomOut": "Afastar"

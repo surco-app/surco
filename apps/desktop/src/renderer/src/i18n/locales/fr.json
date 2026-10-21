@@ -828,16 +828,6 @@
       "clearAll": "Effacer toutes les cues",
       "undo": "Annuler",
       "addCallShort": "+ CALL",
-      "applyTrack": "Appliquer à ce morceau",
-      "noFit": "Ce flux ne rentre pas dans ce morceau",
-      "noFitBecause": "Ne rentre pas dans ce morceau, {{reason}}",
-      "noFitReason": {
-        "strong": "tombe dans la partie forte",
-        "point": "touche un autre point",
-        "start": "tombe avant le premier temps",
-        "end": "tombe après le dernier temps",
-        "limit": "dépasserait 8 hot cues"
-      },
       "zoomIn": "Zoom avant",
       "zoomReset": "Réinitialiser le zoom",
       "zoomOut": "Zoom arrière"

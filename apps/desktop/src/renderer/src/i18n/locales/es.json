@@ -828,16 +828,6 @@
       "clearAll": "Borrar todas las cues",
       "undo": "Deshacer",
       "addCallShort": "+ CALL",
-      "applyTrack": "Aplicar a esta pista",
-      "noFit": "Este flujo no cabe en esta pista",
-      "noFitBecause": "No cabe en esta pista, {{reason}}",
-      "noFitReason": {
-        "strong": "cae en la parte fuerte",
-        "point": "choca con otro punto",
-        "start": "cae antes del primer golpe",
-        "end": "cae después del último golpe",
-        "limit": "pasaría de 8 hot cues"
-      },
       "zoomIn": "Acercar",
       "zoomReset": "Restablecer zoom",
       "zoomOut": "Alejar"

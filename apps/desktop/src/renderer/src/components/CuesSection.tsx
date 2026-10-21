@@ -4,19 +4,11 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  activeCueFlow,
-  DEFAULT_CUE_FLOW_ID,
-  followsPoint,
-  MANUAL_CUE_FLOW,
-  MIX_IN,
-} from '../../../shared/cueFlows'
+import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import {
   BEATS_PER_BAR,
-  evaluateFlow,
-  flowDrops,
   MAX_HOT_CUES,
   nearestBeat,
   SAME_POSITION_MS,
@@ -32,7 +24,6 @@ import {
   type DraftAction,
   type DraftCue,
   type DraftGhost,
-  draftDrops,
   draftPoints,
   ghostOf,
   reduceDraft,
@@ -283,8 +274,7 @@ function Editing({
   const [chosen, setChosen] = useState(settled === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : state.flowId)
   const manual = chosen === MANUAL_CUE_FLOW
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : DEFAULT_CUE_FLOW_ID
-  const shown = flows.find((f) => f.id === shownFlow) ?? MIX_IN
-  const placing = !manual && followsPoint(shown)
+  const placing = !manual
   const pickMode = (id: string) => {
     setChosen(id)
     if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })
@@ -299,32 +289,6 @@ function Editing({
     manual ? { type: 'remove', key } : { type: 'remove-point', key }
   const moveOf = (key: string, ms: number): DraftAction =>
     manual ? { type: 'move', key, ms } : { type: 'move-point', key, ms }
-  const switchGhost = useMemo<DraftGhost | null>(
-    () => (manual ? null : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx)),
-    [manual, state, shownFlow, ctx],
-  )
-  const placeOf = (c: DraftCue): string => `${c.kind === 0 ? 'call' : 'hot'}|${c.ms}|${c.color}`
-  const goneCues = state.cues.filter((c) => switchGhost?.gone.includes(c.key))
-  const reallyAdded = (switchGhost?.added ?? []).filter(
-    (a) => !goneCues.some((g) => placeOf(g) === placeOf(a)),
-  )
-  const reallyGone = goneCues.filter(
-    (g) => !(switchGhost?.added ?? []).some((a) => placeOf(a) === placeOf(g)),
-  )
-  const trackOf = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
-  const placesHot =
-    switchGhost !== null &&
-    evaluateFlow(shown, {
-      ...trackOf,
-      drops: flowDrops(shown, { ...trackOf, drops: draftDrops(state.cues, state.locked) }),
-    }).cues.some((c) => c.place !== 'call')
-  const noFit =
-    switchGhost !== null &&
-    shown.rules.some((r) => r.place !== 'call') &&
-    !placesHot &&
-    reallyGone.some((c) => c.kind !== 0)
-  const canApply =
-    switchGhost !== null && !noFit && (reallyAdded.length > 0 || reallyGone.length > 0)
   const playheadGhost = useMemo<DraftGhost | null>(
     () => (placing ? ghostOf(state, { type: 'mark-drop', ms: playheadMs }, ctx) : null),
     [placing, playheadMs, state, ctx],
@@ -339,21 +303,12 @@ function Editing({
     [placing, hoverMs, state, ctx],
   )
   const [pointDrag, setPointDrag] = useState(false)
-  const ghost = pointDrag
-    ? undefined
-    : (hoverGhost ??
-      playheadGhost ??
-      ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
+  const ghost = pointDrag ? undefined : (hoverGhost ?? playheadGhost ?? undefined)
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const markHere = () => {
     if (manual) dispatch({ type: 'add-call', ms: playheadMs })
     else if (placing) place(playheadMs)
   }
-  const noFitReason = noFit && switchGhost !== null ? switchGhost.rejected[0]?.reason : undefined
-  const noFitText =
-    noFitReason === undefined
-      ? tr('editor.cues.noFit')
-      : tr('editor.cues.noFitBecause', { reason: tr(`editor.cues.noFitReason.${noFitReason}`) })
   const openedWith = useRef(settled)
   useEffect(() => {
     if (openedWith.current === settled) return
@@ -581,19 +536,6 @@ function Editing({
           },
         ]),
   ]
-  const applyButton = (
-    <button
-      type="button"
-      data-testid="cues-apply-track"
-      onClick={() => {
-        dispatch({ type: 'apply-flow', flowId: shownFlow })
-        if (maximized) focusEditor()
-      }}
-      className="press h-8 whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
-    >
-      {tr('editor.cues.applyTrack')}
-    </button>
-  )
   const discardButton = (!unchanged || queued !== null) && (
     <button
       type="button"
@@ -632,7 +574,6 @@ function Editing({
         onClosed={maximized ? focusEditor : undefined}
         options={flowOptions}
       />
-      {canApply && applyButton}
       <span className="flex-1" />
       {discardButton}
       {undoButton}
@@ -852,7 +793,6 @@ function Editing({
             {detail}
           </div>
           {foldedRow}
-          {canApply && <div className="mt-2">{applyButton}</div>}
         </>
       )}
       {!maximized && headerSlot && createPortal(flowControl, headerSlot)}
@@ -1009,15 +949,6 @@ function Editing({
       {queued !== null && !fresh && (
         <p data-testid="cues-queued-stale" className="mt-2 text-xs text-warn">
           {tr('editor.cues.queuedStale')}
-        </p>
-      )}
-      {noFit && (
-        <p
-          data-testid="cues-no-fit"
-          title={noFitText}
-          className="mt-2 truncate whitespace-nowrap text-xs text-warn"
-        >
-          {noFitText}
         </p>
       )}
       {state.notice === 'too-many' && (

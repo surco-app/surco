@@ -828,16 +828,6 @@
       "clearAll": "Clear all cues",
       "undo": "Undo",
       "addCallShort": "+ CALL",
-      "applyTrack": "Apply to this track",
-      "noFit": "This flow doesn't fit this track",
-      "noFitBecause": "Doesn't fit this track, {{reason}}",
-      "noFitReason": {
-        "strong": "it falls in the strong part",
-        "point": "it runs into another point",
-        "start": "it falls before the first beat",
-        "end": "it falls after the last beat",
-        "limit": "it would go past 8 hot cues"
-      },
       "zoomIn": "Zoom in",
       "zoomReset": "Reset zoom",
       "zoomOut": "Zoom out"

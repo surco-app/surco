@@ -828,16 +828,6 @@
       "clearAll": "Alle Cues löschen",
       "undo": "Rückgängig",
       "addCallShort": "+ CALL",
-      "applyTrack": "Auf diesen Titel anwenden",
-      "noFit": "Dieser Ablauf passt nicht zu diesem Titel",
-      "noFitBecause": "Passt nicht zu diesem Titel, {{reason}}",
-      "noFitReason": {
-        "strong": "fällt in den starken Teil",
-        "point": "stößt an einen anderen Punkt",
-        "start": "liegt vor dem ersten Schlag",
-        "end": "liegt nach dem letzten Schlag",
-        "limit": "es wären mehr als 8 Hot Cues"
-      },
       "zoomIn": "Vergrößern",
       "zoomReset": "Zoom zurücksetzen",
       "zoomOut": "Verkleinern"

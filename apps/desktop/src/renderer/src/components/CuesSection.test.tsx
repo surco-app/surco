@@ -468,16 +468,6 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
   })
 
-  it('applies another flow to the drops already marked', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    chooseFlow('calls-only')
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
-    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
-    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
-  })
-
   it('follows a flow chosen in Settings while the editor is open, keeping the draft and using it for the next drop', async () => {
     const { changeSettings } = setup(READ, null, { activeCueFlow: 'mine' })
     await ready()
@@ -622,61 +612,7 @@ describe('CuesSection', () => {
     expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
   })
 
-  it('changes nothing when another flow is picked on a marked track until Aplicar a esta pista', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-    chooseFlow('one-at-32')
-    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    expect(screen.getByTestId('cues-apply-track')).toHaveTextContent('Apply to this track')
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
-    expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
-    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain(
-      `${(bar(32) / 400000) * 100}%`,
-    )
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-  })
-
-  it('offers Aplicar a esta pista with Mi flujo already active on a track rekordbox holds with lone CALLs, and draws the countdown with it', async () => {
-    setup({
-      ...READ,
-      cues: [bar(64), bar(160)].map((ms, i) => ({ id: `d${i}`, ms, kind: 0, color: null })),
-    })
-    await ready()
-    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: My flow')
-    expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
-    expect(screen.getAllByTestId(/^cue-wave-hot-/).length).toBeGreaterThan(0)
-    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-  })
-
-  it('hides Aplicar a esta pista when applying the flow would only change letters, since the cues already sit where the flow puts them', async () => {
-    const at = (n: number, kind: number, color: number) => [
-      { id: `h${n}`, ms: bar(n), kind, color },
-      { id: `c${n}`, ms: bar(n), kind: 0, color: null },
-    ]
-    setup({
-      ...READ,
-      cues: [
-        { id: 'p', ms: bar(64), kind: 0, color: null },
-        ...at(16, 3, 42),
-        ...at(32, 2, 22),
-        ...at(48, 1, 1),
-      ],
-    })
-    await ready()
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-  })
-
-  it('hides Aplicar a esta pista on a track where applying the active flow changes nothing', async () => {
-    setup()
-    await ready()
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-  })
-
-  it('offers Aplicar a esta pista at once for a flow that does not depend on the point, and no hint to click', async () => {
+  it('draws the whole result of a flow that does not depend on the point at the playhead and places it all with one mark, as no Aplicar exists any more', async () => {
     const chorus: CueFlow = {
       id: 'chorus',
       name: 'Estribillos',
@@ -705,10 +641,12 @@ describe('CuesSection', () => {
       { cueFlows: [MY_FLOW, chorus], activeCueFlow: 'chorus' },
     )
     await ready()
-    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
+    playheadAt(bar(200))
+    expect(screen.getAllByTestId(/^cue-wave-ghost-hot-/)).toHaveLength(2)
+    markAt(bar(200))
     expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+    expect(screen.queryByTestId(`cue-wave-call-${bar(200)}`)).toBeNull()
   })
 
   const marks = (re: RegExp) =>
@@ -763,43 +701,6 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-rejected-slot')).toBeNull()
   })
 
-  it('says why another flow chosen on a marked track does not fit', async () => {
-    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
-    await ready()
-    markAt(bar(64))
-    chooseFlow('one-at-32')
-    expect(screen.getByTestId('cues-no-fit')).toHaveTextContent(
-      "Doesn't fit this track, it falls in the strong part",
-    )
-  })
-
-  it('never offers Aplicar a esta pista for a flow that would only take hot cues away, and says it does not fit and why', async () => {
-    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
-    await ready()
-    markAt(bar(64))
-    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
-    chooseFlow('one-at-32')
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-    expect(screen.getByTestId('cues-no-fit')).toHaveTextContent(
-      "Doesn't fit this track, it falls in the strong part",
-    )
-    expect(screen.getByTestId('cues-no-fit').className).toContain('whitespace-nowrap')
-    expect(screen.getByTestId('cues-no-fit').className).toContain('truncate')
-    expect(screen.queryByTestId('cues-rejected')).toBeNull()
-    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
-  })
-
-  it('still offers Aplicar a esta pista when the other flow places a hot cue, or places only CALLs by design, even if it takes hot cues away', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    for (const id of ['one-at-32', 'calls-only']) {
-      chooseFlow(id)
-      expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
-      expect(screen.queryByTestId('cues-no-fit')).toBeNull()
-    }
-  })
-
   it('draws no flow and no cursor in Manual', async () => {
     setup(READ, null, { activeCueFlow: 'manual' })
     await ready()
@@ -808,47 +709,23 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
-  it('changes nothing when another flow is chosen on a marked track until Aplicar a esta pista, the ghost staying at the playhead', async () => {
+  it('changes nothing on the track when another flow is picked, offers no Aplicar, and the next mark places the new flow beside the points already marked', async () => {
     setup()
     await ready()
     markAt(bar(64))
-    chooseFlow('one-at-32')
-    expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-gone', 'false')
-    expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-pending', 'true')
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
-    expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
-  })
-
-  it('leaves with Aplicar a esta pista what a fresh placement of the other flow would', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    chooseFlow('one-at-32')
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
-    expect(
-      screen
-        .queryAllByTestId(/^cue-wave-(hot|call)-/)
-        .map((el) => el.dataset.testid)
-        .sort(),
-    ).toEqual([`cue-wave-call-${bar(64)}`, 'cue-wave-hot-A'])
-  })
-
-  it('places a new point with the flow picked but not applied and leaves the points already marked, still offering Aplicar a esta pista', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    chooseFlow('one-at-32')
     const before = marks(/^cue-wave-(hot|call)-/)
-    hoverAt(bar(160))
+    chooseFlow('one-at-32')
+    expect(marks(/^cue-wave-(hot|call)-/)).toEqual(before)
     expect(screen.queryAllByTestId(/^cue-wave-/).some((el) => el.dataset.gone === 'true')).toBe(
       false,
     )
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+    hoverAt(bar(160))
     const shown = marks(/^cue-wave-ghost-(hot|call)-/)
     markAt(bar(160))
     expect(marks(/^cue-wave-(hot|call)-/)).toEqual([...before, ...shown].sort())
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()
-    expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
   })
 
   it('explains only what a selected cue still lets the user do, since its letter is no longer changed here', async () => {
@@ -904,15 +781,17 @@ describe('CuesSection', () => {
     expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
   })
 
-  it('saves only sets main accepts, even after turning a written countdown into CALLs', async () => {
+  it('saves only sets main accepts after clearing a written countdown and marking again with CALLs only', async () => {
     const read: TrackCues = {
       ...READ,
       cues: writtenPlan().map((c, i) => ({ id: `w${i}`, ...c })),
     }
     const { saveRekordboxCues } = setup(read)
     await ready()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
     chooseFlow('calls-only')
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const { wanted } = saveRekordboxCues.mock.calls[0][0]
@@ -989,27 +868,13 @@ describe('CuesSection', () => {
     )
   })
 
-  it('offers no Aplicar a esta pista on opening a track with hand-placed hot cues and point CALLs, since the flow fills in what is missing only when a point is placed', async () => {
-    setup({
-      ...READ,
-      cues: [
-        { id: 'm', ms: bar(40), kind: 2, color: 1 },
-        { id: 'p', ms: bar(64), kind: 0, color: null },
-      ],
-    })
-    await ready()
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-    await openFull()
-    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-  })
-
-  it('says which hot cues the 8 limit leaves out', async () => {
+  it('says which hot cues the 8 limit leaves out when a new point regenerates a track with many points', async () => {
     setup({
       ...READ,
       cues: [48, 96, 144, 192].map((n) => ({ id: `d${n}`, ms: bar(n), kind: 0, color: null })),
     })
     await ready()
-    fireEvent.click(screen.getByTestId('cues-apply-track'))
+    markAt(bar(240))
     expect(screen.getByTestId('cues-trimmed')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-trimmed-${bar(0)}`)).toBeInTheDocument()
   })
