@@ -82,6 +82,7 @@ const settings: Settings = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  cueLettersByTime: true,
   hiddenSources: [],
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
@@ -270,6 +271,11 @@ describe('cue flows in the draft', () => {
   it('saves the quantize value the Cues tab staged', () => {
     const synced = { ...pickSynced(settings), cueQuantize: 'beat' as const }
     expect(buildSettingsPatch(synced, local).cueQuantize).toBe('beat')
+  })
+
+  it('saves the letter order the Cues tab staged', () => {
+    const synced = { ...pickSynced(settings), cueLettersByTime: false }
+    expect(buildSettingsPatch(synced, local).cueLettersByTime).toBe(false)
   })
 
   it('saves the hidden sources the General tab staged', () => {

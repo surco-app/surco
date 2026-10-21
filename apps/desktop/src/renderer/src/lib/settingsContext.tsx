@@ -98,6 +98,7 @@ interface ResolvedSettings {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  cueLettersByTime: boolean
   hiddenSources: PlaylistSource[]
 }
 
@@ -145,6 +146,7 @@ const DEFAULTS: ResolvedSettings = {
   activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
+  cueLettersByTime: true,
   hiddenSources: [],
 }
 
@@ -193,6 +195,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(settings.cueJumpBars),
     cueQuantize: normalizeCueQuantize(settings.cueQuantize),
+    cueLettersByTime: settings.cueLettersByTime !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
   }
 }

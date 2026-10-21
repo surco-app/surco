@@ -25,6 +25,7 @@ const settings: Settings = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  cueLettersByTime: true,
   hiddenSources: [],
   language: 'system',
   discogsToken: '',

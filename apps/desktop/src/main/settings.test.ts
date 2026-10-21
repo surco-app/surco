@@ -1063,6 +1063,36 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('letters hot cues in track order for a settings file from before the choice, so A is always the first cue', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueLettersByTime).toBe(true)
+  })
+
+  it('keeps fixed pad letters for a DJ who turned the order off, and repairs a value that is not a boolean', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueLettersByTime: false }),
+    )
+    expect(getSettings().cueLettersByTime).toBe(false)
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueLettersByTime: 'no' }),
+    )
+    expect(getSettings().cueLettersByTime).toBe(true)
+  })
+
+  it('carries the letter order to another Mac with the flows', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ cueLettersByTime: false })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.cueLettersByTime).toBe(false)
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('shows every source for a settings file from before sources could be hidden', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().hiddenSources).toEqual([])

@@ -30,6 +30,7 @@ export interface SyncedDraft {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  cueLettersByTime: boolean
   hiddenSources: PlaylistSource[]
   syncEngineDj: boolean
   engineDjPlaylist: string
@@ -133,6 +134,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     activeCueFlow: s.activeCueFlow,
     cueJumpBars: s.cueJumpBars,
     cueQuantize: s.cueQuantize,
+    cueLettersByTime: s.cueLettersByTime,
     hiddenSources: s.hiddenSources,
     syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,

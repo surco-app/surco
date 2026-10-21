@@ -81,6 +81,7 @@ export const defaults: Settings = {
   activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
+  cueLettersByTime: true,
   hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
@@ -313,6 +314,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     activeCueFlow: flows.active,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
+    cueLettersByTime: (patch.cueLettersByTime ?? base.cueLettersByTime) !== false,
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
   }
 }

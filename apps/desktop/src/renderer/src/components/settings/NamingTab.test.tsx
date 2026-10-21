@@ -16,6 +16,7 @@ const synced: SyncedDraft = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  cueLettersByTime: true,
   hiddenSources: [],
   language: 'system',
   outputFormat: 'aiff',

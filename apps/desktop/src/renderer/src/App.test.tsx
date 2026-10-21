@@ -123,6 +123,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     activeCueFlow: 'mine',
     cueJumpBars: 16,
     cueQuantize: 'bar',
+    cueLettersByTime: true,
     hiddenSources: [],
     language: 'system',
     discogsToken: '',

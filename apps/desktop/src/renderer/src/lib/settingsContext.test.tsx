@@ -34,3 +34,34 @@ describe('cue flows as the renderer resolves them', () => {
     expect(screen.getByTestId('flows').textContent).toBe('mix-in,mine|mine')
   })
 })
+
+function Letters(): React.JSX.Element {
+  return <p data-testid="letters">{String(useAppSettings().cueLettersByTime)}</p>
+}
+
+describe('letter order as the renderer resolves it', () => {
+  it('letters in track order before the stored settings arrive and for a value that is not a boolean', () => {
+    render(
+      <SettingsProvider settings={null}>
+        <Letters />
+      </SettingsProvider>,
+    )
+    expect(screen.getByTestId('letters').textContent).toBe('true')
+    cleanup()
+    render(
+      <SettingsProvider settings={{ cueLettersByTime: 'no' as unknown as boolean }}>
+        <Letters />
+      </SettingsProvider>,
+    )
+    expect(screen.getByTestId('letters').textContent).toBe('true')
+  })
+
+  it('keeps the order off when the DJ turned it off', () => {
+    render(
+      <SettingsProvider settings={{ cueLettersByTime: false }}>
+        <Letters />
+      </SettingsProvider>,
+    )
+    expect(screen.getByTestId('letters').textContent).toBe('false')
+  })
+})
