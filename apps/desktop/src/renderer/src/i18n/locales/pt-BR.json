@@ -828,6 +828,7 @@
       "manualMode": "Manual",
       "clearAll": "Apagar todas as cues",
       "markHere": "Marcar aqui",
+      "markedHere": "já está marcado aqui",
       "addCallShort": "+ CALL",
       "applyTrack": "Aplicar a esta faixa",
       "noFit": "Este fluxo não cabe nesta faixa",

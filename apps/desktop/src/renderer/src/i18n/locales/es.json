@@ -828,6 +828,7 @@
       "manualMode": "Manual",
       "clearAll": "Borrar todas las cues",
       "markHere": "Marcar aquí",
+      "markedHere": "ya está marcado aquí",
       "addCallShort": "+ CALL",
       "applyTrack": "Aplicar a esta pista",
       "noFit": "Este flujo no cabe en esta pista",

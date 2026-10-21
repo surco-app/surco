@@ -239,13 +239,13 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  it('keeps Marcar aquí in place but disabled where it would place nothing, saying why when a cue does not fit', async () => {
+  it('keeps Marcar aquí in place but disabled where the flow is already marked, saying so, since a dead button with no reason reads as broken', async () => {
     setup()
     await ready()
     seekStrip(128)
     fireEvent.click(markHere())
     expect(markHere()).toBeDisabled()
-    expect(markHere()).not.toHaveAttribute('title')
+    expect(markHere()).toHaveAttribute('title', 'it is already marked here')
   })
 
   it('says why Marcar aquí places nothing when the flow has nothing that fits at the playhead', async () => {

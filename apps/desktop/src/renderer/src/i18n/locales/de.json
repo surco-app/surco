@@ -828,6 +828,7 @@
       "manualMode": "Manuell",
       "clearAll": "Alle Cues löschen",
       "markHere": "Hier markieren",
+      "markedHere": "hier ist schon markiert",
       "addCallShort": "+ CALL",
       "applyTrack": "Auf diesen Titel anwenden",
       "noFit": "Dieser Ablauf passt nicht zu diesem Titel",

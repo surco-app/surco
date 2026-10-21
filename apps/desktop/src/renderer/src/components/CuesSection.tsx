@@ -689,7 +689,13 @@ function Editing({
       type="button"
       data-testid="cues-mark-here"
       disabled={!manual && !canMark}
-      title={!manual && !canMark && markWhy ? tr(`editor.cues.noFitReason.${markWhy}`) : undefined}
+      title={
+        manual || canMark || playheadGhost === null
+          ? undefined
+          : markWhy
+            ? tr(`editor.cues.noFitReason.${markWhy}`)
+            : tr('editor.cues.markedHere')
+      }
       onClick={() => {
         markHere()
         if (maximized) focusEditor()
