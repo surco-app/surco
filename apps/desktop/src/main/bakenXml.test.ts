@@ -102,7 +102,7 @@ describe('buildBakenXml', () => {
     ],
     ['102', { size: 50_000_000, grid: [] }],
   ])
-  const xml = buildBakenXml(sel, facts)
+  const xml = buildBakenXml(sel, facts, 'darwin')
 
   it('lists only the tracks with a file, once each', () => {
     expect(xml).toContain('<COLLECTION Entries="2">')
