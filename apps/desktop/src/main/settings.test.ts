@@ -1142,7 +1142,7 @@ describe('cue flows', () => {
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ cueFlows: [mine, ONE_AT_32, CALLS_ONLY], activeCueFlow: 'mine' }),
     )
-    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, mine, CALLS_ONLY])
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, mine])
     expect(getSettings().activeCueFlow).toBe('mine')
   })
 
@@ -1151,7 +1151,7 @@ describe('cue flows', () => {
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ cueFlows: [MY_FLOW, ONE_AT_32, CALLS_ONLY], activeCueFlow: 'one-at-32' }),
     )
-    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW, CALLS_ONLY])
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW])
     expect(getSettings().activeCueFlow).toBe('mix-in')
   })
 
@@ -1161,8 +1161,33 @@ describe('cue flows', () => {
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ cueFlows: [MY_FLOW, shipped, CALLS_ONLY], activeCueFlow: 'mix-in' }),
     )
-    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW, CALLS_ONLY])
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW])
     expect(getSettings().activeCueFlow).toBe('mix-in')
+  })
+
+  it('drops an untouched Solo CALL, moving the choice to Mix in 64 when it was the one in use, since Surco no longer offers it', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlows: [MY_FLOW, CALLS_ONLY], activeCueFlow: 'calls-only' }),
+    )
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW])
+    expect(getSettings().activeCueFlow).toBe('mix-in')
+  })
+
+  it('keeps a Solo CALL the DJ edited or renamed as a flow of the DJ', () => {
+    const renamed: CueFlow = { ...CALLS_ONLY, name: 'Marcas' }
+    const edited: CueFlow = { ...CALLS_ONLY, markPoint: false }
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlows: [renamed], activeCueFlow: 'calls-only' }),
+    )
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, renamed])
+    expect(getSettings().activeCueFlow).toBe('calls-only')
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlows: [edited], activeCueFlow: 'mine' }),
+    )
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, edited, MY_FLOW])
   })
 
   it('keeps a Mix in 64 the DJ edited as the DJ made it', () => {
@@ -1213,12 +1238,7 @@ describe('cue flows', () => {
       JSON.stringify({ cueFlows: [MY_FLOW, ONE_AT_32, CALLS_ONLY], activeCueFlow: 'mine' }),
     )
     setConfigDir(dir)
-    expect(getSettings().cueFlows.map((f) => f.id)).toEqual([
-      'mix-in',
-      'mix-in-32',
-      'mine',
-      'calls-only',
-    ])
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mix-in', 'mix-in-32', 'mine'])
     expect(activeCueFlow(getSettings())).toEqual(MY_FLOW)
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })

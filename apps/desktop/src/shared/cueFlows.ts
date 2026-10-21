@@ -116,7 +116,7 @@ export const CALLS_ONLY: CueFlow = { id: 'calls-only', name: '', markPoint: true
 
 export const DEFAULT_CUE_FLOW_ID = MIX_IN.id
 export const BUNDLED_FLOWS: CueFlow[] = [MIX_IN, MIX_IN_32]
-const LEGACY_FLOWS: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
+const LEGACY_FLOWS: CueFlow[] = [MY_FLOW, ONE_AT_32]
 
 const HIGH_MOOD: Record<number, PhraseKind> = {
   1: 'intro',
@@ -226,11 +226,12 @@ export function migrateBundledFlow(
   const flows = stored.map((f) =>
     f.id === MIX_IN.id && sameFlow(f, MIX_IN_AT_64) ? structuredClone(MIX_IN) : f,
   )
-  const untouched = (f: CueFlow): boolean => f.id === ONE_AT_32.id && sameFlow(f, ONE_AT_32)
-  if (!flows.some(untouched)) return { flows, active }
+  const retired = [ONE_AT_32, CALLS_ONLY]
+  const untouched = (f: CueFlow): boolean => retired.some((r) => f.id === r.id && sameFlow(f, r))
+  const gone = flows.filter(untouched).map((f) => f.id)
   return {
     flows: flows.filter((f) => !untouched(f)),
-    active: active === ONE_AT_32.id ? MIX_IN.id : active,
+    active: gone.includes(active) ? MIX_IN.id : active,
   }
 }
 

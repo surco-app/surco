@@ -183,7 +183,7 @@ describe('normalizeCueFlows', () => {
 describe('keepLegacyFlow', () => {
   it('brings back Mi flujo when it is the active flow and the stored list lacks it, so the DJ keeps working the same way', () => {
     expect(keepLegacyFlow([ONE_AT_32], 'mine')).toEqual([ONE_AT_32, MY_FLOW])
-    expect(keepLegacyFlow([ONE_AT_32], 'calls-only')).toEqual([ONE_AT_32, CALLS_ONLY])
+    expect(keepLegacyFlow([ONE_AT_32], 'calls-only')).toEqual([ONE_AT_32])
   })
 
   it('leaves the list alone when the active flow is there or was never one of the earlier bundled ones', () => {
