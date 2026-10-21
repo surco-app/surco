@@ -26,6 +26,7 @@ export interface PlaylistScope {
 
 export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]): PlaylistScope {
   const byPath = new Map<string, TrackItem>()
+  for (const t of tracks) for (const p of t.movedFrom ?? []) byPath.set(p.normalize('NFC'), t)
   for (const t of tracks) if (t.outputPath) byPath.set(t.outputPath.normalize('NFC'), t)
   for (const t of tracks) byPath.set(t.inputPath.normalize('NFC'), t)
   const shown: TrackItem[] = []
@@ -71,5 +72,6 @@ export function playlistMembership(
   )
   return (t) =>
     paths.has(t.inputPath.normalize('NFC')) ||
-    (!!t.outputPath && paths.has(t.outputPath.normalize('NFC')))
+    (!!t.outputPath && paths.has(t.outputPath.normalize('NFC'))) ||
+    (t.movedFrom ?? []).some((p) => paths.has(p.normalize('NFC')))
 }

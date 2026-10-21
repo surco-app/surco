@@ -50,6 +50,10 @@ export function exportedPatch(
       inputPath: result.outputPath,
       fileName: parseFileName(result.outputPath).fileName,
     }),
+    ...(result.inPlace &&
+      result.outputPath !== track.inputPath && {
+        movedFrom: [...(track.movedFrom ?? []), track.inputPath],
+      }),
     ...(settledTrack !== track && { trim: settledTrack.trim }),
     // The conversion's automatic Apple Music step already put the current metadata
     // in the library (add or sync), so the footer must show the added state rather

@@ -33,6 +33,19 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
 }
 
 describe('exportedPatch', () => {
+  it('remembers the path an in-place export moved the file away from', () => {
+    const patch = exportedPatch(track({ movedFrom: ['/music/older.wav'] }), {
+      outputPath: '/music/ATB - Till I Come.aiff',
+      inPlace: true,
+    })
+    expect(patch.movedFrom).toEqual(['/music/older.wav', '/music/old name.wav'])
+  })
+
+  it('remembers no move when the in-place export kept the path', () => {
+    const patch = exportedPatch(track(), { outputPath: '/music/old name.wav', inPlace: true })
+    expect(patch.movedFrom).toBeUndefined()
+  })
+
   // The applied config is what a later dial change is compared against (see
   // isNormalizeStale) — without it, re-normalizing never earns the Update button.
   it('records the normalization the export applied', () => {

@@ -167,6 +167,7 @@ export interface TrackItem {
   // Settings default.
   format?: OutputFormat
   outputPath?: string
+  movedFrom?: string[]
   // Snapshot of the editor (via trackSignature) taken when the track last
   // finished, so later edits flip it "stale" and bring back the convert button.
   processedSignature?: string

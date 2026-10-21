@@ -2100,6 +2100,35 @@ describe('App source playlists', () => {
     })
   })
 
+  it('keeps a row on screen and selected after its conversion moved the file, before rekordbox follows', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/m/a.aiff',
+      inPlace: true,
+    })
+    await openFactory({ processTrack })
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.click(screen.getByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    await act(async () => {})
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('field-title')).toBeInTheDocument()
+  })
+
+  it('reads the open playlist again after a conversion moved a file, so rekordbox’s repoint shows', async () => {
+    const load = vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(FACTORY_ENTRIES)
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/m/a.aiff',
+      inPlace: true,
+    })
+    await openFactory({ processTrack, loadRekordboxPlaylist: load })
+    const reads = load.mock.calls.length
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await waitFor(() => expect(load.mock.calls.length).toBeGreaterThan(reads))
+  })
+
   // The opening fills the BPM rekordbox holds; a BPM the DJ then clears stays cleared
   // through the re-read every edit makes.
   it('fills a loaded row from its playlist on opening only, not on an edit re-read', async () => {

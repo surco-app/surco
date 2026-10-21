@@ -67,7 +67,8 @@ function newTrack(path: string): TrackItem {
 function listedIn(listed: ReadonlySet<string>, t: TrackItem): boolean {
   return (
     listed.has(t.inputPath.normalize('NFC')) ||
-    (!!t.outputPath && listed.has(t.outputPath.normalize('NFC')))
+    (!!t.outputPath && listed.has(t.outputPath.normalize('NFC'))) ||
+    (t.movedFrom ?? []).some((p) => listed.has(p.normalize('NFC')))
   )
 }
 
@@ -822,9 +823,11 @@ export function useTrackLibrary({
     const same = (p: string): string => p.normalize('NFC')
     const loadedNow = (): Set<string> =>
       new Set(
-        tracksRef.current.flatMap((t) =>
-          t.outputPath ? [same(t.inputPath), same(t.outputPath)] : [same(t.inputPath)],
-        ),
+        tracksRef.current.flatMap((t) => [
+          same(t.inputPath),
+          ...(t.outputPath ? [same(t.outputPath)] : []),
+          ...(t.movedFrom ?? []).map(same),
+        ]),
       )
     const loaded = loadedNow()
     for (const e of entries) if (e.path && !e.separator) listedBySource.current.add(same(e.path))
@@ -849,13 +852,7 @@ export function useTrackLibrary({
         mapTracks((t) => (stale.has(t.id) ? { ...t, sourcePreview: nextPreview(t) } : t))
       const listed = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
       const unmarked = new Set(
-        tracksRef.current
-          .filter(
-            (t) =>
-              !t.fromRekordbox &&
-              (listed.has(same(t.inputPath)) || (!!t.outputPath && listed.has(same(t.outputPath)))),
-          )
-          .map((t) => t.id),
+        tracksRef.current.filter((t) => !t.fromRekordbox && listedIn(listed, t)).map((t) => t.id),
       )
       if (unmarked.size > 0)
         mapTracks((t) => (unmarked.has(t.id) ? { ...t, fromRekordbox: true } : t))

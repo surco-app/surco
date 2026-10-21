@@ -148,6 +148,13 @@ export function useTrackProcessing({
   // of these whose encode is already in flight, since the flag above only stops
   // ones not yet started (see main/activeConversions.ts).
   const runningIdsRef = useRef<string[]>([])
+  const movedRef = useRef(false)
+  const rereadMovedSources = (): void => {
+    if (!movedRef.current) return
+    movedRef.current = false
+    queryClient.invalidateQueries({ queryKey: ['source-playlist'] })
+    queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] })
+  }
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
   // processed, not from the closure's snapshot, or mid-batch edits never reach disk.
@@ -390,6 +397,7 @@ export function useTrackProcessing({
         // showing the old output as "after". An in-place export additionally rewrote
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
+        if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
         if (result.inPlace) {
           removeAnalysisQueries(queryClient, [track.inputPath])
           // The row's frozen label and the file's own artwork describe the bytes this
@@ -449,6 +457,7 @@ export function useTrackProcessing({
         )
       } finally {
         window.api.endConversionBatch()
+        rereadMovedSources()
       }
     },
   )
@@ -617,6 +626,7 @@ export function useTrackProcessing({
         // recorded Traktor patches, or they linger and get applied to the collection
         // during the NEXT batch instead.
         window.api.endConversionBatch()
+        rereadMovedSources()
       }
       // After the summary, never mid-run: a run that converted nothing (all skipped or
       // failed) is no moment of value, so asking for support then would read as nagware.

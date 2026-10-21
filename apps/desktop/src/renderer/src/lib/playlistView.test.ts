@@ -17,6 +17,12 @@ const C = track('c', '/m/C.wav')
 const SEP = '/m/Blank Audio/_.mp3'
 
 describe('playlistView', () => {
+  it('finds a track a conversion moved under the path the playlist still lists', () => {
+    const moved = { ...A, inputPath: '/m/A.aiff', movedFrom: ['/m/A.wav'] }
+    expect(playlistView([moved], [entry('/m/A.wav')]).tracks).toEqual([moved])
+    expect(playlistMembership([entry('/m/A.wav')])(moved)).toBe(true)
+  })
+
   it('shows only the playlist tracks, in the playlist order, not the order they were loaded', () => {
     const view = playlistView([A, B, C], [entry('/m/C.wav'), entry('/m/A.wav')])
     expect(view.tracks.map((t) => t.id)).toEqual(['c', 'a'])
