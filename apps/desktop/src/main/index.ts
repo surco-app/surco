@@ -55,6 +55,7 @@ import {
   appleMusicEntryLocation,
   appleMusicLimiter,
   deleteFromAppleMusic,
+  musicEntryForFile,
   updateInAppleMusic,
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
@@ -75,7 +76,7 @@ import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio } from './ffmpeg'
+import { convertAudio, readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { libraryCopyInfo } from './libraryFileUse'
@@ -1241,6 +1242,12 @@ function registerIpc(): void {
             { labelParams: { track } },
           ),
         )
+      },
+      findAppleMusicEntry: async (path, meta) => {
+        const own = await readMeta(path)
+        const titles = [...new Set([meta.title, own.tags.title].filter(Boolean))]
+        if (titles.length === 0) return undefined
+        return appleMusicLimiter.run(() => musicEntryForFile(path, titles))
       },
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the

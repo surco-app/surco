@@ -752,6 +752,22 @@ export async function musicFileEntries(
   }
 }
 
+export async function musicEntryForFile(
+  path: string,
+  titles: string[],
+  run: typeof runOsascript = runOsascript,
+): Promise<{ persistentId: string; label: string } | undefined> {
+  const { entries } = await musicFileEntries(
+    titles.map((title) => ({ path, title })),
+    true,
+    run,
+  )
+  const found = entries[path]
+  return found?.length === 1
+    ? { persistentId: found[0].persistentId, label: found[0].label }
+    : undefined
+}
+
 // Every file track and its file, read before the list review trashes a file: the title
 // lookup misses a track renamed in Music. Measured 09/10 on a 2045-track SMB library:
 // `whose location is` never matched a real path and still took 35-45 s, one track at a

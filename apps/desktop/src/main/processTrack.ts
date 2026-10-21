@@ -81,6 +81,10 @@ export interface ProcessTrackDeps {
     meta: TrackMetadata,
     coverPath?: string,
   ) => Promise<string | null>
+  findAppleMusicEntry?: (
+    path: string,
+    meta: TrackMetadata,
+  ) => Promise<{ persistentId: string; label: string } | undefined>
   // Registers the written file in the user's Engine DJ library database, storing the
   // cover (when there is one) as the row's artwork.
   // `replaces` is the file this conversion supersedes (the replaced Apple Music copy, else
@@ -148,11 +152,15 @@ async function replaceAppleMusicCopy(
   target: string,
   coverPath: string | undefined,
   deps: ProcessTrackDeps,
+  old: { persistentId?: string; label: string } = {
+    persistentId: job.musicPersistentId,
+    label: job.replacesLabel ?? metaLabel(job),
+  },
 ): Promise<{ added: string; oldCopyKept?: 'mismatch' | 'error' }> {
   const added = await deps.addToAppleMusic(target, job.meta, coverPath)
-  if (!job.musicPersistentId) return { added }
+  if (!old.persistentId) return { added }
   try {
-    await deps.deleteAppleMusic(job.musicPersistentId, job.replacesLabel ?? metaLabel(job))
+    await deps.deleteAppleMusic(old.persistentId, old.label)
     return { added }
   } catch (e) {
     return {
@@ -242,6 +250,13 @@ export async function runProcessTrack(
       inPlace,
     )
     let target = outputPath
+    const existingMusicEntry =
+      inPlace &&
+      !job.musicPersistentId &&
+      !job.replacesPath &&
+      shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
+        ? await deps.findAppleMusicEntry?.(job.inputPath, job.meta).catch(() => undefined)
+        : undefined
     // Awaited before the conflict check reads the disk and the sibling claims, as the
     // beside branch does: with the wait between that read and reservePath, two in-place
     // jobs of one run (Song.flac and Song.wav, both becoming Song.aiff) each read the name
@@ -378,6 +393,20 @@ export async function runProcessTrack(
         // replayed in between so the successor is equivalent before anything is retired.
         if (job.replacesPath) {
           const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps)
+          musicPersistentId = replaced.added
+          oldMusicCopyKept = replaced.oldCopyKept
+        } else if (existingMusicEntry && inPlace && outputIsInput) {
+          musicPersistentId =
+            (await deps.updateInAppleMusic(existingMusicEntry.persistentId, job.meta, coverPath)) ??
+            (await deps.addToAppleMusic(target, job.meta, coverPath))
+        } else if (existingMusicEntry && inPlace) {
+          const replaced = await replaceAppleMusicCopy(
+            job,
+            target,
+            coverPath,
+            deps,
+            existingMusicEntry,
+          )
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
         } else {

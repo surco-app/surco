@@ -15,6 +15,7 @@ import {
   buildUpdateScript,
   entriesForPaths,
   isAppleMusicOnly,
+  musicEntryForFile,
   musicFileEntries,
   musicFileLocations,
   parseFileLocations,
@@ -823,6 +824,25 @@ describe('Music entries for loaded files', () => {
     expect(script).toContain(`{"${PID}", "${OTHER}"}`)
     expect(script).toContain('location of item i of theTracks')
     expect(script.indexOf('POSIX path of loc')).toBeGreaterThan(script.indexOf('end tell'))
+  })
+
+  it('finds the one Music entry on a file under the title it had before the edit', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce([row(PID, 'A', 'Old Name', ''), row(OTHER, 'B', 'X', '')].join(RS))
+      .mockResolvedValueOnce(row(PID, '/m/a.aiff'))
+    expect(await musicEntryForFile('/m/a.aiff', ['New Name', 'Old Name'], run)).toEqual({
+      persistentId: PID,
+      label: 'A - Old Name',
+    })
+  })
+
+  it('refuses to pick when Music holds the file twice', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce([row(PID, 'A', 'T', ''), row(OTHER, 'A', 'T', '')].join(RS))
+      .mockResolvedValueOnce([row(PID, '/m/a.aiff'), row(OTHER, '/m/a.aiff')].join(RS))
+    expect(await musicEntryForFile('/m/a.aiff', ['T'], run)).toBeUndefined()
   })
 })
 

@@ -1068,6 +1068,53 @@ describe('runProcessTrack — Apple Music', () => {
     await expect(runProcessTrack(job(), deps)).rejects.toThrow('1000')
   })
 
+  it('updates the Music entry that already holds the rewritten file instead of adding a second one', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.isSameFile = vi.fn(async () => true)
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    const result = await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
+
+    expect(deps.findAppleMusicEntry).toHaveBeenCalledWith('/in/song.wav', {})
+    expect(vi.mocked(deps.findAppleMusicEntry).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.convertAudio).mock.invocationCallOrder[0],
+    )
+    expect(deps.updateInAppleMusic).toHaveBeenCalledWith('lib-9', {}, undefined)
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(result.musicPersistentId).toBe('updated-id')
+  })
+
+  it('moves the Music entry of a file the conversion renamed onto the new file, retiring the old one', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith('/in/Artist - Title.aiff', {}, undefined)
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('lib-9', 'A - Old')
+    expect(result.musicPersistentId).toBe('added-id')
+  })
+
+  it('adds as before when Music holds no entry for the file', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => undefined)
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledOnce()
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.musicPersistentId).toBe('added-id')
+  })
+
+  it('looks nothing up for a track that already knows its Music entry or for a new copy', async () => {
+    const known = mac({ overwriteOriginal: true })
+    known.findAppleMusicEntry = vi.fn(async () => undefined)
+    await runProcessTrack(job({ musicPersistentId: 'lib-7' }), known)
+    const copy = mac()
+    copy.findAppleMusicEntry = vi.fn(async () => undefined)
+    await runProcessTrack(job(), copy)
+
+    expect(known.findAppleMusicEntry).not.toHaveBeenCalled()
+    expect(copy.findAppleMusicEntry).not.toHaveBeenCalled()
+  })
+
   it('does not touch Apple Music for a FLAC export even on macOS', async () => {
     const deps = mac({ outputFormat: 'flac' })
     await runProcessTrack(job(), deps)
