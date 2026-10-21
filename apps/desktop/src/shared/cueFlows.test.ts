@@ -8,6 +8,7 @@ import {
   followsPoint,
   keepLegacyFlow,
   MANUAL_CUE_FLOW,
+  MIX_IN,
   MY_FLOW,
   normalizeCueFlows,
   ONE_AT_32,
@@ -44,20 +45,26 @@ describe('bundled flows', () => {
     })
   })
 
-  it('ships one green cue 32 bars before the drop as the only flow, so a new DJ starts from one simple flow', () => {
-    expect(ONE_AT_32.rules).toEqual([
+  it('ships Entrada as the only flow, one green cue 64 bars before the point and a CALL on it, so a new DJ starts from one simple flow', () => {
+    expect(MIX_IN.rules).toEqual([
       {
         from: 'drop',
         direction: 'back',
-        bars: 32,
+        bars: 64,
         repeat: 1,
         when: 'fits',
         place: 'hot',
         color: { fixed: 22 },
       },
     ])
+    expect(MIX_IN.markPoint).toBe(true)
     expect(CALLS_ONLY.rules).toEqual([])
-    expect(BUNDLED_FLOWS.map((f) => f.id)).toEqual(['one-at-32'])
+    expect(BUNDLED_FLOWS.map((f) => f.id)).toEqual(['mix-in'])
+  })
+
+  it('keeps Una cue a 32 as an earlier flow a DJ may still have, brought back when it is the active one', () => {
+    expect(ONE_AT_32.rules[0].bars).toBe(32)
+    expect(keepLegacyFlow([MIX_IN], 'one-at-32')).toEqual([MIX_IN, ONE_AT_32])
   })
 })
 
@@ -92,18 +99,18 @@ describe('phraseKindOf', () => {
 
 describe('normalizeCueFlows', () => {
   it('gives the bundled flow to a settings file written before flows existed', () => {
-    expect(normalizeCueFlows(undefined)).toEqual([ONE_AT_32])
+    expect(normalizeCueFlows(undefined)).toEqual([MIX_IN])
   })
 
   it('puts the default flow back when a synced file lost it, because the app falls back to it', () => {
     const mine: CueFlow = { id: 'x', name: 'Solo 64', markPoint: true, rules: [] }
-    expect(normalizeCueFlows([mine]).map((f) => f.id)).toEqual(['one-at-32', 'x'])
+    expect(normalizeCueFlows([mine]).map((f) => f.id)).toEqual(['mix-in', 'x'])
   })
 
   it('keeps the Mi flujo and Solo CALL an earlier Surco stored, edits included, as flows of the DJ', () => {
     const edited: CueFlow = { ...MY_FLOW, rules: [{ ...MY_FLOW.rules[0], bars: 8 }] }
-    const flows = normalizeCueFlows([edited, ONE_AT_32, CALLS_ONLY])
-    expect(flows).toEqual([edited, ONE_AT_32, CALLS_ONLY])
+    const flows = normalizeCueFlows([MIX_IN, edited, ONE_AT_32, CALLS_ONLY])
+    expect(flows).toEqual([MIX_IN, edited, ONE_AT_32, CALLS_ONLY])
   })
 
   it('drops a broken rule and keeps the good ones, so a hand-edited file never crashes the engine', () => {
@@ -143,15 +150,15 @@ describe('normalizeCueFlows', () => {
       { id: 'a', name: '', markPoint: false, rules: [] },
       { id: 'b', name: '', markPoint: 'no', rules: [] },
     ])
-    expect(flows.filter((f) => f.id !== 'one-at-32').map((f) => f.markPoint)).toEqual([false, true])
+    expect(flows.filter((f) => f.id !== 'mix-in').map((f) => f.markPoint)).toEqual([false, true])
   })
 
   it('drops a flow whose id is the Manual mode, so Manual never stands for a flow', () => {
     const flows = normalizeCueFlows([
-      ONE_AT_32,
+      MIX_IN,
       { id: MANUAL_CUE_FLOW, name: 'Mía', markPoint: true, rules: [] },
     ])
-    expect(flows.map((f) => f.id)).toEqual(['one-at-32'])
+    expect(flows.map((f) => f.id)).toEqual(['mix-in'])
   })
 })
 
@@ -179,17 +186,17 @@ describe('activeCueFlow', () => {
   const kept: CueFlow[] = [ONE_AT_32, MY_FLOW, CALLS_ONLY]
 
   it('uses the flow the user chose', () => {
-    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'one-at-32' })).toBe(ONE_AT_32)
+    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'mix-in' })).toBe(MIX_IN)
   })
 
   it('falls back to the default flow when the chosen flow was deleted on another Mac', () => {
-    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'gone' })).toEqual(ONE_AT_32)
-    expect(activeCueFlow({})).toEqual(ONE_AT_32)
+    expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: 'gone' })).toEqual(MIX_IN)
+    expect(activeCueFlow({})).toEqual(MIX_IN)
   })
 
   it('runs the default flow for main while the editor is in Manual, since completing on close is its own switch', () => {
     expect(activeCueFlow({ cueFlows: BUNDLED_FLOWS, activeCueFlow: MANUAL_CUE_FLOW })).toEqual(
-      ONE_AT_32,
+      MIX_IN,
     )
   })
 
@@ -209,11 +216,11 @@ describe('bundled flows stay pristine', () => {
     const withoutDefault = normalizeCueFlows([{ id: 'x', name: 'A', rules: [] }])
     withoutDefault[0].rules[0].bars = 99
     expect(BUNDLED_FLOWS).toEqual(pristine)
-    expect(ONE_AT_32).toEqual(pristine[0])
+    expect(MIX_IN).toEqual(pristine[0])
   })
 
   it('hands out copies from restoreDefaultFlow and activeCueFlow', () => {
-    restoreDefaultFlow([ONE_AT_32])[0].rules[0].bars = 99
+    restoreDefaultFlow([MIX_IN])[0].rules[0].bars = 99
     activeCueFlow({}).rules[0].bars = 99
     activeCueFlow({ cueFlows: [], activeCueFlow: 'gone' }).rules[0].bars = 99
     expect(BUNDLED_FLOWS).toEqual(pristine)
@@ -222,9 +229,9 @@ describe('bundled flows stay pristine', () => {
 
 describe('restoreDefaultFlow', () => {
   it('puts the default flow back as Surco ships it and leaves the flows of the DJ alone, Mi flujo included', () => {
-    const edited = { ...ONE_AT_32, name: 'Festival', rules: [] }
+    const edited = { ...MIX_IN, name: 'Festival', rules: [] }
     const mine = { ...MY_FLOW, name: 'Lo mío', rules: [] }
-    expect(restoreDefaultFlow([edited, mine])).toEqual([ONE_AT_32, mine])
+    expect(restoreDefaultFlow([edited, mine])).toEqual([MIX_IN, mine])
   })
 })
 

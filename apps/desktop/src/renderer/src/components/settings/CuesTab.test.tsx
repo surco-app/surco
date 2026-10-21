@@ -8,6 +8,7 @@ import {
   BUNDLED_FLOWS,
   CALLS_ONLY,
   type CueFlow,
+  MIX_IN,
   MY_FLOW,
   ONE_AT_32,
 } from '../../../../shared/cueFlows'
@@ -31,7 +32,7 @@ afterEach(async () => {
 let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueJumpBars' | 'cueQuantize'> | null =
   null
 
-const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
+const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 function Harness({
   active = 'mine',
@@ -79,12 +80,12 @@ describe('CuesTab', () => {
   it('gives a new DJ the one bundled flow, marked as the default', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
-    render(<Harness flows={BUNDLED_FLOWS} active="one-at-32" />)
+    render(<Harness flows={BUNDLED_FLOWS} active="mix-in" />)
     expect(screen.getAllByRole('textbox')).toHaveLength(1)
     expect(screen.queryByTestId('cue-flow-mine')).toBeNull()
     expect(screen.queryByTestId('cue-flow-calls-only')).toBeNull()
-    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('Por defecto')
-    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Una cue a 32')
+    expect(screen.getByTestId('cue-flow-mix-in')).toHaveTextContent('Por defecto')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Entrada')
   })
 
   it('offers Poner por defecto on a flow that is not the default', async () => {
@@ -112,7 +113,7 @@ describe('CuesTab', () => {
   it('marks the bundled flow as the default when the stored active flow no longer exists, since that is the flow that runs', () => {
     render(<Harness flows={BUNDLED_FLOWS} active="gone" />)
     expect(
-      within(screen.getByTestId('cue-flow-one-at-32')).getByTestId('cue-flow-in-use'),
+      within(screen.getByTestId('cue-flow-mix-in')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
     expect(screen.queryByTestId('cue-flow-use')).toBeNull()
   })
@@ -269,12 +270,12 @@ describe('CuesTab', () => {
   })
 
   it('restores the name of the bundled flow with Restablecer', () => {
-    render(<Harness flows={BUNDLED_FLOWS} active="one-at-32" />)
+    render(<Harness flows={BUNDLED_FLOWS} active="mix-in" />)
     fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Otro' } })
     fireEvent.blur(screen.getByTestId('cue-flow-name'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
-    expect(last?.cueFlows.find((f) => f.id === 'one-at-32')?.name).toBe('')
-    expect(screen.getByTestId('cue-flow-name')).toHaveValue('One cue at 32')
+    expect(last?.cueFlows.find((f) => f.id === 'mix-in')?.name).toBe('')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Mix in')
   })
 
   it('sizes the name input to show the whole name', () => {
@@ -288,29 +289,29 @@ describe('CuesTab', () => {
   })
 
   it('never offers to delete the bundled flow but restores it as Surco ships it', () => {
-    render(<Harness flows={BUNDLED_FLOWS} active="one-at-32" />)
+    render(<Harness flows={BUNDLED_FLOWS} active="mix-in" />)
     expect(screen.queryByTestId('cue-flow-delete')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
     fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-8'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
-    expect(last?.cueFlows).toEqual([ONE_AT_32])
+    expect(last?.cueFlows).toEqual([MIX_IN])
   })
 
   it('treats the Mi flujo an earlier Surco kept as a flow of the DJ, deletable and with nothing to restore', () => {
     render(<Harness />)
     expect(screen.queryByTestId('cue-flow-restore')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-flow-delete'))
-    expect(last?.cueFlows.map((f) => f.id)).toEqual(['one-at-32', 'calls-only'])
-    expect(last?.activeCueFlow).toBe('one-at-32')
-    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveAttribute('aria-current', 'true')
+    expect(last?.cueFlows.map((f) => f.id)).toEqual(['mix-in', 'one-at-32', 'calls-only'])
+    expect(last?.activeCueFlow).toBe('mix-in')
+    expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-current', 'true')
   })
 
   it('deletes another flow and falls back to the bundled flow when it was the default', () => {
     render(<Harness active="calls-only" />)
     fireEvent.click(screen.getByTestId('cue-flow-calls-only'))
     fireEvent.click(screen.getByTestId('cue-flow-delete'))
-    expect(last?.cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32'])
-    expect(last?.activeCueFlow).toBe('one-at-32')
+    expect(last?.cueFlows.map((f) => f.id)).toEqual(['mix-in', 'mine', 'one-at-32'])
+    expect(last?.activeCueFlow).toBe('mix-in')
   })
 
   it('reads each rule as one sentence, the way the DJ would say it', async () => {
@@ -430,7 +431,7 @@ describe('CuesTab', () => {
         rules: ONE_AT_32.rules,
       })
       expect(made?.id).not.toBe('learned')
-      expect(last?.cueFlows.slice(0, 3)).toEqual(KEPT)
+      expect(last?.cueFlows.slice(0, KEPT.length)).toEqual(KEPT)
       expect(last?.activeCueFlow).toBe(made?.id)
       expect(screen.queryByTestId('cue-learned')).toBeNull()
     })

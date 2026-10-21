@@ -450,19 +450,19 @@ describe('CuesSection', () => {
     chooseFlow('calls-only')
     changeSettings({ cueFlows: [MY_FLOW, ONE_AT_32] })
     await waitFor(() =>
-      expect(screen.getByTestId('cues-flow')).toHaveAttribute('aria-label', 'Flow: One cue at 32'),
+      expect(screen.getByTestId('cues-flow')).toHaveAttribute('aria-label', 'Flow: Mix in'),
     )
   })
 
   it('lists only the bundled flow for a new DJ, already chosen', async () => {
     setup(READ, null, { cueFlows: undefined, activeCueFlow: undefined })
     await ready()
-    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: One cue at 32')
+    expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: Mix in')
     fireEvent.click(screen.getByTestId('cues-flow'))
     const names = within(screen.getByTestId('cues-flow-listbox'))
       .getAllByRole('option')
       .map((o) => o.textContent)
-    expect(names).toEqual(['One cue at 32', 'Manual', 'Clear all cues'])
+    expect(names).toEqual(['Mix in', 'Manual', 'Clear all cues'])
   })
 
   it('names the bundled flows in the flow list instead of showing them blank', async () => {
@@ -472,7 +472,14 @@ describe('CuesSection', () => {
     const names = within(screen.getByTestId('cues-flow-listbox'))
       .getAllByRole('option')
       .map((o) => o.textContent)
-    expect(names).toEqual(['My flow', 'One cue at 32', 'CALL only', 'Manual', 'Clear all cues'])
+    expect(names).toEqual([
+      'Mix in',
+      'My flow',
+      'One cue at 32',
+      'CALL only',
+      'Manual',
+      'Clear all cues',
+    ])
   })
 
   it('reads Flujo and the flow name on the selector, lists Manual apart after the flows and saves the pick', async () => {

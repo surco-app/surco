@@ -10,7 +10,14 @@ const dir = vi.hoisted(() => {
 vi.mock('electron', () => ({ app: { getPath: () => dir } }))
 
 import { rmSync } from 'node:fs'
-import { activeCueFlow, CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../shared/cueFlows'
+import {
+  activeCueFlow,
+  CALLS_ONLY,
+  type CueFlow,
+  MIX_IN,
+  MY_FLOW,
+  ONE_AT_32,
+} from '../shared/cueFlows'
 import { applyImportedSettings, serializeSettingsForExport } from './exportIpc'
 import { getSettings, saveSettings } from './settings'
 
@@ -68,13 +75,13 @@ describe('serializeSettingsForExport', () => {
       cueFlows: [mine, ONE_AT_32, CALLS_ONLY],
       activeCueFlow: 'mine',
     })
-    expect(back.cueFlows).toEqual([mine, ONE_AT_32, CALLS_ONLY])
+    expect(back.cueFlows).toEqual([MIX_IN, mine, ONE_AT_32, CALLS_ONLY])
     expect(activeCueFlow(back)).toEqual(mine)
   })
 
   it('brings back Mi flujo for an earlier export that has it active without the flows', () => {
     const back = applyImportedSettings({ activeCueFlow: 'mine' })
-    expect(back.cueFlows).toEqual([ONE_AT_32, MY_FLOW])
+    expect(back.cueFlows).toEqual([MIX_IN, MY_FLOW])
     expect(activeCueFlow(back)).toEqual(MY_FLOW)
   })
 })

@@ -44,7 +44,14 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { activeCueFlow, CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../shared/cueFlows'
+import {
+  activeCueFlow,
+  CALLS_ONLY,
+  type CueFlow,
+  MIX_IN,
+  MY_FLOW,
+  ONE_AT_32,
+} from '../shared/cueFlows'
 import type { Settings } from '../shared/types'
 import {
   defaults,
@@ -1085,8 +1092,8 @@ describe('cue flows', () => {
 
   it('gives a settings file from before flows the one bundled flow, active', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
-    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['one-at-32'])
-    expect(getSettings().activeCueFlow).toBe('one-at-32')
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mix-in'])
+    expect(getSettings().activeCueFlow).toBe('mix-in')
   })
 
   it('puts the default flow back into a synced file that lost it, so the section always has a flow', () => {
@@ -1094,7 +1101,7 @@ describe('cue flows', () => {
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ cueFlows: [{ id: 'x', name: 'Solo 64', rules: [] }], activeCueFlow: 'x' }),
     )
-    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['one-at-32', 'x'])
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mix-in', 'x'])
     expect(getSettings().activeCueFlow).toBe('x')
   })
 
@@ -1104,7 +1111,7 @@ describe('cue flows', () => {
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ cueFlows: [mine, ONE_AT_32, CALLS_ONLY], activeCueFlow: 'mine' }),
     )
-    expect(getSettings().cueFlows).toEqual([mine, ONE_AT_32, CALLS_ONLY])
+    expect(getSettings().cueFlows).toEqual([MIX_IN, mine, ONE_AT_32, CALLS_ONLY])
     expect(getSettings().activeCueFlow).toBe('mine')
   })
 
@@ -1113,7 +1120,7 @@ describe('cue flows', () => {
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ activeCueFlow: 'mine' }),
     )
-    expect(getSettings().cueFlows).toEqual([ONE_AT_32, MY_FLOW])
+    expect(getSettings().cueFlows).toEqual([MIX_IN, MY_FLOW])
     expect(activeCueFlow(getSettings())).toEqual(MY_FLOW)
   })
 
@@ -1125,7 +1132,12 @@ describe('cue flows', () => {
       JSON.stringify({ cueFlows: [MY_FLOW, ONE_AT_32, CALLS_ONLY], activeCueFlow: 'mine' }),
     )
     setConfigDir(dir)
-    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mine', 'one-at-32', 'calls-only'])
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual([
+      'mix-in',
+      'mine',
+      'one-at-32',
+      'calls-only',
+    ])
     expect(activeCueFlow(getSettings())).toEqual(MY_FLOW)
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })

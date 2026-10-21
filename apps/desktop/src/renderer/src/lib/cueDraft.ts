@@ -1,4 +1,4 @@
-import { type CueFlow, type FlowPhrase, ONE_AT_32 } from '../../../shared/cueFlows'
+import { type CueFlow, type FlowPhrase, MIX_IN } from '../../../shared/cueFlows'
 import {
   type ExistingCue,
   evaluateFlow,
@@ -122,7 +122,7 @@ const needsGrid = (action: DraftAction): boolean =>
   action.type === 'move-point'
 
 const flowById = (ctx: DraftContext, id: string): CueFlow =>
-  ctx.flows.find((f) => f.id === id) ?? ONE_AT_32
+  ctx.flows.find((f) => f.id === id) ?? MIX_IN
 
 const snap = (ctx: DraftContext, ms: number): number => ctx.snapTo[nearestBeat(ctx.snapTo, ms)]
 

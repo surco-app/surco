@@ -37,8 +37,8 @@ describe('reduceDraft', () => {
   })
 
   it('draws with the bundled flow when the flow of the draft was deleted, since that is the flow Surco falls back to', () => {
-    const s = reduceDraft(startDraft([], 'gone'), { type: 'mark-drop', ms: bar(64) }, ctx)
-    expect(s.cues.filter((c) => c.kind !== 0).map((c) => [c.ms, c.color])).toEqual([[bar(32), 22]])
+    const s = reduceDraft(startDraft([], 'gone'), { type: 'mark-drop', ms: bar(80) }, ctx)
+    expect(s.cues.filter((c) => c.kind !== 0).map((c) => [c.ms, c.color])).toEqual([[bar(16), 22]])
   })
 
   it('keeps one drop when the same position is marked twice', () => {

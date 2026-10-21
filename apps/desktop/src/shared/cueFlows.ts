@@ -89,11 +89,28 @@ export const ONE_AT_32: CueFlow = {
   ],
 }
 
+export const MIX_IN: CueFlow = {
+  id: 'mix-in',
+  name: '',
+  markPoint: true,
+  rules: [
+    {
+      from: 'drop',
+      direction: 'back',
+      bars: 64,
+      repeat: 1,
+      when: 'fits',
+      place: 'hot',
+      color: { fixed: 22 },
+    },
+  ],
+}
+
 export const CALLS_ONLY: CueFlow = { id: 'calls-only', name: '', markPoint: true, rules: [] }
 
-export const DEFAULT_CUE_FLOW_ID = ONE_AT_32.id
-export const BUNDLED_FLOWS: CueFlow[] = [ONE_AT_32]
-const LEGACY_FLOWS: CueFlow[] = [MY_FLOW, CALLS_ONLY]
+export const DEFAULT_CUE_FLOW_ID = MIX_IN.id
+export const BUNDLED_FLOWS: CueFlow[] = [MIX_IN]
+const LEGACY_FLOWS: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 const HIGH_MOOD: Record<number, PhraseKind> = {
   1: 'intro',
@@ -188,7 +205,7 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
       }),
     })
   }
-  return seen.has(DEFAULT_CUE_FLOW_ID) ? flows : [structuredClone(ONE_AT_32), ...flows]
+  return seen.has(DEFAULT_CUE_FLOW_ID) ? flows : [structuredClone(MIX_IN), ...flows]
 }
 
 export function keepLegacyFlow(flows: CueFlow[], active: string): CueFlow[] {
@@ -203,12 +220,12 @@ export function activeCueFlow(settings: { cueFlows?: CueFlow[]; activeCueFlow?: 
     flows.find((f) => f.id === settings.activeCueFlow) ??
     flows.find((f) => f.id === MY_FLOW_ID) ??
     flows.find((f) => f.id === DEFAULT_CUE_FLOW_ID) ??
-    structuredClone(ONE_AT_32)
+    structuredClone(MIX_IN)
   )
 }
 
 export function restoreDefaultFlow(flows: CueFlow[]): CueFlow[] {
-  return flows.map((f) => (f.id === DEFAULT_CUE_FLOW_ID ? structuredClone(ONE_AT_32) : f))
+  return flows.map((f) => (f.id === DEFAULT_CUE_FLOW_ID ? structuredClone(MIX_IN) : f))
 }
 
 export function followsPoint(flow: CueFlow): boolean {

@@ -35,7 +35,7 @@ export const testSettings: Settings = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   cueFlows: BUNDLED_FLOWS,
-  activeCueFlow: 'one-at-32',
+  activeCueFlow: 'mix-in',
   cueJumpBars: 16,
   cueQuantize: 'bar',
   hiddenSources: [],

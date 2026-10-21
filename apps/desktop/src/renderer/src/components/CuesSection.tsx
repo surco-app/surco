@@ -8,7 +8,7 @@ import {
   DEFAULT_CUE_FLOW_ID,
   followsPoint,
   MANUAL_CUE_FLOW,
-  ONE_AT_32,
+  MIX_IN,
 } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
@@ -274,7 +274,7 @@ function Editing({
   const [chosen, setChosen] = useState(settled === MANUAL_CUE_FLOW ? MANUAL_CUE_FLOW : state.flowId)
   const manual = chosen === MANUAL_CUE_FLOW
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : DEFAULT_CUE_FLOW_ID
-  const shown = flows.find((f) => f.id === shownFlow) ?? ONE_AT_32
+  const shown = flows.find((f) => f.id === shownFlow) ?? MIX_IN
   const placing = !manual && followsPoint(shown)
   const pickMode = (id: string) => {
     setChosen(id)

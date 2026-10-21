@@ -2417,6 +2417,7 @@
   "cueFlows": {
     "unnamed": "Flujo sin nombre",
     "builtIn": {
+      "mix-in": "Entrada",
       "mine": "Mi flujo",
       "one-at-32": "Una cue a 32",
       "calls-only": "Solo CALL"
