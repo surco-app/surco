@@ -109,7 +109,7 @@ export default function Walkthrough() {
                   <DeclickScene />
                 </div>
               </Replayable>
-              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
+              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.declick.short')}
                 <AnchorLink id={SCENE_ANCHORS.declick} />
               </p>
@@ -120,7 +120,7 @@ export default function Walkthrough() {
                   <TrimScene />
                 </div>
               </Replayable>
-              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
+              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.trim.short')}
                 <AnchorLink id={SCENE_ANCHORS.trim} />
               </p>
@@ -131,7 +131,7 @@ export default function Walkthrough() {
                   <NormalizeScene />
                 </div>
               </Replayable>
-              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
+              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.normalize.short')}
                 <AnchorLink id={SCENE_ANCHORS.normalize} />
               </p>
