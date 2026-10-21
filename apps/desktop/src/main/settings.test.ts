@@ -61,6 +61,7 @@ import {
   migrateBackupLimits,
   migrateBackupPolicy,
   migrateImportFields,
+  migrateMixInBars,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -1155,14 +1156,25 @@ describe('cue flows', () => {
     expect(getSettings().activeCueFlow).toBe('mix-in')
   })
 
-  it('brings a Mix in 64 stored at 64 bars, as an earlier build shipped it, to the 16 bars it really is, the active choice kept', () => {
+  it('brings a Mix in 64 stored at 64 bars, as an earlier build shipped it, to the 16 bars it really is, once, the active choice kept', () => {
     const shipped: CueFlow = { ...MIX_IN, rules: [{ ...MIX_IN.rules[0], bars: 64 }] }
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ cueFlows: [MY_FLOW, shipped, CALLS_ONLY], activeCueFlow: 'mix-in' }),
     )
+    migrateMixInBars()
     expect(getSettings().cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW])
     expect(getSettings().activeCueFlow).toBe('mix-in')
+    expect(getSettings().mixInBarsMigrated).toBe(true)
+  })
+
+  it('keeps a Mix in 64 the DJ sets back to 64 bars after the one-shot move, on every later load and launch', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    migrateMixInBars()
+    const at64: CueFlow = { ...MIX_IN, rules: [{ ...MIX_IN.rules[0], bars: 64 }] }
+    saveSettings({ cueFlows: [at64, MIX_IN_32] })
+    migrateMixInBars()
+    expect(getSettings().cueFlows[0]).toEqual(at64)
   })
 
   it('drops an untouched Solo CALL, moving the choice to Mix in 64 when it was the one in use, since Surco no longer offers it', () => {

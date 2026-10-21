@@ -219,13 +219,16 @@ const sameFlow = (a: CueFlow, b: CueFlow): boolean => JSON.stringify(a) === JSON
 
 const MIX_IN_AT_64: CueFlow = { ...MIX_IN, rules: [{ ...MIX_IN.rules[0], bars: 64 }] }
 
-export function migrateBundledFlow(
-  stored: CueFlow[],
-  active: string,
-): { flows: CueFlow[]; active: string } {
-  const flows = stored.map((f) =>
+export function fixShippedMixIn(flows: CueFlow[]): CueFlow[] {
+  return flows.map((f) =>
     f.id === MIX_IN.id && sameFlow(f, MIX_IN_AT_64) ? structuredClone(MIX_IN) : f,
   )
+}
+
+export function migrateBundledFlow(
+  flows: CueFlow[],
+  active: string,
+): { flows: CueFlow[]; active: string } {
   const retired = [ONE_AT_32, CALLS_ONLY]
   const untouched = (f: CueFlow): boolean => retired.some((r) => f.id === r.id && sameFlow(f, r))
   const gone = flows.filter(untouched).map((f) => f.id)

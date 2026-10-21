@@ -6,6 +6,7 @@ import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
 import {
   BUNDLED_FLOWS,
   DEFAULT_CUE_FLOW_ID,
+  fixShippedMixIn,
   keepLegacyFlow,
   migrateBundledFlow,
   normalizeCueFlows,
@@ -583,6 +584,12 @@ export function migrateBackupPolicy(): void {
 // Same reason as migrateBackupPolicy: 30 days and 10 GB were the defaults, written out by
 // every Save, so the smaller ones would never reach those installs. Each limit moves only
 // if it still holds the old default; one the user changed to anything else stays.
+export function migrateMixInBars(): void {
+  const cur = getSettings()
+  if (cur.mixInBarsMigrated) return
+  saveSettings({ cueFlows: fixShippedMixIn(cur.cueFlows), mixInBarsMigrated: true })
+}
+
 export function migrateBackupLimits(): void {
   const cur = getSettings()
   if (cur.backupLimitsMigrated) return

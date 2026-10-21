@@ -366,6 +366,7 @@ export interface Settings {
   // One-shot marker for moving the old 30 days and 10 GB defaults onto 7 and 2 (settings.ts).
   backupLimitsMigrated: boolean
   trackImportFieldsMigrated: boolean
+  mixInBarsMigrated?: boolean
   conversionCount: number
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
   // only in the main process (stats:record fire-and-forget), so near-simultaneous

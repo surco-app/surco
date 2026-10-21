@@ -131,6 +131,7 @@ import {
   migrateBackupLimits,
   migrateBackupPolicy,
   migrateImportFields,
+  migrateMixInBars,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -1585,6 +1586,7 @@ app.whenReady().then(() => {
   migrateProviderDefaults()
   migrateBackupPolicy()
   migrateBackupLimits()
+  migrateMixInBars()
   migrateImportFields()
   createWindow()
 
