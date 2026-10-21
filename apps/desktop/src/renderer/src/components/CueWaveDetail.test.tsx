@@ -44,7 +44,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueWaveDetail>> = {}) {
   const view = render(<CueWaveDetail {...props} />)
   const rerender = (next: Partial<React.ComponentProps<typeof CueWaveDetail>>) =>
     view.rerender(<CueWaveDetail {...props} {...next} />)
-  return { onScrub, onZoom, rerender, unmount: view.unmount }
+  return { onScrub, onZoom, rerender, unmount: view.unmount, container: view.container }
 }
 
 describe('CueWaveDetail', () => {
@@ -59,11 +59,11 @@ describe('CueWaveDetail', () => {
     expect(screen.getByTestId('cue-detail-playhead').style.left).toBe('')
   })
 
-  it('draws a visible line on every bar with a cap at each end, and no loose beats', () => {
+  it('draws a visible line on every bar, with a cap at each end on the ordinary ones, and no loose beats', () => {
     setup()
     const lines = screen.getAllByTestId('cue-detail-bar')
     expect(lines).toHaveLength(17)
-    for (const line of lines) {
+    for (const line of lines.filter((l) => l.dataset.phrase !== 'true')) {
       expect(within(line).getAllByTestId('cue-detail-cap')).toHaveLength(2)
       expect(line.className).toContain('bg-[var(--color-fg-dim)]/35')
     }
@@ -87,30 +87,26 @@ describe('CueWaveDetail', () => {
     expect(screen.queryAllByTestId('cue-detail-beat')).toHaveLength(0)
   })
 
-  it('paints the caps red on bars 1, 5, 9 and so on, counted from the grid and not from the window, and leaves the rest grey', () => {
-    setup({ playheadMs: bar(33) })
-    const lines = screen.getAllByTestId('cue-detail-bar')
-    const phrases = lines.filter((l) => l.dataset.phrase === 'true')
-    for (const line of lines) {
-      expect(line.dataset.phrase === 'true').toBe((Number(line.dataset.bar) - 1) % 4 === 0)
-    }
-    expect(phrases.length).toBeGreaterThan(0)
-    for (const line of lines) {
-      const phrase = line.dataset.phrase === 'true'
-      const [top, bottom] = within(line).getAllByTestId('cue-detail-cap')
-      if (phrase) {
-        expect(top.style.borderTopColor).not.toBe('')
-        expect(bottom.style.borderBottomColor).not.toBe('')
-      } else {
-        expect(top.style.borderTopColor).toBe('')
-        expect(bottom.style.borderBottomColor).toBe('')
+  it('marks bars 1, 5, 9 and so on with a stronger ink line and no red cap, since red belongs to CALLs only, counted from the grid and not from the window', () => {
+    for (const compact of [false, true]) {
+      const view = setup({ playheadMs: bar(33), compact })
+      const lines = screen.getAllByTestId('cue-detail-bar')
+      for (const line of lines)
+        expect(line.dataset.phrase === 'true').toBe((Number(line.dataset.bar) - 1) % 4 === 0)
+      const phrases = lines.filter((l) => l.dataset.phrase === 'true')
+      expect(phrases.length).toBeGreaterThan(0)
+      for (const line of phrases) {
+        expect(within(line).queryAllByTestId('cue-detail-cap')).toHaveLength(0)
+        expect(line.className).toContain(
+          compact ? 'bg-[var(--color-fg-dim)]/30' : 'bg-[var(--color-fg-dim)]/60',
+        )
       }
+      expect(view.container.innerHTML).not.toContain(MEMORY_CUE_COLOR)
+      const probe = document.createElement('i')
+      probe.style.borderTopColor = MEMORY_CUE_COLOR
+      expect(view.container.innerHTML).not.toContain(probe.style.borderTopColor)
+      view.unmount()
     }
-    const [top, bottom] = within(phrases[0]).getAllByTestId('cue-detail-cap')
-    const probe = document.createElement('i')
-    probe.style.borderTopColor = MEMORY_CUE_COLOR
-    expect(top.style.borderTopColor).toBe(probe.style.borderTopColor)
-    expect(bottom.style.borderBottomColor).toBe(probe.style.borderTopColor)
   })
 
   it('shows fewer bars once zoomed in', () => {

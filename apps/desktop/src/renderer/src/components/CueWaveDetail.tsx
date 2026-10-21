@@ -38,13 +38,11 @@ const ZOOM_BUTTON =
 const CAPS = [
   {
     position: 'top-0',
-    colour: 'borderTopColor',
     grey: 'border-t-[var(--color-fg-dim)]',
     shape: 'border-t-[3px]',
   },
   {
     position: 'bottom-0',
-    colour: 'borderBottomColor',
     grey: 'border-b-[var(--color-fg-dim)]',
     shape: 'border-b-[3px]',
   },
@@ -437,19 +435,24 @@ export function CueWaveDetail({
                 aria-hidden="true"
                 style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
                 className={`absolute bottom-0 w-px ${
-                  compact ? 'bg-[var(--color-fg-dim)]/15' : 'bg-[var(--color-fg-dim)]/35'
+                  b.phrase
+                    ? compact
+                      ? 'bg-[var(--color-fg-dim)]/30'
+                      : 'bg-[var(--color-fg-dim)]/60'
+                    : compact
+                      ? 'bg-[var(--color-fg-dim)]/15'
+                      : 'bg-[var(--color-fg-dim)]/35'
                 }`}
               >
-                {(compact ? (b.phrase ? [CAPS[0]] : []) : CAPS).map((cap) => (
-                  <span
-                    key={cap.position}
-                    data-testid="cue-detail-cap"
-                    style={b.phrase ? { [cap.colour]: MEMORY_CUE_COLOR } : undefined}
-                    className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[2.5px] border-x-transparent ${cap.position} ${
-                      b.phrase ? '' : cap.grey
-                    } ${cap.shape}`}
-                  />
-                ))}
+                {!compact &&
+                  !b.phrase &&
+                  CAPS.map((cap) => (
+                    <span
+                      key={cap.position}
+                      data-testid="cue-detail-cap"
+                      className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[2.5px] border-x-transparent ${cap.position} ${cap.grey} ${cap.shape}`}
+                    />
+                  ))}
               </span>
             ))}
           <canvas
