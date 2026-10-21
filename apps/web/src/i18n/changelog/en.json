@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.9",
+    "date": "October 21, 2026",
+    "title": "rekordbox inside Surco",
+    "items": [
+      {
+        "text": "Your rekordbox playlists show in the sidebar next to your Apple Music ones. Open one and work on it in Surco in its own order, with rekordbox’s waveform and cues on every track.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Organise rekordbox from Surco. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait until you close it, and Surco makes a backup before writing.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "A new cue editor on rekordbox’s waveform, with its grid and the red line on every bar. Add and remove hot cues and memory cues, drag them into place, snap them to the beat or the bar and undo. Work in the panel or full screen with keyboard shortcuts.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Cue flows. Pick a flow, like Mix in 64, Mix in 32 or one of your own, and move over the waveform to see what it would place, see-through. One click places it there. Letters follow the track, so A is always the first one, and you can turn that off if each letter is a fixed pad for you.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Export your rekordbox playlists to a USB stick that rekordbox can keep syncing, with their cues, grids and waveforms.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Convert a track you keep in rekordbox and it stays the same track, with its playlists and cues. Editing its tags no longer renames its file.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Hide the source you don’t use, rekordbox or Apple Music, from the sidebar, and bring it back from Settings.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Before Surco writes to rekordbox, make your own backup of the library from rekordbox. Surco makes one too, but your library is what you play with, so always keep a copy of your own.",
+        "in": "1.9.0"
+      }
+    ]
+  },
+  {
     "version": "1.8",
     "date": "October 13, 2026",
     "title": "Cleaner vinyl",

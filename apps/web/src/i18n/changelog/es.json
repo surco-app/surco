@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.9",
+    "date": "21 de octubre de 2026",
+    "title": "rekordbox dentro de Surco",
+    "items": [
+      {
+        "text": "Tus playlists de rekordbox aparecen en la barra lateral, junto a las de Apple Music. Abres una y la trabajas en Surco en su mismo orden, con la onda de rekordbox y sus cues en cada pista.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Organizas rekordbox desde Surco. Creas, renombras y borras playlists y carpetas, añades, quitas y reordenas pistas, y eliges en el editor en qué playlists está cada una. Si rekordbox está abierto, los cambios esperan a que lo cierres y Surco hace una copia de seguridad antes de escribir.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Nuevo editor de cues sobre la onda de rekordbox, con su rejilla y la línea roja en cada compás. Pones y quitas hot cues y CALL, los mueves arrastrando, se ajustan al golpe o al compás y puedes deshacer. Se trabaja en el panel o a pantalla completa con atajos de teclado.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Flujos de cues. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca en ese punto. Las letras siguen el orden de la pista, así que la A siempre es la primera, y lo puedes apagar si cada letra es un pad fijo para ti.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Exportas tus playlists de rekordbox a un USB que rekordbox puede seguir sincronizando, con sus cues, rejilla y ondas.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Si conviertes una pista que tienes en rekordbox, sigue siendo la misma pista y conserva sus playlists y sus cues. Cambiar sus etiquetas ya no le cambia el nombre al archivo.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Puedes ocultar de la barra lateral la fuente que no uses, rekordbox o Apple Music, y volver a mostrarla desde Ajustes.",
+        "in": "1.9.0"
+      },
+      {
+        "text": "Antes de que Surco escriba en rekordbox, haz tu propia copia de seguridad de la biblioteca desde rekordbox. Surco hace también la suya, pero tu biblioteca es tu herramienta de trabajo y conviene tener siempre una copia tuya.",
+        "in": "1.9.0"
+      }
+    ]
+  },
+  {
     "version": "1.8",
     "date": "13 de octubre de 2026",
     "title": "Vinilo más limpio",
