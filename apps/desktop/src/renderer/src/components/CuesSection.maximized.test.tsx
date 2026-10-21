@@ -521,6 +521,25 @@ describe('CuesSection maximized keys', () => {
     expect(document.activeElement).toBe(editor())
   })
 
+  it('adds a hot cue at the playhead from an empty pad and letters it by its place in the track, while a pad whose letter is taken jumps to that cue, with the order on', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    key('2')
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('16%')
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    seek(20000)
+    key('1')
+    expect(position()).toBe('1:04.0')
+    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(1)
+    seek(20000)
+    key('2')
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('5%')
+    expect(screen.getByTestId('cue-wave-hot-B').style.left).toContain('16%')
+    key('2')
+    expect(position()).toBe('1:04.0')
+  })
+
   it('marks a track with the keyboard only', async () => {
     setup({ cueLettersByTime: false })
     await maximize()
