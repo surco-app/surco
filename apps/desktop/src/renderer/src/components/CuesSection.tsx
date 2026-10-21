@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Minimize2, Pause, Play, Undo2 } from 'lucide-react'
+import { Check, Keyboard, Minimize2, Pause, Play, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -622,19 +622,29 @@ function Editing({
     </button>
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
+  const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
   const autoControl =
     proposals.length > 0 ? (
       <>
         <button
           type="button"
           data-testid="cues-auto-accept"
+          aria-label={maximized ? undefined : acceptLabel}
+          title={maximized ? undefined : acceptLabel}
           onClick={() => {
             acceptProposals()
             if (maximized) focusEditor()
           }}
           className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-dashed border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${autoHeight}`}
         >
-          {tr('editor.cues.auto.accept', { count: proposals.length })}
+          {maximized ? (
+            acceptLabel
+          ) : (
+            <>
+              <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+              {proposals.length}
+            </>
+          )}
           <kbd className="rounded border border-[var(--color-accent)] px-1 font-sans text-[10px]">
             ↵
           </kbd>
@@ -642,13 +652,19 @@ function Editing({
         <button
           type="button"
           data-testid="cues-auto-discard"
+          aria-label={maximized ? undefined : tr('editor.cues.auto.discard')}
+          title={maximized ? undefined : tr('editor.cues.auto.discard')}
           onClick={() => {
             setProposed(null)
             if (maximized) focusEditor()
           }}
-          className="press shrink-0 whitespace-nowrap px-1 text-xs text-fg-dim hover:text-fg"
+          className="press flex shrink-0 items-center whitespace-nowrap px-1 text-xs text-fg-dim hover:text-fg"
         >
-          {tr('editor.cues.auto.discard')}
+          {maximized ? (
+            tr('editor.cues.auto.discard')
+          ) : (
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
         </button>
       </>
     ) : (

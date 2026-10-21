@@ -181,13 +181,15 @@ describe('Auto marcar', () => {
     expect(proposals()).toHaveLength(2)
   })
 
-  it('offers to accept them all and to discard, and Descartar leaves the draft as it was', async () => {
+  it('offers to accept them all and to discard in full screen, and Descartar leaves the draft as it was', async () => {
     setup()
     await ready()
+    await openFull()
     await autoMark()
     expect(screen.queryByTestId('cues-auto-mark')).toBeNull()
     expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the 2 suggestions')
     expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('↵')
+    expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent('Discard')
     fireEvent.click(screen.getByTestId('cues-auto-discard'))
     expect(proposals()).toEqual([])
     expect(realMarks()).toHaveLength(0)
@@ -216,8 +218,23 @@ describe('Auto marcar', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-drop-${bar(64)}`))
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the suggestion')
+    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName('Accept the suggestion')
     expect(realMarks()).toHaveLength(0)
+  })
+
+  it('keeps accept and discard to an icon and the count in the folded header, so the header holds one line with the maximize button', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    const accept = screen.getByTestId('cues-auto-accept')
+    expect(accept).toHaveAccessibleName('Accept the 2 suggestions')
+    expect(accept).toHaveAttribute('title', 'Accept the 2 suggestions')
+    expect(accept).toHaveTextContent(/^2↵$/)
+    const discard = screen.getByTestId('cues-auto-discard')
+    expect(discard).toHaveAccessibleName('Discard')
+    expect(discard).toHaveTextContent('')
+    fireEvent.click(discard)
+    expect(proposals()).toEqual([])
   })
 
   it('leaves out a proposal in the bar of a CALL already there, so it never moves or doubles a point', async () => {
