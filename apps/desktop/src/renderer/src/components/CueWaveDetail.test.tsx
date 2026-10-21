@@ -450,14 +450,14 @@ describe('CueWaveDetail', () => {
     expect(screen.queryByTestId(`cue-detail-ghost-dropped-${bar(4)}`)).toBeNull()
   })
 
-  it('paints at most one column per pixel however long the track, so a 5 minute wave stays smooth', () => {
+  it('paints one column per device pixel of the drawn strip however long the track, a peak and a body each', () => {
     const fillRect = vi.fn()
     const fake = { clearRect: vi.fn(), fillRect, setTransform: vi.fn(), fillStyle: '' }
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
     const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
     setup({ source: { words }, playheadMs: 150000 })
-    expect(fillRect.mock.calls.length).toBeGreaterThan(0)
-    expect(fillRect.mock.calls.length).toBeLessThanOrEqual(400)
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    expect(fillRect.mock.calls).toHaveLength(canvas.width * 2)
   })
 
   it('paints the short folded wave from the same detailed wave and with the same columns as full screen at the same zoom', () => {
@@ -475,7 +475,7 @@ describe('CueWaveDetail', () => {
     expect(counts[1]).toBe(counts[0])
   })
 
-  it('paints the wave in Surco accent like every other wave in the app, not in rekordbox colours', () => {
+  it('paints the wave in Surco colours, a faint ink peak under an accent body like the home scenes, not in rekordbox colours', () => {
     const styles: string[] = []
     const fake = {
       clearRect: vi.fn(),
@@ -487,16 +487,19 @@ describe('CueWaveDetail', () => {
       },
     }
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const tokens: Record<string, string> = {
+      '--color-accent': '#7aa2f7',
+      '--color-fg-faint': '#838bb2',
+    }
     vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-      getPropertyValue: (name: string) => (name === '--color-accent' ? '#7aa2f7' : ''),
+      getPropertyValue: (name: string) => tokens[name] ?? '',
     } as never)
     const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
     setup({ source: { words }, playheadMs: 150000 })
-    expect(styles.length).toBeGreaterThan(0)
-    expect(new Set(styles)).toEqual(new Set(['#7aa2f7']))
+    expect(styles).toEqual(['#838bb2', '#7aa2f7'])
   })
 
-  it('keeps the canvas size and its one resize watcher while only the playhead moves, since resizing and re-observing every frame made the playing wave flicker', () => {
+  it('neither resizes nor repaints the canvas while only the playhead moves, it slides the strip it already drew, since repainting every frame made the playing wave flicker and cost frames', () => {
     const fake = { clearRect: vi.fn(), fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
     const watchers: (() => void)[] = []
@@ -525,14 +528,18 @@ describe('CueWaveDetail', () => {
         },
       })
     }
+    const left = canvas.style.left
     for (const ms of [150500, 151000, 151500]) rerender({ source: { words }, playheadMs: ms })
     expect(sizes).toEqual([])
     expect(watchers).toHaveLength(1)
-    expect(fake.clearRect).toHaveBeenCalledTimes(4)
+    expect(fake.clearRect).toHaveBeenCalledTimes(1)
+    expect(canvas.style.left).not.toBe(left)
+    rerender({ source: { words }, playheadMs: 150000 + bar(20) })
+    expect(fake.clearRect).toHaveBeenCalledTimes(2)
     vi.unstubAllGlobals()
   })
 
-  it('scales the canvas by the device pixel ratio but still paints one column per CSS pixel', () => {
+  it('paints one column per device pixel on a Retina screen, so a zoomed wave never stretches one entry into blocks', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const fillRect = vi.fn()
     const setTransform = vi.fn()
@@ -541,10 +548,12 @@ describe('CueWaveDetail', () => {
     const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
     setup({ source: { words }, playheadMs: 150000 })
     const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
-    expect(canvas.width).toBe(800)
+    expect(canvas.width).toBe(400 * 3 * 2)
     expect(canvas.height).toBe(320)
-    expect(setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 0, 0)
-    expect(fillRect.mock.calls.length).toBeLessThanOrEqual(400)
+    expect(canvas.style.width).toBe('300%')
+    const xs = fillRect.mock.calls.map(([x]) => x)
+    expect(new Set(xs).size).toBe(canvas.width)
+    expect(fillRect.mock.calls.every(([, , w]) => w === 1)).toBe(true)
     vi.unstubAllGlobals()
   })
 

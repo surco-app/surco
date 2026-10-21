@@ -1,11 +1,11 @@
 import { Minus, Plus, Search } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
-import { type DetailSource, visibleColumns } from '../lib/cueDetail'
+import { type DetailSource, paintWave, waveColumns } from '../lib/cueDetail'
 import {
   type CueGhost,
   droppedStyle,
@@ -33,6 +33,7 @@ import type { WaveCue } from './CueWave'
 const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
+const STRIP_WINDOWS = 3
 const DRAG_PX = 3
 const PHRASE_LINE_OPACITY = 0.5
 const ZOOM_BUTTON =
@@ -271,35 +272,76 @@ export function CueWaveDetail({
     stage.addEventListener('wheel', onWheel, { passive: false })
     return () => stage.removeEventListener('wheel', onWheel)
   }, [])
-  const draw = useCallback(() => {
+  const strip = useRef<{
+    data: unknown
+    fromMs: number
+    toMs: number
+    span: number
+    width: number
+    height: number
+    dpr: number
+  } | null>(null)
+  const sync = (force: boolean) => {
     const canvas = canvasRef.current
+    const stage = stageRef.current
     const g = canvas?.getContext('2d')
-    if (!canvas || !g) return
-    const rect = canvas.getBoundingClientRect()
-    const width = Math.max(1, Math.round(rect.width))
-    const height = Math.max(1, Math.round(rect.height))
+    if (!canvas || !stage || !g) return
+    const width = Math.max(1, Math.round(stage.getBoundingClientRect().width))
+    const height = Math.max(1, Math.round(canvas.getBoundingClientRect().height))
     const dpr = window.devicePixelRatio || 1
-    if (canvas.width !== width * dpr) canvas.width = width * dpr
-    if (canvas.height !== height * dpr) canvas.height = height * dpr
-    g.setTransform(dpr, 0, 0, dpr, 0, 0)
-    g.clearRect(0, 0, width, height)
-    if (!source) return
-    const accent = getComputedStyle(canvas).getPropertyValue('--color-accent').trim()
-    g.globalAlpha = 0.7
-    visibleColumns(source, fromMs, toMs, width).forEach((column, x) => {
-      if (!column) return
-      const h = Math.max(column.h * height * WAVE_SPAN, 1)
-      g.fillStyle = accent
-      g.fillRect(x, (height - h) / 2, 1, h)
-    })
-  }, [source, fromMs, toMs])
-  useEffect(draw, [draw])
-  const drawLatest = useRef(draw)
-  drawLatest.current = draw
+    const data = source && ('words' in source ? source.words : source.wave)
+    const was = strip.current
+    if (
+      force ||
+      !was ||
+      was.data !== data ||
+      was.width !== width ||
+      was.height !== height ||
+      was.dpr !== dpr ||
+      Math.abs(was.span - span) > span * 0.05 ||
+      fromMs < was.fromMs ||
+      toMs > was.toMs
+    ) {
+      const columns = Math.round(width * STRIP_WINDOWS * dpr)
+      if (canvas.width !== columns) canvas.width = columns
+      if (canvas.height !== height * dpr) canvas.height = height * dpr
+      g.setTransform(1, 0, 0, 1, 0, 0)
+      g.clearRect(0, 0, canvas.width, canvas.height)
+      const reach = ((STRIP_WINDOWS - 1) / 2) * span
+      strip.current = {
+        data,
+        fromMs: fromMs - reach,
+        toMs: toMs + reach,
+        span,
+        width,
+        height,
+        dpr,
+      }
+      if (source) {
+        const style = getComputedStyle(canvas)
+        paintWave(
+          g,
+          waveColumns(source, fromMs - reach, toMs + reach, columns),
+          canvas.height,
+          {
+            peak: style.getPropertyValue('--color-fg-faint').trim(),
+            body: style.getPropertyValue('--color-accent').trim(),
+          },
+          WAVE_SPAN,
+        )
+      }
+    }
+    const drawn = strip.current as NonNullable<typeof strip.current>
+    canvas.style.left = `${((drawn.fromMs - fromMs) / span) * 100}%`
+    canvas.style.width = `${((drawn.toMs - drawn.fromMs) / span) * 100}%`
+  }
+  const syncLatest = useRef(sync)
+  syncLatest.current = sync
+  useLayoutEffect(() => syncLatest.current(false))
   useEffect(() => {
     const stage = stageRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => drawLatest.current())
+    const observer = new ResizeObserver(() => syncLatest.current(true))
     observer.observe(stage)
     return () => observer.disconnect()
   }, [])
@@ -457,7 +499,7 @@ export function CueWaveDetail({
               top: `${WAVE_MARK_LANE_PX}px`,
               height: `calc(100% - ${WAVE_MARK_LANE_PX}px)`,
             }}
-            className="absolute inset-x-0 w-full"
+            className="absolute"
           />
           <span
             data-testid="cue-detail-playhead"
