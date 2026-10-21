@@ -15,6 +15,9 @@ describe('CueFlowPreview', () => {
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     expect(screen.getAllByTestId(/^cue-wave-call-/)).toHaveLength(4)
     expect(screen.getByTestId('cue-wave')).toHaveAttribute('tabindex', '-1')
+    expect(
+      screen.getByText('Example track at 128 BPM with the point at bar 96'),
+    ).toBeInTheDocument()
   })
 
   it('draws a hot cue without CALL for a flow that places only hot cues', () => {

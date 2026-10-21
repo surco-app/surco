@@ -1,7 +1,13 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueFlow } from '../../../shared/cueFlows'
-import { EXAMPLE_DURATION_MS, EXAMPLE_GRID, EXAMPLE_WAVE, examplePlan } from '../lib/cueExample'
+import {
+  EXAMPLE_DURATION_MS,
+  EXAMPLE_GRID,
+  EXAMPLE_POINT_BAR,
+  EXAMPLE_WAVE,
+  examplePlan,
+} from '../lib/cueExample'
 import { CueWave } from './CueWave'
 
 export function CueFlowPreview({ flow }: { flow: CueFlow }): React.JSX.Element {
@@ -21,7 +27,9 @@ export function CueFlowPreview({ flow }: { flow: CueFlow }): React.JSX.Element {
         trimmed={out.status === 'plan' ? out.trimmed : []}
         readOnly
       />
-      <p className="mt-1 text-[11px] text-fg-dim">{tr('settings.cueFlows.previewHint')}</p>
+      <p className="mt-1 text-[11px] text-fg-dim">
+        {tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR })}
+      </p>
       {out.status === 'too-many' && (
         <p data-testid="cue-preview-too-many" className="mt-1 text-xs text-warn">
           {tr('settings.cueFlows.tooMany', { count: out.needed })}

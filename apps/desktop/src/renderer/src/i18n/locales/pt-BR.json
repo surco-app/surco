@@ -1453,7 +1453,7 @@
       "removeRule": "Remover regra",
       "noRules": "Sem regras. Colocar o fluxo deixa só o CALL do ponto.",
       "preview": "Prévia",
-      "previewHint": "Faixa de exemplo a 128 BPM com o ponto no compasso 64",
+      "previewHint": "Faixa de exemplo a 128 BPM com o ponto no compasso {{bar}}",
       "tooMany": "Este fluxo pede {{count}} hot cues e o rekordbox aceita 8",
       "looseCall": "Um CALL solto é lido como ponto na próxima vez",
       "block": {

@@ -1453,7 +1453,7 @@
       "removeRule": "Retirer la règle",
       "noRules": "Aucune règle. Placer le flux ne laisse que le CALL du point.",
       "preview": "Aperçu",
-      "previewHint": "Morceau d’exemple à 128 BPM avec le point à la mesure 64",
+      "previewHint": "Morceau d’exemple à 128 BPM avec le point à la mesure {{bar}}",
       "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
       "looseCall": "Un CALL seul se lit comme un point la fois suivante",
       "block": {

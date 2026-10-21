@@ -11,17 +11,18 @@ export const EXAMPLE_GRID = Array.from({ length: BARS * 4 }, (_, i) => ({
 }))
 
 export const exampleBar = (n: number): number => EXAMPLE_GRID[(n - 1) * 4].ms
-export const EXAMPLE_DROP = exampleBar(64)
+export const EXAMPLE_POINT_BAR = 96
+export const EXAMPLE_DROP = exampleBar(EXAMPLE_POINT_BAR)
 export const EXAMPLE_DURATION_MS = Math.round(BARS * 4 * BEAT_MS)
 
 const SECTIONS: [number, PhraseKind][] = [
   [1, 'intro'],
-  [32, 'up'],
-  [64, 'chorus'],
-  [96, 'down'],
-  [112, 'up'],
-  [128, 'chorus'],
-  [160, 'outro'],
+  [48, 'up'],
+  [96, 'chorus'],
+  [128, 'down'],
+  [144, 'up'],
+  [160, 'chorus'],
+  [176, 'outro'],
 ]
 
 export const EXAMPLE_PHRASES: FlowPhrase[] = SECTIONS.map(([bar, kind]) => ({
@@ -30,17 +31,17 @@ export const EXAMPLE_PHRASES: FlowPhrase[] = SECTIONS.map(([bar, kind]) => ({
 }))
 
 export const EXAMPLE_STRONG: StrongPart[] = [
-  { start: exampleBar(64), end: exampleBar(96) },
-  { start: exampleBar(128), end: exampleBar(160) },
+  { start: exampleBar(96), end: exampleBar(128) },
+  { start: exampleBar(160), end: exampleBar(176) },
 ]
 
 const WAVE_LEVELS: [number, number][] = [
   [1, 0.35],
-  [32, 0.6],
-  [48, 0.2],
-  [64, 0.95],
-  [96, 0.6],
-  [160, 0.3],
+  [48, 0.6],
+  [80, 0.2],
+  [96, 0.95],
+  [128, 0.6],
+  [176, 0.3],
 ]
 
 export const EXAMPLE_WAVE: CueWaveColumn[] = Array.from({ length: BARS }, (_, bar) => {

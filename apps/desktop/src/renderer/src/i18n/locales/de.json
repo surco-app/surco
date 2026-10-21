@@ -1453,7 +1453,7 @@
       "removeRule": "Regel entfernen",
       "noRules": "Keine Regeln. Der Ablauf setzt nur den CALL des Punkts.",
       "preview": "Vorschau",
-      "previewHint": "Beispieltitel mit 128 BPM und dem Punkt in Takt 64",
+      "previewHint": "Beispieltitel mit 128 BPM und dem Punkt in Takt {{bar}}",
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
       "looseCall": "Ein einzelner CALL wird beim nächsten Mal als Punkt gelesen",
       "block": {

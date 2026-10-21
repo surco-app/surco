@@ -1453,7 +1453,7 @@
       "removeRule": "Remove rule",
       "noRules": "No rules. Placing the flow leaves only the CALL of the point.",
       "preview": "Preview",
-      "previewHint": "Example track at 128 BPM with the point at bar 64",
+      "previewHint": "Example track at 128 BPM with the point at bar {{bar}}",
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
       "looseCall": "A loose CALL reads as a point the next time",
       "block": {

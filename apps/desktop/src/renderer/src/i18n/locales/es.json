@@ -1453,7 +1453,7 @@
       "removeRule": "Quitar regla",
       "noRules": "Sin reglas. Colocar el flujo deja solo el CALL del punto.",
       "preview": "Vista previa",
-      "previewHint": "Pista de ejemplo a 128 BPM con el punto en el compás 64",
+      "previewHint": "Pista de ejemplo a 128 BPM con el punto en el compás {{bar}}",
       "tooMany": "Este flujo pide {{count}} hot cues y rekordbox admite 8",
       "looseCall": "Un CALL suelto se lee como un punto la próxima vez",
       "block": {
