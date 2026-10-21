@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { PlaylistSource } from '../../../shared/types'
+import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
+import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
@@ -218,6 +219,49 @@ describe('useSourceBrowser', () => {
     expect(result.current.playlist).toBeNull()
     act(() => result.current.selectSource('rekordbox'))
     expect(result.current.playlist?.id).toBe('house')
+  })
+
+  it('puts Recently added first in rekordbox, above every playlist, with its count', async () => {
+    const { result } = setup({ rekordboxRecentCount: vi.fn().mockResolvedValue(12) })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    expect(result.current.tree?.[0]).toEqual({
+      id: RECENTLY_ADDED_ID,
+      name: 'sources.recentlyAdded',
+      kind: 'playlist',
+      count: 12,
+    })
+    expect(result.current.tree?.[1].id).toBe('house')
+  })
+
+  it('leaves Recently added out of Music, which has its own', async () => {
+    const rekordboxRecentCount = vi.fn().mockResolvedValue(12)
+    const loadAppleMusicPlaylists = vi
+      .fn()
+      .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 4 }])
+    const { result } = setup({ rekordboxRecentCount, loadAppleMusicPlaylists })
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    expect(result.current.tree?.[0].id).toBe('P1')
+    expect(rekordboxRecentCount).not.toHaveBeenCalled()
+  })
+
+  it('opens Recently added through the playlist read, so its rows behave like any playlist', async () => {
+    const { result } = setup({ rekordboxRecentCount: vi.fn().mockResolvedValue(1) })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    act(() => result.current.selectPlaylist(result.current.tree?.[0] as SourceNode, []))
+    await waitFor(() => expect(result.current.entries).toHaveLength(1))
+    expect(window.api.loadRekordboxPlaylist).toHaveBeenCalledWith(RECENTLY_ADDED_ID)
+  })
+
+  it('re-counts Recently added whenever the tree is re-read, so a track just added to rekordbox shows up', async () => {
+    const rekordboxRecentCount = vi.fn().mockResolvedValueOnce(1).mockResolvedValue(2)
+    const { result, focus } = setup({ rekordboxRecentCount })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(1))
+    act(() => focus())
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(2))
   })
 
   // "Insert separator" copies the collection's own separator; with none, the menu item says

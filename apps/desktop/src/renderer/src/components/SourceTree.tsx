@@ -1,7 +1,8 @@
-import { ChevronDown, ChevronRight, FolderPlus, ListPlus, Search, Usb } from 'lucide-react'
+import { ChevronDown, ChevronRight, Clock, FolderPlus, ListPlus, Search, Usb } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { subtreeCounts } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
@@ -207,6 +208,8 @@ export function SourceTree({
     trail?: string,
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
+    const recent = node.id === RECENTLY_ADDED_ID
+    const nodeEdit = recent ? undefined : edit
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
@@ -238,13 +241,13 @@ export function SourceTree({
             aria-current={selected || undefined}
             onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
             onContextMenu={(e) => {
-              if (!edit) return
+              if (!nodeEdit) return
               e.preventDefault()
               setMenu({ node, x: e.clientX, y: e.clientY })
             }}
             data-drop-target={dropOn?.id === node.id || undefined}
             onDragOver={(e) => {
-              if (!edit || isFolder || !carriesTracks(e)) return
+              if (!nodeEdit || isFolder || !carriesTracks(e)) return
               e.preventDefault()
               setDropOn({ id: node.id, count: dropCount(e) })
             }}
@@ -254,11 +257,11 @@ export function SourceTree({
               setDropOn((d) => (d?.id === node.id ? null : d))
             }}
             onDrop={(e) => {
-              if (!edit || isFolder || !carriesTracks(e)) return
+              if (!nodeEdit || isFolder || !carriesTracks(e)) return
               e.preventDefault()
               e.stopPropagation()
               setDropOn(null)
-              edit.onDropTracks(node, Array.from(e.dataTransfer.files))
+              nodeEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
             }}
             style={{ paddingLeft: 10 + depth * 18 }}
             className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[13px] ${
@@ -273,6 +276,14 @@ export function SourceTree({
           >
             {isFolder && (
               <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
+            )}
+            {recent && (
+              <Clock
+                size={13}
+                data-testid="source-node-recent-icon"
+                className="shrink-0 text-fg-faint"
+                aria-hidden="true"
+              />
             )}
             <span className="min-w-0 truncate">{node.name}</span>
             {trail && <span className="min-w-0 truncate text-xs text-fg-faint">{trail}</span>}

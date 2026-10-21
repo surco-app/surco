@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import { distinctTracks, musicEntries, musicTree, withReadCounts } from '../lib/appleMusicSource'
 import { useRekordboxAvailable } from './useRekordboxPlaylists'
@@ -49,6 +51,7 @@ export function useSourceBrowser({
   hiddenSources: PlaylistSource[]
 }): SourceBrowser {
   const queryClient = useQueryClient()
+  const { t: tr } = useTranslation()
   const onPlaylistGoneRef = useRef(onPlaylistGone)
   onPlaylistGoneRef.current = onPlaylistGone
   const [picked, setSource] = useState<PlaylistSource | null>(null)
@@ -71,6 +74,27 @@ export function useSourceBrowser({
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const recent = useQuery({
+    queryKey: ['source-tree', 'rekordbox', 'recent'],
+    queryFn: () => window.api.rekordboxRecentCount(),
+    enabled: source === 'rekordbox',
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const shownTree = useMemo(
+    () =>
+      source === 'rekordbox' && tree.data && recent.data !== undefined
+        ? [
+            {
+              id: RECENTLY_ADDED_ID,
+              name: tr('sources.recentlyAdded'),
+              kind: 'playlist' as const,
+              count: recent.data,
+            },
+            ...tree.data,
+          ]
+        : tree.data,
+    [source, tree.data, recent.data, tr],
+  )
   const entries = useQuery({
     queryKey: ['source-playlist', source, playlist?.id],
     queryFn: () => readPlaylist(source as PlaylistSource, playlist?.id as string),
@@ -91,10 +115,10 @@ export function useSourceBrowser({
   // and the caller is told which playlist went, so the jump back has a reason. A failed
   // re-read keeps the tree it had, so it never reads as a deletion.
   useEffect(() => {
-    if (!playlist || !source || !tree.data || containsNode(tree.data, playlist.id)) return
+    if (!playlist || !source || !shownTree || containsNode(shownTree, playlist.id)) return
     setPlaylists(({ [source]: _, ...rest }) => rest)
     onPlaylistGoneRef.current(playlist.name, source)
-  }, [playlist, source, tree.data])
+  }, [playlist, source, shownTree])
 
   useWindowFocus((focused) => {
     if (!focused) return
@@ -119,7 +143,7 @@ export function useSourceBrowser({
             ])
             return read && distinctTracks(read)
           })
-        : tree.data,
+        : shownTree,
     treeFailed: tree.isError,
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,

@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
 import { clearDraggedRows, setDraggedRows } from '../lib/reorderDrag'
@@ -26,7 +27,7 @@ const NODES: SourceNode[] = [
   { id: 'house', name: 'House', kind: 'playlist', count: 32 },
 ]
 
-function setup(selectedId: string | null = null, editable = false) {
+function setup(selectedId: string | null = null, editable = false, nodes = NODES) {
   const onSelect = vi.fn()
   const edit = {
     onCreate: vi.fn(),
@@ -42,7 +43,7 @@ function setup(selectedId: string | null = null, editable = false) {
         width={236}
         title="rekordbox"
         source="rekordbox"
-        nodes={NODES}
+        nodes={nodes}
         failed={false}
         selectedId={selectedId}
         onSelect={onSelect}
@@ -526,5 +527,47 @@ describe('SourceTree rename and delete', () => {
       screen.getByText('Delete the playlist “House”? The tracks stay in the collection.'),
     ).toBeInTheDocument()
     expect(edit.onDelete).not.toHaveBeenCalled()
+  })
+})
+
+describe('SourceTree Recently added', () => {
+  const RECENT: SourceNode = {
+    id: RECENTLY_ADDED_ID,
+    name: 'Recently added',
+    kind: 'playlist',
+    count: 12,
+  }
+  const node = () => screen.getByTestId(`source-node-${RECENTLY_ADDED_ID}`)
+
+  it('marks it with a clock, so it reads as Surco’s list and not one of the DJ’s playlists', () => {
+    setup(null, true, [RECENT, ...NODES])
+    expect(screen.getByTestId('source-node-recent-icon')).toBeInTheDocument()
+    expect(screen.getAllByTestId('source-node-recent-icon')).toHaveLength(1)
+  })
+
+  it('opens like any playlist', () => {
+    const onSelect = setup(null, true, [RECENT, ...NODES])
+    fireEvent.click(node())
+    expect(onSelect).toHaveBeenCalledWith(RECENT, [])
+  })
+
+  // It is not a rekordbox playlist: a rename or delete would be sent to a playlist that
+  // does not exist in the collection.
+  it('offers no rename or delete', () => {
+    setup(null, true, [RECENT, ...NODES])
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+  })
+
+  // What is in it is decided by when tracks entered the collection, so a drop has nowhere to
+  // go, and it must not fall through to the window import either.
+  it('takes no drop and keeps it from reaching the window import', () => {
+    const { edit, onOuterDrop } = setup(null, true, [RECENT, ...NODES])
+    const dt = files('a.wav')
+    fireEvent.dragOver(node(), { dataTransfer: dt })
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
   })
 })
