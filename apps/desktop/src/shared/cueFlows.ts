@@ -231,10 +231,12 @@ export function migrateBundledFlow(
 ): { flows: CueFlow[]; active: string } {
   const retired = [ONE_AT_32, CALLS_ONLY]
   const untouched = (f: CueFlow): boolean => retired.some((r) => f.id === r.id && sameFlow(f, r))
+  const kept = flows.filter((f) => !untouched(f))
+  const stranded = active === CALLS_ONLY.id && !kept.some((f) => f.id === active)
   const gone = flows.filter(untouched).map((f) => f.id)
   return {
-    flows: flows.filter((f) => !untouched(f)),
-    active: gone.includes(active) ? MIX_IN.id : active,
+    flows: kept,
+    active: gone.includes(active) || stranded ? MIX_IN.id : active,
   }
 }
 

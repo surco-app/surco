@@ -1186,6 +1186,15 @@ describe('cue flows', () => {
     expect(getSettings().activeCueFlow).toBe('mix-in')
   })
 
+  it('moves an active Solo CALL with no stored copy to Mix in 64, since there is no Solo CALL left to run', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ activeCueFlow: 'calls-only' }),
+    )
+    expect(getSettings().activeCueFlow).toBe('mix-in')
+    expect(getSettings().cueFlows.map((f) => f.id)).toEqual(['mix-in', 'mix-in-32'])
+  })
+
   it('keeps a Solo CALL the DJ edited or renamed as a flow of the DJ', () => {
     const renamed: CueFlow = { ...CALLS_ONLY, name: 'Marcas' }
     const edited: CueFlow = { ...CALLS_ONLY, markPoint: false }
