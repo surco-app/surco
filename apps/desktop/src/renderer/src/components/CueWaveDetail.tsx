@@ -403,7 +403,7 @@ export function CueWaveDetail({
             setCursor(ms)
             onHover?.(ms)
           }}
-          onDoubleClick={compact ? onZoomReset : undefined}
+          onDoubleClick={compact && !onPlace ? onZoomReset : undefined}
           onMouseLeave={() => {
             setCursor(null)
             onHover?.(null)

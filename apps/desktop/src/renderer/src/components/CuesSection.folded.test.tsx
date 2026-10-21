@@ -294,4 +294,15 @@ describe('CuesSection folded', () => {
     fireEvent.doubleClick(screen.getByTestId('cue-detail'))
     expect(width()).toBe('8%')
   })
+
+  it('keeps the zoom on a double click while placing, where clicks only place', async () => {
+    setup()
+    await ready()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    fireEvent.mouseUp(window, { clientX: 128 })
+    fireEvent.click(within(screen.getByTestId('cues-folded-row')).getByTestId('cue-zoom-in'))
+    fireEvent.click(placeMode())
+    fireEvent.doubleClick(screen.getByTestId('cue-detail'))
+    expect(screen.getByTestId('cue-wave-view').style.width).toBe('4%')
+  })
 })
