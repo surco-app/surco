@@ -199,6 +199,7 @@ export interface Api {
   rekordboxAvailable: () => Promise<boolean>
   // The collection's folder and playlist tree, read-only. Empty when unreadable.
   loadRekordboxTree: () => Promise<SourceNode[]>
+  rekordboxRecentCount: () => Promise<number>
   // One playlist's rows in order, separators and file-less rows included.
   loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is

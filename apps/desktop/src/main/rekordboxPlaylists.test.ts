@@ -3,10 +3,12 @@ import { tmpdir } from 'node:os'
 import { join, posix, win32 } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { mediaUrl } from '../shared/media'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { openRekordboxDb } from './rekordboxDb'
 import {
   coverFileOf,
   entryPath,
+  readRecentlyAddedCount,
   readRekordboxPlaylist,
   readRekordboxPlaylistWithPreview,
   readRekordboxTree,
@@ -300,5 +302,98 @@ describe('coverFileOf', () => {
   it('gives nothing when rekordbox has no artwork file for the track', () => {
     expect(coverFileOf(share, '/PIONEER/Artwork/a/b/artwork.jpg', () => false)).toBeNull()
     expect(coverFileOf(share, null, () => true)).toBeNull()
+  })
+})
+
+describe('the recently added list', () => {
+  const share = '/Users/dj/Library/Pioneer/rekordbox/share'
+  const now = new Date(2026, 9, 21, 12)
+  let rdb: NonNullable<ReturnType<typeof openRekordboxDb>>
+
+  beforeAll(async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbrecent-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      content: [
+        { ...NIGHT, StockDate: '2026-10-20', CreatedAt: '2026-10-20 09:00:00.000 +00:00' },
+        {
+          ...PLAY,
+          StockDate: '2026-10-20',
+          CreatedAt: '2026-10-20 18:00:00.000 +00:00',
+          ArtistID: 'a1',
+        },
+        { ...SPOTIFY, StockDate: '2026-10-01' },
+        {
+          ID: 'edge',
+          FolderPath: '/Volumes/Public/Music/Edge.wav',
+          FileType: 11,
+          Title: 'Edge',
+          Length: 200,
+          StockDate: '2026-09-21',
+        },
+        {
+          ID: 'old',
+          FolderPath: '/Volumes/Public/Music/Old.wav',
+          FileType: 11,
+          Title: 'Old',
+          Length: 200,
+          StockDate: '2026-09-20',
+        },
+        { ...GONE, StockDate: '2026-10-19' },
+        { ...SEP, StockDate: '2026-10-18' },
+        {
+          ID: 'undated',
+          FolderPath: '/Volumes/Public/Music/Undated.wav',
+          FileType: 11,
+          Title: 'Undated',
+          Length: 200,
+        },
+      ],
+      keys: [
+        { ID: 'k1', ScaleName: '4B' },
+        { ID: 'k2', ScaleName: '8A' },
+      ],
+      artists: [{ ID: 'a1', Name: '2 Fabiola' }],
+      playlists: [],
+      links: [],
+      cueRows: [{ ID: 'q1', ContentID: 'c2', InMsec: 1000, Kind: 1, ColorTableIndex: 1 }],
+    })
+    const opened = openRekordboxDb(path, { readonly: true })
+    if (!opened) throw new Error('fixture did not open')
+    rdb = opened
+  })
+
+  afterAll(() => rdb.close())
+
+  it('lists the tracks that entered the collection in the last 30 days, newest first, the order the DJ added them', () => {
+    const rows = readRekordboxPlaylistWithPreview(rdb, share, RECENTLY_ADDED_ID, () => false, now)
+    expect(rows.map((r) => r.contentId)).toEqual(['c2', 'c1', 'c3', 'edge'])
+  })
+
+  it('counts what the list will show, so the tree number matches its rows', () => {
+    expect(readRecentlyAddedCount(rdb, now)).toBe(4)
+  })
+
+  it('gives its rows what any playlist row has, so they open, play and show cues alike', () => {
+    const [play, night, streamed] = readRekordboxPlaylistWithPreview(
+      rdb,
+      share,
+      RECENTLY_ADDED_ID,
+      () => false,
+      now,
+    )
+    expect(play).toMatchObject({
+      path: PLAY.FolderPath,
+      separator: false,
+      contentId: 'c2',
+      meta: { bpm: '138.07', key: '8A', rating: 100 },
+      preview: {
+        title: 'Play This Song (Transformix)',
+        artist: '2 Fabiola',
+        durationSec: 338,
+        cues: [{ ms: 1000, kind: 1, color: 1 }],
+      },
+    })
+    expect(night.preview?.title).toBe('Night Train (Extended Mix)')
+    expect(streamed).toMatchObject({ path: null, separator: false })
   })
 })

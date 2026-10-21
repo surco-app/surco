@@ -6,7 +6,7 @@ import type { TrackProperties } from '../shared/types'
 import { FILE_TYPES } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
-import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
+import { localDate, rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 type Db = InstanceType<typeof Database>
 
@@ -63,10 +63,6 @@ export async function readContentFacts(
       : (props.bitrateKbps ?? 0),
     meta,
   }
-}
-
-function localDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export function insertContent(

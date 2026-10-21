@@ -190,6 +190,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     loadAppleMusicPlaylists: async () => [],
     rekordboxAvailable: async () => false,
     loadRekordboxTree: async () => [],
+    rekordboxRecentCount: async () => 0,
     loadRekordboxPlaylist: async () => [],
     rekordboxHasSeparator: async () => false,
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),

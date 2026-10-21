@@ -181,6 +181,7 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:playlistTracks', persistentId),
   rekordboxAvailable: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:available'),
   loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
+  rekordboxRecentCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:recentCount'),
   loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('rekordbox:playlist', id),
   editRekordboxPlaylist: (

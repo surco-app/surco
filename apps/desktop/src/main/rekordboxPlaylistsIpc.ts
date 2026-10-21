@@ -11,7 +11,11 @@ import { rekordboxShareDir } from './rekordboxArtwork'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { separatorContent } from './rekordboxPlaylistEdit'
-import { readRekordboxPlaylistWithPreview, readRekordboxTree } from './rekordboxPlaylists'
+import {
+  readRecentlyAddedCount,
+  readRekordboxPlaylistWithPreview,
+  readRekordboxTree,
+} from './rekordboxPlaylists'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
@@ -78,6 +82,10 @@ export function registerRekordboxPlaylistsIpc(
   ipcMain.handle('rekordbox:tree', async () => {
     const path = collection()
     return withCollection(path, readRekordboxTree, [], await keyOf(path))
+  })
+  ipcMain.handle('rekordbox:recentCount', async () => {
+    const path = collection()
+    return withCollection(path, (db) => readRecentlyAddedCount(db), 0, await keyOf(path))
   })
   ipcMain.handle('rekordbox:playlist', async (_e, id: string) => {
     const path = collection()

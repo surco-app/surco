@@ -151,7 +151,9 @@ describe('registerRekordboxPlaylistsIpc', () => {
     vi.mocked(openRekordboxDb).mockClear()
     await handler('rekordbox:tree')()
     await handler('rekordbox:hasSeparator')()
+    await handler('rekordbox:recentCount')()
     expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
+      [path, { readonly: true, key }],
       [path, { readonly: true, key }],
       [path, { readonly: true, key }],
     ])
@@ -206,6 +208,20 @@ describe('registerRekordboxPlaylistsIpc', () => {
       queue: queueFor(path),
     })
     expect(await handler('rekordbox:hasSeparator')()).toBe(true)
+  })
+
+  it('counts the tracks added in the last 30 days, the number the tree shows beside Recently added', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    const today = new Date().toLocaleDateString('sv-SE')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c, i) => (i < 2 ? { ...c, StockDate: today } : c)),
+    })
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+    })
+    expect(await handler('rekordbox:recentCount')()).toBe(2)
   })
 
   // The write's transaction spans an await: two at once would fight over SQLite's busy

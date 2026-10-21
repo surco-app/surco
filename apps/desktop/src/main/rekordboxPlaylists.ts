@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import path, { resolve } from 'node:path'
 import { mediaUrl } from '../shared/media'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
   AppleMusicTrackMeta,
   RowCue,
@@ -10,6 +11,7 @@ import type {
 } from '../shared/types'
 import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
+import { localDate } from './rekordboxRows'
 
 // Reads the user's rekordbox playlists as a source of tracks: the folder tree and one
 // playlist's rows. Read-only by construction — every caller opens the collection with
@@ -112,13 +114,41 @@ export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlayli
         ORDER BY s.TrackNo`,
     )
     .all(id) as EntryRow[]
-  return rows.map((row) => {
-    const ids = { linkId: String(row.linkId), contentId: String(row.contentId) }
-    if (row.sep) return { path: entryPath(row.FolderPath), separator: true, meta: {}, ...ids }
-    if (row.FileType === STREAMING_FILE_TYPE)
-      return { path: null, separator: false, meta: {}, ...ids }
-    return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row), ...ids }
-  })
+  return rows.map(entryOf)
+}
+
+function entryOf(row: EntryRow): SourcePlaylistEntry {
+  const ids = { linkId: String(row.linkId), contentId: String(row.contentId) }
+  if (row.sep) return { path: entryPath(row.FolderPath), separator: true, meta: {}, ...ids }
+  if (row.FileType === STREAMING_FILE_TYPE)
+    return { path: null, separator: false, meta: {}, ...ids }
+  return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row), ...ids }
+}
+
+const RECENT = `coalesce(c.rb_local_deleted, 0) = 0 AND NOT ${IS_SEPARATOR} AND c.StockDate >= ?`
+
+function recentSince(now: Date): string {
+  return localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30))
+}
+
+function readRecentlyAdded(db: RekordboxDb, now: Date): SourcePlaylistEntry[] {
+  const rows = db
+    .prepare(
+      `SELECT c.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, k.ScaleName, 0 AS sep
+         FROM djmdContent c
+         LEFT JOIN djmdKey k ON k.ID = c.KeyID
+        WHERE ${RECENT}
+        ORDER BY c.StockDate DESC, c.created_at DESC`,
+    )
+    .all(recentSince(now)) as EntryRow[]
+  return rows.map(entryOf)
+}
+
+export function readRecentlyAddedCount(db: RekordboxDb, now: Date = new Date()): number {
+  const row = db
+    .prepare(`SELECT count(*) AS n FROM djmdContent c WHERE ${RECENT}`)
+    .get(recentSince(now)) as { n: number }
+  return row.n
 }
 
 interface PreviewRow {
@@ -163,22 +193,26 @@ export function readRekordboxPlaylistWithPreview(
   share: string,
   id: string,
   exists: (p: string) => boolean = existsSync,
+  now: Date = new Date(),
 ): SourcePlaylistEntry[] {
-  const entries = readRekordboxPlaylist(db, id)
+  const recent = id === RECENTLY_ADDED_ID
+  const entries = recent ? readRecentlyAdded(db, now) : readRekordboxPlaylist(db, id)
+  const contentIds = recent ? `SELECT c.ID FROM djmdContent c WHERE ${RECENT}` : PLAYLIST_CONTENT
+  const param = recent ? recentSince(now) : id
   const rows = db
     .prepare(
       `SELECT c.ID AS contentId, c.Title, a.Name AS Artist, c.Length, c.ImagePath, c.AnalysisDataPath
          FROM djmdContent c LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
-        WHERE c.ID IN (${PLAYLIST_CONTENT})`,
+        WHERE c.ID IN (${contentIds})`,
     )
-    .all(id) as PreviewRow[]
+    .all(param) as PreviewRow[]
   const cueRows = db
     .prepare(
       `SELECT ContentID AS contentId, InMsec, Kind, ColorTableIndex FROM djmdCue
-        WHERE coalesce(rb_local_deleted, 0) = 0 AND ContentID IN (${PLAYLIST_CONTENT})
+        WHERE coalesce(rb_local_deleted, 0) = 0 AND ContentID IN (${contentIds})
         ORDER BY InMsec`,
     )
-    .all(id) as CueRow[]
+    .all(param) as CueRow[]
   const cues = new Map<string, RowCue[]>()
   for (const c of cueRows) {
     const list = cues.get(String(c.contentId)) ?? []

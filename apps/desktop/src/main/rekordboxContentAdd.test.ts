@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import {
   CONTENT_LINK,
   type ContentFacts,
@@ -11,6 +12,7 @@ import {
 } from './rekordboxContentAdd'
 import { openRekordboxDb } from './rekordboxDb'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
+import { readRekordboxPlaylistWithPreview } from './rekordboxPlaylists'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
 const NOW = new Date(2026, 9, 18, 23, 30)
@@ -171,6 +173,14 @@ describe('insertContent', () => {
     expect(db.prepare('SELECT FolderPath FROM djmdContent WHERE ID = ?').get(id)).toEqual({
       FolderPath: '/Volumes/Public/Music/Café.wav'.normalize('NFC'),
     })
+    db.close()
+  })
+
+  it('lands first in Recently added, though the file itself is months old', async () => {
+    const db = await open()
+    const id = insertContent(db, facts(), { now: NOW })
+    const [first] = readRekordboxPlaylistWithPreview(db, '/s', RECENTLY_ADDED_ID, () => false, NOW)
+    expect(first.contentId).toBe(id)
     db.close()
   })
 })

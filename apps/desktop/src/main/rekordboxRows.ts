@@ -12,6 +12,10 @@ export function rekordboxStamp(now: Date): string {
   return `${now.toISOString().replace('T', ' ').replace('Z', '')} +00:00`
 }
 
+export function localDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // rekordbox numbers every local change from one counter (agentRegistry localUpdateCount)
 // and stamps the row with it (rb_local_usn). Taking the next number and moving the counter
 // on keeps a row Surco writes ordered after every change rekordbox already made.
