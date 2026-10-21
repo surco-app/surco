@@ -4,9 +4,27 @@ import {
   EXAMPLE_DROP,
   EXAMPLE_DURATION_MS,
   EXAMPLE_GRID,
+  EXAMPLE_WAVE,
   exampleBar,
   examplePlan,
 } from './cueExample'
+
+describe('the example wave', () => {
+  const level = (from: number, to: number) => {
+    const bars = EXAMPLE_WAVE.slice(from - 1, to)
+    return bars.reduce((sum, c) => sum + c.h, 0) / bars.length
+  }
+
+  it('drops quiet in the bars before the point and breaks loud right on it, so the eye finds the drop at bar 64', () => {
+    expect(level(52, 63)).toBeLessThan(level(40, 47) * 0.6)
+    expect(level(52, 63)).toBeLessThan(level(64, 71) * 0.4)
+  })
+
+  it('has no later loud block as big as the drop, so nothing else reads as the drop', () => {
+    const drop = Math.min(...EXAMPLE_WAVE.slice(63, 71).map((c) => c.h))
+    expect(Math.max(...EXAMPLE_WAVE.slice(95).map((c) => c.h))).toBeLessThan(drop)
+  })
+})
 
 describe('the example track', () => {
   it('draws no CALL on the example point for a flow that leaves it unmarked, as placing it would', () => {

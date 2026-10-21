@@ -34,17 +34,18 @@ export const EXAMPLE_STRONG: StrongPart[] = [
   { start: exampleBar(128), end: exampleBar(160) },
 ]
 
-const LEVEL: Record<PhraseKind, number> = {
-  intro: 0.35,
-  up: 0.55,
-  chorus: 0.95,
-  down: 0.45,
-  outro: 0.3,
-}
+const WAVE_LEVELS: [number, number][] = [
+  [1, 0.35],
+  [32, 0.6],
+  [48, 0.2],
+  [64, 0.95],
+  [96, 0.6],
+  [160, 0.3],
+]
 
 export const EXAMPLE_WAVE: CueWaveColumn[] = Array.from({ length: BARS }, (_, bar) => {
-  const kind = [...SECTIONS].reverse().find(([start]) => start <= bar + 1)?.[1] ?? 'intro'
-  return { h: LEVEL[kind] * (bar % 4 === 0 ? 1 : 0.85), rgb: null }
+  const level = [...WAVE_LEVELS].reverse().find(([start]) => start <= bar + 1)?.[1] ?? 0.35
+  return { h: level * (bar % 4 === 0 ? 1 : 0.85), rgb: null }
 })
 
 export function examplePlan(flow: CueFlow): FlowOutcome {
