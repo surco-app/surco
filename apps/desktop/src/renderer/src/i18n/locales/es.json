@@ -1518,6 +1518,8 @@
         "unit": "compases",
         "quantize": "Cuantizar"
       },
+      "lettersByTime": "Letras en orden de la pista",
+      "lettersByTimeHint": "La A siempre es la primera cue de la pista. Apágalo si cada letra es un pad fijo para ti.",
       "markPoint": "Marcar el punto con un CALL"
     }
   },

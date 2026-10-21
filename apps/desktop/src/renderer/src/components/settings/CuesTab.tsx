@@ -19,6 +19,7 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { CueFlowPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
 import { CheckboxRow } from './CheckboxRow'
+import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -357,6 +358,20 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
             </button>
           ))}
         </fieldset>
+      </div>
+      <div
+        data-testid="cue-letters"
+        className="rounded-md border border-[var(--color-line)] px-3.5 py-3 text-sm"
+      >
+        <CheckboxRow
+          testid="settings-cue-letters-by-time"
+          checked={synced.cueLettersByTime}
+          onChange={(v) => patch('cueLettersByTime', v)}
+          label={tr('settings.cueFlows.lettersByTime')}
+        />
+        <SettingsHint data-testid="settings-cue-letters-hint" className="mt-1 pl-7">
+          {tr('settings.cueFlows.lettersByTimeHint')}
+        </SettingsHint>
       </div>
     </div>
   )

@@ -1518,6 +1518,8 @@
         "unit": "bars",
         "quantize": "Quantize"
       },
+      "lettersByTime": "Letters in track order",
+      "lettersByTimeHint": "A is always the first cue of the track. Turn it off if each letter is a fixed pad for you.",
       "markPoint": "Mark the point with a CALL"
     }
   },

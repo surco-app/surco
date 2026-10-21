@@ -1518,6 +1518,8 @@
         "unit": "mesures",
         "quantize": "Quantifier"
       },
+      "lettersByTime": "Lettres dans l’ordre du morceau",
+      "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactivez-le si chaque lettre est un pad fixe pour vous.",
       "markPoint": "Marquer le point avec un CALL"
     }
   },

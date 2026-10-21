@@ -1518,6 +1518,8 @@
         "unit": "Takte",
         "quantize": "Quantisieren"
       },
+      "lettersByTime": "Buchstaben in Titelreihenfolge",
+      "lettersByTimeHint": "A ist immer der erste Cue des Titels. Schalte es aus, wenn jeder Buchstabe für dich ein fester Pad ist.",
       "markPoint": "Den Punkt mit einem CALL markieren"
     }
   },

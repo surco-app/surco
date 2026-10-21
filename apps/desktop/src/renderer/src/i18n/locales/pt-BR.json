@@ -1518,6 +1518,8 @@
         "unit": "compassos",
         "quantize": "Quantizar"
       },
+      "lettersByTime": "Letras na ordem da faixa",
+      "lettersByTimeHint": "A é sempre o primeiro cue da faixa. Desligue se cada letra for um pad fixo para você.",
       "markPoint": "Marcar o ponto com um CALL"
     }
   },

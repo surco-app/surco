@@ -29,8 +29,10 @@ afterEach(async () => {
   afterTest = null
 })
 
-let last: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueJumpBars' | 'cueQuantize'> | null =
-  null
+let last: Pick<
+  SyncedDraft,
+  'cueFlows' | 'activeCueFlow' | 'cueJumpBars' | 'cueQuantize' | 'cueLettersByTime'
+> | null = null
 
 const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
@@ -48,6 +50,7 @@ function Harness({
     activeCueFlow: active,
     cueJumpBars: 16 as CueJumpBars,
     cueQuantize: 'bar' as CueQuantize,
+    cueLettersByTime: true,
   })
   last = draft
   return (
@@ -75,6 +78,20 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-flow-in-use')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     expect(last?.activeCueFlow).toBe('mine')
+  })
+
+  it('letters the hot cues in track order by default and lets a DJ with fixed pads turn it off', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness />)
+    const toggle = screen.getByTestId('settings-cue-letters-by-time')
+    expect(toggle).toBeChecked()
+    expect(screen.getByText('Letras en orden de la pista')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-cue-letters-hint')).toHaveTextContent(
+      'La A siempre es la primera cue de la pista. Apágalo si cada letra es un pad fijo para ti.',
+    )
+    fireEvent.click(toggle)
+    expect(last?.cueLettersByTime).toBe(false)
   })
 
   it('gives a new DJ the one bundled flow, marked as the default', async () => {
