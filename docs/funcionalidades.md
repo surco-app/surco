@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 13 de octubre de 2026** (v1.8.0). Levantado por primera vez el
+**Última revisión: 21 de octubre de 2026** (v1.9.0, rekordbox dentro de Surco). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -834,13 +834,15 @@ Meterlo en un átomo freeform escribiría bytes que no lee nadie, ni el propio S
 
 Actualizada 2026-09-02: dos celdas daban por perdido lo que hoy se escribe.
 Revisada el 2026-09-23 para v1.0: `tags.ts` y `tagFields.ts` no cambiaron desde
-v0.100.0, así que la tabla sigue en vigor.
+v0.100.0, así que la tabla sigue en vigor. Revisada el 2026-10-21 para v1.9.0. `tags.ts`
+solo cambió en la lectura (pasa al worker), las celdas siguen igual y se añade la fila de
+rekordbox, cuyos cues y playlists no viven en el fichero.
 
 | Campo | MP3 | AIFF | WAV | FLAC | M4A/ALAC |
 |---|---|---|---|---|---|
 | 28 campos base | Sí | Sí | Sí (chunk `id3 `) | Sí | Sí |
 | Carátula | Sí | Sí | Sí (vía `id3 `) | Sí | Sí |
-| Rating | Sí | Sí | Sí | Sí | **No** (`tags.ts:711-714`) |
+| Rating | Sí | Sí | Sí | Sí | **No** (`tags.ts:951-954`) |
 | Nº de catálogo | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Estilo, país, tipo de medio, URL Discogs | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Artista original, letrista, director, codificado por | Sí | Sí | Sí | Sí | **Sí** (freeform) |
@@ -849,6 +851,13 @@ v0.100.0, así que la tabla sigue en vigor.
 | Año original | Sí | Sí | Sí | Sí | **No** |
 | Posición vinilo «A2» | Sí | Sí | Sí | Sí | **No** (solo dígitos) |
 | Cues de Traktor | Sí | Sí | **Sí** | Sí | **No** |
+| Cues y playlists de rekordbox | Sí | Sí | Sí | Sí | Sí |
+
+Los cues y las playlists de rekordbox viven en su colección (`master.db`), no en el
+fichero, así que ningún formato los pierde. Los conserva el repunte de §11, que da de alta
+los cinco formatos (`FILE_TYPES`, `rekordboxDb.ts:51-58`). Sin la opción «Actualizar la
+colección de rekordbox al convertir», apagada por defecto, la entrada sigue apuntando al
+fichero antiguo.
 
 ---
 
@@ -1078,6 +1087,31 @@ Los campos viajan separados por los caracteres de control *unit separator* y *re
 separator*, no por tabulador y salto de línea: el grouping y el comentario los escribe
 el usuario y pueden contener ambos (`appleMusicPlaylists.ts:145`).
 
+### Playlists de rekordbox en la barra lateral
+
+Nuevo en v1.9.0. La barra lateral (`SourceRail.tsx`) lleva primero la lista de trabajo de
+siempre y después las bibliotecas encontradas en el equipo, Apple Music solo en macOS y
+rekordbox si hay colección. Una fuente que el equipo no tiene no se dibuja.
+
+**Lectura de solo lectura.** El árbol y las filas se leen de `master.db` abierto en solo
+lectura, así que navegar nunca puede dañar la colección (`rekordboxPlaylists.ts:8-10`). Se
+listan carpetas y playlists normales (`Attribute IN (0, 1)`, `:45`), **no las listas
+inteligentes**. El orden es el de rekordbox, y los separadores se reconocen por lo que son
+(pista de 2 s o menos sin título), no por dónde viven (`:16`).
+
+**Cada fila trae lo de rekordbox**, con título, artista, duración, carátula, una onda pequeña
+sacada de su análisis (o la de Surco en caché si el análisis está dañado) y las hot cues como
+muestras de color, o la marca de «no analizada». Las pistas sin fichero en el disco se
+cuentan en un aviso (`sources.missing*`).
+
+**Independiente de la sincronización.** Ver las playlists no necesita la opción de
+sincronizar rekordbox al convertir.
+
+**Ocultar una fuente.** Apple Music o rekordbox se pueden quitar de la barra lateral desde
+su menú en la propia barra o en Ajustes → General → Fuentes, y volver a mostrar desde ahí
+(`hiddenSources`, `settings.ts:86`, `shared/hiddenSources.ts`). Ocultarla solo la quita de la
+barra y no cambia su sincronización al convertir (`settings.sourcesHint`).
+
 ---
 
 ## 11. Destinos
@@ -1151,8 +1185,8 @@ celdas por perdidas que hoy se conservan):
 | MP3/AIFF → MP3/AIFF | **Sí** |
 | MP3/AIFF → FLAC | **Sí** (re-armado a basE91) |
 | FLAC → FLAC | **Sí** |
-| **FLAC → MP3/AIFF** | **Sí** (`ffmpeg.ts:2044-2053`, `:2068-2083`) |
-| **Cualquiera → WAV** | **Sí** (`ffmpeg.ts:1977-2002`, `:2009-2019`) |
+| **FLAC → MP3/AIFF** | **Sí** (`ffmpeg.ts:2147-2156`, `:2171-2186`) |
+| **Cualquiera → WAV** | **Sí** (`ffmpeg.ts:2080-2105`, `:2112-2123`) |
 | Cualquiera → **ALAC/M4A** | **No**, a propósito |
 | Con «limpiar metadatos» | **No**, a propósito |
 
@@ -1164,7 +1198,7 @@ los hot cues y la rejilla, en una conversión que reportaba éxito
 
 Los cuatro formatos cruzados están enumerados en un test que recorre la matriz
 entera y comprueba que la posición del cue sobrevive
-(`cueMatrix.test.ts:161-193`). El comentario dice por qué se enumeró toda:
+(`cueMatrix.test.ts:127-163`). El comentario dice por qué se enumeró toda:
 *«el bug que reportó djotas era una sola celda vacía; enumerar la matriz entera es
 lo que convierte "arreglamos el que reportaron" en "los comprobamos todos"»*.
 
@@ -1174,7 +1208,13 @@ conservan, y la entrada del original no pierde los suyos cuando la conversión v
 otra carpeta.
 
 M4A queda fuera porque no tiene ID3 donde escribir, la misma razón por la que la
-ruta ALAC no lleva cues (`ffmpeg.ts:2012-2013`, test `convertCues.test.ts:713-720`).
+ruta ALAC no lleva cues (`ffmpeg.ts:2115-2116`, test `convertCues.test.ts:758-770`).
+
+Revisada el 2026-10-21 para v1.9.0. Las celdas no cambian, solo las líneas citadas. Esta
+matriz es solo de Traktor, cuyos cues viajan **dentro del fichero**. Los de rekordbox viven en
+su colección y no dependen del formato (ver §8.5 y el editor de cues más abajo). Surco
+**conserva** los cues de Traktor al convertir pero no los edita. El editor de cues escribe
+solo en rekordbox.
 
 **Cues de Mixed In Key.** MIK guarda su JSON en base64 dentro de un GEOB
 llamado `CuePoints`; Surco lo traduce al árbol binario de Traktor
@@ -1244,33 +1284,45 @@ sobrescrito, porque copias fechadas dejaban basura en la carpeta del usuario.
 Distinto de la exportación XML de más abajo: aquí se escribe **en la colección real**
 (`master.db`), reapuntando entradas que ya existen en vez de crear pistas nuevas.
 
-**Apagado por defecto** (`syncRekordbox: false`, `settings.ts:55`). El asistente de
+**Apagado por defecto** (`syncRekordbox: false`, `settings.ts:79`). El asistente de
 primer arranque lo ofrece solo si encuentra rekordbox en el equipo; a quien no lo use, el
 paso no le aparece (`djLibraries.ts`). La ruta se detecta sola y el ajuste solo hace falta
 si la colección vive en otro sitio (`rekordboxDbPath`).
 
 **Qué conserva:** la entrada mantiene su identificador, así que **playlists, cue points e
-historial siguen en su sitio** — rekordbox enlaza por pista, no por ruta
-(`rekordboxLibrary.ts:14`). Se escriben cuatro campos: ruta, nombre de fichero, código de
-formato y tamaño. `OrgFolderPath` **no se toca**: es el registro de dónde vino la pista,
-no una ruta viva.
+historial siguen en su sitio**, porque rekordbox enlaza por pista y no por ruta
+(`rekordboxLibrary.ts:23-25`). Cambian la ruta, el nombre de fichero, el código de formato y
+el tamaño, y además el título, artista, álbum, artista del álbum, género, sello, remixer,
+comentario, año, números de pista y disco y la carátula (`applyRekordboxMeta`,
+`rekordboxMetadata.ts:60`). Un campo vacío en Surco no borra el de rekordbox; BPM, tonalidad
+y cues se quedan como los tenga rekordbox. `OrgFolderPath` **no se toca**, porque es el registro de
+dónde vino la pista y no una ruta viva (`rekordboxLibrary.ts:199-201`).
 
-**Dos copias de seguridad, y sin ellas no se escribe** (`rekordboxLibrary.ts:106-110`):
-una por escritura (`.surco-backup`), sobrescrita en cada pista, y otra por tanda
-(`.surco-session`), tomada antes de la primera escritura del lote. La segunda existe
-porque la primera, al sobrescribirse, tras un lote de 300 describe la colección justo
-antes de la pista 300, no antes del lote.
+**El nombre del fichero no cambia por editar etiquetas.** Una pista abierta desde una
+playlist de rekordbox no se renombra con la plantilla aunque esté activo el renombrado
+automático, para que una edición de etiquetas no mueva el fichero al que apunta la colección
+(`autoNamesFile`, `outputName.ts:20-25`). Desde v1.9.0.
+
+**Dos copias de seguridad, y sin ellas no se escribe** (`rekordboxLibrary.ts:179-188`):
+una por tanda de conversión (`.surco-session`), tomada antes de la primera escritura y que
+describe la colección antes del lote, y otra antes de escribir (`.surco-backup`). La tanda
+entera va en una sola transacción detrás de una sola copia, y si la escritura falla se repone
+esa copia (`:113-121`, `:229-233`); antes cada pista pagaba su propia copia de 56 MB.
 
 **Exige rekordbox cerrado**, comprobado dos veces: antes de leer y otra vez tras la copia,
-para estrechar la ventana (`rekordboxLibrary.ts:113`). **La guarda falla cerrada**: si no
+para estrechar la ventana (`rekordboxLibrary.ts:159`, `:192`). **Si está abierto, espera.**
+Desde v1.9.0 los repuntes bloqueados entran en la cola de rekordbox
+(`rekordboxQueueFromRun.ts:87`), que se guarda en disco y se aplica sola al cerrar rekordbox,
+y una pastilla dice cuántas pistas esperan (`rekordboxQueue.pill*`). Antes se omitían.
+**La guarda falla cerrada**: si no
 se puede averiguar si corre, se asume que sí (`rekordboxProcess.ts`). La coincidencia es
 por nombre completo, nunca por subcadena, porque el bundle trae `rekordboxAgent` y
 `Upmgr rekordbox`. El cierre es siempre un quit educado, nunca un kill: rekordbox tiene
 `master.db` abierto por SQLCipher.
 
 **Nunca lanza:** la conversión ya terminó en disco cuando esto corre, así que cada fallo
-devuelve un motivo que el panel de actividad cuenta — omitido por rekordbox abierto, por
-copia fallida, por colección de solo lectura, ilegible o no escribible. **Y se avisa en
+devuelve un motivo que el panel de actividad cuenta, sea copia fallida o colección de solo
+lectura, ilegible o no escribible. **Y se avisa en
 pantalla**: una colección que no pudo seguir a la tanda (solo lectura, ilegible, escritura
 o copia fallidas) y las pistas que se quedaron en el fichero antiguo por ambigüedad se
 cuentan en un aviso tras la tanda, en el idioma del usuario (`rekordboxFlush.ts`, claves
@@ -1286,8 +1338,135 @@ reapuntables sin ambigüedad, 34 ambiguas, 117 que no están en rekordbox.
 en rekordbox la ruta es una columna entera. La regla de misma carpeta sigue aplicándose
 solo a Traktor.
 
-**Riesgo asumido:** los contadores de sincronización con rekordbox cloud (`usn`,
-`rb_local_usn`, `rb_local_synced`) no se mantienen. Está pensado para bibliotecas locales.
+**Las filas que escribe Surco llevan el contador local de rekordbox.** Cada escritura
+(metadatos, playlists, cues, altas) toma el siguiente `rb_local_usn` de
+`agentRegistry.localUpdateCount`, como hace rekordbox, para quedar ordenada detrás de sus
+cambios (`rekordboxRows.ts:15-27`). El `usn` de la nube queda nulo y `rb_local_synced` a 0,
+como en las altas de rekordbox. **No se ha probado con la sincronización en la nube de
+rekordbox**, que está pensado para bibliotecas locales.
+
+### Organizar rekordbox desde Surco
+
+Nuevo en v1.9.0. Desde el árbol de la barra lateral se crean, renombran y borran playlists y
+carpetas, se añaden pistas soltándolas sobre una playlist, se quitan y se reordenan, y en el
+menú de una pista se puede insertar un separador copiando uno que ya exista en la colección
+(`RekordboxPlaylistEdit`, `shared/types.ts:1091-1100`). Borrar una playlist o una carpeta
+nunca borra pistas de la colección, porque una playlist solo enlaza entradas
+(`rekordboxPlaylistEdit.ts:3-6`). No se tocan las listas inteligentes, que no se leen.
+
+**El campo Playlists.** En el editor, «Playlists» elige en qué playlists de rekordbox está
+cada pista, también sobre varias a la vez, y puede crear una playlist nueva al escribir
+(`PlaylistsField.tsx`). Se escribe al convertir o actualizar la pista. Si la pista no estaba
+en la colección, Surco la da de alta sin análisis (`insertContent`,
+`rekordboxContentAdd.ts:72`) y rekordbox la analiza al abrirse, medido el 18/10 en rekordbox
+7.2.19 (`docs/llevar-a-rekordbox-medidas.md`). Soltar sobre una playlist, en cambio, solo
+añade pistas que ya están en la colección y dice cuántas no estaban
+(`sources.edit.notInCollection*`). El campo aparece solo la primera vez que hay colección
+(`useOfferRekordboxField`).
+
+**Con rekordbox abierto, los cambios esperan.** Cada gesto pide cerrarlo una vez; si sigue
+abierto, el cambio entra en una cola guardada en disco (`rekordboxQueue.ts`) que se aplica
+sola al cerrar rekordbox, y una pastilla dice cuántos cambios esperan. La cola se puede
+descartar, y lo que se preparó para otra colección no se aplica a la actual
+(`rekordboxQueue.elsewhere`). Si la playlist cambió en rekordbox entretanto, el cambio se
+rechaza en vez de pisarla (`stale`).
+
+**Copia y transacción.** Antes de escribir se pliega el WAL en `master.db`, se toma la copia
+de la sesión y otra de la escritura, y todas las operaciones van en una transacción que cubre
+también `masterPlaylists6.xml`. Un fallo se deshace con el rollback de SQLite; `master.db`
+solo se repone desde la copia si su estado es desconocido (`rekordboxPlaylistWrite.ts:67-75`,
+`:109-114`). Si ni eso es posible, el aviso dice cómo reponer la copia a mano
+(`sources.edit.refused.writeUnknown`).
+
+### Editor de cues de rekordbox
+
+Nuevo en v1.9.0. La sección Cues del editor aparece cuando la pista se abrió desde una
+playlist de rekordbox (`App.tsx:2059-2069`) y rekordbox la tiene analizada; si no, lo dice
+(`editor.cues.unanalysed`). Dibuja la onda en color de rekordbox con su rejilla y la línea
+roja en cada compás que la rejilla marca como golpe 1, como rekordbox
+(`CueWave.tsx`, `CueWaveDetail.tsx`).
+
+**Qué se edita.** Hot cues de la A a la H (máximo 8, el límite de rekordbox,
+`HOT_KINDS`, `shared/cueRules.ts:258`) y CALL (memory cues). Se ponen en el cabezal o con el
+menú sobre la onda, se arrastran, se borran y se les cambia el color. Al moverlas se ajustan
+al compás o al golpe (`cueQuantize`, por defecto compás, `shared/cueQuantize.ts`). Los bucles
+se muestran pero Surco no los mueve ni los cambia (`editor.cues.loop`). Deshacer y rehacer con
+⌘Z y ⇧⌘Z (`lib/cueKeys.ts`).
+
+**Panel o pantalla completa, con teclas.** Espacio reproduce, ← → saltan N compases
+(ajustable), ⇧← ⇧→ un golpe, C centra en la rejilla, M pone un CALL en el cabezal, 1 a 8 la
+hot cue A a H, ⌫ borra la seleccionada, + − hacen zoom (`cueKeyAction`, `lib/cueKeys.ts`).
+Estas teclas viven en la sección, no en la tabla de atajos rebindables.
+
+**Se escribe solo en la colección de rekordbox.** «Guardar en rekordbox» escribe
+`djmdCue`, actualiza `contentCue` y sube `CueUpdated` de la pista (`applyCueChanges`,
+`rekordboxCues.ts:216`), como hace rekordbox al poner un cue a mano. No se escriben en el
+fichero ni en Traktor, Serato o Engine DJ. El guardado pasa por la misma cola que las
+playlists (`rekordboxCuesIpc.ts:75-78`). Con rekordbox cerrado se aplica al momento, con copia
+de seguridad, y con rekordbox abierto espera a que se cierre. Si la pista cambió en rekordbox
+mientras esperaba, el guardado se descarta y se muestra lo que tiene rekordbox
+(`editor.cues.queuedStale`). Salir con cues sin guardar pide confirmación
+(`main/index.ts:524-530`).
+
+### Flujos de cues
+
+Un flujo es una lista de reglas que, a partir de un punto, pone hot cues y CALL
+(`shared/cueFlows.ts`). **El punto lo marca el usuario** con un CALL que no está sobre una
+hot cue (`findDrops`, `shared/cueRules.ts:28-32`). Surco no detecta los drops solo (ver §13).
+
+**Flujos incluidos:** «Mix in 64», una hot cue 16 compases (64 golpes) antes del punto, y
+«Mix in 32», a 8 compases (`MIX_IN`, `MIX_IN_32`, `cueFlows.ts:92-118`). Cada regla elige
+desde dónde cuenta (el punto, el primer o último golpe, o cada intro, subida, bajada,
+estribillo u outro del análisis de frases de rekordbox), el sentido, la distancia en compases,
+cuántas veces repite, una condición (siempre, si cabe, si no hay otra cue en ese compás, si no
+hay otra antes del punto), si pone hot cue, CALL o ambos, y el color. Los flujos propios se
+crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM, y
+**«Aprender de mi colección»** propone uno a partir de los cues que ya tiene la colección y
+dice con cuántas pistas encaja (`rekordboxLearnFlow.ts:45`, `shared/learnFlow.ts:306`).
+
+**Vista previa y clic.** Al pasar el ratón por la onda se ve en transparente lo que pondría el
+flujo (`CueFlowPreview.tsx`) y un clic lo coloca en ese punto; lo que no cabe se dice en vez de
+callarlo (`editor.cues.trimmed*`, `tooMany`). Hay también un modo Manual sin flujo.
+
+**Letras en orden de la pista** (`cueLettersByTime`, encendido por defecto,
+`settings.ts:85`). Al poner o quitar cues las letras se reasignan por tiempo, así que la A
+es siempre la primera (`lib/cueDraft.ts:409`). Se apaga en Ajustes → Cues para quien usa
+cada letra como un pad fijo.
+
+**Completar al cerrar rekordbox** (`completeCuesOnClose`, apagado, `settings.ts:80`). Al
+cerrar rekordbox aplica el flujo activo a las pistas analizadas que tienen CALL y ninguna hot
+cue, también las que no se han abierto en Surco (`rekordboxCompleteOnClose.ts:15-62`). Antes
+de encenderlo dice cuántas pistas completará.
+
+### Exportar a un USB
+
+Nuevo en v1.9.0. Exporta playlists y carpetas de rekordbox a un USB que los reproductores leen
+y que rekordbox puede seguir sincronizando. Se abre desde el menú de una playlist o carpeta
+en la barra lateral, desde ⌘K y desde el aviso que sale al conectar un USB (`App.tsx:696-740`).
+
+**Qué escribe.** Lo hace baken, una herramienta externa compilada con los parches de Surco
+(`bakenRun.ts`, `electron-builder.yml:34-43`): `export.pdb`, la base OneLibrary
+(`exportLibrary.db`), los análisis de rekordbox (onda, rejilla, cues) y el audio. Además
+escribe la identidad de la colección y `playlists3.sync`/`playlists3Plus.sync`, que es lo que
+deja a rekordbox reconocer y seguir sincronizando las playlists del USB
+(`rekordboxStickSync.ts:1-4`). Copia los ajustes de reproductor del usuario (My Settings). La
+música que ya está en el USB se aprovecha. Medido contra un export de rekordbox 7.2.19, pistas,
+playlists y metadatos coinciden fila a fila y ondas y rejilla son idénticas byte a byte
+(`docs/export-usb-medidas.md` §1).
+
+**Salvaguardas.** Exige rekordbox cerrado y se ofrece a cerrarlo (`usbExport.ts:520-522`).
+Un ensayo previo calcula el espacio y rechaza si no cabe. Si el USB cambia durante el ensayo,
+no se escribe. Avisa antes de exportar de lo que los reproductores no leen, como exFAT (el CDJ-2000
+no lo lee), NTFS, GPT (ni CDJ-2000 ni NXS2) y una carpeta que no es la raíz del USB, y de las
+pistas cuyo volumen de origen no está montado (`usbExport.ts:280-300`).
+
+**Plataformas.** macOS y Windows. En Linux no se ofrece (`usbExportIpc.ts:46-52`).
+
+### Tu propia copia de rekordbox
+
+Cada escritura en la colección deja las copias `.surco-session` y `.surco-backup` junto a
+`master.db`. El changelog de v1.9.0 aconseja además hacer la propia copia de la biblioteca
+desde rekordbox antes de que Surco escriba. Ese consejo no aparece dentro de la app.
 
 ### Sustituir la copia de la biblioteca
 
@@ -1324,7 +1503,8 @@ de biblioteca sigue mereciendo actualizarse. El motivo viaja hacia arriba para c
 
 ### Exportación a rekordbox, Serato, Traktor y M3U8
 
-Cuatro ficheros puente. **Ninguno lleva cue points, rating ni carátula.**
+Cuatro ficheros puente. **Ninguno lleva cue points, rating ni carátula.** No confundir con
+la exportación a USB de arriba, que sí lleva cues, rejilla y ondas.
 
 - **rekordbox** (`.xml`): metadatos y rutas. La URL debe ir percent-encoded o la
   importación descarta la pista en silencio.
@@ -1537,9 +1717,11 @@ comparación»* (`useDeclickAb.ts:60-67`).
 
 Recopilado de los cinco informes. Cada punto está verificado.
 
-1. **Cue points:** en MP3, AIFF (las dos grafías, `.aif` y `.aiff`), FLAC y WAV,
-   en cualquier cruce entre esos cuatro. **No en ALAC/M4A**, que no tiene ID3
-   donde escribirlos.
+1. **Cue points de Traktor:** se conservan en MP3, AIFF (las dos grafías, `.aif` y
+   `.aiff`), FLAC y WAV, en cualquier cruce entre esos cuatro. **No en ALAC/M4A**, que
+   no tiene ID3 donde escribirlos. Surco los conserva, **no los edita**, y el editor de cues
+   escribe solo en la colección de rekordbox (`master.db`), nunca en el fichero ni en
+   Traktor, Serato o Engine DJ.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. No se transfiere rating ni se
    crean playlists.
@@ -1549,9 +1731,11 @@ Recopilado de los cinco informes. Cada punto está verificado.
     confundirse con el repunte de la colección real de rekordbox (§11), donde los
     cues y las playlists sí sobreviven precisamente porque no se tocan: se cambia
     la ruta de una entrada que ya existe.
-5. **El repunte de rekordbox sale apagado** (`syncRekordbox: false`) y exige
-    rekordbox cerrado. No resuelve las pistas con dos entradas: las declara
-    ambiguas y no elige. No mantiene los contadores de rekordbox cloud.
+5. **El repunte de rekordbox sale apagado** (`syncRekordbox: false`): sin él, convertir
+    una pista de rekordbox no conserva nada en la colección, que sigue apuntando al fichero
+    antiguo. Escribe con rekordbox cerrado; si está abierto, espera en la cola hasta que se
+    cierre. No resuelve las pistas con dos entradas, las declara ambiguas y no elige. No se
+    ha probado con la sincronización en la nube de rekordbox.
 6. **Sustituir no mueve el fichero en Apple Music:** Music no deja escribir la
     ubicación de una pista, así que por debajo es añadir y borrar. El aviso de
     pérdida de calidad informa, nunca bloquea.
@@ -1635,3 +1819,27 @@ Recopilado de los cinco informes. Cada punto está verificado.
     (`musicFieldWrite.ts:38-42`, `recoverableTrash.ts:17`). Y con «Nunca» solo es definitivo
     el borrado que el usuario confirma en un disco sin papelera, tras un aviso que lo dice;
     un duplicado quitado en la revisión va a Copias de seguridad.
+34. **Surco no detecta los drops.** El punto de un flujo de cues lo marca el usuario con un
+    CALL. Hay un detector automático en el código (`shared/dropDetect.ts`) pero solo lo usan
+    los tests de medida, acertaba en torno al 68 % de los drops y no se ha publicado. No
+    decir «pone los cues solo» ni «detecta el drop».
+35. **Los cues de rekordbox se escriben solo en su colección** (`master.db`), con rekordbox
+    cerrado y copia de seguridad antes; con rekordbox abierto esperan en la cola. Solo en
+    pistas abiertas desde una playlist de rekordbox y ya analizadas por rekordbox. Máximo 8
+    hot cues (A a H). Los bucles no se tocan.
+36. **Surco no desplaza los cues de rekordbox al recortar silencio.** El repunte conserva
+    los cues de la colección tal cual, en milisegundos, sin el desplazamiento que sí reciben
+    los de Traktor (ningún módulo `rekordbox*.ts` aplica el recorte). No prometer que «los
+    cues siguen en su sitio» tras recortar una pista de rekordbox.
+37. **Las listas inteligentes de rekordbox no se leen** ni se pueden organizar desde Surco
+    (`rekordboxPlaylists.ts:45`).
+38. **Exportar a USB es solo para playlists de rekordbox**, en macOS y Windows (no en Linux),
+    y exige rekordbox cerrado. Lo escrito coincide con un export de rekordbox 7.2.19, pero en
+    reproductores reales solo consta una prueba en CDJ-3000X y XDJ-AZ
+    (`docs/export-usb-medidas.md` §9). Un USB en exFAT no lo lee el CDJ-2000. No prometer
+    compatibilidad con todos los CDJ.
+39. **Las teclas del editor de cues no son rebindables.** Viven en la sección (`lib/cueKeys.ts`),
+    fuera de la tabla de atajos de Ajustes.
+40. **El nombre de archivo de una pista de rekordbox solo se protege del renombrado
+    automático por plantilla** (`outputName.ts:20-25`). Un cambio de formato sí cambia el
+    fichero, y entonces es el repunte (si está activo) el que mueve la entrada.
