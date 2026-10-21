@@ -135,4 +135,9 @@ describe('cue editor copy', () => {
         .map(([key]) => key),
     ).toEqual([])
   })
+
+  it('names Auto marcar in the help as the button reads, so a DJ who reads it finds the button', () => {
+    for (const locale of [es, en, de, fr, ptBR])
+      expect(locale.editor.cues.help).toContain(locale.editor.cues.auto.button)
+  })
 })

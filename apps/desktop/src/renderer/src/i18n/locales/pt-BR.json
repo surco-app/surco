@@ -769,7 +769,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Escolha um fluxo e clique na forma de onda ampliada onde quer o ponto, ou toque em Return para colocá-lo no cursor de reprodução. Você também pode escolher Manual e ponha cada cue à mão. Selecione um cue para movê-lo, apagá-lo ou mudar a cor.",
+      "help": "Escolha um fluxo e clique na forma de onda ampliada onde quer o ponto, ou toque em Return para colocá-lo no cursor de reprodução. Você também pode escolher Manual e ponha cada cue à mão. Marcar automático sugere pontos para você aceitar ou remover. Selecione um cue para movê-lo, apagá-lo ou mudar a cor.",
       "unanalysed": "O rekordbox ainda não analisou esta faixa",
       "tooMany": "Precisaria de mais de 8 hot cues. Tire um ponto.",
       "save": "Salvar no rekordbox",
