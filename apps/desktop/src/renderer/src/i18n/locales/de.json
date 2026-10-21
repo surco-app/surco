@@ -826,6 +826,7 @@
       "addCall": "CALL am Abspielkopf setzen",
       "manualMode": "Manuell",
       "clearAll": "Alle Cues löschen",
+      "undo": "Rückgängig",
       "addCallShort": "+ CALL",
       "applyTrack": "Auf diesen Titel anwenden",
       "noFit": "Dieser Ablauf passt nicht zu diesem Titel",

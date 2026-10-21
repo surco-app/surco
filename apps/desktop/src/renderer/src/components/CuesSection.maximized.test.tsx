@@ -1271,6 +1271,24 @@ describe('CuesSection maximized placing', () => {
   })
 })
 
+describe('CuesSection maximized undo', () => {
+  it('offers the same undo button in the header right before Guardar en rekordbox, undoing one step', async () => {
+    setup()
+    await maximize()
+    const undo = screen.getByTestId('cues-step-back')
+    expect(screen.getByTestId('cues-actions')).toContainElement(undo)
+    expect(undo.nextElementSibling).toBe(screen.getByTestId('cues-save'))
+    expect(undo).toHaveAttribute('title', 'Undo ⌘Z')
+    expect(undo).toBeDisabled()
+    seek(128000)
+    editor().focus()
+    key('Enter')
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-step-back'))
+    expect(screen.queryByTestId('cue-wave-call-128000')).toBeNull()
+  })
+})
+
 describe('CuesSection maximized point corrections', () => {
   const placeAtPlayhead = () => {
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })

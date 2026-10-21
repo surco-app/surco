@@ -826,6 +826,7 @@
       "addCall": "Adicionar um CALL no cursor",
       "manualMode": "Manual",
       "clearAll": "Apagar todas as cues",
+      "undo": "Desfazer",
       "addCallShort": "+ CALL",
       "applyTrack": "Aplicar a esta faixa",
       "noFit": "Este fluxo não cabe nesta faixa",

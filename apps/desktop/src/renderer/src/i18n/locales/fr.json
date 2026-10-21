@@ -826,6 +826,7 @@
       "addCall": "Ajouter un CALL sur la tête de lecture",
       "manualMode": "Manuel",
       "clearAll": "Effacer toutes les cues",
+      "undo": "Annuler",
       "addCallShort": "+ CALL",
       "applyTrack": "Appliquer à ce morceau",
       "noFit": "Ce flux ne rentre pas dans ce morceau",

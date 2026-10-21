@@ -826,6 +826,7 @@
       "addCall": "Add a CALL at the playhead",
       "manualMode": "Manual",
       "clearAll": "Clear all cues",
+      "undo": "Undo",
       "addCallShort": "+ CALL",
       "applyTrack": "Apply to this track",
       "noFit": "This flow doesn't fit this track",

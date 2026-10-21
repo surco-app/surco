@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Minimize2, Pause, Play } from 'lucide-react'
+import { Keyboard, Minimize2, Pause, Play, Undo2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -603,6 +603,22 @@ function Editing({
       {tr('editor.cues.discard')}
     </button>
   )
+  const undoButton = (
+    <button
+      type="button"
+      data-testid="cues-step-back"
+      aria-label={tr('editor.cues.undo')}
+      title={`${tr('editor.cues.undo')} ⌘Z`}
+      disabled={state.past.length === 0}
+      onClick={() => {
+        dispatch({ type: 'undo' })
+        if (maximized) focusEditor()
+      }}
+      className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+    >
+      <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
+    </button>
+  )
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
       <Select
@@ -618,6 +634,7 @@ function Editing({
       {canApply && applyButton}
       <span className="flex-1" />
       {discardButton}
+      {undoButton}
       <button
         type="button"
         data-testid="cues-save"
@@ -741,6 +758,7 @@ function Editing({
       )}
       <span className="flex-1" />
       {addCallButton}
+      {undoButton}
       <button
         type="button"
         data-testid="cues-save"

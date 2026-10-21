@@ -275,6 +275,28 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-save')).toBeDisabled()
   })
 
+  it('undoes one step with the undo button right before Guardar, enabled only with something to undo, as ⌘Z does', async () => {
+    setup()
+    await ready()
+    const undo = screen.getByTestId('cues-step-back')
+    expect(screen.getByTestId('cues-folded-row')).toContainElement(undo)
+    expect(undo.nextElementSibling).toBe(screen.getByTestId('cues-save'))
+    expect(undo).toHaveAccessibleName('Undo')
+    expect(undo).toHaveAttribute('title', 'Undo ⌘Z')
+    expect(undo).toBeDisabled()
+    seekStrip(128)
+    placeAtPlayhead()
+    seekStrip(200)
+    placeAtPlayhead()
+    expect(screen.getByTestId('cue-wave-call-200000')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-step-back'))
+    expect(screen.queryByTestId('cue-wave-call-200000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-step-back'))
+    expect(marks()).toHaveLength(0)
+    expect(screen.getByTestId('cues-step-back')).toBeDisabled()
+  })
+
   it('offers + CALL in Manual, which puts a CALL at the playhead, while a click on the zoomed wave places nothing', async () => {
     setup({ activeCueFlow: 'manual' })
     await ready()
