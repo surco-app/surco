@@ -312,27 +312,32 @@ function Editing({
     const calls = state.cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
     return (proposed ?? []).filter((ms) => !calls.includes(barAt(ms)))
   }, [proposed, state.cues, read.grid, ctx.beats])
+  const acceptAll = useMemo<DraftAction>(
+    () => ({
+      type: 'batch',
+      actions: proposals.map((ms) =>
+        manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
+      ),
+    }),
+    [proposals, manual],
+  )
   const proposalGhost = useMemo<DraftGhost | null>(
-    () =>
-      proposals.length > 0
-        ? ghostOf(
-            state,
-            {
-              type: 'batch',
-              actions: proposals.map((ms) =>
-                manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
-              ),
-            },
-            ctx,
-          )
-        : null,
-    [proposals, manual, state, ctx],
+    () => (proposals.length > 0 ? ghostOf(state, acceptAll, ctx) : null),
+    [proposals, acceptAll, state, ctx],
   )
   const autoMark = () => {
     if (!words) return
     const found = detectDrops({ grid: read.grid, phrases: read.phrases, words })
     setNoBreak(found.length === 0)
     setProposed(found)
+  }
+  const acceptProposals = () => {
+    dispatch(acceptAll)
+    setProposed(null)
+  }
+  const acceptProposal = (ms: number) => {
+    dispatch(manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms })
+    setProposed((all) => (all ?? []).filter((p) => p !== ms))
   }
   const [pointDrag, setPointDrag] = useState(false)
   const ghost = pointDrag ? undefined : (hoverGhost ?? proposalGhost ?? playheadGhost ?? undefined)
@@ -467,6 +472,7 @@ function Editing({
     else if (key.type === 'beat') seekTo(jumpBeats(ctx.beats, playheadMs, key.dir))
     else if (key.type === 'centre') seekTo(ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)])
     else if (key.type === 'memory') dispatch({ type: 'add-call', ms: playheadMs })
+    else if (key.type === 'mark' && proposals.length > 0) acceptProposals()
     else if (key.type === 'mark' && !manual) markHere()
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch(removeOf(selected.key))
@@ -487,7 +493,8 @@ function Editing({
     const pressed = e.target as HTMLElement
     if (e.key === 'Enter' && !isTypingTarget(pressed) && !pressed.closest('button')) {
       e.preventDefault()
-      markHere()
+      if (proposals.length > 0) acceptProposals()
+      else markHere()
     } else if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
       e.preventDefault()
       dispatch(removeOf(selected.key))
@@ -535,6 +542,7 @@ function Editing({
     locked: state.locked.includes(c.key),
   }))
   const save = () => {
+    setProposed(null)
     void window.api
       .saveRekordboxCues({
         contentId: cue.contentId,
@@ -600,6 +608,10 @@ function Editing({
         <button
           type="button"
           data-testid="cues-auto-accept"
+          onClick={() => {
+            acceptProposals()
+            if (maximized) focusEditor()
+          }}
           className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-dashed border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${autoHeight}`}
         >
           {tr('editor.cues.auto.accept', { count: proposals.length })}
@@ -715,6 +727,7 @@ function Editing({
       onPlace={placing ? place : undefined}
       onHover={placing ? setHoverMs : undefined}
       proposals={proposals}
+      onAcceptProposal={acceptProposal}
       onDropProposal={(ms) => setProposed((all) => (all ?? []).filter((p) => p !== ms))}
     />
   )

@@ -262,3 +262,86 @@ describe('Auto marcar', () => {
     expect(within(actions).getByTestId('cues-auto-accept')).toBeInTheDocument()
   })
 })
+
+describe('accepting Auto marcar', () => {
+  const calls = () =>
+    screen
+      .queryAllByTestId(/^cue-wave-call-/)
+      .map((el) => el.dataset.testid)
+      .sort()
+  const hots = () => screen.queryAllByTestId(/^cue-wave-hot-/)
+  const undo = () => fireEvent.click(screen.getByTestId('cues-step-back'))
+
+  it('places one proposal with its ✓ as a point placed by hand, and keeps the others proposed', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+    expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toHaveAttribute('data-pending', 'true')
+    expect(hots()).toHaveLength(3)
+    expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
+    expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
+  })
+
+  it('places every proposal with Aceptar and takes them all back with one undo', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    expect(calls()).toEqual(
+      expect.arrayContaining([`cue-wave-call-${bar(128)}`, `cue-wave-call-${bar(64)}`]),
+    )
+    expect(hots()).toHaveLength(6)
+    expect(proposals()).toEqual([])
+    expect(autoButton()).toBeInTheDocument()
+    undo()
+    expect(realMarks()).toHaveLength(0)
+    expect(screen.getByTestId('cues-step-back')).toBeDisabled()
+  })
+
+  it('accepts them all with Return while they are shown, folded or in full screen', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+    expect(hots()).toHaveLength(6)
+    undo()
+    await openFull()
+    await autoMark()
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+    expect(hots()).toHaveLength(6)
+    expect(proposals()).toEqual([])
+  })
+
+  it('keeps Return placing at the playhead once the proposals are discarded', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-discard'))
+    seekStrip(bar(32))
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+    expect(calls()).toContain(`cue-wave-call-${bar(32)}`)
+    expect(calls()).not.toContain(`cue-wave-call-${bar(64)}`)
+  })
+
+  it('places a CALL on each proposal in Manual, as placing by hand does there', async () => {
+    setup({ settings: { activeCueFlow: 'manual' } })
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    expect(calls()).toEqual([`cue-wave-call-${bar(64)}`, `cue-wave-call-${bar(128)}`])
+    expect(hots()).toHaveLength(0)
+  })
+
+  it('forgets what is still proposed once the cues are saved', async () => {
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(proposals()).toEqual([])
+  })
+})
