@@ -1290,6 +1290,18 @@ describe('CuesSection maximized undo', () => {
     key('z', { metaKey: true, shiftKey: true })
     expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
   })
+
+  it('fills Save to rekordbox once there is something to save, so the edits are not left unsaved by a button that looks off', async () => {
+    setup()
+    await maximize()
+    const save = screen.getByTestId('cues-save')
+    expect(save.className).not.toContain('bg-[var(--color-accent)]')
+    seek(128000)
+    editor().focus()
+    key('Enter')
+    expect(save).toBeEnabled()
+    expect(save.className).toContain('bg-[var(--color-accent)]')
+  })
 })
 
 describe('CuesSection maximized point corrections', () => {

@@ -583,7 +583,11 @@ function Editing({
         disabled={unchanged}
         aria-label={maximized ? undefined : tr('editor.cues.save')}
         onClick={save}
-        className="press h-8 whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 text-xs font-semibold text-fg hover:bg-[var(--color-hover)] disabled:opacity-40"
+        className={`press h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
+          unchanged
+            ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
+            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+        }`}
       >
         {maximized ? tr('editor.cues.save') : tr('editor.cues.saveShort')}
       </button>
