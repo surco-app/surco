@@ -17,6 +17,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type { Api } from '../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
+import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import type {
   ActivityEvent,
   RekordboxSyncIssue,
@@ -2269,6 +2270,74 @@ describe('App source playlists', () => {
       },
       'Factory',
     )
+  })
+
+  describe('Recently added', () => {
+    const fresh = (path: string, id: string) => ({
+      path,
+      separator: false,
+      meta: {},
+      linkId: id,
+      contentId: id,
+    })
+    const RECENT_ENTRIES = [fresh('/m/c.wav', 'r3'), fresh('/m/a.wav', 'r1')]
+
+    async function openRecent(over: Record<string, unknown> = {}) {
+      await openFactory({
+        rekordboxRecentCount: vi.fn<Api['rekordboxRecentCount']>().mockResolvedValue(2),
+        loadRekordboxPlaylist: vi
+          .fn<Api['loadRekordboxPlaylist']>()
+          .mockImplementation(async (id) =>
+            id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : FACTORY_ENTRIES,
+          ),
+        ...over,
+      })
+      fireEvent.click(screen.getByTestId(`source-node-${RECENTLY_ADDED_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+    }
+
+    // Its order is when each track entered the collection, and it has no rows in rekordbox
+    // to remove or move: any of these edits would name a playlist rekordbox does not have.
+    it('offers no reorder, removal or separator on its rows', async () => {
+      await openRecent()
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-remove-separator')).not.toBeInTheDocument()
+    })
+
+    it('copies its rows to a playlist by their rekordbox entry, like any open playlist', async () => {
+      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+      await openRecent({ editRekordboxPlaylist: edit })
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: 'h', tracks: [{ contentId: 'r3', paths: ['/m/c.wav'] }] },
+        'House',
+      )
+    })
+
+    it('is never offered as a playlist to add tracks to', async () => {
+      await openFactory({
+        rekordboxRecentCount: vi.fn<Api['rekordboxRecentCount']>().mockResolvedValue(2),
+      })
+      await screen.findByTestId(`source-node-${RECENTLY_ADDED_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(
+        screen.queryByTestId(`track-menu-playlist-${RECENTLY_ADDED_ID}`),
+      ).not.toBeInTheDocument()
+    })
   })
 
   // With a filter on, rows between the visible ones are hidden; a drop would land among them.

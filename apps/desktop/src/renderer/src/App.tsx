@@ -18,6 +18,7 @@ import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
+import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
@@ -2038,6 +2039,7 @@ export default function App(): React.JSX.Element {
   // afterwards is re-read and shown (useRekordboxEdits).
   const rekordboxOpen =
     browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
+  const crateOpen = rekordboxOpen && browser.playlist?.id !== RECENTLY_ADDED_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -2150,7 +2152,7 @@ export default function App(): React.JSX.Element {
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
-  const reorderEnabled = rekordboxOpen && sortBy === 'import' && !search && !filterActive
+  const reorderEnabled = crateOpen && sortBy === 'import' && !search && !filterActive
   const reorder = useMemo(
     () =>
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
@@ -2163,8 +2165,10 @@ export default function App(): React.JSX.Element {
     if (browser.source !== 'rekordbox' || !browser.tree) return undefined
     const playlist = browser.playlist
     return {
-      targets: flattenPlaylists(browser.tree).filter((h) => h.node.id !== playlist?.id),
-      openName: rekordboxOpen && playlist ? playlist.name : null,
+      targets: flattenPlaylists(browser.tree).filter(
+        (h) => h.node.id !== playlist?.id && h.node.id !== RECENTLY_ADDED_ID,
+      ),
+      openName: crateOpen && playlist ? playlist.name : null,
       canInsertSeparator: browser.canInsertSeparator,
       onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
       onInsertSeparator: () => {
@@ -2815,7 +2819,7 @@ export default function App(): React.JSX.Element {
                             onTrashSelected={onTrashSelected}
                             onTrashSuspects={onTrashSuspects}
                           />
-                          {rekordboxOpen && !reorderEnabled && (
+                          {crateOpen && !reorderEnabled && (
                             <p
                               data-testid="reorder-hint"
                               className="px-4 pt-1 text-[11px] text-fg-faint"
