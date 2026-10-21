@@ -208,6 +208,25 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
   return seen.has(DEFAULT_CUE_FLOW_ID) ? flows : [structuredClone(MIX_IN), ...flows]
 }
 
+const sameFlow = (a: CueFlow, b: CueFlow): boolean => JSON.stringify(a) === JSON.stringify(b)
+
+export function migrateBundledFlow(
+  flows: CueFlow[],
+  active: string,
+): { flows: CueFlow[]; active: string } {
+  const untouched = (f: CueFlow): boolean => f.id === ONE_AT_32.id && sameFlow(f, ONE_AT_32)
+  if (!flows.some(untouched)) return { flows, active }
+  const next = active === ONE_AT_32.id ? MIX_IN.id : active
+  if (flows.some((f) => f.id === MIX_IN.id && !sameFlow(f, MIX_IN)))
+    return { flows: flows.filter((f) => !untouched(f)), active: next }
+  return {
+    flows: flows
+      .filter((f) => f.id !== MIX_IN.id)
+      .map((f) => (untouched(f) ? structuredClone(MIX_IN) : f)),
+    active: next,
+  }
+}
+
 export function keepLegacyFlow(flows: CueFlow[], active: string): CueFlow[] {
   const legacy = LEGACY_FLOWS.find((f) => f.id === active)
   if (!legacy || flows.some((f) => f.id === active)) return flows

@@ -75,7 +75,7 @@ describe('serializeSettingsForExport', () => {
       cueFlows: [mine, ONE_AT_32, CALLS_ONLY],
       activeCueFlow: 'mine',
     })
-    expect(back.cueFlows).toEqual([MIX_IN, mine, ONE_AT_32, CALLS_ONLY])
+    expect(back.cueFlows).toEqual([mine, MIX_IN, CALLS_ONLY])
     expect(activeCueFlow(back)).toEqual(mine)
   })
 

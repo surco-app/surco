@@ -7,6 +7,7 @@ import {
   BUNDLED_FLOWS,
   DEFAULT_CUE_FLOW_ID,
   keepLegacyFlow,
+  migrateBundledFlow,
   normalizeCueFlows,
 } from '../shared/cueFlows'
 import { DEFAULT_CUE_JUMP_BARS, normalizeCueJumpBars } from '../shared/cueJump'
@@ -288,8 +289,10 @@ function migrateDcOffset(cfg: NormalizeConfig): NormalizeConfig {
 }
 
 function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
-  const activeCueFlow =
-    typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow
+  const flows = migrateBundledFlow(
+    normalizeCueFlows(patch.cueFlows ?? base.cueFlows),
+    typeof patch.activeCueFlow === 'string' ? patch.activeCueFlow : base.activeCueFlow,
+  )
   return {
     ...base,
     ...patch,
@@ -306,8 +309,8 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
       patch.backupRetentionDays ?? base.backupRetentionDays,
     ),
     backupMaxGb: sanitizeMaxGb(patch.backupMaxGb ?? base.backupMaxGb),
-    cueFlows: keepLegacyFlow(normalizeCueFlows(patch.cueFlows ?? base.cueFlows), activeCueFlow),
-    activeCueFlow,
+    cueFlows: keepLegacyFlow(flows.flows, flows.active),
+    activeCueFlow: flows.active,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
