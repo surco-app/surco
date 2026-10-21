@@ -485,6 +485,7 @@ function Editing({
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch(removeOf(selected.key))
     else if (key.type === 'undo') dispatch({ type: 'undo' })
+    else if (key.type === 'redo') dispatch({ type: 'redo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
   }
   const onKey = (e: React.KeyboardEvent) => {
@@ -504,9 +505,9 @@ function Editing({
     } else if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
       e.preventDefault()
       dispatch(removeOf(selected.key))
-    } else if (e.key === 'z' && (e.metaKey || e.ctrlKey)) {
+    } else if (e.key.toLowerCase() === 'z' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      dispatch({ type: 'undo' })
+      dispatch({ type: e.shiftKey ? 'redo' : 'undo' })
     }
   }
   const [colourFor, setColourFor] = useState<string | null>(null)

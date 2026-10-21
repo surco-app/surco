@@ -68,11 +68,12 @@ describe('cueKeyAction', () => {
     expect(press('Enter')).toEqual({ type: 'mark' })
   })
 
-  it('lets Escape, Tab and every command chord but undo through', () => {
+  it('lets Escape, Tab and every command chord but undo and redo through', () => {
     for (const key of ['Escape', 'Tab', 'F10']) expect(press(key)).toBeNull()
     expect(press('k', { metaKey: true })).toBeNull()
     expect(press(',', { metaKey: true })).toBeNull()
-    expect(press('z', { metaKey: true, shiftKey: true })).toBeNull()
+    expect(press('z', { metaKey: true, shiftKey: true })).toEqual({ type: 'redo' })
+    expect(press('Z', { metaKey: true, shiftKey: true })).toEqual({ type: 'redo' })
     expect(press('m', { altKey: true })).toBeNull()
   })
 })

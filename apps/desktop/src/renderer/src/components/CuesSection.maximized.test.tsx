@@ -1286,6 +1286,9 @@ describe('CuesSection maximized undo', () => {
     expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('cues-step-back'))
     expect(screen.queryByTestId('cue-wave-call-128000')).toBeNull()
+    editor().focus()
+    key('z', { metaKey: true, shiftKey: true })
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
   })
 })
 

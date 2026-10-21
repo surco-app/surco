@@ -10,6 +10,7 @@ export type CueKey =
   | { type: 'hot'; kind: number }
   | { type: 'remove' }
   | { type: 'undo' }
+  | { type: 'redo' }
   | { type: 'zoom'; dir: 'in' | 'out' }
   | { type: 'swallow' }
 
@@ -21,7 +22,10 @@ function commandChord(e: { key: string; shiftKey: boolean; altKey: boolean }): C
   if (LIST_KEYS.includes(e.key)) return null
   const lower = e.key.toLowerCase()
   if (e.altKey) return null
-  if (e.shiftKey) return lower === 'enter' ? { type: 'swallow' } : null
+  if (e.shiftKey) {
+    if (lower === 'z') return { type: 'redo' }
+    return lower === 'enter' ? { type: 'swallow' } : null
+  }
   if (lower === 'z') return { type: 'undo' }
   return TRACK_CHORDS.includes(lower) ? { type: 'swallow' } : null
 }

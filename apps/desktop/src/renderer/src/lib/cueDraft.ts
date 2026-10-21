@@ -36,6 +36,7 @@ export interface CueDraft {
   flowId: string
   generatedBy: string
   past: DraftSnapshot[]
+  future: DraftSnapshot[]
   selected: string | null
   notice: DraftNotice
   trimmed: number[]
@@ -70,6 +71,7 @@ export type DraftAction =
   | { type: 'use-flow'; flowId: string }
   | { type: 'clear' }
   | { type: 'undo' }
+  | { type: 'redo' }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 const isHot = (c: { kind: number }): boolean => c.kind !== 0
@@ -80,6 +82,7 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
     flowId,
     generatedBy: flowId,
     past: [],
+    future: [],
     selected: null,
     notice: null,
     trimmed: [],
@@ -139,6 +142,21 @@ function snapshot(state: CueDraft): DraftSnapshot {
   }
 }
 
+function restore(state: CueDraft, at: DraftSnapshot): CueDraft {
+  return {
+    ...state,
+    cues: at.cues,
+    flowId: at.flowId,
+    generatedBy: at.generatedBy,
+    trimmed: at.trimmed,
+    edited: at.edited,
+    placed: at.placed,
+    origin: at.origin,
+    selected: null,
+    notice: null,
+  }
+}
+
 function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {}): CueDraft {
   return {
     ...state,
@@ -147,6 +165,7 @@ function commit(state: CueDraft, cues: DraftCue[], over: Partial<CueDraft> = {})
     ...over,
     cues,
     past: [...state.past, snapshot(state)],
+    future: [],
   }
 }
 
@@ -443,17 +462,18 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     const previous = state.past[state.past.length - 1]
     if (!previous) return state
     return {
-      ...state,
-      cues: previous.cues,
-      flowId: previous.flowId,
-      generatedBy: previous.generatedBy,
-      trimmed: previous.trimmed,
-      edited: previous.edited,
-      placed: previous.placed,
-      origin: previous.origin,
+      ...restore(state, previous),
       past: state.past.slice(0, -1),
-      selected: null,
-      notice: null,
+      future: [...state.future, snapshot(state)],
+    }
+  }
+  if (action.type === 'redo') {
+    const next = state.future[state.future.length - 1]
+    if (!next) return state
+    return {
+      ...restore(state, next),
+      past: [...state.past, snapshot(state)],
+      future: state.future.slice(0, -1),
     }
   }
   if (action.type === 'clear') {

@@ -455,6 +455,19 @@ describe('reduceDraft', () => {
     expect(after.cues).toBe(before)
   })
 
+  it('redoes what was undone, one step at a time, until a new change drops what is left to redo', () => {
+    const one = run(empty(), { type: 'mark-drop', ms: bar(64) })
+    const two = run(one, { type: 'mark-drop', ms: bar(128) })
+    const back = run(two, { type: 'undo' }, { type: 'undo' })
+    expect(back.cues).toEqual([])
+    const again = run(back, { type: 'redo' })
+    expect(again.cues).toEqual(one.cues)
+    expect(run(again, { type: 'redo' }).cues).toEqual(two.cues)
+    const changed = run(again, { type: 'mark-drop', ms: bar(200) })
+    expect(run(changed, { type: 'redo' })).toBe(changed)
+    expect(run(empty(), { type: 'redo' }).cues).toEqual([])
+  })
+
   it('undoes one step at a time and never undoes a selection', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const selected = run(marked, { type: 'select', key: marked.cues[0].key })

@@ -237,6 +237,18 @@ describe('CuesSection folded', () => {
     expect(marks()).toHaveLength(0)
   })
 
+  it('undoes with ⌘Z and redoes with ⇧⌘Z while working in the folded section', async () => {
+    setup()
+    await ready()
+    seekStrip(128)
+    placeAtPlayhead()
+    const editor = screen.getByTestId('cues-editor')
+    fireEvent.keyDown(editor, { key: 'z', metaKey: true })
+    expect(marks()).toHaveLength(0)
+    fireEvent.keyDown(editor, { key: 'Z', metaKey: true, shiftKey: true })
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+  })
+
   it('marks with Enter while the focus is in the folded section, and leaves Enter alone elsewhere', async () => {
     setup()
     await ready()
