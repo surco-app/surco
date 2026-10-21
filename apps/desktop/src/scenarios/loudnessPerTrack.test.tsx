@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import type { NormalizeConfig } from '../shared/types'
-import { type AppScenario, openApp, stepTo } from './app'
+import { type AppScenario, openApp, openSection, stepTo } from './app'
 import { loudness, makeTrack, scenarioDir } from './fixtures'
 
 const STREAMING: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
@@ -16,14 +16,9 @@ function targetField(): HTMLInputElement {
   return screen.getByTestId('normalize-target-lufs') as HTMLInputElement
 }
 
-function openLoudnessSection(): void {
-  const toggle = within(screen.getByTestId('editor-normalize')).getAllByRole('button')[0]
-  if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
-}
-
 async function dial(surco: AppScenario, title: string, target: string): Promise<void> {
   await surco.select(title)
-  openLoudnessSection()
+  await openSection('editor-normalize')
   stepTo(targetField(), target)
   await waitFor(() => expect(targetField().value).toBe(target))
 }

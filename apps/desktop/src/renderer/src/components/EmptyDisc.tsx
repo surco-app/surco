@@ -15,7 +15,7 @@ const RING_DELAYS = ['0s', '0.87s', '1.74s']
 // in the Dock. It does NOT turn: a platter rotating forever reads as a progress indicator,
 // which is the one thing an idle screen must not claim. Instead the sound leaves the disc —
 // rings pulsing outward from the rim while the record itself sits still. The disc keeps the
-// icon's own materials (the rim, the groove rings, the blue label with the waveform) so it
+// icon's own materials (the blue face, its lit edge, the pale label with the waveform) so it
 // reads as Surco's record rather than a generic vinyl glyph, drawn in the Tokyo Night
 // colours closest to the icon's.
 export function EmptyDisc(): React.JSX.Element {
@@ -27,14 +27,18 @@ export function EmptyDisc(): React.JSX.Element {
       className="empty-disc-in h-20 w-20"
     >
       <defs>
-        <radialGradient id="empty-disc-face" cx="0.42" cy="0.36" r="0.85">
-          <stop offset="0" stopColor="#292e42" />
-          <stop offset="0.55" stopColor="#16161e" />
-          <stop offset="1" stopColor="#0c0e14" />
+        <radialGradient id="empty-disc-face" cx="0.35" cy="0.3" r="0.9">
+          <stop offset="0" stopColor="#3d59a1" />
+          <stop offset="0.6" stopColor="#2959aa" />
+          <stop offset="1" stopColor="#283457" />
         </radialGradient>
+        <linearGradient id="empty-disc-rim" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#7aa2f7" />
+          <stop offset="0.5" stopColor="#3d59a1" stopOpacity="0.6" />
+          <stop offset="1" stopColor="#283457" stopOpacity="0" />
+        </linearGradient>
         <radialGradient id="empty-disc-label-fill" cx="0.4" cy="0.34" r="0.9">
-          <stop offset="0" stopColor="#c0caf5" />
-          <stop offset="0.6" stopColor="#89ddff" />
+          <stop offset="0" stopColor="#89ddff" />
           <stop offset="1" stopColor="#7aa2f7" />
         </radialGradient>
       </defs>
@@ -57,25 +61,26 @@ export function EmptyDisc(): React.JSX.Element {
       ))}
 
       <g data-testid="empty-disc-platter">
-        <circle cx="512" cy="512" r="370" fill="#3b4261" />
-        <circle cx="512" cy="512" r="363" fill="url(#empty-disc-face)" />
-        {/* The icon draws these at 0.06 opacity and 3 wide, tuned for a 1024px Dock tile. At
-            the 128px this renders at they vanish, so both are lifted to survive the size. */}
-        <g fill="none" stroke="#c0caf5" strokeOpacity="0.08" strokeWidth="5">
-          <circle cx="512" cy="512" r="331" />
-          <circle cx="512" cy="512" r="301" />
-          <circle cx="512" cy="512" r="271" />
-          <circle cx="512" cy="512" r="242" />
-        </g>
+        <circle cx="512" cy="512" r="370" fill="url(#empty-disc-face)" />
+        {/* The icon's edge, 10 wide on a 1024px Dock tile, would scale to 12 and land under a
+            pixel at the 80px this renders at; 14 keeps it at about one. */}
+        <circle
+          cx="512"
+          cy="512"
+          r="363"
+          fill="none"
+          stroke="url(#empty-disc-rim)"
+          strokeWidth="14"
+        />
       </g>
 
       <g data-testid="empty-disc-label">
-        <circle cx="512" cy="512" r="168" fill="url(#empty-disc-label-fill)" />
+        <circle cx="512" cy="512" r="185" fill="url(#empty-disc-label-fill)" />
         <path
-          d="M412 512 C 442 432, 471 432, 501 512 S 560 592, 590 512 L 612 512"
+          d="M402 512 C 434 423, 468 423, 500 512 S 565 601, 597 512 L 622 512"
           fill="none"
           stroke="#0c0e14"
-          strokeWidth="20"
+          strokeWidth="24"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

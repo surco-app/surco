@@ -43,6 +43,22 @@
       {
         "text": "Surco ocupa menos memoria con listas largas.",
         "in": "1.8.3"
+      },
+      {
+        "text": "Si tienes la misma pista dos veces en la lista, Surco marca junto al artista cuál es la mejor copia y por qué. Lo decide con lo que mide, no con lo que declara el archivo, así que cuenta si una copia tiene pérdidas, si le falta agudo o, cuando las dos salen del mismo master, cuál pasó por un limitador. Si no encuentra diferencia, no elige ninguna.",
+        "in": "1.8.4"
+      },
+      {
+        "text": "Al abrir una pista que ya tienes en Apple Music, Calidad de audio la compara con la copia de tu biblioteca y te dice cuál conviene conservar, con las cifras al lado.",
+        "in": "1.8.4"
+      },
+      {
+        "text": "Al terminar una conversión, cada cosa que puedes hacer después tiene su nombre y está reunida en el menú «Más acciones», junto al paso que falte, como añadirla a Apple Music.",
+        "in": "1.8.4"
+      },
+      {
+        "text": "Si conviertes en su sitio dos archivos con el mismo nombre y distinto formato, como Song.flac y Song.wav, ya no se pisan al quedar en el mismo formato. Antes podía quedar una sola grabación de las dos; ahora la segunda se guarda como «Song (2)».",
+        "in": "1.8.4"
       }
     ]
   },

@@ -1362,6 +1362,15 @@ export interface PairFacts {
   gainDb: number
 }
 
+// A short stretch of two copies of one master where the worse copy pins the most samples
+// to its ceiling, the better one lined up and scaled to the same loudness. Each side is
+// min/max per column, flattened as lo, hi pairs, so whatever of the better copy rises past
+// the worse one is what the limiter took away.
+export interface LimiterGlimpse {
+  worse: number[]
+  better: number[]
+}
+
 // Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass
 // (astats + ebur128). Integrated loudness and true peak can read -Infinity for
 // digital silence, which the UI renders as "−∞" rather than a misleading number.

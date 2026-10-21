@@ -39,6 +39,7 @@
     "space": "Espacio"
   },
   "hero": {
+    "latestRelease": "Nuevo en {{version}}",
     "h1a": "Prepara tus pistas",
     "h1b": "antes de pincharlas.",
     "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
@@ -559,8 +560,7 @@
     "smartscreen": "Al abrir el instalador, Windows mostrará «Windows protegió tu PC»: pulsa «Más información» y luego «Ejecutar de todas formas». Es SmartScreen avisando de que no reconoce al editor, no de que el archivo tenga nada malo.",
     "unsupported": "Todavía no hay instalador para tu sistema.",
     "unreachable": "No hemos podido consultar las descargas ahora mismo.",
-    "unreachableLink": "Descárgalo desde GitHub",
-    "countSuffix": "descargas y subiendo"
+    "unreachableLink": "Descárgalo desde GitHub"
   },
   "guide": {
     "metaTitle": "Cómo usar Surco: Guía paso a paso",
@@ -1106,8 +1106,6 @@
       "cuesLabel": "Cue points",
       "intact": "sin tocar",
       "inPlace": "en su sitio",
-      "before": "10 playlists a mano",
-      "after": "un clic",
       "fieldYear": "Año",
       "step": "y después · se sustituye"
     },

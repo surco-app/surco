@@ -2,14 +2,14 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import ffmpegStatic from 'ffmpeg-static'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
-import { type AppScenario, openApp } from './app'
+import { type AppScenario, openApp, openSection } from './app'
 import { DROP_MS, makeTrack, scenarioDir } from './fixtures'
 
 const RATE = 44100
@@ -34,11 +34,6 @@ function hitMs(path: string): number {
   return (at / RATE) * 1000
 }
 
-function openSection(testId: string): void {
-  const toggle = within(screen.getByTestId(testId)).getAllByRole('button')[0]
-  if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
-}
-
 // Cutting the dead air before a record is the trim a DJ does most, and its cost is
 // invisible until the gig: every hotcue and the beatgrid were set against the old start,
 // so unless they move with the audio, the Drop fires two seconds late and the grid sits
@@ -58,7 +53,7 @@ describe('Cut the silence before a record without moving its Traktor cue points'
     surco = await openApp({ settings: {}, destination: 'beside' })
     await surco.drop(folder)
     await surco.select('Record')
-    openSection('editor-trim')
+    await openSection('editor-trim')
   }, 90_000)
 
   afterAll(() => {
@@ -68,7 +63,7 @@ describe('Cut the silence before a record without moving its Traktor cue points'
   it('offers to cut the silent lead-in and stages it with one click', async () => {
     fireEvent.click(await screen.findByTestId('trim-apply-start', undefined, { timeout: 30_000 }))
     await screen.findByTestId('trim-cuts')
-  })
+  }, 60_000)
 
   it('converts the record without its lead-in', async () => {
     fireEvent.click(screen.getByTestId('process-btn'))

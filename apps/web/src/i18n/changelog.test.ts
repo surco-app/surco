@@ -34,6 +34,11 @@ describe.each([
     }
   })
 
+  it('opens with the same release in both languages, since the home hero announces it', () => {
+    expect(releases[0].version).toBe((es as Release[])[0].version)
+    expect(releases[0].version).toBe((en as Release[])[0].version)
+  })
+
   it('orders releases newest first', () => {
     const numeric = releases.map((r) => r.version.split('.').map(Number))
     const sorted = [...numeric].sort((a, b) => b[0] - a[0] || b[1] - a[1])

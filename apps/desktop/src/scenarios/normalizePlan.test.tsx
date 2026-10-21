@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import type { NormalizeConfig } from '../shared/types'
-import { type AppScenario, openApp, stepTo } from './app'
+import { type AppScenario, openApp, openSection, stepTo } from './app'
 import { loudness, makeTrack, scenarioDir } from './fixtures'
 
 const CEILING = -1
@@ -32,8 +32,7 @@ function decibels(text: string, unit: string): number {
 
 async function planFor(surco: AppScenario, title: string, target: string): Promise<Plan> {
   await surco.select(title)
-  const toggle = within(screen.getByTestId('editor-normalize')).getAllByRole('button')[0]
-  if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
+  await openSection('editor-normalize')
   stepTo(screen.getByTestId('normalize-target-lufs') as HTMLInputElement, target)
   const card = await screen.findByTestId('normalize-plan', undefined, { timeout: 30_000 })
   await waitFor(() => expect(decibels(card.textContent ?? '', 'LUFS')).toBe(Number(target)))

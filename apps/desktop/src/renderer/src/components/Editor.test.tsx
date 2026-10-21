@@ -3632,6 +3632,11 @@ describe('Editor Apple Music library badge', () => {
     showSpectrum = false,
     libraryLossy = false,
     hereLossy = false,
+    herePath = '/music/Strobe.aif',
+    platform = 'darwin',
+    music = true,
+    index = ownedWithId,
+    location = '/Music/Strobe.wav',
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -3639,10 +3644,15 @@ describe('Editor Apple Music library badge', () => {
     showSpectrum?: boolean
     libraryLossy?: boolean
     hereLossy?: boolean
+    herePath?: string
+    platform?: string
+    music?: boolean
+    index?: AppleMusicIndex
+    location?: string
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
-    setApi('darwin')
+    setApi(platform)
     const api = window.api as unknown as Record<string, unknown>
-    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.wav')
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue(location)
     api.peekAnalysis = vi.fn().mockResolvedValue(null)
     // A lossy source shows as a 16 kHz cutoff with a knee, the mark a transcode leaves.
     api.spectrogram = vi.fn(async (path: string) => {
@@ -3659,9 +3669,10 @@ describe('Editor Apple Music library badge', () => {
     api.fingerprint = vi.fn(async (path: string) => path)
     api.comparePair = vi.fn(() => pair)
     const { onProcess } = renderEditor(
-      { id: 'a', inputPath: '/music/Strobe.aif', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
       'wav',
-      { libraryIndex: ownedWithId, showSpectrum },
+      // The comparison reads in Audio quality, so that section is mounted.
+      { libraryIndex: index, showSpectrum, showLoudness: true, addToAppleMusic: music },
     )
     return { api, onProcess }
   }
@@ -3675,7 +3686,9 @@ describe('Editor Apple Music library badge', () => {
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
     )
     const pill = screen.getByTestId('copy-verdict')
-    expect(pill).toHaveTextContent('This file is better')
+    // The row shows the swap the replace button offers; the verdict is the control's name.
+    expect(pill).toHaveTextContent('Better copy than the Apple Music one')
+    expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'good')
     expect(screen.queryByTestId('copy-sentence')).toBeNull()
     fireEvent.click(pill)
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
@@ -3686,6 +3699,20 @@ describe('Editor Apple Music library badge', () => {
 
   // The pill sat inside the header's fold button: a click on it folded Metadata, and a
   // button nested in a button is out of reach for the keyboard and a screen reader.
+  // A track opened straight from the library's own folder is the library's copy: comparing
+  // it with itself measures twice to say "same audio" about one file.
+  it('shows no verdict when the file in hand is the library copy itself', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: wavLoudness,
+      herePath: '/music/strobe.wav'.normalize('NFD'),
+    })
+    // The library copy's properties are read in the same render the comparison would start.
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.wav'))
+    expect(screen.queryByTestId('copy-verdict')).toBeNull()
+    expect(api.comparePair).not.toHaveBeenCalled()
+  })
+
   it('opens the numbers from the pill without folding the Metadata section', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
@@ -3737,8 +3764,66 @@ describe('Editor Apple Music library badge', () => {
     await waitFor(() =>
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
     )
-    expect(screen.getByTestId('copy-verdict')).toHaveTextContent('Apple Music has a better one')
+    expect(screen.getByTestId('copy-verdict')).toHaveTextContent(
+      'Worse copy than the Apple Music one',
+    )
+    expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'warn')
     expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+  })
+
+  // "Pinned at its ceiling" is a claim the user has to take on trust; the glimpse shows it.
+  // The limited copy picks the stretch, so it is always the worse one whichever side it is.
+  describe('shows the limiter on the waves when it decided the verdict', () => {
+    const glimpse = { worse: [-0.5, 0.5], better: [-0.6, 0.6] }
+
+    it('draws the Apple Music copy as the limited one when this file is better', async () => {
+      const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+      api.limiterGlimpse = vi.fn(async () => glimpse)
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
+      expect(api.limiterGlimpse).toHaveBeenCalledWith(
+        '/Music/Strobe.wav',
+        '/music/Strobe.aif',
+        44100,
+      )
+      expect(screen.getByTestId('glimpse-toggle-better')).toHaveTextContent('This file · AIF')
+    })
+
+    it('draws this file as the limited one when Apple Music is better', async () => {
+      const { api } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+      api.limiterGlimpse = vi.fn(async () => glimpse)
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
+      expect(api.limiterGlimpse).toHaveBeenCalledWith(
+        '/music/Strobe.aif',
+        '/Music/Strobe.wav',
+        44100,
+      )
+    })
+
+    // A lossy copy is told apart by its spectrum, not by peaks; waves of two different
+    // sources would show differences that have nothing to do with the verdict.
+    it('draws nothing when the verdict rests on something else', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        libraryLossy: true,
+      })
+      api.limiterGlimpse = vi.fn(async () => glimpse)
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
+      expect(screen.queryByTestId('limiter-glimpse')).toBeNull()
+      expect(api.limiterGlimpse).not.toHaveBeenCalled()
+    })
   })
 
   // Until the measured verdict lands, the quick format-and-cutoff check is the only warning
@@ -3775,7 +3860,7 @@ describe('Editor Apple Music library badge', () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, pair: new Promise(() => {}) })
     const pill = await screen.findByTestId('copy-verdict')
     expect(pill).toHaveAttribute('data-state', 'measuring')
-    expect(pill).toHaveTextContent('Comparing…')
+    expect(pill).toHaveTextContent('Comparing with the Apple Music copy…')
   })
 
   // A copy that could not be measured gives no verdict at all; the pill that was there
@@ -3801,6 +3886,73 @@ describe('Editor Apple Music library badge', () => {
     await waitFor(() =>
       expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
     )
+  })
+
+  // The comparison is with the library's own copy of this track, so it only shows when there
+  // is one to measure: Apple Music on, the track found in it, and a file behind the entry.
+  // Each case below is the measured verdict's own fixture with one of those taken away.
+  describe('only compares when the library holds a copy with a file', () => {
+    const settle = () => new Promise((r) => setTimeout(r, 50))
+
+    it('compares when all of them hold', async () => {
+      const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      expect(api.comparePair).toHaveBeenCalled()
+    })
+
+    it('says nothing when adding to Apple Music is off', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        music: false,
+      })
+      await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high'))
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says nothing when the track is not in Apple Music', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        index: buildLibraryIndex([
+          { title: 'Other', artist: 'Someone', persistentId: 'FEDCBA9876543210' },
+        ]),
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music'),
+      )
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says nothing when the Apple Music entry has no file on disk', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        location: '',
+      })
+      await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says nothing off macOS, where there is no Apple Music', async () => {
+      const { api } = renderWithLibraryCopy({
+        here: aifLoudness,
+        library: wavLoudness,
+        platform: 'win32',
+      })
+      await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high'))
+      await settle()
+      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
   })
 
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than

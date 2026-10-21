@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { app } from 'electron'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -9,18 +9,13 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { getSettings } from '../main/settings'
 import type { NormalizeConfig } from '../shared/types'
-import { type AppScenario, openApp, stepTo } from './app'
+import { type AppScenario, openApp, openSection, stepTo } from './app'
 import { loudness, makeTrack, scenarioDir } from './fixtures'
 
 const STREAMING: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function targetField(): HTMLInputElement {
   return screen.getByTestId('normalize-target-lufs') as HTMLInputElement
-}
-
-function openSection(testId: string): void {
-  const toggle = within(screen.getByTestId(testId)).getAllByRole('button')[0]
-  if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
 }
 
 function savedSession(): string {
@@ -45,9 +40,9 @@ describe('Come back to a crate the next day and find each track as it was left',
     const evening = await openApp({ settings: { normalize: STREAMING }, destination: 'beside' })
     await evening.drop(folder)
     await evening.select('Opener')
-    openSection('editor-normalize')
+    await openSection('editor-normalize')
     stepTo(targetField(), '-20')
-    openSection('editor-declick')
+    await openSection('editor-declick')
     fireEvent.click(screen.getByTestId('declick-mode-strong'))
     await evening.select('Closer')
     stepTo(targetField(), '-12')
@@ -76,12 +71,12 @@ describe('Come back to a crate the next day and find each track as it was left',
 
   it('opens the track at the loudness left on it', async () => {
     await surco.select('Opener')
-    openSection('editor-normalize')
+    await openSection('editor-normalize')
     await waitFor(() => expect(targetField().value).toBe('-20'), { timeout: 10_000 })
   }, 20_000)
 
-  it('opens the track at the click repair left on it', () => {
-    openSection('editor-declick')
+  it('opens the track at the click repair left on it', async () => {
+    await openSection('editor-declick')
     expect(screen.getByTestId('declick-mode-strong').getAttribute('aria-pressed')).toBe('true')
   })
 

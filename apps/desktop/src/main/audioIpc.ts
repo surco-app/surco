@@ -34,6 +34,7 @@ import {
   extractCover,
   extractCoverDataUrl,
   generateSpectrogram,
+  limiterGlimpse,
   measureBpm,
   measureChannelScan,
   measureKey,
@@ -339,6 +340,18 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       )
     } catch (err) {
       if (!isAbortError(err)) log.error('audio:pair failed', err)
+      return null
+    }
+  })
+
+  // Not cached on disk either: it is drawn only when the comparison card is opened.
+  handleAudio('audio:limiterGlimpse', async (_e, worse: string, better: string, rate: number) => {
+    try {
+      return await cancellable(worse, 'low', (signal) =>
+        analysisLimiter.run(() => limiterGlimpse(worse, better, rate, signal), 'low', signal),
+      )
+    } catch (err) {
+      if (!isAbortError(err)) log.error('audio:limiterGlimpse failed', err)
       return null
     }
   })

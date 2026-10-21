@@ -43,6 +43,22 @@
       {
         "text": "Surco uses less memory with long lists.",
         "in": "1.8.3"
+      },
+      {
+        "text": "If you have the same track twice in the list, Surco marks next to the artist which copy is the better one and why. It decides from what it measures, not from what the file claims, so it weighs whether a copy is lossy, whether it is missing top end or, when both come from the same master, which one went through a limiter. If it finds no difference, it picks neither.",
+        "in": "1.8.4"
+      },
+      {
+        "text": "When you open a track you already have in Apple Music, Audio quality compares it with the copy in your library and tells you which one to keep, with the figures beside it.",
+        "in": "1.8.4"
+      },
+      {
+        "text": "When a conversion finishes, everything you can do next is named and gathered in the More actions menu, next to the step still left, such as adding it to Apple Music.",
+        "in": "1.8.4"
+      },
+      {
+        "text": "Converting in place two files that share a name in different formats, such as Song.flac and Song.wav, no longer has them overwrite each other when they end up in the same format. Only one of the two recordings could be left; now the second is saved as \"Song (2)\".",
+        "in": "1.8.4"
       }
     ]
   },

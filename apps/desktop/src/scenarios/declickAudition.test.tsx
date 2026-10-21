@@ -2,14 +2,14 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import ffmpegStatic from 'ffmpeg-static'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import type { Api } from '../preload/api'
-import { type AppScenario, openApp } from './app'
+import { type AppScenario, openApp, openSection } from './app'
 import { makeTrack, scenarioDir, vinylSource } from './fixtures'
 
 function samples(path: string): Int16Array {
@@ -68,8 +68,7 @@ describe('Pick a click repair by ear and get exactly that in the file', () => {
     auditions = recordAuditions()
     await surco.drop(folder)
     await surco.select('Side A')
-    const toggle = within(screen.getByTestId('editor-declick')).getAllByRole('button')[0]
-    if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
+    await openSection('editor-declick')
   }, 90_000)
 
   afterAll(() => {

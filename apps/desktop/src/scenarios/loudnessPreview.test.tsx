@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { getSettings } from '../main/settings'
 import type { NormalizeConfig } from '../shared/types'
-import { type AppScenario, openApp, stepTo, typeInto } from './app'
+import { type AppScenario, openApp, openSection, stepTo, typeInto } from './app'
 import { loudness, makeTrack, scenarioDir } from './fixtures'
 
 const STREAMING: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
@@ -47,9 +47,7 @@ describe('Tune a track’s loudness target while watching its wave', () => {
     surco = await openApp({ settings: { normalize: STREAMING }, destination: 'beside' })
     await surco.drop(folder)
     await surco.select('Loud')
-    const section = screen.getByTestId('editor-normalize')
-    const toggle = within(section).getAllByRole('button')[0]
-    if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
+    await openSection('editor-normalize')
     await screen.findByTestId('waveform-gain-delta', undefined, { timeout: 30_000 })
   }, 90_000)
 

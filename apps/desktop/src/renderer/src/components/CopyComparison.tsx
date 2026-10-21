@@ -53,12 +53,6 @@ const DECIDING_ROW: Partial<Record<CopyReason, RowId>> = {
   crest: 'crest',
 }
 
-const BORDER = {
-  good: 'var(--color-good)',
-  warn: 'var(--color-warn)',
-  neutral: 'var(--color-line-strong)',
-} as const
-
 export function CopyComparison({
   id,
   verdict,
@@ -66,6 +60,7 @@ export function CopyComparison({
   library,
   hereLabel,
   libraryLabel,
+  glimpse,
 }: {
   id?: string
   // A tie opens no card: the pill does not show for one.
@@ -74,6 +69,8 @@ export function CopyComparison({
   library: CopyFacts
   hereLabel: string
   libraryLabel: string
+  // The waves behind the sentence, set between it and the table.
+  glimpse?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lang = i18n.language
@@ -160,7 +157,6 @@ export function CopyComparison({
   ]
   const decided = 'reason' in verdict ? verdict : null
   const decidingRow = decided ? DECIDING_ROW[decided.reason] : undefined
-  const tone = verdict.winner === 'a' ? 'good' : verdict.winner === 'b' ? 'warn' : 'neutral'
   const cellTone = (side: 'a' | 'b'): string =>
     decided?.winner === side ? 'text-[var(--color-good)]' : 'text-[var(--color-warn)]'
 
@@ -168,50 +164,64 @@ export function CopyComparison({
     <div
       id={id}
       data-testid="copy-comparison"
-      data-tone={tone}
-      className="mt-2 border-l-2 pl-2.5 text-xs"
-      style={{ borderColor: BORDER[tone] }}
+      // No rule of its own: the verdict line above carries the colour, and this is its
+      // detail, set in line with that line's words.
+      className="mt-1.5 pl-3 text-xs"
     >
       <p data-testid="copy-sentence" className="text-fg-dim">
         {sentence()}
       </p>
+      {glimpse}
       {/* Same audio means either copy will do: a table of matching figures would only send
           the reader hunting for a difference that is not there. */}
       {verdict.winner !== 'same' && (
-        <table className="mt-2 tabular-nums text-fg-dim">
-          <thead>
-            <tr>
-              <th />
-              <th className="pl-4 text-right font-medium">
-                {tr('editor.copyThisFile')} · {hereLabel}
-              </th>
-              <th className="pl-4 text-right font-medium">
-                {LIBRARY} · {libraryLabel}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const decides = row.id === decidingRow
-              return (
-                <tr
-                  key={row.id}
-                  data-testid={`copy-row-${row.id}`}
-                  data-decides={decides ? 'true' : undefined}
-                  className={decides ? 'text-fg' : undefined}
-                >
-                  <th scope="row" className="text-left font-normal">
-                    {row.label}
-                  </th>
-                  <td className={`pl-4 text-right ${decides ? cellTone('a') : ''}`}>{row.here}</td>
-                  <td className={`pl-4 text-right ${decides ? cellTone('b') : ''}`}>
-                    {row.library}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        // The Properties readout's table: rows on the field colour, split by hairlines, labels
+        // small and dim, figures at reading size.
+        <div className="mt-2 overflow-hidden rounded-lg bg-[var(--color-field)]">
+          <table className="w-full border-collapse tabular-nums">
+            <thead>
+              <tr>
+                <th />
+                <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
+                  {tr('editor.copyThisFile')} · {hereLabel}
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
+                  {LIBRARY} · {libraryLabel}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const decides = row.id === decidingRow
+                return (
+                  <tr
+                    key={row.id}
+                    data-testid={`copy-row-${row.id}`}
+                    data-decides={decides ? 'true' : undefined}
+                    className="border-t border-[var(--color-line)]"
+                  >
+                    <th
+                      scope="row"
+                      className={`px-3 py-2 text-left text-xs font-normal ${decides ? 'text-fg' : 'text-fg-dim'}`}
+                    >
+                      {row.label}
+                    </th>
+                    <td
+                      className={`px-3 py-2 text-right text-sm font-medium ${decides ? cellTone('a') : ''}`}
+                    >
+                      {row.here}
+                    </td>
+                    <td
+                      className={`px-3 py-2 text-right text-sm font-medium ${decides ? cellTone('b') : ''}`}
+                    >
+                      {row.library}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

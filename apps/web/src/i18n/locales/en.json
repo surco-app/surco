@@ -39,6 +39,7 @@
     "space": "Space"
   },
   "hero": {
+    "latestRelease": "New in {{version}}",
     "h1a": "Get your tracks ready",
     "h1b": "before you play them.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
@@ -559,8 +560,7 @@
     "smartscreen": "When you open the installer, Windows will show “Windows protected your PC”: click “More info”, then “Run anyway”. That’s SmartScreen saying it doesn’t recognise the publisher, not that anything is wrong with the file.",
     "unsupported": "There's no installer for your system yet.",
     "unreachable": "We couldn't check the downloads right now.",
-    "unreachableLink": "Download it from GitHub",
-    "countSuffix": "downloads and counting"
+    "unreachableLink": "Download it from GitHub"
   },
   "guide": {
     "metaTitle": "How to use Surco: step-by-step guide",
@@ -1106,8 +1106,6 @@
       "cuesLabel": "Cue points",
       "intact": "untouched",
       "inPlace": "in place",
-      "before": "10 playlists by hand",
-      "after": "one click",
       "fieldYear": "Year",
       "step": "and later · replaced"
     },

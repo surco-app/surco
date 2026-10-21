@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
-import { type AppScenario, openApp } from './app'
+import { type AppScenario, openApp, openSection } from './app'
 import { audioMd5, makeTrack, scenarioDir, vinylSource } from './fixtures'
 
 // A rip session mixes a dusty pressing with a clean one. The DJ sets the repair on the
@@ -34,8 +34,7 @@ describe('Repair the clicks of one rip in a batch and leave the clean one untouc
     surco = await openApp({ settings: {}, destination: 'beside' })
     await surco.drop(folder)
     await surco.select('Dusty')
-    const toggle = within(screen.getByTestId('editor-declick')).getAllByRole('button')[0]
-    if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle)
+    await openSection('editor-declick')
     fireEvent.click(await screen.findByTestId('declick-mode-strong'))
     await surco.select('Clean')
     await surco.convertAll()

@@ -1,10 +1,10 @@
 import {
+  ChevronRight,
   Copy,
   Eraser,
   Globe,
   Music,
   RefreshCw,
-  Scale,
   Scissors,
   Tag,
   TriangleAlert,
@@ -114,6 +114,7 @@ import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
+import { LimiterGlimpse } from './LimiterGlimpse'
 import { MetadataForm } from './MetadataForm'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
@@ -232,6 +233,9 @@ interface Props {
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
+
+// macOS paths compare without case, and Music may hand back the other Unicode form.
+const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
 
 const COPY_STATE_LABEL = {
   here: 'editor.copyHereBetter',
@@ -667,15 +671,18 @@ export const Editor = memo(function Editor({
   // be measured gives no verdict and leaves that check as the only answer. A pair that could
   // not be lined up is not one master, so compareCopies skips the level criteria and the
   // format and spectrum still decide.
-  const hereFacts = useCopyFacts(item.inputPath, !!replacedCopyPath, 'high')
-  const libraryFacts = useCopyFacts(replacedCopyPath, !!replacedCopyPath)
-  const copyPair = usePairFacts(item.inputPath, replacedCopyPath, !!replacedCopyPath)
+  // A track opened from the library's own folder is that copy, so there is nothing to compare.
+  const comparedCopyPath =
+    pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
+  const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
+  const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
+  const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
   const copyVerdict =
     hereFacts && libraryFacts && copyPair !== undefined
       ? compareCopies(hereFacts, libraryFacts, copyPair)
       : null
   const copyMeasuring =
-    !!replacedCopyPath &&
+    !!comparedCopyPath &&
     (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
   const [copyOpenFor, setCopyOpenFor] = useState('')
   const copyOpen =
@@ -1240,26 +1247,86 @@ export const Editor = memo(function Editor({
         : copyVerdict.winner === 'b'
           ? 'library'
           : 'same'
-  const copyVerdictPill =
+  // The comparison with the library's copy lives in Audio quality, under the spectrum: that
+  // section speaks of the open track, so "better" or "worse" needs no subject, and its
+  // numbers sit beside the spectrum they are read with. The Metadata header keeps only the
+  // library mark, which still turns to a warning when the library's copy is the better one.
+  // Drawn as one more finding under the spectrum: the same rule on its left, coloured as
+  // the findings above it are (green better, amber worse, grey the same or still measuring).
+  const copyStateTone = {
+    here: 'good',
+    library: 'warn',
+    same: 'neutral',
+    measuring: 'neutral',
+  } as const
+  const TONE_BORDER = {
+    good: 'var(--color-good)',
+    warn: 'var(--color-warn)',
+    neutral: 'var(--color-line-strong)',
+  }
+  // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
+  const limitedRate =
+    copyVerdict && 'reason' in copyVerdict && copyVerdict.reason === 'peakCount'
+      ? (copyVerdict.winner === 'a' ? libraryFacts : hereFacts)?.sampleRateHz
+      : undefined
+  const copyLine =
     !isMulti && inLibrary === 'yes' && copyState ? (
-      <button
-        type="button"
-        data-testid="copy-verdict"
-        data-state={copyState}
-        aria-expanded={copyOpen}
-        aria-controls={copyCardId}
-        disabled={copyState === 'measuring'}
-        onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-        className="press rounded-md"
-      >
-        <SectionPill
-          tone={copyState === 'here' ? 'good' : copyState === 'library' ? 'warn' : 'neutral'}
-          testid="copy-verdict-pill"
-          icon={<Scale className="h-3.5 w-3.5" aria-hidden="true" />}
+      <>
+        <div
+          data-testid="copy-line"
+          data-tone={copyStateTone[copyState]}
+          className="mt-2 border-l-2 pl-2.5 text-xs"
+          style={{ borderColor: TONE_BORDER[copyStateTone[copyState]] }}
         >
-          {tr(COPY_STATE_LABEL[copyState])}
-        </SectionPill>
-      </button>
+          <button
+            type="button"
+            data-testid="copy-verdict"
+            data-state={copyState}
+            aria-expanded={copyOpen}
+            aria-controls={copyCardId}
+            disabled={copyState === 'measuring'}
+            onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
+            className="press flex items-center gap-1 rounded text-fg-dim hover:text-fg-muted"
+          >
+            {tr(COPY_STATE_LABEL[copyState], { library: libraryName })}
+            {copyState !== 'measuring' && (
+              <ChevronRight
+                className={`h-3 w-3 transition-transform ${copyOpen ? 'rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
+        {copyOpen && copyVerdict && hereFacts && libraryFacts && (
+          <CopyComparison
+            id={copyCardId}
+            verdict={copyVerdict}
+            here={hereFacts}
+            library={libraryFacts}
+            hereLabel={hereFacts.ext}
+            libraryLabel={libraryFacts.ext}
+            glimpse={
+              limitedRate ? (
+                <LimiterGlimpse
+                  worsePath={copyVerdict.winner === 'a' ? comparedCopyPath : item.inputPath}
+                  betterPath={copyVerdict.winner === 'a' ? item.inputPath : comparedCopyPath}
+                  sampleRate={limitedRate}
+                  layers={[
+                    {
+                      side: copyVerdict.winner === 'a' ? 'better' : 'worse',
+                      label: `${tr('editor.copyThisFile')} · ${hereFacts.ext}`,
+                    },
+                    {
+                      side: copyVerdict.winner === 'a' ? 'worse' : 'better',
+                      label: `${libraryName} · ${libraryFacts.ext}`,
+                    },
+                  ]}
+                />
+              ) : undefined
+            }
+          />
+        )}
+      </>
     ) : undefined
   const libraryMarks = (
     <>
@@ -1352,7 +1419,6 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             status={hasLibraryMarks ? libraryMarks : undefined}
-            statusAction={copyVerdictPill}
             right={
               // The two action groups (file: copy/search — tags: clear/fill/format) ride the
               // title line as bare toolbar glyphs, split by a divider.
@@ -1379,16 +1445,6 @@ export const Editor = memo(function Editor({
               </div>
             }
           />
-          {copyOpen && copyVerdict && hereFacts && libraryFacts && (
-            <CopyComparison
-              id={copyCardId}
-              verdict={copyVerdict}
-              here={hereFacts}
-              library={libraryFacts}
-              hereLabel={hereFacts.ext}
-              libraryLabel={libraryFacts.ext}
-            />
-          )}
           <SectionBody open={formOpen} id={formBodyId}>
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
@@ -1511,6 +1567,7 @@ export const Editor = memo(function Editor({
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             showHints={showEditorHints}
                             outputSampleRate={outputSampleRate}
+                            copyComparison={copyLine}
                           />
                         )
                       )

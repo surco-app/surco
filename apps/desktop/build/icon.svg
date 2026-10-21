@@ -1,43 +1,32 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="tile" cx="0.32" cy="0.24" r="1.0">
-      <stop offset="0" stop-color="#2A2E42"/>
-      <stop offset="0.55" stop-color="#1A1B26"/>
-      <stop offset="1" stop-color="#14141C"/>
+      <stop offset="0" stop-color="#14305C"/>
+      <stop offset="0.55" stop-color="#0A1A38"/>
+      <stop offset="1" stop-color="#050D1F"/>
     </radialGradient>
-    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/>
-      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="disc" cx="0.42" cy="0.36" r="0.85">
-      <stop offset="0" stop-color="#23263A"/>
-      <stop offset="0.55" stop-color="#131520"/>
-      <stop offset="1" stop-color="#07080C"/>
+    <radialGradient id="disc" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#3466C2"/>
+      <stop offset="0.6" stop-color="#2149A0"/>
+      <stop offset="1" stop-color="#173678"/>
     </radialGradient>
     <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3A4060"/>
-      <stop offset="1" stop-color="#07080C"/>
+      <stop offset="0" stop-color="#6F9FEC"/>
+      <stop offset="0.5" stop-color="#2D5BB4" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#173678" stop-opacity="0"/>
     </linearGradient>
     <radialGradient id="label" cx="0.4" cy="0.34" r="0.9">
-      <stop offset="0" stop-color="#CFE4FF"/>
-      <stop offset="0.6" stop-color="#9ED7FF"/>
-      <stop offset="1" stop-color="#6F9BEC"/>
+      <stop offset="0" stop-color="#A8D4FF"/>
+      <stop offset="1" stop-color="#78B4F2"/>
     </radialGradient>
   </defs>
 
   <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#tile)"/>
-  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#gloss)"/>
 
-  <circle cx="512" cy="512" r="300" fill="url(#rim)"/>
-  <circle cx="512" cy="512" r="294" fill="url(#disc)"/>
-  <g fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="3">
-    <circle cx="512" cy="512" r="268"/>
-    <circle cx="512" cy="512" r="244"/>
-    <circle cx="512" cy="512" r="220"/>
-    <circle cx="512" cy="512" r="196"/>
-  </g>
+  <circle cx="512" cy="512" r="300" fill="url(#disc)"/>
+  <circle cx="512" cy="512" r="295" fill="none" stroke="url(#rim)" stroke-width="10"/>
 
-  <circle cx="512" cy="512" r="136" fill="url(#label)"/>
-  <path d="M431 512 C 455 447, 479 447, 503 512 S 551 577, 575 512 L 593 512"
-        fill="none" stroke="#0B1430" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="512" cy="512" r="150" fill="url(#label)"/>
+  <path d="M423 512 C 449 440, 476 440, 502 512 S 555 584, 581 512 L 601 512"
+        fill="none" stroke="#0B1430" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
