@@ -767,10 +767,11 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Elige un flujo y haz clic en la onda para colocarlo, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle el color.",
+      "help": "Elige un flujo, lleva el cabezal al punto y pulsa Marcar aquí, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle el color.",
       "unanalysed": "rekordbox aún no ha analizado esta pista",
-      "manual": "Esta pista tiene hot cues puestos a mano. Surco guarda los drops y no toca los hot cues.",
-      "tooMany": "Necesitaría más de 8 hot cues. Quita un drop.",
+      "manual": "Esta pista tiene hot cues puestas a mano. Surco pone un CALL en cada punto y no añade ni mueve hot cues.",
+      "manualLetters": "Esta pista tiene hot cues puestas a mano. Surco pone un CALL en cada punto y no añade ni mueve hot cues, solo ordena sus letras.",
+      "tooMany": "Necesitaría más de 8 hot cues. Quita un punto.",
       "save": "Guardar en rekordbox",
       "unreadable": "No se pudieron leer los cues de rekordbox",
       "discard": "Descartar cambios",
@@ -1433,7 +1434,7 @@
     "engineSync": "Biblioteca de Engine DJ",
     "syncEngineDj": "Actualizar la biblioteca de Engine DJ al convertir",
     "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida en el destino Engine DJ. Antes de escribir, Surco guarda junto a la biblioteca una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto.",
-    "completeCues": "Al cerrar rekordbox, aplicar tu flujo activo en las pistas con drops y sin hot cues",
+    "completeCues": "Al cerrar rekordbox, aplicar tu flujo activo en las pistas con CALL y sin hot cues",
     "completeCuesHint": "Escribe en tu colección, también en pistas que no has mirado en Surco. Apagado, tus cues solo se guardan desde la sección Cues.",
     "completeCuesCount_one": "Se completará 1 pista al cerrar rekordbox.",
     "completeCuesCount_other": "Se completarán {{count}} pistas al cerrar rekordbox.",
@@ -2381,7 +2382,7 @@
       "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
       "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox",
       "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
-      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un drop",
+      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un punto",
       "cuesInvalid": "No se guardaron los cues de {{track}}. Surco no pudo leerlos como cues"
     },
     "part": {
@@ -2411,10 +2412,10 @@
     "elsewhere": "Esto se preparó para otra colección de rekordbox. Surco no lo aplicará a la que usas ahora"
   },
   "cueWave": {
-    "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para marcar drops",
+    "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Propuesta de donde rompe en el compás {{bar}}",
+    "proposal": "Punto propuesto en el compás {{bar}}",
     "label": "Onda de cues"
   },
   "cueFlows": {

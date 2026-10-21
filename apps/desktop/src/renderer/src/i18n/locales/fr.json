@@ -767,10 +767,11 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Choisissez un flux et cliquez sur la forme d’onde pour le placer, ou choisissez Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
+      "help": "Choisissez un flux, amenez la tête de lecture au point et appuyez sur Marquer ici, ou choisissez Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
       "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
-      "manual": "Ce morceau a des hot cues placés à la main. Surco enregistre les drops et ne touche pas aux hot cues.",
-      "tooMany": "Il faudrait plus de 8 hot cues. Retirez un drop.",
+      "manual": "Ce morceau a des hot cues placés à la main. Surco pose un CALL à chaque point et n’ajoute ni ne déplace aucun hot cue.",
+      "manualLetters": "Ce morceau a des hot cues placés à la main. Surco pose un CALL à chaque point et n’ajoute ni ne déplace aucun hot cue, il remet seulement leurs lettres dans l’ordre.",
+      "tooMany": "Il faudrait plus de 8 hot cues. Retirez un point.",
       "save": "Enregistrer dans rekordbox",
       "unreadable": "Impossible de lire les cues de rekordbox",
       "discard": "Annuler les changements",
@@ -1433,7 +1434,7 @@
     "engineSync": "Bibliothèque Engine DJ",
     "syncEngineDj": "Mettre à jour la bibliothèque Engine DJ à la conversion",
     "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie pour la destination Engine DJ qui est utilisée. Avant d'écrire, Surco enregistre à côté de la bibliothèque une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert.",
-    "completeCues": "À la fermeture de rekordbox, appliquer ton flux actif aux morceaux avec drops et sans hot cues",
+    "completeCues": "À la fermeture de rekordbox, appliquer votre flux actif aux morceaux avec des CALL et sans hot cues",
     "completeCuesHint": "Écrit dans ta collection, y compris sur des morceaux que tu n'as pas regardés dans Surco. Désactivé, tes cues ne s'enregistrent que depuis la section Cues.",
     "completeCuesCount_one": "1 morceau sera complété à la fermeture de rekordbox.",
     "completeCuesCount_other": "{{count}} morceaux seront complétés à la fermeture de rekordbox.",
@@ -2381,7 +2382,7 @@
       "playlistGone": "{{playlist}} n’existe plus dans rekordbox. {{track}} n’a pas été ajouté",
       "editChanged": "{{playlist}} n’a pas été modifiée. Elle a changé dans rekordbox",
       "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marque-les à nouveau",
-      "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retire un drop",
+      "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez un point",
       "cuesInvalid": "Les cues de {{track}} n'ont pas été enregistrés. Surco n'a pas pu les lire comme des cues"
     },
     "part": {
@@ -2411,10 +2412,10 @@
     "elsewhere": "Ceci a été préparé pour une autre collection rekordbox. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
   "cueWave": {
-    "notAnalysed": "Ce morceau n'est pas analysé dans rekordbox. Analyse-le là-bas pour marquer des drops",
+    "notAnalysed": "Ce morceau n’est pas analysé dans rekordbox. Analysez-le là-bas pour placer des cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Drop proposé à la mesure {{bar}}",
+    "proposal": "Point proposé à la mesure {{bar}}",
     "label": "Forme d'onde des cues"
   },
   "cueFlows": {

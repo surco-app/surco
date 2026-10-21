@@ -767,10 +767,11 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Wähle einen Ablauf und klicke auf die Wellenform, um ihn zu setzen, oder wähle Manuell und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
+      "help": "Wähle einen Ablauf, bring den Abspielkopf zum Punkt und drück Hier markieren, oder wähle Manuell und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
       "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
-      "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco speichert die Drops und lässt die Hot Cues unverändert.",
-      "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Drop.",
+      "manual": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco setzt an jeden Punkt einen CALL und fügt keine Hot Cues hinzu oder verschiebt sie.",
+      "manualLetters": "Dieser Titel hat von Hand gesetzte Hot Cues. Surco setzt an jeden Punkt einen CALL und fügt keine Hot Cues hinzu oder verschiebt sie, es ordnet nur ihre Buchstaben.",
+      "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Punkt.",
       "save": "In rekordbox speichern",
       "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden",
       "discard": "Änderungen verwerfen",
@@ -1433,7 +1434,7 @@
     "engineSync": "Engine-DJ-Bibliothek",
     "syncEngineDj": "Engine-DJ-Bibliothek beim Konvertieren aktualisieren",
     "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die beim Ziel Engine DJ gewählte Bibliothek. Vor dem Schreiben legt Surco neben der Bibliothek eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
-    "completeCues": "Beim Schließen von rekordbox deinen aktiven Ablauf auf Titel mit Drops und ohne Hot Cues anwenden",
+    "completeCues": "Beim Schließen von rekordbox deinen aktiven Ablauf auf Titel mit CALLs und ohne Hot Cues anwenden",
     "completeCuesHint": "Schreibt in deine Sammlung, auch in Titel, die du in Surco nicht angesehen hast. Aus werden deine Cues nur im Abschnitt Cues gespeichert.",
     "completeCuesCount_one": "1 Titel wird beim Schließen von rekordbox ergänzt.",
     "completeCuesCount_other": "{{count}} Titel werden beim Schließen von rekordbox ergänzt.",
@@ -2381,7 +2382,7 @@
       "playlistGone": "{{playlist}} gibt es in rekordbox nicht mehr. {{track}} wurde nicht hinzugefügt",
       "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert",
       "cuesChanged": "Die Cues von {{track}} haben sich in rekordbox geändert. Markiere sie erneut",
-      "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne einen Drop",
+      "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne einen Punkt",
       "cuesInvalid": "Die Cues von {{track}} wurden nicht gespeichert. Surco konnte sie nicht als Cues lesen"
     },
     "part": {
@@ -2411,10 +2412,10 @@
     "elsewhere": "Das wurde für eine andere rekordbox-Sammlung vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
   },
   "cueWave": {
-    "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Drops zu markieren",
+    "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Cues zu setzen",
     "hotCue": "Hot Cue {{letter}}",
     "call": "CALL",
-    "proposal": "Vorgeschlagener Drop in Takt {{bar}}",
+    "proposal": "Vorgeschlagener Punkt in Takt {{bar}}",
     "label": "Cue-Wellenform"
   },
   "cueFlows": {

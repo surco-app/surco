@@ -1018,7 +1018,7 @@ function Editing({
       )}
       {state.notice === 'manual' && (
         <p data-testid="cues-manual" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.cues.manual')}
+          {tr(settings.cueLettersByTime ? 'editor.cues.manualLetters' : 'editor.cues.manual')}
         </p>
       )}
       {state.notice === 'too-many' && (

@@ -119,7 +119,7 @@ describe('rekordbox queue text', () => {
       })?.text,
     ).toBe('The cues of Tengo changed in rekordbox. Mark them again')
     expect(noticeText(tr, { code: 'cues-too-many', track: 'Tengo' })).toBe(
-      'Tengo would need more than 8 hot cues. Remove a drop',
+      'Tengo would need more than 8 hot cues. Remove a point',
     )
     expect(noticeText(tr, { code: 'cues-invalid', track: 'Tengo' })).toBe(
       'The cues of Tengo were not saved. Surco could not read them as cues',

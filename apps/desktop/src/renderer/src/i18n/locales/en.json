@@ -767,10 +767,11 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Pick a flow and click the waveform to place it, or pick Manual and set each cue by hand. Select a cue to move it, delete it or change its colour.",
+      "help": "Pick a flow, bring the playhead to the point and press Mark here, or pick Manual and set each cue by hand. Select a cue to move it, delete it or change its colour.",
       "unanalysed": "rekordbox has not analysed this track yet",
-      "manual": "This track has hot cues set by hand. Surco saves the drops and leaves the hot cues alone.",
-      "tooMany": "It would need more than 8 hot cues. Remove a drop.",
+      "manual": "This track has hot cues set by hand. Surco adds a CALL at each point and does not add or move hot cues.",
+      "manualLetters": "This track has hot cues set by hand. Surco adds a CALL at each point and does not add or move hot cues, it only puts their letters in order.",
+      "tooMany": "It would need more than 8 hot cues. Remove a point.",
       "save": "Save to rekordbox",
       "unreadable": "Could not read the cues from rekordbox",
       "discard": "Discard changes",
@@ -1433,7 +1434,7 @@
     "engineSync": "Engine DJ library",
     "syncEngineDj": "Update the Engine DJ library when converting",
     "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen under the Engine DJ destination. Before writing, Surco saves a backup of the whole run next to the library, plus one of each write, and it never writes while Engine DJ is open.",
-    "completeCues": "When rekordbox closes, apply your active flow to tracks with drops and no hot cues",
+    "completeCues": "When rekordbox closes, apply your active flow to tracks with CALLs and no hot cues",
     "completeCuesHint": "It writes to your collection on tracks you have not looked at in Surco. Off, your cues are only saved from the Cues section.",
     "completeCuesCount_one": "1 track will be completed when rekordbox closes.",
     "completeCuesCount_other": "{{count}} tracks will be completed when rekordbox closes.",
@@ -2381,7 +2382,7 @@
       "playlistGone": "{{playlist}} is no longer in rekordbox. {{track}} was not added",
       "editChanged": "{{playlist}} was not changed. It changed in rekordbox",
       "cuesChanged": "The cues of {{track}} changed in rekordbox. Mark them again",
-      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a drop",
+      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a point",
       "cuesInvalid": "The cues of {{track}} were not saved. Surco could not read them as cues"
     },
     "part": {
@@ -2411,10 +2412,10 @@
     "elsewhere": "This was prepared for another rekordbox collection. Surco will not apply it to the one you use now"
   },
   "cueWave": {
-    "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to mark drops",
+    "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Suggested drop at bar {{bar}}",
+    "proposal": "Suggested point at bar {{bar}}",
     "label": "Cue waveform"
   },
   "cueFlows": {
