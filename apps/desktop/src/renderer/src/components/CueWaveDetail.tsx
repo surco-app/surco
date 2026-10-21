@@ -35,21 +35,9 @@ const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const STRIP_WINDOWS = 3
 const DRAG_PX = 3
-const PHRASE_LINE_OPACITY = 0.5
+const BAR_LINE_OPACITY = 0.5
 const ZOOM_BUTTON =
   'press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg disabled:pointer-events-none disabled:opacity-40'
-const CAPS = [
-  {
-    position: 'top-0',
-    grey: 'border-t-[var(--color-fg-dim)]',
-    shape: 'border-t-[3px]',
-  },
-  {
-    position: 'bottom-0',
-    grey: 'border-b-[var(--color-fg-dim)]',
-    shape: 'border-b-[3px]',
-  },
-] as const
 
 export function CueZoom({
   bars,
@@ -154,10 +142,7 @@ export function CueWaveDetail({
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const beats = useMemo(() => grid.map((b) => b.ms), [grid])
-  const lines = useMemo(
-    () => barLines(grid).map((b, i) => ({ ms: b.ms, bar: i + 1, phrase: i % 4 === 0 })),
-    [grid],
-  )
+  const lines = useMemo(() => barLines(grid).map((b) => b.ms), [grid])
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
@@ -454,44 +439,23 @@ export function CueWaveDetail({
                 />
               ))}
           {lines
-            .filter((b) => b.ms >= fromMs && b.ms <= toMs)
-            .map((b) => (
+            .filter((ms) => ms >= fromMs && ms <= toMs)
+            .map((ms) => (
               <span
-                key={b.ms}
+                key={ms}
                 data-testid="cue-detail-bar"
-                data-bar={b.bar}
-                data-phrase={b.phrase ? 'true' : 'false'}
+                data-ms={ms}
                 aria-hidden="true"
                 style={{
-                  left: pct(b.ms),
+                  left: pct(ms),
                   top: `${WAVE_MARK_LANE_PX}px`,
-                  ...(b.phrase
-                    ? {
-                        width: '2px',
-                        transform: 'translateX(-50%)',
-                        backgroundColor: MEMORY_CUE_COLOR,
-                        opacity: PHRASE_LINE_OPACITY,
-                      }
-                    : {}),
+                  width: '2px',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: MEMORY_CUE_COLOR,
+                  opacity: BAR_LINE_OPACITY,
                 }}
-                className={`absolute bottom-0 ${
-                  b.phrase
-                    ? ''
-                    : compact
-                      ? 'w-px bg-[var(--color-fg-dim)]/15'
-                      : 'w-px bg-[var(--color-fg-dim)]/35'
-                }`}
-              >
-                {!compact &&
-                  !b.phrase &&
-                  CAPS.map((cap) => (
-                    <span
-                      key={cap.position}
-                      data-testid="cue-detail-cap"
-                      className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[2.5px] border-x-transparent ${cap.position} ${cap.grey} ${cap.shape}`}
-                    />
-                  ))}
-              </span>
+                className="absolute bottom-0"
+              />
             ))}
           <canvas
             ref={canvasRef}

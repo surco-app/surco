@@ -60,17 +60,6 @@ describe('CueWaveDetail', () => {
     expect(screen.getByTestId('cue-detail-playhead').style.left).toBe('')
   })
 
-  it('draws a visible line on every bar, with a cap at each end on the ordinary ones, and no loose beats', () => {
-    setup()
-    const lines = screen.getAllByTestId('cue-detail-bar')
-    expect(lines).toHaveLength(17)
-    for (const line of lines.filter((l) => l.dataset.phrase !== 'true')) {
-      expect(within(line).getAllByTestId('cue-detail-cap')).toHaveLength(2)
-      expect(line.className).toContain('bg-[var(--color-fg-dim)]/35')
-    }
-    expect(screen.queryAllByTestId('cue-grid-cap')).toHaveLength(0)
-  })
-
   it('draws a faint tick on every beat between the bar lines when quantizing to the beat, so a cue on a beat sits on the grid', () => {
     setup({ quantize: 'beat' })
     const ticks = screen.getAllByTestId('cue-detail-beat')
@@ -88,32 +77,36 @@ describe('CueWaveDetail', () => {
     expect(screen.queryAllByTestId('cue-detail-beat')).toHaveLength(0)
   })
 
-  it('tints bars 1, 5, 9 and so on as a red line like rekordbox, counted from the grid and not from the window, with nothing that reads as a CALL triangle', () => {
+  it('draws every bar downbeat as a red line like rekordbox, where the grid itself says beat 1 and not counted from its first beat, with nothing that reads as a CALL triangle', () => {
     const probe = document.createElement('i')
     probe.style.color = MEMORY_CUE_COLOR
     const red = probe.style.color
+    const shifted = Array.from({ length: 800 }, (_, i) => ({
+      ms: i * 500,
+      beat: ((i + 2) % 4) + 1,
+    }))
     for (const compact of [false, true]) {
-      const view = setup({ playheadMs: bar(33), compact })
+      const view = setup({ grid: shifted, playheadMs: bar(33), compact, quantize: 'beat' })
       const lines = screen.getAllByTestId('cue-detail-bar')
-      for (const line of lines)
-        expect(line.dataset.phrase === 'true').toBe((Number(line.dataset.bar) - 1) % 4 === 0)
-      const phrases = lines.filter((l) => l.dataset.phrase === 'true')
-      expect(phrases.length).toBeGreaterThan(0)
-      for (const line of phrases) {
+      expect(lines.length).toBeGreaterThan(10)
+      const downbeats = shifted.filter((b) => b.beat === 1).map((b) => b.ms)
+      for (const line of lines) {
+        expect(downbeats).toContain(Number(line.dataset.ms))
         expect(line.style.backgroundColor).toBe(red)
         expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.45)
         expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.55)
         expect(line.style.width).toBe('2px')
         expect(line.childElementCount).toBe(0)
       }
-      for (const line of lines.filter((l) => l.dataset.phrase !== 'true'))
-        expect(line.style.backgroundColor).toBe('')
+      expect(new Set(lines.map((l) => (Number(l.dataset.ms) / 500) % 4))).toEqual(new Set([2]))
+      const ticks = screen.getAllByTestId('cue-detail-beat')
+      for (const tick of ticks) expect(tick.style.backgroundColor).toBe('')
       const tinted = [...view.container.querySelectorAll<HTMLElement>('*')].filter((el) =>
         [el.style.backgroundColor, el.style.borderTopColor, el.style.borderBottomColor].includes(
           red,
         ),
       )
-      expect(tinted).toEqual(phrases)
+      expect(tinted).toEqual(lines)
       view.unmount()
     }
   })
