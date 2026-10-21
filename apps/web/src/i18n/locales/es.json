@@ -956,6 +956,7 @@
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos."
   },
   "home": {
+    "anchorLink": "Enlace a este ejemplo",
     "walkthrough": {
       "kicker": "Paso a paso",
       "title": "Una pista, de principio a fin",

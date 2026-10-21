@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { PAGES } from '../lib/nav'
+import { SCENE_ANCHORS } from '../lib/sceneAnchors'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
@@ -9,6 +10,7 @@ import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
 import QualityScene from './scenes/QualityScene'
 import ReplaceScene from './scenes/ReplaceScene'
+import { AnchorLink } from './scenes/Replay'
 import SceneLayout from './scenes/SceneLayout'
 import TagScene from './scenes/TagScene'
 import TrimScene from './scenes/TrimScene'
@@ -47,19 +49,31 @@ export default function Walkthrough() {
         </div>
       </Reveal>
 
-      <SceneLayout step={t('home.drop.step')} title={t('home.drop.title')} app={<DropScene />}>
+      <SceneLayout
+        id={SCENE_ANCHORS.drop}
+        step={t('home.drop.step')}
+        title={t('home.drop.title')}
+        app={<DropScene />}
+      >
         {t('home.drop.lede')}
       </SceneLayout>
 
       {/* Wide, like the quality scene: the editor is a form, and a form needs the width
           for its values. In the half-width column every value — the title, the label,
           even "Ken Laszlo" — was truncated to a couple of characters and an ellipsis. */}
-      <SceneLayout wide step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
+      <SceneLayout
+        wide
+        id={SCENE_ANCHORS.tag}
+        step={t('home.tag.step')}
+        title={t('home.tag.title')}
+        app={<TagScene />}
+      >
         {t('home.tag.lede')}
       </SceneLayout>
 
       <SceneLayout
         wide
+        id={SCENE_ANCHORS.quality}
         step={t('home.quality.step')}
         title={t('home.quality.title')}
         app={<QualityScene />}
@@ -71,13 +85,17 @@ export default function Walkthrough() {
           its own, which spent three screens of scroll on the part of the flow the page
           itself calls "and while it's at it": the tagging and the fake-lossless verdict are
           what a visitor comes for, and they were being crowded out by their own footnotes. */}
-      <section className="border-b border-line/50 py-10 sm:py-12">
+      <section
+        id={SCENE_ANCHORS.audio}
+        className="scroll-mt-12 border-b border-line/50 py-10 sm:py-12"
+      >
         <Reveal>
           <p className="font-mono text-xs tracking-wider text-blue uppercase">
             {t('home.audioGroup.step')}
           </p>
           <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
             {t('home.audioGroup.title')}
+            <AnchorLink id={SCENE_ANCHORS.audio} />
           </h2>
           <div className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
             {t('home.audioGroup.lede')}
@@ -85,28 +103,31 @@ export default function Walkthrough() {
         </Reveal>
         <Reveal delay={120} className="mt-7">
           <div className="grid gap-5 lg:grid-cols-3">
-            <div>
+            <div id={SCENE_ANCHORS.declick} className="scroll-mt-16">
               <div className="lg:h-[350px]">
                 <DeclickScene />
               </div>
               <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.declick.short')}
+                <AnchorLink id={SCENE_ANCHORS.declick} />
               </p>
             </div>
-            <div>
+            <div id={SCENE_ANCHORS.trim} className="scroll-mt-16">
               <div className="lg:h-[350px]">
                 <TrimScene />
               </div>
               <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.trim.short')}
+                <AnchorLink id={SCENE_ANCHORS.trim} />
               </p>
             </div>
-            <div>
+            <div id={SCENE_ANCHORS.normalize} className="scroll-mt-16">
               <div className="lg:h-[350px]">
                 <NormalizeScene />
               </div>
               <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.normalize.short')}
+                <AnchorLink id={SCENE_ANCHORS.normalize} />
               </p>
             </div>
           </div>
@@ -115,6 +136,7 @@ export default function Walkthrough() {
 
       <SceneLayout
         wide
+        id={SCENE_ANCHORS.batch}
         step={t('home.batch.step')}
         title={t('home.batch.title')}
         app={<BatchScene />}
@@ -126,6 +148,7 @@ export default function Walkthrough() {
           the library when a better file turns up. */}
       <SceneLayout
         wide
+        id={SCENE_ANCHORS.replace}
         step={t('home.replace.step')}
         title={t('home.replace.title')}
         app={<ReplaceScene />}
@@ -133,7 +156,13 @@ export default function Walkthrough() {
         {t('home.replace.lede')}
       </SceneLayout>
 
-      <SceneLayout wide step={t('home.cues.step')} title={t('home.cues.title')} app={<CuesScene />}>
+      <SceneLayout
+        wide
+        id={SCENE_ANCHORS.cues}
+        step={t('home.cues.step')}
+        title={t('home.cues.title')}
+        app={<CuesScene />}
+      >
         <p>{t('home.cues.lede')}</p>
         <p className="mt-3">{t('home.cues.example')}</p>
       </SceneLayout>
