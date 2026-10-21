@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Minimize2, Pause, Pencil, Play } from 'lucide-react'
+import { Keyboard, Minimize2, Pause, Play } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -688,38 +688,45 @@ function Editing({
     />
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
-  const placeName = manual ? tr('editor.cues.manualMode') : flowName(shown, tr)
   const placeOn = armed && !maximized
   const flowControl = (
-    <span
-      data-testid="cues-flow-control"
-      className={`flex min-w-0 items-center rounded-full ${
-        placeOn ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]' : ''
-      }`}
-    >
-      <button
-        type="button"
-        data-testid="cue-place-mode"
-        aria-pressed={placeOn}
-        disabled={!placing}
-        title={placeName}
-        onClick={() => setPlaceMode((on) => !on)}
-        className={`press flex h-6 min-w-0 items-center gap-1 rounded-full pr-0.5 pl-2 text-xs ${
-          placeOn ? 'font-semibold' : 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg'
-        }`}
+    <span data-testid="cues-flow-control" className="flex min-w-0 items-center gap-3">
+      <label
+        className={`flex shrink-0 items-center gap-1.5 text-xs ${
+          placing ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
+        } ${placeOn ? 'text-fg' : 'text-fg-dim'}`}
       >
-        <Pencil className="h-3 w-3 shrink-0" aria-hidden="true" />
-        <span className="truncate">{placeName}</span>
-      </button>
-      <Select
-        testid="cues-flow"
-        portal
-        bare
-        label={tr('editor.cues.flow')}
-        value={manual ? MANUAL_CUE_FLOW : shownFlow}
-        onChange={pickOption}
-        options={flowOptions.map((o) => ({ ...o, short: '' }))}
-      />
+        <button
+          type="button"
+          role="switch"
+          data-testid="cue-place-mode"
+          aria-checked={placeOn}
+          disabled={!placing}
+          onClick={() => setPlaceMode((on) => !on)}
+          className={`relative h-4 w-7 shrink-0 rounded-full outline-none transition-colors focus-visible:shadow-[inset_0_0_0_1px_var(--color-fg)] disabled:cursor-not-allowed ${
+            placeOn ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-line-strong)]'
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-[var(--color-fg)] transition-transform ${
+              placeOn ? 'translate-x-3' : ''
+            }`}
+          />
+        </button>
+        {tr('editor.cues.placeMode')}
+      </label>
+      <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
+        <Select
+          testid="cues-flow"
+          portal
+          bare
+          label={tr('editor.cues.flow')}
+          value={manual ? MANUAL_CUE_FLOW : shownFlow}
+          onChange={pickOption}
+          options={flowOptions}
+        />
+      </span>
     </span>
   )
   const foldedRow = (

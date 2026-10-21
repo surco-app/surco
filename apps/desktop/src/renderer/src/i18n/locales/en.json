@@ -827,6 +827,7 @@
       "addCall": "Add a CALL at the playhead",
       "manualMode": "Manual",
       "clearAll": "Clear all cues",
+      "placeMode": "Place",
       "placeHint": "Click to place",
       "applyTrack": "Apply to this track",
       "noFit": "This flow doesn't fit this track",

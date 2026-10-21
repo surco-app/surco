@@ -827,6 +827,7 @@
       "addCall": "Añadir un CALL en el cabezal",
       "manualMode": "Manual",
       "clearAll": "Borrar todas las cues",
+      "placeMode": "Colocar",
       "placeHint": "Haz clic para colocar",
       "applyTrack": "Aplicar a esta pista",
       "noFit": "Este flujo no cabe en esta pista",

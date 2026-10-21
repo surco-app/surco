@@ -827,6 +827,7 @@
       "addCall": "CALL am Abspielkopf setzen",
       "manualMode": "Manuell",
       "clearAll": "Alle Cues löschen",
+      "placeMode": "Setzen",
       "placeHint": "Zum Setzen klicken",
       "applyTrack": "Auf diesen Titel anwenden",
       "noFit": "Dieser Ablauf passt nicht zu diesem Titel",

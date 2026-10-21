@@ -103,7 +103,7 @@ const clickAt = (ms: number) =>
   fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
 const placeOn = () => {
   const toggle = screen.queryByTestId('cue-place-mode')
-  if (toggle && toggle.getAttribute('aria-pressed') === 'false' && !toggle.hasAttribute('disabled'))
+  if (toggle && toggle.getAttribute('aria-checked') === 'false' && !toggle.hasAttribute('disabled'))
     fireEvent.click(toggle)
 }
 const markAt = (ms: number) => {
