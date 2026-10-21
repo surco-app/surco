@@ -49,6 +49,7 @@ import {
   DEFAULT_ZOOM_BARS,
   detailWindow,
   jumpBeats,
+  wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
 import {
@@ -750,7 +751,7 @@ function Editing({
       </span>
       {toCall !== null && (
         <span data-testid="cue-detail-to-call" className="min-w-0 truncate text-fg-dim">
-          {tr('editor.cues.toCallShort', { count: Number(toCall.toFixed(1)) })}
+          {tr('editor.cues.toCallShort', { count: wholeBars(toCall) })}
         </span>
       )}
       {armed && rejectedSlot}

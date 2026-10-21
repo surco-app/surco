@@ -167,6 +167,9 @@ describe('CuesSection folded', () => {
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 96 })
     fireEvent.mouseUp(window, { clientX: 96 })
     expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^16 to CALL$/)
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 127.4 })
+    fireEvent.mouseUp(window, { clientX: 127.4 })
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^1 to CALL$/)
   })
 
   it('keeps Guardar in place, quiet with nothing to save and filled once there is', async () => {

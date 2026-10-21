@@ -53,6 +53,10 @@ export function barsToNextCall(beats: number[], points: number[], ms: number): n
   return Math.max(0, (beatPosition(beats, next) - beatPosition(beats, ms)) / BEATS_PER_BAR)
 }
 
+export function wholeBars(bars: number): number {
+  return Math.max(0, Math.ceil(bars - 1e-6))
+}
+
 export function zoomStep(bars: number, dir: 'in' | 'out'): number {
   const found = ZOOM_BARS.findIndex((z) => z === bars)
   const at = found === -1 ? ZOOM_BARS.findIndex((z) => z === DEFAULT_ZOOM_BARS) : found

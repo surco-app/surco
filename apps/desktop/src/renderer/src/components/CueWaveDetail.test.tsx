@@ -166,11 +166,15 @@ describe('CueWaveDetail', () => {
     )
   })
 
-  it('says one bar in the singular and keeps half a bar when the CALL sits off the bar', () => {
+  it('counts whole bars, rounding up off the grid so it reads 1 until the playhead is on the point and never 0 before it', () => {
     const { rerender } = setup({ points: [bar(33)] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('1 bar to the CALL')
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^1 bar to the CALL$/)
     rerender({ points: [bar(40) + 1000] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('8.5 bars to the CALL')
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^9 bars to the CALL$/)
+    rerender({ points: [bar(32) + 600] })
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^1 bar to the CALL$/)
+    rerender({ points: [bar(32)] })
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^0 bars to the CALL$/)
   })
 
   it('says nothing about a CALL when none lies ahead', () => {

@@ -23,6 +23,7 @@ import {
   detailWindow,
   snapToBeat,
   wheelZoom,
+  wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
 import { barLines, quantizePoints } from '../lib/cueWave'
@@ -366,7 +367,7 @@ export function CueWaveDetail({
               data-testid="cue-detail-to-call"
               className="absolute left-1/2 ml-2 whitespace-nowrap text-fg-dim"
             >
-              {t('editor.cues.toCall', { count: Number(toCall.toFixed(1)) })}
+              {t('editor.cues.toCall', { count: wholeBars(toCall) })}
             </span>
           )}
         </div>
