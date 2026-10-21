@@ -88,6 +88,9 @@
     <loc>https://getsurco.app/casos-de-uso/llevar-pistas-a-engine-dj</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/casos-de-uso/preparar-cues-de-rekordbox-con-tu-flujo</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/casos-de-uso/set-desde-playlist-apple-music</loc>
   </url>
   <url>
@@ -137,6 +140,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/en/use-cases/send-tracks-to-engine-dj</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/en/use-cases/set-up-rekordbox-cues-with-your-flow</loc>
   </url>
   <url>
     <loc>https://getsurco.app/en/use-cases/set-from-apple-music-playlist</loc>

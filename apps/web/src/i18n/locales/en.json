@@ -2283,6 +2283,56 @@
         ]
       },
       {
+        "id": "rekordbox-cues",
+        "slug": "set-up-rekordbox-cues-with-your-flow",
+        "group": "library",
+        "title": "Set up your tracks' cues with your own flow",
+        "body": [
+          "You prepare your rekordbox tracks the same way every time, with cues counted from where the track drops. You want to mark that point with one click and have Surco place the rest.",
+          "This is how one DJ does it with their flow, but the point can be whatever you like and you build the flow your own way. It works on Mac and Windows."
+        ],
+        "keywords": "hot cues call memory drop breakdown subidón mix in bars",
+        "settings": [
+          {
+            "tab": "Cues",
+            "section": "New flow",
+            "setting": "Mark the point with a CALL",
+            "note": "Give your flow a name, say Subidón. Its rule already counts back from the point every 16 bars and places hot cue + CALL. Change “Once” to “3 times” and pick “a colour per repeat” with blue, green and red. This box, ticked by default, adds the CALL at the point."
+          },
+          {
+            "tab": "Cues",
+            "setting": "Letters in track order",
+            "note": "That's the default. A is always the first cue in the track. Turn it off if each letter is a fixed pad for you."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Open your rekordbox playlist",
+            "text": "It's in Surco's sidebar, with your collection's folders. Pick a track and go to the Cues section."
+          },
+          {
+            "title": "Pick your flow",
+            "text": "In the section's “Flow” menu, say Subidón. It stays picked for the next tracks."
+          },
+          {
+            "title": "Click where the track drops",
+            "text": "Hovering over the waveform shows a see-through preview of what the flow would place. On click, Surco counts back from that point and places a red hot cue at 48 bars, a green one at 32 and a blue one at 16, each with its own CALL, plus a CALL at the point."
+          },
+          {
+            "title": "Click “Save to rekordbox”",
+            "text": "With rekordbox closed, it saves right away. If it's open, Surco waits and saves when you close it. Then move on to the next track."
+          }
+        ],
+        "points": [
+          "Surco doesn't find where the track drops on its own. You mark that point with the click.",
+          "Only on tracks rekordbox has already analyzed. If the analysis is missing, Surco tells you.",
+          "rekordbox takes at most 8 hot cues, A to H. If one doesn't fit, Surco tells you.",
+          "If one cue is enough, two flows come ready-made. Mix in 64 places a hot cue 16 bars before the point and Mix in 32, 8 bars before.",
+          "The cues are saved to your rekordbox collection, not to the file. Before Surco writes to it, make your own backup of the library from rekordbox. Surco makes one too."
+        ],
+        "related": []
+      },
+      {
         "id": "music-playlist-set",
         "slug": "set-from-apple-music-playlist",
         "group": "go",

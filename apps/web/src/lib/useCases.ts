@@ -29,6 +29,7 @@ export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'watched-folder': ['folder'],
   loudness: ['folder'],
   'engine-dj': ['engineDj'],
+  'rekordbox-cues': ['rekordbox'],
   'music-playlist-set': ['appleMusic', 'usb'],
   nas: ['nas'],
 }

@@ -133,6 +133,15 @@ describe('finding a use case', () => {
     expect(found(es, '', 'engineDj')).toContain('replace')
   })
 
+  // A rekordbox DJ preparing a set looks for "hot cues" or "drop", with rekordbox picked as
+  // where the music lives. The cue recipe only helps if it shows up for both.
+  it('finds the cue recipe the way a rekordbox DJ looks for it', () => {
+    expect(found(es, 'hot cues', 'rekordbox')).toEqual(['rekordbox-cues'])
+    expect(found(en, 'hot cues', 'rekordbox')).toEqual(['rekordbox-cues'])
+    expect(found(es, 'drop')).toEqual(['rekordbox-cues'])
+    expect(found(en, 'drop')).toEqual(['rekordbox-cues'])
+  })
+
   // A recipe with no source is invisible as soon as the reader picks one, and a source
   // with no recipe is a filter that always answers "nothing here".
   it('gives every case a source and every source a case', () => {
