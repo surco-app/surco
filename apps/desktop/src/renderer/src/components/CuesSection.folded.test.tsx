@@ -239,6 +239,18 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
+  it('lets Descartar cambios give way before Marcar aquí and Guardar in a narrow panel, since the app showed Guardar cut off at the edge', async () => {
+    setup()
+    await ready()
+    seekStrip(128)
+    fireEvent.click(markHere())
+    const discard = screen.getByTestId('cues-undo')
+    expect(discard.className).toContain('min-w-0')
+    expect(discard.className).toContain('truncate')
+    for (const id of ['cues-mark-here', 'cues-save'])
+      expect(screen.getByTestId(id).className).toContain('shrink-0')
+  })
+
   it('keeps Marcar aquí in place but disabled where the flow is already marked, saying so, since a dead button with no reason reads as broken', async () => {
     setup()
     await ready()

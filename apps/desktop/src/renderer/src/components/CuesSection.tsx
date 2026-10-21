@@ -590,7 +590,7 @@ function Editing({
       type="button"
       data-testid="cues-undo"
       onClick={onDiscard}
-      className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+      className="press min-w-0 truncate whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
     >
       {tr('editor.cues.discard')}
     </button>
