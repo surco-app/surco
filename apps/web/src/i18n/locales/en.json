@@ -271,7 +271,7 @@
           },
           {
             "t": "rekordbox cues",
-            "d": "Hot cues A to H and CALLs, on the waveform. Build flows from blocks, or let Surco learn yours from your collection, and one click places what the flow asks for and tells you what doesn't fit. Written with rekordbox closed, after a backup."
+            "d": "Hot cues A to H and CALLs, on the waveform. Build flows from blocks, or let Surco learn yours from your collection, and one click places what the flow asks for and tells you what doesn't fit. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written with rekordbox closed, after a backup."
           },
           {
             "t": "Files for rekordbox, Serato, M3U8",
@@ -1114,7 +1114,7 @@
     "cues": {
       "step": "and in rekordbox · cued",
       "title": "Your rekordbox cues, in one click.",
-      "lede": "Open your rekordbox playlists in Surco. Pick a flow, move the cursor over the waveform and see the hot cues and CALLs it would set, see-through. One click and they're in. Surco writes them to rekordbox while the app is closed, after making a backup.",
+      "lede": "Open your rekordbox playlists in Surco. Pick a flow, move the cursor over the waveform and see the hot cues and CALLs it would set, see-through. One click and they're in. The letters follow the track, so A is always the first one. Surco writes them to rekordbox while the app is closed, after making a backup.",
       "example": "Say a DJ marks the point where the track drops with a CALL, and their flow sets, counting back, a red hot cue at 48 bars, a green one at 32 and a blue one at 16, each with its own CALL. The point can be whatever you like.",
       "unsaved": "Not saved",
       "flow": "Flow",

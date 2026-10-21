@@ -271,7 +271,7 @@
           },
           {
             "t": "Cues de rekordbox",
-            "d": "Hot cues de la A a la H y CALL, sobre la onda. Te montas flujos por bloques, o Surco aprende el tuyo de tu colección, y un clic coloca lo que pide el flujo y te dice lo que no cabe. Se escriben con rekordbox cerrado y con copia de seguridad antes."
+            "d": "Hot cues de la A a la H y CALL, sobre la onda. Creas flujos por bloques, o Surco aprende el tuyo de tu colección, y un clic coloca lo que pide el flujo y te dice lo que no cabe. Las letras siguen el orden de la pista, y si usas cada letra como un pad fijo, lo apagas en Ajustes. Se escriben con rekordbox cerrado y con copia de seguridad antes."
           },
           {
             "t": "Ficheros para rekordbox, Serato y M3U8",
@@ -1114,7 +1114,7 @@
     "cues": {
       "step": "y en rekordbox · se marca",
       "title": "Tus cues de rekordbox, de un clic.",
-      "lede": "Abre tus playlists de rekordbox en Surco. Eliges un flujo, pasas el cursor por la onda y ves en transparente las hot cues y los CALL que pondría. Un clic y quedan puestas. Surco las escribe en rekordbox con la app cerrada, después de hacer una copia de seguridad.",
+      "lede": "Abre tus playlists de rekordbox en Surco. Eliges un flujo, pasas el cursor por la onda y ves en transparente las hot cues y los CALL que pondría. Un clic y quedan puestas. Las letras siguen el orden de la pista, así que la A siempre es la primera. Surco las escribe en rekordbox con la app cerrada, después de hacer una copia de seguridad.",
       "example": "Por ejemplo, un DJ marca con un CALL el punto donde rompe la pista y su flujo pone, hacia atrás, una hot cue roja a 48 compases, una verde a 32 y una azul a 16, cada una con su CALL. El punto puede ser el que quieras.",
       "unsaved": "Sin guardar",
       "flow": "Flujo",
