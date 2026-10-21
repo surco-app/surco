@@ -39,6 +39,8 @@ Vicent, 20/10, aprobando las propuestas del recorrido (`.superpowers/sdd/2026-10
 17. Vicent, 20/10: "N compases al CALL" cuenta hasta el siguiente punto, no hasta el CALL de una hot cue ni un bucle.
 18. Vicent, 20/10: la tira general lleva una escala abajo con una muesca cada 32 golpes (8 compases, una frase de rekordbox), algo más marcada cada 128 golpes, en lugar de la muesca cada 16 compases de `2026-10-20-editor-cues-calma-design.md`. A la izquierda de la onda ampliada, fuera de ella, van los botones de acercar, restablecer y alejar, como en rekordbox, siempre visibles y desactivados en los extremos.
 
+19. Vicent, 20/10: el único flujo que trae Surco se llama "Entrada" y pone una hot cue 64 compases antes del punto, con el CALL en el punto y el color de siempre. Sustituye a "Una cue a 32". Una copia guardada de "Una cue a 32" sin tocar pasa a ser "Entrada", también si era la elegida; si el DJ la cambió o le puso nombre, se queda como flujo suyo. "Subidón" es el nombre que Vicent dio a su flujo propio y no se toca.
+
 ## Fuera de alcance
 
 - La detección automática (se hace después sobre este mismo mecanismo).
@@ -46,6 +48,6 @@ Vicent, 20/10, aprobando las propuestas del recorrido (`.superpowers/sdd/2026-10
 ## Cómo sabremos que está
 
 - Con Mi flujo, al pasar el cursor se ven el CALL y las hot cues con sus CALL en fantasma, y un clic los coloca exactamente donde se veían.
-- Con "Una cue a 32" solo se ve y coloca ese CALL y esa hot cue.
+- Con "Entrada" solo se ve y coloca ese CALL y esa hot cue.
 - Con Manual no aparece ningún fantasma de flujo.
 - Cambiar de flujo en una pista marcada no cambia nada hasta "Aplicar a esta pista".
