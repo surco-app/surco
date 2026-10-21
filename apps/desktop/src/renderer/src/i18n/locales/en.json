@@ -768,7 +768,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Pick a flow, bring the playhead to the point and press Mark here, or pick Manual and set each cue by hand. Select a cue to move it, delete it or change its colour.",
+      "help": "Pick a flow and click the zoomed waveform where you want the point, or press Return to place it at the playhead. You can also pick Manual and set each cue by hand. Select a cue to move it, delete it or change its colour.",
       "unanalysed": "rekordbox has not analysed this track yet",
       "tooMany": "It would need more than 8 hot cues. Remove a point.",
       "save": "Save to rekordbox",

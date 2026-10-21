@@ -768,7 +768,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Choisissez un flux, amenez la tête de lecture au point et appuyez sur Marquer ici, ou choisissez Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
+      "help": "Choisissez un flux et cliquez sur la forme d’onde agrandie là où vous voulez le point, ou appuyez sur Entrée pour le placer à la tête de lecture. Vous pouvez aussi choisir Manuel et placez chaque cue à la main. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
       "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
       "tooMany": "Il faudrait plus de 8 hot cues. Retirez un point.",
       "save": "Enregistrer dans rekordbox",

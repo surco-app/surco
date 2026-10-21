@@ -768,7 +768,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Wähle einen Ablauf, bring den Abspielkopf zum Punkt und drück Hier markieren, oder wähle Manuell und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
+      "help": "Wähle einen Ablauf und klick in der vergrößerten Wellenform dorthin, wo der Punkt hin soll, oder drück Return, um ihn am Abspielkopf zu setzen. Du kannst auch Manuell wählen und setze jedes Cue von Hand. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
       "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
       "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Punkt.",
       "save": "In rekordbox speichern",

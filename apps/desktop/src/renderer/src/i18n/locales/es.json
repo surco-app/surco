@@ -768,7 +768,7 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Elige un flujo, lleva el cabezal al punto y pulsa Marcar aquí, o elige Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle el color.",
+      "help": "Elige un flujo y haz clic en la onda ampliada donde quieras el punto, o pulsa Intro para ponerlo en el cabezal. También puedes elegir Manual y pon cada cue a mano. Selecciona una cue para moverla, borrarla o cambiarle el color.",
       "unanalysed": "rekordbox aún no ha analizado esta pista",
       "tooMany": "Necesitaría más de 8 hot cues. Quita un punto.",
       "save": "Guardar en rekordbox",
