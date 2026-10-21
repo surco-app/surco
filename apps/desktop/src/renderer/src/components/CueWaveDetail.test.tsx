@@ -88,7 +88,10 @@ describe('CueWaveDetail', () => {
     expect(screen.queryAllByTestId('cue-detail-beat')).toHaveLength(0)
   })
 
-  it('marks bars 1, 5, 9 and so on with a stronger ink line and no red cap, since red belongs to CALLs only, counted from the grid and not from the window', () => {
+  it('tints bars 1, 5, 9 and so on as a red line like rekordbox, counted from the grid and not from the window, with nothing that reads as a CALL triangle', () => {
+    const probe = document.createElement('i')
+    probe.style.color = MEMORY_CUE_COLOR
+    const red = probe.style.color
     for (const compact of [false, true]) {
       const view = setup({ playheadMs: bar(33), compact })
       const lines = screen.getAllByTestId('cue-detail-bar')
@@ -97,15 +100,20 @@ describe('CueWaveDetail', () => {
       const phrases = lines.filter((l) => l.dataset.phrase === 'true')
       expect(phrases.length).toBeGreaterThan(0)
       for (const line of phrases) {
-        expect(within(line).queryAllByTestId('cue-detail-cap')).toHaveLength(0)
-        expect(line.className).toContain(
-          compact ? 'bg-[var(--color-fg-dim)]/30' : 'bg-[var(--color-fg-dim)]/60',
-        )
+        expect(line.style.backgroundColor).toBe(red)
+        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.45)
+        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.55)
+        expect(line.style.width).toBe('2px')
+        expect(line.childElementCount).toBe(0)
       }
-      expect(view.container.innerHTML).not.toContain(MEMORY_CUE_COLOR)
-      const probe = document.createElement('i')
-      probe.style.borderTopColor = MEMORY_CUE_COLOR
-      expect(view.container.innerHTML).not.toContain(probe.style.borderTopColor)
+      for (const line of lines.filter((l) => l.dataset.phrase !== 'true'))
+        expect(line.style.backgroundColor).toBe('')
+      const tinted = [...view.container.querySelectorAll<HTMLElement>('*')].filter((el) =>
+        [el.style.backgroundColor, el.style.borderTopColor, el.style.borderBottomColor].includes(
+          red,
+        ),
+      )
+      expect(tinted).toEqual(phrases)
       view.unmount()
     }
   })

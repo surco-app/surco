@@ -33,6 +33,7 @@ const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const DRAG_PX = 3
+const PHRASE_LINE_OPACITY = 0.5
 const ZOOM_BUTTON =
   'press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg disabled:pointer-events-none disabled:opacity-40'
 const CAPS = [
@@ -417,15 +418,24 @@ export function CueWaveDetail({
                 data-bar={b.bar}
                 data-phrase={b.phrase ? 'true' : 'false'}
                 aria-hidden="true"
-                style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-                className={`absolute bottom-0 w-px ${
+                style={{
+                  left: pct(b.ms),
+                  top: `${WAVE_MARK_LANE_PX}px`,
+                  ...(b.phrase
+                    ? {
+                        width: '2px',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: MEMORY_CUE_COLOR,
+                        opacity: PHRASE_LINE_OPACITY,
+                      }
+                    : {}),
+                }}
+                className={`absolute bottom-0 ${
                   b.phrase
-                    ? compact
-                      ? 'bg-[var(--color-fg-dim)]/30'
-                      : 'bg-[var(--color-fg-dim)]/60'
+                    ? ''
                     : compact
-                      ? 'bg-[var(--color-fg-dim)]/15'
-                      : 'bg-[var(--color-fg-dim)]/35'
+                      ? 'w-px bg-[var(--color-fg-dim)]/15'
+                      : 'w-px bg-[var(--color-fg-dim)]/35'
                 }`}
               >
                 {!compact &&
