@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
@@ -12,15 +12,22 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
-vi.mock('./CueWaveDetail', () => ({
-  CueWaveDetail: ({ onPlace }: { onPlace?: (ms: number) => void }) => (
-    <button type="button" data-testid="add-same" onClick={() => onPlace?.(128000)} />
-  ),
-  CueZoom: () => null,
-}))
-
 afterEach(cleanup)
 afterEach(resetEditorSections)
+
+beforeEach(() => {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 400,
+    height: 80,
+    right: 400,
+    bottom: 80,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  })
+})
 
 const READ: TrackCues = {
   contentId: '103',
@@ -53,9 +60,10 @@ describe('CuesSection drops', () => {
       </QueryClientProvider>,
     )
     await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
-    fireEvent.click(screen.getByTestId('section-maximize'))
-    fireEvent.click(screen.getByTestId('add-same'))
-    fireEvent.click(screen.getByTestId('add-same'))
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    fireEvent.mouseUp(window, { clientX: 128 })
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
     fireEvent.click(screen.getByTestId('cues-save'))
     const [req] = saveRekordboxCues.mock.calls[0]
     expect(req.wanted.filter((c) => c.ms === 128000 && c.kind === 0)).toHaveLength(1)

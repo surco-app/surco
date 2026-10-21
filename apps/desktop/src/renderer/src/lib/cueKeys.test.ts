@@ -64,8 +64,12 @@ describe('cueKeyAction', () => {
     expect(press('Backspace', { metaKey: true, shiftKey: true })).toBeNull()
   })
 
-  it('lets Escape, Tab, Enter and every command chord but undo through', () => {
-    for (const key of ['Escape', 'Tab', 'Enter', 'F10']) expect(press(key)).toBeNull()
+  it('marks the point at the playhead with Enter, as the Marcar aquí button does', () => {
+    expect(press('Enter')).toEqual({ type: 'mark' })
+  })
+
+  it('lets Escape, Tab and every command chord but undo through', () => {
+    for (const key of ['Escape', 'Tab', 'F10']) expect(press(key)).toBeNull()
     expect(press('k', { metaKey: true })).toBeNull()
     expect(press(',', { metaKey: true })).toBeNull()
     expect(press('z', { metaKey: true, shiftKey: true })).toBeNull()

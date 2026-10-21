@@ -38,6 +38,7 @@ export function CueDeck({
   onJumpBars,
   onQuantize,
   onDone,
+  mark,
 }: {
   cues: DeckCue[]
   selected: string | null
@@ -56,6 +57,7 @@ export function CueDeck({
   onJumpBars: (bars: CueJumpBars) => void
   onQuantize: (unit: CueQuantize) => void
   onDone?: () => void
+  mark?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [colouring, setColouring] = useState<string | null>(null)
@@ -99,6 +101,7 @@ export function CueDeck({
           />
         )}
       </button>
+      {mark}
       <div className="flex items-center gap-1.5">
         {HOT_KINDS.map((kind) => {
           const cue = cues.find((c) => c.kind === kind)

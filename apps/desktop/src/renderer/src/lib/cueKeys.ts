@@ -6,6 +6,7 @@ export type CueKey =
   | { type: 'beat'; dir: 1 | -1 }
   | { type: 'centre' }
   | { type: 'memory' }
+  | { type: 'mark' }
   | { type: 'hot'; kind: number }
   | { type: 'remove' }
   | { type: 'undo' }
@@ -40,6 +41,7 @@ export function cueKeyAction(e: {
     return e.shiftKey ? { type: 'beat', dir } : { type: 'jump', dir }
   }
   if (e.key === 'Backspace' || e.key === 'Delete') return { type: 'remove' }
+  if (e.key === 'Enter') return { type: 'mark' }
   if (e.key === '+' || e.key === '=') return { type: 'zoom', dir: 'in' }
   if (e.key === '-') return { type: 'zoom', dir: 'out' }
   const lower = e.key.toLowerCase()

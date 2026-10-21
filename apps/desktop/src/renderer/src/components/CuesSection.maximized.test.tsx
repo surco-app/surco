@@ -207,8 +207,6 @@ describe('CuesSection maximized', () => {
   it('moves the playhead to the beat with a click on the overview with a flow chosen and places nothing, so the strip always navigates', async () => {
     setup()
     await maximize()
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 128 })
-    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128.3 })
     fireEvent.mouseUp(window, { clientX: 128.3 })
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128.3 })
@@ -807,51 +805,36 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
   })
 
-  it('places the flow with a click on the zoomed wave without moving the playhead', async () => {
+  it('moves the playhead to the beat with a click on the zoomed wave and places nothing', async () => {
     setup()
     await maximize()
     seek(128000)
-    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
-    fireEvent.mouseUp(window, { clientX: 200 })
-    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
-    expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    expect(position()).toBe('2:08.0')
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 300 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+    expect(position()).toBe('2:16.0')
   })
 
-  it('draws the flow under the cursor on the zoomed wave and on the strip, and a click places it', async () => {
+  it('draws the flow at the playhead on the zoomed wave and on the strip, and Marcar aquí places it', async () => {
     setup()
     await maximize()
     seek(128000)
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
-    expect(screen.getByTestId('cue-detail-cursor')).toBeInTheDocument()
     expect(screen.getByTestId('cue-detail-ghost-call-128000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-ghost-hot-C')).toBeInTheDocument()
-    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
-    fireEvent.mouseUp(window, { clientX: 200 })
+    fireEvent.click(screen.getByTestId('cues-mark-here'))
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
   })
 
-  it('draws the cursor line on the strip too while the cursor is over the zoomed wave, where the ghost is drawn', async () => {
+  it('moves the ghost with the playhead while the strip is dragged, so it always shows what Marcar aquí would place', async () => {
     setup()
     await maximize()
-    seek(128000)
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
-    expect(screen.getByTestId('cue-wave-cursor').style.left).toBe('32%')
-    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
-    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
-  })
-
-  it('drops the flow under the cursor once a press on the strip turns into moving the playhead, so no stale cues hang over the scrub', async () => {
-    setup()
-    await maximize()
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 128 })
-    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
     fireEvent.mouseMove(window, { clientX: 200 })
-    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
-    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-ghost-call-128000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-ghost-call-200000')).toBeInTheDocument()
     fireEvent.mouseUp(window, { clientX: 200 })
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
   })
@@ -1263,11 +1246,33 @@ describe('CuesSection maximized over the rest of the editor', () => {
   })
 })
 
-describe('CuesSection maximized point corrections', () => {
-  const placeAtPlayhead = () => {
+describe('CuesSection maximized Marcar aquí', () => {
+  it('never places with a click on the zoomed wave or the strip, and marks at the playhead with Marcar aquí in the deck or Enter', async () => {
+    setup()
+    await maximize()
+    seek(128000)
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
     fireEvent.mouseUp(window, { clientX: 200 })
-  }
+    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128 })
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+    expect(screen.getByTestId('cues-deck')).toContainElement(screen.getByTestId('cues-mark-here'))
+    expect(screen.getByTestId('cue-detail-ghost-call-128000')).toBeInTheDocument()
+    editor().focus()
+    key('Enter')
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-mark-here')).toBeDisabled()
+  })
+
+  it('leaves only the deck’s own + CALL in Manual, with no second button', async () => {
+    setup({ activeCueFlow: 'manual' })
+    await maximize()
+    expect(screen.queryByTestId('cues-mark-here')).toBeNull()
+    expect(screen.getByTestId('cues-memory')).toBeInTheDocument()
+  })
+})
+
+describe('CuesSection maximized point corrections', () => {
+  const placeAtPlayhead = () => fireEvent.click(screen.getByTestId('cues-mark-here'))
   const marks = () =>
     screen
       .queryAllByTestId(/^cue-wave-(hot|call)-/)
@@ -1341,18 +1346,18 @@ describe('CuesSection maximized point corrections', () => {
     expect(marks()).toEqual(placed)
   })
 
-  it('hides the placing hint and the flow ghost while a point’s CALL is dragged, and brings the hint back after', async () => {
+  it('hides the flow ghost while a point’s CALL is dragged and brings it back after', async () => {
     setup()
     await maximize()
     seek(128000)
     placeAtPlayhead()
-    fireEvent.mouseDown(screen.getByTestId('cue-detail-call-128000'), { button: 0, clientX: 200 })
-    fireEvent.mouseMove(window, { clientX: 300 })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
-    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
+    seek(120000)
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/).length).toBeGreaterThan(0)
+    fireEvent.mouseDown(screen.getByTestId('cue-detail-call-128000'), { button: 0, clientX: 300 })
+    fireEvent.mouseMove(window, { clientX: 350 })
     expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
-    fireEvent.mouseUp(window, { clientX: 300 })
-    expect(screen.getByTestId('cues-place-hint')).toBeInTheDocument()
+    fireEvent.mouseUp(window, { clientX: 350 })
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/).length).toBeGreaterThan(0)
   })
 
   it('moves only the playhead when a drag on the strip starts on a mark, since the strip only navigates', async () => {

@@ -101,17 +101,15 @@ function setup(
 
 const clickAt = (ms: number) =>
   fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
-const placeOn = () => {
-  const toggle = screen.queryByTestId('cue-place-mode')
-  if (toggle && toggle.getAttribute('aria-checked') === 'false' && !toggle.hasAttribute('disabled'))
-    fireEvent.click(toggle)
-}
-const markAt = (ms: number) => {
+const playheadAt = (ms: number) => {
   fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 })
   fireEvent.mouseUp(window, { clientX: ms / 1000 })
-  placeOn()
-  fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
-  fireEvent.mouseUp(window, { clientX: 200 })
+}
+const markAt = (ms: number) => {
+  playheadAt(ms)
+  const mark = screen.queryByTestId('cues-mark-here')
+  if (mark) fireEvent.click(mark)
+  else fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
 }
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))
@@ -563,14 +561,12 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: Manual')
   })
 
-  it('says Haz clic para colocar only in full screen, where a click always places with the flow', async () => {
+  it('says no click hint in full screen either, where Marcar aquí places the flow at the playhead', async () => {
     setup()
     await ready()
-    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
     await openFull()
+    expect(screen.queryByTestId('cues-place-hint')).toBeNull()
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
-    expect(screen.getByTestId('cues-place-hint')).toHaveTextContent('Click to place')
-    expect(screen.queryByTestId('cues-apply-flow')).toBeNull()
     markAt(bar(64))
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
@@ -708,10 +704,7 @@ describe('CuesSection', () => {
       .queryAllByTestId(re)
       .map((el) => `${el.dataset.testid?.replace('ghost-', '')} ${el.style.left}`)
       .sort()
-  const hoverAt = (ms: number) => {
-    placeOn()
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 40 })
-  }
+  const hoverAt = playheadAt
 
   it('draws on hover what a click would place with Mi flujo, see-through, and the click places exactly that', async () => {
     setup()
@@ -737,7 +730,7 @@ describe('CuesSection', () => {
     ).toEqual([`cue-wave-ghost-call-${bar(64)}`, 'cue-wave-ghost-hot-A'])
   })
 
-  it('draws dimmed and dashed what the flow drops at the hovered point and says why, so a lone hot cue is no mystery', async () => {
+  it('draws dimmed and dashed what the flow drops with the point at the playhead and counts it, so a lone hot cue is no mystery', async () => {
     setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
     await ready()
     hoverAt(bar(64))
@@ -747,20 +740,18 @@ describe('CuesSection', () => {
         opacity: '0.3',
       })
     expect(screen.getByTestId('cues-rejected')).toHaveTextContent(/^2 don't fit$/)
-    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
+    hoverAt(bar(200))
     expect(screen.queryByTestId('cues-rejected')).toBeNull()
     expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(0)
     await openFull()
-    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: bar(40) / 1000 })
-    fireEvent.mouseUp(window, { clientX: bar(40) / 1000 })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+    hoverAt(bar(40))
     expect(screen.getByTestId('cues-rejected')).toHaveTextContent(/^1 doesn't fit$/)
   })
 
   it('counts what does not fit in one short line that keeps its place, shown or not, so nothing below it moves', async () => {
     setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
     await ready()
-    placeOn()
+    hoverAt(bar(200))
     const slot = screen.getByTestId('cues-rejected-slot')
     expect(slot.className).toContain('whitespace-nowrap')
     expect(slot).toHaveTextContent('')
@@ -768,31 +759,15 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-rejected-slot')).toBe(slot)
     expect(slot).toContainElement(screen.getByTestId('cues-rejected'))
     expect(screen.getByTestId('cues-rejected').className).toContain('truncate')
-    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
+    hoverAt(bar(200))
     expect(screen.getByTestId('cues-rejected-slot')).toBe(slot)
   })
 
-  it('says what does not fit only while the cursor is over the wave, not all the time on a track that could take the flow', async () => {
-    setup({
-      ...READ,
-      strong: [{ start: bar(30), end: bar(40) }],
-      cues: [bar(64), bar(160)].map((ms, i) => ({ id: `d${i}`, ms, kind: 0, color: null })),
-    })
-    await ready()
-    expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
-    expect(screen.queryByTestId('cues-rejected')).toBeNull()
-    hoverAt(bar(66))
-    expect(screen.getByTestId('cues-rejected')).toBeInTheDocument()
-    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
-    expect(screen.queryByTestId('cues-rejected')).toBeNull()
-  })
-
-  it('draws what another flow would drop when it is chosen on a marked track, with the reason', async () => {
+  it('says why another flow chosen on a marked track does not fit', async () => {
     setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
     await ready()
     markAt(bar(64))
     chooseFlow('one-at-32')
-    expect(screen.getByTestId(`cue-wave-ghost-dropped-${bar(32)}`)).toBeInTheDocument()
     expect(screen.getByTestId('cues-no-fit')).toHaveTextContent(
       "Doesn't fit this track, it falls in the strong part",
     )
@@ -833,25 +808,22 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
-  it('dims what another flow would take away and draws what it would add, changing nothing until Aplicar a esta pista', async () => {
+  it('changes nothing when another flow is chosen on a marked track until Aplicar a esta pista, the ghost staying at the playhead', async () => {
     setup()
     await ready()
     markAt(bar(64))
     chooseFlow('one-at-32')
-    expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-gone', 'true')
-    expect(screen.getByTestId('cue-wave-ghost-hot-A')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-gone', 'false')
     expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-pending', 'true')
     fireEvent.click(screen.getByTestId('cues-apply-track'))
-    expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
     expect(screen.queryByTestId('cue-wave-hot-C')).toBeNull()
   })
 
-  it('dims the CALL the first flow paired with a hot cue the new flow keeps, and Aplicar a esta pista leaves what a fresh placement would', async () => {
+  it('leaves with Aplicar a esta pista what a fresh placement of the other flow would', async () => {
     setup()
     await ready()
     markAt(bar(64))
     chooseFlow('one-at-32')
-    expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toHaveAttribute('data-gone', 'true')
     fireEvent.click(screen.getByTestId('cues-apply-track'))
     expect(
       screen
@@ -879,18 +851,6 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-apply-track')).toBeInTheDocument()
   })
 
-  it('brings the flow switch back once the cursor leaves the strip, after the hover drew its own', async () => {
-    setup()
-    await ready()
-    markAt(bar(64))
-    chooseFlow('one-at-32')
-    hoverAt(bar(160))
-    expect(screen.getByTestId(`cue-wave-ghost-call-${bar(160)}`)).toBeInTheDocument()
-    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
-    expect(screen.queryByTestId(`cue-wave-ghost-call-${bar(160)}`)).toBeNull()
-    expect(screen.getByTestId('cue-wave-hot-C')).toHaveAttribute('data-gone', 'true')
-  })
-
   it('explains only what a selected cue still lets the user do, since its letter is no longer changed here', async () => {
     setup()
     await ready()
@@ -899,7 +859,7 @@ describe('CuesSection', () => {
     )
   })
 
-  it('forgets the hovered point when Settings switches to Manual under the cursor, so switching back draws no old flow', async () => {
+  it('draws no ghost in Manual and draws it again at the playhead once a flow is chosen', async () => {
     const { changeSettings } = setup()
     await ready()
     hoverAt(bar(64))
@@ -908,7 +868,7 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
     expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
     changeSettings({ activeCueFlow: 'mine' })
-    expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-/).length).toBeGreaterThan(0)
   })
 
   it('draws the whole result of a flow that does not depend on the point as soon as it is chosen', async () => {

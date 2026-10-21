@@ -284,29 +284,15 @@ function Editing({
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : DEFAULT_CUE_FLOW_ID
   const shown = flows.find((f) => f.id === shownFlow) ?? MIX_IN
   const placing = !manual && followsPoint(shown)
-  const [placeMode, setPlaceMode] = useState(false)
-  const armed = placing && (maximized || placeMode)
-  useEffect(() => {
-    if (!placeMode) return
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return
-      e.preventDefault()
-      setPlaceMode(false)
-    }
-    document.addEventListener('keydown', onEscape)
-    return () => document.removeEventListener('keydown', onEscape)
-  }, [placeMode])
   const pickMode = (id: string) => {
     setChosen(id)
     if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })
-    if (!maximized) setPlaceMode(id !== MANUAL_CUE_FLOW)
     onFlow?.(id)
   }
   const pickOption = (id: string) => {
     if (id === CLEAR_CUES) dispatch({ type: 'clear' })
     else pickMode(id)
   }
-  const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const removeOf = (key: string): DraftAction =>
     manual ? { type: 'remove', key } : { type: 'remove-point', key }
   const moveOf = (key: string, ms: number): DraftAction =>
@@ -337,20 +323,21 @@ function Editing({
     reallyGone.some((c) => c.kind !== 0)
   const canApply =
     switchGhost !== null && !noFit && (reallyAdded.length > 0 || reallyGone.length > 0)
-  const [hoverMs, setHoverMs] = useState<number | null>(null)
-  useEffect(() => {
-    if (!armed) setHoverMs(null)
-  }, [armed])
-  const hoverGhost = useMemo<DraftGhost | null>(
-    () =>
-      armed && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
-    [armed, hoverMs, state, ctx],
+  const playheadGhost = useMemo<DraftGhost | null>(
+    () => (placing ? ghostOf(state, { type: 'mark-drop', ms: playheadMs }, ctx) : null),
+    [placing, playheadMs, state, ctx],
   )
   const [pointDrag, setPointDrag] = useState(false)
   const ghost = pointDrag
     ? undefined
-    : (hoverGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
-  const rejectedCount = pointDrag ? 0 : (hoverGhost?.rejected.length ?? 0)
+    : (playheadGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
+  const rejectedCount = pointDrag ? 0 : (playheadGhost?.rejected.length ?? 0)
+  const canMark = playheadGhost !== null && playheadGhost.added.length > 0
+  const markWhy = playheadGhost?.rejected[0]?.reason
+  const markHere = () => {
+    if (manual) dispatch({ type: 'add-call', ms: playheadMs })
+    else if (canMark) dispatch({ type: 'mark-drop', ms: playheadMs })
+  }
   const noFitReason = noFit && switchGhost !== null ? switchGhost.rejected[0]?.reason : undefined
   const noFitText =
     noFitReason === undefined
@@ -483,6 +470,7 @@ function Editing({
     else if (key.type === 'beat') seekTo(jumpBeats(ctx.beats, playheadMs, key.dir))
     else if (key.type === 'centre') seekTo(ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)])
     else if (key.type === 'memory') dispatch({ type: 'add-call', ms: playheadMs })
+    else if (key.type === 'mark' && !manual) markHere()
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch(removeOf(selected.key))
     else if (key.type === 'undo') dispatch({ type: 'undo' })
@@ -498,7 +486,11 @@ function Editing({
       run(key)
       return
     }
-    if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
+    const pressed = e.target as HTMLElement
+    if (e.key === 'Enter' && !isTypingTarget(pressed) && !pressed.closest('button')) {
+      e.preventDefault()
+      markHere()
+    } else if ((e.key === 'Backspace' || e.key === 'Delete') && selected) {
       e.preventDefault()
       dispatch(removeOf(selected.key))
     } else if (e.key === 'z' && (e.metaKey || e.ctrlKey)) {
@@ -616,11 +608,6 @@ function Editing({
         options={flowOptions}
       />
       {canApply && applyButton}
-      {placing && maximized && !pointDrag && (
-        <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
-          {tr('editor.cues.placeHint')}
-        </span>
-      )}
       {placing && rejectedSlot}
       <span className="flex-1" />
       {discardButton}
@@ -645,8 +632,6 @@ function Editing({
       cues={waveCues}
       selected={state.selected}
       trimmed={state.trimmed}
-      onHover={armed ? setHoverMs : undefined}
-      hoverMs={armed ? hoverMs : null}
       ghost={ghost}
       onSelect={(key) => dispatch({ type: 'select', key })}
       onMenu={maximized ? setMenu : undefined}
@@ -669,8 +654,6 @@ function Editing({
       onScrub={seekTo}
       onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
       onZoomReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-      onPlace={armed ? place : undefined}
-      onHover={armed ? setHoverMs : undefined}
       ghost={ghost}
       onMarkMenu={openMarkMenu}
       onDeleteMark={(key) => dispatch(removeOf(key))}
@@ -684,50 +667,37 @@ function Editing({
       onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
       onMarkDrag={setPointDrag}
       compact={!maximized}
-      onSeekClick={maximized ? undefined : seekTo}
+      onSeekClick={seekTo}
     />
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
-  const placeOn = armed && !maximized
   const flowControl = (
-    <span data-testid="cues-flow-control" className="flex min-w-0 items-center gap-3">
-      <label
-        className={`flex shrink-0 items-center gap-1.5 text-xs ${
-          placing ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
-        } ${placeOn ? 'text-fg' : 'text-fg-dim'}`}
-      >
-        <button
-          type="button"
-          role="switch"
-          data-testid="cue-place-mode"
-          aria-checked={placeOn}
-          disabled={!placing}
-          onClick={() => setPlaceMode((on) => !on)}
-          className={`relative h-4 w-7 shrink-0 rounded-full outline-none transition-colors focus-visible:shadow-[inset_0_0_0_1px_var(--color-fg)] disabled:cursor-not-allowed ${
-            placeOn ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-line-strong)]'
-          }`}
-        >
-          <span
-            aria-hidden="true"
-            className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-[var(--color-fg)] transition-transform ${
-              placeOn ? 'translate-x-3' : ''
-            }`}
-          />
-        </button>
-        {tr('editor.cues.placeMode')}
-      </label>
-      <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
-        <Select
-          testid="cues-flow"
-          portal
-          bare
-          label={tr('editor.cues.flow')}
-          value={manual ? MANUAL_CUE_FLOW : shownFlow}
-          onChange={pickOption}
-          options={flowOptions}
-        />
-      </span>
+    <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
+      <Select
+        testid="cues-flow"
+        portal
+        bare
+        label={tr('editor.cues.flow')}
+        value={manual ? MANUAL_CUE_FLOW : shownFlow}
+        onChange={pickOption}
+        options={flowOptions}
+      />
     </span>
+  )
+  const markButton = (
+    <button
+      type="button"
+      data-testid="cues-mark-here"
+      disabled={!manual && !canMark}
+      title={!manual && !canMark && markWhy ? tr(`editor.cues.noFitReason.${markWhy}`) : undefined}
+      onClick={() => {
+        markHere()
+        if (maximized) focusEditor()
+      }}
+      className="press h-6 shrink-0 whitespace-nowrap rounded-full bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+    >
+      {manual ? tr('editor.cues.addCallShort') : tr('editor.cues.markHere')}
+    </button>
   )
   const foldedRow = (
     <div
@@ -761,9 +731,10 @@ function Editing({
           {tr('editor.cues.toCallShort', { count: wholeBars(toCall) })}
         </span>
       )}
-      {armed && rejectedSlot}
+      {placing && rejectedSlot}
       <span className="flex-1" />
       {discardButton}
+      {markButton}
       <button
         type="button"
         data-testid="cues-save"
@@ -1041,6 +1012,7 @@ function Editing({
       )}
       {maximized && (
         <CueDeck
+          mark={manual ? undefined : markButton}
           cues={state.cues}
           selected={state.selected}
           locked={state.locked}
