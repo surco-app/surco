@@ -152,6 +152,14 @@ describe('CuesSection folded', () => {
     await waitFor(() => expect(rekordboxCueWaveDetail).toHaveBeenCalledWith('103'))
   })
 
+  it('draws the overview strip from the detailed wave once it arrives, so the whole track shows real detail', async () => {
+    rekordboxCueWaveDetail.mockResolvedValueOnce(new Uint16Array(3000).fill((7 << 13) | (20 << 2)))
+    setup()
+    await ready()
+    expect(await screen.findByTestId('cue-wave-canvas')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-bars')).toBeNull()
+  })
+
   it('draws both waves on one surface and a row with play, zoom, time and Guardar, with the flow control up in the header', async () => {
     setup()
     await ready()

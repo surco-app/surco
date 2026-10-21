@@ -5,6 +5,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
+import { paintWave, waveColumns } from '../lib/cueDetail'
 import {
   type CueGhost,
   droppedStyle,
@@ -55,6 +56,7 @@ export function CueWave({
   slim,
   view,
   ghost: rawGhost,
+  detail,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -74,6 +76,7 @@ export function CueWave({
   slim?: boolean
   view?: { fromMs: number; toMs: number }
   ghost?: CueGhost
+  detail?: Uint16Array | null
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -123,20 +126,47 @@ export function CueWave({
       window.removeEventListener('mouseup', up)
     }
   }, [seeking, seekAt])
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const waveHeight = slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    const g = canvas?.getContext('2d')
+    if (!canvas || !g || !detail || stripPx <= 0) return
+    canvas.style.height = waveHeight
+    const dpr = window.devicePixelRatio || 1
+    const columns = Math.round(stripPx * dpr)
+    const height = Math.max(1, Math.round(canvas.getBoundingClientRect().height * dpr))
+    if (canvas.width !== columns) canvas.width = columns
+    if (canvas.height !== height) canvas.height = height
+    g.clearRect(0, 0, columns, height)
+    const style = getComputedStyle(canvas)
+    paintWave(g, waveColumns({ words: detail }, 0, durationMs, columns), height, {
+      peak: style.getPropertyValue('--color-fg-faint').trim(),
+      body: style.getPropertyValue('--color-accent').trim(),
+    })
+  }, [detail, stripPx, durationMs, waveHeight])
   const waveSvg = useMemo(
     () =>
-      wave && (
-        <WaveBars
-          bars={peakBars(
-            wave.map((c) => c.h),
-            overviewBars,
-          )}
-          testId="cue-wave-bars"
+      detail ? (
+        <canvas
+          ref={canvasRef}
+          data-testid="cue-wave-canvas"
           className="absolute inset-x-0 bottom-0 w-full"
-          style={{ height: slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT }}
         />
+      ) : (
+        wave && (
+          <WaveBars
+            bars={peakBars(
+              wave.map((c) => c.h),
+              overviewBars,
+            )}
+            testId="cue-wave-bars"
+            className="absolute inset-x-0 bottom-0 w-full"
+            style={{ height: slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT }}
+          />
+        )
       ),
-    [wave, overviewBars, slim],
+    [wave, overviewBars, slim, detail],
   )
   const ticks = useMemo(
     () =>

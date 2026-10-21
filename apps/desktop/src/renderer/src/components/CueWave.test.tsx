@@ -342,6 +342,59 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-ghost-hot-B')).toBeInTheDocument()
   })
 
+  it('draws the overview from the detailed wave once it is loaded, one thin column per device pixel, like rekordbox overview', () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const fillRect = vi.fn<(x: number, y: number, w: number, h: number) => void>()
+    const fake = { clearRect: vi.fn(), fillRect, setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const detail = new Uint16Array(12000).map((_, i) => (7 << 13) | ((i % 32) << 2))
+    setup({ detail })
+    expect(screen.queryByTestId('cue-wave-bars')).toBeNull()
+    const canvas = screen.getByTestId('cue-wave-canvas') as HTMLCanvasElement
+    expect(canvas.width).toBe(800 * 2)
+    expect(new Set(fillRect.mock.calls.map(([x]) => x)).size).toBe(canvas.width)
+    expect(fillRect.mock.calls.every(([, , w]) => w === 1)).toBe(true)
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the light overview bars until the detailed wave arrives', () => {
+    setup({ detail: null })
+    expect(screen.getByTestId('cue-wave-bars')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-canvas')).toBeNull()
+  })
+
+  it('does not repaint the overview while only the playhead moves', () => {
+    const clearRect = vi.fn()
+    const fake = { clearRect, fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const detail = new Uint16Array(12000).fill((7 << 13) | (20 << 2))
+    const cues = [{ key: 'a', ms: 16000, kind: 1, color: 42, pending: false }]
+    const view = render(
+      <CueWave
+        wave={[{ h: 1, rgb: null }]}
+        grid={GRID}
+        durationMs={80000}
+        cues={cues}
+        detail={detail}
+        playheadMs={0}
+      />,
+    )
+    const drawn = clearRect.mock.calls.length
+    expect(drawn).toBeGreaterThan(0)
+    for (const ms of [500, 1000, 1500])
+      view.rerender(
+        <CueWave
+          wave={[{ h: 1, rgb: null }]}
+          grid={GRID}
+          durationMs={80000}
+          cues={cues}
+          detail={detail}
+          playheadMs={ms}
+        />,
+      )
+    expect(clearRect.mock.calls.length).toBe(drawn)
+  })
+
   it('shows the part the zoomed wave shows as a soft rectangle', () => {
     setup({
       onSeek: vi.fn<(ms: number) => void>(),

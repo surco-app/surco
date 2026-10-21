@@ -606,6 +606,7 @@ function Editing({
       onSeek={seekTo}
       view={detailWindow(ctx.beats, playheadMs, zoom)}
       slim={!maximized}
+      detail={words}
     />
   )
   const detail = (
