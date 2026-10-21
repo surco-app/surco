@@ -10,8 +10,8 @@ function total(w: { tree: number; list: number; results: number; form: number })
 describe('columnWidths', () => {
   it.each([
     [1280, { tree: 207, list: 300, results: 300, form: 413 }],
-    [1440, { tree: 235, list: 331, results: 359, form: 455 }],
-    [1728, { tree: 280, list: 400, results: 434, form: 554 }],
+    [1440, { tree: 235, list: 331, results: 304, form: 510 }],
+    [1728, { tree: 280, list: 400, results: 367, form: 621 }],
   ])(
     'gives the form the room the old fixed widths starved at a %i px window with a source open',
     (window, expected) => {
@@ -20,15 +20,32 @@ describe('columnWidths', () => {
   )
 
   it.each([
-    [1280, { tree: 0, list: 353, results: 382, form: 485 }],
-    [1440, { tree: 0, list: 399, results: 432, form: 549 }],
-    [1728, { tree: 0, list: 480, results: 523, form: 665 }],
+    [1280, { tree: 0, list: 353, results: 323, form: 544 }],
+    [1440, { tree: 0, list: 399, results: 366, form: 615 }],
+    [1728, { tree: 0, list: 480, results: 442, form: 746 }],
   ])(
     'hands the tree its share back in proportion in Files at a %i px window',
     (window, expected) => {
       expect(columnWidths(window - RAIL, false, undefined)).toEqual(expected)
     },
   )
+
+  it('leaves the form at least 460 px by default whenever the window allows it, so the folded Cues section has room', () => {
+    expect(FORM_MIN).toBe(460)
+    for (const available of [1380, 1500, 1668, 2500])
+      expect(columnWidths(available, true, undefined).form).toBeGreaterThanOrEqual(460)
+  })
+
+  it('hands the share the results column gives up to the form at a common 1440 px window', () => {
+    const w = columnWidths(1440 - RAIL, true, undefined)
+    expect(w.results).toBe(Math.round(1380 * 0.22))
+    expect(w.form).toBe(1380 - w.tree - w.list - w.results)
+    expect(w.form).toBeGreaterThan(500)
+  })
+
+  it('keeps the width a DJ dragged the results column to, over the new default', () => {
+    expect(columnWidths(1440 - RAIL, true, { results: 0.25 }).results).toBe(Math.round(1380 * 0.25))
+  })
 
   it('always fills exactly the available width, so no gap or overflow opens beside the form', () => {
     for (const available of [1020, 1220, 1380, 1668, 2500]) {

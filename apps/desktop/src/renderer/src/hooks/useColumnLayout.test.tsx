@@ -50,8 +50,8 @@ describe('useColumnLayout', () => {
   })
 
   it('reads the saved shares, so a drag from an earlier session comes back', () => {
-    const { result } = setup({ results: 0.28 })
-    expect(result.current.widths.results).toBe(386)
+    const { result } = setup({ results: 0.25 })
+    expect(result.current.widths.results).toBe(345)
   })
 
   it('follows the window as it is resized, keeping the proportions', () => {
@@ -77,10 +77,10 @@ describe('useColumnLayout', () => {
     act(() => result.current.startResize('results', pointerDown(500)))
     act(() => pointer('pointermove', 520))
     flushFrames()
-    expect(result.current.widths.results).toBe(378)
+    expect(result.current.widths.results).toBe(323)
     act(() => pointer('pointerup', 520))
     expect(onCommit).toHaveBeenCalledTimes(1)
-    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(378 / 1378)
+    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(323 / 1378)
   })
 
   it('keeps the other saved shares when one column is dragged', () => {
@@ -110,7 +110,7 @@ describe('useColumnLayout', () => {
     act(() => pointer('pointermove', 600))
     flushFrames()
     const shown = result.current.widths
-    expect(shown.form).toBe(420)
+    expect(shown.form).toBe(460)
     act(() => pointer('pointerup', 600))
     expect(onCommit.mock.calls[0][0].results).toBeCloseTo(shown.results / 1378)
   })
