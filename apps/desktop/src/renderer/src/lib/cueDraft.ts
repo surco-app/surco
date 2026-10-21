@@ -69,6 +69,7 @@ export type DraftAction =
   | { type: 'add-call'; ms: number }
   | { type: 'use-flow'; flowId: string }
   | { type: 'clear' }
+  | { type: 'batch'; actions: DraftAction[] }
   | { type: 'undo' }
   | { type: 'redo' }
 
@@ -416,6 +417,11 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
   const generator = flowById(ctx, state.generatedBy)
   if (action.type === 'select') return { ...state, selected: action.key }
   if (action.type === 'use-flow') return { ...state, flowId: action.flowId }
+  if (action.type === 'batch') {
+    const next = action.actions.reduce((s, a) => reduceDraft(s, a, ctx), state)
+    if (next.cues === state.cues) return { ...next, past: state.past, future: state.future }
+    return { ...next, past: [...state.past, snapshot(state)], future: [] }
+  }
   if (action.type === 'undo') {
     const previous = state.past[state.past.length - 1]
     if (!previous) return state

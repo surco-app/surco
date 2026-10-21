@@ -1014,3 +1014,40 @@ describe('letters in track order', () => {
     ])
   })
 })
+
+describe('several placements at once', () => {
+  const both: DraftAction = {
+    type: 'batch',
+    actions: [
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(128) },
+    ],
+  }
+
+  it('places each point as if the DJ had placed them one after the other by hand', () => {
+    const byHand = run(
+      empty(),
+      { type: 'mark-drop', ms: bar(64) },
+      { type: 'mark-drop', ms: bar(128) },
+    )
+    expect(run(empty(), both).cues).toEqual(byHand.cues)
+  })
+
+  it('takes every placement back with one undo, so accepting all is one step', () => {
+    const placed = run(empty(), both)
+    expect(placed.past).toHaveLength(1)
+    expect(run(placed, { type: 'undo' }).cues).toEqual([])
+    expect(run(placed, { type: 'undo' }, { type: 'redo' }).cues).toEqual(placed.cues)
+  })
+
+  it('records no undo step when every point is already there', () => {
+    const placed = run(empty(), both)
+    expect(run(placed, both).past).toHaveLength(1)
+  })
+
+  it('shows as ghost exactly what accepting them places', () => {
+    const ghost = ghostOf(empty(), both, ctx)
+    expect(ghost.added).toEqual(run(empty(), both).cues)
+    expect(ghost.gone).toEqual([])
+  })
+})
