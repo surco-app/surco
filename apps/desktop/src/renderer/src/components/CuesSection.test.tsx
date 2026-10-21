@@ -99,8 +99,6 @@ function setup(
   }
 }
 
-const clickAt = (ms: number) =>
-  fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
 const playheadAt = (ms: number) => {
   fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 })
   fireEvent.mouseUp(window, { clientX: ms / 1000 })
@@ -584,7 +582,7 @@ describe('CuesSection', () => {
     setup(READ, null, { activeCueFlow: 'manual' })
     await ready()
     expect(screen.queryByTestId('cues-place-hint')).toBeNull()
-    clickAt(bar(64))
+    playheadAt(bar(64))
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
     expect(screen.getByTestId('cues-position')).toHaveTextContent('2:08.0')
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)

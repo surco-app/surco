@@ -199,7 +199,8 @@ describe('CuesSection maximized', () => {
   it('moves the playhead with a click on the overview in Manual', async () => {
     setup({ activeCueFlow: 'manual' })
     await maximize()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 100 })
+    fireEvent.mouseUp(window, { clientX: 100 })
     expect(position()).toBe('1:40.0')
     expect(screen.queryByTestId('cue-wave-call-100000')).toBeNull()
   })

@@ -35,12 +35,6 @@ export function droppedStyle(at: number, mark: DroppedMark): CSSProperties {
     opacity: DROPPED_OPACITY,
   }
 }
-export const CURSOR_LINE: CSSProperties = {
-  borderLeftWidth: 1,
-  borderLeftStyle: 'dashed',
-  borderLeftColor: 'var(--color-accent)',
-}
-
 export interface HotMark {
   key: string
   ms: number

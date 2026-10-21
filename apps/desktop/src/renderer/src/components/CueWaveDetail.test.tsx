@@ -214,70 +214,20 @@ describe('CueWaveDetail', () => {
     expect(onScrub.mock.calls).toEqual([[bar(32) + 8000], [bar(32) + 9000]])
   })
 
-  it('places on the bar under a click and still scrubs with a drag when a flow is chosen', () => {
-    const onPlace = vi.fn<(ms: number) => void>()
-    const { onScrub } = setup({ onPlace })
+  it('moves the playhead to the beat under a click, a hand shake included, and scrubs with a real drag, since a click never places', () => {
+    const onSeekClick = vi.fn<(ms: number) => void>()
+    const { onScrub } = setup({ onSeekClick })
     const stage = screen.getByTestId('cue-detail')
     fireEvent.mouseDown(stage, { button: 0, clientX: 310 })
     fireEvent.mouseMove(window, { clientX: 312 })
     fireEvent.mouseUp(window, { clientX: 312 })
-    expect(onPlace).toHaveBeenCalledWith(bar(36))
+    expect(onSeekClick).toHaveBeenCalledWith(bar(36) + 1000)
     expect(onScrub).not.toHaveBeenCalled()
     fireEvent.mouseDown(stage, { button: 0, clientX: 400 })
     fireEvent.mouseMove(window, { clientX: 300 })
     fireEvent.mouseUp(window, { clientX: 300 })
     expect(onScrub).toHaveBeenLastCalledWith(bar(32) + 8000)
-    expect(onPlace).toHaveBeenCalledTimes(1)
-  })
-
-  it('never places on a press that starts on a mark, which belongs to its ✕ and its menu', () => {
-    const onPlace = vi.fn<(ms: number) => void>()
-    setup({ onPlace, cues: [{ key: 'b', ms: bar(36), kind: 2, color: 22, pending: false }] })
-    fireEvent.mouseDown(screen.getByTestId('cue-detail-hot-B'), { button: 0, clientX: 300 })
-    fireEvent.mouseUp(window, { clientX: 300 })
-    expect(onPlace).not.toHaveBeenCalled()
-  })
-
-  it('draws a thin line on the bar under the cursor and hands it on, and none without a flow', () => {
-    const onHover = vi.fn<(ms: number | null) => void>()
-    const { rerender } = setup({ onHover })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
-    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
-    expect(onHover).not.toHaveBeenCalled()
-    rerender({ onHover, onPlace: vi.fn<(ms: number) => void>() })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
-    expect(onHover).toHaveBeenLastCalledWith(bar(36))
-    expect(screen.getByTestId('cue-detail-cursor').style.left).toBe('75%')
-    expect(screen.getByTestId('cue-detail-cursor')).toHaveStyle({
-      borderLeftStyle: 'dashed',
-      borderLeftColor: 'var(--color-accent)',
-    })
-    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
-    expect(onHover).toHaveBeenLastCalledWith(null)
-    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
-  })
-
-  it('takes the line under the cursor away once the editor stops placing, so Manual never shows where a flow would go', () => {
-    const { rerender } = setup({ onPlace: vi.fn<(ms: number) => void>() })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
-    expect(screen.getByTestId('cue-detail-cursor')).toBeInTheDocument()
-    rerender({ onPlace: undefined })
-    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
-  })
-
-  it('forgets the bar under the cursor as soon as a press starts, so no flow hangs over a scrub', () => {
-    const onHover = vi.fn<(ms: number | null) => void>()
-    const onScrub = vi.fn<(ms: number) => void>()
-    setup({ onHover, onScrub, onPlace: vi.fn<(ms: number) => void>() })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
-    expect(onHover).toHaveBeenLastCalledWith(bar(36))
-    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 310 })
-    fireEvent.mouseMove(window, { clientX: 200 })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
-    expect(onScrub).toHaveBeenCalled()
-    expect(onHover).toHaveBeenLastCalledWith(null)
-    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
-    fireEvent.mouseUp(window, { clientX: 200 })
+    expect(onSeekClick).toHaveBeenCalledTimes(1)
   })
 
   it('draws the flow see-through and dims what it would take away', () => {
@@ -330,15 +280,12 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalled()
   })
 
-  it('draws no flow under the cursor while a CALL is being dragged, and says when the drag starts and ends', () => {
-    const onHover = vi.fn<(ms: number | null) => void>()
+  it('says when a CALL drag starts and ends, so the editor hides the flow meanwhile', () => {
     const onMarkDrag = vi.fn<(dragging: boolean) => void>()
     setup({
       cues: [{ key: 'p', ms: bar(36), kind: 0, color: null, pending: false }],
       movable: ['p'],
       onMoveMark: vi.fn(),
-      onPlace: vi.fn(),
-      onHover,
       onMarkDrag,
     })
     fireEvent.mouseDown(screen.getByTestId(`cue-detail-call-${bar(36)}`), {
@@ -347,9 +294,6 @@ describe('CueWaveDetail', () => {
     })
     expect(onMarkDrag).toHaveBeenLastCalledWith(true)
     fireEvent.mouseMove(window, { clientX: 340 })
-    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 340 })
-    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
-    expect(onHover).toHaveBeenLastCalledWith(null)
     fireEvent.mouseUp(window, { clientX: 340 })
     expect(onMarkDrag).toHaveBeenLastCalledWith(false)
   })
@@ -608,11 +552,9 @@ describe('CueWaveDetail', () => {
     expect(canvas.height).toBe(300)
   })
 
-  it('shows a crosshair over the wave when a flow is chosen, so the click reads as placing and not as grabbing', () => {
-    const { rerender } = setup()
+  it('shows a hand over the wave, since a press there only moves the playhead', () => {
+    setup()
     expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
-    rerender({ onPlace: vi.fn<(ms: number) => void>() })
-    expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
   })
   it('draws the marks in front of the playhead, which starts below the marks lane', () => {
     setup({

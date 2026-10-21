@@ -6,7 +6,6 @@ import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
 import {
-  CURSOR_LINE,
   type CueGhost,
   droppedStyle,
   GHOST_OPACITY,
@@ -54,8 +53,6 @@ export function CueWave({
   onSeek,
   slim,
   view,
-  onHover,
-  hoverMs,
   ghost,
 }: {
   wave: CueWaveColumn[] | null
@@ -75,20 +72,17 @@ export function CueWave({
   onSeek?: (ms: number) => void
   slim?: boolean
   view?: { fromMs: number; toMs: number }
-  onHover?: (ms: number | null) => void
-  hoverMs?: number | null
   ghost?: CueGhost
 }): React.JSX.Element {
   const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
-  const [cursor, setCursor] = useState<number | null>(null)
   const [seeking, setSeeking] = useState(false)
   const sought = useRef<number | null>(null)
   const [stripPx, setStripPx] = useState(0)
   const analysed = grid.length > 0
   const snapMs = quantizePoints(grid, quantize)
-  const latest = useRef({ durationMs, onSeek, onHover })
-  latest.current = { durationMs, onSeek, onHover }
+  const latest = useRef({ durationMs, onSeek })
+  latest.current = { durationMs, onSeek }
   useLayoutEffect(() => {
     const root = rootRef.current
     if (!analysed || !root) return
@@ -101,13 +95,6 @@ export function CueWave({
   }, [analysed])
   const overviewBars =
     stripPx > 0 ? Math.max(1, Math.round(stripPx / ROW_BAR_PITCH_PX)) : OVERVIEW_BARS
-  useEffect(() => {
-    if (readOnly) setCursor(null)
-  }, [readOnly])
-  const hovering = onHover !== undefined
-  useEffect(() => {
-    if (!hovering) setCursor(null)
-  }, [hovering])
   const msAtX = useCallback((clientX: number): number => {
     const rect = rootRef.current?.getBoundingClientRect()
     if (!rect) return 0
@@ -182,11 +169,9 @@ export function CueWave({
   }
   const { hot, calls } = placeCues(cues, durationMs)
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
-  const line = cursor ?? hoverMs ?? null
   const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
   const viewPct = (ms: number): string =>
     `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
-  const snapAt = (clientX: number): number => snapMs[nearestBeat(snapMs, msAtX(clientX))]
   const gone = new Set(ghost?.gone ?? [])
   const ghostMarks = ghost ? placeCues(ghost.added, durationMs) : null
   const shown = view && {
@@ -211,20 +196,9 @@ export function CueWave({
       tabIndex={readOnly ? -1 : 0}
       onMouseDown={(e) => {
         if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
-        setCursor(null)
-        onHover?.(null)
         sought.current = seekAt(e.clientX)
         onSeek(sought.current)
         setSeeking(true)
-      }}
-      onClick={(e) => {
-        if (readOnly) return
-        if (onSeek && sought.current === null) onSeek(seekAt(e.clientX))
-        sought.current = null
-      }}
-      onKeyDown={(e) => {
-        if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || cursor === null) return
-        onSeek?.(cursor)
       }}
       onContextMenu={(e) => {
         if (readOnly) return
@@ -235,16 +209,6 @@ export function CueWave({
           x: e.clientX - rect.left,
           y: e.clientY - rect.top,
         })
-      }}
-      onMouseMove={(e) => {
-        if (readOnly || !onHover || seeking) return
-        const ms = snapAt(e.clientX)
-        setCursor(ms)
-        onHover?.(ms)
-      }}
-      onMouseLeave={() => {
-        setCursor(null)
-        onHover?.(null)
       }}
       className={`relative w-full overflow-hidden outline-none focus-visible:shadow-none ${
         slim ? 'h-[44px]' : 'h-16 rounded-md bg-[var(--color-panel-2)]'
@@ -403,14 +367,6 @@ export function CueWave({
             className="pointer-events-none absolute z-10 h-3 w-3 rounded-[3px] border"
           />
         ))}
-      {line !== null && (
-        <span
-          data-testid="cue-wave-cursor"
-          aria-hidden="true"
-          style={{ ...CURSOR_LINE, left: pct(line) }}
-          className="pointer-events-none absolute top-0 bottom-0"
-        />
-      )}
     </div>
   )
 }

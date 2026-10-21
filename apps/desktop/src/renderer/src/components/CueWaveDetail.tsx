@@ -7,7 +7,6 @@ import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { type DetailSource, visibleColumns } from '../lib/cueDetail'
 import {
-  CURSOR_LINE,
   type CueGhost,
   droppedStyle,
   GHOST_OPACITY,
@@ -118,10 +117,8 @@ export function CueWaveDetail({
   onZoomReset,
   compact,
   onSeekClick,
-  onPlace,
   onMarkMenu,
   onDeleteMark,
-  onHover,
   ghost,
   points,
   movable,
@@ -140,10 +137,8 @@ export function CueWaveDetail({
   onZoomReset?: () => void
   compact?: boolean
   onSeekClick?: (ms: number) => void
-  onPlace?: (ms: number) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
-  onHover?: (ms: number | null) => void
   ghost?: CueGhost
   points: number[]
   movable?: string[]
@@ -161,13 +156,12 @@ export function CueWaveDetail({
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
-  const latest = useRef({ span, beats, onScrub, onZoom, onPlace, onSeekClick })
-  latest.current = { span, beats, onScrub, onZoom, onPlace, onSeekClick }
+  const latest = useRef({ span, beats, onScrub, onZoom, onSeekClick })
+  latest.current = { span, beats, onScrub, onZoom, onSeekClick }
   const [drag, setDrag] = useState<{
     x0: number
     ms0: number
     width: number
-    pick: number | null
     tap: number
   } | null>(null)
   const moved = useRef(false)
@@ -176,7 +170,7 @@ export function CueWaveDetail({
     moved.current = false
     let scrubbed: number | null = null
     const move = (e: MouseEvent) => {
-      if (!moved.current && drag.pick !== null && Math.abs(e.clientX - drag.x0) <= DRAG_PX) return
+      if (!moved.current && Math.abs(e.clientX - drag.x0) <= DRAG_PX) return
       moved.current = true
       const ms = snapToBeat(
         latest.current.beats,
@@ -187,8 +181,7 @@ export function CueWaveDetail({
       latest.current.onScrub(ms)
     }
     const up = () => {
-      if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)
-      else if (!moved.current) latest.current.onSeekClick?.(drag.tap)
+      if (!moved.current) latest.current.onSeekClick?.(drag.tap)
       setDrag(null)
     }
     window.addEventListener('mousemove', move)
@@ -245,8 +238,6 @@ export function CueWaveDetail({
             const rect = stageRef.current?.getBoundingClientRect()
             if (!rect || rect.width <= 0) return
             e.stopPropagation()
-            setCursor(null)
-            onHover?.(null)
             setMarkDrag({
               key,
               x0: e.clientX,
@@ -259,13 +250,6 @@ export function CueWaveDetail({
           },
         }
       : {}
-  const [cursor, setCursor] = useState<number | null>(null)
-  const canPlace = onPlace !== undefined
-  useEffect(() => {
-    if (!canPlace) setCursor(null)
-  }, [canPlace])
-  const snapAt = (clientX: number, rect: DOMRect): number =>
-    snapMs[nearestBeat(snapMs, fromMs + ((clientX - rect.left) / rect.width) * span)]
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
@@ -383,32 +367,16 @@ export function CueWaveDetail({
             if (e.button !== 0) return
             const rect = stageRef.current?.getBoundingClientRect()
             if (!rect || rect.width <= 0) return
-            const onMark = (e.target as HTMLElement).closest('[data-mark]') !== null
-            setCursor(null)
-            onHover?.(null)
             setDrag({
               x0: e.clientX,
               ms0: playheadMs,
               width: rect.width,
-              pick: onPlace && !onMark ? snapAt(e.clientX, rect) : null,
               tap: snapToBeat(beats, fromMs + ((e.clientX - rect.left) / rect.width) * span),
             })
           }}
-          onMouseMove={(e) => {
-            if (!onPlace || drag || markDrag) return
-            const rect = stageRef.current?.getBoundingClientRect()
-            if (!rect || rect.width <= 0) return
-            const ms = snapAt(e.clientX, rect)
-            setCursor(ms)
-            onHover?.(ms)
-          }}
-          onDoubleClick={compact && !onPlace ? onZoomReset : undefined}
-          onMouseLeave={() => {
-            setCursor(null)
-            onHover?.(null)
-          }}
+          onDoubleClick={compact ? onZoomReset : undefined}
           style={{
-            cursor: onPlace ? 'crosshair' : 'grab',
+            cursor: 'grab',
             height: compact ? COMPACT_HEIGHT : STAGE_HEIGHT,
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"
@@ -577,14 +545,6 @@ export function CueWaveDetail({
               aria-hidden="true"
               style={{ left: `${dragAt}%` }}
               className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
-            />
-          )}
-          {cursor !== null && cursor >= fromMs && cursor <= toMs && (
-            <span
-              data-testid="cue-detail-cursor"
-              aria-hidden="true"
-              style={{ ...CURSOR_LINE, left: pct(cursor) }}
-              className="pointer-events-none absolute top-0 bottom-0"
             />
           )}
         </div>
