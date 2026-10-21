@@ -38,8 +38,8 @@ Vicent, 20/10, aprobando las propuestas del recorrido (`.superpowers/sdd/2026-10
 16. Vicent, 20/10: en la fuente rekordbox la sección Cues va la primera del editor, encima de Archivo y Metadatos, y se pliega y despliega como las demás. Si el DJ ordenó las secciones en Ajustes de forma distinta a la de Surco, se respeta su orden.
 17. Vicent, 20/10: "N compases al CALL" cuenta hasta el siguiente punto, no hasta el CALL de una hot cue ni un bucle.
 18. Vicent, 20/10: la tira general lleva una escala abajo con una muesca cada 32 golpes (8 compases, una frase de rekordbox), algo más marcada cada 128 golpes, en lugar de la muesca cada 16 compases de `2026-10-20-editor-cues-calma-design.md`. A la izquierda de la onda ampliada, fuera de ella, van los botones de acercar, restablecer y alejar, como en rekordbox, siempre visibles y desactivados en los extremos.
-
 19. Vicent, 20/10: el único flujo que trae Surco se llama "Entrada" y pone una hot cue 64 compases antes del punto, con el CALL en el punto y el color de siempre. Sustituye a "Una cue a 32". Una copia guardada de "Una cue a 32" sin tocar pasa a ser "Entrada", también si era la elegida; si el DJ la cambió o le puso nombre, se queda como flujo suyo. "Subidón" es el nombre que Vicent dio a su flujo propio y no se toca.
+20. Vicent, 21/10: se deshace la decisión 16. Cues sigue el orden de Ajustes › Secciones como las demás secciones, y en esa lista la fila de Cues dice "Solo en rekordbox".
 
 ## Fuera de alcance
 
