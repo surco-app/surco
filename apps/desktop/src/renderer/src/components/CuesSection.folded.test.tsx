@@ -19,6 +19,7 @@ import '../i18n'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import type { Command } from '../lib/commands'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { runKeyClaim } from '../lib/spaceClaim'
@@ -302,6 +303,52 @@ describe('CuesSection folded', () => {
     expect(pause).toHaveBeenCalled()
     expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
     player.remove()
+  })
+
+  it('plays the cue preview with Space while working in the folded section, and leaves Space to the mini-player elsewhere', async () => {
+    stubSound()
+    const player = vi.fn<() => void>()
+    const commands: Command[] = [
+      { id: 'play', title: 'play', enabled: true, group: 'navigate', run: player },
+    ]
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => commands,
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+    setup()
+    await ready()
+    const outside = document.createElement('div')
+    outside.tabIndex = 0
+    outside.setAttribute('data-testid', 'track-row')
+    document.body.appendChild(outside)
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+    act(() => screen.getByTestId('cue-wave').focus())
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: ' ' })
+    expect(audios).toHaveLength(1)
+    expect(player).not.toHaveBeenCalled()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: ' ' })
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
+    act(() => outside.focus())
+    fireEvent.keyDown(outside, { key: ' ' })
+    expect(player).toHaveBeenCalledTimes(1)
+    expect(audios).toHaveLength(1)
+    outside.remove()
+  })
+
+  it('takes the focus into the section when its zoomed wave is pressed, without a ring around the editor', async () => {
+    setup()
+    await ready()
+    const editor = screen.getByTestId('cues-editor')
+    expect(editor).toHaveAttribute('tabindex', '-1')
+    expect(editor.className).toContain('outline-none')
   })
 
   it('zooms the folded zoomed wave with the buttons in the row and goes back to 16 bars with a double click on it', async () => {

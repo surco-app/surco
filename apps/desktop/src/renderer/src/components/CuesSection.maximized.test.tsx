@@ -782,7 +782,6 @@ describe('CuesSection maximized keys', () => {
     })
     fireEvent.click(screen.getByTestId('section-maximize'))
     expect(pause).toHaveBeenCalled()
-    expect(runKeyClaim('play')).toBe(false)
   })
 
   it('stops the sound on restore even when the section stays mounted where it was', async () => {

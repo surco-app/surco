@@ -827,7 +827,7 @@ function Editing({
       ref={editorRef}
       data-testid="cues-editor"
       data-maximized={maximized ? 'true' : 'false'}
-      tabIndex={maximized ? -1 : undefined}
+      tabIndex={-1}
       aria-label={tr('editor.cues.title')}
       className={`relative m-0 min-w-0 border-0 p-0 outline-none focus-visible:shadow-none ${maximized ? 'my-auto flex flex-col gap-3' : ''}`}
       onKeyDown={onKey}
@@ -1110,10 +1110,26 @@ export function CuesSection({
     if (!maximized) return
     return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() }, { over: true })
   }, [maximized])
+  const [working, setWorking] = useState(false)
+  const sectionRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (maximized || !audition.playing) return
+    const el = sectionRef.current
+    if (!el) return
+    const enter = () => setWorking(true)
+    const leave = (e: FocusEvent) => {
+      if (!el.contains(e.relatedTarget as Node | null)) setWorking(false)
+    }
+    el.addEventListener('focusin', enter)
+    el.addEventListener('focusout', leave)
+    return () => {
+      el.removeEventListener('focusin', enter)
+      el.removeEventListener('focusout', leave)
+    }
+  }, [])
+  useEffect(() => {
+    if (maximized || !(audition.playing || (open && working))) return
     return claimKeys({ play: () => toggle.current() })
-  }, [maximized, audition.playing])
+  }, [maximized, audition.playing, open, working])
   const editable =
     !isError &&
     read !== undefined &&
@@ -1163,6 +1179,7 @@ export function CuesSection({
     <div
       data-testid="cues-section"
       className={full ? 'flex h-full flex-col' : 'mt-6 border-t border-[var(--color-line)] pt-6'}
+      ref={sectionRef}
     >
       {!full && (
         <SectionHeader
