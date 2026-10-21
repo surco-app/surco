@@ -23,7 +23,7 @@ export interface CueGhost {
   rejected?: DroppedMark[]
 }
 
-export const GHOST_OPACITY = 0.42
+export const GHOST_OPACITY = 0.5
 export const GONE_OPACITY = 0.3
 export const DROPPED_OPACITY = 0.3
 

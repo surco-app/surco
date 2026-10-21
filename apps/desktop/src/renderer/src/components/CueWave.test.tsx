@@ -5,6 +5,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
+import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { resetRowWaves } from '../lib/rowWaves'
 import { CueWave } from './CueWave'
 import { RowWave } from './RowWave'
@@ -297,9 +298,15 @@ describe('CueWave', () => {
         gone: ['a'],
       },
     })
-    expect(screen.getByTestId('cue-wave-ghost-hot-B')).toHaveStyle({ opacity: '0.42' })
+    const ghost = screen.getByTestId('cue-wave-ghost-hot-B')
+    const fill = ghost.querySelector<HTMLElement>('[data-ghost-fill]')
+    expect(ghost).toHaveTextContent(/^[A-H]$/)
+    expect(ghost.style.borderStyle).not.toBe('dashed')
+    expect(ghost.style.opacity).toBe('')
+    expect(ghost.style.backgroundColor).not.toBe('')
+    expect(fill).toHaveStyle({ backgroundColor: hotCueColor(22), opacity: '0.5' })
     expect(screen.getByTestId('cue-wave-ghost-hot-B').tagName).toBe('SPAN')
-    expect(screen.getByTestId('cue-wave-ghost-call-32000')).toHaveStyle({ opacity: '0.42' })
+    expect(screen.getByTestId('cue-wave-ghost-call-32000')).toHaveStyle({ opacity: '0.5' })
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-gone', 'true')
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ opacity: '0.3' })
     expect(screen.getByTestId('cue-wave-call-40000')).toHaveAttribute('data-gone', 'false')

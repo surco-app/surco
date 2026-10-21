@@ -286,9 +286,15 @@ describe('CueWaveDetail', () => {
         gone: ['b'],
       },
     })
-    expect(screen.getByTestId('cue-detail-ghost-hot-A')).toHaveStyle({ opacity: '0.42' })
+    const ghost = screen.getByTestId('cue-detail-ghost-hot-A')
+    const fill = ghost.querySelector<HTMLElement>('[data-ghost-fill]')
+    expect(ghost).toHaveTextContent(/^[A-H]$/)
+    expect(ghost.style.borderStyle).not.toBe('dashed')
+    expect(ghost.style.opacity).toBe('')
+    expect(ghost.style.backgroundColor).not.toBe('')
+    expect(fill).toHaveStyle({ backgroundColor: hotCueColor(42), opacity: '0.5' })
     expect(screen.getByTestId(`cue-detail-ghost-call-${bar(36)}`)).toHaveStyle({
-      opacity: '0.42',
+      opacity: '0.5',
     })
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveAttribute('data-gone', 'true')
     expect(screen.getByTestId('cue-detail-hot-B')).toHaveStyle({ opacity: '0.3' })
