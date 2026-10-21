@@ -15,6 +15,8 @@ import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import {
   BEATS_PER_BAR,
+  evaluateFlow,
+  flowDrops,
   MAX_HOT_CUES,
   nearestBeat,
   SAME_POSITION_MS,
@@ -30,6 +32,7 @@ import {
   type DraftAction,
   type DraftCue,
   type DraftGhost,
+  draftDrops,
   draftPoints,
   ghostOf,
   reduceDraft,
@@ -311,13 +314,28 @@ function Editing({
     () => (manual ? null : ghostOf(state, { type: 'apply-flow', flowId: shownFlow }, ctx)),
     [manual, state, shownFlow, ctx],
   )
+  const placeOf = (c: DraftCue): string => `${c.kind === 0 ? 'call' : 'hot'}|${c.ms}|${c.color}`
+  const goneCues = state.cues.filter((c) => switchGhost?.gone.includes(c.key))
+  const reallyAdded = (switchGhost?.added ?? []).filter(
+    (a) => !goneCues.some((g) => placeOf(g) === placeOf(a)),
+  )
+  const reallyGone = goneCues.filter(
+    (g) => !(switchGhost?.added ?? []).some((a) => placeOf(a) === placeOf(g)),
+  )
+  const trackOf = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
+  const placesHot =
+    switchGhost !== null &&
+    evaluateFlow(shown, {
+      ...trackOf,
+      drops: flowDrops(shown, { ...trackOf, drops: draftDrops(state.cues, state.locked) }),
+    }).cues.some((c) => c.place !== 'call')
   const noFit =
     switchGhost !== null &&
     shown.rules.some((r) => r.place !== 'call') &&
-    !switchGhost.added.some((c) => c.kind !== 0) &&
-    state.cues.some((c) => c.kind !== 0 && switchGhost.gone.includes(c.key))
+    !placesHot &&
+    reallyGone.some((c) => c.kind !== 0)
   const canApply =
-    switchGhost !== null && !noFit && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
+    switchGhost !== null && !noFit && (reallyAdded.length > 0 || reallyGone.length > 0)
   const [hoverMs, setHoverMs] = useState<number | null>(null)
   useEffect(() => {
     if (!armed) setHoverMs(null)

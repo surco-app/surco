@@ -644,6 +644,24 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-apply-track')).toBeNull()
   })
 
+  it('hides Aplicar a esta pista when applying the flow would only change letters, since the cues already sit where the flow puts them', async () => {
+    const at = (n: number, kind: number, color: number) => [
+      { id: `h${n}`, ms: bar(n), kind, color },
+      { id: `c${n}`, ms: bar(n), kind: 0, color: null },
+    ]
+    setup({
+      ...READ,
+      cues: [
+        { id: 'p', ms: bar(64), kind: 0, color: null },
+        ...at(16, 3, 42),
+        ...at(32, 2, 22),
+        ...at(48, 1, 1),
+      ],
+    })
+    await ready()
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+  })
+
   it('hides Aplicar a esta pista on a track where applying the active flow changes nothing', async () => {
     setup()
     await ready()
