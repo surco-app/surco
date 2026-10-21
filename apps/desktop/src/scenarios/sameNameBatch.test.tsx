@@ -62,6 +62,7 @@ describe('Convert two files that share a name in one go, without one replacing t
         },
         { timeout: 60_000, interval: 200 },
       )
+      await screen.findByTestId('batch-summary', {}, { timeout: 30_000 })
       expect(surco.errors).toEqual([])
       expect(asked).toEqual(destination === 'overwrite' ? ['Song.aiff'] : [])
       expect(
