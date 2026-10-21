@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Minimize2, Pause, Play } from 'lucide-react'
+import { Keyboard, Minimize2, Pause, Play, Undo2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -585,16 +585,29 @@ function Editing({
       )}
     </span>
   )
-  const discardButton = (!unchanged || queued !== null) && (
-    <button
-      type="button"
-      data-testid="cues-undo"
-      onClick={onDiscard}
-      className="press min-w-0 truncate whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
-    >
-      {tr('editor.cues.discard')}
-    </button>
-  )
+  const discardButton =
+    (!unchanged || queued !== null) &&
+    (maximized ? (
+      <button
+        type="button"
+        data-testid="cues-undo"
+        onClick={onDiscard}
+        className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+      >
+        {tr('editor.cues.discard')}
+      </button>
+    ) : (
+      <button
+        type="button"
+        data-testid="cues-undo"
+        aria-label={tr('editor.cues.discard')}
+        title={tr('editor.cues.discard')}
+        onClick={onDiscard}
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    ))
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
       <Select

@@ -239,14 +239,16 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  it('lets Descartar cambios give way before Marcar aquí and Guardar in a narrow panel, since the app showed Guardar cut off at the edge', async () => {
+  it('shows Descartar cambios as an icon in the folded row, so at 445 px neither it nor the bars to the CALL get cut and Guardar stays whole', async () => {
     setup()
     await ready()
     seekStrip(128)
     fireEvent.click(markHere())
     const discard = screen.getByTestId('cues-undo')
-    expect(discard.className).toContain('min-w-0')
-    expect(discard.className).toContain('truncate')
+    expect(discard).toHaveAccessibleName('Discard changes')
+    expect(discard).toHaveAttribute('title', 'Discard changes')
+    expect(discard).toHaveTextContent('')
+    expect(discard.className).toContain('shrink-0')
     for (const id of ['cues-mark-here', 'cues-save'])
       expect(screen.getByTestId(id).className).toContain('shrink-0')
   })
