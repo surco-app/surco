@@ -576,10 +576,10 @@ function Editing({
   const rejectedSlot = (
     <span
       data-testid="cues-rejected-slot"
-      className="min-w-0 flex-1 whitespace-nowrap text-xs text-fg-faint"
+      className="shrink-0 whitespace-nowrap text-xs text-fg-faint"
     >
       {rejectedCount > 0 && (
-        <span data-testid="cues-rejected" className="block truncate">
+        <span data-testid="cues-rejected" className="block">
           {tr('editor.cues.rejectedCount', { count: rejectedCount })}
         </span>
       )}
@@ -607,8 +607,8 @@ function Editing({
         onClosed={maximized ? focusEditor : undefined}
         options={flowOptions}
       />
-      {canApply && applyButton}
       {placing && rejectedSlot}
+      {canApply && applyButton}
       <span className="flex-1" />
       {discardButton}
       <button
@@ -672,17 +672,20 @@ function Editing({
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
   const flowControl = (
-    <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
-      <Select
-        testid="cues-flow"
-        portal
-        bare
-        label={tr('editor.cues.flow')}
-        value={manual ? MANUAL_CUE_FLOW : shownFlow}
-        onChange={pickOption}
-        options={flowOptions}
-      />
-    </span>
+    <>
+      {placing && rejectedSlot}
+      <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
+        <Select
+          testid="cues-flow"
+          portal
+          bare
+          label={tr('editor.cues.flow')}
+          value={manual ? MANUAL_CUE_FLOW : shownFlow}
+          onChange={pickOption}
+          options={flowOptions}
+        />
+      </span>
+    </>
   )
   const markButton = (
     <button
@@ -737,7 +740,6 @@ function Editing({
           {tr('editor.cues.toCallShort', { count: wholeBars(toCall) })}
         </span>
       )}
-      {placing && rejectedSlot}
       <span className="flex-1" />
       {discardButton}
       {markButton}
@@ -1176,7 +1178,7 @@ export function CuesSection({
           onToggle={onToggle}
           help={tr('editor.cues.help')}
           status={unsaved ? <UnsavedMark /> : undefined}
-          statusAction={<span ref={setHeaderSlot} className="flex min-w-0 items-center" />}
+          statusAction={<span ref={setHeaderSlot} className="flex min-w-0 items-center gap-2" />}
         />
       )}
       {full && isMacOS() && (

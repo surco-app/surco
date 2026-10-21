@@ -746,19 +746,32 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-rejected')).toHaveTextContent(/^1 doesn't fit$/)
   })
 
-  it('counts what does not fit in one short line that keeps its place, shown or not, so nothing below it moves', async () => {
+  it('counts what does not fit in the header right before the flow menu, whole on one line in a slot that keeps its place, since the folded row cut it to "3 …"', async () => {
     setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
     await ready()
     hoverAt(bar(200))
     const slot = screen.getByTestId('cues-rejected-slot')
+    expect(slot.nextElementSibling).toBe(screen.getByTestId('cues-flow-menu'))
+    expect(screen.getByTestId('cues-folded-row')).not.toContainElement(slot)
     expect(slot.className).toContain('whitespace-nowrap')
+    expect(slot.className).toContain('shrink-0')
     expect(slot).toHaveTextContent('')
     hoverAt(bar(64))
     expect(screen.getByTestId('cues-rejected-slot')).toBe(slot)
     expect(slot).toContainElement(screen.getByTestId('cues-rejected'))
-    expect(screen.getByTestId('cues-rejected').className).toContain('truncate')
+    expect(screen.getByTestId('cues-rejected').className).not.toContain('truncate')
     hoverAt(bar(200))
     expect(screen.getByTestId('cues-rejected-slot')).toBe(slot)
+  })
+
+  it('counts what does not fit right beside the flow selector in full screen', async () => {
+    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    await ready()
+    await openFull()
+    hoverAt(bar(64))
+    const slot = screen.getByTestId('cues-rejected-slot')
+    expect(slot.previousElementSibling).toContainElement(screen.getByTestId('cues-flow'))
+    expect(slot.className).toContain('shrink-0')
   })
 
   it('says why another flow chosen on a marked track does not fit', async () => {
