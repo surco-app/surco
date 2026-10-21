@@ -335,9 +335,13 @@ function Editing({
     dispatch(acceptAll)
     setProposed(null)
   }
+  const dropProposal = (ms: number) => {
+    setProposed((all) => (all ?? []).filter((p) => p !== ms))
+    focusEditor()
+  }
   const acceptProposal = (ms: number) => {
     dispatch(manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms })
-    setProposed((all) => (all ?? []).filter((p) => p !== ms))
+    dropProposal(ms)
   }
   const [pointDrag, setPointDrag] = useState(false)
   const ghost = pointDrag ? undefined : (hoverGhost ?? proposalGhost ?? playheadGhost ?? undefined)
@@ -728,7 +732,7 @@ function Editing({
       onHover={placing ? setHoverMs : undefined}
       proposals={proposals}
       onAcceptProposal={acceptProposal}
-      onDropProposal={(ms) => setProposed((all) => (all ?? []).filter((p) => p !== ms))}
+      onDropProposal={dropProposal}
     />
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)

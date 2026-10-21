@@ -271,6 +271,35 @@ describe('accepting Auto marcar', () => {
       .sort()
   const hots = () => screen.queryAllByTestId(/^cue-wave-hot-/)
   const undo = () => fireEvent.click(screen.getByTestId('cues-step-back'))
+  const press = (testId: string) => {
+    const button = screen.getByTestId(testId)
+    button.focus()
+    fireEvent.click(button)
+  }
+
+  it('gives the focus back to the editor after ✓ or ✕, so Return still accepts what is left', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(64))
+    press(`cue-proposal-drop-${bar(64)}`)
+    expect(screen.getByTestId('cues-editor')).toHaveFocus()
+    seekStrip(bar(128))
+    press(`cue-proposal-accept-${bar(128)}`)
+    expect(screen.getByTestId('cues-editor')).toHaveFocus()
+  })
+
+  it('keeps Return working after ✕ in full screen', async () => {
+    setup()
+    await ready()
+    await openFull()
+    await autoMark()
+    seekStrip(bar(64))
+    press(`cue-proposal-drop-${bar(64)}`)
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Enter' })
+    expect(calls()).toContain(`cue-wave-call-${bar(128)}`)
+    expect(proposals()).toEqual([])
+  })
 
   it('places one proposal with its ✓ as a point placed by hand, and keeps the others proposed', async () => {
     setup()
