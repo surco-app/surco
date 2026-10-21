@@ -285,7 +285,9 @@ function Editing({
   useEffect(() => {
     if (!placeMode) return
     const onEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPlaceMode(false)
+      if (e.key !== 'Escape' || e.defaultPrevented) return
+      e.preventDefault()
+      setPlaceMode(false)
     }
     document.addEventListener('keydown', onEscape)
     return () => document.removeEventListener('keydown', onEscape)

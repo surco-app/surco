@@ -1,13 +1,23 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
+import { resolveBindings } from '../../../shared/shortcutDefaults'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
@@ -190,6 +200,29 @@ describe('CuesSection folded', () => {
     changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
     await ready()
     expect(placeMode()).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('spends the Escape that turns place mode off there, so the track stays selected, and lets the next Escape through', async () => {
+    const onEscape = vi.fn<() => void>()
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => [],
+        onTogglePalette: () => {},
+        onEscape,
+        onStepTrack: () => {},
+      }),
+    )
+    setup()
+    await ready()
+    fireEvent.click(placeMode())
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(placeMode()).toHaveAttribute('aria-pressed', 'false')
+    expect(onEscape).not.toHaveBeenCalled()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(onEscape).toHaveBeenCalledTimes(1)
   })
 
   it('reads Manual and cannot place when Manual is picked from the chevron', async () => {
