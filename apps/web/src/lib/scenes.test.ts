@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { MY_FLOW } from '../../../desktop/src/shared/cueFlows'
+import { flowOutcome, HOT_KINDS } from '../../../desktop/src/shared/cueRules'
 import {
   BATCH_QUEUE,
   BATCH_TOTAL,
@@ -6,7 +8,7 @@ import {
   CUES_BARS,
   CUES_FLOW,
   CUES_HOVERS,
-  CUES_POINT,
+  CUES_POINTS,
   CUES_ZOOM,
   cuesFrame,
   DROP_TOTAL,
@@ -527,8 +529,9 @@ describe('reviewFrame', () => {
 })
 
 describe('cuesFrame', () => {
-  const frames = Array.from({ length: 401 }, (_, i) => cuesFrame(i / 400))
+  const frames = Array.from({ length: 801 }, (_, i) => cuesFrame(i / 800))
   const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+  const allHovers = CUES_HOVERS.flat()
 
   it('draws one DJ flow as he described it, red at 48 bars, green at 32 and blue at 16', () => {
     expect(CUES_FLOW.map(({ back, colour }) => [back, colour])).toEqual([
@@ -536,51 +539,52 @@ describe('cuesFrame', () => {
       [32, '#28e214'],
       [16, '#305aff'],
     ])
-    expect(CUES_FLOW.map((c) => c.letter)).toEqual(['A', 'B', 'C'])
   })
 
-  it('lands the point where the track drops, right after the quiet break, in both waves', () => {
+  it('lands each point where the track drops, after a quiet break, in both waves', () => {
     const mean = (values: number[], from: number, to: number) =>
       values.slice(from, to).reduce((sum, v) => sum + v, 0) / (to - from)
     const zoomColumn = (bar: number) =>
-      Math.round(((bar - CUES_ZOOM.from) / CUES_ZOOM.bars) * CUES_ZOOM_ENVELOPE.length)
+      Math.round(((bar - CUES_ZOOM.from) / CUES_ZOOM.span) * CUES_ZOOM_ENVELOPE.length)
     const trackColumn = (bar: number) => Math.round((bar / CUES_BARS) * CUES_TRACK_ENVELOPE.length)
-    for (const [values, column] of [
-      [CUES_ZOOM_ENVELOPE, zoomColumn],
-      [CUES_TRACK_ENVELOPE, trackColumn],
-    ] as const) {
-      const before = mean(values, column(CUES_POINT - 8), column(CUES_POINT))
-      const after = mean(values, column(CUES_POINT), column(CUES_POINT + 4))
-      expect(before).toBeLessThan(0.1)
-      expect(after).toBeGreaterThan(0.3)
+    for (const point of CUES_POINTS) {
+      for (const [values, column] of [
+        [CUES_ZOOM_ENVELOPE, zoomColumn],
+        [CUES_TRACK_ENVELOPE, trackColumn],
+      ] as const) {
+        const windows = Array.from({ length: 21 }, (_, i) =>
+          mean(values, column(point - 24 + i), column(point - 20 + i)),
+        )
+        const after = mean(values, column(point), column(point + 4))
+        expect(Math.min(...windows)).toBeLessThan(0.1)
+        expect(mean(values, column(point - 4), column(point))).toBeLessThan(after / 2)
+        expect(after).toBeGreaterThan(0.3)
+      }
     }
   })
 
   it('opens on a track with no cues, no ghost and no pointer', () => {
     const start = cuesFrame(0)
-    expect(start.placed).toBe(null)
+    expect(start.placed).toEqual({ points: [], hot: [] })
     expect(start.ghost).toBe(null)
     expect(start.cursor).toBe('hidden')
     expect(start.saved).toBe(false)
   })
 
-  it('shows the ghost only while the pointer is over the wave and nothing is placed yet', () => {
-    for (const f of frames) {
-      if (f.ghost) {
-        expect(['start', 'closer', 'point']).toContain(f.cursor)
-        expect(f.placed).toBe(null)
-      }
-    }
-    expect(firstAt((f) => f.ghost !== null)).toBeGreaterThan(-1)
-  })
-
-  it('places every ghost cue back from the point under the pointer, on whole bars inside the track', () => {
+  it('shows the ghost only while the pointer is over the wave, at a point not placed yet', () => {
     for (const f of frames) {
       if (!f.ghost) continue
-      expect(f.ghost.hot.map((h) => f.ghost && f.ghost.point - h.bar)).toEqual(
-        CUES_FLOW.map((c) => c.back),
-      )
-      for (const bar of [f.ghost.point, ...f.ghost.hot.map((h) => h.bar)]) {
+      expect(['start', 'closer', 'point']).toContain(f.cursor)
+      expect(f.placed.points).not.toContain(f.ghost.points[0])
+    }
+  })
+
+  it('draws every ghost cue back from the point under the pointer, on whole bars inside the track', () => {
+    for (const f of frames) {
+      if (!f.ghost) continue
+      const [point] = f.ghost.points
+      expect(f.ghost.hot.map((h) => point - h.bar)).toEqual(CUES_FLOW.map((c) => c.back))
+      for (const bar of [point, ...f.ghost.hot.map((h) => h.bar)]) {
         expect(Number.isInteger(bar)).toBe(true)
         expect(bar).toBeGreaterThanOrEqual(0)
         expect(bar).toBeLessThan(CUES_BARS)
@@ -588,49 +592,102 @@ describe('cuesFrame', () => {
     }
   })
 
-  it('moves the ghost through each hover point in turn, only after the pointer has gone there', () => {
-    const points = frames.map((f) => f.ghost?.point ?? null).filter((p) => p !== null)
-    expect([...new Set(points)]).toEqual([...CUES_HOVERS])
-    expect(firstAt((f) => f.cursor === 'closer')).toBeLessThan(
-      firstAt((f) => f.ghost?.point === CUES_HOVERS[1]),
-    )
-    expect(firstAt((f) => f.cursor === 'point')).toBeLessThan(
-      firstAt((f) => f.ghost?.point === CUES_POINT),
+  it('moves the ghost through each hover in turn, only after the pointer has gone there', () => {
+    const points = frames.map((f) => f.ghost?.points[0] ?? null).filter((p) => p !== null)
+    expect([...new Set(points)]).toEqual(allHovers)
+    CUES_HOVERS.forEach((hovers, round) => {
+      expect(firstAt((f) => f.round === round && f.cursor === 'closer')).toBeLessThan(
+        firstAt((f) => f.ghost?.points[0] === hovers[1]),
+      )
+      expect(firstAt((f) => f.round === round && f.cursor === 'point')).toBeLessThan(
+        firstAt((f) => f.ghost?.points[0] === hovers[2]),
+      )
+    })
+  })
+
+  it('shows each drop in the zoomed wave before the pointer works on it', () => {
+    for (const f of frames) if (f.ghost) expect(f.view).toBe(f.round)
+    expect(firstAt((f) => f.view === 1)).toBeLessThan(
+      firstAt((f) => f.round === 1 && f.cursor !== 'hidden'),
     )
   })
 
-  it('places exactly what the ghost showed, with the click on the point', () => {
-    const placed = firstAt((f) => f.placed !== null)
-    const pressed = firstAt((f) => f.pressed)
-    expect(pressed).toBeGreaterThan(firstAt((f) => f.ghost?.point === CUES_POINT))
-    expect(pressed).toBeLessThan(placed)
-    expect(frames[pressed].cursor).toBe('point')
-    expect(frames[placed].placed).toEqual(frames[placed - 1].ghost)
+  it('places exactly what the ghost showed, with each click on its point', () => {
+    CUES_POINTS.forEach((point) => {
+      const placed = firstAt((f) => f.placed.points.includes(point))
+      const pressed = firstAt((f) => f.pressed && f.ghost?.points[0] === point)
+      expect(pressed).toBeGreaterThan(-1)
+      expect(pressed).toBeLessThan(placed)
+      expect(frames[pressed].cursor).toBe('point')
+      const before = frames[placed - 1]
+      expect(frames[placed].placed).toEqual({
+        points: [...before.placed.points, point],
+        hot: [...before.placed.hot, ...(before.ghost?.hot ?? [])],
+      })
+    })
   })
 
   it('never takes a placed cue back', () => {
-    const placed = firstAt((f) => f.placed !== null)
-    for (const f of frames.slice(placed)) expect(f.placed).toEqual(frames[placed].placed)
+    for (let i = 1; i < frames.length; i++) {
+      expect(frames[i].placed.hot.slice(0, frames[i - 1].placed.hot.length)).toEqual(
+        frames[i - 1].placed.hot,
+      )
+    }
   })
 
-  it('saves to rekordbox only after placing, with the pointer on the button first', () => {
+  it('saves to rekordbox only after both placements, with the pointer on the button first', () => {
     const saved = firstAt((f) => f.saved)
     const pressed = firstAt((f) => f.savePressed)
-    expect(pressed).toBeGreaterThan(firstAt((f) => f.placed !== null))
+    expect(pressed).toBeGreaterThan(firstAt((f) => f.placed.points.length === CUES_POINTS.length))
     expect(firstAt((f) => f.cursor === 'save')).toBeLessThan(pressed)
     expect(saved).toBeGreaterThan(pressed)
   })
 
-  it('ends with the flow placed on the point and saved, the pointer gone', () => {
-    const end = cuesFrame(1)
-    expect(end.placed).toEqual({
-      point: CUES_POINT,
-      hot: CUES_FLOW.map(({ back, letter, colour }) => ({
-        bar: CUES_POINT - back,
-        letter,
-        colour,
-      })),
+  it('ends with exactly the cues the app places with this flow on these two points', () => {
+    const BEAT_MS = 1000
+    const msOf = (bar: number) => bar * 4 * BEAT_MS
+    const barOf = (ms: number) => ms / (4 * BEAT_MS)
+    const track = {
+      beats: Array.from({ length: CUES_BARS * 4 }, (_, i) => i * BEAT_MS),
+      strong: [],
+      phrases: [],
+    }
+    const first = flowOutcome({
+      ...track,
+      existing: [],
+      drops: [msOf(CUES_POINTS[0])],
+      previousDrops: [],
+      flow: MY_FLOW,
     })
+    if (first.status !== 'plan') throw new Error(first.status)
+    const second = flowOutcome({
+      ...track,
+      existing: first.wanted.map((w, i) => ({ ...w, id: `c${i}` })),
+      drops: CUES_POINTS.map(msOf),
+      previousDrops: [msOf(CUES_POINTS[0])],
+      flow: MY_FLOW,
+      kept: [],
+    })
+    if (second.status !== 'plan') throw new Error(second.status)
+    const hex: Record<number, string> = { 1: '#305aff', 22: '#28e214', 42: '#e62828' }
+    const hot = second.wanted
+      .filter((w) => w.kind !== 0)
+      .sort((a, b) => a.ms - b.ms)
+      .map((w) => ({
+        bar: barOf(w.ms),
+        letter: 'ABCDEFGH'[HOT_KINDS.indexOf(w.kind)],
+        colour: hex[w.color ?? 0],
+      }))
+    const calls = second.wanted
+      .filter((w) => w.kind === 0)
+      .map((w) => barOf(w.ms))
+      .sort((a, b) => a - b)
+    const end = cuesFrame(1)
+    expect(end.placed.hot).toEqual(hot)
+    expect(calls).toEqual(
+      [...end.placed.points, ...end.placed.hot.map((h) => h.bar)].sort((a, b) => a - b),
+    )
+    expect(end.placed.hot.map((h) => h.letter)).toEqual(['A', 'B', 'C', 'D', 'E', 'F'])
     expect(end.ghost).toBe(null)
     expect(end.saved).toBe(true)
     expect(end.savePressed).toBe(false)

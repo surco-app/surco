@@ -426,18 +426,24 @@ export function reviewFrame(t: number): ReviewFrame {
   }
 }
 
-export const CUES_BARS = 206
-export const CUES_POINT = 148
-export const CUES_HOVERS = [136, 142, CUES_POINT] as const
-export const CUES_ZOOM = { from: 96, bars: 56 } as const
-export const CUES_SECONDS = 9
+export const CUES_BARS = 207
+export const CUES_POINTS = [71, 149] as const
+export const CUES_HOVERS = [
+  [59, 65, 71],
+  [137, 143, 149],
+] as const
+export const CUES_ZOOM = { from: 19, span: 134, bars: 56, views: [19, 97] } as const
+export const CUES_SECONDS = 15
 export const CUES_CALL_COLOUR = '#e62828'
 
 export const CUES_FLOW = [
-  { back: 48, letter: 'A', colour: '#e62828' },
-  { back: 32, letter: 'B', colour: '#28e214' },
-  { back: 16, letter: 'C', colour: '#305aff' },
+  { back: 48, colour: '#e62828' },
+  { back: 32, colour: '#28e214' },
+  { back: 16, colour: '#305aff' },
 ] as const
+
+const CUES_LETTERS = 'ABCDEFGH'
+const CUES_ROUNDS = [0, 6.3]
 
 export interface CueMark {
   bar: number
@@ -446,43 +452,60 @@ export interface CueMark {
 }
 
 export interface CuePlacement {
-  point: number
+  points: number[]
   hot: CueMark[]
 }
 
 export interface CuesFrame {
+  round: 0 | 1
+  view: 0 | 1
   cursor: 'hidden' | 'start' | 'closer' | 'point' | 'save'
   ghost: CuePlacement | null
   pressed: boolean
-  placed: CuePlacement | null
+  placed: CuePlacement
   savePressed: boolean
   saved: boolean
 }
 
-const placement = (point: number): CuePlacement => ({
-  point,
-  hot: CUES_FLOW.map(({ back, letter, colour }) => ({ bar: point - back, letter, colour })),
+const placement = (point: number, before: number): CuePlacement => ({
+  points: [point],
+  hot: CUES_FLOW.map(({ back, colour }, i) => ({
+    bar: point - back,
+    letter: CUES_LETTERS[before + i],
+    colour,
+  })),
 })
 
 export function cuesFrame(t: number): CuesFrame {
   const s = clamp(t) * CUES_SECONDS
-  const placed = s >= 5.1
-  const hover = placed || s < 1.3 ? null : CUES_HOVERS[s < 3 ? 0 : s < 4.4 ? 1 : 2]
+  const round = s >= CUES_ROUNDS[1] ? 1 : 0
+  const r = s - CUES_ROUNDS[round]
+  const done = CUES_ROUNDS.filter((o) => s >= o + 5.1).length
+  const placed = CUES_POINTS.slice(0, done).map((p, i) => placement(p, i * CUES_FLOW.length))
+  const hovering = done === round && r >= 1.3
+  const hover = CUES_HOVERS[round][r < 3 ? 0 : r < 4.4 ? 1 : 2]
   return {
+    round,
+    view: s >= 5.6 ? 1 : 0,
     cursor:
-      s < 0.5 || s >= 7.6
-        ? 'hidden'
-        : s < 2.2
-          ? 'start'
-          : s < 3.6
-            ? 'closer'
-            : s < 5.7
-              ? 'point'
-              : 'save',
-    ghost: hover === null ? null : placement(hover),
-    pressed: s >= 4.9 && s < 5.1,
-    placed: placed ? placement(CUES_POINT) : null,
-    savePressed: s >= 6.9 && s < 7.1,
-    saved: s >= 7.1,
+      s >= 11.9
+        ? s < 13.9
+          ? 'save'
+          : 'hidden'
+        : r < 0.5 || (round === 0 && r >= 5.5)
+          ? 'hidden'
+          : r < 2.2
+            ? 'start'
+            : r < 3.6
+              ? 'closer'
+              : 'point',
+    ghost: hovering ? placement(hover, done * CUES_FLOW.length) : null,
+    pressed: r >= 4.9 && r < 5.1,
+    placed: {
+      points: placed.flatMap((p) => p.points),
+      hot: placed.flatMap((p) => p.hot),
+    },
+    savePressed: s >= 13 && s < 13.2,
+    saved: s >= 13.2,
   }
 }

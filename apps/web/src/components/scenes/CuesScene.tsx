@@ -1,4 +1,4 @@
-import { type RefObject, useRef, useState } from 'react'
+import { createRef, type RefObject, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CUES_BARS,
@@ -6,6 +6,7 @@ import {
   CUES_HOVERS,
   CUES_SECONDS,
   CUES_ZOOM,
+  type CueMark,
   type CuePlacement,
   cuesFrame,
 } from '../../lib/scenes'
@@ -16,52 +17,52 @@ import { AppWave, Cover, EASE, Glyph, ICONS, SceneCursor } from './AppChrome'
 const TRACK = { title: 'Something (Extended Mix)', artist: 'Lasgo', duration: '5:56' }
 const GHOST_OPACITY = 0.42
 const PADS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-const ZOOM_LINES = Array.from({ length: CUES_ZOOM.bars }, (_, i) => CUES_ZOOM.from + i)
+const ZOOM_LINES = Array.from({ length: CUES_ZOOM.span }, (_, i) => CUES_ZOOM.from + i)
+const VIEW_SLIDE = `transform 1s ${EASE}`
 
 const at = (bar: number, from: number, bars: number) => ((bar - from) / bars) * 100
 
-function Marks({
-  placement,
-  ghost,
-  from,
-  bars,
-}: {
-  placement: CuePlacement
-  ghost: boolean
-  from: number
-  bars: number
-}) {
-  const inside = (bar: number) => bar >= from && bar <= from + bars
-  const left = (bar: number) => ({
-    left: `${at(bar, from, bars)}%`,
-    opacity: ghost ? GHOST_OPACITY : 1,
+type Mark = { key: string; bar: number; ghost: boolean; hot?: CueMark }
+
+const marksOf = (placed: CuePlacement, ghost: CuePlacement | null): Mark[] => [
+  ...placed.points.map((bar, i) => ({ key: `point${i}`, bar, ghost: false })),
+  ...placed.hot.map((h) => ({ key: h.letter, bar: h.bar, ghost: false, hot: h })),
+  ...(ghost
+    ? [
+        { key: `point${placed.points.length}`, bar: ghost.points[0], ghost: true },
+        ...ghost.hot.map((h) => ({ key: h.letter, bar: h.bar, ghost: true, hot: h })),
+      ]
+    : []),
+]
+
+function Marks({ marks, from, bars }: { marks: Mark[]; from: number; bars: number }) {
+  const shown = marks.filter(({ bar }) => bar >= from && bar <= from + bars)
+  const style = (m: Mark) => ({
+    left: `${at(m.bar, from, bars)}%`,
+    opacity: m.ghost ? GHOST_OPACITY : 1,
     transition: `left 0.35s ${EASE}, opacity 0.3s ease`,
   })
   return (
     <>
-      {[
-        { key: 'point', bar: placement.point },
-        ...placement.hot.map((h) => ({ key: h.letter, bar: h.bar })),
-      ]
-        .filter(({ bar }) => inside(bar))
-        .map(({ key, bar }) => (
-          <i
-            key={key}
-            className="absolute top-0.5 block h-0 w-0 -translate-x-1/2 border-x-[11px] border-t-[13px] border-x-transparent"
-            style={{ ...left(bar), borderTopColor: CUES_CALL_COLOUR }}
-          />
-        ))}
-      {placement.hot
-        .filter((h) => inside(h.bar))
-        .map((h) => (
-          <i
-            key={h.letter}
-            className="absolute top-0 z-10 block size-3.5 -translate-x-1/2 rounded-[3px] text-center text-[9px] leading-3.5 font-semibold text-bg not-italic"
-            style={{ ...left(h.bar), backgroundColor: h.colour }}
-          >
-            {h.letter}
-          </i>
-        ))}
+      {shown.map((m) => (
+        <i
+          key={m.key}
+          className="absolute top-0.5 block h-0 w-0 -translate-x-1/2 border-x-[11px] border-t-[13px] border-x-transparent"
+          style={{ ...style(m), borderTopColor: CUES_CALL_COLOUR }}
+        />
+      ))}
+      {shown.map(
+        (m) =>
+          m.hot && (
+            <i
+              key={m.key}
+              className="absolute top-0 z-10 block size-3.5 -translate-x-1/2 rounded-[3px] text-center text-[9px] leading-3.5 font-semibold text-bg not-italic"
+              style={{ ...style(m), backgroundColor: m.hot.colour }}
+            >
+              {m.hot.letter}
+            </i>
+          ),
+      )}
     </>
   )
 }
@@ -71,7 +72,7 @@ function Anchor({ bar, anchorRef }: { bar: number; anchorRef: RefObject<HTMLSpan
     <span
       ref={anchorRef}
       className="absolute top-[55%] block size-0"
-      style={{ left: `${at(bar, CUES_ZOOM.from, CUES_ZOOM.bars)}%` }}
+      style={{ left: `${at(bar, CUES_ZOOM.from, CUES_ZOOM.span)}%` }}
     />
   )
 }
@@ -80,15 +81,18 @@ export default function CuesScene() {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const win = useRef<HTMLDivElement>(null)
-  const start = useRef<HTMLSpanElement>(null)
-  const closer = useRef<HTMLSpanElement>(null)
-  const point = useRef<HTMLSpanElement>(null)
   const save = useRef<HTMLSpanElement>(null)
-  const [targets] = useState(() => ({ start, closer, point, save }))
+  const [anchors] = useState(() =>
+    CUES_HOVERS.map((hovers) => hovers.map(() => createRef<HTMLSpanElement>())),
+  )
   const frame = cuesFrame(useSceneProgress(ref, CUES_SECONDS * 1000))
-  const shown = frame.placed ?? frame.ghost
-  const unsaved = frame.placed !== null && !frame.saved
-  const pads = new Map((frame.placed?.hot ?? []).map((h) => [h.letter, h.colour]))
+  const marks = marksOf(frame.placed, frame.ghost)
+  const unsaved = frame.placed.points.length > 0 && !frame.saved
+  const pads = new Map(frame.placed.hot.map((h) => [h.letter, h.colour]))
+  const viewFrom = CUES_ZOOM.views[frame.view]
+  const step = ['start', 'closer', 'point'].indexOf(frame.cursor)
+  const target =
+    frame.cursor === 'hidden' ? null : frame.cursor === 'save' ? save : anchors[frame.round][step]
 
   return (
     <div ref={ref}>
@@ -160,52 +164,57 @@ export default function CuesScene() {
             <span
               className="absolute inset-y-0 block border-x border-blue/30 bg-blue/10"
               style={{
-                left: `${at(CUES_ZOOM.from, 0, CUES_BARS)}%`,
+                left: `${at(viewFrom, 0, CUES_BARS)}%`,
                 width: `${(CUES_ZOOM.bars / CUES_BARS) * 100}%`,
+                transition: `left 1s ${EASE}`,
               }}
             />
             <span className="absolute inset-x-0 top-4 bottom-0">
               <AppWave values={CUES_TRACK_ENVELOPE} />
             </span>
-            {shown && <Marks placement={shown} ghost={!frame.placed} from={0} bars={CUES_BARS} />}
+            <Marks marks={marks} from={0} bars={CUES_BARS} />
           </div>
 
           <div className="relative h-40 overflow-hidden rounded-md bg-bg2 sm:h-44">
-            {ZOOM_LINES.map((bar) => (
-              <i
-                key={bar}
-                className={`absolute inset-y-0 block w-px ${bar % 16 === 0 ? 'bg-faint/25' : bar % 4 === 0 ? 'bg-faint/15' : 'bg-faint/[0.07]'}`}
-                style={{ left: `${at(bar, CUES_ZOOM.from, CUES_ZOOM.bars)}%` }}
-              >
-                {bar % 4 === 0 && (
-                  <i className="absolute top-0 left-0 block h-1.5 w-px bg-red/60" />
-                )}
-              </i>
-            ))}
-            <span className="absolute inset-x-0 top-6 bottom-2">
-              <AppWave values={CUES_ZOOM_ENVELOPE} />
-            </span>
+            <div
+              className="absolute inset-y-0 left-0"
+              style={{
+                width: `${(CUES_ZOOM.span / CUES_ZOOM.bars) * 100}%`,
+                transform: `translateX(-${((viewFrom - CUES_ZOOM.from) / CUES_ZOOM.span) * 100}%)`,
+                transition: VIEW_SLIDE,
+              }}
+            >
+              {ZOOM_LINES.map((bar) => (
+                <i
+                  key={bar}
+                  className={`absolute inset-y-0 block w-px ${bar % 16 === 0 ? 'bg-faint/25' : bar % 4 === 0 ? 'bg-faint/15' : 'bg-faint/[0.07]'}`}
+                  style={{ left: `${at(bar, CUES_ZOOM.from, CUES_ZOOM.span)}%` }}
+                >
+                  {bar % 4 === 0 && (
+                    <i className="absolute top-0 left-0 block h-1.5 w-px bg-red/60" />
+                  )}
+                </i>
+              ))}
+              <span className="absolute inset-x-0 top-6 bottom-2">
+                <AppWave values={CUES_ZOOM_ENVELOPE} />
+              </span>
+              {frame.ghost && (
+                <i
+                  className={`absolute top-4 bottom-0 block border-l ${frame.pressed ? 'border-solid border-fg' : 'border-dashed border-fg/70'}`}
+                  style={{
+                    left: `${at(frame.ghost.points[0], CUES_ZOOM.from, CUES_ZOOM.span)}%`,
+                    transition: `left 0.35s ${EASE}`,
+                  }}
+                />
+              )}
+              <Marks marks={marks} from={CUES_ZOOM.from} bars={CUES_ZOOM.span} />
+              {CUES_HOVERS.flatMap((hovers, round) =>
+                hovers.map((bar, i) => (
+                  <Anchor key={bar} bar={bar} anchorRef={anchors[round][i]} />
+                )),
+              )}
+            </div>
             <i className="absolute inset-y-0 left-1/2 block w-px bg-fg/70" />
-            {frame.ghost && (
-              <i
-                className={`absolute top-4 bottom-0 block border-l ${frame.pressed ? 'border-solid border-fg' : 'border-dashed border-fg/70'}`}
-                style={{
-                  left: `${at(frame.ghost.point, CUES_ZOOM.from, CUES_ZOOM.bars)}%`,
-                  transition: `left 0.35s ${EASE}`,
-                }}
-              />
-            )}
-            {shown && (
-              <Marks
-                placement={shown}
-                ghost={!frame.placed}
-                from={CUES_ZOOM.from}
-                bars={CUES_ZOOM.bars}
-              />
-            )}
-            <Anchor bar={CUES_HOVERS[0]} anchorRef={start} />
-            <Anchor bar={CUES_HOVERS[1]} anchorRef={closer} />
-            <Anchor bar={CUES_HOVERS[2]} anchorRef={point} />
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -232,10 +241,7 @@ export default function CuesScene() {
           </div>
         </div>
 
-        <SceneCursor
-          container={win}
-          target={frame.cursor === 'hidden' ? null : targets[frame.cursor]}
-        />
+        <SceneCursor container={win} target={target} />
       </div>
     </div>
   )
