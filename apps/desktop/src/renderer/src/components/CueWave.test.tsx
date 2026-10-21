@@ -224,17 +224,19 @@ describe('CueWave', () => {
   })
 
   it('says the track is not analysed and takes no clicks when it has no grid', () => {
-    const onOpen = vi.fn<(ms: number) => void>()
-    setup({ grid: [], onOpen })
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ grid: [], onSeek })
     expect(screen.getByTestId('cue-wave-not-analysed')).toBeInTheDocument()
     expect(screen.queryByTestId('cue-wave')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('cue-wave-not-analysed'), { clientX: 100, clientY: 40 })
-    expect(onOpen).not.toHaveBeenCalled()
+    expect(onSeek).not.toHaveBeenCalled()
   })
 
   it('clears the ghost after a click', () => {
-    setup({ onHover: vi.fn(), onOpen: vi.fn() })
+    setup({ onHover: vi.fn(), onSeek: vi.fn() })
     fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 100, clientY: 40 })
+    fireEvent.mouseUp(window, { clientX: 100 })
     fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 100, clientY: 40 })
     expect(screen.queryByTestId('cue-wave-cursor')).not.toBeInTheDocument()
   })
@@ -294,22 +296,15 @@ describe('CueWave', () => {
     expect(onSeek.mock.calls).toEqual([[40500], [40500], [41000]])
   })
 
-  it('draws no playhead in the folded section', () => {
-    setup({ onOpen: vi.fn() })
+  it('draws no playhead when it is given none, as the Settings preview', () => {
+    setup()
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
   })
 
-  it('opens the editor on the beat under a folded click, even while it draws the flow under the cursor, so the DJ lands on the grid and places where the bars are visible', () => {
-    const onOpen = vi.fn<(ms: number) => void>()
-    const onHover = vi.fn<(ms: number | null) => void>()
-    setup({ onOpen, onHover })
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 102, clientY: 40 })
-    expect(onHover).toHaveBeenLastCalledWith(10000)
-    expect(screen.getByTestId('cue-wave-cursor')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 403 })
-    expect(onOpen).toHaveBeenCalledWith(40500)
-    expect(onHover).toHaveBeenLastCalledWith(null)
-    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+  it('draws as a slim strip without its own card when it shares a surface with the zoomed wave', () => {
+    setup({ slim: true })
+    expect(screen.getByTestId('cue-wave').className).toContain('h-[34px]')
+    expect(screen.getByTestId('cue-wave').className).not.toContain('rounded-md')
   })
 
   it('moves the playhead with a click or a drag in the full editor while it draws the flow under the cursor, so the strip always navigates', () => {
@@ -329,24 +324,14 @@ describe('CueWave', () => {
     expect(onSeek).toHaveBeenLastCalledWith(40500)
   })
 
-  it('opens the editor at the point under the cursor with Enter on the strip, as a click would, but not from a focused mark', () => {
-    const onOpen = vi.fn<(ms: number) => void>()
-    setup({ onOpen, onHover: vi.fn() })
+  it('moves the playhead to the point under the cursor with Enter on the strip, as a click would, but not from a focused mark', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ onSeek, onHover: vi.fn() })
     fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 102, clientY: 40 })
     fireEvent.keyDown(screen.getByTestId('cue-wave-hot-A'), { key: 'Enter' })
-    expect(onOpen).not.toHaveBeenCalled()
+    expect(onSeek).not.toHaveBeenCalled()
     fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'Enter' })
-    expect(onOpen).toHaveBeenCalledWith(10000)
-  })
-
-  it('opens the editor at the clicked point when the folded strip only opens', () => {
-    const onOpen = vi.fn<(ms: number) => void>()
-    setup({ onOpen })
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 200 })
-    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
-    expect(screen.getByTestId('cue-wave').className).toContain('cursor-pointer')
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 400 })
-    expect(onOpen).toHaveBeenCalledWith(40000)
+    expect(onSeek).toHaveBeenCalledWith(10000)
   })
 
   it('hands the beat under the cursor to the editor and forgets it when the cursor leaves, so the flow is drawn only while hovering', () => {

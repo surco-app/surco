@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Minimize2 } from 'lucide-react'
+import { Keyboard, Minimize2, Pause, Pencil, Play } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
@@ -39,7 +40,9 @@ import { flowName } from '../lib/cueFlowName'
 import { type CueKey, cueKeyAction } from '../lib/cueKeys'
 import {
   adjacentCall,
+  barsToNextCall,
   callAt,
+  cueClock,
   DEFAULT_ZOOM_BARS,
   detailWindow,
   jumpBeats,
@@ -64,7 +67,7 @@ import { claimKeys } from '../lib/spaceClaim'
 import { CueDeck } from './CueDeck'
 import { CuePalette } from './CuePalette'
 import { CueWave } from './CueWave'
-import { CueWaveDetail } from './CueWaveDetail'
+import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
@@ -213,7 +216,7 @@ function Editing({
   onFlow,
   onDiscard,
   onRestore,
-  onMaximize,
+  headerSlot,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -229,7 +232,7 @@ function Editing({
   onFlow?: (id: string) => void
   onDiscard: () => void
   onRestore: () => void
-  onMaximize: () => void
+  headerSlot: HTMLElement | null
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -277,9 +280,20 @@ function Editing({
   const shownFlow = flows.some((f) => f.id === chosen) ? chosen : DEFAULT_CUE_FLOW_ID
   const shown = flows.find((f) => f.id === shownFlow) ?? MIX_IN
   const placing = !manual && followsPoint(shown)
+  const [placeMode, setPlaceMode] = useState(false)
+  const armed = placing && (maximized || placeMode)
+  useEffect(() => {
+    if (!placeMode) return
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPlaceMode(false)
+    }
+    document.addEventListener('keydown', onEscape)
+    return () => document.removeEventListener('keydown', onEscape)
+  }, [placeMode])
   const pickMode = (id: string) => {
     setChosen(id)
     if (id !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: id })
+    if (!maximized) setPlaceMode(id !== MANUAL_CUE_FLOW)
     onFlow?.(id)
   }
   const pickOption = (id: string) => {
@@ -304,12 +318,12 @@ function Editing({
     switchGhost !== null && !noFit && (switchGhost.added.length > 0 || switchGhost.gone.length > 0)
   const [hoverMs, setHoverMs] = useState<number | null>(null)
   useEffect(() => {
-    if (!placing) setHoverMs(null)
-  }, [placing])
+    if (!armed) setHoverMs(null)
+  }, [armed])
   const hoverGhost = useMemo<DraftGhost | null>(
     () =>
-      placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
-    [placing, hoverMs, state, ctx],
+      armed && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
+    [armed, hoverMs, state, ctx],
   )
   const [pointDrag, setPointDrag] = useState(false)
   const ghost = pointDrag
@@ -415,10 +429,6 @@ function Editing({
       ? { wave: read.wave, durationMs: read.durationMs }
       : null
   const seekTo = (ms: number) => onPlayhead(Math.min(Math.max(ms, 0), read.durationMs))
-  const openAt = (ms: number) => {
-    seekTo(ms)
-    onMaximize()
-  }
   const pad = (kind: number) => {
     const existing = state.cues.find((c) => c.kind === kind)
     if (!existing) {
@@ -527,6 +537,51 @@ function Editing({
         return refreshQueued()
       })
   }
+  const flowOptions = [
+    ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
+    { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
+    {
+      value: CLEAR_CUES,
+      label: tr('editor.cues.clearAll'),
+      divided: true,
+      disabled: !clearable,
+    },
+  ]
+  const applyButton = (
+    <button
+      type="button"
+      data-testid="cues-apply-track"
+      onClick={() => {
+        dispatch({ type: 'apply-flow', flowId: shownFlow })
+        if (maximized) focusEditor()
+      }}
+      className="press h-8 whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+    >
+      {tr('editor.cues.applyTrack')}
+    </button>
+  )
+  const rejectedSlot = (
+    <span
+      data-testid="cues-rejected-slot"
+      className="min-w-0 flex-1 whitespace-nowrap text-xs text-fg-faint"
+    >
+      {rejectedCount > 0 && (
+        <span data-testid="cues-rejected" className="block truncate">
+          {tr('editor.cues.rejectedCount', { count: rejectedCount })}
+        </span>
+      )}
+    </span>
+  )
+  const discardButton = (!unchanged || queued !== null) && (
+    <button
+      type="button"
+      data-testid="cues-undo"
+      onClick={onDiscard}
+      className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+    >
+      {tr('editor.cues.discard')}
+    </button>
+  )
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
       <Select
@@ -537,58 +592,17 @@ function Editing({
         value={manual ? MANUAL_CUE_FLOW : shownFlow}
         onChange={pickOption}
         onClosed={maximized ? focusEditor : undefined}
-        options={[
-          ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
-          { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
-          {
-            value: CLEAR_CUES,
-            label: tr('editor.cues.clearAll'),
-            divided: true,
-            disabled: !clearable,
-          },
-        ]}
+        options={flowOptions}
       />
-      {canApply && (
-        <button
-          type="button"
-          data-testid="cues-apply-track"
-          onClick={() => {
-            dispatch({ type: 'apply-flow', flowId: shownFlow })
-            if (maximized) focusEditor()
-          }}
-          className="press h-8 whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
-        >
-          {tr('editor.cues.applyTrack')}
-        </button>
-      )}
+      {canApply && applyButton}
       {placing && maximized && !pointDrag && (
         <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
           {tr('editor.cues.placeHint')}
         </span>
       )}
-      {placing && (
-        <span
-          data-testid="cues-rejected-slot"
-          className="min-w-0 flex-1 whitespace-nowrap text-xs text-fg-faint"
-        >
-          {rejectedCount > 0 && (
-            <span data-testid="cues-rejected" className="block truncate">
-              {tr('editor.cues.rejectedCount', { count: rejectedCount })}
-            </span>
-          )}
-        </span>
-      )}
+      {placing && rejectedSlot}
       <span className="flex-1" />
-      {(!unchanged || queued !== null) && (
-        <button
-          type="button"
-          data-testid="cues-undo"
-          onClick={onDiscard}
-          className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
-        >
-          {tr('editor.cues.discard')}
-        </button>
-      )}
+      {discardButton}
       <button
         type="button"
         data-testid="cues-save"
@@ -598,6 +612,143 @@ function Editing({
         className="press h-8 whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 text-xs font-semibold text-fg hover:bg-[var(--color-hover)] disabled:opacity-40"
       >
         {maximized ? tr('editor.cues.save') : tr('editor.cues.saveShort')}
+      </button>
+    </div>
+  )
+  const strip = (
+    <CueWave
+      wave={read.wave}
+      grid={read.grid}
+      quantize={settings.cueQuantize}
+      durationMs={read.durationMs}
+      cues={waveCues}
+      selected={state.selected}
+      trimmed={state.trimmed}
+      onHover={armed ? setHoverMs : undefined}
+      hoverMs={armed ? hoverMs : null}
+      ghost={ghost}
+      onSelect={(key) => dispatch({ type: 'select', key })}
+      onMenu={maximized ? setMenu : undefined}
+      onMarkMenu={openMarkMenu}
+      playheadMs={playheadMs}
+      onSeek={seekTo}
+      view={detailWindow(ctx.beats, playheadMs, zoom)}
+      slim={!maximized}
+    />
+  )
+  const detail = (
+    <CueWaveDetail
+      source={source}
+      grid={read.grid}
+      cues={waveCues}
+      selected={state.selected}
+      playheadMs={playheadMs}
+      bars={zoom}
+      quantize={settings.cueQuantize}
+      onScrub={seekTo}
+      onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+      onZoomReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+      onPlace={armed ? place : undefined}
+      onHover={armed ? setHoverMs : undefined}
+      ghost={ghost}
+      onMarkMenu={openMarkMenu}
+      onDeleteMark={(key) => dispatch(removeOf(key))}
+      points={pointMs}
+      movable={[
+        ...points,
+        ...state.cues
+          .filter((c) => c.kind !== 0 && !state.locked.includes(c.key))
+          .map((c) => c.key),
+      ]}
+      onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
+      onMarkDrag={setPointDrag}
+      compact={!maximized}
+      onSeekClick={maximized ? undefined : seekTo}
+    />
+  )
+  const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
+  const placeName = manual ? tr('editor.cues.manualMode') : flowName(shown, tr)
+  const placeOn = armed && !maximized
+  const flowControl = (
+    <span
+      data-testid="cues-flow-control"
+      className={`flex min-w-0 items-center rounded-full ${
+        placeOn ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]' : ''
+      }`}
+    >
+      <button
+        type="button"
+        data-testid="cue-place-mode"
+        aria-pressed={placeOn}
+        disabled={!placing}
+        title={placeName}
+        onClick={() => setPlaceMode((on) => !on)}
+        className={`press flex h-6 min-w-0 items-center gap-1 rounded-full pr-0.5 pl-2 text-xs ${
+          placeOn ? 'font-semibold' : 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg'
+        }`}
+      >
+        <Pencil className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <span className="truncate">{placeName}</span>
+      </button>
+      <Select
+        testid="cues-flow"
+        portal
+        bare
+        label={tr('editor.cues.flow')}
+        value={manual ? MANUAL_CUE_FLOW : shownFlow}
+        onChange={pickOption}
+        options={flowOptions.map((o) => ({ ...o, short: '' }))}
+      />
+    </span>
+  )
+  const foldedRow = (
+    <div
+      data-testid="cues-folded-row"
+      className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-xs"
+    >
+      <button
+        type="button"
+        data-testid="cues-play"
+        aria-label={audition.playing ? tr('editor.cues.pause') : tr('editor.cues.play')}
+        onClick={() => audition.toggle(playheadMs)}
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg hover:bg-[var(--color-hover)]"
+      >
+        {audition.playing ? (
+          <Pause className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        ) : (
+          <Play
+            className="h-3.5 w-3.5 translate-x-px"
+            fill="currentColor"
+            strokeWidth={0}
+            aria-hidden="true"
+          />
+        )}
+      </button>
+      <CueZoom row bars={zoom} onZoom={(dir) => setZoom((z) => zoomStep(z, dir))} />
+      <span data-testid="cues-position" className="shrink-0 font-semibold tabular-nums text-fg">
+        {cueClock(playheadMs)}
+      </span>
+      {toCall !== null && (
+        <span data-testid="cue-detail-to-call" className="min-w-0 truncate text-fg-dim">
+          {tr('editor.cues.toCall', { count: Number(toCall.toFixed(1)) })}
+        </span>
+      )}
+      {armed && rejectedSlot}
+      <span className="flex-1" />
+      {discardButton}
+      <button
+        type="button"
+        data-testid="cues-save"
+        disabled={unchanged}
+        aria-label={tr('editor.cues.save')}
+        onClick={save}
+        className={`press h-6 shrink-0 whitespace-nowrap rounded-full px-3 text-xs font-semibold ${
+          unchanged
+            ? 'text-fg-dim'
+            : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+        }`}
+      >
+        {tr('editor.cues.saveShort')}
       </button>
     </div>
   )
@@ -662,54 +813,25 @@ function Editing({
       onKeyDown={onKey}
     >
       {maximized && header}
-      <CueWave
-        wave={read.wave}
-        grid={read.grid}
-        quantize={settings.cueQuantize}
-        durationMs={read.durationMs}
-        cues={waveCues}
-        selected={state.selected}
-        trimmed={state.trimmed}
-        onHover={placing ? setHoverMs : undefined}
-        hoverMs={placing ? hoverMs : null}
-        ghost={ghost}
-        onSelect={(key) => dispatch({ type: 'select', key })}
-        onMenu={maximized ? setMenu : undefined}
-        onMarkMenu={openMarkMenu}
-        playheadMs={maximized ? playheadMs : undefined}
-        onSeek={maximized ? seekTo : undefined}
-        onOpen={maximized ? undefined : openAt}
-        view={maximized ? detailWindow(ctx.beats, playheadMs, zoom) : undefined}
-      />
-      {!maximized && <div className="mt-3">{actions}</div>}
-      {maximized && (
-        <CueWaveDetail
-          source={source}
-          grid={read.grid}
-          cues={waveCues}
-          selected={state.selected}
-          playheadMs={playheadMs}
-          bars={zoom}
-          quantize={settings.cueQuantize}
-          onScrub={seekTo}
-          onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-          onZoomReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-          onPlace={placing ? place : undefined}
-          onHover={placing ? setHoverMs : undefined}
-          ghost={ghost}
-          onMarkMenu={openMarkMenu}
-          onDeleteMark={(key) => dispatch(removeOf(key))}
-          points={pointMs}
-          movable={[
-            ...points,
-            ...state.cues
-              .filter((c) => c.kind !== 0 && !state.locked.includes(c.key))
-              .map((c) => c.key),
-          ]}
-          onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
-          onMarkDrag={setPointDrag}
-        />
+      {maximized ? (
+        <>
+          {strip}
+          {detail}
+        </>
+      ) : (
+        <>
+          <div
+            data-testid="cues-surface"
+            className="overflow-hidden rounded-md bg-[var(--color-panel-2)]"
+          >
+            <div className="border-b border-[var(--color-line)]">{strip}</div>
+            {detail}
+          </div>
+          {foldedRow}
+          {canApply && <div className="mt-2">{applyButton}</div>}
+        </>
       )}
+      {!maximized && headerSlot && createPortal(flowControl, headerSlot)}
       {menu !== null && (
         <div
           ref={menuRef}
@@ -949,7 +1071,15 @@ export function CuesSection({
     setHead({ contentId: cue.contentId, ms })
     keepPlayhead(cue.contentId, ms)
   }
-  const audition = useCueAudition(cue.path, maximized, follow)
+  const audition = useCueAudition(cue.path, open, follow)
+  const stopSound = audition.stop
+  const shownMaximized = useRef(maximized)
+  useEffect(() => {
+    if (shownMaximized.current === maximized) return
+    shownMaximized.current = maximized
+    stopSound()
+  }, [maximized, stopSound])
+  const [headerSlot, setHeaderSlot] = useState<HTMLSpanElement | null>(null)
   const moveHead = (ms: number) => {
     follow(ms)
     audition.seek(ms)
@@ -994,7 +1124,7 @@ export function CuesSection({
         onQuantize={onQuantize}
         onFlow={onFlow}
         onRestore={() => setMaximized(null)}
-        onMaximize={() => setMaximized('cues')}
+        headerSlot={headerSlot}
         onDiscard={() => {
           forgetDraft(cue.contentId)
           setRound((n) => n + 1)
@@ -1019,6 +1149,7 @@ export function CuesSection({
           onToggle={onToggle}
           help={tr('editor.cues.help')}
           status={unsaved ? <UnsavedMark /> : undefined}
+          statusAction={<span ref={setHeaderSlot} className="flex min-w-0 items-center" />}
         />
       )}
       {full && isMacOS() && (

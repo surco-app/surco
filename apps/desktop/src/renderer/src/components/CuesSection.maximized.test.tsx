@@ -114,24 +114,12 @@ const seek = (ms: number) => {
 const position = () => screen.getByTestId('cues-position').textContent
 
 describe('CuesSection maximized', () => {
-  it('stays the section of today while folded into the column', async () => {
+  it('keeps the deck and the full-size zoomed wave for full screen, the folded section showing its short one', async () => {
     setup()
     await ready()
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
-    expect(screen.queryByTestId('cue-detail')).toBeNull()
+    expect(screen.getByTestId('cue-detail').style.height).toBe('96px')
     expect(screen.queryByTestId('cues-deck')).toBeNull()
-  })
-
-  it('opens the full editor with the playhead where the folded strip was clicked, without marking anything', async () => {
-    setup({ activeCueFlow: 'manual' })
-    await ready()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128 })
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
-    )
-    expect(position()).toBe('2:08.0')
-    expect(screen.queryByTestId('cue-wave-call-128000')).toBeNull()
-    expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
   })
 
   it('offers no right-click menu on the folded strip, since corrections belong to the full editor', async () => {
@@ -232,19 +220,6 @@ describe('CuesSection maximized', () => {
     expect(position()).toBe('1:40.0')
   })
 
-  it('opens the full editor at the beat of a folded click with a flow chosen, placing nothing, so the point is chosen where the bars are visible', async () => {
-    setup()
-    await ready()
-    fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: 128 })
-    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128.3 })
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
-    )
-    expect(position()).toBe('2:08.5')
-    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
-  })
-
   it('shows on the overview the part the zoomed wave shows, and follows the zoom', async () => {
     setup()
     await maximize()
@@ -269,12 +244,6 @@ describe('CuesSection maximized', () => {
     fireEvent.click(screen.getByTestId('cue-zoom-reset'))
     expect(screen.getByTestId('cue-wave-view').style.width).toBe('8%')
     expect(screen.getByTestId('cue-zoom-reset')).toBeDisabled()
-  })
-
-  it('draws no rectangle on the folded strip, where there is no zoomed wave', async () => {
-    setup()
-    await ready()
-    expect(screen.queryByTestId('cue-wave-view')).toBeNull()
   })
 
   it('recolours a placed hot cue from its pad and puts the default colour back', async () => {

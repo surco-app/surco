@@ -30,6 +30,7 @@ import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
 const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
+const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const DRAG_PX = 3
 const ZOOM_BUTTON =
@@ -49,6 +50,62 @@ const CAPS = [
   },
 ] as const
 
+export function CueZoom({
+  bars,
+  onZoom,
+  onReset,
+  row,
+}: {
+  bars: number
+  onZoom: (dir: 'in' | 'out') => void
+  onReset?: () => void
+  row?: boolean
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  const buttons = [
+    ['cue-zoom-in', 'editor.cues.zoomIn', Plus, () => onZoom('in'), zoomStep(bars, 'in') === bars],
+    [
+      'cue-zoom-reset',
+      'editor.cues.zoomReset',
+      RotateCcw,
+      () => onReset?.(),
+      bars === DEFAULT_ZOOM_BARS,
+    ],
+    [
+      'cue-zoom-out',
+      'editor.cues.zoomOut',
+      Minus,
+      () => onZoom('out'),
+      zoomStep(bars, 'out') === bars,
+    ],
+  ] as const
+  return (
+    <div
+      data-testid="cue-zoom"
+      className={
+        row
+          ? 'flex shrink-0 items-center gap-0.5'
+          : 'absolute top-0 right-full mr-1 flex flex-col gap-1'
+      }
+    >
+      {(row ? [buttons[2], buttons[0]] : buttons).map(([id, label, Icon, act, off]) => (
+        <button
+          key={id}
+          type="button"
+          data-testid={id}
+          aria-label={t(label)}
+          title={t(label)}
+          disabled={off}
+          onClick={act}
+          className={ZOOM_BUTTON}
+        >
+          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function CueWaveDetail({
   source,
   grid,
@@ -60,6 +117,8 @@ export function CueWaveDetail({
   onScrub,
   onZoom,
   onZoomReset,
+  compact,
+  onSeekClick,
   onPlace,
   onMarkMenu,
   onDeleteMark,
@@ -80,6 +139,8 @@ export function CueWaveDetail({
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
   onZoomReset?: () => void
+  compact?: boolean
+  onSeekClick?: (ms: number) => void
   onPlace?: (ms: number) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
@@ -101,13 +162,14 @@ export function CueWaveDetail({
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
-  const latest = useRef({ span, beats, onScrub, onZoom, onPlace })
-  latest.current = { span, beats, onScrub, onZoom, onPlace }
+  const latest = useRef({ span, beats, onScrub, onZoom, onPlace, onSeekClick })
+  latest.current = { span, beats, onScrub, onZoom, onPlace, onSeekClick }
   const [drag, setDrag] = useState<{
     x0: number
     ms0: number
     width: number
     pick: number | null
+    tap: number
   } | null>(null)
   const moved = useRef(false)
   useEffect(() => {
@@ -127,6 +189,7 @@ export function CueWaveDetail({
     }
     const up = () => {
       if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)
+      else if (!moved.current) latest.current.onSeekClick?.(drag.tap)
       setDrag(null)
     }
     window.addEventListener('mousemove', move)
@@ -292,63 +355,26 @@ export function CueWaveDetail({
   }
   return (
     <div className="flex shrink-0 flex-col">
-      <div className="relative h-4 shrink-0 text-xs tabular-nums">
-        <span
-          data-testid="cues-position"
-          className="absolute right-1/2 mr-2 font-semibold whitespace-nowrap text-fg"
-        >
-          {cueClock(playheadMs)}
-        </span>
-        {toCall !== null && (
+      {!compact && (
+        <div className="relative h-4 shrink-0 text-xs tabular-nums">
           <span
-            data-testid="cue-detail-to-call"
-            className="absolute left-1/2 ml-2 whitespace-nowrap text-fg-dim"
+            data-testid="cues-position"
+            className="absolute right-1/2 mr-2 font-semibold whitespace-nowrap text-fg"
           >
-            {t('editor.cues.toCall', { count: Number(toCall.toFixed(1)) })}
+            {cueClock(playheadMs)}
           </span>
-        )}
-      </div>
-      <div className="relative">
-        <div data-testid="cue-zoom" className="absolute top-0 right-full mr-1 flex flex-col gap-1">
-          {(
-            [
-              [
-                'cue-zoom-in',
-                'editor.cues.zoomIn',
-                Plus,
-                () => onZoom('in'),
-                zoomStep(bars, 'in') === bars,
-              ],
-              [
-                'cue-zoom-reset',
-                'editor.cues.zoomReset',
-                RotateCcw,
-                () => onZoomReset?.(),
-                bars === DEFAULT_ZOOM_BARS,
-              ],
-              [
-                'cue-zoom-out',
-                'editor.cues.zoomOut',
-                Minus,
-                () => onZoom('out'),
-                zoomStep(bars, 'out') === bars,
-              ],
-            ] as const
-          ).map(([id, label, Icon, act, off]) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={id}
-              aria-label={t(label)}
-              title={t(label)}
-              disabled={off}
-              onClick={act}
-              className={ZOOM_BUTTON}
+          {toCall !== null && (
+            <span
+              data-testid="cue-detail-to-call"
+              className="absolute left-1/2 ml-2 whitespace-nowrap text-fg-dim"
             >
-              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          ))}
+              {t('editor.cues.toCall', { count: Number(toCall.toFixed(1)) })}
+            </span>
+          )}
         </div>
+      )}
+      <div className="relative">
+        {!compact && <CueZoom bars={bars} onZoom={onZoom} onReset={onZoomReset} />}
         <div
           ref={stageRef}
           data-testid="cue-detail"
@@ -366,6 +392,7 @@ export function CueWaveDetail({
               ms0: playheadMs,
               width: rect.width,
               pick: onPlace && !onMark ? snapAt(e.clientX, rect) : null,
+              tap: snapToBeat(beats, fromMs + ((e.clientX - rect.left) / rect.width) * span),
             })
           }}
           onMouseMove={(e) => {
@@ -376,11 +403,15 @@ export function CueWaveDetail({
             setCursor(ms)
             onHover?.(ms)
           }}
+          onDoubleClick={compact ? onZoomReset : undefined}
           onMouseLeave={() => {
             setCursor(null)
             onHover?.(null)
           }}
-          style={{ cursor: onPlace ? 'crosshair' : 'grab', height: STAGE_HEIGHT }}
+          style={{
+            cursor: onPlace ? 'crosshair' : 'grab',
+            height: compact ? COMPACT_HEIGHT : STAGE_HEIGHT,
+          }}
           className="relative w-full shrink-0 select-none overflow-hidden"
         >
           {quantize === 'beat' &&
@@ -405,9 +436,11 @@ export function CueWaveDetail({
                 data-phrase={b.phrase ? 'true' : 'false'}
                 aria-hidden="true"
                 style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-                className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/35"
+                className={`absolute bottom-0 w-px ${
+                  compact ? 'bg-[var(--color-fg-dim)]/15' : 'bg-[var(--color-fg-dim)]/35'
+                }`}
               >
-                {CAPS.map((cap) => (
+                {(compact ? (b.phrase ? [CAPS[0]] : []) : CAPS).map((cap) => (
                   <span
                     key={cap.position}
                     data-testid="cue-detail-cap"

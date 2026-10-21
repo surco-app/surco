@@ -16,6 +16,7 @@ vi.mock('./CueWaveDetail', () => ({
   CueWaveDetail: ({ onPlace }: { onPlace?: (ms: number) => void }) => (
     <button type="button" data-testid="add-same" onClick={() => onPlace?.(128000)} />
   ),
+  CueZoom: () => null,
 }))
 
 afterEach(cleanup)

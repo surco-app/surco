@@ -101,15 +101,17 @@ function setup(
 
 const clickAt = (ms: number) =>
   fireEvent.click(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 60 })
+const placeOn = () => {
+  const toggle = screen.queryByTestId('cue-place-mode')
+  if (toggle && toggle.getAttribute('aria-pressed') === 'false' && !toggle.hasAttribute('disabled'))
+    fireEvent.click(toggle)
+}
 const markAt = (ms: number) => {
-  const full = screen.getByTestId('cues-editor').dataset.maximized === 'true'
-  if (full) {
-    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 })
-    fireEvent.mouseUp(window, { clientX: ms / 1000 })
-  } else clickAt(ms)
+  fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 })
+  fireEvent.mouseUp(window, { clientX: ms / 1000 })
+  placeOn()
   fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
   fireEvent.mouseUp(window, { clientX: 200 })
-  if (!full) fireEvent.click(screen.getByTestId('section-maximize'))
 }
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))
@@ -412,15 +414,17 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
   })
 
-  it('puts the strip first and the actions under it while folded, with a short Guardar', async () => {
+  it('puts the waves first and the row with a short Guardar under them while folded, the flow up in the header', async () => {
     setup()
     await ready()
     const order = screen
       .getByTestId('cue-wave')
-      .compareDocumentPosition(screen.getByTestId('cues-actions'))
+      .compareDocumentPosition(screen.getByTestId('cues-folded-row'))
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('cues-actions')).toContainElement(screen.getByTestId('cues-flow'))
-    expect(screen.getByTestId('cues-actions')).toContainElement(screen.getByTestId('cues-save'))
+    expect(screen.getByTestId('cues-folded-row')).not.toContainElement(
+      screen.getByTestId('cues-flow'),
+    )
+    expect(screen.getByTestId('cues-folded-row')).toContainElement(screen.getByTestId('cues-save'))
     expect(screen.getByTestId('cues-save').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
   })
@@ -543,9 +547,10 @@ describe('CuesSection', () => {
     ])
   })
 
-  it('reads Flujo and the flow name on the selector, lists Manual apart after the flows and saves the pick', async () => {
+  it('reads Flujo and the flow name on the full-screen selector, lists Manual apart after the flows and saves the pick', async () => {
     const { onFlow } = setup()
     await ready()
+    await openFull()
     const trigger = screen.getByTestId('cues-flow')
     expect(within(trigger).getByText('Flow')).toBeInTheDocument()
     expect(trigger).toHaveAccessibleName('Flow: My flow')
@@ -558,14 +563,11 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: Manual')
   })
 
-  it('opens the full editor from a folded click with a flow chosen and says Haz clic para colocar only there, where a click places', async () => {
+  it('says Haz clic para colocar only in full screen, where a click always places with the flow', async () => {
     setup()
     await ready()
     expect(screen.queryByTestId('cues-place-hint')).toBeNull()
-    clickAt(bar(64))
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
-    )
+    await openFull()
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
     expect(screen.getByTestId('cues-place-hint')).toHaveTextContent('Click to place')
     expect(screen.queryByTestId('cues-apply-flow')).toBeNull()
@@ -582,14 +584,13 @@ describe('CuesSection', () => {
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
   })
 
-  it('opens the full editor from a folded click in Manual and places nothing, with no hint', async () => {
+  it('moves the playhead with a folded click in Manual and places nothing, with no hint', async () => {
     setup(READ, null, { activeCueFlow: 'manual' })
     await ready()
     expect(screen.queryByTestId('cues-place-hint')).toBeNull()
     clickAt(bar(64))
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
-    )
+    expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
+    expect(screen.getByTestId('cues-position')).toHaveTextContent('2:08.0')
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
   })
 
@@ -689,8 +690,10 @@ describe('CuesSection', () => {
       .queryAllByTestId(re)
       .map((el) => `${el.dataset.testid?.replace('ghost-', '')} ${el.style.left}`)
       .sort()
-  const hoverAt = (ms: number) =>
+  const hoverAt = (ms: number) => {
+    placeOn()
     fireEvent.mouseMove(screen.getByTestId('cue-wave'), { clientX: ms / 1000, clientY: 40 })
+  }
 
   it('draws on hover what a click would place with Mi flujo, see-through, and the click places exactly that', async () => {
     setup()
@@ -739,6 +742,7 @@ describe('CuesSection', () => {
   it('counts what does not fit in one short line that keeps its place, shown or not, so nothing below it moves', async () => {
     setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
     await ready()
+    placeOn()
     const slot = screen.getByTestId('cues-rejected-slot')
     expect(slot.className).toContain('whitespace-nowrap')
     expect(slot).toHaveTextContent('')

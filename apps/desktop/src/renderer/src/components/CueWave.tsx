@@ -50,7 +50,7 @@ export function CueWave({
   onAcceptProposal,
   playheadMs,
   onSeek,
-  onOpen,
+  slim,
   view,
   onHover,
   hoverMs,
@@ -71,7 +71,7 @@ export function CueWave({
   onAcceptProposal?: (ms: number) => void
   playheadMs?: number
   onSeek?: (ms: number) => void
-  onOpen?: (ms: number) => void
+  slim?: boolean
   view?: { fromMs: number; toMs: number }
   onHover?: (ms: number | null) => void
   hoverMs?: number | null
@@ -217,18 +217,12 @@ export function CueWave({
       }}
       onClick={(e) => {
         if (readOnly) return
-        if (onSeek) {
-          if (sought.current === null) onSeek(seekAt(e.clientX))
-          sought.current = null
-          return
-        }
-        setCursor(null)
-        onHover?.(null)
-        onOpen?.(seekAt(e.clientX))
+        if (onSeek && sought.current === null) onSeek(seekAt(e.clientX))
+        sought.current = null
       }}
       onKeyDown={(e) => {
         if (readOnly || e.target !== e.currentTarget || e.key !== 'Enter' || cursor === null) return
-        onOpen?.(cursor)
+        onSeek?.(cursor)
       }}
       onContextMenu={(e) => {
         if (readOnly) return
@@ -250,9 +244,9 @@ export function CueWave({
         setCursor(null)
         onHover?.(null)
       }}
-      className={`relative h-16 w-full overflow-hidden rounded-md bg-[var(--color-panel-2)] ${
-        readOnly ? 'cursor-default' : 'cursor-pointer'
-      }`}
+      className={`relative w-full overflow-hidden ${
+        slim ? 'h-[34px]' : 'h-16 rounded-md bg-[var(--color-panel-2)]'
+      } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
     >
       <div
         data-testid="cue-wave-area"
