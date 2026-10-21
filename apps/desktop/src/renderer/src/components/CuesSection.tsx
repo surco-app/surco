@@ -118,6 +118,18 @@ function UnsavedMark(): React.JSX.Element {
   )
 }
 
+function withoutCallInBar(
+  proposed: number[],
+  cues: DraftCue[],
+  grid: { ms: number; beat: number }[],
+): number[] {
+  const beats = grid.map((b) => b.ms)
+  const barAt = (ms: number) =>
+    grid.slice(0, nearestBeat(beats, ms) + 1).filter((b) => b.beat === 1).length
+  const calls = cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
+  return proposed.filter((ms) => !calls.includes(barAt(ms)))
+}
+
 const MENU_ITEM =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] disabled:opacity-40'
 
@@ -305,13 +317,11 @@ function Editing({
   )
   const { data: words } = useCueWaveDetail(cue.contentId, true)
   const [proposed, setProposed] = useState<number[] | null>(null)
-  const [noBreak, setNoBreak] = useState(false)
-  const proposals = useMemo(() => {
-    const barAt = (ms: number) =>
-      read.grid.slice(0, nearestBeat(ctx.beats, ms) + 1).filter((b) => b.beat === 1).length
-    const calls = state.cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
-    return (proposed ?? []).filter((ms) => !calls.includes(barAt(ms)))
-  }, [proposed, state.cues, read.grid, ctx.beats])
+  const [autoNote, setAutoNote] = useState<'none' | 'marked' | null>(null)
+  const proposals = useMemo(
+    () => withoutCallInBar(proposed ?? [], state.cues, read.grid),
+    [proposed, state.cues, read.grid],
+  )
   const acceptAll = useMemo<DraftAction>(
     () => ({
       type: 'batch',
@@ -328,7 +338,13 @@ function Editing({
   const autoMark = () => {
     if (!words) return
     const found = detectDrops({ grid: read.grid, phrases: read.phrases, words })
-    setNoBreak(found.length === 0)
+    setAutoNote(
+      found.length === 0
+        ? 'none'
+        : withoutCallInBar(found, state.cues, read.grid).length === 0
+          ? 'marked'
+          : null,
+    )
     setProposed(found)
   }
   const acceptProposals = () => {
@@ -1053,9 +1069,14 @@ function Editing({
           {tr('editor.cues.queuedStale')}
         </p>
       )}
-      {noBreak && (
+      {autoNote === 'none' && (
         <p data-testid="cues-auto-none" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.auto.none')}
+        </p>
+      )}
+      {autoNote === 'marked' && (
+        <p data-testid="cues-auto-marked" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.auto.marked')}
         </p>
       )}
       {state.notice === 'too-many' && (

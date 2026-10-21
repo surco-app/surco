@@ -257,6 +257,25 @@ describe('Auto marcar', () => {
     expect(autoButton()).toBeInTheDocument()
   })
 
+  it('says every break it finds already has a CALL, instead of seeming to do nothing on a marked track', async () => {
+    setup({
+      read: {
+        ...READ,
+        cues: [
+          { id: 'c1', ms: bar(64), kind: 0, color: null },
+          { id: 'c2', ms: bar(128) + 500, kind: 0, color: null },
+        ],
+      },
+    })
+    await ready()
+    await autoMark()
+    expect(screen.getByTestId('cues-auto-marked')).toHaveTextContent(
+      'You already have a CALL everywhere Surco thinks the track breaks',
+    )
+    expect(screen.queryByTestId('cues-auto-none')).toBeNull()
+    expect(proposals()).toEqual([])
+  })
+
   it('forgets the proposals on another track, since they belong to the track they were made for', async () => {
     const { changeTrack } = setup()
     await ready()
