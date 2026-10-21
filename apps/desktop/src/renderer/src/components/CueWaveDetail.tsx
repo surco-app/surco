@@ -1,4 +1,4 @@
-import { Minus, Plus, RotateCcw } from 'lucide-react'
+import { Minus, Plus, Search } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -65,7 +65,7 @@ export function CueZoom({
     [
       'cue-zoom-reset',
       'editor.cues.zoomReset',
-      RotateCcw,
+      Search,
       () => onReset?.(),
       bars === DEFAULT_ZOOM_BARS,
     ],

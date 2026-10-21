@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { RotateCcw, Search } from 'lucide-react'
 import { hotCueColor, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
 import { CueWaveDetail } from './CueWaveDetail'
@@ -398,6 +399,14 @@ describe('CueWaveDetail', () => {
     fireEvent.click(screen.getByTestId('cue-zoom-in'))
     fireEvent.click(screen.getByTestId('cue-zoom-out'))
     expect(onZoom.mock.calls).toEqual([['in'], ['out']])
+  })
+
+  it('draws the zoom reset as a magnifier, never a turning arrow, since Vicent read the arrow as undo', () => {
+    setup({ onZoomReset: vi.fn<() => void>() })
+    const drawn = (icon: React.ReactElement) => render(icon).container.innerHTML
+    const reset = screen.getByTestId('cue-zoom-reset').innerHTML
+    expect(reset).toBe(drawn(<Search className="h-3.5 w-3.5" aria-hidden="true" />))
+    expect(reset).not.toBe(drawn(<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />))
   })
 
   it('disables + and − at the ends of the zoom and offers reset away from the default, never hiding any', () => {
