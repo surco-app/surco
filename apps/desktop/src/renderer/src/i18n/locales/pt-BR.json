@@ -831,8 +831,6 @@
       "addCallShort": "+ CALL",
       "applyTrack": "Aplicar a esta faixa",
       "noFit": "Este fluxo não cabe nesta faixa",
-      "rejectedCount_one": "{{count}} não cabe",
-      "rejectedCount_other": "{{count}} não cabem",
       "noFitBecause": "Não cabe nesta faixa, {{reason}}",
       "noFitReason": {
         "strong": "cai na parte forte",

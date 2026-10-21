@@ -831,8 +831,6 @@
       "addCallShort": "+ CALL",
       "applyTrack": "Auf diesen Titel anwenden",
       "noFit": "Dieser Ablauf passt nicht zu diesem Titel",
-      "rejectedCount_one": "{{count}} passt nicht",
-      "rejectedCount_other": "{{count}} passen nicht",
       "noFitBecause": "Passt nicht zu diesem Titel, {{reason}}",
       "noFitReason": {
         "strong": "fällt in den starken Teil",

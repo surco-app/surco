@@ -831,8 +831,6 @@
       "addCallShort": "+ CALL",
       "applyTrack": "Aplicar a esta pista",
       "noFit": "Este flujo no cabe en esta pista",
-      "rejectedCount_one": "{{count}} no cabe",
-      "rejectedCount_other": "{{count}} no caben",
       "noFitBecause": "No cabe en esta pista, {{reason}}",
       "noFitReason": {
         "strong": "cae en la parte fuerte",

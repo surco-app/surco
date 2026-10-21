@@ -831,8 +831,6 @@
       "addCallShort": "+ CALL",
       "applyTrack": "Apply to this track",
       "noFit": "This flow doesn't fit this track",
-      "rejectedCount_one": "{{count}} doesn't fit",
-      "rejectedCount_other": "{{count}} don't fit",
       "noFitBecause": "Doesn't fit this track, {{reason}}",
       "noFitReason": {
         "strong": "it falls in the strong part",

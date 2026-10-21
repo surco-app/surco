@@ -831,8 +831,6 @@
       "addCallShort": "+ CALL",
       "applyTrack": "Appliquer à ce morceau",
       "noFit": "Ce flux ne rentre pas dans ce morceau",
-      "rejectedCount_one": "{{count}} ne rentre pas",
-      "rejectedCount_other": "{{count}} ne rentrent pas",
       "noFitBecause": "Ne rentre pas dans ce morceau, {{reason}}",
       "noFitReason": {
         "strong": "tombe dans la partie forte",

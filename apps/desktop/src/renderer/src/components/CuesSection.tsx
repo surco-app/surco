@@ -331,7 +331,6 @@ function Editing({
   const ghost = pointDrag
     ? undefined
     : (playheadGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
-  const rejectedCount = pointDrag ? 0 : (playheadGhost?.rejected.length ?? 0)
   const canMark = playheadGhost !== null && playheadGhost.added.length > 0
   const markWhy = playheadGhost?.rejected[0]?.reason
   const markHere = () => {
@@ -573,18 +572,6 @@ function Editing({
       {tr('editor.cues.applyTrack')}
     </button>
   )
-  const rejectedSlot = (
-    <span
-      data-testid="cues-rejected-slot"
-      className="shrink-0 whitespace-nowrap text-xs text-fg-faint"
-    >
-      {rejectedCount > 0 && (
-        <span data-testid="cues-rejected" className="block">
-          {tr('editor.cues.rejectedCount', { count: rejectedCount })}
-        </span>
-      )}
-    </span>
-  )
   const discardButton =
     (!unchanged || queued !== null) &&
     (maximized ? (
@@ -620,7 +607,6 @@ function Editing({
         onClosed={maximized ? focusEditor : undefined}
         options={flowOptions}
       />
-      {placing && rejectedSlot}
       {canApply && applyButton}
       <span className="flex-1" />
       {discardButton}
@@ -685,20 +671,17 @@ function Editing({
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
   const flowControl = (
-    <>
-      {placing && rejectedSlot}
-      <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
-        <Select
-          testid="cues-flow"
-          portal
-          bare
-          label={tr('editor.cues.flow')}
-          value={manual ? MANUAL_CUE_FLOW : shownFlow}
-          onChange={pickOption}
-          options={flowOptions}
-        />
-      </span>
-    </>
+    <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
+      <Select
+        testid="cues-flow"
+        portal
+        bare
+        label={tr('editor.cues.flow')}
+        value={manual ? MANUAL_CUE_FLOW : shownFlow}
+        onChange={pickOption}
+        options={flowOptions}
+      />
+    </span>
   )
   const markButton = (
     <button
@@ -1186,7 +1169,7 @@ export function CuesSection({
           onToggle={onToggle}
           help={tr('editor.cues.help')}
           status={unsaved ? <UnsavedMark /> : undefined}
-          statusAction={<span ref={setHeaderSlot} className="flex min-w-0 items-center gap-2" />}
+          statusAction={<span ref={setHeaderSlot} className="flex min-w-0 items-center" />}
         />
       )}
       {full && isMacOS() && (
