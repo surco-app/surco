@@ -9,6 +9,7 @@ import {
   CALLS_ONLY,
   type CueFlow,
   MIX_IN,
+  MIX_IN_32,
   MY_FLOW,
   ONE_AT_32,
 } from '../../../../shared/cueFlows'
@@ -94,15 +95,16 @@ describe('CuesTab', () => {
     expect(last?.cueLettersByTime).toBe(false)
   })
 
-  it('gives a new DJ the one bundled flow, marked as the default', async () => {
+  it('gives a new DJ the two bundled flows, Mix in 64 marked as the default', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness flows={BUNDLED_FLOWS} active="mix-in" />)
     expect(screen.getAllByRole('textbox')).toHaveLength(1)
+    expect(screen.getByTestId('cue-flow-mix-in-32')).toHaveTextContent('Mix in 32')
     expect(screen.queryByTestId('cue-flow-mine')).toBeNull()
     expect(screen.queryByTestId('cue-flow-calls-only')).toBeNull()
     expect(screen.getByTestId('cue-flow-mix-in')).toHaveTextContent('Por defecto')
-    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Entrada')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Mix in 64')
   })
 
   it('offers Poner por defecto on a flow that is not the default', async () => {
@@ -292,7 +294,7 @@ describe('CuesTab', () => {
     fireEvent.blur(screen.getByTestId('cue-flow-name'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
     expect(last?.cueFlows.find((f) => f.id === 'mix-in')?.name).toBe('')
-    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Mix in')
+    expect(screen.getByTestId('cue-flow-name')).toHaveValue('Mix in 64')
   })
 
   it('sizes the name input to show the whole name', () => {
@@ -305,13 +307,20 @@ describe('CuesTab', () => {
     )
   })
 
-  it('never offers to delete the bundled flow but restores it as Surco ships it', () => {
+  it('never offers to delete a bundled flow but restores it as Surco ships it', () => {
     render(<Harness flows={BUNDLED_FLOWS} active="mix-in" />)
     expect(screen.queryByTestId('cue-flow-delete')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
     fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-8'))
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
-    expect(last?.cueFlows).toEqual([MIX_IN])
+    expect(last?.cueFlows).toEqual([MIX_IN, MIX_IN_32])
+    fireEvent.click(screen.getByTestId('cue-flow-mix-in-32'))
+    expect(screen.queryByTestId('cue-flow-delete')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-4'))
+    expect(last?.cueFlows[1].rules[0].bars).toBe(4)
+    fireEvent.click(screen.getByTestId('cue-flow-restore'))
+    expect(last?.cueFlows).toEqual([MIX_IN, MIX_IN_32])
   })
 
   it('treats the Mi flujo an earlier Surco kept as a flow of the DJ, deletable and with nothing to restore', () => {

@@ -7,6 +7,7 @@ import {
   type CueFlow,
   type CueRule,
   DEFAULT_CUE_FLOW_ID,
+  isBundledFlow,
   MANUAL_CUE_FLOW,
   restoreDefaultFlow,
 } from '../../../../shared/cueFlows'
@@ -285,11 +286,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                   {tr('settings.cueFlows.use')}
                 </button>
               )}
-              {flow.id === DEFAULT_CUE_FLOW_ID ? (
+              {isBundledFlow(flow.id) ? (
                 <button
                   type="button"
                   data-testid="cue-flow-restore"
-                  onClick={() => patch('cueFlows', restoreDefaultFlow(flows))}
+                  onClick={() => patch('cueFlows', restoreDefaultFlow(flows, flow.id))}
                   className={BUTTON_CLASS}
                 >
                   {tr('settings.cueFlows.restore')}

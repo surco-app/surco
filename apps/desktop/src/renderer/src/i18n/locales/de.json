@@ -2417,7 +2417,8 @@
   "cueFlows": {
     "unnamed": "Ablauf ohne Namen",
     "builtIn": {
-      "mix-in": "Einstieg",
+      "mix-in": "Mix in 64",
+      "mix-in-32": "Mix in 32",
       "mine": "Mein Ablauf",
       "one-at-32": "Ein Cue bei 32",
       "calls-only": "Nur CALL"

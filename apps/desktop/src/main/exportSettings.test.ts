@@ -15,6 +15,7 @@ import {
   CALLS_ONLY,
   type CueFlow,
   MIX_IN,
+  MIX_IN_32,
   MY_FLOW,
   ONE_AT_32,
 } from '../shared/cueFlows'
@@ -75,13 +76,13 @@ describe('serializeSettingsForExport', () => {
       cueFlows: [mine, ONE_AT_32, CALLS_ONLY],
       activeCueFlow: 'mine',
     })
-    expect(back.cueFlows).toEqual([mine, MIX_IN, CALLS_ONLY])
+    expect(back.cueFlows).toEqual([MIX_IN, MIX_IN_32, mine, CALLS_ONLY])
     expect(activeCueFlow(back)).toEqual(mine)
   })
 
   it('brings back Mi flujo for an earlier export that has it active without the flows', () => {
     const back = applyImportedSettings({ activeCueFlow: 'mine' })
-    expect(back.cueFlows).toEqual([MIX_IN, MY_FLOW])
+    expect(back.cueFlows).toEqual([MIX_IN, MIX_IN_32, MY_FLOW])
     expect(activeCueFlow(back)).toEqual(MY_FLOW)
   })
 })

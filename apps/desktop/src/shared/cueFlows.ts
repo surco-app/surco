@@ -106,10 +106,16 @@ export const MIX_IN: CueFlow = {
   ],
 }
 
+export const MIX_IN_32: CueFlow = {
+  ...MIX_IN,
+  id: 'mix-in-32',
+  rules: [{ ...MIX_IN.rules[0], bars: 8 }],
+}
+
 export const CALLS_ONLY: CueFlow = { id: 'calls-only', name: '', markPoint: true, rules: [] }
 
 export const DEFAULT_CUE_FLOW_ID = MIX_IN.id
-export const BUNDLED_FLOWS: CueFlow[] = [MIX_IN]
+export const BUNDLED_FLOWS: CueFlow[] = [MIX_IN, MIX_IN_32]
 const LEGACY_FLOWS: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 const HIGH_MOOD: Record<number, PhraseKind> = {
@@ -205,7 +211,8 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
       }),
     })
   }
-  return seen.has(DEFAULT_CUE_FLOW_ID) ? flows : [structuredClone(MIX_IN), ...flows]
+  const bundled = BUNDLED_FLOWS.map((b) => flows.find((f) => f.id === b.id) ?? structuredClone(b))
+  return [...bundled, ...flows.filter((f) => !BUNDLED_FLOWS.some((b) => b.id === f.id))]
 }
 
 const sameFlow = (a: CueFlow, b: CueFlow): boolean => JSON.stringify(a) === JSON.stringify(b)
@@ -221,14 +228,9 @@ export function migrateBundledFlow(
   )
   const untouched = (f: CueFlow): boolean => f.id === ONE_AT_32.id && sameFlow(f, ONE_AT_32)
   if (!flows.some(untouched)) return { flows, active }
-  const next = active === ONE_AT_32.id ? MIX_IN.id : active
-  if (flows.some((f) => f.id === MIX_IN.id && !sameFlow(f, MIX_IN)))
-    return { flows: flows.filter((f) => !untouched(f)), active: next }
   return {
-    flows: flows
-      .filter((f) => f.id !== MIX_IN.id)
-      .map((f) => (untouched(f) ? structuredClone(MIX_IN) : f)),
-    active: next,
+    flows: flows.filter((f) => !untouched(f)),
+    active: active === ONE_AT_32.id ? MIX_IN.id : active,
   }
 }
 
@@ -248,8 +250,13 @@ export function activeCueFlow(settings: { cueFlows?: CueFlow[]; activeCueFlow?: 
   )
 }
 
-export function restoreDefaultFlow(flows: CueFlow[]): CueFlow[] {
-  return flows.map((f) => (f.id === DEFAULT_CUE_FLOW_ID ? structuredClone(MIX_IN) : f))
+export function isBundledFlow(id: string): boolean {
+  return BUNDLED_FLOWS.some((b) => b.id === id)
+}
+
+export function restoreDefaultFlow(flows: CueFlow[], id = DEFAULT_CUE_FLOW_ID): CueFlow[] {
+  const shipped = BUNDLED_FLOWS.find((b) => b.id === id)
+  return flows.map((f) => (shipped && f.id === id ? structuredClone(shipped) : f))
 }
 
 export function followsPoint(flow: CueFlow): boolean {

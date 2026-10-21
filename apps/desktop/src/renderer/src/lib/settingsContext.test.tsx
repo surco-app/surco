@@ -22,7 +22,7 @@ describe('cue flows as the renderer resolves them', () => {
         <Flows />
       </SettingsProvider>,
     )
-    expect(screen.getByTestId('flows').textContent).toBe('mix-in|mix-in')
+    expect(screen.getByTestId('flows').textContent).toBe('mix-in,mix-in-32|mix-in')
   })
 
   it('brings back Mi flujo for settings that have it active without the flows, so the editor places the same cues', () => {
@@ -31,7 +31,7 @@ describe('cue flows as the renderer resolves them', () => {
         <Flows />
       </SettingsProvider>,
     )
-    expect(screen.getByTestId('flows').textContent).toBe('mix-in,mine|mine')
+    expect(screen.getByTestId('flows').textContent).toBe('mix-in,mix-in-32,mine|mine')
   })
 })
 
