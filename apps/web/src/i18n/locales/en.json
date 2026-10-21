@@ -264,15 +264,19 @@
           },
           {
             "t": "Your rekordbox collection",
-            "d": "After converting, the track is still the same track in rekordbox, with its playlists, cue points and history. Turn it on in Settings. It backs up first and needs rekordbox closed."
+            "d": "After converting, the track is still the same track in rekordbox, with its playlists, cue points and history, and editing its tags never renames the file. Turn it on in Settings. It backs up first, and if rekordbox is open it waits for you to close it."
           },
           {
             "t": "Your rekordbox playlists",
-            "d": "Open them in Surco with their folders and in their order, and work on their tracks like any other."
+            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. If you don't use rekordbox or Apple Music, hide that source."
           },
           {
             "t": "rekordbox cues",
-            "d": "Hot cues A to H and CALLs, on the waveform. Build flows from blocks, or let Surco learn yours from your collection, and one click places what the flow asks for and tells you what doesn't fit. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written with rekordbox closed, after a backup."
+            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written to rekordbox after a backup."
+          },
+          {
+            "t": "A USB stick for your CDJs",
+            "d": "Export your rekordbox playlists to a USB stick with their cues, grid and waveforms, and rekordbox can keep syncing it. Needs rekordbox closed. On macOS and Windows."
           },
           {
             "t": "Files for rekordbox, Serato, M3U8",

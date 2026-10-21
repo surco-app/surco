@@ -264,15 +264,19 @@
           },
           {
             "t": "Tu colección de rekordbox",
-            "d": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists, sus cue points y su historial. Se activa en Ajustes, hace copia de seguridad antes y necesita rekordbox cerrado."
+            "d": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists, sus cue points y su historial, y cambiar sus etiquetas no le cambia el nombre al archivo. Se activa en Ajustes y hace copia de seguridad antes. Si rekordbox está abierto, espera a que lo cierres."
           },
           {
             "t": "Tus playlists de rekordbox",
-            "d": "Las abres en Surco con sus carpetas y en su orden, y trabajas sus pistas como cualquier otra."
+            "d": "Las abres en Surco con sus carpetas y en su orden, con la onda y las cues de rekordbox en cada pista. Y las organizas desde aquí. Creas, renombras y borras playlists y carpetas, añades, quitas y reordenas pistas, y en el editor eliges en qué playlists está cada una. Si rekordbox está abierto, los cambios esperan a que lo cierres. Si no usas rekordbox o Apple Music, ocultas esa fuente."
           },
           {
             "t": "Cues de rekordbox",
-            "d": "Hot cues de la A a la H y CALL, sobre la onda. Creas flujos por bloques, o Surco aprende el tuyo de tu colección, y un clic coloca lo que pide el flujo y te dice lo que no cabe. Las letras siguen el orden de la pista, y si usas cada letra como un pad fijo, lo apagas en Ajustes. Se escriben con rekordbox cerrado y con copia de seguridad antes."
+            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Las arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Se escriben en rekordbox con copia de seguridad antes."
+          },
+          {
+            "t": "Un USB para tus CDJ",
+            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows."
           },
           {
             "t": "Ficheros para rekordbox, Serato y M3U8",
