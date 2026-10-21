@@ -5,7 +5,7 @@
 // the reduced-motion jump are all the same code path with a different t.
 
 import { CRATE } from './crate'
-import { DECLICK_MARKS, TAIL_CUT, TRACK_ENVELOPE } from './waveforms'
+import { DECLICK_MARKS, TAIL_CUT } from './waveforms'
 
 const clamp = (t: number) => Math.min(Math.max(t, 0), 1)
 
@@ -426,10 +426,10 @@ export function reviewFrame(t: number): ReviewFrame {
   }
 }
 
-export const CUES_BARS = TRACK_ENVELOPE.length
-export const CUES_POINT = 122
-export const CUES_HOVERS = [110, 116, CUES_POINT] as const
-export const CUES_ZOOM = { from: 70, bars: 64 } as const
+export const CUES_BARS = 206
+export const CUES_POINT = 148
+export const CUES_HOVERS = [136, 142, CUES_POINT] as const
+export const CUES_ZOOM = { from: 96, bars: 56 } as const
 export const CUES_SECONDS = 9
 export const CUES_CALL_COLOUR = '#e62828'
 

@@ -1,6 +1,5 @@
 import { type RefObject, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CRATE } from '../../lib/crate'
 import {
   CUES_BARS,
   CUES_CALL_COLOUR,
@@ -11,13 +10,12 @@ import {
   cuesFrame,
 } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
-import { TRACK_ENVELOPE } from '../../lib/waveforms'
+import { CUES_TRACK_ENVELOPE, CUES_ZOOM_ENVELOPE } from '../../lib/waveforms'
 import { AppWave, Cover, EASE, Glyph, ICONS, SceneCursor } from './AppChrome'
 
-const TRACK = CRATE.lasgo2
+const TRACK = { title: 'Something (Extended Mix)', artist: 'Lasgo', duration: '5:56' }
 const GHOST_OPACITY = 0.42
 const PADS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-const ZOOM_ENVELOPE = TRACK_ENVELOPE.slice(CUES_ZOOM.from, CUES_ZOOM.from + CUES_ZOOM.bars)
 const ZOOM_LINES = Array.from({ length: CUES_ZOOM.bars }, (_, i) => CUES_ZOOM.from + i)
 
 const at = (bar: number, from: number, bars: number) => ((bar - from) / bars) * 100
@@ -111,7 +109,7 @@ export default function CuesScene() {
           <div className="flex flex-wrap items-center gap-x-3.5 gap-y-3">
             <span className="flex min-w-0 items-center gap-3.5">
               <span className="size-10 flex-none overflow-hidden rounded-md">
-                <Cover src={TRACK.cover} />
+                <Cover />
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-[15px] font-semibold text-fg">
@@ -167,7 +165,7 @@ export default function CuesScene() {
               }}
             />
             <span className="absolute inset-x-0 top-4 bottom-0">
-              <AppWave values={TRACK_ENVELOPE} className="fill-faint/60" />
+              <AppWave values={CUES_TRACK_ENVELOPE} />
             </span>
             {shown && <Marks placement={shown} ghost={!frame.placed} from={0} bars={CUES_BARS} />}
           </div>
@@ -176,12 +174,16 @@ export default function CuesScene() {
             {ZOOM_LINES.map((bar) => (
               <i
                 key={bar}
-                className={`absolute inset-y-0 block w-px ${bar % 16 === 0 ? 'bg-faint/30' : 'bg-faint/10'}`}
+                className={`absolute inset-y-0 block w-px ${bar % 16 === 0 ? 'bg-faint/25' : bar % 4 === 0 ? 'bg-faint/15' : 'bg-faint/[0.07]'}`}
                 style={{ left: `${at(bar, CUES_ZOOM.from, CUES_ZOOM.bars)}%` }}
-              />
+              >
+                {bar % 4 === 0 && (
+                  <i className="absolute top-0 left-0 block h-1.5 w-px bg-red/60" />
+                )}
+              </i>
             ))}
             <span className="absolute inset-x-0 top-6 bottom-2">
-              <AppWave values={ZOOM_ENVELOPE} gap={0.45} />
+              <AppWave values={CUES_ZOOM_ENVELOPE} />
             </span>
             <i className="absolute inset-y-0 left-1/2 block w-px bg-fg/70" />
             {frame.ghost && (

@@ -7,6 +7,7 @@ import {
   CUES_FLOW,
   CUES_HOVERS,
   CUES_POINT,
+  CUES_ZOOM,
   cuesFrame,
   DROP_TOTAL,
   DROP_TRACKS,
@@ -32,7 +33,7 @@ import {
   tagFrame,
   trimFrame,
 } from './scenes'
-import { DECLICK_MARKS } from './waveforms'
+import { CUES_TRACK_ENVELOPE, CUES_ZOOM_ENVELOPE, DECLICK_MARKS } from './waveforms'
 
 // Every scene is frozen mid-action in the static version — "12/40", "Converting
 // 11/40", the cut already placed. These check that each frame function actually
@@ -536,6 +537,23 @@ describe('cuesFrame', () => {
       [16, '#305aff'],
     ])
     expect(CUES_FLOW.map((c) => c.letter)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('lands the point where the track drops, right after the quiet break, in both waves', () => {
+    const mean = (values: number[], from: number, to: number) =>
+      values.slice(from, to).reduce((sum, v) => sum + v, 0) / (to - from)
+    const zoomColumn = (bar: number) =>
+      Math.round(((bar - CUES_ZOOM.from) / CUES_ZOOM.bars) * CUES_ZOOM_ENVELOPE.length)
+    const trackColumn = (bar: number) => Math.round((bar / CUES_BARS) * CUES_TRACK_ENVELOPE.length)
+    for (const [values, column] of [
+      [CUES_ZOOM_ENVELOPE, zoomColumn],
+      [CUES_TRACK_ENVELOPE, trackColumn],
+    ] as const) {
+      const before = mean(values, column(CUES_POINT - 8), column(CUES_POINT))
+      const after = mean(values, column(CUES_POINT), column(CUES_POINT + 4))
+      expect(before).toBeLessThan(0.1)
+      expect(after).toBeGreaterThan(0.3)
+    }
   })
 
   it('opens on a track with no cues, no ghost and no pointer', () => {
