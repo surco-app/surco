@@ -821,6 +821,7 @@
       "saveShort": "Save",
       "toCall_one": "{{count}} bar to the CALL",
       "toCall_other": "{{count}} bars to the CALL",
+      "toCallShort": "{{count}} to CALL",
       "play": "Play",
       "pause": "Pause",
       "addCall": "Add a CALL at the playhead",

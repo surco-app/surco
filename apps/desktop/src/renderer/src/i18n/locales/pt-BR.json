@@ -821,6 +821,7 @@
       "saveShort": "Salvar",
       "toCall_one": "{{count}} compasso até o CALL",
       "toCall_other": "{{count}} compassos até o CALL",
+      "toCallShort": "{{count}} até o CALL",
       "play": "Tocar",
       "pause": "Pausar",
       "addCall": "Adicionar um CALL no cursor",

@@ -821,6 +821,7 @@
       "saveShort": "Speichern",
       "toCall_one": "{{count}} Takt bis zum CALL",
       "toCall_other": "{{count}} Takte bis zum CALL",
+      "toCallShort": "{{count}} bis CALL",
       "play": "Abspielen",
       "pause": "Pause",
       "addCall": "CALL am Abspielkopf setzen",

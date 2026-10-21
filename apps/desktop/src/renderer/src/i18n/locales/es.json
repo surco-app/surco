@@ -821,6 +821,7 @@
       "saveShort": "Guardar",
       "toCall_one": "{{count}} compás al CALL",
       "toCall_other": "{{count}} compases al CALL",
+      "toCallShort": "{{count}} al CALL",
       "play": "Reproducir",
       "pause": "Pausa",
       "addCall": "Añadir un CALL en el cabezal",

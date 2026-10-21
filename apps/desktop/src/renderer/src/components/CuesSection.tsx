@@ -750,7 +750,7 @@ function Editing({
       </span>
       {toCall !== null && (
         <span data-testid="cue-detail-to-call" className="min-w-0 truncate text-fg-dim">
-          {tr('editor.cues.toCall', { count: Number(toCall.toFixed(1)) })}
+          {tr('editor.cues.toCallShort', { count: Number(toCall.toFixed(1)) })}
         </span>
       )}
       {armed && rejectedSlot}

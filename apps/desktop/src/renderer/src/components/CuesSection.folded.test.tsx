@@ -156,6 +156,18 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cue-wave-view')).toBeInTheDocument()
   })
 
+  it('says the bars to the point in the short form in the row, so the count of what does not fit has room beside it', async () => {
+    setup()
+    await ready()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    fireEvent.mouseUp(window, { clientX: 128 })
+    fireEvent.click(placeMode())
+    clickDetail(200)
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 96 })
+    fireEvent.mouseUp(window, { clientX: 96 })
+    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^16 to CALL$/)
+  })
+
   it('keeps Guardar in place, quiet with nothing to save and filled once there is', async () => {
     setup()
     await ready()

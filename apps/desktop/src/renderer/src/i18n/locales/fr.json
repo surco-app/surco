@@ -821,6 +821,7 @@
       "saveShort": "Enregistrer",
       "toCall_one": "{{count}} mesure avant le CALL",
       "toCall_other": "{{count}} mesures avant le CALL",
+      "toCallShort": "{{count}} avant le CALL",
       "play": "Lire",
       "pause": "Pause",
       "addCall": "Ajouter un CALL sur la tête de lecture",
