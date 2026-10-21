@@ -832,7 +832,18 @@
       "addCallShort": "+ CALL",
       "zoomIn": "Vergrößern",
       "zoomReset": "Zoom zurücksetzen",
-      "zoomOut": "Verkleinern"
+      "zoomOut": "Verkleinern",
+      "auto": {
+        "button": "Auto-Markieren",
+        "accept_one": "Vorschlag übernehmen",
+        "accept_other": "{{count}} Vorschläge übernehmen",
+        "discard": "Verwerfen",
+        "ask": "Bricht es hier los? {{time}}",
+        "acceptOne": "Übernehmen",
+        "drop": "Entfernen",
+        "unanalysed": "Keine rekordbox-Analyse",
+        "none": "Surco findet nicht, wo dieser Titel losbricht"
+      }
     }
   },
   "fields": {
@@ -2403,7 +2414,6 @@
     "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Cues zu setzen",
     "hotCue": "Hot Cue {{letter}}",
     "call": "CALL",
-    "proposal": "Vorgeschlagener Punkt in Takt {{bar}}",
     "label": "Cue-Wellenform"
   },
   "cueFlows": {

@@ -832,7 +832,18 @@
       "addCallShort": "+ CALL",
       "zoomIn": "Zoom avant",
       "zoomReset": "Réinitialiser le zoom",
-      "zoomOut": "Zoom arrière"
+      "zoomOut": "Zoom arrière",
+      "auto": {
+        "button": "Marquage auto",
+        "accept_one": "Accepter la proposition",
+        "accept_other": "Accepter les {{count}} propositions",
+        "discard": "Ignorer",
+        "ask": "Ça décolle ici ? {{time}}",
+        "acceptOne": "Accepter",
+        "drop": "Retirer",
+        "unanalysed": "Pas d’analyse rekordbox",
+        "none": "Surco ne trouve pas où ce morceau décolle"
+      }
     }
   },
   "fields": {
@@ -2403,7 +2414,6 @@
     "notAnalysed": "Ce morceau n’est pas analysé dans rekordbox. Analysez-le là-bas pour placer des cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Point proposé à la mesure {{bar}}",
     "label": "Forme d'onde des cues"
   },
   "cueFlows": {

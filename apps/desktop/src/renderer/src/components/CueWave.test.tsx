@@ -32,7 +32,6 @@ function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
   const handlers = {
     onSelect: vi.fn(),
     onMenu: vi.fn(),
-    onAcceptProposal: vi.fn(),
   }
   render(
     <CueWave
@@ -163,10 +162,12 @@ describe('CueWave', () => {
     expect(h.onSelect).toHaveBeenCalledWith('a')
   })
 
-  it('keeps a proposal clickable under a mark at the same place', () => {
+  it('draws a proposal as a bare line under a mark at the same place, since it is accepted from its pill on the zoomed wave', () => {
     setup({ proposals: [16000] })
     const all = screen.getAllByTestId(/^cue-wave-(proposal|hot)-/)
     expect(all.map((e) => e.dataset.testid)).toEqual(['cue-wave-proposal-16000', 'cue-wave-hot-A'])
+    expect(screen.getByTestId('cue-wave-proposal-16000')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByTestId('cue-wave-proposal-16000').style.left).toBe('20%')
   })
 
   it('opens the menu on a right-click with the beat under it', () => {
@@ -179,12 +180,6 @@ describe('CueWave', () => {
     const h = setup({ quantize: 'bar' })
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 105, clientY: 30 })
     expect(h.onMenu).toHaveBeenCalledWith({ ms: 10000, x: 105, y: 30 })
-  })
-
-  it('draws proposals dashed and accepts one with a click', () => {
-    const h = setup({ proposals: [32000] })
-    fireEvent.click(screen.getByTestId('cue-wave-proposal-32000'))
-    expect(h.onAcceptProposal).toHaveBeenCalledWith(32000)
   })
 
   it('draws the hot cues the 8 limit left out apart, so the user sees them', () => {

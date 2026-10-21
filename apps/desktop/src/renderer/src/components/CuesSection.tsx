@@ -13,6 +13,7 @@ import {
   nearestBeat,
   SAME_POSITION_MS,
 } from '../../../shared/cueRules'
+import { detectDrops } from '../../../shared/dropDetect'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
@@ -302,8 +303,39 @@ function Editing({
       placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
     [placing, hoverMs, state, ctx],
   )
+  const { data: words } = useCueWaveDetail(cue.contentId, true)
+  const [proposed, setProposed] = useState<number[] | null>(null)
+  const [noBreak, setNoBreak] = useState(false)
+  const proposals = useMemo(() => {
+    const barAt = (ms: number) =>
+      read.grid.slice(0, nearestBeat(ctx.beats, ms) + 1).filter((b) => b.beat === 1).length
+    const calls = state.cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
+    return (proposed ?? []).filter((ms) => !calls.includes(barAt(ms)))
+  }, [proposed, state.cues, read.grid, ctx.beats])
+  const proposalGhost = useMemo<DraftGhost | null>(
+    () =>
+      proposals.length > 0
+        ? ghostOf(
+            state,
+            {
+              type: 'batch',
+              actions: proposals.map((ms) =>
+                manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
+              ),
+            },
+            ctx,
+          )
+        : null,
+    [proposals, manual, state, ctx],
+  )
+  const autoMark = () => {
+    if (!words) return
+    const found = detectDrops({ grid: read.grid, phrases: read.phrases, words })
+    setNoBreak(found.length === 0)
+    setProposed(found)
+  }
   const [pointDrag, setPointDrag] = useState(false)
-  const ghost = pointDrag ? undefined : (hoverGhost ?? playheadGhost ?? undefined)
+  const ghost = pointDrag ? undefined : (hoverGhost ?? proposalGhost ?? playheadGhost ?? undefined)
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const markHere = () => {
     if (manual) dispatch({ type: 'add-call', ms: playheadMs })
@@ -396,7 +428,6 @@ function Editing({
         )
       : undefined
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
-  const { data: words } = useCueWaveDetail(cue.contentId, true)
   const source: DetailSource | null = words
     ? { words }
     : read.wave
@@ -562,6 +593,47 @@ function Editing({
       <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   )
+  const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
+  const autoControl =
+    proposals.length > 0 ? (
+      <>
+        <button
+          type="button"
+          data-testid="cues-auto-accept"
+          className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-dashed border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${autoHeight}`}
+        >
+          {tr('editor.cues.auto.accept', { count: proposals.length })}
+          <kbd className="rounded border border-[var(--color-accent)] px-1 font-sans text-[10px]">
+            ↵
+          </kbd>
+        </button>
+        <button
+          type="button"
+          data-testid="cues-auto-discard"
+          onClick={() => {
+            setProposed(null)
+            if (maximized) focusEditor()
+          }}
+          className="press shrink-0 whitespace-nowrap px-1 text-xs text-fg-dim hover:text-fg"
+        >
+          {tr('editor.cues.auto.discard')}
+        </button>
+      </>
+    ) : (
+      <button
+        type="button"
+        data-testid="cues-auto-mark"
+        disabled={!words}
+        title={words ? undefined : tr('editor.cues.auto.unanalysed')}
+        onClick={autoMark}
+        className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
+      >
+        <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
+          <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
+        </svg>
+        {tr('editor.cues.auto.button')}
+      </button>
+    )
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
       <Select
@@ -574,6 +646,7 @@ function Editing({
         onClosed={maximized ? focusEditor : undefined}
         options={flowOptions}
       />
+      {autoControl}
       <span className="flex-1" />
       {discardButton}
       {undoButton}
@@ -602,6 +675,7 @@ function Editing({
       cues={waveCues}
       selected={state.selected}
       trimmed={state.trimmed}
+      proposals={proposals}
       ghost={ghost}
       onSelect={(key) => dispatch({ type: 'select', key })}
       onMenu={maximized ? setMenu : undefined}
@@ -640,11 +714,16 @@ function Editing({
       compact={!maximized}
       onPlace={placing ? place : undefined}
       onHover={placing ? setHoverMs : undefined}
+      proposals={proposals}
+      onDropProposal={(ms) => setProposed((all) => (all ?? []).filter((p) => p !== ms))}
     />
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
   const flowControl = (
-    <span data-testid="cues-flow-menu" className="min-w-0 [&_button:focus-visible]:shadow-none">
+    <span
+      data-testid="cues-flow-menu"
+      className="flex min-w-0 items-center gap-2 [&_button:focus-visible]:shadow-none"
+    >
       <Select
         testid="cues-flow"
         portal
@@ -654,6 +733,7 @@ function Editing({
         onChange={pickOption}
         options={flowOptions}
       />
+      {autoControl}
     </span>
   )
   const addCallButton = manual && (
@@ -954,6 +1034,11 @@ function Editing({
       {queued !== null && !fresh && (
         <p data-testid="cues-queued-stale" className="mt-2 text-xs text-warn">
           {tr('editor.cues.queuedStale')}
+        </p>
+      )}
+      {noBreak && (
+        <p data-testid="cues-auto-none" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.auto.none')}
         </p>
       )}
       {state.notice === 'too-many' && (

@@ -832,7 +832,18 @@
       "addCallShort": "+ CALL",
       "zoomIn": "Acercar",
       "zoomReset": "Restablecer zoom",
-      "zoomOut": "Alejar"
+      "zoomOut": "Alejar",
+      "auto": {
+        "button": "Auto marcar",
+        "accept_one": "Aceptar la propuesta",
+        "accept_other": "Aceptar las {{count}} propuestas",
+        "discard": "Descartar",
+        "ask": "¿Rompe aquí? {{time}}",
+        "acceptOne": "Aceptar",
+        "drop": "Quitar",
+        "unanalysed": "Sin análisis de rekordbox",
+        "none": "Surco no encuentra dónde rompe en esta pista"
+      }
     }
   },
   "fields": {
@@ -2403,7 +2414,6 @@
     "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Punto propuesto en el compás {{bar}}",
     "label": "Onda de cues"
   },
   "cueFlows": {

@@ -17,7 +17,7 @@ import {
   visibleGhost,
 } from '../lib/cueMarks'
 import { snapToBeat } from '../lib/cuePlayhead'
-import { barLines, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
+import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -35,7 +35,6 @@ const OVERVIEW_BARS = 300
 const ROW_BAR_PITCH_PX = 3
 const WAVE_HEIGHT = '90%'
 const SLIM_WAVE_HEIGHT = `calc(100% - ${HOT_MARK_PX.row + 2}px)`
-const WAVE_TOP = '10%'
 
 export function CueWave({
   wave,
@@ -50,7 +49,6 @@ export function CueWave({
   onSelect,
   onMenu,
   onMarkMenu,
-  onAcceptProposal,
   playheadMs,
   onSeek,
   slim,
@@ -70,7 +68,6 @@ export function CueWave({
   onSelect?: (key: string | null) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
-  onAcceptProposal?: (ms: number) => void
   playheadMs?: number
   onSeek?: (ms: number) => void
   slim?: boolean
@@ -280,17 +277,12 @@ export function CueWave({
       ))}
       {!readOnly &&
         (proposals ?? []).map((ms) => (
-          <button
+          <span
             key={`p${ms}`}
-            type="button"
             data-testid={`cue-wave-proposal-${ms}`}
-            aria-label={t('cueWave.proposal', { bar: cuePosition(ms, grid).bar })}
-            style={{ left: pct(ms), top: WAVE_TOP }}
-            className="absolute bottom-0 w-2 -translate-x-1/2 border-l border-dashed border-[var(--color-fg)]/70"
-            onClick={(e) => {
-              e.stopPropagation()
-              onAcceptProposal?.(ms)
-            }}
+            aria-hidden="true"
+            style={{ left: pct(ms) }}
+            className="pointer-events-none absolute top-0 bottom-0 border-l border-dashed border-[var(--color-accent)]"
           />
         ))}
       {calls.map((c) => {

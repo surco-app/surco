@@ -832,7 +832,18 @@
       "addCallShort": "+ CALL",
       "zoomIn": "Zoom in",
       "zoomReset": "Reset zoom",
-      "zoomOut": "Zoom out"
+      "zoomOut": "Zoom out",
+      "auto": {
+        "button": "Auto mark",
+        "accept_one": "Accept the suggestion",
+        "accept_other": "Accept the {{count}} suggestions",
+        "discard": "Discard",
+        "ask": "Does it break here? {{time}}",
+        "acceptOne": "Accept",
+        "drop": "Remove",
+        "unanalysed": "No rekordbox analysis",
+        "none": "Surco can’t find where this track breaks"
+      }
     }
   },
   "fields": {
@@ -2403,7 +2414,6 @@
     "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Suggested point at bar {{bar}}",
     "label": "Cue waveform"
   },
   "cueFlows": {

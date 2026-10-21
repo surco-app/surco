@@ -832,7 +832,18 @@
       "addCallShort": "+ CALL",
       "zoomIn": "Aproximar",
       "zoomReset": "Redefinir o zoom",
-      "zoomOut": "Afastar"
+      "zoomOut": "Afastar",
+      "auto": {
+        "button": "Marcar automático",
+        "accept_one": "Aceitar a sugestão",
+        "accept_other": "Aceitar as {{count}} sugestões",
+        "discard": "Descartar",
+        "ask": "Explode aqui? {{time}}",
+        "acceptOne": "Aceitar",
+        "drop": "Remover",
+        "unanalysed": "Sem análise do rekordbox",
+        "none": "O Surco não encontra onde esta faixa explode"
+      }
     }
   },
   "fields": {
@@ -2403,7 +2414,6 @@
     "notAnalysed": "Esta faixa não foi analisada no rekordbox. Analise lá para colocar cues",
     "hotCue": "Hot cue {{letter}}",
     "call": "CALL",
-    "proposal": "Ponto sugerido no compasso {{bar}}",
     "label": "Forma de onda dos cues"
   },
   "cueFlows": {
