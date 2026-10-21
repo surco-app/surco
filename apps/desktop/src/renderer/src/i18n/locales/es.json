@@ -829,21 +829,19 @@
       "placeHint": "Haz clic para colocar",
       "applyTrack": "Aplicar a esta pista",
       "noFit": "Este flujo no cabe en esta pista",
+      "rejectedCount_one": "{{count}} no cabe",
+      "rejectedCount_other": "{{count}} no caben",
+      "noFitBecause": "No cabe en esta pista, {{reason}}",
+      "noFitReason": {
+        "strong": "cae en la parte fuerte",
+        "point": "choca con otro punto",
+        "start": "cae antes del primer golpe",
+        "end": "cae después del último golpe",
+        "limit": "pasaría de 8 hot cues"
+      },
       "zoomIn": "Acercar",
       "zoomReset": "Restablecer el zoom",
-      "zoomOut": "Alejar",
-      "rejected": {
-        "strong_one": "{{count}} no cabe, cae en la parte fuerte",
-        "strong_other": "{{count}} no caben, caen en la parte fuerte",
-        "point_one": "{{count}} no cabe, choca con otro punto",
-        "point_other": "{{count}} no caben, chocan con otro punto",
-        "start_one": "{{count}} no cabe, cae antes del primer golpe",
-        "start_other": "{{count}} no caben, caen antes del primer golpe",
-        "end_one": "{{count}} no cabe, cae después del último golpe",
-        "end_other": "{{count}} no caben, caen después del último golpe",
-        "limit_one": "{{count}} no cabe, pasaría de 8 hot cues",
-        "limit_other": "{{count}} no caben, pasarían de 8 hot cues"
-      }
+      "zoomOut": "Alejar"
     }
   },
   "fields": {

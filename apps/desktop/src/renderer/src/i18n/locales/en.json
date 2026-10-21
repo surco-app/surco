@@ -829,21 +829,19 @@
       "placeHint": "Click to place",
       "applyTrack": "Apply to this track",
       "noFit": "This flow doesn't fit this track",
+      "rejectedCount_one": "{{count}} doesn't fit",
+      "rejectedCount_other": "{{count}} don't fit",
+      "noFitBecause": "Doesn't fit this track, {{reason}}",
+      "noFitReason": {
+        "strong": "it falls in the strong part",
+        "point": "it runs into another point",
+        "start": "it falls before the first beat",
+        "end": "it falls after the last beat",
+        "limit": "it would go past 8 hot cues"
+      },
       "zoomIn": "Zoom in",
       "zoomReset": "Reset zoom",
-      "zoomOut": "Zoom out",
-      "rejected": {
-        "strong_one": "{{count}} doesn't fit, it falls in the strong part",
-        "strong_other": "{{count}} don't fit, they fall in the strong part",
-        "point_one": "{{count}} doesn't fit, it runs into another point",
-        "point_other": "{{count}} don't fit, they run into another point",
-        "start_one": "{{count}} doesn't fit, it falls before the first beat",
-        "start_other": "{{count}} don't fit, they fall before the first beat",
-        "end_one": "{{count}} doesn't fit, it falls after the last beat",
-        "end_other": "{{count}} don't fit, they fall after the last beat",
-        "limit_one": "{{count}} doesn't fit, it would go past 8 hot cues",
-        "limit_other": "{{count}} don't fit, they would go past 8 hot cues"
-      }
+      "zoomOut": "Zoom out"
     }
   },
   "fields": {

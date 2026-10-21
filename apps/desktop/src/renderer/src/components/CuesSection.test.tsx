@@ -724,9 +724,7 @@ describe('CuesSection', () => {
         borderStyle: 'dashed',
         opacity: '0.3',
       })
-    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
-      "2 don't fit, they fall in the strong part",
-    )
+    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(/^2 don't fit$/)
     fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
     expect(screen.queryByTestId('cues-rejected')).toBeNull()
     expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(0)
@@ -734,9 +732,21 @@ describe('CuesSection', () => {
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: bar(40) / 1000 })
     fireEvent.mouseUp(window, { clientX: bar(40) / 1000 })
     fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
-    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
-      "1 doesn't fit, it falls before the first beat",
-    )
+    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(/^1 doesn't fit$/)
+  })
+
+  it('counts what does not fit in one short line that keeps its place, shown or not, so nothing below it moves', async () => {
+    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    await ready()
+    const slot = screen.getByTestId('cues-rejected-slot')
+    expect(slot.className).toContain('whitespace-nowrap')
+    expect(slot).toHaveTextContent('')
+    hoverAt(bar(64))
+    expect(screen.getByTestId('cues-rejected-slot')).toBe(slot)
+    expect(slot).toContainElement(screen.getByTestId('cues-rejected'))
+    expect(screen.getByTestId('cues-rejected').className).toContain('truncate')
+    fireEvent.mouseLeave(screen.getByTestId('cue-wave'))
+    expect(screen.getByTestId('cues-rejected-slot')).toBe(slot)
   })
 
   it('says what does not fit only while the cursor is over the wave, not all the time on a track that could take the flow', async () => {
@@ -760,8 +770,8 @@ describe('CuesSection', () => {
     markAt(bar(64))
     chooseFlow('one-at-32')
     expect(screen.getByTestId(`cue-wave-ghost-dropped-${bar(32)}`)).toBeInTheDocument()
-    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
-      "1 doesn't fit, it falls in the strong part",
+    expect(screen.getByTestId('cues-no-fit')).toHaveTextContent(
+      "Doesn't fit this track, it falls in the strong part",
     )
   })
 
@@ -772,10 +782,12 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
     chooseFlow('one-at-32')
     expect(screen.queryByTestId('cues-apply-track')).toBeNull()
-    expect(screen.getByTestId('cues-no-fit')).toHaveTextContent("This flow doesn't fit this track")
-    expect(screen.getByTestId('cues-rejected')).toHaveTextContent(
-      "1 doesn't fit, it falls in the strong part",
+    expect(screen.getByTestId('cues-no-fit')).toHaveTextContent(
+      "Doesn't fit this track, it falls in the strong part",
     )
+    expect(screen.getByTestId('cues-no-fit').className).toContain('whitespace-nowrap')
+    expect(screen.getByTestId('cues-no-fit').className).toContain('truncate')
+    expect(screen.queryByTestId('cues-rejected')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
   })
 

@@ -315,10 +315,12 @@ function Editing({
   const ghost = pointDrag
     ? undefined
     : (hoverGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
-  const rejected = pointDrag
-    ? []
-    : (hoverGhost?.rejected ?? (noFit && switchGhost !== null ? switchGhost.rejected : []))
-  const rejectedReasons = [...new Set(rejected.map((r) => r.reason))]
+  const rejectedCount = pointDrag ? 0 : (hoverGhost?.rejected.length ?? 0)
+  const noFitReason = noFit && switchGhost !== null ? switchGhost.rejected[0]?.reason : undefined
+  const noFitText =
+    noFitReason === undefined
+      ? tr('editor.cues.noFit')
+      : tr('editor.cues.noFitBecause', { reason: tr(`editor.cues.noFitReason.${noFitReason}`) })
   const openedWith = useRef(settled)
   useEffect(() => {
     if (openedWith.current === settled) return
@@ -559,25 +561,21 @@ function Editing({
           {tr('editor.cues.applyTrack')}
         </button>
       )}
-      {noFit && (
-        <span data-testid="cues-no-fit" className="text-xs text-warn">
-          {tr('editor.cues.noFit')}
-        </span>
-      )}
       {placing && maximized && !pointDrag && (
         <span data-testid="cues-place-hint" role="status" className="text-xs text-fg-dim">
           {tr('editor.cues.placeHint')}
         </span>
       )}
-      {rejectedReasons.length > 0 && (
-        <span data-testid="cues-rejected" className="text-xs text-fg-faint">
-          {rejectedReasons
-            .map((reason) =>
-              tr(`editor.cues.rejected.${reason}`, {
-                count: rejected.filter((r) => r.reason === reason).length,
-              }),
-            )
-            .join(' · ')}
+      {placing && (
+        <span
+          data-testid="cues-rejected-slot"
+          className="min-w-0 flex-1 whitespace-nowrap text-xs text-fg-faint"
+        >
+          {rejectedCount > 0 && (
+            <span data-testid="cues-rejected" className="block truncate">
+              {tr('editor.cues.rejectedCount', { count: rejectedCount })}
+            </span>
+          )}
         </span>
       )}
       <span className="flex-1" />
@@ -865,6 +863,15 @@ function Editing({
       {queued !== null && !fresh && (
         <p data-testid="cues-queued-stale" className="mt-2 text-xs text-warn">
           {tr('editor.cues.queuedStale')}
+        </p>
+      )}
+      {noFit && (
+        <p
+          data-testid="cues-no-fit"
+          title={noFitText}
+          className="mt-2 truncate whitespace-nowrap text-xs text-warn"
+        >
+          {noFitText}
         </p>
       )}
       {state.notice === 'manual' && (

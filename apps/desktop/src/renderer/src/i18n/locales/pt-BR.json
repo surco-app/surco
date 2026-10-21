@@ -829,21 +829,19 @@
       "placeHint": "Clique para colocar",
       "applyTrack": "Aplicar a esta faixa",
       "noFit": "Este fluxo não cabe nesta faixa",
+      "rejectedCount_one": "{{count}} não cabe",
+      "rejectedCount_other": "{{count}} não cabem",
+      "noFitBecause": "Não cabe nesta faixa, {{reason}}",
+      "noFitReason": {
+        "strong": "cai na parte forte",
+        "point": "bate em outro ponto",
+        "start": "cai antes da primeira batida",
+        "end": "cai depois da última batida",
+        "limit": "passaria de 8 hot cues"
+      },
       "zoomIn": "Aproximar",
       "zoomReset": "Redefinir o zoom",
-      "zoomOut": "Afastar",
-      "rejected": {
-        "strong_one": "{{count}} não cabe, cai na parte forte",
-        "strong_other": "{{count}} não cabem, caem na parte forte",
-        "point_one": "{{count}} não cabe, bate em outro ponto",
-        "point_other": "{{count}} não cabem, batem em outro ponto",
-        "start_one": "{{count}} não cabe, cai antes da primeira batida",
-        "start_other": "{{count}} não cabem, caem antes da primeira batida",
-        "end_one": "{{count}} não cabe, cai depois da última batida",
-        "end_other": "{{count}} não cabem, caem depois da última batida",
-        "limit_one": "{{count}} não cabe, passaria de 8 hot cues",
-        "limit_other": "{{count}} não cabem, passariam de 8 hot cues"
-      }
+      "zoomOut": "Afastar"
     }
   },
   "fields": {

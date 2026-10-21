@@ -829,21 +829,19 @@
       "placeHint": "Cliquez pour placer",
       "applyTrack": "Appliquer à ce morceau",
       "noFit": "Ce flux ne rentre pas dans ce morceau",
+      "rejectedCount_one": "{{count}} ne rentre pas",
+      "rejectedCount_other": "{{count}} ne rentrent pas",
+      "noFitBecause": "Ne rentre pas dans ce morceau, {{reason}}",
+      "noFitReason": {
+        "strong": "tombe dans la partie forte",
+        "point": "touche un autre point",
+        "start": "tombe avant le premier temps",
+        "end": "tombe après le dernier temps",
+        "limit": "dépasserait 8 hot cues"
+      },
       "zoomIn": "Zoom avant",
       "zoomReset": "Réinitialiser le zoom",
-      "zoomOut": "Zoom arrière",
-      "rejected": {
-        "strong_one": "{{count}} ne rentre pas, tombe dans la partie forte",
-        "strong_other": "{{count}} ne rentrent pas, tombent dans la partie forte",
-        "point_one": "{{count}} ne rentre pas, touche un autre point",
-        "point_other": "{{count}} ne rentrent pas, touchent un autre point",
-        "start_one": "{{count}} ne rentre pas, tombe avant le premier temps",
-        "start_other": "{{count}} ne rentrent pas, tombent avant le premier temps",
-        "end_one": "{{count}} ne rentre pas, tombe après le dernier temps",
-        "end_other": "{{count}} ne rentrent pas, tombent après le dernier temps",
-        "limit_one": "{{count}} ne rentre pas, dépasserait 8 hot cues",
-        "limit_other": "{{count}} ne rentrent pas, dépasseraient 8 hot cues"
-      }
+      "zoomOut": "Zoom arrière"
     }
   },
   "fields": {
