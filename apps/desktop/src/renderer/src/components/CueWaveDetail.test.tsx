@@ -488,6 +488,42 @@ describe('CueWaveDetail', () => {
     expect(new Set(styles)).toEqual(new Set(['#7aa2f7']))
   })
 
+  it('keeps the canvas size and its one resize watcher while only the playhead moves, since resizing and re-observing every frame made the playing wave flicker', () => {
+    const fake = { clearRect: vi.fn(), fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const watchers: (() => void)[] = []
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          watchers.push(callback)
+        }
+        observe() {}
+        disconnect() {}
+      },
+    )
+    const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
+    const { rerender } = setup({ source: { words }, playheadMs: 150000 })
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    const sizes: number[] = []
+    for (const side of ['width', 'height'] as const) {
+      const own = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, side)
+      Object.defineProperty(canvas, side, {
+        configurable: true,
+        get: () => own?.get?.call(canvas),
+        set: (v: number) => {
+          sizes.push(v)
+          own?.set?.call(canvas, v)
+        },
+      })
+    }
+    for (const ms of [150500, 151000, 151500]) rerender({ source: { words }, playheadMs: ms })
+    expect(sizes).toEqual([])
+    expect(watchers).toHaveLength(1)
+    expect(fake.clearRect).toHaveBeenCalledTimes(4)
+    vi.unstubAllGlobals()
+  })
+
   it('scales the canvas by the device pixel ratio but still paints one column per CSS pixel', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const fillRect = vi.fn()

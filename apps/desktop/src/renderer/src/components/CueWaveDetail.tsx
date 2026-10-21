@@ -277,8 +277,8 @@ export function CueWaveDetail({
     const width = Math.max(1, Math.round(rect.width))
     const height = Math.max(1, Math.round(rect.height))
     const dpr = window.devicePixelRatio || 1
-    canvas.width = width * dpr
-    canvas.height = height * dpr
+    if (canvas.width !== width * dpr) canvas.width = width * dpr
+    if (canvas.height !== height * dpr) canvas.height = height * dpr
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.clearRect(0, 0, width, height)
     if (!source) return
@@ -292,13 +292,15 @@ export function CueWaveDetail({
     })
   }, [source, fromMs, toMs])
   useEffect(draw, [draw])
+  const drawLatest = useRef(draw)
+  drawLatest.current = draw
   useEffect(() => {
     const stage = stageRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(draw)
+    const observer = new ResizeObserver(() => drawLatest.current())
     observer.observe(stage)
     return () => observer.disconnect()
-  }, [draw])
+  }, [])
   const { hot, calls } = placeCues(
     cues.map((c) => ({ ...c, ms: c.ms - fromMs })),
     span,
