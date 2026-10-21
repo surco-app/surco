@@ -224,7 +224,10 @@ function regenerate(
   const cues =
     out.status === 'plan'
       ? keepEdited(state, withoutOldCalls(state, ctx, drops, flow, previousFlow, generated))
-      : generated
+      : [
+          ...generated,
+          ...state.cues.filter((c) => !isHot(c) && !generated.some((g) => g.key === c.key)),
+        ]
   if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,

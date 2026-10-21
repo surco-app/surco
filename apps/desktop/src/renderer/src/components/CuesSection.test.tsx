@@ -959,6 +959,49 @@ describe('CuesSection', () => {
       expect(wanted).toEqual(expect.arrayContaining([{ ms: bar(64), kind: 0, color: null }]))
     })
 
+  it('keeps every CALL already on a track with hand-placed hot cues when a new point is marked and saved, even one the new point’s CALL rule would land on, since that CALL was lost', async () => {
+    const callBack: CueFlow = {
+      id: 'call-back',
+      name: 'Call back',
+      markPoint: true,
+      rules: [
+        {
+          from: 'drop',
+          direction: 'back',
+          bars: 32,
+          repeat: 1,
+          when: 'always',
+          place: 'call',
+          color: { fixed: 22 },
+        },
+      ],
+    }
+    const read = {
+      ...READ,
+      cues: [
+        { id: 'm', ms: bar(40), kind: 2, color: 1 },
+        { id: 'p', ms: bar(32), kind: 0, color: null },
+      ],
+    }
+    const { saveRekordboxCues } = setup(read, null, {
+      cueFlows: [...KEPT, callBack],
+      activeCueFlow: 'call-back',
+    })
+    await ready()
+    markAt(bar(64))
+    expect(screen.getByTestId('cues-manual')).toBeInTheDocument()
+    expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const { wanted } = saveRekordboxCues.mock.calls[0][0]
+    expect(wanted).toEqual(
+      expect.arrayContaining([
+        { id: 'p', ms: bar(32), kind: 0, color: null },
+        { ms: bar(64), kind: 0, color: null },
+      ]),
+    )
+  })
+
   it('says which hot cues the 8 limit leaves out', async () => {
     setup({
       ...READ,
