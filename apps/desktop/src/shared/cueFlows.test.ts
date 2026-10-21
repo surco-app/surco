@@ -45,12 +45,12 @@ describe('bundled flows', () => {
     })
   })
 
-  it('ships Entrada as the only flow, one green cue 64 bars before the point and a CALL on it, so a new DJ starts from one simple flow', () => {
+  it('ships Entrada as the only flow, one green cue two rounds of 32 beats (16 bars) before the point and a CALL on it, so a new DJ starts from one simple flow', () => {
     expect(MIX_IN.rules).toEqual([
       {
         from: 'drop',
         direction: 'back',
-        bars: 64,
+        bars: 16,
         repeat: 1,
         when: 'fits',
         place: 'hot',

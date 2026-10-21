@@ -97,7 +97,7 @@ export const MIX_IN: CueFlow = {
     {
       from: 'drop',
       direction: 'back',
-      bars: 64,
+      bars: 16,
       repeat: 1,
       when: 'fits',
       place: 'hot',
@@ -210,10 +210,15 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
 
 const sameFlow = (a: CueFlow, b: CueFlow): boolean => JSON.stringify(a) === JSON.stringify(b)
 
+const MIX_IN_AT_64: CueFlow = { ...MIX_IN, rules: [{ ...MIX_IN.rules[0], bars: 64 }] }
+
 export function migrateBundledFlow(
-  flows: CueFlow[],
+  stored: CueFlow[],
   active: string,
 ): { flows: CueFlow[]; active: string } {
+  const flows = stored.map((f) =>
+    f.id === MIX_IN.id && sameFlow(f, MIX_IN_AT_64) ? structuredClone(MIX_IN) : f,
+  )
   const untouched = (f: CueFlow): boolean => f.id === ONE_AT_32.id && sameFlow(f, ONE_AT_32)
   if (!flows.some(untouched)) return { flows, active }
   const next = active === ONE_AT_32.id ? MIX_IN.id : active

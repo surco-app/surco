@@ -1154,6 +1154,25 @@ describe('cue flows', () => {
     expect(getSettings().activeCueFlow).toBe('mix-in')
   })
 
+  it('brings an Entrada stored at 64 bars, as an earlier build shipped it, to the 16 bars it really is, the active choice kept', () => {
+    const shipped: CueFlow = { ...MIX_IN, rules: [{ ...MIX_IN.rules[0], bars: 64 }] }
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlows: [MY_FLOW, shipped, CALLS_ONLY], activeCueFlow: 'mix-in' }),
+    )
+    expect(getSettings().cueFlows).toEqual([MY_FLOW, MIX_IN, CALLS_ONLY])
+    expect(getSettings().activeCueFlow).toBe('mix-in')
+  })
+
+  it('keeps an Entrada the DJ edited as the DJ made it', () => {
+    const edited: CueFlow = { ...MIX_IN, name: 'Larga', rules: [{ ...MIX_IN.rules[0], bars: 64 }] }
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlows: [edited], activeCueFlow: 'mix-in' }),
+    )
+    expect(getSettings().cueFlows).toEqual([edited])
+  })
+
   it('keeps a Una cue a 32 the DJ edited or renamed as a flow of the DJ, never losing it', () => {
     const edited: CueFlow = { ...ONE_AT_32, rules: [{ ...ONE_AT_32.rules[0], bars: 16 }] }
     const renamed: CueFlow = { ...ONE_AT_32, name: 'Mía' }
