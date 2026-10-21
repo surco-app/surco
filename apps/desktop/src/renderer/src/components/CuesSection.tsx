@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Minimize2, Pause, Play, Undo2 } from 'lucide-react'
+import { Keyboard, Minimize2, Pause, Play } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -92,6 +92,7 @@ export interface CueTrackInfo {
 
 const ignore = () => {}
 const CLEAR_CUES = 'clear-cues'
+const DISCARD_CUES = 'discard-cues'
 
 const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
   'trim-start-back': ignore,
@@ -291,6 +292,7 @@ function Editing({
   }
   const pickOption = (id: string) => {
     if (id === CLEAR_CUES) dispatch({ type: 'clear' })
+    else if (id === DISCARD_CUES) onDiscard()
     else pickMode(id)
   }
   const removeOf = (key: string): DraftAction =>
@@ -568,6 +570,15 @@ function Editing({
       divided: true,
       disabled: !clearable,
     },
+    ...(maximized
+      ? []
+      : [
+          {
+            value: DISCARD_CUES,
+            label: tr('editor.cues.discard'),
+            disabled: unchanged && queued === null,
+          },
+        ]),
   ]
   const applyButton = (
     <button
@@ -582,29 +593,16 @@ function Editing({
       {tr('editor.cues.applyTrack')}
     </button>
   )
-  const discardButton =
-    (!unchanged || queued !== null) &&
-    (maximized ? (
-      <button
-        type="button"
-        data-testid="cues-undo"
-        onClick={onDiscard}
-        className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
-      >
-        {tr('editor.cues.discard')}
-      </button>
-    ) : (
-      <button
-        type="button"
-        data-testid="cues-undo"
-        aria-label={tr('editor.cues.discard')}
-        title={tr('editor.cues.discard')}
-        onClick={onDiscard}
-        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-      >
-        <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
-    ))
+  const discardButton = (!unchanged || queued !== null) && (
+    <button
+      type="button"
+      data-testid="cues-undo"
+      onClick={onDiscard}
+      className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+    >
+      {tr('editor.cues.discard')}
+    </button>
+  )
   const actions = (
     <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
       <Select
@@ -742,7 +740,6 @@ function Editing({
         </span>
       )}
       <span className="flex-1" />
-      {discardButton}
       {addCallButton}
       <button
         type="button"

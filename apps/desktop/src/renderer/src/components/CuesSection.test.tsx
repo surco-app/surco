@@ -107,6 +107,21 @@ const markAt = (ms: number) => {
   playheadAt(ms)
   fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
 }
+const discard = () => {
+  const button = screen.queryByTestId('cues-undo')
+  if (button) return fireEvent.click(button)
+  fireEvent.click(screen.getByTestId('cues-flow'))
+  fireEvent.click(screen.getByTestId('cues-flow-option-discard-cues'))
+}
+const discardOffered = () => {
+  if (screen.queryByTestId('cues-undo')) return true
+  if (!screen.queryByTestId('cues-flow-option-discard-cues'))
+    fireEvent.click(screen.getByTestId('cues-flow'))
+  const option = screen.getByTestId('cues-flow-option-discard-cues')
+  const offered = option.getAttribute('aria-disabled') !== 'true'
+  fireEvent.keyDown(option, { key: 'Escape' })
+  return offered
+}
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))
   await waitFor(() =>
@@ -158,7 +173,7 @@ describe('CuesSection', () => {
     setup()
     await ready()
     markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-undo'))
+    discard()
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
     cleanup()
     setup()
@@ -288,7 +303,7 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
     expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: My flow')
-    expect(screen.getByTestId('cues-undo')).toBeInTheDocument()
+    expect(discardOffered()).toBe(true)
     fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
     await waitFor(() => expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument())
   })
@@ -302,7 +317,7 @@ describe('CuesSection', () => {
       'true',
     )
     fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
-    expect(screen.queryByTestId('cues-undo')).toBeNull()
+    expect(discardOffered()).toBe(false)
   })
 
   it('recolours a hot cue from rekordbox picker', async () => {
@@ -426,10 +441,11 @@ describe('CuesSection', () => {
   it('offers Descartar only once there is something to discard', async () => {
     setup()
     await ready()
-    expect(screen.queryByTestId('cues-undo')).toBeNull()
+    expect(discardOffered()).toBe(false)
     markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-undo'))
-    await waitFor(() => expect(screen.queryByTestId('cues-undo')).toBeNull())
+    expect(discardOffered()).toBe(true)
+    discard()
+    await waitFor(() => expect(discardOffered()).toBe(false))
   })
 
   it('does not take the drop away when the click that adds another lands on it', async () => {
@@ -498,7 +514,7 @@ describe('CuesSection', () => {
     const names = within(screen.getByTestId('cues-flow-listbox'))
       .getAllByRole('option')
       .map((o) => o.textContent)
-    expect(names).toEqual(['Mix in 64', 'Mix in 32', 'Manual', 'Clear all cues'])
+    expect(names).toEqual(['Mix in 64', 'Mix in 32', 'Manual', 'Clear all cues', 'Discard changes'])
   })
 
   it('lists two flows that share a name apart and picks the one chosen, since flows are told apart by id', async () => {
@@ -537,6 +553,7 @@ describe('CuesSection', () => {
       'CALL only',
       'Manual',
       'Clear all cues',
+      'Discard changes',
     ])
   })
 
@@ -1001,7 +1018,7 @@ describe('CuesSection', () => {
     const { undoRekordboxCues } = setup()
     await ready()
     markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-undo'))
+    discard()
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
     expect(screen.getByTestId('cues-save')).toBeDisabled()
     expect(undoRekordboxCues).not.toHaveBeenCalled()
@@ -1013,7 +1030,7 @@ describe('CuesSection', () => {
     await ready()
     expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument()
     rekordboxQueuedCues.mockResolvedValue(null)
-    fireEvent.click(screen.getByTestId('cues-undo'))
+    discard()
     await waitFor(() => expect(undoRekordboxCues).toHaveBeenCalledWith('103'))
     await waitFor(() => expect(screen.queryByTestId(`cue-wave-call-${bar(64)}`)).toBeNull())
   })

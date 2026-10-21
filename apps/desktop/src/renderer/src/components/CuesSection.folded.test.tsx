@@ -253,17 +253,26 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  it('shows Descartar cambios as an icon in the folded row, so at 445 px neither it nor the bars to the CALL get cut and Guardar stays whole', async () => {
+  it('offers Descartar cambios in the flow menu below Borrar todas las cues, only once there are changes, and keeps it out of the row where it read as undo', async () => {
     setup()
     await ready()
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    const clear = screen.getByTestId('cues-flow-option-clear-cues')
+    const discard = screen.getByTestId('cues-flow-option-discard-cues')
+    expect(discard).toHaveTextContent('Discard changes')
+    expect(clear.compareDocumentPosition(discard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(discard).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.keyDown(discard, { key: 'Escape' })
     seekStrip(128)
     placeAtPlayhead()
-    const discard = screen.getByTestId('cues-undo')
-    expect(discard).toHaveAccessibleName('Discard changes')
-    expect(discard).toHaveAttribute('title', 'Discard changes')
-    expect(discard).toHaveTextContent('')
-    expect(discard.className).toContain('shrink-0')
-    expect(screen.getByTestId('cues-save').className).toContain('shrink-0')
+    expect(screen.getByTestId('cues-folded-row')).not.toContainElement(
+      screen.queryByTestId('cues-undo'),
+    )
+    fireEvent.click(screen.getByTestId('cues-flow'))
+    expect(screen.getByTestId('cues-flow-option-discard-cues')).not.toHaveAttribute('aria-disabled')
+    fireEvent.click(screen.getByTestId('cues-flow-option-discard-cues'))
+    expect(marks()).toHaveLength(0)
+    expect(screen.getByTestId('cues-save')).toBeDisabled()
   })
 
   it('offers + CALL in Manual, which puts a CALL at the playhead, while a click on the zoomed wave places nothing', async () => {
