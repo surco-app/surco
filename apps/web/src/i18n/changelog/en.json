@@ -25,7 +25,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Convert a track you keep in rekordbox and it stays the same track, with its playlists and cues. Editing its tags no longer renames its file.",
+        "text": "With «Update the rekordbox collection when converting» on in Settings, a track you convert stays the same track in rekordbox, with its playlists and cues. And editing the tags of a rekordbox track no longer renames its file.",
         "in": "1.9.0"
       },
       {
