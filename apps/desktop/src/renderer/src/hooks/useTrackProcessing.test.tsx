@@ -895,6 +895,42 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
   })
 
+  it('follows a renamed file and counts it converted when only the Apple Music step failed', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/Artist - Title.wav',
+        inPlace: true,
+        appleMusicFailed: true,
+      }),
+    })
+    const updateTrack = vi.fn()
+    const onAppleMusicFailed = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', musicPersistentId: 'PID1' })],
+          settings: null,
+          updateTrack,
+          onAppleMusicFailed,
+        }),
+      { wrapper: withClient() },
+    )
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(outcome).toBe('converted')
+    const patch = Object.assign({}, ...updateTrack.mock.calls.map((c) => c[1]))
+    expect(patch).toMatchObject({
+      status: 'done',
+      inputPath: '/m/Artist - Title.wav',
+      musicStatus: 'error',
+      musicError: i18n.t('editor.appleMusicError'),
+    })
+    expect(patch.musicPersistentId).toBeUndefined()
+    expect(onAppleMusicFailed).toHaveBeenCalledWith('a.wav')
+  })
+
   // Auto-apply only fills the gap when the user hasn't chosen a name: a manual outputName
   // (rename/edit) must still win, or the setting would silently overwrite deliberate names.
   it('keeps a manual output name over the pattern when auto-apply is on', async () => {

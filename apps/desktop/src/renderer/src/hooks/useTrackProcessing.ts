@@ -56,6 +56,7 @@ interface Params {
   // Surfaced when a replacement converted and went into Music but the copy it superseded
   // could not be retired, so the library now holds both.
   onOldMusicCopyKept?: (reason: 'mismatch' | 'error') => void
+  onAppleMusicFailed?: (name: string) => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
   // (.opus/.ogg/.oga/.aac/.mp4). A batch run shows this through batchSummary's "N
   // skipped" count, but a single-track convert has no summary to show it in — without
@@ -128,6 +129,7 @@ export function useTrackProcessing({
   onNormalizeSkipped,
   onDeclicked,
   onOldMusicCopyKept,
+  onAppleMusicFailed,
   onFormatSkipped,
   onKeptAsIs,
   rereadTrackMeta,
@@ -391,6 +393,10 @@ export function useTrackProcessing({
             declickFor(track, declickOverride, settings?.declick),
           ),
         )
+        if (result.appleMusicFailed) {
+          updateTrack(id, { musicStatus: 'error', musicError: tr('editor.appleMusicError') })
+          onAppleMusicFailed?.(track.listLabel)
+        }
         // Every conversion replaces the file at the output path, so probes cached for
         // it (the before/after comparison's waveform/loudness of a previous export)
         // describe bytes that no longer exist — without eviction a re-export keeps

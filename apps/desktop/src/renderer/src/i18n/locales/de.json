@@ -223,6 +223,7 @@
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
     "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
+    "appleMusicFailedAfterConvert": "„{{name}}“ wurde konvertiert, aber Apple Music konnte nicht aktualisiert werden. Versuche, den Titel erneut zu Apple Music hinzuzufügen.",
     "convertFailed": "„{{name}}“ konnte nicht konvertiert werden: {{reason}}",
     "convertFailedMany": "„{{name}}“ und {{count}} weitere konnten nicht konvertiert werden: {{reason}}",
     "declicked": "Klicks in {{count}} Samples von „{{name}}“ repariert.",

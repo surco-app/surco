@@ -2987,6 +2987,24 @@ describe('App per-track format pick', () => {
     expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
   })
 
+  it('says the conversion went through and only Apple Music failed', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/music/a.aiff',
+      inPlace: false,
+      appleMusicFailed: true,
+    })
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      processTrack,
+    })
+    await renderApp()
+    const [a] = await addTwoTracks()
+    fireEvent.click(a)
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    expect(await screen.findByTestId('music-after-convert')).toHaveTextContent('Apple Music')
+    expect(screen.queryByTestId('app-error')).not.toBeInTheDocument()
+  })
+
   // Widening to several tracks and back to one kept "Convert to FLAC" on the button while
   // the convert itself fell back to the Settings format.
   it('converts in the picked format after the selection widens and narrows back', async () => {

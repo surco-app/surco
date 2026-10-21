@@ -1242,6 +1242,7 @@ export interface ProcessResult {
   // one could not be retired, so Music holds both. 'mismatch' means Music refused because
   // the live entry no longer carries the offered name; 'error' that the delete failed.
   oldMusicCopyKept?: 'mismatch' | 'error'
+  appleMusicFailed?: true
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

@@ -365,47 +365,55 @@ export async function runProcessTrack(
     // file get imported, which also re-establishes the persistent ID.
     let musicPersistentId: string | undefined
     let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
+    let appleMusicFailed: true | undefined
     if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
-      // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
-      // entry only rewrites its tags — Music offers no way to repoint one at another file
-      // — so the upgrade reported 14/09 left the library on the MP3 while claiming
-      // success. The new file therefore has to be imported and the old entry retired.
-      //
-      // Add first and delete last: a failing add then destroys nothing, and the crates are
-      // replayed in between so the successor is equivalent before anything is retired.
-      if (job.replacesPath) {
-        const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps)
-        musicPersistentId = replaced.added
-        oldMusicCopyKept = replaced.oldCopyKept
-      } else {
-        musicPersistentId = job.musicPersistentId
-          ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
-            (await deps.addToAppleMusic(target, job.meta, coverPath)))
-          : await deps.addToAppleMusic(target, job.meta, coverPath)
-      }
-      // "Apple Music only" removes the temp conversion in the finally below — safe only
-      // when Music COPIED the file into its Media folder. With "Copy files to the Media
-      // folder when adding" off, the fresh entry still references the temp path, and
-      // the cleanup would leave a library row that plays nothing. Verify where the
-      // entry points; a temp reference rolls the add back and fails the job out loud.
-      if (tmpDir && musicPersistentId) {
-        const entryPath = await deps.appleMusicEntryLocation(musicPersistentId)
-        if (entryPath.startsWith(tmpDir)) {
-          await deps.deleteAppleMusic(musicPersistentId, metaLabel(job))
-          throw errorWithKey('appleMusicNoMediaCopy', entryPath)
+      try {
+        // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
+        // entry only rewrites its tags — Music offers no way to repoint one at another file
+        // — so the upgrade reported 14/09 left the library on the MP3 while claiming
+        // success. The new file therefore has to be imported and the old entry retired.
+        //
+        // Add first and delete last: a failing add then destroys nothing, and the crates are
+        // replayed in between so the successor is equivalent before anything is retired.
+        if (job.replacesPath) {
+          const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps)
+          musicPersistentId = replaced.added
+          oldMusicCopyKept = replaced.oldCopyKept
+        } else {
+          musicPersistentId = job.musicPersistentId
+            ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
+              (await deps.addToAppleMusic(target, job.meta, coverPath)))
+            : await deps.addToAppleMusic(target, job.meta, coverPath)
         }
-        // Music copied the file out of the temp dir, so this is where it actually lives.
-        // The repoint recorded during the conversion still names the temp path, which the
-        // cleanup below deletes — the flush would then refuse it as output-missing and
-        // leave the collection on the old file, which is what the user hit.
-        if (entryPath) deps.redirectRepoint?.(target, entryPath)
+        // "Apple Music only" removes the temp conversion in the finally below — safe only
+        // when Music COPIED the file into its Media folder. With "Copy files to the Media
+        // folder when adding" off, the fresh entry still references the temp path, and
+        // the cleanup would leave a library row that plays nothing. Verify where the
+        // entry points; a temp reference rolls the add back and fails the job out loud.
+        if (tmpDir && musicPersistentId) {
+          const entryPath = await deps.appleMusicEntryLocation(musicPersistentId)
+          if (entryPath.startsWith(tmpDir)) {
+            await deps.deleteAppleMusic(musicPersistentId, metaLabel(job))
+            throw errorWithKey('appleMusicNoMediaCopy', entryPath)
+          }
+          // Music copied the file out of the temp dir, so this is where it actually lives.
+          // The repoint recorded during the conversion still names the temp path, which the
+          // cleanup below deletes — the flush would then refuse it as output-missing and
+          // leave the collection on the old file, which is what the user hit.
+          if (entryPath) deps.redirectRepoint?.(target, entryPath)
+        }
+      } catch (e) {
+        if (musicOnly) throw e
+        log.warn('process:track Apple Music step failed after the file was written', target, e)
+        musicPersistentId = undefined
+        appleMusicFailed = true
       }
     }
 
     // The Engine DJ destination points a library row at the file just written; a failed
-    // registration throws and fails the job, like a failed Apple Music add — never a
-    // silent "converted but not in the library".
+    // registration throws and fails the job — never a silent "converted but not in the
+    // library".
     let addedToEngineDj: true | undefined
     if (addToEngineDj) {
       stage('engineDj')
@@ -468,6 +476,7 @@ export async function runProcessTrack(
       declickedSamples,
       addedToEngineDj,
       oldMusicCopyKept,
+      appleMusicFailed,
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a

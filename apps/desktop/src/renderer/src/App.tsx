@@ -1223,6 +1223,13 @@ export default function App(): React.JSX.Element {
     // clicks" on every convert would train the user to ignore the notice.
     onDeclicked: (name, count) => setNotice(tr('notices.declicked', { name, count })),
     onOldMusicCopyKept: (reason) => reportOldCopyRemoveFailure(reason === 'mismatch'),
+    onAppleMusicFailed: (name) =>
+      pushToast(store, {
+        key: 'music-after-convert',
+        tone: 'danger',
+        message: tr('notices.appleMusicFailedAfterConvert', { name }),
+        testid: 'music-after-convert',
+      }),
     // A batch run shows this skip through batchSummary's "N skipped" count, but a
     // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),

@@ -1031,6 +1031,43 @@ describe('runProcessTrack — Apple Music', () => {
     expect(result.musicPersistentId).toBe('added-id')
   })
 
+  it('reports a renamed file as converted when the Music update fails afterwards, so the row follows the file', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.updateInAppleMusic = vi.fn(async () => {
+      throw new Error('Music got an error (1000)')
+    })
+    const result = await runProcessTrack(job({ musicPersistentId: 'lib-7' }), deps)
+
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/Artist - Title.aiff',
+    )
+    expect(result).toMatchObject({
+      outputPath: '/in/Artist - Title.aiff',
+      inPlace: true,
+      appleMusicFailed: true,
+    })
+    expect(result.musicPersistentId).toBeUndefined()
+  })
+
+  it('reports a written copy as converted when the Music add fails afterwards', async () => {
+    const deps = mac()
+    deps.addToAppleMusic = vi.fn(async () => {
+      throw new Error('Music got an error (1000)')
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result).toMatchObject({ outputPath: '/out/Artist - Title.aiff', appleMusicFailed: true })
+  })
+
+  it('still fails "Apple Music only" when the add fails, since no file was kept', async () => {
+    const deps = mac({ keepOutputCopy: false })
+    deps.addToAppleMusic = vi.fn(async () => {
+      throw new Error('Music got an error (1000)')
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('1000')
+  })
+
   it('does not touch Apple Music for a FLAC export even on macOS', async () => {
     const deps = mac({ outputFormat: 'flac' })
     await runProcessTrack(job(), deps)
