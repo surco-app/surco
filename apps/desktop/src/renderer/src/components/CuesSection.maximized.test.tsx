@@ -250,10 +250,10 @@ describe('CuesSection maximized', () => {
     fireEvent.click(screen.getByTestId('cues-pad-A'))
     fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
     fireEvent.click(within(screen.getByTestId('cues-pad-colours')).getByTestId('cue-palette-42'))
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#e62828' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: '#e62828' })
     fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
     fireEvent.click(within(screen.getByTestId('cues-pad-colours')).getByTestId('cue-palette-reset'))
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#28e214' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: '#28e214' })
   })
 
   it('gives the keys back to the editor after a pad colour, Restablecer or Escape, so Space plays and not the pad', async () => {
@@ -1204,7 +1204,7 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
     fireEvent.click(screen.getByTestId('cues-menu-colour'))
     fireEvent.click(within(screen.getByTestId('cues-menu')).getByTestId('cue-palette-42'))
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#e62828' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: '#e62828' })
     expect(screen.queryByTestId('cues-menu')).toBeNull()
   })
 

@@ -305,6 +305,43 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-call-40000')).toHaveAttribute('data-gone', 'false')
   })
 
+  it('draws an unsaved cue filled exactly like a saved one, since only the header says what is unsaved', () => {
+    setup({
+      cues: [
+        { key: 'a', ms: 16000, kind: 1, color: 42, pending: false },
+        { key: 'b', ms: 32000, kind: 2, color: 42, pending: true },
+        { key: 'p', ms: 16000, kind: 0, color: null, pending: false },
+        { key: 'd', ms: 40000, kind: 0, color: null, pending: true },
+      ],
+    })
+    const unsaved = screen.getByTestId('cue-wave-hot-B')
+    const saved = screen.getByTestId('cue-wave-hot-A')
+    expect(unsaved.style.backgroundColor).toBe(saved.style.backgroundColor)
+    expect(unsaved.style.borderColor).toBe('')
+    expect(unsaved.className).toBe(saved.className)
+    expect(screen.getByTestId('cue-wave-call-40000').className).toBe(
+      screen.getByTestId('cue-wave-call-16000').className,
+    )
+  })
+
+  it('draws no preview over a cue already in place, neither a see-through twin nor a dashed outline', () => {
+    setup({
+      ghost: {
+        added: [
+          { key: 'g1', ms: 16000, kind: 1, color: 42 },
+          { key: 'g2', ms: 40000, kind: 0, color: null },
+          { key: 'g3', ms: 32000, kind: 2, color: 22 },
+        ],
+        gone: [],
+        rejected: [{ ms: 16000, place: 'both', color: 42 }],
+      },
+    })
+    expect(screen.queryByTestId('cue-wave-ghost-hot-A')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-ghost-call-40000')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-ghost-dropped-16000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-ghost-hot-B')).toBeInTheDocument()
+  })
+
   it('shows the part the zoomed wave shows as a soft rectangle', () => {
     setup({
       onSeek: vi.fn<(ms: number) => void>(),

@@ -13,6 +13,7 @@ import {
   HOT_MARK_PX,
   markStyle,
   placeCues,
+  visibleGhost,
 } from '../lib/cueMarks'
 import { snapToBeat } from '../lib/cuePlayhead'
 import { barLines, cuePosition, peakBars, quantizePoints } from '../lib/cueWave'
@@ -53,7 +54,7 @@ export function CueWave({
   onSeek,
   slim,
   view,
-  ghost,
+  ghost: rawGhost,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -169,6 +170,7 @@ export function CueWave({
   }
   const { hot, calls } = placeCues(cues, durationMs)
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
+  const ghost = visibleGhost(rawGhost, cues)
   const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
   const viewPct = (ms: number): string =>
     `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
@@ -277,7 +279,7 @@ export function CueWave({
           },
           className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent ${
             isSelected ? 'border-t-[9px]' : 'border-t-[6px]'
-          } ${pending ? 'opacity-60' : ''}`,
+          }`,
         }
         return readOnly ? (
           <span key={`c${c.key}`} aria-hidden="true" {...common} />
@@ -302,14 +304,13 @@ export function CueWave({
           'data-selected': isSelected ? 'true' : 'false',
           style: {
             ...markStyle(h.at),
-            ...(pending
-              ? { borderColor: h.colour, color: h.colour }
-              : { backgroundColor: h.colour, color: '#000' }),
+            backgroundColor: h.colour,
+            color: '#000',
             ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
           },
           className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
-            pending ? 'border' : ''
-          } ${isSelected ? 'ring-2 ring-[var(--color-fg)]' : ''}`,
+            isSelected ? 'ring-2 ring-[var(--color-fg)]' : ''
+          }`,
         }
         return readOnly ? (
           <span key={`h${h.key}`} aria-hidden="true" {...common}>

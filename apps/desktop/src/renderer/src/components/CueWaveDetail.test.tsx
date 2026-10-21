@@ -570,23 +570,46 @@ describe('CueWaveDetail', () => {
     vi.unstubAllGlobals()
   })
 
-  it('draws a pending hot cue outlined and a pending CALL marked, as the section does', () => {
+  it('draws an unsaved cue filled exactly like a saved one, since only the header says what is unsaved', () => {
     setup({
       cues: [
         { key: 'b', ms: bar(36), kind: 2, color: 22, pending: true },
+        { key: 'a', ms: bar(34), kind: 1, color: 22, pending: false },
         { key: 'd', ms: bar(40), kind: 0, color: null, pending: true },
         { key: 'e', ms: bar(34), kind: 0, color: null, pending: false },
       ],
     })
-    const hot = screen.getByTestId('cue-detail-hot-B')
-    expect(hot).toHaveAttribute('data-pending', 'true')
-    expect(hot.style.backgroundColor).toBe('')
-    expect(hot.style.borderColor).not.toBe('')
-    expect(screen.getByTestId(`cue-detail-call-${bar(40)}`)).toHaveAttribute('data-pending', 'true')
-    expect(screen.getByTestId(`cue-detail-call-${bar(34)}`)).toHaveAttribute(
-      'data-pending',
-      'false',
+    const unsaved = screen.getByTestId('cue-detail-hot-B')
+    const saved = screen.getByTestId('cue-detail-hot-A')
+    expect(unsaved.style.backgroundColor).toBe(saved.style.backgroundColor)
+    expect(unsaved.style.borderColor).toBe('')
+    expect(unsaved.className).toBe(saved.className)
+    expect(screen.getByTestId(`cue-detail-call-${bar(40)}`).className).toBe(
+      screen.getByTestId(`cue-detail-call-${bar(34)}`).className,
     )
+  })
+
+  it('draws no preview over a cue already in place, neither a see-through twin nor a dashed outline', () => {
+    setup({
+      cues: [
+        { key: 'a', ms: bar(34), kind: 1, color: 22, pending: true },
+        { key: 'c', ms: bar(34), kind: 0, color: null, pending: true },
+      ],
+      ghost: {
+        added: [
+          { key: 'g1', ms: bar(34), kind: 1, color: 22 },
+          { key: 'g2', ms: bar(34), kind: 0, color: null },
+          { key: 'g3', ms: bar(36), kind: 2, color: 42 },
+        ],
+        gone: [],
+        rejected: [{ ms: bar(34), place: 'both', color: 22 }],
+      },
+    })
+    expect(screen.queryByTestId(`cue-detail-ghost-call-${bar(34)}`)).toBeNull()
+    expect(screen.queryByTestId(`cue-detail-ghost-dropped-${bar(34)}`)).toBeNull()
+    expect(screen.queryAllByTestId(/^cue-detail-ghost-hot-/).map((el) => el.style.left)).toEqual([
+      screen.getByTestId('cue-detail-ghost-hot-B').style.left,
+    ])
   })
 
   it('puts no buttons over the wave itself, the zoom buttons sit beside it', () => {

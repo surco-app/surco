@@ -13,6 +13,7 @@ import {
   GONE_OPACITY,
   markStyle,
   placeCues,
+  visibleGhost,
   WAVE_MARK_LANE_PX,
 } from '../lib/cueMarks'
 import {
@@ -121,7 +122,7 @@ export function CueWaveDetail({
   onHover,
   onMarkMenu,
   onDeleteMark,
-  ghost,
+  ghost: rawGhost,
   points,
   movable,
   onMoveMark,
@@ -307,6 +308,7 @@ export function CueWaveDetail({
     span,
   )
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
+  const ghost = visibleGhost(rawGhost, cues)
   const toCall = barsToNextCall(beats, points, playheadMs)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
   const gone = new Set(ghost?.gone ?? [])
@@ -481,15 +483,12 @@ export function CueWaveDetail({
                   ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
                 }}
-                className={`absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] ${
-                  pendingOf.get(c.key) ? 'opacity-60' : ''
-                }`}
+                className="absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
               />
               {badge(c.key, c.at, t('editor.cues.deleteCallMark'), 9)}
             </Fragment>
           ))}
           {hot.map((h) => {
-            const pending = pendingOf.get(h.key) ?? false
             return (
               <Fragment key={`h${h.key}`}>
                 <span
@@ -497,7 +496,7 @@ export function CueWaveDetail({
                   data-testid={`cue-detail-hot-${h.letter}`}
                   data-mark="true"
                   data-gone={gone.has(h.key) ? 'true' : 'false'}
-                  data-pending={pending ? 'true' : 'false'}
+                  data-pending={pendingOf.get(h.key) ? 'true' : 'false'}
                   data-selected={selected === h.key ? 'true' : 'false'}
                   aria-hidden="true"
                   onContextMenu={(e) => markMenu(h.key, e)}
@@ -505,15 +504,14 @@ export function CueWaveDetail({
                   {...grab(h.key)}
                   style={{
                     ...markStyle(h.at),
-                    ...(pending
-                      ? { borderColor: h.colour, color: h.colour }
-                      : { backgroundColor: h.colour, color: '#000' }),
+                    backgroundColor: h.colour,
+                    color: '#000',
                     ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
                     ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   }}
                   className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
-                    pending ? 'border' : ''
-                  } ${selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''}`}
+                    selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''
+                  }`}
                 >
                   {h.letter}
                 </span>

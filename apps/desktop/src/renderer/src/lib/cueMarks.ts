@@ -35,6 +35,21 @@ export function droppedStyle(at: number, mark: DroppedMark): CSSProperties {
     opacity: DROPPED_OPACITY,
   }
 }
+export function visibleGhost(ghost: CueGhost | undefined, cues: MarkInput[]): CueGhost | undefined {
+  if (!ghost) return ghost
+  const real = cues.filter((c) => !ghost.gone.includes(c.key))
+  const held = (ms: number, call?: boolean): boolean =>
+    real.some(
+      (c) =>
+        (call === undefined || (c.kind === 0) === call) && Math.abs(c.ms - ms) <= SAME_POSITION_MS,
+    )
+  return {
+    ...ghost,
+    added: ghost.added.filter((c) => !held(c.ms, c.kind === 0)),
+    rejected: ghost.rejected?.filter((r) => !held(r.ms)),
+  }
+}
+
 export interface HotMark {
   key: string
   ms: number

@@ -329,7 +329,7 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-colour'))
     fireEvent.click(screen.getByTestId('cue-palette-5'))
     expect(screen.queryByTestId('cue-palette')).toBeNull()
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#50b4ff' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: '#50b4ff' })
     expect(screen.queryByTestId('cues-letter')).toBeNull()
   })
 
@@ -373,7 +373,7 @@ describe('CuesSection', () => {
     await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(10) / 1000, clientY: 30 })
     fireEvent.click(screen.getByTestId('cues-menu-add-hot'))
-    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ borderColor: '#28e214' })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: '#28e214' })
     expect(screen.queryByTestId('cues-menu')).toBeNull()
   })
 
