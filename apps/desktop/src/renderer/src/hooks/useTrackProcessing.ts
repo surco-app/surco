@@ -20,7 +20,7 @@ import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
-import { renderOutputName } from '../lib/outputName'
+import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
@@ -310,9 +310,10 @@ export function useTrackProcessing({
       // derived live from the pattern when no manual name was set. A manual edit still wins.
       // Overwrite mode pins the name to the original regardless of any stale outputName,
       // so the rewrite lands back on the source file the user means to replace.
-      const autoName = settings?.autoApplyFilename
-        ? renderOutputName(settings.filenameFormat, meta)
-        : ''
+      const autoName =
+        settings && autoNamesFile(settings.autoApplyFilename, track)
+          ? renderOutputName(settings.filenameFormat, meta)
+          : ''
       const outputName = overwriteOriginal
         ? track.fileName
         : track.outputName?.trim() || autoName || track.fileName

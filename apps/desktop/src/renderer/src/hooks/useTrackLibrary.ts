@@ -455,6 +455,7 @@ export function useTrackLibrary({
     // and the conversion stops honouring the source's own format.
     if (saved.musicPersistentId) patch.musicPersistentId = saved.musicPersistentId
     if (saved.fromAppleMusic) patch.fromAppleMusic = true
+    if (saved.fromRekordbox) patch.fromRekordbox = true
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
@@ -846,6 +847,18 @@ export function useTrackLibrary({
       )
       if (stale.size > 0)
         mapTracks((t) => (stale.has(t.id) ? { ...t, sourcePreview: nextPreview(t) } : t))
+      const listed = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
+      const unmarked = new Set(
+        tracksRef.current
+          .filter(
+            (t) =>
+              !t.fromRekordbox &&
+              (listed.has(same(t.inputPath)) || (!!t.outputPath && listed.has(same(t.outputPath)))),
+          )
+          .map((t) => t.id),
+      )
+      if (unmarked.size > 0)
+        mapTracks((t) => (unmarked.has(t.id) ? { ...t, fromRekordbox: true } : t))
     }
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
@@ -897,8 +910,11 @@ export function useTrackLibrary({
           ...(e.musicPersistentId ? { musicPersistentId: e.musicPersistentId } : {}),
         })
       }
-      if (source === 'rekordbox' && e.preview)
-        pendingSeed.current.set(e.path, { sourcePreview: e.preview })
+      if (source === 'rekordbox')
+        pendingSeed.current.set(e.path, {
+          fromRekordbox: true,
+          ...(e.preview && { sourcePreview: e.preview }),
+        })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
     await addPaths(freshPaths, undefined, false, false)

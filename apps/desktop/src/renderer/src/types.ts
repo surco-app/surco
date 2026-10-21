@@ -204,6 +204,7 @@ export interface TrackItem {
   // (see resolveJobFormat), the same way the file's own tags win over what Music holds.
   // Distinct from musicPersistentId, which a track also earns by being ADDED to Music.
   fromAppleMusic?: boolean
+  fromRekordbox?: boolean
   // The file on disk that a replacement supersedes, resolved from the library copy this
   // track would replace. Stamped alongside musicPersistentId just before the convert runs:
   // rekordbox indexes that path, and the file being converted may live anywhere.

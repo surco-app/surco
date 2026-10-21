@@ -74,7 +74,7 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
 import { missingSummary } from '../lib/missingSummary'
-import { renderOutputName, titleFormatPatches } from '../lib/outputName'
+import { autoNamesFile, renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
@@ -971,7 +971,8 @@ export const Editor = memo(function Editor({
   // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
   // it derives live from the pattern (falling back to the file name for sparse metadata).
   const defaultOutputName =
-    (autoApplyFilename && renderOutputName(filenameFormat, resolvedMeta)) || item.fileName
+    (autoNamesFile(autoApplyFilename, item) && renderOutputName(filenameFormat, resolvedMeta)) ||
+    item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
@@ -1618,7 +1619,7 @@ export const Editor = memo(function Editor({
                           item={item}
                           format={format}
                           defaultOutputName={defaultOutputName}
-                          autoApply={autoApplyFilename}
+                          autoApply={autoNamesFile(autoApplyFilename, item)}
                           willEditInPlace={willEditInPlace}
                           open={outputOpen}
                           onToggle={() => setSectionOpen('output', !outputOpen)}

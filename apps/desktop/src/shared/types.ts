@@ -513,6 +513,7 @@ export interface SessionEdit {
   // a second one, and still keeps the source's own format.
   musicPersistentId?: string
   fromAppleMusic?: boolean
+  fromRekordbox?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
   // The per-tag inspector deletes, so a restored track still drops them on convert.

@@ -1,6 +1,7 @@
 import { fieldValue } from '../../../shared/customFields'
 import { yearFromDate } from '../../../shared/tagFields'
 import type { TrackMetadata } from '../../../shared/types'
+import type { TrackItem } from '../types'
 import { cleanName } from './release'
 
 // Discogs tags same-named labels with a trailing "(8)" disambiguator; like the artist,
@@ -14,6 +15,13 @@ function tokenValue(meta: TrackMetadata, key: string): string {
   if (!value) return ''
   if (key === 'year') return yearFromDate(value)
   return key === 'publisher' ? cleanName(value) : value
+}
+
+export function autoNamesFile(
+  autoApplyFilename: boolean,
+  track: Pick<TrackItem, 'fromRekordbox'>,
+): boolean {
+  return autoApplyFilename && !track.fromRekordbox
 }
 
 export function renderOutputName(format: string, meta: TrackMetadata): string {

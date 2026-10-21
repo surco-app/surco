@@ -40,6 +40,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   // conversion stops honouring the source's own format.
   if (track.musicPersistentId) edit.musicPersistentId = track.musicPersistentId
   if (track.fromAppleMusic) edit.fromAppleMusic = true
+  if (track.fromRekordbox) edit.fromRekordbox = true
   if (track.coverRemoved) edit.coverRemoved = true
   if (track.metaCleared) edit.metaCleared = true
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved

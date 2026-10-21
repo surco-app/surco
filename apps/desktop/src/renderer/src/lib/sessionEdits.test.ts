@@ -153,6 +153,11 @@ describe('sessionEdits', () => {
     expect(edits['/music/a.wav'].fromAppleMusic).toBe(true)
   })
 
+  it('remembers that a track came from rekordbox, so a reopened row keeps its file name', () => {
+    const edits = sessionEdits([track({ fromRekordbox: true })])
+    expect(edits['/music/a.wav'].fromRekordbox).toBe(true)
+  })
+
   // A loose file has neither, and storing absent flags would only bloat the file.
   it('stores nothing about the library for a track that has no copy', () => {
     const edits = sessionEdits([track({})])

@@ -873,6 +873,28 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  it('keeps the file name of a rekordbox track when auto-apply is on, so the DJ library keeps its file', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', fromRekordbox: true })],
+          settings: {
+            overwriteOriginal: false,
+            autoApplyFilename: true,
+            filenameFormat: '{artist} - {title}',
+          } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
+  })
+
   // Auto-apply only fills the gap when the user hasn't chosen a name: a manual outputName
   // (rename/edit) must still win, or the setting would silently overwrite deliberate names.
   it('keeps a manual output name over the pattern when auto-apply is on', async () => {

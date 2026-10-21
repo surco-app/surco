@@ -312,6 +312,20 @@ describe('opening a source playlist', () => {
     expect(result.current.tracks[0].meta.key).not.toBe('4B')
   })
 
+  it('marks every row a rekordbox playlist lists as a DJ library track, loaded before or not', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
+    })
+    expect(result.current.tracks.map((t) => [t.inputPath, t.fromRekordbox])).toEqual([
+      ['/m/a.aiff', true],
+      ['/m/b.aiff', true],
+    ])
+  })
+
   it('stamps a Music row with its library identity, so converting updates that copy', async () => {
     const { result } = setup()
     await act(async () => {

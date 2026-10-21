@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import {
+  autoNamesFile,
   emptyTitleFormatFields,
   outputNamePatches,
   renderOutputName,
@@ -365,5 +366,16 @@ describe('{year} with a full release date', () => {
     expect(renderOutputName('{artist} ({year})', meta({ artist: 'A', year: '2020-12-01' }))).toBe(
       'A (2020)',
     )
+  })
+})
+
+describe('autoNamesFile', () => {
+  it('names a loose file from the pattern when auto-apply is on', () => {
+    expect(autoNamesFile(true, {})).toBe(true)
+    expect(autoNamesFile(false, {})).toBe(false)
+  })
+
+  it('never renames a rekordbox track, whose collection points at the file by its name', () => {
+    expect(autoNamesFile(true, { fromRekordbox: true })).toBe(false)
   })
 })
