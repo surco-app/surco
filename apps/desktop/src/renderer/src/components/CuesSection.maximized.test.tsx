@@ -190,11 +190,9 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
   })
 
-  it('asks main for the full colour wave only once maximized', async () => {
+  it('asks main for the full colour wave as soon as the section is open, folded or full, since both draw the zoomed wave', async () => {
     const { rekordboxCueWaveDetail } = setup()
     await ready()
-    expect(rekordboxCueWaveDetail).not.toHaveBeenCalled()
-    await maximize()
     await waitFor(() => expect(rekordboxCueWaveDetail).toHaveBeenCalledWith('103'))
   })
 

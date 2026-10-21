@@ -442,7 +442,7 @@ function Editing({
         )
       : undefined
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
-  const { data: words } = useCueWaveDetail(cue.contentId, maximized)
+  const { data: words } = useCueWaveDetail(cue.contentId, true)
   const source: DetailSource | null = words
     ? { words }
     : read.wave

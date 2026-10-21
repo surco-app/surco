@@ -44,7 +44,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueWaveDetail>> = {}) {
   const view = render(<CueWaveDetail {...props} />)
   const rerender = (next: Partial<React.ComponentProps<typeof CueWaveDetail>>) =>
     view.rerender(<CueWaveDetail {...props} {...next} />)
-  return { onScrub, onZoom, rerender }
+  return { onScrub, onZoom, rerender, unmount: view.unmount }
 }
 
 describe('CueWaveDetail', () => {
@@ -454,6 +454,21 @@ describe('CueWaveDetail', () => {
     setup({ source: { words }, playheadMs: 150000 })
     expect(fillRect.mock.calls.length).toBeGreaterThan(0)
     expect(fillRect.mock.calls.length).toBeLessThanOrEqual(400)
+  })
+
+  it('paints the short folded wave from the same detailed wave and with the same columns as full screen at the same zoom', () => {
+    const counts: number[] = []
+    for (const compact of [false, true]) {
+      const fillRect = vi.fn()
+      const fake = { clearRect: vi.fn(), fillRect, setTransform: vi.fn(), fillStyle: '' }
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+      const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
+      const view = setup({ source: { words }, playheadMs: 150000, compact })
+      counts.push(fillRect.mock.calls.length)
+      view.unmount()
+    }
+    expect(counts[0]).toBeGreaterThan(300)
+    expect(counts[1]).toBe(counts[0])
   })
 
   it('paints the wave in Surco accent like every other wave in the app, not in rekordbox colours', () => {

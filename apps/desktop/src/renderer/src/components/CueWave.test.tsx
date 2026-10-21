@@ -301,10 +301,11 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
   })
 
-  it('draws as a slim strip without its own card when it shares a surface with the zoomed wave', () => {
+  it('draws as a slim strip without its own card when it shares a surface with the zoomed wave, its marks in a lane above the bars so none is cut', () => {
     setup({ slim: true })
-    expect(screen.getByTestId('cue-wave').className).toContain('h-[34px]')
+    expect(screen.getByTestId('cue-wave').className).toContain('h-[44px]')
     expect(screen.getByTestId('cue-wave').className).not.toContain('rounded-md')
+    expect(screen.getByTestId('cue-wave-bars').style.height).toBe('calc(100% - 14px)')
   })
 
   it('moves the playhead with a click or a drag in the full editor while it draws the flow under the cursor, so the strip always navigates', () => {

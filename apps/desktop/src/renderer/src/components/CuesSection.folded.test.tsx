@@ -87,10 +87,14 @@ beforeEach(() => {
   })
 })
 
+const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
+
 function setup(settings: Partial<Settings> = {}) {
+  rekordboxCueWaveDetail.mockClear()
   installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+    rekordboxCueWaveDetail,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' }) => (
@@ -125,6 +129,12 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
     expect(position()).toBe('2:08.5')
     expect(marks()).toHaveLength(0)
+  })
+
+  it('loads the detailed wave for the short zoomed wave while folded, so it has the resolution of full screen', async () => {
+    setup()
+    await ready()
+    await waitFor(() => expect(rekordboxCueWaveDetail).toHaveBeenCalledWith('103'))
   })
 
   it('draws both waves on one surface and a row with play, zoom, time and Guardar, with the flow control up in the header', async () => {

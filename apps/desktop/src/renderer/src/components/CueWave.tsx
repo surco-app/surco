@@ -11,6 +11,7 @@ import {
   droppedStyle,
   GHOST_OPACITY,
   GONE_OPACITY,
+  HOT_MARK_PX,
   markStyle,
   placeCues,
 } from '../lib/cueMarks'
@@ -32,6 +33,7 @@ const PHRASES_PER_STRONG_TICK = 4
 const OVERVIEW_BARS = 300
 const ROW_BAR_PITCH_PX = 3
 const WAVE_HEIGHT = '90%'
+const SLIM_WAVE_HEIGHT = `calc(100% - ${HOT_MARK_PX.row + 2}px)`
 const WAVE_TOP = '10%'
 
 export function CueWave({
@@ -143,10 +145,10 @@ export function CueWave({
           )}
           testId="cue-wave-bars"
           className="absolute inset-x-0 bottom-0 w-full"
-          style={{ height: WAVE_HEIGHT }}
+          style={{ height: slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT }}
         />
       ),
-    [wave, overviewBars],
+    [wave, overviewBars, slim],
   )
   const ticks = useMemo(
     () =>
@@ -245,7 +247,7 @@ export function CueWave({
         onHover?.(null)
       }}
       className={`relative w-full overflow-hidden ${
-        slim ? 'h-[34px]' : 'h-16 rounded-md bg-[var(--color-panel-2)]'
+        slim ? 'h-[44px]' : 'h-16 rounded-md bg-[var(--color-panel-2)]'
       } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
     >
       <div
