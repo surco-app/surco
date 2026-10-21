@@ -972,6 +972,20 @@ describe('CuesSection', () => {
     )
   })
 
+  it('offers no Aplicar a esta pista on opening a track with hand-placed hot cues and point CALLs, since the flow fills in what is missing only when a point is placed', async () => {
+    setup({
+      ...READ,
+      cues: [
+        { id: 'm', ms: bar(40), kind: 2, color: 1 },
+        { id: 'p', ms: bar(64), kind: 0, color: null },
+      ],
+    })
+    await ready()
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+    await openFull()
+    expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+  })
+
   it('says which hot cues the 8 limit leaves out', async () => {
     setup({
       ...READ,

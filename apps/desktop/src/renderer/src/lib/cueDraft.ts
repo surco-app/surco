@@ -209,7 +209,8 @@ function regenerate(
     kept: state.placed,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
-  if (out.status === 'manual') return fillMissing(state, ctx, drops, flow, point)
+  if (out.status === 'manual' && point !== undefined)
+    return fillMissing(state, ctx, drops, flow, point)
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
   let nextKey = state.nextKey
   const origin = { ...state.origin }
@@ -223,7 +224,13 @@ function regenerate(
     origin[`n${nextKey}`] = flow.id
     return { key: `n${nextKey}`, ms: w.ms, kind: w.kind, color: w.color }
   })
-  const cues = keepEdited(state, withoutOldCalls(state, ctx, drops, flow, previousFlow, generated))
+  const cues =
+    out.status === 'plan'
+      ? keepEdited(state, withoutOldCalls(state, ctx, drops, flow, previousFlow, generated))
+      : [
+          ...generated,
+          ...state.cues.filter((c) => !isHot(c) && !generated.some((g) => g.key === c.key)),
+        ]
   if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,
@@ -232,7 +239,7 @@ function regenerate(
     origin,
     selected: null,
     notice: null,
-    trimmed: out.trimmed,
+    trimmed: out.status === 'plan' ? out.trimmed : [],
   })
 }
 
@@ -241,7 +248,7 @@ function fillMissing(
   ctx: DraftContext,
   drops: number[],
   flow: CueFlow,
-  point?: number,
+  point: number,
 ): CueDraft {
   const wantedOf = (points: number[]): WantedCue[] => {
     const out = flowOutcome({
@@ -256,22 +263,20 @@ function fillMissing(
     return out.status === 'too-many' ? [] : out.wanted
   }
   const same = (a: WantedCue, b: WantedCue): boolean => isHot(a) === isHot(b) && near(a.ms, b.ms)
-  const before = point === undefined ? [] : wantedOf(drops.filter((d) => !near(d, point)))
+  const before = wantedOf(drops.filter((d) => !near(d, point)))
   const planned = wantedOf(drops).filter((c) => !before.some((b) => same(b, c)))
   const skipped = planned.filter((c) => isHot(c) && state.cues.some((o) => same(o, c)))
   const fresh = planned.filter(
     (c) =>
       !state.cues.some((o) => same(o, c)) && (isHot(c) || !skipped.some((h) => near(h.ms, c.ms))),
   )
-  const points = point === undefined ? drops : [point]
-  const away = (ms: number): number => Math.min(...points.map((p) => Math.abs(p - ms)))
+  const away = (ms: number): number => Math.abs(point - ms)
   const free = freeLetters(state.cues)
   const hot = fresh.filter(isHot).sort((a, b) => away(a.ms) - away(b.ms))
   const left = hot.slice(free.length)
   const placed = fresh.filter(
     (c) =>
-      !left.includes(c) &&
-      (isHot(c) || points.some((p) => near(p, c.ms)) || !left.some((h) => near(h.ms, c.ms))),
+      !left.includes(c) && (isHot(c) || near(point, c.ms) || !left.some((h) => near(h.ms, c.ms))),
   )
   const letter = new Map(
     hot

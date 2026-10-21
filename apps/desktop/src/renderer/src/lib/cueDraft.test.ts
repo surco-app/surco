@@ -135,7 +135,7 @@ describe('reduceDraft', () => {
       expect(at(s, bar(64), false)).toBeDefined()
     })
 
-    it('adds the missing cues of every point on Aplicar, leaving the hand cue and the CALLs in place', () => {
+    it('fills in nothing on Aplicar, which keeps the hand cue and the CALLs as they are, since only placing a point fills in what is missing', () => {
       const start = startDraft(
         [
           { id: 'h', ms: bar(40), kind: 2, color: 9 },
@@ -144,11 +144,7 @@ describe('reduceDraft', () => {
         'mine',
       )
       const s = run(start, { type: 'apply-flow', flowId: 'one-at-32' })
-      expect(s.notice).toBeNull()
-      expect(hotOf(s)).toEqual([
-        [bar(32), 1, 22],
-        [bar(40), 2, 9],
-      ])
+      expect(hotOf(s)).toEqual([[bar(40), 2, 9]])
       expect(s.cues.find((c) => c.key === 'p')?.ms).toBe(bar(64))
     })
   })
