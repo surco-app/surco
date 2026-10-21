@@ -301,6 +301,14 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
   })
 
+  it('draws no focus ring once Space is pressed on it, since the global keyboard ring of a focusable element showed as a blue line under the strip', () => {
+    setup({ slim: true, onSeek: vi.fn() })
+    const strip = screen.getByTestId('cue-wave')
+    expect(strip).toHaveAttribute('tabindex', '0')
+    expect(strip.className).toContain('outline-none')
+    expect(strip.className).toContain('focus-visible:shadow-none')
+  })
+
   it('draws as a slim strip without its own card when it shares a surface with the zoomed wave, its marks in a lane above the bars so none is cut', () => {
     setup({ slim: true })
     expect(screen.getByTestId('cue-wave').className).toContain('h-[44px]')
