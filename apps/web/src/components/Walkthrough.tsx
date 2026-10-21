@@ -10,7 +10,7 @@ import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
 import QualityScene from './scenes/QualityScene'
 import ReplaceScene from './scenes/ReplaceScene'
-import { AnchorLink } from './scenes/Replay'
+import { AnchorLink, Replayable } from './scenes/Replay'
 import SceneLayout from './scenes/SceneLayout'
 import TagScene from './scenes/TagScene'
 import TrimScene from './scenes/TrimScene'
@@ -103,29 +103,35 @@ export default function Walkthrough() {
         </Reveal>
         <Reveal delay={120} className="mt-7">
           <div className="grid gap-5 lg:grid-cols-3">
-            <div id={SCENE_ANCHORS.declick} className="scroll-mt-16">
-              <div className="lg:h-[350px]">
-                <DeclickScene />
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+            <div id={SCENE_ANCHORS.declick} className="scroll-mt-24">
+              <Replayable>
+                <div className="lg:h-[350px]">
+                  <DeclickScene />
+                </div>
+              </Replayable>
+              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.declick.short')}
                 <AnchorLink id={SCENE_ANCHORS.declick} />
               </p>
             </div>
-            <div id={SCENE_ANCHORS.trim} className="scroll-mt-16">
-              <div className="lg:h-[350px]">
-                <TrimScene />
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+            <div id={SCENE_ANCHORS.trim} className="scroll-mt-24">
+              <Replayable>
+                <div className="lg:h-[350px]">
+                  <TrimScene />
+                </div>
+              </Replayable>
+              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.trim.short')}
                 <AnchorLink id={SCENE_ANCHORS.trim} />
               </p>
             </div>
-            <div id={SCENE_ANCHORS.normalize} className="scroll-mt-16">
-              <div className="lg:h-[350px]">
-                <NormalizeScene />
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+            <div id={SCENE_ANCHORS.normalize} className="scroll-mt-24">
+              <Replayable>
+                <div className="lg:h-[350px]">
+                  <NormalizeScene />
+                </div>
+              </Replayable>
+              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.normalize.short')}
                 <AnchorLink id={SCENE_ANCHORS.normalize} />
               </p>

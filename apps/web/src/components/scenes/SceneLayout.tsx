@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Reveal from '../Reveal'
-import { AnchorLink } from './Replay'
+import { AnchorLink, Replayable } from './Replay'
 
 // One step of the walkthrough: a slab of app UI on one side, a short caption on the
 // other. Alternating `flip` keeps the eye moving down the page instead of running
@@ -38,7 +38,7 @@ export default function SceneLayout({
           <div className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{children}</div>
         </Reveal>
         <Reveal delay={120} className="mt-7">
-          {app}
+          <Replayable>{app}</Replayable>
         </Reveal>
       </section>
     )
@@ -65,7 +65,7 @@ export default function SceneLayout({
         <div className="mt-3 leading-relaxed text-pretty text-muted">{children}</div>
       </Reveal>
       <Reveal from={flip ? 'left' : 'right'} delay={120} className={flip ? 'lg:order-1' : ''}>
-        {app}
+        <Replayable>{app}</Replayable>
       </Reveal>
     </section>
   )

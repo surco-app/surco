@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { SCENE_ANCHORS } from '../lib/sceneAnchors'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
-import { AnchorLink } from './scenes/Replay'
+import { AnchorLink, Replayable } from './scenes/Replay'
 import ReviewScene from './scenes/ReviewScene'
 
 const POINTS = ['spelling', 'typo', 'duplicate', 'everywhere'] as const
@@ -25,7 +25,9 @@ export default function LibraryReview() {
         </div>
       </Reveal>
       <Reveal delay={120} className="mt-8">
-        <ReviewScene />
+        <Replayable>
+          <ReviewScene />
+        </Replayable>
       </Reveal>
       <Reveal delay={160}>
         <ol className="mt-8 grid gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -35,7 +37,7 @@ export default function LibraryReview() {
               <p className="mt-1.5 text-sm font-semibold text-fg">
                 {t(`home.review.points.${key}.title`)}
               </p>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
                 {t(`home.review.points.${key}.text`)}
               </p>
             </li>
