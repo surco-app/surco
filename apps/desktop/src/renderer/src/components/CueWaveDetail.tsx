@@ -86,7 +86,7 @@ export function CueZoom({
           : 'absolute top-0 right-full mr-1 flex flex-col gap-1'
       }
     >
-      {(row ? [buttons[2], buttons[0]] : buttons).map(([id, label, Icon, act, off]) => (
+      {(row ? [buttons[2], buttons[1], buttons[0]] : buttons).map(([id, label, Icon, act, off]) => (
         <button
           key={id}
           type="button"
@@ -116,7 +116,8 @@ export function CueWaveDetail({
   onZoom,
   onZoomReset,
   compact,
-  onSeekClick,
+  onPlace,
+  onHover,
   onMarkMenu,
   onDeleteMark,
   ghost,
@@ -136,7 +137,8 @@ export function CueWaveDetail({
   onZoom: (dir: 'in' | 'out') => void
   onZoomReset?: () => void
   compact?: boolean
-  onSeekClick?: (ms: number) => void
+  onPlace?: (ms: number) => void
+  onHover?: (ms: number | null) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
   ghost?: CueGhost
@@ -156,13 +158,13 @@ export function CueWaveDetail({
   const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
   const span = toMs - fromMs
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
-  const latest = useRef({ span, beats, onScrub, onZoom, onSeekClick })
-  latest.current = { span, beats, onScrub, onZoom, onSeekClick }
+  const latest = useRef({ span, beats, onScrub, onZoom, onPlace })
+  latest.current = { span, beats, onScrub, onZoom, onPlace }
   const [drag, setDrag] = useState<{
     x0: number
     ms0: number
     width: number
-    tap: number
+    pick: number | null
   } | null>(null)
   const moved = useRef(false)
   useEffect(() => {
@@ -181,7 +183,7 @@ export function CueWaveDetail({
       latest.current.onScrub(ms)
     }
     const up = () => {
-      if (!moved.current) latest.current.onSeekClick?.(drag.tap)
+      if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)
       setDrag(null)
     }
     window.addEventListener('mousemove', move)
@@ -238,6 +240,7 @@ export function CueWaveDetail({
             const rect = stageRef.current?.getBoundingClientRect()
             if (!rect || rect.width <= 0) return
             e.stopPropagation()
+            onHover?.(null)
             setMarkDrag({
               key,
               x0: e.clientX,
@@ -250,6 +253,8 @@ export function CueWaveDetail({
           },
         }
       : {}
+  const snapAt = (clientX: number, rect: DOMRect): number =>
+    snapMs[nearestBeat(snapMs, fromMs + ((clientX - rect.left) / rect.width) * span)]
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
@@ -367,16 +372,24 @@ export function CueWaveDetail({
             if (e.button !== 0) return
             const rect = stageRef.current?.getBoundingClientRect()
             if (!rect || rect.width <= 0) return
+            const onMark = (e.target as HTMLElement).closest('[data-mark]') !== null
+            onHover?.(null)
             setDrag({
               x0: e.clientX,
               ms0: playheadMs,
               width: rect.width,
-              tap: snapToBeat(beats, fromMs + ((e.clientX - rect.left) / rect.width) * span),
+              pick: onPlace && !onMark ? snapAt(e.clientX, rect) : null,
             })
           }}
-          onDoubleClick={compact ? onZoomReset : undefined}
+          onMouseMove={(e) => {
+            if (!onPlace || drag || markDrag) return
+            const rect = stageRef.current?.getBoundingClientRect()
+            if (!rect || rect.width <= 0) return
+            onHover?.(snapAt(e.clientX, rect))
+          }}
+          onMouseLeave={() => onHover?.(null)}
           style={{
-            cursor: 'grab',
+            cursor: onPlace ? 'crosshair' : 'grab',
             height: compact ? COMPACT_HEIGHT : STAGE_HEIGHT,
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"

@@ -214,20 +214,63 @@ describe('CueWaveDetail', () => {
     expect(onScrub.mock.calls).toEqual([[bar(32) + 8000], [bar(32) + 9000]])
   })
 
-  it('moves the playhead to the beat under a click, a hand shake included, and scrubs with a real drag, since a click never places', () => {
-    const onSeekClick = vi.fn<(ms: number) => void>()
-    const { onScrub } = setup({ onSeekClick })
+  it('places on the quantized bar under a click, a hand shake included, and only scrubs with a real drag, never moving the playhead on a click', () => {
+    const onPlace = vi.fn<(ms: number) => void>()
+    const { onScrub } = setup({ onPlace })
     const stage = screen.getByTestId('cue-detail')
     fireEvent.mouseDown(stage, { button: 0, clientX: 310 })
     fireEvent.mouseMove(window, { clientX: 312 })
     fireEvent.mouseUp(window, { clientX: 312 })
-    expect(onSeekClick).toHaveBeenCalledWith(bar(36) + 1000)
+    expect(onPlace).toHaveBeenCalledWith(bar(36))
     expect(onScrub).not.toHaveBeenCalled()
     fireEvent.mouseDown(stage, { button: 0, clientX: 400 })
     fireEvent.mouseMove(window, { clientX: 300 })
     fireEvent.mouseUp(window, { clientX: 300 })
     expect(onScrub).toHaveBeenLastCalledWith(bar(32) + 8000)
-    expect(onSeekClick).toHaveBeenCalledTimes(1)
+    expect(onPlace).toHaveBeenCalledTimes(1)
+  })
+
+  it('does nothing on a click without a flow to place, as in Manual', () => {
+    const { onScrub } = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 310 })
+    fireEvent.mouseUp(window, { clientX: 310 })
+    expect(onScrub).not.toHaveBeenCalled()
+  })
+
+  it('never places on a press that starts on a mark, which belongs to its ✕ and its menu', () => {
+    const onPlace = vi.fn<(ms: number) => void>()
+    setup({ onPlace, cues: [{ key: 'b', ms: bar(36), kind: 2, color: 22, pending: false }] })
+    fireEvent.mouseDown(screen.getByTestId('cue-detail-hot-B'), { button: 0, clientX: 300 })
+    fireEvent.mouseUp(window, { clientX: 300 })
+    expect(onPlace).not.toHaveBeenCalled()
+  })
+
+  it('hands the quantized bar under the pointer on, and forgets it when the pointer leaves or a press starts, so the flow follows the pointer only while hovering', () => {
+    const onHover = vi.fn<(ms: number | null) => void>()
+    setup({ onHover, onPlace: vi.fn<(ms: number) => void>() })
+    const stage = screen.getByTestId('cue-detail')
+    fireEvent.mouseMove(stage, { clientX: 310 })
+    expect(onHover).toHaveBeenLastCalledWith(bar(36))
+    fireEvent.mouseLeave(stage)
+    expect(onHover).toHaveBeenLastCalledWith(null)
+    fireEvent.mouseMove(stage, { clientX: 310 })
+    fireEvent.mouseDown(stage, { button: 0, clientX: 310 })
+    expect(onHover).toHaveBeenLastCalledWith(null)
+    fireEvent.mouseUp(window, { clientX: 310 })
+  })
+
+  it('hands nothing on while hovering without a flow to place', () => {
+    const onHover = vi.fn<(ms: number | null) => void>()
+    setup({ onHover })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
+    expect(onHover).not.toHaveBeenCalledWith(bar(36))
+  })
+
+  it('leaves the zoom alone on a double click on the short wave, since its first click already places', () => {
+    const onZoomReset = vi.fn()
+    setup({ compact: true, onZoomReset, bars: 8 })
+    fireEvent.doubleClick(screen.getByTestId('cue-detail'))
+    expect(onZoomReset).not.toHaveBeenCalled()
   })
 
   it('draws the flow see-through and dims what it would take away', () => {
@@ -552,9 +595,11 @@ describe('CueWaveDetail', () => {
     expect(canvas.height).toBe(300)
   })
 
-  it('shows a hand over the wave, since a press there only moves the playhead', () => {
-    setup()
+  it('shows a crosshair over the wave when a click places the flow, and a hand when a press can only scrub', () => {
+    const { rerender } = setup()
     expect(screen.getByTestId('cue-detail').style.cursor).toBe('grab')
+    rerender({ onPlace: vi.fn<(ms: number) => void>() })
+    expect(screen.getByTestId('cue-detail').style.cursor).toBe('crosshair')
   })
   it('draws the marks in front of the playhead, which starts below the marks lane', () => {
     setup({

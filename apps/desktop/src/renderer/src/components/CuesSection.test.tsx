@@ -105,9 +105,7 @@ const playheadAt = (ms: number) => {
 }
 const markAt = (ms: number) => {
   playheadAt(ms)
-  const mark = screen.queryByTestId('cues-mark-here')
-  if (mark) fireEvent.click(mark)
-  else fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+  fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
 }
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))

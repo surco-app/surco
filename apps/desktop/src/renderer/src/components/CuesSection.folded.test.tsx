@@ -114,7 +114,6 @@ function setup(settings: Partial<Settings> = {}) {
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-detail')).toBeInTheDocument())
 const position = () => screen.getByTestId('cues-position').textContent
 const marks = () => screen.queryAllByTestId(/^cue-wave-(hot|call)-/)
-const markHere = () => screen.getByTestId('cues-mark-here')
 const seekStrip = (x: number) => {
   fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: x })
   fireEvent.mouseUp(window, { clientX: x })
@@ -129,6 +128,7 @@ const placedMarks = () =>
     .queryAllByTestId(/^cue-wave-(hot|call)-/)
     .map((el) => `${el.dataset.testid} ${el.style.left}`)
     .sort()
+const placeAtPlayhead = () => clickDetail(200)
 const clickDetail = (x: number) => {
   fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: x })
   fireEvent.mouseUp(window, { clientX: x })
@@ -160,11 +160,17 @@ describe('CuesSection folded', () => {
     expect(surface).toContainElement(screen.getByTestId('cue-detail'))
     expect(screen.getByTestId('cue-detail').style.height).toBe('96px')
     const row = screen.getByTestId('cues-folded-row')
-    for (const id of ['cues-play', 'cue-zoom-out', 'cue-zoom-in', 'cues-position', 'cues-save'])
+    for (const id of [
+      'cues-play',
+      'cue-zoom-out',
+      'cue-zoom-reset',
+      'cue-zoom-in',
+      'cues-position',
+      'cues-save',
+    ])
       expect(row).toContainElement(screen.getByTestId(id))
-    expect(screen.queryByTestId('cue-zoom-reset')).toBeNull()
     expect(row.className).toContain('whitespace-nowrap')
-    expect(row).toContainElement(markHere())
+    expect(screen.queryByTestId('cues-mark-here')).toBeNull()
     expect(screen.queryByTestId('cue-place-mode')).toBeNull()
     expect(surface).not.toContainElement(screen.getByTestId('cues-flow'))
     expect(row).not.toContainElement(screen.getByTestId('cues-flow'))
@@ -175,7 +181,7 @@ describe('CuesSection folded', () => {
     setup()
     await ready()
     seekStrip(128)
-    fireEvent.click(markHere())
+    placeAtPlayhead()
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 96 })
     fireEvent.mouseUp(window, { clientX: 96 })
     expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^16 to CALL$/)
@@ -191,17 +197,19 @@ describe('CuesSection folded', () => {
     expect(save).toBeDisabled()
     expect(save.className).not.toContain('bg-[var(--color-accent)]')
     seekStrip(128)
-    fireEvent.click(markHere())
+    placeAtPlayhead()
     expect(screen.getByTestId('cues-save')).toBe(save)
     expect(save).toBeEnabled()
     expect(save.className).toContain('bg-[var(--color-accent)]')
   })
 
-  it('never places with a click or a drag on either wave, which only move the playhead to the beat', async () => {
+  it('never places with a click or a drag on the strip, nor with a drag on the zoomed wave, which only move the playhead', async () => {
     setup()
     await ready()
     seekStrip(128.3)
-    clickDetail(300.3)
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 100 })
+    fireEvent.mouseMove(window, { clientX: 140 })
+    fireEvent.mouseUp(window, { clientX: 140 })
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 300 })
     fireEvent.mouseMove(window, { clientX: 250 })
     fireEvent.mouseUp(window, { clientX: 250 })
@@ -209,16 +217,22 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
   })
 
-  it('draws at the playhead what the flow would place, and Marcar aquí places exactly that in one undo step', async () => {
+  it('draws the flow at the playhead, follows the pointer over the zoomed wave, and a click there places exactly what it showed in one undo step without moving the playhead', async () => {
     setup()
     await ready()
     seekStrip(128.3)
-    const shown = ghostMarks()
-    expect(shown.length).toBeGreaterThan(1)
     expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
-    expect(markHere()).toHaveTextContent('Mark here')
-    fireEvent.click(markHere())
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    expect(screen.queryByTestId('cue-wave-ghost-call-128000')).toBeNull()
+    const shown = ghostMarks()
+    expect(screen.getByTestId('cue-wave-ghost-call-136000')).toBeInTheDocument()
+    expect(shown.length).toBeGreaterThan(1)
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    clickDetail(300)
     expect(placedMarks()).toEqual(shown)
+    expect(position()).toBe('2:08.5')
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'z', metaKey: true })
     expect(marks()).toHaveLength(0)
   })
@@ -243,59 +257,24 @@ describe('CuesSection folded', () => {
     setup()
     await ready()
     seekStrip(128)
-    fireEvent.click(markHere())
+    placeAtPlayhead()
     const discard = screen.getByTestId('cues-undo')
     expect(discard).toHaveAccessibleName('Discard changes')
     expect(discard).toHaveAttribute('title', 'Discard changes')
     expect(discard).toHaveTextContent('')
     expect(discard.className).toContain('shrink-0')
-    for (const id of ['cues-mark-here', 'cues-save'])
-      expect(screen.getByTestId(id).className).toContain('shrink-0')
+    expect(screen.getByTestId('cues-save').className).toContain('shrink-0')
   })
 
-  it('keeps Marcar aquí in place but disabled where the flow is already marked, saying so, since a dead button with no reason reads as broken', async () => {
-    setup()
-    await ready()
-    seekStrip(128)
-    fireEvent.click(markHere())
-    expect(markHere()).toBeDisabled()
-    expect(markHere()).toHaveAttribute('title', 'it is already marked here')
-  })
-
-  it('says why Marcar aquí places nothing when the flow has nothing that fits at the playhead', async () => {
-    const quiet: CueFlow = { ...ONE_AT_32, id: 'quiet', markPoint: false }
-    installApi({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => ({
-        ...READ,
-        strong: [{ start: 60000, end: 80000 }],
-      })),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-      rekordboxCueWaveDetail,
-    })
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(
-      <QueryClientProvider client={client}>
-        <SettingsProvider settings={{ cueFlows: [quiet], activeCueFlow: 'quiet' }}>
-          <CuesSection
-            cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
-            open
-            onToggle={vi.fn()}
-          />
-        </SettingsProvider>
-      </QueryClientProvider>,
-    )
-    await ready()
-    seekStrip(128)
-    expect(markHere()).toBeDisabled()
-    expect(markHere()).toHaveAttribute('title', 'it falls in the strong part')
-  })
-
-  it('reads + CALL in Manual and puts a CALL at the playhead', async () => {
+  it('offers + CALL in Manual, which puts a CALL at the playhead, while a click on the zoomed wave places nothing', async () => {
     setup({ activeCueFlow: 'manual' })
     await ready()
     seekStrip(128)
-    expect(markHere()).toHaveTextContent('+ CALL')
-    fireEvent.click(markHere())
+    clickDetail(300)
+    expect(marks()).toHaveLength(0)
+    const add = screen.getByTestId('cues-add-call')
+    expect(add).toHaveTextContent('+ CALL')
+    fireEvent.click(add)
     expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
     expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
   })
@@ -388,16 +367,17 @@ describe('CuesSection folded', () => {
     expect(editor.className).toContain('outline-none')
   })
 
-  it('zooms the folded zoomed wave with the buttons in the row and goes back to 16 bars with a double click on it', async () => {
+  it('zooms the folded zoomed wave with the buttons in the row and goes back to 16 bars with the reset beside them, since a click on the wave now places', async () => {
     setup()
     await ready()
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
     fireEvent.mouseUp(window, { clientX: 128 })
     const width = () => screen.getByTestId('cue-wave-view').style.width
     expect(width()).toBe('8%')
-    fireEvent.click(within(screen.getByTestId('cues-folded-row')).getByTestId('cue-zoom-in'))
+    const row = within(screen.getByTestId('cues-folded-row'))
+    fireEvent.click(row.getByTestId('cue-zoom-in'))
     expect(width()).toBe('4%')
-    fireEvent.doubleClick(screen.getByTestId('cue-detail'))
+    fireEvent.click(row.getByTestId('cue-zoom-reset'))
     expect(width()).toBe('8%')
   })
 })

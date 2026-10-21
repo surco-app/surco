@@ -327,15 +327,25 @@ function Editing({
     () => (placing ? ghostOf(state, { type: 'mark-drop', ms: playheadMs }, ctx) : null),
     [placing, playheadMs, state, ctx],
   )
+  const [hoverMs, setHoverMs] = useState<number | null>(null)
+  useEffect(() => {
+    if (!placing) setHoverMs(null)
+  }, [placing])
+  const hoverGhost = useMemo<DraftGhost | null>(
+    () =>
+      placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
+    [placing, hoverMs, state, ctx],
+  )
   const [pointDrag, setPointDrag] = useState(false)
   const ghost = pointDrag
     ? undefined
-    : (playheadGhost ?? ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
-  const canMark = playheadGhost !== null && playheadGhost.added.length > 0
-  const markWhy = playheadGhost?.rejected[0]?.reason
+    : (hoverGhost ??
+      playheadGhost ??
+      ((canApply || noFit) && switchGhost !== null ? switchGhost : undefined))
+  const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const markHere = () => {
     if (manual) dispatch({ type: 'add-call', ms: playheadMs })
-    else if (canMark) dispatch({ type: 'mark-drop', ms: playheadMs })
+    else if (placing) place(playheadMs)
   }
   const noFitReason = noFit && switchGhost !== null ? switchGhost.rejected[0]?.reason : undefined
   const noFitText =
@@ -666,7 +676,8 @@ function Editing({
       onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
       onMarkDrag={setPointDrag}
       compact={!maximized}
-      onSeekClick={seekTo}
+      onPlace={placing ? place : undefined}
+      onHover={placing ? setHoverMs : undefined}
     />
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
@@ -683,25 +694,14 @@ function Editing({
       />
     </span>
   )
-  const markButton = (
+  const addCallButton = manual && (
     <button
       type="button"
-      data-testid="cues-mark-here"
-      disabled={!manual && !canMark}
-      title={
-        manual || canMark || playheadGhost === null
-          ? undefined
-          : markWhy
-            ? tr(`editor.cues.noFitReason.${markWhy}`)
-            : tr('editor.cues.markedHere')
-      }
-      onClick={() => {
-        markHere()
-        if (maximized) focusEditor()
-      }}
-      className="press h-6 shrink-0 whitespace-nowrap rounded-full bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+      data-testid="cues-add-call"
+      onClick={markHere}
+      className="press h-6 shrink-0 whitespace-nowrap rounded-full bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
     >
-      {manual ? tr('editor.cues.addCallShort') : tr('editor.cues.markHere')}
+      {tr('editor.cues.addCallShort')}
     </button>
   )
   const foldedRow = (
@@ -727,7 +727,12 @@ function Editing({
           />
         )}
       </button>
-      <CueZoom row bars={zoom} onZoom={(dir) => setZoom((z) => zoomStep(z, dir))} />
+      <CueZoom
+        row
+        bars={zoom}
+        onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+        onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+      />
       <span data-testid="cues-position" className="shrink-0 font-semibold tabular-nums text-fg">
         {cueClock(playheadMs)}
       </span>
@@ -738,7 +743,7 @@ function Editing({
       )}
       <span className="flex-1" />
       {discardButton}
-      {markButton}
+      {addCallButton}
       <button
         type="button"
         data-testid="cues-save"
@@ -1011,7 +1016,6 @@ function Editing({
       )}
       {maximized && (
         <CueDeck
-          mark={manual ? undefined : markButton}
           cues={state.cues}
           selected={state.selected}
           locked={state.locked}

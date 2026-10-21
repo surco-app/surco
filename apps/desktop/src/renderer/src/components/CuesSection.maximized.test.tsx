@@ -806,26 +806,31 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getByTestId('cues-legend')).toHaveTextContent('⌘Z')
   })
 
-  it('moves the playhead to the beat with a click on the zoomed wave and places nothing', async () => {
+  it('places the flow on the bar under a click on the zoomed wave without moving the playhead', async () => {
     setup()
     await maximize()
     seek(128000)
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 300 })
     fireEvent.mouseUp(window, { clientX: 300 })
-    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
-    expect(position()).toBe('2:16.0')
+    expect(screen.getByTestId('cue-wave-call-136000')).toBeInTheDocument()
+    expect(position()).toBe('2:08.0')
   })
 
-  it('draws the flow at the playhead on the zoomed wave and on the strip, and Marcar aquí places it', async () => {
+  it('draws the flow at the playhead on the zoomed wave and on the strip, at the pointer while it hovers the zoomed wave, and Enter places it at the playhead', async () => {
     setup()
     await maximize()
     seek(128000)
     expect(screen.getByTestId('cue-detail-ghost-call-128000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-ghost-hot-C')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cues-mark-here'))
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    expect(screen.getByTestId('cue-wave-ghost-call-136000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-ghost-call-128000')).toBeNull()
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    editor().focus()
+    key('Enter')
+    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
-    expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
   })
 
   it('moves the ghost with the playhead while the strip is dragged, so it always shows what Marcar aquí would place', async () => {
@@ -1247,33 +1252,30 @@ describe('CuesSection maximized over the rest of the editor', () => {
   })
 })
 
-describe('CuesSection maximized Marcar aquí', () => {
-  it('never places with a click on the zoomed wave or the strip, and marks at the playhead with Marcar aquí in the deck or Enter', async () => {
+describe('CuesSection maximized placing', () => {
+  it('places with a click on the zoomed wave but never with the strip, offers no Marcar aquí button and still marks at the playhead with Enter', async () => {
     setup()
     await maximize()
     seek(128000)
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 100 })
+    fireEvent.mouseUp(window, { clientX: 100 })
+    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+    expect(screen.queryByTestId('cues-mark-here')).toBeNull()
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
     fireEvent.mouseUp(window, { clientX: 200 })
-    fireEvent.click(screen.getByTestId('cue-wave'), { clientX: 128 })
-    expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
-    expect(screen.getByTestId('cues-deck')).toContainElement(screen.getByTestId('cues-mark-here'))
-    expect(screen.getByTestId('cue-detail-ghost-call-128000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-call-100000')).toBeInTheDocument()
+    seek(160000)
     editor().focus()
     key('Enter')
-    expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
-    expect(screen.getByTestId('cues-mark-here')).toBeDisabled()
-  })
-
-  it('leaves only the deck’s own + CALL in Manual, with no second button', async () => {
-    setup({ activeCueFlow: 'manual' })
-    await maximize()
-    expect(screen.queryByTestId('cues-mark-here')).toBeNull()
-    expect(screen.getByTestId('cues-memory')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-call-160000')).toBeInTheDocument()
   })
 })
 
 describe('CuesSection maximized point corrections', () => {
-  const placeAtPlayhead = () => fireEvent.click(screen.getByTestId('cues-mark-here'))
+  const placeAtPlayhead = () => {
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+  }
   const marks = () =>
     screen
       .queryAllByTestId(/^cue-wave-(hot|call)-/)
