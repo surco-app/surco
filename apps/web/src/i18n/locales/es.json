@@ -1114,8 +1114,8 @@
     "cues": {
       "step": "y en rekordbox · se marca",
       "title": "Tus cues de rekordbox, de un clic.",
-      "lede": "Abre tus playlists de rekordbox en Surco y deja listos los cues de cada pista. Te montas un flujo con tus reglas, pasas el cursor por la onda y ves en transparente las hot cues y los CALL que pondría. Un clic y quedan puestos. Si prefieres ir a mano, en Manual los pones uno a uno. Surco los escribe en rekordbox cuando está cerrado, y antes hace una copia de seguridad.",
-      "example": "Por ejemplo, un DJ marca con un CALL el punto donde rompe la pista, y su flujo pone desde ahí hacia atrás una hot cue roja a 48 compases, una verde a 32 y una azul a 16, cada una con su CALL. Otro pone una sola hot cue a 32 compases. El punto puede ser el que tú quieras.",
+      "lede": "Abre tus playlists de rekordbox en Surco. Eliges un flujo, pasas el cursor por la onda y ves en transparente las hot cues y los CALL que pondría. Un clic y quedan puestas. Surco las escribe en rekordbox con la app cerrada, después de hacer una copia de seguridad.",
+      "example": "Por ejemplo, un DJ marca con un CALL el punto donde rompe la pista y su flujo pone, hacia atrás, una hot cue roja a 48 compases, una verde a 32 y una azul a 16, cada una con su CALL. El punto puede ser el que quieras.",
       "unsaved": "Sin guardar",
       "flow": "Flujo",
       "flowName": "Mi flujo",
