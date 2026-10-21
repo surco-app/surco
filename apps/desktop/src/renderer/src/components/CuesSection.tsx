@@ -243,8 +243,9 @@ function Editing({
       strong: read.strong,
       phrases: read.phrases,
       flows,
+      lettersByTime: settings.cueLettersByTime,
     }),
-    [read, flows, settings.cueQuantize],
+    [read, flows, settings.cueQuantize, settings.cueLettersByTime],
   )
   const inRekordbox = useMemo(
     () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),

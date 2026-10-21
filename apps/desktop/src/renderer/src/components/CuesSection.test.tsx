@@ -209,6 +209,45 @@ describe('CuesSection', () => {
     ])
   })
 
+  it('letters a cue placed before A as the new A and saves the old A as B with its CALL untouched, or keeps the pads as they were with the order off', async () => {
+    const saved = {
+      ...READ,
+      cues: [
+        { id: 'h', ms: bar(32), kind: 1, color: 5 },
+        { id: 'hc', ms: bar(32), kind: 0, color: null },
+      ],
+    }
+    for (const [lettersByTime, newKind, oldKind] of [
+      [true, 1, 2],
+      [false, 2, 1],
+    ] as const) {
+      const { saveRekordboxCues } = setup(saved, null, {
+        activeCueFlow: 'manual',
+        cueLettersByTime: lettersByTime,
+      })
+      await ready()
+      await openFull()
+      fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: bar(16) / 1000 })
+      fireEvent.mouseUp(window, { clientX: bar(16) / 1000 })
+      fireEvent.click(screen.getByTestId('cues-pad-B'))
+      fireEvent.click(screen.getByTestId('cues-save'))
+      await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+      const { wanted } = saveRekordboxCues.mock.calls[0][0]
+      expect(wanted).toEqual(
+        expect.arrayContaining([
+          { id: 'h', ms: bar(32), kind: oldKind, color: 5 },
+          { id: 'hc', ms: bar(32), kind: 0, color: null },
+          expect.objectContaining({ ms: bar(16), kind: newKind }),
+        ]),
+      )
+      expect(wanted).toHaveLength(3)
+      expect(validWantedSet(wanted, saved.cues)).toEqual({ ok: true })
+      cleanup()
+      resetEditorSections()
+      resetCueSession()
+    }
+  })
+
   it('keeps Save off while the draft is what rekordbox or the queued save already holds', async () => {
     setup({ ...READ, cues: [{ id: 'd', ms: bar(64), kind: 0, color: null }] })
     await ready()

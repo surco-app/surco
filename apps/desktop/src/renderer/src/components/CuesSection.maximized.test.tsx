@@ -553,7 +553,7 @@ describe('CuesSection maximized keys', () => {
   })
 
   it('marks a track with the keyboard only', async () => {
-    setup()
+    setup({ cueLettersByTime: false })
     await maximize()
     key('ArrowRight')
     expect(position()).toBe('0:32.0')
@@ -1115,7 +1115,7 @@ describe('CuesSection maximized over the rest of the editor', () => {
     for (const handler of Object.values(trim)) expect(handler).not.toHaveBeenCalled()
   })
   it('shows a small ✕ on a set pad only while the pointer is over it, and it deletes that hot cue without selecting or playing the pad', async () => {
-    setup()
+    setup({ cueLettersByTime: false })
     await maximize()
     seek(64000)
     fireEvent.click(screen.getByTestId('cues-pad-A'))
@@ -1155,7 +1155,7 @@ describe('CuesSection maximized over the rest of the editor', () => {
   })
 
   it('deletes the focused pad with ⌫ or Supr and not the selected cue', async () => {
-    setup()
+    setup({ cueLettersByTime: false })
     await maximize()
     seek(64000)
     fireEvent.click(screen.getByTestId('cues-pad-A'))

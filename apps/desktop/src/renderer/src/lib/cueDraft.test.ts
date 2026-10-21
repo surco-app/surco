@@ -959,3 +959,59 @@ describe('draftPoints', () => {
     expect(draftPoints(s, withCalls)).toEqual([bar(64)])
   })
 })
+
+describe('letters in track order', () => {
+  const on = { ...ctx, lettersByTime: true }
+  const fromRekordbox = [{ id: 'a', ms: bar(32), kind: 1, color: 5 }]
+  const letters = (s: CueDraft) =>
+    s.cues
+      .filter((c) => c.kind !== 0)
+      .sort((x, y) => x.ms - y.ms)
+      .map((c) => [c.ms, c.kind])
+
+  it('makes a cue placed before A the new A and moves the old A to B, so A is always the first cue', () => {
+    const s = reduceDraft(startDraft(fromRekordbox, 'mine'), { type: 'add-hot', ms: bar(16) }, on)
+    expect(letters(s)).toEqual([
+      [bar(16), 1],
+      [bar(32), 2],
+    ])
+    expect(s.cues.find((c) => c.key === 'a')?.color).toBe(5)
+  })
+
+  it('leaves every letter where it was when the order is off, so a fixed pad stays its pad', () => {
+    const s = run(startDraft(fromRekordbox, 'mine'), { type: 'add-hot', ms: bar(16) })
+    expect(letters(s)).toEqual([
+      [bar(16), 2],
+      [bar(32), 1],
+    ])
+  })
+
+  it('keeps the letter of a loop and fills the other letters in track order around it', () => {
+    const loop = { id: 'L', ms: bar(8), kind: 2, color: 1 }
+    const s = reduceDraft(
+      startDraft([loop, ...fromRekordbox], 'mine', ['L']),
+      { type: 'add-hot', ms: bar(16) },
+      on,
+    )
+    expect(letters(s)).toEqual([
+      [bar(8), 2],
+      [bar(16), 1],
+      [bar(32), 3],
+    ])
+  })
+
+  it('takes the new cue and the new letters away together with one undo', () => {
+    const start = startDraft(fromRekordbox, 'mine')
+    const s = reduceDraft(start, { type: 'add-hot', ms: bar(16) }, on)
+    expect(reduceDraft(s, { type: 'undo' }, on).cues).toEqual(start.cues)
+  })
+
+  it('moves the letters up when the first cue is deleted or moved after another', () => {
+    const two = startDraft([...fromRekordbox, { id: 'b', ms: bar(48), kind: 2, color: 5 }], 'mine')
+    expect(letters(reduceDraft(two, { type: 'remove', key: 'a' }, on))).toEqual([[bar(48), 1]])
+    expect(letters(reduceDraft(two, { type: 'move', key: 'a', ms: bar(56) }, on))).toEqual([
+      [bar(48), 1],
+      [bar(56), 2],
+    ])
+  })
+})

@@ -52,6 +52,7 @@ export interface DraftContext {
   strong: StrongPart[]
   phrases: FlowPhrase[]
   flows: CueFlow[]
+  lettersByTime?: boolean
 }
 
 export type DraftAction =
@@ -338,7 +339,38 @@ function placeOnce(
   })
 }
 
+const RELETTERED: DraftAction['type'][] = [
+  'mark-drop',
+  'add-hot',
+  'move',
+  'remove',
+  'move-point',
+  'remove-point',
+  'apply-flow',
+  'clear',
+]
+
+function inTrackOrder(cues: DraftCue[], locked: string[]): DraftCue[] {
+  const fixed = cues.filter((c) => isHot(c) && locked.includes(c.key))
+  const free = HOT_KINDS.filter((k) => !fixed.some((c) => c.kind === k))
+  const order = cues
+    .filter((c) => isHot(c) && !locked.includes(c.key))
+    .sort((a, b) => a.ms - b.ms)
+    .map((c) => c.key)
+  return cues.map((c) => {
+    const at = order.indexOf(c.key)
+    return at === -1 || free[at] === c.kind ? c : { ...c, kind: free[at] }
+  })
+}
+
 export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft {
+  const next = step(state, action, ctx)
+  if (!ctx.lettersByTime || next.cues === state.cues || !RELETTERED.includes(action.type))
+    return next
+  return { ...next, cues: inTrackOrder(next.cues, next.locked) }
+}
+
+function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft {
   const flow = flowById(ctx, state.flowId)
   const generator = flowById(ctx, state.generatedBy)
   if (action.type === 'select') return { ...state, selected: action.key }
