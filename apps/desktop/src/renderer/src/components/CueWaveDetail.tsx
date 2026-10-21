@@ -591,8 +591,15 @@ export function CueWaveDetail({
                   onMouseDown={(e) => e.stopPropagation()}
                   onMouseMove={(e) => e.stopPropagation()}
                   onMouseEnter={() => onHover?.(null)}
-                  style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX + 4}px` }}
-                  className="absolute z-20 ml-1.5 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-[11px] font-semibold text-[var(--color-accent)]"
+                  style={{
+                    ...(ms - fromMs > span / 2
+                      ? { right: `${100 - ((ms - fromMs) / span) * 100}%` }
+                      : { left: pct(ms) }),
+                    top: `${WAVE_MARK_LANE_PX + 4}px`,
+                  }}
+                  className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-[11px] font-semibold text-[var(--color-accent)] ${
+                    ms - fromMs > span / 2 ? 'mr-1.5' : 'ml-1.5'
+                  }`}
                 >
                   {t('editor.cues.auto.ask', { time: formatTime(ms / 1000) })}
                   <button

@@ -195,6 +195,20 @@ describe('Auto marcar', () => {
     expect(autoButton()).toBeInTheDocument()
   })
 
+  it('opens the pill toward the middle of the zoomed wave, so ✓ and ✕ never fall off its edge', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(60))
+    const right = screen.getByTestId(`cue-proposal-${bar(64)}`)
+    expect(right.style.right).toBe('25%')
+    expect(right.style.left).toBe('')
+    seekStrip(bar(68))
+    const left = screen.getByTestId(`cue-proposal-${bar(64)}`)
+    expect(left.style.left).toBe('25%')
+    expect(left.style.right).toBe('')
+  })
+
   it('takes one proposal away with its ✕ and keeps the rest', async () => {
     setup()
     await ready()
