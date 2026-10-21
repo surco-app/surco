@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -20,6 +21,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
@@ -247,6 +249,37 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Pause')
     changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
     expect(pause).toHaveBeenCalled()
+  })
+
+  it('lets Space stop the folded preview while it plays, instead of starting the mini-player over it, and gives Space back once stopped', async () => {
+    stubSound()
+    setup()
+    await ready()
+    expect(runKeyClaim('play')).toBe(false)
+    fireEvent.click(screen.getByTestId('cues-play'))
+    let handled = false
+    act(() => {
+      handled = runKeyClaim('play')
+    })
+    expect(handled).toBe(true)
+    expect(pause).toHaveBeenCalled()
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
+    expect(runKeyClaim('play')).toBe(false)
+  })
+
+  it('stops the preview when the mini-player starts, so two audios never sound together', async () => {
+    stubSound()
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    const player = document.createElement('audio')
+    document.body.appendChild(player)
+    act(() => {
+      player.dispatchEvent(new Event('play'))
+    })
+    expect(pause).toHaveBeenCalled()
+    expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Play')
+    player.remove()
   })
 
   it('zooms the folded zoomed wave with the buttons in the row and goes back to 16 bars with a double click on it', async () => {

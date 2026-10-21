@@ -1092,6 +1092,10 @@ export function CuesSection({
     if (!maximized) return
     return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() }, { over: true })
   }, [maximized])
+  useEffect(() => {
+    if (maximized || !audition.playing) return
+    return claimKeys({ play: () => toggle.current() })
+  }, [maximized, audition.playing])
   const editable =
     !isError &&
     read !== undefined &&

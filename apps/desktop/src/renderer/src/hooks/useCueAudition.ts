@@ -88,6 +88,15 @@ export function useCueAudition(
   }, [active, stop])
 
   useEffect(() => {
+    if (!playing) return
+    const onOther = (e: Event) => {
+      if (e.target !== audioRef.current) stop()
+    }
+    document.addEventListener('play', onOther, true)
+    return () => document.removeEventListener('play', onOther, true)
+  }, [playing, stop])
+
+  useEffect(() => {
     if (soundingPath.current !== path) stop()
   }, [path, stop])
 
