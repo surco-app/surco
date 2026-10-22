@@ -843,9 +843,11 @@ function registerIpc(): void {
   ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())
   // Switching the settings folder takes effect immediately (no Save step): it moves
   // where settings.json lives, returning the settings now in effect from that folder.
-  ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) =>
-    settingsForRenderer(setConfigDir(dir)),
-  )
+  const pickedConfigDirs = new Set<string>()
+  ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) => {
+    if (dir !== null && !pickedConfigDirs.has(dir)) throw errorWithKey('pathNotAllowed')
+    return settingsForRenderer(setConfigDir(dir))
+  })
 
   ipcMain.handle('cache:stats', () => analysisCacheStats())
   ipcMain.handle('cache:clear', () => clearAnalysisCache())
@@ -855,7 +857,9 @@ function registerIpc(): void {
       title: createMenuT(menuLocale())('dialogConfigDir'),
       properties: ['openDirectory', 'createDirectory'],
     })
-    return canceled ? null : filePaths[0]
+    if (canceled) return null
+    pickedConfigDirs.add(filePaths[0])
+    return filePaths[0]
   })
 
   ipcMain.handle('dialog:pickFiles', async () => {

@@ -468,6 +468,18 @@ describe('a settings file that exists but cannot be read', () => {
   })
 })
 
+describe('the settings folder the renderer may move to', () => {
+  it('is only one the folder dialog in main returned, or the default', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler = source.slice(source.indexOf("ipcMain.handle('settings:setConfigDir'"))
+    expect(handler.slice(0, 300)).toContain(
+      "if (dir !== null && !pickedConfigDirs.has(dir)) throw errorWithKey('pathNotAllowed')",
+    )
+    const picker = source.slice(source.indexOf("ipcMain.handle('dialog:pickConfigDir'"))
+    expect(picker.slice(0, 500)).toContain('pickedConfigDirs.add(')
+  })
+})
+
 describe('configurable settings folder', () => {
   // Users point the settings folder at iCloud Drive/Dropbox to share preferences
   // across Macs; these tests pin down the contract that makes that safe.
