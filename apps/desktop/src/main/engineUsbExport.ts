@@ -10,6 +10,7 @@ import {
   writeFile,
 } from 'node:fs/promises'
 import { dirname, join, posix, win32 } from 'node:path'
+import Database from 'better-sqlite3-multiple-ciphers'
 import type {
   UsbExportEvent,
   UsbExportRequest,
@@ -22,8 +23,7 @@ import type {
   UsbVolume,
   UsbWarning,
 } from '../shared/types'
-import Database from 'better-sqlite3-multiple-ciphers'
-import { type EngineDb, engineDatabasePath, openEngineDb } from './enginePlaylists'
+import { artworkFileName, type EngineDb, engineDatabasePath, openEngineDb } from './enginePlaylists'
 import {
   createEngineUsbDb,
   engineUsbTracksByOrigin,
@@ -32,7 +32,6 @@ import {
   putEngineUsbTracks,
 } from './engineUsbDb'
 import {
-  artworkFileName,
   type EngineUsbSelection,
   type EngineUsbTrack,
   readEngineUsbSelection,

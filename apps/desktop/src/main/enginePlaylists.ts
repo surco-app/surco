@@ -121,12 +121,36 @@ function metaOf(row: EntityRow): AppleMusicTrackMeta {
   return meta
 }
 
-function coverFiles(db: EngineDb, ids: number[], artDir: string): Map<number, string> {
+export function artworkFileName(hash: unknown): string | null {
+  return Buffer.isBuffer(hash) ? hash.toString('base64url') : null
+}
+
+function artworkFile(libraryDir: string, hash: unknown): string | null {
+  const name = artworkFileName(hash)
+  if (!name) return null
+  for (const ext of ['jpg', 'png']) {
+    const file = join(libraryDir, 'Artwork', `${name}.${ext}`)
+    if (existsSync(file)) return file
+  }
+  return null
+}
+
+function coverFiles(
+  db: EngineDb,
+  libraryDir: string,
+  ids: number[],
+  artDir: string,
+): Map<number, string> {
   const files = new Map<number, string>()
-  const read = db.prepare('SELECT albumArt FROM AlbumArt WHERE id = ?')
+  const read = db.prepare('SELECT hash, albumArt FROM AlbumArt WHERE id = ?')
   for (const id of new Set(ids)) {
-    const row = read.get(id) as { albumArt: Buffer | null } | undefined
-    if (!row?.albumArt || row.albumArt.length === 0) continue
+    const row = read.get(id) as { hash: unknown; albumArt: Buffer | null } | undefined
+    if (!row) continue
+    if (!row.albumArt || row.albumArt.length === 0) {
+      const beside = artworkFile(libraryDir, row.hash)
+      if (beside) files.set(id, beside)
+      continue
+    }
     const png = row.albumArt[0] === 0x89
     const file = join(
       artDir,
@@ -186,6 +210,7 @@ export function readEnginePlaylist(
   const rows = id === RECENTLY_ADDED_ID ? readRecentRows(db, now) : readPlaylistRows(db, id)
   const covers = coverFiles(
     db,
+    libraryDir,
     rows.flatMap((r) => (r.path && r.albumArtId ? [r.albumArtId] : [])),
     artDir,
   )

@@ -18,6 +18,7 @@ export interface EngineFixture {
     dateAdded?: number
   }[]
   art?: { id: number; bytes: Uint8Array }[]
+  artHashes?: { id: number; hash: Uint8Array }[]
   playlists: { id: number; title: string; parentListId: number; nextListId: number }[]
   entities: { id: number; listId: number; trackId: number; nextEntityId: number }[]
   performance?: EnginePerformanceRow[]
@@ -42,6 +43,7 @@ export function writeEngineLibraryFixture(
   db.prepare('INSERT INTO AlbumArt (id, hash, albumArt) VALUES (1, NULL, NULL)').run()
   const art = db.prepare('INSERT INTO AlbumArt (id, hash, albumArt) VALUES (?, ?, ?)')
   for (const a of data.art ?? []) art.run(a.id, `hash-${a.id}`, Buffer.from(a.bytes))
+  for (const a of data.artHashes ?? []) art.run(a.id, Buffer.from(a.hash), null)
   const track = db.prepare(`INSERT INTO Track (id, path, filename, title, artist, length, bpm,
     bpmAnalyzed, rating, albumArtId, dateAdded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   for (const t of data.tracks)

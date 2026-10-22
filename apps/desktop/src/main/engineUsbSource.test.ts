@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { openEngineDb } from './enginePlaylists'
 import { type EngineFixture, writeEngineLibraryFixture } from './enginePlaylistsFixture'
-import { artworkFileName, readEngineUsbSelection } from './engineUsbSource'
+import { readEngineUsbSelection } from './engineUsbSource'
 
 async function opened(data: EngineFixture) {
   const dir = await mkdtemp(join(tmpdir(), 'surco-engineusb-'))
@@ -70,17 +70,5 @@ describe('readEngineUsbSelection', () => {
       expect.objectContaining({ id: 4, title: 'Streamed', path: null }),
     ])
     db.close()
-  })
-})
-
-describe('artworkFileName', () => {
-  it('names the image as Engine DJ 4 does in its Artwork folder, the hash in URL-safe base64', () => {
-    const hash = Buffer.from('f8a7dcaa49e456914f24038b5a9f36c5fcf921b7', 'hex')
-    expect(artworkFileName(hash)).toBe('-KfcqknkVpFPJAOLWp82xfz5Ibc')
-  })
-
-  it('has no name for a cover kept inside the database, as older libraries store it', () => {
-    expect(artworkFileName('3f786850e387550fdab836ed7e6dc881de23001b')).toBeNull()
-    expect(artworkFileName(null)).toBeNull()
   })
 })

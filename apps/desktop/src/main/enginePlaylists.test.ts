@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -7,6 +7,7 @@ import { mediaPathFromUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { analysedTrack } from './enginePerformanceFixture'
 import {
+  artworkFileName,
   openEngineDb,
   readEnginePlaylist,
   readEngineRecentCount,
@@ -229,6 +230,23 @@ describe('readEnginePlaylist', () => {
     db.close()
   })
 
+  it('finds the cover Engine DJ 4 keeps beside the library, since its database holds only the picture hash', async () => {
+    const hash = new Uint8Array(20).fill(0xfb)
+    const dir = await library({
+      tracks: [{ id: 1, path: 'Music/a.mp3', albumArtId: 2 }],
+      artHashes: [{ id: 2, hash }],
+      playlists: [{ id: 1, title: 'P', parentListId: 0, nextListId: 0 }],
+      entities: [{ id: 1, listId: 1, trackId: 1, nextEntityId: 0 }],
+    })
+    mkdirSync(join(dir, 'Artwork'))
+    const file = join(dir, 'Artwork', `${Buffer.from(hash).toString('base64url')}.jpg`)
+    await writeFile(file, JPEG)
+    const db = opened(dir)
+    const [row] = readEnginePlaylist(db, dir, '1', join(dir, 'art'))
+    expect(mediaPathFromUrl(row.preview?.coverUrl as string)).toBe(file)
+    db.close()
+  })
+
   it('writes one cover file per picture, however many tracks share it', async () => {
     const dir = await library({
       tracks: [
@@ -367,5 +385,17 @@ describe('openEngineDb', () => {
     await writeFile(engineDbPath(dir), 'not a database')
     expect(() => readEngineTree(opened(dir))).toThrow()
     expect(existsSync(`${engineDbPath(dir)}-journal`)).toBe(false)
+  })
+})
+
+describe('artworkFileName', () => {
+  it('names the image as Engine DJ 4 does in its Artwork folder, the hash in URL-safe base64', () => {
+    const hash = Buffer.from('f8a7dcaa49e456914f24038b5a9f36c5fcf921b7', 'hex')
+    expect(artworkFileName(hash)).toBe('-KfcqknkVpFPJAOLWp82xfz5Ibc')
+  })
+
+  it('has no name for a cover kept inside the database, as older libraries store it', () => {
+    expect(artworkFileName('3f786850e387550fdab836ed7e6dc881de23001b')).toBeNull()
+    expect(artworkFileName(null)).toBeNull()
   })
 })

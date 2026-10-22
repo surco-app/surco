@@ -68,7 +68,3 @@ export function readEngineUsbSelection(
   })
   return { playlists, tracks: [...tracks.values()] }
 }
-
-export function artworkFileName(hash: unknown): string | null {
-  return Buffer.isBuffer(hash) ? hash.toString('base64url') : null
-}
