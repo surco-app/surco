@@ -1167,6 +1167,11 @@ function Editing({
           {tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
         </p>
       )}
+      {copy === ENGINE_COPY && state.cues.some((c) => c.kind === 0) && (
+        <p data-testid="cues-engine-calls" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.engine.calls')}
+        </p>
+      )}
       {autoNote === 'none' && (
         <p data-testid="cues-auto-none" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.auto.none')}

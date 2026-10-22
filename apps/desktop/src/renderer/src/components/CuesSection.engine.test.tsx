@@ -119,6 +119,25 @@ describe('CuesSection on an Engine DJ track', () => {
     )
   })
 
+  it('warns while the draft holds CALLs that Engine DJ will not keep them, before the DJ saves', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-engine-calls')).toBeNull()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument())
+    expect(screen.getByTestId('cues-engine-calls')).toHaveTextContent(
+      'Engine DJ only keeps hot cues. The CALLs will not be saved',
+    )
+  })
+
+  it('never warns about CALLs on a rekordbox track, which keeps them', async () => {
+    setup({ ...READ, contentId: '103' }, 'queued', '103')
+    await ready()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-engine-calls')).toBeNull()
+  })
+
   it('says the save belongs to another Engine library when its queue holds one', async () => {
     setup(READ, 'other-collection')
     await ready()

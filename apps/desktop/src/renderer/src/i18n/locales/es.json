@@ -865,6 +865,7 @@
         "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en Engine DJ y ya no vale. Ves lo que tiene Engine DJ ahora.",
         "saveFailed": "No se pudo guardar en Engine DJ. Las cues siguen sin guardar",
         "autoUnavailable": "Auto marcar aún no funciona con pistas de Engine DJ",
+        "calls": "Engine DJ solo guarda hot cues. Los CALL no se guardarán",
         "saveAll_one": "Guardar {{count}} pista en Engine DJ",
         "saveAll_other": "Guardar {{count}} pistas en Engine DJ"
       }

@@ -865,6 +865,7 @@
         "queuedStale": "Das wartende Speichern entstand, bevor sich der Titel in Engine DJ geändert hat, und gilt nicht mehr. Du siehst, was Engine DJ jetzt hat.",
         "saveFailed": "Speichern in Engine DJ fehlgeschlagen. Die Cues sind weiterhin nicht gespeichert",
         "autoUnavailable": "Auto-Markieren funktioniert mit Engine-DJ-Titeln noch nicht",
+        "calls": "Engine DJ speichert nur Hot Cues. Die CALLs werden nicht gespeichert",
         "saveAll_one": "{{count}} Titel in Engine DJ speichern",
         "saveAll_other": "{{count}} Titel in Engine DJ speichern"
       }
