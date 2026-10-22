@@ -33,6 +33,10 @@ function readTree(source: PlaylistSource): Promise<SourceNode[]> {
     : window.api.loadAppleMusicPlaylists().then(musicTree)
 }
 
+function readRecentCount(source: PlaylistSource): Promise<number> {
+  return source === 'engine' ? window.api.engineRecentCount() : window.api.rekordboxRecentCount()
+}
+
 function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
   if (source === 'engine') return window.api.loadEnginePlaylist(id)
   return source === 'rekordbox'
@@ -84,15 +88,16 @@ export function useSourceBrowser({
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const hasRecent = source === 'rekordbox' || source === 'engine'
   const recent = useQuery({
-    queryKey: ['source-tree', 'rekordbox', 'recent'],
-    queryFn: () => window.api.rekordboxRecentCount(),
-    enabled: source === 'rekordbox',
+    queryKey: ['source-tree', source, 'recent'],
+    queryFn: () => readRecentCount(source as PlaylistSource),
+    enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
   const shownTree = useMemo(
     () =>
-      source === 'rekordbox' && tree.data && recent.data !== undefined
+      hasRecent && tree.data && recent.data !== undefined
         ? [
             {
               id: RECENTLY_ADDED_ID,
@@ -103,7 +108,7 @@ export function useSourceBrowser({
             ...tree.data,
           ]
         : tree.data,
-    [source, tree.data, recent.data, tr],
+    [hasRecent, tree.data, recent.data, tr],
   )
   const entries = useQuery({
     queryKey: ['source-playlist', source, playlist?.id],

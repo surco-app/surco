@@ -305,6 +305,49 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(2))
   })
 
+  it('puts Recently added first in Engine DJ too, above every playlist, with its count', async () => {
+    const { result } = setup({ engineRecentCount: vi.fn().mockResolvedValue(5) })
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    expect(result.current.tree?.[0]).toEqual({
+      id: RECENTLY_ADDED_ID,
+      name: 'sources.recentlyAdded',
+      kind: 'playlist',
+      count: 5,
+    })
+    expect(result.current.tree?.[1].id).toBe('7')
+  })
+
+  it('counts each library’s own Recently added, so switching sources never shows the other’s number', async () => {
+    const { result } = setup({
+      rekordboxRecentCount: vi.fn().mockResolvedValue(12),
+      engineRecentCount: vi.fn().mockResolvedValue(5),
+    })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(12))
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree?.[1]?.id).toBe('7'))
+    expect(result.current.tree?.[0].count).toBe(5)
+  })
+
+  it('opens Engine DJ’s Recently added through the Engine playlist read', async () => {
+    const { result } = setup({ engineRecentCount: vi.fn().mockResolvedValue(1) })
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    act(() => result.current.selectPlaylist(result.current.tree?.[0] as SourceNode, []))
+    await waitFor(() => expect(result.current.entries).toHaveLength(1))
+    expect(window.api.loadEnginePlaylist).toHaveBeenCalledWith(RECENTLY_ADDED_ID)
+  })
+
+  it('re-counts Engine DJ’s Recently added on focus, so a track just added in Engine shows up', async () => {
+    const engineRecentCount = vi.fn().mockResolvedValueOnce(1).mockResolvedValue(2)
+    const { result, focus } = setup({ engineRecentCount })
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(1))
+    act(() => focus())
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(2))
+  })
+
   // "Insert separator" copies the collection's own separator; with none, the menu item says
   // so instead of failing after the user picked it.
   it('knows whether rekordbox has a separator to copy', async () => {

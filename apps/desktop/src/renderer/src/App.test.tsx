@@ -2402,6 +2402,41 @@ describe('App source playlists', () => {
         screen.queryByTestId(`track-menu-playlist-${RECENTLY_ADDED_ID}`),
       ).not.toBeInTheDocument()
     })
+
+    it('shows Engine DJ’s first with the same clock, opening read-only rows like rekordbox’s', async () => {
+      setApi({
+        readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
+        engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
+        loadEngineTree: vi
+          .fn<Api['loadEngineTree']>()
+          .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 3 }]),
+        engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(2),
+        loadEnginePlaylist: vi
+          .fn<Api['loadEnginePlaylist']>()
+          .mockImplementation(async (id) => (id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : [])),
+        startTrackDrag: vi.fn(),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-engine'))
+      const recent = await screen.findByTestId(`source-node-${RECENTLY_ADDED_ID}`)
+      expect(screen.getAllByTestId(/^source-node-/).filter((n) => n.tagName === 'BUTTON')[0]).toBe(
+        recent,
+      )
+      expect(within(recent).getByTestId('source-node-recent-icon')).toBeInTheDocument()
+      fireEvent.click(recent)
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
   })
 
   // With a filter on, rows between the visible ones are hidden; a drop would land among them.
