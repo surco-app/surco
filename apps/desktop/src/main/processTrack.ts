@@ -95,6 +95,7 @@ export interface ProcessTrackDeps {
     coverPath: string | undefined,
     replaces: string,
   ) => Promise<void>
+  ensureEngineDjClosed?: () => Promise<boolean>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   attachRekordboxPlaylists?: (
@@ -318,6 +319,8 @@ export async function runProcessTrack(
         inPlace = false
       }
     }
+    if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
+      throw errorWithKey('engineDjOpen')
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
     // finally so a thrown error still frees it for the next job or retry.

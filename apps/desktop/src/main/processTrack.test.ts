@@ -825,6 +825,27 @@ describe('runProcessTrack — beside the original', () => {
   })
 })
 
+describe('runProcessTrack — Engine DJ open before the write', () => {
+  it('fails before writing anything when Engine DJ stays open', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true, addToEngineDj: true }),
+      ensureEngineDjClosed: vi.fn(async () => false),
+    })
+
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('engineDjOpen')
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
+  it('does not ask about Engine DJ when the job does not add to it', async () => {
+    const ensureEngineDjClosed = vi.fn(async () => false)
+    const deps = makeDeps({ ensureEngineDjClosed })
+
+    await runProcessTrack(job(), deps)
+    expect(ensureEngineDjClosed).not.toHaveBeenCalled()
+  })
+})
+
 describe('runProcessTrack — in-place rewrite', () => {
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({

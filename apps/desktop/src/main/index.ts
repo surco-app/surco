@@ -1255,6 +1255,7 @@ function registerIpc(): void {
         if (titles.length === 0) return undefined
         return appleMusicLimiter.run(() => musicEntryForFile(path, titles))
       },
+      ensureEngineDjClosed: () => ensureEngineDjClosed(BrowserWindow.fromWebContents(e.sender)),
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.
