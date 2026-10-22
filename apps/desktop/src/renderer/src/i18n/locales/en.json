@@ -830,6 +830,8 @@
       "saveFailed": "Could not save to rekordbox. The cues are still not saved",
       "saveAll_one": "Save {{count}} track to rekordbox",
       "saveAll_other": "Save {{count}} tracks to rekordbox",
+      "saveAllBoth_one": "Save {{count}} track to rekordbox and Engine DJ",
+      "saveAllBoth_other": "Save {{count}} tracks to rekordbox and Engine DJ",
       "toCall_one": "{{count}} bar to the CALL",
       "toCall_other": "{{count}} bars to the CALL",
       "toCallShort": "{{count}} to CALL",
@@ -855,6 +857,16 @@
         "none": "Surco can’t find where this track breaks",
         "marked": "You already have a CALL everywhere Surco thinks the track breaks",
         "selected": "Auto mark the selected"
+      },
+      "engine": {
+        "save": "Save to Engine DJ",
+        "unanalysed": "Engine DJ has not analysed this track yet",
+        "unreadable": "Could not read the cues from Engine DJ",
+        "queuedStale": "The queued save was made before the track changed in Engine DJ and is out of date. You see what Engine DJ holds now.",
+        "saveFailed": "Could not save to Engine DJ. The cues are still not saved",
+        "autoUnavailable": "Auto mark does not work with Engine DJ tracks yet",
+        "saveAll_one": "Save {{count}} track to Engine DJ",
+        "saveAll_other": "Save {{count}} tracks to Engine DJ"
       }
     }
   },

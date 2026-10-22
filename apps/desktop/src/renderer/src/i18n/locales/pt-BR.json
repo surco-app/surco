@@ -830,6 +830,8 @@
       "saveFailed": "Não foi possível salvar no rekordbox. Os cues continuam sem salvar",
       "saveAll_one": "Salvar {{count}} faixa no rekordbox",
       "saveAll_other": "Salvar {{count}} faixas no rekordbox",
+      "saveAllBoth_one": "Salvar {{count}} faixa no rekordbox e no Engine DJ",
+      "saveAllBoth_other": "Salvar {{count}} faixas no rekordbox e no Engine DJ",
       "toCall_one": "{{count}} compasso até o CALL",
       "toCall_other": "{{count}} compassos até o CALL",
       "toCallShort": "{{count}} até o CALL",
@@ -855,6 +857,16 @@
         "none": "O Surco não encontra onde esta faixa explode",
         "marked": "Você já tem um CALL em cada lugar onde o Surco acha que a faixa explode",
         "selected": "Marcar automático nas selecionadas"
+      },
+      "engine": {
+        "save": "Salvar no Engine DJ",
+        "unanalysed": "O Engine DJ ainda não analisou esta faixa",
+        "unreadable": "Não foi possível ler os cues do Engine DJ",
+        "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no Engine DJ e não vale mais. Você vê o que o Engine DJ tem agora.",
+        "saveFailed": "Não foi possível salvar no Engine DJ. Os cues continuam sem salvar",
+        "autoUnavailable": "Auto marcar ainda não funciona com faixas do Engine DJ",
+        "saveAll_one": "Salvar {{count}} faixa no Engine DJ",
+        "saveAll_other": "Salvar {{count}} faixas no Engine DJ"
       }
     }
   },

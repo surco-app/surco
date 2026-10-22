@@ -830,6 +830,8 @@
       "saveFailed": "No se pudo guardar en rekordbox. Las cues siguen sin guardar",
       "saveAll_one": "Guardar {{count}} pista en rekordbox",
       "saveAll_other": "Guardar {{count}} pistas en rekordbox",
+      "saveAllBoth_one": "Guardar {{count}} pista en rekordbox y Engine DJ",
+      "saveAllBoth_other": "Guardar {{count}} pistas en rekordbox y Engine DJ",
       "toCall_one": "{{count}} compás al CALL",
       "toCall_other": "{{count}} compases al CALL",
       "toCallShort": "{{count}} al CALL",
@@ -855,6 +857,16 @@
         "none": "Surco no encuentra dónde rompe en esta pista",
         "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe",
         "selected": "Auto marcar las seleccionadas"
+      },
+      "engine": {
+        "save": "Guardar en Engine DJ",
+        "unanalysed": "Engine DJ aún no ha analizado esta pista",
+        "unreadable": "No se pudieron leer las cues de Engine DJ",
+        "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en Engine DJ y ya no vale. Ves lo que tiene Engine DJ ahora.",
+        "saveFailed": "No se pudo guardar en Engine DJ. Las cues siguen sin guardar",
+        "autoUnavailable": "Auto marcar aún no funciona con pistas de Engine DJ",
+        "saveAll_one": "Guardar {{count}} pista en Engine DJ",
+        "saveAll_other": "Guardar {{count}} pistas en Engine DJ"
       }
     }
   },

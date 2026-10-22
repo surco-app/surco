@@ -14,6 +14,7 @@ import {
   SAME_POSITION_MS,
 } from '../../../shared/cueRules'
 import { detectDrops } from '../../../shared/dropDetect'
+import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
@@ -90,6 +91,34 @@ export interface CueTrackInfo {
 }
 
 const ignore = () => {}
+
+const REKORDBOX_COPY = {
+  save: 'editor.cues.save',
+  unanalysed: 'editor.cues.unanalysed',
+  unreadable: 'editor.cues.unreadable',
+  queuedStale: 'editor.cues.queuedStale',
+  saveFailed: 'editor.cues.saveFailed',
+  otherLibrary: 'sources.edit.refused.otherCollection',
+  autoUnanalysed: 'editor.cues.auto.unanalysed',
+}
+
+const ENGINE_COPY: typeof REKORDBOX_COPY = {
+  save: 'editor.cues.engine.save',
+  unanalysed: 'editor.cues.engine.unanalysed',
+  unreadable: 'editor.cues.engine.unreadable',
+  queuedStale: 'editor.cues.engine.queuedStale',
+  saveFailed: 'editor.cues.engine.saveFailed',
+  otherLibrary: 'engineQueue.otherLibrary',
+  autoUnanalysed: 'editor.cues.engine.autoUnavailable',
+}
+
+const copyOf = (contentId: string) => (isEngineContent(contentId) ? ENGINE_COPY : REKORDBOX_COPY)
+
+function saveAllKey(unsaved: ReadonlySet<string>): string {
+  const engine = [...unsaved].filter(isEngineContent).length
+  if (engine === 0) return 'editor.cues.saveAll'
+  return engine === unsaved.size ? 'editor.cues.engine.saveAll' : 'editor.cues.saveAllBoth'
+}
 const CLEAR_CUES = 'clear-cues'
 const DISCARD_CUES = 'discard-cues'
 
@@ -596,7 +625,9 @@ function Editing({
     ])
     if (saved) setProposed(null)
   }
-  const unsavedTracks = useUnsavedCueTracks().size
+  const copy = copyOf(cue.contentId)
+  const unsavedSet = useUnsavedCueTracks()
+  const unsavedTracks = unsavedSet.size
   const [savingAll, setSavingAll] = useState(false)
   const saveAll = async () => {
     setSavingAll(true)
@@ -617,7 +648,7 @@ function Editing({
         maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
       }`}
     >
-      {tr('editor.cues.saveAll', { count: unsavedTracks })}
+      {tr(saveAllKey(unsavedSet), { count: unsavedTracks })}
     </button>
   )
   const flowOptions = [
@@ -716,7 +747,7 @@ function Editing({
         type="button"
         data-testid="cues-auto-mark"
         disabled={!words}
-        title={words ? undefined : tr('editor.cues.auto.unanalysed')}
+        title={words ? undefined : tr(copy.autoUnanalysed)}
         onClick={autoMark}
         className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
       >
@@ -747,7 +778,7 @@ function Editing({
         type="button"
         data-testid="cues-save"
         disabled={unchanged}
-        aria-label={maximized ? undefined : tr('editor.cues.save')}
+        aria-label={maximized ? undefined : tr(copy.save)}
         onClick={() => void save()}
         className={`press h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
           unchanged
@@ -755,7 +786,7 @@ function Editing({
             : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
         }`}
       >
-        {maximized ? tr('editor.cues.save') : tr('editor.cues.saveShort')}
+        {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
       </button>
     </div>
   )
@@ -884,7 +915,7 @@ function Editing({
         type="button"
         data-testid="cues-save"
         disabled={unchanged}
-        aria-label={tr('editor.cues.save')}
+        aria-label={tr(copy.save)}
         onClick={() => void save()}
         className={`press h-6 shrink-0 whitespace-nowrap rounded-full px-3 text-xs font-semibold ${
           unchanged
@@ -1128,16 +1159,12 @@ function Editing({
       )}
       {queued !== null && !fresh && (
         <p data-testid="cues-queued-stale" className="mt-2 text-xs text-warn">
-          {tr('editor.cues.queuedStale')}
+          {tr(copy.queuedStale)}
         </p>
       )}
       {saveFailed !== null && (
         <p data-testid="cues-save-failed" className="mt-2 text-xs text-warn">
-          {tr(
-            saveFailed === 'other-collection'
-              ? 'sources.edit.refused.otherCollection'
-              : 'editor.cues.saveFailed',
-          )}
+          {tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
         </p>
       )}
       {autoNote === 'none' && (
@@ -1270,12 +1297,12 @@ export function CuesSection({
   const body =
     isError || read === null ? (
       <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
-        {tr('editor.cues.unreadable')}
+        {tr(copyOf(cue.contentId).unreadable)}
       </p>
     ) : read === undefined || queued === undefined ? null : !read.analysed ||
       read.grid.length === 0 ? (
       <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
-        {tr('editor.cues.unanalysed')}
+        {tr(copyOf(cue.contentId).unanalysed)}
       </p>
     ) : (
       <Editing
