@@ -18,7 +18,7 @@ const ENTRY_RE = /<ENTRY\b[^>]*>[\s\S]*?<\/ENTRY>/g
 // \b after the name stops VOLUME from also matching inside VOLUMEID="..." — no real
 // collision exists in Traktor's known LOCATION schema today, but the anchor is what
 // makes that true by construction rather than by accident.
-function attr(fragment: string, name: string): string {
+export function attr(fragment: string, name: string): string {
   const m = fragment.match(new RegExp(`${name}\\b="([^"]*)"`))
   return m ? unescapeAttr(m[1]) : ''
 }
