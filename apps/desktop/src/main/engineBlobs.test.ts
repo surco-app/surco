@@ -4,6 +4,7 @@ import {
   decodeOverview,
   decodeQuickCues,
   decodeTrackData,
+  deflateEngineBlob,
   inflateEngineBlob,
 } from './engineBlobs'
 
@@ -120,5 +121,12 @@ describe('Engine DJ performance blobs', () => {
     expect(decodeBeatGrid(Buffer.alloc(10))).toBeNull()
     expect(decodeOverview(Buffer.alloc(10))).toBeNull()
     expect(decodeQuickCues(Buffer.alloc(3))).toBeNull()
+  })
+
+  it('compresses a blob as Qt does, its length first, so Engine reads back what Surco writes', () => {
+    const raw = Buffer.from('quick cues as Engine keeps them')
+    const blob = deflateEngineBlob(raw)
+    expect(blob.readUInt32BE(0)).toBe(raw.length)
+    expect(inflateEngineBlob(blob)).toEqual(raw)
   })
 })

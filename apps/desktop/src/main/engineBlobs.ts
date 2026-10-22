@@ -1,7 +1,13 @@
-import { inflateSync } from 'node:zlib'
+import { deflateSync, inflateSync } from 'node:zlib'
 
 export function inflateEngineBlob(blob: Uint8Array): Buffer {
   return inflateSync(Buffer.from(blob).subarray(4))
+}
+
+export function deflateEngineBlob(raw: Uint8Array): Buffer {
+  const length = Buffer.alloc(4)
+  length.writeUInt32BE(raw.length)
+  return Buffer.concat([length, deflateSync(raw)])
 }
 
 export interface EngineTrackData {
