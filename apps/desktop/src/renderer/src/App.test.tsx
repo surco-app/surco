@@ -496,6 +496,20 @@ describe('App Engine DJ cues', () => {
     })
   }
 
+  it('opens the cue editor on a row of an Engine DJ playlist, reading the cues of its Engine track', async () => {
+    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null)
+    openEngine({ rekordboxTrackCues: read })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(read).toHaveBeenCalledWith('engine:12'))
+    expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
+  })
+
   it('shows what waits for Engine DJ to close beside rekordbox’s queue', async () => {
     openEngine({
       engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue({

@@ -2066,6 +2066,9 @@ export default function App(): React.JSX.Element {
   // afterwards is re-read and shown (useRekordboxEdits).
   const rekordboxOpen =
     browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
+  const cuesOpen =
+    rekordboxOpen ||
+    (browser.source === 'engine' && browser.playlist !== null && playlistScope !== null)
   const crateOpen = rekordboxOpen && browser.playlist?.id !== RECENTLY_ADDED_ID
   const pendingCuePaths = useMemo(
     () =>
@@ -2081,15 +2084,16 @@ export default function App(): React.JSX.Element {
     void forgetStaleDrafts(queryClient)
   }, [rekordboxQueue.state, engineCueQueue.state, queryClient])
   useCueSessionFor(settings?.rekordboxDbPath)
+  useCueSessionFor(settings?.engineLibraryDir)
   const unsavedCues = useUnsavedCueTracks()
   useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])
   const unsavedCueIds = useMemo(() => {
     const ids = new Set<string>()
-    if (!rekordboxOpen) return ids
+    if (!cuesOpen) return ids
     for (const [id, contentId] of playlistScope?.contentOf ?? [])
       if (unsavedCues.has(contentId)) ids.add(id)
     return ids
-  }, [rekordboxOpen, playlistScope, unsavedCues])
+  }, [cuesOpen, playlistScope, unsavedCues])
   const autoMarks = useAutoMarks()
   const autoMarkById = useMemo(() => {
     const byId = new Map<string, AutoMark>()
@@ -2108,7 +2112,7 @@ export default function App(): React.JSX.Element {
     void autoMarkTracks(queryClient, ids)
   })
   const selectedContentId =
-    rekordboxOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
+    cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
   const selectedLabel = selected?.listLabel
   const rekordboxCue = useMemo(
