@@ -9,7 +9,14 @@ import type { DropInput } from '../../../shared/dropDetect'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
-import { autoMarkOf, keepAutoMark, resetCueSession } from '../lib/cueSession'
+import { startDraft } from '../lib/cueDraft'
+import {
+  autoMarkOf,
+  keepAutoMark,
+  keepDraft,
+  resetCueSession,
+  unsavedCueTracks,
+} from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
@@ -484,5 +491,62 @@ describe('pending proposals', () => {
     setup()
     await ready()
     expect(screen.getByTestId('cues-auto-marked')).toBeInTheDocument()
+  })
+})
+
+describe('saving several tracks', () => {
+  const other = () =>
+    keepDraft('104', '104|f1|null', startDraft([{ ms: bar(32), kind: 0, color: null }], 'mine'), {
+      path: '/m/h.wav',
+      label: 'Other',
+      fingerprint: 'f1',
+    })
+
+  it('saves every reviewed track to rekordbox at once, each through the same save as its own Guardar', async () => {
+    other()
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    const all = await screen.findByTestId('cues-save-all')
+    expect(all).toHaveTextContent('Save 2 tracks to rekordbox')
+    fireEvent.click(all)
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
+    expect(saveRekordboxCues).toHaveBeenCalledWith({
+      contentId: '104',
+      path: '/m/h.wav',
+      label: 'Other',
+      fingerprint: 'f1',
+      wanted: [{ ms: bar(32), kind: 0, color: null }],
+    })
+    expect(saveRekordboxCues).toHaveBeenCalledWith(
+      expect.objectContaining({ contentId: '103', path: '/m/g.wav', label: 'Gowan' }),
+    )
+    await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
+  })
+
+  it('is not offered while only this track is unsaved, where its own Guardar does it', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
+  })
+
+  it('never saves what is still only proposed, on this track or another', async () => {
+    other()
+    keepAutoMark('105', { kind: 'proposed', ms: [bar(16)] })
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+    fireEvent.click(await screen.findByTestId('cues-save-all'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
+    const saved = saveRekordboxCues.mock.calls.map(([req]) => req.contentId)
+    expect(saved).toEqual(expect.arrayContaining(['103', '104']))
+    const mine = saveRekordboxCues.mock.calls.find(([req]) => req.contentId === '103')?.[0]
+    expect(mine?.wanted.some((c) => c.ms === bar(128))).toBe(false)
+    expect(autoMarkOf('105')).toEqual({ kind: 'proposed', ms: [bar(16)] })
   })
 })

@@ -827,6 +827,8 @@
       },
       "resetColour": "Redefinir",
       "saveShort": "Salvar",
+      "saveAll_one": "Salvar {{count}} faixa no rekordbox",
+      "saveAll_other": "Salvar {{count}} faixas no rekordbox",
       "toCall_one": "{{count}} compasso até o CALL",
       "toCall_other": "{{count}} compassos até o CALL",
       "toCallShort": "{{count}} até o CALL",

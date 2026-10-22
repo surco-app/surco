@@ -3,6 +3,7 @@ import { startDraft } from './cueDraft'
 import {
   autoMarkOf,
   autoMarks,
+  draftsToSave,
   forgetAutoMark,
   forgetDraft,
   keepAutoMark,
@@ -15,18 +16,20 @@ import {
   unsavedCueTracks,
 } from './cueSession'
 
+const TARGET = { path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' }
+
 afterEach(resetCueSession)
 
 describe('cue session', () => {
   it('gives back the draft kept for the same track and read, and none for another', () => {
     const draft = startDraft([{ ms: 1000, kind: 1, color: 22 }], 'mine')
-    keepDraft('103', '103|f0|null', draft)
+    keepDraft('103', '103|f0|null', draft, TARGET)
     expect(keptDraft('103', '103|f0|null')).toBe(draft)
     expect(keptDraft('104', '104|f0|null')).toBeUndefined()
   })
 
   it('never gives back a draft built on another read or another queued save, so cues changed in rekordbox are never overwritten', () => {
-    keepDraft('103', '103|f0|null', startDraft([], 'mine'))
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
     expect(keptDraft('103', '103|f1|null')).toBeUndefined()
     expect(keptDraft('103', '103|f0|{"wanted":[],"fingerprint":"f0"}')).toBeUndefined()
   })
@@ -34,15 +37,15 @@ describe('cue session', () => {
   it('keeps the draft of every track apart, so opening another track never drops the first', () => {
     const first = startDraft([], 'mine')
     const second = startDraft([], 'mine')
-    keepDraft('103', '103|f0|null', first)
-    keepDraft('104', '104|f0|null', second)
+    keepDraft('103', '103|f0|null', first, TARGET)
+    keepDraft('104', '104|f0|null', second, TARGET)
     expect(keptDraft('103', '103|f0|null')).toBe(first)
     expect(keptDraft('104', '104|f0|null')).toBe(second)
   })
 
   it('forgets only the draft of the track that is saved or discarded', () => {
-    keepDraft('103', '103|f0|null', startDraft([], 'mine'))
-    keepDraft('104', '104|f0|null', startDraft([], 'mine'))
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
+    keepDraft('104', '104|f0|null', startDraft([], 'mine'), TARGET)
     forgetDraft('103')
     expect(keptDraft('103', '103|f0|null')).toBeUndefined()
     expect(keptDraft('104', '104|f0|null')).toBeDefined()
@@ -51,9 +54,9 @@ describe('cue session', () => {
   it('names the tracks with an unsaved draft and calls back only when that list changes, so the list does not repaint on every edit', () => {
     const listener = vi.fn<() => void>()
     const stop = subscribeCueDrafts(listener)
-    keepDraft('103', '103|f0|null', startDraft([], 'mine'))
-    keepDraft('103', '103|f0|null', startDraft([], 'mine'))
-    keepDraft('104', '104|f0|null', startDraft([], 'mine'))
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
+    keepDraft('104', '104|f0|null', startDraft([], 'mine'), TARGET)
     expect([...unsavedCueTracks()]).toEqual(['103', '104'])
     expect(listener).toHaveBeenCalledTimes(2)
     forgetDraft('103')
@@ -103,5 +106,30 @@ describe('cue session', () => {
     keepAutoMark('103', { kind: 'none' })
     resetCueSession()
     expect(autoMarkOf('103')).toBeUndefined()
+  })
+
+  it('lists every unsaved draft as the save rekordbox needs, so several tracks are saved in one go', () => {
+    keepDraft(
+      '103',
+      '103|f0|null',
+      startDraft([{ ms: 1000, kind: 0, color: null }], 'mine'),
+      TARGET,
+    )
+    keepDraft('104', '104|f1|null', startDraft([], 'mine'), {
+      path: '/m/h.wav',
+      label: 'Other',
+      fingerprint: 'f1',
+    })
+    keepAutoMark('105', { kind: 'proposed', ms: [128000] })
+    expect(draftsToSave()).toEqual([
+      {
+        contentId: '103',
+        path: '/m/g.wav',
+        label: 'Gowan',
+        fingerprint: 'f0',
+        wanted: [{ ms: 1000, kind: 0, color: null }],
+      },
+      { contentId: '104', path: '/m/h.wav', label: 'Other', fingerprint: 'f1', wanted: [] },
+    ])
   })
 })

@@ -827,6 +827,8 @@
       },
       "resetColour": "Reset",
       "saveShort": "Save",
+      "saveAll_one": "Save {{count}} track to rekordbox",
+      "saveAll_other": "Save {{count}} tracks to rekordbox",
       "toCall_one": "{{count}} bar to the CALL",
       "toCall_other": "{{count}} bars to the CALL",
       "toCallShort": "{{count}} to CALL",

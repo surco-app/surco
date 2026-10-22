@@ -827,6 +827,8 @@
       },
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
+      "saveAll_one": "{{count}} Titel in rekordbox speichern",
+      "saveAll_other": "{{count}} Titel in rekordbox speichern",
       "toCall_one": "{{count}} Takt bis zum CALL",
       "toCall_other": "{{count}} Takte bis zum CALL",
       "toCallShort": "{{count}} bis CALL",

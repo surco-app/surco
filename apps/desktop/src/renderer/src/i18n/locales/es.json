@@ -827,6 +827,8 @@
       },
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
+      "saveAll_one": "Guardar {{count}} pista en rekordbox",
+      "saveAll_other": "Guardar {{count}} pistas en rekordbox",
       "toCall_one": "{{count}} compás al CALL",
       "toCall_other": "{{count}} compases al CALL",
       "toCallShort": "{{count}} al CALL",

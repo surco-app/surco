@@ -117,6 +117,7 @@ describe('Auto marcar over several tracks', () => {
       '103',
       cueDraftKey('103', 'f0', null),
       startDraft([{ ms: bar(64), kind: 0, color: null }], 'mine'),
+      { path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' },
     )
     const { client } = setup({ queued: { '104': fresh } })
     await autoMarkTracks(client, ['103', '104'])

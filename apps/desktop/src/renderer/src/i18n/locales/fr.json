@@ -827,6 +827,8 @@
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
+      "saveAll_one": "Enregistrer {{count}} morceau dans rekordbox",
+      "saveAll_other": "Enregistrer {{count}} morceaux dans rekordbox",
       "toCall_one": "{{count}} mesure avant le CALL",
       "toCall_other": "{{count}} mesures avant le CALL",
       "toCallShort": "{{count}} avant le CALL",

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import type { QueuedCues } from '../../../shared/types'
-import type { CueDraft } from './cueDraft'
+import type { QueuedCues, SaveCuesRequest } from '../../../shared/types'
+import { type CueDraft, wantedOfDraft } from './cueDraft'
 
 export type AutoMark =
   | { kind: 'proposed'; ms: number[] }
@@ -8,7 +8,13 @@ export type AutoMark =
   | { kind: 'marked' }
   | { kind: 'unanalysed' }
 
-const drafts = new Map<string, { draftKey: string; value: CueDraft }>()
+export interface CueSaveTarget {
+  path: string
+  label: string
+  fingerprint: string
+}
+
+const drafts = new Map<string, { draftKey: string; value: CueDraft; target: CueSaveTarget }>()
 let marks: ReadonlyMap<string, AutoMark> = new Map()
 const playheads = new Map<string, number>()
 const listeners = new Set<() => void>()
@@ -49,10 +55,23 @@ export function keptDraft(contentId: string, draftKey: string): CueDraft | undef
   return kept?.draftKey === draftKey ? kept.value : undefined
 }
 
-export function keepDraft(contentId: string, draftKey: string, value: CueDraft): void {
+export function keepDraft(
+  contentId: string,
+  draftKey: string,
+  value: CueDraft,
+  target: CueSaveTarget,
+): void {
   const fresh = !drafts.has(contentId)
-  drafts.set(contentId, { draftKey, value })
+  drafts.set(contentId, { draftKey, value, target })
   if (fresh) changed()
+}
+
+export function draftsToSave(): SaveCuesRequest[] {
+  return [...drafts].map(([contentId, { value, target }]) => ({
+    contentId,
+    ...target,
+    wanted: wantedOfDraft(value.cues),
+  }))
 }
 
 export function forgetDraft(contentId: string): void {

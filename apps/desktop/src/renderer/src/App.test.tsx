@@ -422,7 +422,13 @@ describe('App unsaved cues', () => {
 
   it('tells main how many tracks hold unsaved cues, so quitting asks before losing them', async () => {
     await renderApp()
-    act(() => keepDraft('103', '103|f0|null', startDraft([], 'mine')))
+    act(() =>
+      keepDraft('103', '103|f0|null', startDraft([], 'mine'), {
+        path: '/m/a.wav',
+        label: 'a',
+        fingerprint: 'f0',
+      }),
+    )
     await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(1))
     act(() => forgetDraft('103'))
     await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))

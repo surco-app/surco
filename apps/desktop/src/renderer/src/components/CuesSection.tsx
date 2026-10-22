@@ -48,6 +48,7 @@ import {
 import {
   autoMarkOf,
   cueDraftKey,
+  draftsToSave,
   forgetAutoMark,
   forgetDraft,
   keepAutoMark,
@@ -385,8 +386,13 @@ function Editing({
   const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
   useEffect(() => {
     if (unchanged) forgetDraft(cue.contentId)
-    else keepDraft(cue.contentId, draftKey, state)
-  }, [cue.contentId, draftKey, state, unchanged])
+    else
+      keepDraft(cue.contentId, draftKey, state, {
+        path: cue.path,
+        label: cue.label,
+        fingerprint: read.fingerprint,
+      })
+  }, [cue.contentId, cue.path, cue.label, read.fingerprint, draftKey, state, unchanged])
   const pending = (c: DraftCue): boolean =>
     !inRekordbox.some(
       (r) => r.id === c.id && r.ms === c.ms && r.kind === c.kind && r.color === c.color,
@@ -580,6 +586,26 @@ function Editing({
         return refreshQueued()
       })
   }
+  const unsavedTracks = useUnsavedCueTracks().size
+  const saveAll = async () => {
+    for (const req of draftsToSave()) {
+      await window.api.saveRekordboxCues(req)
+      forgetDraft(req.contentId)
+    }
+    return refreshQueued()
+  }
+  const saveAllButton = unsavedTracks > 1 && (
+    <button
+      type="button"
+      data-testid="cues-save-all"
+      onClick={() => void saveAll()}
+      className={`press shrink-0 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
+        maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
+      }`}
+    >
+      {tr('editor.cues.saveAll', { count: unsavedTracks })}
+    </button>
+  )
   const flowOptions = [
     ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
     { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
@@ -702,6 +728,7 @@ function Editing({
       <span className="flex-1" />
       {discardButton}
       {undoButton}
+      {saveAllButton}
       <button
         type="button"
         data-testid="cues-save"
@@ -931,6 +958,7 @@ function Editing({
             {detail}
           </div>
           {foldedRow}
+          {saveAllButton && <div className="mt-2 flex justify-end">{saveAllButton}</div>}
         </>
       )}
       {!maximized && headerSlot && createPortal(flowControl, headerSlot)}
