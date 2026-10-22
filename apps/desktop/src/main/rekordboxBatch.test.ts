@@ -206,6 +206,16 @@ describe('a renderer reload', () => {
       /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.reset\(\)\s*engineSessionBackup\.reset\(\)/,
     )
   })
+
+  it('keeps the conflict choice and cover memo of the run when a single convert starts mid-run', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler =
+      source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n {2}\}\)/)?.[1] ?? ''
+    const outer = handler.slice(handler.indexOf('if (beginRekordboxBatch())'))
+    expect(handler.indexOf('if (beginRekordboxBatch())')).toBeGreaterThan(-1)
+    expect(outer).toContain('stickyConflict.reset()')
+    expect(outer).toContain('coverMemo = createCoverMemo(prepareProcessedCover)')
+  })
 })
 
 describe('beginRekordboxBatch', () => {

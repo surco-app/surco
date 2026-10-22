@@ -1096,14 +1096,14 @@ function registerIpc(): void {
   // while THIS batch is still open (⌘⏎ during a running convert-all, see nmlBatch.ts) —
   // nesting is tracked there so a lone convert mid-batch can never wipe it.
   ipcMain.on('process:batch-begin', () => {
-    stickyConflict.reset()
-    coverMemo = createCoverMemo(prepareProcessedCover)
     beginNmlBatch()
     // A new run gets a new pre-run copy; without this the stored one would describe the
     // collection before the FIRST run since launch, not before the run in progress.
     if (beginRekordboxBatch()) {
       rekordboxSessionBackup.reset()
       engineSessionBackup.reset()
+      stickyConflict.reset()
+      coverMemo = createCoverMemo(prepareProcessedCover)
     }
   })
 
