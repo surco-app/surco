@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startDraft } from './cueDraft'
 import {
+  autoMarkOf,
+  autoMarks,
+  forgetAutoMark,
   forgetDraft,
+  keepAutoMark,
   keepDraft,
   keepPlayhead,
   keptDraft,
@@ -65,5 +69,39 @@ describe('cue session', () => {
     expect(keptPlayhead('103')).toBe(64000)
     expect(keptPlayhead('104')).toBe(32000)
     expect(keptPlayhead('105')).toBe(0)
+  })
+
+  it('keeps what Auto marcar found for each track apart, so a whole playlist can be reviewed one track at a time', () => {
+    keepAutoMark('103', { kind: 'proposed', ms: [128000, 256000] })
+    keepAutoMark('104', { kind: 'unanalysed' })
+    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [128000, 256000] })
+    expect(autoMarkOf('104')).toEqual({ kind: 'unanalysed' })
+    expect(autoMarkOf('105')).toBeUndefined()
+    forgetAutoMark('103')
+    expect(autoMarkOf('103')).toBeUndefined()
+    expect(autoMarks().get('104')).toEqual({ kind: 'unanalysed' })
+  })
+
+  it('never counts pending proposals as unsaved, so quitting with nothing accepted does not ask', () => {
+    keepAutoMark('103', { kind: 'proposed', ms: [128000] })
+    expect([...unsavedCueTracks()]).toEqual([])
+  })
+
+  it('calls back only when a track’s proposals really change, so the list does not repaint for the same result', () => {
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    keepAutoMark('103', { kind: 'proposed', ms: [128000] })
+    keepAutoMark('103', { kind: 'proposed', ms: [128000] })
+    forgetAutoMark('104')
+    expect(listener).toHaveBeenCalledTimes(1)
+    keepAutoMark('103', { kind: 'proposed', ms: [] })
+    expect(listener).toHaveBeenCalledTimes(2)
+    stop()
+  })
+
+  it('drops the proposals with the rest of the session', () => {
+    keepAutoMark('103', { kind: 'none' })
+    resetCueSession()
+    expect(autoMarkOf('103')).toBeUndefined()
   })
 })
