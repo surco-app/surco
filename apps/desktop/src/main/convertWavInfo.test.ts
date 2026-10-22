@@ -106,6 +106,20 @@ describe('a WAV conversion keeps the tags Traktor reads', () => {
     expect((await readMeta(out)).tags.artist).toBe('Artist A')
   })
 
+  it('reads names with a slash back literally and keeps them on the next update', async () => {
+    const out = join(dir, 'slash.wav')
+    const slashed = { ...meta, artist: 'AC/DC', albumArtist: '', composer: 'Lennon/McCartney' }
+    await convertAudio(source, out, 'wav', slashed)
+    const first = (await readMeta(out)).tags
+    expect(first.artist).toBe('AC/DC')
+    expect(first.composer).toBe('Lennon/McCartney')
+
+    await convertAudio(out, out, 'wav', first)
+    const second = (await readMeta(out)).tags
+    expect(second.artist).toBe('AC/DC')
+    expect(second.composer).toBe('Lennon/McCartney')
+  })
+
   it('reads its own title and artist back', async () => {
     const out = join(dir, 'roundtrip.wav')
     await convertAudio(source, out, 'wav', meta)

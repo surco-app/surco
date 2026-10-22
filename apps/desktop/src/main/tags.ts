@@ -256,8 +256,13 @@ function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
   // v2.3 splits a date into TYER and a day-first TDAT; v2.4 keeps it whole in TDRC.
   const tdat = text('TDAT')
   const split = /^\d{4}$/.test(tdat) ? `${text('TYER')}-${tdat.slice(2)}-${tdat.slice(0, 2)}` : ''
+  const asStored = (values: string[] | undefined, fallback = ''): string =>
+    id3.version === 3 && values?.length ? values.join('/').trim() : fallback
   return {
     ...extras,
+    artist: asStored(id3.performers, extras.artist),
+    albumArtist: asStored(id3.albumArtists, extras.albumArtist),
+    composer: asStored(id3.composers, extras.composer),
     year: fullDateOf(split) || fullDateOf(text('TDRC')) || extras.year,
     isrc: extras.isrc || text('TSRC'),
     originalArtist: text('TOPE'),
