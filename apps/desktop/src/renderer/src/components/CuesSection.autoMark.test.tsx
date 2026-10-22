@@ -545,6 +545,21 @@ describe('saving several tracks', () => {
     expect(saved.sort()).toEqual(['103', '104'])
   })
 
+  it('takes no second click while it saves, so a double click never queues the tracks twice', async () => {
+    other()
+    const { saveRekordboxCues } = setup()
+    saveRekordboxCues.mockImplementation(() => new Promise(() => {}))
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    const all = await screen.findByTestId('cues-save-all')
+    fireEvent.click(all)
+    await waitFor(() => expect(all).toBeDisabled())
+    fireEvent.click(all)
+    await new Promise((r) => setTimeout(r, 20))
+    expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+  })
+
   it('is not offered while only this track is unsaved, where its own Guardar does it', async () => {
     setup()
     await ready()

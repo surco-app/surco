@@ -588,20 +588,27 @@ function Editing({
       })
   }
   const unsavedTracks = useUnsavedCueTracks().size
+  const [savingAll, setSavingAll] = useState(false)
   const saveAll = async () => {
-    await forgetStaleDrafts(queryClient)
-    for (const req of draftsToSave()) {
-      await window.api.saveRekordboxCues(req)
-      forgetDraft(req.contentId)
+    setSavingAll(true)
+    try {
+      await forgetStaleDrafts(queryClient)
+      for (const req of draftsToSave()) {
+        await window.api.saveRekordboxCues(req)
+        forgetDraft(req.contentId)
+      }
+      await refreshQueued()
+    } finally {
+      setSavingAll(false)
     }
-    return refreshQueued()
   }
   const saveAllButton = unsavedTracks > 1 && (
     <button
       type="button"
       data-testid="cues-save-all"
+      disabled={savingAll}
       onClick={() => void saveAll()}
-      className={`press shrink-0 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
+      className={`press shrink-0 disabled:opacity-40 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
         maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
       }`}
     >
