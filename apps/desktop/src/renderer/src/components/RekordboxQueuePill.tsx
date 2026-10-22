@@ -3,16 +3,25 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RekordboxQueueState } from '../../../shared/types'
-import { partText, pillText } from '../lib/rekordboxQueueText'
+import {
+  partText,
+  pillText,
+  type QueueWords,
+  REKORDBOX_QUEUE_WORDS,
+} from '../lib/rekordboxQueueText'
 
 export function RekordboxQueuePill({
   state,
   onApplyNow,
   onDiscard,
+  words = REKORDBOX_QUEUE_WORDS,
+  testid = 'rekordbox-queue',
 }: {
   state: RekordboxQueueState
   onApplyNow: () => void
   onDiscard: () => void
+  words?: QueueWords
+  testid?: string
 }): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -37,7 +46,7 @@ export function RekordboxQueuePill({
     }
   }, [open])
 
-  const text = pillText(tr, state)
+  const text = pillText(tr, state, words)
   const hidden = !text
   useEffect(() => {
     if (!hidden) return
@@ -49,7 +58,7 @@ export function RekordboxQueuePill({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        data-testid="rekordbox-queue-pill"
+        data-testid={`${testid}-pill`}
         aria-expanded={open}
         onClick={() => {
           setOpen((v) => !v)
@@ -62,24 +71,24 @@ export function RekordboxQueuePill({
       </button>
       {open && (
         <div
-          data-testid="rekordbox-queue-menu"
+          data-testid={`${testid}-menu`}
           className="absolute top-full right-0 z-30 mt-1.5 w-80 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]"
         >
           {state.halted && (
-            <p data-testid="rekordbox-queue-halted" className="mb-2 px-1.5 text-xs text-danger">
-              {tr('rekordboxQueue.halted')}
+            <p data-testid={`${testid}-halted`} className="mb-2 px-1.5 text-xs text-danger">
+              {tr(words.halted)}
             </p>
           )}
           {state.elsewhere && (
-            <p data-testid="rekordbox-queue-elsewhere" className="mb-2 px-1.5 text-xs text-danger">
-              {tr('rekordboxQueue.elsewhere')}
+            <p data-testid={`${testid}-elsewhere`} className="mb-2 px-1.5 text-xs text-danger">
+              {tr(words.elsewhere)}
             </p>
           )}
           <ul className="max-h-64 space-y-1 overflow-auto">
             {state.items.map((item) => (
               <li
                 key={item.key}
-                data-testid={`rekordbox-queue-item-${item.key}`}
+                data-testid={`${testid}-item-${item.key}`}
                 className="rounded px-1.5 py-1 text-xs"
               >
                 <span className="block truncate text-fg">{item.label}</span>
@@ -91,11 +100,11 @@ export function RekordboxQueuePill({
           </ul>
           {confirming ? (
             <div className="mt-2 border-t border-[var(--color-line)] pt-2 text-xs">
-              <p className="mb-2 text-fg-muted">{tr('rekordboxQueue.discardConfirm')}</p>
+              <p className="mb-2 text-fg-muted">{tr(words.discardConfirm)}</p>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  data-testid="rekordbox-queue-discard-no"
+                  data-testid={`${testid}-discard-no`}
                   onClick={() => setConfirming(false)}
                   className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
                 >
@@ -103,7 +112,7 @@ export function RekordboxQueuePill({
                 </button>
                 <button
                   type="button"
-                  data-testid="rekordbox-queue-discard-yes"
+                  data-testid={`${testid}-discard-yes`}
                   onClick={() => {
                     setOpen(false)
                     setConfirming(false)
@@ -119,7 +128,7 @@ export function RekordboxQueuePill({
             <div className="mt-2 flex justify-end gap-2 border-t border-[var(--color-line)] pt-2 text-xs">
               <button
                 type="button"
-                data-testid="rekordbox-queue-discard"
+                data-testid={`${testid}-discard`}
                 onClick={() => setConfirming(true)}
                 className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
               >
@@ -128,7 +137,7 @@ export function RekordboxQueuePill({
               {state.items.length > 0 && (
                 <button
                   type="button"
-                  data-testid="rekordbox-queue-apply"
+                  data-testid={`${testid}-apply`}
                   onClick={() => {
                     setOpen(false)
                     onApplyNow()
