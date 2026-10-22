@@ -33,6 +33,9 @@ try {
   out.push('', `Outside read failed: ${err.message}`)
 }
 
+const control = path.join(path.dirname(dir), '..', 'SurcoProbeControl', 'control.txt')
+out.push('', `Control (new folder in AppData) at real path: ${fs.existsSync(control) ? 'present' : 'missing'}`)
+
 const walk = (d) =>
   fs.existsSync(d)
     ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {

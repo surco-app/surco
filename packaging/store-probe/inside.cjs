@@ -26,6 +26,11 @@ try {
   fs.writeFileSync(path.join(dir, 'brand-new.txt'), 'NEW')
   log('wrote brand-new.txt')
 
+  const control = path.join(process.env.APPDATA, 'SurcoProbeControl')
+  fs.mkdirSync(control, { recursive: true })
+  fs.writeFileSync(path.join(control, 'control.txt'), 'CONTROL')
+  log(`wrote control; inside reads: ${fs.readFileSync(path.join(control, 'control.txt'), 'utf8')}`)
+
   const Database = require(
     path.join(installDir, 'app', 'resources', 'app.asar.unpacked', 'node_modules', 'better-sqlite3-multiple-ciphers'),
   )

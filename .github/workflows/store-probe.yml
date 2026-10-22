@@ -78,12 +78,12 @@ jobs:
 
           foreach ($variant in 'virtualized', 'unvirtualized') {
             "## $variant" | Add-Content $env:GITHUB_STEP_SUMMARY
+            node "$probe\seed.cjs" $dir
+            Remove-Item -Recurse -Force (Join-Path $env:APPDATA 'SurcoProbeControl') -ErrorAction SilentlyContinue
             $appx = Get-ChildItem "apps\desktop\dist-$variant\*.appx" | Select-Object -First 1
             Add-AppxPackage -Path $appx.FullName
             $pkg = Get-AppxPackage -Name SurcoProbe
             $localCache = Join-Path $env:LOCALAPPDATA "Packages\$($pkg.PackageFamilyName)\LocalCache"
-
-            node "$probe\seed.cjs" $dir
 
             $sync = "C:\probe-sync\$variant"
             New-Item -ItemType Directory -Force $sync | Out-Null
