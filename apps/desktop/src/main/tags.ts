@@ -816,7 +816,7 @@ function setUserText(tag: Id3v2Tag, description: string, text: string): void {
     frame = Id3v2UserTextInformationFrame.fromDescription(description)
     tag.addFrame(frame)
   }
-  frame.text = text.split(';')
+  frame.text = [text]
 }
 
 // Upserts one POPM frame (keyed by its user/email) with the given 0–255 byte.

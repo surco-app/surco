@@ -9,9 +9,11 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { convertAudio, readTags } from './ffmpeg'
 import { diffSnapshots, snapshotTags } from './tagSnapshot'
 import {
   ALLOWED_UPDATE_CHANGES,
+  UPDATE_FORMAT,
   type UpdateExt,
   unexplainedChanges,
   updateLikeTheApp,
@@ -136,4 +138,29 @@ describe.each(FORMATS)('updating a $ext in its own format', ({ ext, codec }) => 
       })
     }
   })
+})
+
+describe.each(FORMATS)('a typed value with a semicolon in a $ext', ({ ext, codec }) => {
+  it('reads back whole and survives a second update', async () => {
+    const src = join(dir, `semicolon-src.${ext}`)
+    const out = join(dir, `semicolon-out.${ext}`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=duration=1',
+      ...codec,
+      src,
+    ])
+    await convertAudio(src, out, UPDATE_FORMAT[ext], {
+      ...(await readTags(src)),
+      catalogNumber: 'ABC;123',
+    })
+    expect((await readTags(out)).catalogNumber).toBe('ABC;123')
+    await convertAudio(out, out, UPDATE_FORMAT[ext], await readTags(out))
+    expect((await readTags(out)).catalogNumber).toBe('ABC;123')
+  }, 60000)
 })
