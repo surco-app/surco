@@ -19,6 +19,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import { GeneralTab } from './GeneralTab'
 
 afterEach(cleanup)
+afterEach(() => vi.unstubAllEnvs())
 
 const synced = {
   theme: 'system',
@@ -175,6 +176,13 @@ describe('GeneralTab sources', () => {
     expect(engine).toBeChecked()
     fireEvent.click(engine)
     expect(patch).toHaveBeenCalledWith('hiddenSources', ['engine'])
+  })
+
+  it('leaves Engine DJ out of a release build, where the source is not offered to users yet', async () => {
+    vi.stubEnv('DEV', false)
+    renderSources({ platform: 'darwin', rekordbox: true })
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    expect(screen.queryByTestId('settings-source-engine')).not.toBeInTheDocument()
   })
 
   it('says that hiding a source leaves its sync alone', async () => {

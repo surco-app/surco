@@ -73,7 +73,7 @@ export function useSourceBrowser({
   const sources: PlaylistSource[] = [
     ...(isMac ? (['appleMusic'] as const) : []),
     ...(rekordbox ? (['rekordbox'] as const) : []),
-    'engine' as const,
+    ...(import.meta.env.DEV ? (['engine'] as const) : []),
   ].filter((s) => !hiddenSources.includes(s))
   const engine = useQuery({
     queryKey: ['source-available', 'engine'],

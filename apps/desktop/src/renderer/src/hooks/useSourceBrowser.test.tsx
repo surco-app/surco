@@ -9,6 +9,7 @@ import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
 afterEach(cleanup)
+afterEach(() => vi.unstubAllEnvs())
 
 function setup(
   api: Record<string, unknown>,
@@ -65,6 +66,12 @@ describe('useSourceBrowser', () => {
     await waitFor(() =>
       expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
     )
+  })
+
+  it('leaves Engine DJ out of a release build, where the source is not offered to users yet', async () => {
+    vi.stubEnv('DEV', false)
+    const { result } = setup({})
+    await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
   })
 
   it('leaves out a source the user hid, whichever one it is', async () => {
