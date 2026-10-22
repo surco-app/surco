@@ -924,7 +924,7 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0]?.rekordboxPlaylistsBase).toEqual(['3000'])
   })
 
-  it('restores that a track came from rekordbox, so converting it keeps its file name', async () => {
+  it('restores that a track came from rekordbox or Engine DJ, so converting it keeps its file name', async () => {
     setApi({
       readMeta: vi.fn().mockResolvedValue({
         tags: { title: '', artist: '' },
@@ -947,11 +947,12 @@ describe('useTrackLibrary foreign tags', () => {
     )
     await act(() =>
       result.current.addPaths(['/m/a.wav'], {
-        '/m/a.wav': { meta: { title: 'Restored' } as never, fromRekordbox: true },
+        '/m/a.wav': { meta: { title: 'Restored' } as never, fromRekordbox: true, fromEngine: true },
       }),
     )
 
     expect(result.current.tracks[0]?.fromRekordbox).toBe(true)
+    expect(result.current.tracks[0]?.fromEngine).toBe(true)
   })
 
   it('restores which library copy a track belongs to', async () => {

@@ -457,6 +457,7 @@ export function useTrackLibrary({
     if (saved.musicPersistentId) patch.musicPersistentId = saved.musicPersistentId
     if (saved.fromAppleMusic) patch.fromAppleMusic = true
     if (saved.fromRekordbox) patch.fromRekordbox = true
+    if (saved.fromEngine) patch.fromEngine = true
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
@@ -912,8 +913,11 @@ export function useTrackLibrary({
           fromRekordbox: true,
           ...(e.preview && { sourcePreview: e.preview }),
         })
-      if (source === 'engine' && e.preview)
-        pendingSeed.current.set(e.path, { sourcePreview: e.preview })
+      if (source === 'engine')
+        pendingSeed.current.set(e.path, {
+          fromEngine: true,
+          ...(e.preview && { sourcePreview: e.preview }),
+        })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
     await addPaths(freshPaths, undefined, false, false)

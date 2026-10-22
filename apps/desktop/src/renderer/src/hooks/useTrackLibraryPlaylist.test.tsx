@@ -488,9 +488,9 @@ describe('opening a rekordbox playlist with previews', () => {
     await act(async () => {
       await result.current.openSourcePlaylist([entry('/m/e.aiff', 'E')], 'engine')
     })
-    expect(result.current.tracks.map((t) => [t.sourcePreview?.title, t.fromRekordbox])).toEqual([
-      ['E', undefined],
-    ])
+    expect(
+      result.current.tracks.map((t) => [t.sourcePreview?.title, t.fromRekordbox, t.fromEngine]),
+    ).toEqual([['E', undefined, true]])
   })
 
   it('drops the row of a file the disk lacks and counts it once, as missing and not as unreadable', async () => {
