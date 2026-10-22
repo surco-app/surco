@@ -2430,6 +2430,30 @@
     "pillElsewhere": "Wartet auf eine andere rekordbox-Sammlung",
     "elsewhere": "Das wurde für eine andere rekordbox-Sammlung vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
   },
+  "engineQueue": {
+    "pillTracks_one": "1 Titel wartet, bis du Engine DJ schließt",
+    "pillTracks_other": "{{count}} Titel warten, bis du Engine DJ schließt",
+    "pillChanges_one": "1 Änderung wartet, bis du Engine DJ schließt",
+    "pillChanges_other": "{{count}} Änderungen warten, bis du Engine DJ schließt",
+    "applied_one": "Fertig in Engine DJ · 1 Titel",
+    "applied_other": "Fertig in Engine DJ · {{count}} Titel",
+    "appliedChanges_one": "Fertig in Engine DJ · 1 Änderung",
+    "appliedChanges_other": "Fertig in Engine DJ · {{count}} Änderungen",
+    "backupFailed": "Engine DJ konnte nicht gesichert werden. Surco versucht es beim nächsten Schließen erneut",
+    "unreadable": "Surco kann die Engine-DJ-Bibliothek gerade nicht lesen, nichts geändert",
+    "writeFailed": "Die Cues konnten nicht in Engine DJ gespeichert werden. Die Bibliothek ist unverändert",
+    "otherLibrary": "Was wartet, gehört zu einer anderen Engine-DJ-Bibliothek, daher wurde nichts geändert. Wechsle zurück zu dieser Bibliothek oder verwirf, was wartet",
+    "notice": {
+      "cuesChanged": "Die Cues von {{track}} haben sich in Engine DJ geändert. Markiere sie erneut",
+      "callsDropped_one": "1 CALL von {{track}} wurde nicht gespeichert ({{times}}). Engine DJ speichert nur Hot Cues",
+      "callsDropped_other": "{{count}} CALLs von {{track}} wurden nicht gespeichert ({{times}}). Engine DJ speichert nur Hot Cues"
+    },
+    "discardConfirm": "Wartende Änderungen verwerfen? Die Cues zeigen wieder, was Engine DJ hat",
+    "pillHalted": "Engine-DJ-Änderungen angehalten",
+    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Bibliothek nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie m.db.surco-backup. Wenn etwas nicht stimmt, stelle die Bibliothek zuerst daraus wieder her",
+    "pillElsewhere": "Wartet auf eine andere Engine-DJ-Bibliothek",
+    "elsewhere": "Das wurde für eine andere Engine-DJ-Bibliothek vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
+  },
   "cueWave": {
     "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Cues zu setzen",
     "hotCue": "Hot Cue {{letter}}",

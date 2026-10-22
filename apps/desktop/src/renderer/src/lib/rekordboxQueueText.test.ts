@@ -4,7 +4,13 @@ import de from '../i18n/locales/de.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
 import ptBR from '../i18n/locales/pt-BR.json'
-import { appliedMessage, noticeText, partText, pillText } from './rekordboxQueueText'
+import {
+  appliedMessage,
+  ENGINE_QUEUE_WORDS,
+  noticeText,
+  partText,
+  pillText,
+} from './rekordboxQueueText'
 
 const tr = i18n.getFixedT('en')
 
@@ -129,5 +135,45 @@ describe('rekordbox queue text', () => {
 
   it('says nothing when nothing landed and nothing was kept', () => {
     expect(appliedMessage(tr, { tracks: 0, changes: 0, notices: [], written: [] })).toBeNull()
+  })
+})
+
+describe('Engine DJ queue text', () => {
+  it('says the tracks wait for Engine DJ to close, not rekordbox', () => {
+    expect(pillText(tr, { tracks: 2, changes: 0, items: [] }, ENGINE_QUEUE_WORDS)).toBe(
+      '2 tracks wait for you to close Engine DJ',
+    )
+  })
+
+  it('names the CALLs Engine DJ did not keep and where they were, in the same line as what landed', () => {
+    expect(
+      appliedMessage(
+        tr,
+        {
+          tracks: 1,
+          changes: 0,
+          notices: [{ code: 'cues-calls-dropped', track: 'Tengo', calls: [4000, 72500] }],
+          written: [],
+        },
+        ENGINE_QUEUE_WORDS,
+      )?.text,
+    ).toBe(
+      'Done in Engine DJ · 1 track. 2 CALLs of Tengo were not saved (0:04, 1:12). Engine DJ only keeps hot cues',
+    )
+  })
+
+  it('says the cues changed in Engine DJ when a save was refused for it', () => {
+    expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, ENGINE_QUEUE_WORDS)).toBe(
+      'The cues of Tengo changed in Engine DJ. Mark them again',
+    )
+  })
+
+  it('says in Spanish which CALLs did not reach Engine DJ, plainly and without a colon', () => {
+    expect(es.engineQueue.notice.callsDropped_one).toBe(
+      'No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues',
+    )
+    expect(es.engineQueue.notice.callsDropped_other).toBe(
+      'No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues',
+    )
   })
 })

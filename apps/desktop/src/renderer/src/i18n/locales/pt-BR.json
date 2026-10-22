@@ -2430,6 +2430,30 @@
     "pillElsewhere": "Pendente de outra coleção do rekordbox",
     "elsewhere": "Isto foi preparado para outra coleção do rekordbox. O Surco não vai aplicá-lo à que você usa agora"
   },
+  "engineQueue": {
+    "pillTracks_one": "1 faixa espera você fechar o Engine DJ",
+    "pillTracks_other": "{{count}} faixas esperam você fechar o Engine DJ",
+    "pillChanges_one": "1 mudança espera você fechar o Engine DJ",
+    "pillChanges_other": "{{count}} mudanças esperam você fechar o Engine DJ",
+    "applied_one": "Pronto no Engine DJ · 1 faixa",
+    "applied_other": "Pronto no Engine DJ · {{count}} faixas",
+    "appliedChanges_one": "Pronto no Engine DJ · 1 mudança",
+    "appliedChanges_other": "Pronto no Engine DJ · {{count}} mudanças",
+    "backupFailed": "Não foi possível fazer a cópia do Engine DJ. O Surco tentará de novo ao fechá-lo",
+    "unreadable": "O Surco não consegue ler a biblioteca do Engine DJ agora e nada mudou",
+    "writeFailed": "Não foi possível salvar os cues no Engine DJ. A biblioteca continua como estava",
+    "otherLibrary": "O que espera é de outra biblioteca do Engine DJ, então nada foi alterado. Volte para essa biblioteca ou descarte o que espera",
+    "notice": {
+      "cuesChanged": "Os cues de {{track}} mudaram no Engine DJ. Marque-os de novo",
+      "callsDropped_one": "1 CALL de {{track}} não foi salvo ({{times}}). O Engine DJ só guarda hot cues",
+      "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Engine DJ só guarda hot cues"
+    },
+    "discardConfirm": "Descartar o que espera? Os cues voltam ao que o Engine DJ tem",
+    "pillHalted": "Mudanças do Engine DJ em pausa",
+    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na biblioteca até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança m.db.surco-backup, então se algo parecer errado, restaure a partir dela antes",
+    "pillElsewhere": "Pendente de outra biblioteca do Engine DJ",
+    "elsewhere": "Isto foi preparado para outra biblioteca do Engine DJ. O Surco não vai aplicá-lo à que você usa agora"
+  },
   "cueWave": {
     "notAnalysed": "Esta faixa não foi analisada no rekordbox. Analise lá para colocar cues",
     "hotCue": "Hot cue {{letter}}",

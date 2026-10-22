@@ -1141,6 +1141,7 @@ export type RekordboxQueueNotice =
     }
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
   | { code: 'edit-changed'; playlist: string }
+  | { code: 'cues-calls-dropped'; track: string; calls: number[] }
 
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
 

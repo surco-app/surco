@@ -2430,6 +2430,30 @@
     "pillElsewhere": "En attente d’une autre collection rekordbox",
     "elsewhere": "Ceci a été préparé pour une autre collection rekordbox. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
+  "engineQueue": {
+    "pillTracks_one": "1 morceau attend que vous fermiez Engine DJ",
+    "pillTracks_other": "{{count}} morceaux attendent que vous fermiez Engine DJ",
+    "pillChanges_one": "1 changement attend que vous fermiez Engine DJ",
+    "pillChanges_other": "{{count}} changements attendent que vous fermiez Engine DJ",
+    "applied_one": "Fait dans Engine DJ · 1 morceau",
+    "applied_other": "Fait dans Engine DJ · {{count}} morceaux",
+    "appliedChanges_one": "Fait dans Engine DJ · 1 changement",
+    "appliedChanges_other": "Fait dans Engine DJ · {{count}} changements",
+    "backupFailed": "Impossible de sauvegarder Engine DJ. Surco réessaiera à sa prochaine fermeture",
+    "unreadable": "Surco ne peut pas lire la bibliothèque Engine DJ pour le moment, rien n’a changé",
+    "writeFailed": "Impossible d’enregistrer les cues dans Engine DJ. La bibliothèque est restée telle quelle",
+    "otherLibrary": "Ce qui attend appartient à une autre bibliothèque Engine DJ, rien n’a donc été modifié. Reviens à cette bibliothèque ou abandonne ce qui attend",
+    "notice": {
+      "cuesChanged": "Les cues de {{track}} ont changé dans Engine DJ. Marque-les à nouveau",
+      "callsDropped_one": "1 CALL de {{track}} n’a pas été enregistré ({{times}}). Engine DJ ne garde que les hot cues",
+      "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). Engine DJ ne garde que les hot cues"
+    },
+    "discardConfirm": "Abandonner ce qui attend ? Les cues reviennent à ce qu’a Engine DJ",
+    "pillHalted": "Changements Engine DJ en pause",
+    "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la bibliothèque tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours m.db.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
+    "pillElsewhere": "En attente d’une autre bibliothèque Engine DJ",
+    "elsewhere": "Ceci a été préparé pour une autre bibliothèque Engine DJ. Surco ne l’appliquera pas à celle que tu utilises maintenant"
+  },
   "cueWave": {
     "notAnalysed": "Ce morceau n’est pas analysé dans rekordbox. Analysez-le là-bas pour placer des cues",
     "hotCue": "Hot cue {{letter}}",

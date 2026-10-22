@@ -6,6 +6,7 @@ import type {
   RekordboxQueuePart,
   RekordboxQueueState,
 } from '../../../shared/types'
+import { formatTime } from './duration'
 import { refusalKey } from './playlistEdits'
 
 export interface QueueWords {
@@ -45,6 +46,30 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-changed': 'rekordboxQueue.notice.cuesChanged',
     'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
     'cues-invalid': 'rekordboxQueue.notice.cuesInvalid',
+    'cues-calls-dropped': 'engineQueue.notice.callsDropped',
+  },
+}
+
+export const ENGINE_QUEUE_WORDS: QueueWords = {
+  pillTracks: 'engineQueue.pillTracks',
+  pillChanges: 'engineQueue.pillChanges',
+  pillHalted: 'engineQueue.pillHalted',
+  pillElsewhere: 'engineQueue.pillElsewhere',
+  halted: 'engineQueue.halted',
+  elsewhere: 'engineQueue.elsewhere',
+  discardConfirm: 'engineQueue.discardConfirm',
+  applied: 'engineQueue.applied',
+  appliedChanges: 'engineQueue.appliedChanges',
+  backupFailed: 'engineQueue.backupFailed',
+  refused: (reason) =>
+    reason === 'unreadable'
+      ? 'engineQueue.unreadable'
+      : reason === 'other-collection'
+        ? 'engineQueue.otherLibrary'
+        : 'engineQueue.writeFailed',
+  notices: {
+    ...REKORDBOX_QUEUE_WORDS.notices,
+    'cues-changed': 'engineQueue.notice.cuesChanged',
   },
 }
 
@@ -53,6 +78,12 @@ export function noticeText(
   notice: RekordboxQueueNotice,
   words: QueueWords = REKORDBOX_QUEUE_WORDS,
 ): string {
+  if (notice.code === 'cues-calls-dropped')
+    return tr(words.notices[notice.code], {
+      track: notice.track,
+      count: notice.calls.length,
+      times: notice.calls.map((ms) => formatTime(ms / 1000)).join(', '),
+    })
   return tr(words.notices[notice.code], notice)
 }
 
