@@ -510,6 +510,41 @@ describe('App Engine DJ cues', () => {
     expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
   })
 
+  async function openFriday() {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  }
+
+  it('runs Auto marcar over the selected rows of an Engine DJ playlist by their Engine track', async () => {
+    const dropInput = vi.fn<Api['rekordboxCueDropInput']>().mockResolvedValue(null)
+    openEngine({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
+      rekordboxCueDropInput: dropInput,
+    })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('cues-auto-mark-all'))
+    await waitFor(() => expect(autoMarkOf('engine:12')).toEqual({ kind: 'unanalysed' }))
+    expect(autoMarkOf('engine:11')).toEqual({ kind: 'unanalysed' })
+  })
+
+  it('shows on each row of an Engine DJ playlist what Auto marcar left for its Engine track', async () => {
+    openEngine()
+    await openFriday()
+    act(() => keepAutoMark('engine:12', { kind: 'proposed', ms: [1000, 2000] }))
+    const chips = () =>
+      screen
+        .getAllByTestId('track-wave-line')
+        .map((row) => within(row).queryByTestId('track-auto-mark')?.textContent ?? null)
+    await waitFor(() => expect(chips()).toEqual([null, '2 proposals']))
+  })
+
   it('shows what waits for Engine DJ to close beside rekordbox’s queue', async () => {
     openEngine({
       engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue({

@@ -2097,13 +2097,13 @@ export default function App(): React.JSX.Element {
   const autoMarks = useAutoMarks()
   const autoMarkById = useMemo(() => {
     const byId = new Map<string, AutoMark>()
-    if (!rekordboxOpen) return byId
+    if (!cuesOpen) return byId
     for (const [id, contentId] of playlistScope?.contentOf ?? []) {
       const mark = autoMarks.get(contentId)
       if (mark) byId.set(id, mark)
     }
     return byId
-  }, [rekordboxOpen, playlistScope, autoMarks])
+  }, [cuesOpen, playlistScope, autoMarks])
   const autoMarkSelected = useStableCallback(() => {
     const ids = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
@@ -3003,7 +3003,7 @@ export default function App(): React.JSX.Element {
                           onCueJumpBars={onCueJumpBars}
                           onCueQuantize={onCueQuantize}
                           onCueFlow={onCueFlow}
-                          onCueAutoMarkAll={rekordboxOpen ? autoMarkSelected : undefined}
+                          onCueAutoMarkAll={cuesOpen ? autoMarkSelected : undefined}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}

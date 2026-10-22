@@ -40,10 +40,12 @@ function setup({
   reads = {},
   words = {},
   queued = {},
+  dropInputs = {},
 }: {
   reads?: Record<string, TrackCues | null>
   words?: Record<string, Uint16Array | null>
   queued?: Record<string, QueuedCues | null>
+  dropInputs?: Record<string, DropInput | null>
 } = {}) {
   const api = installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) =>
@@ -52,6 +54,9 @@ function setup({
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async (id) => queued[id] ?? null),
     rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async (id) =>
       id in words ? words[id] : WORDS,
+    ),
+    rekordboxCueDropInput: vi.fn<Api['rekordboxCueDropInput']>(
+      async (id) => dropInputs[id] ?? null,
     ),
     saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => 'queued'),
   })
@@ -141,5 +146,42 @@ describe('Auto marcar over several tracks', () => {
     setTimeout(() => order.push('ui'), 0)
     await running
     expect(order).toEqual(['detect', 'ui', 'detect'])
+  })
+})
+
+describe('Auto marcar over several Engine DJ tracks', () => {
+  const ENGINE_GRID = GRID.map((b) => ({ ms: b.ms + 30, beat: ((b.beat + 1) % 4) + 1 }))
+  const engineRead = (id: string): TrackCues => ({
+    ...READ,
+    contentId: id,
+    grid: ENGINE_GRID,
+    phrases: [],
+  })
+  const REKORDBOX_INPUT: DropInput = { grid: GRID, phrases: READ.phrases, words: WORDS }
+
+  it('detects on the structure main gives for the Engine track, not on a rekordbox wave it does not have', async () => {
+    const { client, api } = setup({
+      reads: { 'engine:4': engineRead('engine:4') },
+      dropInputs: { 'engine:4': REKORDBOX_INPUT },
+    })
+    await autoMarkTracks(client, ['engine:4'])
+    expect(detectDrops).toHaveBeenCalledWith(REKORDBOX_INPUT)
+    expect(api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
+  })
+
+  it('moves each proposal onto the nearest Engine beat, where the cue will be saved, even when Engine counts its bars from another beat', async () => {
+    const { client } = setup({
+      reads: { 'engine:4': engineRead('engine:4') },
+      dropInputs: { 'engine:4': REKORDBOX_INPUT },
+    })
+    await autoMarkTracks(client, ['engine:4'])
+    expect(autoMarkOf('engine:4')).toEqual({ kind: 'proposed', ms: [bar(64) + 30, bar(128) + 30] })
+  })
+
+  it('says an Engine track has no analysis when there is nothing to detect on', async () => {
+    const { client } = setup({ reads: { 'engine:4': engineRead('engine:4') } })
+    await autoMarkTracks(client, ['engine:4'])
+    expect(autoMarkOf('engine:4')).toEqual({ kind: 'unanalysed' })
+    expect(detectDrops).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { nearestBeat } from '../../../shared/cueRules'
 import { type DropInput, detectDrops } from '../../../shared/dropDetect'
-import { cueWaveDetailQuery, queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
+import { isEngineContent } from '../../../shared/engineContent'
+import {
+  cueDropInputQuery,
+  cueWaveDetailQuery,
+  queuedCuesQuery,
+  trackCuesQuery,
+} from '../hooks/useTrackCues'
 import { type AutoMark, cueDraftKey, keepAutoMark, keptDraft } from './cueSession'
 
 export function withoutCallInBar(
@@ -21,16 +27,27 @@ export function dropsOnGrid(input: DropInput, grid: { ms: number }[]): number[] 
   return detectDrops(input).map((ms) => beats[nearestBeat(beats, ms)])
 }
 
+async function dropInputOf(
+  client: QueryClient,
+  contentId: string,
+  read: { grid: DropInput['grid']; phrases: DropInput['phrases'] },
+): Promise<DropInput | null> {
+  if (isEngineContent(contentId))
+    return client.fetchQuery(cueDropInputQuery(contentId)).catch(() => null)
+  const words = await client.fetchQuery(cueWaveDetailQuery(contentId)).catch(() => null)
+  return words ? { grid: read.grid, phrases: read.phrases, words } : null
+}
+
 async function autoMarkOne(client: QueryClient, contentId: string): Promise<AutoMark> {
   const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
   if (!read?.analysed || read.grid.length === 0) return { kind: 'unanalysed' }
-  const words = await client.fetchQuery(cueWaveDetailQuery(contentId)).catch(() => null)
-  if (!words) return { kind: 'unanalysed' }
+  const input = await dropInputOf(client, contentId, read)
+  if (!input) return { kind: 'unanalysed' }
   const queued = await client.fetchQuery(queuedCuesQuery(contentId))
   const cues =
     keptDraft(contentId, cueDraftKey(contentId, read.fingerprint, queued))?.cues ??
     (queued && queued.fingerprint === read.fingerprint ? queued.wanted : read.cues)
-  const found = detectDrops({ grid: read.grid, phrases: read.phrases, words })
+  const found = dropsOnGrid(input, read.grid)
   if (found.length === 0) return { kind: 'none' }
   const open = withoutCallInBar(found, cues, read.grid)
   return open.length === 0 ? { kind: 'marked' } : { kind: 'proposed', ms: open }
