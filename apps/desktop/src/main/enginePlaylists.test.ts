@@ -40,6 +40,32 @@ const TRACKS: EngineFixture['tracks'] = [
 ]
 
 describe('readEngineTree', () => {
+  it('leaves out the lists Engine keeps unsaved and never shows, so the tree matches Engine DJ', async () => {
+    const dir = await library({
+      tracks: TRACKS,
+      playlists: [
+        { id: 1, title: 'Bases', parentListId: 0, nextListId: 4 },
+        { id: 2, title: '2K', parentListId: 1, nextListId: 3 },
+        { id: 3, title: '95', parentListId: 1, nextListId: 0, isPersisted: 0 },
+        { id: 4, title: 'Aaron', parentListId: 0, nextListId: 5, isPersisted: 0 },
+        { id: 5, title: 'House', parentListId: 0, nextListId: 0 },
+      ],
+      entities: [{ id: 1, listId: 2, trackId: 1, nextEntityId: 0 }],
+    })
+    const db = opened(dir)
+    expect(readEngineTree(db)).toEqual([
+      {
+        id: '1',
+        name: 'Bases',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: '2', name: '2K', kind: 'playlist', count: 1 }],
+      },
+      { id: '5', name: 'House', kind: 'playlist', count: 0 },
+    ])
+    db.close()
+  })
+
   it('nests crates under their folders and orders siblings by the nextListId chain, as Engine shows them', async () => {
     const dir = await library({
       tracks: TRACKS,

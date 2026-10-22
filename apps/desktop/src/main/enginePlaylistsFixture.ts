@@ -19,7 +19,13 @@ export interface EngineFixture {
   }[]
   art?: { id: number; bytes: Uint8Array }[]
   artHashes?: { id: number; hash: Uint8Array }[]
-  playlists: { id: number; title: string; parentListId: number; nextListId: number }[]
+  playlists: {
+    id: number
+    title: string
+    parentListId: number
+    nextListId: number
+    isPersisted?: 0 | 1
+  }[]
   entities: { id: number; listId: number; trackId: number; nextEntityId: number }[]
   performance?: EnginePerformanceRow[]
   wal?: boolean
@@ -71,8 +77,9 @@ export function writeEngineLibraryFixture(
       p.trackId,
     )
   const list = db.prepare(`INSERT INTO Playlist (id, title, parentListId, isPersisted,
-    nextListId, isExplicitlyExported) VALUES (?, ?, ?, 1, ?, 1)`)
-  for (const p of data.playlists) list.run(p.id, p.title, p.parentListId, p.nextListId)
+    nextListId, isExplicitlyExported) VALUES (?, ?, ?, ?, ?, 1)`)
+  for (const p of data.playlists)
+    list.run(p.id, p.title, p.parentListId, p.isPersisted ?? 1, p.nextListId)
   const entity = db.prepare(`INSERT INTO PlaylistEntity (id, listId, trackId, databaseUuid,
     nextEntityId, membershipReference) VALUES (?, ?, ?, 'fixture-uuid', ?, 0)`)
   for (const e of data.entities) entity.run(e.id, e.listId, e.trackId, e.nextEntityId)

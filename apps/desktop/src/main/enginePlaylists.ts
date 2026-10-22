@@ -71,7 +71,8 @@ export function readEngineTree(db: EngineDb): SourceNode[] {
       `SELECT p.id, p.nextListId AS next, p.parentListId AS parent, p.title,
               (SELECT count(*) FROM PlaylistEntity e JOIN Track t ON t.id = e.trackId
                 WHERE e.listId = p.id) AS n
-         FROM Playlist p`,
+         FROM Playlist p
+        WHERE coalesce(p.isPersisted, 1) = 1`,
     )
     .all() as ListRow[]
   const byParent = new Map<number, ListRow[]>()
