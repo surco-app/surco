@@ -268,11 +268,11 @@
           },
           {
             "t": "Your rekordbox playlists",
-            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. If you don't use rekordbox or Apple Music, hide that source."
+            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. «Recently added» comes first, with what you added to the collection in the last 30 days. If you don't use rekordbox or Apple Music, hide that source."
           },
           {
             "t": "rekordbox cues",
-            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written to rekordbox after a backup."
+            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written to rekordbox after a backup."
           },
           {
             "t": "A USB stick for your CDJs",
