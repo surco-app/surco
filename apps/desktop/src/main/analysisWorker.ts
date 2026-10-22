@@ -1,5 +1,6 @@
 import { parentPort } from 'node:worker_threads'
 import { killActiveScans } from './channelScan'
+import { killCueWaveWords } from './cueWaveWords'
 import { runWorkerJob, type WorkerJob } from './workerJobs'
 
 // The channel scan spawns ffmpeg from in here, so a child outlives this thread unless it
@@ -7,6 +8,7 @@ import { runWorkerJob, type WorkerJob } from './workerJobs'
 // long mix burning a core with nothing left that can stop it. 'exit' covers both routes
 // the thread ends by — the pool terminating it, and the process going away underneath.
 process.on('exit', killActiveScans)
+process.on('exit', killCueWaveWords)
 
 // Worker-thread entry: a plain request/response loop over parentPort. All routing
 // logic lives in runWorkerJob so it stays testable outside a thread. The await handles

@@ -1,6 +1,7 @@
 import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
+import { runCueWaveWords } from './cueWaveWords'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
@@ -76,6 +77,13 @@ export type WorkerJob =
   // completion holding a limiter slot. A job rather than a signal because an AbortSignal
   // does not survive the structured clone into the worker.
   | { type: 'killChannelScan'; input: string }
+  | {
+      type: 'cueWaveWords'
+      input: string
+      ffmpegPath: string
+      sampleRate: number
+      timeoutMs: number
+    }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
   | { type: 'tagLibRead'; file: string }
 
@@ -86,6 +94,7 @@ export type WorkerJobResult =
   | FieldWrite[]
   | { peaks: number[]; rms: number[] }
   | FullScan
+  | Uint16Array
   | TagLibRead
   | null
 
@@ -93,6 +102,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
   switch (job.type) {
     case 'channelScan':
       return runChannelScan(job.input, job.ffmpegPath, job.channels, job.timeoutMs)
+    case 'cueWaveWords':
+      return runCueWaveWords(job.input, job.ffmpegPath, job.sampleRate, job.timeoutMs)
     case 'killChannelScan':
       killScansFor(job.input)
       return null

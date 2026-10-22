@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { createCueWaveWords } from './cueWaveWords'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { createCueWaveWords, runCueWaveWords } from './cueWaveWords'
+
+const FF = ffmpegStatic as unknown as string
 
 const RATE = 48000
 const PER_WORD = RATE / 150
@@ -64,5 +71,50 @@ describe('createCueWaveWords', () => {
     const whole = frames(PER_WORD * 3, [0.6, 0.5, 0.2, 0.1])
     whole[5 * 4] = 0.9
     expect(reduce(whole.subarray(0, 333), whole.subarray(333))).toEqual(reduce(whole))
+  })
+})
+
+describe('runCueWaveWords', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'surco-cue-words-'))
+  const tone = (name: string, source: string, rate: number, channels: number) => {
+    const file = join(dir, name)
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      source,
+      '-ar',
+      String(rate),
+      '-ac',
+      String(channels),
+      file,
+    ])
+    return file
+  }
+  let bass = ''
+  let treble = ''
+  beforeAll(() => {
+    bass = tone('bass.wav', 'sine=frequency=60:duration=2', 44100, 2)
+    treble = tone('treble.flac', 'sine=frequency=5000:duration=2', 48000, 1)
+  })
+
+  it('colours a kick-range tone as low and a hi-hat-range tone as high, the two bands the drop model reads', async () => {
+    const middle = (words: Uint16Array) => words[Math.floor(words.length / 2)]
+    const kick = middle(await runCueWaveWords(bass, FF, 44100, 60_000))
+    const hat = middle(await runCueWaveWords(treble, FF, 48000, 60_000))
+    expect([low(kick), high(kick)]).toEqual([7, 0])
+    expect([low(hat), high(hat)]).toEqual([0, 7])
+  })
+
+  it("decodes at the file's own rate and keeps 150 words a second, mono or stereo", async () => {
+    expect((await runCueWaveWords(bass, FF, 44100, 60_000)).length).toBe(300)
+    expect((await runCueWaveWords(treble, FF, 48000, 60_000)).length).toBe(300)
+  })
+
+  it('fails on a file ffmpeg cannot decode rather than answering silence', async () => {
+    await expect(runCueWaveWords(join(dir, 'missing.wav'), FF, 44100, 60_000)).rejects.toThrow()
   })
 })

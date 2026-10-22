@@ -26,8 +26,13 @@ vi.mock('./channelScan', () => ({
   runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
 }))
 
+vi.mock('./cueWaveWords', () => ({
+  runCueWaveWords: vi.fn(async () => new Uint16Array([1, 2, 3])),
+}))
+
 import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
+import { runCueWaveWords } from './cueWaveWords'
 import { detectKey } from './musicalKey'
 import { setTagFields } from './tagFieldSet'
 import { copyCueFrames, type TagLibRead, writeTags } from './tags'
@@ -141,6 +146,18 @@ describe('runWorkerJob', () => {
     })
     expect(runChannelScan).toHaveBeenCalledWith('/in.flac', '/bin/ffmpeg', 2, 120000)
     expect(out).toEqual({ clipped: [false, true], channels: [] })
+  })
+
+  it('decodes the colour wave words in the worker with the file rate, so a batch of Engine tracks never stalls the window', async () => {
+    const out = await runWorkerJob({
+      type: 'cueWaveWords',
+      input: '/in.aiff',
+      ffmpegPath: '/bin/ffmpeg',
+      sampleRate: 44100,
+      timeoutMs: 120000,
+    })
+    expect(runCueWaveWords).toHaveBeenCalledWith('/in.aiff', '/bin/ffmpeg', 44100, 120000)
+    expect(out).toEqual(new Uint16Array([1, 2, 3]))
   })
 
   it('routes cue copies with source, destination and shift in order', () => {
