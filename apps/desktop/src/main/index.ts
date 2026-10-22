@@ -100,6 +100,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
+import { routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
@@ -286,8 +287,13 @@ app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
   const win = BrowserWindow.getAllWindows()[0]
-  if (win) win.webContents.send('open-files', [path])
-  else pendingFiles.push(path)
+  routeOpenedFile(path, {
+    window: () => (win ? { loading: win.webContents.isLoading() } : null),
+    ready: () => app.isReady(),
+    createWindow,
+    send: (paths) => win?.webContents.send('open-files', paths),
+    pending: pendingFiles,
+  })
 })
 
 // A single flat file name (the cover-export .jpg): slashes are illegal characters here
