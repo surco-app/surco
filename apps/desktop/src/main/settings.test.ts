@@ -433,6 +433,41 @@ describe('saveSettings atomicity', () => {
   })
 })
 
+describe('a settings file that exists but cannot be read', () => {
+  const localFile = (): string => join(app.getPath('userData'), 'settings.json')
+  const runStartupMigrations = (): void => {
+    migrateProviderDefaults()
+    migrateBackupPolicy()
+    migrateBackupLimits()
+    migrateMixInBars()
+    migrateImportFields()
+  }
+  const wipe = (): void => {
+    setConfigDir(null)
+    for (const name of ['settings.json', 'settings.json.unreadable', 'config-dir.json'])
+      rmSync(join(app.getPath('userData'), name), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  it('keeps the unreadable bytes aside instead of overwriting them with defaults', () => {
+    const truncated = '{"theme":"dark","discogsToken":"tok","filenameFormat":"{title}"'
+    writeFileSync(localFile(), truncated)
+    runStartupMigrations()
+    expect(readFileSync(`${localFile()}.unreadable`, 'utf-8')).toBe(truncated)
+  })
+
+  it('never writes defaults into a synced folder whose file iCloud has evicted', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    rmSync(join(dir, 'settings.json'))
+    writeFileSync(join(dir, '.settings.json.icloud'), 'placeholder')
+    runStartupMigrations()
+    saveSettings({ theme: 'dark' })
+    expect(() => statSync(join(dir, 'settings.json'))).toThrow()
+  })
+})
+
 describe('configurable settings folder', () => {
   // Users point the settings folder at iCloud Drive/Dropbox to share preferences
   // across Macs; these tests pin down the contract that makes that safe.

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { app } from 'electron'
 import { autoMatchAvailable } from '../shared/autoMatch'
 import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
@@ -245,13 +245,30 @@ function syncedFile(): string | null {
   return dir ? join(dir, 'settings.json') : null
 }
 
+const unreadable = new Set<string>()
+
 function readJson(path: string): Record<string, unknown> {
   try {
-    if (existsSync(path)) return JSON.parse(readFileSync(path, 'utf-8'))
+    if (existsSync(path)) {
+      const parsed = JSON.parse(readFileSync(path, 'utf-8'))
+      unreadable.delete(path)
+      return parsed
+    }
   } catch {
     // corrupt or unreadable (e.g. an iCloud file not yet downloaded) → treat as empty
+    unreadable.add(path)
   }
   return {}
+}
+
+function evictedByICloud(path: string): boolean {
+  return !existsSync(path) && existsSync(join(dirname(path), `.${basename(path)}.icloud`))
+}
+
+function writeOver(path: string, value: unknown): void {
+  if (evictedByICloud(path)) return
+  if (unreadable.delete(path) && existsSync(path)) renameSync(path, `${path}.unreadable`)
+  writeAtomic(path, value)
 }
 
 function split(settings: Settings): { synced: Partial<Settings>; local: Partial<Settings> } {
@@ -462,12 +479,12 @@ export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Setting
 function persist(next: Settings): Settings {
   const sf = syncedFile()
   if (!sf) {
-    writeAtomic(localFile(), next)
+    writeOver(localFile(), next)
     return next
   }
   const { synced, local } = split(next)
-  writeAtomic(sf, synced)
-  writeAtomic(localFile(), local)
+  writeOver(sf, synced)
+  writeOver(localFile(), local)
   return next
 }
 
