@@ -31,7 +31,7 @@ import { resetEditorSections } from './hooks/useEditorSections'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { startDraft } from './lib/cueDraft'
-import { forgetDraft, keepDraft, resetCueSession } from './lib/cueSession'
+import { autoMarkOf, forgetDraft, keepDraft, resetCueSession } from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
@@ -1894,6 +1894,18 @@ describe('App source playlists', () => {
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await screen.findByTestId('track-separator-s1')
   }
+
+  it('runs Auto marcar over the selected rows of the open playlist by their rekordbox entry', async () => {
+    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null)
+    await openFactory({ rekordboxTrackCues: read })
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('cues-auto-mark-all'))
+    await waitFor(() => expect(autoMarkOf('c-l2')).toEqual({ kind: 'unanalysed' }))
+    expect(autoMarkOf('c-l1')).toEqual({ kind: 'unanalysed' })
+    expect(autoMarkOf('c-l3')).toBeUndefined()
+  })
 
   // The DJ's own request: put the set in order by dragging. The list must show the new
   // order at once and keep it after rekordbox answers, even with the dragged row selected

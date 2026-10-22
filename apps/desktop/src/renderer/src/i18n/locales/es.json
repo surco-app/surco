@@ -843,7 +843,8 @@
         "drop": "Quitar",
         "unanalysed": "Sin análisis de rekordbox",
         "none": "Surco no encuentra dónde rompe en esta pista",
-        "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe"
+        "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe",
+        "selected": "Auto marcar las seleccionadas"
       }
     }
   },

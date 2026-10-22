@@ -843,7 +843,8 @@
         "drop": "Remover",
         "unanalysed": "Sem análise do rekordbox",
         "none": "O Surco não encontra onde esta faixa explode",
-        "marked": "Você já tem um CALL em cada lugar onde o Surco acha que a faixa explode"
+        "marked": "Você já tem um CALL em cada lugar onde o Surco acha que a faixa explode",
+        "selected": "Marcar automático nas selecionadas"
       }
     }
   },

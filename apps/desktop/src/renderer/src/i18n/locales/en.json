@@ -843,7 +843,8 @@
         "drop": "Remove",
         "unanalysed": "No rekordbox analysis",
         "none": "Surco can’t find where this track breaks",
-        "marked": "You already have a CALL everywhere Surco thinks the track breaks"
+        "marked": "You already have a CALL everywhere Surco thinks the track breaks",
+        "selected": "Auto mark the selected"
       }
     }
   },

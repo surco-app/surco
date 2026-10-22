@@ -843,7 +843,8 @@
         "drop": "Retirer",
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
-        "marked": "Vous avez déjà un CALL partout où Surco pense que le morceau décolle"
+        "marked": "Vous avez déjà un CALL partout où Surco pense que le morceau décolle",
+        "selected": "Marquage auto de la sélection"
       }
     }
   },

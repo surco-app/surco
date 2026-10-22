@@ -843,7 +843,8 @@
         "drop": "Entfernen",
         "unanalysed": "Keine rekordbox-Analyse",
         "none": "Surco findet nicht, wo dieser Titel losbricht",
-        "marked": "Du hast schon überall ein CALL, wo Surco meint, dass der Titel losbricht"
+        "marked": "Du hast schon überall ein CALL, wo Surco meint, dass der Titel losbricht",
+        "selected": "Auswahl auto-markieren"
       }
     }
   },

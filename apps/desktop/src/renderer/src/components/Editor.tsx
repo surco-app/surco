@@ -6,6 +6,7 @@ import {
   Music,
   RefreshCw,
   Scissors,
+  Sparkle,
   Tag,
   TriangleAlert,
   Type,
@@ -211,6 +212,7 @@ interface Props {
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
+  onCueAutoMarkAll?: () => void
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
@@ -283,6 +285,7 @@ export const Editor = memo(function Editor({
   onCueJumpBars,
   onCueQuantize,
   onCueFlow,
+  onCueAutoMarkAll,
   onHideEditorHints,
   onOpenRename,
   onRegenerateName,
@@ -1520,6 +1523,18 @@ export const Editor = memo(function Editor({
                       )
                     case 'cues':
                       if (!rekordboxCue) return false
+                      if (isMulti && onCueAutoMarkAll)
+                        return (
+                          <BulkActionSection
+                            key={id}
+                            testid="cues-multi"
+                            buttonTestid="cues-auto-mark-all"
+                            title={tr('editor.cues.title')}
+                            label={tr('editor.cues.auto.selected')}
+                            icon={Sparkle}
+                            onClick={onCueAutoMarkAll}
+                          />
+                        )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
                       return (
                         <CuesSection

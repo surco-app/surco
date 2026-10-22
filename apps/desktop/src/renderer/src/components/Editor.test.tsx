@@ -1414,6 +1414,7 @@ describe('Editor multi-select', () => {
       groupingSeparator?: string
       customFields?: Settings['customFields']
       rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
+      onCueAutoMarkAll?: () => void
     } = {},
   ) {
     if (opts.platform)
@@ -1445,6 +1446,7 @@ describe('Editor multi-select', () => {
         item={a}
         libraryIndex={null}
         rekordboxCue={opts.rekordboxCue}
+        onCueAutoMarkAll={opts.onCueAutoMarkAll}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
@@ -1586,6 +1588,19 @@ describe('Editor multi-select', () => {
     const header = within(section).getByRole('button', { name: i18n.t('editor.cues.title') })
     expect(header).toBeDisabled()
     expect(section).toHaveTextContent(i18n.t('editor.singleTrackOnly'))
+  })
+
+  it('offers Auto marcar for the whole selection in the cues slot, so a playlist is prepared at once', () => {
+    const onCueAutoMarkAll = vi.fn()
+    renderMulti({
+      rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+      onCueAutoMarkAll,
+    })
+    expect(screen.queryByTestId('cues-single-only')).toBeNull()
+    const button = within(screen.getByTestId('cues-multi')).getByTestId('cues-auto-mark-all')
+    expect(button).toHaveTextContent(i18n.t('editor.cues.auto.selected'))
+    fireEvent.click(button)
+    expect(onCueAutoMarkAll).toHaveBeenCalledTimes(1)
   })
 
   it('shows no cues section over several tracks outside a rekordbox playlist', () => {

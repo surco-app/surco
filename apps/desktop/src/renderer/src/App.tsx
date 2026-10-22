@@ -114,6 +114,7 @@ import { baseName } from './lib/baseName'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
+import { autoMarkTracks } from './lib/cueAutoMark'
 import { useUnsavedCueTracks } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
@@ -2058,6 +2059,13 @@ export default function App(): React.JSX.Element {
       if (unsavedCues.has(contentId)) ids.add(id)
     return ids
   }, [rekordboxOpen, playlistScope, unsavedCues])
+  const autoMarkSelected = useStableCallback(() => {
+    const ids = selectedTracks.flatMap((t) => {
+      const contentId = playlistScope?.contentOf.get(t.id)
+      return contentId ? [contentId] : []
+    })
+    void autoMarkTracks(queryClient, ids)
+  })
   const selectedContentId =
     rekordboxOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
@@ -2948,6 +2956,7 @@ export default function App(): React.JSX.Element {
                           onCueJumpBars={onCueJumpBars}
                           onCueQuantize={onCueQuantize}
                           onCueFlow={onCueFlow}
+                          onCueAutoMarkAll={rekordboxOpen ? autoMarkSelected : undefined}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}
