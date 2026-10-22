@@ -72,6 +72,7 @@ import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
@@ -967,6 +968,10 @@ function registerIpc(): void {
       allowMedia: (paths) => mediaAccess.allowAll(paths),
     },
   )
+  registerEnginePlaylistsIpc(() => getSettings().engineLibraryDir, {
+    artDir: () => join(app.getPath('userData'), 'engine-artwork'),
+    allowMedia: (paths) => mediaAccess.allowAll(paths),
+  })
   registerRekordboxQueueIpc(rekordboxQueue, {
     collection: rekordboxCollectionPath,
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),

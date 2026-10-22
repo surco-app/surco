@@ -203,6 +203,9 @@ export interface Api {
   rekordboxRecentCount: () => Promise<number>
   // One playlist's rows in order, separators and file-less rows included.
   loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  engineAvailable: () => Promise<boolean>
+  loadEngineTree: () => Promise<SourceNode[]>
+  loadEnginePlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
   // open; the result says whether the edit was written, and why not.
   editRekordboxPlaylist: (
