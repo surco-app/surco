@@ -162,6 +162,14 @@ import { dirRoots, FolderWatcher } from './watcher'
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
 
+if (!app.requestSingleInstanceLock()) app.exit(0)
+app.on('second-instance', () => {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (!win) return
+  if (win.isMinimized()) win.restore()
+  win.focus()
+})
+
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
 // served by surco:// instead of buffering the whole thing across IPC.
