@@ -433,6 +433,40 @@ describe('App unsaved cues', () => {
     act(() => forgetDraft('103'))
     await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))
   })
+
+  it('forgets a draft built on a queued save once the queue changes under it, so quitting no longer asks for it', async () => {
+    let pushQueue: Parameters<Api['onRekordboxQueueChanged']>[0] = () => {}
+    setApi({
+      onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>((cb) => {
+        pushQueue = cb
+        return () => {}
+      }),
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => ({
+        contentId: '103',
+        analysed: true,
+        grid: [],
+        strong: [],
+        phrases: [],
+        cues: [],
+        wave: null,
+        durationMs: 1000,
+        fingerprint: 'f0',
+      })),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+    })
+    await renderApp()
+    const queued = { wanted: [], fingerprint: 'f0' }
+    act(() =>
+      keepDraft('103', `103|f0|${JSON.stringify(queued)}`, startDraft([], 'mine'), {
+        path: '/m/a.wav',
+        label: 'a',
+        fingerprint: 'f0',
+      }),
+    )
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(1))
+    act(() => pushQueue({ tracks: 0, changes: 0, items: [] }))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))
+  })
 })
 
 describe('App sidebar clipping', () => {

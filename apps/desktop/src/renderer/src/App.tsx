@@ -115,6 +115,7 @@ import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
+import { forgetStaleDrafts } from './lib/cueDrafts'
 import { type AutoMark, useAutoMarks, useUnsavedCueTracks } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
@@ -2050,6 +2051,9 @@ export default function App(): React.JSX.Element {
       ),
     [rekordboxQueue.state],
   )
+  useEffect(() => {
+    void forgetStaleDrafts(queryClient)
+  }, [rekordboxQueue.state, queryClient])
   const unsavedCues = useUnsavedCueTracks()
   useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])
   const unsavedCueIds = useMemo(() => {

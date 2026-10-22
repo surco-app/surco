@@ -32,6 +32,7 @@ import {
   startDraft,
   wantedOfDraft,
 } from '../lib/cueDraft'
+import { forgetStaleDrafts } from '../lib/cueDrafts'
 import { flowName } from '../lib/cueFlowName'
 import { type CueKey, cueKeyAction } from '../lib/cueKeys'
 import {
@@ -588,6 +589,7 @@ function Editing({
   }
   const unsavedTracks = useUnsavedCueTracks().size
   const saveAll = async () => {
+    await forgetStaleDrafts(queryClient)
     for (const req of draftsToSave()) {
       await window.api.saveRekordboxCues(req)
       forgetDraft(req.contentId)

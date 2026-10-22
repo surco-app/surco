@@ -496,10 +496,10 @@ describe('pending proposals', () => {
 
 describe('saving several tracks', () => {
   const other = () =>
-    keepDraft('104', '104|f1|null', startDraft([{ ms: bar(32), kind: 0, color: null }], 'mine'), {
+    keepDraft('104', '104|f0|null', startDraft([{ ms: bar(32), kind: 0, color: null }], 'mine'), {
       path: '/m/h.wav',
       label: 'Other',
-      fingerprint: 'f1',
+      fingerprint: 'f0',
     })
 
   it('saves every reviewed track to rekordbox at once, each through the same save as its own Guardar', async () => {
@@ -516,13 +516,33 @@ describe('saving several tracks', () => {
       contentId: '104',
       path: '/m/h.wav',
       label: 'Other',
-      fingerprint: 'f1',
+      fingerprint: 'f0',
       wanted: [{ ms: bar(32), kind: 0, color: null }],
     })
     expect(saveRekordboxCues).toHaveBeenCalledWith(
       expect.objectContaining({ contentId: '103', path: '/m/g.wav', label: 'Gowan' }),
     )
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
+  })
+
+  it('leaves out and forgets a draft built on a queued save that was discarded since, so its cues never come back', async () => {
+    other()
+    const queued = { wanted: [{ ms: bar(16), kind: 0, color: null }], fingerprint: 'f0' }
+    keepDraft('105', `105|f0|${JSON.stringify(queued)}`, startDraft([], 'mine'), {
+      path: '/m/s.wav',
+      label: 'Stale',
+      fingerprint: 'f0',
+    })
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    fireEvent.click(await screen.findByTestId('cues-save-all'))
+    await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
+    const saved = saveRekordboxCues.mock.calls.flatMap(([req]) =>
+      [req].flat().map((r) => r.contentId),
+    )
+    expect(saved.sort()).toEqual(['103', '104'])
   })
 
   it('is not offered while only this track is unsaved, where its own Guardar does it', async () => {
