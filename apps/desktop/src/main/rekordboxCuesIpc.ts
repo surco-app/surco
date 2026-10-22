@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
+import { isEngineContent } from '../shared/engineContent'
 import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest } from '../shared/types'
+import { readEngineTrackCues } from './engineCues'
+import { withEngineLibrary } from './enginePlaylistsIpc'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
@@ -10,13 +13,25 @@ import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import type { RekordboxQueue } from './rekordboxQueue'
 
+type CueQueue = Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
+
 export function registerRekordboxCuesIpc(host: {
   collection: () => string
-  queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
+  queue: CueQueue
   applyQuietly: () => void
   flow: () => CueFlow
+  engine?: { libraryDir: () => string; queue: CueQueue; applyQuietly: () => void }
 }): void {
+  const engineOf = (contentId: string) => (isEngineContent(contentId) ? host.engine : undefined)
+  const queueOf = (contentId: string) => engineOf(contentId)?.queue ?? host.queue
   ipcMain.handle('rekordbox:trackCues', async (_e, contentId: string) => {
+    const engine = engineOf(contentId)
+    if (engine)
+      return withEngineLibrary(
+        engine.libraryDir(),
+        (db) => readEngineTrackCues(db, contentId),
+        null,
+      )
     const path = host.collection()
     return withCollection(
       path,
@@ -26,6 +41,7 @@ export function registerRekordboxCuesIpc(host: {
     )
   })
   ipcMain.handle('rekordbox:cueWaveDetail', async (_e, contentId: string) => {
+    if (engineOf(contentId)) return null
     const path = host.collection()
     return withCollection(
       path,
@@ -54,7 +70,7 @@ export function registerRekordboxCuesIpc(host: {
   ipcMain.handle(
     'rekordbox:queuedCues',
     async (_e, contentId: string): Promise<QueuedCues | null> => {
-      const op = host.queue.cuesOp(contentId)
+      const op = queueOf(contentId).cuesOp(contentId)
       if (!op || (op.wanted === undefined && op.drops === undefined)) return null
       if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint }
       const path = host.collection()
@@ -69,13 +85,21 @@ export function registerRekordboxCuesIpc(host: {
     },
   )
   ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {
-    const op = host.queue.cuesOp(contentId)
-    if (op) host.queue.drop(op.id)
+    const queue = queueOf(contentId)
+    const op = queue.cuesOp(contentId)
+    if (op) queue.drop(op.id)
   })
   ipcMain.handle('rekordbox:saveCues', (_e, reqs: SaveCuesRequest[]): SaveCuesOutcome => {
-    if (!host.queue.enqueue(reqs.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' }))))
-      return 'other-collection'
-    host.applyQuietly()
-    return 'queued'
+    const targets = [
+      { ...host, mine: reqs.filter((r) => !engineOf(r.contentId)) },
+      ...(host.engine ? [{ ...host.engine, mine: reqs.filter((r) => engineOf(r.contentId)) }] : []),
+    ].filter((t) => t.mine.length > 0)
+    let outcome: SaveCuesOutcome = 'queued'
+    for (const t of targets) {
+      if (t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' }))))
+        t.applyQuietly()
+      else outcome = 'other-collection'
+    }
+    return outcome
   })
 }

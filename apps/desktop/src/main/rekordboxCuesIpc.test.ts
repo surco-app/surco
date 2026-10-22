@@ -15,6 +15,8 @@ import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
 import { flowOutcome } from '../shared/cueRules'
 import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
+import { analysedTrack } from './enginePerformanceFixture'
+import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
@@ -393,5 +395,97 @@ describe('registerRekordboxCuesIpc', () => {
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).not.toHaveBeenCalled()
+  })
+})
+
+describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
+  async function engineLibrary(): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-enginecuesipc-'))
+    writeEngineLibraryFixture(dir, {
+      tracks: [{ id: 4, path: '../Music/e.mp3', title: 'e', length: 60 }],
+      playlists: [],
+      entities: [],
+      performance: [analysedTrack(4, [{ label: 'Cue 1', sample: 44100 * 8, argb: 0xff28e214 }])],
+    }).close()
+    return dir
+  }
+
+  function register(dir: string, rekordbox = queue(), engine = queue()) {
+    const applyRekordbox = quietly()
+    const applyEngine = quietly()
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: rekordbox,
+      applyQuietly: applyRekordbox,
+      flow: () => MY_FLOW,
+      engine: { libraryDir: () => dir, queue: engine, applyQuietly: applyEngine },
+    })
+    return { applyRekordbox, applyEngine }
+  }
+
+  it('reads an Engine row’s cues from the Engine DJ library, so the editor opens on Engine tracks too', async () => {
+    register(await engineLibrary())
+    const read = (await handler('rekordbox:trackCues')({}, 'engine:4')) as TrackCues
+    expect(read.cues).toEqual([{ id: '0', ms: 8000, kind: 1, color: 22 }])
+    expect(read.analysed).toBe(true)
+  })
+
+  it('has no detailed wave for an Engine track, since Engine keeps only a coarse overview', async () => {
+    register(await engineLibrary())
+    expect(await handler('rekordbox:cueWaveDetail')({}, 'engine:4')).toBeNull()
+  })
+
+  it('queues each save on the library it belongs to and applies each queue, so one Save all reaches both apps', async () => {
+    const rekordbox = queue()
+    const engine = queue()
+    const { applyRekordbox, applyEngine } = register(await engineLibrary(), rekordbox, engine)
+    const req = (contentId: string) => ({
+      contentId,
+      path: `/m/${contentId}.wav`,
+      label: contentId,
+      wanted: [],
+      fingerprint: 'F',
+    })
+    expect(await handler('rekordbox:saveCues')({}, [req('103'), req('engine:4')])).toBe('queued')
+    expect(
+      vi.mocked(rekordbox.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId),
+    ).toEqual(['103'])
+    expect(vi.mocked(engine.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId)).toEqual([
+      'engine:4',
+    ])
+    expect(applyRekordbox).toHaveBeenCalled()
+    expect(applyEngine).toHaveBeenCalled()
+  })
+
+  it('says the save belongs elsewhere when the Engine queue holds another library', async () => {
+    const engine = queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) })
+    const rekordbox = queue()
+    const { applyEngine } = register(await engineLibrary(), rekordbox, engine)
+    const req = {
+      contentId: 'engine:4',
+      path: '/m/e.mp3',
+      label: 'e',
+      wanted: [],
+      fingerprint: 'F',
+    }
+    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('other-collection')
+    expect(rekordbox.enqueue).not.toHaveBeenCalled()
+    expect(applyEngine).not.toHaveBeenCalled()
+  })
+
+  it('shows and takes back an Engine save from the Engine queue', async () => {
+    const drop = vi.fn<RekordboxQueue['drop']>()
+    const wanted = [{ id: '0', ms: 8000, kind: 1, color: 22 }]
+    const engine = queue({
+      cuesOp: (id) => (id === 'engine:4' ? savedOp({ contentId: 'engine:4', wanted }) : undefined),
+      drop,
+    })
+    register(await engineLibrary(), queue(), engine)
+    expect(await handler('rekordbox:queuedCues')({}, 'engine:4')).toEqual({
+      wanted,
+      fingerprint: 'F1',
+    })
+    handler('rekordbox:undoCues')({}, 'engine:4')
+    expect(drop).toHaveBeenCalledWith('c1')
   })
 })
