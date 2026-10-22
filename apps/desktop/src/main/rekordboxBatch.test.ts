@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import {
@@ -184,5 +186,14 @@ describe('playlists on a repoint', () => {
     expect(endRekordboxBatch()).toEqual([
       { ...a, to: '/Media/one.wav', playlists: [{ name: 'Bolos' }] },
     ])
+  })
+})
+
+describe('a renderer reload', () => {
+  it('abandons the rekordbox batch along with the NML one, so later batches still flush', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler = source.match(/on\('did-start-loading', \(\) => \{([^}]*)\}\)/)?.[1] ?? ''
+    expect(handler).toContain('abandonNmlBatch()')
+    expect(handler).toContain('abandonRekordboxBatch()')
   })
 })

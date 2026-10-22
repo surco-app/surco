@@ -108,6 +108,7 @@ import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
+  abandonRekordboxBatch,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   redirectRekordboxRepoint,
@@ -592,7 +593,10 @@ function createWindow(): BrowserWindow {
   // open batch never arrives. Left alone the accumulator's depth stays above zero and
   // no later batch ever flushes again — the collection would quietly stop updating
   // until the app restarted. Abandon whatever was in flight instead.
-  win.webContents.on('did-start-loading', abandonNmlBatch)
+  win.webContents.on('did-start-loading', () => {
+    abandonNmlBatch()
+    abandonRekordboxBatch()
+  })
 
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
