@@ -95,6 +95,24 @@ describe('expandPaths', () => {
     expect(await expandPaths([file])).toEqual([file])
   })
 
+  it('drops a dropped file that is not audio, so the walk never vouches for it', async () => {
+    const key = join(dir, 'id_rsa')
+    const script = join(dir, 'run.command')
+    await writeFile(key, 'x')
+    await writeFile(script, 'x')
+    const announced: string[] = []
+
+    expect(await expandPaths([key, script], (batch) => announced.push(...batch))).toEqual([])
+    expect(announced).toEqual([])
+  })
+
+  it('keeps an audio file whose extension is in capitals', async () => {
+    const file = join(dir, 'TRACK.WAV')
+    await writeFile(file, 'x')
+
+    expect(await expandPaths([file])).toEqual([file])
+  })
+
   // A user sent two MP3s that "keep failing" (21/09/2026); one of them was 0 bytes. An
   // empty file has no header, no frames and no tags, so every probe fails and the row
   // sits in the list with no title, no duration and nothing saying why. Dropping it here
