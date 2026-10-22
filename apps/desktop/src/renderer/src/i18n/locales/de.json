@@ -872,6 +872,12 @@
         "calls": "Engine DJ speichert nur Hot Cues. Die CALLs werden nicht gespeichert",
         "saveAll_one": "{{count}} Titel in Engine DJ speichern",
         "saveAll_other": "{{count}} Titel in Engine DJ speichern"
+      },
+      "provisional": {
+        "chip": "Surco-Raster · {{bpm}} BPM",
+        "help": "rekordbox hat diesen Titel noch nicht analysiert. Surco hat Tempo und Raster selbst gemessen, du kannst die Cues also schon setzen. Sobald rekordbox ihn analysiert, rückt Surco sie auf dessen Raster.",
+        "measuring": "Raster wird gemessen…",
+        "auto": "Auto-Markieren braucht die Analyse von rekordbox"
       }
     }
   },

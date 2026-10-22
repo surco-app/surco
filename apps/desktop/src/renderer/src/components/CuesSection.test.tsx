@@ -9,7 +9,7 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
-import type { QueuedCues, Settings, TrackCues } from '../../../shared/types'
+import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { resetCueSession } from '../lib/cueSession'
@@ -53,6 +53,7 @@ function setup(
   read: TrackCues | null | Error = READ,
   queued: QueuedCues | null | Error = null,
   settings?: Partial<Settings>,
+  api: Partial<Api> = {},
 ) {
   const logError = vi.fn<Api['logError']>()
   const onFlow = vi.fn<(id: string) => void>()
@@ -67,6 +68,7 @@ function setup(
     return queued
   })
   installApi({
+    ...api,
     rekordboxTrackCues,
     rekordboxQueuedCues,
     saveRekordboxCues,
@@ -1096,5 +1098,62 @@ describe('CuesSection', () => {
     const { logError } = setup(READ, new Error('ipc down'))
     await ready()
     expect(logError).toHaveBeenCalledWith(expect.stringContaining('ipc down'))
+  })
+})
+
+describe('CuesSection on a track rekordbox has not analysed', () => {
+  const UNANALYSED: TrackCues = { ...READ, analysed: false, grid: [] }
+  const SURCO: SurcoGrid = {
+    bpm: 140,
+    grid: Array.from({ length: 800 }, (_, i) => ({ ms: 37 + i * 500, beat: 0 })),
+    words: null,
+  }
+  const surcoGrid = (grid: SurcoGrid | null = SURCO) =>
+    vi.fn<Api['rekordboxSurcoGrid']>(async () => grid)
+
+  it("lets the cues go on Surco's own grid, so they can be set without opening rekordbox", async () => {
+    const { saveRekordboxCues } = setup(UNANALYSED, null, undefined, {
+      rekordboxSurcoGrid: surcoGrid(),
+    })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const [[reqs]] = saveRekordboxCues.mock.calls
+    expect(reqs[0].wanted?.some((c) => c.kind === 0 && c.ms === 128037)).toBe(true)
+  })
+
+  it("says the grid is Surco's and shows the tempo it measured", async () => {
+    setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid() })
+    await ready()
+    expect(screen.getByTestId('cues-provisional')).toHaveTextContent('Surco grid · 140.00 BPM')
+  })
+
+  it("explains once, in the section help, that the cues will move onto rekordbox's grid when it analyses the track", async () => {
+    setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid() })
+    await ready()
+    expect(screen.getByTestId('section-help')).toHaveTextContent(/rekordbox has not analysed/)
+  })
+
+  it('says Surco is measuring while it decodes, instead of claiming nothing can be done', async () => {
+    setup(UNANALYSED, null, undefined, {
+      rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(() => new Promise(() => {})),
+    })
+    await waitFor(() => expect(screen.getByTestId('cues-measuring')).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-unanalysed')).toBeNull()
+  })
+
+  it('falls back to saying rekordbox has not analysed it when Surco hears no beat either', async () => {
+    setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid(null) })
+    await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
+    expect(screen.queryByTestId('cue-wave')).toBeNull()
+  })
+
+  it('never decodes a track rekordbox already analysed', async () => {
+    const rekordboxSurcoGrid = surcoGrid()
+    setup(READ, null, undefined, { rekordboxSurcoGrid })
+    await ready()
+    expect(rekordboxSurcoGrid).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cues-provisional')).toBeNull()
   })
 })

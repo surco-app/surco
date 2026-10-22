@@ -26,6 +26,7 @@ export function CueDeck({
   locked,
   jumpBars,
   quantize,
+  barQuantize = true,
   playing,
   onPlay,
   onPad,
@@ -44,6 +45,7 @@ export function CueDeck({
   locked: string[]
   jumpBars: CueJumpBars
   quantize: CueQuantize
+  barQuantize?: boolean
   playing: boolean
   onPlay: () => void
   onPad: (kind: number) => void
@@ -250,6 +252,7 @@ export function CueDeck({
           options={CUE_QUANTIZE.map((u) => ({
             value: u,
             label: u === 'bar' ? tr('editor.cues.quantizeBar') : tr('editor.cues.quantizeBeat'),
+            disabled: u === 'bar' && !barQuantize,
           }))}
         />
       </div>

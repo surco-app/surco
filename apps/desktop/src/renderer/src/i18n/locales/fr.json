@@ -872,6 +872,12 @@
         "calls": "Engine DJ ne garde que les hot cues. Les CALL ne seront pas enregistrés",
         "saveAll_one": "Enregistrer {{count}} morceau dans Engine DJ",
         "saveAll_other": "Enregistrer {{count}} morceaux dans Engine DJ"
+      },
+      "provisional": {
+        "chip": "Grille de Surco · {{bpm}} BPM",
+        "help": "rekordbox n’a pas encore analysé ce morceau. Surco a mesuré le tempo et la grille, vous pouvez donc placer les cues dès maintenant. Quand rekordbox l’analysera, Surco les calera sur sa grille.",
+        "measuring": "Mesure de la grille…",
+        "auto": "Le marquage auto a besoin de l’analyse de rekordbox"
       }
     }
   },

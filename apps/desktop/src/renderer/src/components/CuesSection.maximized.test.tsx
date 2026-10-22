@@ -18,7 +18,7 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
-import type { Settings, TrackCues } from '../../../shared/types'
+import type { Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
@@ -1448,5 +1448,47 @@ describe('CuesSection maximized point corrections', () => {
       run()
       expect(marks()).toEqual([])
     }
+  })
+})
+
+describe("CuesSection maximized on Surco's grid", () => {
+  const SURCO: SurcoGrid = {
+    bpm: 140,
+    grid: Array.from({ length: 800 }, (_, i) => ({ ms: 37 + i * 500, beat: 0 })),
+    words: Uint16Array.from({ length: 60000 }, () => 31 << 2),
+  }
+  const onSurcoGrid = (settings: Partial<Settings> | null = null) =>
+    setup(
+      settings,
+      { ...READ, analysed: false, grid: [] },
+      {
+        rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(async () => SURCO),
+      },
+    )
+
+  it('keeps Bar in the quantize menu but off, since only rekordbox can tell where a bar starts', async () => {
+    onSurcoGrid({ cueQuantize: 'bar' })
+    await maximize()
+    expect(screen.getByTestId('cues-quantize')).toHaveTextContent('Beat')
+    fireEvent.click(screen.getByTestId('cues-quantize'))
+    expect(screen.getByTestId('cues-quantize-option-bar')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it("turns Auto mark off and says it needs rekordbox's analysis", async () => {
+    onSurcoGrid()
+    await maximize()
+    expect(screen.getByTestId('cues-auto-mark')).toBeDisabled()
+    expect(screen.getByTestId('cues-auto-mark')).toHaveAttribute(
+      'title',
+      'Auto mark needs rekordbox’s analysis',
+    )
+  })
+
+  it("names Surco's grid in the editor header too", async () => {
+    onSurcoGrid()
+    await maximize()
+    expect(
+      within(screen.getByTestId('cues-header')).getByTestId('cues-provisional'),
+    ).toHaveTextContent('Surco grid · 140.00 BPM')
   })
 })

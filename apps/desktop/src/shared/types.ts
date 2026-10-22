@@ -1710,6 +1710,7 @@ export interface TrackCues {
 export interface SurcoGrid {
   bpm: number
   grid: { ms: number; beat: number }[]
+  words: Uint16Array | null
 }
 
 export interface QueuedCues {

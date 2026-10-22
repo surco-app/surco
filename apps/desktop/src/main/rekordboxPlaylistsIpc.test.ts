@@ -169,6 +169,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
       applyQuietly: vi.fn(),
       flow: () => MY_FLOW,
       beatGrid: async () => null,
+      words: async () => null,
     })
     registerRekordboxQueueIpc(queue, {
       collection: () => path,

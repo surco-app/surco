@@ -16,7 +16,13 @@ import {
 import type { DropInput } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
-import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest, TrackCues } from '../../../shared/types'
+import type {
+  QueuedCues,
+  SaveCuesOutcome,
+  SaveCuesRequest,
+  SurcoGrid,
+  TrackCues,
+} from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
@@ -24,6 +30,7 @@ import {
   useAuditionLead,
   useCueWaveDetail,
   useQueuedCues,
+  useSurcoGrid,
   useTrackCues,
 } from '../hooks/useTrackCues'
 import { dropsOnGrid, withoutCallInBar } from '../lib/cueAutoMark'
@@ -69,6 +76,7 @@ import {
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { isTypingTarget } from '../lib/keymap'
+import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
@@ -116,6 +124,18 @@ const ENGINE_COPY: typeof REKORDBOX_COPY = {
   saveFailed: 'editor.cues.engine.saveFailed',
   otherLibrary: 'engineQueue.otherLibrary',
   autoUnanalysed: 'editor.cues.engine.autoUnreadable',
+}
+
+function ProvisionalMark({ bpm }: { bpm: number }): React.JSX.Element {
+  const { t: tr, i18n } = useTranslation()
+  return (
+    <span
+      data-testid="cues-provisional"
+      className="shrink-0 whitespace-nowrap rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-fg"
+    >
+      {tr('editor.cues.provisional.chip', { bpm: formatFixed(bpm, 2, i18n.language) })}
+    </span>
+  )
 }
 
 const copyOf = (contentId: string) => (isEngineContent(contentId) ? ENGINE_COPY : REKORDBOX_COPY)
@@ -256,6 +276,7 @@ function Editing({
   onDiscard,
   onRestore,
   headerSlot,
+  provisional,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -272,22 +293,24 @@ function Editing({
   onDiscard: () => void
   onRestore: () => void
   headerSlot: HTMLElement | null
+  provisional?: SurcoGrid
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
   const settings = useAppSettings()
   const flows = settings.cueFlows
   const active = activeCueFlow(settings)
+  const quantize: CueQuantize = provisional ? 'beat' : settings.cueQuantize
   const ctx = useMemo(
     () => ({
       beats: read.grid.map((b) => b.ms),
-      snapTo: quantizePoints(read.grid, settings.cueQuantize),
+      snapTo: quantizePoints(read.grid, quantize),
       strong: read.strong,
       phrases: read.phrases,
       flows,
       lettersByTime: settings.cueLettersByTime,
     }),
-    [read, flows, settings.cueQuantize, settings.cueLettersByTime],
+    [read, flows, quantize, settings.cueLettersByTime],
   )
   const inRekordbox = useMemo(
     () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
@@ -345,7 +368,8 @@ function Editing({
       placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
     [placing, hoverMs, state, ctx],
   )
-  const { data: words } = useCueWaveDetail(cue.contentId, true)
+  const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
+  const words = provisional ? provisional.words : rekordboxWords
   const engine = isEngineContent(cue.contentId)
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<number[] | null>(() => {
@@ -773,8 +797,14 @@ function Editing({
       <button
         type="button"
         data-testid="cues-auto-mark"
-        disabled={engine ? readingAudio : !words}
-        title={engine || words ? undefined : tr(copy.autoUnanalysed)}
+        disabled={provisional ? true : engine ? readingAudio : !words}
+        title={
+          provisional
+            ? tr('editor.cues.provisional.auto')
+            : engine || words
+              ? undefined
+              : tr(copy.autoUnanalysed)
+        }
         onClick={autoMark}
         className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
       >
@@ -821,7 +851,7 @@ function Editing({
     <CueWave
       wave={read.wave}
       grid={read.grid}
-      quantize={settings.cueQuantize}
+      quantize={quantize}
       durationMs={read.durationMs}
       cues={waveCues}
       selected={state.selected}
@@ -846,7 +876,7 @@ function Editing({
       selected={state.selected}
       playheadMs={playheadMs}
       bars={zoom}
-      quantize={settings.cueQuantize}
+      quantize={quantize}
       onScrub={seekTo}
       onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
       onZoomReset={() => setZoom(DEFAULT_ZOOM_BARS)}
@@ -989,6 +1019,7 @@ function Editing({
           </>
         )}
       </div>
+      {provisional && <ProvisionalMark bpm={provisional.bpm} />}
       <span className="flex-1" />
       {actions}
       <CueKeys jumpBars={settings.cueJumpBars} onClose={focusEditor} />
@@ -1230,7 +1261,8 @@ function Editing({
           selected={state.selected}
           locked={state.locked}
           jumpBars={settings.cueJumpBars}
-          quantize={settings.cueQuantize}
+          quantize={quantize}
+          barQuantize={!provisional}
           playing={audition.playing}
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
@@ -1270,6 +1302,10 @@ export function CuesSection({
   const queryClient = useQueryClient()
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
+  const wantsSurcoGrid = !!read && !read.analysed && !isEngineContent(cue.contentId)
+  const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
+  const provisional = wantsSurcoGrid && surco ? surco : undefined
+  const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
   const unsaved = useUnsavedCueTracks().has(cue.contentId)
@@ -1326,26 +1362,31 @@ export function CuesSection({
   }, [maximized, audition.playing, open, working])
   const editable =
     !isError &&
-    read !== undefined &&
-    read !== null &&
+    shown !== undefined &&
+    shown !== null &&
     queued !== undefined &&
-    read.analysed &&
-    read.grid.length > 0
+    shown.analysed &&
+    shown.grid.length > 0
   const full = maximized && editable
   const body =
-    isError || read === null ? (
+    isError || shown === null ? (
       <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
         {tr(copyOf(cue.contentId).unreadable)}
       </p>
-    ) : read === undefined || queued === undefined ? null : !read.analysed ||
-      read.grid.length === 0 ? (
+    ) : shown === undefined || queued === undefined ? null : wantsSurcoGrid &&
+      surco === undefined ? (
+      <p data-testid="cues-measuring" className="text-xs text-fg-dim">
+        {tr('editor.cues.provisional.measuring')}
+      </p>
+    ) : !shown.analysed || shown.grid.length === 0 ? (
       <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
         {tr(copyOf(cue.contentId).unanalysed)}
       </p>
     ) : (
       <Editing
         key={`${draftKey}|${round}`}
-        read={read}
+        read={shown}
+        provisional={provisional}
         queued={queued}
         cue={cue}
         draftKey={draftKey}
@@ -1382,8 +1423,19 @@ export function CuesSection({
           title={tr('editor.cues.title')}
           open={open}
           onToggle={onToggle}
-          help={tr('editor.cues.help')}
-          status={unsaved ? <UnsavedMark /> : undefined}
+          help={
+            provisional
+              ? `${tr('editor.cues.help')} ${tr('editor.cues.provisional.help')}`
+              : tr('editor.cues.help')
+          }
+          status={
+            unsaved || provisional ? (
+              <>
+                {provisional && <ProvisionalMark bpm={provisional.bpm} />}
+                {unsaved && <UnsavedMark />}
+              </>
+            ) : undefined
+          }
           statusAction={<span ref={setHeaderSlot} className="flex min-w-0 items-center" />}
         />
       )}

@@ -872,6 +872,12 @@
         "calls": "Engine DJ solo guarda hot cues. Los CALL no se guardarán",
         "saveAll_one": "Guardar {{count}} pista en Engine DJ",
         "saveAll_other": "Guardar {{count}} pistas en Engine DJ"
+      },
+      "provisional": {
+        "chip": "Rejilla de Surco · {{bpm}} BPM",
+        "help": "rekordbox aún no ha analizado esta pista. Surco ha calculado el tempo y la rejilla, así que puedes poner los cues ya. Cuando rekordbox la analice, Surco los ajustará a su rejilla.",
+        "measuring": "Calculando la rejilla…",
+        "auto": "Auto marcar necesita el análisis de rekordbox"
       }
     }
   },

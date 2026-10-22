@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { QueuedCues, TrackCues } from '../../../shared/types'
+import type { QueuedCues, SurcoGrid, TrackCues } from '../../../shared/types'
 
 export const trackCuesQuery = (contentId: string) => ({
   queryKey: ['rekordbox-track-cues', contentId],
@@ -45,6 +45,19 @@ export function useTrackCues(contentId: string | undefined): {
 export function useQueuedCues(contentId: string): { data: QueuedCues | null | undefined } {
   const { data } = useQuery(queuedCuesQuery(contentId))
   return { data }
+}
+
+export function useSurcoGrid(
+  contentId: string,
+  enabled: boolean,
+): { data: SurcoGrid | null | undefined } {
+  const { data, isError } = useQuery({
+    queryKey: ['rekordbox-surco-grid', contentId],
+    queryFn: () => window.api.rekordboxSurcoGrid(contentId),
+    enabled,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return { data: isError ? null : data }
 }
 
 export function useAuditionLead(contentId: string): number {

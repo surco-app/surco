@@ -1056,6 +1056,7 @@ function registerIpc(): void {
     applyQuietly: applyRekordboxQueueQuietly,
     flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
+    words: cachedCueWaveWords,
     engine: {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,

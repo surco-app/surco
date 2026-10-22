@@ -19,12 +19,22 @@ import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
 
 type CueQueue = Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
 
+const WORDS_PER_SECOND = 150
+
+function shiftedWords(words: Uint16Array, shiftMs: number): Uint16Array {
+  const lead = Math.round((shiftMs * WORDS_PER_SECOND) / 1000)
+  const out = new Uint16Array(lead + words.length)
+  out.set(words, lead)
+  return out
+}
+
 export function registerRekordboxCuesIpc(host: {
   collection: () => string
   queue: CueQueue
   applyQuietly: () => void
   flow: () => CueFlow
   beatGrid: (file: string) => Promise<BeatGridFit | null>
+  words: (file: string) => Promise<Uint16Array | null>
   engine?: {
     libraryDir: () => string
     queue: CueQueue
@@ -112,7 +122,12 @@ export function registerRekordboxCuesIpc(host: {
       const fit = await host.beatGrid(row.FolderPath)
       if (!fit) return null
       const shiftMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
-      return { bpm: fit.bpm, grid: provisionalGrid(fit, shiftMs, row.Length * 1000) }
+      const words = await host.words(row.FolderPath)
+      return {
+        bpm: fit.bpm,
+        grid: provisionalGrid(fit, shiftMs, row.Length * 1000),
+        words: words && shiftedWords(words, shiftMs),
+      }
     },
   )
   ipcMain.handle('rekordbox:countCompletable', () => {
