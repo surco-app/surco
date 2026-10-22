@@ -359,3 +359,98 @@ describe('engine USB export', () => {
     expect(w.exporter.busy()).toBe(false)
   })
 })
+
+describe('engine USB export onto a drive Surco exported to before', () => {
+  async function exported(w: Awaited<ReturnType<typeof world>>, ids: string[]) {
+    w.events.length = 0
+    expect(await w.exporter.start(request(ids))).toEqual({ ok: true })
+    return finished(w.events)
+  }
+
+  it('copies nothing again and adds no track twice when the same playlist goes again', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    const before = await stat(join(engineDir(w.usb), 'Music', 'play.mp3'))
+    expect(await exported(w, ['1'])).toMatchObject({ outcome: 'done', tracks: 2 })
+    expect(
+      w.events.filter((e) => e.type === 'track').map((e) => e.type === 'track' && e.state),
+    ).toEqual(['kept', 'kept'])
+    expect((await stat(join(engineDir(w.usb), 'Music', 'play.mp3'))).mtimeMs).toBe(before.mtimeMs)
+    const db = usbDb(w.usb)
+    expect(db.prepare('SELECT count(*) FROM Track').pluck().get()).toBe(2)
+    expect(db.prepare('SELECT count(*) FROM Playlist').pluck().get()).toBe(1)
+    db.close()
+  })
+
+  it('keeps the playlists already on the drive and shares the tracks they have in common', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    await exported(w, ['4'])
+    const db = usbDb(w.usb)
+    expect(readEngineTree(db).map((n) => n.name)).toEqual(['Warm up', 'Dupes'])
+    expect(playlistTitles(db, listId(db, 'Warm up'))).toEqual(['Play', 'Night Train'])
+    expect(playlistTitles(db, listId(db, 'Dupes'))).toEqual(['Play', 'Play again', 'What'])
+    expect(db.prepare('SELECT path FROM Track ORDER BY id').pluck().all()).toEqual([
+      'Music/play.mp3',
+      'Music/night.aiff',
+      'Music/Play (2).MP3',
+      'Music/What_.aiff',
+    ])
+    db.close()
+    expect((await readdir(join(engineDir(w.usb), 'Music'))).sort()).toEqual([
+      'Play (2).MP3',
+      'What_.aiff',
+      'night.aiff',
+      'play.mp3',
+    ])
+  })
+
+  it('replaces the playlist with what it holds now on the desktop and counts what left it', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    const desktop = new Database(join(w.libraryDir, 'Database2', 'm.db'))
+    desktop.prepare('DELETE FROM PlaylistEntity WHERE listId = 1 AND trackId = 1').run()
+    desktop.close()
+    const plan = await w.exporter.plan(request(['1']))
+    expect(plan.ok && plan.plan.removedSinceLast).toBe(1)
+    await exported(w, ['1'])
+    const db = usbDb(w.usb)
+    expect(playlistTitles(db, listId(db, 'Warm up'))).toEqual(['Play'])
+    db.close()
+  })
+
+  it('copies a file again when the one on the drive is no longer the same size, as after a new conversion', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    await writeFile(join(w.libraryDir, '../Tracks/play.mp3'), Buffer.alloc(2500, 9))
+    await exported(w, ['1'])
+    expect(
+      (await readFile(join(engineDir(w.usb), 'Music', 'play.mp3'))).equals(Buffer.alloc(2500, 9)),
+    ).toBe(true)
+    const db = usbDb(w.usb)
+    expect(
+      db.prepare("SELECT fileBytes FROM Track WHERE path = 'Music/play.mp3'").pluck().get(),
+    ).toBe(2500)
+    expect(db.prepare('SELECT count(*) FROM Track').pluck().get()).toBe(2)
+    db.close()
+  })
+
+  it('treats a library whose database Surco did not write as someone else’s, even with Surco’s note beside it', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    const db = new Database(join(engineDir(w.usb), 'Database2', 'm.db'))
+    db.prepare("UPDATE Information SET uuid = 'made-by-engine'").run()
+    db.close()
+    expect(await w.exporter.plan(request(['1']))).toEqual({ ok: false, reason: 'engine-foreign' })
+  })
+
+  it('refuses a library on the drive from another Engine DJ version rather than mix two schemas', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    const db = new Database(join(engineDir(w.usb), 'Database2', 'm.db'))
+    db.prepare('UPDATE Information SET schemaVersionMinor = 1').run()
+    db.close()
+    expect(await w.exporter.plan(request(['1']))).toEqual({ ok: false, reason: 'engine-schema' })
+    expect(await w.exporter.start(request(['1']))).toEqual({ ok: false, reason: 'engine-schema' })
+  })
+})

@@ -21,8 +21,15 @@ import type {
   UsbVolume,
   UsbWarning,
 } from '../shared/types'
-import { engineDatabasePath, openEngineDb } from './enginePlaylists'
-import { createEngineUsbDb, putEngineUsbPlaylist, putEngineUsbTracks } from './engineUsbDb'
+import Database from 'better-sqlite3-multiple-ciphers'
+import { type EngineDb, engineDatabasePath, openEngineDb } from './enginePlaylists'
+import {
+  createEngineUsbDb,
+  engineUsbTracksByOrigin,
+  libraryUuid,
+  putEngineUsbPlaylist,
+  putEngineUsbTracks,
+} from './engineUsbDb'
 import {
   artworkFileName,
   type EngineUsbSelection,
@@ -33,6 +40,7 @@ import { resolveTarget, sourceRoot, type Target } from './usbExport'
 import { targetKey, type UsbMemory } from './usbExportMemory'
 
 export const ENGINE_USB_FOLDER = 'Engine Library'
+const MARKER = '.surco-export.json'
 
 export interface EngineUsbExporterDeps {
   platform: NodeJS.Platform
@@ -70,6 +78,7 @@ interface Planned {
 interface Prepared {
   target: Target
   lib: string
+  existing: boolean
   sel: EngineUsbSelection
   planned: Planned[]
   missing: EngineUsbTrack[]
@@ -137,6 +146,65 @@ async function artworkOf(
   return out
 }
 
+interface LibraryInfo {
+  uuid: string
+  version: string
+}
+
+function libraryInfo(db: EngineDb): LibraryInfo {
+  return db
+    .prepare(
+      `SELECT uuid, schemaVersionMajor || '.' || schemaVersionMinor || '.' || schemaVersionPatch
+         AS version FROM Information ORDER BY id LIMIT 1`,
+    )
+    .get() as LibraryInfo
+}
+
+interface OnDrive {
+  byOrigin: Map<number, { id: number; path: string }>
+  paths: string[]
+}
+
+async function libraryOnDrive(
+  lib: string,
+  desktop: LibraryInfo,
+): Promise<OnDrive | null | UsbFailure> {
+  if (!(await exists(engineDatabasePath(lib)))) return null
+  const marker = await readFile(join(lib, MARKER), 'utf8').then(
+    (text) => JSON.parse(text) as { uuid?: unknown },
+    () => null,
+  )
+  let db: EngineDb | null = null
+  try {
+    db = openEngineDb(lib)
+    if (!db || !marker) return 'engine-foreign'
+    const info = libraryInfo(db)
+    if (marker.uuid !== info.uuid) return 'engine-foreign'
+    if (info.version !== desktop.version) return 'engine-schema'
+    return {
+      byOrigin: engineUsbTracksByOrigin(db, desktop.uuid),
+      paths: db.prepare('SELECT path FROM Track WHERE path IS NOT NULL').pluck().all() as string[],
+    }
+  } catch {
+    return 'engine-foreign'
+  } finally {
+    db?.close()
+  }
+}
+
+function loadLibrary(lib: string): Database.Database {
+  const db = openEngineDb(lib)
+  if (!db) throw new Error('the Engine Library on the drive is gone')
+  try {
+    const bytes = db.serialize()
+    bytes[18] = 1
+    bytes[19] = 1
+    return new Database(bytes)
+  } finally {
+    db.close()
+  }
+}
+
 async function coverOf(art: Artwork | null): Promise<string | null> {
   if (!art) return null
   const bytes = await readFile(art.source).catch(() => null)
@@ -155,11 +223,13 @@ async function prepare(
   const target = await resolveTarget(deps, req.target)
   if (typeof target === 'string') return target
   let sel: EngineUsbSelection
+  let desktop: LibraryInfo
   try {
     const db = openEngineDb(desktopDir)
     if (!db) return 'engine-missing'
     try {
       sel = readEngineUsbSelection(db, desktopDir, req.playlistIds)
+      desktop = libraryInfo(db)
     } finally {
       db.close()
     }
@@ -169,7 +239,8 @@ async function prepare(
   }
   if (sel.tracks.length === 0) return 'nothing-selected'
   const lib = join(target.root, ENGINE_USB_FOLDER)
-  if (await exists(engineDatabasePath(lib))) return 'engine-foreign'
+  const onDrive = await libraryOnDrive(lib, desktop)
+  if (typeof onDrive === 'string') return onDrive
   const rootOf = (t: EngineUsbTrack) => (t.path ? sourceRoot(t.path, deps.platform) : null)
   const counts = new Map<string, number>()
   for (const t of sel.tracks) {
@@ -185,7 +256,7 @@ async function prepare(
   if (unreachable && strict) return 'sources-unreachable'
   const reachable = new Set(sources)
   const basename = (deps.platform === 'win32' ? win32 : posix).basename
-  const taken = new Set<string>()
+  const taken = new Set((onDrive?.paths ?? []).map((p) => p.toLowerCase()))
   const missing: EngineUsbTrack[] = []
   const streaming: EngineUsbTrack[] = []
   const found: { track: EngineUsbTrack; source: string; size: number }[] = []
@@ -207,7 +278,7 @@ async function prepare(
   )
   const planned: Planned[] = []
   for (const f of found) {
-    const dest = allocate(basename(f.source), taken)
+    const dest = onDrive?.byOrigin.get(f.track.id)?.path ?? allocate(basename(f.source), taken)
     const name = artworkFileName(f.track.artHash)
     planned.push({
       ...f,
@@ -228,6 +299,7 @@ async function prepare(
   return {
     target,
     lib,
+    existing: onDrive !== null,
     sel,
     planned,
     missing,
@@ -308,7 +380,8 @@ export function createEngineUsbExporter(deps: EngineUsbExporterDeps) {
         newCount: tracks.filter((t) => !t.onStick).length,
         newBytes: tracks.filter((t) => !t.onStick).reduce((sum, t) => sum + t.size, 0),
         keptCount: tracks.filter((t) => t.onStick).length,
-        removedSinceLast: entry ? entry.trackIds.filter((id) => !ids.has(id)).length : null,
+        removedSinceLast:
+          entry && p.existing ? entry.trackIds.filter((id) => !ids.has(id)).length : null,
         warnings: warningsOf(p, engineOpen),
       }
       return { ok: true, plan: summary }
@@ -369,9 +442,11 @@ export function createEngineUsbExporter(deps: EngineUsbExporterDeps) {
     const desktop = openEngineDb(deps.libraryDir())
     if (!desktop) throw new Error('the Engine DJ library is gone')
     let bytes: Buffer
+    let uuid: string
     try {
-      const usb = createEngineUsbDb(desktop)
+      const usb = p.existing ? loadLibrary(p.lib) : createEngineUsbDb(desktop)
       try {
+        uuid = libraryUuid(usb)
         const ids = putEngineUsbTracks(
           usb,
           desktop,
@@ -394,6 +469,7 @@ export function createEngineUsbExporter(deps: EngineUsbExporterDeps) {
     }
     const file = engineDatabasePath(p.lib)
     await mkdir(dirname(file), { recursive: true })
+    if (!p.existing) await writeFile(join(p.lib, MARKER), JSON.stringify({ uuid }))
     const temp = `${file}.surco-tmp`
     try {
       await writeFile(temp, bytes)
