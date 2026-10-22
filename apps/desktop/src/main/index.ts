@@ -1124,7 +1124,9 @@ function registerIpc(): void {
     runProcessTrack(job, {
       settings: getSettings(),
       platform: process.platform,
-      sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
+      sendProgress: (stage) => {
+        if (!e.sender.isDestroyed()) e.sender.send('process:progress', { id: job.id, stage })
+      },
       hasCoverSource,
       prepareProcessedCover: coverMemo.prepare,
       isPathReserved: outputReservations.isReserved,

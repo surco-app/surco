@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
@@ -1637,5 +1639,13 @@ describe('runProcessTrack: accented file names on macOS', () => {
       makeDeps({ platform: 'win32' }),
     )
     expect(result.outputPath).toBe('/out/Röyksopp - Fiësta.aiff'.normalize('NFC'))
+  })
+})
+
+describe('progress for a window that closed mid-job', () => {
+  it('is not sent to a destroyed window, so the steps after the write still run', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const wiring = source.match(/sendProgress: \(stage\) =>[^\n]*(\n[^\n]*){0,2}/)?.[0] ?? ''
+    expect(wiring).toContain('e.sender.isDestroyed()')
   })
 })
