@@ -2332,7 +2332,12 @@
       "playlist-empty": "Eine Playlist wäre leer. Es wurde nichts exportiert.",
       "source-lost": "Das Musiklaufwerk wurde mittendrin ausgeworfen. Der USB-Stick behält seine vorherige Bibliothek.",
       "sync-files": "Der USB-Stick funktioniert auf den Playern, aber rekordbox erkennt seine Playlists eventuell nicht. Exportiere erneut.",
-      "stick-ids-full": "Der USB-Stick hat keine freien Nummern für neue Playlists mehr. Erneutes Exportieren behebt das nicht."
+      "stick-ids-full": "Der USB-Stick hat keine freien Nummern für neue Playlists mehr. Erneutes Exportieren behebt das nicht.",
+      "engine-missing": "Die Engine-DJ-Bibliothek wurde nicht gefunden.",
+      "engine-unreadable": "Die Engine-DJ-Bibliothek konnte nicht gelesen werden.",
+      "engine-open": "Engine DJ ist noch geöffnet. Es wurde nichts exportiert.",
+      "engine-foreign": "Dieser USB-Stick hat schon eine Engine-DJ-Bibliothek, die nicht von Surco stammt. Es wurde nichts verändert.",
+      "engine-schema": "Die Engine-DJ-Bibliothek auf diesem USB-Stick stammt von einer anderen Engine-DJ-Version. Es wurde nichts verändert."
     },
     "trackFailure": {
       "missing-file": "Datei nicht gefunden",
@@ -2389,7 +2394,8 @@
       "rekordboxOpen": "rekordbox ist geöffnet. Beim Exportieren wirst du gebeten, es zu schließen.",
       "sourcesUnreachable_one": "{{volume}} ist nicht auffindbar, und dort liegt die Musik von {{count}} Track. Binde es ein und exportiere erneut.",
       "sourcesUnreachable_other": "{{volume}} ist nicht auffindbar, und dort liegt die Musik von {{count}} Tracks. Binde es ein und exportiere erneut.",
-      "emptyPlaylist": "Von {{names}} ist kein Track auffindbar."
+      "emptyPlaylist": "Von {{names}} ist kein Track auffindbar.",
+      "engineOpen": "Engine DJ ist geöffnet. Beim Exportieren wirst du gebeten, es zu schließen."
     },
     "unexportable": {
       "missing-file": "Datei nicht gefunden",

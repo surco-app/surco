@@ -2332,7 +2332,12 @@
       "playlist-empty": "Une playlist se retrouverait vide. Rien n’a été exporté.",
       "source-lost": "Le disque de la musique a été démonté en cours de route. La clé garde sa bibliothèque précédente.",
       "sync-files": "La clé fonctionne sur les lecteurs, mais rekordbox risque de ne pas reconnaître ses playlists. Exporte à nouveau.",
-      "stick-ids-full": "La clé n’a plus de numéros libres pour de nouvelles playlists. Exporter à nouveau n’y changera rien."
+      "stick-ids-full": "La clé n’a plus de numéros libres pour de nouvelles playlists. Exporter à nouveau n’y changera rien.",
+      "engine-missing": "La bibliothèque Engine DJ est introuvable.",
+      "engine-unreadable": "La bibliothèque Engine DJ n’a pas pu être lue.",
+      "engine-open": "Engine DJ est toujours ouvert. Rien n’a été exporté.",
+      "engine-foreign": "Cette clé USB a déjà une bibliothèque Engine DJ que Surco n’a pas créée. Rien n’a été modifié.",
+      "engine-schema": "La bibliothèque Engine DJ de cette clé USB vient d’une autre version d’Engine DJ. Rien n’a été modifié."
     },
     "trackFailure": {
       "missing-file": "fichier introuvable",
@@ -2389,7 +2394,8 @@
       "rekordboxOpen": "rekordbox est ouvert. Il te sera demandé de le fermer à l’export.",
       "sourcesUnreachable_one": "{{volume}} est introuvable, et la musique de {{count}} piste s’y trouve. Monte-le et exporte à nouveau.",
       "sourcesUnreachable_other": "{{volume}} est introuvable, et la musique de {{count}} pistes s’y trouve. Monte-le et exporte à nouveau.",
-      "emptyPlaylist": "Aucune piste de {{names}} n’a été trouvée."
+      "emptyPlaylist": "Aucune piste de {{names}} n’a été trouvée.",
+      "engineOpen": "Engine DJ est ouvert. Il te sera demandé de le fermer à l’export."
     },
     "unexportable": {
       "missing-file": "fichier introuvable",

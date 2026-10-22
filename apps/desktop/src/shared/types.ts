@@ -1555,6 +1555,7 @@ export type UsbWarning =
   | { kind: 'sourcesUnreachable'; volume: string; tracks: number }
   | { kind: 'rekordboxOpen' }
   | { kind: 'emptyPlaylist'; names: string[] }
+  | { kind: 'engineOpen' }
 
 export interface UsbPlan {
   tracks: UsbPlanTrack[]
@@ -1572,6 +1573,7 @@ export interface UsbExportRequest {
   target: UsbTarget
   prune: boolean
   settings: boolean
+  source?: 'engine'
 }
 
 export type UsbFailure =
@@ -1597,6 +1599,11 @@ export type UsbFailure =
   | 'sync-files'
   // The stick's playlists3.sync already uses the last playlist id a new one could take.
   | 'stick-ids-full'
+  | 'engine-missing'
+  | 'engine-unreadable'
+  | 'engine-open'
+  | 'engine-foreign'
+  | 'engine-schema'
 
 export type UsbPlanResult = { ok: true; plan: UsbPlan } | { ok: false; reason: UsbFailure }
 
