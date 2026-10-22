@@ -54,6 +54,7 @@ export function createActiveConversions(): ActiveConversions {
     },
     isCancelled: (jobId) => cancelled.has(jobId),
     killAll: () => {
+      for (const jobId of running) cancelled.add(jobId)
       for (const kill of kills.values()) kill('SIGTERM')
       kills.clear()
     },

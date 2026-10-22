@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createActiveConversions } from './activeConversions'
 
@@ -116,5 +118,17 @@ describe('createActiveConversions', () => {
     conversions.cancel('done')
     conversions.beginJob('done')
     expect(conversions.isCancelled('done')).toBe(false)
+  })
+
+  it('marks every running job cancelled on killAll, so the ones with no child do not publish', () => {
+    const conversions = createActiveConversions()
+    conversions.beginJob('measuring')
+    conversions.killAll()
+    expect(conversions.isCancelled('measuring')).toBe(true)
+  })
+
+  it('stops the conversions when the user confirms closing the window, not only on quit', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    expect(source).toMatch(/if \(quit\) \{\s*activeConversions\.killAll\(\)\s*win\.close\(\)/)
   })
 })

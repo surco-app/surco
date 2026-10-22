@@ -557,7 +557,10 @@ function createWindow(): BrowserWindow {
     if (!quitGuard.mustAsk()) return
     event.preventDefault()
     quitGuard.ask().then((quit) => {
-      if (quit) win.close()
+      if (quit) {
+        activeConversions.killAll()
+        win.close()
+      }
     })
   })
   // Let the renderer pause its background analyze sweep while the window is hidden,
