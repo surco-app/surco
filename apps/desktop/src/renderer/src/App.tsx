@@ -115,7 +115,7 @@ import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
-import { useUnsavedCueTracks } from './lib/cueSession'
+import { type AutoMark, useAutoMarks, useUnsavedCueTracks } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
@@ -2059,6 +2059,16 @@ export default function App(): React.JSX.Element {
       if (unsavedCues.has(contentId)) ids.add(id)
     return ids
   }, [rekordboxOpen, playlistScope, unsavedCues])
+  const autoMarks = useAutoMarks()
+  const autoMarkById = useMemo(() => {
+    const byId = new Map<string, AutoMark>()
+    if (!rekordboxOpen) return byId
+    for (const [id, contentId] of playlistScope?.contentOf ?? []) {
+      const mark = autoMarks.get(contentId)
+      if (mark) byId.set(id, mark)
+    }
+    return byId
+  }, [rekordboxOpen, playlistScope, autoMarks])
   const autoMarkSelected = useStableCallback(() => {
     const ids = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
@@ -2888,6 +2898,7 @@ export default function App(): React.JSX.Element {
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
                               unsavedCueIds={unsavedCueIds}
+                              autoMarkById={autoMarkById}
                               onOpenBackup={onOpenBackup}
                               duplicateRankById={duplicateRankById}
                             />

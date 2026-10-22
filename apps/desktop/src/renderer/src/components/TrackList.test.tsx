@@ -23,6 +23,7 @@ import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
+import type { AutoMark } from '../lib/cueSession'
 import { trackSignature } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { clearDraggedRows, draggedRows } from '../lib/reorderDrag'
@@ -105,6 +106,7 @@ function renderList(
     reorder,
     pendingCuePaths,
     unsavedCueIds,
+    autoMarkById,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -117,6 +119,7 @@ function renderList(
     }
     pendingCuePaths?: ReadonlySet<string>
     unsavedCueIds?: ReadonlySet<string>
+    autoMarkById?: ReadonlyMap<string, AutoMark>
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -151,6 +154,7 @@ function renderList(
       reorder={reorder}
       pendingCuePaths={pendingCuePaths}
       unsavedCueIds={unsavedCueIds}
+      autoMarkById={autoMarkById}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -521,6 +525,41 @@ describe('TrackList', () => {
     const rows = screen.getAllByTestId('track-wave-line')
     expect(within(rows[0]).queryByTestId('track-cues-unsaved')).toBeNull()
     expect(within(rows[1]).getByTestId('track-cues-unsaved')).toHaveTextContent('Cues not saved')
+  })
+
+  it('says on each row what Auto marcar left for it, so the DJ sees which tracks still need a look', () => {
+    renderList(
+      ['a', 'b', 'c', 'd', 'e'].map((id) => track({ id, duration: 200 })),
+      null,
+      [],
+      {
+        autoMarkById: new Map<string, AutoMark>([
+          ['a', { kind: 'proposed', ms: [50000, 100000] }],
+          ['b', { kind: 'unanalysed' }],
+          ['c', { kind: 'marked' }],
+          ['d', { kind: 'none' }],
+        ]),
+      },
+    )
+    const chips = screen
+      .getAllByTestId('track-wave-line')
+      .map((row) => within(row).queryByTestId('track-auto-mark')?.textContent ?? null)
+    expect(chips).toEqual(['2 proposals', 'No analysis', 'Already marked', 'No proposals', null])
+    const [proposed, unanalysed] = screen.getAllByTestId('track-auto-mark')
+    expect(proposed.className).toContain('border-dashed')
+    expect(proposed.className).toContain('text-[var(--color-accent)]')
+    expect(unanalysed.className).toContain('text-fg-dim')
+  })
+
+  it('keeps the unsaved dot next to the chip once some proposals are accepted', () => {
+    renderList([track({ id: 'a', duration: 200 })], null, [], {
+      unsavedCueIds: new Set(['a']),
+      autoMarkById: new Map<string, AutoMark>([['a', { kind: 'proposed', ms: [50000] }]]),
+    })
+    const row = screen.getByTestId('track-wave-line')
+    expect(within(row).getByTestId('track-cues-unsaved')).toBeInTheDocument()
+    expect(within(row).getByTestId('track-auto-mark')).toHaveTextContent('1 proposal')
+    expect(within(row).getAllByTestId('track-wave-proposal')).toHaveLength(1)
   })
 
   it('omits the duration until it has been probed', () => {

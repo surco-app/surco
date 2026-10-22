@@ -27,6 +27,7 @@ import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { activeCleanups } from '../lib/autoClean'
+import type { AutoMark } from '../lib/cueSession'
 import { isStale } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { formatTime } from '../lib/duration'
@@ -100,6 +101,7 @@ interface Props {
   backupAtByPath?: ReadonlyMap<string, number>
   pendingCuePaths?: ReadonlySet<string>
   unsavedCueIds?: ReadonlySet<string>
+  autoMarkById?: ReadonlyMap<string, AutoMark>
   onOpenBackup?: (track: TrackItem) => void
   // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
   duplicateRankById?: ReadonlyMap<string, DuplicateRank>
@@ -333,6 +335,7 @@ interface RowProps {
   backupAt?: number
   cuesPending: boolean
   cuesUnsaved: boolean
+  autoMark?: AutoMark
   onOpenBackup?: (track: TrackItem) => void
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
@@ -366,6 +369,7 @@ const TrackRow = memo(function TrackRow({
   backupAt,
   cuesPending,
   cuesUnsaved,
+  autoMark,
   onOpenBackup,
   duplicate,
   outsideFilter,
@@ -846,24 +850,41 @@ const TrackRow = memo(function TrackRow({
                   </span>
                 </span>
               ) : (
-                <>
-                  <RowWave
-                    request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
-                    cues={t.sourcePreview?.cues ?? []}
-                    durationSec={shown.duration}
-                    pending={cuesPending}
-                    active={seen}
-                    unanalyzed={Boolean(t.sourcePreview) && !t.sourcePreview?.analysisPath}
-                  />
-                  {cuesUnsaved && (
+                <span className="flex h-full items-center gap-1.5">
+                  <span className="relative block h-full min-w-0 flex-1">
+                    <RowWave
+                      request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
+                      cues={t.sourcePreview?.cues ?? []}
+                      durationSec={shown.duration}
+                      pending={cuesPending}
+                      active={seen}
+                      unanalyzed={Boolean(t.sourcePreview) && !t.sourcePreview?.analysisPath}
+                      proposals={autoMark?.kind === 'proposed' ? autoMark.ms : undefined}
+                    />
+                    {cuesUnsaved && (
+                      <span
+                        data-testid="track-cues-unsaved"
+                        className="absolute top-0.5 right-0 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]"
+                      >
+                        <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
+                      </span>
+                    )}
+                  </span>
+                  {autoMark && (
                     <span
-                      data-testid="track-cues-unsaved"
-                      className="absolute top-0.5 right-0 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]"
+                      data-testid="track-auto-mark"
+                      className={`shrink-0 whitespace-nowrap rounded-full border px-1.5 text-[10px] leading-4 ${
+                        autoMark.kind === 'proposed'
+                          ? 'border-dashed border-[var(--color-accent)] font-semibold text-[var(--color-accent)]'
+                          : 'border-[var(--color-line-strong)] text-fg-dim'
+                      }`}
                     >
-                      <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
+                      {autoMark.kind === 'proposed'
+                        ? tr('trackList.autoMark.proposed', { count: autoMark.ms.length })
+                        : tr(`trackList.autoMark.${autoMark.kind}`)}
                     </span>
                   )}
-                </>
+                </span>
               )}
             </span>
           </span>
@@ -966,6 +987,7 @@ export const TrackList = memo(function TrackList({
   backupAtByPath,
   pendingCuePaths,
   unsavedCueIds,
+  autoMarkById,
   onOpenBackup,
   duplicateRankById,
   outsideFilter,
@@ -1234,6 +1256,7 @@ export const TrackList = memo(function TrackList({
               backupAt={backupAtByPath?.get(t.inputPath)}
               cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
               cuesUnsaved={unsavedCueIds?.has(t.id) ?? false}
+              autoMark={autoMarkById?.get(t.id)}
               onOpenBackup={onOpenBackup}
               duplicate={duplicateRankById?.get(t.id)}
               outsideFilter={outsideFilter?.has(t.id) ?? false}

@@ -63,6 +63,10 @@ export function autoMarks(): ReadonlyMap<string, AutoMark> {
   return marks
 }
 
+export function useAutoMarks(): ReadonlyMap<string, AutoMark> {
+  return useSyncExternalStore(subscribeCueDrafts, autoMarks)
+}
+
 export function autoMarkOf(contentId: string): AutoMark | undefined {
   return marks.get(contentId)
 }

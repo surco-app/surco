@@ -14,6 +14,7 @@ export function RowWave({
   pending,
   active,
   unanalyzed = false,
+  proposals = [],
 }: {
   request: RowWaveRequest
   cues: RowCue[]
@@ -21,6 +22,7 @@ export function RowWave({
   pending: boolean
   active: boolean
   unanalyzed?: boolean
+  proposals?: number[]
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const key = rowWaveKey(request)
@@ -67,6 +69,16 @@ export function RowWave({
           className="absolute inset-x-0 bottom-0 h-[18px] w-full"
         />
       )}
+      {span > 0 &&
+        proposals.map((ms) => (
+          <span
+            key={`p-${ms}`}
+            data-testid="track-wave-proposal"
+            aria-hidden="true"
+            style={{ left: `${(ms / span) * 100}%` }}
+            className="absolute top-0 bottom-0 border-l border-dashed border-[var(--color-accent)]"
+          />
+        ))}
       {calls.map((c) => (
         <span
           key={`m-${c.key}`}

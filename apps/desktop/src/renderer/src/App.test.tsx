@@ -31,7 +31,7 @@ import { resetEditorSections } from './hooks/useEditorSections'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { startDraft } from './lib/cueDraft'
-import { autoMarkOf, forgetDraft, keepDraft, resetCueSession } from './lib/cueSession'
+import { autoMarkOf, forgetDraft, keepAutoMark, keepDraft, resetCueSession } from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
@@ -365,6 +365,7 @@ beforeEach(() => {
   // test that folds a section away doesn't leak that state into the next.
   resetEditorSections()
   resetEditorPlace()
+  resetCueSession()
   observers.length = 0
   globalThis.IntersectionObserver =
     MockIntersectionObserver as unknown as typeof IntersectionObserver
@@ -1905,6 +1906,16 @@ describe('App source playlists', () => {
     await waitFor(() => expect(autoMarkOf('c-l2')).toEqual({ kind: 'unanalysed' }))
     expect(autoMarkOf('c-l1')).toEqual({ kind: 'unanalysed' })
     expect(autoMarkOf('c-l3')).toBeUndefined()
+  })
+
+  it('shows on each row of the open playlist what Auto marcar left for its rekordbox entry', async () => {
+    await openFactory()
+    act(() => keepAutoMark('c-l2', { kind: 'proposed', ms: [1000, 2000] }))
+    const chips = () =>
+      screen
+        .getAllByTestId('track-wave-line')
+        .map((row) => within(row).queryByTestId('track-auto-mark')?.textContent ?? null)
+    await waitFor(() => expect(chips()).toEqual([null, '2 proposals', null]))
   })
 
   // The DJ's own request: put the set in order by dragging. The list must show the new

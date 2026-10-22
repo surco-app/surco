@@ -372,6 +372,13 @@
   },
   "trackList": {
     "cuesUnsaved": "Cues sin guardar",
+    "autoMark": {
+      "proposed_one": "{{count}} propuesta",
+      "proposed_other": "{{count}} propuestas",
+      "unanalysed": "Sin análisis",
+      "marked": "Ya marcada",
+      "none": "Sin propuestas"
+    },
     "cuesPendingNone": "Cues esperando a rekordbox",
     "rekordboxUnanalyzed": "Sin analizar en rekordbox",
     "cuesAria_one": "{{count}} hot cue",

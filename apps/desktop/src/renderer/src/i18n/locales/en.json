@@ -372,6 +372,13 @@
   },
   "trackList": {
     "cuesUnsaved": "Cues not saved",
+    "autoMark": {
+      "proposed_one": "{{count}} proposal",
+      "proposed_other": "{{count}} proposals",
+      "unanalysed": "No analysis",
+      "marked": "Already marked",
+      "none": "No proposals"
+    },
     "cuesPendingNone": "Cues waiting for rekordbox",
     "rekordboxUnanalyzed": "Not analyzed in rekordbox",
     "cuesAria_one": "{{count}} hot cue",

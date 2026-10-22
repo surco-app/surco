@@ -172,4 +172,20 @@ describe('RowWave', () => {
     expect(screen.getByTestId('track-cue-pending')).toBeInTheDocument()
     expect(screen.getByTestId('track-wave')).toHaveAccessibleName('Cues waiting for rekordbox')
   })
+
+  it('draws each pending Auto marcar proposal as a dashed line where it falls', () => {
+    render(
+      <RowWave
+        request={request}
+        cues={[]}
+        durationSec={200}
+        pending={false}
+        active
+        proposals={[50000, 150000]}
+      />,
+    )
+    const lines = screen.getAllByTestId('track-wave-proposal')
+    expect(lines.map((l) => l.style.left)).toEqual(['25%', '75%'])
+    expect(lines[0].className).toContain('border-dashed')
+  })
 })
