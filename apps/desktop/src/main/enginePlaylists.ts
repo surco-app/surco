@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
+import { engineContentId } from '../shared/engineContent'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -10,6 +11,7 @@ import type {
   SourcePlaylistEntry,
   SourcePreview,
 } from '../shared/types'
+import { engineCuesOf, readEnginePerformance } from './engineCues'
 
 export type EngineDb = Database.Database
 
@@ -95,6 +97,7 @@ export function readEngineTree(db: EngineDb): SourceNode[] {
 }
 
 interface EntityRow extends Linked {
+  trackId: number
   path: string | null
   title: string | null
   artist: string | null
@@ -139,7 +142,7 @@ function coverFiles(db: EngineDb, ids: number[], artDir: string): Map<number, st
 }
 
 const ROW_FIELDS =
-  't.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.albumArtId'
+  't.id AS trackId, t.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.albumArtId'
 
 function recentSince(now: Date): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).getTime() / 1000
@@ -189,13 +192,22 @@ export function readEnginePlaylist(
   return rows.map((r) => {
     if (!r.path) return { path: null, separator: false, meta: {} }
     const cover = r.albumArtId ? covers.get(r.albumArtId) : undefined
+    const contentId = engineContentId(r.trackId)
+    const perf = readEnginePerformance(db, r.trackId)
+    const cues = perf ? engineCuesOf(contentId, perf, { wave: false }).cues : []
     const preview: SourcePreview = {
       title: r.title?.trim() ?? '',
       artist: r.artist?.trim() ?? '',
       durationSec: r.length ?? 0,
       ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
-      cues: [],
+      cues: cues.map(({ ms, kind, color }) => ({ ms, kind, color })),
     }
-    return { path: resolve(libraryDir, r.path), separator: false, meta: metaOf(r), preview }
+    return {
+      path: resolve(libraryDir, r.path),
+      separator: false,
+      meta: metaOf(r),
+      contentId,
+      preview,
+    }
   })
 }

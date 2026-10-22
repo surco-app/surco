@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { mediaPathFromUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import { analysedTrack } from './enginePerformanceFixture'
 import {
   openEngineDb,
   readEnginePlaylist,
@@ -190,6 +191,25 @@ describe('readEnginePlaylist', () => {
     })
     const cover = mediaPathFromUrl(row.preview?.coverUrl as string)
     expect(readFileSync(cover)).toEqual(Buffer.from(JPEG))
+    db.close()
+  })
+
+  it('names each row’s Engine track, apart from rekordbox ids, and shows its hot cues on the row before the editor opens', async () => {
+    const dir = await library({
+      tracks: TRACKS,
+      playlists: [{ id: 1, title: 'P', parentListId: 0, nextListId: 0 }],
+      entities: [
+        { id: 7, listId: 1, trackId: 3, nextEntityId: 8 },
+        { id: 8, listId: 1, trackId: 1, nextEntityId: 0 },
+      ],
+      performance: [
+        analysedTrack(3, [null, { label: 'Cue 2', sample: 44100 * 4, argb: 0xff28e214 }]),
+      ],
+    })
+    const db = opened(dir)
+    const rows = readEnginePlaylist(db, dir, '1', join(dir, 'art'))
+    expect(rows.map((r) => r.contentId)).toEqual(['engine:3', 'engine:1'])
+    expect(rows.map((r) => r.preview?.cues)).toEqual([[{ ms: 4000, kind: 2, color: 22 }], []])
     db.close()
   })
 
