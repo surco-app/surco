@@ -59,6 +59,14 @@ function riffInfoFields(path: string): string[] {
   return [...text.slice(info).matchAll(/(INAM|IART|IPRD|ICMT|IGNR|ICRD|IPRT)/g)].map((m) => m[1])
 }
 
+function riffInfoValue(path: string, id: string): string | undefined {
+  const bytes = readFileSync(path)
+  const at = bytes.indexOf(id, bytes.indexOf('INFO'), 'latin1')
+  if (at === -1) return undefined
+  const size = bytes.readUInt32LE(at + 4)
+  return bytes.toString('utf8', at + 8, at + 8 + size).replace(/\0+$/, '')
+}
+
 // djotas, on a WAV Surco converted: Traktor showed no artist and put the file name in the
 // title, while mp3tag read the file correctly. mp3tag reads the ID3 chunk Surco writes;
 // Traktor reads RIFF INFO, which the TagLib pass was deleting outright. The deletion was
@@ -84,6 +92,18 @@ describe('a WAV conversion keeps the tags Traktor reads', () => {
     await convertAudio(source, out, 'wav', meta)
 
     expect((await readMeta(out)).tags.grouping).toBe('Crate A')
+  })
+
+  it('keeps the artist in IART when the album artist differs, across repeated updates', async () => {
+    const out = join(dir, 'compilation.wav')
+    const compilation = { ...meta, artist: 'Artist A', albumArtist: 'Various Artists' }
+    await convertAudio(source, out, 'wav', compilation)
+    expect(riffInfoValue(out, 'IART')).toBe('Artist A')
+    expect((await readMeta(out)).tags.artist).toBe('Artist A')
+
+    await convertAudio(out, out, 'wav', (await readMeta(out)).tags)
+    expect(riffInfoValue(out, 'IART')).toBe('Artist A')
+    expect((await readMeta(out)).tags.artist).toBe('Artist A')
   })
 
   it('reads its own title and artist back', async () => {

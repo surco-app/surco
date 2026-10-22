@@ -11,6 +11,7 @@ import {
   Id3v2TextInformationFrame,
   type Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
+  type InfoTag,
   type Mpeg4AppleTag,
   Mpeg4BoxType,
   Picture,
@@ -192,6 +193,12 @@ export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
   )
 }
 
+function albumArtistsOf(f: TagFile): string[] | undefined {
+  return f.getTag(TagTypes.RiffInfo, false)
+    ? f.getTag(TagTypes.Id3v2, false)?.albumArtists
+    : f.tag.albumArtists
+}
+
 // The review fields as TagLib reads them, untrimmed: the list review looks for the stray
 // spaces tagLibExtrasOf trims away. The NUL RIFF INFO pads with is never a spelling.
 export function tagLibReviewRawOf(f: TagFile): ReviewRawFields {
@@ -200,7 +207,7 @@ export function tagLibReviewRawOf(f: TagFile): ReviewRawFields {
     title: tag.title ?? '',
     artist: tag.performers?.join(', ') ?? '',
     album: tag.album ?? '',
-    albumArtist: tag.albumArtists?.join(', ') ?? '',
+    albumArtist: albumArtistsOf(f)?.join(', ') ?? '',
     genre: tag.genres?.join(', ') ?? '',
   }
   return Object.fromEntries(
@@ -214,7 +221,7 @@ function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
     title: tag.title?.trim() || '',
     artist: tag.performers?.join(', ').trim() || '',
     album: tag.album?.trim() || '',
-    albumArtist: tag.albumArtists?.join(', ').trim() || '',
+    albumArtist: albumArtistsOf(f)?.join(', ').trim() || '',
     year: tag.year ? String(tag.year) : '',
     genre: tag.genres?.join(', ').trim() || '',
     grouping: tag.grouping?.trim() || '',
@@ -913,6 +920,10 @@ export function writeTags(
     tag.copyright = meta.copyright ?? ''
     tag.subtitle = meta.mixName ?? ''
     tag.isCompilation = meta.compilation === '1'
+    if (extname(file).toLowerCase() === '.wav') {
+      const info = f.getTag(TagTypes.RiffInfo, false) as InfoTag | null
+      info?.setValuesFromStrings('IART', toArray(meta.artist))
+    }
 
     // TagLib maps `publisher` to Vorbis ORGANIZATION, the canonical name for the record
     // label — and the one name Traktor does not look at. It reads LABEL, so on FLAC the
