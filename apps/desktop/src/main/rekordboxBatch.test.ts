@@ -201,7 +201,7 @@ describe('a renderer reload', () => {
   it('starts a fresh pre-run copy only when the outermost batch opens', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
     const handler =
-      source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n  \}\)/)?.[1] ?? ''
+      source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n {2}\}\)/)?.[1] ?? ''
     expect(handler).toMatch(
       /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.reset\(\)\s*engineSessionBackup\.reset\(\)/,
     )
