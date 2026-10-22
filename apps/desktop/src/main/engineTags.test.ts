@@ -14,7 +14,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
+import { addToEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
 import { isEngineDjRunning } from './engineProcess'
 import { updateEngineTags } from './engineTags'
 import { renameWithRetry } from './renameRetry'
@@ -240,5 +242,36 @@ describe('updateEngineTags', () => {
     await writeFile(lib.dbPath, 'not a database')
     const [result] = await updateEngineTags(lib.dir, [artist(lib.file)])
     expect(result).toEqual({ written: false, reason: 'unreadable' })
+  })
+})
+
+describe('updateEngineTags alongside a conversion adding to Engine', () => {
+  it('keeps the row a conversion added while the tag sync was copying the library', async () => {
+    const lib = await library()
+    const seeded: Database = new SQL.Database(await readFile(lib.dbPath))
+    seeded.run(
+      "INSERT INTO Information (uuid, schemaVersionMajor, schemaVersionMinor, schemaVersionPatch) VALUES ('u-1', 3, 0, 0)",
+    )
+    await writeFile(lib.dbPath, seeded.export())
+    seeded.close()
+    const converted = join(lib.music, 'new.aiff')
+    await writeFile(converted, 'audio')
+    setEngineWriteGatherMs(0)
+    let added: Promise<void> = Promise.resolve()
+
+    const [result] = await updateEngineTags(lib.dir, [artist(lib.file)], {
+      sessionBackup: async () => {
+        added = addToEngineLibrary(lib.dir, converted, emptyMetadata(), 'Surco')
+        await Promise.race([added, new Promise((r) => setTimeout(r, 500))])
+      },
+    })
+    await added
+
+    const after: Database = new SQL.Database(await readFile(lib.dbPath))
+    const rows = after.exec('SELECT path, artist FROM Track ORDER BY id')[0].values
+    after.close()
+    expect(result).toEqual({ written: true })
+    expect(rows.map((r) => r[0])).toContain('../music/new.aiff')
+    expect(rows.find((r) => r[0] === '../music/c.mp3')?.[1]).toBe('DJ Lara')
   })
 })

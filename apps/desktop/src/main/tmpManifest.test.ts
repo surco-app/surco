@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createTmpManifest } from './tmpManifest'
 
@@ -150,5 +152,15 @@ describe('createTmpManifest', () => {
     fs.readFileSync = () => '{not json'
     const manifest = createTmpManifest('/manifest.json', fs)
     expect(() => manifest.sweepOrphans()).not.toThrow()
+  })
+})
+
+describe('a second launch while Surco is running', () => {
+  it('exits before the launch sweep can delete the temps the first instance is writing', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const lock = source.indexOf('if (!app.requestSingleInstanceLock()) app.exit(0)')
+    expect(lock).toBeGreaterThan(-1)
+    expect(lock).toBeLessThan(source.indexOf('tmpManifest.sweepOrphans()'))
+    expect(source).toContain("app.on('second-instance'")
   })
 })

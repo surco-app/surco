@@ -4,7 +4,7 @@ import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import type { LibraryTagUpdate, TagChange } from '../shared/types'
 import { loadSqlJs } from './engine'
-import { assertEngineClosed } from './engineLibrary'
+import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { absolute } from './engineRepoint'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { LibraryRepointResult } from './libraryRepointFlush'
@@ -30,7 +30,17 @@ export interface EngineTagsOptions {
   sessionBackup?: (dbPath: string) => Promise<void>
 }
 
-export async function updateEngineTags(
+export function updateEngineTags(
+  libraryDir: string,
+  updates: (LibraryTagUpdate & PathMatchOptions)[],
+  options: EngineTagsOptions = {},
+): Promise<LibraryRepointResult[]> {
+  return withEngineDatabase(join(libraryDir, 'Database2', 'm.db'), () =>
+    writeEngineTags(libraryDir, updates, options),
+  )
+}
+
+async function writeEngineTags(
   libraryDir: string,
   updates: (LibraryTagUpdate & PathMatchOptions)[],
   options: EngineTagsOptions = {},

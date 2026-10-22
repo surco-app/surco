@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { type BackupPolicy, keepsBackup } from '../shared/backupPolicy'
 import type { TrashEntry, TrashReason } from '../shared/types'
 
@@ -40,13 +41,19 @@ export function configureOriginalKeeper(next: OriginalKeeper | null): void {
 //
 // `policy` is a getter, not a value: Settings is saved while the app runs, and a keeper
 // built at launch would otherwise honour the value the app started with until restart.
-export function policyKeeper(policy: () => BackupPolicy, stash: OriginalKeeper): OriginalKeeper {
+export function policyKeeper(
+  policy: () => BackupPolicy,
+  stash: OriginalKeeper,
+  noRoom?: (path: string) => Promise<void>,
+): OriginalKeeper {
   return async (path, reason, outputPath, ctx) => {
     // No conversion to judge (a format change's leftover, a delete): nothing was
     // re-encoded, but nothing can be re-run either, so only 'never' skips these.
     const reencodes = ctx?.reencodes ?? true
     if (!ctx?.regardlessOfPolicy && !keepsBackup(policy(), { reencodes })) return null
-    return stash(path, reason, outputPath, ctx)
+    const kept = await stash(path, reason, outputPath, ctx)
+    if (!kept && !ctx?.regardlessOfPolicy && noRoom && existsSync(path)) await noRoom(path)
+    return kept
   }
 }
 
@@ -88,10 +95,15 @@ export function configureBackupStore(
     remove: (id: string) => Promise<void>
   },
   policy: () => BackupPolicy,
+  noRoom?: (path: string) => Promise<void>,
 ): void {
   livePolicy = policy
   configureOriginalKeeper(
-    policyKeeper(policy, (path, reason, outputPath) => store.stash(path, reason, outputPath)),
+    policyKeeper(
+      policy,
+      (path, reason, outputPath) => store.stash(path, reason, outputPath),
+      noRoom,
+    ),
   )
   configureBackupDiscarder((entry) => store.remove(entry.id))
 }

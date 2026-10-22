@@ -104,17 +104,20 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
+import { routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
-import { trashRecoverably } from './recoverableTrash'
+import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
+  abandonRekordboxBatch,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   redirectRekordboxRepoint,
+  rekordboxBatchOpen,
 } from './rekordboxBatch'
 import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
@@ -164,6 +167,14 @@ import { dirRoots, FolderWatcher } from './watcher'
 
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
+
+if (!app.requestSingleInstanceLock()) app.exit(0)
+app.on('second-instance', () => {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (!win) return
+  if (win.isMinimized()) win.restore()
+  win.focus()
+})
 
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
@@ -310,13 +321,18 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
 const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =>
   trashLimits(getSettings()),
 )
-configureBackupStore(surcoTrash, () => getSettings().backupPolicy)
+configureBackupStore(surcoTrash, () => getSettings().backupPolicy, trashWithoutRoom)
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
   const win = BrowserWindow.getAllWindows()[0]
-  if (win) win.webContents.send('open-files', [path])
-  else pendingFiles.push(path)
+  routeOpenedFile(path, {
+    window: () => (win ? { loading: win.webContents.isLoading() } : null),
+    ready: () => app.isReady(),
+    createWindow,
+    send: (paths) => win?.webContents.send('open-files', paths),
+    pending: pendingFiles,
+  })
 })
 
 // A single flat file name (the cover-export .jpg): slashes are illegal characters here
@@ -559,6 +575,7 @@ function createWindow(): BrowserWindow {
   // (or lets the databases finish) and closes once baken has reported.
   const quitGuard = createQuitGuard({
     count: activeConversions.count,
+    batchOpen: rekordboxBatchOpen,
     exporting: () => usbExport?.busy() ?? false,
     settle: () => usbExport?.stop() ?? Promise.resolve(),
     writing: () => rekordboxQueue.busy() || engineCueQueue.busy(),
@@ -599,7 +616,10 @@ function createWindow(): BrowserWindow {
     if (!quitGuard.mustAsk()) return
     event.preventDefault()
     quitGuard.ask().then((quit) => {
-      if (quit) win.close()
+      if (quit) {
+        activeConversions.killAll()
+        win.close()
+      }
     })
   })
   // Let the renderer pause its background analyze sweep while the window is hidden,
@@ -635,7 +655,10 @@ function createWindow(): BrowserWindow {
   // open batch never arrives. Left alone the accumulator's depth stays above zero and
   // no later batch ever flushes again — the collection would quietly stop updating
   // until the app restarted. Abandon whatever was in flight instead.
-  win.webContents.on('did-start-loading', abandonNmlBatch)
+  win.webContents.on('did-start-loading', () => {
+    abandonNmlBatch()
+    abandonRekordboxBatch()
+  })
 
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
@@ -1076,11 +1099,12 @@ function registerIpc(): void {
     stickyConflict.reset()
     coverMemo = createCoverMemo(prepareProcessedCover)
     beginNmlBatch()
-    beginRekordboxBatch()
     // A new run gets a new pre-run copy; without this the stored one would describe the
     // collection before the FIRST run since launch, not before the run in progress.
-    rekordboxSessionBackup.reset()
-    engineSessionBackup.reset()
+    if (beginRekordboxBatch()) {
+      rekordboxSessionBackup.reset()
+      engineSessionBackup.reset()
+    }
   })
 
   // The collaborators every library flush shares, whatever it is flushing: the conversion
@@ -1179,7 +1203,9 @@ function registerIpc(): void {
     runProcessTrack(job, {
       settings: getSettings(),
       platform: process.platform,
-      sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
+      sendProgress: (stage) => {
+        if (!e.sender.isDestroyed()) e.sender.send('process:progress', { id: job.id, stage })
+      },
       hasCoverSource,
       prepareProcessedCover: coverMemo.prepare,
       isPathReserved: outputReservations.isReserved,
@@ -1248,6 +1274,7 @@ function registerIpc(): void {
               clearExtras,
               foreignRemoved,
               replacesPath,
+              () => activeConversions.isCancelled(job.id),
             ),
           {
             labelParams: { track },
@@ -1309,6 +1336,7 @@ function registerIpc(): void {
         if (titles.length === 0) return undefined
         return appleMusicLimiter.run(() => musicEntryForFile(path, titles))
       },
+      ensureEngineDjClosed: () => ensureEngineDjClosed(BrowserWindow.fromWebContents(e.sender)),
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.

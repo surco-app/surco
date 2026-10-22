@@ -170,4 +170,41 @@ describe('useCueAudition', () => {
     act(() => audios[0].onloadedmetadata?.())
     expect(audios[0].currentTime).toBe(96)
   })
+
+  describe('on a file rekordbox times ahead of the editor', () => {
+    const LEAD = 26
+
+    async function ahead(onPosition = vi.fn<(ms: number) => void>()) {
+      const hook = renderHook(() => useCueAudition('/m/lame.mp3', true, onPosition, LEAD))
+      act(() => hook.result.current.toggle(64000))
+      await act(async () => {
+        audios[0].onloadedmetadata?.()
+      })
+      return { hook, onPosition }
+    }
+
+    it('starts the sound at the moment rekordbox calls the playhead, so the beat heard is the beat under it', async () => {
+      await ahead()
+      expect(audios[0].currentTime).toBeCloseTo(63.974, 6)
+    })
+
+    it('reports the playhead in rekordbox time, so a cue dropped while listening is written where it was heard', async () => {
+      const { onPosition } = await ahead()
+      audios[0].currentTime = 64.5
+      nextFrame()
+      expect(onPosition).toHaveBeenLastCalledWith(64526)
+    })
+
+    it('jumps to the rekordbox moment asked for', async () => {
+      const { hook } = await ahead()
+      act(() => hook.result.current.seek(96000))
+      expect(audios[0].currentTime).toBeCloseTo(95.974, 6)
+    })
+
+    it('never seeks before the start of the file', async () => {
+      const { hook } = await ahead()
+      act(() => hook.result.current.seek(10))
+      expect(audios[0].currentTime).toBe(0)
+    })
+  })
 })

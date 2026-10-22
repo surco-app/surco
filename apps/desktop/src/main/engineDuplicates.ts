@@ -4,8 +4,8 @@ import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import type { DuplicatePair } from '../shared/types'
 import { loadSqlJs } from './engine'
-import { assertEngineClosed } from './engineLibrary'
-import { absolute, repointEngineTracks } from './engineRepoint'
+import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
+import { absolute, writeEngineRepoints } from './engineRepoint'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { DuplicateReplaceResult } from './rekordboxDuplicates'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -52,7 +52,17 @@ function replace(db: Database, uuid: string, fromId: number, toId: number): void
   }
 }
 
-export async function replaceEngineDuplicates(
+export function replaceEngineDuplicates(
+  libraryDir: string,
+  pairs: DuplicatePair[],
+  options: EngineDuplicateOptions = {},
+): Promise<DuplicateReplaceResult[]> {
+  return withEngineDatabase(join(libraryDir, 'Database2', 'm.db'), () =>
+    writeEngineDuplicates(libraryDir, pairs, options),
+  )
+}
+
+async function writeEngineDuplicates(
   libraryDir: string,
   pairs: DuplicatePair[],
   options: EngineDuplicateOptions = {},
@@ -117,7 +127,7 @@ export async function replaceEngineDuplicates(
   }
 
   if (repoints.length > 0) {
-    const repointed = await repointEngineTracks(
+    const repointed = await writeEngineRepoints(
       libraryDir,
       repoints.map((i) => ({ ...pairs[i], ...options })),
       { sessionBackup: options.sessionBackup },

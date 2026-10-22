@@ -17,6 +17,9 @@ export interface ActiveConversions {
   // Returns whether a process was actually killed, so the caller can tell a
   // real cancel from a no-op (job already done, or never started).
   cancel: (jobId: string) => boolean
+  // Whether a cancel reached this job while it ran, child process or not: the phases that
+  // spawn nothing (measuring, verifying, tagging, a stream copy) check it before publishing.
+  isCancelled: (jobId: string) => boolean
   // Quitting the whole app must not leave ffmpeg children orphaned to keep
   // writing after the process that owns them is gone — will-quit calls this for
   // every conversion still in flight.
@@ -30,6 +33,7 @@ export interface ActiveConversions {
 export function createActiveConversions(): ActiveConversions {
   const kills = new Map<string, (signal: string) => void>()
   const running = new Set<string>()
+  const cancelled = new Set<string>()
   return {
     register: (jobId, kill) => kills.set(jobId, kill),
     unregister: (jobId) => kills.delete(jobId),
@@ -38,15 +42,19 @@ export function createActiveConversions(): ActiveConversions {
     },
     endJob: (jobId) => {
       running.delete(jobId)
+      cancelled.delete(jobId)
     },
     cancel: (jobId) => {
+      if (running.has(jobId)) cancelled.add(jobId)
       const kill = kills.get(jobId)
       if (!kill) return false
       kill('SIGTERM')
       kills.delete(jobId)
       return true
     },
+    isCancelled: (jobId) => cancelled.has(jobId),
     killAll: () => {
+      for (const jobId of running) cancelled.add(jobId)
       for (const kill of kills.values()) kill('SIGTERM')
       kills.clear()
     },

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import {
@@ -7,6 +9,7 @@ import {
   endRekordboxBatch,
   recordRekordboxRepoint,
   redirectRekordboxRepoint,
+  rekordboxBatchOpen,
 } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 
@@ -184,5 +187,51 @@ describe('playlists on a repoint', () => {
     expect(endRekordboxBatch()).toEqual([
       { ...a, to: '/Media/one.wav', playlists: [{ name: 'Bolos' }] },
     ])
+  })
+})
+
+describe('a renderer reload', () => {
+  it('abandons the rekordbox batch along with the NML one, so later batches still flush', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler = source.match(/on\('did-start-loading', \(\) => \{([^}]*)\}\)/)?.[1] ?? ''
+    expect(handler).toContain('abandonNmlBatch()')
+    expect(handler).toContain('abandonRekordboxBatch()')
+  })
+
+  it('starts a fresh pre-run copy only when the outermost batch opens', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler =
+      source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n  \}\)/)?.[1] ?? ''
+    expect(handler).toMatch(
+      /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.reset\(\)\s*engineSessionBackup\.reset\(\)/,
+    )
+  })
+})
+
+describe('beginRekordboxBatch', () => {
+  it('says whether it opened a new run, so a convert started mid-run is told apart', () => {
+    abandonRekordboxBatch()
+    expect(beginRekordboxBatch()).toBe(true)
+    expect(beginRekordboxBatch()).toBe(false)
+    endRekordboxBatch()
+    endRekordboxBatch()
+    expect(beginRekordboxBatch()).toBe(true)
+    endRekordboxBatch()
+  })
+
+  it('reports a batch as open from its first begin until its last end', () => {
+    abandonRekordboxBatch()
+    expect(rekordboxBatchOpen()).toBe(false)
+    beginRekordboxBatch()
+    beginRekordboxBatch()
+    endRekordboxBatch()
+    expect(rekordboxBatchOpen()).toBe(true)
+    endRekordboxBatch()
+    expect(rekordboxBatchOpen()).toBe(false)
+  })
+
+  it('lets the close guard see an open batch', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    expect(source).toContain('batchOpen: rekordboxBatchOpen,')
   })
 })

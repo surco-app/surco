@@ -1701,8 +1701,9 @@ const DITHER_FILTER = 'aresample=out_sample_fmt=s16:dither_method=triangular_hp'
 // split_os_path() (macOS volume/Windows drive letter split) and friendly_to_dir()
 // (the "/A/B/" -> "/:A/:B/:" folder encoding) in traktor_nml_cleaner.py. A path
 // under neither /Volumes/ nor a Windows drive letter (e.g. the internal boot
-// volume) keeps VOLUME as Traktor itself does: empty, with the whole path folded
-// into DIR — split_os_path's fallback returns no volume for that case.
+// volume) gets an empty VOLUME with the whole path folded into DIR, as
+// split_os_path's fallback does. Traktor itself stores the boot volume's name, so
+// matching an ENTRY needs bootVolumeName (traktorNmlLibrary.ts) to fill it in.
 export function toNmlLocation(path: string): { volume: string; dir: string; file: string } {
   const normalized = path.replace(/\\/g, '/').replace(/\/+$/, '')
   const file = basename(normalized)
@@ -1892,6 +1893,7 @@ export async function convertAudio(
   // The file this conversion supersedes, when it replaces a copy already in the library.
   // rekordbox indexes that path, not the one being converted.
   replacesPath?: string,
+  isCancelled?: () => boolean,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   const meta = composeMeta(sourceMeta)
   // We always write to a temp file and rename it over the target, so
@@ -2031,6 +2033,7 @@ export async function convertAudio(
           // Not stamped with an error key: the cause here is open-ended (permissions, a
           // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
           // than any sentence Surco could pick in advance.
+          if (isCancelled?.()) throw errorWithKey('conversionCancelled')
           const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
           throw text ? new Error(firstErrorLine(text) || text) : e
         })
@@ -2246,6 +2249,7 @@ export async function convertAudio(
     // both branches share and nothing further writes to the temp, which is exactly what
     // the rename's own comment below already claims to be true of it.
     await assertDecodable(tmp, copiedVerbatim ? input : undefined)
+    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and

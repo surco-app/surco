@@ -22,6 +22,14 @@ describe('createQuitGuard', () => {
     expect(confirm).toHaveBeenCalledWith(3, false, 0)
   })
 
+  it('asks while a batch is open even when no track is in main at that instant', async () => {
+    const confirm = vi.fn().mockResolvedValue(false)
+    const guard = createQuitGuard({ count: () => 0, batchOpen: () => true, confirm })
+    expect(guard.mustAsk()).toBe(true)
+    expect(await guard.ask()).toBe(false)
+    expect(confirm).toHaveBeenCalledWith(1, false, 0)
+  })
+
   // A USB export runs in main: quitting without asking left baken writing the stick with
   // no app, no .sync files and no memory of the export.
   it('asks while a USB export runs, even with nothing converting', async () => {

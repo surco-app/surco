@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
@@ -789,6 +791,25 @@ describe('runProcessTrack — beside the original', () => {
     expect(deps.confirmConflict).not.toHaveBeenCalled()
   })
 
+  it("does not let its own previous copy ride over another job's claim", async () => {
+    const reservations = createOutputReservations(false)
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+    })
+    reservations.reserve('/in/song.aiff')
+
+    const result = await runProcessTrack(
+      job({ outputName: 'song', previousOutputPath: '/in/song.aiff' }),
+      deps,
+    )
+
+    expect(result.outputPath).toBe('/in/song (2).aiff')
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+  })
+
   // A stale previousOutputPath can point at the source itself (an in-place run before
   // the mode switch). The source is never a valid target here, whatever claims it.
   it('never writes over the source, even when the previous output was the source', async () => {
@@ -803,6 +824,27 @@ describe('runProcessTrack — beside the original', () => {
     )
     expect(result.outputPath).toBe('/in/song (2).wav')
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+})
+
+describe('runProcessTrack — Engine DJ open before the write', () => {
+  it('fails before writing anything when Engine DJ stays open', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true, addToEngineDj: true }),
+      ensureEngineDjClosed: vi.fn(async () => false),
+    })
+
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('engineDjOpen')
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
+  it('does not ask about Engine DJ when the job does not add to it', async () => {
+    const ensureEngineDjClosed = vi.fn(async () => false)
+    const deps = makeDeps({ ensureEngineDjClosed })
+
+    await runProcessTrack(job(), deps)
+    expect(ensureEngineDjClosed).not.toHaveBeenCalled()
   })
 })
 
@@ -1597,5 +1639,13 @@ describe('runProcessTrack: accented file names on macOS', () => {
       makeDeps({ platform: 'win32' }),
     )
     expect(result.outputPath).toBe('/out/Röyksopp - Fiësta.aiff'.normalize('NFC'))
+  })
+})
+
+describe('progress for a window that closed mid-job', () => {
+  it('is not sent to a destroyed window, so the steps after the write still run', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const wiring = source.match(/sendProgress: \(stage\) =>[^\n]*(\n[^\n]*){0,2}/)?.[0] ?? ''
+    expect(wiring).toContain('e.sender.isDestroyed()')
   })
 })

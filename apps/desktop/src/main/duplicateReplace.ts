@@ -130,6 +130,8 @@ export async function traktorDuplicateStep(
               count: r.outcomes.filter((o) => o === 'repointed' || o === 'replaced').length,
             },
           }
+        if (!r.reason && r.outcomes.includes('failed'))
+          return { detailKey: 'activity.duplicatesUnsettled' }
         return { detailKey: TRAKTOR_SYNC_SKIP_KEYS[r.reason ?? 'no-matches'] }
       },
     },

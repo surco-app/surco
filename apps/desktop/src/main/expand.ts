@@ -47,8 +47,9 @@ export type OnBatch = (paths: string[]) => void
 // Drag-and-drop hands us whatever the user dropped — files *and* folders. A
 // dropped folder arrives as a single path that the renderer's extension filter
 // silently discards, so here we replace each directory with the audio files it
-// contains (recursing into subfolders) and pass plain files through untouched.
-// The renderer still runs its own extension/dedupe filter on the result.
+// contains (recursing into subfolders) and pass plain audio files through. Only audio
+// passes: files:expand grants media access to whatever this returns, so a path the
+// renderer names must not come back vouched for unless it is a track.
 // Walk the dropped paths concurrently rather than one after another: the renderer awaits
 // this whole walk before the first track row appears, and on a deep or network (SMB)
 // folder a serial walk adds up every directory's round-trip latency, leaving the list
@@ -70,6 +71,7 @@ export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<s
       if (info?.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)
       if (isHidden(name) || isConversionTemp(name)) return []
+      if (!AUDIO_EXTS.has(extname(name).toLowerCase())) return []
       // A 0-byte file has no header, no frames and no tags: every probe fails and the
       // row would sit in the list with no title, no duration and nothing saying why
       // (a user sent one among two MP3s that "keep failing", 21/09/2026). The stat is

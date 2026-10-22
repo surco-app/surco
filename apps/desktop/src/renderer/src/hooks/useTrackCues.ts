@@ -47,6 +47,15 @@ export function useQueuedCues(contentId: string): { data: QueuedCues | null | un
   return { data }
 }
 
+export function useAuditionLead(contentId: string): number {
+  const { data } = useQuery({
+    queryKey: ['rekordbox-audition-lead', contentId],
+    queryFn: () => window.api.rekordboxAuditionLead(contentId),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return data ?? 0
+}
+
 export function useCueWaveDetail(
   contentId: string,
   enabled: boolean,

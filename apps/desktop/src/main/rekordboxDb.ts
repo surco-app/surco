@@ -150,14 +150,19 @@ function candidateRows(db: RekordboxDb, fileName: string): ContentRow[] {
 // Returns the single matching track, null when the collection does not have it (the
 // normal case for a partly-imported library), or an ambiguous verdict when more than one
 // row resolves to the file — never a guess between them.
+export const rekordboxStoredPath = (path: string): string =>
+  /^[A-Za-z]:[\\/]/.test(path) ? path.replace(/\\/g, '/') : path
+
 export function findTrackByPath(
   db: RekordboxDb,
   path: string,
   options: FindOptions = {},
 ): RekordboxTrack | AmbiguousMatch | null {
-  const safeResolve = pathKey(options)
+  const key = pathKey(options)
+  const safeResolve = (p: string): string => rekordboxStoredPath(key(p))
   const target = safeResolve(path)
-  const fileName = path.slice(path.lastIndexOf('/') + 1)
+  const stored = rekordboxStoredPath(path)
+  const fileName = stored.slice(stored.lastIndexOf('/') + 1)
   const rows = candidateRows(db, fileName)
   const matches = rows.filter((r) => safeResolve(r.FolderPath) === target)
   // Logged on every miss, because a miss is indistinguishable from "the collection never

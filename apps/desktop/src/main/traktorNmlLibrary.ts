@@ -40,7 +40,11 @@ export interface SyncResult {
   reason?: 'traktor-running' | 'backup-failed' | 'no-matches' | 'unreadable' | 'write-failed'
 }
 
-export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Promise<SyncResult> {
+export async function syncCollection(
+  nmlPath: string,
+  patches: NmlPatch[],
+  bootVolume = bootVolumeName(),
+): Promise<SyncResult> {
   // Traktor loads collection.nml once at launch and rewrites it whole on quit, so a
   // write while it's open is invisible until restart at best, silently reverted at
   // worst — see traktorProcess.ts. Checked again below, right before the swap.
@@ -55,7 +59,8 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
     return { written: false, matched: 0, reason: 'unreadable' }
   }
 
-  const patched = applyPatches(original, patches)
+  const located = patches.map((p) => (p.volume ? p : { ...p, volume: bootVolume }))
+  const patched = applyPatches(original, located)
   if (patched === original) {
     // A patch that matched nothing is the normal "Traktor doesn't have this track"
     // case, not a failure — no backup, no write, disk untouched.
@@ -71,7 +76,7 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
   // COVERARTID would only send it back to the same stale cache (see
   // traktorCoverCache.ts). Read off `original`, which still has the ids, and after the
   // rename so a sync that never landed leaves a matching cache alone.
-  refreshCachedCoverArt(nmlPath, refreshedCoverIds(original, patches), readEmbeddedCover)
+  refreshCachedCoverArt(nmlPath, refreshedCoverIds(original, located), readEmbeddedCover)
 
   // A conversion that coexists with its source just had the inherited AUDIO_ID and
   // COVERARTID stripped, so Traktor knows no artwork for it and has nothing cached to

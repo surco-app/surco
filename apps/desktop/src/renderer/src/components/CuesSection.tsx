@@ -21,6 +21,7 @@ import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
   cueDropInputQuery,
+  useAuditionLead,
   useCueWaveDetail,
   useQueuedCues,
   useTrackCues,
@@ -1283,7 +1284,8 @@ export function CuesSection({
     setHead({ contentId: cue.contentId, ms })
     keepPlayhead(cue.contentId, ms)
   }
-  const audition = useCueAudition(cue.path, open, follow)
+  const leadMs = useAuditionLead(cue.contentId)
+  const audition = useCueAudition(cue.path, open, follow, leadMs)
   const stopSound = audition.stop
   const shownMaximized = useRef(maximized)
   useEffect(() => {

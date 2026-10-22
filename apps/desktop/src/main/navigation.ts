@@ -38,7 +38,10 @@ export function isBlockedFetchUrl(url: string): boolean {
   // URL.hostname keeps an IPv6 literal's brackets ("[::1]"); strip them to classify it.
   if (host.startsWith('[') && host.endsWith(']')) {
     const v6 = host.slice(1, -1)
-    return v6 === '::1' || v6 === '::' || /^(fe80|fc|fd)/.test(v6)
+    const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(v6)
+    if (!mapped) return v6 === '::1' || v6 === '::' || /^(fe80|fc|fd)/.test(v6)
+    const [hi, lo] = [parseInt(mapped[1], 16), parseInt(mapped[2], 16)]
+    host = [hi >> 8, hi & 255, lo >> 8, lo & 255].join('.')
   }
   const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host)
   if (!m) return false

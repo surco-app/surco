@@ -206,6 +206,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:cueWaveDetail', contentId),
   rekordboxCueDropInput: (contentId: string): Promise<DropInput | null> =>
     ipcRenderer.invoke('rekordbox:cueDropInput', contentId),
+  rekordboxAuditionLead: (contentId: string): Promise<number> =>
+    ipcRenderer.invoke('rekordbox:auditionLead', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

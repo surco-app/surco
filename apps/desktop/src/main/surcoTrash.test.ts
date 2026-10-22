@@ -1,7 +1,19 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const unlinkGate = vi.hoisted(() => ({ hold: null as Promise<void> | null, calls: 0 }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs/promises')>()
+  const unlink: typeof real.unlink = async (path) => {
+    unlinkGate.calls++
+    if (unlinkGate.hold) await unlinkGate.hold
+    return real.unlink(path)
+  }
+  return { ...real, unlink }
+})
+
 import { TRASH_MIN_FREE_BYTES } from '../shared/trash'
 import { createSurcoTrash, type SurcoTrash } from './surcoTrash'
 
@@ -170,6 +182,43 @@ describe('sweeping', () => {
   })
 })
 
+describe('stashes that overlap', () => {
+  it('keeps the entry of a copy taken while an earlier stash was still pruning', async () => {
+    for (let i = 0; i < 9; i++)
+      await trash.stash(song(`old${i}.aiff`), 'deleted', undefined, Date.now() - (9 - i) * 1000)
+    let release = (): void => {}
+    unlinkGate.hold = new Promise((r) => {
+      release = r
+    })
+    unlinkGate.calls = 0
+    const first = trash.stash(song('First.aiff', 200), 'replaced')
+    await vi.waitFor(() => expect(unlinkGate.calls).toBe(1))
+    unlinkGate.hold = null
+    const second = await trash.stash(song('Second.aiff'), 'replaced')
+    release()
+    await first
+
+    expect((await trash.list()).map((e) => e.id)).toContain(second?.id)
+  })
+
+  it('empties without dropping a copy taken while it was deleting the others', async () => {
+    await trash.stash(song('Old.aiff'), 'deleted')
+    let release = (): void => {}
+    unlinkGate.hold = new Promise((r) => {
+      release = r
+    })
+    unlinkGate.calls = 0
+    const emptying = trash.empty()
+    await vi.waitFor(() => expect(unlinkGate.calls).toBe(1))
+    unlinkGate.hold = null
+    const taken = await trash.stash(song('Taken.aiff'), 'replaced')
+    release()
+    await emptying
+
+    expect((await trash.list()).map((e) => e.id)).toEqual([taken?.id])
+  })
+})
+
 describe('the manifest', () => {
   it('lists newest first and survives a reload from disk', async () => {
     await trash.stash(song('A.wav'), 'deleted', undefined, Date.now() - 2000)
@@ -184,6 +233,24 @@ describe('the manifest', () => {
     const t = createSurcoTrash(join(root, 'trash'))
     expect(await t.list()).toEqual([])
     expect(statSync(join(root, 'trash')).isDirectory()).toBe(true)
+  })
+
+  it('sets a corrupt manifest aside so the original paths it names are not overwritten', async () => {
+    const entry = await trash.stash(song('Kept.aiff'), 'deleted')
+    const manifest = join(root, 'trash', 'trash.json')
+    writeFileSync(manifest, '{not json')
+    await trash.stash(song('Next.aiff'), 'deleted')
+    expect(readFileSync(`${manifest}.unreadable`, 'utf8')).toBe('{not json')
+    expect(existsSync(entry?.storedPath as string)).toBe(true)
+  })
+
+  it('sweeps a stored file the manifest no longer names, but only once it outlives the retention', async () => {
+    const orphan = await trash.stash(song('Lost.aiff'), 'deleted')
+    writeFileSync(join(root, 'trash', 'trash.json'), '{not json')
+    await trash.sweep()
+    expect(existsSync(orphan?.storedPath as string)).toBe(true)
+    await trash.sweep(Date.now() + 31 * DAY)
+    expect(existsSync(orphan?.storedPath as string)).toBe(false)
   })
 })
 

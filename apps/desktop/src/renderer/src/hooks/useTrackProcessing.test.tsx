@@ -533,6 +533,37 @@ describe('useTrackProcessing', () => {
   // rather than thirty — which is why the message alone left the user with "one of
   // them broke" and no way to tell which. The label rides along so the toast can name
   // the track, exactly as the normalize/declick notices beside it already do.
+  it('returns a cancelled conversion to idle without a failure toast', async () => {
+    setApi({
+      processTrack: vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            "Error invoking remote method 'process:track': Error: SURCO_ERR:conversionCancelled",
+          ),
+        ),
+    })
+    const updateTrack = vi.fn()
+    const onProcessError = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+          onProcessError,
+        }),
+      { wrapper: withClient() },
+    )
+    let outcome: unknown
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+    expect(onProcessError).not.toHaveBeenCalled()
+    expect(outcome).toBe('skipped')
+  })
+
   it('passes the failing track label to the error callback', async () => {
     setApi({ processTrack: vi.fn().mockRejectedValue(new Error('disk full')) })
     const onProcessError = vi.fn()

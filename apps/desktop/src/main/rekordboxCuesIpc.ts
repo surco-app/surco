@@ -8,6 +8,7 @@ import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
 import { rekordboxShareDir } from './rekordboxArtwork'
+import { rekordboxLeadOfFile } from './rekordboxAuditionLead'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { learnFromCollection } from './rekordboxLearnFlow'
@@ -68,6 +69,23 @@ export function registerRekordboxCuesIpc(host: {
       realPath: (p) => realpathSync(p),
       words: engine.words,
     })
+  })
+  ipcMain.handle('rekordbox:auditionLead', async (_e, contentId: string) => {
+    const path = host.collection()
+    const file = withCollection(
+      path,
+      (db) =>
+        (
+          db
+            .prepare(
+              `SELECT FolderPath FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+            )
+            .get(contentId) as { FolderPath: string } | undefined
+        )?.FolderPath ?? null,
+      null,
+      await keyOf(path),
+    )
+    return file ? rekordboxLeadOfFile(file) : 0
   })
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()

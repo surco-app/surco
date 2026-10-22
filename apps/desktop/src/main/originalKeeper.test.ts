@@ -86,6 +86,31 @@ describe('policyKeeper', () => {
   })
 })
 
+describe('a copy the store has no room for', () => {
+  const refused = async () => null
+  const present = join(process.cwd(), 'package.json')
+
+  it('hands the original to the system trash when the setting wanted a copy', async () => {
+    const overflow = vi.fn(async (_path: string) => {})
+    await policyKeeper(() => 'always', refused, overflow)(present, 'renamed', '/out.aiff')
+    expect(overflow).toHaveBeenCalledWith(present)
+  })
+
+  it('leaves the original where it is when the setting wanted no copy', async () => {
+    const overflow = vi.fn(async (_path: string) => {})
+    await policyKeeper(() => 'never', refused, overflow)(present, 'renamed', '/out.aiff')
+    expect(overflow).not.toHaveBeenCalled()
+  })
+
+  it('leaves a write whose promise rests on the copy to refuse on its own', async () => {
+    const overflow = vi.fn(async (_path: string) => {})
+    await policyKeeper(() => 'always', refused, overflow)(present, 'deleted', undefined, {
+      regardlessOfPolicy: true,
+    })
+    expect(overflow).not.toHaveBeenCalled()
+  })
+})
+
 describe('keepOriginal', () => {
   // Unconfigured — every unit test that drives a conversion — it keeps nothing and the
   // callers fall back to what they did before: rename over, unlink.
@@ -159,7 +184,9 @@ describe('launch', () => {
   const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
 
   it('installs the store behind the live backup setting', () => {
-    expect(source).toContain('configureBackupStore(surcoTrash, () => getSettings().backupPolicy)')
+    expect(source).toContain(
+      'configureBackupStore(surcoTrash, () => getSettings().backupPolicy, trashWithoutRoom)',
+    )
   })
 
   it('never installs a keeper that skips the setting', () => {
