@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { QueuedCues, SaveCuesRequest } from '../../../shared/types'
 import { type CueDraft, wantedOfDraft } from './cueDraft'
 
@@ -117,4 +117,13 @@ export function resetCueSession(): void {
   playheads.clear()
   marks = new Map()
   changed()
+}
+
+export function useCueSessionFor(collection: string | undefined): void {
+  const seen = useRef(collection)
+  useEffect(() => {
+    if (seen.current === collection) return
+    if (seen.current !== undefined) resetCueSession()
+    seen.current = collection
+  }, [collection])
 }

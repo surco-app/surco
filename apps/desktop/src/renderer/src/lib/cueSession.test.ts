@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+import { renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startDraft } from './cueDraft'
 import {
@@ -14,6 +16,7 @@ import {
   resetCueSession,
   subscribeCueDrafts,
   unsavedCueTracks,
+  useCueSessionFor,
 } from './cueSession'
 
 const TARGET = { path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' }
@@ -131,5 +134,27 @@ describe('cue session', () => {
       },
       { contentId: '104', path: '/m/h.wav', label: 'Other', fingerprint: 'f1', wanted: [] },
     ])
+  })
+
+  it('starts the session over when the rekordbox collection changes, so a draft or proposal is never saved onto another collection’s track with the same id', () => {
+    const { rerender } = renderHook(({ at }) => useCueSessionFor(at), {
+      initialProps: { at: '/a/master.db' as string | undefined },
+    })
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
+    keepAutoMark('104', { kind: 'proposed', ms: [128000] })
+    rerender({ at: '/a/master.db' })
+    expect([...unsavedCueTracks()]).toEqual(['103'])
+    rerender({ at: '/b/master.db' })
+    expect([...unsavedCueTracks()]).toEqual([])
+    expect(autoMarkOf('104')).toBeUndefined()
+  })
+
+  it('keeps the session while the settings are still loading, since no collection was left', () => {
+    const { rerender } = renderHook(({ at }) => useCueSessionFor(at), {
+      initialProps: { at: undefined as string | undefined },
+    })
+    keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
+    rerender({ at: '/a/master.db' })
+    expect([...unsavedCueTracks()]).toEqual(['103'])
   })
 })
