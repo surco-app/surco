@@ -903,6 +903,23 @@
         "shotCaption": "Traktor collection sync in Settings."
       },
       {
+        "id": "rekordbox",
+        "title": "Set up your rekordbox cues",
+        "body": [
+          "Open a rekordbox playlist in Surco’s sidebar and pick a track. The Cues section shows its rekordbox waveform and grid, and you set hot cues A to H and CALLs with the mouse or the keyboard.",
+          "With a flow, one click where the track drops places the rest of the cues, counting back. If you’d rather not look for that point, Auto mark suggests it and you accept it with Return."
+        ],
+        "points": [
+          "«Save to rekordbox» writes to your collection with rekordbox closed, after making a backup. If it’s open, Surco waits until you close it.",
+          "Flows are made in Settings › Cues. Two come ready-made, Mix in 64 and Mix in 32, and Surco can learn yours from the cues you already have.",
+          "With several tracks selected, «Auto mark the selected» prepares them all and «Save N tracks to rekordbox» saves them in one go.",
+          "If rekordbox hasn’t analyzed the track yet, Surco measures the grid and you can set the cues anyway. Once rekordbox analyzes it, they move onto its grid.",
+          "Auto mark suggests, it doesn’t decide. Its suggestions aren’t always right, so nothing is saved until you accept them."
+        ],
+        "shot": "rekordbox-en.webp",
+        "shotCaption": "Auto mark suggests where the track drops, with your flow ready to accept."
+      },
+      {
         "id": "atajos",
         "title": "Fly with the keyboard",
         "body": [

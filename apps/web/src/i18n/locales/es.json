@@ -903,6 +903,23 @@
         "shotCaption": "La sincronización con la colección de Traktor en Ajustes."
       },
       {
+        "id": "rekordbox",
+        "title": "Prepara tus cues de rekordbox",
+        "body": [
+          "Abre una playlist de rekordbox en la barra lateral de Surco y elige una pista. En la sección Cues ves su onda y su rejilla de rekordbox, y pones hot cues de la A a la H y CALL con el ratón o con el teclado.",
+          "Con un flujo, un clic donde rompe la pista pone el resto de cues contando hacia atrás. Si prefieres no buscar ese punto, Auto marcar te lo propone y lo aceptas con Intro."
+        ],
+        "points": [
+          "«Guardar en rekordbox» escribe en tu colección con rekordbox cerrado, después de hacer una copia de seguridad. Si lo tienes abierto, Surco espera a que lo cierres.",
+          "Los flujos se crean en Ajustes › Cues. Vienen dos hechos, Mix in 64 y Mix in 32, y Surco puede aprender el tuyo de las cues que ya tienes.",
+          "Con varias pistas seleccionadas, «Auto marcar las seleccionadas» las prepara todas y «Guardar N pistas en rekordbox» las guarda de una vez.",
+          "Si rekordbox aún no ha analizado la pista, Surco calcula la rejilla y puedes poner las cues igual. Cuando rekordbox la analiza, se ajustan a su rejilla.",
+          "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas."
+        ],
+        "shot": "rekordbox-es.webp",
+        "shotCaption": "Auto marcar propone dónde rompe la pista, con tu flujo listo para aceptar."
+      },
+      {
         "id": "atajos",
         "title": "Vuela con el teclado",
         "body": [
