@@ -694,6 +694,20 @@ describe('CuesSection maximized keys', () => {
     shared.remove()
   })
 
+  it('plays a LAME MP3 from the sound rekordbox places under the playhead, not one frame later', async () => {
+    stubSound()
+    const rekordboxAuditionLead = vi.fn<Api['rekordboxAuditionLead']>(async () => 26)
+    setup(null, READ, { rekordboxAuditionLead })
+    await maximize()
+    await waitFor(() => expect(rekordboxAuditionLead).toHaveBeenCalledWith('103'))
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-play'))
+    await act(async () => {
+      audios[0].onloadedmetadata?.()
+    })
+    expect(audios[0].currentTime).toBeCloseTo(63.974, 6)
+  })
+
   it('plays and pauses with the Play button for whoever does not use the keyboard', async () => {
     stubSound()
     setup()

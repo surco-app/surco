@@ -1,8 +1,10 @@
+import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
+import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
@@ -49,6 +51,28 @@ const savedOp = (over: Partial<CuesOp> = {}): CuesOp => ({
   fingerprint: 'F1',
   ...over,
 })
+
+async function collectionWithMp3(encoder: 'LAME' | 'Lavc'): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'surco-rblead-'))
+  const mp3 = join(dir, 'track.mp3')
+  execFileSync(ffmpegStatic as unknown as string, [
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=1',
+    mp3,
+  ])
+  const bytes = readFileSync(mp3)
+  bytes.write(encoder, bytes.indexOf('Lavc'), 'latin1')
+  writeFileSync(mp3, bytes)
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    content: ORGANISE_FIXTURE.content.map((c) => (c.ID === '101' ? { ...c, FolderPath: mp3 } : c)),
+  })
+  return path
+}
 
 async function completableCollection(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbcount-'))
@@ -255,6 +279,39 @@ describe('registerRekordboxCuesIpc', () => {
     expect(applyQuietly).toHaveBeenCalled()
   })
 
+  it('tells the editor how far rekordbox runs ahead of what it plays on a LAME MP3, so a cue set by ear lands where it was heard', async () => {
+    const path = await collectionWithMp3('LAME')
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:auditionLead')({}, '101')).toBeCloseTo((1152 / 44100) * 1000, 3)
+  })
+
+  it('gives no lead for an MP3 the editor already plays in step with rekordbox', async () => {
+    const path = await collectionWithMp3('Lavc')
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:auditionLead')({}, '101')).toBe(0)
+  })
+
+  it('gives no lead for a track the collection does not hold', async () => {
+    const path = await collectionWithMp3('LAME')
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+    })
+    expect(await handler('rekordbox:auditionLead')({}, '999')).toBe(0)
+  })
+
   it('reads nothing without a collection', async () => {
     registerRekordboxCuesIpc({
       collection: () => '',
@@ -264,6 +321,7 @@ describe('registerRekordboxCuesIpc', () => {
     })
     expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
+    expect(await handler('rekordbox:auditionLead')({}, '103')).toBe(0)
   })
 
   it('reports the cues queued for a track with the fingerprint they were built on, or null when nothing waits', () => {

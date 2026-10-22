@@ -8,10 +8,13 @@ export interface CueAudition {
   stop: () => void
 }
 
+const elementSec = (ms: number, leadMs: number): number => Math.max(0, ms - leadMs) / 1000
+
 export function useCueAudition(
   path: string,
   active: boolean,
   onPosition: (ms: number) => void,
+  leadMs = 0,
 ): CueAudition {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const frame = useRef<number | null>(null)
@@ -19,6 +22,8 @@ export function useCueAudition(
   const wantedMs = useRef(0)
   const latest = useRef(onPosition)
   latest.current = onPosition
+  const lead = useRef(leadMs)
+  lead.current = leadMs
   const [playing, setPlaying] = useState(false)
 
   const stop = useCallback((): void => {
@@ -40,7 +45,7 @@ export function useCueAudition(
   const follow = useCallback((audio: HTMLAudioElement): void => {
     const tick = () => {
       if (audioRef.current !== audio) return
-      latest.current(audio.currentTime * 1000)
+      latest.current(audio.currentTime * 1000 + lead.current)
       frame.current = requestAnimationFrame(tick)
     }
     frame.current = requestAnimationFrame(tick)
@@ -56,7 +61,7 @@ export function useCueAudition(
       wantedMs.current = fromMs
       audio.onloadedmetadata = () => {
         if (audioRef.current !== audio) return
-        audio.currentTime = wantedMs.current / 1000
+        audio.currentTime = elementSec(wantedMs.current, lead.current)
         audio
           .play()
           .then(() => {
@@ -80,7 +85,7 @@ export function useCueAudition(
 
   const seek = useCallback((ms: number): void => {
     wantedMs.current = ms
-    if (audioRef.current) audioRef.current.currentTime = ms / 1000
+    if (audioRef.current) audioRef.current.currentTime = elementSec(ms, lead.current)
   }, [])
 
   useEffect(() => {

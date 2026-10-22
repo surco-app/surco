@@ -17,7 +17,12 @@ import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
-import { useCueWaveDetail, useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
+import {
+  useAuditionLead,
+  useCueWaveDetail,
+  useQueuedCues,
+  useTrackCues,
+} from '../hooks/useTrackCues'
 import type { DetailSource } from '../lib/cueDetail'
 import {
   type CueDraft,
@@ -1022,7 +1027,8 @@ export function CuesSection({
     setHead({ contentId: cue.contentId, ms })
     keepPlayhead(cue.contentId, ms)
   }
-  const audition = useCueAudition(cue.path, open, follow)
+  const leadMs = useAuditionLead(cue.contentId)
+  const audition = useCueAudition(cue.path, open, follow, leadMs)
   const stopSound = audition.stop
   const shownMaximized = useRef(maximized)
   useEffect(() => {
