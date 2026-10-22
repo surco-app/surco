@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
-import { rekordboxLeadMs, rekordboxLeadOfFile } from './rekordboxTimeline'
+import {
+  rekordboxLeadMs,
+  rekordboxLeadOfFile,
+  rekordboxShiftMs,
+  rekordboxShiftOfFile,
+} from './rekordboxTimeline'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-audition-lead-'))
@@ -14,12 +19,20 @@ const MPEG1_48K_STEREO = [0xff, 0xfb, 0x94, 0x44]
 const MPEG1_44K_MONO = [0xff, 0xfb, 0x90, 0xc4]
 const MPEG2_22K_STEREO = [0xff, 0xf3, 0x90, 0x44]
 
-function infoFrame(header: number[], sideInfo: number, encoder: string, tag = 'Info'): Buffer {
+function infoFrame(
+  header: number[],
+  sideInfo: number,
+  encoder: string,
+  tag = 'Info',
+  delay = 576,
+): Buffer {
   const frame = Buffer.alloc(417)
   Buffer.from(header).copy(frame, 0)
   frame.write(tag, 4 + sideInfo, 'latin1')
   frame.writeUInt32BE(0, 8 + sideInfo)
   frame.write(encoder, 12 + sideInfo, 'latin1')
+  frame[12 + sideInfo + 21] = delay >> 4
+  frame[12 + sideInfo + 22] = (delay & 0x0f) << 4
   return frame
 }
 
@@ -109,5 +122,64 @@ describe('rekordboxLeadOfFile', () => {
     const file = join(dir, 'fake.wav')
     writeFileSync(file, infoFrame(MPEG1_44K_STEREO, 32, 'LAME3.100'))
     expect(await rekordboxLeadOfFile(file)).toBe(0)
+  })
+})
+
+describe('rekordboxShiftMs', () => {
+  const lame44 = infoFrame(MPEG1_44K_STEREO, 32, 'LAME3.100')
+
+  it('puts rekordbox one frame plus the encoder delay and the decoder delay ahead of ffmpeg on a LAME MP3, measured at 51 ms across 132 of the collection', () => {
+    expect(rekordboxShiftMs('.mp3', lame44, 44100)).toBeCloseTo(
+      ((1152 + 576 + 529) / 44100) * 1000,
+      3,
+    )
+  })
+
+  it('takes the delay the encoder wrote, not a fixed one', () => {
+    const late = infoFrame(MPEG1_44K_STEREO, 32, 'LAME3.100', 'Info', 1000)
+    expect(rekordboxShiftMs('.mp3', late, 44100)).toBeCloseTo(
+      ((1152 + 1000 + 529) / 44100) * 1000,
+      3,
+    )
+  })
+
+  it('scales by the frame rate of the stream, measured 47 ms on 48 kHz LAME files', () => {
+    expect(
+      rekordboxShiftMs('.mp3', infoFrame(MPEG1_48K_STEREO, 32, 'LAME3.100'), 48000),
+    ).toBeCloseTo(((1152 + 576 + 529) / 48000) * 1000, 3)
+  })
+
+  it('puts rekordbox one frame ahead on an ffmpeg-encoded MP3, measured at 26 ms on Lavc files', () => {
+    expect(
+      rekordboxShiftMs('.mp3', infoFrame(MPEG1_44K_STEREO, 32, 'Lavc58.43'), 44100),
+    ).toBeCloseTo((1152 / 44100) * 1000, 3)
+  })
+
+  it('keeps a headerless MP3 in step, measured within 4 ms', () => {
+    const plain = Buffer.alloc(417)
+    Buffer.from(MPEG1_44K_STEREO).copy(plain, 0)
+    expect(rekordboxShiftMs('.mp3', plain, 44100)).toBe(0)
+  })
+
+  it('puts rekordbox the AAC priming ahead of ffmpeg on an M4A, which ffmpeg trims and rekordbox plays', () => {
+    expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 44100)).toBeCloseTo((2112 / 44100) * 1000, 3)
+    expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 48000)).toBeCloseTo(44, 3)
+  })
+
+  it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
+    expect(rekordboxShiftMs('.wav', lame44, 44100)).toBe(0)
+    expect(rekordboxShiftMs('.aiff', Buffer.alloc(0), 44100)).toBe(0)
+  })
+})
+
+describe('rekordboxShiftOfFile', () => {
+  it('reads the shift of a real ffmpeg MP3 from disk', async () => {
+    const file = join(dir, 'shift.mp3')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', file])
+    expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
+  })
+
+  it('reads no shift for a file it cannot open', async () => {
+    expect(await rekordboxShiftOfFile(join(dir, 'gone.mp3'), 44100)).toBe(0)
   })
 })

@@ -5,6 +5,8 @@ import { leadingId3v2Size } from './id3Header'
 const HEAD_SCAN_BYTES = 1 << 20
 const MPEG1_SAMPLE_RATES = [44100, 48000, 32000]
 const MPEG1_FRAME_SAMPLES = 1152
+const MP3_DECODER_DELAY = 529
+const AAC_PRIMING = 2112
 const XING_FIELD_BYTES = [
   [1, 4],
   [2, 4],
@@ -36,6 +38,7 @@ function firstFrame(head: Buffer): number | null {
 export interface Mpeg1Info {
   sampleRate: number
   encoder: string
+  delay: number
 }
 
 export function mpeg1Info(head: Buffer): Mpeg1Info | null {
@@ -53,6 +56,7 @@ export function mpeg1Info(head: Buffer): Mpeg1Info | null {
   return {
     sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
     encoder: head.toString('latin1', encoderAt, encoderAt + 4),
+    delay: (head[encoderAt + 21] << 4) | (head[encoderAt + 22] >> 4),
   }
 }
 
@@ -62,19 +66,41 @@ export function rekordboxLeadMs(head: Buffer): number {
   return (MPEG1_FRAME_SAMPLES / info.sampleRate) * 1000
 }
 
-export async function rekordboxLeadOfFile(file: string): Promise<number> {
-  if (extname(file).toLowerCase() !== '.mp3') return 0
+export function rekordboxShiftMs(ext: string, head: Buffer, sampleRate: number): number {
+  const kind = ext.toLowerCase()
+  if (kind === '.m4a') return (AAC_PRIMING / sampleRate) * 1000
+  if (kind !== '.mp3') return 0
+  const info = mpeg1Info(head)
+  if (!info) return 0
+  const skipped = info.encoder === 'LAME' ? info.delay + MP3_DECODER_DELAY : 0
+  return ((MPEG1_FRAME_SAMPLES + skipped) / info.sampleRate) * 1000
+}
+
+async function mp3Head(file: string): Promise<Buffer | null> {
+  if (extname(file).toLowerCase() !== '.mp3') return null
   let fh: Awaited<ReturnType<typeof open>>
   try {
     fh = await open(file, 'r')
   } catch {
-    return 0
+    return null
   }
   try {
     const head = Buffer.alloc(HEAD_SCAN_BYTES)
     const { bytesRead } = await fh.read(head, 0, HEAD_SCAN_BYTES, 0)
-    return rekordboxLeadMs(head.subarray(0, bytesRead))
+    return head.subarray(0, bytesRead)
   } finally {
     await fh.close()
   }
+}
+
+export async function rekordboxLeadOfFile(file: string): Promise<number> {
+  const head = await mp3Head(file)
+  return head ? rekordboxLeadMs(head) : 0
+}
+
+export async function rekordboxShiftOfFile(file: string, sampleRate: number): Promise<number> {
+  const ext = extname(file)
+  if (ext.toLowerCase() !== '.mp3') return rekordboxShiftMs(ext, Buffer.alloc(0), sampleRate)
+  const head = await mp3Head(file)
+  return head ? rekordboxShiftMs(ext, head, sampleRate) : 0
 }
