@@ -41,6 +41,7 @@ import { resolveTarget, sourceRoot, type Target } from './usbExport'
 import { targetKey, type UsbMemory } from './usbExportMemory'
 
 export const ENGINE_USB_FOLDER = 'Engine Library'
+export const ENGINE_USB_QUIT_DETAIL = 'engineQuitDetailUsb' as const
 const MARKER = '.surco-export.json'
 
 export interface EngineUsbExporterDeps {

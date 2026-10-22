@@ -8,9 +8,11 @@ import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { chainOrder, readEngineTree } from './enginePlaylists'
 import {
   createEngineUsbExporter,
+  ENGINE_USB_QUIT_DETAIL,
   type EngineUsbExporterDeps,
   engineLibraryHolder,
 } from './engineUsbExport'
+import { createMenuT } from './i18n'
 import { createUsbMemory } from './usbExportMemory'
 
 const UUID = 'B10C96EF-51C2-344E-B78D-DAFC319D973E'
@@ -471,5 +473,18 @@ describe('engineLibraryHolder', () => {
     db.prepare("UPDATE Information SET uuid = 'made-by-engine'").run()
     db.close()
     expect(await engineLibraryHolder(w.usb)).toMatchObject({ by: 'other' })
+  })
+})
+
+describe('closing Engine DJ for a USB export', () => {
+  it('asks with words about the USB export, not about a conversion, in every language', () => {
+    for (const locale of ['es', 'en', 'de', 'fr', 'pt-BR']) {
+      const t = createMenuT(locale)
+      const text = t(ENGINE_USB_QUIT_DETAIL)
+      expect(text).toContain('USB')
+      expect(text).toContain('Engine DJ')
+      expect(text).not.toBe(t('engineQuitDetail'))
+      expect(text).not.toMatch(/[—:]/)
+    }
   })
 })

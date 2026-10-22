@@ -248,7 +248,8 @@ const api: Api = {
     ipcRenderer.on('usb:volumesChanged', listener)
     return () => ipcRenderer.removeListener('usb:volumesChanged', listener)
   },
-  usbPickFolder: (): Promise<UsbFolderPick | null> => ipcRenderer.invoke('usb:pickFolder'),
+  usbPickFolder: (source?: 'engine'): Promise<UsbFolderPick | null> =>
+    ipcRenderer.invoke('usb:pickFolder', source),
   usbPlan: (req: UsbExportRequest): Promise<UsbPlanResult> => ipcRenderer.invoke('usb:plan', req),
   usbExport: (req: UsbExportRequest): Promise<UsbStartResult> =>
     ipcRenderer.invoke('usb:export', req),
