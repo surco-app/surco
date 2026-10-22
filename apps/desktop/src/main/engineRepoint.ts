@@ -3,7 +3,7 @@ import { basename, extname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import { loadSqlJs } from './engine'
-import { assertEngineClosed } from './engineLibrary'
+import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
@@ -49,7 +49,17 @@ function relativeTo(libraryDir: string, file: string): string {
   return relative(libraryDir, file).split('\\').join('/')
 }
 
-export async function repointEngineTracks(
+export function repointEngineTracks(
+  libraryDir: string,
+  repoints: EngineRepoint[],
+  options: EngineRepointOptions = {},
+): Promise<EngineRepointResult[]> {
+  return withEngineDatabase(join(libraryDir, 'Database2', 'm.db'), () =>
+    writeEngineRepoints(libraryDir, repoints, options),
+  )
+}
+
+export async function writeEngineRepoints(
   libraryDir: string,
   repoints: EngineRepoint[],
   options: EngineRepointOptions = {},

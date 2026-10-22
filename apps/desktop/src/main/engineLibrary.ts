@@ -129,6 +129,17 @@ interface PendingAdd {
 let pending: PendingAdd[] = []
 let draining = false
 
+const writing = new Map<string, Promise<unknown>>()
+
+export function withEngineDatabase<T>(dbPath: string, task: () => Promise<T>): Promise<T> {
+  const run = (writing.get(dbPath) ?? Promise.resolve()).then(task, task)
+  writing.set(
+    dbPath,
+    run.catch(() => {}),
+  )
+  return run
+}
+
 // How long the writer waits before a rewrite, so the tracks of a run that finish a moment
 // apart share it. A batch's conversions land seconds apart, each after the previous write
 // was done, so without the wait every track rewrote the whole library alone. Each add
@@ -180,7 +191,7 @@ async function drain(): Promise<void> {
       }
       for (const [dir, adds] of byDir) {
         try {
-          await writeBatch(dir, adds)
+          await withEngineDatabase(join(dir, 'Database2', 'm.db'), () => writeBatch(dir, adds))
           for (const add of adds) add.resolve()
         } catch (e) {
           for (const add of adds) add.reject(e)
