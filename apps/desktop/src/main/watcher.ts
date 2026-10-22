@@ -63,6 +63,7 @@ export class FolderWatcher {
   // reporting after teardown — the leak the close test exists to catch, just too late
   // for it to see.
   private closed = false
+  private generation = 0
 
   constructor(
     private onChange: (root: string, files: string[]) => void,
@@ -99,9 +100,11 @@ export class FolderWatcher {
   // outcome. Armed only after the previous sweep settles, so a slow network walk can
   // never overlap itself the way a fixed interval could.
   private armPoll(): void {
+    const generation = this.generation
     this.poll = setTimeout(
       () => {
         void this.sweep().finally(() => {
+          if (generation !== this.generation) return
           if (!this.closed && this.watches.size > 0) this.armPoll()
           else this.poll = null
         })
@@ -114,13 +117,14 @@ export class FolderWatcher {
   }
 
   private async sweep(): Promise<void> {
+    const generation = this.generation
     let found = false
     await Promise.all(
       [...this.watches.keys()].map((root) =>
         collectAudio(root)
           .then((files) => {
             if (files.length !== this.counts.get(root)) found = true
-            this.report(root, files)
+            this.report(root, files, generation)
           })
           .catch(() => {}),
       ),
@@ -133,8 +137,8 @@ export class FolderWatcher {
   // Every report goes through here so the remembered count stays in step with what the
   // renderer was last told, whichever path produced it — and so a walk that was already
   // running when the crate was torn down reports nothing.
-  private report(root: string, files: string[]): void {
-    if (this.closed) return
+  private report(root: string, files: string[], generation: number): void {
+    if (this.closed || generation !== this.generation) return
     this.counts.set(root, files.length)
     this.onChange(root, files)
   }
@@ -146,12 +150,13 @@ export class FolderWatcher {
       root,
       setTimeout(() => {
         this.timers.delete(root)
+        const generation = this.generation
         void collectAudio(root)
           .then((files) => {
             // The OS saw something move, so the crate is live: back to the base rate,
             // whatever the poll had backed off to.
             this.emptySweeps = 0
-            this.report(root, files)
+            this.report(root, files, generation)
           })
           .catch(() => {})
       }, this.debounceMs),
@@ -169,6 +174,7 @@ export class FolderWatcher {
 
   close(): void {
     this.closed = true
+    this.generation += 1
     for (const w of this.watches.values()) w.close()
     for (const t of this.timers.values()) clearTimeout(t)
     if (this.poll) clearTimeout(this.poll)

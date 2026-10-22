@@ -2,6 +2,21 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const walkGate = vi.hoisted(() => ({ hold: null as Promise<void> | null, started: 0 }))
+vi.mock('./expand', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./expand')>()
+  return {
+    ...real,
+    collectAudio: async (...args: Parameters<typeof real.collectAudio>) => {
+      walkGate.started++
+      const files = await real.collectAudio(...args)
+      if (walkGate.hold) await walkGate.hold
+      return files
+    },
+  }
+})
+
 import { dirRoots, FolderWatcher, nextPollMs } from './watcher'
 
 describe('dirRoots', () => {
@@ -173,5 +188,28 @@ describe('FolderWatcher', () => {
     await writeFile(join(dir, 'late.wav'), '')
     await new Promise((r) => setTimeout(r, 200))
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('drops a sweep of the previous crate that settles after the next one is loaded', async () => {
+    const other = await mkdtemp(join(tmpdir(), 'surco-watch-next-'))
+    await writeFile(join(dir, 'old-crate.wav'), '')
+    const onChange = vi.fn()
+    const watcher = new FolderWatcher(onChange, 50, 20)
+    let release = (): void => {}
+    walkGate.hold = new Promise((r) => {
+      release = r
+    })
+    walkGate.started = 0
+    watcher.watch([dir])
+    await vi.waitFor(() => expect(walkGate.started).toBeGreaterThan(0))
+    watcher.close()
+    walkGate.hold = null
+    watcher.watch([other])
+    release()
+    await new Promise((r) => setTimeout(r, 100))
+
+    expect(onChange.mock.calls.some(([root]) => root === dir)).toBe(false)
+    watcher.close()
+    await rm(other, { recursive: true, force: true })
   })
 })
