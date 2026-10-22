@@ -33,21 +33,33 @@ function firstFrame(head: Buffer): number | null {
   return null
 }
 
-export function rekordboxLeadMs(head: Buffer): number {
+export interface Mpeg1Info {
+  sampleRate: number
+  encoder: string
+}
+
+export function mpeg1Info(head: Buffer): Mpeg1Info | null {
   const frame = firstFrame(head)
-  if (frame === null) return 0
+  if (frame === null) return null
   const mono = head[frame + 3] >> 6 === 3
   const tagAt = frame + 4 + (mono ? 17 : 32)
   const tag = head.toString('latin1', tagAt, tagAt + 4)
-  if (tag !== 'Info' && tag !== 'Xing') return 0
+  if (tag !== 'Info' && tag !== 'Xing') return null
   const flags = head.readUInt32BE(tagAt + 4)
   const encoderAt = XING_FIELD_BYTES.reduce(
     (at, [flag, bytes]) => (flags & flag ? at + bytes : at),
     tagAt + 8,
   )
-  if (head.toString('latin1', encoderAt, encoderAt + 4) !== 'LAME') return 0
-  const sampleRate = MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3]
-  return (MPEG1_FRAME_SAMPLES / sampleRate) * 1000
+  return {
+    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
+    encoder: head.toString('latin1', encoderAt, encoderAt + 4),
+  }
+}
+
+export function rekordboxLeadMs(head: Buffer): number {
+  const info = mpeg1Info(head)
+  if (info?.encoder !== 'LAME') return 0
+  return (MPEG1_FRAME_SAMPLES / info.sampleRate) * 1000
 }
 
 export async function rekordboxLeadOfFile(file: string): Promise<number> {

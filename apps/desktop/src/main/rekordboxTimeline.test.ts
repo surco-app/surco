@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
-import { rekordboxLeadMs, rekordboxLeadOfFile } from './rekordboxAuditionLead'
+import { rekordboxLeadMs, rekordboxLeadOfFile } from './rekordboxTimeline'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-audition-lead-'))

@@ -8,13 +8,13 @@ import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
 import { rekordboxShareDir } from './rekordboxArtwork'
-import { rekordboxLeadOfFile } from './rekordboxAuditionLead'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { learnFromCollection } from './rekordboxLearnFlow'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import type { RekordboxQueue } from './rekordboxQueue'
+import { rekordboxLeadOfFile } from './rekordboxTimeline'
 
 type CueQueue = Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
 
