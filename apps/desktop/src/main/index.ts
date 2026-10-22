@@ -560,8 +560,9 @@ function createWindow(): BrowserWindow {
     count: activeConversions.count,
     exporting: () => usbExport?.busy() ?? false,
     settle: () => usbExport?.stop() ?? Promise.resolve(),
-    writing: rekordboxQueue.busy,
-    finishWriting: rekordboxQueue.settled,
+    writing: () => rekordboxQueue.busy() || engineCueQueue.busy(),
+    finishWriting: () =>
+      Promise.all([rekordboxQueue.settled(), engineCueQueue.settled()]).then(() => undefined),
     unsavedCues: () => unsavedCueTracks,
     confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
