@@ -230,6 +230,12 @@ export interface Api {
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // Whether the collection has a separator track that can be copied into a playlist.
   rekordboxHasSeparator: () => Promise<boolean>
+  engineCueQueue: () => Promise<RekordboxQueueState>
+  applyEngineCueQueue: () => Promise<RekordboxQueueApplied | null>
+  discardEngineCueQueue: () => Promise<void>
+  engineCueQueueReady: () => Promise<void>
+  onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.
   usbVolumes: () => Promise<UsbVolumeList>

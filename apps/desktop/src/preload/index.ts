@@ -227,6 +227,21 @@ const api: Api = {
     return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
   },
   rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
+  engineCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('engine:cueQueue'),
+  applyEngineCueQueue: (): Promise<RekordboxQueueApplied | null> =>
+    ipcRenderer.invoke('engine:applyCueQueue'),
+  discardEngineCueQueue: (): Promise<void> => ipcRenderer.invoke('engine:discardCueQueue'),
+  engineCueQueueReady: (): Promise<void> => ipcRenderer.invoke('engine:cueQueueReady'),
+  onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
+    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
+    ipcRenderer.on('engine:cueQueueChanged', listener)
+    return () => ipcRenderer.removeListener('engine:cueQueueChanged', listener)
+  },
+  onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
+    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
+    ipcRenderer.on('engine:cueQueueApplied', listener)
+    return () => ipcRenderer.removeListener('engine:cueQueueApplied', listener)
+  },
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {
     const listener = (_e: unknown, list: UsbVolumeList): void => cb(list)

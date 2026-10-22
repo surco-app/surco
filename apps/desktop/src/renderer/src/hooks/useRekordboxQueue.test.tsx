@@ -7,7 +7,7 @@ import type { Api } from '../../../preload/api'
 import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
 import '../i18n'
 import { installApi } from '../test/api'
-import { useRekordboxQueue } from './useRekordboxQueue'
+import { ENGINE_CUE_QUEUE, useRekordboxQueue } from './useRekordboxQueue'
 
 afterEach(cleanup)
 
@@ -163,5 +163,53 @@ describe('useRekordboxQueue', () => {
       }),
     })
     await waitFor(() => expect(logError).toHaveBeenCalledWith(expect.stringContaining('ipc down')))
+  })
+})
+
+describe('useRekordboxQueue on the Engine DJ cue queue', () => {
+  it('follows the Engine queue and announces what landed in Engine DJ’s words, re-reading the cues', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    const engineCueQueueReady = vi.fn<Api['engineCueQueueReady']>(async () => {})
+    installApi({
+      engineCueQueue: vi.fn<Api['engineCueQueue']>(async () => WAITING),
+      onEngineCueQueueApplied: (cb) => {
+        applied = cb
+        return () => {}
+      },
+      engineCueQueueReady,
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const notify = vi.fn()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const hook = renderHook(() => useRekordboxQueue(notify, vi.fn(), vi.fn(), ENGINE_CUE_QUEUE), {
+      wrapper,
+    })
+    await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))
+    expect(engineCueQueueReady).toHaveBeenCalled()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    expect(notify).toHaveBeenCalledWith('Done in Engine DJ · 1 track', 'neutral')
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
+  })
+
+  it('applies and discards through the Engine queue, never rekordbox’s', async () => {
+    const applyEngineCueQueue = vi.fn<Api['applyEngineCueQueue']>(async () => null)
+    const discardEngineCueQueue = vi.fn<Api['discardEngineCueQueue']>(async () => {})
+    const applyRekordboxQueue = vi.fn<Api['applyRekordboxQueue']>(async () => null)
+    installApi({ applyEngineCueQueue, discardEngineCueQueue, applyRekordboxQueue })
+    const client = new QueryClient()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const hook = renderHook(() => useRekordboxQueue(vi.fn(), vi.fn(), vi.fn(), ENGINE_CUE_QUEUE), {
+      wrapper,
+    })
+    await act(() => hook.result.current.applyNow())
+    await act(() => hook.result.current.discard())
+    expect(applyEngineCueQueue).toHaveBeenCalled()
+    expect(discardEngineCueQueue).toHaveBeenCalled()
+    expect(applyRekordboxQueue).not.toHaveBeenCalled()
   })
 })

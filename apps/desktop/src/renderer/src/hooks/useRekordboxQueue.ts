@@ -6,15 +6,53 @@ import type {
   RekordboxQueueState,
   RekordboxQueueWritten,
 } from '../../../shared/types'
-import { refusalKey } from '../lib/playlistEdits'
-import { appliedMessage } from '../lib/rekordboxQueueText'
+import {
+  appliedMessage,
+  ENGINE_QUEUE_WORDS,
+  type QueueWords,
+  REKORDBOX_QUEUE_WORDS,
+} from '../lib/rekordboxQueueText'
 
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
+
+export interface QueueSource {
+  name: string
+  read: () => Promise<RekordboxQueueState>
+  onChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+  ready: () => Promise<void>
+  applyNow: () => Promise<RekordboxQueueApplied | null>
+  discard: () => Promise<void>
+  words: QueueWords
+}
+
+export const REKORDBOX_QUEUE: QueueSource = {
+  name: 'rekordbox queue',
+  read: () => window.api.rekordboxQueue(),
+  onChanged: (cb) => window.api.onRekordboxQueueChanged(cb),
+  onApplied: (cb) => window.api.onRekordboxQueueApplied(cb),
+  ready: () => window.api.rekordboxQueueReady(),
+  applyNow: () => window.api.applyRekordboxQueue(),
+  discard: () => window.api.discardRekordboxQueue(),
+  words: REKORDBOX_QUEUE_WORDS,
+}
+
+export const ENGINE_CUE_QUEUE: QueueSource = {
+  name: 'Engine DJ cue queue',
+  read: () => window.api.engineCueQueue(),
+  onChanged: (cb) => window.api.onEngineCueQueueChanged(cb),
+  onApplied: (cb) => window.api.onEngineCueQueueApplied(cb),
+  ready: () => window.api.engineCueQueueReady(),
+  applyNow: () => window.api.applyEngineCueQueue(),
+  discard: () => window.api.discardEngineCueQueue(),
+  words: ENGINE_QUEUE_WORDS,
+}
 
 export function useRekordboxQueue(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
   onDiscarded: (paths: string[]) => void,
   onWritten: (written: RekordboxQueueWritten[]) => void,
+  source: QueueSource = REKORDBOX_QUEUE,
 ): { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> } {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -23,17 +61,17 @@ export function useRekordboxQueue(
   useEffect(() => {
     let live = true
     let pushed = false
-    void window.api
-      .rekordboxQueue()
+    void source
+      .read()
       .then((s) => {
         if (live && !pushed) setState(s)
       })
       .catch((e: unknown) => {
         window.api.logError(
-          `rekordbox queue: first read failed (${e instanceof Error ? e.message : String(e)})`,
+          `${source.name}: first read failed (${e instanceof Error ? e.message : String(e)})`,
         )
       })
-    const off = window.api.onRekordboxQueueChanged((s) => {
+    const off = source.onChanged((s) => {
       pushed = true
       setState(s)
     })
@@ -41,7 +79,7 @@ export function useRekordboxQueue(
       live = false
       off()
     }
-  }, [])
+  }, [source])
 
   const reread = useCallback(
     () =>
@@ -58,41 +96,41 @@ export function useRekordboxQueue(
   const announce = useCallback(
     (applied: RekordboxQueueApplied | null) => {
       if (!applied) return
-      const message = appliedMessage(tr, applied)
+      const message = appliedMessage(tr, applied, source.words)
       if (message) notify(message.text, message.tone)
       if ('written' in applied) onWritten(applied.written)
       void reread()
     },
-    [tr, notify, reread, onWritten],
+    [tr, notify, reread, onWritten, source],
   )
 
-  useEffect(() => window.api.onRekordboxQueueApplied(announce), [announce])
+  useEffect(() => source.onApplied(announce), [source, announce])
 
   useEffect(() => {
-    void window.api.rekordboxQueueReady().catch(() => undefined)
-  }, [])
+    void source.ready().catch(() => undefined)
+  }, [source])
 
   const applyNow = useCallback(async () => {
     try {
-      announce(await window.api.applyRekordboxQueue())
+      announce(await source.applyNow())
     } catch {
-      notify(tr(refusalKey('write-failed')), 'danger')
+      notify(tr(source.words.refused('write-failed')), 'danger')
     }
-  }, [announce, notify, tr])
+  }, [announce, notify, tr, source])
 
   const discard = useCallback(async () => {
     const paths = state.items.flatMap((i) =>
       i.key.startsWith('track:') ? [i.key.slice('track:'.length)] : [],
     )
     try {
-      await window.api.discardRekordboxQueue()
+      await source.discard()
     } catch {
-      notify(tr(refusalKey('write-failed')), 'danger')
+      notify(tr(source.words.refused('write-failed')), 'danger')
       return
     }
     onDiscarded(paths)
     void reread()
-  }, [state, onDiscarded, reread, notify, tr])
+  }, [state, onDiscarded, reread, notify, tr, source])
 
   return { state, applyNow, discard }
 }
