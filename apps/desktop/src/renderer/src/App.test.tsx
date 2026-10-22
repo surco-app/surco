@@ -1086,6 +1086,37 @@ describe('App USB export', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByTestId('usb-export-modal')).not.toBeInTheDocument())
   })
+
+  it('opens from the Engine DJ tree on its playlists and asks for an Engine DJ export, even with no rekordbox', async () => {
+    const usbPlan = vi
+      .fn<Api['usbPlan']>()
+      .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
+    setApi({
+      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
+      loadEngineTree: vi
+        .fn<Api['loadEngineTree']>()
+        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
+      usbVolumes: vi
+        .fn<Api['usbVolumes']>()
+        .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
+      usbPlan,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-tree-export-usb'))
+    expect(await screen.findByTestId('usb-export-modal')).toBeInTheDocument()
+    fireEvent.click(await screen.findByTestId('check-node-7'))
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          playlistIds: ['7'],
+          target: { kind: 'volume', uuid: 'A' },
+          source: 'engine',
+        }),
+      ),
+    )
+  })
 })
 
 describe('App source rail', () => {
