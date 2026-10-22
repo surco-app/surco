@@ -3,7 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
-import { AppleMusicIcon, RekordboxIcon } from './SourceIcons'
+import { AppleMusicIcon, EngineIcon, RekordboxIcon } from './SourceIcons'
 import { Tooltip } from './Tooltip'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, so the rail
@@ -11,6 +11,7 @@ import { Tooltip } from './Tooltip'
 const ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
   appleMusic: AppleMusicIcon,
   rekordbox: RekordboxIcon,
+  engine: EngineIcon,
 }
 
 // The column of places tracks come from, as rekordbox's own side panel has it. The first

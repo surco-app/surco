@@ -537,7 +537,7 @@ describe('App column widths', () => {
   it('sizes the list as a share of the window, so a wider window gives every column room', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '370px' })
+    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '352px' })
   })
 
   it('saves the dragged list width as a share of the window, not as pixels', async () => {
@@ -566,7 +566,7 @@ describe('App column widths', () => {
     await addTwoTracks()
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveStyle({
-        width: `${Math.round((1278 * 0.3) / 0.83)}px`,
+        width: `${Math.round((1218 * 0.3) / 0.83)}px`,
       }),
     )
   })
@@ -1033,13 +1033,12 @@ describe('App USB export', () => {
 })
 
 describe('App source rail', () => {
-  // A rail holding only "Tracks" offers nothing to switch to; drawn anyway it is a column
-  // of chrome beside the list that a Windows user without rekordbox can never use.
-  it('is not drawn when this machine has no source to pick', async () => {
+  it('offers Engine DJ on a machine with no other source, so the DJ finds where to set its library', async () => {
     await renderApp()
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
     await act(async () => {})
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-rail-engine')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
   })
 
   // The rekordbox check is asynchronous: the window paints before it answers, and the
@@ -1053,14 +1052,14 @@ describe('App source rail', () => {
     })
     await renderApp()
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
     await act(async () => answer(true))
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
   })
 
   it('is not drawn when every source this machine has is hidden', async () => {
     setApi({
-      getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox'] })),
+      getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox', 'engine'] })),
       rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
     })
     await renderApp()
@@ -1080,7 +1079,9 @@ describe('App source rail', () => {
     fireEvent.contextMenu(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(screen.getByTestId('source-rail-hide'))
     expect(saveSettings.mock.calls.at(-1)?.[0]).toEqual({ hiddenSources: ['rekordbox'] })
-    await waitFor(() => expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument(),
+    )
   })
 
   // A tree with nothing picked in it has no rows to show either: beside it stays the one

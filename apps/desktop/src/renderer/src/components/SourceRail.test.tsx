@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PlaylistSource } from '../../../shared/types'
 import '../i18n'
 import { SourceRail } from './SourceRail'
 
@@ -23,7 +24,7 @@ describe('SourceRail', () => {
     render(
       <SourceRail
         onHide={vi.fn()}
-        sources={['appleMusic', 'rekordbox']}
+        sources={['appleMusic', 'rekordbox', 'engine']}
         active={null}
         onSelect={vi.fn()}
       />,
@@ -31,7 +32,9 @@ describe('SourceRail', () => {
     const rekordbox = screen.getByTestId('source-rail-rekordbox')
     expect(rekordbox).toHaveTextContent('')
     expect(rekordbox).toHaveAccessibleName('rekordbox')
-    for (const s of ['rekordbox', 'appleMusic']) {
+    expect(screen.getByTestId('source-rail-engine')).toHaveTextContent('')
+    expect(screen.getByTestId('source-rail-engine')).toHaveAccessibleName('Engine DJ')
+    for (const s of ['rekordbox', 'appleMusic', 'engine']) {
       const icon = screen.getByTestId(`source-rail-icon-${s}`)
       expect(icon.tagName.toLowerCase()).toBe('svg')
       expect(icon.querySelector('[fill="currentColor"]')).not.toBeNull()
@@ -79,9 +82,9 @@ describe('SourceRail', () => {
   })
 
   describe('hiding a source', () => {
-    function setup(active: 'appleMusic' | 'rekordbox' | null = null) {
-      const onSelect = vi.fn<(source: 'appleMusic' | 'rekordbox' | null) => void>()
-      const onHide = vi.fn<(source: 'appleMusic' | 'rekordbox') => void>()
+    function setup(active: PlaylistSource | null = null) {
+      const onSelect = vi.fn<(source: PlaylistSource | null) => void>()
+      const onHide = vi.fn<(source: PlaylistSource) => void>()
       render(
         <SourceRail
           sources={['appleMusic', 'rekordbox']}

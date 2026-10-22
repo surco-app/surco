@@ -1166,7 +1166,8 @@
     "sourcesTitle": "Fontes",
     "source": {
       "appleMusic": "Apple Music",
-      "rekordbox": "rekordbox"
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ"
     },
     "sourceAppleMusicUnavailable": "Disponível apenas no macOS",
     "sourceRekordboxUnavailable": "Nenhuma coleção do rekordbox foi encontrada",
@@ -1899,17 +1900,23 @@
     "rail": "Fontes",
     "hide": {
       "appleMusic": "Ocultar Apple Music",
-      "rekordbox": "Ocultar rekordbox"
+      "rekordbox": "Ocultar rekordbox",
+      "engine": "Ocultar Engine DJ"
     },
     "workingList": "Faixas",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
+    "engine": "Engine DJ",
     "recentlyAdded": "Adicionadas recentemente",
     "search": "Buscar playlist",
     "loading": "Lendo playlists…",
     "failed": {
       "appleMusic": "Não foi possível ler suas playlists. Verifique se o Apple Music está aberto e se o Surco tem permissão para controlá-lo.",
-      "rekordbox": "Não foi possível ler a coleção. Se você acabou de mudar algo, volte ao Surco em alguns segundos."
+      "rekordbox": "Não foi possível ler a coleção. Se você acabou de mudar algo, volte ao Surco em alguns segundos.",
+      "engine": "Não foi possível ler a biblioteca do Engine DJ. Se você acabou de mudar algo, volte ao Surco em alguns segundos."
+    },
+    "notFound": {
+      "engine": "O Surco não encontra uma biblioteca do Engine DJ. Defina a pasta dela, a que contém Database2, em Engine DJ, dentro de Ajustes → Saída."
     },
     "empty": "Nenhuma playlist.",
     "noMatch": "Nenhuma playlist corresponde.",
@@ -1918,7 +1925,8 @@
     "separator": "separador",
     "gone": {
       "appleMusic": "“{{name}}” não está mais no Music",
-      "rekordbox": "“{{name}}” não está mais no rekordbox"
+      "rekordbox": "“{{name}}” não está mais no rekordbox",
+      "engine": "“{{name}}” não está mais no Engine DJ"
     },
     "missing_one": "{{count}} faixa de “{{name}}” não tem arquivo no disco",
     "missing_other": "{{count}} faixas de “{{name}}” não têm arquivo no disco",

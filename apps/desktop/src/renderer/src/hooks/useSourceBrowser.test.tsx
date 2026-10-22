@@ -29,6 +29,13 @@ function setup(
       .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
     loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]),
     loadAppleMusicPlaylistTracks: vi.fn(),
+    engineAvailable: vi.fn().mockResolvedValue(true),
+    loadEngineTree: vi
+      .fn()
+      .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
+    loadEnginePlaylist: vi
+      .fn()
+      .mockResolvedValue([{ path: '/m/e.wav', separator: false, meta: {} }]),
     onWindowFocus: vi.fn((cb: (f: boolean) => void) => {
       focus = cb
       return () => {}
@@ -53,36 +60,70 @@ function setup(
 }
 
 describe('useSourceBrowser', () => {
-  it('offers Music on macOS and rekordbox when a collection is readable', async () => {
+  it('offers Music on macOS, rekordbox when a collection is readable, and Engine DJ', async () => {
     const { result } = setup({})
-    await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
+    )
   })
 
   it('leaves out a source the user hid, whichever one it is', async () => {
-    const { result } = setup({}, 'darwin', () => {}, ['appleMusic'])
+    const { result } = setup({}, 'darwin', () => {}, ['appleMusic', 'engine'])
     await waitFor(() => expect(result.current.sources).toEqual(['rekordbox']))
   })
 
   it('offers nothing when every source is hidden, so no rail is drawn', async () => {
-    const { result } = setup({}, 'darwin', () => {}, ['appleMusic', 'rekordbox'])
+    const { result } = setup({}, 'darwin', () => {}, ['appleMusic', 'rekordbox', 'engine'])
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
     expect(result.current.sources).toEqual([])
   })
 
   it('goes back to the working list when the open source gets hidden, so no rows of a source off the rail stay on screen', async () => {
     const { result, hide } = setup({})
-    await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
+    )
     act(() => result.current.selectSource('rekordbox'))
     expect(result.current.source).toBe('rekordbox')
     hide(['rekordbox'])
     expect(result.current.source).toBeNull()
-    expect(result.current.sources).toEqual(['appleMusic'])
+    expect(result.current.sources).toEqual(['appleMusic', 'engine'])
   })
 
-  it('offers nothing on Windows without rekordbox, so no rail is drawn', async () => {
-    const { result } = setup({ rekordboxAvailable: vi.fn().mockResolvedValue(false) }, 'win32')
+  it('offers Engine DJ even without a library, so the DJ finds the tab that says where to set it', async () => {
+    const { result } = setup(
+      {
+        rekordboxAvailable: vi.fn().mockResolvedValue(false),
+        engineAvailable: vi.fn().mockResolvedValue(false),
+      },
+      'win32',
+    )
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
-    expect(result.current.sources).toEqual([])
+    expect(result.current.sources).toEqual(['engine'])
+  })
+
+  it('says the Engine DJ library is missing only while Engine DJ is open and its database is not there', async () => {
+    const engineAvailable = vi.fn().mockResolvedValue(false)
+    const { result, focus } = setup({ engineAvailable })
+    expect(result.current.libraryMissing).toBe(false)
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.libraryMissing).toBe(true))
+    engineAvailable.mockResolvedValue(true)
+    act(() => focus())
+    await waitFor(() => expect(result.current.libraryMissing).toBe(false))
+    act(() => result.current.selectSource('rekordbox'))
+    expect(result.current.libraryMissing).toBe(false)
+  })
+
+  it('reads the Engine DJ tree and the picked playlist from the Engine library', async () => {
+    const { result } = setup({})
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree?.map((n) => n.name)).toEqual(['Friday']))
+    act(() =>
+      result.current.selectPlaylist({ id: '7', name: 'Friday', kind: 'playlist', count: 1 }, []),
+    )
+    await waitFor(() => expect(result.current.entries).toHaveLength(1))
+    expect(window.api.loadEnginePlaylist).toHaveBeenCalledWith('7')
   })
 
   // Music only reports how many rows a playlist has, repeats included, while the list shows

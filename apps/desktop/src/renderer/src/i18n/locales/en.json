@@ -1166,7 +1166,8 @@
     "sourcesTitle": "Sources",
     "source": {
       "appleMusic": "Apple Music",
-      "rekordbox": "rekordbox"
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ"
     },
     "sourceAppleMusicUnavailable": "Only available on macOS",
     "sourceRekordboxUnavailable": "No rekordbox collection was found",
@@ -1899,17 +1900,23 @@
     "rail": "Sources",
     "hide": {
       "appleMusic": "Hide Apple Music",
-      "rekordbox": "Hide rekordbox"
+      "rekordbox": "Hide rekordbox",
+      "engine": "Hide Engine DJ"
     },
     "workingList": "Tracks",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
+    "engine": "Engine DJ",
     "recentlyAdded": "Recently added",
     "search": "Search playlists",
     "loading": "Reading playlists…",
     "failed": {
       "appleMusic": "Couldn't read your playlists. Check that Apple Music is open and that Surco is allowed to control it.",
-      "rekordbox": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds."
+      "rekordbox": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds.",
+      "engine": "Couldn't read the Engine DJ library. If you just changed something, come back to Surco in a few seconds."
+    },
+    "notFound": {
+      "engine": "Surco can't find an Engine DJ library. Set its folder, the one that holds Database2, under Engine DJ in Settings → Output."
     },
     "empty": "No playlists.",
     "noMatch": "No playlist matches.",
@@ -1918,7 +1925,8 @@
     "separator": "separator",
     "gone": {
       "appleMusic": "“{{name}}” is no longer in Music",
-      "rekordbox": "“{{name}}” is no longer in rekordbox"
+      "rekordbox": "“{{name}}” is no longer in rekordbox",
+      "engine": "“{{name}}” is no longer in Engine DJ"
     },
     "missing_one": "{{count}} track from “{{name}}” has no file on disk",
     "missing_other": "{{count}} tracks from “{{name}}” have no file on disk",

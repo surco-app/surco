@@ -39,3 +39,17 @@ export function RekordboxIcon({ size, ...rest }: IconProps): React.JSX.Element {
     </svg>
   )
 }
+
+export function EngineIcon({ size, ...rest }: IconProps): React.JSX.Element {
+  const mask = useId()
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" {...rest}>
+      <mask id={mask}>
+        <circle cx="12" cy="12" r="10" fill="white" />
+        <rect x="10" y="7.6" width="14" height="2.6" fill="black" />
+        <rect x="10" y="13.8" width="14" height="2.6" fill="black" />
+      </mask>
+      <rect width="24" height="24" fill="currentColor" mask={`url(#${mask})`} />
+    </svg>
+  )
+}

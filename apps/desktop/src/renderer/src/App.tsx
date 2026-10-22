@@ -2740,6 +2740,7 @@ export default function App(): React.JSX.Element {
                     source={browser.source}
                     nodes={browser.tree}
                     failed={browser.treeFailed}
+                    missing={browser.libraryMissing}
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={selectPlaylist}
                     edit={browser.source === 'rekordbox' ? treeEdit : undefined}

@@ -1166,7 +1166,8 @@
     "sourcesTitle": "Sources",
     "source": {
       "appleMusic": "Apple Music",
-      "rekordbox": "rekordbox"
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ"
     },
     "sourceAppleMusicUnavailable": "Disponible uniquement sur macOS",
     "sourceRekordboxUnavailable": "Aucune collection rekordbox n'a été trouvée",
@@ -1899,17 +1900,23 @@
     "rail": "Sources",
     "hide": {
       "appleMusic": "Masquer Apple Music",
-      "rekordbox": "Masquer rekordbox"
+      "rekordbox": "Masquer rekordbox",
+      "engine": "Masquer Engine DJ"
     },
     "workingList": "Morceaux",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
+    "engine": "Engine DJ",
     "recentlyAdded": "Ajoutées récemment",
     "search": "Rechercher une playlist",
     "loading": "Lecture des playlists…",
     "failed": {
       "appleMusic": "Impossible de lire tes playlists. Vérifie qu'Apple Music est ouvert et que Surco a le droit de le contrôler.",
-      "rekordbox": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes."
+      "rekordbox": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
+      "engine": "Impossible de lire la bibliothèque Engine DJ. Si vous venez de modifier quelque chose, revenez dans Surco dans quelques secondes."
+    },
+    "notFound": {
+      "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indiquez son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Sortie."
     },
     "empty": "Aucune playlist.",
     "noMatch": "Aucune playlist ne correspond.",
@@ -1918,7 +1925,8 @@
     "separator": "séparateur",
     "gone": {
       "appleMusic": "« {{name}} » n’est plus dans Music",
-      "rekordbox": "« {{name}} » n’est plus dans rekordbox"
+      "rekordbox": "« {{name}} » n’est plus dans rekordbox",
+      "engine": "« {{name}} » n’est plus dans Engine DJ"
     },
     "missing_one": "{{count}} piste de « {{name}} » n’a pas de fichier sur le disque",
     "missing_other": "{{count}} pistes de « {{name}} » n’ont pas de fichier sur le disque",

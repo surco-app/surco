@@ -129,6 +129,24 @@ describe('SourceTree', () => {
     expect(screen.queryByTestId('source-node-house')).not.toBeInTheDocument()
   })
 
+  it('says where to set the Engine DJ library when there is none, instead of looking like a library with no playlists', () => {
+    render(
+      <SourceTree
+        width={236}
+        title="Engine DJ"
+        source="engine"
+        nodes={[]}
+        failed={false}
+        missing
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('source-tree-missing')).toHaveTextContent('Settings → Output')
+    expect(screen.queryByText(i18n.t('sources.empty'))).not.toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+  })
+
   it('says when the collection could not be read instead of looking empty', () => {
     render(
       <SourceTree

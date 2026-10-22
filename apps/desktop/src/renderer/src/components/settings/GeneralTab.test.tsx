@@ -168,6 +168,15 @@ describe('GeneralTab sources', () => {
     expect(screen.getByTestId('settings-source-appleMusic')).toBeEnabled()
   })
 
+  it('lets Engine DJ be hidden on any machine, since its source is in the rail with or without a library', async () => {
+    const patch = renderSources({ platform: 'win32', rekordbox: false })
+    const engine = screen.getByTestId('settings-source-engine')
+    expect(engine).toBeEnabled()
+    expect(engine).toBeChecked()
+    fireEvent.click(engine)
+    expect(patch).toHaveBeenCalledWith('hiddenSources', ['engine'])
+  })
+
   it('says that hiding a source leaves its sync alone', async () => {
     renderSources({ platform: 'darwin', rekordbox: true })
     expect(screen.getByTestId('settings-sources-hint')).toHaveTextContent(

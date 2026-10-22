@@ -1025,7 +1025,7 @@ export interface AppleMusicPlaylistTracks {
 
 // Where a crate of playlists comes from. Engine DJ and Traktor join in a later phase with
 // the same shapes.
-export type PlaylistSource = 'appleMusic' | 'rekordbox'
+export type PlaylistSource = 'appleMusic' | 'rekordbox' | 'engine'
 
 // One row of a source's playlist tree. A playlist counts its real tracks, separators left
 // out, because that is the number the user sees in the list; a folder counts its direct

@@ -1166,7 +1166,8 @@
     "sourcesTitle": "Quellen",
     "source": {
       "appleMusic": "Apple Music",
-      "rekordbox": "rekordbox"
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ"
     },
     "sourceAppleMusicUnavailable": "Nur unter macOS verfügbar",
     "sourceRekordboxUnavailable": "Es wurde keine rekordbox-Sammlung gefunden",
@@ -1899,17 +1900,23 @@
     "rail": "Quellen",
     "hide": {
       "appleMusic": "Apple Music ausblenden",
-      "rekordbox": "rekordbox ausblenden"
+      "rekordbox": "rekordbox ausblenden",
+      "engine": "Engine DJ ausblenden"
     },
     "workingList": "Titel",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
+    "engine": "Engine DJ",
     "recentlyAdded": "Zuletzt hinzugefügt",
     "search": "Playlist suchen",
     "loading": "Playlists werden gelesen…",
     "failed": {
       "appleMusic": "Deine Playlists konnten nicht gelesen werden. Prüfe, ob Apple Music geöffnet ist und Surco es steuern darf.",
-      "rekordbox": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück."
+      "rekordbox": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
+      "engine": "Die Engine DJ-Bibliothek konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück."
+    },
+    "notFound": {
+      "engine": "Surco findet keine Engine DJ-Bibliothek. Lege ihren Ordner, den mit Database2, unter Engine DJ in Einstellungen → Ausgabe fest."
     },
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
@@ -1918,7 +1925,8 @@
     "separator": "Trenner",
     "gone": {
       "appleMusic": "„{{name}}“ ist nicht mehr in Music",
-      "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox"
+      "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox",
+      "engine": "„{{name}}“ ist nicht mehr in Engine DJ"
     },
     "missing_one": "{{count}} Titel aus „{{name}}“ hat keine Datei auf dem Datenträger",
     "missing_other": "{{count}} Titel aus „{{name}}“ haben keine Datei auf dem Datenträger",

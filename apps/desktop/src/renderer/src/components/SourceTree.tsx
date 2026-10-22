@@ -41,6 +41,7 @@ export function SourceTree({
   source,
   nodes,
   failed,
+  missing = false,
   selectedId,
   onSelect,
   edit,
@@ -51,6 +52,7 @@ export function SourceTree({
   source: PlaylistSource
   nodes: SourceNode[] | undefined
   failed: boolean
+  missing?: boolean
   selectedId: string | null
   onSelect: (node: SourceNode, folders: string[]) => void
   // Organising, offered only where the source can be written (rekordbox): creating playlists
@@ -312,8 +314,14 @@ export function SourceTree({
   }
 
   let body: React.ReactNode
+  if (missing)
+    body = (
+      <p data-testid="source-tree-missing" className="px-3 text-xs text-fg-faint">
+        {tr(`sources.notFound.${source}`)}
+      </p>
+    )
   // Only a tree never read says it failed; a failed re-read keeps the one already shown.
-  if (failed && !nodes)
+  else if (failed && !nodes)
     body = (
       <p data-testid="source-tree-failed" className="px-3 text-xs text-fg-faint">
         {tr(`sources.failed.${source}`)}

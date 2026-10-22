@@ -13,6 +13,7 @@ export interface SourceBrowser {
   playlist: { id: string; name: string; folders: string[] } | null
   tree: SourceNode[] | undefined
   treeFailed: boolean
+  libraryMissing: boolean
   entries: SourcePlaylistEntry[] | undefined
   entriesLoading: boolean
   entriesFailed: boolean
@@ -26,12 +27,14 @@ function containsNode(nodes: SourceNode[], id: string): boolean {
 }
 
 function readTree(source: PlaylistSource): Promise<SourceNode[]> {
+  if (source === 'engine') return window.api.loadEngineTree()
   return source === 'rekordbox'
     ? window.api.loadRekordboxTree()
     : window.api.loadAppleMusicPlaylists().then(musicTree)
 }
 
 function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
+  if (source === 'engine') return window.api.loadEnginePlaylist(id)
   return source === 'rekordbox'
     ? window.api.loadRekordboxPlaylist(id)
     : window.api.loadAppleMusicPlaylistTracks(id).then(musicEntries)
@@ -66,7 +69,14 @@ export function useSourceBrowser({
   const sources: PlaylistSource[] = [
     ...(isMac ? (['appleMusic'] as const) : []),
     ...(rekordbox ? (['rekordbox'] as const) : []),
+    'engine' as const,
   ].filter((s) => !hiddenSources.includes(s))
+  const engine = useQuery({
+    queryKey: ['source-available', 'engine'],
+    queryFn: () => window.api.engineAvailable(),
+    enabled: source === 'engine',
+    staleTime: Number.POSITIVE_INFINITY,
+  })
 
   const tree = useQuery({
     queryKey: ['source-tree', source],
@@ -145,6 +155,7 @@ export function useSourceBrowser({
           })
         : shownTree,
     treeFailed: tree.isError,
+    libraryMissing: source === 'engine' && engine.data === false,
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,
     entriesFailed: source !== null && playlist !== null && entries.isError,

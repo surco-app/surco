@@ -18,7 +18,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
-const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox']
+const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine']
 
 interface Props {
   synced: SyncedDraft
@@ -63,10 +63,12 @@ export function GeneralTab({
   const unavailable: Record<PlaylistSource, boolean> = {
     appleMusic: !isMacOS(),
     rekordbox: rekordboxFound !== true,
+    engine: false,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
     rekordbox: rekordboxFound === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
+    engine: undefined,
   }
   const clearCache = useCallback(async () => {
     setClearing(true)

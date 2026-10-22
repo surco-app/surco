@@ -1166,7 +1166,8 @@
     "sourcesTitle": "Fuentes",
     "source": {
       "appleMusic": "Apple Music",
-      "rekordbox": "rekordbox"
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ"
     },
     "sourceAppleMusicUnavailable": "Solo existe en macOS",
     "sourceRekordboxUnavailable": "No se ha encontrado una colección de rekordbox",
@@ -1899,17 +1900,23 @@
     "rail": "Fuentes",
     "hide": {
       "appleMusic": "Ocultar Apple Music",
-      "rekordbox": "Ocultar rekordbox"
+      "rekordbox": "Ocultar rekordbox",
+      "engine": "Ocultar Engine DJ"
     },
     "workingList": "Pistas",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
+    "engine": "Engine DJ",
     "recentlyAdded": "Añadidas recientemente",
     "search": "Buscar playlist",
     "loading": "Leyendo playlists…",
     "failed": {
       "appleMusic": "No se pudieron leer tus playlists. Comprueba que Apple Music está abierto y que Surco tiene permiso para controlarlo.",
-      "rekordbox": "No se pudo leer la colección. Si acabas de cambiar algo, vuelve a Surco en unos segundos."
+      "rekordbox": "No se pudo leer la colección. Si acabas de cambiar algo, vuelve a Surco en unos segundos.",
+      "engine": "No se pudo leer la biblioteca de Engine DJ. Si acabas de cambiar algo, vuelve a Surco en unos segundos."
+    },
+    "notFound": {
+      "engine": "Surco no encuentra una biblioteca de Engine DJ. Indica su carpeta, la que contiene Database2, en Engine DJ dentro de Ajustes → Destino."
     },
     "empty": "No hay playlists.",
     "noMatch": "Ninguna playlist coincide.",
@@ -1918,7 +1925,8 @@
     "separator": "separador",
     "gone": {
       "appleMusic": "«{{name}}» ya no está en Music",
-      "rekordbox": "«{{name}}» ya no está en rekordbox"
+      "rekordbox": "«{{name}}» ya no está en rekordbox",
+      "engine": "«{{name}}» ya no está en Engine DJ"
     },
     "missing_one": "{{count}} pista de «{{name}}» no tiene fichero en el disco",
     "missing_other": "{{count}} pistas de «{{name}}» no tienen fichero en el disco",
