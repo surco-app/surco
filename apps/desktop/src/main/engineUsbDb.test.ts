@@ -2,7 +2,13 @@ import Database from 'better-sqlite3-multiple-ciphers'
 import { describe, expect, it } from 'vitest'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { analysedTrack } from './enginePerformanceFixture'
-import { createEngineUsbDb, putEngineUsbTracks } from './engineUsbDb'
+import { readEngineTree } from './enginePlaylists'
+import {
+  createEngineUsbDb,
+  libraryUuid,
+  putEngineUsbPlaylist,
+  putEngineUsbTracks,
+} from './engineUsbDb'
 
 const DESKTOP_UUID = 'desktop-uuid'
 const ENGINE_4_USER_VERSION = 4194305
@@ -192,5 +198,124 @@ describe('putEngineUsbTracks', () => {
     expect(row(usb, 'SELECT loops FROM PerformanceData WHERE trackId = ?', first.get(1))).toEqual({
       loops: Buffer.from([7]),
     })
+  })
+})
+
+describe('putEngineUsbPlaylist', () => {
+  const NOW = new Date(2026, 9, 22, 11, 5, 9)
+
+  function usbWithTracks(): { usb: Database.Database; ids: number[] } {
+    const desktop = desktopWithTracks()
+    const usb = createEngineUsbDb(desktop)
+    const map = putEngineUsbTracks(usb, desktop, [
+      { desktopId: 1, path: 'Music/Surrender.aiff', fileBytes: 1 },
+      { desktopId: 2, path: 'Music/Inside.aiff', fileBytes: 1 },
+      { desktopId: 3, path: 'Music/Bongo.aiff', fileBytes: 1 },
+    ])
+    return { usb, ids: [1, 2, 3].map((id) => map.get(id) as number) }
+  }
+
+  const listId = (usb: Database.Database, title: string): number =>
+    (usb.prepare('SELECT id FROM Playlist WHERE title = ?').get(title) as { id: number }).id
+
+  function chain(usb: Database.Database, list: number) {
+    const rows = usb
+      .prepare(
+        'SELECT id, trackId, nextEntityId, databaseUuid, membershipReference FROM PlaylistEntity WHERE listId = ?',
+      )
+      .all(list) as {
+      id: number
+      trackId: number
+      nextEntityId: number
+      databaseUuid: string
+      membershipReference: number
+    }[]
+    const pointed = new Set(rows.map((r) => r.nextEntityId))
+    const heads = rows.filter((r) => !pointed.has(r.id))
+    expect(heads.length).toBeLessThanOrEqual(1)
+    const out: typeof rows = []
+    let at = heads[0]
+    while (at) {
+      out.push(at)
+      at = rows.find((r) => r.id === at?.nextEntityId) as (typeof rows)[number]
+    }
+    expect(out).toHaveLength(rows.length)
+    expect(out.at(-1)?.nextEntityId ?? 0).toBe(0)
+    return out
+  }
+
+  it('links the entries head to tail in the exported order, ending in 0, because Engine reads a playlist by following nextEntityId', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Warm up'], [ids[2], ids[0], ids[1]], NOW)
+    const entries = chain(usb, listId(usb, 'Warm up'))
+    expect(entries.map((e) => e.trackId)).toEqual([ids[2], ids[0], ids[1]])
+    expect(new Set(entries.map((e) => e.databaseUuid))).toEqual(new Set([libraryUuid(usb)]))
+    expect(entries.every((e) => e.membershipReference === 0)).toBe(true)
+  })
+
+  it('lists a track once even if the desktop playlist repeats it, as Engine allows one entry per track', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Warm up'], [ids[0], ids[1], ids[0]], NOW)
+    expect(chain(usb, listId(usb, 'Warm up')).map((e) => e.trackId)).toEqual([ids[0], ids[1]])
+  })
+
+  it('puts a new playlist after the ones already on the USB, so the player shows them in export order', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Warm up'], [ids[0]], NOW)
+    putEngineUsbPlaylist(usb, ['Peak'], [ids[1]], NOW)
+    expect(readEngineTree(usb).map((n) => n.name)).toEqual(['Warm up', 'Peak'])
+    expect(
+      usb.prepare('SELECT title, nextListId, isPersisted, lastEditTime FROM Playlist').all(),
+    ).toEqual([
+      {
+        title: 'Warm up',
+        nextListId: listId(usb, 'Peak'),
+        isPersisted: 1,
+        lastEditTime: '2026-10-22 11:05:09',
+      },
+      { title: 'Peak', nextListId: 0, isPersisted: 1, lastEditTime: '2026-10-22 11:05:09' },
+    ])
+  })
+
+  it('replaces the tracks of a playlist exported before, in its place, instead of adding a second playlist with the same name', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Warm up'], [ids[0], ids[1]], NOW)
+    putEngineUsbPlaylist(usb, ['Peak'], [ids[1]], NOW)
+    const before = listId(usb, 'Warm up')
+    putEngineUsbPlaylist(usb, ['Warm up'], [ids[2]], NOW)
+    expect(listId(usb, 'Warm up')).toBe(before)
+    expect(readEngineTree(usb).map((n) => n.name)).toEqual(['Warm up', 'Peak'])
+    expect(chain(usb, before).map((e) => e.trackId)).toEqual([ids[2]])
+  })
+
+  it('rebuilds the folders around a playlist once, so two playlists of one folder land in the same folder', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Sets', '2026', 'Peak'], [ids[0]], NOW)
+    putEngineUsbPlaylist(usb, ['Sets', '2026', 'Closing'], [ids[1]], NOW)
+    const tree = readEngineTree(usb)
+    expect(tree).toHaveLength(1)
+    expect(tree[0]).toMatchObject({ name: 'Sets', kind: 'folder' })
+    expect(tree[0].children?.[0]).toMatchObject({ name: '2026', kind: 'folder' })
+    expect(tree[0].children?.[0].children?.map((n) => n.name)).toEqual(['Peak', 'Closing'])
+  })
+
+  it('fills a folder with the tracks of the playlists inside it, counting in how many each one is, the way the desktop library keeps its folders', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Bases', '2K'], [ids[2]], NOW)
+    putEngineUsbPlaylist(usb, ['Bases', '24'], [ids[1]], NOW)
+    putEngineUsbPlaylist(usb, ['Bases', 'All'], [ids[2], ids[1]], NOW)
+    const folder = chain(usb, listId(usb, 'Bases'))
+    expect(folder.map((e) => [e.trackId, e.membershipReference])).toEqual([
+      [ids[2], 2],
+      [ids[1], 2],
+    ])
+    putEngineUsbPlaylist(usb, ['Bases', 'All'], [ids[0]], NOW)
+    expect(chain(usb, listId(usb, 'Bases')).map((e) => [e.trackId, e.membershipReference])).toEqual(
+      [
+        [ids[2], 1],
+        [ids[1], 1],
+        [ids[0], 1],
+      ],
+    )
   })
 })

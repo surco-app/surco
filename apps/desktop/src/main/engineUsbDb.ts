@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { posix } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
-import type { EngineDb } from './enginePlaylists'
+import { chainOrder, type EngineDb } from './enginePlaylists'
 
 export function createEngineUsbDb(desktop: EngineDb): Database.Database {
   const usb = new Database(':memory:')
@@ -129,4 +129,113 @@ export function putEngineUsbTracks(
     }
   })()
   return ids
+}
+
+const two = (n: number): string => String(n).padStart(2, '0')
+
+function editStamp(d: Date): string {
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`
+}
+
+interface Entity {
+  id: number
+  next: number
+  trackId: number
+  ref: number
+}
+
+function entitiesOf(usb: Database.Database, listId: number): Entity[] {
+  return chainOrder(
+    usb
+      .prepare(
+        `SELECT id, nextEntityId AS next, trackId, membershipReference AS ref
+           FROM PlaylistEntity WHERE listId = ?`,
+      )
+      .all(listId) as Entity[],
+  )
+}
+
+function listUnder(usb: Database.Database, parent: number, title: string, stamp: string): number {
+  const found = usb
+    .prepare('SELECT id FROM Playlist WHERE title = ? AND parentListId = ?')
+    .pluck()
+    .get(title, parent) as number | undefined
+  if (found !== undefined) return found
+  return Number(
+    usb
+      .prepare(
+        `INSERT INTO Playlist (title, parentListId, isPersisted, nextListId, lastEditTime,
+          isExplicitlyExported) VALUES (?, ?, 1, 0, ?, 1)`,
+      )
+      .run(title, parent, stamp).lastInsertRowid,
+  )
+}
+
+function appendEntities(
+  usb: Database.Database,
+  listId: number,
+  tracks: { trackId: number; ref: number }[],
+  uuid: string,
+): void {
+  const insert = usb.prepare(
+    `INSERT INTO PlaylistEntity (listId, trackId, databaseUuid, nextEntityId, membershipReference)
+     VALUES (?, ?, ?, 0, ?)`,
+  )
+  const link = usb.prepare('UPDATE PlaylistEntity SET nextEntityId = ? WHERE id = ?')
+  let tail = entitiesOf(usb, listId).at(-1)?.id ?? null
+  for (const t of tracks) {
+    const id = Number(insert.run(listId, t.trackId, uuid, t.ref).lastInsertRowid)
+    if (tail !== null) link.run(id, tail)
+    tail = id
+  }
+}
+
+function rebuildFolder(usb: Database.Database, folderId: number, uuid: string): void {
+  const children = chainOrder(
+    usb
+      .prepare('SELECT id, nextListId AS next FROM Playlist WHERE parentListId = ?')
+      .all(folderId) as { id: number; next: number }[],
+  )
+  const counts = new Map<number, number>()
+  for (const child of children)
+    for (const e of entitiesOf(usb, child.id))
+      counts.set(e.trackId, (counts.get(e.trackId) ?? 0) + 1)
+  usb
+    .prepare('DELETE FROM PlaylistEntity WHERE listId = ? AND membershipReference > 0')
+    .run(folderId)
+  const direct = new Set(entitiesOf(usb, folderId).map((e) => e.trackId))
+  appendEntities(
+    usb,
+    folderId,
+    [...counts]
+      .filter(([trackId]) => !direct.has(trackId))
+      .map(([trackId, ref]) => ({ trackId, ref })),
+    uuid,
+  )
+}
+
+export function putEngineUsbPlaylist(
+  usb: Database.Database,
+  path: string[],
+  trackIds: number[],
+  now: Date,
+): void {
+  const uuid = libraryUuid(usb)
+  const stamp = editStamp(now)
+  usb.transaction(() => {
+    const lists: number[] = []
+    for (const title of path) lists.push(listUnder(usb, lists.at(-1) ?? 0, title, stamp))
+    const listId = lists.at(-1) as number
+    usb.prepare('UPDATE Playlist SET lastEditTime = ? WHERE id = ?').run(stamp, listId)
+    usb
+      .prepare('DELETE FROM PlaylistEntity WHERE listId = ? AND membershipReference = 0')
+      .run(listId)
+    appendEntities(
+      usb,
+      listId,
+      [...new Set(trackIds)].map((trackId) => ({ trackId, ref: 0 })),
+      uuid,
+    )
+    for (const folder of lists.slice(0, -1).reverse()) rebuildFolder(usb, folder, uuid)
+  })()
 }

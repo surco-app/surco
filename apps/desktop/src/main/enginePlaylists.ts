@@ -40,7 +40,7 @@ interface Linked {
   next: number
 }
 
-function chainOrder<T extends Linked>(items: T[]): T[] {
+export function chainOrder<T extends Linked>(items: T[]): T[] {
   const byId = new Map(items.map((i) => [i.id, i]))
   const pointed = new Set(items.map((i) => i.next))
   const sorted = [...items].sort((a, b) => a.id - b.id)
