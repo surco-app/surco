@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readdirSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -73,4 +73,40 @@ describe('convertAudio — killed mid-encode', () => {
     const leftovers = readdirSync(dir).filter((f) => f.includes('.tmp-'))
     expect(leftovers).toEqual([])
   }, 15000)
+})
+
+describe('convertAudio — cancelled outside the encode', () => {
+  it('publishes nothing when the cancel lands where no child process runs', async () => {
+    const out = join(dir, 'cancelled.aiff')
+    const promise = convertAudio(
+      src,
+      out,
+      'aiff',
+      meta,
+      undefined,
+      {
+        mode: 'loudness',
+        targetLufs: -9,
+        truePeakDb: -1,
+        peakDb: -1,
+        removeDcOffset: false,
+        peakPerChannel: false,
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => true,
+    )
+
+    await expect(promise).rejects.toThrow('conversionCancelled')
+    expect(existsSync(out)).toBe(false)
+    expect(readdirSync(dir).filter((f) => f.includes('.tmp-'))).toEqual([])
+  }, 30000)
 })

@@ -1188,6 +1188,7 @@ function registerIpc(): void {
               clearExtras,
               foreignRemoved,
               replacesPath,
+              () => activeConversions.isCancelled(job.id),
             ),
           {
             labelParams: { track },

@@ -101,4 +101,20 @@ describe('createActiveConversions', () => {
     conversions.endJob('a')
     expect(conversions.count()).toBe(0)
   })
+
+  it('remembers a cancel for a running job with no process to kill, until the job ends', () => {
+    const conversions = createActiveConversions()
+    conversions.beginJob('measuring')
+    conversions.cancel('measuring')
+    expect(conversions.isCancelled('measuring')).toBe(true)
+    conversions.endJob('measuring')
+    expect(conversions.isCancelled('measuring')).toBe(false)
+  })
+
+  it('ignores a cancel for a job that is not running', () => {
+    const conversions = createActiveConversions()
+    conversions.cancel('done')
+    conversions.beginJob('done')
+    expect(conversions.isCancelled('done')).toBe(false)
+  })
 })

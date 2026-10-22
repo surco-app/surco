@@ -1893,6 +1893,7 @@ export async function convertAudio(
   // The file this conversion supersedes, when it replaces a copy already in the library.
   // rekordbox indexes that path, not the one being converted.
   replacesPath?: string,
+  isCancelled?: () => boolean,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   const meta = composeMeta(sourceMeta)
   // We always write to a temp file and rename it over the target, so
@@ -2247,6 +2248,7 @@ export async function convertAudio(
     // both branches share and nothing further writes to the temp, which is exactly what
     // the rename's own comment below already claims to be true of it.
     await assertDecodable(tmp, copiedVerbatim ? input : undefined)
+    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and

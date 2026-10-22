@@ -153,6 +153,7 @@
     "convertedOutputTruncated": "Le fichier converti est sorti plus court que l'original, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion.",
     "engineDjOpen": "Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.",
     "noRoomForBackup": "Il n'y a pas d'espace disque pour une copie de sauvegarde de l'original et son disque n'a pas de corbeille, il n'a donc pas été touché. Libérez de l'espace et réessayez.",
+    "conversionCancelled": "Conversion annulée.",
     "sourceTagsUnread": "Les tags de ce fichier n'ont pas pu être lus, il n'a donc pas été touché : le convertir aurait effacé ceux qu'il a. Rechargez-le et réessayez.",
     "coverDownloadFailed": "La pochette n'a pas pu être téléchargée.",
     "coverNotImage": "Cette adresse ne mène pas à une image.",
