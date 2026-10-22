@@ -15,6 +15,7 @@ import {
   findTrackByPath,
   isAmbiguous,
   openRekordboxDb,
+  rekordboxStoredPath,
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -212,7 +213,7 @@ export async function repointTracks(
     write.transaction(() => {
       for (const w of writes) {
         const { to, meta, onWrite } = repoints[w.index]
-        update.run(to, basename(to), w.fileType, w.size, w.id)
+        update.run(rekordboxStoredPath(to), basename(to), w.fileType, w.size, w.id)
         if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
         // Placed after the statement so a test can fail the write once the row has
         // really changed — the only state in which the rollback below is doing anything.

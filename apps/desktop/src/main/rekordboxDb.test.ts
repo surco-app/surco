@@ -184,6 +184,27 @@ describe('rekordboxRawKey', () => {
 })
 
 describe('findTrackByPath', () => {
+  it('finds a Windows track rekordbox stores with forward slashes from the backslashed path', async () => {
+    const winPath = join(await mkdtemp(join(tmpdir(), 'surco-rb-win-')), 'master.db')
+    const writer = new Database(winPath)
+    writer.pragma(`cipher='sqlcipher'`)
+    writer.pragma('legacy=4')
+    writer.pragma(`key='${REKORDBOX_KEY}'`)
+    writer.exec(
+      'CREATE TABLE djmdContent (ID VARCHAR(255) PRIMARY KEY, FolderPath VARCHAR(255), FileNameL VARCHAR(255), FileType INTEGER, FileSize INTEGER, rb_local_deleted TINYINT(1) DEFAULT 0)',
+    )
+    writer
+      .prepare(
+        'INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize) VALUES (?, ?, ?, ?, ?)',
+      )
+      .run('600000001', 'C:/Users/dj/Music/Win Track.mp3', 'Win Track.mp3', 1, 8000000)
+    writer.close()
+    const db = openRekordboxDb(winPath)
+    if (!db) throw new Error('fixture did not decrypt')
+    expect(single(findTrackByPath(db, 'C:\\Users\\dj\\Music\\Win Track.mp3')).id).toBe('600000001')
+    db.close()
+  })
+
   it('finds the track that a conversion is about to replace', () => {
     const db = open()
     const found = findTrackByPath(db, '/Volumes/Public/Music/Acid Tribute/02 Everybody.mp3')
