@@ -1781,6 +1781,7 @@
     "rekordboxTagsWritten_other": "{{count}} Titel mit korrigierten Namen",
     "duplicatesReplaced_one": "{{count}} entfernte Kopie verweist jetzt auf die behaltene",
     "duplicatesReplaced_other": "{{count}} entfernte Kopien verweisen jetzt auf die behaltenen",
+    "duplicatesUnsettled": "Übersprungen: Die Sammlung enthält diesen Track mehrfach oder auf einem anderen Laufwerk, daher wurde er nicht angerührt",
     "rekordboxSyncNothing": "Keiner dieser Titel ist in der Sammlung",
     "rekordboxSyncRunning": "Übersprungen: rekordbox war geöffnet",
     "rekordboxSyncBackupFailed": "Übersprungen: keine Sicherung der Sammlung möglich",

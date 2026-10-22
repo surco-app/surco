@@ -1781,6 +1781,7 @@
     "rekordboxTagsWritten_other": "{{count}} faixas com os nomes corrigidos",
     "duplicatesReplaced_one": "{{count}} cópia removida agora aponta para a que fica",
     "duplicatesReplaced_other": "{{count}} cópias removidas agora apontam para as que ficam",
+    "duplicatesUnsettled": "Ignorado: a coleção tem esta faixa mais de uma vez ou em outro disco, então ela não foi tocada",
     "rekordboxSyncNothing": "Nenhuma dessas faixas está na coleção",
     "rekordboxSyncRunning": "Ignorado: o rekordbox estava aberto",
     "rekordboxSyncBackupFailed": "Ignorado: não foi possível fazer backup da coleção",

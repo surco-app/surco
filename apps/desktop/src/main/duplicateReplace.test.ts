@@ -467,4 +467,18 @@ describe('replaceDuplicates in Activity', () => {
     await replaceDuplicates([{ ...PAIR, from: '/m/unknown.aiff' }], d)
     expect(events).toEqual([])
   })
+
+  it('says the collection held the track ambiguously rather than not at all', async () => {
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+    await traktorDuplicateStep([PAIR], {
+      nmlPath: '/c.nml',
+      ensureTraktorClosed: async () => true,
+      showBlockedDialog: vi.fn(),
+      track: activity.track,
+      replace: vi.fn().mockResolvedValue({ written: false, outcomes: ['failed'] }),
+    })
+    expect(events.at(-1)).toMatchObject({ detailKey: 'activity.duplicatesUnsettled' })
+  })
 })

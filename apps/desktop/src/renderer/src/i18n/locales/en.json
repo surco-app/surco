@@ -1781,6 +1781,7 @@
     "rekordboxTagsWritten_other": "{{count}} tracks with their names fixed",
     "duplicatesReplaced_one": "{{count}} removed copy now points at the one you kept",
     "duplicatesReplaced_other": "{{count}} removed copies now point at the ones you kept",
+    "duplicatesUnsettled": "Skipped: the collection holds this track more than once or on another disk, so it was left alone",
     "rekordboxSyncNothing": "None of these tracks are in the collection",
     "rekordboxSyncRunning": "Skipped: rekordbox was open",
     "rekordboxSyncBackupFailed": "Skipped: couldn't back up the collection",
