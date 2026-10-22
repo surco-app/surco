@@ -13,7 +13,7 @@ export function RowWave({
   durationSec,
   pending,
   active,
-  unanalyzed = false,
+  unanalyzed,
   proposals = [],
 }: {
   request: RowWaveRequest
@@ -21,7 +21,7 @@ export function RowWave({
   durationSec: number | undefined
   pending: boolean
   active: boolean
-  unanalyzed?: boolean
+  unanalyzed?: 'rekordbox' | 'engine'
   proposals?: number[]
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -59,7 +59,11 @@ export function RowWave({
           data-testid="track-unanalyzed"
           className="absolute inset-x-0 bottom-0 block truncate text-xs text-fg-dim"
         >
-          {tr('trackList.rekordboxUnanalyzed')}
+          {tr(
+            unanalyzed === 'engine'
+              ? 'trackList.engineUnanalyzed'
+              : 'trackList.rekordboxUnanalyzed',
+          )}
         </span>
       )}
       {!unanalyzed && bars && bars.length > 0 && (

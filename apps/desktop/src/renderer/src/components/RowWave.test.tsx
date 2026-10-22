@@ -33,7 +33,7 @@ describe('RowWave', () => {
         durationSec={370}
         pending={false}
         active
-        unanalyzed
+        unanalyzed="rekordbox"
       />,
     )
     expect(screen.getByTestId('track-unanalyzed')).toHaveTextContent('Not analyzed in rekordbox')

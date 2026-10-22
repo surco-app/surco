@@ -1051,6 +1051,7 @@ export interface SourcePreview {
   durationSec: number
   coverUrl?: string
   analysisPath?: string
+  unanalysed?: true
   cues: RowCue[]
 }
 

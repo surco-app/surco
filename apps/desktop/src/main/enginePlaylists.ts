@@ -194,13 +194,14 @@ export function readEnginePlaylist(
     const cover = r.albumArtId ? covers.get(r.albumArtId) : undefined
     const contentId = engineContentId(r.trackId)
     const perf = readEnginePerformance(db, r.trackId)
-    const cues = perf ? engineCuesOf(contentId, perf, { wave: false }).cues : []
+    const read = perf ? engineCuesOf(contentId, perf, { wave: false }) : null
     const preview: SourcePreview = {
       title: r.title?.trim() ?? '',
       artist: r.artist?.trim() ?? '',
       durationSec: r.length ?? 0,
       ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
-      cues: cues.map(({ ms, kind, color }) => ({ ms, kind, color })),
+      ...(read?.analysed ? {} : { unanalysed: true }),
+      cues: (read?.cues ?? []).map(({ ms, kind, color }) => ({ ms, kind, color })),
     }
     return {
       path: resolve(libraryDir, r.path),

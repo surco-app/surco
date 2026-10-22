@@ -381,6 +381,7 @@
     },
     "cuesPendingNone": "Cues en attente de rekordbox",
     "rekordboxUnanalyzed": "Non analysée dans rekordbox",
+    "engineUnanalyzed": "Non analysée dans Engine DJ",
     "cuesAria_one": "{{count}} hot cue",
     "cuesAria_other": "{{count}} hot cues",
     "cuesAriaPending_one": "{{count}} hot cue en attente de rekordbox",

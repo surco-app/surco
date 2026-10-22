@@ -859,8 +859,11 @@ const TrackRow = memo(function TrackRow({
                       pending={cuesPending}
                       active={seen}
                       unanalyzed={
-                        Boolean(t.fromRekordbox && t.sourcePreview) &&
-                        !t.sourcePreview?.analysisPath
+                        t.fromRekordbox && t.sourcePreview && !t.sourcePreview.analysisPath
+                          ? 'rekordbox'
+                          : t.fromEngine && t.sourcePreview?.unanalysed
+                            ? 'engine'
+                            : undefined
                       }
                       proposals={autoMark?.kind === 'proposed' ? autoMark.ms : undefined}
                     />

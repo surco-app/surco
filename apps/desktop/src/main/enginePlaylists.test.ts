@@ -213,6 +213,22 @@ describe('readEnginePlaylist', () => {
     db.close()
   })
 
+  it('marks the rows Engine has not analysed, so the list can say so before the editor opens', async () => {
+    const dir = await library({
+      tracks: TRACKS,
+      playlists: [{ id: 1, title: 'P', parentListId: 0, nextListId: 0 }],
+      entities: [
+        { id: 1, listId: 1, trackId: 1, nextEntityId: 2 },
+        { id: 2, listId: 1, trackId: 2, nextEntityId: 0 },
+      ],
+      performance: [analysedTrack(2)],
+    })
+    const db = opened(dir)
+    const rows = readEnginePlaylist(db, dir, '1', join(dir, 'art'))
+    expect(rows.map((r) => r.preview?.unanalysed)).toEqual([true, undefined])
+    db.close()
+  })
+
   it('writes one cover file per picture, however many tracks share it', async () => {
     const dir = await library({
       tracks: [

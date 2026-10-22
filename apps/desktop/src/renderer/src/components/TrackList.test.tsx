@@ -489,6 +489,19 @@ describe('TrackList', () => {
     expect(screen.queryByTestId('track-wave-bars')).toBeNull()
   })
 
+  it('says which Engine DJ tracks Engine has not analysed yet, in Engine’s name', () => {
+    const preview = { title: 'A', artist: '', durationSec: 200, cues: [] }
+    renderList([
+      track({ id: 'new', fromEngine: true, sourcePreview: { ...preview, unanalysed: true } }),
+      track({ id: 'done', fromEngine: true, sourcePreview: preview }),
+    ])
+    const rows = screen.getAllByTestId('track-wave-line')
+    expect(within(rows[0]).getByTestId('track-unanalyzed')).toHaveTextContent(
+      'Not analyzed in Engine DJ',
+    )
+    expect(within(rows[1]).queryByTestId('track-unanalyzed')).toBeNull()
+  })
+
   it('says which rekordbox tracks still need analysing, and says nothing for files outside rekordbox', () => {
     const preview = { title: 'A', artist: '', durationSec: 200, cues: [] }
     renderList([
