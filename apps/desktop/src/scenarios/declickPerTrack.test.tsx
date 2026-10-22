@@ -45,6 +45,7 @@ describe('Repair the clicks of one rip in a batch and leave the clean one untouc
       },
       { timeout: 60_000, interval: 200 },
     )
+    await screen.findByTestId('batch-summary', {}, { timeout: 30_000 })
   }, 120_000)
 
   afterAll(() => {

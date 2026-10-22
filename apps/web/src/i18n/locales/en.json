@@ -956,6 +956,8 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes."
   },
   "home": {
+    "replay": "Replay the animation",
+    "anchorLink": "Link to this example",
     "walkthrough": {
       "kicker": "Step by step",
       "title": "One track, start to finish",
