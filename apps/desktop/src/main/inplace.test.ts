@@ -10,6 +10,7 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import { configureOriginalKeeper } from './originalKeeper'
 
 describe('sanitizeOutputName', () => {
   it('keeps "/" as a folder boundary while cleaning each segment on its own', () => {
@@ -230,6 +231,25 @@ describe('removeRenamedOriginal', () => {
     await removeRenamedOriginal(oldPath, newPath)
 
     expect(await exists(oldPath)).toBe(false)
+    expect(await exists(newPath)).toBe(true)
+  })
+
+  it('finishes when the keeper already sent the original to the system trash', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-rm-'))
+    const oldPath = join(dir, 'old.mp3')
+    const newPath = join(dir, 'old.aiff')
+    await writeFile(oldPath, 'a')
+    await writeFile(newPath, 'b')
+    configureOriginalKeeper(async (path) => {
+      await rm(path)
+      return null
+    })
+    try {
+      await removeRenamedOriginal(oldPath, newPath)
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
     expect(await exists(newPath)).toBe(true)
   })
 

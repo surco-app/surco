@@ -15,9 +15,10 @@ import type { TrashEntry, TrashReason } from '../shared/types'
 // under a manifest that names where each file came from.
 
 export interface SurcoTrash {
-  // Moves the file into the trash and records it. Null when there is no such file: a
+  // Moves the file into the trash and records it. Null when there is no such file (a
   // caller cleaning up after a rename that changed only the case of the name asks for a
-  // path that no longer exists, and that is not an error.
+  // path that no longer exists, and that is not an error) or when the file does not fit
+  // the room the cap and the disk leave.
   stash(
     path: string,
     reason: TrashReason,

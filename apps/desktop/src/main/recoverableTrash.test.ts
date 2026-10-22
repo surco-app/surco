@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
-import { type RecoverableTrashDeps, trashAsConfirmed, trashRecoverably } from './recoverableTrash'
+import {
+  type RecoverableTrashDeps,
+  trashAsConfirmed,
+  trashRecoverably,
+  trashWithoutRoom,
+} from './recoverableTrash'
 
 afterEach(() => configureOriginalKeeper(null))
 
@@ -106,5 +111,19 @@ describe('trashAsConfirmed', () => {
     const d = deps({ policy: () => 'never' })
     expect(await trashAsConfirmed('/Users/me/a.mp3', { permanentConfirmed: true }, d)).toBe('trash')
     expect(d.remove).not.toHaveBeenCalled()
+  })
+})
+
+describe('trashWithoutRoom', () => {
+  it('sends an original the backup store had no room for to the system trash', async () => {
+    const d = deps({})
+    await trashWithoutRoom('/m/a.flac', d)
+    expect(d.trashItem).toHaveBeenCalledWith('/m/a.flac')
+  })
+
+  it('refuses rather than delete for good on a disk with no Trash', async () => {
+    const d = deps({ keepsTrash: () => false })
+    await expect(trashWithoutRoom('/Volumes/nas/a.flac', d)).rejects.toThrow('noRoomForBackup')
+    expect(d.trashItem).not.toHaveBeenCalled()
   })
 })

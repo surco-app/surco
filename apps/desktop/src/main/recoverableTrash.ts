@@ -1,6 +1,7 @@
 import { unlink } from 'node:fs/promises'
 import { shell } from 'electron'
 import type { BackupPolicy } from '../shared/backupPolicy'
+import { errorWithKey } from '../shared/errorKeys'
 import { currentBackupPolicy, keepOriginal } from './originalKeeper'
 import { volumeKeepsTrash } from './trashSupport'
 
@@ -36,6 +37,16 @@ export async function trashRecoverably(
   }
   await deps.trashItem(path)
   return 'trash'
+}
+
+export async function trashWithoutRoom(
+  path: string,
+  over: Partial<RecoverableTrashDeps> = {},
+): Promise<void> {
+  const deps = { ...defaultDeps, ...over }
+  if (!deps.keepsTrash(path) && deps.platform !== 'win32')
+    throw errorWithKey('noRoomForBackup', path)
+  await deps.trashItem(path)
 }
 
 // A delete the user confirmed in the trash or clean-up dialog. Under "Never" on a disk

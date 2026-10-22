@@ -106,7 +106,7 @@ import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playb
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
-import { trashRecoverably } from './recoverableTrash'
+import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   attachRekordboxPlaylists,
   beginRekordboxBatch,
@@ -271,7 +271,7 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
 const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =>
   trashLimits(getSettings()),
 )
-configureBackupStore(surcoTrash, () => getSettings().backupPolicy)
+configureBackupStore(surcoTrash, () => getSettings().backupPolicy, trashWithoutRoom)
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)

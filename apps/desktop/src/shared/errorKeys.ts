@@ -42,6 +42,7 @@ export const ERROR_KEYS = [
   'beatportNoSecureStorage',
   'musicbrainzUnavailable',
   'musicbrainzRateLimit',
+  'noRoomForBackup',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]
