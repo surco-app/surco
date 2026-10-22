@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import type { QueuedCues } from '../../../shared/types'
 import type { CueDraft } from './cueDraft'
 
 export type AutoMark =
@@ -33,6 +34,14 @@ export function unsavedCueTracks(): ReadonlySet<string> {
 
 export function useUnsavedCueTracks(): ReadonlySet<string> {
   return useSyncExternalStore(subscribeCueDrafts, unsavedCueTracks)
+}
+
+export function cueDraftKey(
+  contentId: string,
+  fingerprint: string,
+  queued: QueuedCues | null | undefined,
+): string {
+  return `${contentId}|${fingerprint}|${JSON.stringify(queued)}`
 }
 
 export function keptDraft(contentId: string, draftKey: string): CueDraft | undefined {

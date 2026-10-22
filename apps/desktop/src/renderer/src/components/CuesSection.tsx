@@ -19,6 +19,7 @@ import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useCueWaveDetail, useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
+import { withoutCallInBar } from '../lib/cueAutoMark'
 import type { DetailSource } from '../lib/cueDetail'
 import {
   type CueDraft,
@@ -46,6 +47,7 @@ import {
 } from '../lib/cuePlayhead'
 import {
   autoMarkOf,
+  cueDraftKey,
   forgetAutoMark,
   forgetDraft,
   keepAutoMark,
@@ -119,18 +121,6 @@ function UnsavedMark(): React.JSX.Element {
       {tr('editor.cues.unsaved')}
     </span>
   )
-}
-
-function withoutCallInBar(
-  proposed: number[],
-  cues: DraftCue[],
-  grid: { ms: number; beat: number }[],
-): number[] {
-  const beats = grid.map((b) => b.ms)
-  const barAt = (ms: number) =>
-    grid.slice(0, nearestBeat(beats, ms) + 1).filter((b) => b.beat === 1).length
-  const calls = cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
-  return proposed.filter((ms) => !calls.includes(barAt(ms)))
 }
 
 const MENU_ITEM =
@@ -1169,7 +1159,7 @@ export function CuesSection({
   const maximized = open && whole === 'cues'
   const unsaved = useUnsavedCueTracks().has(cue.contentId)
   const [round, setRound] = useState(0)
-  const draftKey = `${cue.contentId}|${read?.fingerprint ?? ''}|${JSON.stringify(queued)}`
+  const draftKey = cueDraftKey(cue.contentId, read?.fingerprint ?? '', queued)
   const [head, setHead] = useState(() => ({
     contentId: cue.contentId,
     ms: keptPlayhead(cue.contentId),
