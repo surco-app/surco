@@ -196,4 +196,25 @@ describe('a renderer reload', () => {
     expect(handler).toContain('abandonNmlBatch()')
     expect(handler).toContain('abandonRekordboxBatch()')
   })
+
+  it('starts a fresh pre-run copy only when the outermost batch opens', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler =
+      source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n  \}\)/)?.[1] ?? ''
+    expect(handler).toMatch(
+      /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.reset\(\)\s*engineSessionBackup\.reset\(\)/,
+    )
+  })
+})
+
+describe('beginRekordboxBatch', () => {
+  it('says whether it opened a new run, so a convert started mid-run is told apart', () => {
+    abandonRekordboxBatch()
+    expect(beginRekordboxBatch()).toBe(true)
+    expect(beginRekordboxBatch()).toBe(false)
+    endRekordboxBatch()
+    endRekordboxBatch()
+    expect(beginRekordboxBatch()).toBe(true)
+    endRekordboxBatch()
+  })
 })

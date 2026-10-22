@@ -1020,11 +1020,12 @@ function registerIpc(): void {
     stickyConflict.reset()
     coverMemo = createCoverMemo(prepareProcessedCover)
     beginNmlBatch()
-    beginRekordboxBatch()
     // A new run gets a new pre-run copy; without this the stored one would describe the
     // collection before the FIRST run since launch, not before the run in progress.
-    rekordboxSessionBackup.reset()
-    engineSessionBackup.reset()
+    if (beginRekordboxBatch()) {
+      rekordboxSessionBackup.reset()
+      engineSessionBackup.reset()
+    }
   })
 
   // The collaborators every library flush shares, whatever it is flushing: the conversion
