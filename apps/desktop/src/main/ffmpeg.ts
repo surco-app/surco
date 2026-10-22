@@ -3553,3 +3553,21 @@ export async function measureChannelScan(
     channels: scan.channels.length === 2 ? scan.channels : undefined,
   }
 }
+
+export async function measureCueWaveWords(input: string): Promise<Uint16Array | null> {
+  try {
+    const sampleRate = Number((await probeAudio(input)).sampleRate)
+    if (!sampleRate) return null
+    const words = await runInWorker<Uint16Array>({
+      type: 'cueWaveWords',
+      input,
+      ffmpegPath,
+      sampleRate,
+      timeoutMs: ANALYSIS_TIMEOUT_MS,
+    })
+    return words.length > 0 ? words : null
+  } catch (err) {
+    log.warn(`cue wave words failed for ${input}: ${String(err)}`)
+    return null
+  }
+}
