@@ -171,6 +171,7 @@ export default function Walkthrough() {
       >
         <p>{t('home.cues.lede')}</p>
         <p className="mt-3">{t('home.cues.example')}</p>
+        <p className="mt-3">{t('home.cues.auto')}</p>
       </SceneLayout>
 
       <Reveal>
