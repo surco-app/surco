@@ -780,7 +780,7 @@
       "unanalysed": "rekordbox aún no ha analizado esta pista",
       "tooMany": "Necesitaría más de 8 hot cues. Quita un punto.",
       "save": "Guardar en rekordbox",
-      "unreadable": "No se pudieron leer los cues de rekordbox",
+      "unreadable": "No se pudieron leer las cues de rekordbox",
       "discard": "Descartar cambios",
       "unsaved": "Sin guardar",
       "flow": "Flujo",
@@ -2392,9 +2392,9 @@
       "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en rekordbox",
       "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
       "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox",
-      "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
+      "cuesChanged": "Las cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlas",
       "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita un punto",
-      "cuesInvalid": "No se guardaron los cues de {{track}}. Surco no pudo leerlos como cues"
+      "cuesInvalid": "No se guardaron las cues de {{track}}. Surco no pudo leerlas como cues"
     },
     "part": {
       "repoint": "nueva ruta",
