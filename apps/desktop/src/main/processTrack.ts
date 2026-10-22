@@ -96,6 +96,7 @@ export interface ProcessTrackDeps {
     replaces: string,
   ) => Promise<void>
   ensureEngineDjClosed?: () => Promise<boolean>
+  isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   attachRekordboxPlaylists?: (
@@ -184,6 +185,7 @@ export async function runProcessTrack(
   if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
+  if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
 
   let prepared: PreparedCover | undefined
   // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed

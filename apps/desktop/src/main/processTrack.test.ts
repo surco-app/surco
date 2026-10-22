@@ -827,6 +827,24 @@ describe('runProcessTrack — beside the original', () => {
   })
 })
 
+describe('runProcessTrack — a source main never handed out', () => {
+  it('refuses to convert a file that is not one of the tracks the app accepted', async () => {
+    const deps = makeDeps({ isAllowed: vi.fn(() => false) })
+
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('pathNotAllowed')
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+  })
+
+  it('converts a track the app accepted', async () => {
+    const isAllowed = vi.fn(() => true)
+    const deps = makeDeps({ isAllowed })
+
+    await runProcessTrack(job(), deps)
+    expect(isAllowed).toHaveBeenCalledWith('/in/song.wav')
+    expect(deps.convertAudio).toHaveBeenCalled()
+  })
+})
+
 describe('runProcessTrack — Engine DJ open before the write', () => {
   it('fails before writing anything when Engine DJ stays open', async () => {
     const deps = makeDeps({
