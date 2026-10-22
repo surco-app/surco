@@ -234,6 +234,24 @@ describe('the manifest', () => {
     expect(await t.list()).toEqual([])
     expect(statSync(join(root, 'trash')).isDirectory()).toBe(true)
   })
+
+  it('sets a corrupt manifest aside so the original paths it names are not overwritten', async () => {
+    const entry = await trash.stash(song('Kept.aiff'), 'deleted')
+    const manifest = join(root, 'trash', 'trash.json')
+    writeFileSync(manifest, '{not json')
+    await trash.stash(song('Next.aiff'), 'deleted')
+    expect(readFileSync(`${manifest}.unreadable`, 'utf8')).toBe('{not json')
+    expect(existsSync(entry?.storedPath as string)).toBe(true)
+  })
+
+  it('sweeps a stored file the manifest no longer names, but only once it outlives the retention', async () => {
+    const orphan = await trash.stash(song('Lost.aiff'), 'deleted')
+    writeFileSync(join(root, 'trash', 'trash.json'), '{not json')
+    await trash.sweep()
+    expect(existsSync(orphan?.storedPath as string)).toBe(true)
+    await trash.sweep(Date.now() + 31 * DAY)
+    expect(existsSync(orphan?.storedPath as string)).toBe(false)
+  })
 })
 
 // The cap is the user's number and knows nothing of the disk: 10 GB of copies on a disk

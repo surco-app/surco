@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { constants, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { copyFile, mkdir, rename, stat, statfs, unlink } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, rename, stat, statfs, unlink } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { TRASH_MAX_BYTES, TRASH_MIN_FREE_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { TrashEntry, TrashReason } from '../shared/types'
@@ -85,9 +85,12 @@ export function createSurcoTrash(
       const parsed: unknown = JSON.parse(readFileSync(manifest, 'utf8'))
       return Array.isArray(parsed) ? (parsed as TrashEntry[]) : []
     } catch {
-      // A corrupt manifest (a partial write mid-crash) reads as empty rather than
-      // failing every call; the files it named stay on disk until the next sweep of a
-      // manifest that names them again.
+      // A corrupt manifest reads as empty rather than failing every call. It is set aside
+      // so the next write cannot destroy the original paths it holds, and the files it
+      // named are swept once they outlive the retention.
+      try {
+        renameSync(manifest, `${manifest}.unreadable`)
+      } catch {}
       return []
     }
   }
@@ -132,6 +135,17 @@ export function createSurcoTrash(
     const gone = new Set(dropped.map((e) => e.id))
     write(read().filter((e) => !gone.has(e.id)))
     return dropped
+  }
+
+  const sweepUnnamed = async (now: number): Promise<void> => {
+    const named = new Set(read().map((e) => e.storedPath))
+    const { retentionMs } = limits()
+    for (const name of await readdir(items).catch(() => [])) {
+      const path = join(items, name)
+      if (named.has(path)) continue
+      const info = await stat(path).catch(() => null)
+      if (info && now - info.birthtimeMs > retentionMs) await unlink(path).catch(() => {})
+    }
   }
 
   const keep: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
@@ -201,6 +215,10 @@ export function createSurcoTrash(
       const gone = new Set(entries.map((e) => e.id))
       write(read().filter((e) => !gone.has(e.id)))
     },
-    sweep: async (now = Date.now()) => prune(now, limits().maxBytes),
+    sweep: async (now = Date.now()) => {
+      const dropped = await prune(now, limits().maxBytes)
+      await sweepUnnamed(now)
+      return dropped
+    },
   }
 }
