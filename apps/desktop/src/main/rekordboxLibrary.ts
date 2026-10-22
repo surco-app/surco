@@ -39,7 +39,7 @@ const BACKUP_SUFFIX = '.surco-backup'
 
 export type RepointResult =
   | { written: true; id: string }
-  | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' }
+  | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' | 'occupied' }
   | { written: false; reason: 'rekordbox-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'read-only' }
   | { written: false; reason: 'ambiguous'; ids: string[] }
@@ -110,6 +110,9 @@ function stageCovers(
   return staged
 }
 
+const heldByAnother = (holder: ReturnType<typeof findTrackByPath>, id: string): boolean =>
+  holder !== null && (isAmbiguous(holder) || holder.id !== id)
+
 // A whole run at once: one check that rekordbox is closed, one read to find every track,
 // one backup, one more check, and one write for all of them. Each track used to pay all of
 // that on its own, a full copy of the collection (the user's is 56 MB) and two opens
@@ -170,6 +173,8 @@ export async function repointTracks(
       if (match === null) results[p.index] = { written: false, reason: 'no-match' }
       else if (isAmbiguous(match))
         results[p.index] = { written: false, reason: 'ambiguous', ids: match.ambiguous }
+      else if (heldByAnother(findTrackByPath(db, repoint.to, repoint), match.id))
+        results[p.index] = { written: false, reason: 'occupied' }
       else writes.push({ ...p, id: match.id })
     }
   } finally {

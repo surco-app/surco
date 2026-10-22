@@ -428,6 +428,17 @@ describe('repointTrack', () => {
     expect(readRow(dbPath).FolderPath).toBe(MP3)
   })
 
+  it('refuses to move an entry onto a file the collection already holds', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+    addTrack(dbPath, '900003', output)
+
+    const result = await repointTrack(dbPath, { from: MP3, to: output })
+
+    expect(result).toEqual({ written: false, reason: 'occupied' })
+    expect(readRow(dbPath).FolderPath).toBe(MP3)
+  })
+
   // The guard is checked again immediately before the write: rekordbox can be launched
   // during the lookup and the backup, and that window is exactly when a user double-clicks
   // the app after starting a conversion.
