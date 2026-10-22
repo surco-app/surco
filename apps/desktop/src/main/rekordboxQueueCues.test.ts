@@ -24,13 +24,14 @@ const bar = (n: number) => BEATS[n * 4]
 
 async function collection(
   cues: { ID: string; InMsec: number; Kind: number; ColorTableIndex: number | null }[] = [],
+  analysed = true,
 ) {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbqcues-'))
   const path = join(dir, 'master.db')
   writeRekordboxPlaylistFixture(path, {
     ...ORGANISE_FIXTURE,
     content: ORGANISE_FIXTURE.content.map((c) =>
-      c.ID === '103' ? { ...c, AnalysisDataPath: ANLZ } : c,
+      c.ID === '103' && analysed ? { ...c, AnalysisDataPath: ANLZ } : c,
     ),
     cueRows: cues.map((q) => ({ ...q, ContentID: '103' })),
   })
@@ -98,6 +99,28 @@ const op = (path: string, over: Partial<CuesOp> = {}): CuesOp => ({
 })
 
 describe('cues operations', () => {
+  it('writes the set the editor built on Surco\'s grid to a track rekordbox has not analysed yet, which keeps it through its first analysis', async () => {
+    const path = await collection([], false)
+    const result = await applyRekordboxBatch(path, [op(path)], deps())
+    expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices: [] })
+    expect(cuesOf(path)).toHaveLength(COUNTDOWN.length)
+  })
+
+  it('still refuses a save holding only drops on a track rekordbox has not analysed, since turning drops into cues needs its grid', async () => {
+    const path = await collection([], false)
+    const result = await applyRekordboxBatch(
+      path,
+      [op(path, { wanted: undefined, drops: [bar(64)], previousDrops: [] })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0]).toEqual({
+      id: 'c',
+      applied: false,
+      notices: [{ code: 'cues-changed', track: 'Gowan' }],
+    })
+    expect(cuesOf(path)).toEqual([])
+  })
+
   it('writes the drop and its countdown in one batch, as the DJ marked it', async () => {
     const path = await collection()
     const result = await applyRekordboxBatch(path, [op(path)], deps())
