@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir -p resources/baken
           npx electron-vite build
-          common="--win appx --x64 --publish never -c.appx.identityName=SurcoProbe -c.appx.applicationId=SurcoProbe -c.appx.publisher=CN=SurcoProbe -c.appx.publisherDisplayName=Surco"
+          common="--win appx --x64 --publish never -c.appx.identityName=SurcoProbe -c.appx.applicationId=SurcoProbe -c.appx.publisher=CN=SurcoProbe -c.appx.publisherDisplayName=Surco -c.toolsets.winCodeSign=1.1.0"
           npx electron-builder $common -c.directories.output=dist-virtualized
           npx electron-builder $common -c.directories.output=dist-unvirtualized \
             -c.appx.customManifestPath="$GITHUB_WORKSPACE/packaging/store-probe/unvirtualized.appxmanifest.xml"
