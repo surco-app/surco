@@ -73,10 +73,28 @@ en Traktor los importa y desde ahí funcionan igual que si los hubiera marcado e
 - Conservar los cues de Traktor dentro del fichero al convertir, y parchear el `.nml`
   (`traktor4.ts`, `traktorNml.ts`).
 
+## Lo que enseñó un `.nml` real (22/10)
+
+Un export de playlist de Traktor 3 de otro usuario (NML versión 19, 47 pistas: 43 MP3 y 4
+FLAC). `traktorNmlCues.ts` lo lee entero: las 47 pistas y sus 184 cues.
+
+- **Ningún color.** Traktor 3 no guarda color por cue, así que para estos usuarios «con los
+  colores» solo puede ser el color con que Traktor pinta cada tipo. Hay que sacar esos colores
+  reales de Traktor; los del boceto siguen siendo supuestos.
+- **El tipo distingue cosas para el DJ.** 108 cues de tipo fade in y 73 de tipo cue, alternados
+  en los pads. Pasarlos todos del mismo color perdería esa información.
+- **El pad 1 es siempre la rejilla.** En las 47 pistas Traktor 3 ocupa el primer pad con el
+  marcador de rejilla, y los cues reales empiezan en el pad 2. El lector ya deja fuera la
+  rejilla; queda decidir si el pad 2 pasa a ser la A de rekordbox o se queda en la B.
+- **Ni CALL ni loops** en este usuario: todos sus cues están en pads, de 4 a 7 por pista.
+- **Casi todo MP3**, justo donde el desfase entre programas pesa más. Sin el audio no se puede
+  medir.
+
 ## Antes de retomarlo
 
 1. Que lo de la v1.10 lleve un tiempo en uso sin problemas.
-2. Un `collection.nml` real de Traktor 4 con cues de varios colores, de un usuario.
+2. El `collection.nml` de djotas (Traktor 4, con cues de varios colores), y una captura de
+   Traktor con un cue de cada tipo para saber sus colores reales.
 3. Medir el desfase de Traktor y de Engine en MP3 frente a rekordbox, con pistas que estén en
    los dos programas (como la medición de la rejilla del 22/10).
 4. Probar la escritura de Engine DJ contra Engine real.
