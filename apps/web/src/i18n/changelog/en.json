@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.10",
+    "date": "October 22, 2026",
+    "title": "Cues without waiting for rekordbox",
+    "items": [
+      {
+        "text": "Auto mark suggests where each track drops and shows, see-through, what your flow would place. Accept the suggestions with Return, all at once or one by one, and drop the ones you don’t like. Nothing is saved until you accept it.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Select several tracks of a rekordbox playlist and press «Auto mark the selected». Each row tells you what it found, and «Save N tracks to rekordbox» saves every track you reviewed in one go.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "You can now set cues on a track rekordbox hasn’t analyzed yet, without opening it. Surco measures the tempo and the grid itself, and once rekordbox analyzes the track, it moves your cues onto its grid and tells you how far they moved. Rows that aren’t analyzed say so.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "«Recently added» comes first in the rekordbox tree, with the tracks you added in the last 30 days, newest first.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "In the cue editor, an MP3 sounds right where the playhead is. It used to play a touch ahead of rekordbox’s waveform.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "On Windows, Surco finds in rekordbox the tracks you convert, so they stay up to date with their playlists and cues.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Tags are saved as you write them. A semicolon no longer cuts a field short, artists with a slash read back whole and a WAV keeps its artist.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "If your settings folder is in iCloud and the file isn’t downloaded yet, Surco no longer overwrites it with the defaults.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Closing Surco during a batch conversion asks first, also between one track and the next, and confirming stops the conversions in progress.",
+        "in": "1.10.0"
+      }
+    ]
+  },
+  {
     "version": "1.9",
     "date": "October 21, 2026",
     "title": "rekordbox inside Surco",

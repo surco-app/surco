@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.10",
+    "date": "22 de octubre de 2026",
+    "title": "Cues sin esperar a rekordbox",
+    "items": [
+      {
+        "text": "Auto marcar te propone dónde rompe cada pista y te enseña en transparente lo que pondría tu flujo. Aceptas las propuestas con Intro, todas a la vez o una a una, y quitas las que no te convencen. No se guarda nada hasta que lo aceptas.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Selecciona varias pistas de una playlist de rekordbox y pulsa «Auto marcar las seleccionadas». Cada fila te dice lo que ha encontrado, y con «Guardar N pistas en rekordbox» guardas de una vez todas las que has revisado.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Ya puedes poner cues a una pista que rekordbox aún no ha analizado, sin abrirlo. Surco calcula el tempo y la rejilla por su cuenta, y cuando rekordbox la analiza, ajusta tus cues a su rejilla y te dice cuánto se han movido. Las filas sin analizar lo indican.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "«Añadidas recientemente» aparece la primera en el árbol de rekordbox, con las pistas que has metido en los últimos 30 días, de la más nueva a la más antigua.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "En el editor de cues, un MP3 suena justo donde está el cabezal. Antes se oía un pelín adelantado respecto a la onda de rekordbox.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "En Windows, Surco encuentra en rekordbox las pistas que conviertes, así que siguen al día con sus playlists y sus cues.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Las etiquetas se guardan como las escribes. Un punto y coma ya no corta un campo, los artistas con barra se leen enteros y un WAV conserva su artista.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Si tienes la carpeta de ajustes en iCloud y el archivo aún no está descargado, Surco ya no lo pisa con los valores por defecto.",
+        "in": "1.10.0"
+      },
+      {
+        "text": "Cerrar Surco durante una conversión por lotes te pregunta antes, también entre una pista y la siguiente, y al confirmar se paran las conversiones en curso.",
+        "in": "1.10.0"
+      }
+    ]
+  },
+  {
     "version": "1.9",
     "date": "21 de octubre de 2026",
     "title": "rekordbox dentro de Surco",
