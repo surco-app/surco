@@ -2033,6 +2033,7 @@ export async function convertAudio(
           // Not stamped with an error key: the cause here is open-ended (permissions, a
           // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
           // than any sentence Surco could pick in advance.
+          if (isCancelled?.()) throw errorWithKey('conversionCancelled')
           const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
           throw text ? new Error(firstErrorLine(text) || text) : e
         })

@@ -110,3 +110,34 @@ describe('convertAudio — cancelled outside the encode', () => {
     expect(readdirSync(dir).filter((f) => f.includes('.tmp-'))).toEqual([])
   }, 30000)
 })
+
+describe('convertAudio — encode killed by a cancel', () => {
+  it('says the conversion was cancelled rather than echoing the ffmpeg command line', async () => {
+    const out = join(dir, 'killed-by-cancel.flac')
+    let cancelled = false
+    const promise = convertAudio(
+      src,
+      out,
+      'flac',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      (child) => {
+        cancelled = true
+        child.kill('SIGTERM')
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => cancelled,
+    )
+
+    await expect(promise).rejects.toThrow(/^SURCO_ERR:conversionCancelled$/)
+  }, 15000)
+})

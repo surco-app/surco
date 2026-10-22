@@ -19,7 +19,7 @@ import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
-import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
+import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
@@ -415,6 +415,10 @@ export function useTrackProcessing({
         return 'converted'
       } catch (e) {
         const raw = e instanceof Error ? cleanIpcError(e.message) : ''
+        if (errorKeyOf(raw) === 'conversionCancelled') {
+          updateTrack(id, { status: 'idle', stage: undefined })
+          return 'skipped'
+        }
         // The held-file case keeps its own string: it is matched on a marker embedded
         // mid-message (renameRetry stamps it ahead of the OS error it wraps), not on
         // the leading key mainErrorMessage reads.
