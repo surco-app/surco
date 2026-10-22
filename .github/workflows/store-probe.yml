@@ -1,0 +1,105 @@
+name: Store probe
+
+on:
+  push:
+    branches: [spike/store-probe]
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - name: Fetch Electron binary
+        shell: bash
+        run: node node_modules/electron/install.js
+
+      - name: Self-signed certificate
+        shell: pwsh
+        run: |
+          $cert = New-SelfSignedCertificate -Type Custom -Subject 'CN=SurcoProbe' -KeyUsage DigitalSignature `
+            -CertStoreLocation Cert:\CurrentUser\My `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+          $pass = ConvertTo-SecureString -String probe -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath C:\probe.pfx -Password $pass
+          Import-PfxCertificate -FilePath C:\probe.pfx -CertStoreLocation Cert:\LocalMachine\TrustedPeople -Password $pass
+
+      - name: Build both packages
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          CSC_LINK: C:\probe.pfx
+          CSC_KEY_PASSWORD: probe
+        run: |
+          mkdir -p resources/baken
+          npx electron-vite build
+          common="--win appx --x64 --publish never -c.appx.identityName=SurcoProbe -c.appx.applicationId=SurcoProbe -c.appx.publisher=CN=SurcoProbe -c.appx.publisherDisplayName=Surco"
+          npx electron-builder $common -c.directories.output=dist-virtualized
+          npx electron-builder $common -c.directories.output=dist-unvirtualized \
+            -c.appx.customManifestPath="$GITHUB_WORKSPACE/packaging/store-probe/unvirtualized.appxmanifest.xml"
+          ls dist-virtualized dist-unvirtualized
+
+      - name: Probe both packages
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = Join-Path $env:APPDATA 'Pioneer\rekordbox'
+          $probe = Join-Path $env:GITHUB_WORKSPACE 'packaging\store-probe'
+
+          function Wait-File($path) {
+            $deadline = (Get-Date).AddSeconds(120)
+            while (-not (Test-Path $path)) {
+              if ((Get-Date) -gt $deadline) { throw "timed out waiting for $path" }
+              Start-Sleep -Milliseconds 500
+            }
+          }
+
+          foreach ($variant in 'virtualized', 'unvirtualized') {
+            "## $variant" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $appx = Get-ChildItem "apps\desktop\dist-$variant\*.appx" | Select-Object -First 1
+            Add-AppxPackage -Path $appx.FullName
+            $pkg = Get-AppxPackage -Name SurcoProbe
+            $localCache = Join-Path $env:LOCALAPPDATA "Packages\$($pkg.PackageFamilyName)\LocalCache"
+
+            node "$probe\seed.cjs" $dir
+
+            $sync = "C:\probe-sync\$variant"
+            New-Item -ItemType Directory -Force $sync | Out-Null
+            $exe = Join-Path $pkg.InstallLocation 'app\Surco.exe'
+            $cmdArgs = "/c set ELECTRON_RUN_AS_NODE=1&& `"$exe`" `"$probe\inside.cjs`" `"$($pkg.InstallLocation)`" `"$dir`" `"$sync`" > `"$sync\stdout.txt`" 2>&1"
+            Invoke-CommandInDesktopPackage -PackageFamilyName $pkg.PackageFamilyName -AppId SurcoProbe -Command cmd.exe -Args $cmdArgs
+
+            try {
+              Wait-File "$sync\inserted"
+              node "$probe\check.cjs" "${variant}: Surco still has master.db open" $dir $localCache
+              New-Item -ItemType File "$sync\proceed" | Out-Null
+              Wait-File "$sync\done"
+              node "$probe\check.cjs" "${variant}: after Surco closed master.db" $dir $localCache
+            } finally {
+              New-Item -ItemType File -Force "$sync\proceed" | Out-Null
+              Start-Sleep -Seconds 2
+              foreach ($f in 'inside.log', 'stdout.txt') {
+                if (Test-Path "$sync\$f") {
+                  "<details><summary>$variant $f</summary>`n`n``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+                  Get-Content "$sync\$f" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  "``````</details>`n" | Add-Content $env:GITHUB_STEP_SUMMARY
+                }
+              }
+              Remove-AppxPackage $pkg.PackageFullName
+            }
+          }
