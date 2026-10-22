@@ -83,7 +83,7 @@ export interface UsbExporterDeps {
   run?: typeof runBaken
 }
 
-interface Target {
+export interface Target {
   root: string
   name: string
   volume: UsbVolume | null
@@ -118,7 +118,10 @@ export function failureReason(message: string): UsbTrackFailure {
   return 'unreadable'
 }
 
-async function resolveTarget(deps: UsbExporterDeps, t: UsbTarget): Promise<Target | UsbFailure> {
+export async function resolveTarget(
+  deps: Pick<UsbExporterDeps, 'volumes' | 'realPath' | 'platform'>,
+  t: UsbTarget,
+): Promise<Target | UsbFailure> {
   const volumes = await deps.volumes()
   if (t.kind === 'volume') {
     const v = volumes.find((x) => x.uuid === t.uuid)

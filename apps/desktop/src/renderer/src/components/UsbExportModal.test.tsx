@@ -376,3 +376,105 @@ describe('UsbExportModal choosing', () => {
     )
   })
 })
+
+describe('UsbExportModal for Engine DJ', () => {
+  const engineVol = (over: Partial<UsbVolume>, engine: UsbVolume['engine']): UsbVolume =>
+    vol({ ...over, engine })
+
+  it('asks main for an Engine DJ export and offers none of the rekordbox options, which a Denon player never reads', async () => {
+    await show(
+      {
+        volumes: [engineVol({}, { holder: { by: 'surco', at: 1 }, remembered: REMEMBERED })],
+        lastKey: null,
+      },
+      { source: 'engine' },
+    )
+    expect(usbPlan).toHaveBeenCalledWith({
+      playlistIds: ['mak'],
+      target: { kind: 'volume', uuid: 'U1' },
+      prune: false,
+      settings: false,
+      source: 'engine',
+    })
+    expect(screen.queryByTestId('usb-settings')).toBeNull()
+    expect(screen.queryByTestId('usb-prune')).toBeNull()
+  })
+
+  it('ticks what Surco last exported to the drive for Engine DJ, not what rekordbox keeps there', async () => {
+    await show(
+      {
+        volumes: [
+          engineVol(
+            {
+              stickPlaylists: ['house'],
+              remembered: { ...REMEMBERED, playlistIds: ['house'] },
+            },
+            { holder: { by: 'surco', at: 1 }, remembered: REMEMBERED },
+          ),
+        ],
+        lastKey: null,
+      },
+      { source: 'engine' },
+    )
+    expect(screen.getByTestId('check-node-mak')).toBeChecked()
+    expect(screen.getByTestId('check-node-house')).not.toBeChecked()
+  })
+
+  it('says who wrote the Engine Library on each drive', async () => {
+    await show(
+      {
+        volumes: [
+          engineVol(
+            { holder: { by: 'rekordbox', at: Date.now() } },
+            { holder: { by: 'surco', at: Date.now() }, remembered: null },
+          ),
+        ],
+        lastKey: null,
+      },
+      { source: 'engine' },
+    )
+    expect(screen.getByTestId('usb-volume-U1')).toHaveTextContent('exportado por Surco hoy')
+    expect(screen.getByTestId('usb-volume-U1')).not.toHaveTextContent('rekordbox')
+  })
+
+  it('preselects the drive it last exported to for Engine DJ, whatever rekordbox used last', async () => {
+    await show(
+      {
+        volumes: [
+          engineVol({}, { holder: { by: 'surco', at: 5 }, remembered: { ...REMEMBERED, at: 5 } }),
+          engineVol(
+            { uuid: 'U2' },
+            { holder: { by: 'surco', at: 9 }, remembered: { ...REMEMBERED, at: 9 } },
+          ),
+        ],
+        lastKey: 'volume:U1',
+      },
+      { source: 'engine' },
+    )
+    expect(screen.getByTestId('usb-volume-pick-U2')).toBeChecked()
+  })
+
+  it('asks for the folder with what Surco remembers for Engine DJ there', async () => {
+    const usbPickFolder = vi.fn<Api['usbPickFolder']>(async () => null)
+    ;(window as unknown as { api: Api }).api = stubApi({ usbPlan, usbPickFolder })
+    await show({ volumes: [vol({})], lastKey: null }, { source: 'engine' })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('usb-other'))
+    })
+    expect(usbPickFolder).toHaveBeenCalledWith('engine')
+  })
+
+  it('warns that Engine DJ is open', async () => {
+    withWarnings([{ kind: 'engineOpen' }])
+    await show(
+      {
+        volumes: [engineVol({}, { holder: { by: 'empty', at: null }, remembered: REMEMBERED })],
+        lastKey: null,
+      },
+      { source: 'engine' },
+    )
+    expect(screen.getByTestId('usb-warning-engineOpen')).toHaveTextContent(
+      'Engine DJ está abierto. Se te pedirá cerrarlo al exportar.',
+    )
+  })
+})

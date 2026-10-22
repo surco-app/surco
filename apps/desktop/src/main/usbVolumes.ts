@@ -12,7 +12,7 @@ import windowsVolumesScript from './windowsVolumes.ps1?raw'
 // network share, never a disk image. macOS asks diskutil one volume at a time; Windows asks
 // one PowerShell query. Both come out as RawVolume, keyed by a stable identifier.
 
-export type RawVolume = Omit<UsbVolume, 'holder' | 'remembered' | 'stickPlaylists'>
+export type RawVolume = Omit<UsbVolume, 'holder' | 'remembered' | 'stickPlaylists' | 'engine'>
 
 export interface VolumeSource {
   list: () => Promise<RawVolume[]>
@@ -263,11 +263,14 @@ export async function readVolumes(
   holder: typeof stickHolder = stickHolder,
   syncText: (root: string) => Promise<string | null> = (root) =>
     readFile(join(root, 'PIONEER', 'rekordbox', 'playlists3.sync'), 'utf8').catch(() => null),
+  engine?: { memory: UsbMemory; holder: (root: string) => Promise<UsbHolder> },
 ): Promise<UsbVolume[]> {
   const out: UsbVolume[] = []
   for (const v of await source.list()) {
-    const entry = memory.get(targetKey({ kind: 'volume', uuid: v.uuid }))
+    const key = targetKey({ kind: 'volume', uuid: v.uuid })
+    const entry = memory.get(key)
     const sync = await syncText(v.mountPoint)
+    const engineEntry = engine?.memory.get(key) ?? null
     out.push({
       ...v,
       holder: await holder(v.mountPoint, entry?.pdb ?? null),
@@ -280,6 +283,19 @@ export async function readVolumes(
             at: entry.at,
           }
         : null,
+      ...(engine && {
+        engine: {
+          holder: await engine.holder(v.mountPoint),
+          remembered: engineEntry
+            ? {
+                playlistIds: engineEntry.playlistIds,
+                prune: false,
+                settings: false,
+                at: engineEntry.at,
+              }
+            : null,
+        },
+      }),
     })
   }
   return out

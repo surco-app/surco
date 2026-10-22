@@ -7,6 +7,7 @@ import {
   rename,
   rm,
   stat,
+  statfs,
   writeFile,
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -14,15 +15,22 @@ import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { UsbExportRequest, UsbFolderPick, UsbVolumeList } from '../shared/types'
+import { isEngineDjRunning } from './engineProcess'
+import {
+  createEngineUsbExporter,
+  ENGINE_USB_QUIT_DETAIL,
+  engineLibraryHolder,
+} from './engineUsbExport'
 import { openRekordboxDb } from './rekordboxDb'
 import { playlistXmlPath } from './rekordboxMasterXml'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { readMasterIdentity } from './rekordboxStickSync'
 import { createUsbExporter, USB_QUIT_DETAIL } from './usbExport'
 import { createUsbMemory, targetKey } from './usbExportMemory'
+import { routeUsbExports } from './usbExportRoute'
 import { readExportSelection } from './usbExportSource'
 import { stageExport } from './usbExportStage'
-import { readVolumes, systemVolumeSource, watchVolumes } from './usbVolumes'
+import { readVolumes, stickHolder, systemVolumeSource, watchVolumes } from './usbVolumes'
 
 // The USB export's IPC, macOS and Windows. Elsewhere every call answers "unsupported" and
 // nothing is watched; the renderer does not offer the feature there at all.
@@ -39,6 +47,11 @@ export function registerUsbExportIpc(opts: {
   ensureRekordboxClosed: (
     win: BrowserWindow | null,
     detail: typeof USB_QUIT_DETAIL,
+  ) => Promise<boolean>
+  engineLibrary: () => string
+  ensureEngineDjClosed: (
+    win: BrowserWindow | null,
+    detail: typeof ENGINE_USB_QUIT_DETAIL,
   ) => Promise<boolean>
 }): { busy: () => boolean; stop: () => Promise<void> } | null {
   const platform = process.platform
@@ -59,13 +72,17 @@ export function registerUsbExportIpc(opts: {
     : join(opts.home, 'Library', 'Application Support', 'Pioneer', 'rekordbox6')
   const systemRoot = win ? `${process.env.SystemDrive ?? 'C:'}\\` : '/'
   const memory = createUsbMemory(join(opts.userData, 'usb-exports.json'))
+  const engineMemory = createUsbMemory(join(opts.userData, 'usb-engine-exports.json'))
   const broadcast = (channel: string, payload: unknown): void => {
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(channel, payload)
   }
   // The window that pressed Exportar, for the close dialog: one export at a time.
   let asking: BrowserWindow | null = null
   const list = async (): Promise<UsbVolumeList> => ({
-    volumes: await readVolumes(source, memory),
+    volumes: await readVolumes(source, memory, stickHolder, undefined, {
+      memory: engineMemory,
+      holder: engineLibraryHolder,
+    }),
     lastKey: memory.last(),
   })
   const exporter = createUsbExporter({
@@ -154,6 +171,28 @@ export function registerUsbExportIpc(opts: {
     masterPlaylistsXml: () =>
       readFile(playlistXmlPath(opts.collection()), 'utf8').catch(() => null),
   })
+  const engineExporter = createEngineUsbExporter({
+    platform,
+    libraryDir: opts.engineLibrary,
+    volumes: () => readVolumes(source, memory),
+    idAt: (root) => source.idAt(root),
+    devOf: (root) =>
+      stat(root)
+        .then((s) => s.dev)
+        .catch(() => null),
+    realPath: (p) => realpath(p).catch(() => null),
+    freeBytes: (root) =>
+      statfs(root)
+        .then((s) => s.bavail * s.bsize)
+        .catch(() => null),
+    engineRunning: isEngineDjRunning,
+    ensureEngineClosed: () => opts.ensureEngineDjClosed(asking, ENGINE_USB_QUIT_DETAIL),
+    memory: engineMemory,
+    send: (e) => broadcast('usb:event', e),
+    now: () => Date.now(),
+    log: (m) => log.info(m),
+  })
+  const route = routeUsbExports(exporter, engineExporter)
   // Watching starts with the first request for the list (the rail offers the export only
   // with a rekordbox collection), not at launch for every user.
   let watching = false
@@ -164,7 +203,7 @@ export function registerUsbExportIpc(opts: {
     }
     return list()
   })
-  ipcMain.handle('usb:pickFolder', async (e): Promise<UsbFolderPick | null> => {
+  ipcMain.handle('usb:pickFolder', async (e, from?: 'engine'): Promise<UsbFolderPick | null> => {
     const w = BrowserWindow.fromWebContents(e.sender)
     const options = {
       properties: ['openDirectory', 'createDirectory'] as Array<
@@ -177,7 +216,9 @@ export function registerUsbExportIpc(opts: {
     if (canceled || !filePaths[0]) return null
     // The real path: one folder reached through a symlink or directly is one memory.
     const path = await realpath(filePaths[0]).catch(() => filePaths[0])
-    const entry = memory.get(targetKey({ kind: 'folder', path }))
+    const entry = (from === 'engine' ? engineMemory : memory).get(
+      targetKey({ kind: 'folder', path }),
+    )
     return {
       path,
       remembered: entry
@@ -190,11 +231,11 @@ export function registerUsbExportIpc(opts: {
         : null,
     }
   })
-  ipcMain.handle('usb:plan', (_e, req: UsbExportRequest) => exporter.plan(req))
+  ipcMain.handle('usb:plan', (_e, req: UsbExportRequest) => route.plan(req))
   ipcMain.handle('usb:export', (e, req: UsbExportRequest) => {
     asking = BrowserWindow.fromWebContents(e.sender)
-    return exporter.start(req)
+    return route.start(req)
   })
-  ipcMain.handle('usb:cancel', () => exporter.cancel())
-  return { busy: exporter.busy, stop: exporter.stop }
+  ipcMain.handle('usb:cancel', () => route.cancel())
+  return { busy: route.busy, stop: route.stop }
 }

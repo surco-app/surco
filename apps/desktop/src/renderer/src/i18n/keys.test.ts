@@ -91,6 +91,11 @@ const USB_FAILURES: Record<UsbFailure, true> = {
   'source-lost': true,
   'sync-files': true,
   'stick-ids-full': true,
+  'engine-missing': true,
+  'engine-unreadable': true,
+  'engine-open': true,
+  'engine-foreign': true,
+  'engine-schema': true,
 }
 
 describe('USB export failures', () => {

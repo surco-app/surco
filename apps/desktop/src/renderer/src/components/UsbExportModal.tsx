@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type {
   SourceNode,
   UsbExportRequest,
+  UsbHolder,
   UsbRemembered,
   UsbStartResult,
   UsbTarget,
@@ -22,11 +23,18 @@ import { UsbExportProgress } from './UsbExportProgress'
 
 // The first stick to offer: the one asked for (the connect notice), else the last one used
 // if it is mounted, else the only one.
-function initialVolume(list: UsbVolumeList | null, preselect: string | null): UsbVolume | null {
+function initialVolume(
+  list: UsbVolumeList | null,
+  preselect: string | null,
+  engine: boolean,
+): UsbVolume | null {
   const vols = list?.volumes ?? []
+  const lastEngine = vols
+    .filter((v) => v.engine?.remembered)
+    .sort((a, b) => (b.engine?.remembered?.at ?? 0) - (a.engine?.remembered?.at ?? 0))[0]
   return (
     vols.find((v) => v.uuid === preselect) ??
-    vols.find((v) => `volume:${v.uuid}` === list?.lastKey) ??
+    (engine ? lastEngine : vols.find((v) => `volume:${v.uuid}` === list?.lastKey)) ??
     (vols.length === 1 ? vols[0] : null)
   )
 }
@@ -35,6 +43,8 @@ function initialVolume(list: UsbVolumeList | null, preselect: string | null): Us
 // synced more playlists to it after Surco last wrote it, else what Surco remembers.
 const tickedFor = (v: UsbVolume | null): string[] | null =>
   v?.stickPlaylists ?? v?.remembered?.playlistIds ?? null
+
+const EMPTY_HOLDER: UsbHolder = { by: 'empty', at: null }
 
 // What main refuses to export anyway: Exportar is not offered while one of these shows.
 const BLOCKING: ReadonlySet<UsbWarning['kind']> = new Set([
@@ -47,6 +57,7 @@ export function UsbExportModal({
   nodes,
   volumes,
   preselect,
+  source,
   onStart,
   onCancelExport,
   onClose,
@@ -55,6 +66,7 @@ export function UsbExportModal({
   nodes: SourceNode[] | undefined
   volumes: UsbVolumeList | null
   preselect: string | null
+  source?: 'engine'
   onStart: (req: UsbExportRequest) => Promise<UsbStartResult>
   onCancelExport: () => void
   onClose: () => void
@@ -64,13 +76,18 @@ export function UsbExportModal({
   const size = (bytes: number): string => formatFileSize(bytes, i18n.language)
   const phase = useUsbExportState((s) => s.phase, store)
   const targetName = useUsbExportState((s) => s.targetName, store)
-  const first = initialVolume(volumes, preselect)
+  const engine = source === 'engine'
+  const ticksOf = (v: UsbVolume | null): string[] | null =>
+    engine ? (v?.engine?.remembered?.playlistIds ?? null) : tickedFor(v)
+  const rememberedOf = (v: UsbVolume | null): UsbRemembered | null =>
+    (engine ? v?.engine?.remembered : v?.remembered) ?? null
+  const first = initialVolume(volumes, preselect, engine)
   const [target, setTarget] = useState<UsbTarget | null>(
     first ? { kind: 'volume', uuid: first.uuid } : null,
   )
-  const [checked, setChecked] = useState<Set<string>>(new Set(tickedFor(first) ?? []))
-  const [prune, setPrune] = useState(first?.remembered?.prune ?? false)
-  const [settings, setSettings] = useState(first?.remembered?.settings ?? false)
+  const [checked, setChecked] = useState<Set<string>>(new Set(ticksOf(first) ?? []))
+  const [prune, setPrune] = useState(rememberedOf(first)?.prune ?? false)
+  const [settings, setSettings] = useState(rememberedOf(first)?.settings ?? false)
   const [starting, setStarting] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
   // Each stick keeps its own boxes: one Surco never wrote starts with both off, whatever
@@ -85,7 +102,7 @@ export function UsbExportModal({
   if (!seeded && first) {
     setSeeded(true)
     setTarget({ kind: 'volume', uuid: first.uuid })
-    seed(tickedFor(first), first.remembered)
+    seed(ticksOf(first), rememberedOf(first))
   }
   const folder = target?.kind === 'folder'
   // A playlist deleted in rekordbox can still be listed by the stick's sync file or by
@@ -95,7 +112,9 @@ export function UsbExportModal({
   const ticked = [...checked].filter((id) => inTree.has(id)).sort()
   const req: UsbExportRequest | null =
     target && ticked.length > 0
-      ? { playlistIds: ticked, target, prune: folder ? false : prune, settings }
+      ? engine
+        ? { playlistIds: ticked, target, prune: false, settings: false, source: 'engine' }
+        : { playlistIds: ticked, target, prune: folder ? false : prune, settings }
       : null
   const { plan, failure, broken, loading } = useUsbPlan(req)
   const chosen =
@@ -105,11 +124,11 @@ export function UsbExportModal({
 
   const choose = (v: UsbVolume): void => {
     setTarget({ kind: 'volume', uuid: v.uuid })
-    seed(tickedFor(v), v.remembered)
+    seed(ticksOf(v), rememberedOf(v))
   }
   // A folder has no sync file to read: only what Surco remembers for it.
   const pickFolder = async (): Promise<void> => {
-    const pick = await window.api.usbPickFolder()
+    const pick = await (engine ? window.api.usbPickFolder('engine') : window.api.usbPickFolder())
     if (!pick) return
     setTarget({ kind: 'folder', path: pick.path })
     seed(pick.remembered?.playlistIds ?? null, pick.remembered)
@@ -250,7 +269,11 @@ export function UsbExportModal({
                         ].join(' · ')}
                       </span>
                       <span className="block text-xs text-fg-faint">
-                        {holderText(v.holder, tr, new Date())}
+                        {holderText(
+                          engine ? (v.engine?.holder ?? EMPTY_HOLDER) : v.holder,
+                          tr,
+                          new Date(),
+                        )}
                       </span>
                     </span>
                   </label>
@@ -309,16 +332,18 @@ export function UsbExportModal({
                 </>
               )}
             </div>
-            <label className="flex items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                data-testid="usb-settings"
-                checked={settings}
-                onChange={(e) => setSettings(e.target.checked)}
-              />
-              {tr('usbExport.choose.settings')}
-            </label>
-            {!folder && (
+            {!engine && (
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  data-testid="usb-settings"
+                  checked={settings}
+                  onChange={(e) => setSettings(e.target.checked)}
+                />
+                {tr('usbExport.choose.settings')}
+              </label>
+            )}
+            {!folder && !engine && (
               <label className="flex items-center gap-2 text-xs">
                 <input
                   type="checkbox"

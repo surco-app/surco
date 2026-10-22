@@ -2333,7 +2333,12 @@
       "playlist-empty": "A playlist would end up empty. Nothing was exported.",
       "source-lost": "The music drive was unmounted halfway. The USB keeps its previous library.",
       "sync-files": "The USB is fine for the players, but rekordbox may not recognise its playlists. Export again.",
-      "stick-ids-full": "The USB has no free numbers left for new playlists. Exporting again will not fix it."
+      "stick-ids-full": "The USB has no free numbers left for new playlists. Exporting again will not fix it.",
+      "engine-missing": "The Engine DJ library was not found.",
+      "engine-unreadable": "The Engine DJ library could not be read.",
+      "engine-open": "Engine DJ is still open. Nothing was exported.",
+      "engine-foreign": "This USB already has an Engine DJ library that Surco did not make. Nothing was touched.",
+      "engine-schema": "The Engine DJ library on this USB is from another version of Engine DJ. Nothing was touched."
     },
     "trackFailure": {
       "missing-file": "file not found",
@@ -2390,7 +2395,8 @@
       "rekordboxOpen": "rekordbox is open. You will be asked to close it when exporting.",
       "sourcesUnreachable_one": "{{volume}} cannot be found, and the music of {{count}} track is there. Mount it and export again.",
       "sourcesUnreachable_other": "{{volume}} cannot be found, and the music of {{count}} tracks is there. Mount it and export again.",
-      "emptyPlaylist": "No track of {{names}} can be found."
+      "emptyPlaylist": "No track of {{names}} can be found.",
+      "engineOpen": "Engine DJ is open. You will be asked to close it when exporting."
     },
     "unexportable": {
       "missing-file": "file not found",

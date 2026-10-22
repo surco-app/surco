@@ -709,23 +709,30 @@ export default function App(): React.JSX.Element {
       discardEngineQueue,
     ],
   )
-  // The USB export: macOS and Windows, with a rekordbox collection. Its state lives in
-  // usbExportStore, outside React; App reads only the phase (for the notices), so a byte
-  // tick never re-renders the app.
-  const usbAvailable =
-    (isMac || window.api.platform === 'win32') && browser.sources.includes('rekordbox')
+  // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
+  // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
+  // the notices), so a byte tick never re-renders the app.
+  const usbPlatform = isMac || window.api.platform === 'win32'
+  const usbAvailable = usbPlatform && browser.sources.includes('rekordbox')
+  const engineUsbAvailable = usbPlatform && browser.source === 'engine' && !browser.libraryMissing
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
   const usbRunning = useUsbExportState(isRunning)
-  const { list: usbVolumes } = useUsbVolumes(usbAvailable)
-  const [usbModal, setUsbModal] = useState<{ preselect: string | null } | null>(null)
+  const [usbModal, setUsbModal] = useState<{
+    preselect: string | null
+    source: 'rekordbox' | 'engine'
+  } | null>(null)
+  const { list: usbVolumes } = useUsbVolumes(usbAvailable || usbModal?.source === 'engine')
   // Opening after a finished background export starts again at the chooser: its result was
   // already announced.
-  const openUsbExport = useCallback((preselect: string | null = null) => {
-    if (!isRunning(usbExportStore.getState()) && usbExportStore.getState().phase !== 'idle')
-      usbExportStore.dispatch({ type: 'reset' })
-    setUsbModal({ preselect })
-  }, [])
+  const openUsbExport = useCallback(
+    (preselect: string | null = null, source: 'rekordbox' | 'engine' = 'rekordbox') => {
+      if (!isRunning(usbExportStore.getState()) && usbExportStore.getState().phase !== 'idle')
+        usbExportStore.dispatch({ type: 'reset' })
+      setUsbModal({ preselect, source })
+    },
+    [],
+  )
   const closeUsbExport = useCallback(() => {
     setUsbModal(null)
     if (!isRunning(usbExportStore.getState())) usbExportStore.dispatch({ type: 'reset' })
@@ -739,9 +746,11 @@ export default function App(): React.JSX.Element {
   )
   // The same query key the source browser uses for rekordbox's tree, so an open tree is
   // reused and a tree read here is there when the user opens rekordbox in the rail.
+  const usbSource = usbModal?.source ?? 'rekordbox'
   const usbTree = useQuery({
-    queryKey: ['source-tree', 'rekordbox'],
-    queryFn: () => window.api.loadRekordboxTree(),
+    queryKey: ['source-tree', usbSource],
+    queryFn: () =>
+      usbSource === 'engine' ? window.api.loadEngineTree() : window.api.loadRekordboxTree(),
     enabled: usbModal !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -2771,7 +2780,9 @@ export default function App(): React.JSX.Element {
                     onExportUsb={
                       usbAvailable && browser.source === 'rekordbox'
                         ? () => openUsbExport()
-                        : undefined
+                        : engineUsbAvailable
+                          ? () => openUsbExport(null, 'engine')
+                          : undefined
                     }
                   />
                 )}
@@ -3180,6 +3191,7 @@ export default function App(): React.JSX.Element {
                 nodes={usbTree.data}
                 volumes={usbVolumes}
                 preselect={usbModal.preselect}
+                source={usbModal.source === 'engine' ? 'engine' : undefined}
                 onStart={(req) => window.api.usbExport(req)}
                 onCancelExport={() => void window.api.usbCancel()}
                 onClose={closeUsbExport}

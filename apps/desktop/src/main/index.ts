@@ -348,7 +348,7 @@ let engineQuitPrompt: Promise<boolean> | null = null
 // the library write, since Engine would not see it and could overwrite it on exit.
 async function ensureEngineDjClosed(
   win: BrowserWindow | null,
-  detail: 'engineQuitDetail' | 'engineQuitDetailCues' = 'engineQuitDetail',
+  detail: 'engineQuitDetail' | 'engineQuitDetailCues' | 'engineQuitDetailUsb' = 'engineQuitDetail',
 ): Promise<boolean> {
   if (!(await isEngineDjRunning())) return true
   engineQuitPrompt ??= (async () => {
@@ -1052,6 +1052,8 @@ function registerIpc(): void {
         exists: existsSync,
       }),
     ensureRekordboxClosed,
+    engineLibrary: engineLibraryPath,
+    ensureEngineDjClosed,
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
