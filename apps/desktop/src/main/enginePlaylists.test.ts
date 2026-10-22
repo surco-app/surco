@@ -4,7 +4,13 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { mediaPathFromUrl } from '../shared/media'
-import { openEngineDb, readEnginePlaylist, readEngineTree } from './enginePlaylists'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import {
+  openEngineDb,
+  readEnginePlaylist,
+  readEngineRecentCount,
+  readEngineTree,
+} from './enginePlaylists'
 import {
   type EngineFixture,
   engineDbPath,
@@ -214,6 +220,68 @@ describe('readEnginePlaylist', () => {
     const dir = await library({ tracks: TRACKS, playlists: [], entities: [] })
     const db = opened(dir)
     expect(readEnginePlaylist(db, dir, '42', join(dir, 'art'))).toEqual([])
+    db.close()
+  })
+})
+
+describe('the recently added list', () => {
+  const now = new Date(2026, 9, 21, 12)
+  const at = (y: number, m: number, d: number, h = 0) => new Date(y, m, d, h).getTime() / 1000
+
+  async function recentLibrary(): Promise<string> {
+    return library({
+      tracks: [
+        { id: 1, path: 'Music/night.mp3', title: 'Night', dateAdded: at(2026, 9, 20, 9) },
+        {
+          id: 2,
+          path: 'Music/play.mp3',
+          title: 'Play',
+          artist: 'Fabiola',
+          length: 338,
+          bpmAnalyzed: 138.07,
+          rating: 80,
+          albumArtId: 2,
+          dateAdded: at(2026, 9, 20, 18),
+        },
+        { id: 3, path: null, title: 'Streamed', dateAdded: at(2026, 9, 1) },
+        { id: 4, path: 'Music/edge.mp3', title: 'Edge', dateAdded: at(2026, 8, 21) },
+        { id: 5, path: 'Music/old.mp3', title: 'Old', dateAdded: at(2026, 8, 20, 23) },
+        { id: 6, path: 'Music/undated.mp3', title: 'Undated' },
+      ],
+      art: [{ id: 2, bytes: JPEG }],
+      playlists: [],
+      entities: [],
+    })
+  }
+
+  it('lists the tracks that entered the library in the last 30 days, newest first, the order the DJ added them', async () => {
+    const dir = await recentLibrary()
+    const db = opened(dir)
+    const rows = readEnginePlaylist(db, dir, RECENTLY_ADDED_ID, join(dir, 'art'), now)
+    expect(rows.map((r) => r.preview?.title ?? null)).toEqual(['Play', 'Night', null, 'Edge'])
+    db.close()
+  })
+
+  it('counts what the list will show, so the tree number matches its rows', async () => {
+    const db = opened(await recentLibrary())
+    expect(readEngineRecentCount(db, now)).toBe(4)
+    db.close()
+  })
+
+  it('gives its rows what any playlist row has, so they open, play and paint alike', async () => {
+    const dir = await recentLibrary()
+    const db = opened(dir)
+    const [play, , streamed] = readEnginePlaylist(db, dir, RECENTLY_ADDED_ID, join(dir, 'art'), now)
+    expect(play).toMatchObject({
+      path: resolve(dir, 'Music/play.mp3'),
+      separator: false,
+      meta: { bpm: '138.07', rating: 80 },
+      preview: { title: 'Play', artist: 'Fabiola', durationSec: 338, cues: [] },
+    })
+    expect(readFileSync(mediaPathFromUrl(play.preview?.coverUrl as string))).toEqual(
+      Buffer.from(JPEG),
+    )
+    expect(streamed).toEqual({ path: null, separator: false, meta: {} })
     db.close()
   })
 })

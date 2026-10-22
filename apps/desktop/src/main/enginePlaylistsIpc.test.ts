@@ -66,6 +66,25 @@ describe('registerEnginePlaylistsIpc', () => {
     expect(() => handler('engine:tree')({})).toThrow()
   })
 
+  it('counts the tracks added in the last 30 days, the number the tree shows beside Recently added', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-engineipc-'))
+    const now = Date.now() / 1000
+    writeEngineLibraryFixture(dir, {
+      tracks: [
+        { id: 1, path: 'a.mp3', dateAdded: now - 60 },
+        { id: 2, path: 'b.mp3', dateAdded: now - 3600 },
+        { id: 3, path: 'c.mp3', dateAdded: now - 90 * 86400 },
+      ],
+      playlists: [],
+      entities: [],
+    }).close()
+    let configured = ''
+    registerEnginePlaylistsIpc(() => configured, { artDir: () => join(dir, 'art') })
+    expect(handler('engine:recentCount')({})).toBe(0)
+    configured = dir
+    expect(handler('engine:recentCount')({})).toBe(2)
+  })
+
   it('grants the files and covers of the playlist it read, so the rows can play and paint before any disk walk', async () => {
     const dir = await library()
     const allowMedia = vi.fn()

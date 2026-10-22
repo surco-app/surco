@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { mediaUrl } from '../shared/media'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
   AppleMusicTrackMeta,
   SourceNode,
@@ -137,22 +138,49 @@ function coverFiles(db: EngineDb, ids: number[], artDir: string): Map<number, st
   return files
 }
 
-export function readEnginePlaylist(
-  db: EngineDb,
-  libraryDir: string,
-  id: string,
-  artDir: string,
-): SourcePlaylistEntry[] {
-  const rows = chainOrder(
+const ROW_FIELDS =
+  't.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.albumArtId'
+
+function recentSince(now: Date): number {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).getTime() / 1000
+}
+
+function readRecentRows(db: EngineDb, now: Date): EntityRow[] {
+  return db
+    .prepare(
+      `SELECT t.id, 0 AS next, ${ROW_FIELDS} FROM Track t
+        WHERE t.dateAdded >= ? ORDER BY t.dateAdded DESC, t.id DESC`,
+    )
+    .all(recentSince(now)) as EntityRow[]
+}
+
+export function readEngineRecentCount(db: EngineDb, now: Date = new Date()): number {
+  const row = db
+    .prepare('SELECT count(*) AS n FROM Track WHERE dateAdded >= ?')
+    .get(recentSince(now)) as { n: number }
+  return row.n
+}
+
+function readPlaylistRows(db: EngineDb, id: string): EntityRow[] {
+  return chainOrder(
     db
       .prepare(
-        `SELECT e.id, e.nextEntityId AS next, t.path, t.title, t.artist, t.length, t.bpm,
-                t.bpmAnalyzed, t.rating, t.albumArtId
+        `SELECT e.id, e.nextEntityId AS next, ${ROW_FIELDS}
            FROM PlaylistEntity e JOIN Track t ON t.id = e.trackId
           WHERE e.listId = ?`,
       )
       .all(Number(id)) as EntityRow[],
   )
+}
+
+export function readEnginePlaylist(
+  db: EngineDb,
+  libraryDir: string,
+  id: string,
+  artDir: string,
+  now: Date = new Date(),
+): SourcePlaylistEntry[] {
+  const rows = id === RECENTLY_ADDED_ID ? readRecentRows(db, now) : readPlaylistRows(db, id)
   const covers = coverFiles(
     db,
     rows.flatMap((r) => (r.path && r.albumArtId ? [r.albumArtId] : [])),

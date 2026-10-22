@@ -14,6 +14,7 @@ export interface EngineFixture {
     bpmAnalyzed?: number
     rating?: number
     albumArtId?: number
+    dateAdded?: number
   }[]
   art?: { id: number; bytes: Uint8Array }[]
   playlists: { id: number; title: string; parentListId: number; nextListId: number }[]
@@ -40,7 +41,7 @@ export function writeEngineLibraryFixture(
   const art = db.prepare('INSERT INTO AlbumArt (id, hash, albumArt) VALUES (?, ?, ?)')
   for (const a of data.art ?? []) art.run(a.id, `hash-${a.id}`, Buffer.from(a.bytes))
   const track = db.prepare(`INSERT INTO Track (id, path, filename, title, artist, length, bpm,
-    bpmAnalyzed, rating, albumArtId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    bpmAnalyzed, rating, albumArtId, dateAdded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   for (const t of data.tracks)
     track.run(
       t.id,
@@ -53,6 +54,7 @@ export function writeEngineLibraryFixture(
       t.bpmAnalyzed ?? null,
       t.rating ?? 0,
       t.albumArtId ?? 1,
+      t.dateAdded ?? null,
     )
   const list = db.prepare(`INSERT INTO Playlist (id, title, parentListId, isPersisted,
     nextListId, isExplicitlyExported) VALUES (?, ?, ?, 1, ?, 1)`)

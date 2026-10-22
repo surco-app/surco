@@ -187,6 +187,7 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:playlist', id),
   engineAvailable: (): Promise<boolean> => ipcRenderer.invoke('engine:available'),
   loadEngineTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('engine:tree'),
+  engineRecentCount: (): Promise<number> => ipcRenderer.invoke('engine:recentCount'),
   loadEnginePlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('engine:playlist', id),
   editRekordboxPlaylist: (

@@ -205,6 +205,7 @@ export interface Api {
   loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   engineAvailable: () => Promise<boolean>
   loadEngineTree: () => Promise<SourceNode[]>
+  engineRecentCount: () => Promise<number>
   loadEnginePlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
   // open; the result says whether the edit was written, and why not.

@@ -195,6 +195,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxHasSeparator: async () => false,
     engineAvailable: async () => false,
     loadEngineTree: async () => [],
+    engineRecentCount: async () => 0,
     loadEnginePlaylist: async () => [],
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
