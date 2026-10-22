@@ -69,6 +69,7 @@ import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, wireRendererRecovery } from './crashGuards'
+import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
@@ -1028,6 +1029,7 @@ function registerIpc(): void {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,
       applyQuietly: applyEngineCueQueueQuietly,
+      words: cachedCueWaveWords,
     },
   })
   registerEngineCueQueueIpc(engineCueQueue, {

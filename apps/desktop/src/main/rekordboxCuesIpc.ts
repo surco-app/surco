@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
+import { realpathSync } from 'node:fs'
 import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
 import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest } from '../shared/types'
 import { readEngineTrackCues } from './engineCues'
+import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
@@ -20,7 +22,12 @@ export function registerRekordboxCuesIpc(host: {
   queue: CueQueue
   applyQuietly: () => void
   flow: () => CueFlow
-  engine?: { libraryDir: () => string; queue: CueQueue; applyQuietly: () => void }
+  engine?: {
+    libraryDir: () => string
+    queue: CueQueue
+    applyQuietly: () => void
+    words: (file: string) => Promise<Uint16Array | null>
+  }
 }): void {
   const engineOf = (contentId: string) => (isEngineContent(contentId) ? host.engine : undefined)
   const queueOf = (contentId: string) => engineOf(contentId)?.queue ?? host.queue
@@ -49,6 +56,18 @@ export function registerRekordboxCuesIpc(host: {
       null,
       await keyOf(path),
     )
+  })
+  ipcMain.handle('rekordbox:cueDropInput', async (_e, contentId: string) => {
+    const engine = engineOf(contentId)
+    if (!engine) return null
+    const path = host.collection()
+    return engineDropInput(contentId, {
+      libraryDir: engine.libraryDir(),
+      collection: path,
+      key: await keyOf(path),
+      realPath: (p) => realpathSync(p),
+      words: engine.words,
+    })
   })
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()

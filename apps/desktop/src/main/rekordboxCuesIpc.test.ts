@@ -13,6 +13,7 @@ vi.mock('./rekordboxDb', async (actual) => {
 
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
 import { flowOutcome } from '../shared/cueRules'
+import type { DropInput } from '../shared/dropDetect'
 import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
 import { analysedTrack } from './enginePerformanceFixture'
@@ -410,7 +411,12 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
     return dir
   }
 
-  function register(dir: string, rekordbox = queue(), engine = queue()) {
+  function register(
+    dir: string,
+    rekordbox = queue(),
+    engine = queue(),
+    words = vi.fn(async (_file: string) => new Uint16Array([4, 8])),
+  ) {
     const applyRekordbox = quietly()
     const applyEngine = quietly()
     registerRekordboxCuesIpc({
@@ -418,9 +424,9 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
       queue: rekordbox,
       applyQuietly: applyRekordbox,
       flow: () => MY_FLOW,
-      engine: { libraryDir: () => dir, queue: engine, applyQuietly: applyEngine },
+      engine: { libraryDir: () => dir, queue: engine, applyQuietly: applyEngine, words },
     })
-    return { applyRekordbox, applyEngine }
+    return { applyRekordbox, applyEngine, words }
   }
 
   it('reads an Engine row’s cues from the Engine DJ library, so the editor opens on Engine tracks too', async () => {
@@ -433,6 +439,21 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
   it('has no detailed wave for an Engine track, since Engine keeps only a coarse overview', async () => {
     register(await engineLibrary())
     expect(await handler('rekordbox:cueWaveDetail')({}, 'engine:4')).toBeNull()
+  })
+
+  it('gives Auto marcar an Engine track’s structure to detect on, from Surco’s own words when rekordbox lacks the file', async () => {
+    const dir = await engineLibrary()
+    const { words } = register(dir)
+    const input = (await handler('rekordbox:cueDropInput')({}, 'engine:4')) as DropInput
+    expect(words).toHaveBeenCalledWith(join(dir, '../Music/e.mp3'))
+    expect([...input.words]).toEqual([4, 8])
+    expect(input.phrases).toEqual([])
+  })
+
+  it('has no drop input for a rekordbox track, whose words the editor already reads', async () => {
+    const { words } = register(await engineLibrary())
+    expect(await handler('rekordbox:cueDropInput')({}, '103')).toBeNull()
+    expect(words).not.toHaveBeenCalled()
   })
 
   it('queues each save on the library it belongs to and applies each queue, so one Save all reaches both apps', async () => {

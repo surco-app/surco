@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
+import type { DropInput } from '../shared/dropDetect'
 import type { LearnedFlow } from '../shared/learnFlow'
 import type {
   ActivityEvent,
@@ -203,6 +204,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
   rekordboxCueWaveDetail: (contentId: string): Promise<Uint16Array | null> =>
     ipcRenderer.invoke('rekordbox:cueWaveDetail', contentId),
+  rekordboxCueDropInput: (contentId: string): Promise<DropInput | null> =>
+    ipcRenderer.invoke('rekordbox:cueDropInput', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

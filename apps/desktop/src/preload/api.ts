@@ -3,6 +3,7 @@
 // this contract fails the main-side build instead of surfacing as a runtime IPC
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
+import type { DropInput } from '../shared/dropDetect'
 import type { LearnedFlow } from '../shared/learnFlow'
 import type {
   ActivityEvent,
@@ -219,6 +220,7 @@ export interface Api {
   rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
+  rekordboxCueDropInput: (contentId: string) => Promise<DropInput | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   rekordboxLearnFlow: () => Promise<LearnedFlow | null>
