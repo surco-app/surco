@@ -79,6 +79,26 @@ beforeEach(() => {
 
 const patch = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }
 
+describe('syncCollection on the boot disk', () => {
+  it('matches a track Traktor stores under the boot volume name, which a boot-disk path leaves empty', async () => {
+    writeFileSync(
+      nmlPath,
+      NML.replace('DIR="/:M/:"', 'DIR="/:Users/:dj/:M/:"').replace(
+        'VOLUME="HD"',
+        'VOLUME="Macintosh HD"',
+      ),
+    )
+    const result = await syncCollection(
+      nmlPath,
+      [{ volume: '', dir: '/:Users/:dj/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }],
+      'Macintosh HD',
+    )
+
+    expect(result.written).toBe(true)
+    expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
+  })
+})
+
 describe('syncCollection', () => {
   // La colección es la biblioteca entera de un DJ: nunca se escribe sin una copia
   // recuperable al lado, y el backup va ANTES de tocar el original.

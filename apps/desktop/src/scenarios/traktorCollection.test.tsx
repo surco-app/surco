@@ -9,6 +9,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 import { toNmlLocation } from '../main/ffmpeg'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { findEntries } from '../main/traktorNml'
+import { bootVolumeName } from '../main/traktorNmlLibrary'
 import { type AppScenario, openApp, openSection } from './app'
 import { DROP_MS, makeTrack, scenarioDir } from './fixtures'
 
@@ -16,7 +17,8 @@ const COLLECTION_CUE_MS = 30_000
 const WITH_LEAD_IN = 'aevalsrc=if(lt(t\\,2)\\,0\\,0.3*sin(2*PI*220*t)):s=44100:d=84'
 
 function collection(source: string): string {
-  const { volume, dir, file } = toNmlLocation(source)
+  const { volume: pathVolume, dir, file } = toNmlLocation(source)
+  const volume = pathVolume || bootVolumeName()
   return `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <NML VERSION="19"><HEAD COMPANY="www.native-instruments.com" PROGRAM="Traktor"></HEAD>
 <COLLECTION ENTRIES="1">

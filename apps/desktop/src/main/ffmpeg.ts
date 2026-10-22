@@ -1701,8 +1701,9 @@ const DITHER_FILTER = 'aresample=out_sample_fmt=s16:dither_method=triangular_hp'
 // split_os_path() (macOS volume/Windows drive letter split) and friendly_to_dir()
 // (the "/A/B/" -> "/:A/:B/:" folder encoding) in traktor_nml_cleaner.py. A path
 // under neither /Volumes/ nor a Windows drive letter (e.g. the internal boot
-// volume) keeps VOLUME as Traktor itself does: empty, with the whole path folded
-// into DIR — split_os_path's fallback returns no volume for that case.
+// volume) gets an empty VOLUME with the whole path folded into DIR, as
+// split_os_path's fallback does. Traktor itself stores the boot volume's name, so
+// matching an ENTRY needs bootVolumeName (traktorNmlLibrary.ts) to fill it in.
 export function toNmlLocation(path: string): { volume: string; dir: string; file: string } {
   const normalized = path.replace(/\\/g, '/').replace(/\/+$/, '')
   const file = basename(normalized)
