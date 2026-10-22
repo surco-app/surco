@@ -9,7 +9,7 @@ import type { DropInput } from '../../../shared/dropDetect'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
-import { resetCueSession } from '../lib/cueSession'
+import { autoMarkOf, keepAutoMark, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
@@ -422,5 +422,67 @@ describe('accepting Auto marcar', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     expect(proposals()).toEqual([])
+  })
+})
+
+describe('pending proposals', () => {
+  it('shows the proposals a batch left for the track as soon as it opens, so the DJ only reviews', async () => {
+    keepAutoMark('103', { kind: 'proposed', ms: [bar(64), bar(128)] })
+    setup()
+    await ready()
+    expect(proposals()).toEqual([`cue-wave-proposal-${bar(64)}`, `cue-wave-proposal-${bar(128)}`])
+    expect(screen.getByTestId('cues-auto-accept')).toBeInTheDocument()
+    expect(detectDrops).not.toHaveBeenCalled()
+  })
+
+  it('keeps them when the DJ moves to another track and comes back, until they are answered', async () => {
+    const { changeTrack } = setup()
+    await ready()
+    await autoMark()
+    changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
+    expect(await screen.findByTestId('cues-auto-mark')).toBeInTheDocument()
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await waitFor(() => expect(proposals()).toHaveLength(2))
+  })
+
+  it('leaves only what is still unanswered pending, so the row counts what is left to review', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(64), bar(128)] })
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(128)] })
+  })
+
+  it('leaves nothing pending once they are all accepted', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    expect(autoMarkOf('103')).toBeUndefined()
+  })
+
+  it('leaves nothing pending once Descartar throws them away', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-discard'))
+    expect(autoMarkOf('103')).toBeUndefined()
+  })
+
+  it('records when the detector finds nothing or only marked breaks, so the row can say so', async () => {
+    detectDrops.mockReturnValue([])
+    setup()
+    await ready()
+    await autoMark()
+    expect(autoMarkOf('103')).toEqual({ kind: 'none' })
+  })
+
+  it('says again what the detector found when the track opens after a batch', async () => {
+    keepAutoMark('103', { kind: 'marked' })
+    setup()
+    await ready()
+    expect(screen.getByTestId('cues-auto-marked')).toBeInTheDocument()
   })
 })

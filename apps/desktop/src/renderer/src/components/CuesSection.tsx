@@ -45,7 +45,10 @@ import {
   zoomStep,
 } from '../lib/cuePlayhead'
 import {
+  autoMarkOf,
+  forgetAutoMark,
   forgetDraft,
+  keepAutoMark,
   keepDraft,
   keepPlayhead,
   keptDraft,
@@ -316,12 +319,22 @@ function Editing({
     [placing, hoverMs, state, ctx],
   )
   const { data: words } = useCueWaveDetail(cue.contentId, true)
-  const [proposed, setProposed] = useState<number[] | null>(null)
-  const [autoNote, setAutoNote] = useState<'none' | 'marked' | null>(null)
+  const [proposed, setProposed] = useState<number[] | null>(() => {
+    const kept = autoMarkOf(cue.contentId)
+    return kept?.kind === 'proposed' ? kept.ms : null
+  })
+  const [autoNote, setAutoNote] = useState<'none' | 'marked' | null>(() => {
+    const kept = autoMarkOf(cue.contentId)
+    return kept?.kind === 'none' || kept?.kind === 'marked' ? kept.kind : null
+  })
   const proposals = useMemo(
     () => withoutCallInBar(proposed ?? [], state.cues, read.grid),
     [proposed, state.cues, read.grid],
   )
+  useEffect(() => {
+    if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', ms: proposals })
+    else if (autoMarkOf(cue.contentId)?.kind === 'proposed') forgetAutoMark(cue.contentId)
+  }, [cue.contentId, proposals])
   const acceptAll = useMemo<DraftAction>(
     () => ({
       type: 'batch',
@@ -338,13 +351,14 @@ function Editing({
   const autoMark = () => {
     if (!words) return
     const found = detectDrops({ grid: read.grid, phrases: read.phrases, words })
-    setAutoNote(
+    const note =
       found.length === 0
         ? 'none'
         : withoutCallInBar(found, state.cues, read.grid).length === 0
           ? 'marked'
-          : null,
-    )
+          : null
+    if (note) keepAutoMark(cue.contentId, { kind: note })
+    setAutoNote(note)
     setProposed(found)
   }
   const acceptProposals = () => {
