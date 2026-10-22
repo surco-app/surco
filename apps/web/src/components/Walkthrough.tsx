@@ -169,10 +169,7 @@ export default function Walkthrough() {
         title={t('home.cues.title')}
         app={<CuesScene />}
       >
-        <p>{t('home.cues.lede')}</p>
-        <p className="mt-3">{t('home.cues.example')}</p>
-        <p className="mt-3">{t('home.cues.auto')}</p>
-        <p className="mt-3">{t('home.cues.onClose')}</p>
+        {t('home.cues.lede')}
       </SceneLayout>
 
       <Reveal>

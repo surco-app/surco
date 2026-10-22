@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { CUES_FLOW } from '../lib/scenes'
 import en from './locales/en.json'
 import es from './locales/es.json'
 
@@ -51,18 +50,4 @@ describe('guide screenshots', () => {
     expect(shots(en).length).toBeGreaterThan(0)
     expect(shots(en)).toHaveLength(shots(es).length)
   })
-})
-
-describe('rekordbox cue example', () => {
-  for (const [name, locale] of [
-    ['en', en],
-    ['es', es],
-  ] as const) {
-    it(`${name} tells the same distances, in the same order, as the scene draws`, () => {
-      const distances = [...locale.home.cues.example.matchAll(/\b(\d+)\b/g)].map((m) =>
-        Number(m[1]),
-      )
-      expect(distances.slice(0, CUES_FLOW.length)).toEqual(CUES_FLOW.map((c) => c.back))
-    })
-  }
 })

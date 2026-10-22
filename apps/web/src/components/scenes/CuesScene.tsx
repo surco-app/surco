@@ -35,6 +35,8 @@ const marksOf = (placed: CuePlacement, ghost: CuePlacement | null): Mark[] => [
     : []),
 ]
 
+const ZOOM_POINT = (bar: number) => `${at(bar, CUES_ZOOM.from, CUES_ZOOM.span)}%`
+
 function Marks({ marks, from, bars }: { marks: Mark[]; from: number; bars: number }) {
   const shown = marks.filter(({ bar }) => bar >= from && bar <= from + bars)
   const style = (m: Mark) => ({
@@ -82,17 +84,25 @@ export default function CuesScene() {
   const ref = useRef<HTMLDivElement>(null)
   const win = useRef<HTMLDivElement>(null)
   const save = useRef<HTMLSpanElement>(null)
+  const auto = useRef<HTMLSpanElement>(null)
   const [anchors] = useState(() =>
     CUES_HOVERS.map((hovers) => hovers.map(() => createRef<HTMLSpanElement>())),
   )
   const frame = cuesFrame(useSceneProgress(ref, CUES_SECONDS * 1000))
-  const marks = marksOf(frame.placed, frame.ghost)
+  const shown = frame.ghost ?? frame.proposal
+  const marks = marksOf(frame.placed, shown)
   const unsaved = frame.placed.points.length > 0 && !frame.saved
   const pads = new Map(frame.placed.hot.map((h) => [h.letter, h.colour]))
   const viewFrom = CUES_ZOOM.views[frame.view]
   const step = ['start', 'closer', 'point'].indexOf(frame.cursor)
   const target =
-    frame.cursor === 'hidden' ? null : frame.cursor === 'save' ? save : anchors[frame.round][step]
+    frame.cursor === 'hidden'
+      ? null
+      : frame.cursor === 'save'
+        ? save
+        : frame.cursor === 'auto'
+          ? auto
+          : anchors[0][step]
 
   return (
     <div ref={ref}>
@@ -139,7 +149,19 @@ export default function CuesScene() {
                   <Glyph size={12}>{ICONS.chevron}</Glyph>
                 </span>
               </span>
-              <span className="text-xs whitespace-nowrap text-muted">{t('home.cues.hint')}</span>
+              <span
+                ref={auto}
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-blue px-2.5 text-xs font-semibold whitespace-nowrap text-blue transition-transform duration-200"
+                style={{ transform: frame.autoPressed ? 'scale(0.96)' : 'none' }}
+              >
+                <svg viewBox="0 0 16 16" className="size-3" aria-hidden="true">
+                  <path
+                    d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                {t('home.cues.autoButton')}
+              </span>
               <span className="flex-1" />
               <span
                 className="text-xs whitespace-nowrap text-muted transition-opacity duration-300"
@@ -198,21 +220,29 @@ export default function CuesScene() {
               <span className="absolute inset-x-0 top-6 bottom-2">
                 <AppWave values={CUES_ZOOM_ENVELOPE} />
               </span>
-              {frame.ghost && (
+              {shown && (
                 <i
                   className={`absolute top-4 bottom-0 block border-l ${frame.pressed ? 'border-solid border-fg' : 'border-dashed border-fg/70'}`}
-                  style={{
-                    left: `${at(frame.ghost.points[0], CUES_ZOOM.from, CUES_ZOOM.span)}%`,
-                    transition: `left 0.35s ${EASE}`,
-                  }}
+                  style={{ left: ZOOM_POINT(shown.points[0]), transition: `left 0.35s ${EASE}` }}
                 />
               )}
-              <Marks marks={marks} from={CUES_ZOOM.from} bars={CUES_ZOOM.span} />
-              {CUES_HOVERS.flatMap((hovers, round) =>
-                hovers.map((bar, i) => (
-                  <Anchor key={bar} bar={bar} anchorRef={anchors[round][i]} />
-                )),
+              {frame.proposal && (
+                <span
+                  className="absolute top-5 z-20 flex -translate-x-full items-center gap-1.5 rounded-full border border-dashed border-blue bg-bg py-0.5 pr-0.5 pl-2.5 text-[11px] font-semibold whitespace-nowrap text-blue"
+                  style={{ left: `calc(${ZOOM_POINT(frame.proposal.points[0])} - 6px)` }}
+                >
+                  {t('home.cues.ask')}
+                  <span
+                    className={`grid h-4 min-w-4 place-items-center rounded-full px-1 transition-colors duration-200 ${frame.returnPressed ? 'bg-fg text-bg' : 'bg-blue text-bg'}`}
+                  >
+                    ↵
+                  </span>
+                </span>
               )}
+              <Marks marks={marks} from={CUES_ZOOM.from} bars={CUES_ZOOM.span} />
+              {CUES_HOVERS[0].map((bar, i) => (
+                <Anchor key={bar} bar={bar} anchorRef={anchors[0][i]} />
+              ))}
             </div>
             <i className="absolute inset-y-0 left-1/2 block w-px bg-fg/70" />
           </div>

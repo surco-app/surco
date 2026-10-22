@@ -579,52 +579,71 @@ describe('cuesFrame', () => {
     }
   })
 
-  it('draws every ghost cue back from the point under the pointer, on whole bars inside the track', () => {
+  it('draws every ghost and proposed cue back from its point, on whole bars inside the track', () => {
     for (const f of frames) {
-      if (!f.ghost) continue
-      const [point] = f.ghost.points
-      expect(f.ghost.hot.map((h) => point - h.bar)).toEqual(CUES_FLOW.map((c) => c.back))
-      for (const bar of [point, ...f.ghost.hot.map((h) => h.bar)]) {
-        expect(Number.isInteger(bar)).toBe(true)
-        expect(bar).toBeGreaterThanOrEqual(0)
-        expect(bar).toBeLessThan(CUES_BARS)
+      for (const shown of [f.ghost, f.proposal]) {
+        if (!shown) continue
+        const [point] = shown.points
+        expect(shown.hot.map((h) => point - h.bar)).toEqual(CUES_FLOW.map((c) => c.back))
+        for (const bar of [point, ...shown.hot.map((h) => h.bar)]) {
+          expect(Number.isInteger(bar)).toBe(true)
+          expect(bar).toBeGreaterThanOrEqual(0)
+          expect(bar).toBeLessThan(CUES_BARS)
+        }
       }
     }
   })
 
-  it('moves the ghost through each hover in turn, only after the pointer has gone there', () => {
+  it('marks the first drop by hand, moving the ghost through each hover after the pointer has gone there', () => {
     const points = frames.map((f) => f.ghost?.points[0] ?? null).filter((p) => p !== null)
     expect([...new Set(points)]).toEqual(allHovers)
-    CUES_HOVERS.forEach((hovers, round) => {
-      expect(firstAt((f) => f.round === round && f.cursor === 'closer')).toBeLessThan(
-        firstAt((f) => f.ghost?.points[0] === hovers[1]),
-      )
-      expect(firstAt((f) => f.round === round && f.cursor === 'point')).toBeLessThan(
-        firstAt((f) => f.ghost?.points[0] === hovers[2]),
-      )
-    })
-  })
-
-  it('shows each drop in the zoomed wave before the pointer works on it', () => {
-    for (const f of frames) if (f.ghost) expect(f.view).toBe(f.round)
-    expect(firstAt((f) => f.view === 1)).toBeLessThan(
-      firstAt((f) => f.round === 1 && f.cursor !== 'hidden'),
+    expect(firstAt((f) => f.cursor === 'closer')).toBeLessThan(
+      firstAt((f) => f.ghost?.points[0] === CUES_HOVERS[0][1]),
+    )
+    expect(firstAt((f) => f.cursor === 'point')).toBeLessThan(
+      firstAt((f) => f.ghost?.points[0] === CUES_HOVERS[0][2]),
     )
   })
 
-  it('places exactly what the ghost showed, with each click on its point', () => {
-    CUES_POINTS.forEach((point) => {
-      const placed = firstAt((f) => f.placed.points.includes(point))
-      const pressed = firstAt((f) => f.pressed && f.ghost?.points[0] === point)
-      expect(pressed).toBeGreaterThan(-1)
-      expect(pressed).toBeLessThan(placed)
-      expect(frames[pressed].cursor).toBe('point')
-      const before = frames[placed - 1]
-      expect(frames[placed].placed).toEqual({
-        points: [...before.placed.points, point],
-        hot: [...before.placed.hot, ...(before.ghost?.hot ?? [])],
-      })
+  it('places exactly what the ghost showed on the first click', () => {
+    const point = CUES_POINTS[0]
+    const placed = firstAt((f) => f.placed.points.includes(point))
+    const pressed = firstAt((f) => f.pressed && f.ghost?.points[0] === point)
+    expect(pressed).toBeGreaterThan(-1)
+    expect(pressed).toBeLessThan(placed)
+    expect(frames[pressed].cursor).toBe('point')
+    expect(frames[placed].placed).toEqual({ points: [point], hot: frames[placed - 1].ghost?.hot })
+  })
+
+  it('lets Auto marcar find the second drop, only after its button is pressed with the pointer on it', () => {
+    const proposed = firstAt((f) => f.proposal !== null)
+    const pressed = firstAt((f) => f.autoPressed)
+    expect(pressed).toBeGreaterThan(firstAt((f) => f.placed.points.length === 1))
+    expect(frames[pressed].cursor).toBe('auto')
+    expect(proposed).toBeGreaterThan(pressed)
+    expect(frames[proposed].proposal?.points).toEqual([CUES_POINTS[1]])
+    for (const f of frames) if (f.proposal) expect(f.ghost).toBe(null)
+  })
+
+  it('shows each drop in the zoomed wave before it is worked on', () => {
+    for (const f of frames) {
+      if (f.ghost) expect(f.view).toBe(0)
+      if (f.proposal) expect(f.view).toBe(1)
+    }
+  })
+
+  it('accepts the proposal with Return, placing exactly what it showed', () => {
+    const point = CUES_POINTS[1]
+    const placed = firstAt((f) => f.placed.points.includes(point))
+    const returned = firstAt((f) => f.returnPressed)
+    expect(returned).toBeGreaterThan(firstAt((f) => f.proposal !== null))
+    expect(returned).toBeLessThan(placed)
+    const before = frames[placed - 1]
+    expect(frames[placed].placed).toEqual({
+      points: [...before.placed.points, point],
+      hot: [...before.placed.hot, ...(before.proposal?.hot ?? [])],
     })
+    expect(frames[placed].proposal).toBe(null)
   })
 
   it('never takes a placed cue back', () => {
@@ -689,6 +708,7 @@ describe('cuesFrame', () => {
     )
     expect(end.placed.hot.map((h) => h.letter)).toEqual(['A', 'B', 'C', 'D', 'E', 'F'])
     expect(end.ghost).toBe(null)
+    expect(end.proposal).toBe(null)
     expect(end.saved).toBe(true)
     expect(end.savePressed).toBe(false)
     expect(end.cursor).toBe('hidden')

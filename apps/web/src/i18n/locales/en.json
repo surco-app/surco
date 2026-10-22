@@ -1118,17 +1118,15 @@
     "cues": {
       "step": "and in rekordbox · cued",
       "title": "Your rekordbox cues, in one click.",
-      "lede": "Open your rekordbox playlists in Surco. Pick a flow, move the cursor over the waveform and see the hot cues and CALLs it would set, see-through. One click and they're in. The letters follow the track, so A is always the first one. Surco writes them to rekordbox while the app is closed, after making a backup.",
-      "example": "Say a DJ marks the point where the track drops with a CALL, and their flow sets, counting back, a red hot cue at 48 bars, a green one at 32 and a blue one at 16, each with its own CALL. The point can be whatever you like.",
+      "lede": "Click where the track drops, or let Auto mark suggest it. Your flow places the rest of the cues and Surco saves them to rekordbox.",
       "unsaved": "Not saved",
       "flow": "Flow",
       "flowName": "Subidón",
-      "hint": "Click to place",
       "discard": "Discard changes",
       "save": "Save to rekordbox",
       "addCall": "+ CALL",
-      "auto": "Rather not hunt for the point? Press Auto mark and Surco suggests where the track drops, with its flow shown see-through, on several tracks at once too. You keep or drop each suggestion.",
-      "onClose": "Rather mark in rekordbox? Put a CALL where each track drops and, when you close rekordbox, Surco adds your flow's hot cues to the tracks that don't have any yet."
+      "autoButton": "Auto mark",
+      "ask": "Does it break here?"
     },
     "app": {
       "search": "Search tracks",
