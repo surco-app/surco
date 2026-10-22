@@ -2056,6 +2056,7 @@ export default function App(): React.JSX.Element {
       ),
     [rekordboxQueue.state],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-checks the kept drafts each time the rekordbox queue changes; forgetStaleDrafts reads the queue fresh from main.
   useEffect(() => {
     void forgetStaleDrafts(queryClient)
   }, [rekordboxQueue.state, queryClient])
