@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
+import type { EnginePerformanceRow } from './enginePerformanceFixture'
 
 export interface EngineFixture {
   tracks: {
@@ -19,6 +20,7 @@ export interface EngineFixture {
   art?: { id: number; bytes: Uint8Array }[]
   playlists: { id: number; title: string; parentListId: number; nextListId: number }[]
   entities: { id: number; listId: number; trackId: number; nextEntityId: number }[]
+  performance?: EnginePerformanceRow[]
   wal?: boolean
 }
 
@@ -55,6 +57,16 @@ export function writeEngineLibraryFixture(
       t.rating ?? 0,
       t.albumArtId ?? 1,
       t.dateAdded ?? null,
+    )
+  const perf = db.prepare(`UPDATE PerformanceData SET trackData = ?, beatData = ?, quickCues = ?,
+    overviewWaveFormData = ? WHERE trackId = ?`)
+  for (const p of data.performance ?? [])
+    perf.run(
+      p.trackData ?? null,
+      p.beatData ?? null,
+      p.quickCues ?? null,
+      p.overviewWaveFormData ?? null,
+      p.trackId,
     )
   const list = db.prepare(`INSERT INTO Playlist (id, title, parentListId, isPersisted,
     nextListId, isExplicitlyExported) VALUES (?, ?, ?, 1, ?, 1)`)
