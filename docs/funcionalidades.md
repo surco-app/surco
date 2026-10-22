@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 21 de octubre de 2026** (v1.9.0, rekordbox dentro de Surco). Levantado por primera vez el
+**Última revisión: 22 de octubre de 2026** (v1.10.0, cues sin esperar a rekordbox). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1104,6 +1104,11 @@ sacada de su análisis (o la de Surco en caché si el análisis está dañado) y
 muestras de color, o la marca de «no analizada». Las pistas sin fichero en el disco se
 cuentan en un aviso (`sources.missing*`).
 
+**Añadidas recientemente** (nuevo en v1.10.0). Va la primera del árbol, con un reloj, y
+lista las pistas que entraron en la colección en los últimos 30 días, de la más nueva a la
+más antigua (`StockDate`, `rekordboxPlaylists.ts:128-141`). Es de solo lectura: no se
+renombra, no se borra, no se reordena y no se le añaden pistas.
+
 **Independiente de la sincronización.** Ver las playlists no necesita la opción de
 sincronizar rekordbox al convertir.
 
@@ -1381,8 +1386,9 @@ solo se repone desde la copia si su estado es desconocido (`rekordboxPlaylistWri
 ### Editor de cues de rekordbox
 
 Nuevo en v1.9.0. La sección Cues del editor aparece cuando la pista se abrió desde una
-playlist de rekordbox (`App.tsx:2059-2069`) y rekordbox la tiene analizada; si no, lo dice
-(`editor.cues.unanalysed`). Dibuja la onda en color de rekordbox con su rejilla y la línea
+playlist de rekordbox (`App.tsx:2123-2133`). Si rekordbox aún no la ha analizado, se abre
+sobre la rejilla de Surco (ver «Pistas que rekordbox no ha analizado», abajo), y solo si
+Surco tampoco encuentra pulso dice que no está analizada (`editor.cues.unanalysed`). Dibuja la onda en color de rekordbox con su rejilla y la línea
 roja en cada compás que la rejilla marca como golpe 1, como rekordbox
 (`CueWave.tsx`, `CueWaveDetail.tsx`).
 
@@ -1408,11 +1414,46 @@ mientras esperaba, el guardado se descarta y se muestra lo que tiene rekordbox
 (`editor.cues.queuedStale`). Salir con cues sin guardar pide confirmación
 (`main/index.ts:524-530`).
 
+**La escucha va en el tiempo de rekordbox** (v1.10.0). Chromium reproduce un MP3 con
+cabecera LAME un frame antes de donde rekordbox coloca los milisegundos, así que el editor
+desplaza el cabezal y los saltos ese frame, 26 ms a 44,1 kHz (`rekordboxLeadMs`,
+`rekordboxTimeline.ts:63`). Medido en Electron y contra 142 MP3 LAME de una colección real;
+en M4A, WAV, AIFF y MP3 de ffmpeg ya coincidían. Un MP3 sin cabecera sigue saltando con
+algo de error, porque Chromium no puede buscar en él con exactitud.
+
+### Pistas que rekordbox no ha analizado
+
+Nuevo en v1.10.0. Se pueden poner cues sin abrir rekordbox.
+
+**La rejilla la calcula Surco.** El tempo es el del detector de BPM de siempre y el primer
+golpe se busca en la subida más brusca de la energía plegada por periodo, no en su pico, que
+cae unos 100 ms después del bombo (`fitBeatGrid`, `beatGrid.ts:49`). Luego se pasa al tiempo
+de rekordbox según el formato y el codificador del MP3 (`rekordboxShiftMs`,
+`rekordboxTimeline.ts:69`). Medido contra el análisis de rekordbox en 2006 pistas de una
+colección real: la BPM coincide a ±0,02 en el 93 % y el golpe cae a 10 ms o menos en el
+83 %. **El compás no se sabe**: todos los golpes van sin número (`provisionalGrid`,
+`beatGrid.ts:57`), así que no hay líneas de compás y «Cuantizar a compás» se ve pero queda
+apagado (`CuesSection.tsx:1276`). La cuenta atrás de los flujos funciona porque solo cuenta
+golpes. Auto marcar queda apagado porque necesita el análisis de rekordbox. La onda es la de
+Surco en el formato de rekordbox (`rekordbox:surcoGrid`, `rekordboxCuesIpc.ts:105`).
+
+**Se guarda igual.** La cola escribe en una pista sin analizar el conjunto de cues que montó
+el editor, pero no un guardado antiguo que solo trae los puntos, que necesita la rejilla de
+rekordbox (`rekordboxPlaylistWrite.ts:341`). Probado una vez en un rekordbox real: los cues
+escritos antes de su primer análisis siguen en los mismos milisegundos después de él.
+
+**Luego se ajusta a la rejilla de rekordbox.** Cada guardado así queda apuntado en
+`rekordbox-provisional.json`. Al abrir Surco, y al cerrar rekordbox con Surco abierto, las
+pistas que rekordbox ya analizó se ajustan: cada cue va al golpe más cercano si está a un
+cuarto de golpe o menos, y si no se queda donde está y se avisa (`onRekordboxGrid`,
+`rekordboxProvisional.ts:52`, `FIT_SHARE_OF_BEAT`). Si los cues se cambiaron en rekordbox
+mientras tanto, no se tocan. El aviso dice cuántos se movieron y cuánto el que más.
+
 ### Flujos de cues
 
 Un flujo es una lista de reglas que, a partir de un punto, pone hot cues y CALL
 (`shared/cueFlows.ts`). **El punto lo marca el usuario** con un CALL que no está sobre una
-hot cue (`findDrops`, `shared/cueRules.ts:28-32`). Surco no detecta los drops solo (ver §13).
+hot cue (`findDrops`, `shared/cueRules.ts:28-32`), o lo propone Auto marcar (abajo).
 
 **Flujos incluidos:** «Mix in 64», una hot cue 16 compases (64 golpes) antes del punto, y
 «Mix in 32», a 8 compases (`MIX_IN`, `MIX_IN_32`, `cueFlows.ts:92-118`). Cada regla elige
@@ -1427,6 +1468,16 @@ dice con cuántas pistas encaja (`rekordboxLearnFlow.ts:45`, `shared/learnFlow.t
 **Vista previa y clic.** Al pasar el ratón por la onda se ve en transparente lo que pondría el
 flujo (`CueFlowPreview.tsx`) y un clic lo coloca en ese punto; lo que no cabe se dice en vez de
 callarlo (`editor.cues.trimmed*`, `tooMany`). Hay también un modo Manual sin flujo.
+
+**Auto marcar** (nuevo en v1.10.0). Propone dónde rompe la pista a partir del análisis de
+rekordbox (frases y onda) y la rejilla (`detectDrops`, `shared/dropDetect.ts:216`), y dibuja
+en transparente lo que pondría el flujo. Las propuestas se aceptan con Intro, todas o de una
+en una, y no se guarda nada hasta aceptarlas. Con varias filas seleccionadas de una playlist,
+«Auto marcar las seleccionadas» las calcula todas y cada fila dice lo que dejó
+(`autoMarkTracks`, `lib/cueAutoMark.ts:56`); «Guardar N pistas en rekordbox» guarda de una
+vez las revisadas. Medido sobre pistas apartadas de una colección real con los drops que
+marcó su DJ: encuentra en torno al 68 % de los drops y en torno al 70 % de sus propuestas son
+drops (`dropDetectMeasure.test.ts`). Necesita el análisis de rekordbox.
 
 **Letras en orden de la pista** (`cueLettersByTime`, encendido por defecto,
 `settings.ts:85`). Al poner o quitar cues las letras se reasignan por tiempo, así que la A
@@ -1819,27 +1870,31 @@ Recopilado de los cinco informes. Cada punto está verificado.
     (`musicFieldWrite.ts:38-42`, `recoverableTrash.ts:17`). Y con «Nunca» solo es definitivo
     el borrado que el usuario confirma en un disco sin papelera, tras un aviso que lo dice;
     un duplicado quitado en la revisión va a Copias de seguridad.
-34. **Surco no detecta los drops.** El punto de un flujo de cues lo marca el usuario con un
-    CALL. Hay un detector automático en el código (`shared/dropDetect.ts`) pero solo lo usan
-    los tests de medida, acertaba en torno al 68 % de los drops y no se ha publicado. No
-    decir «pone los cues solo» ni «detecta el drop».
-35. **Los cues de rekordbox se escriben solo en su colección** (`master.db`), con rekordbox
+34. **Auto marcar propone, no decide.** Encuentra en torno al 68 % de los drops y en torno
+    al 70 % de sus propuestas aciertan; el usuario acepta o quita cada una. No decir «pone los
+    cues solo» ni «detecta el drop». Necesita el análisis de rekordbox.
+35. **Las cues sin análisis de rekordbox van sobre una rejilla aproximada.** Cae a 10 ms o
+    menos del golpe de rekordbox en el 83 % de las pistas medidas, no en todas, y no sabe dónde
+    empieza el compás. El ajuste a la rejilla de rekordbox solo ocurre cuando Surco se abre (o
+    está abierto al cerrar rekordbox) después del análisis. No decir que sustituye al análisis
+    de rekordbox.
+36. **Los cues de rekordbox se escriben solo en su colección** (`master.db`), con rekordbox
     cerrado y copia de seguridad antes; con rekordbox abierto esperan en la cola. Solo en
     pistas abiertas desde una playlist de rekordbox y ya analizadas por rekordbox. Máximo 8
     hot cues (A a H). Los bucles no se tocan.
-36. **Surco no desplaza los cues de rekordbox al recortar silencio.** El repunte conserva
+37. **Surco no desplaza los cues de rekordbox al recortar silencio.** El repunte conserva
     los cues de la colección tal cual, en milisegundos, sin el desplazamiento que sí reciben
     los de Traktor (ningún módulo `rekordbox*.ts` aplica el recorte). No prometer que «los
     cues siguen en su sitio» tras recortar una pista de rekordbox.
-37. **Las listas inteligentes de rekordbox no se leen** ni se pueden organizar desde Surco
+38. **Las listas inteligentes de rekordbox no se leen** ni se pueden organizar desde Surco
     (`rekordboxPlaylists.ts:45`).
-38. **Exportar a USB es solo para playlists de rekordbox**, en macOS y Windows (no en Linux),
+39. **Exportar a USB es solo para playlists de rekordbox**, en macOS y Windows (no en Linux),
     y exige rekordbox cerrado. Lo escrito coincide con un export de rekordbox 7.2.19, pero en
     reproductores reales solo consta una prueba en CDJ-3000X y XDJ-AZ
     (`docs/export-usb-medidas.md` §9). Un USB en exFAT no lo lee el CDJ-2000. No prometer
     compatibilidad con todos los CDJ.
-39. **Las teclas del editor de cues no son rebindables.** Viven en la sección (`lib/cueKeys.ts`),
+40. **Las teclas del editor de cues no son rebindables.** Viven en la sección (`lib/cueKeys.ts`),
     fuera de la tabla de atajos de Ajustes.
-40. **El nombre de archivo de una pista de rekordbox solo se protege del renombrado
+41. **El nombre de archivo de una pista de rekordbox solo se protege del renombrado
     automático por plantilla** (`outputName.ts:20-25`). Un cambio de formato sí cambia el
     fichero, y entonces es el repunte (si está activo) el que mueve la entrada.
