@@ -71,5 +71,20 @@ export function hotCueColor(index: number | null): string {
   return (index !== null && index >= 1 ? TABLE[index - 1] : undefined) ?? HOT_CUE_DEFAULT_COLOR
 }
 
+export function hotCueArgb(index: number | null): number {
+  return (0xff000000 | Number.parseInt(hotCueColor(index).slice(1), 16)) >>> 0
+}
+
+export function nearestHotCueColor(argb: number): number {
+  const distance = (hex: string): number =>
+    [16, 8, 0].reduce((sum, shift, i) => {
+      const d = ((argb >>> shift) & 0xff) - Number.parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
+      return sum + d * d
+    }, 0)
+  let best = 0
+  for (let i = 1; i < TABLE.length; i++) if (distance(TABLE[i]) < distance(TABLE[best])) best = i
+  return best + 1
+}
+
 export const HOT_CUE_PICKER = [48, 52, 56, 60, 1, 5, 9, 14, 18, 22, 26, 30, 32, 38, 42, 45]
 export const HOT_CUE_DEFAULT_INDEX = 22

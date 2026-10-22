@@ -3,8 +3,10 @@ import {
   HOT_CUE_DEFAULT_COLOR,
   HOT_CUE_DEFAULT_INDEX,
   HOT_CUE_PICKER,
+  hotCueArgb,
   hotCueColor,
   MEMORY_CUE_COLOR,
+  nearestHotCueColor,
 } from './rekordboxCueColors'
 
 describe('rekordbox cue colours', () => {
@@ -42,5 +44,21 @@ describe('rekordbox cue colours', () => {
 
   it('gives a new hot cue the colour rekordbox draws a cue without one', () => {
     expect(hotCueColor(HOT_CUE_DEFAULT_INDEX)).toBe(HOT_CUE_DEFAULT_COLOR)
+  })
+
+  it('writes each colour to Engine DJ as the opaque ARGB of the same swatch, so the pad lights as Surco drew it', () => {
+    expect(hotCueArgb(22)).toBe(0xff28e214)
+    expect(hotCueArgb(1)).toBe(0xff305aff)
+    expect(hotCueArgb(null)).toBe(0xff28e214)
+  })
+
+  it('reads every colour Surco writes back as the same index, so an untouched cue never looks recoloured', () => {
+    for (let index = 1; index <= 62; index++)
+      expect(nearestHotCueColor(hotCueArgb(index))).toBe(index)
+  })
+
+  it('reads an Engine DJ pad colour as the closest swatch of the table, since Engine has its own palette', () => {
+    expect(nearestHotCueColor(0xfff4d338)).toBe(33)
+    expect(nearestHotCueColor(0xffef8130)).toBe(38)
   })
 })
