@@ -789,6 +789,25 @@ describe('runProcessTrack — beside the original', () => {
     expect(deps.confirmConflict).not.toHaveBeenCalled()
   })
 
+  it("does not let its own previous copy ride over another job's claim", async () => {
+    const reservations = createOutputReservations(false)
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+    })
+    reservations.reserve('/in/song.aiff')
+
+    const result = await runProcessTrack(
+      job({ outputName: 'song', previousOutputPath: '/in/song.aiff' }),
+      deps,
+    )
+
+    expect(result.outputPath).toBe('/in/song (2).aiff')
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+  })
+
   // A stale previousOutputPath can point at the source itself (an in-place run before
   // the mode switch). The source is never a valid target here, whatever claims it.
   it('never writes over the source, even when the previous output was the source', async () => {

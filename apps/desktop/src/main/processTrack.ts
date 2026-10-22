@@ -277,7 +277,7 @@ export async function runProcessTrack(
       // a valid target — not even via a stale previousOutputPath pointing at it after
       // a mode switch from overwrite.
       const taken = (p: string): boolean =>
-        p !== job.previousOutputPath && (deps.existsSync(p) || deps.isPathReserved(p))
+        deps.isPathReserved(p) || (p !== job.previousOutputPath && deps.existsSync(p))
       if ((await deps.isSameFile(job.inputPath, outputPath)) || taken(outputPath)) {
         target = uniqueOutputPath(outputPath, (p) => p === job.inputPath || taken(p))
       }
