@@ -272,7 +272,7 @@
           },
           {
             "t": "rekordbox cues",
-            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written to rekordbox after a backup."
+            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written to rekordbox after a backup."
           },
           {
             "t": "A USB stick for your CDJs",
@@ -1127,7 +1127,8 @@
       "discard": "Discard changes",
       "save": "Save to rekordbox",
       "addCall": "+ CALL",
-      "auto": "Rather not hunt for the point? Press Auto mark and Surco suggests where the track drops, with its flow shown see-through, on several tracks at once too. You keep or drop each suggestion."
+      "auto": "Rather not hunt for the point? Press Auto mark and Surco suggests where the track drops, with its flow shown see-through, on several tracks at once too. You keep or drop each suggestion.",
+      "onClose": "Rather mark in rekordbox? Put a CALL where each track drops and, when you close rekordbox, Surco adds your flow's hot cues to the tracks that don't have any yet."
     },
     "app": {
       "search": "Search tracks",
@@ -2294,7 +2295,7 @@
           "You prepare your rekordbox tracks the same way every time, with cues counted from where the track drops. You want to mark that point with one click, or have Surco suggest it, and have it place the rest.",
           "This is how one DJ does it with their flow, but the point can be whatever you like and you build the flow your own way. It works on Mac and Windows."
         ],
-        "keywords": "hot cues call memory drop breakdown subidón mix in bars auto mark automatic suggestions unanalyzed",
+        "keywords": "hot cues call memory drop breakdown subidón mix in bars auto mark automatic suggestions unanalyzed complete on close",
         "settings": [
           {
             "tab": "Cues",
@@ -2306,6 +2307,13 @@
             "tab": "Cues",
             "setting": "Letters in track order",
             "note": "That's the default. A is always the first cue in the track. Turn it off if each letter is a fixed pad for you."
+          },
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "When rekordbox closes, apply your active flow to tracks with CALLs and no hot cues",
+            "optional": true,
+            "note": "To mark the point in rekordbox instead of in Surco. You put a CALL where the track drops while you prepare and, when you close rekordbox, Surco adds your flow's hot cues. Turning it on tells you how many tracks it will complete."
           }
         ],
         "steps": [
@@ -2330,6 +2338,7 @@
           "Auto mark suggests, it doesn't decide. Its suggestions aren't always right, so nothing is saved until you accept them.",
           "To prepare several at once, select them in the list and choose “Auto mark the selected”. Each row tells you how many suggestions it has, and you see them when you open it.",
           "If rekordbox hasn't analyzed the track yet, Surco measures the tempo and the grid itself and you can set the cues without opening rekordbox. Once rekordbox analyzes it, Surco moves them onto its grid. Auto mark does need that analysis.",
+          "When rekordbox closes, Surco only completes tracks rekordbox has already analyzed, with a CALL and no hot cues, so a track that already has hot cues stays as it is. Surco has to be open when you close rekordbox.",
           "rekordbox takes at most 8 hot cues, A to H. If one doesn't fit, Surco tells you.",
           "If one cue is enough, two flows come ready-made. Mix in 64 places a hot cue 16 bars before the point and Mix in 32, 8 bars before.",
           "The cues are saved to your rekordbox collection, not to the file. Before Surco writes to it, make your own backup of the library from rekordbox. Surco makes one too."

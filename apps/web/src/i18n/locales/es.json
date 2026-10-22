@@ -272,7 +272,7 @@
           },
           {
             "t": "Cues de rekordbox",
-            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Las arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Se escriben en rekordbox con copia de seguridad antes."
+            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Las arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Y si marcas los CALL en rekordbox, Surco pone las hot cues de tu flujo al cerrarlo. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Se escriben en rekordbox con copia de seguridad antes."
           },
           {
             "t": "Un USB para tus CDJ",
@@ -1127,7 +1127,8 @@
       "discard": "Descartar cambios",
       "save": "Guardar en rekordbox",
       "addCall": "+ CALL",
-      "auto": "¿No quieres buscar el punto? Pulsa Auto marcar y Surco te propone dónde rompe la pista, con su flujo en transparente, también en varias pistas a la vez. Tú aceptas o quitas cada propuesta."
+      "auto": "¿No quieres buscar el punto? Pulsa Auto marcar y Surco te propone dónde rompe la pista, con su flujo en transparente, también en varias pistas a la vez. Tú aceptas o quitas cada propuesta.",
+      "onClose": "¿Prefieres marcar en rekordbox? Pon un CALL donde rompe cada pista y, al cerrar rekordbox, Surco añade las hot cues de tu flujo a las que aún no tienen ninguna."
     },
     "app": {
       "search": "Buscar pistas",
@@ -2294,7 +2295,7 @@
           "Preparas tus pistas de rekordbox siempre igual, con unas cues contadas desde donde rompe la pista. Quieres marcar ese punto con un clic, o que Surco te lo proponga, y que ponga el resto.",
           "Así lo hace un DJ con su flujo, pero el punto puede ser el que quieras y el flujo lo montas a tu manera. Funciona en Mac y en Windows."
         ],
-        "keywords": "hot cues call memory drop rompe subidón mix in compases auto marcar automático propuestas sin analizar",
+        "keywords": "hot cues call memory drop rompe subidón mix in compases auto marcar automático propuestas sin analizar completar al cerrar",
         "settings": [
           {
             "tab": "Cues",
@@ -2306,6 +2307,13 @@
             "tab": "Cues",
             "setting": "Letras en orden de la pista",
             "note": "Así viene. La A es siempre la primera cue de la pista. Apágalo si para ti cada letra es un pad fijo."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de rekordbox",
+            "setting": "Al cerrar rekordbox, aplicar tu flujo activo en las pistas con CALL y sin hot cues",
+            "optional": true,
+            "note": "Para marcar el punto en rekordbox en vez de en Surco. Pones un CALL donde rompe mientras preparas y, al cerrar rekordbox, Surco añade las hot cues de tu flujo. Al encenderlo te dice cuántas pistas completará."
           }
         ],
         "steps": [
@@ -2330,6 +2338,7 @@
           "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas.",
           "Para preparar varias de golpe, selecciónalas en la lista y elige «Auto marcar las seleccionadas». Cada fila te dice cuántas propuestas tiene y las ves al abrirla.",
           "Si rekordbox aún no ha analizado la pista, Surco calcula el tempo y la rejilla él mismo y puedes poner las cues sin abrir rekordbox. Cuando rekordbox la analice, Surco las ajusta a su rejilla. Auto marcar sí necesita ese análisis.",
+          "Al cerrar rekordbox, Surco solo completa pistas que rekordbox ya ha analizado, con algún CALL y ninguna hot cue, así que una pista que ya tiene hot cues se queda como está. Surco tiene que estar abierto cuando cierras rekordbox.",
           "rekordbox admite como mucho 8 hot cues, de la A a la H. Si una no cabe, Surco te lo dice.",
           "Si te basta una cue, vienen dos flujos hechos. Mix in 64 pone una hot cue 16 compases antes del punto y Mix in 32, 8 compases antes.",
           "Las cues se guardan en tu colección de rekordbox, no en el archivo. Antes de que Surco escriba en ella, haz tu propia copia de seguridad de la biblioteca desde rekordbox. Surco hace también la suya."
