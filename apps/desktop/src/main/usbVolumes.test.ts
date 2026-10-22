@@ -164,6 +164,31 @@ describe('macOS: darwinSource and readVolumes', () => {
     expect(vols.map((v) => v.stickPlaylists)).toEqual([['3965545314'], null])
   })
 
+  it('reads per drive what Surco last exported there for Engine DJ, apart from what it exported for rekordbox', async () => {
+    const source = {
+      list: async () => [{ ...RAW, uuid: 'A', mountPoint: '/Volumes/A' }],
+      idAt: async () => null,
+    }
+    const engineMemory = await memory()
+    engineMemory.remember('volume:A', {
+      playlistIds: ['7'],
+      trackIds: ['1'],
+      at: 9,
+      pdb: null,
+      prune: false,
+      settings: false,
+    })
+    const vols = await readVolumes(source, await memory(), holder, noSync, {
+      memory: engineMemory,
+      holder: async (root) => ({ by: 'surco', at: root === '/Volumes/A' ? 5 : null }),
+    })
+    expect(vols[0].remembered).toBeNull()
+    expect(vols[0].engine).toEqual({
+      holder: { by: 'surco', at: 5 },
+      remembered: { playlistIds: ['7'], prune: false, settings: false, at: 9 },
+    })
+  })
+
   it('reads the UUID at a mount point right now', async () => {
     expect(await darwinSource(deps({ '/Volumes/Surco': STICK })).idAt('/Volumes/Surco')).toBe(
       'B10C96EF-51C2-344E-B78D-DAFC319D973E',

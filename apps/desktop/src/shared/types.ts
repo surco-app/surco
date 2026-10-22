@@ -1517,6 +1517,7 @@ export interface UsbVolume {
   remembered: UsbRemembered | null
   // Master IDs of the playlists the stick's playlists3.sync ticks; null without one.
   stickPlaylists: string[] | null
+  engine?: { holder: UsbHolder; remembered: UsbRemembered | null }
 }
 
 export type UsbTarget = { kind: 'volume'; uuid: string } | { kind: 'folder'; path: string }

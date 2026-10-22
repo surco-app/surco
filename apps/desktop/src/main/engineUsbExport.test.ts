@@ -6,7 +6,11 @@ import { describe, expect, it, vi } from 'vitest'
 import type { UsbExportEvent, UsbExportRequest, UsbVolume } from '../shared/types'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { chainOrder, readEngineTree } from './enginePlaylists'
-import { createEngineUsbExporter, type EngineUsbExporterDeps } from './engineUsbExport'
+import {
+  createEngineUsbExporter,
+  type EngineUsbExporterDeps,
+  engineLibraryHolder,
+} from './engineUsbExport'
 import { createUsbMemory } from './usbExportMemory'
 
 const UUID = 'B10C96EF-51C2-344E-B78D-DAFC319D973E'
@@ -452,5 +456,20 @@ describe('engine USB export onto a drive Surco exported to before', () => {
     db.close()
     expect(await w.exporter.plan(request(['1']))).toEqual({ ok: false, reason: 'engine-schema' })
     expect(await w.exporter.start(request(['1']))).toEqual({ ok: false, reason: 'engine-schema' })
+  })
+})
+
+describe('engineLibraryHolder', () => {
+  it('tells an empty drive, one Surco exported to and one with an Engine Library of someone else apart, for the drive list', async () => {
+    const w = await world()
+    expect(await engineLibraryHolder(w.usb)).toEqual({ by: 'empty', at: null })
+    await w.exporter.start(request(['1']))
+    await finished(w.events)
+    const written = (await stat(join(engineDir(w.usb), 'Database2', 'm.db'))).mtimeMs
+    expect(await engineLibraryHolder(w.usb)).toEqual({ by: 'surco', at: written })
+    const db = new Database(join(engineDir(w.usb), 'Database2', 'm.db'))
+    db.prepare("UPDATE Information SET uuid = 'made-by-engine'").run()
+    db.close()
+    expect(await engineLibraryHolder(w.usb)).toMatchObject({ by: 'other' })
   })
 })

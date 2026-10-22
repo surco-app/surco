@@ -14,6 +14,7 @@ import type {
   UsbExportEvent,
   UsbExportRequest,
   UsbFailure,
+  UsbHolder,
   UsbPlan,
   UsbPlanResult,
   UsbPlanTrack,
@@ -165,15 +166,35 @@ interface OnDrive {
   paths: string[]
 }
 
+const readMarker = (lib: string): Promise<{ uuid?: unknown } | null> =>
+  readFile(join(lib, MARKER), 'utf8').then(
+    (text) => JSON.parse(text) as { uuid?: unknown },
+    () => null,
+  )
+
+export async function engineLibraryHolder(root: string): Promise<UsbHolder> {
+  const lib = join(root, ENGINE_USB_FOLDER)
+  const facts = await stat(engineDatabasePath(lib)).catch(() => null)
+  if (!facts) return { by: 'empty', at: null }
+  const marker = await readMarker(lib)
+  let db: EngineDb | null = null
+  try {
+    db = openEngineDb(lib)
+    const ours = marker !== null && db !== null && libraryInfo(db).uuid === marker.uuid
+    return { by: ours ? 'surco' : 'other', at: facts.mtimeMs }
+  } catch {
+    return { by: 'other', at: facts.mtimeMs }
+  } finally {
+    db?.close()
+  }
+}
+
 async function libraryOnDrive(
   lib: string,
   desktop: LibraryInfo,
 ): Promise<OnDrive | null | UsbFailure> {
   if (!(await exists(engineDatabasePath(lib)))) return null
-  const marker = await readFile(join(lib, MARKER), 'utf8').then(
-    (text) => JSON.parse(text) as { uuid?: unknown },
-    () => null,
-  )
+  const marker = await readMarker(lib)
   let db: EngineDb | null = null
   try {
     db = openEngineDb(lib)
