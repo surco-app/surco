@@ -94,6 +94,20 @@ export function decodeQuickCues(raw: Buffer): EngineQuickCues | null {
   return { slots, tail: raw.subarray(at) }
 }
 
+export function quickCueSlotBytes(cue: EngineQuickCue | null): Buffer {
+  const label = Buffer.from(cue?.label ?? '', 'utf8').subarray(0, 255)
+  const rest = Buffer.alloc(12)
+  rest.writeDoubleBE(cue?.sample ?? EMPTY_CUE_SAMPLE, 0)
+  rest.writeUInt32BE(cue?.argb ?? 0, 8)
+  return Buffer.concat([Buffer.from([label.length]), label, rest])
+}
+
+export function encodeQuickCues(slots: Buffer[], tail: Buffer): Buffer {
+  const count = Buffer.alloc(8)
+  count.writeBigInt64BE(BigInt(slots.length))
+  return Buffer.concat([count, ...slots, tail])
+}
+
 export type EngineBands = [number, number, number]
 
 export function decodeOverview(raw: Buffer): { entries: EngineBands[]; max: EngineBands } | null {

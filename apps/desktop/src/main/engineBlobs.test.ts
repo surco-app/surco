@@ -5,7 +5,9 @@ import {
   decodeQuickCues,
   decodeTrackData,
   deflateEngineBlob,
+  encodeQuickCues,
   inflateEngineBlob,
+  quickCueSlotBytes,
 } from './engineBlobs'
 
 const REAL_TRACK_DATA =
@@ -128,5 +130,17 @@ describe('Engine DJ performance blobs', () => {
     const blob = deflateEngineBlob(raw)
     expect(blob.readUInt32BE(0)).toBe(raw.length)
     expect(inflateEngineBlob(blob)).toEqual(raw)
+  })
+
+  it('writes quick cues byte for byte as Engine does, empty slots included, so Engine loads a set Surco wrote like its own', () => {
+    const raw = real(REAL_QUICK_CUES)
+    const cues = decodeQuickCues(raw)
+    if (!cues) throw new Error('real quick cues did not decode')
+    expect(
+      encodeQuickCues(
+        cues.slots.map((s) => quickCueSlotBytes(s.cue)),
+        cues.tail,
+      ),
+    ).toEqual(raw)
   })
 })
