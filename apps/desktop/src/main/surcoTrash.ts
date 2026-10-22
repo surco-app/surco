@@ -129,7 +129,8 @@ export function createSurcoTrash(
       return false
     })
     for (const entry of dropped) await discard(entry)
-    write(kept)
+    const gone = new Set(dropped.map((e) => e.id))
+    write(read().filter((e) => !gone.has(e.id)))
     return dropped
   }
 
@@ -195,8 +196,10 @@ export function createSurcoTrash(
       write(read().filter((e) => e.id !== id))
     },
     empty: async () => {
-      for (const entry of read()) await discard(entry)
-      write([])
+      const entries = read()
+      for (const entry of entries) await discard(entry)
+      const gone = new Set(entries.map((e) => e.id))
+      write(read().filter((e) => !gone.has(e.id)))
     },
     sweep: async (now = Date.now()) => prune(now, limits().maxBytes),
   }

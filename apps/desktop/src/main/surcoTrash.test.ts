@@ -1,7 +1,19 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const unlinkGate = vi.hoisted(() => ({ hold: null as Promise<void> | null, calls: 0 }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs/promises')>()
+  const unlink: typeof real.unlink = async (path) => {
+    unlinkGate.calls++
+    if (unlinkGate.hold) await unlinkGate.hold
+    return real.unlink(path)
+  }
+  return { ...real, unlink }
+})
+
 import { TRASH_MIN_FREE_BYTES } from '../shared/trash'
 import { createSurcoTrash, type SurcoTrash } from './surcoTrash'
 
@@ -167,6 +179,43 @@ describe('sweeping', () => {
     rmSync(entry?.storedPath as string)
     await expect(trash.sweep()).resolves.toHaveLength(1)
     expect(await trash.list()).toEqual([])
+  })
+})
+
+describe('stashes that overlap', () => {
+  it('keeps the entry of a copy taken while an earlier stash was still pruning', async () => {
+    for (let i = 0; i < 9; i++)
+      await trash.stash(song(`old${i}.aiff`), 'deleted', undefined, Date.now() - (9 - i) * 1000)
+    let release = (): void => {}
+    unlinkGate.hold = new Promise((r) => {
+      release = r
+    })
+    unlinkGate.calls = 0
+    const first = trash.stash(song('First.aiff', 200), 'replaced')
+    await vi.waitFor(() => expect(unlinkGate.calls).toBe(1))
+    unlinkGate.hold = null
+    const second = await trash.stash(song('Second.aiff'), 'replaced')
+    release()
+    await first
+
+    expect((await trash.list()).map((e) => e.id)).toContain(second?.id)
+  })
+
+  it('empties without dropping a copy taken while it was deleting the others', async () => {
+    await trash.stash(song('Old.aiff'), 'deleted')
+    let release = (): void => {}
+    unlinkGate.hold = new Promise((r) => {
+      release = r
+    })
+    unlinkGate.calls = 0
+    const emptying = trash.empty()
+    await vi.waitFor(() => expect(unlinkGate.calls).toBe(1))
+    unlinkGate.hold = null
+    const taken = await trash.stash(song('Taken.aiff'), 'replaced')
+    release()
+    await emptying
+
+    expect((await trash.list()).map((e) => e.id)).toEqual([taken?.id])
   })
 })
 
