@@ -1,4 +1,9 @@
-import type { ListMusicOutcome, ListRemoval, RemoveCopyResult } from '../shared/types'
+import type {
+  DuplicatePair,
+  ListMusicOutcome,
+  ListRemoval,
+  RemoveCopyResult,
+} from '../shared/types'
 import type { Activity } from './activity'
 
 export interface RemoveCopyDeps {
@@ -95,6 +100,12 @@ function endingOf(result: RemoveCopyResult): Ending {
   }
 }
 
+const issued = new Set<string>()
+type IssuedPair = DuplicatePair & { shared: boolean }
+const pairKey = (pair: IssuedPair): string => `${pair.from}\0${pair.to}\0${pair.shared}`
+
+export const isIssuedPair = (pair: IssuedPair): boolean => issued.has(pairKey(pair))
+
 // One Activity row per removed copy, titled by the copy the user saw; its file's fate joins
 // the same row later.
 export async function removeDuplicateCopyLogged(
@@ -109,7 +120,10 @@ export async function removeDuplicateCopyLogged(
     () => removeDuplicateCopy(req, deps),
     { group, groupLabel: req.label, summary: endingOf },
   )
-  if (result.pair) log.rememberCopy(result.pair.from, { group, label: req.label })
+  if (result.pair) {
+    issued.add(pairKey(result.pair))
+    log.rememberCopy(result.pair.from, { group, label: req.label })
+  }
   return result
 }
 

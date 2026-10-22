@@ -28,6 +28,7 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
+import { errorWithKey } from '../shared/errorKeys'
 import {
   isRecoveryUrl,
   MEDIA_SCHEME,
@@ -101,6 +102,7 @@ import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
+import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
@@ -1172,6 +1174,7 @@ function registerIpc(): void {
     'library:replaceDuplicates',
     async (e, pairs: ReplacePair[]): Promise<DuplicateReplaceOutcome[]> => {
       if (process.platform !== 'darwin' || pairs.length === 0) return []
+      if (!pairs.every(isIssuedPair)) throw errorWithKey('pathNotAllowed')
       return replaceDuplicates(pairs, {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),

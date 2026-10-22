@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { ActivityEvent, ListRemoval } from '../shared/types'
 import { createActivity } from './activity'
 import {
+  isIssuedPair,
   type ListMusicDeps,
   type RemoveCopyDeps,
   removeDuplicateCopy,
@@ -172,6 +175,21 @@ describe('removeDuplicateCopyLogged', () => {
       },
     }
   }
+
+  it('vouches only for the pairs it handed out, so the trash step cannot be aimed elsewhere', async () => {
+    const { log } = logged()
+    const result = await removeDuplicateCopyLogged(req, deps(), log)
+    expect(result.pair && isIssuedPair(result.pair)).toBe(true)
+    expect(isIssuedPair({ from: '/Users/dj/.ssh/id_rsa', to: '/m/keep.aiff', shared: false })).toBe(
+      false,
+    )
+  })
+
+  it('lets library:replaceDuplicates act only on pairs main handed out', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    const handler = source.slice(source.indexOf("'library:replaceDuplicates'"))
+    expect(handler.slice(0, 600)).toContain('pairs.every(isIssuedPair)')
+  })
 
   it('names the copy and says it left Music with its playlists', async () => {
     const { events, copies, log } = logged()
