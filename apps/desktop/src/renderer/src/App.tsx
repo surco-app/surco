@@ -86,7 +86,7 @@ import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useOfferRekordboxField, useRekordboxAvailable } from './hooks/useRekordboxPlaylists'
-import { useRekordboxQueue } from './hooks/useRekordboxQueue'
+import { ENGINE_CUE_QUEUE, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -143,6 +143,7 @@ import {
   discardPlaylistEdits,
   type PlaylistsEdit,
 } from './lib/rekordboxPlaylists'
+import { ENGINE_QUEUE_WORDS } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -196,6 +197,7 @@ import type { CopiedTags, TrackItem } from './types'
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
+const ignoreQueued = (): void => {}
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
@@ -679,15 +681,33 @@ export default function App(): React.JSX.Element {
   )
   const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists, dropWrittenPlaylists)
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
+  const engineCueQueue = useRekordboxQueue(notifyEdit, ignoreQueued, ignoreQueued, ENGINE_CUE_QUEUE)
+  const { applyNow: applyEngineQueueNow, discard: discardEngineQueue } = engineCueQueue
   const queuePill = useMemo(
     () => (
-      <RekordboxQueuePill
-        state={rekordboxQueue.state}
-        onApplyNow={() => void applyQueueNow()}
-        onDiscard={() => void discardQueue()}
-      />
+      <>
+        <RekordboxQueuePill
+          state={rekordboxQueue.state}
+          onApplyNow={() => void applyQueueNow()}
+          onDiscard={() => void discardQueue()}
+        />
+        <RekordboxQueuePill
+          state={engineCueQueue.state}
+          onApplyNow={() => void applyEngineQueueNow()}
+          onDiscard={() => void discardEngineQueue()}
+          words={ENGINE_QUEUE_WORDS}
+          testid="engine-queue"
+        />
+      </>
     ),
-    [rekordboxQueue.state, applyQueueNow, discardQueue],
+    [
+      rekordboxQueue.state,
+      applyQueueNow,
+      discardQueue,
+      engineCueQueue.state,
+      applyEngineQueueNow,
+      discardEngineQueue,
+    ],
   )
   // The USB export: macOS and Windows, with a rekordbox collection. Its state lives in
   // usbExportStore, outside React; App reads only the phase (for the notices), so a byte
@@ -2050,16 +2070,16 @@ export default function App(): React.JSX.Element {
   const pendingCuePaths = useMemo(
     () =>
       new Set(
-        rekordboxQueue.state.items
+        [...rekordboxQueue.state.items, ...engineCueQueue.state.items]
           .filter((i) => i.parts.some((p) => p.kind === 'cues'))
           .map((i) => i.key.slice('track:'.length)),
       ),
-    [rekordboxQueue.state],
+    [rekordboxQueue.state, engineCueQueue.state],
   )
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-checks the kept drafts each time the rekordbox queue changes; forgetStaleDrafts reads the queue fresh from main.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-checks the kept drafts each time either cue queue changes; forgetStaleDrafts reads the queues fresh from main.
   useEffect(() => {
     void forgetStaleDrafts(queryClient)
-  }, [rekordboxQueue.state, queryClient])
+  }, [rekordboxQueue.state, engineCueQueue.state, queryClient])
   useCueSessionFor(settings?.rekordboxDbPath)
   const unsavedCues = useUnsavedCueTracks()
   useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])

@@ -307,6 +307,14 @@ function setApi(over: Record<string, unknown> = {}): void {
     rekordboxQueueReady: vi.fn<Api['rekordboxQueueReady']>().mockResolvedValue(undefined),
     onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>(() => () => {}),
     onRekordboxQueueApplied: vi.fn<Api['onRekordboxQueueApplied']>(() => () => {}),
+    engineCueQueue: vi
+      .fn<Api['engineCueQueue']>()
+      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
+    applyEngineCueQueue: vi.fn<Api['applyEngineCueQueue']>().mockResolvedValue(null),
+    discardEngineCueQueue: vi.fn<Api['discardEngineCueQueue']>().mockResolvedValue(undefined),
+    engineCueQueueReady: vi.fn<Api['engineCueQueueReady']>().mockResolvedValue(undefined),
+    onEngineCueQueueChanged: vi.fn<Api['onEngineCueQueueChanged']>(() => () => {}),
+    onEngineCueQueueApplied: vi.fn<Api['onEngineCueQueueApplied']>(() => () => {}),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},
@@ -466,6 +474,40 @@ describe('App unsaved cues', () => {
     await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(1))
     act(() => pushQueue({ tracks: 0, changes: 0, items: [] }))
     await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))
+  })
+})
+
+describe('App Engine DJ cues', () => {
+  afterEach(resetCueSession)
+
+  function openEngine(over: Partial<Api> = {}) {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
+      loadEngineTree: vi
+        .fn<Api['loadEngineTree']>()
+        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
+      loadEnginePlaylist: vi.fn<Api['loadEnginePlaylist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
+        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+      ]),
+      ...over,
+    })
+  }
+
+  it('shows what waits for Engine DJ to close beside rekordbox’s queue', async () => {
+    openEngine({
+      engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue({
+        tracks: 1,
+        changes: 0,
+        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      }),
+    })
+    await renderApp()
+    expect(await screen.findByTestId('engine-queue-pill')).toHaveTextContent(
+      '1 track waits for you to close Engine DJ',
+    )
   })
 })
 
