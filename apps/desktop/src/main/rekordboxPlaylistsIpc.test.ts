@@ -170,6 +170,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
       flow: () => MY_FLOW,
       beatGrid: async () => null,
       words: async () => null,
+      provisional: { add: vi.fn() },
     })
     registerRekordboxQueueIpc(queue, {
       collection: () => path,

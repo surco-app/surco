@@ -14,6 +14,7 @@ import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { learnFromCollection } from './rekordboxLearnFlow'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
+import type { ProvisionalList } from './rekordboxProvisional'
 import type { RekordboxQueue } from './rekordboxQueue'
 import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
 
@@ -35,6 +36,7 @@ export function registerRekordboxCuesIpc(host: {
   flow: () => CueFlow
   beatGrid: (file: string) => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
+  provisional: Pick<ProvisionalList, 'add'>
   engine?: {
     libraryDir: () => string
     queue: CueQueue
@@ -176,9 +178,12 @@ export function registerRekordboxCuesIpc(host: {
     ].filter((t) => t.mine.length > 0)
     let outcome: SaveCuesOutcome = 'queued'
     for (const t of targets) {
-      if (t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' }))))
+      if (t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))) {
+        for (const req of t.mine)
+          if (req.provisional)
+            host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
         t.applyQuietly()
-      else outcome = 'other-collection'
+      } else outcome = 'other-collection'
     }
     return outcome
   })

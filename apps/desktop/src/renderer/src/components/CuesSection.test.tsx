@@ -1121,6 +1121,7 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const [[reqs]] = saveRekordboxCues.mock.calls
     expect(reqs[0].wanted?.some((c) => c.kind === 0 && c.ms === 128037)).toBe(true)
+    expect(reqs[0].provisional).toBe(true)
   })
 
   it("says the grid is Surco's and shows the tempo it measured", async () => {

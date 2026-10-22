@@ -349,7 +349,8 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   }
   if (wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES) return changed('cues-too-many')
   const cues = diffCues(read.cues, wanted)
-  if (isEmptyChange(cues)) return { outcome: { id: op.id, applied: true, notices: [] } }
+  if (isEmptyChange(cues))
+    return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
   return { op, cues }
 }
 
@@ -471,7 +472,7 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
   if (planned.op.kind === 'track') return writeTrack(db, draft, planned, now)
   if (planned.op.kind === 'cues') {
     applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
-    return { id: planned.op.id, applied: true, notices: [] }
+    return { id: planned.op.id, applied: true, notices: planned.op.notices ?? [] }
   }
   return writeEdit(db, draft, planned, now)
 }

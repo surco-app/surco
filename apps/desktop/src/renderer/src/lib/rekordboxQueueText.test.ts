@@ -84,6 +84,15 @@ describe('rekordbox queue text', () => {
   })
 
   it('says why a track or an edit was skipped, for every notice code that can arrive', () => {
+    expect(noticeText(tr, { code: 'cues-adjusted', track: 'Pray', moved: 4, maxMs: 7 })).toBe(
+      'rekordbox has analysed Pray. 4 cues moved onto its grid, the furthest 7 ms',
+    )
+    expect(noticeText(tr, { code: 'cues-adjusted', track: 'Pray', moved: 1, maxMs: 3 })).toBe(
+      'rekordbox has analysed Pray. 1 cue moved onto its grid, 3 ms',
+    )
+    expect(noticeText(tr, { code: 'cues-unfit', track: 'Pray', count: 1 })).toBe(
+      'One cue of Pray sits far from rekordbox’s beats and was left where it was. Check it',
+    )
     expect(noticeText(tr, { code: 'ambiguous', track: 'Bam Bam' })).toBe(
       'Bam Bam was not added. rekordbox has it twice',
     )

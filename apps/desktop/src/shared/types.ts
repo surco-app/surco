@@ -1143,6 +1143,8 @@ export type RekordboxQueueNotice =
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
   | { code: 'edit-changed'; playlist: string }
   | { code: 'cues-calls-dropped'; track: string; calls: number[] }
+  | { code: 'cues-adjusted'; track: string; moved: number; maxMs: number }
+  | { code: 'cues-unfit'; track: string; count: number }
 
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
 
@@ -1726,4 +1728,5 @@ export interface SaveCuesRequest {
   label: string
   wanted: WantedCue[]
   fingerprint: string
+  provisional?: true
 }

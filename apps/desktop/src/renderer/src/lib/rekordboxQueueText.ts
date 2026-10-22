@@ -47,6 +47,8 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
     'cues-invalid': 'rekordboxQueue.notice.cuesInvalid',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
+    'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
+    'cues-unfit': 'rekordboxQueue.notice.cuesUnfit',
   },
 }
 
@@ -84,6 +86,8 @@ export function noticeText(
       count: notice.calls.length,
       times: notice.calls.map((ms) => formatTime(ms / 1000)).join(', '),
     })
+  if (notice.code === 'cues-adjusted')
+    return tr(words.notices[notice.code], { ...notice, count: notice.moved })
   return tr(words.notices[notice.code], notice)
 }
 

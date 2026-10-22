@@ -472,8 +472,18 @@ function Editing({
         path: cue.path,
         label: cue.label,
         fingerprint: read.fingerprint,
+        ...(provisional ? { provisional: true as const } : {}),
       })
-  }, [cue.contentId, cue.path, cue.label, read.fingerprint, draftKey, state, unchanged])
+  }, [
+    cue.contentId,
+    cue.path,
+    cue.label,
+    read.fingerprint,
+    draftKey,
+    state,
+    unchanged,
+    provisional,
+  ])
   const pending = (c: DraftCue): boolean =>
     !inRekordbox.some(
       (r) => r.id === c.id && r.ms === c.ms && r.kind === c.kind && r.color === c.color,
@@ -672,6 +682,7 @@ function Editing({
         label: cue.label,
         wanted,
         fingerprint: read.fingerprint,
+        ...(provisional ? { provisional: true as const } : {}),
       },
     ])
     if (saved) setProposed(null)

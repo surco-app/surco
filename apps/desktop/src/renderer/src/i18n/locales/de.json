@@ -2432,7 +2432,11 @@
       "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert",
       "cuesChanged": "Die Cues von {{track}} haben sich in rekordbox geändert. Markiere sie erneut",
       "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne einen Punkt",
-      "cuesInvalid": "Die Cues von {{track}} wurden nicht gespeichert. Surco konnte sie nicht als Cues lesen"
+      "cuesInvalid": "Die Cues von {{track}} wurden nicht gespeichert. Surco konnte sie nicht als Cues lesen",
+      "cuesAdjusted_one": "rekordbox hat {{track}} analysiert. 1 Cue auf sein Raster gerückt, {{maxMs}} ms",
+      "cuesAdjusted_other": "rekordbox hat {{track}} analysiert. {{count}} Cues auf sein Raster gerückt, der weiteste {{maxMs}} ms",
+      "cuesUnfit_one": "Ein Cue von {{track}} liegt weit von den Schlägen in rekordbox und blieb, wo er war. Prüf ihn",
+      "cuesUnfit_other": "{{count}} Cues von {{track}} liegen weit von den Schlägen in rekordbox und blieben, wo sie waren. Prüf sie"
     },
     "part": {
       "repoint": "neuer Pfad",

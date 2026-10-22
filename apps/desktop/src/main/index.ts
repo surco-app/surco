@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import {
   createReadStream,
   existsSync,
@@ -129,6 +130,7 @@ import { findRekordboxCollection } from './rekordboxPath'
 import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
+import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
@@ -239,6 +241,16 @@ const rekordboxQueue = createRekordboxQueue({
   nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
   onChange: (state) => broadcast('rekordbox:queueChanged', state),
 })
+const provisionalCues = createProvisionalList(
+  fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
+)
+const adjustProvisionalCues = (): void =>
+  adjustProvisional({
+    list: provisionalCues,
+    collection: rekordboxCollectionPath,
+    queue: rekordboxQueue,
+    newId: randomUUID,
+  })
 const announceApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('rekordbox:queueApplied', notice)
@@ -251,15 +263,21 @@ const rekordboxQueueWatch = watchRekordboxQueue({
   collection: rekordboxCollectionPath,
   isRunning: isRekordboxRunning,
   onApplied: announceApplied,
-  alwaysWatch: () => getSettings().completeCuesOnClose,
-  onClosed: () =>
+  alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
+  onClosed: () => {
     completeOnClose({
       enabled: () => getSettings().completeCuesOnClose,
       collection: rekordboxCollectionPath,
       flow: () => activeCueFlow(getSettings()),
       queue: rekordboxQueue,
-    }),
+    })
+    adjustProvisionalCues()
+  },
 })
+const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
+  if (provisionalCues.all().length > 0 && !(await isRekordboxRunning())) adjustProvisionalCues()
+  rekordboxQueueWatch.poke()
+}
 const applyRekordboxQueueQuietly = (): void => {
   void serialLibraryFlush(() =>
     rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
@@ -1048,7 +1066,7 @@ function registerIpc(): void {
     collection: rekordboxCollectionPath,
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
     onWaiting: rekordboxQueueWatch.poke,
-    onReady: rekordboxQueueWatch.poke,
+    onReady: () => void adjustProvisionalCuesOnLaunch(),
   })
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
@@ -1057,6 +1075,7 @@ function registerIpc(): void {
     flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
     words: cachedCueWaveWords,
+    provisional: provisionalCues,
     engine: {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,

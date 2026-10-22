@@ -99,7 +99,22 @@ const op = (path: string, over: Partial<CuesOp> = {}): CuesOp => ({
 })
 
 describe('cues operations', () => {
-  it('writes the set the editor built on Surco\'s grid to a track rekordbox has not analysed yet, which keeps it through its first analysis', async () => {
+  it("reports what an adjustment onto rekordbox's grid did once it is written", async () => {
+    const path = await collection()
+    const notices = [{ code: 'cues-adjusted' as const, track: 'Gowan', moved: 2, maxMs: 7 }]
+    const result = await applyRekordboxBatch(path, [op(path, { notices })], deps())
+    expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices })
+  })
+
+  it('still reports the cues it left alone when the adjustment changed nothing else', async () => {
+    const path = await collection([{ ID: 'm', InMsec: bar(64), Kind: 0, ColorTableIndex: null }])
+    const notices = [{ code: 'cues-unfit' as const, track: 'Gowan', count: 1 }]
+    const wanted = [{ id: 'm', ms: bar(64), kind: 0, color: null }]
+    const result = await applyRekordboxBatch(path, [op(path, { wanted, notices })], deps())
+    expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices })
+  })
+
+  it("writes the set the editor built on Surco's grid to a track rekordbox has not analysed yet, which keeps it through its first analysis", async () => {
     const path = await collection([], false)
     const result = await applyRekordboxBatch(path, [op(path)], deps())
     expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices: [] })

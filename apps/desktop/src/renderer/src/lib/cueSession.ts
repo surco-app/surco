@@ -12,6 +12,7 @@ export interface CueSaveTarget {
   path: string
   label: string
   fingerprint: string
+  provisional?: true
 }
 
 const drafts = new Map<string, { draftKey: string; value: CueDraft; target: CueSaveTarget }>()

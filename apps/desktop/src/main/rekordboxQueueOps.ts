@@ -37,6 +37,7 @@ export interface CuesOp extends Omit<SaveCuesRequest, 'wanted'> {
   wanted?: WantedCue[]
   drops?: number[]
   previousDrops?: number[]
+  notices?: RekordboxQueueNotice[]
 }
 
 export type QueueOp = EditOp | TrackOp | CuesOp
