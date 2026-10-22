@@ -492,14 +492,20 @@ describe('TrackList', () => {
   it('says which rekordbox tracks still need analysing, and says nothing for files outside rekordbox', () => {
     const preview = { title: 'A', artist: '', durationSec: 200, cues: [] }
     renderList([
-      track({ id: 'new', sourcePreview: preview }),
-      track({ id: 'done', sourcePreview: { ...preview, analysisPath: '/share/ANLZ0000.DAT' } }),
+      track({ id: 'new', fromRekordbox: true, sourcePreview: preview }),
+      track({
+        id: 'done',
+        fromRekordbox: true,
+        sourcePreview: { ...preview, analysisPath: '/share/ANLZ0000.DAT' },
+      }),
       track({ id: 'file' }),
+      track({ id: 'engine', sourcePreview: preview }),
     ])
     const rows = screen.getAllByTestId('track-wave-line')
     expect(within(rows[0]).getByTestId('track-unanalyzed')).toBeInTheDocument()
     expect(within(rows[1]).queryByTestId('track-unanalyzed')).toBeNull()
     expect(within(rows[2]).queryByTestId('track-unanalyzed')).toBeNull()
+    expect(within(rows[3]).queryByTestId('track-unanalyzed')).toBeNull()
   })
 
   it('draws the cues of a track waiting for rekordbox hollow', () => {

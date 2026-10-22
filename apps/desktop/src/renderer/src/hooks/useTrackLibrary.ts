@@ -912,6 +912,8 @@ export function useTrackLibrary({
           fromRekordbox: true,
           ...(e.preview && { sourcePreview: e.preview }),
         })
+      if (source === 'engine' && e.preview)
+        pendingSeed.current.set(e.path, { sourcePreview: e.preview })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
     await addPaths(freshPaths, undefined, false, false)
