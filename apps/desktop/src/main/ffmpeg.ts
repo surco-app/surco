@@ -40,6 +40,7 @@ import type {
 } from '../shared/types'
 import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { isAbortError } from './analysisCancel'
+import type { BeatGridFit } from './beatGrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
 import { automaticCueOffsetMs } from './cueCalibration'
@@ -3237,6 +3238,17 @@ export async function measureBpm(input: string): Promise<BpmResult | null> {
   const pcm = await decodeAnalysisPcm(input)
   if (pcm === null) return null
   return runInWorker<BpmResult | null>({ type: 'bpm', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+}
+
+export async function measureBeatGrid(input: string): Promise<BeatGridFit | null> {
+  const pcm = await decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, maxBufferMb: 96 }).catch(
+    (err) => {
+      if (isPcmOverrun(err)) return null
+      throw err
+    },
+  )
+  if (pcm === null) return null
+  return runInWorker<BeatGridFit | null>({ type: 'beatGrid', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {

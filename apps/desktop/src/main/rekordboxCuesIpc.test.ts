@@ -170,6 +170,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     const words = (await handler('rekordbox:cueWaveDetail')({}, '101')) as Uint16Array
     expect([...words]).toEqual([(7 << 13) | (31 << 2), (7 << 7) | (16 << 2)])
@@ -194,6 +195,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
   })
@@ -205,6 +207,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
     expect(await handler('rekordbox:cueWaveDetail')({}, '999')).toBeNull()
@@ -213,6 +216,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
   })
@@ -226,6 +230,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     const learned = await handler('rekordbox:learnFlow')({})
     expect(learned).toEqual({
@@ -243,6 +248,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:learnFlow')({})).toBeNull()
   })
@@ -254,6 +260,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow,
+      beatGrid: async () => null,
     })
     registerRekordboxCuesIpc(host(() => MY_FLOW))
     expect(await handler('rekordbox:countCompletable')({})).toBe(1)
@@ -269,6 +276,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ enqueue }),
       applyQuietly,
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     const req = {
       contentId: '103',
@@ -289,6 +297,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) }),
       applyQuietly,
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     const req = {
       contentId: '103',
@@ -309,6 +318,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ enqueue }),
       applyQuietly,
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     const req = (contentId: string) => ({
       contentId,
@@ -332,6 +342,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:auditionLead')({}, '101')).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
@@ -343,6 +354,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:auditionLead')({}, '101')).toBe(0)
   })
@@ -354,8 +366,57 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:auditionLead')({}, '999')).toBe(0)
+  })
+
+  it('lays a grid of its own on a track rekordbox has not analysed, in rekordbox time, so the editor can place cues without opening rekordbox', async () => {
+    const path = await collectionWithMp3('LAME')
+    const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 100 }))
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid,
+    })
+    const out = (await handler('rekordbox:surcoGrid')({}, '101')) as {
+      bpm: number
+      grid: { ms: number; beat: number }[]
+    }
+    expect(beatGrid).toHaveBeenCalledWith(expect.stringMatching(/track\.mp3$/))
+    expect(out.bpm).toBe(120)
+    expect(out.grid[0].ms).toBe(Math.round(100 + ((1152 + 576 + 529) / 44100) * 1000 + 2))
+    expect(out.grid[1].ms - out.grid[0].ms).toBe(500)
+    expect(out.grid.every((b) => b.beat === 0)).toBe(true)
+    expect(out.grid.at(-1)?.ms).toBeLessThan(256000)
+  })
+
+  it('offers no grid for a track Surco hears no beat in', async () => {
+    const path = await collectionWithMp3('LAME')
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+    })
+    expect(await handler('rekordbox:surcoGrid')({}, '101')).toBeNull()
+  })
+
+  it('offers no grid for a track the collection does not hold, without decoding anything', async () => {
+    const path = await collectionWithMp3('LAME')
+    const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 100 }))
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid,
+    })
+    expect(await handler('rekordbox:surcoGrid')({}, '999')).toBeNull()
+    expect(beatGrid).not.toHaveBeenCalled()
   })
 
   it('reads nothing without a collection', async () => {
@@ -364,6 +425,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue(),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
@@ -378,6 +440,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ cuesOp: (id) => (id === '103' ? queued : undefined) }),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     return Promise.all([
       expect(handler('rekordbox:queuedCues')({}, '103')).resolves.toEqual({
@@ -395,6 +458,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ cuesOp }),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     registerRekordboxCuesIpc(host(() => undefined))
     const read = (await handler('rekordbox:trackCues')({}, '101')) as TrackCues
@@ -428,6 +492,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ cuesOp: () => savedOp() }),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     expect(await handler('rekordbox:queuedCues')({}, '103')).toBeNull()
   })
@@ -439,6 +504,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ cuesOp: () => savedOp({ drops: [1000] }), drop }),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).toHaveBeenCalledWith('c1')
@@ -451,6 +517,7 @@ describe('registerRekordboxCuesIpc', () => {
       queue: queue({ drop }),
       applyQuietly: quietly(),
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).not.toHaveBeenCalled()
@@ -482,6 +549,7 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
       queue: rekordbox,
       applyQuietly: applyRekordbox,
       flow: () => MY_FLOW,
+      beatGrid: async () => null,
       engine: { libraryDir: () => dir, queue: engine, applyQuietly: applyEngine, words },
     })
     return { applyRekordbox, applyEngine, words }

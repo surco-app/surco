@@ -65,6 +65,7 @@ import type {
   SourcePlaylistEntry,
   SpectrumResult,
   SpectrumVerdict,
+  SurcoGrid,
   TrackCues,
   TrackMetadata,
   TrackProperties,
@@ -222,6 +223,7 @@ export interface Api {
   rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
   rekordboxCueDropInput: (contentId: string) => Promise<DropInput | null>
   rekordboxAuditionLead: (contentId: string) => Promise<number>
+  rekordboxSurcoGrid: (contentId: string) => Promise<SurcoGrid | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   rekordboxLearnFlow: () => Promise<LearnedFlow | null>

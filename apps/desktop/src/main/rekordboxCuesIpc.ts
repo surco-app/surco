@@ -3,7 +3,8 @@ import { realpathSync } from 'node:fs'
 import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
-import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest } from '../shared/types'
+import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest, SurcoGrid } from '../shared/types'
+import { type BeatGridFit, provisionalGrid } from './beatGrid'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
@@ -14,7 +15,7 @@ import { learnFromCollection } from './rekordboxLearnFlow'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import type { RekordboxQueue } from './rekordboxQueue'
-import { rekordboxLeadOfFile } from './rekordboxTimeline'
+import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
 
 type CueQueue = Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
 
@@ -23,6 +24,7 @@ export function registerRekordboxCuesIpc(host: {
   queue: CueQueue
   applyQuietly: () => void
   flow: () => CueFlow
+  beatGrid: (file: string) => Promise<BeatGridFit | null>
   engine?: {
     libraryDir: () => string
     queue: CueQueue
@@ -87,6 +89,32 @@ export function registerRekordboxCuesIpc(host: {
     )
     return file ? rekordboxLeadOfFile(file) : 0
   })
+  ipcMain.handle(
+    'rekordbox:surcoGrid',
+    async (_e, contentId: string): Promise<SurcoGrid | null> => {
+      if (engineOf(contentId)) return null
+      const path = host.collection()
+      const row = withCollection(
+        path,
+        (db) =>
+          db
+            .prepare(
+              `SELECT FolderPath, SampleRate, Length FROM djmdContent
+                WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+            )
+            .get(contentId) as
+            | { FolderPath: string; SampleRate: number | null; Length: number }
+            | undefined,
+        undefined,
+        await keyOf(path),
+      )
+      if (!row) return null
+      const fit = await host.beatGrid(row.FolderPath)
+      if (!fit) return null
+      const shiftMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
+      return { bpm: fit.bpm, grid: provisionalGrid(fit, shiftMs, row.Length * 1000) }
+    },
+  )
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
     return withCollection(

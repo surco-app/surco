@@ -62,6 +62,7 @@ import {
 import { appMenuTemplate } from './appMenu'
 import { registerAudioIpc } from './audioIpc'
 import { bakenCommand } from './bakenPath'
+import { cachedBeatGrid } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
@@ -1054,6 +1055,7 @@ function registerIpc(): void {
     queue: rekordboxQueue,
     applyQuietly: applyRekordboxQueueQuietly,
     flow: () => activeCueFlow(getSettings()),
+    beatGrid: cachedBeatGrid,
     engine: {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,

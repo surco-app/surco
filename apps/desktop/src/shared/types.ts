@@ -1707,6 +1707,11 @@ export interface TrackCues {
   fingerprint: string
 }
 
+export interface SurcoGrid {
+  bpm: number
+  grid: { ms: number; beat: number }[]
+}
+
 export interface QueuedCues {
   wanted: WantedCue[]
   fingerprint: string

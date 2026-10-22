@@ -40,6 +40,7 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
   SpectrumVerdict,
+  SurcoGrid,
   TrackCues,
   TrackProperties,
   TrashEntry,
@@ -208,6 +209,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:cueDropInput', contentId),
   rekordboxAuditionLead: (contentId: string): Promise<number> =>
     ipcRenderer.invoke('rekordbox:auditionLead', contentId),
+  rekordboxSurcoGrid: (contentId: string): Promise<SurcoGrid | null> =>
+    ipcRenderer.invoke('rekordbox:surcoGrid', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

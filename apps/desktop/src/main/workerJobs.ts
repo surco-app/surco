@@ -1,4 +1,5 @@
 import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import { type BeatGridFit, fitBeatGrid } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveWords } from './cueWaveWords'
@@ -26,6 +27,7 @@ import { computePeaks } from './waveform'
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
+  | { type: 'beatGrid'; pcm: Float32Array; sampleRate: number }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   // The click detector's second-difference scan over the whole native-rate side (~21M
@@ -89,6 +91,7 @@ export type WorkerJob =
 
 export type WorkerJobResult =
   | BpmResult
+  | BeatGridFit
   | KeyResult
   | number[]
   | FieldWrite[]
@@ -107,6 +110,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'killChannelScan':
       killScansFor(job.input)
       return null
+    case 'beatGrid':
+      return fitBeatGrid(job.pcm, job.sampleRate)
     case 'bpm':
       return detectBpm(job.pcm, job.sampleRate)
     case 'key':

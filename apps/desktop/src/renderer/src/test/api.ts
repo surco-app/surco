@@ -206,6 +206,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxCueWaveDetail: async () => null,
     rekordboxCueDropInput: async () => null,
     rekordboxAuditionLead: async () => 0,
+    rekordboxSurcoGrid: async () => null,
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     rekordboxLearnFlow: async () => null,
