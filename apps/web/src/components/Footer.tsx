@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { PAGES } from '../lib/nav'
+import DownloadCount from './DownloadCount'
 
 export default function Footer() {
   const { t, i18n } = useTranslation()
@@ -111,7 +112,10 @@ export default function Footer() {
 
       <div className="border-t border-line/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-faint sm:flex-row">
-          <span>{t('footer.copyright')}</span>
+          <span className="flex gap-2">
+            <span>{t('footer.copyright')}</span>
+            <DownloadCount />
+          </span>
           <a
             href={codeSigningHref}
             data-testid="footer-code-signing"

@@ -479,7 +479,8 @@
     "slogan": "tu música, en orden",
     "convertHeading": "Convertir",
     "flacToAiff": "FLAC a AIFF",
-    "codeSigning": "Firma de código y privacidad"
+    "codeSigning": "Firma de código y privacidad",
+    "downloads": "descargas"
   },
   "install": {
     "kicker": "Instalar",

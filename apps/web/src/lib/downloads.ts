@@ -1,5 +1,59 @@
+// Counts installer downloads across every published release, mirroring the
+// filter in scripts/downloads.mjs: only .dmg/.exe/.AppImage count. The .zip,
+// .blockmap and latest*.yml assets are update traffic electron-updater pulls on
+// each launch, so counting them would inflate the number.
+
+interface ReleaseAsset {
+  name: string
+  download_count: number
+}
+
+interface Release {
+  assets?: ReleaseAsset[]
+}
+
+function isInstaller(name: string): boolean {
+  return name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.AppImage')
+}
+
+export function countDownloads(releases: Release[]): number {
+  return releases.reduce(
+    (total, rel) =>
+      total +
+      (rel.assets ?? [])
+        .filter((a) => isInstaller(a.name))
+        .reduce((sum, a) => sum + (a.download_count ?? 0), 0),
+    0,
+  )
+}
+
+// GitHub caps per_page at 100, so a single request stops seeing the oldest
+// releases (and their download counts) once the repo passes 100 of them. Walks
+// the pages until one comes back short. Throws on any failed page: a partial
+// list would silently undercount, which is the very bug this exists to avoid.
+export async function fetchAllReleases(repo: string): Promise<Release[]> {
+  const releases: Release[] = []
+  for (let pageNum = 1; ; pageNum++) {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/releases?per_page=100&page=${pageNum}`,
+    )
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
+    const pageReleases = (await res.json()) as Release[]
+    releases.push(...pageReleases)
+    if (pageReleases.length < 100) return releases
+  }
+}
+
+// The walk above costs one request per 100 releases, and GitHub's unauthenticated limit
+// is 60 per hour PER IP — shared by everyone behind an office, campus or CGNAT address.
+// Every page mounting the download button repeated the whole walk, so one visit through
+// home → features → guide → changelog spent it four times over; exhausting the limit
+// answers 403, which drops the visitor onto a raw asset list instead of an installer.
+// Caching is safe here because this is a vanity count, not live data: minutes out of
+// date is invisible.
+
 // Requests still in flight, keyed like their stored counterparts. The stored copy only
-// helps the NEXT page: the buttons sharing a page all run their effects in the
+// helps the NEXT page: the buttons and counts sharing a page all run their effects in the
 // same tick, before any response has landed, so without this the first render still spends
 // one request per mount. Measured on the home page: 3 installer lookups.
 const inFlight = new Map<string, Promise<unknown>>()
@@ -41,6 +95,10 @@ async function cachedBySession<T>(key: string, request: () => Promise<T>): Promi
   return started
 }
 
+export function fetchReleasesCached(repo: string): Promise<Release[]> {
+  return cachedBySession(`surco:releases:${repo}`, () => fetchAllReleases(repo))
+}
+
 export interface InstallerRelease {
   tag_name: string
   draft?: boolean
@@ -51,10 +109,14 @@ export interface InstallerRelease {
 
 // The button asking for the installer is mounted on every page — three times on the home
 // page alone (hero, closing CTA, install section) — and each mount used to spend its own
-// request against the same 60/hour-per-IP budget. A visit through home →
+// request against the same 60/hour-per-IP budget the count walks. A visit through home →
 // features → guide → changelog cost a dozen, which is how a shared office or CGNAT address
 // reaches the 403 that drops visitors onto a raw asset list. The installer URL only changes
 // when a release ships, so one request per session is enough.
+//
+// Kept separate from the count's cache on purpose: that one walks every page of 100 to sum
+// download counts, while this asks for a single page of 20 and needs the asset URL and size
+// the count's payload doesn't carry.
 export function fetchInstallerReleasesCached(repo: string): Promise<InstallerRelease[]> {
   return cachedBySession(`surco:installers:${repo}`, async () => {
     const res = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=20`)
