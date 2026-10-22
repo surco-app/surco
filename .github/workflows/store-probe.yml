@@ -42,9 +42,6 @@ jobs:
       - name: Build both packages
         working-directory: apps/desktop
         shell: bash
-        env:
-          CSC_LINK: C:\probe.pfx
-          CSC_KEY_PASSWORD: probe
         run: |
           mkdir -p resources/baken
           npx electron-vite build
@@ -53,6 +50,16 @@ jobs:
           npx electron-builder $common -c.directories.output=dist-unvirtualized \
             -c.appx.customManifestPath="$GITHUB_WORKSPACE/packaging/store-probe/unvirtualized.appxmanifest.xml"
           ls dist-virtualized dist-unvirtualized
+
+      - name: Sign both packages with the SDK signtool
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' | Sort-Object FullName -Descending | Select-Object -First 1
+          Write-Host "signtool: $($signtool.FullName)"
+          foreach ($appx in Get-ChildItem apps\desktop\dist-*\*.appx) {
+            & $signtool.FullName sign /fd sha256 /f C:\probe.pfx /p probe $appx.FullName
+            if ($LASTEXITCODE -ne 0) { throw "signing $($appx.Name) failed" }
+          }
 
       - name: Probe both packages
         shell: pwsh
