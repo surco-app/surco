@@ -15,7 +15,7 @@ import {
   quickCueSlotBytes,
 } from './engineBlobs'
 import { type EnginePerformance, engineCuesOf } from './engineCues'
-import { assertEngineClosed } from './engineLibrary'
+import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -128,13 +128,21 @@ function sampleRateOf(perf: EnginePerformance): number {
   return perf.trackData ? inflateEngineBlob(perf.trackData).readDoubleBE(0) : 0
 }
 
-export async function applyEngineCuesBatch(
+export function applyEngineCuesBatch(
   libraryDir: string,
   ops: QueueOp[],
   deps: EngineCuesWriteDeps,
 ): Promise<BatchResult> {
-  if (!libraryDir) return { ok: false, reason: 'unreadable' }
+  if (!libraryDir) return Promise.resolve({ ok: false, reason: 'unreadable' })
   const dbPath = engineDatabasePath(libraryDir)
+  return withEngineDatabase(dbPath, () => writeEngineCuesBatch(dbPath, ops, deps))
+}
+
+async function writeEngineCuesBatch(
+  dbPath: string,
+  ops: QueueOp[],
+  deps: EngineCuesWriteDeps,
+): Promise<BatchResult> {
   let db: Database
   try {
     const SQL = await loadSqlJs()

@@ -10,6 +10,7 @@ import { buildEngineDatabase, loadSqlJs } from './engine'
 import { decodeQuickCues, inflateEngineBlob } from './engineBlobs'
 import { readEngineTrackCues } from './engineCues'
 import { applyEngineCuesBatch } from './engineCuesWrite'
+import { withEngineDatabase } from './engineLibrary'
 import { analysedTrack, MAIN_CUE_TAIL, quickCuesRaw } from './enginePerformanceFixture'
 import { openEngineDb } from './enginePlaylists'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
@@ -297,3 +298,35 @@ describe('applyEngineCuesBatch', () => {
 function quickCuesRawSlots() {
   return decodeQuickCues(quickCuesRaw(SLOTS))?.slots.map((s) => s.cue)
 }
+
+describe('applyEngineCuesBatch alongside another write to the same library', () => {
+  it('waits for it, so a track that write adds is still there after the cues are saved', async () => {
+    const dir = await library()
+    let release = () => {}
+    const held = withEngineDatabase(dbFile(dir), async () => {
+      await new Promise<void>((r) => {
+        release = r
+        setTimeout(r, 300)
+      })
+      const db = new Database(dbFile(dir))
+      db.prepare(
+        "INSERT INTO Track (id, path, filename) VALUES (2, '../Music/b.mp3', 'b.mp3')",
+      ).run()
+      db.close()
+    })
+    const saved = applyEngineCuesBatch(
+      dir,
+      [op(dir, [UNTOUCHED, { ms: 16000, kind: 2, color: 33 }])],
+      deps({ sessionBackup: vi.fn(async () => release()) }),
+    )
+    await held
+    expect(await saved).toMatchObject({ ok: true, wrote: true })
+    const db = new Database(dbFile(dir), { readonly: true })
+    const paths = (
+      db.prepare('SELECT path FROM Track ORDER BY id').all() as { path: string }[]
+    ).map((r) => r.path)
+    db.close()
+    expect(paths).toEqual(['../Music/a.mp3', '../Music/b.mp3'])
+    expect(slotsOf(dir).slots[1].cue?.label).toBe('')
+  })
+})
