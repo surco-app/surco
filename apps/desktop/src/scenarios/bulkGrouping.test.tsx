@@ -63,6 +63,7 @@ describe('Add a grouping tag to several tracks at once, keeping the ones each al
       },
       { timeout: 60_000, interval: 200 },
     )
+    await screen.findByTestId('batch-summary', {}, { timeout: 30_000 })
   }, 120_000)
 
   afterAll(() => {

@@ -84,6 +84,7 @@ describe('Replace a file whose tags could not be read, without wiping them', () 
     await convertInPlace(surco as AppScenario)
     const out = source.replace('.flac', '.aiff')
     await waitFor(() => expect(existsSync(out)).toBe(true), { timeout: 60_000 })
+    await screen.findByTestId('batch-summary', {}, { timeout: 30_000 })
     expect(await readTags(out)).toMatchObject({
       album: TAGS.album,
       grouping: TAGS.grouping,
@@ -99,6 +100,7 @@ describe('Replace a file whose tags could not be read, without wiping them', () 
     await convertInPlace(surco as AppScenario)
     const badge = await screen.findByTestId('track-status-badge', undefined, { timeout: 30_000 })
     expect(badge.getAttribute('data-tone')).toBe('danger')
+    await screen.findByTestId('batch-summary', {}, { timeout: 30_000 })
     expect(sha1(source)).toBe(before)
     expect(existsSync(source.replace('.flac', '.aiff'))).toBe(false)
   }, 120_000)
