@@ -250,9 +250,33 @@ describe('registerRekordboxCuesIpc', () => {
       wanted: [{ ms: 1000, kind: 0, color: null }],
       fingerprint: 'f',
     }
-    await handler('rekordbox:saveCues')({}, req)
+    await handler('rekordbox:saveCues')({}, [req])
     expect(enqueue).toHaveBeenCalledWith([expect.objectContaining({ kind: 'cues', ...req })])
     expect(applyQuietly).toHaveBeenCalled()
+  })
+
+  it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>()
+    const applyQuietly = quietly()
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      flow: () => MY_FLOW,
+    })
+    const req = (contentId: string) => ({
+      contentId,
+      path: `/m/${contentId}.wav`,
+      label: contentId,
+      wanted: [{ ms: 1000, kind: 0, color: null }],
+      fingerprint: 'f',
+    })
+    await handler('rekordbox:saveCues')({}, [req('103'), req('104')])
+    expect(enqueue).toHaveBeenCalledTimes(1)
+    const [ops] = enqueue.mock.calls[0]
+    expect(ops.map((o) => (o.kind === 'cues' ? o.contentId : null))).toEqual(['103', '104'])
+    expect(new Set(ops.map((o) => o.id)).size).toBe(2)
+    expect(applyQuietly).toHaveBeenCalledTimes(1)
   })
 
   it('reads nothing without a collection', async () => {

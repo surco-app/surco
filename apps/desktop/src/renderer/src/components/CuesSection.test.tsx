@@ -206,7 +206,7 @@ describe('CuesSection', () => {
     markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
-    const req = saveRekordboxCues.mock.calls[0][0]
+    const req = saveRekordboxCues.mock.calls[0][0][0]
     expect(req).toMatchObject({
       contentId: '103',
       path: '/m/g.wav',
@@ -243,7 +243,7 @@ describe('CuesSection', () => {
       fireEvent.click(screen.getByTestId('cues-pad-B'))
       fireEvent.click(screen.getByTestId('cues-save'))
       await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
-      const { wanted } = saveRekordboxCues.mock.calls[0][0]
+      const { wanted } = saveRekordboxCues.mock.calls[0][0][0]
       expect(wanted).toEqual(
         expect.arrayContaining([
           { id: 'h', ms: bar(32), kind: oldKind, color: 5 },
@@ -794,7 +794,7 @@ describe('CuesSection', () => {
     markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
-    const { wanted } = saveRekordboxCues.mock.calls[0][0]
+    const { wanted } = saveRekordboxCues.mock.calls[0][0][0]
     expect(wanted.every((c) => c.kind === 0 && c.color === null)).toBe(true)
     expect(validWantedSet(wanted, read.cues)).toEqual({ ok: true })
   })
@@ -810,7 +810,7 @@ describe('CuesSection', () => {
       markAt(bar(64))
       fireEvent.click(screen.getByTestId('cues-save'))
       await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
-      const { wanted } = saveRekordboxCues.mock.calls[0][0]
+      const { wanted } = saveRekordboxCues.mock.calls[0][0][0]
       const hot = wanted.filter((c) => c.kind !== 0).sort((a, b) => a.ms - b.ms)
       expect(hot.map((c) => c.ms)).toEqual([bar(16), bar(32), bar(40), bar(48)])
       expect(hot.find((c) => c.id === 'm')).toEqual({
@@ -859,7 +859,7 @@ describe('CuesSection', () => {
     expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
-    const { wanted } = saveRekordboxCues.mock.calls[0][0]
+    const { wanted } = saveRekordboxCues.mock.calls[0][0][0]
     expect(wanted).toEqual(
       expect.arrayContaining([
         { id: 'p', ms: bar(32), kind: 0, color: null },
@@ -913,7 +913,7 @@ describe('CuesSection', () => {
     markAt(bar(32))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
-    const req = saveRekordboxCues.mock.calls[0][0]
+    const req = saveRekordboxCues.mock.calls[0][0][0]
     expect(req.fingerprint).toBe('f2')
     expect(req.wanted).toContainEqual({ ...extra, kind: expect.any(Number) })
   })

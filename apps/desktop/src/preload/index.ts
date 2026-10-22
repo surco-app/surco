@@ -206,8 +206,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:queuedCues', contentId),
   undoRekordboxCues: (contentId: string): Promise<void> =>
     ipcRenderer.invoke('rekordbox:undoCues', contentId),
-  saveRekordboxCues: (req: SaveCuesRequest): Promise<void> =>
-    ipcRenderer.invoke('rekordbox:saveCues', req),
+  saveRekordboxCues: (reqs: SaveCuesRequest[]): Promise<void> =>
+    ipcRenderer.invoke('rekordbox:saveCues', reqs),
   rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('rekordbox:membership', paths),
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {

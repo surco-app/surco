@@ -65,7 +65,7 @@ describe('CuesSection drops', () => {
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
     fireEvent.click(screen.getByTestId('cues-save'))
-    const [req] = saveRekordboxCues.mock.calls[0]
+    const [[req]] = saveRekordboxCues.mock.calls[0]
     expect(req.wanted.filter((c) => c.ms === 128000 && c.kind === 0)).toHaveLength(1)
     expect(req.wanted.filter((c) => c.ms === 128000 && c.kind !== 0)).toHaveLength(0)
     expect(req.wanted.filter((c) => c.kind !== 0)).toHaveLength(3)

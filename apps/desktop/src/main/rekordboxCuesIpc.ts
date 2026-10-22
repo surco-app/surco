@@ -72,8 +72,8 @@ export function registerRekordboxCuesIpc(host: {
     const op = host.queue.cuesOp(contentId)
     if (op) host.queue.drop(op.id)
   })
-  ipcMain.handle('rekordbox:saveCues', (_e, req: SaveCuesRequest) => {
-    host.queue.enqueue([{ ...req, id: randomUUID(), kind: 'cues' }])
+  ipcMain.handle('rekordbox:saveCues', (_e, reqs: SaveCuesRequest[]) => {
+    host.queue.enqueue(reqs.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
     host.applyQuietly()
   })
 }

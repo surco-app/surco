@@ -575,13 +575,15 @@ function Editing({
   const save = () => {
     setProposed(null)
     void window.api
-      .saveRekordboxCues({
-        contentId: cue.contentId,
-        path: cue.path,
-        label: cue.label,
-        wanted,
-        fingerprint: read.fingerprint,
-      })
+      .saveRekordboxCues([
+        {
+          contentId: cue.contentId,
+          path: cue.path,
+          label: cue.label,
+          wanted,
+          fingerprint: read.fingerprint,
+        },
+      ])
       .then(() => {
         forgetDraft(cue.contentId)
         return refreshQueued()
@@ -593,10 +595,9 @@ function Editing({
     setSavingAll(true)
     try {
       await forgetStaleDrafts(queryClient)
-      for (const req of draftsToSave()) {
-        await window.api.saveRekordboxCues(req)
-        forgetDraft(req.contentId)
-      }
+      const reqs = draftsToSave()
+      await window.api.saveRekordboxCues(reqs)
+      for (const req of reqs) forgetDraft(req.contentId)
       await refreshQueued()
     } finally {
       setSavingAll(false)

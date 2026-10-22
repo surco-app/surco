@@ -502,7 +502,7 @@ describe('saving several tracks', () => {
       fingerprint: 'f0',
     })
 
-  it('saves every reviewed track to rekordbox at once, each through the same save as its own Guardar', async () => {
+  it('saves every reviewed track to rekordbox in one go, so the collection is written once', async () => {
     other()
     const { saveRekordboxCues } = setup()
     await ready()
@@ -511,17 +511,20 @@ describe('saving several tracks', () => {
     const all = await screen.findByTestId('cues-save-all')
     expect(all).toHaveTextContent('Save 2 tracks to rekordbox')
     fireEvent.click(all)
-    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
-    expect(saveRekordboxCues).toHaveBeenCalledWith({
-      contentId: '104',
-      path: '/m/h.wav',
-      label: 'Other',
-      fingerprint: 'f0',
-      wanted: [{ ms: bar(32), kind: 0, color: null }],
-    })
-    expect(saveRekordboxCues).toHaveBeenCalledWith(
-      expect.objectContaining({ contentId: '103', path: '/m/g.wav', label: 'Gowan' }),
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0]).toEqual(
+      expect.arrayContaining([
+        {
+          contentId: '104',
+          path: '/m/h.wav',
+          label: 'Other',
+          fingerprint: 'f0',
+          wanted: [{ ms: bar(32), kind: 0, color: null }],
+        },
+        expect.objectContaining({ contentId: '103', path: '/m/g.wav', label: 'Gowan' }),
+      ]),
     )
+    expect(saveRekordboxCues.mock.calls[0][0]).toHaveLength(2)
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
   })
 
@@ -539,9 +542,7 @@ describe('saving several tracks', () => {
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
     fireEvent.click(await screen.findByTestId('cues-save-all'))
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
-    const saved = saveRekordboxCues.mock.calls.flatMap(([req]) =>
-      [req].flat().map((r) => r.contentId),
-    )
+    const saved = saveRekordboxCues.mock.calls.flatMap(([reqs]) => reqs.map((r) => r.contentId))
     expect(saved.sort()).toEqual(['103', '104'])
   })
 
@@ -577,10 +578,10 @@ describe('saving several tracks', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
     fireEvent.click(await screen.findByTestId('cues-save-all'))
-    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
-    const saved = saveRekordboxCues.mock.calls.map(([req]) => req.contentId)
-    expect(saved).toEqual(expect.arrayContaining(['103', '104']))
-    const mine = saveRekordboxCues.mock.calls.find(([req]) => req.contentId === '103')?.[0]
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    const [reqs] = saveRekordboxCues.mock.calls[0]
+    expect(reqs.map((r) => r.contentId).sort()).toEqual(['103', '104'])
+    const mine = reqs.find((r) => r.contentId === '103')
     expect(mine?.wanted.some((c) => c.ms === bar(128))).toBe(false)
     expect(autoMarkOf('105')).toEqual({ kind: 'proposed', ms: [bar(16)] })
   })
