@@ -112,6 +112,7 @@ import {
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   redirectRekordboxRepoint,
+  rekordboxBatchOpen,
 } from './rekordboxBatch'
 import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
@@ -526,6 +527,7 @@ function createWindow(): BrowserWindow {
   // (or lets the databases finish) and closes once baken has reported.
   const quitGuard = createQuitGuard({
     count: activeConversions.count,
+    batchOpen: rekordboxBatchOpen,
     exporting: () => usbExport?.busy() ?? false,
     settle: () => usbExport?.stop() ?? Promise.resolve(),
     writing: rekordboxQueue.busy,

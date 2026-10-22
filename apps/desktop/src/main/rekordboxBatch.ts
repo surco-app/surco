@@ -69,6 +69,10 @@ export function abandonRekordboxBatch(): void {
   depth = 0
 }
 
+export function rekordboxBatchOpen(): boolean {
+  return depth > 0
+}
+
 export function beginRekordboxBatch(): boolean {
   const opens = depth === 0
   if (opens) repoints = []

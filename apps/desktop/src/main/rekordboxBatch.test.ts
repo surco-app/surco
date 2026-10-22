@@ -9,6 +9,7 @@ import {
   endRekordboxBatch,
   recordRekordboxRepoint,
   redirectRekordboxRepoint,
+  rekordboxBatchOpen,
 } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 
@@ -216,5 +217,21 @@ describe('beginRekordboxBatch', () => {
     endRekordboxBatch()
     expect(beginRekordboxBatch()).toBe(true)
     endRekordboxBatch()
+  })
+
+  it('reports a batch as open from its first begin until its last end', () => {
+    abandonRekordboxBatch()
+    expect(rekordboxBatchOpen()).toBe(false)
+    beginRekordboxBatch()
+    beginRekordboxBatch()
+    endRekordboxBatch()
+    expect(rekordboxBatchOpen()).toBe(true)
+    endRekordboxBatch()
+    expect(rekordboxBatchOpen()).toBe(false)
+  })
+
+  it('lets the close guard see an open batch', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    expect(source).toContain('batchOpen: rekordboxBatchOpen,')
   })
 })
