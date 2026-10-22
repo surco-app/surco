@@ -827,6 +827,7 @@
       },
       "resetColour": "Reset",
       "saveShort": "Save",
+      "saveFailed": "Could not save to rekordbox. The cues are still not saved",
       "saveAll_one": "Save {{count}} track to rekordbox",
       "saveAll_other": "Save {{count}} tracks to rekordbox",
       "toCall_one": "{{count}} bar to the CALL",

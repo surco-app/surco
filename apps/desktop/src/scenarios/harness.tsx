@@ -298,7 +298,7 @@ function scenarioApi(
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     rekordboxLearnFlow: async () => null,
-    saveRekordboxCues: async () => {},
+    saveRekordboxCues: async () => 'queued',
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
     rekordboxMembership: async () => ({}),
@@ -389,7 +389,7 @@ function scenarioApi(
     endConversionBatch: () => {
       flushes.push(
         flushConversionBatch(libraryHost(errors), sessions, {
-          enqueue: () => {},
+          enqueue: () => true,
           applyQuietly: () => {},
         }),
       )

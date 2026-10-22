@@ -53,7 +53,7 @@ function setup({
     rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async (id) =>
       id in words ? words[id] : WORDS,
     ),
-    saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => {}),
+    saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => 'queued'),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return { api, client }

@@ -15,7 +15,7 @@ import {
 } from '../../../shared/cueRules'
 import { detectDrops } from '../../../shared/dropDetect'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
-import type { QueuedCues, TrackCues } from '../../../shared/types'
+import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useCueWaveDetail, useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
@@ -572,22 +572,29 @@ function Editing({
     pending: pending(c),
     locked: state.locked.includes(c.key),
   }))
-  const save = () => {
-    setProposed(null)
-    void window.api
-      .saveRekordboxCues([
-        {
-          contentId: cue.contentId,
-          path: cue.path,
-          label: cue.label,
-          wanted,
-          fingerprint: read.fingerprint,
-        },
-      ])
-      .then(() => {
-        forgetDraft(cue.contentId)
-        return refreshQueued()
-      })
+  const [saveFailed, setSaveFailed] = useState<SaveCuesOutcome | 'failed' | null>(null)
+  const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
+    const outcome = await window.api.saveRekordboxCues(reqs).catch(() => 'failed' as const)
+    if (outcome !== 'queued') {
+      setSaveFailed(outcome)
+      return false
+    }
+    setSaveFailed(null)
+    for (const req of reqs) forgetDraft(req.contentId)
+    await refreshQueued()
+    return true
+  }
+  const save = async () => {
+    const saved = await send([
+      {
+        contentId: cue.contentId,
+        path: cue.path,
+        label: cue.label,
+        wanted,
+        fingerprint: read.fingerprint,
+      },
+    ])
+    if (saved) setProposed(null)
   }
   const unsavedTracks = useUnsavedCueTracks().size
   const [savingAll, setSavingAll] = useState(false)
@@ -595,10 +602,7 @@ function Editing({
     setSavingAll(true)
     try {
       await forgetStaleDrafts(queryClient)
-      const reqs = draftsToSave()
-      await window.api.saveRekordboxCues(reqs)
-      for (const req of reqs) forgetDraft(req.contentId)
-      await refreshQueued()
+      await send(draftsToSave())
     } finally {
       setSavingAll(false)
     }
@@ -744,7 +748,7 @@ function Editing({
         data-testid="cues-save"
         disabled={unchanged}
         aria-label={maximized ? undefined : tr('editor.cues.save')}
-        onClick={save}
+        onClick={() => void save()}
         className={`press h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
           unchanged
             ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
@@ -881,7 +885,7 @@ function Editing({
         data-testid="cues-save"
         disabled={unchanged}
         aria-label={tr('editor.cues.save')}
-        onClick={save}
+        onClick={() => void save()}
         className={`press h-6 shrink-0 whitespace-nowrap rounded-full px-3 text-xs font-semibold ${
           unchanged
             ? 'text-fg-dim'
@@ -1125,6 +1129,15 @@ function Editing({
       {queued !== null && !fresh && (
         <p data-testid="cues-queued-stale" className="mt-2 text-xs text-warn">
           {tr('editor.cues.queuedStale')}
+        </p>
+      )}
+      {saveFailed !== null && (
+        <p data-testid="cues-save-failed" className="mt-2 text-xs text-warn">
+          {tr(
+            saveFailed === 'other-collection'
+              ? 'sources.edit.refused.otherCollection'
+              : 'editor.cues.saveFailed',
+          )}
         </p>
       )}
       {autoNote === 'none' && (

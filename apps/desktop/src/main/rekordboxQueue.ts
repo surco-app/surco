@@ -64,7 +64,7 @@ export type QueueApply =
     }
 
 export interface RekordboxQueue {
-  enqueue: (ops: QueueOp[], repoints?: RekordboxRepoint[]) => void
+  enqueue: (ops: QueueOp[], repoints?: RekordboxRepoint[]) => boolean
   state: () => RekordboxQueueState
   isEmpty: () => boolean
   discard: () => void
@@ -278,7 +278,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
           log.warn(
             `rekordbox queue held for ${q.collection}, left out ${ops.length} operation(s) and ${repoints.length} repoint(s) read from ${here || 'no collection'}`,
           )
-        return
+        return false
       }
       for (const r of repoints) {
         const at = q.repoints.findIndex((x) => x.from === r.from)
@@ -291,6 +291,7 @@ export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
         else q.ops[at] = op
       }
       save()
+      return true
     },
     state: () => stateOf(q, deps.collection()),
     isEmpty: () => q.repoints.length === 0 && q.ops.length === 0,

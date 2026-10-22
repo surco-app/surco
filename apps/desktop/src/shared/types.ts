@@ -1701,6 +1701,8 @@ export interface QueuedCues {
   fingerprint: string
 }
 
+export type SaveCuesOutcome = 'queued' | 'other-collection'
+
 export interface SaveCuesRequest {
   contentId: string
   path: string

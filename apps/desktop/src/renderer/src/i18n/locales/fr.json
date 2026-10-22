@@ -827,6 +827,7 @@
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
+      "saveFailed": "Impossible d’enregistrer dans rekordbox. Les cues ne sont toujours pas enregistrés",
       "saveAll_one": "Enregistrer {{count}} morceau dans rekordbox",
       "saveAll_other": "Enregistrer {{count}} morceaux dans rekordbox",
       "toCall_one": "{{count}} mesure avant le CALL",

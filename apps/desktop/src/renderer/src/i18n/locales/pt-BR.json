@@ -827,6 +827,7 @@
       },
       "resetColour": "Redefinir",
       "saveShort": "Salvar",
+      "saveFailed": "Não foi possível salvar no rekordbox. Os cues continuam sem salvar",
       "saveAll_one": "Salvar {{count}} faixa no rekordbox",
       "saveAll_other": "Salvar {{count}} faixas no rekordbox",
       "toCall_one": "{{count}} compasso até o CALL",

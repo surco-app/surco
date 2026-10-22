@@ -50,6 +50,7 @@ import type {
   RemoveCopyResult,
   ReviewOutcome,
   RowWaveRequest,
+  SaveCuesOutcome,
   SaveCuesRequest,
   ScanVerdict,
   SearchHints,
@@ -217,7 +218,7 @@ export interface Api {
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   rekordboxLearnFlow: () => Promise<LearnedFlow | null>
-  saveRekordboxCues: (reqs: SaveCuesRequest[]) => Promise<void>
+  saveRekordboxCues: (reqs: SaveCuesRequest[]) => Promise<SaveCuesOutcome>
   rekordboxQueuedCues: (contentId: string) => Promise<QueuedCues | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>

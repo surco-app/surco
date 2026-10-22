@@ -31,7 +31,7 @@ const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
 
 function queue(over: Partial<Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>> = {}) {
   return {
-    enqueue: vi.fn<RekordboxQueue['enqueue']>(),
+    enqueue: vi.fn<RekordboxQueue['enqueue']>(() => true),
     cuesOp: vi.fn<RekordboxQueue['cuesOp']>(() => undefined),
     drop: vi.fn<RekordboxQueue['drop']>(),
     ...over,
@@ -235,7 +235,7 @@ describe('registerRekordboxCuesIpc', () => {
   })
 
   it('queues the cues and applies quietly, since "Guardar en rekordbox" never asks', async () => {
-    const enqueue = vi.fn<RekordboxQueue['enqueue']>()
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
@@ -250,13 +250,32 @@ describe('registerRekordboxCuesIpc', () => {
       wanted: [{ ms: 1000, kind: 0, color: null }],
       fingerprint: 'f',
     }
-    await handler('rekordbox:saveCues')({}, [req])
+    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('queued')
     expect(enqueue).toHaveBeenCalledWith([expect.objectContaining({ kind: 'cues', ...req })])
     expect(applyQuietly).toHaveBeenCalled()
   })
 
+  it('says the cues were not queued when the queue belongs to another collection, and applies nothing', async () => {
+    const applyQuietly = quietly()
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) }),
+      applyQuietly,
+      flow: () => MY_FLOW,
+    })
+    const req = {
+      contentId: '103',
+      path: '/m/a.wav',
+      label: 'a',
+      wanted: [],
+      fingerprint: 'f',
+    }
+    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('other-collection')
+    expect(applyQuietly).not.toHaveBeenCalled()
+  })
+
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
-    const enqueue = vi.fn<RekordboxQueue['enqueue']>()
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',

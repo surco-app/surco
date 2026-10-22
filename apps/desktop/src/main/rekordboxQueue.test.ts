@@ -197,6 +197,14 @@ describe('rekordbox queue', () => {
     expect(q.state().items.map((i) => i.key)).toEqual(['edit:e1'])
   })
 
+  it('tells the caller when it leaves operations out of a queue held for another collection, so a save is never taken as done', () => {
+    let at = '/copy/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    expect(q.enqueue([rename])).toBe(true)
+    at = '/real/master.db'
+    expect(q.enqueue([track('a', '/m/a.wav')])).toBe(false)
+  })
+
   it('logs the run it leaves out of a queue held for another collection, so a lost repoint can be traced', () => {
     let at = '/copy/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))

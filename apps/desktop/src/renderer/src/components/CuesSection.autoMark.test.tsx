@@ -73,7 +73,7 @@ function setup({
   words?: Uint16Array | null
   settings?: Partial<Settings>
 } = {}) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => 'queued')
   installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
       ...read,
@@ -559,6 +559,44 @@ describe('saving several tracks', () => {
     fireEvent.click(all)
     await new Promise((r) => setTimeout(r, 20))
     expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['the save fails', () => Promise.reject(new Error('ipc')), 'Could not save to rekordbox'],
+    [
+      'the queue belongs to another collection',
+      async () => 'other-collection' as const,
+      'What is waiting belongs to another rekordbox collection',
+    ],
+  ])('keeps every track unsaved and says why when %s', async (_, answer, said) => {
+    other()
+    const { saveRekordboxCues } = setup()
+    saveRekordboxCues.mockImplementation(answer)
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    fireEvent.click(await screen.findByTestId('cues-save-all'))
+    expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(said)
+    expect([...unsavedCueTracks()].sort()).toEqual(['103', '104'])
+    expect(screen.getByTestId('cues-save-all')).toBeEnabled()
+  })
+
+  it.each([
+    ['the save fails', () => Promise.reject(new Error('ipc')), 'Could not save to rekordbox'],
+    [
+      'the queue belongs to another collection',
+      async () => 'other-collection' as const,
+      'What is waiting belongs to another rekordbox collection',
+    ],
+  ])('keeps a single Guardar unsaved and says why when %s', async (_, answer, said) => {
+    const { saveRekordboxCues } = setup()
+    saveRekordboxCues.mockImplementation(answer)
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(said)
+    expect([...unsavedCueTracks()]).toEqual(['103'])
   })
 
   it('is not offered while only this track is unsaved, where its own Guardar does it', async () => {

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import type { QueuedCues, SaveCuesRequest } from '../shared/types'
+import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
@@ -72,8 +72,10 @@ export function registerRekordboxCuesIpc(host: {
     const op = host.queue.cuesOp(contentId)
     if (op) host.queue.drop(op.id)
   })
-  ipcMain.handle('rekordbox:saveCues', (_e, reqs: SaveCuesRequest[]) => {
-    host.queue.enqueue(reqs.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
+  ipcMain.handle('rekordbox:saveCues', (_e, reqs: SaveCuesRequest[]): SaveCuesOutcome => {
+    if (!host.queue.enqueue(reqs.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' }))))
+      return 'other-collection'
     host.applyQuietly()
+    return 'queued'
   })
 }
