@@ -26,6 +26,16 @@ describe('pickMenuLang', () => {
 })
 
 describe('createMenuT', () => {
+  it('asks to close Engine DJ for cues without promising a conversion that is not running', () => {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
+      const t = createMenuT(lang)
+      expect(t('engineQuitDetailCues')).not.toBe(t('engineQuitDetail'))
+    }
+    expect(createMenuT('es')('engineQuitDetailCues')).toBe(
+      'Surco necesita cerrarlo para guardar las cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+    )
+  })
+
   it('translates a key for the resolved locale', () => {
     expect(createMenuT('es-ES')('settings')).toBe('Ajustes…')
     expect(createMenuT('en-US')('settings')).toBe('Settings…')

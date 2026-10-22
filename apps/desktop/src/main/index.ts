@@ -71,6 +71,8 @@ import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
+import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
+import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
@@ -251,6 +253,41 @@ const applyRekordboxQueueQuietly = (): void => {
     if (stillWaiting(result)) rekordboxQueueWatch.poke()
   })
 }
+const engineLibraryPath = (): string =>
+  currentLibraryStatus().engine.found ? getSettings().engineLibraryDir : ''
+const engineCueQueue = createRekordboxQueue({
+  store: fileStore(join(app.getPath('userData'), 'engine-cue-queue.json')),
+  collection: engineLibraryPath,
+  applyBatch: (libraryDir, ops, ensureClosed) =>
+    applyEngineCuesBatch(libraryDir, ops, {
+      ensureClosed,
+      sessionBackup: (path) => sessions.engine.ensure(path),
+    }),
+  repoint: async () => [],
+  nodeStamps: async () => ({}),
+  onChange: (state) => broadcast('engine:cueQueueChanged', state),
+})
+const announceEngineApplied = (result: QueueApply): void => {
+  const notice = appliedNotice(result)
+  if (notice) broadcast('engine:cueQueueApplied', notice)
+}
+const engineCueQueueWatch = watchRekordboxQueue({
+  queue: {
+    isEmpty: () => engineCueQueue.isEmpty(),
+    apply: (ensureClosed) => serialLibraryFlush(() => engineCueQueue.apply(ensureClosed)),
+  },
+  collection: engineLibraryPath,
+  isRunning: isEngineDjRunning,
+  onApplied: announceEngineApplied,
+})
+const applyEngineCueQueueQuietly = (): void => {
+  void serialLibraryFlush(() =>
+    engineCueQueue.apply(async () => !(await isEngineDjRunning())),
+  ).then((result) => {
+    announceEngineApplied(result)
+    if (stillWaiting(result)) engineCueQueueWatch.poke()
+  })
+}
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
 // concurrent process:track calls a batch fans out into — same module-scoped-per-run
@@ -308,14 +345,17 @@ let engineQuitPrompt: Promise<boolean> | null = null
 // True when Engine DJ is not running (possibly because the user just accepted quitting
 // it here); false when it is running and the user declined — the caller then refuses
 // the library write, since Engine would not see it and could overwrite it on exit.
-async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean> {
+async function ensureEngineDjClosed(
+  win: BrowserWindow | null,
+  detail: 'engineQuitDetail' | 'engineQuitDetailCues' = 'engineQuitDetail',
+): Promise<boolean> {
   if (!(await isEngineDjRunning())) return true
   engineQuitPrompt ??= (async () => {
     const t = createMenuT(menuLocale())
     const opts = {
       type: 'warning' as const,
       message: t('engineQuitMessage'),
-      detail: t('engineQuitDetail'),
+      detail: t(detail),
       buttons: [t('engineQuitConfirm'), t('engineQuitCancel')],
       defaultId: 0,
       cancelId: 1,
@@ -983,6 +1023,16 @@ function registerIpc(): void {
     queue: rekordboxQueue,
     applyQuietly: applyRekordboxQueueQuietly,
     flow: () => activeCueFlow(getSettings()),
+    engine: {
+      libraryDir: () => getSettings().engineLibraryDir,
+      queue: engineCueQueue,
+      applyQuietly: applyEngineCueQueueQuietly,
+    },
+  })
+  registerEngineCueQueueIpc(engineCueQueue, {
+    ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
+    onWaiting: engineCueQueueWatch.poke,
+    onReady: engineCueQueueWatch.poke,
   })
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({

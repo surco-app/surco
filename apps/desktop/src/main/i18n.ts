@@ -56,6 +56,7 @@ interface MenuStrings {
   appleMusicGone: string
   engineQuitMessage: string
   engineQuitDetail: string
+  engineQuitDetailCues: string
   engineQuitConfirm: string
   engineQuitCancel: string
   engineOpenError: string
@@ -152,6 +153,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ está abierto',
     engineQuitDetail:
       'Surco necesita cerrarlo para escribir en su biblioteca. Engine DJ se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+    engineQuitDetailCues:
+      'Surco necesita cerrarlo para guardar las cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     engineQuitConfirm: 'Cerrar Engine DJ',
     engineQuitCancel: 'Cancelar',
     engineOpenError: 'Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.',
@@ -254,6 +257,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ is open',
     engineQuitDetail:
       'Surco needs to close it to write into its library. Engine DJ will quit safely; reopen it once the conversion finishes.',
+    engineQuitDetailCues:
+      'Surco needs to close it to save the cues into its library. Engine DJ will quit safely, and you can reopen it right away.',
     engineQuitConfirm: 'Close Engine DJ',
     engineQuitCancel: 'Cancel',
     engineOpenError: 'Close Engine DJ before converting: it has the library open.',
@@ -356,6 +361,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ ist geöffnet',
     engineQuitDetail:
       'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
+    engineQuitDetailCues:
+      'Surco muss es schließen, um die Cues in seiner Bibliothek zu speichern. Engine DJ wird sicher beendet, und du kannst es gleich wieder öffnen.',
     engineQuitConfirm: 'Engine DJ schließen',
     engineQuitCancel: 'Abbrechen',
     engineOpenError: 'Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.',
@@ -459,6 +466,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ est ouvert',
     engineQuitDetail:
       'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
+    engineQuitDetailCues:
+      'Surco doit le fermer pour enregistrer les cues dans sa bibliothèque. Engine DJ sera fermé proprement et tu pourras le rouvrir tout de suite.',
     engineQuitConfirm: 'Fermer Engine DJ',
     engineQuitCancel: 'Annuler',
     engineOpenError: 'Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.',
@@ -563,6 +572,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'O Engine DJ está aberto',
     engineQuitDetail:
       'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    engineQuitDetailCues:
+      'O Surco precisa fechá-lo para salvar os cues na biblioteca dele. O Engine DJ será fechado com segurança e você pode reabri-lo em seguida.',
     engineQuitConfirm: 'Fechar o Engine DJ',
     engineQuitCancel: 'Cancelar',
     engineOpenError: 'Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.',
