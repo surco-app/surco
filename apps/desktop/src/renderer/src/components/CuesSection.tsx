@@ -13,14 +13,19 @@ import {
   nearestBeat,
   SAME_POSITION_MS,
 } from '../../../shared/cueRules'
-import { detectDrops } from '../../../shared/dropDetect'
+import type { DropInput } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
-import { useCueWaveDetail, useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
-import { withoutCallInBar } from '../lib/cueAutoMark'
+import {
+  cueDropInputQuery,
+  useCueWaveDetail,
+  useQueuedCues,
+  useTrackCues,
+} from '../hooks/useTrackCues'
+import { dropsOnGrid, withoutCallInBar } from '../lib/cueAutoMark'
 import type { DetailSource } from '../lib/cueDetail'
 import {
   type CueDraft,
@@ -109,7 +114,7 @@ const ENGINE_COPY: typeof REKORDBOX_COPY = {
   queuedStale: 'editor.cues.engine.queuedStale',
   saveFailed: 'editor.cues.engine.saveFailed',
   otherLibrary: 'engineQueue.otherLibrary',
-  autoUnanalysed: 'editor.cues.engine.autoUnavailable',
+  autoUnanalysed: 'editor.cues.engine.autoUnreadable',
 }
 
 const copyOf = (contentId: string) => (isEngineContent(contentId) ? ENGINE_COPY : REKORDBOX_COPY)
@@ -340,12 +345,15 @@ function Editing({
     [placing, hoverMs, state, ctx],
   )
   const { data: words } = useCueWaveDetail(cue.contentId, true)
+  const engine = isEngineContent(cue.contentId)
+  const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<number[] | null>(() => {
     const kept = autoMarkOf(cue.contentId)
     return kept?.kind === 'proposed' ? kept.ms : null
   })
-  const [autoNote, setAutoNote] = useState<'none' | 'marked' | null>(() => {
+  const [autoNote, setAutoNote] = useState<'none' | 'marked' | 'unanalysed' | null>(() => {
     const kept = autoMarkOf(cue.contentId)
+    if (kept?.kind === 'unanalysed' && engine) return 'unanalysed'
     return kept?.kind === 'none' || kept?.kind === 'marked' ? kept.kind : null
   })
   const proposals = useMemo(
@@ -369,9 +377,8 @@ function Editing({
     () => (proposals.length > 0 ? ghostOf(state, acceptAll, ctx) : null),
     [proposals, acceptAll, state, ctx],
   )
-  const autoMark = () => {
-    if (!words) return
-    const found = detectDrops({ grid: read.grid, phrases: read.phrases, words })
+  const proposeFrom = (input: DropInput) => {
+    const found = dropsOnGrid(input, read.grid)
     const note =
       found.length === 0
         ? 'none'
@@ -381,6 +388,25 @@ function Editing({
     if (note) keepAutoMark(cue.contentId, { kind: note })
     setAutoNote(note)
     setProposed(found)
+  }
+  const autoMark = () => {
+    if (!engine) {
+      if (words) proposeFrom({ grid: read.grid, phrases: read.phrases, words })
+      return
+    }
+    setReadingAudio(true)
+    void queryClient
+      .fetchQuery(cueDropInputQuery(cue.contentId))
+      .catch(() => null)
+      .then((input) => {
+        setReadingAudio(false)
+        if (input) {
+          proposeFrom(input)
+          return
+        }
+        keepAutoMark(cue.contentId, { kind: 'unanalysed' })
+        setAutoNote('unanalysed')
+      })
   }
   const acceptProposals = () => {
     dispatch(acceptAll)
@@ -746,15 +772,15 @@ function Editing({
       <button
         type="button"
         data-testid="cues-auto-mark"
-        disabled={!words}
-        title={words ? undefined : tr(copy.autoUnanalysed)}
+        disabled={engine ? readingAudio : !words}
+        title={engine || words ? undefined : tr(copy.autoUnanalysed)}
         onClick={autoMark}
         className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
       >
         <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
           <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
         </svg>
-        {tr('editor.cues.auto.button')}
+        {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
       </button>
     )
   const actions = (
@@ -1175,6 +1201,11 @@ function Editing({
       {autoNote === 'none' && (
         <p data-testid="cues-auto-none" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.auto.none')}
+        </p>
+      )}
+      {autoNote === 'unanalysed' && (
+        <p data-testid="cues-auto-unreadable" className="mt-2 text-xs text-fg-dim">
+          {tr(copy.autoUnanalysed)}
         </p>
       )}
       {autoNote === 'marked' && (

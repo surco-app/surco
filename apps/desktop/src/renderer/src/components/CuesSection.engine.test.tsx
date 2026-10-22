@@ -5,14 +5,21 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+import type { DropInput } from '../../../shared/dropDetect'
 import type { SaveCuesOutcome, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { startDraft } from '../lib/cueDraft'
-import { keepDraft, resetCueSession } from '../lib/cueSession'
+import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
+
+const detectDrops = vi.hoisted(() => vi.fn<(input: DropInput) => number[]>())
+vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
+  detectDrops,
+}))
 
 afterEach(cleanup)
 afterEach(resetCueSession)
@@ -51,6 +58,7 @@ function setup(
   read: TrackCues | null | Error = READ,
   saved: SaveCuesOutcome = 'queued',
   contentId = 'engine:4',
+  dropInput: Api['rekordboxCueDropInput'] = async () => null,
 ) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => saved)
   installApi({
@@ -59,6 +67,7 @@ function setup(
       return read
     }),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+    rekordboxCueDropInput: vi.fn(dropInput),
     saveRekordboxCues,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -90,14 +99,49 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to Engine DJ')
   })
 
-  it('explains that Auto marcar does not work on Engine tracks yet instead of blaming a missing rekordbox analysis', async () => {
+  it('reads nothing for Auto marcar until the DJ asks, so opening an Engine track never decodes it', async () => {
+    const dropInput = vi.fn<Api['rekordboxCueDropInput']>(async () => null)
+    setup(READ, 'queued', 'engine:4', dropInput)
+    await ready()
+    expect(screen.getByTestId('cues-auto-mark')).toBeEnabled()
+    expect(dropInput).not.toHaveBeenCalled()
+  })
+
+  it('proposes on Engine’s own beats, where the cues get saved, from what main gives it to detect on', async () => {
+    const input: DropInput = {
+      grid: GRID.map((b) => ({ ms: b.ms - 30, beat: b.beat })),
+      phrases: [{ ms: bar(56) - 30, kind: 'up' }],
+      words: new Uint16Array(3000),
+    }
+    detectDrops.mockReset().mockReturnValue([bar(64) - 30])
+    setup(READ, 'queued', 'engine:4', async () => input)
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    await waitFor(() => expect(autoMarkOf('engine:4')).toEqual({ kind: 'proposed', ms: [bar(64)] }))
+    expect(detectDrops).toHaveBeenCalledWith(input)
+  })
+
+  it('says it is reading the track while the audio is decoded, since that can take a few seconds', async () => {
+    let answer: (input: DropInput | null) => void = () => {}
+    setup(READ, 'queued', 'engine:4', () => new Promise((done) => (answer = done)))
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeDisabled())
+    expect(screen.getByTestId('cues-auto-mark')).toHaveTextContent('Reading the track…')
+    answer(null)
+    await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeEnabled())
+  })
+
+  it('says Surco could not read the audio when there is nothing to detect on, rather than proposing nothing as if it had looked', async () => {
     setup()
     await ready()
-    expect(screen.getByTestId('cues-auto-mark')).toBeDisabled()
-    expect(screen.getByTestId('cues-auto-mark')).toHaveAttribute(
-      'title',
-      'Auto mark does not work with Engine DJ tracks yet',
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-auto-unreadable')).toHaveTextContent(
+        'Surco could not read the audio of this track',
+      ),
     )
+    expect(autoMarkOf('engine:4')).toEqual({ kind: 'unanalysed' })
   })
 
   it('says Engine DJ has not analysed the track, and offers nothing to save', async () => {

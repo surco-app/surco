@@ -865,7 +865,8 @@
         "unreadable": "Could not read the cues from Engine DJ",
         "queuedStale": "The queued save was made before the track changed in Engine DJ and is out of date. You see what Engine DJ holds now.",
         "saveFailed": "Could not save to Engine DJ. The cues are still not saved",
-        "autoUnavailable": "Auto mark does not work with Engine DJ tracks yet",
+        "autoReading": "Reading the track…",
+        "autoUnreadable": "Surco could not read the audio of this track",
         "calls": "Engine DJ only keeps hot cues. The CALLs will not be saved",
         "saveAll_one": "Save {{count}} track to Engine DJ",
         "saveAll_other": "Save {{count}} tracks to Engine DJ"

@@ -865,7 +865,8 @@
         "unreadable": "Não foi possível ler os cues do Engine DJ",
         "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no Engine DJ e não vale mais. Você vê o que o Engine DJ tem agora.",
         "saveFailed": "Não foi possível salvar no Engine DJ. Os cues continuam sem salvar",
-        "autoUnavailable": "Auto marcar ainda não funciona com faixas do Engine DJ",
+        "autoReading": "Lendo a faixa…",
+        "autoUnreadable": "O Surco não conseguiu ler o áudio desta faixa",
         "calls": "O Engine DJ só guarda hot cues. Os CALL não serão salvos",
         "saveAll_one": "Salvar {{count}} faixa no Engine DJ",
         "saveAll_other": "Salvar {{count}} faixas no Engine DJ"

@@ -25,6 +25,12 @@ export const cueWaveDetailQuery = (contentId: string) => ({
   staleTime: Number.POSITIVE_INFINITY,
 })
 
+export const cueDropInputQuery = (contentId: string) => ({
+  queryKey: ['rekordbox-cue-drop-input', contentId],
+  queryFn: () => window.api.rekordboxCueDropInput(contentId),
+  staleTime: Number.POSITIVE_INFINITY,
+})
+
 export function useTrackCues(contentId: string | undefined): {
   data: TrackCues | null | undefined
   isError: boolean

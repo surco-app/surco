@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { nearestBeat } from '../../../shared/cueRules'
-import { detectDrops } from '../../../shared/dropDetect'
+import { type DropInput, detectDrops } from '../../../shared/dropDetect'
 import { cueWaveDetailQuery, queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import { type AutoMark, cueDraftKey, keepAutoMark, keptDraft } from './cueSession'
 
@@ -14,6 +14,11 @@ export function withoutCallInBar(
     grid.slice(0, nearestBeat(beats, ms) + 1).filter((b) => b.beat === 1).length
   const calls = cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
   return proposed.filter((ms) => !calls.includes(barAt(ms)))
+}
+
+export function dropsOnGrid(input: DropInput, grid: { ms: number }[]): number[] {
+  const beats = grid.map((b) => b.ms)
+  return detectDrops(input).map((ms) => beats[nearestBeat(beats, ms)])
 }
 
 async function autoMarkOne(client: QueryClient, contentId: string): Promise<AutoMark> {

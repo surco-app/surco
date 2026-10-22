@@ -865,7 +865,8 @@
         "unreadable": "Impossible de lire les cues d’Engine DJ",
         "queuedStale": "L’enregistrement en attente date d’avant le changement du morceau dans Engine DJ et n’est plus valable. Tu vois ce qu’a Engine DJ maintenant.",
         "saveFailed": "Impossible d’enregistrer dans Engine DJ. Les cues ne sont toujours pas enregistrés",
-        "autoUnavailable": "Le marquage auto ne marche pas encore avec les morceaux Engine DJ",
+        "autoReading": "Lecture de la piste…",
+        "autoUnreadable": "Surco n’a pas pu lire l’audio de cette piste",
         "calls": "Engine DJ ne garde que les hot cues. Les CALL ne seront pas enregistrés",
         "saveAll_one": "Enregistrer {{count}} morceau dans Engine DJ",
         "saveAll_other": "Enregistrer {{count}} morceaux dans Engine DJ"
