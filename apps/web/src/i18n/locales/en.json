@@ -279,6 +279,10 @@
             "d": "Export your rekordbox playlists to a USB stick with their cues, grid and waveforms, and rekordbox can keep syncing it. Needs rekordbox closed. On macOS and Windows."
           },
           {
+            "t": "Your Engine DJ playlists",
+            "d": "Open them in Surco and set hot cues on their tracks with the same editor, Auto mark included. Not CALL points, since Engine DJ keeps only hot cues. And export them to a USB drive with its Engine library, ready for the player."
+          },
+          {
             "t": "Files for rekordbox, Serato, M3U8",
             "d": "Paths and metadata, no cues, no ratings. Serato's crate, paths only."
           },
