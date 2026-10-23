@@ -9,7 +9,7 @@ export const PAGES = {
   useCases: { es: '/casos-de-uso', en: '/en/use-cases' },
   changelog: { es: '/cambios', en: '/en/changelog' },
   flacToAiff: { es: '/convertir/flac-a-aiff', en: '/en/convert/flac-to-aiff' },
-  codeSigning: { es: '/firma-de-codigo', en: '/en/code-signing' },
+  privacy: { es: '/privacidad', en: '/en/privacy' },
 } as const
 
 export type Page = keyof typeof PAGES

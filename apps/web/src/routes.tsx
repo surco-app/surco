@@ -7,13 +7,13 @@ import type { RouteRecord } from 'vite-react-ssg'
 import { Head } from 'vite-react-ssg'
 import App from './App'
 import Changelog from './components/Changelog'
-import CodeSigning from './components/CodeSigning'
 import DonateCancel from './components/DonateCancel'
 import DonateCompleted from './components/DonateCompleted'
 import Features from './components/Features'
 import FlacToAiff from './components/FlacToAiff'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
+import Privacy from './components/Privacy'
 import UseCasePage, { type UseCase } from './components/UseCase'
 import UseCases from './components/UseCases'
 import { createI18n, type Language } from './i18n'
@@ -29,9 +29,9 @@ const FLAC_TO_AIFF_PATHS: Record<Language, string> = {
   es: '/convertir/flac-a-aiff',
   en: '/en/convert/flac-to-aiff',
 }
-const CODE_SIGNING_PATHS: Record<Language, string> = {
-  es: '/firma-de-codigo',
-  en: '/en/code-signing',
+const PRIVACY_PATHS: Record<Language, string> = {
+  es: '/privacidad',
+  en: '/en/privacy',
 }
 
 const I18N: Record<Language, i18n> = { es: createI18n('es'), en: createI18n('en') }
@@ -282,33 +282,33 @@ function LocalizedFlacToAiff({ lng }: { lng: Language }) {
   )
 }
 
-function CodeSigningHead({ lng }: { lng: Language }) {
+function PrivacyHead({ lng }: { lng: Language }) {
   const t = I18N[lng].getFixedT(lng)
-  const url = SITE + CODE_SIGNING_PATHS[lng]
+  const url = SITE + PRIVACY_PATHS[lng]
   return (
     <Head>
       <html lang={t('meta.htmlLang')} />
-      <title>{t('codeSigning.metaTitle')}</title>
-      <meta name="description" content={t('codeSigning.metaDescription')} />
+      <title>{t('privacy.metaTitle')}</title>
+      <meta name="description" content={t('privacy.metaDescription')} />
       <link rel="canonical" href={url} />
-      <link rel="alternate" hrefLang="es" href={`${SITE}${CODE_SIGNING_PATHS.es}`} />
-      <link rel="alternate" hrefLang="en" href={`${SITE}${CODE_SIGNING_PATHS.en}`} />
-      <link rel="alternate" hrefLang="x-default" href={`${SITE}${CODE_SIGNING_PATHS.es}`} />
+      <link rel="alternate" hrefLang="es" href={`${SITE}${PRIVACY_PATHS.es}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}${PRIVACY_PATHS.en}`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE}${PRIVACY_PATHS.es}`} />
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
-      <meta property="og:title" content={t('codeSigning.metaTitle')} />
-      <meta property="og:description" content={t('codeSigning.metaDescription')} />
-      <meta name="twitter:title" content={t('codeSigning.metaTitle')} />
-      <meta name="twitter:description" content={t('codeSigning.metaDescription')} />
+      <meta property="og:title" content={t('privacy.metaTitle')} />
+      <meta property="og:description" content={t('privacy.metaDescription')} />
+      <meta name="twitter:title" content={t('privacy.metaTitle')} />
+      <meta name="twitter:description" content={t('privacy.metaDescription')} />
     </Head>
   )
 }
 
-function LocalizedCodeSigning({ lng }: { lng: Language }) {
+function LocalizedPrivacy({ lng }: { lng: Language }) {
   return (
     <I18nextProvider i18n={I18N[lng]}>
-      <CodeSigningHead lng={lng} />
-      <CodeSigning />
+      <PrivacyHead lng={lng} />
+      <Privacy />
     </I18nextProvider>
   )
 }
@@ -368,13 +368,13 @@ export const routes: RouteRecord[] = [
         entry: 'src/routes.tsx',
       },
       {
-        path: 'firma-de-codigo',
-        element: <LocalizedCodeSigning lng="es" />,
+        path: 'privacidad',
+        element: <LocalizedPrivacy lng="es" />,
         entry: 'src/routes.tsx',
       },
       {
-        path: 'en/code-signing',
-        element: <LocalizedCodeSigning lng="en" />,
+        path: 'en/privacy',
+        element: <LocalizedPrivacy lng="en" />,
         entry: 'src/routes.tsx',
       },
       // Transactional pages PayPal redirects to after the donate flow: their copy is

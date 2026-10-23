@@ -479,7 +479,7 @@
     "slogan": "tu música, en orden",
     "convertHeading": "Convertir",
     "flacToAiff": "FLAC a AIFF",
-    "codeSigning": "Firma de código y privacidad",
+    "privacy": "Privacidad",
     "downloads": "descargas"
   },
   "install": {
@@ -2460,39 +2460,13 @@
       }
     ]
   },
-  "codeSigning": {
-    "metaTitle": "Política de firma de código y privacidad · Surco",
-    "metaDescription": "Cómo se firman los instaladores de Surco, quién aprueba cada versión y qué datos salen de tu ordenador cuando usas la app.",
-    "kicker": "Firma y privacidad",
-    "title": "Política de firma de código",
-    "lede": "Cómo se firman los instaladores de Surco, quién decide qué se firma y qué datos salen de tu ordenador.",
-    "signingHeading": "Firma",
-    "attribution": "Firma de código gratuita proporcionada por SignPath.io, con certificado de SignPath Foundation.",
-    "signingBody": [
-      "La firma demuestra que el instalador lo ha publicado Surco y que nadie lo ha modificado después.",
-      "Solo se firman instaladores compilados desde el código público de Surco por su proceso de publicación en GitHub Actions, y cada versión se aprueba a mano antes de firmarla.",
-      "En macOS, Surco está firmado y notarizado por Apple."
-    ],
-    "pending": "La primera versión de Windows firmada todavía no ha salido. Hasta entonces el instalador de Windows se publica sin firma.",
-    "teamHeading": "Equipo",
-    "teamLede": "Surco lo desarrolla y mantiene una sola persona, que ocupa los tres papeles.",
-    "roles": [
-      {
-        "role": "Autor",
-        "desc": "Puede cambiar el código sin revisión adicional."
-      },
-      {
-        "role": "Revisor",
-        "desc": "Revisa cada cambio que llega de fuera del equipo."
-      },
-      {
-        "role": "Aprobador",
-        "desc": "Aprueba cada solicitud de firma y decide qué versiones se firman."
-      }
-    ],
-    "member": "Vicent Gozalbes",
-    "sourceLabel": "Código fuente",
-    "privacyHeading": "Privacidad",
+  "privacy": {
+    "metaTitle": "Privacidad · Surco",
+    "metaDescription": "Qué datos salen de tu ordenador cuando usas Surco, a qué servicios van y qué mide esta web.",
+    "kicker": "Privacidad",
+    "title": "Privacidad",
+    "lede": "Surco no tiene cuenta ni telemetría. Esto es todo lo que sale de tu ordenador cuando usas la app, y lo que mide esta web.",
+    "privacyHeading": "La app",
     "privacyLede": "Surco no tiene cuenta ni telemetría, y no envía nada a ningún servidor de Surco. La app solo se conecta a otros servicios en estos casos.",
     "privacyItems": [
       "Cuando buscas una pista, a mano o con la búsqueda automática, envía el título, el artista y otros datos de búsqueda a las fuentes que tengas activadas. Pueden ser Discogs, Bandcamp, Deezer, Beatport y MusicBrainz. Las carátulas se descargan de sus servidores y de Cover Art Archive.",
@@ -2501,9 +2475,6 @@
       "Si informas de un error, abre en tu navegador un formulario de GitHub con la versión, el sistema y las últimas líneas de error, sin rutas de carpetas. No se envía nada hasta que lo publicas tú."
     ],
     "policiesLabel": "Cada servicio tiene su propia política de privacidad",
-    "webHeading": "Esta web",
-    "webBody": "getsurco.app usa Google Analytics y Vercel Analytics para contar visitas y descargas. La app de escritorio no usa ninguno de los dos.",
-    "webPolicies": "Políticas de Google y Vercel",
     "policies": [
       {
         "name": "Discogs",
@@ -2534,6 +2505,9 @@
         "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
       }
     ],
+    "webHeading": "Esta web",
+    "webBody": "getsurco.app usa Google Analytics y Vercel Analytics para contar visitas y descargas. La app de escritorio no usa ninguno de los dos.",
+    "webPolicies": "Políticas de Google y Vercel",
     "webPolicyLinks": [
       {
         "name": "Google",

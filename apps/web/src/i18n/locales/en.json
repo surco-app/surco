@@ -479,7 +479,7 @@
     "slogan": "your music, in order",
     "convertHeading": "Convert",
     "flacToAiff": "FLAC to AIFF",
-    "codeSigning": "Code signing and privacy",
+    "privacy": "Privacy",
     "downloads": "downloads"
   },
   "install": {
@@ -2460,39 +2460,13 @@
       }
     ]
   },
-  "codeSigning": {
-    "metaTitle": "Code signing policy and privacy · Surco",
-    "metaDescription": "How Surco's installers are signed, who approves each release and what data leaves your computer when you use the app.",
-    "kicker": "Signing and privacy",
-    "title": "Code signing policy",
-    "lede": "How Surco's installers are signed, who decides what gets signed and what data leaves your computer.",
-    "signingHeading": "Signing",
-    "attribution": "Free code signing provided by SignPath.io, certificate by SignPath Foundation.",
-    "signingBody": [
-      "The signature proves the installer was published by Surco and that nobody changed it afterwards.",
-      "Only installers built from Surco's public source code by its GitHub Actions release pipeline are signed, and every release is approved by hand before it is signed.",
-      "On macOS, Surco is signed and notarized by Apple."
-    ],
-    "pending": "The first signed Windows release has not shipped yet. Until then the Windows installer is published unsigned.",
-    "teamHeading": "Team",
-    "teamLede": "Surco is developed and maintained by one person, who holds all three roles.",
-    "roles": [
-      {
-        "role": "Author",
-        "desc": "Can change the source code without further review."
-      },
-      {
-        "role": "Reviewer",
-        "desc": "Reviews every change that comes from outside the team."
-      },
-      {
-        "role": "Approver",
-        "desc": "Approves every signing request and decides which releases get signed."
-      }
-    ],
-    "member": "Vicent Gozalbes",
-    "sourceLabel": "Source code",
-    "privacyHeading": "Privacy",
+  "privacy": {
+    "metaTitle": "Privacy · Surco",
+    "metaDescription": "What data leaves your computer when you use Surco, which services it goes to and what this website measures.",
+    "kicker": "Privacy",
+    "title": "Privacy",
+    "lede": "Surco has no account and no telemetry. This is everything that leaves your computer when you use the app, and what this website measures.",
+    "privacyHeading": "The app",
     "privacyLede": "Surco has no account and no telemetry, and sends nothing to any Surco server. The app only connects to other services in these cases.",
     "privacyItems": [
       "When you search for a track, by hand or with auto-match, it sends the title, the artist and other search details to the sources you have turned on. These can be Discogs, Bandcamp, Deezer, Beatport and MusicBrainz. Artwork is downloaded from their servers and from Cover Art Archive.",
@@ -2501,9 +2475,6 @@
       "If you report a bug, it opens a GitHub form in your browser with the version, the system and the latest error lines, without folder paths. Nothing is sent until you post it yourself."
     ],
     "policiesLabel": "Each service has its own privacy policy",
-    "webHeading": "This website",
-    "webBody": "getsurco.app uses Google Analytics and Vercel Analytics to count visits and downloads. The desktop app uses neither.",
-    "webPolicies": "Google and Vercel policies",
     "policies": [
       {
         "name": "Discogs",
@@ -2534,6 +2505,9 @@
         "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
       }
     ],
+    "webHeading": "This website",
+    "webBody": "getsurco.app uses Google Analytics and Vercel Analytics to count visits and downloads. The desktop app uses neither.",
+    "webPolicies": "Google and Vercel policies",
     "webPolicyLinks": [
       {
         "name": "Google",

@@ -10,7 +10,7 @@ export default function Footer() {
   const useCasesHref = PAGES.useCases[lang]
   const changelogHref = PAGES.changelog[lang]
   const flacToAiffHref = PAGES.flacToAiff[lang]
-  const codeSigningHref = PAGES.codeSigning[lang]
+  const privacyHref = PAGES.privacy[lang]
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
@@ -117,11 +117,11 @@ export default function Footer() {
             <DownloadCount />
           </span>
           <a
-            href={codeSigningHref}
-            data-testid="footer-code-signing"
+            href={privacyHref}
+            data-testid="footer-privacy"
             className="transition-colors hover:text-fg"
           >
-            {t('footer.codeSigning')}
+            {t('footer.privacy')}
           </a>
           <span>{t('footer.slogan')}</span>
         </div>

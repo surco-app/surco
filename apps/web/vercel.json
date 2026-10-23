@@ -10,5 +10,9 @@
       "source": "/assets/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
+  ],
+  "redirects": [
+    { "source": "/firma-de-codigo", "destination": "/privacidad", "permanent": true },
+    { "source": "/en/code-signing", "destination": "/en/privacy", "permanent": true }
   ]
 }
