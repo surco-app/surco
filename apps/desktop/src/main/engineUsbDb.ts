@@ -137,18 +137,24 @@ function editStamp(d: Date): string {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`
 }
 
-interface Entity {
-  id: number
-  next: number
+interface Member {
+  uuid: string
   trackId: number
   ref: number
 }
+
+interface Entity extends Member {
+  id: number
+  next: number
+}
+
+const memberKey = (m: Member): string => `${m.uuid}\n${m.trackId}`
 
 function entitiesOf(usb: Database.Database, listId: number): Entity[] {
   return chainOrder(
     usb
       .prepare(
-        `SELECT id, nextEntityId AS next, trackId, membershipReference AS ref
+        `SELECT id, nextEntityId AS next, databaseUuid AS uuid, trackId, membershipReference AS ref
            FROM PlaylistEntity WHERE listId = ?`,
       )
       .all(listId) as Entity[],
@@ -171,46 +177,40 @@ function listUnder(usb: Database.Database, parent: number, title: string, stamp:
   )
 }
 
-function appendEntities(
-  usb: Database.Database,
-  listId: number,
-  tracks: { trackId: number; ref: number }[],
-  uuid: string,
-): void {
+function appendEntities(usb: Database.Database, listId: number, members: Member[]): void {
   const insert = usb.prepare(
     `INSERT INTO PlaylistEntity (listId, trackId, databaseUuid, nextEntityId, membershipReference)
      VALUES (?, ?, ?, 0, ?)`,
   )
   const link = usb.prepare('UPDATE PlaylistEntity SET nextEntityId = ? WHERE id = ?')
   let tail = entitiesOf(usb, listId).at(-1)?.id ?? null
-  for (const t of tracks) {
-    const id = Number(insert.run(listId, t.trackId, uuid, t.ref).lastInsertRowid)
+  for (const m of members) {
+    const id = Number(insert.run(listId, m.trackId, m.uuid, m.ref).lastInsertRowid)
     if (tail !== null) link.run(id, tail)
     tail = id
   }
 }
 
-function rebuildFolder(usb: Database.Database, folderId: number, uuid: string): void {
+function rebuildFolder(usb: Database.Database, folderId: number): void {
   const children = chainOrder(
     usb
       .prepare('SELECT id, nextListId AS next FROM Playlist WHERE parentListId = ?')
       .all(folderId) as { id: number; next: number }[],
   )
-  const counts = new Map<number, number>()
+  const counts = new Map<string, Member>()
   for (const child of children)
-    for (const e of entitiesOf(usb, child.id))
-      counts.set(e.trackId, (counts.get(e.trackId) ?? 0) + 1)
+    for (const e of entitiesOf(usb, child.id)) {
+      const key = memberKey(e)
+      counts.set(key, { uuid: e.uuid, trackId: e.trackId, ref: (counts.get(key)?.ref ?? 0) + 1 })
+    }
   usb
     .prepare('DELETE FROM PlaylistEntity WHERE listId = ? AND membershipReference > 0')
     .run(folderId)
-  const direct = new Set(entitiesOf(usb, folderId).map((e) => e.trackId))
+  const direct = new Set(entitiesOf(usb, folderId).map(memberKey))
   appendEntities(
     usb,
     folderId,
-    [...counts]
-      .filter(([trackId]) => !direct.has(trackId))
-      .map(([trackId, ref]) => ({ trackId, ref })),
-    uuid,
+    [...counts].filter(([key]) => !direct.has(key)).map(([, member]) => member),
   )
 }
 
@@ -220,8 +220,10 @@ export function putEngineUsbPlaylist(
   trackIds: number[],
   now: Date,
 ): void {
-  const uuid = libraryUuid(usb)
   const stamp = editStamp(now)
+  const origin = usb.prepare(
+    'SELECT originDatabaseUuid AS uuid, originTrackId AS trackId FROM Track WHERE id = ?',
+  )
   usb.transaction(() => {
     const lists: number[] = []
     for (const title of path) lists.push(listUnder(usb, lists.at(-1) ?? 0, title, stamp))
@@ -233,9 +235,11 @@ export function putEngineUsbPlaylist(
     appendEntities(
       usb,
       listId,
-      [...new Set(trackIds)].map((trackId) => ({ trackId, ref: 0 })),
-      uuid,
+      [...new Set(trackIds)].flatMap((id) => {
+        const o = origin.get(id) as { uuid: string; trackId: number } | undefined
+        return o ? [{ ...o, ref: 0 }] : []
+      }),
     )
-    for (const folder of lists.slice(0, -1).reverse()) rebuildFolder(usb, folder, uuid)
+    for (const folder of lists.slice(0, -1).reverse()) rebuildFolder(usb, folder)
   })()
 }
