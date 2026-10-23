@@ -2438,7 +2438,8 @@
       "cuesAdjusted_one": "rekordbox ya ha analizado {{track}}. 1 cue ajustado a su rejilla, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox ya ha analizado {{track}}. {{count}} cues ajustados a su rejilla, el que más {{maxMs}} ms",
       "cuesUnfit_one": "Un cue de {{track}} cae lejos de los golpes de rekordbox y se ha dejado donde estaba. Revísalo",
-      "cuesUnfit_other": "{{count}} cues de {{track}} caen lejos de los golpes de rekordbox y se han dejado donde estaban. Revísalos"
+      "cuesUnfit_other": "{{count}} cues de {{track}} caen lejos de los golpes de rekordbox y se han dejado donde estaban. Revísalos",
+      "goToCue": "Ir al cue"
     },
     "part": {
       "repoint": "nueva ruta",

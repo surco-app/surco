@@ -118,6 +118,7 @@ import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
 import {
   type AutoMark,
+  focusCue,
   useAutoMarks,
   useCueSessionFor,
   useUnsavedCueTracks,
@@ -143,7 +144,7 @@ import {
   discardPlaylistEdits,
   type PlaylistsEdit,
 } from './lib/rekordboxPlaylists'
-import { ENGINE_QUEUE_WORDS } from './lib/rekordboxQueueText'
+import { type CueSpot, ENGINE_QUEUE_WORDS } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -153,6 +154,7 @@ import {
   ownRowsDropped,
 } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
+import { revealStep } from './lib/revealCue'
 import { scopedMusicSource } from './lib/reviewSource'
 import {
   duplicatesDetail,
@@ -659,17 +661,30 @@ export default function App(): React.JSX.Element {
     filesOpen: browser.source === null,
   })
 
+  const [revealing, setRevealing] = useState<CueSpot | null>(null)
   // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
   // edits leaves the latest answer, not a stack.
   const notifyEdit = useCallback(
-    (text: string, tone: 'neutral' | 'danger') =>
-      pushToast(store, {
+    (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => {
+      const id = pushToast(store, {
         key: 'rekordbox-edit',
         tone,
         message: text,
-        duration: 5000,
+        ...(goTo
+          ? {
+              action: {
+                label: { key: 'rekordboxQueue.notice.goToCue' },
+                onAction: () => {
+                  dismissToast(store, id)
+                  focusCue(goTo)
+                  setRevealing(goTo)
+                },
+              },
+            }
+          : { duration: 5000 }),
         testid: 'rekordbox-edit-notice',
-      }),
+      })
+    },
     [store],
   )
   const editRekordbox = useRekordboxEdits(notifyEdit)
@@ -2537,7 +2552,26 @@ export default function App(): React.JSX.Element {
   // is deliberately omitted from the close: it forces a deliberate choice, not an Escape
   // dismissal. Deselect is skipped while a field is focused so Escape stays a field action
   // (cancel an edit, close a field's own popover) instead of yanking the editor away.
-  const { maximized } = useMaximizedSection()
+  const { maximized, setMaximized } = useMaximizedSection()
+  useEffect(() => {
+    if (!revealing) return
+    const step = revealStep(revealing.contentId, {
+      source: browser.source,
+      playlistId: browser.playlist?.id ?? null,
+      loading: browser.entriesLoading,
+      listed: browser.entries?.map((e) => e.contentId),
+      contentOf: playlistScope?.contentOf,
+    })
+    if (step.do === 'source') selectSource('rekordbox')
+    else if (step.do === 'playlist') {
+      const recent = browser.tree?.find((n) => n.id === RECENTLY_ADDED_ID)
+      if (recent) selectPlaylist(recent, [])
+    } else if (step.do === 'select') {
+      setSelection({ ids: [step.id], anchor: step.id })
+      setMaximized('cues')
+      setRevealing(null)
+    } else if (step.do === 'give-up') setRevealing(null)
+  }, [revealing, browser, playlistScope, selectSource, selectPlaylist, setMaximized])
   function onEscape(): void {
     if (activeModal) {
       if (activeModal.type === 'onboarding') return

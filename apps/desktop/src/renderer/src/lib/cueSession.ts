@@ -18,6 +18,7 @@ export interface CueSaveTarget {
 const drafts = new Map<string, { draftKey: string; value: CueDraft; target: CueSaveTarget }>()
 let marks: ReadonlyMap<string, AutoMark> = new Map()
 const playheads = new Map<string, number>()
+let focus: { contentId: string; ms: number } | null = null
 const listeners = new Set<() => void>()
 let unsaved: ReadonlySet<string> = new Set()
 
@@ -113,9 +114,28 @@ export function keepPlayhead(contentId: string, ms: number): void {
   playheads.set(contentId, ms)
 }
 
+export function focusCue(spot: { contentId: string; ms: number }): void {
+  focus = spot
+  notify()
+}
+
+function cueFocus(): { contentId: string; ms: number } | null {
+  return focus
+}
+
+export function useCueFocus(): { contentId: string; ms: number } | null {
+  return useSyncExternalStore(subscribeCueDrafts, cueFocus)
+}
+
+export function settleCueFocus(): void {
+  focus = null
+  notify()
+}
+
 export function resetCueSession(): void {
   drafts.clear()
   playheads.clear()
+  focus = null
   marks = new Map()
   changed()
 }

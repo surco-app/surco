@@ -2438,7 +2438,8 @@
       "cuesAdjusted_one": "O rekordbox já analisou {{track}}. 1 cue ajustado à grade dele, {{maxMs}} ms",
       "cuesAdjusted_other": "O rekordbox já analisou {{track}}. {{count}} cues ajustados à grade dele, o mais distante {{maxMs}} ms",
       "cuesUnfit_one": "Um cue de {{track}} cai longe das batidas do rekordbox e ficou onde estava. Confira",
-      "cuesUnfit_other": "{{count}} cues de {{track}} caem longe das batidas do rekordbox e ficaram onde estavam. Confira"
+      "cuesUnfit_other": "{{count}} cues de {{track}} caem longe das batidas do rekordbox e ficaram onde estavam. Confira",
+      "goToCue": "Ir ao cue"
     },
     "part": {
       "repoint": "novo caminho",

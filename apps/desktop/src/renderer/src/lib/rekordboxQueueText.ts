@@ -112,11 +112,16 @@ export function partText(tr: TFunction, part: RekordboxQueuePart): string {
   return tr(`rekordboxQueue.part.${part.kind}`)
 }
 
+export interface CueSpot {
+  contentId: string
+  ms: number
+}
+
 export function appliedMessage(
   tr: TFunction,
   applied: RekordboxQueueApplied,
   words: QueueWords = REKORDBOX_QUEUE_WORDS,
-): { text: string; tone: 'neutral' | 'danger' } | null {
+): { text: string; tone: 'neutral' | 'danger'; goTo?: CueSpot } | null {
   if ('refused' in applied) {
     const key =
       applied.refused === 'backup-failed'
@@ -133,5 +138,11 @@ export function appliedMessage(
       : []),
     ...applied.notices.map((n) => noticeText(tr, n, words)),
   ]
-  return parts.length > 0 ? { text: parts.join('. '), tone: 'neutral' } : null
+  if (parts.length === 0) return null
+  const unfit = applied.notices.find((n) => n.code === 'cues-unfit')
+  return {
+    text: parts.join('. '),
+    tone: 'neutral',
+    ...(unfit ? { goTo: { contentId: unfit.contentId, ms: unfit.ms } } : {}),
+  }
 }

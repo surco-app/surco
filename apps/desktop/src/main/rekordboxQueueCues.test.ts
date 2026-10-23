@@ -108,7 +108,9 @@ describe('cues operations', () => {
 
   it('still reports the cues it left alone when the adjustment changed nothing else', async () => {
     const path = await collection([{ ID: 'm', InMsec: bar(64), Kind: 0, ColorTableIndex: null }])
-    const notices = [{ code: 'cues-unfit' as const, track: 'Gowan', count: 1 }]
+    const notices = [
+      { code: 'cues-unfit' as const, track: 'Gowan', count: 1, contentId: '7', ms: 1000 },
+    ]
     const wanted = [{ id: 'm', ms: bar(64), kind: 0, color: null }]
     const result = await applyRekordboxBatch(path, [op(path, { wanted, notices })], deps())
     expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices })

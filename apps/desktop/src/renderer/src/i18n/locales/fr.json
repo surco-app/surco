@@ -2438,7 +2438,8 @@
       "cuesAdjusted_one": "rekordbox a analysé {{track}}. 1 cue calé sur sa grille, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox a analysé {{track}}. {{count}} cues calés sur sa grille, le plus éloigné de {{maxMs}} ms",
       "cuesUnfit_one": "Un cue de {{track}} tombe loin des temps de rekordbox et a été laissé en place. Vérifiez-le",
-      "cuesUnfit_other": "{{count}} cues de {{track}} tombent loin des temps de rekordbox et ont été laissés en place. Vérifiez-les"
+      "cuesUnfit_other": "{{count}} cues de {{track}} tombent loin des temps de rekordbox et ont été laissés en place. Vérifiez-les",
+      "goToCue": "Aller au cue"
     },
     "part": {
       "repoint": "nouveau chemin",

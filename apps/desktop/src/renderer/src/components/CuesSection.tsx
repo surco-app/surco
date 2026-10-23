@@ -71,6 +71,8 @@ import {
   keepPlayhead,
   keptDraft,
   keptPlayhead,
+  settleCueFocus,
+  useCueFocus,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
 import { quantizePoints } from '../lib/cueWave'
@@ -1345,6 +1347,14 @@ export function CuesSection({
     follow(ms)
     audition.seek(ms)
   }
+  const focus = useCueFocus()
+  const moveHeadRef = useRef(moveHead)
+  moveHeadRef.current = moveHead
+  useEffect(() => {
+    if (focus?.contentId !== cue.contentId) return
+    settleCueFocus()
+    moveHeadRef.current(focus.ms)
+  }, [focus, cue.contentId])
   const toggle = useRef(() => {})
   toggle.current = () => audition.toggle(playheadMs)
   useEffect(() => {

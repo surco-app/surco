@@ -122,11 +122,13 @@ describe('adjustmentOps', () => {
     expect(opsFor(path, [entry({ contentId: '999' })])).toEqual({ ops: [], settled: ['999'] })
   })
 
-  it('says which cues it left alone even when nothing else needed moving', async () => {
+  it('says which cues it left alone even when nothing else needed moving, and where the first one sits so the notice can take the DJ to it', async () => {
     const far = [{ ms: 64_250, kind: 0, color: null }]
     const path = await collection(true, far)
     const { ops } = opsFor(path, [entry({ wanted: far })])
-    expect(ops[0].notices).toEqual([{ code: 'cues-unfit', track: 'Gowan', count: 1 }])
+    expect(ops[0].notices).toEqual([
+      { code: 'cues-unfit', track: 'Gowan', count: 1, contentId: '103', ms: 64_250 },
+    ])
   })
 
   it("settles a track whose cues already sit on rekordbox's beats without queuing anything", async () => {

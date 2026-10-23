@@ -61,6 +61,19 @@ describe('rekordbox queue text', () => {
     })
   })
 
+  it('points at the first cue left off the grid, so the notice can take the DJ to it', () => {
+    const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 2, contentId: '7', ms: 1000 }
+    expect(
+      appliedMessage(tr, { tracks: 0, changes: 1, notices: [unfit], written: [] })?.goTo,
+    ).toEqual({
+      contentId: '7',
+      ms: 1000,
+    })
+    expect(
+      appliedMessage(tr, { tracks: 2, changes: 0, notices: [], written: [] })?.goTo,
+    ).toBeUndefined()
+  })
+
   it('names what happens to each track', () => {
     expect(partText(tr, { kind: 'playlists', names: ['Makina', 'Cierre'] })).toBe(
       'to Makina, Cierre',
@@ -90,9 +103,9 @@ describe('rekordbox queue text', () => {
     expect(noticeText(tr, { code: 'cues-adjusted', track: 'Pray', moved: 1, maxMs: 3 })).toBe(
       'rekordbox has analysed Pray. 1 cue moved onto its grid, 3 ms',
     )
-    expect(noticeText(tr, { code: 'cues-unfit', track: 'Pray', count: 1 })).toBe(
-      'One cue of Pray sits far from rekordbox’s beats and was left where it was. Check it',
-    )
+    expect(
+      noticeText(tr, { code: 'cues-unfit', track: 'Pray', count: 1, contentId: '7', ms: 1000 }),
+    ).toBe('One cue of Pray sits far from rekordbox’s beats and was left where it was. Check it')
     expect(noticeText(tr, { code: 'ambiguous', track: 'Bam Bam' })).toBe(
       'Bam Bam was not added. rekordbox has it twice',
     )

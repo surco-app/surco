@@ -2438,7 +2438,8 @@
       "cuesAdjusted_one": "rekordbox has analysed {{track}}. 1 cue moved onto its grid, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox has analysed {{track}}. {{count}} cues moved onto its grid, the furthest {{maxMs}} ms",
       "cuesUnfit_one": "One cue of {{track}} sits far from rekordbox’s beats and was left where it was. Check it",
-      "cuesUnfit_other": "{{count}} cues of {{track}} sit far from rekordbox’s beats and were left where they were. Check them"
+      "cuesUnfit_other": "{{count}} cues of {{track}} sit far from rekordbox’s beats and were left where they were. Check them",
+      "goToCue": "Go to cue"
     },
     "part": {
       "repoint": "new path",

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
@@ -12,7 +12,7 @@ import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueR
 import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
-import { resetCueSession } from '../lib/cueSession'
+import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
@@ -592,6 +592,15 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
     expect(screen.getByTestId('cues-position')).toHaveTextContent('2:08.0')
     expect(screen.queryAllByTestId(/^cue-wave-(hot|call)-/)).toHaveLength(0)
+  })
+
+  it('puts the playhead on a cue a notice sends the DJ to, once that track is the one open', async () => {
+    const { changeTrack } = setup()
+    await ready()
+    act(() => focusCue({ contentId: '104', ms: bar(64) }))
+    expect(screen.getByTestId('cues-position')).toHaveTextContent('0:00.0')
+    changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Hold' })
+    await waitFor(() => expect(screen.getByTestId('cues-position')).toHaveTextContent('2:08.0'))
   })
 
   it('places a second point with a second click, each with its own cues', async () => {

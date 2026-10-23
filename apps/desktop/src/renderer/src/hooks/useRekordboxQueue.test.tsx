@@ -88,6 +88,16 @@ describe('useRekordboxQueue', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-queued-cues'] })
   })
 
+  it('hands the notice the cue rekordbox left off its grid, so the DJ can go straight to it', async () => {
+    const { notify, applied } = setup()
+    const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 1, contentId: '7', ms: 1000 }
+    act(() => applied({ tracks: 0, changes: 1, notices: [unfit], written: [] }))
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Pray'), 'neutral', {
+      contentId: '7',
+      ms: 1000,
+    })
+  })
+
   it('hands back what landed so the fields the collection now holds are cleared', async () => {
     const { onWritten, applied } = setup()
     const written = [{ path: '/m/a.wav', wanted: [{ name: 'Surco prueba A' }] }]

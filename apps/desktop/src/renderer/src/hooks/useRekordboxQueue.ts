@@ -8,6 +8,7 @@ import type {
 } from '../../../shared/types'
 import {
   appliedMessage,
+  type CueSpot,
   ENGINE_QUEUE_WORDS,
   type QueueWords,
   REKORDBOX_QUEUE_WORDS,
@@ -49,7 +50,7 @@ export const ENGINE_CUE_QUEUE: QueueSource = {
 }
 
 export function useRekordboxQueue(
-  notify: (text: string, tone: 'neutral' | 'danger') => void,
+  notify: (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => void,
   onDiscarded: (paths: string[]) => void,
   onWritten: (written: RekordboxQueueWritten[]) => void,
   source: QueueSource = REKORDBOX_QUEUE,
@@ -97,7 +98,8 @@ export function useRekordboxQueue(
     (applied: RekordboxQueueApplied | null) => {
       if (!applied) return
       const message = appliedMessage(tr, applied, source.words)
-      if (message) notify(message.text, message.tone)
+      if (message?.goTo) notify(message.text, message.tone, message.goTo)
+      else if (message) notify(message.text, message.tone)
       if ('written' in applied) onWritten(applied.written)
       void reread()
     },

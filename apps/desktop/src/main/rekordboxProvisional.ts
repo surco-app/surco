@@ -56,10 +56,11 @@ export function createProvisionalList(
 export function onRekordboxGrid(
   cues: TrackCueRow[],
   beats: number[],
-): { wanted: WantedCue[]; moved: number; maxMs: number; unfit: number } {
+): { wanted: WantedCue[]; moved: number; maxMs: number; unfit: number; unfitMs: number } {
   let moved = 0
   let maxMs = 0
   let unfit = 0
+  let unfitMs = Number.POSITIVE_INFINITY
   const wanted = cues.map((c) => {
     const keep = { id: c.id, ms: c.ms, kind: c.kind, color: c.color }
     if (c.loop) return keep
@@ -70,13 +71,14 @@ export function onRekordboxGrid(
     if (off === 0) return keep
     if (off > period * FIT_SHARE_OF_BEAT) {
       unfit++
+      unfitMs = Math.min(unfitMs, c.ms)
       return keep
     }
     moved++
     maxMs = Math.max(maxMs, off)
     return { ...keep, ms: beat }
   })
-  return { wanted, moved, maxMs, unfit }
+  return { wanted, moved, maxMs, unfit, unfitMs }
 }
 
 const cueKey = (c: { ms: number; kind: number; color: number | null }) =>
@@ -118,7 +120,14 @@ export function adjustmentOps(
         moved: fit.moved,
         maxMs: fit.maxMs,
       })
-    if (fit.unfit > 0) notices.push({ code: 'cues-unfit', track: entry.label, count: fit.unfit })
+    if (fit.unfit > 0)
+      notices.push({
+        code: 'cues-unfit',
+        track: entry.label,
+        count: fit.unfit,
+        contentId: entry.contentId,
+        ms: fit.unfitMs,
+      })
     if (notices.length === 0) continue
     ops.push({
       id: newId(),
