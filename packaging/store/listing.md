@@ -38,8 +38,7 @@ Bandcamp, Deezer, Beatport y MusicBrainz. Detecta los MP3 recomprimidos que se h
 por lossless y enseña la medida que hay detrás de cada veredicto. Y deja cada pista en tu
 biblioteca de rekordbox o Engine DJ, o en tus colecciones de Traktor y Serato.
 
-Tus originales no se pierden. Surco guarda una copia de cada archivo que sustituye y puedes
-recuperarlo cuando quieras.
+Surco puede guardar una copia de los archivos que sustituye para que puedas recuperarlos.
 
 Sin cuenta y sin telemetría. Gratis.
 
@@ -50,7 +49,7 @@ Sin cuenta y sin telemetría. Gratis.
 - Detecta MP3 recomprimidos disfrazados de lossless, con el espectro a la vista
 - Mide loudness, picos, dinámica, balance y ruido de fondo
 - Manda las pistas a rekordbox y Engine DJ y exporta a Traktor y Serato
-- Guarda los originales para poder recuperarlos
+- Puede guardar los originales para recuperarlos
 
 **Palabras clave**
 DJ, rekordbox, convertir audio, AIFF, FLAC, etiquetas, Discogs, Beatport, Engine DJ, Traktor
@@ -68,8 +67,7 @@ Beatport and MusicBrainz. It catches re-encoded MP3s posing as lossless and show
 measurement behind every verdict. And it files each track into your rekordbox or Engine DJ
 library, or your Traktor and Serato collections.
 
-Your originals are never lost. Surco keeps a copy of every file it replaces, and you can
-bring it back whenever you want.
+Surco can keep a copy of the files it replaces so you can bring them back.
 
 No account and no telemetry. Free.
 
@@ -80,7 +78,7 @@ No account and no telemetry. Free.
 - Catches re-encoded MP3s disguised as lossless, with the spectrum in view
 - Measures loudness, peaks, dynamics, balance and noise floor
 - Sends tracks to rekordbox and Engine DJ and exports to Traktor and Serato
-- Keeps your originals so you can restore them
+- Can keep your originals so you can restore them
 
 **Keywords**
 DJ, rekordbox, audio converter, AIFF, FLAC, tag editor, Discogs, Beatport, Engine DJ, Traktor
@@ -99,8 +97,7 @@ MP3s, die sich als lossless ausgeben, und zeigt die Messung hinter jedem Ergebni
 legt jeden Track in deiner rekordbox- oder Engine-DJ-Bibliothek ab oder in deinen Traktor-
 und Serato-Sammlungen.
 
-Deine Originale gehen nicht verloren. Surco behält eine Kopie jeder Datei, die es ersetzt,
-und du kannst sie jederzeit zurückholen.
+Surco kann eine Kopie der Dateien behalten, die es ersetzt, damit du sie zurückholen kannst.
 
 Kein Konto, keine Telemetrie. Kostenlos.
 
@@ -111,7 +108,7 @@ Kein Konto, keine Telemetrie. Kostenlos.
 - Erkennt als lossless getarnte MP3s, mit sichtbarem Spektrum
 - Misst Lautheit, Spitzen, Dynamik, Balance und Grundrauschen
 - Schickt Tracks an rekordbox und Engine DJ und exportiert nach Traktor und Serato
-- Behält deine Originale, damit du sie wiederherstellen kannst
+- Kann deine Originale behalten, damit du sie wiederherstellen kannst
 
 **Schlüsselwörter**
 DJ, rekordbox, Audio-Konverter, AIFF, FLAC, Tag-Editor, Discogs, Beatport, Engine DJ, Traktor
@@ -130,8 +127,7 @@ font passer pour du lossless et montre la mesure derrière chaque verdict. Et il
 chaque morceau dans ta bibliothèque rekordbox ou Engine DJ, ou dans tes collections Traktor
 et Serato.
 
-Tes originaux ne sont jamais perdus. Surco garde une copie de chaque fichier qu'il
-remplace, et tu peux le récupérer quand tu veux.
+Surco peut garder une copie des fichiers qu'il remplace pour que tu puisses les récupérer.
 
 Sans compte et sans télémétrie. Gratuit.
 
@@ -142,7 +138,7 @@ Sans compte et sans télémétrie. Gratuit.
 - Repère les MP3 déguisés en lossless, spectre à l'appui
 - Mesure le loudness, les crêtes, la dynamique, la balance et le bruit de fond
 - Envoie les morceaux vers rekordbox et Engine DJ et exporte vers Traktor et Serato
-- Garde tes originaux pour pouvoir les restaurer
+- Peut garder tes originaux pour pouvoir les restaurer
 
 **Mots-clés**
 DJ, rekordbox, convertisseur audio, AIFF, FLAC, éditeur de tags, Discogs, Beatport, Engine DJ, Traktor
@@ -160,8 +156,7 @@ Deezer, Beatport e MusicBrainz. Detecta MP3 recomprimidos que se passam por loss
 mostra a medição por trás de cada veredito. E coloca cada faixa na sua biblioteca do
 rekordbox ou do Engine DJ, ou nas suas coleções do Traktor e do Serato.
 
-Seus originais nunca se perdem. O Surco guarda uma cópia de cada arquivo que substitui, e
-você pode recuperá-lo quando quiser.
+O Surco pode guardar uma cópia dos arquivos que substitui para que você possa recuperá-los.
 
 Sem conta e sem telemetria. Grátis.
 
@@ -172,7 +167,7 @@ Sem conta e sem telemetria. Grátis.
 - Detecta MP3 disfarçados de lossless, com o espectro à vista
 - Mede loudness, picos, dinâmica, balanço e ruído de fundo
 - Envia as faixas para o rekordbox e o Engine DJ e exporta para o Traktor e o Serato
-- Guarda seus originais para que você possa restaurá-los
+- Pode guardar seus originais para que você possa restaurá-los
 
 **Palavras-chave**
 DJ, rekordbox, conversor de áudio, AIFF, FLAC, editor de tags, Discogs, Beatport, Engine DJ, Traktor

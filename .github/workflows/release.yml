@@ -313,10 +313,11 @@ jobs:
 
       # The Microsoft Store package, built from the same compiled app after the installer
       # is already up, so a failure here costs only the Store copy of this version. It is
-      # handed to the store job, which runs once the release is public; on a beta it is
-      # still built, for the first submission to Partner Center by hand.
+      # handed to the store job, which runs once the release is public. Never on a beta:
+      # 1.10.0-beta.1 and 1.10.0 both become package version 1.10.0.0, and the Store only
+      # takes a higher one, so a beta package in Partner Center would block its stable.
       - name: Build the Microsoft Store package (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !contains(github.ref_name, '-beta.')
         id: appx
         continue-on-error: true
         working-directory: apps/desktop
@@ -495,8 +496,15 @@ jobs:
         run: |
           appx=$(ls store/*.appx)
           cp "$appx" store/Surco.msix
-          msstore publish store -i store/Surco.msix -id 9P8C4M673334 -v
+          msstore publish store/Surco.msix -id 9P8C4M673334 -v
           echo "Submitted $GITHUB_REF_NAME to the Microsoft Store (9P8C4M673334)." >> "$GITHUB_STEP_SUMMARY"
+
+      # continue-on-error leaves the run green, so the summary is where a failed submission
+      # shows up; without it the Store copy would stay on an old version unnoticed.
+      - name: Report a failed submission
+        if: failure()
+        shell: bash
+        run: echo "Microsoft Store submission failed for $GITHUB_REF_NAME. See the store job's log." >> "$GITHUB_STEP_SUMMARY"
 
   # Point the Homebrew tap at the freshly published version so `brew install` of a
   # clean machine grabs a current build. Existing installs ignore this — they

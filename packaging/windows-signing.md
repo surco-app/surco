@@ -58,8 +58,9 @@ updates" says the Store handles it, and the betas box is locked (`src/main/updat
 
 ## Releases
 
-`.github/workflows/release.yml` builds the `.appx` next to the installer and keeps it as
-the `surco-store-appx` artifact. The `store` job then submits it with the Microsoft Store
+`.github/workflows/release.yml` builds the `.appx` next to the installer on stable tags
+and keeps it as the `surco-store-appx` artifact. Never on a beta: `1.10.0-beta.1` and
+`1.10.0` both become package version `1.10.0.0`, and the Store only takes a higher one. The `store` job then submits it with the Microsoft Store
 CLI (`msstore`), but only:
 
 - after `publish`, so the Store never gets a version GitHub never made public;
@@ -74,7 +75,8 @@ release.
 ### First submission (by hand)
 
 `msstore` can only update an app that already has a submission, so the first one is made
-in Partner Center with the package from a `build-test.yml` or release artifact, and the
+in Partner Center by hand. Use a package built from a stable version (a `build-test.yml`
+run of `main`, or a stable release artifact), never from a beta, and the
 listing texts in `packaging/store/listing.md`. Then set `STORE_PUBLISH` to `1` under
 Settings, Secrets and variables, Actions, Variables.
 
