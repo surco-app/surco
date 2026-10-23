@@ -167,6 +167,33 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+# The Microsoft Store package, built on request (`--win appx`) beside the NSIS installer,
+# which stays the default target. The identity is the one Partner Center reserved for
+# the app, and the Store signs the package itself, so nothing here signs it.
+#
+# The manifest is our own (build/appx-manifest.xml) because the default one redirects
+# writes to new folders under %APPDATA% into the package's private storage. For a user
+# who installs only from the Store that is %APPDATA%\Surco itself, Originals included:
+# Windows deletes it on uninstall and File Explorer cannot see it. Measured in CI before
+# deciding (packaging/windows-signing.md).
+appx:
+  identityName: VicentGozalbes.Surco
+  publisher: CN=D13B979E-AC81-4811-B7E0-309749169C20
+  publisherDisplayName: Vicent Gozalbes
+  applicationId: Surco
+  displayName: Surco
+  backgroundColor: transparent
+  languages:
+    - es-ES
+    - en-US
+    - de-DE
+    - fr-FR
+    - pt-BR
+  customManifestPath: appx-manifest.xml
+# The default Windows Kits that electron-builder downloads predate the desktop6 schema
+# the manifest above needs, and makeappx rejects the package with them.
+toolsets:
+  winCodeSign: "1.1.0"
 linux:
   icon: build/icon.png
   files:
