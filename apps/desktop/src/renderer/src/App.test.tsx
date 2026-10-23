@@ -2620,7 +2620,7 @@ describe('App source playlists', () => {
     await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalled())
     await act(async () => {})
     expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
-    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.contextMenu((await screen.findAllByTestId('track-row'))[0])
     await screen.findByTestId('track-menu')
     expect(screen.queryByTestId('track-menu-add-to')).not.toBeInTheDocument()
     expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
