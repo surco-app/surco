@@ -311,6 +311,26 @@ jobs:
             dist/Surco-"$version"-Setup.exe dist/Surco-"$version"-Setup.exe.blockmap \
             dist/latest.yml
 
+      # The Microsoft Store package, built from the same compiled app after the installer
+      # is already up, so a failure here costs only the Store copy of this version. It is
+      # handed to the store job, which runs once the release is public; on a beta it is
+      # still built, for the first submission to Partner Center by hand.
+      - name: Build the Microsoft Store package (Windows)
+        if: runner.os == 'Windows'
+        id: appx
+        continue-on-error: true
+        working-directory: apps/desktop
+        shell: bash
+        run: npx electron-builder --win appx --x64 --publish never
+
+      - name: Keep the Microsoft Store package for the store job
+        if: runner.os == 'Windows' && steps.appx.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: surco-store-appx
+          path: apps/desktop/dist/*.appx
+          if-no-files-found: error
+
       # No signing or notarization step: Linux has no equivalent gatekeeper, so the
       # AppImage ships as-is. electron-builder emits latest-linux.yml alongside it,
       # and unlike the two macOS runners there is only one Linux arch, so nothing
@@ -432,6 +452,51 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: gh release edit "$GITHUB_REF_NAME" --repo surco-app/surco-releases --prerelease=false
+
+  # Sends the stable release to the Microsoft Store, whose copy of Surco updates only from
+  # there. After publish, so the Store never receives a version that a failed macOS build
+  # or verify kept from going public. Never a beta: the Store has no beta channel here.
+  # Off until STORE_PUBLISH is 1, which is set by hand once the first submission exists in
+  # Partner Center (msstore can only update an app that already has one). It cannot fail
+  # the release: everything else is already out, and update-tap does not wait for it.
+  store:
+    needs: publish
+    if: ${{ !contains(github.ref_name, '-beta.') && vars.STORE_PUBLISH == '1' }}
+    continue-on-error: true
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: surco-store-appx
+          path: store
+
+      - name: Set up the Microsoft Store CLI
+        uses: microsoft/microsoft-store-apppublisher@v1.1
+
+      - name: Sign in to Partner Center
+        shell: bash
+        run: >-
+          msstore reconfigure
+          --tenantId "${{ secrets.PARTNER_CENTER_TENANT_ID }}"
+          --sellerId "${{ secrets.PARTNER_CENTER_SELLER_ID }}"
+          --clientId "${{ secrets.PARTNER_CENTER_CLIENT_ID }}"
+          --clientSecret "${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}"
+
+      # Partner Center takes no new submission while one is still in certification, and
+      # releases can land minutes apart (v1.8.0 to v1.8.2 on one day). Skipping this one
+      # would leave Store users on the version a hotfix replaced, so the pending one goes.
+      # With nothing pending the delete just fails, which is fine.
+      - name: Replace a submission still in certification
+        shell: bash
+        run: msstore submission delete 9P8C4M673334 --no-confirm || true
+
+      - name: Submit to the Microsoft Store
+        shell: bash
+        run: |
+          appx=$(ls store/*.appx)
+          cp "$appx" store/Surco.msix
+          msstore publish store -i store/Surco.msix -id 9P8C4M673334 -v
+          echo "Submitted $GITHUB_REF_NAME to the Microsoft Store (9P8C4M673334)." >> "$GITHUB_STEP_SUMMARY"
 
   # Point the Homebrew tap at the freshly published version so `brew install` of a
   # clean machine grabs a current build. Existing installs ignore this — they

@@ -17,6 +17,10 @@ on:
         description: Branch or SHA to build
         required: true
         default: main
+      store:
+        description: Also build the Microsoft Store package (.appx)
+        type: boolean
+        default: false
 
 jobs:
   windows:
@@ -93,6 +97,20 @@ jobs:
         with:
           name: surco-windows-test-${{ steps.name.outputs.value }}
           path: apps/desktop/dist/*.exe
+          if-no-files-found: error
+
+      # The same package release.yml sends to the Microsoft Store, for checking it before a
+      # tag or for the first submission to Partner Center by hand.
+      - name: Build the Microsoft Store package
+        if: inputs.store
+        working-directory: apps/desktop
+        run: npx electron-builder --win appx --x64 --publish never
+
+      - if: inputs.store
+        uses: actions/upload-artifact@v4
+        with:
+          name: surco-store-appx-${{ steps.name.outputs.value }}
+          path: apps/desktop/dist/*.appx
           if-no-files-found: error
 
   # The USB export bundles a native helper (baken) that must be signed with the Developer
