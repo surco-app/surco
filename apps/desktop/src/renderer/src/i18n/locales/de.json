@@ -1194,6 +1194,7 @@
     },
     "sourceAppleMusicUnavailable": "Nur unter macOS verfügbar",
     "sourceRekordboxUnavailable": "Es wurde keine rekordbox-Sammlung gefunden",
+    "sourceEngineUnavailable": "Es wurde keine Engine DJ-Bibliothek gefunden",
     "sourcesHint": "Das Ausblenden einer Quelle entfernt sie nur aus der Seitenleiste und ändert nichts daran, ob Konvertierungen mit ihr synchronisiert werden.",
     "updates": "Aktualisierungen",
     "betaUpdates": "Beta-Versionen erhalten",

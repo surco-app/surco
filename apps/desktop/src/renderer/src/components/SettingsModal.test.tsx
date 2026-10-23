@@ -16,6 +16,7 @@ vi.hoisted(() => {
     detectTraktorNmlPath: async () => null,
     rekordboxCollection: async () => '',
     rekordboxAvailable: async () => false,
+    engineAvailable: async () => false,
   }
 })
 

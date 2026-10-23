@@ -60,15 +60,19 @@ export function GeneralTab({
   useEffect(() => {
     window.api.rekordboxAvailable().then(setRekordboxFound)
   }, [])
+  const [engineFound, setEngineFound] = useState<boolean | null>(null)
+  useEffect(() => {
+    window.api.engineAvailable().then(setEngineFound)
+  }, [])
   const unavailable: Record<PlaylistSource, boolean> = {
     appleMusic: !isMacOS(),
     rekordbox: rekordboxFound !== true,
-    engine: false,
+    engine: engineFound !== true,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
     rekordbox: rekordboxFound === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
-    engine: undefined,
+    engine: engineFound === false ? tr('settings.sourceEngineUnavailable') : undefined,
   }
   const clearCache = useCallback(async () => {
     setClearing(true)
