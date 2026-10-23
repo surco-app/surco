@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.11",
+    "date": "October 23, 2026",
+    "title": "Engine DJ, like rekordbox",
+    "items": [
+      {
+        "text": "New Engine DJ tab, next to Music and rekordbox. You see your Engine DJ playlists and set cues on their tracks with the same editor, Auto mark included. Engine DJ keeps only hot cues, so CALL points are not passed on and Surco tells you so. The tab shows up when you have an Engine DJ library.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Export your Engine DJ playlists to a USB drive, with its Engine library ready for the player and the music copied beside it. If you already exported to that drive with Surco, it reuses the music already there.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "With Surco open, the cues you set on a track rekordbox had not analysed move onto rekordbox’s grid as soon as you close it, no restart needed. If one sits far from any beat, the notice brings «Go to cue» and opens the track in the editor right on that cue.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Convert a track with a new cover and Traktor shows it on that track only. Before, it painted it on the rest of the album too.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Waves in the list look like the player’s. A very loud master no longer shows as a solid block.",
+        "in": "1.11.0"
+      }
+    ]
+  },
+  {
     "version": "1.10",
     "date": "October 22, 2026",
     "title": "Cues without waiting for rekordbox",

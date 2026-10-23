@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.11",
+    "date": "23 de octubre de 2026",
+    "title": "Engine DJ, como rekordbox",
+    "items": [
+      {
+        "text": "Nueva pestaña Engine DJ, junto a Music y rekordbox. Ves tus playlists de Engine DJ y pones cues a sus pistas con el mismo editor, Auto marcar incluido. Engine DJ solo guarda hot cues, así que los CALL no se le pasan y Surco te lo avisa. La pestaña aparece si tienes una biblioteca de Engine DJ.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Exportas tus playlists de Engine DJ a un USB, con su biblioteca de Engine lista para el reproductor y la música copiada al lado. Si ese USB ya lo exportaste con Surco, aprovecha la música que ya tiene.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Con Surco abierto, los cues que pusiste a una pista sin analizar se ajustan a la rejilla de rekordbox en cuanto lo cierras, sin reiniciar Surco. Si alguno cae lejos de cualquier golpe, el aviso trae «Ir al cue» y te abre la pista en el editor justo en ese cue.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Al convertir una pista con carátula nueva, Traktor la muestra solo en esa pista. Antes la pintaba también en el resto del disco.",
+        "in": "1.11.0"
+      },
+      {
+        "text": "Las ondas de la lista se ven como en el reproductor. Un máster muy fuerte ya no sale como un bloque lleno.",
+        "in": "1.11.0"
+      }
+    ]
+  },
+  {
     "version": "1.10",
     "date": "22 de octubre de 2026",
     "title": "Cues sin esperar a rekordbox",
