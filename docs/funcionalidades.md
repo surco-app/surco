@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 22 de octubre de 2026** (v1.10.0, cues sin esperar a rekordbox). Levantado por primera vez el
+**Última revisión: 23 de octubre de 2026** (v1.11.0, pestaña Engine DJ). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1112,7 +1112,13 @@ renombra, no se borra, no se reordena y no se le añaden pistas.
 **Independiente de la sincronización.** Ver las playlists no necesita la opción de
 sincronizar rekordbox al convertir.
 
-**Ocultar una fuente.** Apple Music o rekordbox se pueden quitar de la barra lateral desde
+**Engine DJ** (nuevo en v1.11.0). La pestaña aparece si el equipo tiene una biblioteca de
+Engine DJ (`engineAvailable`, `useSourceBrowser.ts:75`), y si no, Ajustes lo dice
+(`settings.sourceEngineUnavailable`). Lista sus playlists y también «Añadidas recientemente»
+(`readEngineRecentCount`, `enginePlaylists.ts:185`), y abre sus pistas en el editor de cues
+(ver «Editor de cues de rekordbox», en §11).
+
+**Ocultar una fuente.** Apple Music, rekordbox o Engine DJ se pueden quitar de la barra lateral desde
 su menú en la propia barra o en Ajustes → General → Fuentes, y volver a mostrar desde ahí
 (`hiddenSources`, `settings.ts:86`, `shared/hiddenSources.ts`). Ocultarla solo la quita de la
 barra y no cambia su sincronización al convertir (`settings.sourcesHint`).
@@ -1257,7 +1263,9 @@ sigue apuntando al original, cuyo audio no cambió, se queda con los suyos
 (`patchFor`, `traktorNml.ts:432-440`); si la colección ya tenía una entrada para
 el convertido, recibe ahí sus cues.
 
-**El `COVERARTID` se conserva tal cual lo escribió Traktor.** Borrarlo solo
+**El `COVERARTID` se conserva tal cual lo escribió Traktor**, salvo que lo compartan otras
+entradas (v1.11.0): entonces la pista convertida suelta el suyo para que Traktor le dibuje su
+propia carátula y no repinte el resto del disco (`refreshedCoverIds`, `traktorNml.ts:170`). Borrarlo solo
 devolvía la entrada a la misma caché vieja; lo que hace redibujar la portada es
 reescribir los tres tamaños cacheados (`traktorCoverCache.ts:73`, enganchado en
 `traktorNmlLibrary.ts:85-88`).
@@ -1407,12 +1415,19 @@ Estas teclas viven en la sección, no en la tabla de atajos rebindables.
 **Se escribe solo en la colección de rekordbox.** «Guardar en rekordbox» escribe
 `djmdCue`, actualiza `contentCue` y sube `CueUpdated` de la pista (`applyCueChanges`,
 `rekordboxCues.ts:216`), como hace rekordbox al poner un cue a mano. No se escriben en el
-fichero ni en Traktor, Serato o Engine DJ. El guardado pasa por la misma cola que las
+fichero ni en Traktor o Serato. El guardado pasa por la misma cola que las
 playlists (`rekordboxCuesIpc.ts:75-78`). Con rekordbox cerrado se aplica al momento, con copia
 de seguridad, y con rekordbox abierto espera a que se cierre. Si la pista cambió en rekordbox
 mientras esperaba, el guardado se descarta y se muestra lo que tiene rekordbox
 (`editor.cues.queuedStale`). Salir con cues sin guardar pide confirmación
 (`main/index.ts:524-530`).
+
+**También para Engine DJ** (nuevo en v1.11.0). Una pista abierta desde la pestaña Engine DJ
+usa el mismo editor, Auto marcar incluido, y «Guardar en Engine DJ» escribe en la biblioteca
+de Engine. Engine solo guarda hot cues: los CALL no se escriben y el aviso dice cuáles
+(`engineCuesWrite.ts:112-115`, `editor.cues.engine.calls`). Igual que con rekordbox, espera a
+que Engine DJ esté cerrado, hace copia antes de escribir y descarta el guardado si la pista
+cambió en Engine mientras esperaba (`engineCuesWrite.ts:105`).
 
 **La escucha va en el tiempo de rekordbox** (v1.10.0). Chromium reproduce un MP3 con
 cabecera LAME un frame antes de donde rekordbox coloca los milisegundos, así que el editor
@@ -1447,7 +1462,12 @@ escritos antes de su primer análisis siguen en los mismos milisegundos después
 pistas que rekordbox ya analizó se ajustan: cada cue va al golpe más cercano si está a un
 cuarto de golpe o menos, y si no se queda donde está y se avisa (`onRekordboxGrid`,
 `rekordboxProvisional.ts:52`, `FIT_SHARE_OF_BEAT`). Si los cues se cambiaron en rekordbox
-mientras tanto, no se tocan. El aviso dice cuántos se movieron y cuánto el que más.
+mientras tanto, no se tocan. El aviso dice cuántos se movieron y cuánto el que más. Desde
+v1.11.0 la vigilancia del cierre de rekordbox arranca al guardar, así que con Surco abierto
+el ajuste llega al cerrar rekordbox sin reiniciar (`createProvisionalList`,
+`rekordboxProvisional.ts:28`). Si un cue se queda fuera, el aviso trae **«Ir al cue»**, que
+abre «Añadidas recientemente», selecciona la pista y deja el editor maximizado con el cabezal
+en ese cue (`revealStep`, `lib/revealCue.ts`; `focusCue`, `lib/cueSession.ts`).
 
 ### Flujos de cues
 
@@ -1512,6 +1532,14 @@ no lo lee), NTFS, GPT (ni CDJ-2000 ni NXS2) y una carpeta que no es la raíz del
 pistas cuyo volumen de origen no está montado (`usbExport.ts:280-300`).
 
 **Plataformas.** macOS y Windows. En Linux no se ofrece (`usbExportIpc.ts:46-52`).
+
+**Para Engine DJ** (nuevo en v1.11.0). Desde el árbol de Engine DJ, «Exportar a USB» escribe
+en el USB una biblioteca de Engine (`Engine Library`) con la música copiada al lado
+(`createEngineUsbExporter`, `engineUsbExport.ts:378`). Si el USB ya tiene una biblioteca que
+escribió Surco, aprovecha sus copias y sustituye las playlists del mismo nombre. Si la
+biblioteca la hizo otro programa, o es de otra versión de Engine, no toca nada
+(`engineUsbExport.ts:201-210`). Exige Engine DJ cerrado y nunca va a la vez que un export de
+rekordbox. Sin las opciones propias de rekordbox (My Settings, sincronización).
 
 ### Tu propia copia de rekordbox
 
@@ -1771,12 +1799,13 @@ Recopilado de los cinco informes. Cada punto está verificado.
 1. **Cue points de Traktor:** se conservan en MP3, AIFF (las dos grafías, `.aif` y
    `.aiff`), FLAC y WAV, en cualquier cruce entre esos cuatro. **No en ALAC/M4A**, que
    no tiene ID3 donde escribirlos. Surco los conserva, **no los edita**, y el editor de cues
-   escribe solo en la colección de rekordbox (`master.db`), nunca en el fichero ni en
-   Traktor, Serato o Engine DJ.
+   escribe solo en la colección de rekordbox (`master.db`) o en la biblioteca de Engine DJ
+   (solo hot cues), nunca en el fichero ni en Traktor o Serato.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. No se transfiere rating ni se
    crean playlists.
-3. **Engine DJ:** no lleva cue points ni beatgrid. Exige Engine cerrado.
+3. **Engine DJ como destino de conversión:** no lleva cue points ni beatgrid. Exige Engine
+   cerrado. Los cues solo llegan a Engine desde su pestaña, y solo los hot cues.
 4. **Exportar a rekordbox/Serato/Traktor/M3U8:** ninguno de los cuatro ficheros
     puente lleva cues, rating ni carátula. Esto es la **exportación**, y no debe
     confundirse con el repunte de la colección real de rekordbox (§11), donde los
