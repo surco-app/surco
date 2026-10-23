@@ -244,6 +244,7 @@ const rekordboxQueue = createRekordboxQueue({
 })
 const provisionalCues = createProvisionalList(
   fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
+  () => rekordboxQueueWatch.poke(),
 )
 const adjustProvisionalCues = (): void =>
   adjustProvisional({

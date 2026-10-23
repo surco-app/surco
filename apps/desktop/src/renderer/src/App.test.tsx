@@ -294,6 +294,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
     rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
+    engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(false),
     rekordboxHasSeparator: vi.fn<Api['rekordboxHasSeparator']>().mockResolvedValue(true),
     rekordboxMembership: vi.fn<Api['rekordboxMembership']>().mockResolvedValue({}),
     editRekordboxPlaylist: vi
@@ -628,7 +629,7 @@ describe('App column widths', () => {
   it('sizes the list as a share of the window, so a wider window gives every column room', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '352px' })
+    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '370px' })
   })
 
   it('saves the dragged list width as a share of the window, not as pixels', async () => {
@@ -657,7 +658,7 @@ describe('App column widths', () => {
     await addTwoTracks()
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveStyle({
-        width: `${Math.round((1218 * 0.3) / 0.83)}px`,
+        width: `${Math.round((1278 * 0.3) / 0.83)}px`,
       }),
     )
   })
@@ -1155,11 +1156,15 @@ describe('App USB export', () => {
 })
 
 describe('App source rail', () => {
-  it('offers Engine DJ on a machine with no other source, so the DJ finds where to set its library', async () => {
+  it('offers Engine DJ only on a machine with its library, as rekordbox only with a collection', async () => {
     await renderApp()
-    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.engineAvailable).toHaveBeenCalled())
     await act(async () => {})
-    expect(screen.getByTestId('source-rail-engine')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-rail-engine')).not.toBeInTheDocument()
+    cleanup()
+    setApi({ engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true) })
+    await renderApp()
+    expect(await screen.findByTestId('source-rail-engine')).toBeInTheDocument()
     expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
   })
 

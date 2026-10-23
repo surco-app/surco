@@ -13,18 +13,21 @@ export interface RowWaveSources {
   peekWave: (path: string) => Promise<WaveformResult | null>
 }
 
-export function barsOf(peaks: number[], bars = ROW_WAVE_BARS): number[] | null {
-  if (peaks.length === 0) return null
-  return Array.from({ length: bars }, (_, i) => {
-    const from = Math.floor((i * peaks.length) / bars)
-    const to = Math.min(
-      peaks.length,
-      Math.max(from + 1, Math.floor(((i + 1) * peaks.length) / bars)),
-    )
-    let top = 0
-    for (let p = from; p < to; p++) top = Math.max(top, Math.abs(peaks[p]))
-    return Math.round(Math.min(1, top) * 100) / 100
+export function barsOf(
+  wave: Pick<WaveformResult, 'peaks' | 'rms'>,
+  bars = ROW_WAVE_BARS,
+): number[] | null {
+  const { rms } = wave
+  if (rms.length === 0) return null
+  const body = Array.from({ length: bars }, (_, i) => {
+    const from = Math.floor((i * rms.length) / bars)
+    const to = Math.min(rms.length, Math.max(from + 1, Math.floor(((i + 1) * rms.length) / bars)))
+    let sq = 0
+    for (let p = from; p < to; p++) sq += rms[p] * rms[p]
+    return Math.sqrt(sq / (to - from))
   })
+  const top = Math.max(...body) || 1
+  return body.map((v) => Math.round((v / top) * 100) / 100)
 }
 
 async function fromRekordbox(
@@ -47,7 +50,7 @@ async function fromSurco(
   sources: RowWaveSources,
 ): Promise<number[] | null> {
   const wave = await sources.peekWave(request.path)
-  return wave ? barsOf(wave.peaks) : null
+  return wave ? barsOf(wave) : null
 }
 
 export async function rowWaves(

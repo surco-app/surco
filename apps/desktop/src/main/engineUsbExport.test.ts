@@ -158,7 +158,8 @@ function playlistTitles(db: Database.Database, listId: number): string[] {
   const rows = db
     .prepare(
       `SELECT e.id, e.nextEntityId AS next, t.title FROM PlaylistEntity e
-         JOIN Track t ON t.id = e.trackId WHERE e.listId = ?`,
+         JOIN Track t ON t.originDatabaseUuid = e.databaseUuid AND t.originTrackId = e.trackId
+        WHERE e.listId = ?`,
     )
     .all(listId) as { id: number; next: number; title: string }[]
   return chainOrder(rows).map((r) => r.title)

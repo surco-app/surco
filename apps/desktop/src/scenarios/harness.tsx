@@ -284,6 +284,7 @@ function scenarioApi(
     // No scenario has a rekordbox collection: the source rail stays without it, and the
     // queries App mounts get an answer instead of the proxy's "not wired" throw.
     rekordboxAvailable: async () => false,
+    engineAvailable: async () => false,
     loadRekordboxTree: async () => [],
     rekordboxRecentCount: async () => 0,
     loadRekordboxPlaylist: async () => [],

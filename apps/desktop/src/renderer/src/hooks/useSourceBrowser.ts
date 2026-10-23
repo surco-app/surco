@@ -70,17 +70,16 @@ export function useSourceBrowser({
   const isMac = window.api.platform === 'darwin'
 
   const rekordbox = useRekordboxAvailable()
-  const sources: PlaylistSource[] = [
-    ...(isMac ? (['appleMusic'] as const) : []),
-    ...(rekordbox ? (['rekordbox'] as const) : []),
-    ...(import.meta.env.DEV ? (['engine'] as const) : []),
-  ].filter((s) => !hiddenSources.includes(s))
   const engine = useQuery({
     queryKey: ['source-available', 'engine'],
     queryFn: () => window.api.engineAvailable(),
-    enabled: source === 'engine',
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const sources: PlaylistSource[] = [
+    ...(isMac ? (['appleMusic'] as const) : []),
+    ...(rekordbox ? (['rekordbox'] as const) : []),
+    ...(engine.data ? (['engine'] as const) : []),
+  ].filter((s) => !hiddenSources.includes(s))
 
   const tree = useQuery({
     queryKey: ['source-tree', source],

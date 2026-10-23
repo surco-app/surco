@@ -25,7 +25,10 @@ export interface ProvisionalList {
   settle: (contentIds: string[]) => void
 }
 
-export function createProvisionalList(store: QueueStore): ProvisionalList {
+export function createProvisionalList(
+  store: QueueStore,
+  onWaiting: () => void = () => {},
+): ProvisionalList {
   let entries: ProvisionalEntry[] = []
   try {
     const text = store.read()
@@ -39,6 +42,7 @@ export function createProvisionalList(store: QueueStore): ProvisionalList {
     add(entry) {
       entries = [...entries.filter((e) => e.contentId !== entry.contentId), entry]
       save()
+      onWaiting()
     },
     all: () => entries,
     settle(contentIds) {

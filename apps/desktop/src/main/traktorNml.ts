@@ -79,8 +79,8 @@ export interface NmlPatch {
   // artist.
   tags?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
   // Asks for this track's cached thumbnails to be rewritten after the collection is
-  // saved. It does NOT change the ENTRY: the COVERARTID stays exactly as Traktor wrote
-  // it, which is the whole point (see refreshedCoverIds).
+  // saved. The COVERARTID stays exactly as Traktor wrote it unless other entries share
+  // it (see refreshedCoverIds).
   refreshCoverArt?: boolean
   // Where the converted file ended up, so the thumbnails can be rendered from the cover
   // it actually carries. Read at sync time rather than carried as an image: the temp
@@ -163,7 +163,7 @@ export interface CoverRefresh {
 }
 
 // Each entry whose artwork this patch set refreshes, paired with the converted file its
-// new cover lives in. The id is kept, never stripped: Traktor serves the library's
+// new cover lives in. An id no other entry shares is kept: Traktor serves the library's
 // artwork from its own thumbnail cache, so removing the id only asks it to re-read that
 // same stale cache — what actually retires the old picture is overwriting the files
 // under the id it already has (see traktorCoverCache.ts).
@@ -177,11 +177,13 @@ export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefres
   // converted file has no id yet; Traktor mints one when it re-reads the file.
   const coexisting = coexistingOutputs(entries, patches)
   const detached = new Set([...coexisting.values()])
+  const sharedCover = sharedCoverSubstitutions(nml, entries, patches)
   const out: CoverRefresh[] = []
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
     if (!patch?.refreshCoverArt || !patch.outputPath) continue
     if (detached.has(patch)) continue
+    if (sharedCover.has(key(entry.volume, entry.dir, entry.file))) continue
     const coverId = nml.slice(entry.start, entry.end).match(COVER_ID_RE)?.[1]
     if (coverId) out.push({ coverId, file: patch.outputPath })
   }
@@ -196,9 +198,32 @@ export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefres
 // what the converted file was meant to inherit is the music, not the identity.
 // AUDIO_ID sits on ENTRY, COVERARTID on INFO.
 function detachSharedIdentity(block: string): string {
-  return block
-    .replace(/(<ENTRY\b[^>]*?)\s+AUDIO_ID="[^"]*"/, '$1')
-    .replace(/(<INFO\b[^>]*?)\s+COVERARTID="[^"]*"/, '$1')
+  return detachCoverId(block.replace(/(<ENTRY\b[^>]*?)\s+AUDIO_ID="[^"]*"/, '$1'))
+}
+
+function detachCoverId(block: string): string {
+  return block.replace(/(<INFO\b[^>]*?)\s+COVERARTID="[^"]*"/, '$1')
+}
+
+function sharedCoverSubstitutions(
+  nml: string,
+  entries: NmlEntry[],
+  patches: NmlPatch[],
+): Map<string, NmlPatch> {
+  const ids = entries.map((e) => nml.slice(e.start, e.end).match(COVER_ID_RE)?.[1])
+  const counts = new Map<string, number>()
+  for (const id of ids) if (id) counts.set(id, (counts.get(id) ?? 0) + 1)
+  const index = indexPatches(patches)
+  const detached = new Set(coexistingOutputs(entries, patches).values())
+  const out = new Map<string, NmlPatch>()
+  entries.forEach((entry, i) => {
+    const id = ids[i]
+    if (!id || (counts.get(id) ?? 0) < 2) return
+    const patch = matchPatch(entry, index)
+    if (!patch?.refreshCoverArt || !patch.outputPath || detached.has(patch)) return
+    out.set(key(entry.volume, entry.dir, entry.file), patch)
+  })
+  return out
 }
 
 // The patches whose output has its own ENTRY alongside the source's — the coexisting
@@ -223,9 +248,13 @@ function coexistingOutputs(entries: NmlEntry[], patches: NmlPatch[]): Map<string
 // and cache entry when it sees the audio is newer than the NML — without that the
 // converted track shows no cover at all rather than the one embedded in it.
 export function detachedOutputPaths(nml: string, patches: NmlPatch[]): string[] {
-  const detached = coexistingOutputs(findEntries(nml), patches)
+  const entries = findEntries(nml)
+  const detached = coexistingOutputs(entries, patches)
   const out = new Set<string>()
-  for (const patch of detached.values()) {
+  for (const patch of [
+    ...detached.values(),
+    ...sharedCoverSubstitutions(nml, entries, patches).values(),
+  ]) {
     if (patch.outputPath) out.add(patch.outputPath)
   }
   return [...out]
@@ -502,6 +531,7 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
   const coexisting = coexistingOutputs(entries, patches)
+  const sharedCover = sharedCoverSubstitutions(nml, entries, patches)
   const produced = producedOutputs(patches)
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
@@ -510,7 +540,11 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
     const at = key(entry.volume, entry.dir, entry.file)
     // The converted file's own ENTRY is not the one the patch matches (that is the
     // source's), so the detach is keyed on the entry's location rather than on a match.
-    const detached = coexisting.has(at) ? detachSharedIdentity(block) : block
+    const detached = coexisting.has(at)
+      ? detachSharedIdentity(block)
+      : sharedCover.has(at)
+        ? detachCoverId(block)
+        : block
     const patched = rewriteEntry(
       detached,
       entry,

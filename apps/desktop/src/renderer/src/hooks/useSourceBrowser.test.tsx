@@ -68,10 +68,12 @@ describe('useSourceBrowser', () => {
     )
   })
 
-  it('leaves Engine DJ out of a release build, where the source is not offered to users yet', async () => {
+  it('offers Engine DJ in a release build too, now that its source is tested against Engine DJ and offered to every user', async () => {
     vi.stubEnv('DEV', false)
     const { result } = setup({})
-    await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
+    )
   })
 
   it('leaves out a source the user hid, whichever one it is', async () => {
@@ -97,7 +99,7 @@ describe('useSourceBrowser', () => {
     expect(result.current.sources).toEqual(['appleMusic', 'engine'])
   })
 
-  it('offers Engine DJ even without a library, so the DJ finds the tab that says where to set it', async () => {
+  it('leaves Engine DJ out on a machine without its library, as rekordbox is left out without a collection, so no tab shows for an app the DJ does not have', async () => {
     const { result } = setup(
       {
         rekordboxAvailable: vi.fn().mockResolvedValue(false),
@@ -105,8 +107,9 @@ describe('useSourceBrowser', () => {
       },
       'win32',
     )
+    await waitFor(() => expect(window.api.engineAvailable).toHaveBeenCalled())
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
-    expect(result.current.sources).toEqual(['engine'])
+    expect(result.current.sources).toEqual([])
   })
 
   it('says the Engine DJ library is missing only while Engine DJ is open and its database is not there', async () => {

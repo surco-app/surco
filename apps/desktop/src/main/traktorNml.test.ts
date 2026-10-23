@@ -372,6 +372,56 @@ describe('identity of a converted file that coexists with its source', () => {
   })
 })
 
+describe('a cover id Traktor shares with other tracks', () => {
+  const ALBUM = `<NML VERSION="20"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Pneuma" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="pneuma.flac" VOLUME="HD"></LOCATION><INFO COVERARTID="083/T45Z2CDD" BITRATE="1042000"></INFO></ENTRY>
+<ENTRY TITLE="Hymn" AUDIO_ID="AZpqq7u7u7q6qqu6"><LOCATION DIR="/:M/:" FILE="hymn.flac" VOLUME="HD"></LOCATION><INFO COVERARTID="083/T45Z2CDD" BITRATE="1042000"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+  const substitution = {
+    volume: 'HD',
+    dir: '/:M/:',
+    file: 'pneuma.flac',
+    newFile: 'pneuma.mp3',
+    outputVolume: 'HD',
+    outputDir: '/:M/:',
+    outputFile: 'pneuma.mp3',
+    outputPath: '/M/pneuma.mp3',
+    refreshCoverArt: true,
+  }
+
+  function entryFor(nml: string, file: string): string {
+    const at = nml.indexOf(`FILE="${file}"`)
+    return nml.slice(nml.lastIndexOf('<ENTRY', at), nml.indexOf('</ENTRY>', at))
+  }
+
+  it('leaves the cached thumbnails of the rest of the album alone', () => {
+    expect(refreshedCoverIds(ALBUM, [substitution])).toEqual([])
+  })
+
+  it('gives up only the cover id of the converted track so Traktor draws its own cover', () => {
+    const out = applyPatches(ALBUM, [substitution])
+
+    const converted = entryFor(out, 'pneuma.mp3')
+    expect(converted).not.toContain('COVERARTID')
+    expect(converted).toContain('AUDIO_ID="AYgFVndld3Vndmia"')
+    expect(entryFor(out, 'hymn.flac')).toContain('COVERARTID="083/T45Z2CDD"')
+  })
+
+  it('names the converted file so Traktor reads its cover again', () => {
+    expect(detachedOutputPaths(ALBUM, [substitution])).toEqual(['/M/pneuma.mp3'])
+  })
+
+  it('keeps the shared id of a track whose artwork the conversion did not carry', () => {
+    const out = applyPatches(ALBUM, [{ ...substitution, refreshCoverArt: undefined }])
+
+    expect(entryFor(out, 'pneuma.mp3')).toContain('COVERARTID="083/T45Z2CDD"')
+    expect(detachedOutputPaths(ALBUM, [{ ...substitution, refreshCoverArt: undefined }])).toEqual(
+      [],
+    )
+  })
+})
+
 // A conversion to another folder, or beside a source that stays, leaves the source's
 // audio exactly as it was, so the cues Traktor keeps for it are still right. The tree read
 // back from the converted file has been moved by the trim and the per-format calibration;

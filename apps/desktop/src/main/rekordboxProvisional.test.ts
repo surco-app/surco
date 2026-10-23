@@ -172,6 +172,13 @@ describe('createProvisionalList', () => {
     expect(list.all().map((e) => e.contentId)).toEqual(['104'])
   })
 
+  it('says when a track starts waiting, so a Surco left open watches for rekordbox closing instead of waiting for a restart', () => {
+    const waiting = vi.fn()
+    const list = createProvisionalList(memoryStore(), waiting)
+    list.add(entry())
+    expect(waiting).toHaveBeenCalledTimes(1)
+  })
+
   it('starts empty from a file it cannot read, instead of refusing to start', () => {
     const store = memoryStore()
     store.text = '{not json'

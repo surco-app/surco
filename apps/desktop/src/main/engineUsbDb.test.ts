@@ -3,12 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { analysedTrack } from './enginePerformanceFixture'
 import { readEngineTree } from './enginePlaylists'
-import {
-  createEngineUsbDb,
-  libraryUuid,
-  putEngineUsbPlaylist,
-  putEngineUsbTracks,
-} from './engineUsbDb'
+import { createEngineUsbDb, putEngineUsbPlaylist, putEngineUsbTracks } from './engineUsbDb'
 
 const DESKTOP_UUID = 'desktop-uuid'
 const ENGINE_4_USER_VERSION = 4194305
@@ -230,6 +225,14 @@ describe('putEngineUsbPlaylist', () => {
       databaseUuid: string
       membershipReference: number
     }[]
+    const byOrigin = usb.prepare(
+      'SELECT id FROM Track WHERE originDatabaseUuid = ? AND originTrackId = ?',
+    )
+    for (const r of rows) {
+      const found = byOrigin.get(r.databaseUuid, r.trackId) as { id: number } | undefined
+      expect(found).toBeDefined()
+      r.trackId = found?.id as number
+    }
     const pointed = new Set(rows.map((r) => r.nextEntityId))
     const heads = rows.filter((r) => !pointed.has(r.id))
     expect(heads.length).toBeLessThanOrEqual(1)
@@ -249,8 +252,21 @@ describe('putEngineUsbPlaylist', () => {
     putEngineUsbPlaylist(usb, ['Warm up'], [ids[2], ids[0], ids[1]], NOW)
     const entries = chain(usb, listId(usb, 'Warm up'))
     expect(entries.map((e) => e.trackId)).toEqual([ids[2], ids[0], ids[1]])
-    expect(new Set(entries.map((e) => e.databaseUuid))).toEqual(new Set([libraryUuid(usb)]))
     expect(entries.every((e) => e.membershipReference === 0)).toBe(true)
+  })
+
+  it('names each entry by the uuid and id the track came from, because Engine DJ finds a playlist track by its origin and showed every exported playlist empty', () => {
+    const { usb, ids } = usbWithTracks()
+    putEngineUsbPlaylist(usb, ['Warm up'], [ids[2], ids[0]], NOW)
+    putEngineUsbPlaylist(usb, ['Bases', '2K'], [ids[1]], NOW)
+    expect(
+      usb.prepare('SELECT databaseUuid, trackId FROM PlaylistEntity ORDER BY listId, id').all(),
+    ).toEqual([
+      { databaseUuid: DESKTOP_UUID, trackId: 3 },
+      { databaseUuid: DESKTOP_UUID, trackId: 1 },
+      { databaseUuid: DESKTOP_UUID, trackId: 2 },
+      { databaseUuid: DESKTOP_UUID, trackId: 2 },
+    ])
   })
 
   it('lists a track once even if the desktop playlist repeats it, as Engine allows one entry per track', () => {

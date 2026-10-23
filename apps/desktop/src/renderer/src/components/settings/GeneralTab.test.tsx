@@ -14,6 +14,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
   revealLog: () => {},
   platform: 'darwin',
   rekordboxAvailable: () => Promise.resolve(true),
+  engineAvailable: () => Promise.resolve(true),
 }
 
 import { GeneralTab } from './GeneralTab'
@@ -133,12 +134,17 @@ describe('GeneralTab beta channel', () => {
 
 describe('GeneralTab sources', () => {
   function renderSources(
-    { platform, rekordbox }: { platform: string; rekordbox: boolean },
+    {
+      platform,
+      rekordbox,
+      engine = true,
+    }: { platform: string; rekordbox: boolean; engine?: boolean },
     hiddenSources: PlaylistSource[] = [],
   ) {
     Object.assign((window as unknown as { api: object }).api, {
       platform,
       rekordboxAvailable: () => Promise.resolve(rekordbox),
+      engineAvailable: () => Promise.resolve(engine),
     })
     const patch = vi.fn<(key: 'hiddenSources', value: PlaylistSource[]) => void>()
     render(
@@ -193,20 +199,29 @@ describe('GeneralTab sources', () => {
     expect(screen.getByTestId('settings-source-appleMusic')).toBeEnabled()
   })
 
-  it('lets Engine DJ be hidden on any machine, since its source is in the rail with or without a library', async () => {
+  it('lets Engine DJ be hidden on a machine that has its library', async () => {
     const patch = renderSources({ platform: 'win32', rekordbox: false })
     const engine = screen.getByTestId('settings-source-engine')
-    expect(engine).toBeEnabled()
+    await waitFor(() => expect(engine).toBeEnabled())
     expect(engine).toBeChecked()
     fireEvent.click(engine)
     expect(patch).toHaveBeenCalledWith('hiddenSources', ['engine'])
   })
 
-  it('leaves Engine DJ out of a release build, where the source is not offered to users yet', async () => {
+  it('keeps the Engine DJ switch in view without a library, disabled and saying why, as the rail leaves the source out there', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, engine: false })
+    await waitFor(() =>
+      expect(screen.getByText(i18n.t('settings.sourceEngineUnavailable'))).toBeInTheDocument(),
+    )
+    expect(screen.getByTestId('settings-source-engine')).toBeDisabled()
+    expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled()
+  })
+
+  it('lists Engine DJ in a release build too, now that its source is tested against Engine DJ and offered to every user', async () => {
     vi.stubEnv('DEV', false)
     renderSources({ platform: 'darwin', rekordbox: true })
     await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
-    expect(screen.queryByTestId('settings-source-engine')).not.toBeInTheDocument()
+    expect(screen.getByTestId('settings-source-engine')).toBeChecked()
   })
 
   it('says that hiding a source leaves its sync alone', async () => {
