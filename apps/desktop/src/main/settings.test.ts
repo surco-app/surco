@@ -315,6 +315,12 @@ describe('nested settings from an older install', () => {
     expect(getSettings().stats.imported).toBe(5)
   })
 
+  it('reads an empty output folder as the default one, since an empty folder sends conversions to the working directory and rekordbox gets a path with no folder', () => {
+    writeFileSync(localFile(), JSON.stringify({ outputDir: '' }))
+    expect(getSettings().outputDir).toBe(defaults.outputDir)
+    expect(defaults.outputDir).not.toBe('')
+  })
+
   it('fills deezerMatches for a stats object written before the Deezer source existed', () => {
     writeFileSync(
       localFile(),

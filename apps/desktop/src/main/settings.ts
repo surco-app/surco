@@ -320,6 +320,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     // Not a spread-merge like the two above: a 0.49-0.50 file stores declick as a
     // bare mode string, which normalizeDeclick upgrades (and repairs) instead.
     declick: normalizeDeclick(patch.declick ?? base.declick),
+    outputDir: patch.outputDir || base.outputDir,
     outputFormat: normalizeOutputFormat(patch.outputFormat ?? base.outputFormat),
     // Sanitized here rather than at the field: this is the one place every settings file
     // passes through, including an old one written before these existed and one arriving
