@@ -178,11 +178,11 @@ describe('GeneralTab sources', () => {
     expect(patch).toHaveBeenCalledWith('hiddenSources', ['engine'])
   })
 
-  it('leaves Engine DJ out of a release build, where the source is not offered to users yet', async () => {
+  it('lists Engine DJ in a release build too, now that its source is tested against Engine DJ and offered to every user', async () => {
     vi.stubEnv('DEV', false)
     renderSources({ platform: 'darwin', rekordbox: true })
     await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
-    expect(screen.queryByTestId('settings-source-engine')).not.toBeInTheDocument()
+    expect(screen.getByTestId('settings-source-engine')).toBeChecked()
   })
 
   it('says that hiding a source leaves its sync alone', async () => {

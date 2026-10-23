@@ -68,10 +68,12 @@ describe('useSourceBrowser', () => {
     )
   })
 
-  it('leaves Engine DJ out of a release build, where the source is not offered to users yet', async () => {
+  it('offers Engine DJ in a release build too, now that its source is tested against Engine DJ and offered to every user', async () => {
     vi.stubEnv('DEV', false)
     const { result } = setup({})
-    await waitFor(() => expect(result.current.sources).toEqual(['appleMusic', 'rekordbox']))
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
+    )
   })
 
   it('leaves out a source the user hid, whichever one it is', async () => {

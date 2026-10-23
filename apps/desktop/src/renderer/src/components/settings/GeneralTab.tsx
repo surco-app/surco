@@ -18,6 +18,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
+const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine']
 
 interface Props {
   synced: SyncedDraft
@@ -59,11 +60,6 @@ export function GeneralTab({
   useEffect(() => {
     window.api.rekordboxAvailable().then(setRekordboxFound)
   }, [])
-  const sources: PlaylistSource[] = [
-    'appleMusic',
-    'rekordbox',
-    ...(import.meta.env.DEV ? (['engine'] as const) : []),
-  ]
   const unavailable: Record<PlaylistSource, boolean> = {
     appleMusic: !isMacOS(),
     rekordbox: rekordboxFound !== true,
@@ -202,7 +198,7 @@ export function GeneralTab({
         tester's laptop channel onto the machine he plays gigs from. */}
       <SettingsSection eyebrow={tr('settings.sourcesTitle')}>
         <div className="flex flex-col gap-3">
-          {sources.map((source) => (
+          {SOURCES.map((source) => (
             <SettingsCheckboxField
               key={source}
               testid={`settings-source-${source}`}
