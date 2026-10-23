@@ -1198,6 +1198,7 @@
     "updates": "Aktualisierungen",
     "betaUpdates": "Beta-Versionen erhalten",
     "betaUpdatesHint": "Betas kommen vor den stabilen Versionen und sind zum Ausprobieren von Neuem da, enthalten aber Fehler, die noch niemand gefunden hat. Betrifft nur diesen Rechner; die Änderung greift beim Neustart von Surco.",
+    "betaUpdatesStoreHint": "Betas gibt es nur für den Installer von der Website. Diese Kopie wird über den Microsoft Store aktualisiert.",
     "exportConfig": "Exportieren…",
     "importConfig": "Importieren…",
     "importConfirm": "Dadurch werden alle deine aktuellen Einstellungen ersetzt. Fortfahren?",

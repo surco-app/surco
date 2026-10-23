@@ -66,6 +66,7 @@ const invokeAudio = <K extends keyof AudioAnalysisIpc>(
 const api: Api = {
   platform:
     (process.env.SURCO_SIMULATE_PLATFORM as NodeJS.Platform | undefined) ?? process.platform,
+  storeBuild: process.windowsStore === true,
   // Resolved once at startup so the renderer (and the ErrorBoundary above it) can
   // stamp feedback with the version synchronously, like platform.
   version: ipcRenderer.sendSync('app:version') as string,

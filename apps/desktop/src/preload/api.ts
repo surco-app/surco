@@ -82,6 +82,9 @@ import type {
 
 export interface Api {
   platform: NodeJS.Platform
+  // True when this copy runs from its Microsoft Store package, which updates through the
+  // Store rather than electron-updater.
+  storeBuild: boolean
   version: string
   getPathForFile: (file: File) => string
   expandPaths: (paths: string[]) => Promise<string[]>

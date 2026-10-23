@@ -129,6 +129,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
   const unsubscribe = () => noop
   return {
     platform: 'darwin',
+    storeBuild: false,
     version: '0.0.0-test',
     getPathForFile: () => '',
     expandPaths: async () => [],

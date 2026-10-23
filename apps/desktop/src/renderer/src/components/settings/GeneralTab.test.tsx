@@ -105,6 +105,30 @@ describe('GeneralTab beta channel', () => {
     const hint = screen.getByText(i18n.t('settings.betaUpdatesHint'))
     expect(hint.textContent).toMatch(/bugs|errores/i)
   })
+
+  // A Store copy updates through the Store, which only ever ships stable builds. The box
+  // stays where it is, greyed out and saying why, instead of vanishing from the tab; and
+  // a user who comes from the installer with betas on still sees that it is on.
+  it('stays visible but locked in a copy from the Microsoft Store', () => {
+    const api = window.api as unknown as { storeBuild?: boolean }
+    api.storeBuild = true
+    try {
+      renderTab({ betaUpdates: true })
+
+      const box = screen.getByTestId('settings-beta-updates')
+      expect(box).toBeDisabled()
+      expect(box).toBeChecked()
+      expect(screen.getByText(i18n.t('settings.betaUpdatesStoreHint'))).toBeInTheDocument()
+    } finally {
+      api.storeBuild = false
+    }
+  })
+
+  it('stays open in the installer from the web', () => {
+    renderTab()
+
+    expect(screen.getByTestId('settings-beta-updates')).toBeEnabled()
+  })
 })
 
 describe('GeneralTab sources', () => {

@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguagePref, PlaylistSource, ThemePref } from '../../../../shared/types'
-import { isMacOS } from '../../lib/platform'
+import { isMacOS, isStoreBuild } from '../../lib/platform'
 import { formatFileSize } from '../../lib/properties'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
@@ -232,7 +232,8 @@ export function GeneralTab({
           checked={local.betaUpdates}
           onChange={(v) => patchLocal('betaUpdates', v)}
           label={tr('settings.betaUpdates')}
-          hint={tr('settings.betaUpdatesHint')}
+          hint={tr(isStoreBuild() ? 'settings.betaUpdatesStoreHint' : 'settings.betaUpdatesHint')}
+          disabled={isStoreBuild()}
         />
       </SettingsSection>
     </>

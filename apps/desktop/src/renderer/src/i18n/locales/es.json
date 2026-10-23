@@ -1198,6 +1198,7 @@
     "updates": "Actualizaciones",
     "betaUpdates": "Recibir versiones beta",
     "betaUpdatesHint": "Las betas llegan antes que las versiones estables y sirven para probar lo nuevo, pero traen errores que aún no se han encontrado. Solo afecta a este equipo, y el cambio se aplica al reiniciar Surco.",
+    "betaUpdatesStoreHint": "Las versiones de prueba solo llegan al instalador descargado desde la web. Esta copia se actualiza desde la Microsoft Store.",
     "exportConfig": "Exportar…",
     "importConfig": "Importar…",
     "importConfirm": "Esto reemplazará toda tu configuración actual. ¿Continuar?",

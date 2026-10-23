@@ -47,6 +47,7 @@ interface MenuStrings {
   checkUpdates: string
   upToDate: string
   updatesDevOnly: string
+  updatesFromStore: string
   conflictExists: string
   conflictReserved: string
   conflictOverwrite: string
@@ -143,6 +144,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     checkUpdates: 'Buscar actualizaciones…',
     upToDate: 'Ya tienes la última versión de Surco.',
     updatesDevOnly: 'Las actualizaciones solo están disponibles en la app instalada.',
+    updatesFromStore: 'Esta copia de Surco viene de la Microsoft Store y se actualiza desde allí.',
     conflictExists: 'Ya existe un archivo con ese nombre en la carpeta de destino.',
     conflictReserved:
       'Otra pista de esta conversión se va a guardar con este mismo nombre y aún no está escrita. Con Sobrescribir o Conservar ambos, esta se guarda con un número añadido al nombre.',
@@ -249,6 +251,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     checkUpdates: 'Check for Updates…',
     upToDate: "You're on the latest version of Surco.",
     updatesDevOnly: 'Updates are only available in the installed app.',
+    updatesFromStore: 'This copy of Surco comes from the Microsoft Store and updates through it.',
     conflictExists: 'A file with this name already exists in the destination folder.',
     conflictReserved:
       'Another track in this conversion is being saved under this same name and has not been written yet. Overwrite or Keep both saves this one with a number added to its name.',
@@ -355,6 +358,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     checkUpdates: 'Nach Updates suchen…',
     upToDate: 'Du hast bereits die neueste Version von Surco.',
     updatesDevOnly: 'Updates sind nur in der installierten App verfügbar.',
+    updatesFromStore:
+      'Diese Kopie von Surco stammt aus dem Microsoft Store und wird über ihn aktualisiert.',
     conflictExists: 'Im Zielordner existiert bereits eine Datei mit diesem Namen.',
     conflictReserved:
       'Ein anderer Track dieser Konvertierung wird unter demselben Namen gespeichert und ist noch nicht geschrieben. Mit Überschreiben oder Beide behalten wird dieser mit einer angehängten Nummer gespeichert.',
@@ -462,6 +467,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     checkUpdates: 'Rechercher les mises à jour…',
     upToDate: 'Tu as déjà la dernière version de Surco.',
     updatesDevOnly: "Les mises à jour ne sont disponibles que dans l'app installée.",
+    updatesFromStore:
+      'Cette copie de Surco vient du Microsoft Store et se met à jour par celui-ci.',
     conflictExists: 'Un fichier du même nom existe déjà dans le dossier de destination.',
     conflictReserved:
       "Un autre morceau de cette conversion va être enregistré sous ce même nom et n'est pas encore écrit. Avec Écraser ou Conserver les deux, celui-ci est enregistré avec un numéro ajouté à son nom.",
@@ -570,6 +577,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     checkUpdates: 'Buscar atualizações…',
     upToDate: 'Você já tem a versão mais recente do Surco.',
     updatesDevOnly: 'As atualizações só estão disponíveis no app instalado.',
+    updatesFromStore: 'Esta cópia do Surco vem da Microsoft Store e é atualizada por ela.',
     conflictExists: 'Já existe um arquivo com esse nome na pasta de destino.',
     conflictReserved:
       'Outra faixa desta conversão vai ser salva com esse mesmo nome e ainda não foi gravada. Com Sobrescrever ou Manter ambos, esta é salva com um número adicionado ao nome.',

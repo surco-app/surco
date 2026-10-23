@@ -10,6 +10,11 @@ export function isWindows(): boolean {
   return window.api.platform === 'win32'
 }
 
+// A copy installed from the Microsoft Store, which takes its updates from the Store.
+export function isStoreBuild(): boolean {
+  return window.api.storeBuild === true
+}
+
 export function revealCommandKey(): string {
   return isWindows() ? 'commands.revealWin' : 'commands.reveal'
 }

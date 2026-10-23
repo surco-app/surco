@@ -164,6 +164,7 @@ import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
+import { updateMode } from './updateMode'
 import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
@@ -499,10 +500,15 @@ let requestUpdateCheck: (() => void) | null = null
 // stops it before the app goes.
 let usbExport: { busy: () => boolean; stop: () => Promise<void> } | null = null
 
+const currentUpdateMode = (): ReturnType<typeof updateMode> =>
+  updateMode({ packaged: app.isPackaged, windowsStore: process.windowsStore === true })
+
 function checkForUpdates(win: BrowserWindow): void {
-  if (!app.isPackaged) {
+  const mode = currentUpdateMode()
+  if (mode !== 'updater') {
     const t = createMenuT(menuLocale())
-    dialog.showMessageBox(win, { type: 'info', message: t('updatesDevOnly') })
+    const message = t(mode === 'store' ? 'updatesFromStore' : 'updatesDevOnly')
+    dialog.showMessageBox(win, { type: 'info', message })
     return
   }
   manualUpdateCheck = true
@@ -1718,8 +1724,9 @@ app.whenReady().then(() => {
   // Downloads a newer version in the background, then tells the renderer so it can
   // show a "restart to update" toast (which calls quitAndInstall via update:install).
   // Only in packaged builds — there is no update feed in dev, and macOS requires
-  // the build to be signed and notarized.
-  if (app.isPackaged) {
+  // the build to be signed and notarized — and never in a Microsoft Store copy, which
+  // the Store updates itself.
+  if (currentUpdateMode() === 'updater') {
     const updater = electronUpdater.autoUpdater
     // Route the updater's own logs to a file (~/Library/Logs/Surco/main.log on
     // macOS) so a failed install — which Squirrel.Mac otherwise swallows — leaves
