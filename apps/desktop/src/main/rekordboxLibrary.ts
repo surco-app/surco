@@ -218,7 +218,19 @@ export async function repointTracks(
         const { to, meta, audio, onWrite } = repoints[w.index]
         update.run(rekordboxStoredPath(to), basename(to), w.fileType, w.size, w.id)
         if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
-        if (audio) shiftCues(write, w.id, audio.cueShiftMs, { now })
+        if (audio) {
+          shiftCues(write, w.id, audio.cueShiftMs, { now })
+          // Measured in the user's rekordbox 24/10: after a repoint rekordbox never analyses
+          // the new file by itself and keeps drawing the old one's waveform and grid over
+          // it. An empty analysis is what a freshly imported track has, and rekordbox
+          // analysed it on the next launch keeping every cue.
+          write
+            .prepare(
+              `UPDATE djmdContent SET AnalysisDataPath = '', Analysed = 0, AnalysisUpdated = NULL
+                WHERE ID = ?`,
+            )
+            .run(w.id)
+        }
         // Placed after the statement so a test can fail the write once the row has
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()

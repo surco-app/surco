@@ -653,6 +653,23 @@ describe('a repoint whose audio was rewritten', () => {
     expect(readAfter(dbPath).cueMs).toBe(31949)
   })
 
+  // Same test: rekordbox never analysed the converted file on its own, not even with
+  // "Analyse track", and kept drawing the old MP3's waveform and grid over the new audio.
+  // That is why the cues still LOOKED right while they sounded off. Clearing the analysis
+  // is what made it analyse the new file, keeping every cue.
+  it('marks the track as not analysed so rekordbox analyses the new file', async () => {
+    const output = join(audioDir, '02 Everybody.aiff')
+    await writeFile(output, Buffer.alloc(5000))
+
+    await repointTrack(dbPath, { from: MP3, to: output, audio: { cueShiftMs: 0 } })
+
+    expect(readAfter(dbPath).analysis).toEqual({
+      AnalysisDataPath: '',
+      Analysed: 0,
+      AnalysisUpdated: null,
+    })
+  })
+
   // A tags-only update leaves the audio as it was: its analysis is still true, and making
   // rekordbox redo it would throw away a grid the DJ may have corrected by hand.
   it('keeps the analysis and the cues when the audio was not rewritten', async () => {
