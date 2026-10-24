@@ -23,6 +23,10 @@
       {
         "text": "Waves in the list look like the player’s. A very loud master no longer shows as a solid block.",
         "in": "1.11.0"
+      },
+      {
+        "text": "Converting a track you keep in rekordbox no longer moves its cue points. They stay on the same beat when you change format or trim the silence at the start, and rekordbox analyses it again when it opens, so you see the new file's waveform instead of the old one's.",
+        "in": "1.11.1"
       }
     ]
   },

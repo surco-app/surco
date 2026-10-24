@@ -23,6 +23,10 @@
       {
         "text": "Las ondas de la lista se ven como en el reproductor. Un máster muy fuerte ya no sale como un bloque lleno.",
         "in": "1.11.0"
+      },
+      {
+        "text": "Convertir una pista que tienes en rekordbox ya no te mueve los cues. Siguen sobre el mismo golpe aunque cambies de formato o recortes el silencio del principio, y rekordbox la vuelve a analizar al abrirse, así que ves la onda del fichero nuevo y no la del antiguo.",
+        "in": "1.11.1"
       }
     ]
   },
