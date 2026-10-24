@@ -12,7 +12,7 @@ import {
   pwv5Section,
   section,
 } from './anlzFixture'
-import { applyCueChanges, cueFingerprint, readTrackCues } from './rekordboxCues'
+import { applyCueChanges, cueFingerprint, readTrackCues, shiftCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
@@ -464,6 +464,134 @@ describe('applyCueChanges', () => {
     expect(db.prepare(`SELECT ID FROM djmdCue WHERE ContentID = '104'`).all()).toEqual([
       { ID: 'other' },
     ])
+    db.close()
+  })
+})
+
+describe('shiftCues', () => {
+  const NOW = new Date('2026-10-24T19:00:00.000Z')
+  const STAMP = '2026-10-24 19:00:00.000 +00:00'
+
+  async function writable() {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbshift-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      cueRows: [
+        { ID: 'q2', ContentID: '103', InMsec: 8000, Kind: 1, ColorTableIndex: 1 },
+        { ID: 'q1', ContentID: '103', InMsec: 8000, Kind: 0, ColorTableIndex: null },
+        {
+          ID: 'loop',
+          ContentID: '103',
+          InMsec: 16000,
+          Kind: 2,
+          ColorTableIndex: 1,
+          OutMsec: 18000,
+        },
+        { ID: 'other', ContentID: '104', InMsec: 1000, Kind: 0, ColorTableIndex: null },
+      ],
+    })
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    return db
+  }
+
+  const rows = (db: NonNullable<ReturnType<typeof openRekordboxDb>>, contentId = '103') =>
+    db
+      .prepare(
+        `SELECT ID, InMsec, InFrame, OutMsec, OutFrame FROM djmdCue WHERE ContentID = ? ORDER BY ID`,
+      )
+      .all(contentId)
+
+  // Measured in the user's rekordbox 24/10: the same LAME MP3 converted to AIFF and analysed
+  // again put every beat 51 ms before the cues the DJ had placed on them. Moving every cue by
+  // that much is what keeps a hot cue on the kick it was set on.
+  it('moves every cue of the track by the same amount, loop ends included', async () => {
+    const db = await writable()
+    expect(shiftCues(db, '103', 51, { now: NOW })).toBe(3)
+    expect(rows(db)).toEqual([
+      { ID: 'loop', InMsec: 16051, InFrame: 2407, OutMsec: 18051, OutFrame: 2707 },
+      { ID: 'q1', InMsec: 8051, InFrame: 1207, OutMsec: -1, OutFrame: null },
+      { ID: 'q2', InMsec: 8051, InFrame: 1207, OutMsec: -1, OutFrame: null },
+    ])
+    expect(rows(db, '104')).toEqual([
+      { ID: 'other', InMsec: 1000, InFrame: 150, OutMsec: -1, OutFrame: null },
+    ])
+    db.close()
+  })
+
+  // Trimming silence pulls the audio earlier, so a cue near the start can land before zero.
+  // Deleting it would lose a cue the DJ placed; keeping it at the very start does not.
+  it('keeps a cue that would fall before the start at the start instead of losing it', async () => {
+    const db = await writable()
+    shiftCues(db, '103', -9000, { now: NOW })
+    expect(rows(db).map((r) => (r as { InMsec: number }).InMsec)).toEqual([7000, 0, 0])
+    db.close()
+  })
+
+  // rekordbox also keeps MP3 positions as MPEG frame numbers on some cues. They describe the
+  // old file, so they would contradict the moved milliseconds; zero is what Surco writes on
+  // the cues it creates and what rekordbox read correctly in the same test.
+  it('clears the MPEG positions that described the old file', async () => {
+    const db = await writable()
+    db.prepare(`UPDATE djmdCue SET InMpegFrame = 6296, InMpegAbs = 1772826 WHERE ID = 'q2'`).run()
+    shiftCues(db, '103', 51, { now: NOW })
+    expect(db.prepare(`SELECT InMpegFrame, InMpegAbs FROM djmdCue WHERE ID = 'q2'`).get()).toEqual({
+      InMpegFrame: 0,
+      InMpegAbs: 0,
+    })
+    db.close()
+  })
+
+  it('keeps contentCue and the track counters in step with the moved rows', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 2)`,
+    ).run(
+      JSON.stringify([
+        { ID: 'q2', Kind: 1, InMsec: 8000, InFrame: 1200, InMpegFrame: 6296, OutMsec: -1 },
+        { ID: 'loop', Kind: 2, InMsec: 16000, InFrame: 2400, OutMsec: 18000, OutFrame: 2700 },
+      ]),
+    )
+    shiftCues(db, '103', 51, { now: NOW })
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    expect(JSON.parse(cc.Cues)).toEqual([
+      {
+        ID: 'q2',
+        Kind: 1,
+        InMsec: 8051,
+        InFrame: 1207,
+        InMpegFrame: 0,
+        OutMsec: -1,
+        updated_at: '2026-10-24T19:00:00.000+00:00',
+      },
+      {
+        ID: 'loop',
+        Kind: 2,
+        InMsec: 16051,
+        InFrame: 2407,
+        OutMsec: 18051,
+        OutFrame: 2707,
+        updated_at: '2026-10-24T19:00:00.000+00:00',
+      },
+    ])
+    expect(
+      db.prepare(`SELECT CueUpdated, updated_at FROM djmdContent WHERE ID = '103'`).get(),
+    ).toEqual({
+      CueUpdated: '3',
+      updated_at: STAMP,
+    })
+    db.close()
+  })
+
+  it('writes nothing when there is nothing to move', async () => {
+    const db = await writable()
+    expect(shiftCues(db, '103', 0, { now: NOW })).toBe(0)
+    expect(db.prepare(`SELECT CueUpdated FROM djmdContent WHERE ID = '103'`).get()).toEqual({
+      CueUpdated: null,
+    })
     db.close()
   })
 })

@@ -48,12 +48,17 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
     OrgFolderPath VARCHAR(255), Title VARCHAR(255), ArtistID VARCHAR(255), AlbumID VARCHAR(255),
     GenreID VARCHAR(255), LabelID VARCHAR(255), RemixerID VARCHAR(255), Commnt TEXT,
     ReleaseYear INTEGER, TrackNo INTEGER, DiscNo INTEGER, BPM INTEGER, KeyID VARCHAR(255),
-    Rating INTEGER, ImagePath VARCHAR(255), usn BIGINT, rb_local_usn BIGINT,
+    Rating INTEGER, ImagePath VARCHAR(255), AnalysisDataPath VARCHAR(255), Analysed INTEGER,
+    AnalysisUpdated INTEGER, CueUpdated VARCHAR(255), usn BIGINT, rb_local_usn BIGINT,
     rb_local_deleted TINYINT(1) DEFAULT 0, updated_at DATETIME)`)
   db.exec(`CREATE TABLE djmdSongPlaylist (ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255),
     ContentID VARCHAR(255))`)
   db.exec(`CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255),
-    InMsec INTEGER)`)
+    InMsec INTEGER, InFrame INTEGER, InMpegFrame INTEGER, InMpegAbs INTEGER,
+    OutMsec INTEGER DEFAULT -1, OutFrame INTEGER, OutMpegFrame INTEGER, OutMpegAbs INTEGER,
+    Kind INTEGER, ${LOOKUP})`)
+  db.exec(`CREATE TABLE contentCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255),
+    Cues TEXT, rb_cue_count INTEGER, ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
     SearchStr VARCHAR(255), ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdAlbum (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
@@ -97,7 +102,9 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
         t.id,
       )
     for (const [i, ms] of (t.cuesMs ?? []).entries())
-      db.prepare(`INSERT INTO djmdCue VALUES (?, ?, ?)`).run(`${t.id}-cue${i}`, t.id, ms)
+      db.prepare(
+        `INSERT INTO djmdCue (ID, ContentID, InMsec, Kind, rb_local_deleted) VALUES (?, ?, ?, 0, 0)`,
+      ).run(`${t.id}-cue${i}`, t.id, ms)
   }
   db.close()
   return path

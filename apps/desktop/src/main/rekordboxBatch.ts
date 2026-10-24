@@ -7,6 +7,9 @@ export interface RekordboxRepoint {
   from: string
   to: string
   meta?: RekordboxMeta
+  // The conversion rewrote the audio: rekordbox's analysis describes the old file, and its
+  // cues land back on the beats they were set on once moved by cueShiftMs.
+  audio?: { cueShiftMs: number }
   playlists?: RekordboxPlaylistTarget[]
   playlistsBase?: string[]
 }
@@ -26,13 +29,22 @@ let depth = 0
 export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
   // A conversion that lands on the path it started from tells rekordbox nothing new, and
   // recording it would make the flush open and back up the collection for nothing.
-  if (repoint.from === repoint.to && !repoint.meta) return
+  if (repoint.from === repoint.to && !repoint.meta && !repoint.audio) return
   // Converting one track twice in a run — a retry, an edit followed by a convert — must
   // leave the collection on the last file produced, so the later repoint replaces the
   // earlier one rather than queueing behind it.
   const existing = repoints.findIndex((r) => r.from === repoint.from)
-  if (existing !== -1) repoints[existing] = repoint
-  else repoints.push(repoint)
+  if (existing === -1) {
+    repoints.push(repoint)
+    return
+  }
+  const earlier = repoints[existing]
+  // Only a second conversion of the first one's output stacks its move on top; one that
+  // read the original again already measured from the file the cues were set on.
+  repoints[existing] =
+    earlier.audio && repoint.audio && earlier.to === repoint.from
+      ? { ...repoint, audio: { cueShiftMs: earlier.audio.cueShiftMs + repoint.audio.cueShiftMs } }
+      : repoint
 }
 
 // Moves a recorded repoint onto the path the file really ended up at, keyed by the path
@@ -51,7 +63,7 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
 export function redirectRekordboxRepoint(currentTo: string, landedAt: string): void {
   const index = repoints.findIndex((r) => r.to === currentTo)
   if (index === -1) return
-  if (repoints[index].from === landedAt && !repoints[index].meta) {
+  if (repoints[index].from === landedAt && !repoints[index].meta && !repoints[index].audio) {
     repoints.splice(index, 1)
     return
   }

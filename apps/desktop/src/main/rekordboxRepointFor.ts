@@ -15,10 +15,27 @@ export function rekordboxRepointFor(
   // library. That file — not the one being converted — is what the collection has indexed:
   // a FLAC downloaded into some folder has never been in rekordbox, so repointing from it
   // matched nothing and left the entry on the old MP3.
-  options: { replaces?: string; meta?: RekordboxMeta } = {},
+  options: {
+    replaces?: string
+    meta?: RekordboxMeta
+    // Set when the conversion rewrote the audio rather than copying it: where each file's
+    // first sample sits in rekordbox's timeline (see rekordboxTimeline.ts) and how much
+    // silence was cut from the start.
+    audio?: { sourceShiftMs: number; outputShiftMs: number; trimmedMs: number }
+  } = {},
 ): RekordboxRepoint | null {
   const from = options.replaces ?? input
-  if (options.meta) return { from, to: output, meta: options.meta }
-  if (from === output) return null
-  return { from, to: output }
+  const audio = options.audio && {
+    cueShiftMs: options.replaces
+      ? 0
+      : Math.round(
+          options.audio.outputShiftMs - options.audio.sourceShiftMs - options.audio.trimmedMs,
+        ),
+  }
+  const extra = {
+    ...(options.meta ? { meta: options.meta } : {}),
+    ...(audio ? { audio } : {}),
+  }
+  if (from === output && !options.meta && !audio) return null
+  return { from, to: output, ...extra }
 }

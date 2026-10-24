@@ -213,6 +213,91 @@ function changedEntries(
   return entries
 }
 
+interface CuePosition {
+  InMsec: number
+  OutMsec: number | null
+}
+
+function shifted<T extends CuePosition>(cue: T, deltaMs: number) {
+  const inMs = Math.max(0, cue.InMsec + deltaMs)
+  const loop = cue.OutMsec !== null && cue.OutMsec >= 0
+  const outMs = loop ? Math.max(0, (cue.OutMsec as number) + deltaMs) : cue.OutMsec
+  return { inMs, outMs, loop }
+}
+
+export function shiftCues(db: Db, contentId: string, deltaMs: number, ctx: { now: Date }): number {
+  if (deltaMs === 0) return 0
+  const cues = db
+    .prepare(
+      `SELECT ID, InMsec, OutMsec FROM djmdCue
+        WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .all(contentId) as ({ ID: string } & CuePosition)[]
+  if (cues.length === 0) return 0
+  const stamp = rekordboxStamp(ctx.now)
+  const iso = ctx.now.toISOString().replace('Z', '+00:00')
+  const move = db.prepare(
+    `UPDATE djmdCue SET InMsec = ?, InFrame = ?, InMpegFrame = 0, InMpegAbs = 0,
+       OutMsec = ?, OutFrame = CASE WHEN ? THEN ? ELSE OutFrame END, OutMpegFrame = 0,
+       OutMpegAbs = 0, rb_local_usn = ?, updated_at = ?
+      WHERE ID = ? AND ContentID = ?`,
+  )
+  for (const cue of cues) {
+    const { inMs, outMs, loop } = shifted(cue, deltaMs)
+    move.run(
+      inMs,
+      frameOf(inMs),
+      outMs,
+      loop ? 1 : 0,
+      loop ? frameOf(outMs as number) : null,
+      takeLocalUsn(db, stamp),
+      stamp,
+      cue.ID,
+      contentId,
+    )
+  }
+
+  const cc = db.prepare('SELECT ID, Cues FROM contentCue WHERE ContentID = ?').get(contentId) as
+    | { ID: string; Cues: string | null }
+    | undefined
+  if (cc?.Cues) {
+    const entries = (JSON.parse(cc.Cues) as Record<string, unknown>[]).map((e) => {
+      if (typeof e.InMsec !== 'number') return e
+      const { inMs, outMs, loop } = shifted(
+        { InMsec: e.InMsec, OutMsec: typeof e.OutMsec === 'number' ? e.OutMsec : null },
+        deltaMs,
+      )
+      const next: Record<string, unknown> = { ...e, InMsec: inMs, InFrame: frameOf(inMs) }
+      for (const k of ['InMpegFrame', 'InMpegAbs', 'OutMpegFrame', 'OutMpegAbs'])
+        if (k in e) next[k] = 0
+      if (loop) {
+        next.OutMsec = outMs
+        next.OutFrame = frameOf(outMs as number)
+      }
+      next.updated_at = iso
+      return next
+    })
+    db.prepare('UPDATE contentCue SET Cues = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?').run(
+      JSON.stringify(entries),
+      takeLocalUsn(db, stamp),
+      stamp,
+      cc.ID,
+    )
+  }
+  const track = db.prepare('SELECT CueUpdated FROM djmdContent WHERE ID = ?').get(contentId) as {
+    CueUpdated: string | null
+  }
+  db.prepare(
+    'UPDATE djmdContent SET CueUpdated = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  ).run(
+    String(Number(track.CueUpdated ?? 0) + cues.length),
+    takeLocalUsn(db, stamp),
+    stamp,
+    contentId,
+  )
+  return cues.length
+}
+
 export function applyCueChanges(
   db: Db,
   contentId: string,

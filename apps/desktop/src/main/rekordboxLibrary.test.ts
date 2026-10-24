@@ -583,3 +583,91 @@ describe('repointTracks', () => {
     expect(await readFile(dbPath)).toEqual(before)
   })
 })
+
+describe('a repoint whose audio was rewritten', () => {
+  function addCueAndAnalysisColumns(path: string): void {
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('could not reopen the collection')
+    for (const column of [
+      'InFrame INTEGER',
+      'InMpegFrame INTEGER',
+      'InMpegAbs INTEGER',
+      'OutMsec INTEGER DEFAULT -1',
+      'OutFrame INTEGER',
+      'OutMpegFrame INTEGER',
+      'OutMpegAbs INTEGER',
+      'rb_local_deleted TINYINT(1) DEFAULT 0',
+      'rb_local_usn BIGINT',
+      'updated_at DATETIME',
+    ])
+      db.exec(`ALTER TABLE djmdCue ADD COLUMN ${column}`)
+    for (const column of [
+      'AnalysisDataPath VARCHAR(255)',
+      'Analysed INTEGER',
+      'AnalysisUpdated INTEGER',
+      'CueUpdated VARCHAR(255)',
+      'rb_local_usn BIGINT',
+      'updated_at DATETIME',
+    ])
+      db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column}`)
+    db.exec(
+      `CREATE TABLE contentCue (ID VARCHAR(255), ContentID VARCHAR(255), Cues TEXT,
+        rb_local_usn BIGINT, updated_at DATETIME)`,
+    )
+    db.exec(
+      `CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`,
+    )
+    db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
+    db.prepare(
+      `UPDATE djmdContent SET AnalysisDataPath = '/PIONEER/USBANLZ/167/710bc/ANLZ0000.DAT',
+         Analysed = 105, AnalysisUpdated = 1 WHERE ID = '900001'`,
+    ).run()
+    db.close()
+  }
+
+  function readAfter(path: string) {
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('could not reopen the collection')
+    const cue = db.prepare(`SELECT InMsec FROM djmdCue WHERE ID = 'c1'`).get() as {
+      InMsec: number
+    }
+    const analysis = db
+      .prepare(
+        `SELECT AnalysisDataPath, Analysed, AnalysisUpdated FROM djmdContent WHERE ID = '900001'`,
+      )
+      .get()
+    db.close()
+    return { cueMs: cue.InMsec, analysis }
+  }
+
+  beforeEach(() => addCueAndAnalysisColumns(dbPath))
+
+  // Measured 24/10 in the user's rekordbox: a LAME MP3 converted to AIFF left every hot cue
+  // 51 ms after the kick it was set on, once rekordbox analysed the new file.
+  it('moves the cues by the shift the conversion measured', async () => {
+    const output = join(audioDir, '02 Everybody.aiff')
+    await writeFile(output, Buffer.alloc(5000))
+
+    await repointTrack(dbPath, { from: MP3, to: output, audio: { cueShiftMs: -51 } })
+
+    expect(readAfter(dbPath).cueMs).toBe(31949)
+  })
+
+  // A tags-only update leaves the audio as it was: its analysis is still true, and making
+  // rekordbox redo it would throw away a grid the DJ may have corrected by hand.
+  it('keeps the analysis and the cues when the audio was not rewritten', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    await repointTrack(dbPath, { from: MP3, to: output })
+
+    expect(readAfter(dbPath)).toEqual({
+      cueMs: 32000,
+      analysis: {
+        AnalysisDataPath: '/PIONEER/USBANLZ/167/710bc/ANLZ0000.DAT',
+        Analysed: 105,
+        AnalysisUpdated: 1,
+      },
+    })
+  })
+})

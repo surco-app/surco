@@ -85,4 +85,48 @@ describe('rekordboxRepointFor', () => {
       rekordboxRepointFor('/downloads/a.flac', '/m/a.mp3', { replaces: '/m/a.mp3' }),
     ).toBeNull()
   })
+
+  // Reported 23/10 by a DJ and measured twice in the user's rekordbox 24/10: rekordbox keeps
+  // the cues in milliseconds of its own timeline, and on a LAME MP3 it places every sound
+  // 51 ms later than on an AIFF, 26 ms on an ffmpeg MP3. After the conversion every hot cue
+  // sat that far AFTER the kick it was set on (51 ms MP3→AIFF, 26 ms MP3→MP3), and a first
+  // fix that moved them the other way doubled it to 102 and 51.
+  it('moves the cues earlier by how much later rekordbox placed the old file', () => {
+    expect(
+      rekordboxRepointFor('/m/a.mp3', '/m/a.aiff', {
+        audio: { sourceShiftMs: 51.18, outputShiftMs: 0, trimmedMs: 0 },
+      }),
+    ).toEqual({ from: '/m/a.mp3', to: '/m/a.aiff', audio: { cueShiftMs: -51 } })
+  })
+
+  // A trimmed start pulls every beat earlier by exactly what was cut.
+  it('moves the cues back by the silence trimmed from the start', () => {
+    expect(
+      rekordboxRepointFor('/m/a.mp3', '/m/a.mp3', {
+        audio: { sourceShiftMs: 51.18, outputShiftMs: 26.12, trimmedMs: 500 },
+      })?.audio,
+    ).toEqual({ cueShiftMs: -525 })
+  })
+
+  // Re-encoding in place keeps the path, but the audio under the cues moved and rekordbox's
+  // analysis describes the old file, so the entry still has to hear about it.
+  it('reports a file re-encoded in place even without tags for the entry', () => {
+    expect(
+      rekordboxRepointFor('/m/a.mp3', '/m/a.mp3', {
+        audio: { sourceShiftMs: 51.18, outputShiftMs: 26.12, trimmedMs: 0 },
+      }),
+    ).toEqual({ from: '/m/a.mp3', to: '/m/a.mp3', audio: { cueShiftMs: -25 } })
+  })
+
+  // The cues of a replaced file were set on other audio — another master, another encode —
+  // so nothing says how far they are from this one. Better left where they are than moved
+  // by a figure that belongs to a different file.
+  it('leaves the cues alone when the conversion replaces a different file', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.mp3',
+        audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 500 },
+      })?.audio,
+    ).toEqual({ cueShiftMs: 0 })
+  })
 })

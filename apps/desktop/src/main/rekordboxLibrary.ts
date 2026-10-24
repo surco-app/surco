@@ -9,6 +9,7 @@ import {
   type StagedArtwork,
   stageArtwork,
 } from './rekordboxArtwork'
+import { shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
   type FindOptions,
@@ -50,6 +51,7 @@ export interface RepointOptions extends FindOptions, RepointBatchOptions {
   from: string
   to: string
   meta?: RekordboxMeta
+  audio?: { cueShiftMs: number }
   // Seam for the tests to force the failure that must never be simulated by damaging a
   // real collection: a write that dies halfway. Runs right after this track's row changed.
   onWrite?: () => void
@@ -210,11 +212,13 @@ export async function repointTracks(
           SET FolderPath = ?, FileNameL = ?, FileType = ?, FileSize = ?
         WHERE ID = ?`,
     )
+    const now = new Date()
     write.transaction(() => {
       for (const w of writes) {
-        const { to, meta, onWrite } = repoints[w.index]
+        const { to, meta, audio, onWrite } = repoints[w.index]
         update.run(rekordboxStoredPath(to), basename(to), w.fileType, w.size, w.id)
         if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
+        if (audio) shiftCues(write, w.id, audio.cueShiftMs, { now })
         // Placed after the statement so a test can fail the write once the row has
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()

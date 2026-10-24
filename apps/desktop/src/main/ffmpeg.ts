@@ -98,6 +98,7 @@ import { discardBackup, keepOriginal } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
+import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
@@ -2251,6 +2252,19 @@ export async function convertAudio(
     // the rename's own comment below already claims to be true of it.
     await assertDecodable(tmp, copiedVerbatim ? input : undefined)
     if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+    // rekordbox keeps cues in milliseconds of its own timeline, which starts at a different
+    // point on each kind of file (see rekordboxTimeline.ts). Read on both files here, the
+    // last moment the source is still on disk when the rename below lands on its path.
+    const sourceRate = [input, output].some((f) => extname(f).toLowerCase() === '.m4a')
+      ? Number((await probeOnce(input)).sampleRate) || 44100
+      : 44100
+    const rekordboxAudio = copiedVerbatim
+      ? undefined
+      : {
+          sourceShiftMs: await rekordboxShiftOfFile(input, sourceRate),
+          outputShiftMs: await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate),
+          trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
+        }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
@@ -2296,6 +2310,7 @@ export async function convertAudio(
     const repoint = rekordboxRepointFor(input, output, {
       replaces: replacesPath,
       meta: rekordboxMetaFrom(meta),
+      audio: rekordboxAudio,
     })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {

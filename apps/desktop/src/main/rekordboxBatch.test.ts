@@ -96,6 +96,38 @@ describe('rekordbox batch', () => {
     recordRekordboxRepoint({ from: '/m/one.mp3', to: '/m/one.aiff' })
     expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/m/one.aiff' }])
   })
+
+  // An MP3 re-encoded on its own path keeps the path, but its audio moved under the cues
+  // (measured 24/10: 26 ms in the user's rekordbox), so the entry still needs the write.
+  it('keeps a re-encode on the same path even without tags', () => {
+    const reencode = { from: '/m/one.mp3', to: '/m/one.mp3', audio: { cueShiftMs: -25 } }
+    beginRekordboxBatch()
+    recordRekordboxRepoint(reencode)
+    expect(endRekordboxBatch()).toEqual([reencode])
+  })
+
+  // The collection is written once at the end of the run, so its cues still sit where the
+  // DJ put them on the ORIGINAL file. A second re-encode on the same path started from the
+  // first one's output, so the cues have to travel both distances, not just the last.
+  it('adds up the moves of a file re-encoded twice on its own path', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/m/one.mp3', audio: { cueShiftMs: -25 } })
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/m/one.mp3', audio: { cueShiftMs: -500 } })
+    expect(endRekordboxBatch()).toEqual([
+      { from: '/m/one.mp3', to: '/m/one.mp3', audio: { cueShiftMs: -525 } },
+    ])
+  })
+
+  // Converting into another folder leaves the original in place, and a second conversion
+  // reads that original again: its move already counts from the cues' file.
+  it('keeps only the last move when both conversions started from the original', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/out/one.aiff', audio: { cueShiftMs: -51 } })
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/out/one.aiff', audio: { cueShiftMs: -51 } })
+    expect(endRekordboxBatch()).toEqual([
+      { from: '/m/one.mp3', to: '/out/one.aiff', audio: { cueShiftMs: -51 } },
+    ])
+  })
 })
 
 // Measured 15/09 from the user's own log, after three runs that reported only "1 skipped":
@@ -159,6 +191,21 @@ describe('rekordbox batch redirecting to where the file really landed', () => {
     redirectRekordboxRepoint('/tmp/surco-x/one.mp3', '/m/one.mp3')
 
     expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/m/one.mp3', meta }])
+  })
+
+  it('keeps an entry that landed back on its path when its audio was re-encoded', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({
+      from: '/m/one.mp3',
+      to: '/tmp/surco-x/one.mp3',
+      audio: { cueShiftMs: -25 },
+    })
+
+    redirectRekordboxRepoint('/tmp/surco-x/one.mp3', '/m/one.mp3')
+
+    expect(endRekordboxBatch()).toEqual([
+      { from: '/m/one.mp3', to: '/m/one.mp3', audio: { cueShiftMs: -25 } },
+    ])
   })
 })
 
