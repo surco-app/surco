@@ -1,0 +1,7 @@
+[
+  {"id": "open", "say": "Te has bajado un pack de seis flac. ¿Son de verdad sin pérdidas? Arrastras la carpeta a Surco.", "sub": "Un pack de seis FLAC. ¿Son de verdad sin pérdidas? Arrastras la carpeta a Surco."},
+  {"id": "analyze", "say": "Surco mira el espectro de cada pista nada más entrar, sin que pulses nada.", "sub": "Surco mira el espectro de cada pista nada más entrar, sin que pulses nada."},
+  {"id": "filter", "say": "En el filtro de la lista eliges Dudosas. Queda una.", "sub": "En el filtro de la lista eliges Dudosas. Queda una."},
+  {"id": "why", "say": "Al abrirla ves por qué. Los agudos se cortan en seco a diecisiete kilohercios. Ese flac viene de un emepetrés.", "sub": "Al abrirla ves por qué. Los agudos se cortan en seco a 17 kHz. Ese FLAC viene de un MP3."},
+  {"id": "done", "say": "Y no ha tocado tus archivos. Solo mira y te lo dice.", "sub": "Y no ha tocado tus archivos. Solo mira y te lo dice."}
+]

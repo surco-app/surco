@@ -1,0 +1,8 @@
+[
+  {"id": "open", "say": "Te bajas un pack y los títulos llegan así, con guiones bajos y la firma de la web.", "sub": "Te bajas un pack y los títulos llegan así, con guiones bajos y la firma de la web."},
+  {"id": "find", "say": "Pulsas comando efe. Escribes la firma de la web y dejas el reemplazo vacío.", "sub": "Pulsas ⌘F. Escribes la firma de la web y dejas el reemplazo vacío."},
+  {"id": "preview", "say": "Surco te enseña el antes y el después de cada pista.", "sub": "Surco te enseña el antes y el después de cada pista."},
+  {"id": "underscore", "say": "Reemplazas. Y ahora, los guiones bajos por espacios.", "sub": "Reemplazas. Y ahora, los guiones bajos por espacios."},
+  {"id": "save", "say": "Con un clic lo escribes en los cinco ficheros.", "sub": "Con un clic lo escribes en los cinco ficheros."},
+  {"id": "done", "say": "Títulos limpios en segundos, sin tocar el sonido.", "sub": "Títulos limpios en segundos, sin tocar el sonido."}
+]
