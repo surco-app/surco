@@ -17,13 +17,10 @@ import {
   WAVE_MARK_LANE_PX,
 } from '../lib/cueMarks'
 import {
-  barsToNextCall,
-  cueClock,
   DEFAULT_ZOOM_BARS,
   detailWindow,
   snapToBeat,
   wheelZoom,
-  wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
 import { barLines, quantizePoints } from '../lib/cueWave'
@@ -31,7 +28,6 @@ import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
-const STAGE_HEIGHT = 'clamp(160px, 24vh, 240px)'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const STRIP_WINDOWS = 3
@@ -106,14 +102,12 @@ export function CueWaveDetail({
   quantize,
   onScrub,
   onZoom,
-  onZoomReset,
   compact,
   onPlace,
   onHover,
   onMarkMenu,
   onDeleteMark,
   ghost: rawGhost,
-  points,
   movable,
   onMoveMark,
   onMarkDrag,
@@ -130,14 +124,12 @@ export function CueWaveDetail({
   quantize: CueQuantize
   onScrub: (ms: number) => void
   onZoom: (dir: 'in' | 'out') => void
-  onZoomReset?: () => void
   compact?: boolean
   onPlace?: (ms: number) => void
   onHover?: (ms: number | null) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
   ghost?: CueGhost
-  points: number[]
   movable?: string[]
   onMoveMark?: (key: string, ms: number) => void
   onMarkDrag?: (dragging: boolean) => void
@@ -343,7 +335,6 @@ export function CueWaveDetail({
   )
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
   const ghost = visibleGhost(rawGhost, cues)
-  const toCall = barsToNextCall(beats, points, playheadMs)
   const pct = (ms: number): string => `${((ms - fromMs) / span) * 100}%`
   const gone = new Set(ghost?.gone ?? [])
   const ghostMarks = ghost
@@ -381,27 +372,8 @@ export function CueWaveDetail({
     onMarkMenu?.({ key, clientX: e.clientX, clientY: e.clientY })
   }
   return (
-    <div className="flex shrink-0 flex-col">
-      {!compact && (
-        <div className="relative h-4 shrink-0 text-xs tabular-nums">
-          <span
-            data-testid="cues-position"
-            className="absolute right-1/2 mr-2 font-semibold whitespace-nowrap text-fg"
-          >
-            {cueClock(playheadMs)}
-          </span>
-          {toCall !== null && (
-            <span
-              data-testid="cue-detail-to-call"
-              className="absolute left-1/2 ml-2 whitespace-nowrap text-fg-dim"
-            >
-              {t('editor.cues.toCall', { count: wholeBars(toCall) })}
-            </span>
-          )}
-        </div>
-      )}
-      <div className="relative">
-        {!compact && <CueZoom bars={bars} onZoom={onZoom} onReset={onZoomReset} />}
+    <div className={compact ? 'flex shrink-0 flex-col' : 'flex min-h-0 flex-1 flex-col'}>
+      <div className={compact ? 'relative' : 'relative min-h-0 flex-1'}>
         <div
           ref={stageRef}
           data-testid="cue-detail"
@@ -429,7 +401,7 @@ export function CueWaveDetail({
           onMouseLeave={() => onHover?.(null)}
           style={{
             cursor: onPlace ? 'crosshair' : 'grab',
-            height: compact ? COMPACT_HEIGHT : STAGE_HEIGHT,
+            height: compact ? COMPACT_HEIGHT : '100%',
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"
         >

@@ -7,7 +7,7 @@ import '../i18n'
 import { RotateCcw, Search } from 'lucide-react'
 import { hotCueColor, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { HOT_MARK_PX, WAVE_MARK_LANE_PX } from '../lib/cueMarks'
-import { CueWaveDetail } from './CueWaveDetail'
+import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -33,7 +33,6 @@ function setup(over: Partial<React.ComponentProps<typeof CueWaveDetail>> = {}) {
     source: null,
     grid: GRID,
     cues: [],
-    points: [],
     selected: null,
     playheadMs: bar(32),
     bars: 16,
@@ -156,34 +155,6 @@ describe('CueWaveDetail', () => {
     expect(call.compareDocumentPosition(hot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('shows the playhead time left of the centre and the bars to the CALL right of it, in a row above the wave so nothing sits on it', () => {
-    setup({ points: [bar(48)] })
-    expect(screen.getByTestId('cues-position')).toHaveTextContent('1:04.0')
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent('16 bars to the CALL')
-    expect(screen.getByTestId('cue-detail')).not.toContainElement(
-      screen.getByTestId('cues-position'),
-    )
-    expect(screen.getByTestId('cue-detail')).not.toContainElement(
-      screen.getByTestId('cue-detail-to-call'),
-    )
-  })
-
-  it('counts whole bars, rounding up off the grid so it reads 1 until the playhead is on the point and never 0 before it', () => {
-    const { rerender } = setup({ points: [bar(33)] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^1 bar to the CALL$/)
-    rerender({ points: [bar(40) + 1000] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^9 bars to the CALL$/)
-    rerender({ points: [bar(32) + 600] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^1 bar to the CALL$/)
-    rerender({ points: [bar(32)] })
-    expect(screen.getByTestId('cue-detail-to-call')).toHaveTextContent(/^0 bars to the CALL$/)
-  })
-
-  it('says nothing about a CALL when none lies ahead', () => {
-    setup({ points: [bar(8)] })
-    expect(screen.queryByTestId('cue-detail-to-call')).toBeNull()
-  })
-
   it('moves the playhead forward when the wave is dragged left, as the wave runs under it', () => {
     const { onScrub } = setup()
     fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 400 })
@@ -266,13 +237,6 @@ describe('CueWaveDetail', () => {
     setup({ onHover })
     fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 310 })
     expect(onHover).not.toHaveBeenCalledWith(bar(36))
-  })
-
-  it('leaves the zoom alone on a double click on the short wave, since its first click already places', () => {
-    const onZoomReset = vi.fn()
-    setup({ compact: true, onZoomReset, bars: 8 })
-    fireEvent.doubleClick(screen.getByTestId('cue-detail'))
-    expect(onZoomReset).not.toHaveBeenCalled()
   })
 
   it('draws the flow see-through and dims what it would take away', () => {
@@ -388,16 +352,15 @@ describe('CueWaveDetail', () => {
     error.mockRestore()
   })
 
-  it('stacks zoom in, reset and zoom out at the left of the zoomed wave, outside it so they never take a wave click', () => {
-    const onZoomReset = vi.fn<() => void>()
-    const { onZoom } = setup({ onZoomReset })
-    const ids = ['cue-zoom-in', 'cue-zoom-reset', 'cue-zoom-out']
+  it('lays out zoom out, reset and zoom in left to right, as the bar count grows that way', () => {
+    const onZoom = vi.fn<(dir: 'in' | 'out') => void>()
+    render(<CueZoom row bars={16} onZoom={onZoom} onReset={vi.fn<() => void>()} />)
+    const ids = ['cue-zoom-out', 'cue-zoom-reset', 'cue-zoom-in']
     const buttons = ids.map((id) => screen.getByTestId(id))
-    for (const b of buttons) expect(screen.getByTestId('cue-detail')).not.toContainElement(b)
     expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
-      'Zoom in',
-      'Reset zoom',
       'Zoom out',
+      'Reset zoom',
+      'Zoom in',
     ])
     expect(
       buttons[0].compareDocumentPosition(buttons[2]) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -409,7 +372,7 @@ describe('CueWaveDetail', () => {
   })
 
   it('draws the zoom reset as a magnifier, never a turning arrow, since Vicent read the arrow as undo', () => {
-    setup({ onZoomReset: vi.fn<() => void>() })
+    render(<CueZoom row bars={8} onZoom={vi.fn()} onReset={vi.fn<() => void>()} />)
     const drawn = (icon: React.ReactElement) => render(icon).container.innerHTML
     const reset = screen.getByTestId('cue-zoom-reset').innerHTML
     expect(reset).toBe(drawn(<Search className="h-3.5 w-3.5" aria-hidden="true" />))
@@ -417,13 +380,13 @@ describe('CueWaveDetail', () => {
   })
 
   it('disables + and − at the ends of the zoom and offers reset away from the default, never hiding any', () => {
-    const onZoomReset = vi.fn<() => void>()
-    const { rerender } = setup({ bars: 4, onZoomReset })
+    const onReset = vi.fn<() => void>()
+    const { rerender } = render(<CueZoom row bars={4} onZoom={vi.fn()} onReset={onReset} />)
     expect(screen.getByTestId('cue-zoom-in')).toBeDisabled()
     expect(screen.getByTestId('cue-zoom-out')).toBeEnabled()
     fireEvent.click(screen.getByTestId('cue-zoom-reset'))
-    expect(onZoomReset).toHaveBeenCalledTimes(1)
-    rerender({ bars: 64 })
+    expect(onReset).toHaveBeenCalledTimes(1)
+    rerender(<CueZoom row bars={64} onZoom={vi.fn()} onReset={onReset} />)
     expect(screen.getByTestId('cue-zoom-in')).toBeEnabled()
     expect(screen.getByTestId('cue-zoom-out')).toBeDisabled()
   })
@@ -638,13 +601,9 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps the zoomed wave a calm height however tall the window, so full screen adds room around it and not a giant wave', () => {
+  it('fills the height it is given in the full editor, so the window goes to the wave and not to empty space', () => {
     setup()
-    const stage = screen.getByTestId('cue-detail')
-    const [, min, max] = stage.style.height.match(/^clamp\((\d+)px, .+, (\d+)px\)$/) ?? []
-    expect(Number(min)).toBe(160)
-    expect(Number(max)).toBeLessThanOrEqual(240)
-    expect(stage.style.flexGrow).not.toBe('1')
+    expect(screen.getByTestId('cue-detail').style.height).toBe('100%')
   })
 
   it('leaves headroom above and below the loudest column, so a loud track never touches the edges', () => {

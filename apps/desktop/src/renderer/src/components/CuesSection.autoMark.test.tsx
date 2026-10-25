@@ -313,7 +313,7 @@ describe('Auto marcar', () => {
     setup()
     await ready()
     await openFull()
-    const actions = screen.getByTestId('cues-actions')
+    const actions = screen.getByTestId('cues-toolbar')
     expect(within(actions).getByTestId('cues-auto-mark')).toBeInTheDocument()
     await autoMark()
     expect(within(actions).getByTestId('cues-auto-accept')).toBeInTheDocument()

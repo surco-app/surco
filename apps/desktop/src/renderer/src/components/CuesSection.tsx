@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, Keyboard, Minimize2, Pause, Play, Undo2, X } from 'lucide-react'
+import { Check, Keyboard, Minimize2, Pause, Play, Trash2, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -238,7 +238,7 @@ function CueKeys({
           if (open) onClose()
           setOpen(!open)
         }}
-        className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+        className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
       >
         <Keyboard className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -739,7 +739,9 @@ function Editing({
       type="button"
       data-testid="cues-undo"
       onClick={onDiscard}
-      className="press whitespace-nowrap px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+      className={`press shrink-0 whitespace-nowrap text-xs text-fg-dim hover:text-fg ${
+        maximized ? 'h-8 rounded-lg px-3 hover:bg-[var(--color-hover)]' : 'px-2 py-1.5'
+      }`}
     >
       {tr('editor.cues.discard')}
     </button>
@@ -755,7 +757,9 @@ function Editing({
         dispatch({ type: 'undo' })
         if (maximized) focusEditor()
       }}
-      className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+      className={`press flex shrink-0 items-center justify-center text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40 ${
+        maximized ? 'h-8 w-8 rounded-lg' : 'h-6 w-6 rounded-md'
+      }`}
     >
       <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
@@ -828,21 +832,10 @@ function Editing({
       </button>
     )
   const actions = (
-    <div data-testid="cues-actions" className="flex flex-wrap items-center gap-2">
-      <Select
-        testid="cues-flow"
-        portal
-        lead={tr('editor.cues.flow')}
-        label={tr('editor.cues.flow')}
-        value={manual ? MANUAL_CUE_FLOW : shownFlow}
-        onChange={pickOption}
-        onClosed={maximized ? focusEditor : undefined}
-        options={flowOptions}
-      />
-      {autoControl}
-      <span className="flex-1" />
-      {discardButton}
+    <div data-testid="cues-actions" className="flex shrink-0 items-center gap-1">
+      {!unchanged && <UnsavedMark />}
       {undoButton}
+      {discardButton}
       {saveAllButton}
       <button
         type="button"
@@ -850,7 +843,7 @@ function Editing({
         disabled={unchanged}
         aria-label={maximized ? undefined : tr(copy.save)}
         onClick={() => void save()}
-        className={`press h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
+        className={`press ml-1 h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
           unchanged
             ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
             : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
@@ -892,11 +885,9 @@ function Editing({
       quantize={quantize}
       onScrub={seekTo}
       onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-      onZoomReset={() => setZoom(DEFAULT_ZOOM_BARS)}
       ghost={ghost}
       onMarkMenu={openMarkMenu}
       onDeleteMark={(key) => dispatch(removeOf(key))}
-      points={pointMs}
       movable={[
         ...points,
         ...state.cues
@@ -998,7 +989,10 @@ function Editing({
     </div>
   )
   const header = (
-    <div data-testid="cues-header" className="flex shrink-0 items-center gap-3.5">
+    <div
+      data-testid="cues-header"
+      className="flex shrink-0 items-center gap-3 border-b border-[var(--color-line)] pb-3"
+    >
       {track?.cover ? (
         <img src={track.cover} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
       ) : (
@@ -1007,34 +1001,37 @@ function Editing({
           className="h-10 w-10 shrink-0 rounded-md bg-[var(--color-panel-2)]"
         />
       )}
-      <div className="min-w-0">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <div className="truncate text-[15px] font-semibold text-fg">
           {track?.title || cue.label}
         </div>
-        <div className="truncate text-xs text-fg-dim">{track?.artist}</div>
+        <div className="flex min-w-0 items-center gap-1.5 text-xs">
+          {track?.artist && <span className="truncate text-fg-dim">{track.artist}</span>}
+          <div
+            data-testid="cues-meta"
+            className="flex shrink-0 items-center gap-1.5 tabular-nums text-fg-faint"
+          >
+            {track?.artist && <span aria-hidden="true">·</span>}
+            <span data-testid="cues-duration">{formatTime(read.durationMs / 1000)}</span>
+            {track?.bpm && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span data-testid="cues-bpm">{tr('editor.cues.bpm', { bpm: track.bpm })}</span>
+              </>
+            )}
+            {track?.key && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span data-testid="cues-key">{track.key}</span>
+              </>
+            )}
+          </div>
+          {provisional && <ProvisionalMark bpm={provisional.bpm} />}
+        </div>
       </div>
-      {!unchanged && <UnsavedMark />}
-      <div
-        data-testid="cues-meta"
-        className="ml-2 flex shrink-0 items-center gap-1.5 text-xs tabular-nums text-fg-faint"
-      >
-        <span data-testid="cues-duration">{formatTime(read.durationMs / 1000)}</span>
-        {track?.bpm && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span data-testid="cues-bpm">{tr('editor.cues.bpm', { bpm: track.bpm })}</span>
-          </>
-        )}
-        {track?.key && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span data-testid="cues-key">{track.key}</span>
-          </>
-        )}
-      </div>
-      {provisional && <ProvisionalMark bpm={provisional.bpm} />}
       <span className="flex-1" />
       {actions}
+      <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-[var(--color-line-strong)]" />
       <CueKeys jumpBars={settings.cueJumpBars} onClose={focusEditor} />
       <button
         type="button"
@@ -1042,10 +1039,60 @@ function Editing({
         aria-label={tr('editor.sectionRestore')}
         aria-pressed="true"
         onClick={onRestore}
-        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
       >
         <Minimize2 className="h-4 w-4" aria-hidden="true" />
       </button>
+    </div>
+  )
+  const toolbar = (
+    <div data-testid="cues-toolbar" className="flex shrink-0 items-center gap-2">
+      <Select
+        testid="cues-flow"
+        portal
+        lead={tr('editor.cues.flow')}
+        label={tr('editor.cues.flow')}
+        value={manual ? MANUAL_CUE_FLOW : shownFlow}
+        onChange={pickOption}
+        onClosed={focusEditor}
+        options={flowOptions}
+      />
+      {autoControl}
+      <button
+        type="button"
+        data-testid="cues-clear-all"
+        disabled={!clearable}
+        onClick={() => {
+          dispatch({ type: 'clear' })
+          focusEditor()
+        }}
+        className="press flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+        {tr('editor.cues.clearAll')}
+      </button>
+      <span className="flex-1" />
+      <span
+        data-testid="cues-position"
+        className="shrink-0 text-[13px] font-semibold tabular-nums text-fg"
+      >
+        {cueClock(playheadMs)}
+      </span>
+      {toCall !== null && (
+        <span
+          data-testid="cue-detail-to-call"
+          className="shrink-0 whitespace-nowrap text-xs text-fg-dim"
+        >
+          {tr('editor.cues.toCall', { count: wholeBars(toCall) })}
+        </span>
+      )}
+      <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-[var(--color-line-strong)]" />
+      <CueZoom
+        row
+        bars={zoom}
+        onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+        onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+      />
     </div>
   )
   return (
@@ -1055,12 +1102,13 @@ function Editing({
       data-maximized={maximized ? 'true' : 'false'}
       tabIndex={-1}
       aria-label={tr('editor.cues.title')}
-      className={`relative m-0 min-w-0 border-0 p-0 outline-none focus-visible:shadow-none ${maximized ? 'my-auto flex flex-col gap-3' : ''}`}
+      className={`relative m-0 min-w-0 border-0 p-0 outline-none focus-visible:shadow-none ${maximized ? 'flex min-h-0 flex-1 flex-col gap-3' : ''}`}
       onKeyDown={onKey}
     >
       {maximized && header}
       {maximized ? (
         <>
+          {toolbar}
           {strip}
           {detail}
         </>
