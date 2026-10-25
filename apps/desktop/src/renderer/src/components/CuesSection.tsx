@@ -86,6 +86,7 @@ import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
 import { CueDeck } from './CueDeck'
 import { CuePalette } from './CuePalette'
+import { CuePhraseBand } from './CuePhraseBand'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
@@ -1109,7 +1110,10 @@ function Editing({
       {maximized ? (
         <>
           {toolbar}
-          {strip}
+          <div className="flex shrink-0 flex-col gap-1">
+            {strip}
+            <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
+          </div>
           {detail}
         </>
       ) : (

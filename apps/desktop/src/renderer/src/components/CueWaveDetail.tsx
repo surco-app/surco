@@ -28,7 +28,7 @@ import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
-const STAGE_HEIGHT = '200px'
+const STAGE_HEIGHT = '280px'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const STRIP_WINDOWS = 3
