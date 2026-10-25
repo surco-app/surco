@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, Keyboard, Minimize2, Pause, Play, Undo2, X } from 'lucide-react'
+import { Check, Keyboard, Minimize2, Pause, Play, Trash2, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -1058,6 +1058,19 @@ function Editing({
         options={flowOptions}
       />
       {autoControl}
+      <button
+        type="button"
+        data-testid="cues-clear-all"
+        disabled={!clearable}
+        onClick={() => {
+          dispatch({ type: 'clear' })
+          focusEditor()
+        }}
+        className="press flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+        {tr('editor.cues.clearAll')}
+      </button>
       <span className="flex-1" />
       <span
         data-testid="cues-position"

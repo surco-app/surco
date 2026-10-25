@@ -178,6 +178,31 @@ describe('CuesSection maximized', () => {
     ).toBeTruthy()
   })
 
+  it('clears every hot cue and CALL but the loops from Clear all in the toolbar, and ⌘Z brings them back', async () => {
+    const loop = { id: 'l', ms: 32000, kind: 1, color: 1, loop: true }
+    setup(null, {
+      ...READ,
+      cues: [
+        loop,
+        { id: 'h', ms: 64000, kind: 2, color: 1 },
+        { id: 'c', ms: 96000, kind: 0, color: 0 },
+      ],
+    })
+    await maximize()
+    const clear = within(screen.getByTestId('cues-toolbar')).getByTestId('cues-clear-all')
+    expect(clear).toHaveTextContent('Clear all cues')
+    clear.focus()
+    fireEvent.click(clear)
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-call-96000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
+    expect(document.activeElement).toBe(editor())
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-call-96000')).toBeInTheDocument()
+  })
+
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
     setup()
     await maximize()
