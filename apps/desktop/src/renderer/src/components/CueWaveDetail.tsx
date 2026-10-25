@@ -28,11 +28,12 @@ import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
+const STAGE_HEIGHT = '200px'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const STRIP_WINDOWS = 3
 const DRAG_PX = 3
-const BAR_LINE_OPACITY = 0.5
+const BAR_LINE_OPACITY = 0.3
 const ZOOM_BUTTON =
   'press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg disabled:pointer-events-none disabled:opacity-40'
 
@@ -372,8 +373,8 @@ export function CueWaveDetail({
     onMarkMenu?.({ key, clientX: e.clientX, clientY: e.clientY })
   }
   return (
-    <div className={compact ? 'flex shrink-0 flex-col' : 'flex min-h-0 flex-1 flex-col'}>
-      <div className={compact ? 'relative' : 'relative min-h-0 flex-1'}>
+    <div className="flex shrink-0 flex-col">
+      <div className="relative">
         <div
           ref={stageRef}
           data-testid="cue-detail"
@@ -401,7 +402,7 @@ export function CueWaveDetail({
           onMouseLeave={() => onHover?.(null)}
           style={{
             cursor: onPlace ? 'crosshair' : 'grab',
-            height: compact ? COMPACT_HEIGHT : '100%',
+            height: compact ? COMPACT_HEIGHT : STAGE_HEIGHT,
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"
         >
@@ -428,7 +429,7 @@ export function CueWaveDetail({
                 style={{
                   left: pct(ms),
                   top: `${WAVE_MARK_LANE_PX}px`,
-                  width: '2px',
+                  width: '1px',
                   transform: 'translateX(-50%)',
                   backgroundColor: MEMORY_CUE_COLOR,
                   opacity: BAR_LINE_OPACITY,

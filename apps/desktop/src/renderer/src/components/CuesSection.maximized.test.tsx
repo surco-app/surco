@@ -203,6 +203,13 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cue-wave-call-96000')).toBeInTheDocument()
   })
 
+  it('pins the track header to the top and centres the work below it, so the spare height sits around the wave and not inside it', async () => {
+    setup()
+    await maximize()
+    expect(screen.getByTestId('cues-toolbar').className).toContain('mt-auto')
+    expect(screen.getByTestId('cues-deck').parentElement?.className).toContain('mb-auto')
+  })
+
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
     setup()
     await maximize()
