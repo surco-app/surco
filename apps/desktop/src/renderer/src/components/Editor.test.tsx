@@ -3521,7 +3521,9 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    const headerRow = screen.getByRole('button', { name: 'Metadata' }).closest('h3')?.parentElement
+    const headerRow = screen
+      .getByRole('button', { name: 'Metadata' })
+      .closest('[data-testid="section-header-lead"]')?.parentElement
     expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
     expect(headerRow).toContainElement(screen.getByTestId('derive-btn'))
   })
