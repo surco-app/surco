@@ -14,6 +14,7 @@ import {
   normalizeCueFlows,
   ONE_AT_32,
   phraseKindOf,
+  phraseLabelOf,
   restoreDefaultFlow,
 } from './cueFlows'
 
@@ -74,6 +75,52 @@ describe('bundled flows', () => {
   it('keeps Una cue a 32 as an earlier flow a DJ may still have, brought back when it is the active one', () => {
     expect(ONE_AT_32.rules[0].bars).toBe(32)
     expect(keepLegacyFlow([MIX_IN], 'one-at-32')).toEqual([MIX_IN, ONE_AT_32])
+  })
+})
+
+describe('phraseLabelOf', () => {
+  // The phrase band shows what rekordbox calls each phrase, so a DJ reads the same words
+  // there as in rekordbox; the flows' five kinds fold verses and the bridge away.
+  it('names high mood phrases as rekordbox does', () => {
+    expect([1, 2, 3, 5, 6].map((k) => phraseLabelOf(1, k))).toEqual([
+      'Intro',
+      'Up',
+      'Down',
+      'Chorus',
+      'Outro',
+    ])
+  })
+
+  it('keeps the six verses and the bridge of a mid mood track', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((k) => phraseLabelOf(2, k))).toEqual([
+      'Intro',
+      'Verse 1',
+      'Verse 2',
+      'Verse 3',
+      'Verse 4',
+      'Verse 5',
+      'Verse 6',
+      'Bridge',
+      'Chorus',
+      'Outro',
+    ])
+  })
+
+  it('folds a low mood track into its two verses, as rekordbox labels them', () => {
+    expect([2, 3, 4, 5, 6, 7, 8].map((k) => phraseLabelOf(3, k))).toEqual([
+      'Verse 1',
+      'Verse 1',
+      'Verse 1',
+      'Verse 2',
+      'Verse 2',
+      'Verse 2',
+      'Bridge',
+    ])
+  })
+
+  it('names nothing it does not know', () => {
+    expect(phraseLabelOf(1, 4)).toBeNull()
+    expect(phraseLabelOf(2, 11)).toBeNull()
   })
 })
 
