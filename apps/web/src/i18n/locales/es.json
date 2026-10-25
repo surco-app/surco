@@ -509,7 +509,7 @@
       },
       {
         "q": "¿Toca mis archivos originales?",
-        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Si reexportas al mismo formato, Surco reescribe ese fichero donde está, es lo que le permite actualizar las etiquetas sin recodificar el audio. Y con «Sobrescribir original» activado, reescribe siempre. Cuando el audio cambia (convertir, normalizar, recortar), Surco guarda antes una copia de seguridad del original que restauras desde la propia pista; en Ajustes → Destino eliges si la quieres siempre, solo cuando cambia el audio o nunca, y cuántos días y cuánto espacio ocupan."
+        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Si reexportas al mismo formato, Surco reescribe ese fichero donde está, es lo que le permite actualizar las etiquetas sin recodificar el audio. Y con «Editar el original» activado, reescribe siempre. Cuando el audio cambia (convertir, normalizar, recortar), Surco guarda antes una copia de seguridad del original que restauras desde la propia pista; en Ajustes → Destino eliges si la quieres siempre, solo cuando cambia el audio o nunca, y cuántos días y cuánto espacio ocupan."
       },
       {
         "q": "¿Conserva los cue points?",
@@ -1426,7 +1426,7 @@
           {
             "tab": "Destino",
             "setting": "Destino de los archivos convertidos",
-            "value": "Sobrescribir el original",
+            "value": "Editar el original",
             "note": "Surco guarda los cambios en el mismo archivo, sin crear otro."
           },
           {
