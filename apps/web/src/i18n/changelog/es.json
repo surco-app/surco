@@ -27,6 +27,18 @@
       {
         "text": "Convertir una pista que tienes en rekordbox ya no te mueve los cues. Siguen sobre el mismo golpe aunque cambies de formato o recortes el silencio del principio, y rekordbox la vuelve a analizar al abrirse, así que ves la onda del fichero nuevo y no la del antiguo.",
         "in": "1.11.1"
+      },
+      {
+        "text": "El editor de cues a pantalla completa es más limpio. La onda ampliada tiene una altura tranquila, todo empieza justo bajo la pista y debajo de la vista general ves las frases que marcó rekordbox (Intro, Up, Chorus, Down, Outro…), así sabes de un vistazo en qué parte del tema cae cada cue.",
+        "in": "1.11.2"
+      },
+      {
+        "text": "Nuevo botón «Borrar todas las cues» en el editor a pantalla completa. Quita los hot cues y los CALL de una vez, y ⌘Z los recupera si te arrepientes.",
+        "in": "1.11.2"
+      },
+      {
+        "text": "En el menú de convertir puedes elegir «Editar el original» solo para esa vez, sin cambiar los ajustes. Sirve, por ejemplo, para retocar las etiquetas de un fichero sin crear una copia. Surco te sigue pidiendo confirmación antes de reescribirlo.",
+        "in": "1.11.2"
       }
     ]
   },

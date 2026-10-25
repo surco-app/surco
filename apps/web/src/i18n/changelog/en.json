@@ -27,6 +27,18 @@
       {
         "text": "Converting a track you keep in rekordbox no longer moves its cue points. They stay on the same beat when you change format or trim the silence at the start, and rekordbox analyses it again when it opens, so you see the new file's waveform instead of the old one's.",
         "in": "1.11.1"
+      },
+      {
+        "text": "The full-screen cue editor is cleaner. The zoomed wave keeps a calm height, everything starts right under the track, and below the overview you see the phrases rekordbox marked (Intro, Up, Chorus, Down, Outro…), so you can tell at a glance which part of the tune each cue falls in.",
+        "in": "1.11.2"
+      },
+      {
+        "text": "New «Clear all cues» button in the full-screen cue editor. It removes the hot cues and CALL points in one go, and ⌘Z brings them back if you change your mind.",
+        "in": "1.11.2"
+      },
+      {
+        "text": "In the convert menu you can pick «Edit the original» for just this time, without changing your settings. Handy, for instance, to touch up a file's tags without making a copy. Surco still asks you to confirm before rewriting it.",
+        "in": "1.11.2"
       }
     ]
   },
