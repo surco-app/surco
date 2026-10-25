@@ -203,11 +203,32 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cue-wave-call-96000')).toBeInTheDocument()
   })
 
-  it('pins the track header to the top and centres the work below it, so the spare height sits around the wave and not inside it', async () => {
+  it('starts the work right under the track header, so the eye reads down from the title without a gap', async () => {
     setup()
     await maximize()
-    expect(screen.getByTestId('cues-toolbar').className).toContain('mt-auto')
-    expect(screen.getByTestId('cues-deck').parentElement?.className).toContain('mb-auto')
+    expect(screen.getByTestId('cues-toolbar').className).not.toContain('mt-auto')
+    expect(screen.getByTestId('cues-deck').parentElement).toBe(screen.getByTestId('cues-editor'))
+  })
+
+  it('lays rekordbox phrases in a band right under the overview in the full editor, and keeps the folded section without it', async () => {
+    setup(null, {
+      ...READ,
+      sections: [
+        { ms: 0, label: 'Intro', kind: 'intro' },
+        { ms: 32000, label: 'Chorus', kind: 'chorus' },
+      ],
+    })
+    await ready()
+    expect(screen.queryByTestId('cue-phrases')).toBeNull()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cue-phrases')).toBeInTheDocument())
+    expect(screen.getAllByTestId('cue-phrase').map((l) => l.textContent)).toEqual([
+      'Intro',
+      'Chorus',
+    ])
+    expect(screen.getByTestId('cue-wave').nextElementSibling).toBe(
+      screen.getByTestId('cue-phrases'),
+    )
   })
 
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {

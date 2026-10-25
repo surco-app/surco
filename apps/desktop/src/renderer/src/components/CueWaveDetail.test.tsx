@@ -601,10 +601,10 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps the zoomed wave a calm 200px however tall the window, since a wave filling the screen read as coarse rather than clean', () => {
+  it('keeps the zoomed wave a calm 280px however tall the window, since a wave filling the screen read as coarse rather than clean', () => {
     setup()
     const stage = screen.getByTestId('cue-detail')
-    expect(stage.style.height).toBe('200px')
+    expect(stage.style.height).toBe('280px')
     expect(stage.style.flexGrow).not.toBe('1')
   })
 

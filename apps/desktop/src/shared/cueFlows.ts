@@ -28,6 +28,12 @@ export interface FlowPhrase {
   kind: PhraseKind
 }
 
+export interface PhraseSection {
+  ms: number
+  label: string
+  kind: PhraseKind
+}
+
 export const MY_FLOW_ID = 'mine'
 export const MANUAL_CUE_FLOW = 'manual'
 export const RULE_BARS = [0, 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]
@@ -126,6 +132,39 @@ const HIGH_MOOD: Record<number, PhraseKind> = {
   6: 'outro',
 }
 const OTHER_MOOD: Record<number, PhraseKind> = { 1: 'intro', 8: 'down', 9: 'chorus', 10: 'outro' }
+
+const HIGH_LABEL: Record<number, string> = {
+  1: 'Intro',
+  2: 'Up',
+  3: 'Down',
+  5: 'Chorus',
+  6: 'Outro',
+}
+const MID_LABEL: Record<number, string> = {
+  1: 'Intro',
+  2: 'Verse 1',
+  3: 'Verse 2',
+  4: 'Verse 3',
+  5: 'Verse 4',
+  6: 'Verse 5',
+  7: 'Verse 6',
+  8: 'Bridge',
+  9: 'Chorus',
+  10: 'Outro',
+}
+const LOW_LABEL: Record<number, string> = {
+  ...MID_LABEL,
+  3: 'Verse 1',
+  4: 'Verse 1',
+  5: 'Verse 2',
+  6: 'Verse 2',
+  7: 'Verse 2',
+}
+
+export function phraseLabelOf(mood: number, kind: number): string | null {
+  const labels = mood === 1 ? HIGH_LABEL : mood === 2 ? MID_LABEL : LOW_LABEL
+  return labels[kind] ?? null
+}
 
 export function phraseKindOf(mood: number, kind: number): PhraseKind | null {
   if (mood === 1) return HIGH_MOOD[kind] ?? null

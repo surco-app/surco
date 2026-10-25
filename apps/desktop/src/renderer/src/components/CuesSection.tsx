@@ -86,6 +86,7 @@ import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
 import { CueDeck } from './CueDeck'
 import { CuePalette } from './CuePalette'
+import { CuePhraseBand } from './CuePhraseBand'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
@@ -1046,7 +1047,7 @@ function Editing({
     </div>
   )
   const toolbar = (
-    <div data-testid="cues-toolbar" className="mt-auto flex shrink-0 items-center gap-2">
+    <div data-testid="cues-toolbar" className="flex shrink-0 items-center gap-2">
       <Select
         testid="cues-flow"
         portal
@@ -1109,7 +1110,10 @@ function Editing({
       {maximized ? (
         <>
           {toolbar}
-          {strip}
+          <div className="flex shrink-0 flex-col gap-1">
+            {strip}
+            <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
+          </div>
           {detail}
         </>
       ) : (
@@ -1317,30 +1321,26 @@ function Editing({
         </p>
       )}
       {maximized && (
-        <div className="mb-auto">
-          <CueDeck
-            cues={state.cues}
-            selected={state.selected}
-            locked={state.locked}
-            jumpBars={settings.cueJumpBars}
-            quantize={quantize}
-            barQuantize={!provisional}
-            playing={audition.playing}
-            onPlay={() => audition.toggle(playheadMs)}
-            onPad={pad}
-            onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
-            onDelete={(key) => dispatch(removeOf(key))}
-            onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
-            onMemoryStep={memoryStep}
-            onMemoryRemove={memoryRemove}
-            canRemoveMemory={
-              removableCall !== undefined && !state.locked.includes(removableCall.key)
-            }
-            onJumpBars={(bars) => onJumpBars?.(bars)}
-            onQuantize={(unit) => onQuantize?.(unit)}
-            onDone={focusEditor}
-          />
-        </div>
+        <CueDeck
+          cues={state.cues}
+          selected={state.selected}
+          locked={state.locked}
+          jumpBars={settings.cueJumpBars}
+          quantize={quantize}
+          barQuantize={!provisional}
+          playing={audition.playing}
+          onPlay={() => audition.toggle(playheadMs)}
+          onPad={pad}
+          onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
+          onDelete={(key) => dispatch(removeOf(key))}
+          onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
+          onMemoryStep={memoryStep}
+          onMemoryRemove={memoryRemove}
+          canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
+          onJumpBars={(bars) => onJumpBars?.(bars)}
+          onQuantize={(unit) => onQuantize?.(unit)}
+          onDone={focusEditor}
+        />
       )}
     </fieldset>
   )
