@@ -267,6 +267,12 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-bars').style.height).toBe('calc(100% - 14px)')
   })
 
+  it('keeps the full editor overview a thin 44px card, so the zoomed wave stays the one large shape', () => {
+    setup()
+    expect(screen.getByTestId('cue-wave').className).toContain('h-11')
+    expect(screen.getByTestId('cue-wave').className).toContain('rounded-md')
+  })
+
   it('draws two dropped cues at one position without a key clash', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     setup({

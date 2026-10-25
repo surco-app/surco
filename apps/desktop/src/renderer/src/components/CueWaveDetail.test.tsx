@@ -92,9 +92,9 @@ describe('CueWaveDetail', () => {
       for (const line of lines) {
         expect(downbeats).toContain(Number(line.dataset.ms))
         expect(line.style.backgroundColor).toBe(red)
-        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.45)
-        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.55)
-        expect(line.style.width).toBe('2px')
+        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.25)
+        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.35)
+        expect(line.style.width).toBe('1px')
         expect(line.childElementCount).toBe(0)
       }
       expect(new Set(lines.map((l) => (Number(l.dataset.ms) / 500) % 4))).toEqual(new Set([2]))
@@ -601,9 +601,11 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('fills the height it is given in the full editor, so the window goes to the wave and not to empty space', () => {
+  it('keeps the zoomed wave a calm 200px however tall the window, since a wave filling the screen read as coarse rather than clean', () => {
     setup()
-    expect(screen.getByTestId('cue-detail').style.height).toBe('100%')
+    const stage = screen.getByTestId('cue-detail')
+    expect(stage.style.height).toBe('200px')
+    expect(stage.style.flexGrow).not.toBe('1')
   })
 
   it('leaves headroom above and below the loudest column, so a loud track never touches the edges', () => {

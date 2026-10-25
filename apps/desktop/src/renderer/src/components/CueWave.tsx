@@ -240,7 +240,7 @@ export function CueWave({
         })
       }}
       className={`relative w-full overflow-hidden outline-none focus-visible:shadow-none ${
-        slim ? 'h-[44px]' : 'h-16 rounded-md bg-[var(--color-panel-2)]'
+        slim ? 'h-[44px]' : 'h-11 rounded-md bg-[var(--color-panel-2)]'
       } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
     >
       <div
