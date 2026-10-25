@@ -144,18 +144,38 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-save')).toBeInTheDocument()
   })
 
-  it('puts the length, BPM and key in grey beside the title and the mode, Guardar, the keys and restore on the same bar', async () => {
+  it('puts the length, BPM and key in grey beside the title, and Guardar, the keys and restore on the same bar', async () => {
     setup()
     await maximize()
     const header = screen.getByTestId('cues-header')
     const meta = within(header).getByTestId('cues-meta')
     for (const id of ['cues-duration', 'cues-bpm', 'cues-key'])
       expect(meta).toContainElement(screen.getByTestId(id))
-    for (const id of ['cues-flow', 'cues-save', 'cues-keys', 'section-maximize'])
+    for (const id of ['cues-save', 'cues-step-back', 'cues-keys', 'section-maximize'])
       expect(header).toContainElement(screen.getByTestId(id))
     expect(screen.getAllByTestId('section-maximize')).toHaveLength(1)
     expect(screen.getByTestId('section-maximize')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('cues-save')).toHaveTextContent('Save to rekordbox')
+  })
+
+  it('gathers what acts on the marks in one bar over the waves, the flow and Auto mark on the left and the time, the bars to the CALL and the zoom on the right', async () => {
+    setup()
+    await maximize()
+    const toolbar = screen.getByTestId('cues-toolbar')
+    for (const id of [
+      'cues-flow',
+      'cues-auto-mark',
+      'cues-position',
+      'cue-zoom-out',
+      'cue-zoom-reset',
+      'cue-zoom-in',
+    ])
+      expect(toolbar).toContainElement(screen.getByTestId(id))
+    expect(screen.getByTestId('cues-header')).not.toContainElement(screen.getByTestId('cues-flow'))
+    expect(
+      toolbar.compareDocumentPosition(screen.getByTestId('cue-wave')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
@@ -626,12 +646,13 @@ describe('CuesSection maximized keys', () => {
     expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(17)
   })
 
-  it('shows the playhead time beside the playhead instead of in the top bar', async () => {
+  it('shows the playhead time in the bar over the waves instead of in the top bar', async () => {
     setup()
     await maximize()
     expect(screen.getByTestId('cues-header')).not.toContainElement(
       screen.getByTestId('cues-position'),
     )
+    expect(screen.getByTestId('cues-toolbar')).toContainElement(screen.getByTestId('cues-position'))
   })
 
   it('never acts while a field of the editor has the focus', async () => {

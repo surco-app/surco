@@ -9,6 +9,7 @@ import {
   jumpBeats,
   WHEEL_ZOOM_STEP,
   wheelZoom,
+  wholeBars,
   zoomStep,
 } from './cuePlayhead'
 
@@ -140,5 +141,14 @@ describe('wheelZoom', () => {
   it('starts again when the fingers turn back, so a hesitation never zooms the wrong way', () => {
     expect(wheelZoom(-30, 15)).toEqual({ pending: 15, dir: null })
     expect(wheelZoom(30, -15)).toEqual({ pending: -15, dir: null })
+  })
+})
+
+describe('wholeBars', () => {
+  it('rounds up off the grid so it reads 1 until the playhead is on the point and never 0 before it', () => {
+    expect(wholeBars(barsToNextCall(beats, [bar(33)], bar(32)) ?? -1)).toBe(1)
+    expect(wholeBars(barsToNextCall(beats, [bar(40) + 1000], bar(32)) ?? -1)).toBe(9)
+    expect(wholeBars(barsToNextCall(beats, [bar(32) + 600], bar(32)) ?? -1)).toBe(1)
+    expect(wholeBars(barsToNextCall(beats, [bar(32)], bar(32)) ?? -1)).toBe(0)
   })
 })
