@@ -432,12 +432,10 @@ export const Editor = memo(function Editor({
   // The chosen destination, same per-track contract as the format: seeded from this
   // track's earlier pick or the Settings booleans, updated only by the split-button menu,
   // never written back to Settings.
-  // A remembered destination the menu no longer offers (Overwrite turned off since, or
-  // Apple Music off macOS) is dropped, or the track would still go where the user can't
-  // see or pick it any more.
+  // A remembered destination the menu no longer offers (Apple Music off macOS) is
+  // dropped, or the track would still go where the user can't see or pick it any more.
   const rememberedDestination =
     rememberedPick?.destination !== undefined &&
-    (rememberedPick.destination !== 'overwrite' || overwriteOriginal) &&
     (rememberedPick.destination !== 'appleMusic' || isMacOS())
       ? rememberedPick.destination
       : undefined
@@ -518,12 +516,9 @@ export const Editor = memo(function Editor({
   // so the in-place warnings, the button label and the membership badge all describe
   // the conversion the button will actually run.
   const picked = fromDestination(destination)
-  // Overwrite is deliberately not offered as a one-shot pick (rewriting sources is a
-  // Settings-level decision with its own confirmations); it stays listed only while
-  // it IS the configured destination, so the current choice is always visible.
-  const destinationChoices = DESTINATIONS.filter(
-    (d) => (d !== 'overwrite' || overwriteOriginal) && (d !== 'appleMusic' || isMacOS()),
-  )
+  // Overwrite is offered as a one-shot pick too: retagging one file in place shouldn't
+  // need a Settings change, and the convert confirmations still ask before rewriting.
+  const destinationChoices = DESTINATIONS.filter((d) => d !== 'appleMusic' || isMacOS())
   // Which library the membership badge reads — the conversion destination's. Null
   // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
   const librarySource = librarySourceOf({ ...picked, outputFormat: format }, isMacOS())
@@ -1590,7 +1585,7 @@ export const Editor = memo(function Editor({
                     case 'output':
                       // Overwrite mode pins the name to the original, so the File Name
                       // section is replaced by a notice of what the export will do.
-                      if (!isMulti && overwriteOriginal) {
+                      if (!isMulti && picked.overwriteOriginal) {
                         return (
                           <OverwriteNotice
                             key={id}
@@ -1615,7 +1610,7 @@ export const Editor = memo(function Editor({
                       // every file name from the pattern at once (djotas's ask). One
                       // button in the section's slot instead of hiding it entirely.
                       if (isMulti) {
-                        if (overwriteOriginal) return null
+                        if (picked.overwriteOriginal) return null
                         return (
                           <BulkActionSection
                             key={id}
