@@ -3285,7 +3285,7 @@ describe('App per-track format pick', () => {
   // A user with Keep MP3 on and "Next to the original" as the default only wanted to retag
   // one MP3 in place. The rule left the file untouched and the menu had no way to say
   // "this one, rewrite the original", so the only path was changing Settings for good.
-  it('rewrites one MP3 in place when Overwrite original is picked in the menu', async () => {
+  it('rewrites one MP3 in place when Edit the original is picked in the menu', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.mp3', inPlace: true })
     setApi({
       getSettings: vi.fn().mockResolvedValue(

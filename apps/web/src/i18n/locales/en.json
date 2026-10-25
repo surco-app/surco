@@ -509,7 +509,7 @@
       },
       {
         "q": "Does it touch my original files?",
-        "a": "It depends on whether the format changes. Convert to a different format and the original is left alone, with the copy going to a separate folder (Music/Surco). Re-export to the same format and Surco rewrites that file where it is, which is what lets it update the tags without re-encoding the audio. With \"Overwrite original\" on, it always rewrites. When the audio changes (converting, normalizing, trimming), Surco first keeps a backup of the original that you restore from the track itself; in Settings → Output you choose whether to keep one always, only when the audio changes or never, and for how many days and how much space."
+        "a": "It depends on whether the format changes. Convert to a different format and the original is left alone, with the copy going to a separate folder (Music/Surco). Re-export to the same format and Surco rewrites that file where it is, which is what lets it update the tags without re-encoding the audio. With \"Edit the original\" on, it always rewrites. When the audio changes (converting, normalizing, trimming), Surco first keeps a backup of the original that you restore from the track itself; in Settings → Output you choose whether to keep one always, only when the audio changes or never, and for how many days and how much space."
       },
       {
         "q": "Does it keep cue points?",
@@ -1426,7 +1426,7 @@
           {
             "tab": "Output",
             "setting": "Where converted tracks go",
-            "value": "Overwrite original",
+            "value": "Edit the original",
             "note": "Surco saves the changes into the same file instead of making a new one."
           },
           {
