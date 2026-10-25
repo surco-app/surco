@@ -1,0 +1,8 @@
+[
+  {"id": "open", "say": "Una carpeta con dos maxis, sin álbum, sin año y sin carátula. La arrastras a Surco.", "sub": "Una carpeta con dos maxis, sin álbum, sin año y sin carátula. La arrastras a Surco."},
+  {"id": "auto", "say": "Surco busca cada pista en Discogs y la empareja sola cuando está seguro.", "sub": "Surco busca cada pista en Discogs y la empareja sola cuando está seguro."},
+  {"id": "auto2", "say": "Álbum, año, género y carátula, sin un solo clic.", "sub": "Álbum, año, género y carátula, sin un solo clic."},
+  {"id": "pending", "say": "Y si alguna no te convence, la abres y eliges tú la mezcla en el disco.", "sub": "Y si alguna no te convence, la abres y eliges tú la mezcla en el disco."},
+  {"id": "convert", "say": "Pulsas Convertir y Surco lo escribe en los mismos ficheros, sin crear copias.", "sub": "Pulsas Convertir y Surco lo escribe en los mismos ficheros, sin crear copias."},
+  {"id": "done", "say": "Seis pistas etiquetadas. El sonido no cambia.", "sub": "Seis pistas etiquetadas. El sonido no cambia."}
+]

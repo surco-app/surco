@@ -1,0 +1,9 @@
+[
+  {"id": "open", "say": "Tienes un fichero guav sin etiquetas, con un nombre cualquiera. Lo abres en Surco.", "sub": "Un WAV sin etiquetas, con un nombre cualquiera. Lo abres en Surco."},
+  {"id": "search", "say": "Al seleccionarlo, Surco lo busca en Discogs y te sugiere la mejor coincidencia.", "sub": "Al seleccionarlo, Surco lo busca en Discogs y sugiere la mejor coincidencia."},
+  {"id": "release", "say": "Surco abre la edición sugerida, el maxi de Jive de mil novecientos noventa y ocho. Tú eliges la mezcla.", "sub": "Surco abre la edición sugerida, el maxi de Jive de 1998. Tú eliges la mezcla."},
+  {"id": "apply", "say": "Título, artista, álbum, año, género y carátula se rellenan solos.", "sub": "Título, artista, álbum, año, género y carátula se rellenan solos."},
+  {"id": "grouping", "say": "Solo falta la agrupación. Un clic en Cantaditas.", "sub": "Solo falta la agrupación. Un clic en Cantaditas."},
+  {"id": "convert", "say": "Pulsas Convertir. Surco la pasa a aif, escribe todas las etiquetas y la añade a Apple Music.", "sub": "Pulsas Convertir. Surco la pasa a AIFF, escribe las etiquetas y la añade a Apple Music."},
+  {"id": "done", "say": "Ya está en tu biblioteca, lista para pinchar.", "sub": "Ya está en tu biblioteca, lista para pinchar."}
+]

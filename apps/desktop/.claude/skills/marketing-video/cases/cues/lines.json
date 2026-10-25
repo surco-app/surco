@@ -1,0 +1,9 @@
+[
+  {"id": "rb", "say": "Abres tu colección de rekordbox en Surco y eliges una playlist.", "sub": "Abres tu colección de rekordbox en Surco y eliges una playlist."},
+  {"id": "list", "say": "Cada pista enseña sus cues, como en rekordbox. Esta todavía no tiene ninguno.", "sub": "Cada pista enseña sus cues, como en rekordbox. Esta todavía no tiene ninguno."},
+  {"id": "max", "say": "Abres el editor de cues a pantalla completa.", "sub": "Abres el editor de cues a pantalla completa."},
+  {"id": "auto", "say": "Pulsas Auto marcar. Surco lee las frases que analizó rekordbox y propone los cues de tu flujo.", "sub": "Pulsas Auto marcar. Surco lee las frases que analizó rekordbox y propone los cues de tu flujo."},
+  {"id": "accept", "say": "Revisas la propuesta y la aceptas.", "sub": "Revisas la propuesta y la aceptas."},
+  {"id": "nav", "say": "Con las flechas saltas de uno a otro para comprobarlos.", "sub": "Con las flechas saltas de uno a otro para comprobarlos."},
+  {"id": "save", "say": "Y los guardas en rekordbox. Sin marcar nada a mano.", "sub": "Y los guardas en rekordbox. Sin marcar nada a mano."}
+]
