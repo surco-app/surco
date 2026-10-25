@@ -277,7 +277,7 @@ export function Select({
           e.stopPropagation()
           if (!open) toggle()
         }}
-        className={`flex min-w-0 items-center gap-1.5 pr-1.5 pl-2 text-xs outline-none ${look} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
+        className={`flex min-w-0 max-w-full items-center gap-1.5 pr-1.5 pl-2 text-xs outline-none ${look} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
         {lead && <span className="shrink-0 text-fg-dim">{lead}</span>}
