@@ -2604,15 +2604,14 @@ describe('Editor output file name', () => {
     expect(screen.getByTestId('overwrite-notice')).toBeInTheDocument()
   })
 
-  // A destination remembered for this track while Overwrite was on must not outlive the
-  // setting: the menu no longer offers it, yet the track would still rewrite in place.
-  it('drops a remembered destination the menu no longer offers', () => {
-    const { onDestinationChange } = renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', {
+  // Overwrite is a one-shot pick in the menu, so a track the user sent there by hand
+  // keeps going there after a visit to another track, even with Settings saying otherwise.
+  it('keeps a remembered Overwrite pick with overwrite off in Settings', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', {
       overwriteOriginal: false,
       rememberedPick: { destination: 'overwrite' },
     })
-    expect(onDestinationChange).not.toHaveBeenCalledWith('overwrite', expect.anything())
-    expect(screen.queryByTestId('overwrite-notice')).toBeNull()
+    expect(screen.getByTestId('overwrite-notice')).toBeInTheDocument()
   })
 
   // The one irreversible case — replacing a lossless master with MP3 — gets the louder

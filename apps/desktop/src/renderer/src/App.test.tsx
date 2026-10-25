@@ -3282,6 +3282,37 @@ describe('App per-track format pick', () => {
     expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
   })
 
+  // A user with Keep MP3 on and "Next to the original" as the default only wanted to retag
+  // one MP3 in place. The rule left the file untouched and the menu had no way to say
+  // "this one, rewrite the original", so the only path was changing Settings for good.
+  it('rewrites one MP3 in place when Overwrite original is picked in the menu', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.mp3', inPlace: true })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          outputFormat: 'aiff',
+          keepMp3Sources: true,
+          convertBesideOriginal: true,
+          overwriteOriginal: false,
+        }),
+      ),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    fireEvent.click((await screen.findAllByTestId('track-row'))[0])
+    await openFormatMenu()
+    fireEvent.click(screen.getByTestId('process-destination-overwrite'))
+    fireEvent.click(screen.getByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    const [job] = processTrack.mock.calls[0]
+    expect(job.format).toBe('mp3')
+    expect(job.overwriteOriginal).toBe(true)
+  })
+
   it('says the conversion went through and only Apple Music failed', async () => {
     const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
       outputPath: '/music/a.aiff',
