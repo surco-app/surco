@@ -126,7 +126,7 @@ describe('SegmentedControl sliding highlight', () => {
         )
       try {
         rerender(control('c'))
-        const m = overlayEl.style.clipPath.match(/inset\(0 ([\d.]+)px 0 ([\d.]+)px round/)
+        const m = overlayEl.style.clipPath.match(/inset\(0px ([\d.]+)px 0px ([\d.]+)px round/)
         expect(m).not.toBeNull()
         expect(Number(m?.[1])).toBeCloseTo(3, 1)
         expect(Number(m?.[2])).toBeCloseTo(201, 1)
@@ -186,10 +186,54 @@ describe('SegmentedControl sliding highlight', () => {
       )
     try {
       rerender(control('b'))
-      const m = overlayEl.style.clipPath.match(/inset\(0 ([\d.]+)px 0 ([\d.]+)px round/)
+      const m = overlayEl.style.clipPath.match(/inset\(0px ([\d.]+)px 0px ([\d.]+)px round/)
       expect(m).not.toBeNull()
       expect(Number(m?.[1])).toBeCloseTo(1011.6484375 - 732.265625, 6)
       expect(Number(m?.[2])).toBeCloseTo(649.3984375 - 484, 6)
+    } finally {
+      spy.mockRestore()
+      Element.prototype.getBoundingClientRect = original
+    }
+  })
+
+  // In a narrow panel the four loudness presets ran past the panel edge ("Personalizado" cut
+  // off). The row now wraps instead, so the raised copy must clip to the active segment's
+  // row as well as its column, or it would paint every row's segment in that column.
+  it('wraps onto another row when the options do not fit, and clips the highlight to the active row', () => {
+    const original = Element.prototype.getBoundingClientRect
+    const rect = (left: number, right: number, top: number, bottom: number): DOMRect =>
+      ({
+        left,
+        right,
+        top,
+        bottom,
+        width: right - left,
+        height: bottom - top,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect
+    Element.prototype.getBoundingClientRect = function () {
+      const id = (this as Element).getAttribute?.('data-testid') ?? ''
+      if (id === 'seg-highlight') return rect(0, 300, 0, 70)
+      if (id === 'seg-c') return rect(3, 120, 37, 67)
+      return rect(0, 0.0001, 0, 0.0001)
+    }
+    const realGCS = window.getComputedStyle.bind(window)
+    const spy = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockImplementation((el, pseudo) =>
+        (el as Element).getAttribute?.('data-testid') === 'seg-highlight'
+          ? ({ width: '300px', height: '70px' } as CSSStyleDeclaration)
+          : realGCS(el, pseudo),
+      )
+    try {
+      renderControl('c')
+      expect(screen.getByRole('group').className).toContain('flex-wrap')
+      expect(screen.getByTestId('seg-highlight').className).toContain('flex-wrap')
+      expect(screen.getByTestId('seg-highlight').style.clipPath).toBe(
+        'inset(37px 180px 3px 3px round 6px)',
+      )
     } finally {
       spy.mockRestore()
       Element.prototype.getBoundingClientRect = original
