@@ -47,7 +47,12 @@ export function SegmentedControl<T extends string>({
   // hidden wizard step, a modal mid-entrance): zeros read as clip inset(0 0 0 0) —
   // the WHOLE track raised — and the first real measurement then slid the highlight
   // from both edges onto the active segment. Until geometry lands, no highlight.
-  const [clip, setClip] = useState<{ left: number; right: number } | null>(null)
+  const [clip, setClip] = useState<{
+    top: number
+    right: number
+    bottom: number
+    left: number
+  } | null>(null)
   // The slide is for changing VALUE, never for arriving on screen: the transition
   // class is withheld until one real clip has painted, so the first measurement
   // (and the first after being re-hidden) lands instantly.
@@ -83,7 +88,12 @@ export function SegmentedControl<T extends string>({
       }
       const factor = width / o.width
       const b = active.getBoundingClientRect()
-      setClip({ left: (b.left - o.left) * factor, right: (o.right - b.right) * factor })
+      setClip({
+        top: (b.top - o.top) * factor,
+        right: (o.right - b.right) * factor,
+        bottom: (o.bottom - b.bottom) * factor,
+        left: (b.left - o.left) * factor,
+      })
     }
     measure()
     if (!track || typeof ResizeObserver === 'undefined') return
@@ -101,7 +111,7 @@ export function SegmentedControl<T extends string>({
       aria-label={label}
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
-      className={`relative inline-flex gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
+      className={`relative inline-flex max-w-full flex-wrap gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
     >
       {options.map((id) => (
         <button
@@ -125,8 +135,10 @@ export function SegmentedControl<T extends string>({
         // Mirrors the row's exact layout (same padding, gap and type), every copy
         // painted raised, then clips down to the active option's box. clip-path is
         // composited and a transition retargets from the current clip, so rapid
-        // clicks redirect the slide mid-flight instead of restarting it.
-        className={`absolute inset-0 flex gap-0.5 p-[3px] motion-reduce:transition-none ${
+        // clicks redirect the slide mid-flight instead of restarting it. Both layers wrap
+        // alike when the options outgrow a narrow panel, so the clip takes the active
+        // segment's row too.
+        className={`absolute inset-0 flex flex-wrap gap-0.5 p-[3px] motion-reduce:transition-none ${
           settled
             ? 'transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)]'
             : ''
@@ -135,7 +147,7 @@ export function SegmentedControl<T extends string>({
           clip
             ? {
                 pointerEvents: 'none',
-                clipPath: `inset(0 ${clip.right}px 0 ${clip.left}px round 6px)`,
+                clipPath: `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px round 6px)`,
               }
             : { pointerEvents: 'none', visibility: 'hidden' }
         }

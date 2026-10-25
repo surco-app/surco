@@ -79,90 +79,100 @@ export function SectionHeader({
     </span>
   )
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-      {/* The button stretches across the free width (and pads a few px vertically)
+    <div className="flex items-start justify-between gap-x-3">
+      <div
+        data-testid="section-header-lead"
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2"
+      >
+        {/* The button stretches across the free width (and pads a few px vertically)
           so the whole header row folds the section, not just the title's letters;
           the right-slot actions stay outside it. aria-label pins the accessible
           name to the title alone — the summary is state, not name. The h3 puts each
           section in a screen reader's heading list; it takes the button's flex slot.
-          The heading never narrows below its chevron and title: when the right-slot pills and
-          buttons don't fit beside it, the row wraps them onto a line of their own instead of
-          letting them paint over the title. The folded summary is zero-width at rest and only
-          grows into free space, so a long digest truncates rather than forcing that wrap. */}
-      <h3 className={`flex min-w-min ${statusAction ? 'shrink-0' : 'flex-1'}`}>
-        <button
-          type="button"
-          // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
-          // findable from outside React without a ref registry to keep in sync.
-          data-section-header={sectionId}
-          onClick={onToggle}
-          disabled={disabled}
-          aria-label={title}
-          aria-expanded={open}
-          aria-controls={bodyId}
-          aria-describedby={status ? statusId : undefined}
-          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg disabled:opacity-50 disabled:hover:text-fg-muted"
-        >
-          <ChevronRight
-            aria-hidden="true"
-            className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
-          />
-          <span className="shrink-0">{title}</span>
-          {status && (
-            <span id={statusId} className="flex shrink-0 items-center gap-x-4 pl-2">
-              {status}
-            </span>
-          )}
-          {!statusAction && summaryNode}
-        </button>
-      </h3>
-      {statusAction && (
-        <>
-          {statusAction}
-          {/* The rest of the row still folds the section for a pointer, as the one button
-              did before the state's own control split it; the keyboard has that button. */}
+          The heading never narrows below its chevron and title. When the state control (the
+          cue flow and Auto marcar) does not fit beside it, only that control wraps onto a
+          second line: the help, pills and maximize sit in their own group on the title's line,
+          where the whole row's wrap used to drop the maximize alone onto a line of its own.
+          Both groups are a line of 24px so the title and the icons share a centre. The folded
+          summary is zero-width at rest and only grows into free space, so a long digest
+          truncates rather than forcing a wrap. */}
+        <h3 className={`flex min-h-6 min-w-min ${statusAction ? 'shrink-0' : 'flex-1'}`}>
           <button
             type="button"
-            tabIndex={-1}
-            aria-hidden="true"
+            // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
+            // findable from outside React without a ref registry to keep in sync.
+            data-section-header={sectionId}
             onClick={onToggle}
             disabled={disabled}
-            className="-my-1.5 -ml-3 flex min-w-0 flex-1 self-stretch py-1.5"
+            aria-label={title}
+            aria-expanded={open}
+            aria-controls={bodyId}
+            aria-describedby={status ? statusId : undefined}
+            className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg disabled:opacity-50 disabled:hover:text-fg-muted"
           >
-            {summaryNode}
+            <ChevronRight
+              aria-hidden="true"
+              className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+            />
+            <span className="shrink-0">{title}</span>
+            {status && (
+              <span id={statusId} className="flex shrink-0 items-center gap-x-4 pl-2">
+                {status}
+              </span>
+            )}
+            {!statusAction && summaryNode}
           </button>
-        </>
-      )}
-      {help && (
-        <span
-          data-testid="section-help"
-          role="note"
-          className="relative flex h-5 w-5 shrink-0 items-center justify-center text-fg-dim hover:text-fg-muted"
-        >
-          <Info className="h-3 w-3" aria-hidden="true" />
-          {/* The sentence is the note's content for a screen reader, and the
+        </h3>
+        {statusAction && (
+          <>
+            {statusAction}
+            {/* The rest of the row still folds the section for a pointer, as the one button
+              did before the state's own control split it; the keyboard has that button. */}
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-hidden="true"
+              onClick={onToggle}
+              disabled={disabled}
+              className="-my-1.5 -ml-3 flex min-w-0 flex-1 self-stretch py-1.5"
+            >
+              {summaryNode}
+            </button>
+          </>
+        )}
+      </div>
+      <div className="flex min-h-6 shrink-0 items-center gap-x-3">
+        {help && (
+          <span
+            data-testid="section-help"
+            role="note"
+            className="relative flex h-5 w-5 shrink-0 items-center justify-center text-fg-dim hover:text-fg-muted"
+          >
+            <Info className="h-3 w-3" aria-hidden="true" />
+            {/* The sentence is the note's content for a screen reader, and the
               tooltip's label for a pointer — one source, both audiences. */}
-          <span className="sr-only">{help}</span>
-          <Tooltip label={help} />
-        </span>
-      )}
-      {right}
-      {maximizable === true && sectionId !== undefined && (
-        <button
-          type="button"
-          data-testid="section-maximize"
-          aria-label={isMaximized ? tr('editor.sectionRestore') : tr('editor.sectionMaximize')}
-          aria-pressed={isMaximized}
-          onClick={() => setMaximized(isMaximized ? null : sectionId)}
-          className="press flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
-        >
-          {isMaximized ? (
-            <Minimize2 className="h-3 w-3" aria-hidden="true" />
-          ) : (
-            <Maximize2 className="h-3 w-3" aria-hidden="true" />
-          )}
-        </button>
-      )}
+            <span className="sr-only">{help}</span>
+            <Tooltip label={help} />
+          </span>
+        )}
+        {right}
+        {maximizable === true && sectionId !== undefined && (
+          <button
+            type="button"
+            data-testid="section-maximize"
+            aria-label={isMaximized ? tr('editor.sectionRestore') : tr('editor.sectionMaximize')}
+            aria-pressed={isMaximized}
+            onClick={() => setMaximized(isMaximized ? null : sectionId)}
+            className="press flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+          >
+            {isMaximized ? (
+              <Minimize2 className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="h-3 w-3" aria-hidden="true" />
+            )}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

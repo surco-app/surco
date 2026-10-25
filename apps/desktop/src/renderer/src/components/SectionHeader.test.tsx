@@ -81,6 +81,26 @@ describe('SectionHeader folded row', () => {
     expect(screen.getByTestId('section-help')).toBeInTheDocument()
   })
 
+  // In Spanish a long state ("Sin guardar", a flow's name, "Auto marcar") outgrew a narrow
+  // panel and the row's wrap dropped the maximize button alone onto a second line. Only the
+  // state control may wrap now; the help and maximize keep their place on the title's line.
+  it('wraps only the state control, never the help or the maximize', () => {
+    header({
+      maximizable: true,
+      sectionId: 'cues',
+      statusAction: <span data-testid="state">a long flow name</span>,
+    })
+    const lead = screen.getByTestId('section-header-lead')
+    expect(lead.className).toContain('flex-wrap')
+    expect(lead).toContainElement(screen.getByRole('heading', { level: 3 }))
+    expect(lead).toContainElement(screen.getByTestId('state'))
+    expect(lead).not.toContainElement(screen.getByTestId('section-maximize'))
+    expect(lead).not.toContainElement(screen.getByTestId('section-help'))
+    const row = lead.parentElement as HTMLElement
+    expect(row.className).not.toContain('flex-wrap')
+    expect(row).toContainElement(screen.getByTestId('section-maximize'))
+  })
+
   it('keeps the extras once open', () => {
     header({ open: true })
     expect(screen.getByTestId('pill')).toBeInTheDocument()
