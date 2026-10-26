@@ -30,7 +30,7 @@ export function SpectrumLoading(): React.JSX.Element {
         <span
           key={f}
           style={{ top: `${(1 - f / NYQUIST) * 100}%` }}
-          className="pointer-events-none absolute left-1 -translate-y-1/2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[10px] tabular-nums text-fg-faint"
+          className={`pointer-events-none absolute left-1 ${f === 0 ? '-mt-0.5 -translate-y-full' : '-translate-y-1/2'} rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[10px] tabular-nums text-fg-faint`}
         >
           {f / 1000}k
         </span>
