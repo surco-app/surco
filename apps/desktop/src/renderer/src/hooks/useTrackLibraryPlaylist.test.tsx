@@ -641,7 +641,13 @@ describe('the light read of a rekordbox row', () => {
     separator: false,
     meta: {},
     contentId: 'c1',
-    preview: { title: 'A', artist: 'R', durationSec: 256, cues: [] },
+    preview: {
+      title: 'A',
+      artist: 'R',
+      durationSec: 256,
+      cues: [],
+      coverUrl: 'surco://media/rekordbox-art.jpg',
+    },
   }
   const light = {
     tags: tags({ title: 'A' }),
@@ -667,6 +673,22 @@ describe('the light read of a rekordbox row', () => {
     await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
     expect(readMeta).not.toHaveBeenCalled()
     expect(result.current.tracks[0].metaPartial).toBe(true)
+  })
+
+  it('reads the file in full when the library holds no cover for it, so the row shows the file art without being clicked', async () => {
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    const { coverUrl: _, ...bare } = entry.preview
+    await act(async () => {
+      await result.current.openSourcePlaylist([{ ...entry, preview: bare }], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const row = result.current.tracks[0]
+    expect(readMetaLight).not.toHaveBeenCalled()
+    expect(row.embeddedCover).toBe('surco://cover/a.jpg')
+    expect(row.metaPartial).toBe(false)
+    expect(row.diskSignature).toBe(trackSignature(row))
   })
 
   it('completes the cover and foreign tags without the row reading as edited', async () => {
