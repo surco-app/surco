@@ -54,23 +54,30 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
 
       <SettingsSection>
         <SettingsGroup>
-          <SettingsCheckboxField
-            testid="settings-show-spectrum"
-            checked={synced.showSpectrum}
-            onChange={(v) => patch('showSpectrum', v)}
-            label={tr('settings.showSpectrum')}
-            hint={tr('settings.showSpectrumHint')}
-          />
-          {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
-              when it isn't, so the option stays discoverable. */}
-          <SettingsCheckboxField
-            testid="settings-auto-analyze"
-            checked={synced.autoAnalyze}
-            onChange={(v) => patch('autoAnalyze', v)}
-            disabled={!synced.showSpectrum}
-            label={tr('settings.autoAnalyze')}
-            hint={tr('settings.autoAnalyzeHint')}
-          />
+          <div data-testid="settings-quality-analysis">
+            <SettingsCheckboxField
+              testid="settings-show-spectrum"
+              checked={synced.showSpectrum}
+              onChange={(v) => patch('showSpectrum', v)}
+              label={tr('settings.showSpectrum')}
+              hint={tr('settings.showSpectrumHint')}
+            />
+            {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
+                when it isn't, so the option stays discoverable. */}
+            <div
+              data-testid="settings-auto-analyze-nested"
+              className="mt-3 ml-2 border-l border-[var(--color-line-strong)] pl-[19px]"
+            >
+              <SettingsCheckboxField
+                testid="settings-auto-analyze"
+                checked={synced.autoAnalyze}
+                onChange={(v) => patch('autoAnalyze', v)}
+                disabled={!synced.showSpectrum}
+                label={tr('settings.autoAnalyze')}
+                hint={tr('settings.autoAnalyzeHint')}
+              />
+            </div>
+          </div>
           <SettingsCheckboxField
             testid="settings-show-loudness"
             checked={synced.showLoudness}

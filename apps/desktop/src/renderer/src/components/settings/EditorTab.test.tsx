@@ -109,6 +109,17 @@ describe('EditorTab preferences', () => {
     expect(screen.getByTestId('settings-auto-analyze')).toBeDisabled()
   })
 
+  it('nests analyze-on-import under the quality analysis it depends on', () => {
+    renderTab()
+    const nested = screen.getByTestId('settings-auto-analyze-nested')
+    expect(nested).toContainElement(screen.getByTestId('settings-auto-analyze'))
+    expect(screen.getByTestId('settings-quality-analysis')).toContainElement(nested)
+    expect(screen.getByTestId('settings-quality-analysis')).toContainElement(
+      screen.getByTestId('settings-show-spectrum'),
+    )
+    expect(nested).not.toContainElement(screen.getByTestId('settings-show-spectrum'))
+  })
+
   it('stages the key notation choice', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('settings-key-notation-musical'))
