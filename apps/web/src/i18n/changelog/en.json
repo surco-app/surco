@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.12",
+    "date": "October 26, 2026",
+    "title": "Traktor, like rekordbox",
+    "items": [
+      {
+        "text": "New Traktor tab, beside Music, rekordbox and Engine DJ. You see your playlists and the tracks you added in the last 30 days, and you organise them as in rekordbox. You create, rename and delete playlists and folders, add, remove and reorder tracks and add separators.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "You set cues on your Traktor tracks with the same editor, Auto mark included. Traktor gets the hot cues in blue, on buttons 2 to 8, since button 1 is for its grid. If Traktor is open when you save, Surco asks you to quit it and writes nothing until you do.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Settings, Cues, made clearer. You pick the flow from a menu, each rule reads as a sentence and each cue's distance sits inside its colour. “From the point” is now “From where you mark”, which is what it does.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "⌘K reaches everything new. Jump to any library tab, create a playlist, auto mark the selected tracks, save their cues or clear every cue of a track without reaching for the mouse. And convert editing the original just that once.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Rows of a playlist nobody analysed show their waveform and their cover without opening them.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "When you convert with your Traktor collection synced, the track stays in its Traktor playlists even if its format changes.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Your libraries, better protected. Surco does not write to Engine DJ when it cannot tell it is closed, reads Traktor and Engine DJ again after they save on quit, and rekordbox backups now include its latest changes too.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "FLAC cover art shows in Finder again, even when you sync with Traktor. Surco sets it as the file's icon without touching the audio, so Traktor no longer drops those tracks from your collection.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Stats are easier to read, with thousands separators and the time saved shown in workdays instead of thousands of hours.",
+        "in": "1.12.0"
+      }
+    ]
+  },
+  {
     "version": "1.11",
     "date": "October 23, 2026",
     "title": "Engine DJ, like rekordbox",

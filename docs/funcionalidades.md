@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 23 de octubre de 2026** (v1.11.0, pestaña Engine DJ). Levantado por primera vez el
+**Última revisión: 26 de octubre de 2026** (v1.12.0, pestaña Traktor). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1118,7 +1118,21 @@ Engine DJ (`engineAvailable`, `useSourceBrowser.ts:75`), y si no, Ajustes lo dic
 (`readEngineRecentCount`, `enginePlaylists.ts:185`), y abre sus pistas en el editor de cues
 (ver «Editor de cues de rekordbox», en §11).
 
-**Ocultar una fuente.** Apple Music, rekordbox o Engine DJ se pueden quitar de la barra lateral desde
+**Traktor** (nuevo en v1.12.0). La pestaña aparece si se encuentra un `collection.nml`
+(`traktor:available`, `traktorPlaylistsIpc.ts:18`). Lista sus carpetas y playlists y
+«Añadidas recientemente», las pistas importadas en los últimos 30 días
+(`RECENT_DAYS`, `traktorPlaylists.ts:10`). Se organiza como rekordbox: crear, renombrar y
+borrar playlists y carpetas, añadir pistas (arrastrando o desde el menú), reordenar, quitar
+y separadores (`traktorPlaylistEdit.ts`). Las listas propias de Traktor (Preparation,
+HISTORY, _LOOPS y _RECORDINGS) no se renombran ni se borran, y HISTORY no se edita
+(`TRAKTOR_BUILT_IN`, `shared/traktorContent.ts:12`). Una pista que no está en la colección
+no se da de alta: se salta y se avisa, igual que en rekordbox
+(`notInCollection`, `traktorPlaylistEdit.ts:154`). Toda escritura pide cerrar Traktor y
+espera en cola si sigue abierto (`ensureTraktorClosed`, `index.ts:476`), relee la colección
+después de que Traktor guarde al salir (`applyTraktorBatch`, `traktorCuesWrite.ts:122`) y
+guarda antes una copia `.surco-session` por tanda.
+
+**Ocultar una fuente.** Apple Music, rekordbox, Engine DJ o Traktor se pueden quitar de la barra lateral desde
 su menú en la propia barra o en Ajustes → General → Fuentes, y volver a mostrar desde ahí
 (`hiddenSources`, `settings.ts:86`, `shared/hiddenSources.ts`). Ocultarla solo la quita de la
 barra y no cambia su sincronización al convertir (`settings.sourcesHint`).
@@ -1161,7 +1175,9 @@ configurable.
 `isAnalyzed = 0`, para que Engine analice el audio él mismo al primer load.
 
 **Salvaguardas:** backup antes de cada escritura, escritura atómica, y **se niega
-a escribir con Engine DJ abierto** — Engine carga la biblioteca al arrancar y no
+a escribir con Engine DJ abierto**. Si no puede saber si está abierto (la consulta del
+proceso falla), lo da por abierto, como rekordbox y Traktor (desde v1.12.0,
+`engineProcess.ts:23`) — Engine carga la biblioteca al arrancar y no
 la relee, así que una escritura sería invisible en el mejor caso y machacada en
 el peor (`engineLibrary.ts:166-169`). Un lote de 300 pistas paga una
 lectura/escritura, no 300.
@@ -1223,9 +1239,17 @@ ruta ALAC no lleva cues (`ffmpeg.ts:2115-2116`, test `convertCues.test.ts:758-77
 
 Revisada el 2026-10-21 para v1.9.0. Las celdas no cambian, solo las líneas citadas. Esta
 matriz es solo de Traktor, cuyos cues viajan **dentro del fichero**. Los de rekordbox viven en
-su colección y no dependen del formato (ver §8.5 y el editor de cues más abajo). Surco
-**conserva** los cues de Traktor al convertir pero no los edita. El editor de cues escribe
-solo en rekordbox.
+su colección y no dependen del formato (ver §8.5 y el editor de cues más abajo). Al
+convertir, Surco **conserva** los cues de Traktor del fichero pero no los edita.
+
+**El editor de cues escribe en la colección de Traktor** (nuevo en v1.12.0), nunca en el
+fichero. Solo hot cues: Traktor no tiene CALL, así que no se escribe ninguno, y se escriben
+como tipo 0, que Traktor pinta en azul sea cual sea el color elegido
+(`TRAKTOR_CUE_HEX`, `shared/traktorContent.ts:20`). El botón 1 queda para el AutoGrid de
+Traktor, así que el editor da siete letras, de la A a la G, en los botones 2 a 8
+(`TRAKTOR_SLOTS`, `shared/traktorContent.ts:17`). Los cues sin botón, los bucles, los de
+carga y de fundido y la rejilla se dejan como están (`traktorCues.ts:59`,
+`traktorCuesWrite.ts:44`).
 
 **Cues de Mixed In Key.** MIK guarda su JSON en base64 dentro de un GEOB
 llamado `CuePoints`; Surco lo traduce al árbol binario de Traktor
@@ -1240,6 +1264,11 @@ el recorrido consumiera el buffer exacto hacía que todos leyeran «sin cues»
 (`traktor4.ts:62-70`, `:167-176`).
 
 ### Sync del `.nml` de Traktor
+
+**Las playlists siguen a la pista** (nuevo en v1.12.0). Cuando la conversión cambia el nombre
+del fichero (de FLAC a MP3, por ejemplo), las entradas de sus playlists pasan a la ruta nueva.
+Traktor nombra cada pista de una playlist por volumen, carpeta y fichero, así que antes la
+pista se quedaba fuera de ellas (`rewritePlaylists`, `traktorNml.ts:576`).
 
 Apagado por defecto. Cuando se configura la ruta de la colección, actualiza el
 `.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
@@ -1321,6 +1350,12 @@ una por tanda de conversión (`.surco-session`), tomada antes de la primera escr
 describe la colección antes del lote, y otra antes de escribir (`.surco-backup`). La tanda
 entera va en una sola transacción detrás de una sola copia, y si la escritura falla se repone
 esa copia (`:113-121`, `:229-233`); antes cada pista pagaba su propia copia de 56 MB.
+**Las copias están completas** (desde v1.12.0). La colección va en modo WAL, y los cambios que
+rekordbox ya guardó pueden seguir en `master.db-wal`. Antes de copiar se vuelcan a
+`master.db` (`foldWal`, `rekordboxLibrary.ts:185`; `checkpointCollection` en etiquetas y
+duplicados), y si no se pueden volcar no hay copia ni escritura. La reposición tras un fallo
+se hace con la conexión ya cerrada y se niega si el `-wal` aún tiene datos, para no mezclar
+la copia con ellos (`restoreCollection`, `rekordboxSessionBackup.ts`).
 
 **Exige rekordbox cerrado**, comprobado dos veces: antes de leer y otra vez tras la copia,
 para estrechar la ventana (`rekordboxLibrary.ts:159`, `:192`). **Si está abierto, espera.**
@@ -1798,9 +1833,10 @@ Recopilado de los cinco informes. Cada punto está verificado.
 
 1. **Cue points de Traktor:** se conservan en MP3, AIFF (las dos grafías, `.aif` y
    `.aiff`), FLAC y WAV, en cualquier cruce entre esos cuatro. **No en ALAC/M4A**, que
-   no tiene ID3 donde escribirlos. Surco los conserva, **no los edita**, y el editor de cues
-   escribe solo en la colección de rekordbox (`master.db`) o en la biblioteca de Engine DJ
-   (solo hot cues), nunca en el fichero ni en Traktor o Serato.
+   no tiene ID3 donde escribirlos. Al convertir, Surco los conserva **sin editarlos**. El
+   editor de cues escribe en la colección de rekordbox (`master.db`), en la biblioteca de
+   Engine DJ (solo hot cues) y en la colección de Traktor (`collection.nml`, solo hot cues,
+   siete botones, en azul), nunca en el fichero ni en Serato.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. No se transfiere rating ni se
    crean playlists.

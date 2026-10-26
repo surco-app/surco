@@ -283,6 +283,10 @@
             "d": "Las abres en Surco y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Los CALL no, porque Engine DJ solo guarda hot cues. Y las exportas a un USB con su biblioteca de Engine, lista para el reproductor."
           },
           {
+            "t": "Tus playlists de Traktor",
+            "d": "Las abres en Surco, las organizas como las de rekordbox y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Traktor los recibe en azul, en los botones 2 a 8, y Surco te pide cerrarlo antes de guardar."
+          },
+          {
             "t": "Ficheros para rekordbox, Serato y M3U8",
             "d": "Llevan rutas y metadatos, sin cues ni rating. El crate de Serato, solo rutas."
           },
@@ -591,7 +595,7 @@
         ],
         "points": [
           "Disponible para macOS (Apple Silicon e Intel, notarizado por Apple), Windows y Linux (en Linux como AppImage), en cinco idiomas.",
-          "El asistente de bienvenida son solo cuatro pasos (cinco si Surco encuentra tu colección de rekordbox o Traktor); el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
+          "El asistente de bienvenida son solo cuatro pasos (cinco si Surco encuentra tu colección de rekordbox, Engine DJ o Traktor); el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
           "¿Lo despachaste rápido? Puedes volver a abrirlo cuando quieras desde el menú Ayuda o ⌘K: arranca con tus ajustes actuales y solo cambia lo que toques.",
           "De serie ya viene con lo importante encendido: analiza la calidad al importar y busca en Discogs, Bandcamp, Deezer y MusicBrainz sin que configures nada.",
           "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
@@ -918,7 +922,8 @@
           "Los flujos se crean en Ajustes › Cues. Vienen dos hechos, Mix in 64 y Mix in 32, y Surco puede aprender el tuyo de las cues que ya tienes.",
           "Con varias pistas seleccionadas, «Auto marcar las seleccionadas» las prepara todas y «Guardar N pistas en rekordbox» las guarda de una vez.",
           "Si rekordbox aún no ha analizado la pista, Surco calcula la rejilla y puedes poner las cues igual. Cuando rekordbox la analiza, se ajustan a su rejilla.",
-          "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas."
+          "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas.",
+          "Lo mismo con las playlists de Engine DJ y Traktor, que reciben solo los hot cues. En Traktor salen en azul y en los botones 2 a 8, porque el 1 es para su rejilla."
         ],
         "shot": "rekordbox-es.webp",
         "shotCaption": "Auto marcar propone dónde rompe la pista, con tu flujo listo para aceptar."
@@ -975,17 +980,10 @@
     "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
     "beta": {
       "kicker": "En pruebas",
-      "version": "1.11.3-beta.2",
+      "version": "",
       "title": "Lo que llega en la próxima versión",
       "how": "Para probarlo ya, activa Recibir versiones beta en Ajustes, General, y reinicia Surco. Las betas llegan al instalador de la web, no a la copia de la Microsoft Store.",
-      "items": [
-        "Nueva pestaña Traktor con tus playlists, tus carpetas y las pistas que añadiste en los últimos 30 días",
-        "Marca cues en tus pistas de Traktor con Auto marcar o a mano. Al guardar, Surco te pide cerrar Traktor y los pone en los botones 2 a 8",
-        "Organiza tus playlists de Traktor desde Surco como las de rekordbox. Crea, renombra y borra playlists y carpetas, añade pistas, reordénalas y pon separadores",
-        "Las pistas de una playlist de rekordbox, Engine DJ o Traktor enseñan su carátula y su onda aunque nunca las hayas abierto en Surco",
-        "Antes del primer cambio de cada sesión, Surco guarda una copia de tu colección de Traktor junto a ella, como ya hacía con rekordbox y Engine DJ",
-        "Guardar cues en Engine DJ o Traktor cerrándolos desde Surco ya no pisa lo que el programa guarda al salir"
-      ]
+      "items": []
     },
     "olderTitle": "Versiones anteriores",
     "outroTitle": "Pruébalo todo en tu próxima sesión",
@@ -1153,7 +1151,7 @@
     },
     "cues": {
       "step": "y en tu programa · se marca",
-      "title": "Tus cues de rekordbox, Engine\u00a0DJ y Traktor, de un clic.",
+      "title": "Tus cues de rekordbox, Engine DJ y Traktor, de un clic.",
       "lede": "Marca con un clic dónde rompe la pista, o deja que Auto marcar te lo proponga. Tu flujo pone el resto de cues y Surco las guarda en rekordbox, Engine DJ o Traktor. Engine DJ y Traktor reciben solo los hot cues.",
       "unsaved": "Sin guardar",
       "flow": "Flujo",

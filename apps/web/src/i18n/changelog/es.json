@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.12",
+    "date": "26 de octubre de 2026",
+    "title": "Traktor, como rekordbox",
+    "items": [
+      {
+        "text": "Nueva pestaña Traktor, junto a Music, rekordbox y Engine DJ. Ves tus playlists y las pistas que añadiste en los últimos 30 días, y las organizas como en rekordbox. Creas, renombras y borras playlists y carpetas, añades, quitas y reordenas pistas y pones separadores.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Pones cues a tus pistas de Traktor con el mismo editor, Auto marcar incluido. Traktor recibe los hot cues en azul, en los botones 2 a 8, porque el 1 es para su rejilla. Si Traktor está abierto al guardar, Surco te pide cerrarlo y no escribe hasta que lo cierras.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Ajustes, Cues, más claro. Eliges el flujo en un desplegable, cada regla se lee como una frase y la distancia de cada cue va dentro de su color. «Desde el punto» pasa a llamarse «Desde donde marcas», que es lo que hace.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "⌘K llega a todo lo nuevo. Vas a cualquier pestaña de biblioteca, creas una playlist, auto marcas las pistas seleccionadas, guardas sus cues o borras todas las de una pista sin tocar el ratón. Y conviertes editando el original solo esa vez.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Las filas de una playlist sin analizar muestran su onda y su carátula sin tener que abrirlas.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Al convertir con la colección de Traktor sincronizada, la pista sigue en sus playlists de Traktor aunque cambie de formato.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Tus bibliotecas, más protegidas. Surco no escribe en Engine DJ si no puede comprobar que está cerrado, lee de nuevo Traktor y Engine DJ después de que guarden al cerrarse, y las copias de seguridad de rekordbox incluyen también sus últimos cambios.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Las carátulas de los FLAC vuelven a verse en el Finder aunque sincronices con Traktor. Surco las pone como icono del archivo sin tocar el audio, así que Traktor ya no quita esas pistas de la colección.",
+        "in": "1.12.0"
+      },
+      {
+        "text": "Las estadísticas se leen mejor, con las cifras separadas por miles y el tiempo ahorrado en días de trabajo en lugar de miles de horas.",
+        "in": "1.12.0"
+      }
+    ]
+  },
+  {
     "version": "1.11",
     "date": "23 de octubre de 2026",
     "title": "Engine DJ, como rekordbox",
