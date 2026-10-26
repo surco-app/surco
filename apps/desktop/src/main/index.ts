@@ -161,7 +161,7 @@ import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
-import { bootVolumeName } from './traktorNmlLibrary'
+import { bootVolumeName, traktorSessionBackup } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
@@ -1224,6 +1224,7 @@ function registerIpc(): void {
     if (beginRekordboxBatch()) {
       rekordboxSessionBackup.reset()
       engineSessionBackup.reset()
+      traktorSessionBackup.reset()
       stickyConflict.reset()
       coverMemo = createCoverMemo(prepareProcessedCover)
     }
