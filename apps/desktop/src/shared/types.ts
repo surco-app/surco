@@ -289,9 +289,8 @@ export interface Settings {
   // upgrading to the release's larger image. Off by default so a present cover (even a
   // small one) is never swapped for a possibly-wrong release image without the user asking.
   replaceLowResCover: boolean
-  // macOS-only: prepend an ID3v2 header to FLAC outputs so Finder/QuickLook show the
-  // cover (they never read FLAC's own PICTURE block). Off by default — the header is
-  // technically off-spec, so it stays the user's call (see flacFinderCover.ts).
+  // macOS-only: set the cover as the custom Finder icon of FLAC outputs, since
+  // Finder/QuickLook never read FLAC's own PICTURE block (see flacFinderCover.ts).
   flacFinderCovers: boolean
   // Encoder choice for MP3 exports. '320' (CBR) is the default: it's the de-facto
   // DJ-pool standard and every player seeks it reliably; the lower rates and the VBR
