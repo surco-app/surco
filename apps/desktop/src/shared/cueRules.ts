@@ -159,21 +159,25 @@ function allowed(
   return true
 }
 
-function trimToLimit(cues: FlowCue[]): FlowPlan {
+function trimToLimit(cues: FlowCue[], limit: number): FlowPlan {
   let kept = cues
   const trimmed: FlowCue[] = []
   const candidates = cues
     .filter((c) => isPlannedHot(c) && c.repetition > 1)
     .sort((a, b) => b.bars - a.bars || a.ms - b.ms)
   for (const c of candidates) {
-    if (kept.filter(isPlannedHot).length <= MAX_HOT_CUES) break
+    if (kept.filter(isPlannedHot).length <= limit) break
     kept = kept.filter((k) => k !== c)
     trimmed.push(c)
   }
   return { cues: [...kept].sort((a, b) => a.ms - b.ms), trimmed }
 }
 
-function walkFlow(flow: CueFlow, track: FlowTrack): FlowPlan & { rejected: RejectedCue[] } {
+function walkFlow(
+  flow: CueFlow,
+  track: FlowTrack,
+  limit: number,
+): FlowPlan & { rejected: RejectedCue[] } {
   const { beats } = track
   if (beats.length === 0) return { cues: [], trimmed: [], rejected: [] }
   const drops = [...track.drops].sort((a, b) => a - b)
@@ -232,7 +236,7 @@ function walkFlow(flow: CueFlow, track: FlowTrack): FlowPlan & { rejected: Rejec
     })
     placed.push(...own)
   })
-  const plan = trimToLimit(placed)
+  const plan = trimToLimit(placed, limit)
   const all = [...rejected, ...plan.trimmed.map((c) => ({ ...c, reason: 'limit' as const }))]
   const same = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
   return {
@@ -246,16 +250,30 @@ function walkFlow(flow: CueFlow, track: FlowTrack): FlowPlan & { rejected: Rejec
   }
 }
 
-export function evaluateFlow(flow: CueFlow, track: FlowTrack): FlowPlan {
-  const { cues, trimmed } = walkFlow(flow, track)
+export function evaluateFlow(
+  flow: CueFlow,
+  track: FlowTrack,
+  limit: number = MAX_HOT_CUES,
+): FlowPlan {
+  const { cues, trimmed } = walkFlow(flow, track, limit)
   return { cues, trimmed }
 }
 
 export function rejectedCues(flow: CueFlow, track: FlowTrack): RejectedCue[] {
-  return walkFlow(flow, track).rejected
+  return walkFlow(flow, track, MAX_HOT_CUES).rejected
 }
 
 export const HOT_KINDS = [1, 2, 3, 5, 6, 7, 8, 9]
+
+// The hot cue letters a library has buttons for, and whether it wants a CALL beside each
+// hot cue (rekordbox's CDJs show only CALLs as memory points; Traktor draws hot cues as
+// markers already, so the twin would only stack a second mark on the first).
+export interface CueSlots {
+  kinds: number[]
+  pairCalls: boolean
+}
+
+export const ALL_SLOTS: CueSlots = { kinds: HOT_KINDS, pairCalls: true }
 
 export interface ExistingCue {
   id: string
@@ -364,6 +382,7 @@ export interface FlowInput {
   previousFlow?: CueFlow
   point?: number
   kept?: string[]
+  slots?: CueSlots
 }
 
 export type FlowOutcome =
@@ -396,6 +415,8 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
   const { existing, beats, strong, phrases, flow } = input
   const hot = existing.filter((c) => c.kind !== 0)
   const memory = existing.filter((c) => c.kind === 0)
+  const slots = input.slots ?? ALL_SLOTS
+  const letters = slots.kinds
   const wantedDrops = flowDrops(flow, { beats, drops: input.drops, strong, phrases })
   const currentDrops = memory.filter((m) => !m.loop && hot.every((h) => !near(m.ms, h.ms)))
   const removed = new Set(
@@ -406,14 +427,18 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
   const added: WantedCue[] = wantedDrops
     .filter((ms) => !memory.some((m) => near(m.ms, ms)) && !unmarked(ms))
     .map((ms) => ({ ms, kind: 0, color: null }))
-  const plan = evaluateFlow(flow, { beats, drops: wantedDrops, strong, phrases })
+  const plan = evaluateFlow(flow, { beats, drops: wantedDrops, strong, phrases }, letters.length)
   const previousFlow = input.previousFlow ?? flow
-  const oldPlan = evaluateFlow(previousFlow, {
-    beats,
-    drops: flowDrops(previousFlow, { beats, drops: input.previousDrops, strong, phrases }),
-    strong,
-    phrases,
-  })
+  const oldPlan = evaluateFlow(
+    previousFlow,
+    {
+      beats,
+      drops: flowDrops(previousFlow, { beats, drops: input.previousDrops, strong, phrases }),
+      strong,
+      phrases,
+    },
+    letters.length,
+  )
   const hotOf = (p: FlowPlan) => p.cues.filter((c) => c.place !== 'call')
   const fits = hot.every(
     (h) =>
@@ -438,12 +463,12 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
         paired: start?.place === 'both',
       })),
   ].sort((a, b) => a.ms - b.ms)
-  if (planned.length > MAX_HOT_CUES) return { status: 'too-many', needed: planned.length }
+  if (planned.length > letters.length) return { status: 'too-many', needed: planned.length }
 
   const used = new Set<string>()
   const placed: WantedCue[] = []
   const drawn: DrawnHotCue[] = planned.map((w, i) => {
-    const kind = HOT_KINDS[i]
+    const kind = letters[i]
     const there = hot.find((h) => !used.has(h.id) && near(h.ms, w.ms))
     if (there) used.add(there.id)
     placed.push(
@@ -453,6 +478,7 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
     )
     if (
       w.paired &&
+      slots.pairCalls &&
       !memory.some((m) => near(m.ms, w.ms)) &&
       ![...added, ...placed].some((c) => c.id === undefined && c.kind === 0 && near(c.ms, w.ms))
     )

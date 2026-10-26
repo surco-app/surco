@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { MY_FLOW } from './cueFlows'
 import {
+  type CueSlots,
   classify,
   cueChanges,
   type ExistingCue,
   findDrops,
   fitsPlan,
+  flowOutcome,
+  HOT_KINDS,
   isEmptyChange,
   nearestBeat,
   planCues,
@@ -350,5 +354,45 @@ describe('cueChanges', () => {
     ]
     const out = cueChanges(existing, [beat(64)], [beat(64)], grid(200), [])
     expect(out.status === 'plan' && isEmptyChange(out.changes)).toBe(true)
+  })
+})
+
+describe('flowOutcome on a deck with fewer buttons', () => {
+  const plan = (slots?: CueSlots, existing: ExistingCue[] = [], drops = [beat(64), beat(128)]) =>
+    flowOutcome({
+      existing,
+      drops,
+      previousDrops: [],
+      beats: grid(400),
+      strong: [],
+      phrases: [],
+      flow: MY_FLOW,
+      ...(slots ? { slots } : {}),
+    })
+  const hotOf = (out: ReturnType<typeof plan>) =>
+    out.status === 'too-many' ? [] : out.wanted.filter((c) => c.kind !== 0)
+  const SEVEN: CueSlots = { kinds: HOT_KINDS.slice(0, 7), pairCalls: false }
+
+  it('never plans a letter the deck has no button for, trimming to the buttons there are', () => {
+    const out = plan(SEVEN, [], [beat(64), beat(128), beat(192)])
+    expect(hotOf(plan()).length).toBeGreaterThan(0)
+    expect(hotOf(plan(undefined, [], [beat(64), beat(128), beat(192)])).length).toBe(8)
+    expect(out.status).toBe('plan')
+    expect(hotOf(out).length).toBe(7)
+    expect(hotOf(out).some((c) => c.kind === HOT_KINDS[7])).toBe(false)
+  })
+
+  it('leaves out the CALL twin of each hot cue where the deck shows hot cues as markers already', () => {
+    const out = plan(SEVEN)
+    const hot = hotOf(out)
+    const calls = out.status === 'too-many' ? [] : out.wanted.filter((c) => c.kind === 0)
+    expect(hot.length).toBeGreaterThan(0)
+    expect(calls.some((c) => hot.some((h) => Math.abs(h.ms - c.ms) < 1))).toBe(false)
+  })
+
+  it('still pairs each hot cue with a CALL on a full deck, as rekordbox expects', () => {
+    const out = plan()
+    const calls = out.status === 'too-many' ? [] : out.wanted.filter((c) => c.kind === 0)
+    expect(hotOf(out).every((h) => calls.some((c) => Math.abs(h.ms - c.ms) < 1))).toBe(true)
   })
 })

@@ -7,16 +7,11 @@ import { useTranslation } from 'react-i18next'
 import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
-import {
-  BEATS_PER_BAR,
-  MAX_HOT_CUES,
-  nearestBeat,
-  SAME_POSITION_MS,
-} from '../../../shared/cueRules'
+import { ALL_SLOTS, BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import type { DropInput } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
-import { isTraktorContent, TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
+import { isTraktorContent, TRAKTOR_CUE_COLOR, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import type {
   QueuedCues,
   SaveCuesOutcome,
@@ -331,8 +326,9 @@ function Editing({
       phrases: read.phrases,
       flows,
       lettersByTime: settings.cueLettersByTime,
+      slots: isTraktorContent(cue.contentId) ? TRAKTOR_SLOTS : ALL_SLOTS,
     }),
-    [read, flows, quantize, settings.cueLettersByTime],
+    [read, flows, quantize, settings.cueLettersByTime, cue.contentId],
   )
   const inRekordbox = useMemo(
     () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
@@ -1173,7 +1169,7 @@ function Editing({
             type="button"
             role="menuitem"
             data-testid="cues-menu-add-hot"
-            disabled={state.cues.filter((c) => c.kind !== 0).length >= MAX_HOT_CUES}
+            disabled={state.cues.filter((c) => c.kind !== 0).length >= ctx.slots.kinds.length}
             onClick={() => fromMenu({ type: 'add-hot', ms: menu.ms })}
             className={MENU_ITEM}
           >
@@ -1359,6 +1355,7 @@ function Editing({
       {maximized && (
         <CueDeck
           cues={shownCues}
+          kinds={ctx.slots.kinds}
           selected={state.selected}
           locked={state.locked}
           jumpBars={settings.cueJumpBars}
