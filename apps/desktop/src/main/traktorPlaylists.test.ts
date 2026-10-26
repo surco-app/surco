@@ -2,11 +2,13 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import { rekordboxColorOf } from './traktorNmlCues'
 import {
   nmlPath,
   readTraktorPlaylist,
   readTraktorRecentCount,
   readTraktorTree,
+  TRAKTOR_TYPE_COLOR,
 } from './traktorPlaylists'
 
 const TRAKTOR_4 = readFileSync(
@@ -133,9 +135,30 @@ describe('readTraktorPlaylist', () => {
     }
     const [entry] = readTraktorPlaylist(nml([cued], [playlist('L', 'p1', [cued])]), 'p1', '')
     expect(entry.preview?.cues).toEqual([
-      { ms: 8088.7, kind: 3, color: null },
+      { ms: 8088.7, kind: 3, color: rekordboxColorOf(TRAKTOR_TYPE_COLOR[0]) },
       { ms: 30000, kind: 0, color: null },
     ])
+  })
+
+  it('paints each hot cue in the colour Traktor gives its type, since Traktor stores no colour of its own for them', () => {
+    const djotas: Track = {
+      ...A,
+      extra:
+        '<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="0" START="11.333358" LEN="0.000000" REPEATS="-1" HOTCUE="0" COLOR="#FFFFFF"></CUE_V2>' +
+        '<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="3" START="13739.225711" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>' +
+        '<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="0" START="92674.606740" LEN="0.000000" REPEATS="-1" HOTCUE="2"></CUE_V2>' +
+        '<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="1" START="133858.283798" LEN="0.000000" REPEATS="-1" HOTCUE="3"></CUE_V2>' +
+        '<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="5" START="187053.866666" LEN="1715.986544" REPEATS="-1" HOTCUE="4"></CUE_V2>',
+    }
+    const [entry] = readTraktorPlaylist(nml([djotas], [playlist('L', 'p1', [djotas])]), 'p1', '')
+    expect(entry.preview?.cues.map((c) => c.color)).toEqual([
+      rekordboxColorOf('#FFFFFF'),
+      rekordboxColorOf(TRAKTOR_TYPE_COLOR[3]),
+      rekordboxColorOf(TRAKTOR_TYPE_COLOR[0]),
+      rekordboxColorOf(TRAKTOR_TYPE_COLOR[1]),
+      rekordboxColorOf(TRAKTOR_TYPE_COLOR[5]),
+    ])
+    expect(new Set(entry.preview?.cues.slice(1).map((c) => c.color)).size).toBe(4)
   })
 
   it('keeps a row whose track is missing from the collection as one with no file, so the count stays honest', () => {

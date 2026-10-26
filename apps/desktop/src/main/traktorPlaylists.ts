@@ -9,6 +9,16 @@ const RECENT_DAYS = 30
 const TAG_RE = /<(\/?)(NODE|PLAYLIST|PRIMARYKEY)\b([^>]*)>/g
 const CUE_RE = /<CUE_V2\b[^>]*>/g
 
+// Traktor colours a hot cue by its type (cue, fade in, fade out, load, loop) and writes a
+// COLOR only for the few it paints itself, like the white AutoGrid cue.
+export const TRAKTOR_TYPE_COLOR: Record<number, string> = {
+  0: '#2f7bff',
+  1: '#ff8c00',
+  2: '#ff8c00',
+  3: '#ffd200',
+  5: '#3ceb50',
+}
+
 // The collection the DJ pointed Settings at wins, because some keep theirs outside
 // Documents (see traktorNmlPath.ts); otherwise the newest Traktor on the machine, which
 // is how the tab knows Traktor is installed at all.
@@ -140,11 +150,12 @@ function cuesOf(block: string): RowCue[] {
     .map(([cue]) => cue)
     .filter((cue) => Number(attr(cue, 'TYPE')) !== GRID_TYPE)
     .map((cue) => {
-      const slot = Number(attr(cue, 'HOTCUE') || '-1')
+      const kind = HOT_KINDS[Number(attr(cue, 'HOTCUE') || '-1')] ?? 0
+      const color = attr(cue, 'COLOR') || TRAKTOR_TYPE_COLOR[Number(attr(cue, 'TYPE'))]
       return {
         ms: Number(attr(cue, 'START')),
-        kind: HOT_KINDS[slot] ?? 0,
-        color: rekordboxColorOf(attr(cue, 'COLOR') || null),
+        kind,
+        color: kind === 0 ? null : rekordboxColorOf(color ?? null),
       }
     })
 }
