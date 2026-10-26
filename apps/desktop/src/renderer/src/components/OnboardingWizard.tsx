@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
-import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
+import { type DetectedDjLibrary, type DjLibraryId, detectedDjLibraries } from '../lib/djLibraries'
 import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
@@ -27,6 +27,11 @@ const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // in Settings — every extra question here delays the first drop of files.
 const BASE_STEPS = ['welcome', 'search', 'format', 'audio'] as const
 type Step = (typeof BASE_STEPS)[number] | 'djLibraries'
+const SYNC_SETTING: Record<DjLibraryId, 'syncRekordbox' | 'syncEngineDj' | 'syncTraktor'> = {
+  rekordbox: 'syncRekordbox',
+  engine: 'syncEngineDj',
+  traktor: 'syncTraktor',
+}
 
 interface Props {
   settings: Settings
@@ -56,11 +61,20 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // software still finishes at step 4 of 4, with no empty step and no gap in the count.
   const [djLibraries, setDjLibraries] = useState<DetectedDjLibrary[]>([])
   useEffect(() => {
-    Promise.all([window.api.rekordboxCollection(), window.api.detectTraktorNmlPath()]).then(
-      ([rekordbox, traktor]) =>
-        setDjLibraries(detectedDjLibraries({ rekordbox, traktor: traktor ?? '' })),
+    Promise.all([
+      window.api.rekordboxCollection(),
+      window.api.engineAvailable(),
+      window.api.detectTraktorNmlPath(),
+    ]).then(([rekordbox, engine, traktor]) =>
+      setDjLibraries(
+        detectedDjLibraries({
+          rekordbox,
+          engine: engine ? settings.engineLibraryDir : '',
+          traktor: traktor ?? '',
+        }),
+      ),
     )
-  }, [])
+  }, [settings.engineLibraryDir])
   const STEPS: readonly Step[] =
     djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS
 
@@ -319,14 +333,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       <input
                         data-testid={`onboarding-sync-${library.id}`}
                         type="checkbox"
-                        checked={
-                          library.id === 'rekordbox' ? synced.syncRekordbox : synced.syncTraktor
-                        }
+                        checked={synced[SYNC_SETTING[library.id]]}
                         onChange={(e) => {
-                          patch(
-                            library.id === 'rekordbox' ? 'syncRekordbox' : 'syncTraktor',
-                            e.target.checked,
-                          )
+                          patch(SYNC_SETTING[library.id], e.target.checked)
                           if (library.id === 'traktor' && e.target.checked && !local.traktorNmlPath)
                             patchLocal('traktorNmlPath', library.path)
                         }}
@@ -339,7 +348,10 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                         </span>
                         {/* The path it found, so the DJ can see WHICH collection is about
                             to be written to before switching it on. */}
-                        <span className="mt-1 block truncate text-xs text-fg-faint">
+                        <span
+                          data-testid={`onboarding-djlibrary-${library.id}`}
+                          className="mt-1 block truncate text-xs text-fg-faint"
+                        >
                           {library.path}
                         </span>
                       </span>

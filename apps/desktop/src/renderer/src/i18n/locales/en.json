@@ -1619,7 +1619,7 @@
       "level": "Level the loudness",
       "levelBody": "Normalize loudness so tracks sit at a consistent level across your set.",
       "quality": "Check audio quality",
-      "qualityBody": "Show a spectrum of each track to spot lossy files re-encoded as lossless."
+      "qualityBody": "Measure each track to spot lossy files re-encoded as lossless and mark its quality in the list."
     },
     "skip": "Skip",
     "back": "Back",
@@ -1627,13 +1627,15 @@
     "finish": "Finish",
     "step": "Step {{current}} of {{total}}",
     "djLibrariesTitle": "Your DJ collections",
-    "djLibrariesBody": "When you convert a track, Surco can leave your collection pointing at the new file, with its playlists and cue points intact.",
+    "djLibrariesBody": "When you convert a track, Surco can leave your collection pointing at the new file, with its playlists and cue points intact. Its playlists also show up in the sidebar, so you can organize them and set cues from Surco.",
     "djLibrariesNote": "Surco backs the collection up before writing and never writes while the program is open. You can change this later in Settings.",
     "djLibrary": {
       "rekordbox": "rekordbox",
       "rekordboxBody": "Keep the collection in step when converting.",
+      "engine": "Engine DJ",
+      "engineBody": "Keep the library in step when converting.",
       "traktor": "Traktor",
-      "traktorBody": "Write cue points and beatgrid into the collection."
+      "traktorBody": "Keep the collection in step when converting, with its playlists and cues."
     }
   },
   "help": {
