@@ -64,6 +64,19 @@ function Harness({
 }
 
 describe('CuesTab', () => {
+  it('says under the rules that Traktor shows its cues in blue, only where Traktor is installed', async () => {
+    installApi({ traktorAvailable: async () => true })
+    render(<Harness />)
+    expect(await screen.findByTestId('cue-flow-traktor-colours')).toHaveTextContent(
+      'In Traktor these cues show in blue, since Traktor colours each cue by its type',
+    )
+    cleanup()
+    installApi({ traktorAvailable: async () => false })
+    render(<Harness />)
+    await screen.findByTestId('cue-flow-mark-point')
+    expect(screen.queryByTestId('cue-flow-traktor-colours')).not.toBeInTheDocument()
+  })
+
   it('marks the point with a CALL by default and lets a DJ who does not mark it turn that off, the preview following', () => {
     render(<Harness />)
     expect(screen.getByTestId('cue-flow-mark-point')).toBeChecked()

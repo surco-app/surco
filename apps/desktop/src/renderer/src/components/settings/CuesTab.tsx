@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
@@ -51,6 +51,12 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const request = useRef(0)
   const [removals, setRemovals] = useState(0)
   const [typed, setTyped] = useState<string | null>(null)
+  // The rule colours are rekordbox's and Engine DJ's; Traktor paints a cue by its type, so
+  // where Traktor is installed the tab says what its cues will look like there.
+  const [traktorFound, setTraktorFound] = useState(false)
+  useEffect(() => {
+    void window.api.traktorAvailable().then(setTraktorFound, () => {})
+  }, [])
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -259,6 +265,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               <p data-testid="cue-flow-no-rules" className="text-xs text-fg-dim">
                 {tr('settings.cueFlows.noRules')}
               </p>
+            )}
+            {traktorFound && (
+              <SettingsHint data-testid="cue-flow-traktor-colours">
+                {tr('settings.cueFlows.traktorColours')}
+              </SettingsHint>
             )}
             <CheckboxRow
               testid="cue-flow-mark-point"

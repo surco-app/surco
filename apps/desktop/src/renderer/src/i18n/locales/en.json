@@ -1575,7 +1575,8 @@
       },
       "lettersByTime": "Letters in track order",
       "lettersByTimeHint": "A is always the first cue of the track. Turn it off if each letter is a fixed pad for you.",
-      "markPoint": "Mark the point with a CALL"
+      "markPoint": "Mark the point with a CALL",
+      "traktorColours": "In Traktor these cues show in blue, since Traktor colours each cue by its type"
     }
   },
   "errorBoundary": {
