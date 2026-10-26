@@ -84,4 +84,12 @@ describe('readTraktorTrackCues', () => {
     expect(readTraktorTrackCues(nml(entry(DJOTAS)), traktorContentId('X/:nope.mp3'))).toBeNull()
     expect(traktorEntryBlock(nml(entry(DJOTAS)), 'X/:nope.mp3')).toBeNull()
   })
+
+  it('shows an extra grid marker set on a button as a locked cue, so that button is never given away', () => {
+    const marker =
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="50000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="2"><GRID BPM="128.000000"></GRID></CUE_V2>'
+    expect(readTraktorTrackCues(nml(entry([GRID, marker])), ID)?.cues).toEqual([
+      { id: '1', ms: 50000, kind: HOT_KINDS[1], color: expect.any(Number), loop: true },
+    ])
+  })
 })

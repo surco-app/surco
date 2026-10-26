@@ -17,6 +17,7 @@ export const TRAKTOR_TYPE_COLOR: Record<number, string> = {
   1: '#ff8c00',
   2: '#ff8c00',
   3: '#ffd200',
+  4: '#ffffff',
   5: '#3ceb50',
 }
 

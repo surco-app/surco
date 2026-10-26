@@ -36,6 +36,17 @@ export function traktorCueElements(block: string): TraktorCueElement[] {
   }))
 }
 
+// Every CUE_V2 in the ENTRY was read as one element, with only whitespace between them.
+// An attribute holding a raw ">" (Traktor escapes it, other tools may not) breaks the
+// match, and rewriting around it would drop the cue it hides.
+export function traktorCuesIntact(block: string): boolean {
+  const elements = traktorCueElements(block)
+  if ((block.match(/<CUE_V2\b/g) ?? []).length !== elements.length) return false
+  return elements.every(
+    (el, i) => i === 0 || block.slice(elements[i - 1].end, el.start).trim() === '',
+  )
+}
+
 // Each CUE_V2 is named by its place in the ENTRY: two cues without a button share
 // HOTCUE="-1", so the button cannot be the id. Button 1 and the grid marker are Traktor's
 // and stay out. A cue the DJ typed as fade, load or loop is marked loop, the flag the cue
@@ -44,7 +55,7 @@ export function traktorCueRows(block: string): TraktorCueRow[] {
   return traktorCueElements(block).flatMap((el, i): TraktorCueRow[] => {
     const type = Number(attr(el.element, 'TYPE'))
     const hotcue = Number(attr(el.element, 'HOTCUE') || '-1')
-    if (type === GRID_TYPE || hotcue === 0) return []
+    if ((type === GRID_TYPE && hotcue < 0) || hotcue === 0) return []
     const kind = hotcue > 0 ? HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET] : 0
     if (kind === undefined) return []
     return [

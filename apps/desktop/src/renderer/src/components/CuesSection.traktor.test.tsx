@@ -126,4 +126,34 @@ describe('CuesSection on a Traktor track', () => {
     markAt(bar(8))
     expect(screen.getByTestId('cues-save')).toBeDisabled()
   })
+
+  it('lets the DJ save as soon as the collection is confirmed in Settings, without restarting', async () => {
+    let confirmed = false
+    installApi({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      traktorCanSave: vi.fn(async () => confirmed),
+    })
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
+    })
+    const view = (traktorNmlPath: string) => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', traktorNmlPath }}>
+          <CuesSection
+            cue={{ contentId: 'traktor:HD/:m/:e.wav', path: '/m/e.wav', label: 'Tengo' }}
+            open
+            onToggle={vi.fn()}
+          />
+        </SettingsProvider>
+      </QueryClientProvider>
+    )
+    const { rerender } = render(view(''))
+    await ready()
+    await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeDisabled())
+    confirmed = true
+    rerender(view('/Users/dj/collection.nml'))
+    await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeEnabled())
+    expect(screen.queryByTestId('cues-traktor-no-collection')).not.toBeInTheDocument()
+  })
 })

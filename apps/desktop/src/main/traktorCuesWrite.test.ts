@@ -194,4 +194,38 @@ describe('applyTraktorCuesBatch', () => {
     expect(result).toEqual({ ok: false, reason: 'cancelled' })
     expect(write).not.toHaveBeenCalled()
   })
+
+  it('refuses to rewrite an entry holding a cue it cannot read, rather than dropping that cue', async () => {
+    const odd =
+      '<CUE_V2 NAME="a>b" DISPL_ORDER="0" TYPE="0" START="5000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"/>'
+    const strange = nml([GRID, odd, BLUE])
+    const file = await onDisk(strange)
+    const write = vi.fn(async () => null)
+    const wanted = asWanted(strange).filter((c) => c.ms !== 92674.60674)
+    const result = await applyTraktorCuesBatch(file, [op(strange, wanted)], {
+      ensureClosed: async () => true,
+      write,
+    })
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ applied: false, notices: [{ code: 'cues-invalid' }] }],
+    })
+    expect(write).not.toHaveBeenCalled()
+  })
+
+  it('refuses a cue on the button an extra grid marker holds, so no button carries two cues', async () => {
+    const marker =
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="50000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="2"><GRID BPM="128.000000"></GRID></CUE_V2>'
+    const doc2 = nml([GRID, AUTOGRID, marker])
+    const file = await onDisk(doc2)
+    const wanted = [...asWanted(doc2), { ms: 60000, kind: HOT_KINDS[1], color: 5 }]
+    const result = await applyTraktorCuesBatch(file, [op(doc2, wanted)], {
+      ensureClosed: async () => true,
+      write: async () => null,
+    })
+    expect(result).toMatchObject({
+      outcomes: [{ applied: false, notices: [{ code: 'cues-invalid' }] }],
+    })
+  })
 })

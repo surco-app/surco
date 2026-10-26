@@ -8,6 +8,7 @@ import {
   readTraktorTrackCues,
   traktorCueElements,
   traktorCueRows,
+  traktorCuesIntact,
   traktorEntryBlock,
 } from './traktorCues'
 import { writeCollection } from './traktorNmlLibrary'
@@ -91,6 +92,10 @@ export async function applyTraktorCuesBatch(
     const entry = key === null ? null : traktorEntryBlock(nml, key)
     const read = entry && readTraktorTrackCues(nml, op.contentId)
     if (!entry || !read || read.fingerprint !== op.fingerprint) return refused('cues-changed')
+    if (!traktorCuesIntact(entry.block)) {
+      log.warn(`Traktor cues: an unreadable CUE_V2 in ${op.contentId}, left as it was`)
+      return refused('cues-invalid')
+    }
     if (op.wanted === undefined) return refused('cues-invalid')
     const valid = validWantedSet(op.wanted, read.cues)
     if (!valid.ok) {

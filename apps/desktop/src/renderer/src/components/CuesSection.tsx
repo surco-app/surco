@@ -395,7 +395,7 @@ function Editing({
   const traktor = isTraktorContent(cue.contentId)
   const engine = isEngineContent(cue.contentId) || traktor
   const { data: canSave = true } = useQuery({
-    queryKey: ['traktor-can-save'],
+    queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
     enabled: traktor,
   })
