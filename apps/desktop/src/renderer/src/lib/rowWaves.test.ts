@@ -47,4 +47,38 @@ describe('row waves', () => {
     await vi.advanceTimersByTimeAsync(20)
     expect(rowWaveOf('/m/c.wav')).toBeNull()
   })
+
+  // A track no library analysed and Surco never opened had no wave on its row, however long
+  // it stayed on screen. Surco measures it in the background and draws it when it lands.
+  it('measures the wave of a row that has none and draws it when it lands', async () => {
+    vi.useFakeTimers()
+    let measured = false
+    const rowWaves = vi.fn<Api['rowWaves']>(
+      async (): Promise<Record<string, number[]>> => (measured ? { '/m/t.flac': [0.7] } : {}),
+    )
+    const waveform = vi.fn<Api['waveform']>(async () => {
+      measured = true
+      return {} as Awaited<ReturnType<Api['waveform']>>
+    })
+    ;(window as unknown as { api: Partial<Api> }).api = { rowWaves, waveform }
+    const seen = vi.fn()
+    subscribeRowWave({ path: '/m/t.flac' }, seen)
+    await vi.advanceTimersByTimeAsync(60)
+    expect(waveform).toHaveBeenCalledWith('/m/t.flac', 'low')
+    expect(rowWaveOf('/m/t.flac')).toEqual([0.7])
+    expect(seen).toHaveBeenCalledTimes(2)
+  })
+
+  it('leaves a library analysis it cannot find to the row’s own note, and measures a file once', async () => {
+    vi.useFakeTimers()
+    const rowWaves = vi.fn<Api['rowWaves']>(async () => ({}))
+    const waveform = vi.fn<Api['waveform']>(async () => null)
+    ;(window as unknown as { api: Partial<Api> }).api = { rowWaves, waveform }
+    subscribeRowWave({ path: '/m/a.wav', analysisPath: '/a.DAT' }, () => {})
+    subscribeRowWave({ path: '/m/u.wav' }, () => {})
+    await vi.advanceTimersByTimeAsync(60)
+    expect(waveform).toHaveBeenCalledTimes(1)
+    expect(waveform).toHaveBeenCalledWith('/m/u.wav', 'low')
+    expect(rowWaveOf('/m/u.wav')).toBeNull()
+  })
 })
