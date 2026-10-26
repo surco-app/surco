@@ -1628,7 +1628,7 @@
     "finish": "Loslegen",
     "step": "Schritt {{current}} von {{total}}",
     "djLibrariesTitle": "Deine DJ-Sammlungen",
-    "djLibrariesBody": "Beim Konvertieren kann Surco deine Sammlung auf die neue Datei zeigen lassen, mit Playlists und Cue-Punkten.",
+    "djLibrariesBody": "Beim Konvertieren kann Surco deine Sammlung auf die neue Datei zeigen lassen, mit Playlists und Cue-Punkten. Außerdem erscheinen ihre Playlists in der Seitenleiste, damit du sie in Surco ordnen und mit Cues versehen kannst.",
     "djLibrariesNote": "Surco legt vor dem Schreiben eine Sicherung an und schreibt nie, während das Programm geöffnet ist. Du kannst das später in den Einstellungen ändern.",
     "djLibrary": {
       "rekordbox": "rekordbox",
@@ -1636,7 +1636,7 @@
       "engine": "Engine DJ",
       "engineBody": "Die Bibliothek beim Konvertieren aktuell halten.",
       "traktor": "Traktor",
-      "traktorBody": "Cue-Punkte und Beatgrid in die Sammlung schreiben."
+      "traktorBody": "Die Sammlung beim Konvertieren aktuell halten, mit Playlists und Cues."
     }
   },
   "help": {
