@@ -315,6 +315,24 @@ describe('identity of a converted file that coexists with its source', () => {
     expect(out).toContain('FILE="uno.mp3"')
   })
 
+  it('moves the playlist places of a converted track to its new file, or Traktor drops it from them', () => {
+    const inPlaylist = `<NML VERSION="20"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Scratch"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION></ENTRY>
+<ENTRY TITLE="Other"><LOCATION DIR="/:M/:" FILE="dos.flac" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION><PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1">
+<NODE TYPE="PLAYLIST" NAME="Set"><PLAYLIST ENTRIES="2" TYPE="LIST" UUID="set">
+<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="HD/:M/:uno.flac"></PRIMARYKEY></ENTRY>
+<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="HD/:M/:dos.flac"></PRIMARYKEY></ENTRY>
+</PLAYLIST></NODE></SUBNODES></NODE></PLAYLISTS></NML>`
+
+    const out = applyPatches(inPlaylist, [{ ...patch, newFile: 'uno.mp3' }])
+
+    expect(out).toContain('KEY="HD/:M/:uno.mp3"')
+    expect(out).not.toContain('KEY="HD/:M/:uno.flac"')
+    expect(out).toContain('KEY="HD/:M/:dos.flac"')
+    expect(out).toContain('<PLAYLIST ENTRIES="2"')
+  })
+
   // The substitution already consumed: the collection holds the OUTPUT and no longer the
   // source, so this is one track that changed format and its identity is its own. A
   // guard that only asked "is the output present?" would strip it here — the source has
