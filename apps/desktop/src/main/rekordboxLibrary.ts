@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { copyFile, stat } from 'node:fs/promises'
+import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import log from 'electron-log/main'
 import {
@@ -20,7 +20,7 @@ import {
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
-import { writeBackup } from './rekordboxSessionBackup'
+import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBackup'
 
 // Moves an existing collection entry onto the file a conversion just produced, so the
 // track keeps its ID and therefore its playlists, cues and play history. Writing into a
@@ -167,6 +167,7 @@ export async function repointTracks(
   const db = openRekordboxDb(collectionPath)
   if (!db) return settle({ written: false, reason: 'unreadable' })
   const writes: { index: number; id: string; size: number; fileType: number }[] = []
+  let folded = false
   try {
     for (const p of pending) {
       const repoint = repoints[p.index]
@@ -180,12 +181,19 @@ export async function repointTracks(
         results[p.index] = { written: false, reason: 'occupied' }
       else writes.push({ ...p, id: match.id })
     }
+    if (writes.length > 0) {
+      foldWal(db)
+      folded = true
+    }
+  } catch {
+    folded = false
   } finally {
     db.close()
   }
   if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
 
   try {
+    if (!folded) throw new Error('rekordbox collection WAL could not be folded into master.db')
     // The run's own copy first: it has to describe the collection as it was BEFORE the
     // run. Then the copy the rollback below restores.
     await batch.sessionBackup?.(collectionPath)
@@ -250,11 +258,8 @@ export async function repointTracks(
     }
     // The collection is left exactly as it was found; the backup is the only copy that
     // can guarantee that, so it is put back rather than trusting a half-applied write.
-    try {
-      await copyFile(`${collectionPath}${BACKUP_SUFFIX}`, collectionPath)
-    } catch {
-      // The backup is still on disk under its own name for the user to restore by hand.
-    }
+    write.close()
+    await restoreCollection(collectionPath)
     for (const w of writes) results[w.index] = { written: false, reason: 'write-failed' }
     return settle({ written: false, reason: 'write-failed' })
   } finally {

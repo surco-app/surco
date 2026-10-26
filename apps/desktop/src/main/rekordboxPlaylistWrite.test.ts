@@ -24,15 +24,10 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
 })
 
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
-import {
-  applyRekordboxBatch,
-  editRekordboxPlaylist,
-  replaceFile,
-  restoreCollection,
-} from './rekordboxPlaylistWrite'
+import { applyRekordboxBatch, editRekordboxPlaylist, replaceFile } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
 import type { QueueOp } from './rekordboxQueueOps'
-import { createSessionBackup } from './rekordboxSessionBackup'
+import { createSessionBackup, restoreCollection } from './rekordboxSessionBackup'
 
 const NOW = new Date('2026-10-15T18:00:00.000Z')
 const MOVE: RekordboxPlaylistEdit = {

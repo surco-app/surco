@@ -485,6 +485,42 @@ describe('repointTrack', () => {
     expect(result).toEqual({ written: false, reason: 'write-failed' })
     expect(await readFile(dbPath)).toEqual(before)
   })
+
+  function walWriter(path: string): Database.Database {
+    const db = new Database(path)
+    db.pragma(`cipher='sqlcipher'`)
+    db.pragma('legacy=4')
+    db.pragma(`key='${REKORDBOX_KEY}'`)
+    db.pragma('journal_mode = WAL')
+    db.prepare(`INSERT INTO djmdSongPlaylist VALUES ('w1', 'pl3', '900001')`).run()
+    return db
+  }
+
+  function songPlaylistIds(path: string): string[] {
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    try {
+      return (
+        db.prepare('SELECT ID FROM djmdSongPlaylist ORDER BY ID').all() as { ID: string }[]
+      ).map((r) => r.ID)
+    } finally {
+      db.close()
+    }
+  }
+
+  it('backs up the changes rekordbox committed that still sit in the WAL', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+    const other = walWriter(dbPath)
+    try {
+      const result = await repointTrack(dbPath, { from: MP3, to: output })
+      expect(result.written).toBe(true)
+    } finally {
+      other.close()
+    }
+
+    expect(songPlaylistIds(`${dbPath}.surco-backup`)).toEqual(['1', '2', 'w1'])
+  })
 })
 
 // Adds a second and third track the collection knows, for the runs below.
