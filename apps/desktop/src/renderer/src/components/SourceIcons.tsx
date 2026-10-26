@@ -53,3 +53,18 @@ export function EngineIcon({ size, ...rest }: IconProps): React.JSX.Element {
     </svg>
   )
 }
+
+// Traktor's mark redrawn from its app icon: a disc with the T cut out of it.
+export function TraktorIcon({ size, ...rest }: IconProps): React.JSX.Element {
+  const mask = useId()
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" {...rest}>
+      <mask id={mask}>
+        <circle cx="12" cy="12" r="10" fill="white" />
+        <rect x="6.5" y="6.8" width="11" height="2.8" fill="black" />
+        <rect x="10.6" y="6.8" width="2.8" height="10.4" fill="black" />
+      </mask>
+      <rect width="24" height="24" fill="currentColor" mask={`url(#${mask})`} />
+    </svg>
+  )
+}

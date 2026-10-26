@@ -18,7 +18,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
-const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine']
+const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine', 'traktor']
 
 interface Props {
   synced: SyncedDraft
@@ -64,15 +64,21 @@ export function GeneralTab({
   useEffect(() => {
     window.api.engineAvailable().then(setEngineFound)
   }, [])
+  const [traktorFound, setTraktorFound] = useState<boolean | null>(null)
+  useEffect(() => {
+    window.api.traktorAvailable().then(setTraktorFound)
+  }, [])
   const unavailable: Record<PlaylistSource, boolean> = {
     appleMusic: !isMacOS(),
     rekordbox: rekordboxFound !== true,
     engine: engineFound !== true,
+    traktor: traktorFound !== true,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
     rekordbox: rekordboxFound === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
     engine: engineFound === false ? tr('settings.sourceEngineUnavailable') : undefined,
+    traktor: traktorFound === false ? tr('settings.sourceTraktorUnavailable') : undefined,
   }
   const clearCache = useCallback(async () => {
     setClearing(true)

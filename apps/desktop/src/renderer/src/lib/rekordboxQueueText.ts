@@ -47,6 +47,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
     'cues-invalid': 'rekordboxQueue.notice.cuesInvalid',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
+    'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
     'cues-unfit': 'rekordboxQueue.notice.cuesUnfit',
   },
@@ -72,6 +73,29 @@ export const ENGINE_QUEUE_WORDS: QueueWords = {
   notices: {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'engineQueue.notice.cuesChanged',
+  },
+}
+
+export const TRAKTOR_QUEUE_WORDS: QueueWords = {
+  pillTracks: 'traktorQueue.pillTracks',
+  pillChanges: 'traktorQueue.pillChanges',
+  pillHalted: 'traktorQueue.pillHalted',
+  pillElsewhere: 'traktorQueue.pillElsewhere',
+  halted: 'traktorQueue.halted',
+  elsewhere: 'traktorQueue.elsewhere',
+  discardConfirm: 'traktorQueue.discardConfirm',
+  applied: 'traktorQueue.applied',
+  appliedChanges: 'traktorQueue.appliedChanges',
+  backupFailed: 'traktorQueue.backupFailed',
+  refused: (reason) =>
+    reason === 'unreadable'
+      ? 'traktorQueue.unreadable'
+      : reason === 'other-collection'
+        ? 'traktorQueue.otherLibrary'
+        : 'traktorQueue.writeFailed',
+  notices: {
+    ...REKORDBOX_QUEUE_WORDS.notices,
+    'cues-changed': 'traktorQueue.notice.cuesChanged',
   },
 }
 

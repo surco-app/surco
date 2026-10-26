@@ -105,7 +105,7 @@ export async function syncCollection(
 
 // The backup, the second check that Traktor is closed and the write-then-rename every
 // collection write goes through.
-async function writeCollection(
+export async function writeCollection(
   nmlPath: string,
   patched: string,
 ): Promise<SyncResult['reason'] | null> {

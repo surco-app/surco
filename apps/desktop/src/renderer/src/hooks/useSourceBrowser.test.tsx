@@ -37,6 +37,14 @@ function setup(
     loadEnginePlaylist: vi
       .fn()
       .mockResolvedValue([{ path: '/m/e.wav', separator: false, meta: {} }]),
+    traktorAvailable: vi.fn().mockResolvedValue(false),
+    loadTraktorTree: vi
+      .fn()
+      .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 1 }]),
+    traktorRecentCount: vi.fn().mockResolvedValue(3),
+    loadTraktorPlaylist: vi
+      .fn()
+      .mockResolvedValue([{ path: '/m/t.wav', separator: false, meta: {} }]),
     onWindowFocus: vi.fn((cb: (f: boolean) => void) => {
       focus = cb
       return () => {}
@@ -123,6 +131,26 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.libraryMissing).toBe(false))
     act(() => result.current.selectSource('rekordbox'))
     expect(result.current.libraryMissing).toBe(false)
+  })
+
+  it('offers Traktor after the other libraries when its collection is found, so it shows only where Traktor is installed', async () => {
+    const { result } = setup({ traktorAvailable: vi.fn().mockResolvedValue(true) })
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine', 'traktor']),
+    )
+  })
+
+  it('reads the Traktor tree, with Recently added first, and the picked playlist from the collection', async () => {
+    const { result } = setup({ traktorAvailable: vi.fn().mockResolvedValue(true) })
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    expect(result.current.tree?.[0]).toMatchObject({ id: RECENTLY_ADDED_ID, count: 3 })
+    expect(result.current.tree?.[1].name).toBe('Saturday')
+    act(() =>
+      result.current.selectPlaylist({ id: 'u1', name: 'Saturday', kind: 'playlist', count: 1 }, []),
+    )
+    await waitFor(() => expect(result.current.entries).toHaveLength(1))
+    expect(window.api.loadTraktorPlaylist).toHaveBeenCalledWith('u1')
   })
 
   it('reads the Engine DJ tree and the picked playlist from the Engine library', async () => {

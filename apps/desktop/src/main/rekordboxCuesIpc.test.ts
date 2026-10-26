@@ -726,3 +726,86 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
     expect(drop).toHaveBeenCalledWith('c1')
   })
 })
+
+describe('registerRekordboxCuesIpc for Traktor tracks', () => {
+  const ID = 'traktor:HD/:Music/:t.aiff'
+  const NML = `<NML VERSION="20"><COLLECTION ENTRIES="1"><ENTRY TITLE="t"><LOCATION DIR="/:Music/:" FILE="t.aiff" VOLUME="HD" VOLUMEID="v"></LOCATION><INFO PLAYTIME_FLOAT="60.0"></INFO><CUE_V2 NAME="AutoGrid" TYPE="4" START="0.000000" LEN="0" REPEATS="-1" HOTCUE="-1"><GRID BPM="120.000000"></GRID></CUE_V2><CUE_V2 NAME="n.n." TYPE="0" START="8000.000000" LEN="0" REPEATS="-1" HOTCUE="1"></CUE_V2></ENTRY></COLLECTION></NML>`
+
+  async function collectionFile(): Promise<string> {
+    const file = join(await mkdtemp(join(tmpdir(), 'surco-traktorcuesipc-')), 'collection.nml')
+    writeFileSync(file, NML)
+    return file
+  }
+
+  function register(
+    nml: string,
+    rekordbox = queue(),
+    traktor = queue(),
+    words = vi.fn(async (_file: string) => new Uint16Array([4, 8])),
+  ) {
+    const applyTraktor = quietly()
+    registerRekordboxCuesIpc({
+      collection: () => '',
+      queue: rekordbox,
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      traktor: {
+        nml: () => nml,
+        bootVolume: () => 'HD',
+        queue: traktor,
+        applyQuietly: applyTraktor,
+        words,
+      },
+    })
+    return { applyTraktor, words }
+  }
+
+  it('reads a Traktor row’s cues from the collection the tab reads, so the editor opens on Traktor tracks', async () => {
+    register(await collectionFile())
+    const read = (await handler('rekordbox:trackCues')({}, ID)) as TrackCues
+    expect(read.cues).toEqual([{ id: '1', ms: 8000, kind: 1, color: expect.any(Number) }])
+    expect(read.analysed).toBe(true)
+  })
+
+  it('draws the zoomed wave from the audio of the file, since Traktor keeps none Surco can read', async () => {
+    const { words } = register(await collectionFile())
+    expect([...((await handler('rekordbox:cueWaveDetail')({}, ID)) as Uint16Array)]).toEqual([4, 8])
+    expect(words).toHaveBeenCalledWith('/Music/t.aiff')
+  })
+
+  it('gives Auto mark the Traktor grid and the audio words when rekordbox lacks the file', async () => {
+    register(await collectionFile())
+    const input = (await handler('rekordbox:cueDropInput')({}, ID)) as DropInput
+    expect(input.phrases).toEqual([])
+    expect(input.grid[1]).toEqual({ ms: 500, beat: 2 })
+  })
+
+  it('queues a Traktor save on the Traktor queue and applies it there', async () => {
+    const rekordbox = queue()
+    const traktor = queue()
+    const { applyTraktor } = register(await collectionFile(), rekordbox, traktor)
+    const req = { contentId: ID, path: '/Music/t.aiff', label: 't', wanted: [], fingerprint: 'F' }
+    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('queued')
+    expect(vi.mocked(traktor.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId)).toEqual(
+      [ID],
+    )
+    expect(rekordbox.enqueue).not.toHaveBeenCalled()
+    expect(applyTraktor).toHaveBeenCalled()
+  })
+
+  it('shows and takes back a Traktor save from the Traktor queue', async () => {
+    const drop = vi.fn<RekordboxQueue['drop']>()
+    const wanted = [{ id: '1', ms: 8000, kind: 1, color: 1 }]
+    const traktor = queue({
+      cuesOp: (id) => (id === ID ? savedOp({ contentId: ID, wanted }) : undefined),
+      drop,
+    })
+    register(await collectionFile(), queue(), traktor)
+    expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
+    handler('rekordbox:undoCues')({}, ID)
+    expect(drop).toHaveBeenCalledWith('c1')
+  })
+})

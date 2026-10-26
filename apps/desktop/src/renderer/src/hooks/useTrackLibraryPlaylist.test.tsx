@@ -326,6 +326,20 @@ describe('opening a source playlist', () => {
     ])
   })
 
+  it('marks a row loaded before its Traktor playlist opened as Traktor’s, so it is never renamed', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'traktor')
+    })
+    expect(result.current.tracks.map((t) => [t.inputPath, t.fromTraktor])).toEqual([
+      ['/m/a.aiff', true],
+      ['/m/b.aiff', true],
+    ])
+  })
+
   it('stamps a Music row with its library identity, so converting updates that copy', async () => {
     const { result } = setup()
     await act(async () => {
@@ -493,6 +507,17 @@ describe('opening a rekordbox playlist with previews', () => {
     ).toEqual([['E', undefined, true]])
   })
 
+  it('paints a Traktor row from what the collection holds while its file is read, marked as Traktor’s', async () => {
+    const read = vi.fn<Api['readMetaLight']>(() => new Promise(() => {}))
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry('/m/t.aiff', 'T')], 'traktor')
+    })
+    expect(
+      result.current.tracks.map((t) => [t.sourcePreview?.title, t.fromEngine, t.fromTraktor]),
+    ).toEqual([['T', undefined, true]])
+  })
+
   it('drops the row of a file the disk lacks and counts it once, as missing and not as unreadable', async () => {
     const read = vi.fn<Api['readMetaLight']>((path: string) =>
       path === '/m/gone.aiff'
@@ -632,6 +657,36 @@ describe('opening a rekordbox playlist with previews', () => {
     expect(after.sourcePreview?.cues).toHaveLength(2)
     expect(after.diskSignature).toBe(before.diskSignature)
     expect(after.diskSignature).toBe(trackSignature(after))
+  })
+})
+
+describe('a Traktor playlist read again', () => {
+  const entry = (cues: { ms: number; kind: number; color: number | null }[]) => ({
+    path: '/m/t.aiff',
+    separator: false,
+    meta: {},
+    contentId: 'traktor:HD/:m/:t.aiff',
+    preview: { title: 'T', artist: 'R', durationSec: 256, cues },
+  })
+
+  it('repaints the cues of a row already loaded, so a save that reached Traktor shows on the row', async () => {
+    const read = vi.fn<Api['readMetaLight']>(() => new Promise(() => {}))
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [entry([{ ms: 1000, kind: 1, color: null }])],
+        'traktor',
+      )
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [entry([{ ms: 5000, kind: 1, color: null }])],
+        'traktor',
+      )
+    })
+    expect(result.current.tracks[0].sourcePreview?.cues).toEqual([
+      { ms: 5000, kind: 1, color: null },
+    ])
   })
 })
 

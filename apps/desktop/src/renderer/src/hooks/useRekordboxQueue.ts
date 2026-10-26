@@ -12,6 +12,7 @@ import {
   ENGINE_QUEUE_WORDS,
   type QueueWords,
   REKORDBOX_QUEUE_WORDS,
+  TRAKTOR_QUEUE_WORDS,
 } from '../lib/rekordboxQueueText'
 
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
@@ -47,6 +48,17 @@ export const ENGINE_CUE_QUEUE: QueueSource = {
   applyNow: () => window.api.applyEngineCueQueue(),
   discard: () => window.api.discardEngineCueQueue(),
   words: ENGINE_QUEUE_WORDS,
+}
+
+export const TRAKTOR_CUE_QUEUE: QueueSource = {
+  name: 'Traktor cue queue',
+  read: () => window.api.traktorCueQueue(),
+  onChanged: (cb) => window.api.onTraktorCueQueueChanged(cb),
+  onApplied: (cb) => window.api.onTraktorCueQueueApplied(cb),
+  ready: () => window.api.traktorCueQueueReady(),
+  applyNow: () => window.api.applyTraktorCueQueue(),
+  discard: () => window.api.discardTraktorCueQueue(),
+  words: TRAKTOR_QUEUE_WORDS,
 }
 
 export function useRekordboxQueue(

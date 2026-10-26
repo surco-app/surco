@@ -28,17 +28,20 @@ function containsNode(nodes: SourceNode[], id: string): boolean {
 
 function readTree(source: PlaylistSource): Promise<SourceNode[]> {
   if (source === 'engine') return window.api.loadEngineTree()
+  if (source === 'traktor') return window.api.loadTraktorTree()
   return source === 'rekordbox'
     ? window.api.loadRekordboxTree()
     : window.api.loadAppleMusicPlaylists().then(musicTree)
 }
 
 function readRecentCount(source: PlaylistSource): Promise<number> {
+  if (source === 'traktor') return window.api.traktorRecentCount()
   return source === 'engine' ? window.api.engineRecentCount() : window.api.rekordboxRecentCount()
 }
 
 function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
   if (source === 'engine') return window.api.loadEnginePlaylist(id)
+  if (source === 'traktor') return window.api.loadTraktorPlaylist(id)
   return source === 'rekordbox'
     ? window.api.loadRekordboxPlaylist(id)
     : window.api.loadAppleMusicPlaylistTracks(id).then(musicEntries)
@@ -75,10 +78,16 @@ export function useSourceBrowser({
     queryFn: () => window.api.engineAvailable(),
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const traktor = useQuery({
+    queryKey: ['source-available', 'traktor'],
+    queryFn: () => window.api.traktorAvailable(),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
   const sources: PlaylistSource[] = [
     ...(isMac ? (['appleMusic'] as const) : []),
     ...(rekordbox ? (['rekordbox'] as const) : []),
     ...(engine.data ? (['engine'] as const) : []),
+    ...(traktor.data ? (['traktor'] as const) : []),
   ].filter((s) => !hiddenSources.includes(s))
 
   const tree = useQuery({
@@ -87,7 +96,7 @@ export function useSourceBrowser({
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const hasRecent = source === 'rekordbox' || source === 'engine'
+  const hasRecent = source === 'rekordbox' || source === 'engine' || source === 'traktor'
   const recent = useQuery({
     queryKey: ['source-tree', source, 'recent'],
     queryFn: () => readRecentCount(source as PlaylistSource),

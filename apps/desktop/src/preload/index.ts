@@ -193,6 +193,11 @@ const api: Api = {
   engineRecentCount: (): Promise<number> => ipcRenderer.invoke('engine:recentCount'),
   loadEnginePlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('engine:playlist', id),
+  traktorAvailable: (): Promise<boolean> => ipcRenderer.invoke('traktor:available'),
+  loadTraktorTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('traktor:tree'),
+  traktorRecentCount: (): Promise<number> => ipcRenderer.invoke('traktor:recentCount'),
+  loadTraktorPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
+    ipcRenderer.invoke('traktor:playlist', id),
   editRekordboxPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,
@@ -251,6 +256,22 @@ const api: Api = {
     ipcRenderer.on('engine:cueQueueApplied', listener)
     return () => ipcRenderer.removeListener('engine:cueQueueApplied', listener)
   },
+  traktorCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('traktor:cueQueue'),
+  applyTraktorCueQueue: (): Promise<RekordboxQueueApplied | null> =>
+    ipcRenderer.invoke('traktor:applyCueQueue'),
+  discardTraktorCueQueue: (): Promise<void> => ipcRenderer.invoke('traktor:discardCueQueue'),
+  traktorCueQueueReady: (): Promise<void> => ipcRenderer.invoke('traktor:cueQueueReady'),
+  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
+    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
+    ipcRenderer.on('traktor:cueQueueChanged', listener)
+    return () => ipcRenderer.removeListener('traktor:cueQueueChanged', listener)
+  },
+  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
+    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
+    ipcRenderer.on('traktor:cueQueueApplied', listener)
+    return () => ipcRenderer.removeListener('traktor:cueQueueApplied', listener)
+  },
+  traktorCanSave: (): Promise<boolean> => ipcRenderer.invoke('traktor:canSave'),
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {
     const listener = (_e: unknown, list: UsbVolumeList): void => cb(list)

@@ -1,5 +1,7 @@
 import { type CueFlow, type FlowPhrase, MIX_IN } from '../../../shared/cueFlows'
 import {
+  ALL_SLOTS,
+  type CueSlots,
   type ExistingCue,
   evaluateFlow,
   findDrops,
@@ -54,7 +56,10 @@ export interface DraftContext {
   phrases: FlowPhrase[]
   flows: CueFlow[]
   lettersByTime?: boolean
+  slots?: CueSlots
 }
+
+const kindsOf = (ctx: DraftContext): number[] => (ctx.slots ?? ALL_SLOTS).kinds
 
 export type DraftAction =
   | { type: 'mark-drop'; ms: number }
@@ -110,8 +115,12 @@ export function draftPoints(state: CueDraft, ctx: DraftContext): number[] {
   })
 }
 
-export function freeLetters(cues: WantedCue[], current?: number): number[] {
-  return HOT_KINDS.filter((k) => k === current || !cues.some((c) => c.kind === k))
+export function freeLetters(
+  cues: WantedCue[],
+  current?: number,
+  kinds: number[] = HOT_KINDS,
+): number[] {
+  return kinds.filter((k) => k === current || !cues.some((c) => c.kind === k))
 }
 
 export function wantedOfDraft(cues: DraftCue[]): WantedCue[] {
@@ -224,6 +233,7 @@ function regenerate(
     phrases: ctx.phrases,
     flow,
     kept: state.placed,
+    slots: ctx.slots,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   if (out.status === 'manual') return fillMissing(state, ctx, drops, flow, point)
@@ -240,7 +250,7 @@ function regenerate(
     origin[`n${nextKey}`] = flow.id
     return { key: `n${nextKey}`, ms: w.ms, kind: w.kind, color: w.color }
   })
-  const cues = keepEdited(state, generated)
+  const cues = keepEdited(state, generated, kindsOf(ctx))
   if (cues === null) return { ...state, notice: 'too-many' }
   return commit(state, cues, {
     flowId: flow.id,
@@ -269,6 +279,7 @@ function fillMissing(
       strong: ctx.strong,
       phrases: ctx.phrases,
       flow,
+      slots: ctx.slots,
     })
     return out.status === 'too-many' ? [] : out.wanted
   }
@@ -281,7 +292,7 @@ function fillMissing(
       !state.cues.some((o) => same(o, c)) && (isHot(c) || !skipped.some((h) => near(h.ms, c.ms))),
   )
   const away = (ms: number): number => Math.abs(point - ms)
-  const free = freeLetters(state.cues)
+  const free = freeLetters(state.cues, undefined, kindsOf(ctx))
   const hot = fresh.filter(isHot).sort((a, b) => away(a.ms) - away(b.ms))
   const left = hot.slice(free.length)
   const placed = fresh.filter(
@@ -311,7 +322,7 @@ function fillMissing(
   })
 }
 
-function keepEdited(state: CueDraft, generated: DraftCue[]): DraftCue[] | null {
+function keepEdited(state: CueDraft, generated: DraftCue[], kinds: number[]): DraftCue[] | null {
   const mine = (key: string): boolean => state.edited.includes(key) || state.locked.includes(key)
   const edited = state.cues.filter((c) => mine(c.key))
   if (edited.length === 0) return generated
@@ -323,7 +334,7 @@ function keepEdited(state: CueDraft, generated: DraftCue[]): DraftCue[] | null {
     if (pair && !kept.some((c) => c.key === pair.key)) kept.push(pair)
   }
   const held = new Set(edited.filter(isHot).map((e) => e.kind))
-  const free = HOT_KINDS.filter((k) => !held.has(k))
+  const free = kinds.filter((k) => !held.has(k))
   const others = kept.filter((c) => isHot(c) && !mine(c.key)).sort((a, b) => a.ms - b.ms)
   if (others.length > free.length) return null
   const letter = new Map(others.map((c, i) => [c.key, free[i]]))
@@ -350,6 +361,7 @@ function placeOnce(
     phrases: ctx.phrases,
     flow,
     point: ms,
+    slots: ctx.slots,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   const taken = (c: WantedCue): boolean =>
@@ -359,7 +371,7 @@ function placeOnce(
     (c) => !taken(c) && (isHot(c) || !skipped.some((h) => near(h.ms, c.ms))),
   )
   if (fresh.length === 0) return state
-  const free = freeLetters(state.cues)
+  const free = freeLetters(state.cues, undefined, kindsOf(ctx))
   const hot = fresh.filter(isHot).sort((a, b) => a.ms - b.ms)
   if (hot.length > free.length) return { ...state, notice: 'too-many' }
   const letter = new Map(hot.map((c, i) => [c, free[i]]))
@@ -392,9 +404,9 @@ const RELETTERED: DraftAction['type'][] = [
   'clear',
 ]
 
-function inTrackOrder(cues: DraftCue[], locked: string[]): DraftCue[] {
+function inTrackOrder(cues: DraftCue[], locked: string[], kinds: number[]): DraftCue[] {
   const fixed = cues.filter((c) => isHot(c) && locked.includes(c.key))
-  const free = HOT_KINDS.filter((k) => !fixed.some((c) => c.kind === k))
+  const free = kinds.filter((k) => !fixed.some((c) => c.kind === k))
   const order = cues
     .filter((c) => isHot(c) && !locked.includes(c.key))
     .sort((a, b) => a.ms - b.ms)
@@ -409,7 +421,7 @@ export function reduceDraft(state: CueDraft, action: DraftAction, ctx: DraftCont
   const next = step(state, action, ctx)
   if (!ctx.lettersByTime || next.cues === state.cues || !RELETTERED.includes(action.type))
     return next
-  return { ...next, cues: inTrackOrder(next.cues, next.locked) }
+  return { ...next, cues: inTrackOrder(next.cues, next.locked, kindsOf(ctx)) }
 }
 
 function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft {
@@ -480,7 +492,7 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     const ms = snap(ctx, action.ms)
     const hot = action.type === 'add-hot'
     const wanted = action.type === 'add-hot' ? action.kind : undefined
-    const free = freeLetters(state.cues)
+    const free = freeLetters(state.cues, undefined, kindsOf(ctx))
     const kind = !hot ? 0 : wanted === undefined ? free.at(0) : free.find((k) => k === wanted)
     if (kind === undefined || state.cues.some((c) => isHot(c) === hot && near(c.ms, ms)))
       return state
@@ -512,7 +524,8 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     )
   }
   if (action.type === 'reletter') {
-    if (!isHot(target) || !freeLetters(state.cues).includes(action.kind)) return state
+    if (!isHot(target) || !freeLetters(state.cues, undefined, kindsOf(ctx)).includes(action.kind))
+      return state
     return commit(
       state,
       state.cues.map((c) => (c.key === target.key ? { ...c, kind: action.kind } : c)),

@@ -3,7 +3,8 @@ import { normalizeHiddenSources } from './hiddenSources'
 
 describe('normalizeHiddenSources', () => {
   it('keeps the sources it knows, in the order the user hid them', () => {
-    expect(normalizeHiddenSources(['engine', 'rekordbox', 'appleMusic'])).toEqual([
+    expect(normalizeHiddenSources(['traktor', 'engine', 'rekordbox', 'appleMusic'])).toEqual([
+      'traktor',
       'engine',
       'rekordbox',
       'appleMusic',
@@ -11,7 +12,7 @@ describe('normalizeHiddenSources', () => {
   })
 
   it('drops what a hand-edited or newer file holds, so the rail never waits on a source this version lacks', () => {
-    expect(normalizeHiddenSources(['traktor', 3, null, 'appleMusic'])).toEqual(['appleMusic'])
+    expect(normalizeHiddenSources(['serato', 3, null, 'appleMusic'])).toEqual(['appleMusic'])
   })
 
   it('lists a source once however many times it was stored', () => {

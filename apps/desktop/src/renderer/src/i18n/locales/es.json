@@ -835,6 +835,8 @@
       "saveAll_other": "Guardar {{count}} pistas en rekordbox",
       "saveAllBoth_one": "Guardar {{count}} pista en rekordbox y Engine DJ",
       "saveAllBoth_other": "Guardar {{count}} pistas en rekordbox y Engine DJ",
+      "saveAllMixed_one": "Guardar {{count}} pista en su biblioteca",
+      "saveAllMixed_other": "Guardar {{count}} pistas en sus bibliotecas",
       "toCall_one": "{{count}} compás al CALL",
       "toCall_other": "{{count}} compases al CALL",
       "toCallShort": "{{count}} al CALL",
@@ -872,6 +874,19 @@
         "calls": "Engine DJ solo guarda hot cues. Los CALL no se guardarán",
         "saveAll_one": "Guardar {{count}} pista en Engine DJ",
         "saveAll_other": "Guardar {{count}} pistas en Engine DJ"
+      },
+      "traktor": {
+        "save": "Guardar en Traktor",
+        "unanalysed": "Traktor aún no ha analizado esta pista",
+        "unreadable": "No se pudieron leer las cues de Traktor",
+        "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en Traktor y ya no vale. Ves lo que tiene Traktor ahora.",
+        "saveFailed": "No se pudo guardar en Traktor. Las cues siguen sin guardar",
+        "autoReading": "Leyendo la pista…",
+        "autoUnreadable": "Surco no ha podido leer el audio de esta pista",
+        "saveAll_one": "Guardar {{count}} pista en Traktor",
+        "saveAll_other": "Guardar {{count}} pistas en Traktor",
+        "noCollection": "Elige tu collection.nml en Ajustes → Destino → Traktor para que Surco pueda guardar",
+        "colours": "Traktor colorea cada cue según su tipo. Surco las guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor"
       },
       "provisional": {
         "chip": "Rejilla de Surco · {{bpm}} BPM",
@@ -1190,11 +1205,13 @@
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
-      "engine": "Engine DJ"
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
     },
     "sourceAppleMusicUnavailable": "Solo existe en macOS",
     "sourceRekordboxUnavailable": "No se ha encontrado una colección de rekordbox",
     "sourceEngineUnavailable": "No se ha encontrado una biblioteca de Engine DJ",
+    "sourceTraktorUnavailable": "No se ha encontrado una colección de Traktor",
     "sourcesHint": "Ocultar una fuente solo la quita de la barra lateral y no cambia su sincronización al convertir.",
     "updates": "Actualizaciones",
     "betaUpdates": "Recibir versiones beta",
@@ -1927,19 +1944,22 @@
     "hide": {
       "appleMusic": "Ocultar Apple Music",
       "rekordbox": "Ocultar rekordbox",
-      "engine": "Ocultar Engine DJ"
+      "engine": "Ocultar Engine DJ",
+      "traktor": "Ocultar Traktor"
     },
     "workingList": "Pistas",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
+    "traktor": "Traktor",
     "recentlyAdded": "Añadidas recientemente",
     "search": "Buscar playlist",
     "loading": "Leyendo playlists…",
     "failed": {
       "appleMusic": "No se pudieron leer tus playlists. Comprueba que Apple Music está abierto y que Surco tiene permiso para controlarlo.",
       "rekordbox": "No se pudo leer la colección. Si acabas de cambiar algo, vuelve a Surco en unos segundos.",
-      "engine": "No se pudo leer la biblioteca de Engine DJ. Si acabas de cambiar algo, vuelve a Surco en unos segundos."
+      "engine": "No se pudo leer la biblioteca de Engine DJ. Si acabas de cambiar algo, vuelve a Surco en unos segundos.",
+      "traktor": "No se pudo leer la colección de Traktor. Si acabas de cambiar algo, vuelve a Surco en unos segundos."
     },
     "notFound": {
       "engine": "Surco no encuentra una biblioteca de Engine DJ. Indica su carpeta, la que contiene Database2, en Engine DJ dentro de Ajustes → Destino."
@@ -1952,7 +1972,8 @@
     "gone": {
       "appleMusic": "«{{name}}» ya no está en Music",
       "rekordbox": "«{{name}}» ya no está en rekordbox",
-      "engine": "«{{name}}» ya no está en Engine DJ"
+      "engine": "«{{name}}» ya no está en Engine DJ",
+      "traktor": "«{{name}}» ya no está en Traktor"
     },
     "missing_one": "{{count}} pista de «{{name}}» no tiene fichero en el disco",
     "missing_other": "{{count}} pistas de «{{name}}» no tienen fichero en el disco",
@@ -2490,6 +2511,29 @@
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella",
     "pillElsewhere": "Pendiente de otra biblioteca de Engine DJ",
     "elsewhere": "Esto se preparó para otra biblioteca de Engine DJ. Surco no lo aplicará a la que usas ahora"
+  },
+  "traktorQueue": {
+    "pillTracks_one": "1 pista espera a que cierres Traktor",
+    "pillTracks_other": "{{count}} pistas esperan a que cierres Traktor",
+    "pillChanges_one": "1 cambio espera a que cierres Traktor",
+    "pillChanges_other": "{{count}} cambios esperan a que cierres Traktor",
+    "applied_one": "Listo en Traktor · 1 pista",
+    "applied_other": "Listo en Traktor · {{count}} pistas",
+    "appliedChanges_one": "Listo en Traktor · 1 cambio",
+    "appliedChanges_other": "Listo en Traktor · {{count}} cambios",
+    "backupFailed": "No se pudo hacer la copia de Traktor. Se intentará al cerrarlo otra vez",
+    "unreadable": "Surco no puede leer ahora la colección de Traktor y no ha cambiado nada",
+    "writeFailed": "No se pudieron guardar las cues en Traktor. La colección sigue como estaba",
+    "otherLibrary": "Lo que espera es de otra colección de Traktor y no se ha cambiado nada. Vuelve a esa colección o descarta lo que espera",
+    "notice": {
+      "cuesChanged": "Las cues de {{track}} cambiaron en Traktor. Vuelve a marcarlas",
+      "slotDropped": "Traktor tiene 7 botones para las cues de Surco, así que la cue H de {{track}} no se guardó"
+    },
+    "discardConfirm": "¿Descartar lo que espera? Las cues vuelven a lo que dice Traktor",
+    "pillHalted": "Cambios de Traktor en pausa",
+    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella",
+    "pillElsewhere": "Pendiente de otra colección de Traktor",
+    "elsewhere": "Esto se preparó para otra colección de Traktor. Surco no lo aplicará a la que usas ahora"
   },
   "cueWave": {
     "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",

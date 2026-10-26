@@ -15,6 +15,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
   platform: 'darwin',
   rekordboxAvailable: () => Promise.resolve(true),
   engineAvailable: () => Promise.resolve(true),
+  traktorAvailable: () => Promise.resolve(true),
 }
 
 import { GeneralTab } from './GeneralTab'
@@ -138,13 +139,15 @@ describe('GeneralTab sources', () => {
       platform,
       rekordbox,
       engine = true,
-    }: { platform: string; rekordbox: boolean; engine?: boolean },
+      traktor = true,
+    }: { platform: string; rekordbox: boolean; engine?: boolean; traktor?: boolean },
     hiddenSources: PlaylistSource[] = [],
   ) {
     Object.assign((window as unknown as { api: object }).api, {
       platform,
       rekordboxAvailable: () => Promise.resolve(rekordbox),
       engineAvailable: () => Promise.resolve(engine),
+      traktorAvailable: () => Promise.resolve(traktor),
     })
     const patch = vi.fn<(key: 'hiddenSources', value: PlaylistSource[]) => void>()
     render(
@@ -222,6 +225,23 @@ describe('GeneralTab sources', () => {
     renderSources({ platform: 'darwin', rekordbox: true })
     await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
     expect(screen.getByTestId('settings-source-engine')).toBeChecked()
+  })
+
+  it('lets Traktor be hidden on a machine where Traktor is installed', async () => {
+    const patch = renderSources({ platform: 'darwin', rekordbox: true })
+    const traktor = screen.getByTestId('settings-source-traktor')
+    await waitFor(() => expect(traktor).toBeEnabled())
+    expect(traktor).toBeChecked()
+    fireEvent.click(traktor)
+    expect(patch).toHaveBeenCalledWith('hiddenSources', ['traktor'])
+  })
+
+  it('keeps the Traktor switch in view without Traktor, disabled and saying why, as the rail leaves the source out there', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, traktor: false })
+    await waitFor(() =>
+      expect(screen.getByText(i18n.t('settings.sourceTraktorUnavailable'))).toBeInTheDocument(),
+    )
+    expect(screen.getByTestId('settings-source-traktor')).toBeDisabled()
   })
 
   it('says that hiding a source leaves its sync alone', async () => {

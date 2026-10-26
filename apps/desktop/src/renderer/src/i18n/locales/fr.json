@@ -835,6 +835,8 @@
       "saveAll_other": "Enregistrer {{count}} morceaux dans rekordbox",
       "saveAllBoth_one": "Enregistrer {{count}} morceau dans rekordbox et Engine DJ",
       "saveAllBoth_other": "Enregistrer {{count}} morceaux dans rekordbox et Engine DJ",
+      "saveAllMixed_one": "Enregistrer {{count}} piste dans sa bibliothèque",
+      "saveAllMixed_other": "Enregistrer {{count}} pistes dans leurs bibliothèques",
       "toCall_one": "{{count}} mesure avant le CALL",
       "toCall_other": "{{count}} mesures avant le CALL",
       "toCallShort": "{{count}} avant le CALL",
@@ -872,6 +874,19 @@
         "calls": "Engine DJ ne garde que les hot cues. Les CALL ne seront pas enregistrés",
         "saveAll_one": "Enregistrer {{count}} morceau dans Engine DJ",
         "saveAll_other": "Enregistrer {{count}} morceaux dans Engine DJ"
+      },
+      "traktor": {
+        "save": "Enregistrer dans Traktor",
+        "unanalysed": "Traktor n’a pas encore analysé ce morceau",
+        "unreadable": "Impossible de lire les cues d’Traktor",
+        "queuedStale": "L’enregistrement en attente date d’avant le changement du morceau dans Traktor et n’est plus valable. Tu vois ce qu’a Traktor maintenant.",
+        "saveFailed": "Impossible d’enregistrer dans Traktor. Les cues ne sont toujours pas enregistrés",
+        "autoReading": "Lecture de la piste…",
+        "autoUnreadable": "Surco n’a pas pu lire l’audio de cette piste",
+        "saveAll_one": "Enregistrer {{count}} morceau dans Traktor",
+        "saveAll_other": "Enregistrer {{count}} morceaux dans Traktor",
+        "noCollection": "Choisissez votre collection.nml dans Réglages → Sortie → Traktor pour que Surco puisse enregistrer",
+        "colours": "Traktor colore chaque cue selon son type. Surco les enregistre comme des cues normaux, en bleu, et laisse le bouton 1 à l’AutoGrid de Traktor"
       },
       "provisional": {
         "chip": "Grille de Surco · {{bpm}} BPM",
@@ -1190,11 +1205,13 @@
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
-      "engine": "Engine DJ"
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
     },
     "sourceAppleMusicUnavailable": "Disponible uniquement sur macOS",
     "sourceRekordboxUnavailable": "Aucune collection rekordbox n'a été trouvée",
     "sourceEngineUnavailable": "Aucune bibliothèque Engine DJ n'a été trouvée",
+    "sourceTraktorUnavailable": "Aucune collection Traktor n'a été trouvée",
     "sourcesHint": "Masquer une source la retire seulement de la barre latérale et ne change pas la synchronisation lors des conversions.",
     "updates": "Mises à jour",
     "betaUpdates": "Recevoir les versions bêta",
@@ -1927,19 +1944,22 @@
     "hide": {
       "appleMusic": "Masquer Apple Music",
       "rekordbox": "Masquer rekordbox",
-      "engine": "Masquer Engine DJ"
+      "engine": "Masquer Engine DJ",
+      "traktor": "Masquer Traktor"
     },
     "workingList": "Morceaux",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
+    "traktor": "Traktor",
     "recentlyAdded": "Ajoutées récemment",
     "search": "Rechercher une playlist",
     "loading": "Lecture des playlists…",
     "failed": {
       "appleMusic": "Impossible de lire tes playlists. Vérifie qu'Apple Music est ouvert et que Surco a le droit de le contrôler.",
       "rekordbox": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
-      "engine": "Impossible de lire la bibliothèque Engine DJ. Si vous venez de modifier quelque chose, revenez dans Surco dans quelques secondes."
+      "engine": "Impossible de lire la bibliothèque Engine DJ. Si vous venez de modifier quelque chose, revenez dans Surco dans quelques secondes.",
+      "traktor": "Impossible de lire la collection Traktor. Si vous venez de modifier quelque chose, revenez dans Surco dans quelques secondes."
     },
     "notFound": {
       "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indiquez son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Sortie."
@@ -1952,7 +1972,8 @@
     "gone": {
       "appleMusic": "« {{name}} » n’est plus dans Music",
       "rekordbox": "« {{name}} » n’est plus dans rekordbox",
-      "engine": "« {{name}} » n’est plus dans Engine DJ"
+      "engine": "« {{name}} » n’est plus dans Engine DJ",
+      "traktor": "« {{name}} » n’est plus dans Traktor"
     },
     "missing_one": "{{count}} piste de « {{name}} » n’a pas de fichier sur le disque",
     "missing_other": "{{count}} pistes de « {{name}} » n’ont pas de fichier sur le disque",
@@ -2490,6 +2511,29 @@
     "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la bibliothèque tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours m.db.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
     "pillElsewhere": "En attente d’une autre bibliothèque Engine DJ",
     "elsewhere": "Ceci a été préparé pour une autre bibliothèque Engine DJ. Surco ne l’appliquera pas à celle que tu utilises maintenant"
+  },
+  "traktorQueue": {
+    "pillTracks_one": "1 morceau attend que vous fermiez Traktor",
+    "pillTracks_other": "{{count}} morceaux attendent que vous fermiez Traktor",
+    "pillChanges_one": "1 changement attend que vous fermiez Traktor",
+    "pillChanges_other": "{{count}} changements attendent que vous fermiez Traktor",
+    "applied_one": "Fait dans Traktor · 1 morceau",
+    "applied_other": "Fait dans Traktor · {{count}} morceaux",
+    "appliedChanges_one": "Fait dans Traktor · 1 changement",
+    "appliedChanges_other": "Fait dans Traktor · {{count}} changements",
+    "backupFailed": "Impossible de sauvegarder Traktor. Surco réessaiera à sa prochaine fermeture",
+    "unreadable": "Surco ne peut pas lire la collection Traktor pour le moment, rien n’a changé",
+    "writeFailed": "Impossible d’enregistrer les cues dans Traktor. La collection est restée telle quelle",
+    "otherLibrary": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend",
+    "notice": {
+      "cuesChanged": "Les cues de {{track}} ont changé dans Traktor. Marque-les à nouveau",
+      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré"
+    },
+    "discardConfirm": "Abandonner ce qui attend ? Les cues reviennent à ce qu’a Traktor",
+    "pillHalted": "Changements Traktor en pause",
+    "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours collection.nml.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
+    "pillElsewhere": "En attente d’une autre collection Traktor",
+    "elsewhere": "Ceci a été préparé pour une autre collection Traktor. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
   "cueWave": {
     "notAnalysed": "Ce morceau n’est pas analysé dans rekordbox. Analysez-le là-bas pour placer des cues",

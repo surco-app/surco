@@ -10,6 +10,7 @@ import {
   noticeText,
   partText,
   pillText,
+  TRAKTOR_QUEUE_WORDS,
 } from './rekordboxQueueText'
 
 const tr = i18n.getFixedT('en')
@@ -196,6 +197,26 @@ describe('Engine DJ queue text', () => {
     )
     expect(es.engineQueue.notice.callsDropped_other).toBe(
       'No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues',
+    )
+  })
+})
+
+describe('Traktor queue text', () => {
+  it('says the tracks wait for Traktor to close', () => {
+    expect(pillText(tr, { tracks: 2, changes: 0, items: [] }, TRAKTOR_QUEUE_WORDS)).toBe(
+      '2 tracks wait for you to close Traktor',
+    )
+  })
+
+  it('names the track whose cue H did not fit on Traktor’s buttons', () => {
+    expect(noticeText(tr, { code: 'cues-slot-dropped', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
+      "Traktor has 7 buttons for Surco's cues, so cue H of Tengo was not saved",
+    )
+  })
+
+  it('says the cues changed in Traktor when a save was refused for it', () => {
+    expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
+      'The cues of Tengo changed in Traktor. Mark them again',
     )
   })
 })

@@ -835,6 +835,8 @@
       "saveAll_other": "Save {{count}} tracks to rekordbox",
       "saveAllBoth_one": "Save {{count}} track to rekordbox and Engine DJ",
       "saveAllBoth_other": "Save {{count}} tracks to rekordbox and Engine DJ",
+      "saveAllMixed_one": "Save {{count}} track to its library",
+      "saveAllMixed_other": "Save {{count}} tracks to their libraries",
       "toCall_one": "{{count}} bar to the CALL",
       "toCall_other": "{{count}} bars to the CALL",
       "toCallShort": "{{count}} to CALL",
@@ -872,6 +874,19 @@
         "calls": "Engine DJ only keeps hot cues. The CALLs will not be saved",
         "saveAll_one": "Save {{count}} track to Engine DJ",
         "saveAll_other": "Save {{count}} tracks to Engine DJ"
+      },
+      "traktor": {
+        "save": "Save to Traktor",
+        "unanalysed": "Traktor has not analysed this track yet",
+        "unreadable": "Could not read the cues from Traktor",
+        "queuedStale": "The queued save was made before the track changed in Traktor and is out of date. You see what Traktor holds now.",
+        "saveFailed": "Could not save to Traktor. The cues are still not saved",
+        "autoReading": "Reading the track…",
+        "autoUnreadable": "Surco could not read the audio of this track",
+        "saveAll_one": "Save {{count}} track to Traktor",
+        "saveAll_other": "Save {{count}} tracks to Traktor",
+        "noCollection": "Choose your collection.nml in Settings → Output → Traktor so Surco can save",
+        "colours": "Traktor colours each cue by its type. Surco saves them as normal cues, in blue, and leaves button 1 to Traktor's AutoGrid"
       },
       "provisional": {
         "chip": "Surco grid · {{bpm}} BPM",
@@ -1190,11 +1205,13 @@
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
-      "engine": "Engine DJ"
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
     },
     "sourceAppleMusicUnavailable": "Only available on macOS",
     "sourceRekordboxUnavailable": "No rekordbox collection was found",
     "sourceEngineUnavailable": "No Engine DJ library was found",
+    "sourceTraktorUnavailable": "No Traktor collection was found",
     "sourcesHint": "Hiding a source only removes it from the sidebar and does not change whether conversions sync with it.",
     "updates": "Updates",
     "betaUpdates": "Get beta versions",
@@ -1927,19 +1944,22 @@
     "hide": {
       "appleMusic": "Hide Apple Music",
       "rekordbox": "Hide rekordbox",
-      "engine": "Hide Engine DJ"
+      "engine": "Hide Engine DJ",
+      "traktor": "Hide Traktor"
     },
     "workingList": "Tracks",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
+    "traktor": "Traktor",
     "recentlyAdded": "Recently added",
     "search": "Search playlists",
     "loading": "Reading playlists…",
     "failed": {
       "appleMusic": "Couldn't read your playlists. Check that Apple Music is open and that Surco is allowed to control it.",
       "rekordbox": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds.",
-      "engine": "Couldn't read the Engine DJ library. If you just changed something, come back to Surco in a few seconds."
+      "engine": "Couldn't read the Engine DJ library. If you just changed something, come back to Surco in a few seconds.",
+      "traktor": "Couldn't read the Traktor collection. If you just changed something, come back to Surco in a few seconds."
     },
     "notFound": {
       "engine": "Surco can't find an Engine DJ library. Set its folder, the one that holds Database2, under Engine DJ in Settings → Output."
@@ -1952,7 +1972,8 @@
     "gone": {
       "appleMusic": "“{{name}}” is no longer in Music",
       "rekordbox": "“{{name}}” is no longer in rekordbox",
-      "engine": "“{{name}}” is no longer in Engine DJ"
+      "engine": "“{{name}}” is no longer in Engine DJ",
+      "traktor": "“{{name}}” is no longer in Traktor"
     },
     "missing_one": "{{count}} track from “{{name}}” has no file on disk",
     "missing_other": "{{count}} tracks from “{{name}}” have no file on disk",
@@ -2490,6 +2511,29 @@
     "halted": "The last change could not be saved or undone. Surco will not touch the library until you choose Apply now or Discard. Apply now replaces the backup copy m.db.surco-backup, so if anything looks wrong, restore from it first",
     "pillElsewhere": "Waiting for another Engine DJ library",
     "elsewhere": "This was prepared for another Engine DJ library. Surco will not apply it to the one you use now"
+  },
+  "traktorQueue": {
+    "pillTracks_one": "1 track waits for you to close Traktor",
+    "pillTracks_other": "{{count}} tracks wait for you to close Traktor",
+    "pillChanges_one": "1 change waits for you to close Traktor",
+    "pillChanges_other": "{{count}} changes wait for you to close Traktor",
+    "applied_one": "Done in Traktor · 1 track",
+    "applied_other": "Done in Traktor · {{count}} tracks",
+    "appliedChanges_one": "Done in Traktor · 1 change",
+    "appliedChanges_other": "Done in Traktor · {{count}} changes",
+    "backupFailed": "Could not back up Traktor. Surco will try again when you close it",
+    "unreadable": "Surco can't read the Traktor collection right now, so nothing changed",
+    "writeFailed": "Couldn't save the cues to Traktor. The collection is as it was",
+    "otherLibrary": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting",
+    "notice": {
+      "cuesChanged": "The cues of {{track}} changed in Traktor. Mark them again",
+      "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved"
+    },
+    "discardConfirm": "Discard what is waiting? The cues go back to what Traktor has",
+    "pillHalted": "Traktor changes on hold",
+    "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy collection.nml.surco-backup, so if anything looks wrong, restore from it first",
+    "pillElsewhere": "Waiting for another Traktor collection",
+    "elsewhere": "This was prepared for another Traktor collection. Surco will not apply it to the one you use now"
   },
   "cueWave": {
     "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",

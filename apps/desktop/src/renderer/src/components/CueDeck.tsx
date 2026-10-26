@@ -22,6 +22,7 @@ const STEP =
 
 export function CueDeck({
   cues,
+  kinds = HOT_KINDS,
   selected,
   locked,
   jumpBars,
@@ -41,6 +42,7 @@ export function CueDeck({
   onDone,
 }: {
   cues: DeckCue[]
+  kinds?: number[]
   selected: string | null
   locked: string[]
   jumpBars: CueJumpBars
@@ -102,7 +104,7 @@ export function CueDeck({
         )}
       </button>
       <div className="flex items-center gap-1.5">
-        {HOT_KINDS.map((kind) => {
+        {kinds.map((kind) => {
           const cue = cues.find((c) => c.kind === kind)
           const letter = cueLetter(kind)
           const isSelected = cue !== undefined && cue.key === selected

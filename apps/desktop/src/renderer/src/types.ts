@@ -207,6 +207,7 @@ export interface TrackItem {
   fromAppleMusic?: boolean
   fromRekordbox?: boolean
   fromEngine?: boolean
+  fromTraktor?: boolean
   // The file on disk that a replacement supersedes, resolved from the library copy this
   // track would replace. Stamped alongside musicPersistentId just before the convert runs:
   // rekordbox indexes that path, and the file being converted may live anywhere.

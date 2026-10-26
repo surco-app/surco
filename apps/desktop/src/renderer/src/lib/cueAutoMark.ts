@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { nearestBeat } from '../../../shared/cueRules'
 import { type DropInput, detectDrops } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
+import { isTraktorContent } from '../../../shared/traktorContent'
 import {
   cueDropInputQuery,
   cueWaveDetailQuery,
@@ -32,7 +33,7 @@ async function dropInputOf(
   contentId: string,
   read: { grid: DropInput['grid']; phrases: DropInput['phrases'] },
 ): Promise<DropInput | null> {
-  if (isEngineContent(contentId))
+  if (isEngineContent(contentId) || isTraktorContent(contentId))
     return client.fetchQuery(cueDropInputQuery(contentId)).catch(() => null)
   const words = await client.fetchQuery(cueWaveDetailQuery(contentId)).catch(() => null)
   return words ? { grid: read.grid, phrases: read.phrases, words } : null

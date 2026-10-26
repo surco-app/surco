@@ -4,6 +4,7 @@ import { readTraktorMarkers } from './traktor4'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import {
   applyPatches,
+  attr,
   cuesToXml,
   detachedOutputPaths,
   findEntries,
@@ -1243,5 +1244,18 @@ describe('replaceDuplicateInNml', () => {
       count: '2',
       keys: ['Public/:Music/:New/:R&amp;B.aiff', OTHER],
     })
+  })
+})
+
+describe('attr', () => {
+  it('reads an attribute by its own name, not by text inside another attribute’s value', () => {
+    const cue = '<CUE_V2 NAME="go HOTCUE=" DISPL_ORDER="0" TYPE="0" START="1000.000000" HOTCUE="2">'
+    expect(attr(cue, 'HOTCUE')).toBe('2')
+    expect(attr(cue, 'START')).toBe('1000.000000')
+    expect(attr(cue, 'NAME')).toBe('go HOTCUE=')
+  })
+
+  it('never takes a longer attribute name that ends in the one asked for', () => {
+    expect(attr('<INFO MUSICAL_KEY="7" KEY="8A">', 'KEY')).toBe('8A')
   })
 })

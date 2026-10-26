@@ -39,6 +39,12 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
 }
 
 describe('CueDeck', () => {
+  it('shows only the pads the library has buttons for, so a Traktor track offers A to G', () => {
+    setup({ kinds: [1, 2, 3, 5, 6, 7, 8] })
+    expect(screen.getByTestId('cues-pad-G')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-pad-H')).not.toBeInTheDocument()
+  })
+
   it('shows pads A to H, filled with their colour where a hot cue is and empty where none is, with no key hints', () => {
     setup()
     for (const letter of 'ABCDEFGH')

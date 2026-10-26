@@ -382,4 +382,8 @@ describe('autoNamesFile', () => {
   it('never renames an Engine DJ track, whose library points at the file by its path', () => {
     expect(autoNamesFile(true, { fromEngine: true })).toBe(false)
   })
+
+  it('never renames a Traktor track, whose collection points at the file by its path', () => {
+    expect(autoNamesFile(true, { fromTraktor: true })).toBe(false)
+  })
 })

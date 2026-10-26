@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import { type ExistingCue, validWantedSet } from '../../../shared/cueRules'
+import { type ExistingCue, HOT_KINDS, validWantedSet } from '../../../shared/cueRules'
+import { TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import {
   type CueDraft,
   type DraftAction,
@@ -1049,5 +1050,37 @@ describe('several placements at once', () => {
     const ghost = ghostOf(empty(), both, ctx)
     expect(ghost.added).toEqual(run(empty(), both).cues)
     expect(ghost.gone).toEqual([])
+  })
+})
+
+describe('reduceDraft on a Traktor deck', () => {
+  const tk = { ...ctx, slots: TRAKTOR_SLOTS, lettersByTime: true }
+  const load = { id: 'load', ms: bar(2), kind: HOT_KINDS[0], color: 3 }
+  const drops = [bar(64), bar(128), bar(192)]
+  const marked = () =>
+    drops.reduce(
+      (s, ms) => reduceDraft(s, { type: 'mark-drop', ms }, tk),
+      startDraft([load], 'mine', ['load']),
+    )
+
+  it('fills the seven buttons around the DJ load cue and never gives out H, which Traktor has no button for', () => {
+    const s = marked()
+    const hot = s.cues.filter((c) => c.kind !== 0)
+    expect(hot.find((c) => c.key === 'load')?.kind).toBe(HOT_KINDS[0])
+    expect(hot.length).toBeLessThanOrEqual(7)
+    expect(hot.some((c) => c.kind === HOT_KINDS[7])).toBe(false)
+    expect(new Set(hot.map((c) => c.kind)).size).toBe(hot.length)
+  })
+
+  it('writes no CALL on top of a hot cue, since Traktor already draws the hot cue', () => {
+    const s = marked()
+    const hot = s.cues.filter((c) => c.kind !== 0)
+    const calls = s.cues.filter((c) => c.kind === 0)
+    expect(calls.some((c) => hot.some((h) => Math.abs(h.ms - c.ms) < 1))).toBe(false)
+  })
+
+  it('refuses cue H by hand', () => {
+    const s = startDraft([], 'mine')
+    expect(reduceDraft(s, { type: 'add-hot', ms: bar(8), kind: HOT_KINDS[7] }, tk)).toBe(s)
   })
 })

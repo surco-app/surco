@@ -19,9 +19,9 @@ function tokenValue(meta: TrackMetadata, key: string): string {
 
 export function autoNamesFile(
   autoApplyFilename: boolean,
-  track: Pick<TrackItem, 'fromRekordbox' | 'fromEngine'>,
+  track: Pick<TrackItem, 'fromRekordbox' | 'fromEngine' | 'fromTraktor'>,
 ): boolean {
-  return autoApplyFilename && !track.fromRekordbox && !track.fromEngine
+  return autoApplyFilename && !track.fromRekordbox && !track.fromEngine && !track.fromTraktor
 }
 
 export function renderOutputName(format: string, meta: TrackMetadata): string {

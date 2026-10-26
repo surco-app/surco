@@ -42,6 +42,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.fromAppleMusic) edit.fromAppleMusic = true
   if (track.fromRekordbox) edit.fromRekordbox = true
   if (track.fromEngine) edit.fromEngine = true
+  if (track.fromTraktor) edit.fromTraktor = true
   if (track.coverRemoved) edit.coverRemoved = true
   if (track.metaCleared) edit.metaCleared = true
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved

@@ -212,6 +212,10 @@ export interface Api {
   loadEngineTree: () => Promise<SourceNode[]>
   engineRecentCount: () => Promise<number>
   loadEnginePlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  traktorAvailable: () => Promise<boolean>
+  loadTraktorTree: () => Promise<SourceNode[]>
+  traktorRecentCount: () => Promise<number>
+  loadTraktorPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
   // open; the result says whether the edit was written, and why not.
   editRekordboxPlaylist: (
@@ -244,6 +248,13 @@ export interface Api {
   engineCueQueueReady: () => Promise<void>
   onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+  traktorCueQueue: () => Promise<RekordboxQueueState>
+  applyTraktorCueQueue: () => Promise<RekordboxQueueApplied | null>
+  discardTraktorCueQueue: () => Promise<void>
+  traktorCueQueueReady: () => Promise<void>
+  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+  traktorCanSave: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.
   usbVolumes: () => Promise<UsbVolumeList>

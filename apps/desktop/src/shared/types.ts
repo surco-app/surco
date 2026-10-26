@@ -515,6 +515,7 @@ export interface SessionEdit {
   fromAppleMusic?: boolean
   fromRekordbox?: boolean
   fromEngine?: boolean
+  fromTraktor?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
   // The per-tag inspector deletes, so a restored track still drops them on convert.
@@ -1024,9 +1025,9 @@ export interface AppleMusicPlaylistTracks {
   missing: number
 }
 
-// Where a crate of playlists comes from. Engine DJ and Traktor join in a later phase with
-// the same shapes.
-export type PlaylistSource = 'appleMusic' | 'rekordbox' | 'engine'
+// Where a crate of playlists comes from. Every DJ library hands its playlists over in the
+// same shapes.
+export type PlaylistSource = 'appleMusic' | 'rekordbox' | 'engine' | 'traktor'
 
 // One row of a source's playlist tree. A playlist counts its real tracks, separators left
 // out, because that is the number the user sees in the list; a folder counts its direct
@@ -1138,6 +1139,7 @@ export type RekordboxQueueNotice =
         | 'cues-changed'
         | 'cues-too-many'
         | 'cues-invalid'
+        | 'cues-slot-dropped'
       track: string
     }
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
