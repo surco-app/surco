@@ -3,7 +3,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../lib/donate'
-import { formatCount, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
+import { formatCount, timeSavedText } from '../lib/stats'
 import { Confetti } from './Confetti'
 import { ModalShell } from './ModalShell'
 
@@ -39,9 +39,7 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
           </p>
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
           <p data-testid="donate-nudge-time" className="mt-4 text-sm text-fg">
-            {tr('settings.stats.timeSaved', {
-              time: formatTimeSaved(timeSavedSeconds(conversionCount), i18n.language),
-            })}
+            {timeSavedText(tr, conversionCount, i18n.language).headline}
           </p>
         </div>
 

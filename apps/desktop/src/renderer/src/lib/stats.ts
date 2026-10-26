@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+
 // Surco automates what would otherwise be a manual chore per track — exporting
 // from an audio editor, fetching and embedding the cover, typing the tags. We
 // credit a deliberately conservative 4 minutes of saved work per conversion so
@@ -14,18 +16,43 @@ export function formatCount(count: number, language: string): string {
   return new Intl.NumberFormat(language, { useGrouping: 'always' }).format(count)
 }
 
-// A humanized "9 h 28 min" for the Stats readout, distinct from the player's
+// A humanized "7 h 56 min" for totals under a workday, distinct from the player's
 // m:ss clock. "h" and "min" read the same in every shipped locale, so they live
-// here rather than in the translation files. From ten hours up the minutes are
-// noise in a 4-minutes-a-track estimate, so the total rounds to whole hours.
-export function formatTimeSaved(seconds: number, language: string): string {
+// here rather than in the translation files.
+export function formatTimeSaved(seconds: number): string {
   const minutes = Math.round(Math.max(0, seconds) / 60)
-  if (minutes >= 10 * 60) return `${formatCount(Math.round(minutes / 60), language)} h`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   if (h > 0 && m > 0) return `${h} h ${m} min`
   if (h > 0) return `${h} h`
   return `${m} min`
+}
+
+const WORKDAY_HOURS = 8
+
+// The time-saved sentence and its footnote. Past one workday the total is told in 8-hour
+// workdays instead of hours: "1947 h 40 min" means nothing to a reader, 243 workdays does.
+export function timeSavedText(
+  tr: TFunction,
+  conversionCount: number,
+  language: string,
+): { headline: string; perTrack: string } {
+  const seconds = timeSavedSeconds(conversionCount)
+  const minutes = MANUAL_SECONDS_PER_CONVERSION / 60
+  const workdays = Math.round(seconds / (WORKDAY_HOURS * 3600))
+  if (seconds < WORKDAY_HOURS * 3600) {
+    return {
+      headline: tr('settings.stats.timeSaved', { time: formatTimeSaved(seconds) }),
+      perTrack: tr('settings.stats.perTrack', { minutes }),
+    }
+  }
+  return {
+    headline: tr('settings.stats.timeSavedWorkdays', {
+      count: workdays,
+      workdays: formatCount(workdays, language),
+    }),
+    perTrack: tr('settings.stats.perTrackWorkdays', { minutes, hours: WORKDAY_HOURS }),
+  }
 }
 
 // A match tally short enough for the one-line source legend: whole below a thousand, then

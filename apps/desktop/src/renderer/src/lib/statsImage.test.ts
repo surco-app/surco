@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { statsImageCells } from './statsImage'
+import { fittedFontSize, statsImageCells } from './statsImage'
 
 describe('statsImageCells', () => {
   // The share card is a brag sheet, not a report: a "0 encontradas en Bandcamp" row
@@ -127,5 +127,17 @@ describe('statsImageCells', () => {
     })
     expect(cells).toHaveLength(4)
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])
+  })
+})
+
+// fillText's maxWidth squeezes the glyphs sideways instead of wrapping, so "Tu as économisé
+// environ 243 journées de travail" came out as condensed type no other language got.
+describe('fittedFontSize', () => {
+  it('keeps the design size when the text already fits', () => {
+    expect(fittedFontSize(46, 764, 828)).toBe(46)
+  })
+
+  it('shrinks the size in proportion so a long translation fits at its natural width', () => {
+    expect(fittedFontSize(46, 1021, 828)).toBe(37)
   })
 })

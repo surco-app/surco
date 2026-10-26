@@ -166,7 +166,7 @@ describe('StatsTab', () => {
   })
 
   // A five-digit lifetime count is the tab's headline; ungrouped it reads as raw output.
-  it('groups the thousands of the counters and the time saved', () => {
+  it('groups the thousands of the counters', () => {
     render(
       <StatsTab
         settings={withStats({ conversionCount: 29215, stats: { ...zeroStats, imported: 3071 } })}
@@ -174,7 +174,7 @@ describe('StatsTab', () => {
     )
     expect(screen.getByTestId('stats-count')).toHaveTextContent('29,215')
     expect(screen.getByTestId('stats-imported')).toHaveTextContent('3,071')
-    expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('1,948 h')
+    expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('243 workdays')
   })
 
   // The milestone bar gives the counter a goal — 385 of the way to 500 must read as

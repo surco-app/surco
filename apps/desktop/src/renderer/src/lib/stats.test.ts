@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import i18n from '../i18n'
+import es from '../i18n/locales/es.json'
 import {
   formatCount,
   formatMatchCount,
@@ -7,6 +9,7 @@ import {
   matchStatKey,
   nextMilestone,
   timeSavedSeconds,
+  timeSavedText,
 } from './stats'
 
 describe('timeSavedSeconds', () => {
@@ -70,25 +73,48 @@ describe('formatTimeSaved', () => {
   it('humanizes the total as "h min" rather than a m:ss clock', () => {
     // 142 conversions at 4 min each is 568 min → 9 h 28 min, the believable
     // sentence we want to show, not "568:00".
-    expect(formatTimeSaved(timeSavedSeconds(142), 'es')).toBe('9 h 28 min')
+    expect(formatTimeSaved(timeSavedSeconds(142))).toBe('9 h 28 min')
   })
 
   it('drops the minutes when the total lands on a whole hour', () => {
-    expect(formatTimeSaved(3600, 'es')).toBe('1 h')
+    expect(formatTimeSaved(3600)).toBe('1 h')
   })
 
   it('drops the hours below an hour so short tallies read cleanly', () => {
-    expect(formatTimeSaved(40 * 60, 'es')).toBe('40 min')
+    expect(formatTimeSaved(40 * 60)).toBe('40 min')
+  })
+})
+
+// Past a working day "1947 h 40 min" stops meaning anything: nobody pictures two thousand
+// hours, but everybody knows what 243 days at the desk feel like.
+describe('timeSavedText', () => {
+  const en = i18n.getFixedT('en')
+  i18n.addResourceBundle('es', 'translation', es)
+  const esTr = i18n.getFixedT('es')
+
+  it('keeps hours and minutes while the total is under a working day', () => {
+    expect(timeSavedText(en, 119, 'en')).toEqual({
+      headline: "You've saved around 7 h 56 min",
+      perTrack: '≈ 4 min of manual work per track',
+    })
   })
 
-  // The figure is a 4-minutes-a-track estimate prefixed with "about"; "1947 h 40 min"
-  // claims a precision it does not have and makes the reader parse two units.
-  it('drops the minutes from ten hours up, where they are noise in an estimate', () => {
-    expect(formatTimeSaved(timeSavedSeconds(29215), 'es')).toBe('1.948 h')
+  // The unit changed, so the footnote has to say what a day is worth or the figure
+  // reads as calendar days and looks three times inflated.
+  it('counts 8-hour workdays from a full working day on, and says so', () => {
+    expect(timeSavedText(en, 404, 'en')).toEqual({
+      headline: "You've saved around 3 workdays",
+      perTrack: '≈ 4 min of manual work per track, in 8-hour workdays',
+    })
   })
 
-  it('groups the hours with the language separator', () => {
-    expect(formatTimeSaved(timeSavedSeconds(29215), 'en')).toBe('1,948 h')
+  it('says a single workday in the singular', () => {
+    expect(timeSavedText(esTr, 120, 'es').headline).toBe('Has ahorrado cerca de un día de trabajo')
+  })
+
+  it('groups the thousands of the workdays with the language separator', () => {
+    expect(timeSavedText(esTr, 29215, 'es').headline).toBe('Has ahorrado unos 243 días de trabajo')
+    expect(timeSavedText(esTr, 150000, 'es').headline).toBe('Has ahorrado unos 1.250 días de trabajo')
   })
 })
 
