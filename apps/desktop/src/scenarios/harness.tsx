@@ -285,6 +285,7 @@ function scenarioApi(
     // queries App mounts get an answer instead of the proxy's "not wired" throw.
     rekordboxAvailable: async () => false,
     engineAvailable: async () => false,
+    traktorAvailable: async () => false,
     loadRekordboxTree: async () => [],
     rekordboxRecentCount: async () => 0,
     loadRekordboxPlaylist: async () => [],

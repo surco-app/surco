@@ -493,6 +493,17 @@ describe('opening a rekordbox playlist with previews', () => {
     ).toEqual([['E', undefined, true]])
   })
 
+  it('paints a Traktor row from what the collection holds while its file is read, marked as Traktor’s', async () => {
+    const read = vi.fn<Api['readMetaLight']>(() => new Promise(() => {}))
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry('/m/t.aiff', 'T')], 'traktor')
+    })
+    expect(
+      result.current.tracks.map((t) => [t.sourcePreview?.title, t.fromEngine, t.fromTraktor]),
+    ).toEqual([['T', undefined, true]])
+  })
+
   it('drops the row of a file the disk lacks and counts it once, as missing and not as unreadable', async () => {
     const read = vi.fn<Api['readMetaLight']>((path: string) =>
       path === '/m/gone.aiff'

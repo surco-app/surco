@@ -1190,11 +1190,13 @@
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
-      "engine": "Engine DJ"
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
     },
     "sourceAppleMusicUnavailable": "Only available on macOS",
     "sourceRekordboxUnavailable": "No rekordbox collection was found",
     "sourceEngineUnavailable": "No Engine DJ library was found",
+    "sourceTraktorUnavailable": "No Traktor collection was found",
     "sourcesHint": "Hiding a source only removes it from the sidebar and does not change whether conversions sync with it.",
     "updates": "Updates",
     "betaUpdates": "Get beta versions",
@@ -1927,19 +1929,22 @@
     "hide": {
       "appleMusic": "Hide Apple Music",
       "rekordbox": "Hide rekordbox",
-      "engine": "Hide Engine DJ"
+      "engine": "Hide Engine DJ",
+      "traktor": "Hide Traktor"
     },
     "workingList": "Tracks",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
+    "traktor": "Traktor",
     "recentlyAdded": "Recently added",
     "search": "Search playlists",
     "loading": "Reading playlists…",
     "failed": {
       "appleMusic": "Couldn't read your playlists. Check that Apple Music is open and that Surco is allowed to control it.",
       "rekordbox": "Couldn't read the collection. If you just changed something, come back to Surco in a few seconds.",
-      "engine": "Couldn't read the Engine DJ library. If you just changed something, come back to Surco in a few seconds."
+      "engine": "Couldn't read the Engine DJ library. If you just changed something, come back to Surco in a few seconds.",
+      "traktor": "Couldn't read the Traktor collection. If you just changed something, come back to Surco in a few seconds."
     },
     "notFound": {
       "engine": "Surco can't find an Engine DJ library. Set its folder, the one that holds Database2, under Engine DJ in Settings → Output."
@@ -1952,7 +1957,8 @@
     "gone": {
       "appleMusic": "“{{name}}” is no longer in Music",
       "rekordbox": "“{{name}}” is no longer in rekordbox",
-      "engine": "“{{name}}” is no longer in Engine DJ"
+      "engine": "“{{name}}” is no longer in Engine DJ",
+      "traktor": "“{{name}}” is no longer in Traktor"
     },
     "missing_one": "{{count}} track from “{{name}}” has no file on disk",
     "missing_other": "{{count}} tracks from “{{name}}” have no file on disk",

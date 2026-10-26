@@ -1190,11 +1190,13 @@
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
-      "engine": "Engine DJ"
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
     },
     "sourceAppleMusicUnavailable": "Disponível apenas no macOS",
     "sourceRekordboxUnavailable": "Nenhuma coleção do rekordbox foi encontrada",
     "sourceEngineUnavailable": "Nenhuma biblioteca do Engine DJ foi encontrada",
+    "sourceTraktorUnavailable": "Nenhuma coleção do Traktor foi encontrada",
     "sourcesHint": "Ocultar uma fonte apenas a remove da barra lateral e não muda se as conversões sincronizam com ela.",
     "updates": "Atualizações",
     "betaUpdates": "Receber versões beta",
@@ -1927,19 +1929,22 @@
     "hide": {
       "appleMusic": "Ocultar Apple Music",
       "rekordbox": "Ocultar rekordbox",
-      "engine": "Ocultar Engine DJ"
+      "engine": "Ocultar Engine DJ",
+      "traktor": "Ocultar Traktor"
     },
     "workingList": "Faixas",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
+    "traktor": "Traktor",
     "recentlyAdded": "Adicionadas recentemente",
     "search": "Buscar playlist",
     "loading": "Lendo playlists…",
     "failed": {
       "appleMusic": "Não foi possível ler suas playlists. Verifique se o Apple Music está aberto e se o Surco tem permissão para controlá-lo.",
       "rekordbox": "Não foi possível ler a coleção. Se você acabou de mudar algo, volte ao Surco em alguns segundos.",
-      "engine": "Não foi possível ler a biblioteca do Engine DJ. Se você acabou de mudar algo, volte ao Surco em alguns segundos."
+      "engine": "Não foi possível ler a biblioteca do Engine DJ. Se você acabou de mudar algo, volte ao Surco em alguns segundos.",
+      "traktor": "Não foi possível ler a coleção do Traktor. Se você acabou de mudar algo, volte ao Surco em alguns segundos."
     },
     "notFound": {
       "engine": "O Surco não encontra uma biblioteca do Engine DJ. Defina a pasta dela, a que contém Database2, em Engine DJ, dentro de Ajustes → Saída."
@@ -1952,7 +1957,8 @@
     "gone": {
       "appleMusic": "“{{name}}” não está mais no Music",
       "rekordbox": "“{{name}}” não está mais no rekordbox",
-      "engine": "“{{name}}” não está mais no Engine DJ"
+      "engine": "“{{name}}” não está mais no Engine DJ",
+      "traktor": "“{{name}}” não está mais no Traktor"
     },
     "missing_one": "{{count}} faixa de “{{name}}” não tem arquivo no disco",
     "missing_other": "{{count}} faixas de “{{name}}” não têm arquivo no disco",

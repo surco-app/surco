@@ -24,7 +24,7 @@ describe('SourceRail', () => {
     render(
       <SourceRail
         onHide={vi.fn()}
-        sources={['appleMusic', 'rekordbox', 'engine']}
+        sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
         active={null}
         onSelect={vi.fn()}
       />,
@@ -34,7 +34,9 @@ describe('SourceRail', () => {
     expect(rekordbox).toHaveAccessibleName('rekordbox')
     expect(screen.getByTestId('source-rail-engine')).toHaveTextContent('')
     expect(screen.getByTestId('source-rail-engine')).toHaveAccessibleName('Engine DJ')
-    for (const s of ['rekordbox', 'appleMusic', 'engine']) {
+    expect(screen.getByTestId('source-rail-traktor')).toHaveTextContent('')
+    expect(screen.getByTestId('source-rail-traktor')).toHaveAccessibleName('Traktor')
+    for (const s of ['rekordbox', 'appleMusic', 'engine', 'traktor']) {
       const icon = screen.getByTestId(`source-rail-icon-${s}`)
       expect(icon.tagName.toLowerCase()).toBe('svg')
       expect(icon.querySelector('[fill="currentColor"]')).not.toBeNull()

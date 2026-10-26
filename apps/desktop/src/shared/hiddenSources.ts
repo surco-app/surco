@@ -1,6 +1,6 @@
 import type { PlaylistSource } from './types'
 
-const PLAYLIST_SOURCES: readonly PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine']
+const PLAYLIST_SOURCES: readonly PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine', 'traktor']
 
 export function normalizeHiddenSources(value: unknown): PlaylistSource[] {
   if (!Array.isArray(value)) return []

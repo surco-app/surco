@@ -458,6 +458,7 @@ export function useTrackLibrary({
     if (saved.fromAppleMusic) patch.fromAppleMusic = true
     if (saved.fromRekordbox) patch.fromRekordbox = true
     if (saved.fromEngine) patch.fromEngine = true
+    if (saved.fromTraktor) patch.fromTraktor = true
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
@@ -916,6 +917,11 @@ export function useTrackLibrary({
       if (source === 'engine')
         pendingSeed.current.set(e.path, {
           fromEngine: true,
+          ...(e.preview && { sourcePreview: e.preview }),
+        })
+      if (source === 'traktor')
+        pendingSeed.current.set(e.path, {
+          fromTraktor: true,
           ...(e.preview && { sourcePreview: e.preview }),
         })
     }

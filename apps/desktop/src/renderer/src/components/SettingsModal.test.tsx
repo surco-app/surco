@@ -17,6 +17,7 @@ vi.hoisted(() => {
     rekordboxCollection: async () => '',
     rekordboxAvailable: async () => false,
     engineAvailable: async () => false,
+    traktorAvailable: async () => false,
   }
 })
 
