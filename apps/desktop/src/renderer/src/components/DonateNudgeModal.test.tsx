@@ -24,8 +24,8 @@ describe('DonateNudgeModal', () => {
   it('summarizes the conversions and the time saved', () => {
     render(<DonateNudgeModal conversionCount={120} onClose={vi.fn()} />)
     expect(screen.getByTestId('donate-nudge-count')).toHaveTextContent('120')
-    // 120 conversions × 4 min = 8 h, formatted by the shared stats helper.
-    expect(screen.getByTestId('donate-nudge-time')).toHaveTextContent('8 h')
+    // 120 conversions × 4 min = 8 h, one full workday by the shared stats helper.
+    expect(screen.getByTestId('donate-nudge-time')).toHaveTextContent('one workday')
   })
 
   it('links the donate button to the PayPal page in an external tab', () => {

@@ -734,7 +734,7 @@ describe('SettingsModal stats', () => {
     )
     fireEvent.click(screen.getByTestId('settings-tab-stats'))
     expect(screen.getByTestId('stats-count')).toHaveTextContent('142')
-    expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('9 h 28 min')
+    expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('one workday')
   })
 
   // Before the first conversion, "0" and "0 min" would read as broken; explain the

@@ -65,6 +65,12 @@ interface StatsImageInput {
   footer: string
 }
 
+// The font size at which text of the given width fits the room, never above the design
+// size. fillText's own maxWidth squeezes glyphs sideways, which reads as a broken font.
+export function fittedFontSize(size: number, textWidth: number, maxWidth: number): number {
+  return textWidth <= maxWidth ? size : Math.floor((size * maxWidth) / textWidth)
+}
+
 // Concentric record grooves fanning out of a corner — the app's namesake as the card's
 // only decoration, faint enough to sit behind text without a legibility guard.
 function grooves(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
@@ -152,8 +158,11 @@ export function renderStatsImage(input: StatsImageInput): string {
     ctx.fill()
     ctx.stroke()
     ctx.fillStyle = CARD.fg
+    const room = WIDTH - PAD * 2 - 60
     ctx.font = '600 46px system-ui, sans-serif'
-    ctx.fillText(input.timeSaved, centerX, y + 82, WIDTH - PAD * 2 - 60)
+    const size = fittedFontSize(46, ctx.measureText(input.timeSaved).width, room)
+    ctx.font = `600 ${size}px system-ui, sans-serif`
+    ctx.fillText(input.timeSaved, centerX, y + 82, room)
     if (input.perTrack) {
       ctx.fillStyle = CARD.fgDim
       ctx.font = '26px system-ui, sans-serif'

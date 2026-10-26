@@ -14,14 +14,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../../lib/donate'
-import {
-  formatCount,
-  formatMatchCount,
-  formatTimeSaved,
-  MANUAL_SECONDS_PER_CONVERSION,
-  nextMilestone,
-  timeSavedSeconds,
-} from '../../lib/stats'
+import { formatCount, formatMatchCount, nextMilestone, timeSavedText } from '../../lib/stats'
 import { renderStatsImage, statsImageCells } from '../../lib/statsImage'
 import { useToast } from '../../lib/toastContext'
 
@@ -107,6 +100,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
   const { conversionCount, stats } = settings
   const anyActivity = conversionCount > 0 || CELLS.some(({ key }) => stats[key] > 0)
   const milestone = nextMilestone(conversionCount)
+  const saved = timeSavedText(tr, conversionCount, i18n.language)
   // Composes the story-sized share card (an Instagram-ready PNG of these same numbers)
   // and hands it to the save dialog. Guarded against double-clicks while composing.
   const [sharing, setSharing] = useState(false)
@@ -123,16 +117,8 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
           value,
           label: tr(`settings.stats.${key}`),
         })),
-        timeSaved:
-          conversionCount > 0
-            ? tr('settings.stats.timeSaved', {
-                time: formatTimeSaved(timeSavedSeconds(conversionCount), i18n.language),
-              })
-            : null,
-        perTrack:
-          conversionCount > 0
-            ? tr('settings.stats.perTrack', { minutes: MANUAL_SECONDS_PER_CONVERSION / 60 })
-            : null,
+        timeSaved: conversionCount > 0 ? saved.headline : null,
+        perTrack: conversionCount > 0 ? saved.perTrack : null,
         footer: tr('settings.stats.shareFooter'),
       })
       await window.api.exportStatsImage(png)
@@ -236,17 +222,8 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
       )}
       {conversionCount > 0 && (
         <p data-testid="stats-time-saved" className="mt-3 text-sm text-fg">
-          {tr('settings.stats.timeSaved', {
-            time: formatTimeSaved(timeSavedSeconds(conversionCount), i18n.language),
-          })}
-          <span className="text-fg-dim">
-            {' '}
-            (
-            {tr('settings.stats.perTrack', {
-              minutes: MANUAL_SECONDS_PER_CONVERSION / 60,
-            })}
-            )
-          </span>
+          {saved.headline}
+          <span className="text-fg-dim"> ({saved.perTrack})</span>
         </p>
       )}
 
