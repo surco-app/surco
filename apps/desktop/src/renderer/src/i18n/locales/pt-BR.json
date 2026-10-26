@@ -779,9 +779,9 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Escolha um fluxo e clique na forma de onda ampliada onde quer o ponto, ou toque em Return para colocá-lo no cursor de reprodução. Você também pode escolher Manual e ponha cada cue à mão. Marcar automático sugere pontos para você aceitar ou remover. Selecione um cue para movê-lo, apagá-lo ou mudar a cor.",
+      "help": "Escolha um fluxo e clique na forma de onda ampliada onde quer marcar, ou toque em Return para marcar no cursor de reprodução. Você também pode escolher Manual e ponha cada cue à mão. Marcar automático sugere marcas para você aceitar ou remover. Selecione um cue para movê-lo, apagá-lo ou mudar a cor.",
       "unanalysed": "O rekordbox ainda não analisou esta faixa",
-      "tooMany": "Precisaria de mais de 8 hot cues. Tire um ponto.",
+      "tooMany": "Precisaria de mais de 8 hot cues. Tire uma marca.",
       "save": "Salvar no rekordbox",
       "unreadable": "Não foi possível ler os cues do rekordbox",
       "discard": "Descartar alterações",
@@ -1507,11 +1507,11 @@
       "rules": "Regras",
       "addRule": "Adicionar regra",
       "removeRule": "Remover regra",
-      "noRules": "Sem regras. Colocar o fluxo deixa só o CALL do ponto.",
+      "noRules": "Sem regras. O fluxo só põe um CALL onde você marca.",
       "preview": "Prévia",
-      "previewHint": "Faixa de exemplo a 128 BPM com o ponto no compasso {{bar}}",
+      "previewHint": "Faixa de exemplo a 128 BPM, marcada no compasso {{bar}}",
       "tooMany": "Este fluxo pede {{count}} hot cues e o rekordbox aceita 8",
-      "looseCall": "Um CALL solto é lido como ponto na próxima vez",
+      "looseCall": "Um CALL solto será tomado como marca na próxima vez",
       "block": {
         "from": "A partir de",
         "direction": "Sentido",
@@ -1523,9 +1523,9 @@
         "color": "Cor {{n}}"
       },
       "from": {
-        "drop": "A partir do ponto",
-        "first-beat": "A partir do primeiro tempo",
-        "last-beat": "A partir do último tempo",
+        "drop": "A partir de onde você marca",
+        "first-beat": "A partir do primeiro tempo da faixa",
+        "last-beat": "A partir do último tempo da faixa",
         "intro": "A partir de cada intro",
         "up": "A partir de cada subida",
         "down": "A partir de cada descida",
@@ -1546,7 +1546,7 @@
         "always": "sempre",
         "fits": "se couber",
         "clear": "se não houver outra cue nesse compasso",
-        "first": "se não houver outra antes do ponto"
+        "first": "se não houver outra antes de onde você marca"
       },
       "place": {
         "hot": "hot cue",
@@ -1576,7 +1576,7 @@
       },
       "lettersByTime": "Letras na ordem da faixa",
       "lettersByTimeHint": "A é sempre o primeiro cue da faixa. Desligue se cada letra for um pad fixo para você.",
-      "markPoint": "Marcar o ponto com um CALL",
+      "markPoint": "Pôr um CALL onde você marca",
       "traktorColours": "No Traktor estes cues aparecem em azul, porque o Traktor colore cada cue pelo tipo",
       "callsOnlyRekordbox": "Os CALL só existem no rekordbox. O Engine DJ e o Traktor recebem só os hot cues"
     }
@@ -2480,7 +2480,7 @@
       "playlistGone": "{{playlist}} não existe mais no rekordbox. {{track}} não foi adicionada",
       "editChanged": "{{playlist}} não mudou. Ela mudou no rekordbox",
       "cuesChanged": "Os cues de {{track}} mudaram no rekordbox. Marque-os de novo",
-      "cuesTooMany": "{{track}} precisaria de mais de 8 hot cues. Tire um ponto",
+      "cuesTooMany": "{{track}} precisaria de mais de 8 hot cues. Tire uma marca",
       "cuesInvalid": "Os cues de {{track}} não foram salvos. O Surco não conseguiu lê-los como cues",
       "cuesAdjusted_one": "O rekordbox já analisou {{track}}. 1 cue ajustado à grade dele, {{maxMs}} ms",
       "cuesAdjusted_other": "O rekordbox já analisou {{track}}. {{count}} cues ajustados à grade dele, o mais distante {{maxMs}} ms",

@@ -779,9 +779,9 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Choisissez un flux et cliquez sur la forme d’onde agrandie là où vous voulez le point, ou appuyez sur Entrée pour le placer à la tête de lecture. Vous pouvez aussi choisir Manuel et placez chaque cue à la main. Marquage auto vous propose des points à accepter ou à retirer. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
+      "help": "Choisissez un flux et cliquez sur la forme d’onde agrandie là où vous voulez marquer, ou appuyez sur Entrée pour marquer à la tête de lecture. Vous pouvez aussi choisir Manuel et placez chaque cue à la main. Marquage auto vous propose des marques à accepter ou à retirer. Sélectionnez un cue pour le déplacer, le supprimer ou changer sa couleur.",
       "unanalysed": "rekordbox n’a pas encore analysé ce morceau",
-      "tooMany": "Il faudrait plus de 8 hot cues. Retirez un point.",
+      "tooMany": "Il faudrait plus de 8 hot cues. Retirez une marque.",
       "save": "Enregistrer dans rekordbox",
       "unreadable": "Impossible de lire les cues de rekordbox",
       "discard": "Annuler les changements",
@@ -1507,11 +1507,11 @@
       "rules": "Règles",
       "addRule": "Ajouter une règle",
       "removeRule": "Retirer la règle",
-      "noRules": "Aucune règle. Placer le flux ne laisse que le CALL du point.",
+      "noRules": "Aucune règle. Le flux ne met qu’un CALL là où vous marquez.",
       "preview": "Aperçu",
-      "previewHint": "Morceau d’exemple à 128 BPM avec le point à la mesure {{bar}}",
+      "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",
       "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
-      "looseCall": "Un CALL seul se lit comme un point la fois suivante",
+      "looseCall": "Un CALL seul sera pris pour une marque la fois suivante",
       "block": {
         "from": "Depuis",
         "direction": "Sens",
@@ -1523,9 +1523,9 @@
         "color": "Couleur {{n}}"
       },
       "from": {
-        "drop": "Depuis le point",
-        "first-beat": "Depuis le premier temps",
-        "last-beat": "Depuis le dernier temps",
+        "drop": "Depuis là où vous marquez",
+        "first-beat": "Depuis le premier temps du morceau",
+        "last-beat": "Depuis le dernier temps du morceau",
         "intro": "Depuis chaque intro",
         "up": "Depuis chaque montée",
         "down": "Depuis chaque descente",
@@ -1546,7 +1546,7 @@
         "always": "toujours",
         "fits": "si ça rentre",
         "clear": "si aucune autre cue ne tombe sur cette mesure",
-        "first": "s’il n’y en a pas avant le point"
+        "first": "s’il n’y en a pas avant là où vous marquez"
       },
       "place": {
         "hot": "hot cue",
@@ -1576,7 +1576,7 @@
       },
       "lettersByTime": "Lettres dans l’ordre du morceau",
       "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactivez-le si chaque lettre est un pad fixe pour vous.",
-      "markPoint": "Marquer le point avec un CALL",
+      "markPoint": "Mettre un CALL là où vous marquez",
       "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
       "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ et Traktor ne reçoivent que les hot cues"
     }
@@ -2480,7 +2480,7 @@
       "playlistGone": "{{playlist}} n’existe plus dans rekordbox. {{track}} n’a pas été ajouté",
       "editChanged": "{{playlist}} n’a pas été modifiée. Elle a changé dans rekordbox",
       "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marque-les à nouveau",
-      "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez un point",
+      "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez une marque",
       "cuesInvalid": "Les cues de {{track}} n'ont pas été enregistrés. Surco n'a pas pu les lire comme des cues",
       "cuesAdjusted_one": "rekordbox a analysé {{track}}. 1 cue calé sur sa grille, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox a analysé {{track}}. {{count}} cues calés sur sa grille, le plus éloigné de {{maxMs}} ms",

@@ -779,9 +779,9 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Wähle einen Ablauf und klick in der vergrößerten Wellenform dorthin, wo der Punkt hin soll, oder drück Return, um ihn am Abspielkopf zu setzen. Du kannst auch Manuell wählen und setze jedes Cue von Hand. Auto-Markieren schlägt dir Punkte vor, die du übernimmst oder entfernst. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
+      "help": "Wähle einen Ablauf und klick in der vergrößerten Wellenform dorthin, wo du markieren willst, oder drück Return, um am Abspielkopf zu markieren. Du kannst auch Manuell wählen und setze jedes Cue von Hand. Auto-Markieren schlägt dir Markierungen vor, die du übernimmst oder entfernst. Wähle ein Cue, um es zu verschieben, zu löschen oder seine Farbe zu ändern.",
       "unanalysed": "rekordbox hat diesen Titel noch nicht analysiert",
-      "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne einen Punkt.",
+      "tooMany": "Es wären mehr als 8 Hot Cues nötig. Entferne eine Markierung.",
       "save": "In rekordbox speichern",
       "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden",
       "discard": "Änderungen verwerfen",
@@ -1507,11 +1507,11 @@
       "rules": "Regeln",
       "addRule": "Regel hinzufügen",
       "removeRule": "Regel entfernen",
-      "noRules": "Keine Regeln. Der Ablauf setzt nur den CALL des Punkts.",
+      "noRules": "Keine Regeln. Der Ablauf setzt nur einen CALL an deine Markierung.",
       "preview": "Vorschau",
-      "previewHint": "Beispieltitel mit 128 BPM und dem Punkt in Takt {{bar}}",
+      "previewHint": "Beispieltitel mit 128 BPM, markiert in Takt {{bar}}",
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
-      "looseCall": "Ein einzelner CALL wird beim nächsten Mal als Punkt gelesen",
+      "looseCall": "Ein einzelner CALL gilt beim nächsten Mal als Markierung",
       "block": {
         "from": "Ab",
         "direction": "Richtung",
@@ -1523,9 +1523,9 @@
         "color": "Farbe {{n}}"
       },
       "from": {
-        "drop": "Ab dem Punkt",
-        "first-beat": "Ab dem ersten Schlag",
-        "last-beat": "Ab dem letzten Schlag",
+        "drop": "Ab deiner Markierung",
+        "first-beat": "Ab dem ersten Schlag des Titels",
+        "last-beat": "Ab dem letzten Schlag des Titels",
         "intro": "Ab jedem Intro",
         "up": "Ab jedem Aufbau",
         "down": "Ab jedem Breakdown",
@@ -1546,7 +1546,7 @@
         "always": "immer",
         "fits": "wenn es passt",
         "clear": "wenn in diesem Takt keine andere Cue liegt",
-        "first": "wenn vor dem Punkt keins ist"
+        "first": "wenn vor deiner Markierung keins ist"
       },
       "place": {
         "hot": "Hot Cue",
@@ -1576,7 +1576,7 @@
       },
       "lettersByTime": "Buchstaben in Titelreihenfolge",
       "lettersByTimeHint": "A ist immer der erste Cue des Titels. Schalte es aus, wenn jeder Buchstabe für dich ein fester Pad ist.",
-      "markPoint": "Den Punkt mit einem CALL markieren",
+      "markPoint": "Einen CALL an deine Markierung setzen",
       "traktorColours": "In Traktor erscheinen diese Cues blau, denn Traktor färbt jeden Cue nach seinem Typ",
       "callsOnlyRekordbox": "CALLs gibt es nur in rekordbox. Engine DJ und Traktor bekommen nur die Hot Cues"
     }
@@ -2480,7 +2480,7 @@
       "playlistGone": "{{playlist}} gibt es in rekordbox nicht mehr. {{track}} wurde nicht hinzugefügt",
       "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in rekordbox geändert",
       "cuesChanged": "Die Cues von {{track}} haben sich in rekordbox geändert. Markiere sie erneut",
-      "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne einen Punkt",
+      "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne eine Markierung",
       "cuesInvalid": "Die Cues von {{track}} wurden nicht gespeichert. Surco konnte sie nicht als Cues lesen",
       "cuesAdjusted_one": "rekordbox hat {{track}} analysiert. 1 Cue auf sein Raster gerückt, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox hat {{track}} analysiert. {{count}} Cues auf sein Raster gerückt, der weiteste {{maxMs}} ms",

@@ -2334,8 +2334,8 @@
           {
             "tab": "Cues",
             "section": "Nuevo flujo",
-            "setting": "Marcar el punto con un CALL",
-            "note": "Ponle nombre a tu flujo, por ejemplo Subidón. Su regla ya cuenta hacia atrás desde el punto cada 16 compases y pone hot cue + CALL. Cambia «1 vez» por «3 veces» y elige «un color por repetición» con azul, verde y rojo. Esta casilla, que viene puesta, añade el CALL del punto."
+            "setting": "Poner un CALL donde marcas",
+            "note": "Ponle nombre a tu flujo, por ejemplo Subidón. Su regla ya cuenta hacia atrás desde donde marcas cada 16 compases y pone hot cue + CALL. Cambia «1 vez» por «3 veces» y elige «un color por repetición» con azul, verde y rojo. Esta casilla, que viene puesta, añade el CALL del punto."
           },
           {
             "tab": "Cues",
