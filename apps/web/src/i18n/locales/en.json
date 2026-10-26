@@ -975,17 +975,10 @@
     "lede": "The highlights of every release, without the noise. The features that change how you prep your music, version by version.",
     "beta": {
       "kicker": "In testing",
-      "version": "1.11.3-beta.2",
+      "version": "",
       "title": "What is coming in the next version",
       "how": "To try it now, turn on Get beta versions in Settings, General, and restart Surco. Betas reach the installer from this website, not the Microsoft Store copy.",
-      "items": [
-        "A new Traktor tab with your playlists, your folders and the tracks you added in the last 30 days",
-        "Mark cues on your Traktor tracks with Auto mark or by hand. When you save, Surco asks to close Traktor and puts them on buttons 2 to 8",
-        "Organise your Traktor playlists from Surco as you do rekordbox's. Create, rename and delete playlists and folders, add tracks, reorder them and add separators",
-        "Tracks in a rekordbox, Engine DJ or Traktor playlist show their artwork and their wave even if you never opened them in Surco",
-        "Before the first change of each session, Surco keeps a copy of your Traktor collection next to it, as it already did for rekordbox and Engine DJ",
-        "Saving cues to Engine DJ or Traktor while Surco closes them no longer overwrites what the app stores as it quits"
-      ]
+      "items": []
     },
     "olderTitle": "Earlier versions",
     "outroTitle": "Try it all in your next session",
@@ -1153,7 +1146,7 @@
     },
     "cues": {
       "step": "and in your app · cued",
-      "title": "Your rekordbox, Engine\u00a0DJ and Traktor cues, in one click.",
+      "title": "Your rekordbox, Engine DJ and Traktor cues, in one click.",
       "lede": "Click where the track drops, or let Auto mark suggest it. Your flow places the rest of the cues and Surco saves them to rekordbox, Engine DJ or Traktor. Engine DJ and Traktor take the hot cues only.",
       "unsaved": "Not saved",
       "flow": "Flow",
