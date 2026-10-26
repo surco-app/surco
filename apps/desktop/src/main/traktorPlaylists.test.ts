@@ -11,6 +11,7 @@ import {
   readTraktorRecentCount,
   readTraktorTree,
   TRAKTOR_TYPE_COLOR,
+  traktorSeparatorKey,
 } from './traktorPlaylists'
 
 const TRAKTOR_4 = readFileSync(
@@ -20,6 +21,7 @@ const TRAKTOR_4 = readFileSync(
 
 interface Track {
   file: string
+  playtime?: string
   volume?: string
   dir?: string
   title?: string
@@ -30,7 +32,7 @@ interface Track {
 }
 
 const entryOf = (t: Track) =>
-  `<ENTRY TITLE="${t.title ?? t.file}" ARTIST="${t.artist ?? ''}"><LOCATION DIR="${t.dir ?? '/:Users/:dj/:Music/:'}" FILE="${t.file}" VOLUME="${t.volume ?? 'Macintosh HD'}" VOLUMEID="v"></LOCATION><INFO PLAYTIME="200" PLAYTIME_FLOAT="200.500000" IMPORT_DATE="${t.imported ?? '2020/1/1'}"${t.info ?? ''}></INFO>${t.extra ?? ''}</ENTRY>`
+  `<ENTRY TITLE="${t.title ?? t.file}" ARTIST="${t.artist ?? ''}"><LOCATION DIR="${t.dir ?? '/:Users/:dj/:Music/:'}" FILE="${t.file}" VOLUME="${t.volume ?? 'Macintosh HD'}" VOLUMEID="v"></LOCATION><INFO PLAYTIME="${t.playtime ?? '200'}" PLAYTIME_FLOAT="200.500000" IMPORT_DATE="${t.imported ?? '2020/1/1'}"${t.info ?? ''}></INFO>${t.extra ?? ''}</ENTRY>`
 
 const keyOf = (t: Track) =>
   `${t.volume ?? 'Macintosh HD'}${t.dir ?? '/:Users/:dj/:Music/:'}${t.file}`
@@ -93,6 +95,42 @@ describe('readTraktorTree', () => {
 
   it('reads a collection with no playlists at all as an empty tree, not a failure', () => {
     expect(readTraktorTree(TRAKTOR_4)).toEqual([])
+  })
+})
+
+describe('rows and separators', () => {
+  const SEP: Track = { file: 'blank.mp3', title: '', playtime: '1' }
+  const doc = nml(
+    [A, B, SEP],
+    [playlist('Friday', 'fri', [A, SEP, B, SEP]), playlist('Sat', 'sat', [SEP, A])],
+  )
+
+  it('names each row by its playlist and place, the link the list and its edits use', () => {
+    expect(readTraktorPlaylist(doc, 'fri', 'Macintosh HD').map((e) => e.linkId)).toEqual([
+      'fri:0',
+      'fri:1',
+      'fri:2',
+      'fri:3',
+    ])
+  })
+
+  it('marks the DJ separator rows, a blank file of a second or two, as rekordbox does', () => {
+    expect(readTraktorPlaylist(doc, 'fri', 'Macintosh HD').map((e) => e.separator)).toEqual([
+      false,
+      true,
+      false,
+      true,
+    ])
+  })
+
+  it('finds the separator the DJ uses most, to copy it when one is inserted', () => {
+    expect(traktorSeparatorKey(doc)).toBe('Macintosh HD/:Users/:dj/:Music/:blank.mp3')
+    expect(traktorSeparatorKey(nml([A], [playlist('L', 'l', [A])]))).toBeNull()
+  })
+
+  it('names a second folder of the same name apart in the tree', () => {
+    const twins = readTraktorTree(nml([], [folder('Sets', []), folder('Sets', [])]))
+    expect(twins.map((n) => n.id)).toEqual(['folder:Sets', 'folder:Sets#2'])
   })
 })
 

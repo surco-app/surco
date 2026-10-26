@@ -4,10 +4,10 @@ import { TRAKTOR_CUE_HEX, TRAKTOR_HOT_OFFSET, traktorContentId } from '../shared
 import type { AppleMusicTrackMeta, RowCue, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { attr, findEntries } from './traktorNml'
 import { rekordboxColorOf } from './traktorNmlCues'
+import { type ModelNode, nodeById, parsePlaylists, rowLinkId } from './traktorPlaylistModel'
 
 const GRID_TYPE = 4
 const RECENT_DAYS = 30
-const TAG_RE = /<(\/?)(NODE|PLAYLIST|PRIMARYKEY)\b([^>]*)>/g
 const CUE_RE = /<CUE_V2\b[^>]*>/g
 
 // Traktor colours a hot cue by its type (cue, fade in, fade out, load, loop) and writes a
@@ -33,74 +33,18 @@ export function nmlPath(
   return detected.find(exists) ?? ''
 }
 
-interface Node {
-  kind: 'folder' | 'playlist' | 'smartlist'
-  name: string
-  uuid: string
-  keys: string[]
-  children: Node[]
-}
-
-// Traktor nests NODEs inside SUBNODES and keeps a playlist's tracks as PRIMARYKEYs that
-// name the collection ENTRY by volume, folder and file. The document is walked tag by tag
-// rather than parsed, as everywhere else Surco reads an NML.
-function readNodes(nml: string): Node[] {
-  const start = nml.indexOf('<PLAYLISTS>')
-  if (start < 0) return []
-  const root: Node = { kind: 'folder', name: '', uuid: '', keys: [], children: [] }
-  const stack = [root]
-  for (const [tag, closing, name, attrs] of nml.slice(start).matchAll(TAG_RE)) {
-    const at = stack[stack.length - 1]
-    if (name === 'NODE' && closing) {
-      if (stack.length > 1) stack.pop()
-    } else if (name === 'NODE') {
-      const type = attr(attrs, 'TYPE')
-      const node: Node = {
-        kind: type === 'FOLDER' ? 'folder' : type === 'PLAYLIST' ? 'playlist' : 'smartlist',
-        name: attr(attrs, 'NAME'),
-        uuid: '',
-        keys: [],
-        children: [],
-      }
-      at.children.push(node)
-      if (!tag.endsWith('/>')) stack.push(node)
-    } else if (name === 'PLAYLIST' && !closing) at.uuid = attr(attrs, 'UUID')
-    else if (name === 'PRIMARYKEY' && !closing) at.keys.push(attr(attrs, 'KEY'))
-  }
-  const top = root.children[0]
-  return top?.name === '$ROOT' ? top.children : root.children
-}
-
-function toTree(nodes: Node[], folders: string[]): SourceNode[] {
+function toTree(nodes: ModelNode[]): SourceNode[] {
   return nodes.flatMap((n): SourceNode[] => {
     if (n.kind === 'smartlist') return []
     if (n.kind === 'playlist')
-      return [{ id: n.uuid, name: n.name, kind: 'playlist', count: n.keys.length }]
-    const path = [...folders, n.name]
-    const children = toTree(n.children, path)
-    return [
-      {
-        id: `folder:${path.join('/')}`,
-        name: n.name,
-        kind: 'folder',
-        count: children.length,
-        children,
-      },
-    ]
+      return [{ id: n.id, name: n.name, kind: 'playlist', count: n.rows.length }]
+    const children = toTree(n.children)
+    return [{ id: n.id, name: n.name, kind: 'folder', count: children.length, children }]
   })
 }
 
 export function readTraktorTree(nml: string): SourceNode[] {
-  return toTree(readNodes(nml), [])
-}
-
-function findPlaylist(nodes: Node[], uuid: string): Node | null {
-  for (const n of nodes) {
-    if (n.kind === 'playlist' && n.uuid === uuid) return n
-    const inner = findPlaylist(n.children, uuid)
-    if (inner) return inner
-  }
-  return null
+  return toTree(parsePlaylists(nml)?.root.children ?? [])
 }
 
 interface Track {
@@ -182,6 +126,32 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
   }
 }
 
+// A separator is recognised by what it is, as in rekordbox: a blank file of a second or two.
+function isSeparator(track: Track): boolean {
+  const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
+  const playtime = attr(track.block.match(/<INFO\b[^>]*>/)?.[0] ?? '', 'PLAYTIME')
+  return attr(head, 'TITLE').trim() === '' && playtime !== '' && Number(playtime) <= 2
+}
+
+// The DJ's own separator, to copy when one is inserted: among the separator files, the one
+// the playlists use most.
+export function traktorSeparatorKey(nml: string): string | null {
+  const separators = new Set(
+    collection(nml)
+      .filter(isSeparator)
+      .map((t) => t.key),
+  )
+  const uses = new Map<string, number>()
+  const walk = (node: ModelNode): void => {
+    for (const row of node.rows)
+      if (separators.has(row.key)) uses.set(row.key, (uses.get(row.key) ?? 0) + 1)
+    node.children.forEach(walk)
+  }
+  const model = parsePlaylists(nml)
+  if (model) walk(model.root)
+  return [...uses].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+}
+
 function recentSince(now: Date): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - RECENT_DAYS).getTime()
 }
@@ -208,8 +178,14 @@ export function readTraktorPlaylist(
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
   if (id === RECENTLY_ADDED_ID) return recentTracks(nml, now).map((t) => entryOf(t, bootVolume))
-  const list = findPlaylist(readNodes(nml), id)
-  if (!list) return []
-  const byKey = new Map(collection(nml).map((t) => [t.key, t]))
-  return list.keys.map((key) => entryOf(byKey.get(key), bootVolume))
+  const list = nodeById(parsePlaylists(nml), id)
+  if (list?.kind !== 'playlist') return []
+  const tracks = collection(nml)
+  const byKey = new Map(tracks.map((t) => [t.key, t]))
+  const separators = new Set(tracks.filter(isSeparator).map((t) => t.key))
+  return list.rows.map((row, i) => ({
+    ...entryOf(byKey.get(row.key), bootVolume),
+    ...(separators.has(row.key) && { separator: true }),
+    linkId: rowLinkId(list, i),
+  }))
 }
