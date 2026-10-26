@@ -1499,6 +1499,9 @@
       "flows": "Abläufe",
       "newFlow": "Neuer Ablauf",
       "newFlowName": "Ablauf {{n}}",
+      "addFlow": "Ablauf hinzufügen",
+      "rename": "Umbenennen",
+      "moreActions": "Weitere Aktionen für den Ablauf",
       "name": "Name",
       "use": "Als Standard festlegen",
       "inUse": "Standard",
@@ -1571,7 +1574,7 @@
       "manual": {
         "title": "Manueller Editor",
         "jump": "Sprung der Pfeiltasten ← →",
-        "unit": "Takte",
+        "unit": "In Takten",
         "quantize": "Quantisieren"
       },
       "lettersByTime": "Buchstaben in Titelreihenfolge",

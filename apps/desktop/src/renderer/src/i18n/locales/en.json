@@ -1499,6 +1499,9 @@
       "flows": "Flows",
       "newFlow": "New flow",
       "newFlowName": "Flow {{n}}",
+      "addFlow": "Add flow",
+      "rename": "Rename",
+      "moreActions": "More flow actions",
       "name": "Name",
       "use": "Set as default",
       "inUse": "Default",
@@ -1571,7 +1574,7 @@
       "manual": {
         "title": "Manual editor",
         "jump": "Arrow jump ← →",
-        "unit": "bars",
+        "unit": "In bars",
         "quantize": "Quantize"
       },
       "lettersByTime": "Letters in track order",

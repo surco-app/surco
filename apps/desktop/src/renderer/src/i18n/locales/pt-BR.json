@@ -1499,6 +1499,9 @@
       "flows": "Fluxos",
       "newFlow": "Novo fluxo",
       "newFlowName": "Fluxo {{n}}",
+      "addFlow": "Adicionar fluxo",
+      "rename": "Renomear",
+      "moreActions": "Mais ações do fluxo",
       "name": "Nome",
       "use": "Definir como padrão",
       "inUse": "Padrão",
@@ -1571,7 +1574,7 @@
       "manual": {
         "title": "Editor manual",
         "jump": "Salto das setas ← →",
-        "unit": "compassos",
+        "unit": "Em compassos",
         "quantize": "Quantizar"
       },
       "lettersByTime": "Letras na ordem da faixa",

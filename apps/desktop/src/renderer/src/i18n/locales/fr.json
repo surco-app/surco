@@ -1499,6 +1499,9 @@
       "flows": "Flux",
       "newFlow": "Nouveau flux",
       "newFlowName": "Flux {{n}}",
+      "addFlow": "Ajouter un flux",
+      "rename": "Renommer",
+      "moreActions": "Plus d’actions pour le flux",
       "name": "Nom",
       "use": "Définir par défaut",
       "inUse": "Par défaut",
@@ -1571,7 +1574,7 @@
       "manual": {
         "title": "Éditeur manuel",
         "jump": "Saut des flèches ← →",
-        "unit": "mesures",
+        "unit": "En mesures",
         "quantize": "Quantifier"
       },
       "lettersByTime": "Lettres dans l’ordre du morceau",
