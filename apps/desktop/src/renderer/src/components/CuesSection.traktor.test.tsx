@@ -9,7 +9,8 @@ import type { DropInput } from '../../../shared/dropDetect'
 import type { SaveCuesOutcome, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
-import { resetCueSession } from '../lib/cueSession'
+import { startDraft } from '../lib/cueDraft'
+import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
@@ -155,5 +156,34 @@ describe('CuesSection on a Traktor track', () => {
     rerender(view('/Users/dj/collection.nml'))
     await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeEnabled())
     expect(screen.queryByTestId('cues-traktor-no-collection')).not.toBeInTheDocument()
+  })
+
+  it('saves the other libraries’ tracks from Save all but keeps a Traktor track back until the collection is confirmed', async () => {
+    for (const id of ['103', '104'])
+      keepDraft(
+        id,
+        cueDraftKey(id, 'f0', null),
+        startDraft([{ ms: bar(16), kind: 1, color: 1 }], 'mine'),
+        {
+          path: `/m/${id}.wav`,
+          label: id,
+          fingerprint: 'f0',
+        },
+      )
+    const { saveRekordboxCues } = setup(
+      READ,
+      'queued',
+      'traktor:HD/:m/:e.wav',
+      async () => null,
+      false,
+    )
+    await ready()
+    markAt(bar(8))
+    const all = await screen.findByTestId('cues-save-all')
+    await waitFor(() => expect(all).toBeEnabled())
+    fireEvent.click(all)
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const saved = saveRekordboxCues.mock.calls.flatMap(([reqs]) => reqs.map((r) => r.contentId))
+    expect(saved.sort()).toEqual(['103', '104'])
   })
 })

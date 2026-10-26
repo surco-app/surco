@@ -390,11 +390,13 @@ function Editing({
   const words = provisional ? provisional.words : rekordboxWords
   const traktor = isTraktorContent(cue.contentId)
   const engine = isEngineContent(cue.contentId) || traktor
+  const unsavedSet = useUnsavedCueTracks()
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
-    enabled: traktor,
+    enabled: traktor || [...unsavedSet].some(isTraktorContent),
   })
+  const savable = (contentId: string) => canSave || !isTraktorContent(contentId)
   const blocked = traktor && !canSave
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<number[] | null>(() => {
@@ -718,14 +720,13 @@ function Editing({
     if (saved) setProposed(null)
   }
   const copy = copyOf(cue.contentId)
-  const unsavedSet = useUnsavedCueTracks()
-  const unsavedTracks = unsavedSet.size
+  const unsavedTracks = [...unsavedSet].filter(savable).length
   const [savingAll, setSavingAll] = useState(false)
   const saveAll = async () => {
     setSavingAll(true)
     try {
       await forgetStaleDrafts(queryClient)
-      await send(draftsToSave())
+      await send(draftsToSave().filter((r) => savable(r.contentId)))
     } finally {
       setSavingAll(false)
     }
@@ -734,13 +735,13 @@ function Editing({
     <button
       type="button"
       data-testid="cues-save-all"
-      disabled={savingAll || blocked}
+      disabled={savingAll}
       onClick={() => void saveAll()}
       className={`press shrink-0 disabled:opacity-40 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
         maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
       }`}
     >
-      {tr(saveAllKey(unsavedSet), { count: unsavedTracks })}
+      {tr(saveAllKey(new Set([...unsavedSet].filter(savable))), { count: unsavedTracks })}
     </button>
   )
   const flowOptions = [
