@@ -107,10 +107,10 @@ describe('rows and separators', () => {
 
   it('names each row by its playlist and place, the link the list and its edits use', () => {
     expect(readTraktorPlaylist(doc, 'fri', 'Macintosh HD').map((e) => e.linkId)).toEqual([
-      'fri:0',
-      'fri:1',
-      'fri:2',
-      'fri:3',
+      'fri:0:Macintosh HD/:Users/:dj/:Music/:a.mp3',
+      'fri:1:Macintosh HD/:Users/:dj/:Music/:blank.mp3',
+      'fri:2:Macintosh HD/:Users/:dj/:Music/:b.flac',
+      'fri:3:Macintosh HD/:Users/:dj/:Music/:blank.mp3',
     ])
   })
 

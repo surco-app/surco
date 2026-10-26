@@ -99,19 +99,29 @@ describe('applyTraktorEdits', () => {
 
   it('applies a move and then a remove queued on the same playlist to the rows the DJ saw', () => {
     const { nml } = run(
-      op({ kind: 'move', playlistId: 'fri', linkIds: ['fri:2'], beforeLinkId: 'fri:0' }, 'fri'),
-      op({ kind: 'remove', playlistId: 'fri', linkIds: ['fri:1'] }, 'fri'),
+      op(
+        {
+          kind: 'move',
+          playlistId: 'fri',
+          linkIds: ['fri:2:HD/:m/:a.mp3'],
+          beforeLinkId: 'fri:0:HD/:m/:a.mp3',
+        },
+        'fri',
+      ),
+      op({ kind: 'remove', playlistId: 'fri', linkIds: ['fri:1:HD/:m/:sep.mp3'] }, 'fri'),
     )
     expect(rows(nml, 'fri')).toEqual(['a.mp3', 'a.mp3'])
   })
 
   it('inserts the DJ separator before a row', () => {
-    const { nml } = run(op({ kind: 'insertSeparator', playlistId: 'fri', beforeLinkId: 'fri:2' }))
+    const { nml } = run(
+      op({ kind: 'insertSeparator', playlistId: 'fri', beforeLinkId: 'fri:2:HD/:m/:a.mp3' }),
+    )
     expect(rows(nml, 'fri')).toEqual(['a.mp3', '|', '|', 'a.mp3'])
   })
 
   it('refuses an edit on a playlist the DJ changed in Traktor since, and writes nothing', () => {
-    const queued = op({ kind: 'remove', playlistId: 'fri', linkIds: ['fri:0'] }, 'fri')
+    const queued = op({ kind: 'remove', playlistId: 'fri', linkIds: ['fri:0:HD/:m/:a.mp3'] }, 'fri')
     const changed = DOC.replace(
       '<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="HD/:m/:sep.mp3"></PRIMARYKEY>\n</ENTRY>\n',
       '',
@@ -164,5 +174,13 @@ describe('applyTraktorEdits', () => {
     )
     expect(nml).not.toBe(crlf)
     expect(nml.replace(/\r\n/g, '')).not.toContain('\n')
+  })
+
+  it('refuses a row edit when that place no longer holds the track the DJ saw there', () => {
+    const { nml, outcomes } = run(
+      op({ kind: 'remove', playlistId: 'fri', linkIds: ['fri:1:HD/:m/:a.mp3'] }),
+    )
+    expect(nml).toBe(DOC)
+    expect([...outcomes.values()][0]).toMatchObject({ applied: false, reason: 'stale' })
   })
 })

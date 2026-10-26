@@ -147,8 +147,10 @@ export function nodeById(model: PlaylistModel | null, id: string): ModelNode | n
   return model ? find(model.root, id) : null
 }
 
+// A row is named by its playlist, its place and the track it holds there: the place alone
+// would name another track once Traktor reorders the playlist behind a list Surco shows.
 export function rowLinkId(node: ModelNode, index: number): string {
-  return `${node.uuid}:${index}`
+  return `${node.uuid}:${index}:${node.rows[index]?.key ?? ''}`
 }
 
 function changed(node: ModelNode): boolean {

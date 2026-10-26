@@ -44,9 +44,9 @@ describe('parsePlaylists', () => {
     expect(nodeById(model, 'nope')).toBeNull()
   })
 
-  it('names each row by its playlist and place, the link the list and its edits use', () => {
+  it('names each row by its playlist, place and track, the link the list and its edits use', () => {
     const fri = nodeById(parsePlaylists(PLAYLISTS_SAMPLE), 'fri')
-    expect(fri && rowLinkId(fri, 2)).toBe('fri:2')
+    expect(fri && rowLinkId(fri, 2)).toBe('fri:2:HD/:m/:a.mp3')
   })
 
   it('stamps a playlist by its rows and a folder by its children, so a change in Traktor shows', () => {

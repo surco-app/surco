@@ -54,8 +54,9 @@ interface Resolved {
 
 function rowAt(node: ModelNode | null, linkId: string): ModelRow | undefined {
   if (!node) return undefined
-  const at = linkId.lastIndexOf(':')
-  return linkId.slice(0, at) === node.uuid ? node.rows[Number(linkId.slice(at + 1))] : undefined
+  const [uuid, index, ...key] = linkId.split(':')
+  const row = uuid === node.uuid ? node.rows[Number(index)] : undefined
+  return row && row.key === key.join(':') ? row : undefined
 }
 
 function resolve(model: PlaylistModel | null, op: EditOp): Resolved | null {

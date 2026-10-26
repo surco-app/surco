@@ -64,7 +64,7 @@ describe('registerTraktorPlaylistEditIpc', () => {
   it('queues the edit with the stamp of the playlist it names, so a change made in Traktor meanwhile is caught', async () => {
     const file = await collection()
     const { host, queued } = setup(file, applied)
-    const edit = { kind: 'remove', playlistId: 'fri', linkIds: ['fri:0'] }
+    const edit = { kind: 'remove', playlistId: 'fri', linkIds: ['fri:0:HD/:m/:a.mp3'] }
     expect(await handler('traktor:edit')({ sender: {} }, edit, 'Friday')).toEqual({ applied: true })
     expect((queued[0] as EditOp).stamps).toEqual({ fri: traktorStamps(PLAYLISTS_SAMPLE).fri })
     expect(host.ensureClosed).toHaveBeenCalledWith('window')
