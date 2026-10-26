@@ -1406,7 +1406,7 @@ describe('App source rail', () => {
     expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
   })
 
-  it('lists a rekordbox row from the light read and completes it once the row is selected', async () => {
+  it('lists a rekordbox row rekordbox has art for from the light read and completes it once the row is selected', async () => {
     const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue({
       tags: { ...emptyMetadata(), title: 'Charlie' },
       duration: 200,
@@ -1428,7 +1428,13 @@ describe('App source rail', () => {
           separator: false,
           meta: {},
           contentId: 'c',
-          preview: { title: 'Charlie', artist: 'DJ', durationSec: 200, cues: [] },
+          preview: {
+            title: 'Charlie',
+            artist: 'DJ',
+            durationSec: 200,
+            cues: [],
+            coverUrl: 'surco://media/rekordbox-art.jpg',
+          },
         },
       ]),
     })
