@@ -159,6 +159,8 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
+import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
+import { applyTraktorCuesBatch } from './traktorCuesWrite'
 import { bootVolumeName } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { nmlPath } from './traktorPlaylists'
@@ -324,6 +326,53 @@ const applyEngineCueQueueQuietly = (): void => {
   ).then((result) => {
     announceEngineApplied(result)
     if (stillWaiting(result)) engineCueQueueWatch.poke()
+  })
+}
+// The tab reads the collection Settings names or, without one, the newest Traktor found;
+// cues are written only to the one the DJ confirmed in Settings (see traktorNmlPath.ts).
+const traktorReadPath = (): string =>
+  nmlPath(
+    getSettings().traktorNmlPath,
+    detectTraktorNmlPaths(app.getPath('home'), (dir) => {
+      try {
+        return readdirSync(dir)
+      } catch {
+        return []
+      }
+    }),
+    existsSync,
+  )
+const traktorWritePath = (): string => {
+  const path = getSettings().traktorNmlPath
+  return path && existsSync(path) ? path : ''
+}
+const traktorCueQueue = createRekordboxQueue({
+  store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
+  collection: traktorWritePath,
+  applyBatch: (nml, ops, ensureClosed) => applyTraktorCuesBatch(nml, ops, { ensureClosed }),
+  repoint: async () => [],
+  nodeStamps: async () => ({}),
+  onChange: (state) => broadcast('traktor:cueQueueChanged', state),
+})
+const announceTraktorApplied = (result: QueueApply): void => {
+  const notice = appliedNotice(result)
+  if (notice) broadcast('traktor:cueQueueApplied', notice)
+}
+const traktorCueQueueWatch = watchRekordboxQueue({
+  queue: {
+    isEmpty: () => traktorCueQueue.isEmpty(),
+    apply: (ensureClosed) => serialLibraryFlush(() => traktorCueQueue.apply(ensureClosed)),
+  },
+  collection: traktorWritePath,
+  isRunning: isTraktorRunning,
+  onApplied: announceTraktorApplied,
+})
+const applyTraktorCueQueueQuietly = (): void => {
+  void serialLibraryFlush(() =>
+    traktorCueQueue.apply(async () => !(await isTraktorRunning())),
+  ).then((result) => {
+    announceTraktorApplied(result)
+    if (stillWaiting(result)) traktorCueQueueWatch.poke()
   })
 }
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
@@ -1072,21 +1121,10 @@ function registerIpc(): void {
     artDir: () => join(app.getPath('userData'), 'engine-artwork'),
     allowMedia: (paths) => mediaAccess.allowAll(paths),
   })
-  registerTraktorPlaylistsIpc(
-    () =>
-      nmlPath(
-        getSettings().traktorNmlPath,
-        detectTraktorNmlPaths(app.getPath('home'), (dir) => {
-          try {
-            return readdirSync(dir)
-          } catch {
-            return []
-          }
-        }),
-        existsSync,
-      ),
-    { bootVolume: () => bootVolumeName(), allowMedia: (paths) => mediaAccess.allowAll(paths) },
-  )
+  registerTraktorPlaylistsIpc(traktorReadPath, {
+    bootVolume: () => bootVolumeName(),
+    allowMedia: (paths) => mediaAccess.allowAll(paths),
+  })
   registerRekordboxQueueIpc(rekordboxQueue, {
     collection: rekordboxCollectionPath,
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
@@ -1107,12 +1145,25 @@ function registerIpc(): void {
       applyQuietly: applyEngineCueQueueQuietly,
       words: cachedCueWaveWords,
     },
+    traktor: {
+      nml: traktorReadPath,
+      bootVolume: () => bootVolumeName(),
+      queue: traktorCueQueue,
+      applyQuietly: applyTraktorCueQueueQuietly,
+      words: cachedCueWaveWords,
+    },
   })
   registerEngineCueQueueIpc(engineCueQueue, {
     ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
     onWaiting: engineCueQueueWatch.poke,
     onReady: engineCueQueueWatch.poke,
   })
+  registerTraktorCueQueueIpc(traktorCueQueue, {
+    ensureClosed: (win) => ensureTraktorClosed(win),
+    onWaiting: traktorCueQueueWatch.poke,
+    onReady: traktorCueQueueWatch.poke,
+  })
+  ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),

@@ -17,7 +17,10 @@ export interface EngineDropSources {
   words: (file: string) => Promise<Uint16Array | null>
 }
 
-function rekordboxInput(file: string, sources: EngineDropSources): DropInput | null {
+export function rekordboxInput(
+  file: string,
+  sources: Pick<EngineDropSources, 'collection' | 'key' | 'realPath'>,
+): DropInput | null {
   try {
     return withCollection(
       sources.collection,

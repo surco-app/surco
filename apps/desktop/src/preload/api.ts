@@ -248,6 +248,13 @@ export interface Api {
   engineCueQueueReady: () => Promise<void>
   onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+  traktorCueQueue: () => Promise<RekordboxQueueState>
+  applyTraktorCueQueue: () => Promise<RekordboxQueueApplied | null>
+  discardTraktorCueQueue: () => Promise<void>
+  traktorCueQueueReady: () => Promise<void>
+  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+  traktorCanSave: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.
   usbVolumes: () => Promise<UsbVolumeList>
