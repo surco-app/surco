@@ -1,4 +1,5 @@
 import type { LifetimeStats } from '../../../shared/types'
+import { formatCount } from './stats'
 
 // Same fixed dark palette as the quality report (lib/qualityReport.ts): a PNG shared on
 // Instagram must look the same from every install, whatever theme the sender uses.
@@ -53,6 +54,7 @@ export function statsImageCells(stats: LifetimeStats): StatsImageCell[] {
 
 interface StatsImageInput {
   title: string
+  language: string
   // 0 hides the hero block (activity without conversions still deserves a card).
   conversionCount: number
   countLabel: string
@@ -113,7 +115,7 @@ export function renderStatsImage(input: StatsImageInput): string {
   if (input.conversionCount > 0) {
     y += 286
     ctx.font = '700 220px system-ui, sans-serif'
-    ctx.fillText(String(input.conversionCount), centerX, y, WIDTH - PAD * 2)
+    ctx.fillText(formatCount(input.conversionCount, input.language), centerX, y, WIDTH - PAD * 2)
     y += 78
     ctx.fillStyle = CARD.fgDim
     ctx.font = '34px system-ui, sans-serif'
@@ -130,7 +132,7 @@ export function renderStatsImage(input: StatsImageInput): string {
         const x = row.length === 1 ? centerX : centerX + (j === 0 ? -colOffset : colOffset)
         ctx.fillStyle = CARD.fg
         ctx.font = '600 66px system-ui, sans-serif'
-        ctx.fillText(String(cell.value), x, y)
+        ctx.fillText(formatCount(cell.value, input.language), x, y)
         ctx.fillStyle = CARD.fgDim
         ctx.font = '27px system-ui, sans-serif'
         ctx.fillText(cell.label, x, y + 46, colOffset * 2 - 40)

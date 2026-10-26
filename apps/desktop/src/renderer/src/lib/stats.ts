@@ -8,11 +8,19 @@ export function timeSavedSeconds(conversionCount: number): number {
   return Math.max(0, Math.floor(conversionCount)) * MANUAL_SECONDS_PER_CONVERSION
 }
 
+// A tally with its thousands grouped ("29.215" in Spanish). Grouping is forced: Spanish
+// otherwise leaves four digits alone, and "3071" beside "32.533" looks like two formats.
+export function formatCount(count: number, language: string): string {
+  return new Intl.NumberFormat(language, { useGrouping: 'always' }).format(count)
+}
+
 // A humanized "9 h 28 min" for the Stats readout, distinct from the player's
-// m:ss clock. "h" and "min" are the same abbreviations in both shipped locales
-// (English and Spanish), so they live here rather than in the translation files.
-export function formatTimeSaved(seconds: number): string {
+// m:ss clock. "h" and "min" read the same in every shipped locale, so they live
+// here rather than in the translation files. From ten hours up the minutes are
+// noise in a 4-minutes-a-track estimate, so the total rounds to whole hours.
+export function formatTimeSaved(seconds: number, language: string): string {
   const minutes = Math.round(Math.max(0, seconds) / 60)
+  if (minutes >= 10 * 60) return `${formatCount(Math.round(minutes / 60), language)} h`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   if (h > 0 && m > 0) return `${h} h ${m} min`

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatCount,
   formatMatchCount,
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
@@ -47,19 +48,47 @@ describe('formatMatchCount', () => {
   })
 })
 
+// "29215" beside "3071" on a shared card reads as raw output, not as a figure to be proud of.
+describe('formatCount', () => {
+  it('groups thousands with the language separator', () => {
+    expect(formatCount(29215, 'es')).toBe('29.215')
+    expect(formatCount(29215, 'en')).toBe('29,215')
+  })
+
+  // Spanish leaves four-digit numbers ungrouped by default, so "3071" would sit beside
+  // "32.533" in the same grid and the two would look formatted by different hands.
+  it('groups four-digit numbers too, so every tally on the card matches', () => {
+    expect(formatCount(3071, 'es')).toBe('3.071')
+  })
+
+  it('leaves numbers under a thousand alone', () => {
+    expect(formatCount(812, 'es')).toBe('812')
+  })
+})
+
 describe('formatTimeSaved', () => {
   it('humanizes the total as "h min" rather than a m:ss clock', () => {
     // 142 conversions at 4 min each is 568 min → 9 h 28 min, the believable
     // sentence we want to show, not "568:00".
-    expect(formatTimeSaved(timeSavedSeconds(142))).toBe('9 h 28 min')
+    expect(formatTimeSaved(timeSavedSeconds(142), 'es')).toBe('9 h 28 min')
   })
 
   it('drops the minutes when the total lands on a whole hour', () => {
-    expect(formatTimeSaved(3600)).toBe('1 h')
+    expect(formatTimeSaved(3600, 'es')).toBe('1 h')
   })
 
   it('drops the hours below an hour so short tallies read cleanly', () => {
-    expect(formatTimeSaved(40 * 60)).toBe('40 min')
+    expect(formatTimeSaved(40 * 60, 'es')).toBe('40 min')
+  })
+
+  // The figure is a 4-minutes-a-track estimate prefixed with "about"; "1947 h 40 min"
+  // claims a precision it does not have and makes the reader parse two units.
+  it('drops the minutes from ten hours up, where they are noise in an estimate', () => {
+    expect(formatTimeSaved(timeSavedSeconds(29215), 'es')).toBe('1.948 h')
+  })
+
+  it('groups the hours with the language separator', () => {
+    expect(formatTimeSaved(timeSavedSeconds(29215), 'en')).toBe('1,948 h')
   })
 })
 

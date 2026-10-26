@@ -3,7 +3,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../lib/donate'
-import { formatTimeSaved, timeSavedSeconds } from '../lib/stats'
+import { formatCount, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
 import { Confetti } from './Confetti'
 import { ModalShell } from './ModalShell'
 
@@ -17,7 +17,7 @@ interface Props {
 // the gating). Closing is always one click; only the explicit checkbox silences
 // it forever, and that choice is the user's, never implied.
 export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const [dismiss, setDismiss] = useState(false)
 
   return (
@@ -35,12 +35,12 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
 
         <div className="mt-6 flex flex-col items-center text-center">
           <p data-testid="donate-nudge-count" className="text-5xl font-semibold tabular-nums">
-            {conversionCount}
+            {formatCount(conversionCount, i18n.language)}
           </p>
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
           <p data-testid="donate-nudge-time" className="mt-4 text-sm text-fg">
             {tr('settings.stats.timeSaved', {
-              time: formatTimeSaved(timeSavedSeconds(conversionCount)),
+              time: formatTimeSaved(timeSavedSeconds(conversionCount), i18n.language),
             })}
           </p>
         </div>
