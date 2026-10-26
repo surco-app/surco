@@ -18,7 +18,7 @@ export const SPLIT_TOGGLE_READY =
 export const SPLIT_MENU =
   'animate-pop-flat absolute right-0 bottom-full z-50 mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 export const SPLIT_ITEM =
-  'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)]'
+  'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:shadow-none'
 
 // The menu's reachable items in order: a disabled pick (Apple Music under FLAC) can't take
 // focus, so the arrows skip it rather than stall on it.
