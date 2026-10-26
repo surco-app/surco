@@ -215,9 +215,9 @@ describe('Traktor queue text', () => {
   })
 
   it('says a playlist changed in Traktor when an edit was refused for it', () => {
-    expect(
-      noticeText(tr, { code: 'edit-changed', playlist: 'Friday' }, TRAKTOR_QUEUE_WORDS),
-    ).toBe('Friday was not changed. It changed in Traktor')
+    expect(noticeText(tr, { code: 'edit-changed', playlist: 'Friday' }, TRAKTOR_QUEUE_WORDS)).toBe(
+      'Friday was not changed. It changed in Traktor',
+    )
   })
 
   it('speaks of changes, not only cues, now that playlists wait in the same queue', () => {
