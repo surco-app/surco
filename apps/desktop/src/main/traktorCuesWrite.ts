@@ -52,13 +52,14 @@ export function withTraktorCues(block: string, wanted: WantedCue[]): string {
     })
   if (!changed && cues.length === rows.length) return block
   const all = [...kept, ...cues]
+  const eol = block.includes('\r\n') ? '\r\n' : '\n'
   if (elements.length === 0) {
     const close = block.lastIndexOf('</ENTRY>')
-    return `${block.slice(0, close)}${all.map((el) => `${el}\n`).join('')}${block.slice(close)}`
+    return `${block.slice(0, close)}${all.map((el) => `${el}${eol}`).join('')}${block.slice(close)}`
   }
   const first = elements[0]
   const last = elements[elements.length - 1]
-  const separator = elements[1] ? block.slice(first.end, elements[1].start) : '\n'
+  const separator = elements[1] ? block.slice(first.end, elements[1].start) : eol
   return `${block.slice(0, first.start)}${all.join(separator)}${block.slice(last.end)}`
 }
 

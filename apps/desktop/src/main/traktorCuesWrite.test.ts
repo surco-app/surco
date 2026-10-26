@@ -239,4 +239,10 @@ describe('applyTraktorCuesBatch', () => {
       '<CUE_V2 NAME="go HOTCUE=" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="5"></CUE_V2>',
     )
   })
+
+  it('keeps Windows line endings when it adds the first cue to an entry', () => {
+    const crlf = nml([GRID]).replace(/\n/g, '\r\n')
+    const out = withTraktorCues(block(crlf), [{ ms: 5000, kind: HOT_KINDS[1], color: 5 }])
+    expect(out.replace(/\r\n/g, '')).not.toContain('\n')
+  })
 })

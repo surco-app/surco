@@ -1,5 +1,5 @@
 import { HOT_KINDS } from '../shared/cueRules'
-import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
+import { TRAKTOR_HOT_OFFSET, TRAKTOR_SLOTS, traktorKey } from '../shared/traktorContent'
 import type { TrackCueRow, TrackCues } from '../shared/types'
 import { cueFingerprint } from './rekordboxCues'
 import { attr, findEntries } from './traktorNml'
@@ -55,7 +55,8 @@ export function traktorCueRows(block: string): TraktorCueRow[] {
   return traktorCueElements(block).flatMap((el, i): TraktorCueRow[] => {
     const type = Number(attr(el.element, 'TYPE'))
     const hotcue = Number(attr(el.element, 'HOTCUE') || '-1')
-    if ((type === GRID_TYPE && hotcue < 0) || hotcue === 0) return []
+    if ((type === GRID_TYPE && hotcue < 0) || hotcue === 0 || hotcue > TRAKTOR_SLOTS.kinds.length)
+      return []
     const kind = hotcue > 0 ? HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET] : 0
     if (kind === undefined) return []
     return [

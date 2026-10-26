@@ -92,4 +92,10 @@ describe('readTraktorTrackCues', () => {
       { id: '1', ms: 50000, kind: HOT_KINDS[1], color: expect.any(Number), loop: true },
     ])
   })
+
+  it('leaves a cue on a button past 8 alone, since Surco has no letter for it', () => {
+    const odd =
+      '<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="8"></CUE_V2>'
+    expect(readTraktorTrackCues(nml(entry([GRID, odd])), ID)?.cues).toEqual([])
+  })
 })
