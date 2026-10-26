@@ -1126,7 +1126,7 @@
     },
     "replace": {
       "title": "Upgrade the file. Your playlists never notice.",
-      "lede": "If the track is already in your Apple Music, the button reads “Replace”. Any format works, the same one included, from an MP3 to an AIFF or from a 128 MP3 to a 320. Apple Music and rekordbox move to the new file and the track stays in the ten playlists you had it in, cues included. No adding it back to each one by hand.",
+      "lede": "If the track is already in your Apple Music, the button reads “Replace”. Any format works, the same one included, from an MP3 to an AIFF or from a 128 MP3 to a 320. Apple Music moves to the new file, and so do rekordbox, Engine DJ and Traktor if you sync them. The track stays in the ten playlists you had it in, cues included. No adding it back to each one by hand.",
       "convertAll": "Convert 1 track",
       "search": "Search tracks",
       "file": "File",
@@ -1152,9 +1152,9 @@
       "step": "and later · replaced"
     },
     "cues": {
-      "step": "and in rekordbox · cued",
-      "title": "Your rekordbox cues, in one click.",
-      "lede": "Click where the track drops, or let Auto mark suggest it. Your flow places the rest of the cues and Surco saves them to rekordbox.",
+      "step": "and in your app · cued",
+      "title": "Your rekordbox, Engine\u00a0DJ and Traktor cues, in one click.",
+      "lede": "Click where the track drops, or let Auto mark suggest it. Your flow places the rest of the cues and Surco saves them to rekordbox, Engine DJ or Traktor. Engine DJ and Traktor take the hot cues only.",
       "unsaved": "Not saved",
       "flow": "Flow",
       "flowName": "Subidón",
@@ -1182,7 +1182,7 @@
     "review": {
       "kicker": "Your library",
       "title": "Find the typos and duplicates in your library",
-      "lede": "Surco goes through your Apple Music library or the folder you drop and groups what's spelled more than one way, the invisible spaces and characters that sneak in when you copy from a website, and the tracks you have twice. You choose how it should read and the change reaches the files, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor.",
+      "lede": "Surco goes through your Apple Music library, the folder you drop or a rekordbox, Engine DJ or Traktor playlist, and groups what's spelled more than one way, the invisible spaces and characters that sneak in when you copy from a website, and the tracks you have twice. You choose how it should read and the change reaches the files, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor.",
       "points": {
         "spelling": {
           "title": "Spellings",

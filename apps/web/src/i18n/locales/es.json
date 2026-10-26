@@ -1126,7 +1126,7 @@
     },
     "replace": {
       "title": "Mejora el archivo. Tus playlists ni se enteran.",
-      "lede": "Si el tema ya está en tu Apple Music, el botón pasa a decir «Sustituir». Vale cualquier formato, también el mismo, de un MP3 a un AIFF o de un MP3 de 128 a uno de 320. Apple Music y rekordbox se quedan con el archivo nuevo y la pista sigue en las diez playlists donde la tenías, con sus cues. Te ahorras volver a meterla a mano en cada una.",
+      "lede": "Si el tema ya está en tu Apple Music, el botón pasa a decir «Sustituir». Vale cualquier formato, también el mismo, de un MP3 a un AIFF o de un MP3 de 128 a uno de 320. Apple Music se queda con el archivo nuevo, y también rekordbox, Engine DJ y Traktor si los sincronizas. La pista sigue en las diez playlists donde la tenías, con sus cues. Te ahorras volver a meterla a mano en cada una.",
       "convertAll": "Convertir 1 pista",
       "search": "Buscar pistas",
       "file": "Archivo",
@@ -1152,9 +1152,9 @@
       "step": "y después · se sustituye"
     },
     "cues": {
-      "step": "y en rekordbox · se marca",
-      "title": "Tus cues de rekordbox, de un clic.",
-      "lede": "Marca con un clic dónde rompe la pista, o deja que Auto marcar te lo proponga. Tu flujo pone el resto de cues y Surco las guarda en rekordbox.",
+      "step": "y en tu programa · se marca",
+      "title": "Tus cues de rekordbox, Engine\u00a0DJ y Traktor, de un clic.",
+      "lede": "Marca con un clic dónde rompe la pista, o deja que Auto marcar te lo proponga. Tu flujo pone el resto de cues y Surco las guarda en rekordbox, Engine DJ o Traktor. Engine DJ y Traktor reciben solo los hot cues.",
       "unsaved": "Sin guardar",
       "flow": "Flujo",
       "flowName": "Subidón",
@@ -1182,7 +1182,7 @@
     "review": {
       "kicker": "Tu biblioteca",
       "title": "Encuentra las erratas y los duplicados de tu biblioteca",
-      "lede": "Surco repasa tu biblioteca de Apple Music o la carpeta que sueltes y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los ficheros, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor.",
+      "lede": "Surco repasa tu biblioteca de Apple Music, la carpeta que sueltes o una playlist de rekordbox, Engine DJ o Traktor, y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los ficheros, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor.",
       "points": {
         "spelling": {
           "title": "Grafías",
