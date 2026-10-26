@@ -371,7 +371,8 @@
     "musicDuplicates": "Mostrar duplicados en Apple Music…",
     "listReview": "Revisar metadatos…",
     "exportUsb": "Exportar a USB…",
-    "goToSource": "Ir a {{name}}"
+    "goToSource": "Ir a {{name}}",
+    "newPlaylist": "Nueva playlist en {{name}}"
   },
   "trackList": {
     "cuesUnsaved": "Cues sin guardar",

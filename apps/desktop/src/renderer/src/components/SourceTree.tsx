@@ -1,9 +1,10 @@
 import { ChevronDown, ChevronRight, Clock, FolderPlus, ListPlus, Search, Usb } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
+import type { NewPlaylist } from '../lib/commands'
 import { subtreeCounts } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -47,6 +48,7 @@ export function SourceTree({
   edit,
   fixed,
   onExportUsb,
+  newPlaylistRef,
 }: {
   width: number
   title: string
@@ -70,6 +72,7 @@ export function SourceTree({
   fixed?: (node: SourceNode) => 'locked' | 'tracks-only' | null
   // The USB export, offered where it exists: rekordbox's tree on macOS and Windows.
   onExportUsb?: () => void
+  newPlaylistRef?: { current: NewPlaylist | null }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -112,6 +115,13 @@ export function SourceTree({
     // A search shows only its hits, which would hide the field being typed in.
     setQuery('')
   }
+  useEffect(() => {
+    if (!newPlaylistRef) return
+    newPlaylistRef.current = edit ? { source, run: () => startCreating('root', false) } : null
+    return () => {
+      newPlaylistRef.current = null
+    }
+  })
   const commit = (value: string): void => {
     const target = pending.current
     pending.current = null

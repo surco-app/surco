@@ -5,6 +5,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
+import type { NewPlaylist } from '../lib/commands'
 import { clearDraggedRows, setDraggedRows } from '../lib/reorderDrag'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { SourceTree } from './SourceTree'
@@ -277,6 +278,40 @@ describe('SourceTree organising', () => {
     fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
     expect(edit.onCreate).toHaveBeenCalledWith('root', 'Bolo', false)
     expect(screen.queryByTestId('source-tree-name')).not.toBeInTheDocument()
+  })
+
+  it('hands the command palette its own Nueva playlist, only where the library can be edited', () => {
+    const newPlaylistRef: { current: NewPlaylist | null } = { current: null }
+    const onCreate = vi.fn()
+    const tree = (editable: boolean) => (
+      <SourceTree
+        width={236}
+        title="Traktor"
+        source="traktor"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={
+          editable
+            ? { onCreate, onDropTracks: vi.fn(), onRename: vi.fn(), onDelete: vi.fn() }
+            : undefined
+        }
+        newPlaylistRef={newPlaylistRef}
+      />
+    )
+    const { rerender, unmount } = render(tree(false))
+    expect(newPlaylistRef.current).toBeNull()
+    rerender(tree(true))
+    expect(newPlaylistRef.current?.source).toBe('traktor')
+    act(() => newPlaylistRef.current?.run())
+    const field = screen.getByTestId('source-tree-name')
+    expect(field).toHaveFocus()
+    fireEvent.change(field, { target: { value: 'Bolo' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(onCreate).toHaveBeenCalledWith('root', 'Bolo', false)
+    unmount()
+    expect(newPlaylistRef.current).toBeNull()
   })
 
   it('creates a folder inside a folder from its menu, opening it to show where', () => {

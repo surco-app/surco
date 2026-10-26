@@ -130,6 +130,11 @@ export interface CueActions {
   clearAll?: { enabled: boolean; run: () => void }
 }
 
+export interface NewPlaylist {
+  source: PlaylistSource
+  run: () => void
+}
+
 export interface CommandDeps {
   tr: (key: string, options?: Record<string, unknown>) => string
   // The palette hint for a command's effective key binding (defaults + overrides).
@@ -273,6 +278,7 @@ export interface CommandDeps {
   selectSource: (source: PlaylistSource | null) => void
   autoMarkSelected?: () => void
   cueActionsRef: { readonly current: CueActions | null }
+  newPlaylistRef: { readonly current: NewPlaylist | null }
 }
 
 // The id → group map, for surfaces that need to classify commands without being able to
@@ -381,9 +387,11 @@ export function buildCommands(deps: CommandDeps): Command[] {
     selectSource,
     autoMarkSelected,
     cueActionsRef,
+    newPlaylistRef,
   } = deps
   const cueSaveAll = cueActionsRef.current?.saveAll
   const cueClearAll = cueActionsRef.current?.clearAll
+  const newPlaylist = newPlaylistRef.current
   return [
     {
       id: 'add',
@@ -478,6 +486,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('cues-clear-all'),
             enabled: cueClearAll.enabled,
             run: cueClearAll.run,
+          },
+        ]
+      : []),
+    ...(newPlaylist
+      ? [
+          {
+            id: 'new-playlist',
+            group: 'library' as const,
+            title: tr('commands.newPlaylist', { name: tr(`sources.${newPlaylist.source}`) }),
+            hint: hintFor('new-playlist'),
+            enabled: true,
+            run: newPlaylist.run,
           },
         ]
       : []),

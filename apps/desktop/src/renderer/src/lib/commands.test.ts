@@ -113,6 +113,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     sources: [],
     selectSource: () => {},
     cueActionsRef: { current: null },
+    newPlaylistRef: { current: null },
     ...overrides,
   }
 }
@@ -260,6 +261,25 @@ describe('buildCommands cue clear all', () => {
     expect(commandById(deps(false), 'cues-clear-all').enabled).toBe(false)
     const c = commandById(deps(true), 'cues-clear-all')
     expect(c.title).toBe('editor.cues.clearAll')
+    expect(c.enabled).toBe(true)
+    c.run()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('buildCommands new playlist', () => {
+  it('is offered only while the open library tab can be edited', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'new-playlist')).toBe(false)
+  })
+
+  it('names the open library and runs the tree own Nueva playlist', () => {
+    const run = vi.fn()
+    const tr = (k: string, o?: Record<string, unknown>) => (o ? `${k}(${o.name})` : k)
+    const c = commandById(
+      makeDeps({ tr, newPlaylistRef: { current: { source: 'rekordbox', run } } }),
+      'new-playlist',
+    )
+    expect(c.title).toBe('commands.newPlaylist(sources.rekordbox)')
     expect(c.enabled).toBe(true)
     c.run()
     expect(run).toHaveBeenCalledTimes(1)
