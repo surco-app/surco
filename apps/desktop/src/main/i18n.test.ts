@@ -46,6 +46,16 @@ describe('createMenuT', () => {
     )
   })
 
+  it('asks to close Traktor for a playlist change with its own words', () => {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
+      const t = createMenuT(lang)
+      expect(t('traktorQuitDetailPlaylists')).not.toBe(t('traktorQuitDetail'))
+    }
+    expect(createMenuT('es')('traktorQuitDetailPlaylists')).toBe(
+      'Surco necesita cerrarlo para guardar el cambio en tus playlists. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+    )
+  })
+
   it('translates a key for the resolved locale', () => {
     expect(createMenuT('es-ES')('settings')).toBe('Ajustes…')
     expect(createMenuT('en-US')('settings')).toBe('Settings…')

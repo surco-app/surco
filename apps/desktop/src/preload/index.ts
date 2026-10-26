@@ -241,6 +241,11 @@ const api: Api = {
     return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
   },
   rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
+  editTraktorPlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('traktor:edit', edit, label),
+  traktorHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('traktor:hasSeparator'),
   engineCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('engine:cueQueue'),
   applyEngineCueQueue: (): Promise<RekordboxQueueApplied | null> =>
     ipcRenderer.invoke('engine:applyCueQueue'),
