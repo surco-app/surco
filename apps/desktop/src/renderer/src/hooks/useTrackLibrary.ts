@@ -836,7 +836,11 @@ export function useTrackLibrary({
       )
     const loaded = loadedNow()
     for (const e of entries) if (e.path && !e.separator) listedBySource.current.add(same(e.path))
-    if (source === 'rekordbox') {
+    // The library behind the rows, for the ones that point at the file by path: rows it
+    // lists keep their file name, and their preview follows what the library now holds.
+    const libraryFlag =
+      source === 'rekordbox' ? 'fromRekordbox' : source === 'traktor' ? 'fromTraktor' : null
+    if (libraryFlag) {
       const previewOf = new Map(
         entries.flatMap((e) =>
           e.path && !e.separator && e.preview ? [[same(e.path), e.preview] as const] : [],
@@ -857,10 +861,10 @@ export function useTrackLibrary({
         mapTracks((t) => (stale.has(t.id) ? { ...t, sourcePreview: nextPreview(t) } : t))
       const listed = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
       const unmarked = new Set(
-        tracksRef.current.filter((t) => !t.fromRekordbox && listedIn(listed, t)).map((t) => t.id),
+        tracksRef.current.filter((t) => !t[libraryFlag] && listedIn(listed, t)).map((t) => t.id),
       )
       if (unmarked.size > 0)
-        mapTracks((t) => (unmarked.has(t.id) ? { ...t, fromRekordbox: true } : t))
+        mapTracks((t) => (unmarked.has(t.id) ? { ...t, [libraryFlag]: true } : t))
     }
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
