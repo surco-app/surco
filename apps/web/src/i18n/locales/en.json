@@ -973,6 +973,18 @@
     "kicker": "What's new",
     "title": "What's new",
     "lede": "The highlights of every release, without the noise. The features that change how you prep your music, version by version.",
+    "beta": {
+      "kicker": "In testing",
+      "version": "1.11.3-beta.1",
+      "title": "What is coming in the next version",
+      "how": "To try it now, turn on Get beta versions in Settings, General, and restart Surco. Betas reach the installer from this website, not the Microsoft Store copy.",
+      "items": [
+        "A new Traktor tab with your playlists, your folders and the tracks you added in the last 30 days",
+        "Mark cues on your Traktor tracks with Auto mark or by hand. They are saved into your collection when you close Traktor, on buttons 2 to 8",
+        "Organise your Traktor playlists from Surco as you do rekordbox's. Create, rename and delete playlists and folders, add tracks, reorder them and add separators",
+        "Tracks in a rekordbox, Engine DJ or Traktor playlist show their artwork as soon as you open it, without clicking each one"
+      ]
+    },
     "olderTitle": "Earlier versions",
     "outroTitle": "Try it all in your next session",
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes."
