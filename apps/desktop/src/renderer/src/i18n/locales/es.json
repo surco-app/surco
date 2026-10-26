@@ -1620,7 +1620,7 @@
       "level": "Nivelar el volumen",
       "levelBody": "Normaliza el volumen para que las pistas suenen a un nivel constante en tu set.",
       "quality": "Comprobar la calidad",
-      "qualityBody": "Muestra un espectro de cada pista para detectar archivos con pérdida reconvertidos a sin pérdida."
+      "qualityBody": "Mide cada pista para detectar archivos con pérdida reconvertidos a sin pérdida y marca su calidad en la lista."
     },
     "skip": "Saltar",
     "back": "Atrás",

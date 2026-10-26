@@ -1620,7 +1620,7 @@
       "level": "Nivelar o volume",
       "levelBody": "Normalizar o volume para que as faixas fiquem num nível constante no seu set.",
       "quality": "Conferir a qualidade do áudio",
-      "qualityBody": "Mostrar um espectro de cada faixa para detectar arquivos com perdas reconvertidos para sem perdas."
+      "qualityBody": "Medir cada faixa para detectar arquivos com perdas reconvertidos para sem perdas e marcar a qualidade na lista."
     },
     "skip": "Pular",
     "back": "Voltar",

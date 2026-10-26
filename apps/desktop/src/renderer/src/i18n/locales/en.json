@@ -1620,7 +1620,7 @@
       "level": "Level the loudness",
       "levelBody": "Normalize loudness so tracks sit at a consistent level across your set.",
       "quality": "Check audio quality",
-      "qualityBody": "Show a spectrum of each track to spot lossy files re-encoded as lossless."
+      "qualityBody": "Measure each track to spot lossy files re-encoded as lossless and mark its quality in the list."
     },
     "skip": "Skip",
     "back": "Back",

@@ -1620,7 +1620,7 @@
       "level": "Lautheit angleichen",
       "levelBody": "Lautheit normalisieren, damit Tracks im Set auf einem gleichmäßigen Pegel liegen.",
       "quality": "Audioqualität prüfen",
-      "qualityBody": "Ein Spektrum jedes Tracks anzeigen, um als verlustfrei neu verpackte verlustbehaftete Dateien zu erkennen."
+      "qualityBody": "Jeden Track messen, um als verlustfrei neu verpackte verlustbehaftete Dateien zu erkennen, und seine Qualität in der Liste markieren."
     },
     "skip": "Überspringen",
     "back": "Zurück",

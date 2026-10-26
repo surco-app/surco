@@ -1620,7 +1620,7 @@
       "level": "Égaliser le loudness",
       "levelBody": "Normaliser le loudness pour que les morceaux restent à un niveau constant dans ton set.",
       "quality": "Vérifier la qualité audio",
-      "qualityBody": "Afficher un spectre de chaque morceau pour repérer les fichiers avec perte ré-encodés en sans perte."
+      "qualityBody": "Mesurer chaque morceau pour repérer les fichiers avec perte ré-encodés en sans perte et marquer sa qualité dans la liste."
     },
     "skip": "Passer",
     "back": "Retour",
