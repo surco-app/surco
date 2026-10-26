@@ -9,6 +9,7 @@ import type { DropInput } from '../../../shared/dropDetect'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import type { CueActions } from '../lib/commands'
 import { startDraft } from '../lib/cueDraft'
 import {
   autoMarkOf,
@@ -68,10 +69,12 @@ function setup({
   read = READ,
   words = WORDS,
   settings = {},
+  actionsRef,
 }: {
   read?: TrackCues
   words?: Uint16Array | null
   settings?: Partial<Settings>
+  actionsRef?: { current: CueActions | null }
 } = {}) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => 'queued')
   installApi({
@@ -87,7 +90,7 @@ function setup({
   const tree = (cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' }) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...settings }}>
-        <CuesSection cue={cue} open onToggle={vi.fn()} />
+        <CuesSection cue={cue} open onToggle={vi.fn()} actionsRef={actionsRef} />
       </SettingsProvider>
     </QueryClientProvider>
   )
@@ -597,6 +600,35 @@ describe('saving several tracks', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(said)
     expect([...unsavedCueTracks()]).toEqual(['103'])
+  })
+
+  it('hands the command palette this same save, named as the button names it', async () => {
+    other()
+    const actionsRef: { current: CueActions | null } = { current: null }
+    const { saveRekordboxCues } = setup({ actionsRef })
+    await ready()
+    await autoMark()
+    expect(actionsRef.current?.saveAll).toBeUndefined()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    const all = await screen.findByTestId('cues-save-all')
+    expect(actionsRef.current?.saveAll).toMatchObject({ label: all.textContent, saving: false })
+    actionsRef.current?.saveAll?.run()
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0]).toHaveLength(2)
+    await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
+    expect(actionsRef.current?.saveAll).toBeUndefined()
+  })
+
+  it('takes the save back from the palette when the cue editor goes away', async () => {
+    other()
+    const actionsRef: { current: CueActions | null } = { current: null }
+    setup({ actionsRef })
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    await screen.findByTestId('cues-save-all')
+    cleanup()
+    expect(actionsRef.current).toBeNull()
   })
 
   it('is not offered while only this track is unsaved, where its own Guardar does it', async () => {

@@ -59,6 +59,7 @@ import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { baseName } from '../lib/baseName'
 import { compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
+import type { CueActions } from '../lib/commands'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
@@ -213,6 +214,7 @@ interface Props {
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
+  cueActionsRef?: { current: CueActions | null }
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
@@ -286,6 +288,7 @@ export const Editor = memo(function Editor({
   onCueQuantize,
   onCueFlow,
   onCueAutoMarkAll,
+  cueActionsRef,
   onHideEditorHints,
   onOpenRename,
   onRegenerateName,
@@ -1547,6 +1550,7 @@ export const Editor = memo(function Editor({
                           onJumpBars={onCueJumpBars}
                           onQuantize={onCueQuantize}
                           onFlow={onCueFlow}
+                          actionsRef={cueActionsRef}
                         />
                       )
                     case 'properties':

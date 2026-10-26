@@ -1,6 +1,12 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { resolveJobFormat } from '../../../shared/format'
-import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type {
+  DeclickConfig,
+  FormatSetting,
+  NormalizeConfig,
+  PlaylistSource,
+  Settings,
+} from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
@@ -119,8 +125,18 @@ export function runCommand(commands: Command[], id: string): void {
 // Everything the command registry reads or triggers, supplied by App per render so
 // each command's enabled/run pair sees the current state. The registry itself is
 // declarative data; keeping it here leaves App with only the wiring.
+export interface CueActions {
+  saveAll?: { label: string; saving: boolean; run: () => void }
+  clearAll?: { enabled: boolean; run: () => void }
+}
+
+export interface NewPlaylist {
+  source: PlaylistSource
+  run: () => void
+}
+
 export interface CommandDeps {
-  tr: (key: string) => string
+  tr: (key: string, options?: Record<string, unknown>) => string
   // The palette hint for a command's effective key binding (defaults + overrides).
   hintFor: (id: string) => string
   // The host OS, supplied so the registry stays free of IPC: the Apple Music gate is
@@ -258,6 +274,11 @@ export interface CommandDeps {
   acceptReview: () => void
   // Fires the celebration confetti — the same burst the donate nudge shows, on demand.
   fireConfetti: () => void
+  sources: PlaylistSource[]
+  selectSource: (source: PlaylistSource | null) => void
+  autoMarkSelected?: () => void
+  cueActionsRef: { readonly current: CueActions | null }
+  newPlaylistRef: { readonly current: NewPlaylist | null }
 }
 
 // The id → group map, for surfaces that need to classify commands without being able to
@@ -272,7 +293,8 @@ export function commandGroups(): Map<string, string> {
       if (key === 'platform') return 'darwin'
       if (key === 'selected' || key === 'settings' || key === 'analysis' || key === 'matching')
         return null
-      if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks') return []
+      if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks' || key === 'sources')
+        return []
       if (String(key).endsWith('Ref')) return { current: null }
       if (key === 'titleFormatSet' || key === 'playerVisible' || key === 'batching') return false
       if (key === 'selectedTracksCount' || key === 'autoMatchable') return 0
@@ -361,7 +383,15 @@ export function buildCommands(deps: CommandDeps): Command[] {
     canUndoMeta,
     acceptReview,
     fireConfetti,
+    sources,
+    selectSource,
+    autoMarkSelected,
+    cueActionsRef,
+    newPlaylistRef,
   } = deps
+  const cueSaveAll = cueActionsRef.current?.saveAll
+  const cueClearAll = cueActionsRef.current?.clearAll
+  const newPlaylist = newPlaylistRef.current
   return [
     {
       id: 'add',
@@ -420,6 +450,54 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('export-usb'),
             enabled: true,
             run: openUsbExport,
+          },
+        ]
+      : []),
+    ...(autoMarkSelected
+      ? [
+          {
+            id: 'cues-auto-mark-selected',
+            group: 'library' as const,
+            title: tr('editor.cues.auto.selected'),
+            hint: hintFor('cues-auto-mark-selected'),
+            enabled: true,
+            run: autoMarkSelected,
+          },
+        ]
+      : []),
+    ...(cueSaveAll
+      ? [
+          {
+            id: 'cues-save-all',
+            group: 'library' as const,
+            title: cueSaveAll.label,
+            hint: hintFor('cues-save-all'),
+            enabled: !cueSaveAll.saving,
+            run: cueSaveAll.run,
+          },
+        ]
+      : []),
+    ...(cueClearAll
+      ? [
+          {
+            id: 'cues-clear-all',
+            group: 'library' as const,
+            title: tr('editor.cues.clearAll'),
+            hint: hintFor('cues-clear-all'),
+            enabled: cueClearAll.enabled,
+            run: cueClearAll.run,
+          },
+        ]
+      : []),
+    ...(newPlaylist
+      ? [
+          {
+            id: 'new-playlist',
+            group: 'library' as const,
+            title: tr('commands.newPlaylist', { name: tr(`sources.${newPlaylist.source}`) }),
+            hint: hintFor('new-playlist'),
+            enabled: true,
+            run: newPlaylist.run,
           },
         ]
       : []),
@@ -636,6 +714,19 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: true,
       run: () => focusColumn(1),
     },
+    ...(sources.length > 0
+      ? [
+          { id: 'tracks', name: tr('sources.workingList'), source: null },
+          ...sources.map((s) => ({ id: s, name: tr(`sources.${s}`), source: s })),
+        ].map(({ id, name, source }) => ({
+          id: `source-${id}`,
+          group: 'navigate' as const,
+          title: tr('commands.goToSource', { name }),
+          hint: hintFor(`source-${id}`),
+          enabled: true,
+          run: () => selectSource(source),
+        }))
+      : []),
     {
       id: 'process-current',
       group: 'convert',
@@ -655,6 +746,23 @@ export function buildCommands(deps: CommandDeps): Command[] {
           editorDestinationRef.current ?? undefined,
           editorDeclickRef.current ?? undefined,
           () => moveSelection(1),
+        )
+      },
+    },
+    {
+      id: 'convert-edit-original',
+      group: 'convert',
+      title: tr('commands.convertEditOriginal'),
+      hint: hintFor('convert-edit-original'),
+      enabled: canProcessSelected && selectedTracksCount <= 1,
+      run: () => {
+        if (!selected) return
+        processOne(
+          selected.id,
+          editorFormatRef.current ?? undefined,
+          editorNormalizeRef.current ?? undefined,
+          'overwrite',
+          editorDeclickRef.current ?? undefined,
         )
       },
     },

@@ -29,6 +29,7 @@ import {
   useSurcoGrid,
   useTrackCues,
 } from '../hooks/useTrackCues'
+import type { CueActions } from '../lib/commands'
 import { dropsOnGrid, withoutCallInBar } from '../lib/cueAutoMark'
 import type { DetailSource } from '../lib/cueDetail'
 import {
@@ -294,6 +295,7 @@ function Editing({
   onRestore,
   headerSlot,
   provisional,
+  actionsRef,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -311,6 +313,7 @@ function Editing({
   onRestore: () => void
   headerSlot: HTMLElement | null
   provisional?: SurcoGrid
+  actionsRef?: { current: CueActions | null }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -742,6 +745,25 @@ function Editing({
       setSavingAll(false)
     }
   }
+  const saveAllLabel = tr(saveAllKey(new Set([...unsavedSet].filter(savable))), {
+    count: unsavedTracks,
+  })
+  const clearAll = () => {
+    dispatch({ type: 'clear' })
+    focusEditor()
+  }
+  useEffect(() => {
+    if (!actionsRef) return
+    actionsRef.current = {
+      ...(unsavedTracks > 1
+        ? { saveAll: { label: saveAllLabel, saving: savingAll, run: () => void saveAll() } }
+        : {}),
+      ...(maximized ? { clearAll: { enabled: clearable, run: clearAll } } : {}),
+    }
+    return () => {
+      actionsRef.current = null
+    }
+  })
   const saveAllButton = unsavedTracks > 1 && (
     <button
       type="button"
@@ -752,7 +774,7 @@ function Editing({
         maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
       }`}
     >
-      {tr(saveAllKey(new Set([...unsavedSet].filter(savable))), { count: unsavedTracks })}
+      {saveAllLabel}
     </button>
   )
   const flowOptions = [
@@ -1102,10 +1124,7 @@ function Editing({
         type="button"
         data-testid="cues-clear-all"
         disabled={!clearable}
-        onClick={() => {
-          dispatch({ type: 'clear' })
-          focusEditor()
-        }}
+        onClick={clearAll}
         className="press flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
       >
         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1406,6 +1425,7 @@ export function CuesSection({
   onJumpBars,
   onQuantize,
   onFlow,
+  actionsRef,
 }: {
   cue: CueTarget
   open: boolean
@@ -1414,6 +1434,7 @@ export function CuesSection({
   onJumpBars?: (bars: CueJumpBars) => void
   onQuantize?: (unit: CueQuantize) => void
   onFlow?: (id: string) => void
+  actionsRef?: { current: CueActions | null }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -1523,6 +1544,7 @@ export function CuesSection({
         onJumpBars={onJumpBars}
         onQuantize={onQuantize}
         onFlow={onFlow}
+        actionsRef={actionsRef}
         onRestore={() => setMaximized(null)}
         headerSlot={headerSlot}
         onDiscard={() => {

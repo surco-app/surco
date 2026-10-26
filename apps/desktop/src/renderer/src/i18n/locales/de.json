@@ -370,7 +370,10 @@
     "musicReview": "Metadaten in Apple Music prüfen…",
     "musicDuplicates": "Duplikate in Apple Music anzeigen…",
     "listReview": "Metadaten prüfen…",
-    "exportUsb": "Auf USB exportieren…"
+    "exportUsb": "Auf USB exportieren…",
+    "goToSource": "Zu {{name}} wechseln",
+    "newPlaylist": "Neue Playlist in {{name}}",
+    "convertEditOriginal": "Konvertieren und das Original bearbeiten, nur dieses Mal"
   },
   "trackList": {
     "cuesUnsaved": "Cues nicht gespeichert",

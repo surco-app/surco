@@ -110,6 +110,10 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canUndoMeta: () => false,
     acceptReview: () => {},
     fireConfetti: () => {},
+    sources: [],
+    selectSource: () => {},
+    cueActionsRef: { current: null },
+    newPlaylistRef: { current: null },
     ...overrides,
   }
 }
@@ -162,6 +166,123 @@ describe('Music review commands', () => {
     const open = vi.fn()
     commandById(makeDeps({ openUsbExport: open }), 'export-usb').run()
     expect(open).toHaveBeenCalled()
+  })
+})
+
+describe('buildCommands library sources', () => {
+  const ids = (deps: Partial<CommandDeps>) =>
+    buildCommands(makeDeps(deps))
+      .map((c) => c.id)
+      .filter((id) => id.startsWith('source-'))
+
+  it('offers one jump per source the rail draws, and none when the rail is not drawn', () => {
+    expect(ids({ sources: [] })).toEqual([])
+    expect(ids({ sources: ['rekordbox', 'traktor'] })).toEqual([
+      'source-tracks',
+      'source-rekordbox',
+      'source-traktor',
+    ])
+  })
+
+  it('names each source the way the rail does', () => {
+    const tr = (k: string, o?: Record<string, unknown>) => (o ? `${k}(${o.name})` : k)
+    const titles = buildCommands(makeDeps({ tr, sources: ['engine'] }))
+      .filter((c) => c.id.startsWith('source-'))
+      .map((c) => c.title)
+    expect(titles).toEqual([
+      'commands.goToSource(sources.workingList)',
+      'commands.goToSource(sources.engine)',
+    ])
+  })
+
+  it('selects the source exactly as a click on its rail icon does', () => {
+    const selectSource = vi.fn()
+    const commands = buildCommands(makeDeps({ sources: ['appleMusic'], selectSource }))
+    runCommand(commands, 'source-appleMusic')
+    expect(selectSource).toHaveBeenLastCalledWith('appleMusic')
+    runCommand(commands, 'source-tracks')
+    expect(selectSource).toHaveBeenLastCalledWith(null)
+  })
+})
+
+describe('buildCommands cue auto mark', () => {
+  it('is offered only while the editor shows its auto mark button for the selection', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-auto-mark-selected')).toBe(false)
+    const autoMarkSelected = vi.fn()
+    const c = commandById(makeDeps({ autoMarkSelected }), 'cues-auto-mark-selected')
+    expect(c.title).toBe('editor.cues.auto.selected')
+    c.run()
+    expect(autoMarkSelected).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('buildCommands cue batch save', () => {
+  it('is offered only while the cue editor shows its batch save button', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-save-all')).toBe(false)
+    expect(
+      buildCommands(makeDeps({ cueActionsRef: { current: {} } })).some(
+        (c) => c.id === 'cues-save-all',
+      ),
+    ).toBe(false)
+  })
+
+  it('names the target as the button does and runs the button own save', () => {
+    const run = vi.fn()
+    const saveAll = { label: 'Guardar 3 pistas en Traktor', saving: false, run }
+    const c = commandById(makeDeps({ cueActionsRef: { current: { saveAll } } }), 'cues-save-all')
+    expect(c.title).toBe('Guardar 3 pistas en Traktor')
+    expect(c.enabled).toBe(true)
+    c.run()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  it('stays disabled while that save is running, as the button does', () => {
+    const saveAll = { label: 'x', saving: true, run: vi.fn() }
+    expect(
+      commandById(makeDeps({ cueActionsRef: { current: { saveAll } } }), 'cues-save-all').enabled,
+    ).toBe(false)
+  })
+})
+
+describe('buildCommands cue clear all', () => {
+  it('is offered only while the full screen cue editor shows its Clear all', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-clear-all')).toBe(false)
+    expect(
+      buildCommands(makeDeps({ cueActionsRef: { current: {} } })).some(
+        (c) => c.id === 'cues-clear-all',
+      ),
+    ).toBe(false)
+  })
+
+  it('runs the button own clear and follows its disabled state', () => {
+    const run = vi.fn()
+    const deps = (enabled: boolean) =>
+      makeDeps({ cueActionsRef: { current: { clearAll: { enabled, run } } } })
+    expect(commandById(deps(false), 'cues-clear-all').enabled).toBe(false)
+    const c = commandById(deps(true), 'cues-clear-all')
+    expect(c.title).toBe('editor.cues.clearAll')
+    expect(c.enabled).toBe(true)
+    c.run()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('buildCommands new playlist', () => {
+  it('is offered only while the open library tab can be edited', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'new-playlist')).toBe(false)
+  })
+
+  it('names the open library and runs the tree own Nueva playlist', () => {
+    const run = vi.fn()
+    const tr = (k: string, o?: Record<string, unknown>) => (o ? `${k}(${o.name})` : k)
+    const c = commandById(
+      makeDeps({ tr, newPlaylistRef: { current: { source: 'rekordbox', run } } }),
+      'new-playlist',
+    )
+    expect(c.title).toBe('commands.newPlaylist(sources.rekordbox)')
+    expect(c.enabled).toBe(true)
+    c.run()
+    expect(run).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -313,6 +434,29 @@ describe('runCommand', () => {
     const openOnboarding = vi.fn()
     runCommand(buildCommands(makeDeps({ openOnboarding })), 'onboarding')
     expect(openOnboarding).toHaveBeenCalledOnce()
+  })
+})
+
+describe('buildCommands convert editing the original', () => {
+  it('converts the selected track over its original this once, without stepping on', () => {
+    const processOne = vi.fn((_id, _f, _n, _d, _dk, onStarted?: () => void) => onStarted?.())
+    const moveSelection = vi.fn()
+    const cmd = commandById(
+      makeDeps({ selected: track(), canProcessSelected: true, processOne, moveSelection }),
+      'convert-edit-original',
+    )
+    expect(cmd.title).toBe('commands.convertEditOriginal')
+    cmd.run()
+    expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined, 'overwrite', undefined)
+    expect(moveSelection).not.toHaveBeenCalled()
+  })
+
+  it('follows the convert button: one track that can be converted', () => {
+    const enabled = (deps: Partial<CommandDeps>) =>
+      commandById(makeDeps({ selected: track(), ...deps }), 'convert-edit-original').enabled
+    expect(enabled({ canProcessSelected: false })).toBe(false)
+    expect(enabled({ canProcessSelected: true, selectedTracksCount: 2 })).toBe(false)
+    expect(enabled({ canProcessSelected: true, selectedTracksCount: 1 })).toBe(true)
   })
 })
 

@@ -113,7 +113,13 @@ import {
 } from './lib/autoMatch'
 import { baseName } from './lib/baseName'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
-import { buildCommands, type Command, runCommand } from './lib/commands'
+import {
+  buildCommands,
+  type Command,
+  type CueActions,
+  type NewPlaylist,
+  runCommand,
+} from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
@@ -389,6 +395,8 @@ export default function App(): React.JSX.Element {
   // searchInputRef (the editor's Discogs box) so `/` filters the list rather than
   // jumping focus into the editor.
   const trackSearchRef = useRef<HTMLInputElement>(null)
+  const cueActionsRef = useRef<CueActions | null>(null)
+  const newPlaylistRef = useRef<NewPlaylist | null>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
   // "on screen" means within this pane, not the whole window.
   const listScrollRef = useRef<HTMLDivElement>(null)
@@ -2596,6 +2604,16 @@ export default function App(): React.JSX.Element {
       canUndoMeta: metaUndo.canUndo,
       acceptReview,
       fireConfetti,
+      sources: browser.sources,
+      selectSource,
+      autoMarkSelected:
+        rekordboxCue &&
+        selectedTracks.length > 1 &&
+        !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
+          ? autoMarkSelected
+          : undefined,
+      cueActionsRef,
+      newPlaylistRef,
     }),
   )
 
@@ -2871,6 +2889,7 @@ export default function App(): React.JSX.Element {
                           ? () => openUsbExport(null, 'engine')
                           : undefined
                     }
+                    newPlaylistRef={newPlaylistRef}
                   />
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -3102,6 +3121,7 @@ export default function App(): React.JSX.Element {
                           onCueQuantize={onCueQuantize}
                           onCueFlow={onCueFlow}
                           onCueAutoMarkAll={cuesOpen ? autoMarkSelected : undefined}
+                          cueActionsRef={cueActionsRef}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}
                           selectedTracks={selectedTracks}

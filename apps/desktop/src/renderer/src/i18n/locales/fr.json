@@ -370,7 +370,10 @@
     "musicReview": "Vérifier les métadonnées dans Apple Music…",
     "musicDuplicates": "Afficher les doublons dans Apple Music…",
     "listReview": "Vérifier les métadonnées…",
-    "exportUsb": "Exporter vers USB…"
+    "exportUsb": "Exporter vers USB…",
+    "goToSource": "Aller à {{name}}",
+    "newPlaylist": "Nouvelle playlist dans {{name}}",
+    "convertEditOriginal": "Convertir en modifiant l’original, cette fois seulement"
   },
   "trackList": {
     "cuesUnsaved": "Cues non enregistrés",
