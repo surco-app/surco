@@ -236,20 +236,6 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                       )}
                     </button>
                   ))}
-                  {inUse !== flow.id && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      data-testid="cue-flow-use"
-                      onClick={() => {
-                        picker.setOpen(false)
-                        patch('activeCueFlow', flow.id)
-                      }}
-                      className={`${SPLIT_ITEM} mt-1 border-t border-[var(--color-line)] pl-[34px]`}
-                    >
-                      {tr('settings.cueFlows.use')}
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -330,8 +316,21 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                 role="menu"
                 aria-label={tr('settings.cueFlows.moreActions')}
                 onKeyDown={more.onMenuKeyDown}
-                className={`${DROP_MENU} right-0 w-52`}
+                className={`${DROP_MENU} right-0 w-60`}
               >
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cue-flow-use"
+                  disabled={inUse === flow.id}
+                  onClick={() => {
+                    more.setOpen(false)
+                    patch('activeCueFlow', flow.id)
+                  }}
+                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  {tr('settings.cueFlows.use')}
+                </button>
                 <button
                   type="button"
                   role="menuitem"
@@ -353,7 +352,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                       more.setOpen(false)
                       patch('cueFlows', restoreDefaultFlow(flows, flow.id))
                     }}
-                    className={SPLIT_ITEM}
+                    className={`${SPLIT_ITEM} mt-1 border-t border-[var(--color-line)]`}
                   >
                     {tr('settings.cueFlows.restore')}
                   </button>

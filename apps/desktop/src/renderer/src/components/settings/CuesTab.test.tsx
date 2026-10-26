@@ -111,6 +111,7 @@ describe('CuesTab', () => {
     render(<Harness active="manual" />)
     openPicker()
     expect(screen.queryByTestId('cue-flow-in-use')).toBeNull()
+    openMore()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     expect(last?.activeCueFlow).toBe('mine')
   })
@@ -144,12 +145,19 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-checked', 'true')
   })
 
+  it('keeps Poner por defecto with the actions on the open flow, out of the list of flows to pick', () => {
+    render(<Harness />)
+    pick('one-at-32')
+    openPicker()
+    expect(within(screen.getByRole('menu')).queryByTestId('cue-flow-use')).toBeNull()
+  })
+
   it('offers Poner por defecto on a flow that is not the default', async () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
     pick('one-at-32')
-    openPicker()
+    openMore()
     expect(screen.getByTestId('cue-flow-use')).toHaveTextContent('Poner por defecto')
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     expect(last?.activeCueFlow).toBe('one-at-32')
@@ -172,7 +180,8 @@ describe('CuesTab', () => {
     expect(
       within(screen.getByTestId('cue-flow-mix-in')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
-    expect(screen.queryByTestId('cue-flow-use')).toBeNull()
+    openMore()
+    expect(screen.getByTestId('cue-flow-use')).toBeDisabled()
   })
 
   it('keeps marking the Mi flujo an earlier Surco kept when the stored active flow no longer exists, as main still runs it', () => {
@@ -181,7 +190,8 @@ describe('CuesTab', () => {
     expect(
       within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
-    expect(screen.queryByTestId('cue-flow-use')).toBeNull()
+    openMore()
+    expect(screen.getByTestId('cue-flow-use')).toBeDisabled()
   })
 
   it('recalculates the preview live when a block changes', () => {
@@ -301,7 +311,7 @@ describe('CuesTab', () => {
     fireEvent.keyDown(screen.getByTestId('cue-flow-name'), { key: 'Enter' })
     expect(screen.queryByTestId('cue-flow-name')).toBeNull()
     expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Mis 64')
-    openPicker()
+    openMore()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     const made = last?.cueFlows.find((f) => f.name === 'Mis 64')
     expect(made).toBeDefined()
