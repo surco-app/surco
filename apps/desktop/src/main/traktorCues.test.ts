@@ -41,14 +41,13 @@ describe('readTraktorTrackCues', () => {
     ])
   })
 
-  it('reads cues without a button as CALLs, each under its own id', () => {
+  // Traktor has no CALL: a cue without a button is the DJ's own marker there, so Surco
+  // leaves it out of the editor and never moves or deletes it.
+  it('leaves cues without a button out of the editor', () => {
     const memory = (ms: number) =>
       `<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="0" START="${ms}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>`
     const read = readTraktorTrackCues(nml(entry([GRID, memory(1000), memory(2000)])), ID)
-    expect(read?.cues).toEqual([
-      { id: '1', ms: 1000, kind: 0, color: null },
-      { id: '2', ms: 2000, kind: 0, color: null },
-    ])
+    expect(read?.cues).toEqual([])
   })
 
   it('keeps whatever holds button 1 out of the editor even when it is not AutoGrid', () => {

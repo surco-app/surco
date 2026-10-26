@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { DropInput } from '../../../shared/dropDetect'
+import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { SaveCuesOutcome, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -185,5 +187,51 @@ describe('CuesSection on a Traktor track', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const saved = saveRekordboxCues.mock.calls.flatMap(([reqs]) => reqs.map((r) => r.contentId))
     expect(saved.sort()).toEqual(['103', '104'])
+  })
+
+  // Traktor colours each cue by its type and keeps no colour of its own, so a colour
+  // picked in Surco would never reach Traktor: the editor offers none and paints every
+  // cue it adds, proposals included, in the blue Traktor shows a plain cue in.
+  const traktorBlue = (() => {
+    const probe = document.createElement('div')
+    probe.style.backgroundColor = hotCueColor(TRAKTOR_CUE_COLOR)
+    return probe.style.backgroundColor
+  })()
+
+  it('previews Auto mark in Traktor blue, not in the flow colours', async () => {
+    detectDrops.mockReset().mockReturnValue([bar(64)])
+    const input: DropInput = { grid: GRID, phrases: [], words: new Uint16Array(3000) }
+    setup(READ, 'queued', 'traktor:HD/:m/:e.wav', async () => input)
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId(/^cue-wave-ghost-hot-/).length).toBeGreaterThan(0),
+    )
+    for (const mark of screen.getAllByTestId(/^cue-wave-ghost-hot-/))
+      expect((mark.querySelector('[data-ghost-fill]') as HTMLElement).style.backgroundColor).toBe(
+        traktorBlue,
+      )
+  })
+
+  it('offers no colour for a Traktor hot cue, from its button or its marker', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const hot = await screen.findAllByTestId(/^cue-wave-hot-/)
+    expect(hot[0].style.backgroundColor).toBe(traktorBlue)
+    fireEvent.click(hot[0])
+    await waitFor(() => expect(screen.getByTestId('cues-delete')).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-colour')).not.toBeInTheDocument()
+    fireEvent.contextMenu(hot[0])
+    expect(screen.queryByTestId('cues-menu-colour')).not.toBeInTheDocument()
+  })
+
+  it('says the CALLs stay in Surco, since Traktor has none', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-traktor-calls')).toHaveTextContent(
+      'Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor',
+    )
   })
 })

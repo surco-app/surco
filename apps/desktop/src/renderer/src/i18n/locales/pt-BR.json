@@ -886,7 +886,8 @@
         "saveAll_one": "Salvar {{count}} faixa no Traktor",
         "saveAll_other": "Salvar {{count}} faixas no Traktor",
         "noCollection": "Escolha seu collection.nml em Ajustes → Saída → Traktor para que o Surco possa salvar",
-        "colours": "O Traktor colore cada cue pelo tipo. O Surco os salva como cues normais, em azul, e deixa o botão 1 para o AutoGrid do Traktor"
+        "colours": "O Traktor colore cada cue pelo tipo. O Surco os salva como cues normais, em azul, e deixa o botão 1 para o AutoGrid do Traktor",
+        "calls": "O Traktor não tem CALL, então eles não são salvos. Só os hot cues chegam ao Traktor"
       },
       "provisional": {
         "chip": "Grade do Surco · {{bpm}} BPM",
@@ -1575,7 +1576,9 @@
       },
       "lettersByTime": "Letras na ordem da faixa",
       "lettersByTimeHint": "A é sempre o primeiro cue da faixa. Desligue se cada letra for um pad fixo para você.",
-      "markPoint": "Marcar o ponto com um CALL"
+      "markPoint": "Marcar o ponto com um CALL",
+      "traktorColours": "No Traktor estes cues aparecem em azul, porque o Traktor colore cada cue pelo tipo",
+      "callsOnlyRekordbox": "Os CALL só existem no rekordbox. O Engine DJ e o Traktor recebem só os hot cues"
     }
   },
   "errorBoundary": {

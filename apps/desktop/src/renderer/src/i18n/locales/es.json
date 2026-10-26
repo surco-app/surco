@@ -886,7 +886,8 @@
         "saveAll_one": "Guardar {{count}} pista en Traktor",
         "saveAll_other": "Guardar {{count}} pistas en Traktor",
         "noCollection": "Elige tu collection.nml en Ajustes → Destino → Traktor para que Surco pueda guardar",
-        "colours": "Traktor colorea cada cue según su tipo. Surco las guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor"
+        "colours": "Traktor colorea cada cue según su tipo. Surco las guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor",
+        "calls": "Traktor no tiene CALL, así que no se guardan. Solo llegan a Traktor los hot cues"
       },
       "provisional": {
         "chip": "Rejilla de Surco · {{bpm}} BPM",
@@ -1575,7 +1576,9 @@
       },
       "lettersByTime": "Letras en orden de la pista",
       "lettersByTimeHint": "La A siempre es la primera cue de la pista. Apágalo si cada letra es un pad fijo para ti.",
-      "markPoint": "Marcar el punto con un CALL"
+      "markPoint": "Marcar el punto con un CALL",
+      "traktorColours": "En Traktor estas cues salen en azul, porque Traktor pinta cada cue según su tipo",
+      "callsOnlyRekordbox": "Los CALL solo existen en rekordbox. Engine DJ y Traktor reciben solo los hot cues"
     }
   },
   "errorBoundary": {

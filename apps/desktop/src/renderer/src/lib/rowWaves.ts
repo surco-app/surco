@@ -7,30 +7,52 @@ const listeners = new Map<string, Set<() => void>>()
 const inFlight = new Set<string>()
 let queued = new Map<string, RowWaveRequest>()
 let timer: ReturnType<typeof setTimeout> | null = null
+// Files Surco measures itself because no library analysed them: each once per session.
+const measuring = new Set<string>()
 
 export function rowWaveKey(request: RowWaveRequest): string {
   return request.analysisPath ?? request.path
 }
 
-function settle(keys: string[], found: Record<string, number[]>): void {
-  for (const key of keys) {
+function settle(batch: RowWaveRequest[], found: Record<string, number[]>): void {
+  for (const request of batch) {
+    const key = rowWaveKey(request)
     inFlight.delete(key)
     known.set(key, found[key] ?? null)
     for (const listener of listeners.get(key) ?? []) listener()
+    if (!found[key] && !request.analysisPath) measure(request)
   }
+}
+
+// A row with no library analysis only had a wave once its track was opened in Surco: the
+// wave is measured in the background, behind anything the DJ is waiting for, and asked
+// for again once it is in the cache. A library analysis that is missing is left to the
+// row's own "not analysed" note.
+function measure(request: RowWaveRequest): void {
+  const key = rowWaveKey(request)
+  if (measuring.has(key)) return
+  measuring.add(key)
+  void window.api
+    .waveform(request.path, 'low')
+    .then((wave) => {
+      if (!wave || !listeners.has(key)) return
+      known.delete(key)
+      queued.set(key, request)
+      timer ??= setTimeout(flush, BATCH_MS)
+    })
+    .catch(() => {})
 }
 
 function flush(): void {
   timer = null
   const batch = [...queued.values()]
   queued = new Map()
-  const keys = batch.map(rowWaveKey)
-  for (const key of keys) inFlight.add(key)
+  for (const request of batch) inFlight.add(rowWaveKey(request))
   Promise.resolve()
     .then(() => window.api.rowWaves(batch))
     .then(
-      (found) => settle(keys, found),
-      () => settle(keys, {}),
+      (found) => settle(batch, found),
+      () => settle(batch, {}),
     )
 }
 
@@ -57,6 +79,7 @@ export function resetRowWaves(): void {
   if (timer) clearTimeout(timer)
   timer = null
   known.clear()
+  measuring.clear()
   listeners.clear()
   inFlight.clear()
   queued = new Map()

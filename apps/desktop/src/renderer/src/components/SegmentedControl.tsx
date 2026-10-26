@@ -57,6 +57,27 @@ export function SegmentedControl<T extends string>({
   // class is withheld until one real clip has painted, so the first measurement
   // (and the first after being re-hidden) lands instantly.
   const [settled, setSettled] = useState(false)
+  // A row too wide for its panel used to wrap and leave its last option alone on a second
+  // line. It becomes an even grid of two rows instead, measured against a hidden copy of the
+  // row at its natural width, and goes back to one row once the panel can hold it.
+  const measureRef = useRef<HTMLDivElement>(null)
+  const [grid, setGrid] = useState(false)
+  useLayoutEffect(() => {
+    const measure = measureRef.current
+    const room = measure?.closest('[role="group"]')?.parentElement
+    if (!measure || !room) return
+    const check = (): void =>
+      setGrid(room.clientWidth > 0 && measure.offsetWidth + 2 > room.clientWidth)
+    check()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(check)
+    ro.observe(room)
+    ro.observe(measure)
+    return () => ro.disconnect()
+  }, [])
+  const columns = grid
+    ? { gridTemplateColumns: `repeat(${Math.ceil(options.length / 2)}, minmax(0, 1fr))` }
+    : undefined
   // Measured before paint, so the highlight lands on the mounted value without a
   // slide from the far left. The ResizeObserver re-measures when the labels change
   // width under it (language switch, late font) — the value itself is a dep, so a
@@ -109,9 +130,11 @@ export function SegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={label}
+      data-layout={grid ? 'grid' : 'row'}
+      style={columns}
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
-      className={`relative inline-flex max-w-full flex-wrap gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
+      className={`relative ${grid ? 'grid w-full' : 'inline-flex max-w-full flex-wrap'} gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
     >
       {options.map((id) => (
         <button
@@ -138,7 +161,7 @@ export function SegmentedControl<T extends string>({
         // clicks redirect the slide mid-flight instead of restarting it. Both layers wrap
         // alike when the options outgrow a narrow panel, so the clip takes the active
         // segment's row too.
-        className={`absolute inset-0 flex flex-wrap gap-0.5 p-[3px] motion-reduce:transition-none ${
+        className={`absolute inset-0 ${grid ? 'grid' : 'flex flex-wrap'} gap-0.5 p-[3px] motion-reduce:transition-none ${
           settled
             ? 'transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)]'
             : ''
@@ -146,20 +169,39 @@ export function SegmentedControl<T extends string>({
         style={
           clip
             ? {
+                ...columns,
                 pointerEvents: 'none',
                 clipPath: `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px round 6px)`,
               }
-            : { pointerEvents: 'none', visibility: 'hidden' }
+            : { ...columns, pointerEvents: 'none', visibility: 'hidden' }
         }
       >
         {options.map((id) => (
           <span
             key={id}
-            className={`rounded-md bg-[var(--color-panel-2)] ${segmentX} py-1.5 text-sm text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]`}
+            className={`rounded-md bg-[var(--color-panel-2)] ${segmentX} py-1.5 text-center text-sm text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]`}
           >
             {labelFor(id)}
           </span>
         ))}
+      </div>
+      {/* Clipped to nothing, so the row's natural width is measured without widening the
+          panel it sits in (an overflowing copy gave the editor a sideways scrollbar). */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none invisible absolute h-0 w-0 overflow-hidden"
+      >
+        <div
+          ref={measureRef}
+          data-testid={`${testidPrefix}-measure`}
+          className="flex w-max gap-0.5 p-[3px]"
+        >
+          {options.map((id) => (
+            <span key={id} className={`whitespace-nowrap ${segmentX} py-1.5 text-sm`}>
+              {labelFor(id)}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -42,6 +42,10 @@ describe('CueRuleRow colour swatches', () => {
     expect(distance(0)).toHaveTextContent('16')
     expect(distance(1)).toHaveTextContent('32')
     expect(distance(2)).toHaveTextContent('48')
+    // Inside its square: under it, the numbers made the row taller than the sentence and
+    // set the squares off the line of text.
+    for (const slot of [0, 1, 2])
+      expect(screen.getByTestId(`cue-rule-0-color-${slot}`)).toContainElement(distance(slot))
   })
 
   it('writes the stored repetition index of the swatch clicked, not its place on screen', () => {

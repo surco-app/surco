@@ -51,6 +51,12 @@ y que al abrir Traktor estén ahí.
 2. El hotcue 1 (`HOTCUE=0`) queda reservado al AutoGrid: Surco nunca lo lee como editable ni lo
    escribe. Auto mark usa los botones 2 a 8, es decir 7 hot cues.
 
+## Cambios tras la beta (26/10)
+
+- El usuario decidió que Surco no escriba CALL en Traktor ("ese concepto no existe en Traktor"; los CALL solo son de rekordbox). Como en Engine DJ, los CALL siguen en el editor como marcas de trabajo y una nota dice que no se guardan; los cues sin botón que ya hay en Traktor no se leen ni se tocan.
+- En Traktor el editor no ofrece colores (Traktor pinta por tipo) y las propuestas de Auto mark se ven en azul.
+- Guardar cues con Traktor abierto pide cerrarlo, como las ediciones de playlist.
+
 ## Diseño
 
 ### Identidad

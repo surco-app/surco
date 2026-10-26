@@ -274,7 +274,9 @@ export function FieldsEditor({
     // 340px window that left the panel half-empty below it.
     <div className="space-y-4">
       <div>
-        <div className="mb-2 flex items-center justify-between">
+        {/* pr-8 keeps Auto-organize clear of the settings dialog's close button, which
+            sits over this first row's right end. */}
+        <div className="mb-2 flex items-center justify-between pr-8">
           <p className="text-xs font-medium text-fg-dim">{tr('settings.shown')}</p>
           <button
             type="button"

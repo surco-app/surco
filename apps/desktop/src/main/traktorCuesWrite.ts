@@ -41,7 +41,7 @@ export function withTraktorCues(block: string, wanted: WantedCue[]): string {
   const kept = elements.filter((el) => !editable.has(el.start)).map((el) => el.element)
   let changed = false
   const cues = wanted
-    .filter((w) => w.kind !== NO_BUTTON)
+    .filter((w) => w.kind !== NO_BUTTON && w.kind !== 0)
     .map((w) => {
       const was = rows.find((r) => r.id === w.id)
       if (!was || was.ms !== w.ms) {

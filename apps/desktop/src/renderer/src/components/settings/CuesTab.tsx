@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
@@ -51,6 +51,14 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const request = useRef(0)
   const [removals, setRemovals] = useState(0)
   const [typed, setTyped] = useState<string | null>(null)
+  // The rules serve every library, but CALLs only exist in rekordbox and Traktor paints a
+  // cue by its type: where Engine DJ or Traktor is installed, the tab says what reaches them.
+  const [traktorFound, setTraktorFound] = useState(false)
+  const [engineFound, setEngineFound] = useState(false)
+  useEffect(() => {
+    void window.api.traktorAvailable().then(setTraktorFound, () => {})
+    void window.api.engineAvailable().then(setEngineFound, () => {})
+  }, [])
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -259,6 +267,14 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               <p data-testid="cue-flow-no-rules" className="text-xs text-fg-dim">
                 {tr('settings.cueFlows.noRules')}
               </p>
+            )}
+            {(engineFound || traktorFound) && (
+              <SettingsHint data-testid="cue-flow-library-note">
+                {[
+                  tr('settings.cueFlows.callsOnlyRekordbox'),
+                  ...(traktorFound ? [tr('settings.cueFlows.traktorColours')] : []),
+                ].join('. ')}
+              </SettingsHint>
             )}
             <CheckboxRow
               testid="cue-flow-mark-point"

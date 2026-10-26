@@ -249,3 +249,54 @@ describe('SegmentedControl sliding highlight', () => {
     expect(screen.getByTestId('seg-b')).toHaveAttribute('aria-pressed', 'true')
   })
 })
+
+describe('SegmentedControl in a narrow panel', () => {
+  // A row that does not fit used to wrap and leave its last option alone on a second line
+  // ("Benutzerdefiniert" under three presets). It lays out as an even grid of two rows
+  // instead, and goes back to one row as soon as the panel is wide enough.
+  function withWidths(natural: number, available: number) {
+    const offset = vi
+      .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.dataset.testid === 'seg-measure' ? natural : 0
+      })
+    const client = vi
+      .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.querySelector('[data-testid="seg-measure"]') ? available : 0
+      })
+    return () => {
+      offset.mockRestore()
+      client.mockRestore()
+    }
+  }
+  const four = () =>
+    render(
+      <div>
+        <SegmentedControl
+          options={['a', 'b', 'c', 'd'] as const}
+          value="a"
+          onChange={vi.fn()}
+          testidPrefix="seg"
+          labelFor={(id) => id}
+          label="Preset"
+        />
+      </div>,
+    )
+
+  it('sets its options as an even grid of two rows when one row would not fit', () => {
+    const restore = withWidths(445, 353)
+    four()
+    const group = screen.getByRole('group', { name: 'Preset' })
+    expect(group).toHaveAttribute('data-layout', 'grid')
+    expect(group.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))')
+    restore()
+  })
+
+  it('keeps one row while it fits', () => {
+    const restore = withWidths(300, 353)
+    four()
+    expect(screen.getByRole('group', { name: 'Preset' })).toHaveAttribute('data-layout', 'row')
+    restore()
+  })
+})
