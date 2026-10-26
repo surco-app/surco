@@ -283,6 +283,10 @@
             "d": "Open them in Surco and set hot cues on their tracks with the same editor, Auto mark included. Not CALL points, since Engine DJ keeps only hot cues. And export them to a USB drive with its Engine library, ready for the player."
           },
           {
+            "t": "Your Traktor playlists",
+            "d": "Open them in Surco, organise them as you do rekordbox's and set hot cues on their tracks with the same editor, Auto mark included. Traktor gets them in blue, on buttons 2 to 8, and Surco asks you to quit it before saving."
+          },
+          {
             "t": "Files for rekordbox, Serato, M3U8",
             "d": "Paths and metadata, no cues, no ratings. Serato's crate, paths only."
           },
@@ -591,7 +595,7 @@
         ],
         "points": [
           "Available for macOS (Apple Silicon and Intel, notarized by Apple), Windows and Linux (on Linux as an AppImage), in five languages.",
-          "The welcome wizard is just four steps (five if Surco finds your rekordbox or Traktor collection); naming, genres and editor fields wait for you in Settings.",
+          "The welcome wizard is just four steps (five if Surco finds your rekordbox, Engine DJ or Traktor collection); naming, genres and editor fields wait for you in Settings.",
           "Rushed through it? You can reopen it any time from the Help menu or ⌘K: it starts from your current settings and only changes what you touch.",
           "It ships with the useful things already on: quality analysis on import, and Discogs, Bandcamp, Deezer and MusicBrainz all searched without configuring anything.",
           "You can change any setting later in Settings (⌘ ,)."
@@ -918,7 +922,8 @@
           "Flows are made in Settings › Cues. Two come ready-made, Mix in 64 and Mix in 32, and Surco can learn yours from the cues you already have.",
           "With several tracks selected, «Auto mark the selected» prepares them all and «Save N tracks to rekordbox» saves them in one go.",
           "If rekordbox hasn’t analyzed the track yet, Surco measures the grid and you can set the cues anyway. Once rekordbox analyzes it, they move onto its grid.",
-          "Auto mark suggests, it doesn’t decide. Its suggestions aren’t always right, so nothing is saved until you accept them."
+          "Auto mark suggests, it doesn’t decide. Its suggestions aren’t always right, so nothing is saved until you accept them.",
+          "The same works with Engine DJ and Traktor playlists, which get the hot cues only. In Traktor they show in blue and on buttons 2 to 8, since button 1 is for its grid."
         ],
         "shot": "rekordbox-en.webp",
         "shotCaption": "Auto mark suggests where the track drops, with your flow ready to accept."
