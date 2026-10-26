@@ -127,6 +127,7 @@ export function runCommand(commands: Command[], id: string): void {
 // declarative data; keeping it here leaves App with only the wiring.
 export interface CueActions {
   saveAll?: { label: string; saving: boolean; run: () => void }
+  clearAll?: { enabled: boolean; run: () => void }
 }
 
 export interface CommandDeps {
@@ -382,6 +383,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     cueActionsRef,
   } = deps
   const cueSaveAll = cueActionsRef.current?.saveAll
+  const cueClearAll = cueActionsRef.current?.clearAll
   return [
     {
       id: 'add',
@@ -464,6 +466,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('cues-save-all'),
             enabled: !cueSaveAll.saving,
             run: cueSaveAll.run,
+          },
+        ]
+      : []),
+    ...(cueClearAll
+      ? [
+          {
+            id: 'cues-clear-all',
+            group: 'library' as const,
+            title: tr('editor.cues.clearAll'),
+            hint: hintFor('cues-clear-all'),
+            enabled: cueClearAll.enabled,
+            run: cueClearAll.run,
           },
         ]
       : []),

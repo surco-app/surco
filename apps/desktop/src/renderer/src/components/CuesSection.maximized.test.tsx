@@ -22,7 +22,7 @@ import type { Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import type { Command } from '../lib/commands'
+import type { Command, CueActions } from '../lib/commands'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
@@ -70,6 +70,7 @@ function setup(
   settings: Partial<Settings> | null = null,
   read: TrackCues = READ,
   api: Partial<Api> = {},
+  actionsRef?: { current: CueActions | null },
 ) {
   const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
   installApi({
@@ -91,6 +92,7 @@ function setup(
           track={TRACK}
           onJumpBars={onJumpBars}
           onQuantize={onQuantize}
+          actionsRef={actionsRef}
         />
       </SettingsProvider>
     </QueryClientProvider>,
@@ -176,6 +178,20 @@ describe('CuesSection maximized', () => {
       toolbar.compareDocumentPosition(screen.getByTestId('cue-wave')) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
+  })
+
+  it('hands the command palette Clear all only while the editor is full screen', async () => {
+    const actionsRef: { current: CueActions | null } = { current: null }
+    setup(null, { ...READ, cues: [{ id: 'h', ms: 64000, kind: 2, color: 1 }] }, {}, actionsRef)
+    await ready()
+    expect(actionsRef.current?.clearAll).toBeUndefined()
+    await maximize()
+    expect(actionsRef.current?.clearAll?.enabled).toBe(true)
+    act(() => actionsRef.current?.clearAll?.run())
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    expect(document.activeElement).toBe(editor())
+    expect(actionsRef.current?.clearAll?.enabled).toBe(false)
+    expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
   })
 
   it('clears every hot cue and CALL but the loops from Clear all in the toolbar, and ⌘Z brings them back', async () => {

@@ -243,6 +243,29 @@ describe('buildCommands cue batch save', () => {
   })
 })
 
+describe('buildCommands cue clear all', () => {
+  it('is offered only while the full screen cue editor shows its Clear all', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-clear-all')).toBe(false)
+    expect(
+      buildCommands(makeDeps({ cueActionsRef: { current: {} } })).some(
+        (c) => c.id === 'cues-clear-all',
+      ),
+    ).toBe(false)
+  })
+
+  it('runs the button own clear and follows its disabled state', () => {
+    const run = vi.fn()
+    const deps = (enabled: boolean) =>
+      makeDeps({ cueActionsRef: { current: { clearAll: { enabled, run } } } })
+    expect(commandById(deps(false), 'cues-clear-all').enabled).toBe(false)
+    const c = commandById(deps(true), 'cues-clear-all')
+    expect(c.title).toBe('editor.cues.clearAll')
+    expect(c.enabled).toBe(true)
+    c.run()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('guideUrl', () => {
   // The web guide ships per-language at distinct paths, so a Spanish user must
   // not be dropped on the English page (and vice versa) when they open it.
