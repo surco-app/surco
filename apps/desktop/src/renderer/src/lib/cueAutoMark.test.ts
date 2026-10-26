@@ -185,3 +185,18 @@ describe('Auto marcar over several Engine DJ tracks', () => {
     expect(detectDrops).not.toHaveBeenCalled()
   })
 })
+
+describe('Auto marcar over a Traktor track', () => {
+  it('detects on what main reads from the audio, since Traktor keeps no phrases', async () => {
+    const input: DropInput = { grid: GRID, phrases: [], words: WORDS }
+    const { client, api } = setup({
+      reads: {
+        'traktor:HD/:m/:t.wav': { ...READ, contentId: 'traktor:HD/:m/:t.wav', phrases: [] },
+      },
+      dropInputs: { 'traktor:HD/:m/:t.wav': input },
+    })
+    await autoMarkTracks(client, ['traktor:HD/:m/:t.wav'])
+    expect(detectDrops).toHaveBeenCalledWith(input)
+    expect(api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
+  })
+})

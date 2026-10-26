@@ -1,6 +1,6 @@
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
-import { TRAKTOR_HOT_OFFSET, traktorContentId } from '../shared/traktorContent'
+import { TRAKTOR_CUE_HEX, TRAKTOR_HOT_OFFSET, traktorContentId } from '../shared/traktorContent'
 import type { AppleMusicTrackMeta, RowCue, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { attr, findEntries } from './traktorNml'
 import { rekordboxColorOf } from './traktorNmlCues'
@@ -13,7 +13,7 @@ const CUE_RE = /<CUE_V2\b[^>]*>/g
 // Traktor colours a hot cue by its type (cue, fade in, fade out, load, loop) and writes a
 // COLOR only for the few it paints itself, like the white AutoGrid cue.
 export const TRAKTOR_TYPE_COLOR: Record<number, string> = {
-  0: '#2f7bff',
+  0: TRAKTOR_CUE_HEX,
   1: '#ff8c00',
   2: '#ff8c00',
   3: '#ffd200',

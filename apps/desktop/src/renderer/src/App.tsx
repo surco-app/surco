@@ -86,7 +86,7 @@ import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useOfferRekordboxField, useRekordboxAvailable } from './hooks/useRekordboxPlaylists'
-import { ENGINE_CUE_QUEUE, useRekordboxQueue } from './hooks/useRekordboxQueue'
+import { ENGINE_CUE_QUEUE, TRAKTOR_CUE_QUEUE, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -144,7 +144,7 @@ import {
   discardPlaylistEdits,
   type PlaylistsEdit,
 } from './lib/rekordboxPlaylists'
-import { type CueSpot, ENGINE_QUEUE_WORDS } from './lib/rekordboxQueueText'
+import { type CueSpot, ENGINE_QUEUE_WORDS, TRAKTOR_QUEUE_WORDS } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -698,6 +698,13 @@ export default function App(): React.JSX.Element {
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
   const engineCueQueue = useRekordboxQueue(notifyEdit, ignoreQueued, ignoreQueued, ENGINE_CUE_QUEUE)
   const { applyNow: applyEngineQueueNow, discard: discardEngineQueue } = engineCueQueue
+  const traktorCueQueue = useRekordboxQueue(
+    notifyEdit,
+    ignoreQueued,
+    ignoreQueued,
+    TRAKTOR_CUE_QUEUE,
+  )
+  const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
   const queuePill = useMemo(
     () => (
       <>
@@ -713,6 +720,13 @@ export default function App(): React.JSX.Element {
           words={ENGINE_QUEUE_WORDS}
           testid="engine-queue"
         />
+        <RekordboxQueuePill
+          state={traktorCueQueue.state}
+          onApplyNow={() => void applyTraktorQueueNow()}
+          onDiscard={() => void discardTraktorQueue()}
+          words={TRAKTOR_QUEUE_WORDS}
+          testid="traktor-queue"
+        />
       </>
     ),
     [
@@ -722,6 +736,9 @@ export default function App(): React.JSX.Element {
       engineCueQueue.state,
       applyEngineQueueNow,
       discardEngineQueue,
+      traktorCueQueue.state,
+      applyTraktorQueueNow,
+      discardTraktorQueue,
     ],
   )
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
@@ -2092,23 +2109,30 @@ export default function App(): React.JSX.Element {
     browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
   const cuesOpen =
     rekordboxOpen ||
-    (browser.source === 'engine' && browser.playlist !== null && playlistScope !== null)
+    ((browser.source === 'engine' || browser.source === 'traktor') &&
+      browser.playlist !== null &&
+      playlistScope !== null)
   const crateOpen = rekordboxOpen && browser.playlist?.id !== RECENTLY_ADDED_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
-        [...rekordboxQueue.state.items, ...engineCueQueue.state.items]
+        [
+          ...rekordboxQueue.state.items,
+          ...engineCueQueue.state.items,
+          ...traktorCueQueue.state.items,
+        ]
           .filter((i) => i.parts.some((p) => p.kind === 'cues'))
           .map((i) => i.key.slice('track:'.length)),
       ),
-    [rekordboxQueue.state, engineCueQueue.state],
+    [rekordboxQueue.state, engineCueQueue.state, traktorCueQueue.state],
   )
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-checks the kept drafts each time either cue queue changes; forgetStaleDrafts reads the queues fresh from main.
   useEffect(() => {
     void forgetStaleDrafts(queryClient)
-  }, [rekordboxQueue.state, engineCueQueue.state, queryClient])
+  }, [rekordboxQueue.state, engineCueQueue.state, traktorCueQueue.state, queryClient])
   useCueSessionFor(settings?.rekordboxDbPath)
   useCueSessionFor(settings?.engineLibraryDir)
+  useCueSessionFor(settings?.traktorNmlPath)
   const unsavedCues = useUnsavedCueTracks()
   useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])
   const unsavedCueIds = useMemo(() => {

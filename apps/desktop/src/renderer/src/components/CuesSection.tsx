@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Keyboard, Minimize2, Pause, Play, Trash2, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -16,6 +16,7 @@ import {
 import type { DropInput } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { isTraktorContent, TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type {
   QueuedCues,
   SaveCuesOutcome,
@@ -141,9 +142,27 @@ function ProvisionalMark({ bpm }: { bpm: number }): React.JSX.Element {
   )
 }
 
-const copyOf = (contentId: string) => (isEngineContent(contentId) ? ENGINE_COPY : REKORDBOX_COPY)
+const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
+  save: 'editor.cues.traktor.save',
+  unanalysed: 'editor.cues.traktor.unanalysed',
+  unreadable: 'editor.cues.traktor.unreadable',
+  queuedStale: 'editor.cues.traktor.queuedStale',
+  saveFailed: 'editor.cues.traktor.saveFailed',
+  otherLibrary: 'traktorQueue.otherLibrary',
+  autoUnanalysed: 'editor.cues.traktor.autoUnreadable',
+}
+
+const copyOf = (contentId: string) =>
+  isTraktorContent(contentId)
+    ? TRAKTOR_COPY
+    : isEngineContent(contentId)
+      ? ENGINE_COPY
+      : REKORDBOX_COPY
 
 function saveAllKey(unsaved: ReadonlySet<string>): string {
+  const traktor = [...unsaved].filter(isTraktorContent).length
+  if (traktor > 0)
+    return traktor === unsaved.size ? 'editor.cues.traktor.saveAll' : 'editor.cues.saveAllMixed'
   const engine = [...unsaved].filter(isEngineContent).length
   if (engine === 0) return 'editor.cues.saveAll'
   return engine === unsaved.size ? 'editor.cues.engine.saveAll' : 'editor.cues.saveAllBoth'
@@ -373,7 +392,14 @@ function Editing({
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
-  const engine = isEngineContent(cue.contentId)
+  const traktor = isTraktorContent(cue.contentId)
+  const engine = isEngineContent(cue.contentId) || traktor
+  const { data: canSave = true } = useQuery({
+    queryKey: ['traktor-can-save'],
+    queryFn: () => window.api.traktorCanSave(),
+    enabled: traktor,
+  })
+  const blocked = traktor && !canSave
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<number[] | null>(() => {
     const kept = autoMarkOf(cue.contentId)
@@ -660,7 +686,12 @@ function Editing({
         pointMs.some((p) => Math.abs(p - c.ms) <= SAME_POSITION_MS),
     )
     .map((c) => c.key)
-  const waveCues = state.cues.map((c) => ({
+  const shownCues = traktor
+    ? state.cues.map((c) =>
+        c.kind !== 0 && !state.locked.includes(c.key) ? { ...c, color: TRAKTOR_CUE_COLOR } : c,
+      )
+    : state.cues
+  const waveCues = shownCues.map((c) => ({
     ...c,
     pending: pending(c),
     locked: state.locked.includes(c.key),
@@ -707,7 +738,7 @@ function Editing({
     <button
       type="button"
       data-testid="cues-save-all"
-      disabled={savingAll}
+      disabled={savingAll || blocked}
       onClick={() => void saveAll()}
       className={`press shrink-0 disabled:opacity-40 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
         maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
@@ -815,7 +846,7 @@ function Editing({
       <button
         type="button"
         data-testid="cues-auto-mark"
-        disabled={provisional ? true : engine ? readingAudio : !words}
+        disabled={provisional || blocked ? true : engine ? readingAudio : !words}
         title={
           provisional
             ? tr('editor.cues.provisional.auto')
@@ -841,7 +872,7 @@ function Editing({
       <button
         type="button"
         data-testid="cues-save"
-        disabled={unchanged}
+        disabled={unchanged || blocked}
         aria-label={maximized ? undefined : tr(copy.save)}
         onClick={() => void save()}
         className={`press ml-1 h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
@@ -976,7 +1007,7 @@ function Editing({
       <button
         type="button"
         data-testid="cues-save"
-        disabled={unchanged}
+        disabled={unchanged || blocked}
         aria-label={tr(copy.save)}
         onClick={() => void save()}
         className={`press h-6 shrink-0 whitespace-nowrap rounded-full px-3 text-xs font-semibold ${
@@ -1290,6 +1321,11 @@ function Editing({
           {tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
         </p>
       )}
+      {blocked && (
+        <p data-testid="cues-traktor-no-collection" className="mt-2 text-xs text-warn">
+          {tr('editor.cues.traktor.noCollection')}
+        </p>
+      )}
       {copy === ENGINE_COPY && state.cues.some((c) => c.kind === 0) && (
         <p data-testid="cues-engine-calls" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.engine.calls')}
@@ -1322,7 +1358,7 @@ function Editing({
       )}
       {maximized && (
         <CueDeck
-          cues={state.cues}
+          cues={shownCues}
           selected={state.selected}
           locked={state.locked}
           jumpBars={settings.cueJumpBars}
@@ -1496,11 +1532,11 @@ export function CuesSection({
           title={tr('editor.cues.title')}
           open={open}
           onToggle={onToggle}
-          help={
-            provisional
-              ? `${tr('editor.cues.help')} ${tr('editor.cues.provisional.help')}`
-              : tr('editor.cues.help')
-          }
+          help={[
+            tr('editor.cues.help'),
+            ...(provisional ? [tr('editor.cues.provisional.help')] : []),
+            ...(isTraktorContent(cue.contentId) ? [tr('editor.cues.traktor.colours')] : []),
+          ].join(' ')}
           status={
             unsaved || provisional ? (
               <>

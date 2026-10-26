@@ -835,6 +835,8 @@
       "saveAll_other": "Enregistrer {{count}} morceaux dans rekordbox",
       "saveAllBoth_one": "Enregistrer {{count}} morceau dans rekordbox et Engine DJ",
       "saveAllBoth_other": "Enregistrer {{count}} morceaux dans rekordbox et Engine DJ",
+      "saveAllMixed_one": "Enregistrer {{count}} piste dans sa bibliothèque",
+      "saveAllMixed_other": "Enregistrer {{count}} pistes dans leurs bibliothèques",
       "toCall_one": "{{count}} mesure avant le CALL",
       "toCall_other": "{{count}} mesures avant le CALL",
       "toCallShort": "{{count}} avant le CALL",
@@ -872,6 +874,19 @@
         "calls": "Engine DJ ne garde que les hot cues. Les CALL ne seront pas enregistrés",
         "saveAll_one": "Enregistrer {{count}} morceau dans Engine DJ",
         "saveAll_other": "Enregistrer {{count}} morceaux dans Engine DJ"
+      },
+      "traktor": {
+        "save": "Enregistrer dans Traktor",
+        "unanalysed": "Traktor n’a pas encore analysé ce morceau",
+        "unreadable": "Impossible de lire les cues d’Traktor",
+        "queuedStale": "L’enregistrement en attente date d’avant le changement du morceau dans Traktor et n’est plus valable. Tu vois ce qu’a Traktor maintenant.",
+        "saveFailed": "Impossible d’enregistrer dans Traktor. Les cues ne sont toujours pas enregistrés",
+        "autoReading": "Lecture de la piste…",
+        "autoUnreadable": "Surco n’a pas pu lire l’audio de cette piste",
+        "saveAll_one": "Enregistrer {{count}} morceau dans Traktor",
+        "saveAll_other": "Enregistrer {{count}} morceaux dans Traktor",
+        "noCollection": "Choisissez votre collection.nml dans Réglages → Sortie → Traktor pour que Surco puisse enregistrer",
+        "colours": "Traktor colore chaque cue selon son type. Surco les enregistre comme des cues normaux, en bleu, et laisse le bouton 1 à l’AutoGrid de Traktor"
       },
       "provisional": {
         "chip": "Grille de Surco · {{bpm}} BPM",
@@ -2497,6 +2512,29 @@
     "pillElsewhere": "En attente d’une autre bibliothèque Engine DJ",
     "elsewhere": "Ceci a été préparé pour une autre bibliothèque Engine DJ. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
+  "traktorQueue": {
+    "pillTracks_one": "1 morceau attend que vous fermiez Traktor",
+    "pillTracks_other": "{{count}} morceaux attendent que vous fermiez Traktor",
+    "pillChanges_one": "1 changement attend que vous fermiez Traktor",
+    "pillChanges_other": "{{count}} changements attendent que vous fermiez Traktor",
+    "applied_one": "Fait dans Traktor · 1 morceau",
+    "applied_other": "Fait dans Traktor · {{count}} morceaux",
+    "appliedChanges_one": "Fait dans Traktor · 1 changement",
+    "appliedChanges_other": "Fait dans Traktor · {{count}} changements",
+    "backupFailed": "Impossible de sauvegarder Traktor. Surco réessaiera à sa prochaine fermeture",
+    "unreadable": "Surco ne peut pas lire la collection Traktor pour le moment, rien n’a changé",
+    "writeFailed": "Impossible d’enregistrer les cues dans Traktor. La collection est restée telle quelle",
+    "otherLibrary": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend",
+    "notice": {
+      "cuesChanged": "Les cues de {{track}} ont changé dans Traktor. Marque-les à nouveau",
+      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré"
+    },
+    "discardConfirm": "Abandonner ce qui attend ? Les cues reviennent à ce qu’a Traktor",
+    "pillHalted": "Changements Traktor en pause",
+    "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours collection.nml.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
+    "pillElsewhere": "En attente d’une autre collection Traktor",
+    "elsewhere": "Ceci a été préparé pour une autre collection Traktor. Surco ne l’appliquera pas à celle que tu utilises maintenant"
+  },
   "cueWave": {
     "notAnalysed": "Ce morceau n’est pas analysé dans rekordbox. Analysez-le là-bas pour placer des cues",
     "hotCue": "Hot cue {{letter}}",
@@ -2511,11 +2549,6 @@
       "mine": "Mon flux",
       "one-at-32": "Un cue à 32",
       "calls-only": "CALL seulement"
-    }
-  },
-  "traktorQueue": {
-    "notice": {
-      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré"
     }
   }
 }

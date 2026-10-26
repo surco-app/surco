@@ -317,6 +317,15 @@ function setApi(over: Record<string, unknown> = {}): void {
     engineCueQueueReady: vi.fn<Api['engineCueQueueReady']>().mockResolvedValue(undefined),
     onEngineCueQueueChanged: vi.fn<Api['onEngineCueQueueChanged']>(() => () => {}),
     onEngineCueQueueApplied: vi.fn<Api['onEngineCueQueueApplied']>(() => () => {}),
+    traktorCueQueue: vi
+      .fn<Api['traktorCueQueue']>()
+      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
+    applyTraktorCueQueue: vi.fn<Api['applyTraktorCueQueue']>().mockResolvedValue(null),
+    discardTraktorCueQueue: vi.fn<Api['discardTraktorCueQueue']>().mockResolvedValue(undefined),
+    traktorCueQueueReady: vi.fn<Api['traktorCueQueueReady']>().mockResolvedValue(undefined),
+    onTraktorCueQueueChanged: vi.fn<Api['onTraktorCueQueueChanged']>(() => () => {}),
+    onTraktorCueQueueApplied: vi.fn<Api['onTraktorCueQueueApplied']>(() => () => {}),
+    traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},
@@ -558,6 +567,54 @@ describe('App Engine DJ cues', () => {
     await renderApp()
     expect(await screen.findByTestId('engine-queue-pill')).toHaveTextContent(
       '1 track waits for you to close Engine DJ',
+    )
+  })
+})
+
+describe('App Traktor cues', () => {
+  afterEach(resetCueSession)
+
+  function openTraktor(over: Partial<Api> = {}) {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
+      loadTraktorTree: vi
+        .fn<Api['loadTraktorTree']>()
+        .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 }]),
+      traktorRecentCount: vi.fn<Api['traktorRecentCount']>().mockResolvedValue(0),
+      loadTraktorPlaylist: vi.fn<Api['loadTraktorPlaylist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'traktor:HD/:m/:a.wav' },
+        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'traktor:HD/:m/:b.wav' },
+      ]),
+      ...over,
+    })
+  }
+
+  it('opens the cue editor on a row of a Traktor playlist, reading the cues of its collection entry', async () => {
+    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null)
+    openTraktor({ rekordboxTrackCues: read })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+    fireEvent.click(await screen.findByTestId('source-node-u1'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(read).toHaveBeenCalledWith('traktor:HD/:m/:b.wav'))
+    expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
+  })
+
+  it('shows what waits for Traktor to close beside the other queues', async () => {
+    openTraktor({
+      traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue({
+        tracks: 1,
+        changes: 0,
+        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      }),
+    })
+    await renderApp()
+    expect(await screen.findByTestId('traktor-queue-pill')).toHaveTextContent(
+      '1 track waits for you to close Traktor',
     )
   })
 })
