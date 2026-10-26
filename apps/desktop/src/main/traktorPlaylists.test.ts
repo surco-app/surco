@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import { traktorContentId } from '../shared/traktorContent'
 import { rekordboxColorOf } from './traktorNmlCues'
 import {
   nmlPath,
@@ -125,17 +127,18 @@ describe('readTraktorPlaylist', () => {
     expect(entry.meta).toEqual({ bpm: '124', rating: 60 })
   })
 
-  it('shows the hot cues on the row in their slots, and the cues without a slot as memory cues', () => {
+  it('gives the hot cues on the row the letters the editor uses, button 2 as A, and leaves button 1 out', () => {
     const cued: Track = {
       ...A,
       extra:
         '<CUE_V2 NAME="AutoGrid" TYPE="4" START="16.2" LEN="0" REPEATS="-1" HOTCUE="-1"><GRID BPM="124"></GRID></CUE_V2>' +
+        '<CUE_V2 NAME="AutoGrid" TYPE="0" START="16.2" LEN="0" REPEATS="-1" HOTCUE="0" COLOR="#FFFFFF"></CUE_V2>' +
         '<CUE_V2 NAME="n.n." TYPE="0" START="8088.7" LEN="0" REPEATS="-1" HOTCUE="2"></CUE_V2>' +
         '<CUE_V2 NAME="n.n." TYPE="0" START="30000" LEN="0" REPEATS="-1" HOTCUE="-1"></CUE_V2>',
     }
     const [entry] = readTraktorPlaylist(nml([cued], [playlist('L', 'p1', [cued])]), 'p1', '')
     expect(entry.preview?.cues).toEqual([
-      { ms: 8088.7, kind: 3, color: rekordboxColorOf(TRAKTOR_TYPE_COLOR[0]) },
+      { ms: 8088.7, kind: HOT_KINDS[1], color: rekordboxColorOf(TRAKTOR_TYPE_COLOR[0]) },
       { ms: 30000, kind: 0, color: null },
     ])
   })
@@ -152,13 +155,18 @@ describe('readTraktorPlaylist', () => {
     }
     const [entry] = readTraktorPlaylist(nml([djotas], [playlist('L', 'p1', [djotas])]), 'p1', '')
     expect(entry.preview?.cues.map((c) => c.color)).toEqual([
-      rekordboxColorOf('#FFFFFF'),
       rekordboxColorOf(TRAKTOR_TYPE_COLOR[3]),
       rekordboxColorOf(TRAKTOR_TYPE_COLOR[0]),
       rekordboxColorOf(TRAKTOR_TYPE_COLOR[1]),
       rekordboxColorOf(TRAKTOR_TYPE_COLOR[5]),
     ])
-    expect(new Set(entry.preview?.cues.slice(1).map((c) => c.color)).size).toBe(4)
+    expect(new Set(entry.preview?.cues.map((c) => c.color)).size).toBe(4)
+  })
+
+  it('names each row by the key Traktor uses for it, so the editor finds its entry', () => {
+    const odd: Track = { file: 'R&amp;B.mp3' }
+    const [entry] = readTraktorPlaylist(nml([odd], [playlist('L', 'p1', [odd])]), 'p1', '')
+    expect(entry.contentId).toBe(traktorContentId('Macintosh HD/:Users/:dj/:Music/:R&B.mp3'))
   })
 
   it('keeps a row whose track is missing from the collection as one with no file, so the count stays honest', () => {

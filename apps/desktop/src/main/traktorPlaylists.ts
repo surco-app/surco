@@ -1,5 +1,6 @@
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import { TRAKTOR_HOT_OFFSET, traktorContentId } from '../shared/traktorContent'
 import type { AppleMusicTrackMeta, RowCue, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { attr, findEntries } from './traktorNml'
 import { rekordboxColorOf } from './traktorNmlCues'
@@ -127,7 +128,7 @@ function collection(nml: string): Track[] {
 // Traktor stores a path as VOLUME + DIR ("/:Users/:dj/:") + FILE. A drive letter is
 // Windows; the boot disk's own name (or none) is the root of macOS; any other volume is
 // mounted under /Volumes.
-function pathOf(block: string, bootVolume: string): string {
+export function traktorFileOf(block: string, bootVolume: string): string {
   const location = block.match(/<LOCATION\b[^>]*>/)?.[0] ?? ''
   const volume = attr(location, 'VOLUME')
   const folder = attr(location, 'DIR').replace(/\/:/g, '/')
@@ -149,8 +150,10 @@ function cuesOf(block: string): RowCue[] {
   return [...block.matchAll(CUE_RE)]
     .map(([cue]) => cue)
     .filter((cue) => Number(attr(cue, 'TYPE')) !== GRID_TYPE)
-    .map((cue) => {
-      const kind = HOT_KINDS[Number(attr(cue, 'HOTCUE') || '-1')] ?? 0
+    .map((cue) => ({ cue, hotcue: Number(attr(cue, 'HOTCUE') || '-1') }))
+    .filter(({ hotcue }) => hotcue !== 0)
+    .map(({ cue, hotcue }) => {
+      const kind = HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET] ?? 0
       const color = attr(cue, 'COLOR') || TRAKTOR_TYPE_COLOR[Number(attr(cue, 'TYPE'))]
       return {
         ms: Number(attr(cue, 'START')),
@@ -165,9 +168,10 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
   const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
   const info = track.block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
   return {
-    path: pathOf(track.block, bootVolume),
+    path: traktorFileOf(track.block, bootVolume),
     separator: false,
     meta: metaOf(track.block),
+    contentId: traktorContentId(track.key),
     preview: {
       title: attr(head, 'TITLE').trim(),
       artist: attr(head, 'ARTIST').trim(),
