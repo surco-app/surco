@@ -79,22 +79,25 @@ export function editMessage(
   edit: RekordboxPlaylistEdit,
   result: RekordboxEditResult,
   playlistName: string,
+  source: 'rekordbox' | 'traktor' = 'rekordbox',
 ): { text: string; tone: 'neutral' | 'danger' } | null {
+  const own = (key: string): string =>
+    source === 'traktor' ? key.replace('sources.edit.', 'sources.editTraktor.') : key
   if (!result.applied && result.reason !== 'nothing-to-add')
     return {
-      text: tr(REFUSED[result.reason]),
+      text: tr(own(REFUSED[result.reason])),
       tone: WAITING.has(result.reason) ? 'neutral' : 'danger',
     }
   if (edit.kind !== 'add' || !result.report) return null
   const r = result.report
   const parts = [
     r.added > 0
-      ? tr('sources.edit.added', { count: r.added, name: playlistName })
-      : tr('sources.edit.noneAdded', { name: playlistName }),
+      ? tr(own('sources.edit.added'), { count: r.added, name: playlistName })
+      : tr(own('sources.edit.noneAdded'), { name: playlistName }),
   ]
-  if (r.already > 0) parts.push(tr('sources.edit.already', { count: r.already }))
+  if (r.already > 0) parts.push(tr(own('sources.edit.already'), { count: r.already }))
   if (r.notInCollection > 0)
-    parts.push(tr('sources.edit.notInCollection', { count: r.notInCollection }))
-  if (r.ambiguous > 0) parts.push(tr('sources.edit.ambiguous', { count: r.ambiguous }))
+    parts.push(tr(own('sources.edit.notInCollection'), { count: r.notInCollection }))
+  if (r.ambiguous > 0) parts.push(tr(own('sources.edit.ambiguous'), { count: r.ambiguous }))
   return { text: parts.join('. '), tone: 'neutral' }
 }

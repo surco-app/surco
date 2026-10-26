@@ -20,6 +20,7 @@ import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
+import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../shared/traktorContent'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickConfig,
@@ -687,7 +688,21 @@ export default function App(): React.JSX.Element {
     },
     [store],
   )
-  const editRekordbox = useRekordboxEdits(notifyEdit)
+  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
+  // Settings, the only one Surco writes to.
+  const traktorCanSave =
+    useQuery({
+      queryKey: ['traktor-can-save', settings?.traktorNmlPath ?? ''],
+      queryFn: () => window.api.traktorCanSave(),
+      enabled: browser.source === 'traktor',
+    }).data === true
+  const editableSource =
+    browser.source === 'rekordbox'
+      ? 'rekordbox'
+      : browser.source === 'traktor' && traktorCanSave
+        ? 'traktor'
+        : null
+  const editRekordbox = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
@@ -2103,16 +2118,16 @@ export default function App(): React.JSX.Element {
   const onSearchWeb = useStableCallback(() => {
     if (selected) searchTrackWeb(selected)
   })
-  // Organising the open rekordbox crate. Every action sends one edit; what rekordbox holds
-  // afterwards is re-read and shown (useRekordboxEdits).
-  const rekordboxOpen =
-    browser.source === 'rekordbox' && browser.playlist !== null && playlistScope !== null
+  // Organising the open crate of an editable library. Every action sends one edit; what the
+  // library holds afterwards is re-read and shown (useRekordboxEdits).
+  const editableOpen =
+    editableSource !== null && browser.playlist !== null && playlistScope !== null
   const cuesOpen =
-    rekordboxOpen ||
+    editableOpen ||
     ((browser.source === 'engine' || browser.source === 'traktor') &&
       browser.playlist !== null &&
       playlistScope !== null)
-  const crateOpen = rekordboxOpen && browser.playlist?.id !== RECENTLY_ADDED_ID
+  const crateOpen = editableOpen && browser.playlist?.id !== RECENTLY_ADDED_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -2173,7 +2188,7 @@ export default function App(): React.JSX.Element {
   // A row read from an open rekordbox playlist names its collection entry; any other track
   // is looked up by its file, and by its converted file when a conversion moved the entry.
   const trackRef = (t: TrackItem): PlaylistTrackRef => ({
-    contentId: rekordboxOpen ? playlistScope?.contentOf.get(t.id) : undefined,
+    contentId: editableOpen ? playlistScope?.contentOf.get(t.id) : undefined,
     paths:
       t.outputPath && t.outputPath !== t.inputPath ? [t.inputPath, t.outputPath] : [t.inputPath],
   })
@@ -2217,6 +2232,16 @@ export default function App(): React.JSX.Element {
   const deleteInRekordbox = useStableCallback((node: SourceNode) => {
     void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
   })
+  const traktorTop = useMemo(() => new Set((browser.tree ?? []).map((n) => n.id)), [browser.tree])
+  const traktorFixed = useCallback(
+    (node: SourceNode) =>
+      !traktorTop.has(node.id) || !TRAKTOR_BUILT_IN.has(node.name)
+        ? null
+        : node.name === TRAKTOR_HISTORY
+          ? ('locked' as const)
+          : ('tracks-only' as const),
+    [traktorTop],
+  )
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
@@ -2263,11 +2288,14 @@ export default function App(): React.JSX.Element {
   // menuTargets (the one remove and trash use). Added tracks therefore go in working-list
   // order, which is the order they were loaded in.
   const trackMenuPlaylist = (track: TrackItem): TrackPlaylistMenu | undefined => {
-    if (browser.source !== 'rekordbox' || !browser.tree) return undefined
+    if (!editableSource || !browser.tree) return undefined
     const playlist = browser.playlist
     return {
       targets: flattenPlaylists(browser.tree).filter(
-        (h) => h.node.id !== playlist?.id && h.node.id !== RECENTLY_ADDED_ID,
+        (h) =>
+          h.node.id !== playlist?.id &&
+          h.node.id !== RECENTLY_ADDED_ID &&
+          (browser.source !== 'traktor' || traktorFixed(h.node) !== 'locked'),
       ),
       openName: crateOpen && playlist ? playlist.name : null,
       canInsertSeparator: browser.canInsertSeparator,
@@ -2834,7 +2862,8 @@ export default function App(): React.JSX.Element {
                     missing={browser.libraryMissing}
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={selectPlaylist}
-                    edit={browser.source === 'rekordbox' ? treeEdit : undefined}
+                    edit={editableSource ? treeEdit : undefined}
+                    fixed={browser.source === 'traktor' ? traktorFixed : undefined}
                     onExportUsb={
                       usbAvailable && browser.source === 'rekordbox'
                         ? () => openUsbExport()

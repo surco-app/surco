@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { traktorKey } from '../shared/traktorContent'
+import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY, traktorKey } from '../shared/traktorContent'
 import type { PlaylistAddReport, RekordboxEditRefusal } from '../shared/types'
 import { type EditOp, type OpOutcome, opRank } from './rekordboxQueueOps'
 import { escapeAttr, withAttr } from './traktorNml'
@@ -14,12 +14,9 @@ import {
 } from './traktorPlaylistModel'
 import { traktorCollectionIndex, traktorSeparatorKey } from './traktorPlaylists'
 
-// Traktor's own playlists at the root: it recreates or relies on them, so Surco never
-// renames or deletes them, and HISTORY is a log nobody edits.
-const BUILT_IN = new Set(['Preparation', 'HISTORY', '_LOOPS', '_RECORDINGS'])
-
-const builtIn = (node: ModelNode): boolean => node.parent?.id === 'root' && BUILT_IN.has(node.name)
-const history = (node: ModelNode): boolean => builtIn(node) && node.name === 'HISTORY'
+const builtIn = (node: ModelNode): boolean =>
+  node.parent?.id === 'root' && TRAKTOR_BUILT_IN.has(node.name)
+const history = (node: ModelNode): boolean => builtIn(node) && node.name === TRAKTOR_HISTORY
 
 const rowText = (key: string): string =>
   `<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="${escapeAttr(key)}"></PRIMARYKEY>\n</ENTRY>`

@@ -2000,6 +2000,29 @@
         "otherCollection": "O que espera é de outra coleção do rekordbox, então nada foi alterado. Volte para essa coleção ou descarte o que espera"
       }
     },
+    "editTraktor": {
+      "added_one": "{{count}} faixa adicionada a “{{name}}”",
+      "added_other": "{{count}} faixas adicionadas a “{{name}}”",
+      "noneAdded": "Nenhuma faixa adicionada a “{{name}}”",
+      "already_one": "{{count}} já estava na playlist",
+      "already_other": "{{count}} já estavam na playlist",
+      "notInCollection_one": "{{count}} não está na coleção do Traktor",
+      "notInCollection_other": "{{count}} não estão na coleção do Traktor",
+      "ambiguous_one": "{{count}} está duas vezes na coleção e o Surco não sabe qual usar",
+      "ambiguous_other": "{{count}} estão duas vezes na coleção e o Surco não sabe quais usar",
+      "refused": {
+        "cancelled": "O Traktor continua aberto. A mudança será aplicada ao fechá-lo",
+        "running": "O Traktor abriu antes de salvar. A mudança será aplicada ao fechá-lo",
+        "unreadable": "O Surco não consegue alterar os arquivos da coleção do Traktor agora e nada mudou",
+        "backupFailed": "Não foi possível copiar a coleção antes e nada mudou",
+        "writeFailed": "Não foi possível salvar a mudança. A coleção continua como estava",
+        "readOnly": "A coleção do Traktor é somente leitura e nada mudou",
+        "stale": "A playlist mudou no Traktor. Confira e tente de novo",
+        "noSeparator": "Sua coleção não tem nenhum separador para copiar",
+        "writeUnknown": "Não foi possível salvar nem desfazer a alteração, então a coleção pode ter mudado. Antes de abrir o Traktor, substitua collection.nml pela cópia collection.nml.surco-backup ao lado",
+        "otherCollection": "O que espera é de outra coleção do Traktor, então nada foi alterado. Volte para essa coleção ou descarte o que espera"
+      }
+    },
     "tree": {
       "newPlaylist": "Nova playlist",
       "newFolder": "Nova pasta",

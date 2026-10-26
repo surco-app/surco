@@ -14,13 +14,14 @@ import { editMessage, movedEntries } from '../lib/playlistEdits'
 // snap back during the write); the re-read corrects it if the write was refused.
 export function useRekordboxEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
+  source: 'rekordbox' | 'traktor' = 'rekordbox',
 ): (edit: RekordboxPlaylistEdit, playlistName: string) => Promise<RekordboxEditResult> {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
   return useCallback(
     async (edit, playlistName) => {
       if (edit.kind === 'move') {
-        const key = ['source-playlist', 'rekordbox', edit.playlistId]
+        const key = ['source-playlist', source, edit.playlistId]
         // A re-read already in flight (a refocus) carries the order from before the move
         // and would land over it; it is dropped, and the re-read after the write replaces it.
         void queryClient.cancelQueries({ queryKey: key })
@@ -31,7 +32,10 @@ export function useRekordboxEdits(
       }
       let result: RekordboxEditResult
       try {
-        result = await window.api.editRekordboxPlaylist(edit, playlistName)
+        result =
+          source === 'traktor'
+            ? await window.api.editTraktorPlaylist(edit, playlistName)
+            : await window.api.editRekordboxPlaylist(edit, playlistName)
       } catch {
         result = { applied: false, reason: 'write-failed' }
       }
@@ -41,10 +45,10 @@ export function useRekordboxEdits(
         queryClient.invalidateQueries({ queryKey: ['source-separator'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
       ])
-      const message = editMessage(tr, edit, result, playlistName)
+      const message = editMessage(tr, edit, result, playlistName, source)
       if (message) notify(message.text, message.tone)
       return result
     },
-    [queryClient, tr, notify],
+    [queryClient, tr, notify, source],
   )
 }

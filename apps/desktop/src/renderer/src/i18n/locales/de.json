@@ -2000,6 +2000,29 @@
         "otherCollection": "Was wartet, gehört zu einer anderen rekordbox-Sammlung, daher wurde nichts geändert. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet"
       }
     },
+    "editTraktor": {
+      "added_one": "{{count}} Titel zu „{{name}}“ hinzugefügt",
+      "added_other": "{{count}} Titel zu „{{name}}“ hinzugefügt",
+      "noneAdded": "Keine Titel zu „{{name}}“ hinzugefügt",
+      "already_one": "{{count}} war schon in der Playlist",
+      "already_other": "{{count}} waren schon in der Playlist",
+      "notInCollection_one": "{{count}} ist nicht in der Traktor-Sammlung",
+      "notInCollection_other": "{{count}} sind nicht in der Traktor-Sammlung",
+      "ambiguous_one": "{{count}} ist doppelt in der Sammlung und Surco weiß nicht, welcher gilt",
+      "ambiguous_other": "{{count}} sind doppelt in der Sammlung und Surco weiß nicht, welche gelten",
+      "refused": {
+        "cancelled": "Traktor ist noch geöffnet. Die Änderung wird beim Schließen angewendet",
+        "running": "Traktor wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet",
+        "unreadable": "Surco kann die Dateien der Traktor-Sammlung gerade nicht ändern, nichts geändert",
+        "backupFailed": "Die Sammlung konnte vorher nicht gesichert werden, nichts geändert",
+        "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Sammlung ist unverändert",
+        "readOnly": "Die Traktor-Sammlung ist schreibgeschützt, nichts geändert",
+        "stale": "Die Playlist hat sich in Traktor geändert. Prüfe sie und versuche es erneut",
+        "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
+        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup daneben",
+        "otherCollection": "Was wartet, gehört zu einer anderen Traktor-Sammlung, daher wurde nichts geändert. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet"
+      }
+    },
     "tree": {
       "newPlaylist": "Neue Playlist",
       "newFolder": "Neuer Ordner",
