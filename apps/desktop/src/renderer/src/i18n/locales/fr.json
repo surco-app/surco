@@ -886,7 +886,8 @@
         "saveAll_one": "Enregistrer {{count}} morceau dans Traktor",
         "saveAll_other": "Enregistrer {{count}} morceaux dans Traktor",
         "noCollection": "Choisissez votre collection.nml dans Réglages → Sortie → Traktor pour que Surco puisse enregistrer",
-        "colours": "Traktor colore chaque cue selon son type. Surco les enregistre comme des cues normaux, en bleu, et laisse le bouton 1 à l’AutoGrid de Traktor"
+        "colours": "Traktor colore chaque cue selon son type. Surco les enregistre comme des cues normaux, en bleu, et laisse le bouton 1 à l’AutoGrid de Traktor",
+        "calls": "Traktor n’a pas de CALL, ils ne sont donc pas enregistrés. Seuls les hot cues arrivent dans Traktor"
       },
       "provisional": {
         "chip": "Grille de Surco · {{bpm}} BPM",

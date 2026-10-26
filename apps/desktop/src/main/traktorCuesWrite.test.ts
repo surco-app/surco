@@ -75,9 +75,17 @@ describe('withTraktorCues', () => {
     expect(out).toContain(AUTOGRID)
   })
 
-  it('writes a CALL as a cue without a button', () => {
-    const out = withTraktorCues(block(nml([GRID])), [{ ms: 5000, kind: 0, color: null }])
-    expect(out).toContain('START="5000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"')
+  it('writes no CALL, since Traktor has none, and keeps the DJ’s own cues without a button', () => {
+    const own =
+      '<CUE_V2 NAME="Break" DISPL_ORDER="0" TYPE="0" START="92674.606740" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>'
+    const doc = nml([GRID, own])
+    const out = withTraktorCues(block(doc), [
+      { ms: 5000, kind: 0, color: null },
+      { ms: 6000, kind: HOT_KINDS[0], color: 5 },
+    ])
+    expect(out).not.toContain('START="5000.000000"')
+    expect(out).toContain(own)
+    expect(out).toContain('START="6000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"')
   })
 
   it('adds cues to an entry that had none at all, before it closes', () => {

@@ -886,7 +886,8 @@
         "saveAll_one": "Save {{count}} track to Traktor",
         "saveAll_other": "Save {{count}} tracks to Traktor",
         "noCollection": "Choose your collection.nml in Settings → Output → Traktor so Surco can save",
-        "colours": "Traktor colours each cue by its type. Surco saves them as normal cues, in blue, and leaves button 1 to Traktor's AutoGrid"
+        "colours": "Traktor colours each cue by its type. Surco saves them as normal cues, in blue, and leaves button 1 to Traktor's AutoGrid",
+        "calls": "Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor"
       },
       "provisional": {
         "chip": "Surco grid · {{bpm}} BPM",

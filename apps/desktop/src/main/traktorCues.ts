@@ -47,17 +47,17 @@ export function traktorCuesIntact(block: string): boolean {
   )
 }
 
-// Each CUE_V2 is named by its place in the ENTRY: two cues without a button share
-// HOTCUE="-1", so the button cannot be the id. Button 1 and the grid marker are Traktor's
+// Each CUE_V2 is named by its place in the ENTRY, which stays unique where the button
+// would not (every cue without one shares HOTCUE="-1"). Button 1 and the grid marker are Traktor's
 // and stay out. A cue the DJ typed as fade, load or loop is marked loop, the flag the cue
 // rules already treat as "leave exactly as it is".
 export function traktorCueRows(block: string): TraktorCueRow[] {
   return traktorCueElements(block).flatMap((el, i): TraktorCueRow[] => {
     const type = Number(attr(el.element, 'TYPE'))
     const hotcue = Number(attr(el.element, 'HOTCUE') || '-1')
-    if ((type === GRID_TYPE && hotcue < 0) || hotcue === 0 || hotcue > TRAKTOR_SLOTS.kinds.length)
-      return []
-    const kind = hotcue > 0 ? HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET] : 0
+    // Traktor has no CALL: a cue without a button is the DJ's own marker, left untouched.
+    if (hotcue <= 0 || hotcue > TRAKTOR_SLOTS.kinds.length) return []
+    const kind = HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET]
     if (kind === undefined) return []
     return [
       {
@@ -65,7 +65,7 @@ export function traktorCueRows(block: string): TraktorCueRow[] {
         id: String(i),
         ms: Number(attr(el.element, 'START')),
         kind,
-        color: kind === 0 ? null : rekordboxColorOf(TRAKTOR_TYPE_COLOR[type] ?? null),
+        color: rekordboxColorOf(TRAKTOR_TYPE_COLOR[type] ?? null),
         ...(type !== CUE_TYPE && { loop: true }),
       },
     ]

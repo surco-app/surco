@@ -886,7 +886,8 @@
         "saveAll_one": "Guardar {{count}} pista en Traktor",
         "saveAll_other": "Guardar {{count}} pistas en Traktor",
         "noCollection": "Elige tu collection.nml en Ajustes → Destino → Traktor para que Surco pueda guardar",
-        "colours": "Traktor colorea cada cue según su tipo. Surco las guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor"
+        "colours": "Traktor colorea cada cue según su tipo. Surco las guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor",
+        "calls": "Traktor no tiene CALL, así que no se guardan. Solo llegan a Traktor los hot cues"
       },
       "provisional": {
         "chip": "Rejilla de Surco · {{bpm}} BPM",

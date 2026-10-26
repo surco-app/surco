@@ -225,4 +225,13 @@ describe('CuesSection on a Traktor track', () => {
     fireEvent.contextMenu(hot[0])
     expect(screen.queryByTestId('cues-menu-colour')).not.toBeInTheDocument()
   })
+
+  it('says the CALLs stay in Surco, since Traktor has none', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-traktor-calls')).toHaveTextContent(
+      'Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor',
+    )
+  })
 })

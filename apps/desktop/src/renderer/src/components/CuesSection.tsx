@@ -1334,6 +1334,11 @@ function Editing({
           {tr('editor.cues.traktor.noCollection')}
         </p>
       )}
+      {traktor && state.cues.some((c) => c.kind === 0) && (
+        <p data-testid="cues-traktor-calls" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.traktor.calls')}
+        </p>
+      )}
       {copy === ENGINE_COPY && state.cues.some((c) => c.kind === 0) && (
         <p data-testid="cues-engine-calls" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.engine.calls')}

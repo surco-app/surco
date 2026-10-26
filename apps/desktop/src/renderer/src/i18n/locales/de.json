@@ -886,7 +886,8 @@
         "saveAll_one": "{{count}} Titel in Traktor speichern",
         "saveAll_other": "{{count}} Titel in Traktor speichern",
         "noCollection": "Wähle deine collection.nml unter Einstellungen → Ausgabe → Traktor, damit Surco speichern kann",
-        "colours": "Traktor färbt jeden Cue nach seinem Typ. Surco speichert sie als normale Cues in Blau und lässt Taste 1 für das AutoGrid von Traktor frei"
+        "colours": "Traktor färbt jeden Cue nach seinem Typ. Surco speichert sie als normale Cues in Blau und lässt Taste 1 für das AutoGrid von Traktor frei",
+        "calls": "Traktor kennt keine CALLs, sie werden nicht gespeichert. Nur die Hot Cues landen in Traktor"
       },
       "provisional": {
         "chip": "Surco-Raster · {{bpm}} BPM",
