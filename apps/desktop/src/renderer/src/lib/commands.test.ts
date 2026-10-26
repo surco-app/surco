@@ -110,6 +110,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canUndoMeta: () => false,
     acceptReview: () => {},
     fireConfetti: () => {},
+    sources: [],
+    selectSource: () => {},
     ...overrides,
   }
 }
@@ -162,6 +164,42 @@ describe('Music review commands', () => {
     const open = vi.fn()
     commandById(makeDeps({ openUsbExport: open }), 'export-usb').run()
     expect(open).toHaveBeenCalled()
+  })
+})
+
+describe('buildCommands library sources', () => {
+  const ids = (deps: Partial<CommandDeps>) =>
+    buildCommands(makeDeps(deps))
+      .map((c) => c.id)
+      .filter((id) => id.startsWith('source-'))
+
+  it('offers one jump per source the rail draws, and none when the rail is not drawn', () => {
+    expect(ids({ sources: [] })).toEqual([])
+    expect(ids({ sources: ['rekordbox', 'traktor'] })).toEqual([
+      'source-tracks',
+      'source-rekordbox',
+      'source-traktor',
+    ])
+  })
+
+  it('names each source the way the rail does', () => {
+    const tr = (k: string, o?: Record<string, unknown>) => (o ? `${k}(${o.name})` : k)
+    const titles = buildCommands(makeDeps({ tr, sources: ['engine'] }))
+      .filter((c) => c.id.startsWith('source-'))
+      .map((c) => c.title)
+    expect(titles).toEqual([
+      'commands.goToSource(sources.workingList)',
+      'commands.goToSource(sources.engine)',
+    ])
+  })
+
+  it('selects the source exactly as a click on its rail icon does', () => {
+    const selectSource = vi.fn()
+    const commands = buildCommands(makeDeps({ sources: ['appleMusic'], selectSource }))
+    runCommand(commands, 'source-appleMusic')
+    expect(selectSource).toHaveBeenLastCalledWith('appleMusic')
+    runCommand(commands, 'source-tracks')
+    expect(selectSource).toHaveBeenLastCalledWith(null)
   })
 })
 

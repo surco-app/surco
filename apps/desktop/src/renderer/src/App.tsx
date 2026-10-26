@@ -2596,6 +2596,8 @@ export default function App(): React.JSX.Element {
       canUndoMeta: metaUndo.canUndo,
       acceptReview,
       fireConfetti,
+      sources: browser.sources,
+      selectSource,
     }),
   )
 

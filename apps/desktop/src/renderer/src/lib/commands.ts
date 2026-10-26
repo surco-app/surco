@@ -1,6 +1,12 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { resolveJobFormat } from '../../../shared/format'
-import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type {
+  DeclickConfig,
+  FormatSetting,
+  NormalizeConfig,
+  PlaylistSource,
+  Settings,
+} from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
@@ -120,7 +126,7 @@ export function runCommand(commands: Command[], id: string): void {
 // each command's enabled/run pair sees the current state. The registry itself is
 // declarative data; keeping it here leaves App with only the wiring.
 export interface CommandDeps {
-  tr: (key: string) => string
+  tr: (key: string, options?: Record<string, unknown>) => string
   // The palette hint for a command's effective key binding (defaults + overrides).
   hintFor: (id: string) => string
   // The host OS, supplied so the registry stays free of IPC: the Apple Music gate is
@@ -258,6 +264,8 @@ export interface CommandDeps {
   acceptReview: () => void
   // Fires the celebration confetti — the same burst the donate nudge shows, on demand.
   fireConfetti: () => void
+  sources: PlaylistSource[]
+  selectSource: (source: PlaylistSource | null) => void
 }
 
 // The id → group map, for surfaces that need to classify commands without being able to
@@ -272,7 +280,8 @@ export function commandGroups(): Map<string, string> {
       if (key === 'platform') return 'darwin'
       if (key === 'selected' || key === 'settings' || key === 'analysis' || key === 'matching')
         return null
-      if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks') return []
+      if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks' || key === 'sources')
+        return []
       if (String(key).endsWith('Ref')) return { current: null }
       if (key === 'titleFormatSet' || key === 'playerVisible' || key === 'batching') return false
       if (key === 'selectedTracksCount' || key === 'autoMatchable') return 0
@@ -361,6 +370,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     canUndoMeta,
     acceptReview,
     fireConfetti,
+    sources,
+    selectSource,
   } = deps
   return [
     {
@@ -636,6 +647,19 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: true,
       run: () => focusColumn(1),
     },
+    ...(sources.length > 0
+      ? [
+          { id: 'tracks', name: tr('sources.workingList'), source: null },
+          ...sources.map((s) => ({ id: s, name: tr(`sources.${s}`), source: s })),
+        ].map(({ id, name, source }) => ({
+          id: `source-${id}`,
+          group: 'navigate' as const,
+          title: tr('commands.goToSource', { name }),
+          hint: hintFor(`source-${id}`),
+          enabled: true,
+          run: () => selectSource(source),
+        }))
+      : []),
     {
       id: 'process-current',
       group: 'convert',

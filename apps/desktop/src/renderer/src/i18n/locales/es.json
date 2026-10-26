@@ -370,7 +370,8 @@
     "musicReview": "Revisar metadatos en Apple Music…",
     "musicDuplicates": "Mostrar duplicados en Apple Music…",
     "listReview": "Revisar metadatos…",
-    "exportUsb": "Exportar a USB…"
+    "exportUsb": "Exportar a USB…",
+    "goToSource": "Ir a {{name}}"
   },
   "trackList": {
     "cuesUnsaved": "Cues sin guardar",

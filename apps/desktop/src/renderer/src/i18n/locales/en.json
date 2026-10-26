@@ -370,7 +370,8 @@
     "musicReview": "Review metadata in Apple Music…",
     "musicDuplicates": "Show duplicates in Apple Music…",
     "listReview": "Review metadata…",
-    "exportUsb": "Export to USB…"
+    "exportUsb": "Export to USB…",
+    "goToSource": "Go to {{name}}"
   },
   "trackList": {
     "cuesUnsaved": "Cues not saved",
