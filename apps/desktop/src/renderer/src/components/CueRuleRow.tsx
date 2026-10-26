@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Minus } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -33,7 +33,7 @@ const BLOCK_LABEL: Record<Block, string> = {
 }
 
 const TOKEN_CLASS =
-  'press rounded-sm border-b border-dashed border-[var(--color-accent)] px-0.5 text-fg hover:bg-[var(--color-hover)]'
+  'press rounded-[5px] bg-[var(--color-accent)]/15 px-1.5 leading-6 text-fg hover:bg-[var(--color-accent)]/25'
 const MENU_CLASS =
   'absolute left-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
 const ITEM_CLASS =
@@ -180,7 +180,7 @@ export function CueRuleRow({
         e.stopPropagation()
         closeToToken()
       }}
-      className="relative m-0 min-w-0 rounded-md border border-[var(--color-line)] py-2 pl-3 pr-8 text-sm leading-8"
+      className="relative m-0 min-w-0 py-2 pr-10 pl-3.5 text-sm leading-8 text-fg-dim"
     >
       <span aria-hidden="true" className="mr-2 font-mono text-xs text-fg-faint">
         {index + 1}
@@ -244,53 +244,58 @@ export function CueRuleRow({
       {rule.place !== 'call' && (
         <>
           {' '}
-          {token(
-            'color-mode',
-            COLOR_MODES.map((m) => ({ value: m, label: tr(`settings.cueFlows.colorMode.${m}`) })),
-            'fixed' in rule.color ? 'fixed' : 'each',
-            tr(`settings.cueFlows.colorMode.${'fixed' in rule.color ? 'fixed' : 'each'}`),
-            setColorMode,
-          )}{' '}
-          <span className="inline-flex items-start gap-1 align-middle">
-            {shownSlots.map((slot) => (
-              <span key={slot} className="relative flex">
-                {/* The distance sits inside its square, in black as on the wave's cue marks so
+          <span className="whitespace-nowrap">
+            {token(
+              'color-mode',
+              COLOR_MODES.map((m) => ({ value: m, label: tr(`settings.cueFlows.colorMode.${m}`) })),
+              'fixed' in rule.color ? 'fixed' : 'each',
+              tr(`settings.cueFlows.colorMode.${'fixed' in rule.color ? 'fixed' : 'each'}`),
+              setColorMode,
+            )}{' '}
+            <span className="inline-flex items-start gap-1 align-middle">
+              {shownSlots.map((slot) => (
+                <span key={slot} className="relative flex">
+                  {/* The distance sits inside its square, in black as on the wave's cue marks so
                     it reads on every colour: under it, the numbers made the row taller than the
                     sentence and set the squares off the line of text. */}
-                <button
-                  type="button"
-                  data-testid={`${id}-color-${slot}`}
-                  aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
-                  aria-expanded={open === `color-${slot}`}
-                  onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
-                  style={{ backgroundColor: hotCueColor(colorAt(rule.color, slot)), color: '#000' }}
-                  className="press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1"
-                >
-                  {showDistance && (
-                    <span
-                      data-testid={`${id}-color-${slot}-distance`}
-                      className="text-[10px] leading-none font-semibold tabular-nums"
-                    >
-                      {rule.bars * (slot + 1)}
-                    </span>
-                  )}
-                </button>
-                {open === `color-${slot}` && (
-                  <div
-                    ref={paletteRef}
-                    data-testid={`${id}-color-${slot}-palette`}
-                    data-align={paletteRight ? 'right' : 'left'}
-                    className={`absolute ${paletteRight ? 'right-0' : 'left-0'} top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                  <button
+                    type="button"
+                    data-testid={`${id}-color-${slot}`}
+                    aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
+                    aria-expanded={open === `color-${slot}`}
+                    onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
+                    style={{
+                      backgroundColor: hotCueColor(colorAt(rule.color, slot)),
+                      color: '#000',
+                    }}
+                    className="press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1"
                   >
-                    <CuePalette
-                      value={colorAt(rule.color, slot)}
-                      onPick={(color) => pickColor(slot, color)}
-                      label={(i) => tr('editor.cues.colour', { index: i })}
-                    />
-                  </div>
-                )}
-              </span>
-            ))}
+                    {showDistance && (
+                      <span
+                        data-testid={`${id}-color-${slot}-distance`}
+                        className="text-[10px] leading-none font-semibold tabular-nums"
+                      >
+                        {rule.bars * (slot + 1)}
+                      </span>
+                    )}
+                  </button>
+                  {open === `color-${slot}` && (
+                    <div
+                      ref={paletteRef}
+                      data-testid={`${id}-color-${slot}-palette`}
+                      data-align={paletteRight ? 'right' : 'left'}
+                      className={`absolute ${paletteRight ? 'right-0' : 'left-0'} top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                    >
+                      <CuePalette
+                        value={colorAt(rule.color, slot)}
+                        onPick={(color) => pickColor(slot, color)}
+                        label={(i) => tr('editor.cues.colour', { index: i })}
+                      />
+                    </div>
+                  )}
+                </span>
+              ))}
+            </span>
           </span>
         </>
       )}
@@ -299,9 +304,9 @@ export function CueRuleRow({
         data-testid={`${id}-remove`}
         aria-label={tr('settings.cueFlows.removeRule')}
         onClick={onRemove}
-        className="press absolute right-1 top-1.5 rounded-md p-1 text-fg-dim hover:text-fg"
+        className="press absolute top-2.5 right-2 rounded-full p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
       >
-        <X size={14} />
+        <Minus size={14} />
       </button>
       {rule.place === 'call' && (
         <p data-testid={`${id}-loose-call`} className="text-[11px] leading-normal text-fg-dim">
