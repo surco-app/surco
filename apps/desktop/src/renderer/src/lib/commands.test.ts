@@ -437,6 +437,29 @@ describe('runCommand', () => {
   })
 })
 
+describe('buildCommands convert editing the original', () => {
+  it('converts the selected track over its original this once, without stepping on', () => {
+    const processOne = vi.fn((_id, _f, _n, _d, _dk, onStarted?: () => void) => onStarted?.())
+    const moveSelection = vi.fn()
+    const cmd = commandById(
+      makeDeps({ selected: track(), canProcessSelected: true, processOne, moveSelection }),
+      'convert-edit-original',
+    )
+    expect(cmd.title).toBe('commands.convertEditOriginal')
+    cmd.run()
+    expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined, 'overwrite', undefined)
+    expect(moveSelection).not.toHaveBeenCalled()
+  })
+
+  it('follows the convert button: one track that can be converted', () => {
+    const enabled = (deps: Partial<CommandDeps>) =>
+      commandById(makeDeps({ selected: track(), ...deps }), 'convert-edit-original').enabled
+    expect(enabled({ canProcessSelected: false })).toBe(false)
+    expect(enabled({ canProcessSelected: true, selectedTracksCount: 2 })).toBe(false)
+    expect(enabled({ canProcessSelected: true, selectedTracksCount: 1 })).toBe(true)
+  })
+})
+
 describe('buildCommands convert-and-advance', () => {
   // ⌘⏎ kicks off the current track's conversion (which runs in the background) and moves
   // to the next track, so the shortcut works through the crate without a manual step. The

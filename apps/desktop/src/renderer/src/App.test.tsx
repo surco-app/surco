@@ -3392,6 +3392,37 @@ describe('App per-track format pick', () => {
     expect(job.overwriteOriginal).toBe(true)
   })
 
+  it('rewrites the original once from the command palette, asking first and keeping the menu pick', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.mp3', inPlace: true })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          outputFormat: 'aiff',
+          keepMp3Sources: true,
+          convertBesideOriginal: true,
+          overwriteOriginal: false,
+        }),
+      ),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    fireEvent.click((await screen.findAllByTestId('track-row'))[0])
+    const toggle = await screen.findByTestId('process-format-toggle')
+    await waitFor(() => expect(toggle).toBeEnabled())
+    runMenu('convert-edit-original')
+    expect(processTrack).not.toHaveBeenCalled()
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    const [job] = processTrack.mock.calls[0]
+    expect(job.format).toBe('mp3')
+    expect(job.overwriteOriginal).toBe(true)
+    fireEvent.click(await screen.findByTestId('done-more'))
+    expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
+  })
+
   it('says the conversion went through and only Apple Music failed', async () => {
     const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
       outputPath: '/music/a.aiff',

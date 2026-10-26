@@ -750,6 +750,23 @@ export function buildCommands(deps: CommandDeps): Command[] {
       },
     },
     {
+      id: 'convert-edit-original',
+      group: 'convert',
+      title: tr('commands.convertEditOriginal'),
+      hint: hintFor('convert-edit-original'),
+      enabled: canProcessSelected && selectedTracksCount <= 1,
+      run: () => {
+        if (!selected) return
+        processOne(
+          selected.id,
+          editorFormatRef.current ?? undefined,
+          editorNormalizeRef.current ?? undefined,
+          'overwrite',
+          editorDeclickRef.current ?? undefined,
+        )
+      },
+    },
+    {
       // Toggles the batch: starts a convert-all, or cancels the one running — same
       // flip as the sweep commands, so a misfired run can be stopped from the palette
       // that started it (queued tracks bail; in-flight conversions finish).

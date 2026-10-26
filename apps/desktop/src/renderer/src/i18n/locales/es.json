@@ -372,7 +372,8 @@
     "listReview": "Revisar metadatos…",
     "exportUsb": "Exportar a USB…",
     "goToSource": "Ir a {{name}}",
-    "newPlaylist": "Nueva playlist en {{name}}"
+    "newPlaylist": "Nueva playlist en {{name}}",
+    "convertEditOriginal": "Convertir editando el original, solo esta vez"
   },
   "trackList": {
     "cuesUnsaved": "Cues sin guardar",
