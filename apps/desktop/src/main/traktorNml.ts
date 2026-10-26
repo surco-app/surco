@@ -540,12 +540,15 @@ function rewriteEntry(
   return out
 }
 
+const LOCATION_FILE_RE = /<LOCATION\b[^>]*\bFILE="([^"]*)"/
+
 export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
   const coexisting = coexistingOutputs(entries, patches)
   const sharedCover = sharedCoverSubstitutions(nml, entries, patches)
   const produced = producedOutputs(patches)
+  const moves: [string, string][] = []
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
@@ -566,9 +569,11 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
       produced.get(at),
     )
     if (patched === block) continue
+    const file = unescapeAttr(patched.match(LOCATION_FILE_RE)?.[1] ?? escapeAttr(entry.file))
+    if (!sameText(file, entry.file)) moves.push([keyOf(entry), keyOf({ ...entry, file })])
     out = out.slice(0, entry.start) + patched + out.slice(entry.end)
   }
-  return out
+  return rewritePlaylists(out, moves)
 }
 
 // Same matching rules as applyPatches, in one pass over the entries instead of
@@ -664,20 +669,24 @@ const countOf = (open: string) => Number(open.match(/\sENTRIES="(\d+)"/)?.[1] ??
 // Playlists name tracks by VOLUME + DIR + FILE, so they follow a moved entry only when
 // their keys are rewritten too. A playlist that already holds the kept copy loses the
 // removed one instead of playing the song twice.
-function rewritePlaylists(nml: string, fromKey: string, toKey: string): string {
-  const itemKey = (item: string) => unescapeAttr(item.match(ITEM_KEY_RE)?.[2] ?? '')
+function rewritePlaylists(nml: string, moves: [fromKey: string, toKey: string][]): string {
+  if (moves.length === 0) return nml
+  const itemKey = (item: string) =>
+    unescapeAttr(item.match(ITEM_KEY_RE)?.[2] ?? '').normalize('NFC')
+  const to = new Map(moves.map(([from, dest]) => [from.normalize('NFC'), dest]))
   return nml.replace(PLAYLIST_RE, (block) => {
-    const items = [...block.matchAll(ITEM_RE)].map((m) => m[0])
-    if (!items.some((item) => sameText(itemKey(item), fromKey))) return block
-    const holds = items.some((item) => sameText(itemKey(item), toKey))
+    const keys = [...block.matchAll(ITEM_RE)].map((m) => itemKey(m[0]))
+    if (!keys.some((k) => to.has(k))) return block
+    const held = new Set(keys)
     let removed = 0
     const out = block.replace(ITEM_RE, (item) => {
-      if (!sameText(itemKey(item), fromKey)) return item
-      if (holds) {
+      const dest = to.get(itemKey(item))
+      if (dest === undefined) return item
+      if (held.has(dest.normalize('NFC'))) {
         removed += 1
         return ''
       }
-      return item.replace(ITEM_KEY_RE, (_m, a, _k, b) => `${a}${escapeAttr(toKey)}${b}`)
+      return item.replace(ITEM_KEY_RE, (_m, a, _k, b) => `${a}${escapeAttr(dest)}${b}`)
     })
     if (removed === 0) return out
     const open = out.match(/<PLAYLIST\b[^>]*>/)?.[0] ?? ''
@@ -724,7 +733,7 @@ export function replaceDuplicateInNml(
       replaceLocation(block, pair.to.dir, pair.to.file) +
       nml.slice(base + source.end)
     return {
-      nml: rewritePlaylists(moved, keyOf(source), keyOf({ ...pair.to, volume: source.volume })),
+      nml: rewritePlaylists(moved, [[keyOf(source), keyOf({ ...pair.to, volume: source.volume })]]),
       outcome: 'repointed',
     }
   }
@@ -733,7 +742,7 @@ export function replaceDuplicateInNml(
   const without = nml.slice(0, base + source.start) + nml.slice(base + source.end + trailing.length)
   const open = without.match(/<COLLECTION\b[^>]*>/)?.[0] ?? ''
   const counted = without.replace(open, () => setCount(open, countOf(open) - 1))
-  return { nml: rewritePlaylists(counted, keyOf(source), keyOf(kept[0])), outcome: 'replaced' }
+  return { nml: rewritePlaylists(counted, [[keyOf(source), keyOf(kept[0])]]), outcome: 'replaced' }
 }
 
 // How many cues (the beatgrid marker aside) and playlists the collection holds for a file,
