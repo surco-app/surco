@@ -2598,6 +2598,12 @@ export default function App(): React.JSX.Element {
       fireConfetti,
       sources: browser.sources,
       selectSource,
+      autoMarkSelected:
+        rekordboxCue &&
+        selectedTracks.length > 1 &&
+        !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
+          ? autoMarkSelected
+          : undefined,
     }),
   )
 

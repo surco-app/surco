@@ -266,6 +266,7 @@ export interface CommandDeps {
   fireConfetti: () => void
   sources: PlaylistSource[]
   selectSource: (source: PlaylistSource | null) => void
+  autoMarkSelected?: () => void
 }
 
 // The id → group map, for surfaces that need to classify commands without being able to
@@ -372,6 +373,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     fireConfetti,
     sources,
     selectSource,
+    autoMarkSelected,
   } = deps
   return [
     {
@@ -431,6 +433,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('export-usb'),
             enabled: true,
             run: openUsbExport,
+          },
+        ]
+      : []),
+    ...(autoMarkSelected
+      ? [
+          {
+            id: 'cues-auto-mark-selected',
+            group: 'library' as const,
+            title: tr('editor.cues.auto.selected'),
+            hint: hintFor('cues-auto-mark-selected'),
+            enabled: true,
+            run: autoMarkSelected,
           },
         ]
       : []),

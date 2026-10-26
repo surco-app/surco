@@ -203,6 +203,17 @@ describe('buildCommands library sources', () => {
   })
 })
 
+describe('buildCommands cue auto mark', () => {
+  it('is offered only while the editor shows its auto mark button for the selection', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-auto-mark-selected')).toBe(false)
+    const autoMarkSelected = vi.fn()
+    const c = commandById(makeDeps({ autoMarkSelected }), 'cues-auto-mark-selected')
+    expect(c.title).toBe('editor.cues.auto.selected')
+    c.run()
+    expect(autoMarkSelected).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('guideUrl', () => {
   // The web guide ships per-language at distinct paths, so a Spanish user must
   // not be dropped on the English page (and vice versa) when they open it.
