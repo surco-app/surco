@@ -47,6 +47,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-too-many': 'rekordboxQueue.notice.cuesTooMany',
     'cues-invalid': 'rekordboxQueue.notice.cuesInvalid',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
+    'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
     'cues-unfit': 'rekordboxQueue.notice.cuesUnfit',
   },

@@ -2512,5 +2512,10 @@
       "one-at-32": "Una cue a 32",
       "calls-only": "Solo CALL"
     }
+  },
+  "traktorQueue": {
+    "notice": {
+      "slotDropped": "Traktor tiene 7 botones para los cues de Surco, así que el cue H de {{track}} no se guardó"
+    }
   }
 }

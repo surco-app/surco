@@ -2512,5 +2512,10 @@
       "one-at-32": "Ein Cue bei 32",
       "calls-only": "Nur CALL"
     }
+  },
+  "traktorQueue": {
+    "notice": {
+      "slotDropped": "Traktor hat 7 Tasten für die Cues von Surco, daher wurde Cue H von {{track}} nicht gespeichert"
+    }
   }
 }

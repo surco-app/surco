@@ -1139,6 +1139,7 @@ export type RekordboxQueueNotice =
         | 'cues-changed'
         | 'cues-too-many'
         | 'cues-invalid'
+        | 'cues-slot-dropped'
       track: string
     }
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }

@@ -2512,5 +2512,10 @@
       "one-at-32": "One cue at 32",
       "calls-only": "CALL only"
     }
+  },
+  "traktorQueue": {
+    "notice": {
+      "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved"
+    }
   }
 }
