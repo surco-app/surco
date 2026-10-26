@@ -4,7 +4,7 @@ import type { LibraryTagUpdate, MusicReviewField, TagChange } from '../shared/ty
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
 import { isRekordboxRunning } from './rekordboxProcess'
-import { writeBackup } from './rekordboxSessionBackup'
+import { checkpointCollection, writeBackup } from './rekordboxSessionBackup'
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
 
@@ -183,6 +183,7 @@ export async function updateRekordboxTags(
   }
   if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
   try {
+    checkpointCollection(collectionPath)
     await options.sessionBackup?.(collectionPath)
     await writeBackup(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
   } catch {
