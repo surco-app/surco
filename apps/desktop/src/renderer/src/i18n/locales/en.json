@@ -2546,13 +2546,14 @@
     "appliedChanges_other": "Done in Traktor · {{count}} changes",
     "backupFailed": "Could not back up Traktor. Surco will try again when you close it",
     "unreadable": "Surco can't read the Traktor collection right now, so nothing changed",
-    "writeFailed": "Couldn't save the cues to Traktor. The collection is as it was",
+    "writeFailed": "Couldn't save the changes to Traktor. The collection is as it was",
     "otherLibrary": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Traktor. Mark them again",
-      "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved"
+      "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved",
+      "editChanged": "{{playlist}} was not changed. It changed in Traktor"
     },
-    "discardConfirm": "Discard what is waiting? The cues go back to what Traktor has",
+    "discardConfirm": "Discard what is waiting? Your Traktor playlists and cues stay as Traktor has them",
     "pillHalted": "Traktor changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy collection.nml.surco-backup, so if anything looks wrong, restore from it first",
     "pillElsewhere": "Waiting for another Traktor collection",

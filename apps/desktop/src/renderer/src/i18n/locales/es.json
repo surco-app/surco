@@ -2546,13 +2546,14 @@
     "appliedChanges_other": "Listo en Traktor · {{count}} cambios",
     "backupFailed": "No se pudo hacer la copia de Traktor. Se intentará al cerrarlo otra vez",
     "unreadable": "Surco no puede leer ahora la colección de Traktor y no ha cambiado nada",
-    "writeFailed": "No se pudieron guardar las cues en Traktor. La colección sigue como estaba",
+    "writeFailed": "No se pudieron guardar los cambios en Traktor. La colección sigue como estaba",
     "otherLibrary": "Lo que espera es de otra colección de Traktor y no se ha cambiado nada. Vuelve a esa colección o descarta lo que espera",
     "notice": {
       "cuesChanged": "Las cues de {{track}} cambiaron en Traktor. Vuelve a marcarlas",
-      "slotDropped": "Traktor tiene 7 botones para las cues de Surco, así que la cue H de {{track}} no se guardó"
+      "slotDropped": "Traktor tiene 7 botones para las cues de Surco, así que la cue H de {{track}} no se guardó",
+      "editChanged": "{{playlist}} no se cambió. Cambió en Traktor"
     },
-    "discardConfirm": "¿Descartar lo que espera? Las cues vuelven a lo que dice Traktor",
+    "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Traktor se quedan como las tiene Traktor",
     "pillHalted": "Cambios de Traktor en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella",
     "pillElsewhere": "Pendiente de otra colección de Traktor",

@@ -2546,13 +2546,14 @@
     "appliedChanges_other": "Fait dans Traktor · {{count}} changements",
     "backupFailed": "Impossible de sauvegarder Traktor. Surco réessaiera à sa prochaine fermeture",
     "unreadable": "Surco ne peut pas lire la collection Traktor pour le moment, rien n’a changé",
-    "writeFailed": "Impossible d’enregistrer les cues dans Traktor. La collection est restée telle quelle",
+    "writeFailed": "Impossible d’enregistrer les modifications dans Traktor. La collection est restée telle quelle",
     "otherLibrary": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Traktor. Marque-les à nouveau",
-      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré"
+      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré",
+      "editChanged": "{{playlist}} n’a pas été modifiée. Elle a changé dans Traktor"
     },
-    "discardConfirm": "Abandonner ce qui attend ? Les cues reviennent à ce qu’a Traktor",
+    "discardConfirm": "Abandonner ce qui attend ? Vos playlists et cues Traktor restent comme Traktor les a",
     "pillHalted": "Changements Traktor en pause",
     "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours collection.nml.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
     "pillElsewhere": "En attente d’une autre collection Traktor",
