@@ -7,7 +7,10 @@ import { ipcMain } from 'electron'
 import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
+vi.mock('electron', () => ({
+  ipcMain: { handle: vi.fn() },
+  BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
+}))
 vi.mock('./rekordboxDb', async (actual) => {
   const real = await actual<typeof import('./rekordboxDb')>()
   return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
@@ -783,17 +786,19 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
     expect(input.grid[1]).toEqual({ ms: 500, beat: 2 })
   })
 
-  it('queues a Traktor save on the Traktor queue and applies it there', async () => {
+  // Traktor only reads its collection when it starts, so a save made while it is open
+  // would wait unseen: the save asks to close Traktor over the window that made it.
+  it('queues a Traktor save on the Traktor queue and applies it there, asking over the window that saved', async () => {
     const rekordbox = queue()
     const traktor = queue()
     const { applyTraktor } = register(await collectionFile(), rekordbox, traktor)
     const req = { contentId: ID, path: '/Music/t.aiff', label: 't', wanted: [], fingerprint: 'F' }
-    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('queued')
+    expect(await handler('rekordbox:saveCues')({ sender: {} }, [req])).toBe('queued')
     expect(vi.mocked(traktor.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId)).toEqual(
       [ID],
     )
     expect(rekordbox.enqueue).not.toHaveBeenCalled()
-    expect(applyTraktor).toHaveBeenCalled()
+    expect(applyTraktor).toHaveBeenCalledWith('window')
   })
 
   it('shows and takes back a Traktor save from the Traktor queue', async () => {

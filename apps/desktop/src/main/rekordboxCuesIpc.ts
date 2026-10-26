@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, realpathSync } from 'node:fs'
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
 import { isTraktorContent, traktorKey } from '../shared/traktorContent'
@@ -51,7 +51,9 @@ export function registerRekordboxCuesIpc(host: {
     nml: () => string
     bootVolume: () => string
     queue: CueQueue
-    applyQuietly: () => void
+    // Asks to close Traktor over the window that saved: Traktor reads its collection only
+    // when it starts, so a save left waiting quietly would not show until it restarts.
+    applyQuietly: (win: BrowserWindow | null) => void
     words: (file: string) => Promise<Uint16Array | null>
   }
 }): void {
@@ -211,7 +213,7 @@ export function registerRekordboxCuesIpc(host: {
     const op = queue.cuesOp(contentId)
     if (op) queue.drop(op.id)
   })
-  ipcMain.handle('rekordbox:saveCues', (_e, reqs: SaveCuesRequest[]): SaveCuesOutcome => {
+  ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]): SaveCuesOutcome => {
     const targets = [
       { ...host, mine: reqs.filter((r) => !engineOf(r.contentId) && !traktorOf(r.contentId)) },
       ...(host.engine ? [{ ...host.engine, mine: reqs.filter((r) => engineOf(r.contentId)) }] : []),
@@ -225,7 +227,7 @@ export function registerRekordboxCuesIpc(host: {
         for (const req of t.mine)
           if (req.provisional)
             host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
-        t.applyQuietly()
+        t.applyQuietly(BrowserWindow.fromWebContents(e.sender))
       } else outcome = 'other-collection'
     }
     return outcome

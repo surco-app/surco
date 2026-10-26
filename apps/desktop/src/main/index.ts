@@ -368,9 +368,11 @@ const traktorCueQueueWatch = watchRekordboxQueue({
   isRunning: isTraktorRunning,
   onApplied: announceTraktorApplied,
 })
-const applyTraktorCueQueueQuietly = (): void => {
+// A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
+// queued and lands when Traktor closes.
+const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
   void serialLibraryFlush(() =>
-    traktorCueQueue.apply(async () => !(await isTraktorRunning())),
+    traktorCueQueue.apply(() => ensureTraktorClosed(win, 'traktorQuitDetailCues')),
   ).then((result) => {
     announceTraktorApplied(result)
     if (stillWaiting(result)) traktorCueQueueWatch.poke()
@@ -1160,7 +1162,7 @@ function registerIpc(): void {
       nml: traktorReadPath,
       bootVolume: () => bootVolumeName(),
       queue: traktorCueQueue,
-      applyQuietly: applyTraktorCueQueueQuietly,
+      applyQuietly: applyTraktorCueQueueAsking,
       words: cachedCueWaveWords,
     },
   })
