@@ -4,9 +4,9 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
 import { traktorContentId } from '../shared/traktorContent'
-import type { CuesOp } from './rekordboxQueueOps'
+import type { CuesOp, EditOp } from './rekordboxQueueOps'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
-import { applyTraktorCuesBatch, withTraktorCues } from './traktorCuesWrite'
+import { applyTraktorBatch, withTraktorCues } from './traktorCuesWrite'
 
 const KEY = 'Macintosh HD/:Users/:dj/:Music/:power.flac'
 const ID = traktorContentId(KEY)
@@ -101,14 +101,14 @@ describe('withTraktorCues', () => {
   })
 })
 
-describe('applyTraktorCuesBatch', () => {
+describe('applyTraktorBatch', () => {
   const doc = nml([GRID, AUTOGRID, LOAD, BLUE])
 
   it('writes nothing, and asks nothing, when the set is the one Traktor holds', async () => {
     const file = await onDisk(doc)
     const ensureClosed = vi.fn(async () => true)
     const write = vi.fn(async () => null)
-    const result = await applyTraktorCuesBatch(file, [op(doc, asWanted(doc))], {
+    const result = await applyTraktorBatch(file, [op(doc, asWanted(doc))], {
       ensureClosed,
       write,
     })
@@ -120,7 +120,7 @@ describe('applyTraktorCuesBatch', () => {
   it('writes the new set into the collection on disk', async () => {
     const file = await onDisk(doc)
     const wanted = [...asWanted(doc), { ms: 60000, kind: HOT_KINDS[2], color: 5 }]
-    const result = await applyTraktorCuesBatch(file, [op(doc, wanted)], {
+    const result = await applyTraktorBatch(file, [op(doc, wanted)], {
       ensureClosed: async () => true,
       write: async (path, text) => {
         await writeFile(path, text)
@@ -134,7 +134,7 @@ describe('applyTraktorCuesBatch', () => {
   it('drops cue H, which has no Traktor button, and says so', async () => {
     const file = await onDisk(doc)
     const wanted = [...asWanted(doc), { ms: 60000, kind: HOT_KINDS[7], color: 5 }]
-    const result = await applyTraktorCuesBatch(file, [op(doc, wanted)], {
+    const result = await applyTraktorBatch(file, [op(doc, wanted)], {
       ensureClosed: async () => true,
       write: async () => null,
     })
@@ -146,7 +146,7 @@ describe('applyTraktorCuesBatch', () => {
 
   it('refuses a set built on cues Traktor changed since', async () => {
     const file = await onDisk(doc)
-    const result = await applyTraktorCuesBatch(file, [op(doc, asWanted(doc), 'stale')], {
+    const result = await applyTraktorBatch(file, [op(doc, asWanted(doc), 'stale')], {
       ensureClosed: async () => true,
     })
     expect(result).toMatchObject({
@@ -159,7 +159,7 @@ describe('applyTraktorCuesBatch', () => {
   it('refuses a set that moves the DJ load cue', async () => {
     const file = await onDisk(doc)
     const moved = asWanted(doc).map((c) => (c.id === '2' ? { ...c, ms: 1 } : c))
-    const result = await applyTraktorCuesBatch(file, [op(doc, moved)], {
+    const result = await applyTraktorBatch(file, [op(doc, moved)], {
       ensureClosed: async () => true,
     })
     expect(result).toMatchObject({
@@ -169,14 +169,14 @@ describe('applyTraktorCuesBatch', () => {
 
   it('refuses without a confirmed collection', async () => {
     expect(
-      await applyTraktorCuesBatch('', [op(doc, asWanted(doc))], { ensureClosed: async () => true }),
+      await applyTraktorBatch('', [op(doc, asWanted(doc))], { ensureClosed: async () => true }),
     ).toEqual({ ok: false, reason: 'unreadable' })
   })
 
   it('reports Traktor opening mid-write as busy, so the queue waits for it to close', async () => {
     const file = await onDisk(doc)
     const wanted = asWanted(doc).filter((c) => c.id !== '3')
-    const result = await applyTraktorCuesBatch(file, [op(doc, wanted)], {
+    const result = await applyTraktorBatch(file, [op(doc, wanted)], {
       ensureClosed: async () => true,
       write: async () => 'traktor-running',
     })
@@ -187,7 +187,7 @@ describe('applyTraktorCuesBatch', () => {
     const file = await onDisk(doc)
     const wanted = asWanted(doc).filter((c) => c.id !== '3')
     const write = vi.fn(async () => null)
-    const result = await applyTraktorCuesBatch(file, [op(doc, wanted)], {
+    const result = await applyTraktorBatch(file, [op(doc, wanted)], {
       ensureClosed: async () => false,
       write,
     })
@@ -202,7 +202,7 @@ describe('applyTraktorCuesBatch', () => {
     const file = await onDisk(strange)
     const write = vi.fn(async () => null)
     const wanted = asWanted(strange).filter((c) => c.ms !== 92674.60674)
-    const result = await applyTraktorCuesBatch(file, [op(strange, wanted)], {
+    const result = await applyTraktorBatch(file, [op(strange, wanted)], {
       ensureClosed: async () => true,
       write,
     })
@@ -220,7 +220,7 @@ describe('applyTraktorCuesBatch', () => {
     const doc2 = nml([GRID, AUTOGRID, marker])
     const file = await onDisk(doc2)
     const wanted = [...asWanted(doc2), { ms: 60000, kind: HOT_KINDS[1], color: 5 }]
-    const result = await applyTraktorCuesBatch(file, [op(doc2, wanted)], {
+    const result = await applyTraktorBatch(file, [op(doc2, wanted)], {
       ensureClosed: async () => true,
       write: async () => null,
     })
@@ -244,5 +244,37 @@ describe('applyTraktorCuesBatch', () => {
     const crlf = nml([GRID]).replace(/\n/g, '\r\n')
     const out = withTraktorCues(block(crlf), [{ ms: 5000, kind: HOT_KINDS[1], color: 5 }])
     expect(out.replace(/\r\n/g, '')).not.toContain('\n')
+  })
+
+  it('writes a cue save and a playlist edit queued together in one write, both landing', async () => {
+    const withList = doc.replace(
+      '</COLLECTION></NML>',
+      '</COLLECTION><PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1"><NODE TYPE="PLAYLIST" NAME="Friday"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="fri"></PLAYLIST></NODE></SUBNODES></NODE></PLAYLISTS></NML>',
+    )
+    const file = await onDisk(withList)
+    const write = vi.fn(async (path: string, text: string) => {
+      await writeFile(path, text)
+      return null
+    })
+    const edit: EditOp = {
+      id: 'e1',
+      kind: 'edit',
+      edit: { kind: 'add', playlistId: 'fri', tracks: [{ contentId: ID, paths: [] }] },
+      stamps: {},
+    }
+    const cues = op(
+      withList,
+      asWanted(withList).filter((c) => c.id !== '3'),
+    )
+    const result = await applyTraktorBatch(file, [cues, edit], {
+      ensureClosed: async () => true,
+      write,
+      bootVolume: 'Macintosh HD',
+    })
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    expect(write).toHaveBeenCalledTimes(1)
+    const after = await readFile(file, 'utf8')
+    expect(after).not.toContain('START="92674.606740"')
+    expect(after).toContain(`KEY="${KEY}"`)
   })
 })

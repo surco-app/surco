@@ -126,6 +126,21 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
   }
 }
 
+// The collection's keys and, for adding a dropped file, the keys behind each file path
+// (composed, as macOS may hand the same name decomposed).
+export function traktorCollectionIndex(
+  nml: string,
+  bootVolume: string,
+): { keys: Set<string>; byPath: Map<string, string[]> } {
+  const tracks = collection(nml)
+  const byPath = new Map<string, string[]>()
+  for (const t of tracks) {
+    const path = traktorFileOf(t.block, bootVolume).normalize('NFC')
+    byPath.set(path, [...(byPath.get(path) ?? []), t.key])
+  }
+  return { keys: new Set(tracks.map((t) => t.key)), byPath }
+}
+
 // A separator is recognised by what it is, as in rekordbox: a blank file of a second or two.
 function isSeparator(track: Track): boolean {
   const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''

@@ -160,7 +160,7 @@ import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
-import { applyTraktorCuesBatch } from './traktorCuesWrite'
+import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { nmlPath } from './traktorPlaylists'
@@ -349,7 +349,7 @@ const traktorWritePath = (): string => {
 const traktorCueQueue = createRekordboxQueue({
   store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
   collection: traktorWritePath,
-  applyBatch: (nml, ops, ensureClosed) => applyTraktorCuesBatch(nml, ops, { ensureClosed }),
+  applyBatch: (nml, ops, ensureClosed) => applyTraktorBatch(nml, ops, { ensureClosed }),
   repoint: async () => [],
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),

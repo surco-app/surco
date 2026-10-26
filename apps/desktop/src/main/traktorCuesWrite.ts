@@ -3,7 +3,7 @@ import log from 'electron-log/main'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
-import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { BatchResult, EditOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import {
   readTraktorTrackCues,
   traktorCueElements,
@@ -12,13 +12,15 @@ import {
   traktorEntryBlock,
 } from './traktorCues'
 import { withAttr } from './traktorNml'
-import { writeCollection } from './traktorNmlLibrary'
+import { bootVolumeName, writeCollection } from './traktorNmlLibrary'
+import { applyTraktorEdits } from './traktorPlaylistEdit'
 
 const NO_BUTTON = HOT_KINDS[HOT_KINDS.length - 1]
 
 export interface TraktorCuesWriteDeps {
   ensureClosed: () => Promise<boolean>
   write?: typeof writeCollection
+  bootVolume?: string
 }
 
 function buttonOf(kind: number): number {
@@ -69,7 +71,10 @@ function refusalOf(reason: string): RekordboxEditRefusal {
   return 'write-failed'
 }
 
-export async function applyTraktorCuesBatch(
+// Playlist edits and cue saves queued while Traktor was open go out together, in one
+// write: the edits first, since they rewrite only <PLAYLISTS>, which sits after every
+// ENTRY the cue saves then locate afresh.
+export async function applyTraktorBatch(
   nmlPath: string,
   ops: QueueOp[],
   deps: TraktorCuesWriteDeps,
@@ -82,8 +87,15 @@ export async function applyTraktorCuesBatch(
     log.warn(`Traktor cues: cannot read ${nmlPath}: ${(e as Error).message}`)
     return { ok: false, reason: 'unreadable' }
   }
-  let nml = original
+  const edits = applyTraktorEdits(
+    original,
+    ops.filter((op): op is EditOp => op.kind === 'edit'),
+    deps.bootVolume ?? bootVolumeName(),
+  )
+  let nml = edits.nml
   const outcomes: OpOutcome[] = ops.map((op) => {
+    const edited = edits.outcomes.get(op.id)
+    if (edited) return edited
     const refused = (code: 'cues-changed' | 'cues-invalid'): OpOutcome => ({
       id: op.id,
       applied: false,
