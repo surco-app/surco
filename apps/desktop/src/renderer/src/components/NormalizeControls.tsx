@@ -257,13 +257,13 @@ export function NormalizeControls({
             onChange={(n) => onChange({ ...value, peakDb: n })}
             inputRef={peakRef}
           />
-          <label className="flex cursor-pointer items-center gap-3">
+          <label className="flex cursor-pointer items-start gap-3">
             <input
               data-testid="normalize-peak-per-channel"
               type="checkbox"
               checked={value.peakPerChannel === true}
               onChange={(e) => onChange({ ...value, peakPerChannel: e.target.checked })}
-              className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
             />
             <span className="text-sm">{tr('normalize.peakPerChannel')}</span>
           </label>
@@ -277,13 +277,13 @@ export function NormalizeControls({
           before reading removeDcOffset), and a visible checkbox under the None tab
           promised a correction that never happened. */}
       {value.mode !== 'none' && (
-        <label className="mt-3 flex cursor-pointer items-center gap-3 border-t border-[var(--color-line)] pt-3">
+        <label className="mt-3 flex cursor-pointer items-start gap-3 border-t border-[var(--color-line)] pt-3">
           <input
             data-testid="normalize-remove-dc"
             type="checkbox"
             checked={value.removeDcOffset === true}
             onChange={(e) => onChange({ ...value, removeDcOffset: e.target.checked })}
-            className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
           />
           <span className="text-sm">{tr('normalize.removeDcOffset')}</span>
         </label>

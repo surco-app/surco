@@ -26,7 +26,9 @@ export function CheckboxRow({
 }): React.JSX.Element {
   return (
     <label
-      className={`flex items-center gap-3 ${
+      // Top-aligned, with the box nudged onto the first line: centred, a label that wraps
+      // to two lines left the box floating between them.
+      className={`flex items-start gap-3 ${
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       } ${className}`}
     >
@@ -36,7 +38,7 @@ export function CheckboxRow({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
       />
       <span className="text-sm">{label}</span>
     </label>
