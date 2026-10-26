@@ -4,7 +4,7 @@
 // disabled row to someone who runs neither would be noise in a wizard that promises to
 // take under a minute; finding nothing simply removes the step.
 
-export type DjLibraryId = 'rekordbox' | 'traktor'
+export type DjLibraryId = 'rekordbox' | 'engine' | 'traktor'
 
 export interface DetectedDjLibrary {
   id: DjLibraryId
@@ -12,7 +12,7 @@ export interface DetectedDjLibrary {
 }
 
 // Fixed order rather than detection order, so the step reads the same on every machine.
-const ORDER: DjLibraryId[] = ['rekordbox', 'traktor']
+const ORDER: DjLibraryId[] = ['rekordbox', 'engine', 'traktor']
 
 export function detectedDjLibraries(
   found: Partial<Record<DjLibraryId, string>>,

@@ -17,6 +17,12 @@ describe('detectedDjLibraries', () => {
     ])
   })
 
+  it('offers Engine DJ when a library was found', () => {
+    expect(detectedDjLibraries({ engine: '/Users/dj/Music/Engine Library' })).toEqual([
+      { id: 'engine', path: '/Users/dj/Music/Engine Library' },
+    ])
+  })
+
   // Order is fixed rather than detection order, so the step reads the same on every
   // machine that finds both.
   it('lists both in a stable order', () => {
@@ -28,10 +34,24 @@ describe('detectedDjLibraries', () => {
     ])
   })
 
+  it('lists all three in a stable order, Engine DJ between rekordbox and Traktor', () => {
+    expect(
+      detectedDjLibraries({
+        traktor: '/dj/collection.nml',
+        engine: '/dj/Engine Library',
+        rekordbox: '/dj/master.db',
+      }),
+    ).toEqual([
+      { id: 'rekordbox', path: '/dj/master.db' },
+      { id: 'engine', path: '/dj/Engine Library' },
+      { id: 'traktor', path: '/dj/collection.nml' },
+    ])
+  })
+
   // The whole point of the gate: nothing found means no step at all, rather than a step
   // offering two things the user cannot enable.
   it('offers nothing when no collection was found', () => {
     expect(detectedDjLibraries({})).toEqual([])
-    expect(detectedDjLibraries({ rekordbox: '', traktor: '' })).toEqual([])
+    expect(detectedDjLibraries({ rekordbox: '', engine: '', traktor: '' })).toEqual([])
   })
 })

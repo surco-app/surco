@@ -11,6 +11,7 @@ vi.hoisted(() => {
     // The wizard asks both on mount to decide whether the collections step exists at all.
     rekordboxCollection: async () => '',
     detectTraktorNmlPath: async () => null,
+    engineAvailable: async () => false,
   }
 })
 
@@ -358,6 +359,37 @@ describe('OnboardingWizard destination', () => {
       )
     } finally {
       api.api.detectTraktorNmlPath = async () => null
+    }
+  })
+
+  it('offers Engine DJ alone and saves its sync when the DJ ticks it', async () => {
+    const api = window as unknown as {
+      api: {
+        rekordboxCollection: () => Promise<string>
+        engineAvailable: () => Promise<boolean>
+      }
+    }
+    api.api.rekordboxCollection = async () => ''
+    api.api.engineAvailable = async () => true
+    try {
+      const onFinish = vi.fn()
+      render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+      expect(
+        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+      ).toBeInTheDocument()
+      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      const toggle = await screen.findByTestId('onboarding-sync-engine')
+      expect(toggle).not.toBeChecked()
+      expect(screen.getByTestId('onboarding-djlibrary-engine')).toHaveTextContent(
+        '/music/Engine Library',
+      )
+      expect(screen.queryByTestId('onboarding-sync-rekordbox')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('onboarding-sync-traktor')).not.toBeInTheDocument()
+      fireEvent.click(toggle)
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ syncEngineDj: true }))
+    } finally {
+      api.api.engineAvailable = async () => false
     }
   })
 

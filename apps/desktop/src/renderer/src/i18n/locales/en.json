@@ -1633,6 +1633,8 @@
     "djLibrary": {
       "rekordbox": "rekordbox",
       "rekordboxBody": "Keep the collection in step when converting.",
+      "engine": "Engine DJ",
+      "engineBody": "Keep the library in step when converting.",
       "traktor": "Traktor",
       "traktorBody": "Write cue points and beatgrid into the collection."
     }

@@ -1633,6 +1633,8 @@
     "djLibrary": {
       "rekordbox": "rekordbox",
       "rekordboxBody": "Garder la collection à jour à la conversion.",
+      "engine": "Engine DJ",
+      "engineBody": "Garder la bibliothèque à jour à la conversion.",
       "traktor": "Traktor",
       "traktorBody": "Écrire les cue points et la grille dans la collection."
     }
