@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { chmod, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { MY_FLOW } from '../shared/cueFlows'
 import {
@@ -62,7 +62,7 @@ import {
   type TrackOp,
   type XmlDraft,
 } from './rekordboxQueueOps'
-import { writeBackup } from './rekordboxSessionBackup'
+import { checkpointCollection, restoreCollection, writeBackup } from './rekordboxSessionBackup'
 
 // Writes a batch of organising operations into the user's rekordbox collection, the one
 // library they cannot rebuild. Same bargain as the repoint (rekordboxLibrary.ts): the
@@ -106,32 +106,6 @@ export async function replaceFile(path: string, text: string): Promise<void> {
   }
 }
 
-// The collection is in WAL mode (measured), so committed changes can still sit in
-// master.db-wal. Folding them into master.db first is what makes a copy of master.db a
-// complete backup; it changes nothing rekordbox would see. A connection still reading an
-// older snapshot blocks the fold, and SQLite reports that only in the result (busy, or
-// fewer frames checkpointed than the log holds), never by throwing: then there is no
-// complete backup, and no write.
-function checkpoint(collectionPath: string): void {
-  const db = openRekordboxDb(collectionPath)
-  if (!db) throw new Error('rekordbox collection could not be opened')
-  try {
-    // Synchronous in the main process: a reader that blocks the fold must answer quickly
-    // instead of freezing the window for the default 5 s busy wait.
-    db.pragma('busy_timeout = 250')
-    const [result] = db.pragma('wal_checkpoint(TRUNCATE)') as {
-      busy: number
-      log: number
-      checkpointed: number
-    }[]
-    if (result.busy !== 0 || result.log !== result.checkpointed) {
-      throw new Error('rekordbox collection WAL could not be folded into master.db')
-    }
-  } finally {
-    db.close()
-  }
-}
-
 const isReadOnly = (err: unknown): boolean =>
   String((err as { code?: unknown })?.code).startsWith('SQLITE_READONLY')
 
@@ -159,27 +133,6 @@ async function restoreFile(path: string): Promise<void> {
     await replaceFile(path, await readFile(`${path}${BACKUP_SUFFIX}`, 'utf8'))
   } catch (err) {
     log.error(`rekordbox ${path} could not be restored from ${BACKUP_SUFFIX}: ${String(err)}`)
-  }
-}
-
-// The last resort, for a collection whose state after a failure is unknown (a rollback
-// that itself failed). Called with every connection of Surco's closed. A -wal with frames
-// still beside master.db would be replayed by SQLite over the copied-back file, mixing
-// the two; then nothing is overwritten and the copies stay on disk for the user.
-export async function restoreCollection(collectionPath: string): Promise<boolean> {
-  const wal = `${collectionPath}-wal`
-  if (existsSync(wal) && (await stat(wal)).size > 0) {
-    log.error(
-      `rekordbox ${collectionPath} not restored: its -wal still holds frames; the backups ${BACKUP_SUFFIX} and .surco-session are intact`,
-    )
-    return false
-  }
-  try {
-    await copyFile(`${collectionPath}${BACKUP_SUFFIX}`, collectionPath)
-    return true
-  } catch (err) {
-    log.error(`rekordbox ${collectionPath} could not be restored: ${String(err)}`)
-    return false
   }
 }
 
@@ -517,7 +470,7 @@ export async function applyRekordboxBatch(
   const touched = hasXml ? [collectionPath, xmlPath] : [collectionPath]
   let xml: string | null = null
   try {
-    checkpoint(collectionPath)
+    checkpointCollection(collectionPath)
     for (const path of touched) {
       await deps.sessionBackup(path)
       await writeBackup(path, `${path}${BACKUP_SUFFIX}`)
