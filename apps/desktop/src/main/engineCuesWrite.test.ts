@@ -243,6 +243,70 @@ describe('applyEngineCuesBatch', () => {
     expect(existsSync(`${dbFile(dir)}.surco-backup`)).toBe(false)
   })
 
+  it('reads the library again after Engine DJ quits, so what Engine saved on quitting is kept', async () => {
+    const dir = await library()
+    const savedOnQuit = () => {
+      const db = new Database(dbFile(dir))
+      db.prepare("UPDATE Track SET title = 'Saved by Engine' WHERE id = 1").run()
+      db.close()
+    }
+    const result = await applyEngineCuesBatch(
+      dir,
+      [op(dir, [UNTOUCHED, { ms: 24000, kind: 2, color: 42 }])],
+      deps({
+        ensureClosed: vi.fn(async () => {
+          savedOnQuit()
+          return true
+        }),
+      }),
+    )
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    const db = new Database(dbFile(dir), { readonly: true })
+    const title = (db.prepare('SELECT title FROM Track WHERE id = 1').get() as { title: string })
+      .title
+    db.close()
+    expect(title).toBe('Saved by Engine')
+    expect(slotsOf(dir).slots[1].cue).toEqual({
+      label: '',
+      sample: 44100 * 24,
+      argb: hotCueArgb(42),
+    })
+  })
+
+  it('refuses a save on pads Engine DJ changed as it quit', async () => {
+    const dir = await library()
+    const movedOnQuit = () => {
+      const db = new Database(dbFile(dir))
+      db.prepare('UPDATE PerformanceData SET quickCues = ? WHERE trackId = 1').run(
+        Buffer.from(
+          analysedTrack(1, [{ label: 'Moved', sample: 44100 * 12, argb: 0xfff4d338 }])
+            .quickCues as Uint8Array,
+        ),
+      )
+      db.close()
+    }
+    const result = await applyEngineCuesBatch(
+      dir,
+      [op(dir, [UNTOUCHED, { ms: 24000, kind: 2, color: 42 }])],
+      deps({
+        ensureClosed: vi.fn(async () => {
+          movedOnQuit()
+          return true
+        }),
+      }),
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ applied: false, notices: [{ code: 'cues-changed' }] }],
+    })
+    expect(slotsOf(dir).slots[0].cue).toEqual({
+      label: 'Moved',
+      sample: 44100 * 12,
+      argb: 0xfff4d338,
+    })
+  })
+
   it('refuses a set that names a pad Engine does not have, rather than writing part of it', async () => {
     const dir = await library()
     const original = readFileSync(dbFile(dir))

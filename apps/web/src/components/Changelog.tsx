@@ -10,6 +10,14 @@ import ScrollProgress from './ScrollProgress'
 // The page shows the text either way.
 type Item = string | { text: string; in: string }
 
+type Beta = {
+  kicker: string
+  version: string
+  title: string
+  how: string
+  items: string[]
+}
+
 type Release = {
   version: string
   date: string
@@ -43,6 +51,9 @@ export default function Changelog() {
   const { t } = useTranslation()
 
   const releases = t('changelog.releases', { returnObjects: true }) as Release[]
+  // What the current beta carries, kept apart from the releases (see changelog.test.ts):
+  // shown while it lists anything, emptied when the stable version ships.
+  const beta = t('changelog.beta', { returnObjects: true }) as Beta
   const recent = releases.slice(0, EXPANDED_RELEASES)
   const older = releases.slice(EXPANDED_RELEASES)
 
@@ -74,6 +85,28 @@ export default function Changelog() {
             </p>
           </Reveal>
         </section>
+
+        {beta.items.length > 0 && (
+          <section className="py-12">
+            <Reveal>
+              <div className="rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  <span className="font-mono text-xs tracking-wider text-blue uppercase">
+                    {beta.kicker}
+                  </span>
+                  <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
+                    v{beta.version}
+                  </span>
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
+                  {beta.title}
+                </h2>
+                <ItemList items={beta.items} />
+                <p className="mt-6 text-sm leading-relaxed text-faint">{beta.how}</p>
+              </div>
+            </Reveal>
+          </section>
+        )}
 
         {recent.map((r) => (
           <section

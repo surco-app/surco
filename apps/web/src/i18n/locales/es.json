@@ -973,6 +973,18 @@
     "kicker": "Novedades",
     "title": "Novedades",
     "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
+    "beta": {
+      "kicker": "En pruebas",
+      "version": "1.11.3-beta.1",
+      "title": "Lo que llega en la próxima versión",
+      "how": "Para probarlo ya, activa Recibir versiones beta en Ajustes, General, y reinicia Surco. Las betas llegan al instalador de la web, no a la copia de la Microsoft Store.",
+      "items": [
+        "Nueva pestaña Traktor con tus playlists, tus carpetas y las pistas que añadiste en los últimos 30 días",
+        "Marca cues en tus pistas de Traktor con Auto marcar o a mano. Se guardan en tu colección al cerrar Traktor, en los botones 2 a 8",
+        "Organiza tus playlists de Traktor desde Surco como las de rekordbox. Crea, renombra y borra playlists y carpetas, añade pistas, reordénalas y pon separadores",
+        "Las pistas de una playlist de rekordbox, Engine DJ o Traktor enseñan su carátula al abrirla, sin tener que pincharlas una a una"
+      ]
+    },
     "olderTitle": "Versiones anteriores",
     "outroTitle": "Pruébalo todo en tu próxima sesión",
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos."

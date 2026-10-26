@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
+import enLocale from './locales/en.json'
+import esLocale from './locales/es.json'
 
 type Item = string | { text: string; in: string }
 type Release = { version: string; date: string; title: string; items: Item[] }
@@ -43,5 +45,25 @@ describe.each([
     const numeric = releases.map((r) => r.version.split('.').map(Number))
     const sorted = [...numeric].sort((a, b) => b[0] - a[0] || b[1] - a[1])
     expect(numeric).toEqual(sorted)
+  })
+})
+
+// The "in testing" block sits outside the changelog files on purpose: those also feed the
+// desktop "what's new" popup, which filters by version, and a -beta.N stamp there would hide
+// the items from everyone who later updates to the stable release that carries them.
+describe('the beta block', () => {
+  type Beta = { version: string; items: string[] }
+  const betaOf = (locale: { changelog: { beta: Beta } }) => locale.changelog.beta
+
+  it('names the same beta in both languages, with the same number of items', () => {
+    const [b, e] = [betaOf(esLocale), betaOf(enLocale)]
+    expect(b.version).toBe(e.version)
+    expect(b.items).toHaveLength(e.items.length)
+  })
+
+  it('names a beta version while it lists anything, and nothing once the stable ships', () => {
+    const beta = betaOf(esLocale)
+    if (beta.items.length > 0) expect(beta.version).toMatch(/^\d+\.\d+\.\d+-beta\.\d+$/)
+    for (const item of [...beta.items, ...betaOf(enLocale).items]) expect(item.trim()).not.toBe('')
   })
 })

@@ -1,6 +1,6 @@
 import { type Dirent, readdirSync, readlinkSync } from 'node:fs'
 import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
-import { writeBackup } from './rekordboxSessionBackup'
+import { createSessionBackup, writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
 import { refreshCachedCoverArt } from './traktorCoverCache'
@@ -28,6 +28,11 @@ import { isTraktorRunning } from './traktorProcess'
 // he only wants as a safety net. What he can lose is the state before the previous
 // write, which the write he is undoing had already replaced anyway.
 const BACKUP_SUFFIX = '.surco-backup'
+
+// …and one copy per run, taken before its first write and left alone until the next run
+// (see rekordboxSessionBackup.ts): the per-write copy above no longer holds the DJ's
+// collection after a second save, this one still does. Reset when a convert-all begins.
+export const traktorSessionBackup = createSessionBackup({})
 
 // How far ahead of the collection a detached conversion's timestamp is placed. Seconds
 // rather than milliseconds because the comparison has to survive a filesystem that
@@ -110,6 +115,7 @@ export async function writeCollection(
   patched: string,
 ): Promise<SyncResult['reason'] | null> {
   try {
+    await traktorSessionBackup.ensure(nmlPath)
     await writeBackup(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
   } catch {
     // No backup, no write. A write without a recoverable copy next to it is the one
