@@ -16,10 +16,12 @@ export async function isEngineDjRunning(): Promise<boolean> {
     }
     await run('pgrep', ['-x', 'Engine DJ'])
     return true
-  } catch {
-    // pgrep exits non-zero when nothing matches; a missing tool also means "can't
-    // tell", where blocking every conversion would be worse than proceeding.
-    return false
+  } catch (err) {
+    // Only pgrep's documented "nothing matched" (exit status 1) is a real answer of
+    // "closed". Any other failure means the question went unanswered, which must not read
+    // as permission to write: a skipped write is reported, a lost library is not.
+    if (process.platform !== 'win32' && (err as { code?: unknown })?.code === 1) return false
+    return true
   }
 }
 
