@@ -2000,6 +2000,29 @@
         "otherCollection": "What is waiting belongs to another rekordbox collection, so nothing was changed. Go back to that collection or discard what is waiting"
       }
     },
+    "editTraktor": {
+      "added_one": "{{count}} track added to “{{name}}”",
+      "added_other": "{{count}} tracks added to “{{name}}”",
+      "noneAdded": "No tracks added to “{{name}}”",
+      "already_one": "{{count}} was already in the playlist",
+      "already_other": "{{count}} were already in the playlist",
+      "notInCollection_one": "{{count}} is not in the Traktor collection",
+      "notInCollection_other": "{{count}} are not in the Traktor collection",
+      "ambiguous_one": "{{count}} is in the collection twice and Surco can't tell which to use",
+      "ambiguous_other": "{{count}} are in the collection twice and Surco can't tell which to use",
+      "refused": {
+        "cancelled": "Traktor is still open. The change will apply when you close it",
+        "running": "Traktor opened before saving. The change will apply when you close it",
+        "unreadable": "Surco can't change the Traktor collection files right now, so nothing changed",
+        "backupFailed": "Couldn't back up the collection first, so nothing changed",
+        "writeFailed": "Couldn't save the change. The collection is as it was",
+        "readOnly": "The Traktor collection is read-only, so nothing changed",
+        "stale": "The playlist changed in Traktor. Check it and try again",
+        "noSeparator": "Your collection has no separator to copy",
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup next to it",
+        "otherCollection": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting"
+      }
+    },
     "tree": {
       "newPlaylist": "New playlist",
       "newFolder": "New folder",
@@ -2523,13 +2546,14 @@
     "appliedChanges_other": "Done in Traktor · {{count}} changes",
     "backupFailed": "Could not back up Traktor. Surco will try again when you close it",
     "unreadable": "Surco can't read the Traktor collection right now, so nothing changed",
-    "writeFailed": "Couldn't save the cues to Traktor. The collection is as it was",
+    "writeFailed": "Couldn't save the changes to Traktor. The collection is as it was",
     "otherLibrary": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Traktor. Mark them again",
-      "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved"
+      "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved",
+      "editChanged": "{{playlist}} was not changed. It changed in Traktor"
     },
-    "discardConfirm": "Discard what is waiting? The cues go back to what Traktor has",
+    "discardConfirm": "Discard what is waiting? Your Traktor playlists and cues stay as Traktor has them",
     "pillHalted": "Traktor changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy collection.nml.surco-backup, so if anything looks wrong, restore from it first",
     "pillElsewhere": "Waiting for another Traktor collection",

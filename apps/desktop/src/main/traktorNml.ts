@@ -63,7 +63,7 @@ export function findEntries(nml: string): NmlEntry[] {
   return entries
 }
 
-function escapeAttr(value: string): string {
+export function escapeAttr(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

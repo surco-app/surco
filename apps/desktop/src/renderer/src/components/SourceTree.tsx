@@ -45,6 +45,7 @@ export function SourceTree({
   selectedId,
   onSelect,
   edit,
+  fixed,
   onExportUsb,
 }: {
   width: number
@@ -64,6 +65,9 @@ export function SourceTree({
     onRename: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
   }
+  // Playlists the library keeps for itself (Traktor's Preparation, HISTORY…): 'tracks-only'
+  // takes tracks but is never renamed or deleted; 'locked' takes nothing.
+  fixed?: (node: SourceNode) => 'locked' | 'tracks-only' | null
   // The USB export, offered where it exists: rekordbox's tree on macOS and Windows.
   onExportUsb?: () => void
 }): React.JSX.Element {
@@ -212,6 +216,9 @@ export function SourceTree({
     const isFolder = node.kind === 'folder'
     const recent = node.id === RECENTLY_ADDED_ID
     const nodeEdit = recent ? undefined : edit
+    const fixedAs = fixed?.(node) ?? null
+    const dropEdit = fixedAs === 'locked' ? undefined : nodeEdit
+    const menuEdit = fixedAs === null ? nodeEdit : undefined
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
@@ -243,13 +250,13 @@ export function SourceTree({
             aria-current={selected || undefined}
             onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
             onContextMenu={(e) => {
-              if (!nodeEdit) return
+              if (!menuEdit) return
               e.preventDefault()
               setMenu({ node, x: e.clientX, y: e.clientY })
             }}
             data-drop-target={dropOn?.id === node.id || undefined}
             onDragOver={(e) => {
-              if (!nodeEdit || isFolder || !carriesTracks(e)) return
+              if (!dropEdit || isFolder || !carriesTracks(e)) return
               e.preventDefault()
               setDropOn({ id: node.id, count: dropCount(e) })
             }}
@@ -259,11 +266,11 @@ export function SourceTree({
               setDropOn((d) => (d?.id === node.id ? null : d))
             }}
             onDrop={(e) => {
-              if (!nodeEdit || isFolder || !carriesTracks(e)) return
+              if (!dropEdit || isFolder || !carriesTracks(e)) return
               e.preventDefault()
               e.stopPropagation()
               setDropOn(null)
-              nodeEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
+              dropEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
             }}
             style={{ paddingLeft: 10 + depth * 18 }}
             className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[13px] ${

@@ -57,6 +57,36 @@ function setup(selectedId: string | null = null, editable = false, nodes = NODES
 const files = (...names: string[]) => fakeDataTransfer(names.map((n) => new File([''], n)))
 
 describe('SourceTree', () => {
+  it('keeps Traktor’s own playlists from being renamed or deleted, and HISTORY from taking tracks', () => {
+    const PREP: SourceNode = { id: 'prep', name: 'Preparation', kind: 'playlist', count: 0 }
+    const HIST: SourceNode = { id: 'hist', name: 'HISTORY', kind: 'playlist', count: 0 }
+    const edit = { onCreate: vi.fn(), onDropTracks: vi.fn(), onRename: vi.fn(), onDelete: vi.fn() }
+    render(
+      <SourceTree
+        width={236}
+        title="Traktor"
+        source="traktor"
+        nodes={[PREP, HIST, ...NODES]}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={edit}
+        fixed={(n) => (n.id === 'hist' ? 'locked' : n.id === 'prep' ? 'tracks-only' : null)}
+      />,
+    )
+    fireEvent.contextMenu(screen.getByTestId('source-node-prep'))
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    const dt = files('a.wav')
+    fireEvent.dragOver(screen.getByTestId('source-node-prep'), { dataTransfer: dt })
+    fireEvent.drop(screen.getByTestId('source-node-prep'), { dataTransfer: dt })
+    expect(edit.onDropTracks).toHaveBeenCalledWith(PREP, dt.files)
+    fireEvent.dragOver(screen.getByTestId('source-node-hist'), { dataTransfer: dt })
+    fireEvent.drop(screen.getByTestId('source-node-hist'), { dataTransfer: dt })
+    expect(edit.onDropTracks).toHaveBeenCalledTimes(1)
+    fireEvent.contextMenu(screen.getByTestId('source-node-house'))
+    expect(screen.getByTestId('source-tree-menu')).toBeInTheDocument()
+  })
+
   it('takes the width the window layout hands it instead of a fixed one', () => {
     render(
       <SourceTree

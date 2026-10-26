@@ -158,3 +158,34 @@ describe('useRekordboxEdits', () => {
     expect(notify).not.toHaveBeenCalled()
   })
 })
+
+describe('useRekordboxEdits on Traktor', () => {
+  it('sends the edit to Traktor and names Traktor in what it reports', async () => {
+    const editTraktorPlaylist = vi.fn(async () => ({
+      applied: true as const,
+      report: { added: 1, already: 0, notInCollection: 1, ambiguous: 0 },
+    }))
+    ;(window as unknown as { api: unknown }).api = {
+      editRekordboxPlaylist: vi.fn(),
+      editTraktorPlaylist,
+    }
+    const notify = vi.fn()
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const { result } = renderHook(() => useRekordboxEdits(notify, 'traktor'), { wrapper })
+    await act(async () => {
+      await result.current(
+        { kind: 'add', playlistId: 'fri', tracks: [{ paths: ['/m/a.wav'] }] },
+        'Friday',
+      )
+    })
+    expect(editTraktorPlaylist).toHaveBeenCalled()
+    expect(window.api.editRekordboxPlaylist).not.toHaveBeenCalled()
+    expect(notify).toHaveBeenCalledWith(
+      '1 track added to “Friday”. 1 is not in the Traktor collection',
+      'neutral',
+    )
+  })
+})

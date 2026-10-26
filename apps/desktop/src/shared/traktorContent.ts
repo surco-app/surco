@@ -7,6 +7,11 @@ const PREFIX = 'traktor:'
 // own AutoGrid cue, which Surco never edits.
 export const TRAKTOR_HOT_OFFSET = 1
 
+// Traktor's own playlists at the root: it recreates or relies on them, so Surco never
+// renames or deletes them, and HISTORY is a log nobody edits.
+export const TRAKTOR_BUILT_IN = new Set(['Preparation', 'HISTORY', '_LOOPS', '_RECORDINGS'])
+export const TRAKTOR_HISTORY = 'HISTORY'
+
 // Buttons 2 to 8 are Surco's, so letters A to G; a hot cue is already a marker in Traktor,
 // so no CALL is written beside it.
 export const TRAKTOR_SLOTS: CueSlots = { kinds: HOT_KINDS.slice(0, 7), pairCalls: false }

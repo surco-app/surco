@@ -160,9 +160,10 @@ import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
-import { applyTraktorCuesBatch } from './traktorCuesWrite'
+import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
+import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
@@ -349,7 +350,7 @@ const traktorWritePath = (): string => {
 const traktorCueQueue = createRekordboxQueue({
   store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
   collection: traktorWritePath,
-  applyBatch: (nml, ops, ensureClosed) => applyTraktorCuesBatch(nml, ops, { ensureClosed }),
+  applyBatch: (nml, ops, ensureClosed) => applyTraktorBatch(nml, ops, { ensureClosed }),
   repoint: async () => [],
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
@@ -472,7 +473,10 @@ let traktorQuitPrompt: Promise<boolean> | null = null
 // to write collection.nml, since Traktor would not see it and overwrites it on exit.
 async function ensureTraktorClosed(
   win: BrowserWindow | null,
-  detail: 'traktorQuitDetail' | 'traktorQuitDetailCues' = 'traktorQuitDetail',
+  detail:
+    | 'traktorQuitDetail'
+    | 'traktorQuitDetailCues'
+    | 'traktorQuitDetailPlaylists' = 'traktorQuitDetail',
 ): Promise<boolean> {
   if (!(await isTraktorRunning())) return true
   traktorQuitPrompt ??= (async () => {
@@ -1171,6 +1175,13 @@ function registerIpc(): void {
     onReady: traktorCueQueueWatch.poke,
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
+  registerTraktorPlaylistEditIpc({
+    collection: traktorWritePath,
+    queue: traktorCueQueue,
+    ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailPlaylists'),
+    onApplied: announceTraktorApplied,
+    onWaiting: traktorCueQueueWatch.poke,
+  })
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),

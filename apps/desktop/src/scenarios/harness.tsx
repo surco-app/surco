@@ -290,6 +290,8 @@ function scenarioApi(
     rekordboxRecentCount: async () => 0,
     loadRekordboxPlaylist: async () => [],
     rekordboxHasSeparator: async () => false,
+    traktorHasSeparator: async () => false,
+    editTraktorPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,

@@ -126,9 +126,10 @@ export function useSourceBrowser({
   })
 
   const separator = useQuery({
-    queryKey: ['source-separator'],
-    queryFn: () => window.api.rekordboxHasSeparator(),
-    enabled: source === 'rekordbox',
+    queryKey: ['source-separator', source],
+    queryFn: () =>
+      source === 'traktor' ? window.api.traktorHasSeparator() : window.api.rekordboxHasSeparator(),
+    enabled: source === 'rekordbox' || source === 'traktor',
     staleTime: Number.POSITIVE_INFINITY,
   })
 

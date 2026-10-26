@@ -96,6 +96,7 @@ export const TRAKTOR_QUEUE_WORDS: QueueWords = {
   notices: {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'traktorQueue.notice.cuesChanged',
+    'edit-changed': 'traktorQueue.notice.editChanged',
   },
 }
 

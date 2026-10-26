@@ -214,6 +214,21 @@ describe('Traktor queue text', () => {
     )
   })
 
+  it('says a playlist changed in Traktor when an edit was refused for it', () => {
+    expect(noticeText(tr, { code: 'edit-changed', playlist: 'Friday' }, TRAKTOR_QUEUE_WORDS)).toBe(
+      'Friday was not changed. It changed in Traktor',
+    )
+  })
+
+  it('speaks of changes, not only cues, now that playlists wait in the same queue', () => {
+    expect(tr(TRAKTOR_QUEUE_WORDS.discardConfirm)).toBe(
+      'Discard what is waiting? Your Traktor playlists and cues stay as Traktor has them',
+    )
+    expect(tr(TRAKTOR_QUEUE_WORDS.refused('write-failed'))).toBe(
+      "Couldn't save the changes to Traktor. The collection is as it was",
+    )
+  })
+
   it('says the cues changed in Traktor when a save was refused for it', () => {
     expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
       'The cues of Tengo changed in Traktor. Mark them again',

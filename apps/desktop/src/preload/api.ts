@@ -242,6 +242,8 @@ export interface Api {
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // Whether the collection has a separator track that can be copied into a playlist.
   rekordboxHasSeparator: () => Promise<boolean>
+  editTraktorPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
+  traktorHasSeparator: () => Promise<boolean>
   engineCueQueue: () => Promise<RekordboxQueueState>
   applyEngineCueQueue: () => Promise<RekordboxQueueApplied | null>
   discardEngineCueQueue: () => Promise<void>

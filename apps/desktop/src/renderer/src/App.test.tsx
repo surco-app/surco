@@ -604,6 +604,21 @@ describe('App Traktor cues', () => {
     expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
   })
 
+  it('lets the DJ organise Traktor playlists once the collection is confirmed, and not before', async () => {
+    openTraktor({ traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+    expect(await screen.findByTestId('source-tree-new-playlist')).toBeInTheDocument()
+  })
+
+  it('offers no playlist editing in Traktor without a confirmed collection', async () => {
+    openTraktor({ traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(false) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+    await screen.findByTestId('source-node-u1')
+    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+  })
+
   it('shows what waits for Traktor to close beside the other queues', async () => {
     openTraktor({
       traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue({

@@ -3,7 +3,7 @@ import log from 'electron-log/main'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
-import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { BatchResult, EditOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import {
   readTraktorTrackCues,
   traktorCueElements,
@@ -12,13 +12,15 @@ import {
   traktorEntryBlock,
 } from './traktorCues'
 import { withAttr } from './traktorNml'
-import { writeCollection } from './traktorNmlLibrary'
+import { bootVolumeName, writeCollection } from './traktorNmlLibrary'
+import { applyTraktorEdits } from './traktorPlaylistEdit'
 
 const NO_BUTTON = HOT_KINDS[HOT_KINDS.length - 1]
 
 export interface TraktorCuesWriteDeps {
   ensureClosed: () => Promise<boolean>
   write?: typeof writeCollection
+  bootVolume?: string
 }
 
 function buttonOf(kind: number): number {
@@ -69,21 +71,21 @@ function refusalOf(reason: string): RekordboxEditRefusal {
   return 'write-failed'
 }
 
-export async function applyTraktorCuesBatch(
-  nmlPath: string,
+// Everything the batch would write, worked out on one reading of the collection.
+function planBatch(
+  text: string,
   ops: QueueOp[],
-  deps: TraktorCuesWriteDeps,
-): Promise<BatchResult> {
-  if (!nmlPath) return { ok: false, reason: 'unreadable' }
-  let original: string
-  try {
-    original = await readFile(nmlPath, 'utf8')
-  } catch (e) {
-    log.warn(`Traktor cues: cannot read ${nmlPath}: ${(e as Error).message}`)
-    return { ok: false, reason: 'unreadable' }
-  }
-  let nml = original
+  bootVolume: string,
+): { nml: string; outcomes: OpOutcome[] } {
+  const edits = applyTraktorEdits(
+    text,
+    ops.filter((op): op is EditOp => op.kind === 'edit'),
+    bootVolume,
+  )
+  let nml = edits.nml
   const outcomes: OpOutcome[] = ops.map((op) => {
+    const edited = edits.outcomes.get(op.id)
+    if (edited) return edited
     const refused = (code: 'cues-changed' | 'cues-invalid'): OpOutcome => ({
       id: op.id,
       applied: false,
@@ -111,8 +113,36 @@ export async function applyTraktorCuesBatch(
     nml = `${nml.slice(0, entry.start)}${next}${nml.slice(entry.end)}`
     return { id: op.id, applied: true, notices }
   })
-  if (nml === original) return { ok: true, wrote: false, outcomes }
+  return { nml, outcomes }
+}
+
+// Playlist edits and cue saves queued while Traktor was open go out together, in one
+// write: the edits first, since they rewrite only <PLAYLISTS>, which sits after every
+// ENTRY the cue saves then locate afresh.
+export async function applyTraktorBatch(
+  nmlPath: string,
+  ops: QueueOp[],
+  deps: TraktorCuesWriteDeps,
+): Promise<BatchResult> {
+  if (!nmlPath) return { ok: false, reason: 'unreadable' }
+  const read = async (): Promise<string | null> =>
+    readFile(nmlPath, 'utf8').catch((e) => {
+      log.warn(`Traktor cues: cannot read ${nmlPath}: ${(e as Error).message}`)
+      return null
+    })
+  const bootVolume = deps.bootVolume ?? bootVolumeName()
+  const original = await read()
+  if (original === null) return { ok: false, reason: 'unreadable' }
+  const first = planBatch(original, ops, bootVolume)
+  if (first.nml === original) return { ok: true, wrote: false, outcomes: first.outcomes }
+  // Closing Traktor makes it save the collection on its way out, so what was read above
+  // is out of date the moment it quits: the batch is worked out again on what it saved,
+  // which is also what catches a set the DJ changed in Traktor meanwhile.
   if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+  const fresh = await read()
+  if (fresh === null) return { ok: false, reason: 'unreadable' }
+  const { nml, outcomes } = planBatch(fresh, ops, bootVolume)
+  if (nml === fresh) return { ok: true, wrote: false, outcomes }
   const failure = await (deps.write ?? writeCollection)(nmlPath, nml)
   if (failure) return { ok: false, reason: refusalOf(failure) }
   return { ok: true, wrote: true, outcomes }

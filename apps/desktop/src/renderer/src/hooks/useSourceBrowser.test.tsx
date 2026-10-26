@@ -388,6 +388,15 @@ describe('useSourceBrowser', () => {
 
   // "Insert separator" copies the collection's own separator; with none, the menu item says
   // so instead of failing after the user picked it.
+  it('knows whether Traktor has a separator to copy', async () => {
+    const { result } = setup({
+      traktorAvailable: vi.fn().mockResolvedValue(true),
+      traktorHasSeparator: vi.fn().mockResolvedValue(true),
+    })
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.canInsertSeparator).toBe(true))
+  })
+
   it('knows whether rekordbox has a separator to copy', async () => {
     const { result } = setup({ rekordboxHasSeparator: vi.fn().mockResolvedValue(true) })
     expect(result.current.canInsertSeparator).toBe(false)

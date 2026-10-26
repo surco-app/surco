@@ -2000,6 +2000,29 @@
         "otherCollection": "Ce qui attend appartient à une autre collection rekordbox, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend"
       }
     },
+    "editTraktor": {
+      "added_one": "{{count}} piste ajoutée à « {{name}} »",
+      "added_other": "{{count}} pistes ajoutées à « {{name}} »",
+      "noneAdded": "Aucune piste ajoutée à « {{name}} »",
+      "already_one": "{{count}} était déjà dans la playlist",
+      "already_other": "{{count}} étaient déjà dans la playlist",
+      "notInCollection_one": "{{count}} n’est pas dans la collection Traktor",
+      "notInCollection_other": "{{count}} ne sont pas dans la collection Traktor",
+      "ambiguous_one": "{{count}} est deux fois dans la collection et Surco ne sait pas laquelle utiliser",
+      "ambiguous_other": "{{count}} sont deux fois dans la collection et Surco ne sait pas lesquelles utiliser",
+      "refused": {
+        "cancelled": "Traktor est encore ouvert. Le changement s’appliquera à sa fermeture",
+        "running": "Traktor s’est ouvert avant l’enregistrement. Le changement s’appliquera à sa fermeture",
+        "unreadable": "Surco ne peut pas modifier les fichiers de la collection Traktor pour le moment, rien n’a changé",
+        "backupFailed": "Impossible de sauvegarder la collection avant, rien n’a changé",
+        "writeFailed": "Impossible d’enregistrer la modification. La collection est restée telle quelle",
+        "readOnly": "La collection Traktor est en lecture seule, rien n’a changé",
+        "stale": "La playlist a changé dans Traktor. Vérifie-la et réessaie",
+        "noSeparator": "Ta collection n’a aucun séparateur à copier",
+        "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Traktor, remplacez collection.nml par la copie collection.nml.surco-backup à côté",
+        "otherCollection": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend"
+      }
+    },
     "tree": {
       "newPlaylist": "Nouvelle playlist",
       "newFolder": "Nouveau dossier",
@@ -2523,13 +2546,14 @@
     "appliedChanges_other": "Fait dans Traktor · {{count}} changements",
     "backupFailed": "Impossible de sauvegarder Traktor. Surco réessaiera à sa prochaine fermeture",
     "unreadable": "Surco ne peut pas lire la collection Traktor pour le moment, rien n’a changé",
-    "writeFailed": "Impossible d’enregistrer les cues dans Traktor. La collection est restée telle quelle",
+    "writeFailed": "Impossible d’enregistrer les modifications dans Traktor. La collection est restée telle quelle",
     "otherLibrary": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Traktor. Marque-les à nouveau",
-      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré"
+      "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré",
+      "editChanged": "{{playlist}} n’a pas été modifiée. Elle a changé dans Traktor"
     },
-    "discardConfirm": "Abandonner ce qui attend ? Les cues reviennent à ce qu’a Traktor",
+    "discardConfirm": "Abandonner ce qui attend ? Vos playlists et cues Traktor restent comme Traktor les a",
     "pillHalted": "Changements Traktor en pause",
     "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours collection.nml.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie",
     "pillElsewhere": "En attente d’une autre collection Traktor",
