@@ -38,6 +38,20 @@ describe('row waves', () => {
     expect(rowWaves).toHaveBeenCalledTimes(1)
   })
 
+  it('measures nothing, and throws nothing, where the app cannot measure a wave', async () => {
+    vi.useFakeTimers()
+    const rowWaves = vi.fn<Api['rowWaves']>(async () => ({}))
+    ;(window as unknown as { api: Partial<Api> }).api = { rowWaves }
+    const thrown: unknown[] = []
+    const keep = (e: unknown) => thrown.push(e)
+    process.on('unhandledRejection', keep)
+    subscribeRowWave({ path: '/m/n.wav' }, () => {})
+    await vi.advanceTimersByTimeAsync(60)
+    process.off('unhandledRejection', keep)
+    expect(thrown).toEqual([])
+    expect(rowWaveOf('/m/n.wav')).toBeNull()
+  })
+
   it('settles a failed ask as no wave instead of throwing', async () => {
     vi.useFakeTimers()
     stub(async () => {

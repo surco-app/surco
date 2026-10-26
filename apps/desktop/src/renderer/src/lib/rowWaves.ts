@@ -32,8 +32,8 @@ function measure(request: RowWaveRequest): void {
   const key = rowWaveKey(request)
   if (measuring.has(key)) return
   measuring.add(key)
-  void window.api
-    .waveform(request.path, 'low')
+  Promise.resolve()
+    .then(() => window.api.waveform(request.path, 'low'))
     .then((wave) => {
       if (!wave || !listeners.has(key)) return
       known.delete(key)
