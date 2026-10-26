@@ -71,26 +71,16 @@ function refusalOf(reason: string): RekordboxEditRefusal {
   return 'write-failed'
 }
 
-// Playlist edits and cue saves queued while Traktor was open go out together, in one
-// write: the edits first, since they rewrite only <PLAYLISTS>, which sits after every
-// ENTRY the cue saves then locate afresh.
-export async function applyTraktorBatch(
-  nmlPath: string,
+// Everything the batch would write, worked out on one reading of the collection.
+function planBatch(
+  text: string,
   ops: QueueOp[],
-  deps: TraktorCuesWriteDeps,
-): Promise<BatchResult> {
-  if (!nmlPath) return { ok: false, reason: 'unreadable' }
-  let original: string
-  try {
-    original = await readFile(nmlPath, 'utf8')
-  } catch (e) {
-    log.warn(`Traktor cues: cannot read ${nmlPath}: ${(e as Error).message}`)
-    return { ok: false, reason: 'unreadable' }
-  }
+  bootVolume: string,
+): { nml: string; outcomes: OpOutcome[] } {
   const edits = applyTraktorEdits(
-    original,
+    text,
     ops.filter((op): op is EditOp => op.kind === 'edit'),
-    deps.bootVolume ?? bootVolumeName(),
+    bootVolume,
   )
   let nml = edits.nml
   const outcomes: OpOutcome[] = ops.map((op) => {
@@ -123,8 +113,36 @@ export async function applyTraktorBatch(
     nml = `${nml.slice(0, entry.start)}${next}${nml.slice(entry.end)}`
     return { id: op.id, applied: true, notices }
   })
-  if (nml === original) return { ok: true, wrote: false, outcomes }
+  return { nml, outcomes }
+}
+
+// Playlist edits and cue saves queued while Traktor was open go out together, in one
+// write: the edits first, since they rewrite only <PLAYLISTS>, which sits after every
+// ENTRY the cue saves then locate afresh.
+export async function applyTraktorBatch(
+  nmlPath: string,
+  ops: QueueOp[],
+  deps: TraktorCuesWriteDeps,
+): Promise<BatchResult> {
+  if (!nmlPath) return { ok: false, reason: 'unreadable' }
+  const read = async (): Promise<string | null> =>
+    readFile(nmlPath, 'utf8').catch((e) => {
+      log.warn(`Traktor cues: cannot read ${nmlPath}: ${(e as Error).message}`)
+      return null
+    })
+  const bootVolume = deps.bootVolume ?? bootVolumeName()
+  const original = await read()
+  if (original === null) return { ok: false, reason: 'unreadable' }
+  const first = planBatch(original, ops, bootVolume)
+  if (first.nml === original) return { ok: true, wrote: false, outcomes: first.outcomes }
+  // Closing Traktor makes it save the collection on its way out, so what was read above
+  // is out of date the moment it quits: the batch is worked out again on what it saved,
+  // which is also what catches a set the DJ changed in Traktor meanwhile.
   if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+  const fresh = await read()
+  if (fresh === null) return { ok: false, reason: 'unreadable' }
+  const { nml, outcomes } = planBatch(fresh, ops, bootVolume)
+  if (nml === fresh) return { ok: true, wrote: false, outcomes }
   const failure = await (deps.write ?? writeCollection)(nmlPath, nml)
   if (failure) return { ok: false, reason: refusalOf(failure) }
   return { ok: true, wrote: true, outcomes }

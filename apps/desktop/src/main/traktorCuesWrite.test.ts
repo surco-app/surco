@@ -277,4 +277,61 @@ describe('applyTraktorBatch', () => {
     expect(after).not.toContain('START="92674.606740"')
     expect(after).toContain(`KEY="${KEY}"`)
   })
+
+  it('reads the collection again after Traktor quits, so what Traktor saved on quitting is kept and a set it changed is refused', async () => {
+    const file = await onDisk(doc)
+    const savedByTraktor = doc.replace('START="92674.606740"', 'START="99999.000000"')
+    const result = await applyTraktorBatch(
+      file,
+      [
+        op(
+          doc,
+          asWanted(doc).filter((c) => c.id !== '3'),
+        ),
+      ],
+      {
+        ensureClosed: async () => {
+          await writeFile(file, savedByTraktor)
+          return true
+        },
+        write: async (path, text) => {
+          await writeFile(path, text)
+          return null
+        },
+      },
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ applied: false, notices: [{ code: 'cues-changed' }] }],
+    })
+    expect(await readFile(file, 'utf8')).toBe(savedByTraktor)
+  })
+
+  it('applies to what Traktor saved on quitting when the set it touches did not change', async () => {
+    const file = await onDisk(doc)
+    const elsewhere = doc.replace('<STEMS STEMS="x">', '<STEMS STEMS="y">')
+    await applyTraktorBatch(
+      file,
+      [
+        op(
+          doc,
+          asWanted(doc).filter((c) => c.id !== '3'),
+        ),
+      ],
+      {
+        ensureClosed: async () => {
+          await writeFile(file, elsewhere)
+          return true
+        },
+        write: async (path, text) => {
+          await writeFile(path, text)
+          return null
+        },
+      },
+    )
+    const after = await readFile(file, 'utf8')
+    expect(after).toContain('<STEMS STEMS="y">')
+    expect(after).not.toContain('START="92674.606740"')
+  })
 })
