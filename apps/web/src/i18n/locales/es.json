@@ -954,7 +954,7 @@
           "Género y Grouping eligen cada uno su separador (coma, punto y coma, barra o uno tuyo) desde un menú junto al nombre del campo en Ajustes → Campos.",
           "Elige qué campos ver y cuáles obligar, crea los tuyos con un nombre y una clave, y reordénalos arrastrando o pulsa «Auto-organizar» para ponerlos en un orden sensato de un clic.",
           "La pestaña Estadísticas acumula tus números de por vida (pistas cargadas, convertidas, analizadas, encontradas en cada fuente…) y genera una imagen lista para compartir.",
-          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC convertidos.",
+          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC al convertirlos o actualizarlos. La pone como icono del archivo sin tocar el audio ni las etiquetas, así que Traktor los sigue aceptando aunque lo sincronices.",
           "En Búsqueda puedes limitar los resultados de Discogs a vinilo, CD, archivo o casete, y decidir cuántos ver.",
           "En Editor puedes apagar las explicaciones en línea cuando ya te las sepas de memoria, y volver a encenderlas cuando quieras.",
           "El análisis se guarda en caché para no repetirlo; puedes vaciarla, y abrir el registro de errores, desde Ajustes.",

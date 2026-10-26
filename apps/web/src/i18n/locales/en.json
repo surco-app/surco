@@ -954,7 +954,7 @@
           "Genre and Grouping each pick their separator (comma, semicolon, slash or one of your own) from a small menu beside the field name in Settings → Fields.",
           "Choose which fields to see and which to require, create your own with a name and a key, and reorder them by dragging or hit “Auto-organize” to put them in a sensible order in one click.",
           "The Stats tab tracks your lifetime numbers (tracks loaded, converted, analyzed, found on each source…) and generates an image ready to share.",
-          "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of converted FLACs.",
+          "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of FLACs when you convert or update them. It sets the art as the file's icon without touching the audio or the tags, so Traktor still accepts them even with sync on.",
           "Under Search you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
           "In Editor you can turn the inline explanations off once you know them by heart, and back on whenever you like.",
           "Analysis is cached so it isn't repeated; you can clear it, and open the error log, from Settings.",
