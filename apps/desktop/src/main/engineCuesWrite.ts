@@ -138,11 +138,10 @@ export function applyEngineCuesBatch(
   return withEngineDatabase(dbPath, () => writeEngineCuesBatch(dbPath, ops, deps))
 }
 
-async function writeEngineCuesBatch(
+async function openPlanned(
   dbPath: string,
   ops: QueueOp[],
-  deps: EngineCuesWriteDeps,
-): Promise<BatchResult> {
+): Promise<{ db: Database; outcomes: Map<string, OpOutcome>; planned: Planned[] } | null> {
   let db: Database
   try {
     const SQL = await loadSqlJs()
@@ -150,25 +149,45 @@ async function writeEngineCuesBatch(
     db.exec('SELECT trackId FROM PerformanceData LIMIT 1')
   } catch (e) {
     log.warn(`Engine DJ cues: cannot read ${dbPath}: ${(e as Error).message}`)
-    return { ok: false, reason: 'unreadable' }
+    return null
   }
-  try {
-    const outcomes = new Map<string, OpOutcome>()
-    const planned: Planned[] = []
-    for (const op of ops) {
-      const p = plan(db, op)
-      if ('outcome' in p) outcomes.set(op.id, p.outcome)
-      else planned.push(p)
-    }
-    const inOrder = (): OpOutcome[] => ops.map((op) => outcomes.get(op.id) as OpOutcome)
-    if (planned.length === 0) return { ok: true, wrote: false, outcomes: inOrder() }
+  const outcomes = new Map<string, OpOutcome>()
+  const planned: Planned[] = []
+  for (const op of ops) {
+    const p = plan(db, op)
+    if ('outcome' in p) outcomes.set(op.id, p.outcome)
+    else planned.push(p)
+  }
+  return { db, outcomes, planned }
+}
 
-    if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
-    try {
-      await assertEngineClosed(dbPath)
-    } catch {
-      return { ok: false, reason: 'rekordbox-running' }
-    }
+async function writeEngineCuesBatch(
+  dbPath: string,
+  ops: QueueOp[],
+  deps: EngineCuesWriteDeps,
+): Promise<BatchResult> {
+  const inOrder = (outcomes: Map<string, OpOutcome>): OpOutcome[] =>
+    ops.map((op) => outcomes.get(op.id) as OpOutcome)
+  const first = await openPlanned(dbPath, ops)
+  if (!first) return { ok: false, reason: 'unreadable' }
+  first.db.close()
+  if (first.planned.length === 0)
+    return { ok: true, wrote: false, outcomes: inOrder(first.outcomes) }
+
+  if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+  try {
+    await assertEngineClosed(dbPath)
+  } catch {
+    return { ok: false, reason: 'rekordbox-running' }
+  }
+  // Engine DJ saves the library on its way out, so what was read above is out of date once
+  // it quits: the batch is worked out again on what it left, which also catches pads the
+  // DJ changed in Engine meanwhile.
+  const fresh = await openPlanned(dbPath, ops)
+  if (!fresh) return { ok: false, reason: 'unreadable' }
+  const { db, outcomes, planned } = fresh
+  try {
+    if (planned.length === 0) return { ok: true, wrote: false, outcomes: inOrder(outcomes) }
     try {
       await deps.sessionBackup(dbPath)
       await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
@@ -194,7 +213,7 @@ async function writeEngineCuesBatch(
     }
     for (const p of planned)
       outcomes.set(p.op.id, { id: p.op.id, applied: true, notices: p.notices })
-    return { ok: true, wrote: true, outcomes: inOrder() }
+    return { ok: true, wrote: true, outcomes: inOrder(outcomes) }
   } finally {
     db.close()
   }
