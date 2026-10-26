@@ -473,7 +473,18 @@ function Editing({
     dropProposal(ms)
   }
   const [pointDrag, setPointDrag] = useState(false)
-  const ghost = pointDrag ? undefined : (hoverGhost ?? proposalGhost ?? playheadGhost ?? undefined)
+  const anyGhost = pointDrag
+    ? undefined
+    : (hoverGhost ?? proposalGhost ?? playheadGhost ?? undefined)
+  // A proposal is drawn as it would land: in Traktor that is the plain cue's blue, whatever
+  // colour the flow's rule names.
+  const ghost =
+    traktor && anyGhost
+      ? {
+          ...anyGhost,
+          added: anyGhost.added.map((c) => (c.kind !== 0 ? { ...c, color: TRAKTOR_CUE_COLOR } : c)),
+        }
+      : anyGhost
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
   const markHere = () => {
     if (manual) dispatch({ type: 'add-call', ms: playheadMs })
@@ -1225,7 +1236,7 @@ function Editing({
               >
                 {tr('editor.cues.delete')}
               </button>
-              {markTarget.kind !== 0 && (
+              {markTarget.kind !== 0 && !traktor && (
                 <button
                   type="button"
                   role="menuitem"
@@ -1266,7 +1277,7 @@ function Editing({
               {tr('editor.cues.loop')}
             </span>
           )}
-          {selected.kind !== 0 && !state.locked.includes(selected.key) && (
+          {selected.kind !== 0 && !state.locked.includes(selected.key) && !traktor && (
             <div ref={colourRef} className="relative">
               <button
                 type="button"
@@ -1365,7 +1376,9 @@ function Editing({
           playing={audition.playing}
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
-          onRecolour={(key, color) => dispatch({ type: 'recolour', key, color })}
+          onRecolour={
+            traktor ? undefined : (key, color) => dispatch({ type: 'recolour', key, color })
+          }
           onDelete={(key) => dispatch(removeOf(key))}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
           onMemoryStep={memoryStep}

@@ -39,6 +39,12 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
 }
 
 describe('CueDeck', () => {
+  it('opens no palette on a pad where the library keeps no colour (Traktor)', () => {
+    setup({ onRecolour: undefined })
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    expect(screen.queryByTestId('cues-pad-colours')).not.toBeInTheDocument()
+  })
+
   it('shows only the pads the library has buttons for, so a Traktor track offers A to G', () => {
     setup({ kinds: [1, 2, 3, 5, 6, 7, 8] })
     expect(screen.getByTestId('cues-pad-G')).toBeInTheDocument()

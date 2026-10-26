@@ -51,7 +51,8 @@ export function CueDeck({
   playing: boolean
   onPlay: () => void
   onPad: (kind: number) => void
-  onRecolour: (key: string, color: number) => void
+  // Absent where the library keeps no colour of its own (Traktor), so no palette opens.
+  onRecolour?: (key: string, color: number) => void
   onDelete?: (key: string) => void
   onMemory: () => void
   onMemoryStep: (dir: 1 | -1) => void
@@ -128,7 +129,7 @@ export function CueDeck({
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault()
-                  if (cue && !locked.includes(cue.key)) setColouring(cue.key)
+                  if (cue && onRecolour && !locked.includes(cue.key)) setColouring(cue.key)
                 }}
                 style={
                   cue
@@ -160,7 +161,7 @@ export function CueDeck({
                   <CuePalette
                     value={cue.color}
                     onPick={(color) => {
-                      onRecolour(cue.key, color)
+                      onRecolour?.(cue.key, color)
                       setColouring(null)
                       onDone?.()
                     }}
