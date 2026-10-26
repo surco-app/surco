@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../../lib/donate'
 import {
+  formatCount,
   formatMatchCount,
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
@@ -101,7 +102,7 @@ function MatchSplit({
 }
 
 export function StatsTab({ settings }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const { reportError } = useToast()
   const { conversionCount, stats } = settings
   const anyActivity = conversionCount > 0 || CELLS.some(({ key }) => stats[key] > 0)
@@ -115,6 +116,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     try {
       const png = renderStatsImage({
         title: tr('settings.stats.shareTitle'),
+        language: i18n.language,
         conversionCount,
         countLabel: tr('settings.stats.shareHeroLabel'),
         cells: statsImageCells(stats).map(({ key, value }) => ({
@@ -124,7 +126,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         timeSaved:
           conversionCount > 0
             ? tr('settings.stats.timeSaved', {
-                time: formatTimeSaved(timeSavedSeconds(conversionCount)),
+                time: formatTimeSaved(timeSavedSeconds(conversionCount), i18n.language),
               })
             : null,
         perTrack:
@@ -149,7 +151,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
       {conversionCount > 0 && (
         <>
           <p data-testid="stats-count" className="text-4xl font-semibold tabular-nums text-fg">
-            {conversionCount}
+            {formatCount(conversionCount, i18n.language)}
           </p>
           <p className="mt-0.5 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
           {milestone !== null && (
@@ -162,8 +164,8 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
               </div>
               <p className="mt-1.5 text-xs text-fg-dim">
                 {tr('settings.stats.milestone', {
-                  milestone,
-                  remaining: milestone - conversionCount,
+                  milestone: formatCount(milestone, i18n.language),
+                  remaining: formatCount(milestone - conversionCount, i18n.language),
                 })}
               </p>
             </div>
@@ -182,7 +184,9 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
                 className="rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-3"
               >
                 <Icon size={15} className="mx-auto text-fg-dim" aria-hidden="true" />
-                <p className="mt-1.5 text-2xl font-semibold tabular-nums text-fg">{stats[key]}</p>
+                <p className="mt-1.5 text-2xl font-semibold tabular-nums text-fg">
+                  {formatCount(stats[key], i18n.language)}
+                </p>
                 <p className="mt-0.5 text-xs leading-tight text-fg-muted">
                   {tr(`settings.stats.${key}`)}
                 </p>
@@ -233,7 +237,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
       {conversionCount > 0 && (
         <p data-testid="stats-time-saved" className="mt-3 text-sm text-fg">
           {tr('settings.stats.timeSaved', {
-            time: formatTimeSaved(timeSavedSeconds(conversionCount)),
+            time: formatTimeSaved(timeSavedSeconds(conversionCount), i18n.language),
           })}
           <span className="text-fg-dim">
             {' '}
