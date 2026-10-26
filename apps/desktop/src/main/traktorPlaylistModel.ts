@@ -27,6 +27,7 @@ export interface PlaylistModel {
   root: ModelNode
   start: number
   end: number
+  eol: string
 }
 
 function skipSpace(nml: string, at: number): number {
@@ -34,12 +35,17 @@ function skipSpace(nml: string, at: number): number {
   return at
 }
 
-function tagAt(nml: string, at: number): string {
-  return nml.slice(at, nml.indexOf('>', at) + 1)
+function tagAt(nml: string, at: number): string | null {
+  const end = nml.indexOf('>', at)
+  return end < 0 ? null : nml.slice(at, end + 1)
 }
 
-function parseNode(nml: string, start: number, parent: ModelNode | null): ModelNode {
+// Reads one NODE, or null when the text is not shaped as Traktor writes it (cut short, a
+// raw ">" in a name, a folder or playlist missing its list): a tree Surco cannot follow
+// is not read at all, rather than guessed at and written back.
+function parseNode(nml: string, start: number, parent: ModelNode | null): ModelNode | null {
   const open = tagAt(nml, start)
+  if (!open?.startsWith('<NODE')) return null
   const type = attr(open, 'TYPE')
   const node: ModelNode = {
     id: '',
@@ -56,44 +62,47 @@ function parseNode(nml: string, start: number, parent: ModelNode | null): ModelN
   }
   let at = start + open.length
   if (open.endsWith('/>')) {
+    if (node.kind !== 'smartlist') return null
     node.text = open
     return node
   }
-  if (node.kind === 'folder') {
-    at = skipSpace(nml, at)
-    node.inner = tagAt(nml, at)
-    at += node.inner.length
-    if (!node.inner.endsWith('/>'))
-      for (;;) {
-        at = skipSpace(nml, at)
-        if (nml.startsWith('</SUBNODES>', at)) {
-          at += '</SUBNODES>'.length
-          break
-        }
+  if (node.kind === 'smartlist') {
+    const close = nml.indexOf('</NODE>', at)
+    if (close < 0) return null
+    node.text = nml.slice(start, close + '</NODE>'.length)
+    return node
+  }
+  const list = node.kind === 'folder' ? 'SUBNODES' : 'PLAYLIST'
+  at = skipSpace(nml, at)
+  const inner = tagAt(nml, at)
+  if (!inner?.startsWith(`<${list}`)) return null
+  node.inner = inner
+  node.uuid = node.kind === 'playlist' ? attr(inner, 'UUID') : ''
+  at += inner.length
+  if (!inner.endsWith('/>'))
+    for (;;) {
+      at = skipSpace(nml, at)
+      if (nml.startsWith(`</${list}>`, at)) {
+        at += `</${list}>`.length
+        break
+      }
+      if (node.kind === 'folder') {
         const child = parseNode(nml, at, node)
+        if (!child) return null
         node.children.push(child)
         at += child.text.length
-      }
-  } else if (node.kind === 'playlist') {
-    at = skipSpace(nml, at)
-    node.inner = tagAt(nml, at)
-    node.uuid = attr(node.inner, 'UUID')
-    at += node.inner.length
-    if (!node.inner.endsWith('/>'))
-      for (;;) {
-        at = skipSpace(nml, at)
-        if (nml.startsWith('</PLAYLIST>', at)) {
-          at += '</PLAYLIST>'.length
-          break
-        }
-        const close = nml.indexOf('</ENTRY>', at) + '</ENTRY>'.length
-        const text = nml.slice(at, close)
+      } else {
+        if (!nml.startsWith('<ENTRY', at)) return null
+        const end = nml.indexOf('</ENTRY>', at)
+        if (end < 0) return null
+        const text = nml.slice(at, end + '</ENTRY>'.length)
         node.rows.push({ key: attr(text.match(/<PRIMARYKEY\b[^>]*>/)?.[0] ?? '', 'KEY'), text })
-        at = close
+        at += text.length
       }
-  }
-  const close = nml.indexOf('</NODE>', at) + '</NODE>'.length
-  node.text = nml.slice(start, close)
+    }
+  at = skipSpace(nml, at)
+  if (!nml.startsWith('</NODE>', at)) return null
+  node.text = nml.slice(start, at + '</NODE>'.length)
   return node
 }
 
@@ -119,9 +128,10 @@ export function parsePlaylists(nml: string): PlaylistModel | null {
   const start = nml.indexOf('<NODE', section)
   if (start < 0) return null
   const root = parseNode(nml, start, null)
+  if (!root) return null
   root.id = 'root'
   assignIds(root, [])
-  return { root, start, end: start + root.text.length }
+  return { root, start, end: start + root.text.length, eol: nml.includes('\r\n') ? '\r\n' : '\n' }
 }
 
 function find(node: ModelNode, id: string): ModelNode | null {
@@ -145,21 +155,21 @@ function changed(node: ModelNode): boolean {
   return node.dirty || node.children.some(changed)
 }
 
-function render(node: ModelNode): string {
+function render(node: ModelNode, eol: string): string {
   if (!changed(node)) return node.text
   if (node.kind === 'folder') {
     const inner = withAttr(node.inner.replace(/\/>$/, '>'), 'COUNT', String(node.children.length))
-    const body = node.children.map((c) => `${render(c)}\n`).join('')
-    return `${node.open}${inner}${body ? `\n${body}` : ''}</SUBNODES>\n</NODE>`
+    const body = node.children.map((c) => `${render(c, eol)}${eol}`).join('')
+    return `${node.open}${inner}${body ? `${eol}${body}` : ''}</SUBNODES>${eol}</NODE>`
   }
   const inner = withAttr(node.inner.replace(/\/>$/, '>'), 'ENTRIES', String(node.rows.length))
-  const body = node.rows.map((r) => `${r.text}\n`).join('')
-  return `${node.open}${inner}${body}</PLAYLIST>\n</NODE>`
+  const body = node.rows.map((r) => `${r.text}${eol}`).join('')
+  return `${node.open}${inner}${body}</PLAYLIST>${eol}</NODE>`
 }
 
 export function serializePlaylists(nml: string, model: PlaylistModel | null): string {
   if (!model || !changed(model.root)) return nml
-  return `${nml.slice(0, model.start)}${render(model.root)}${nml.slice(model.end)}`
+  return `${nml.slice(0, model.start)}${render(model.root, model.eol)}${nml.slice(model.end)}`
 }
 
 // FNV-1a over what the DJ would see change: a playlist's rows in order, a folder's children.

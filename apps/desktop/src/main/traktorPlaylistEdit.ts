@@ -18,8 +18,8 @@ const builtIn = (node: ModelNode): boolean =>
   node.parent?.id === 'root' && TRAKTOR_BUILT_IN.has(node.name)
 const history = (node: ModelNode): boolean => builtIn(node) && node.name === TRAKTOR_HISTORY
 
-const rowText = (key: string): string =>
-  `<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="${escapeAttr(key)}"></PRIMARYKEY>\n</ENTRY>`
+const rowText = (key: string, eol: string): string =>
+  `<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="${escapeAttr(key)}"></PRIMARYKEY>${eol}</ENTRY>`
 
 function newNode(parent: ModelNode, name: string, folder: boolean): ModelNode {
   const uuid = folder ? '' : randomBytes(16).toString('hex')
@@ -94,6 +94,7 @@ function stale(op: EditOp, model: PlaylistModel | null): OpOutcome | null {
 interface Sources {
   index: ReturnType<typeof traktorCollectionIndex>
   separator: string | null
+  eol: string
 }
 
 function apply(r: Resolved, src: Sources): OpOutcome {
@@ -154,7 +155,7 @@ function apply(r: Resolved, src: Sources): OpOutcome {
       else keys.push(found[0])
     }
     if (keys.length === 0) return refused('nothing-to-add', report)
-    node.rows.push(...keys.map((key) => ({ key, text: rowText(key) })))
+    node.rows.push(...keys.map((key) => ({ key, text: rowText(key, src.eol) })))
     node.dirty = true
     return done({ report: { ...report, added: keys.length } })
   }
@@ -177,7 +178,7 @@ function apply(r: Resolved, src: Sources): OpOutcome {
   if (!src.separator) return refused('no-separator')
   const at = r.before ? node.rows.indexOf(r.before) : -1
   if (at < 0) return refused('stale')
-  node.rows.splice(at, 0, { key: src.separator, text: rowText(src.separator) })
+  node.rows.splice(at, 0, { key: src.separator, text: rowText(src.separator, src.eol) })
   node.dirty = true
   return done()
 }
@@ -200,6 +201,7 @@ export function applyTraktorEdits(
   const src: Sources = {
     index: traktorCollectionIndex(nml, bootVolume),
     separator: traktorSeparatorKey(nml),
+    eol: nml.includes('\r\n') ? '\r\n' : '\n',
   }
   for (const r of [...resolved].sort((a, b) => opRank(a.op) - opRank(b.op)))
     outcomes.set(r.op.id, apply(r, src))

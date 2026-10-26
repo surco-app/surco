@@ -86,4 +86,34 @@ describe('parsePlaylists', () => {
   it('reads a collection with no playlists as no model', () => {
     expect(parsePlaylists('<NML><COLLECTION></COLLECTION></NML>')).toBeNull()
   })
+
+  it('gives up on a tree it cannot follow instead of reading forever or swallowing a neighbour', () => {
+    const playlists = (body: string) =>
+      `<NML><COLLECTION></COLLECTION><PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="2">${body}</SUBNODES></NODE></PLAYLISTS></NML>`
+    const broken = [
+      PLAYLISTS_SAMPLE.slice(
+        0,
+        PLAYLISTS_SAMPLE.indexOf('<NODE TYPE="PLAYLIST" NAME="Friday">') + 60,
+      ),
+      PLAYLISTS_SAMPLE.slice(0, PLAYLISTS_SAMPLE.indexOf('<PRIMARYKEY') + 20),
+      playlists('<NODE TYPE="FOLDER" NAME="x"></NODE>'),
+      playlists(
+        '<NODE TYPE="PLAYLIST" NAME="a>b"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="u"></PLAYLIST></NODE>',
+      ),
+      playlists(
+        '<NODE TYPE="PLAYLIST" NAME="Odd"></NODE><NODE TYPE="PLAYLIST" NAME="B"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="b"></PLAYLIST></NODE>',
+      ),
+    ]
+    for (const nml of broken) expect(parsePlaylists(nml)).toBeNull()
+  })
+
+  it('keeps Windows line endings in the nodes it rewrites', () => {
+    const crlf = PLAYLISTS_SAMPLE.replace(/\n/g, '\r\n')
+    const model = parsePlaylists(crlf)
+    const dnb = nodeById(model, 'dnb')
+    if (!dnb) throw new Error('no dnb')
+    dnb.rows.push({ key: 'k', text: 'X' })
+    dnb.dirty = true
+    expect(serializePlaylists(crlf, model).replace(/\r\n/g, '')).not.toContain('\n')
+  })
 })

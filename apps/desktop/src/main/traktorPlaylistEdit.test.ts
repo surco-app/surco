@@ -154,4 +154,15 @@ describe('applyTraktorEdits', () => {
     )
     expect([...outcomes.values()].map((o) => o.reason)).toEqual(['stale', 'stale'])
   })
+
+  it('writes the rows it adds with the collection’s own line endings', () => {
+    const crlf = DOC.replace(/\n/g, '\r\n')
+    const { nml } = applyTraktorEdits(
+      crlf,
+      [op({ kind: 'add', playlistId: 'dnb', tracks: [{ paths: ['/m/b.mp3'] }] })],
+      'HD',
+    )
+    expect(nml).not.toBe(crlf)
+    expect(nml.replace(/\r\n/g, '')).not.toContain('\n')
+  })
 })
