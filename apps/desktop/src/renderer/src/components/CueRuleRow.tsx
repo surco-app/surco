@@ -253,24 +253,28 @@ export function CueRuleRow({
           )}{' '}
           <span className="inline-flex items-start gap-1 align-middle">
             {shownSlots.map((slot) => (
-              <span key={slot} className="relative flex flex-col items-center">
+              <span key={slot} className="relative flex">
+                {/* The distance sits inside its square, in black as on the wave's cue marks so
+                    it reads on every colour: under it, the numbers made the row taller than the
+                    sentence and set the squares off the line of text. */}
                 <button
                   type="button"
                   data-testid={`${id}-color-${slot}`}
                   aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
                   aria-expanded={open === `color-${slot}`}
                   onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
-                  style={{ backgroundColor: hotCueColor(colorAt(rule.color, slot)) }}
-                  className="press block h-[18px] w-[18px] rounded-[3px] border border-[var(--color-line)]"
-                />
-                {showDistance && (
-                  <span
-                    data-testid={`${id}-color-${slot}-distance`}
-                    className="text-[10px] leading-none text-fg-dim tabular-nums"
-                  >
-                    {rule.bars * (slot + 1)}
-                  </span>
-                )}
+                  style={{ backgroundColor: hotCueColor(colorAt(rule.color, slot)), color: '#000' }}
+                  className="press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1"
+                >
+                  {showDistance && (
+                    <span
+                      data-testid={`${id}-color-${slot}-distance`}
+                      className="text-[10px] leading-none font-semibold tabular-nums"
+                    >
+                      {rule.bars * (slot + 1)}
+                    </span>
+                  )}
+                </button>
                 {open === `color-${slot}` && (
                   <div
                     ref={paletteRef}
