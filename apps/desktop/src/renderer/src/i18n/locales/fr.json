@@ -1577,7 +1577,8 @@
       "lettersByTime": "Lettres dans l’ordre du morceau",
       "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactivez-le si chaque lettre est un pad fixe pour vous.",
       "markPoint": "Marquer le point avec un CALL",
-      "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type"
+      "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
+      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ et Traktor ne reçoivent que les hot cues"
     }
   },
   "errorBoundary": {

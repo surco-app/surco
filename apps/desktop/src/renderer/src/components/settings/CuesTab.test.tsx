@@ -64,17 +64,25 @@ function Harness({
 }
 
 describe('CuesTab', () => {
-  it('says under the rules that Traktor shows its cues in blue, only where Traktor is installed', async () => {
-    installApi({ traktorAvailable: async () => true })
+  // The rules are shared by every library, and two of their parts only fully reach
+  // rekordbox: CALLs (only rekordbox has them) and colours (Traktor paints by cue type).
+  it('says under the rules what reaches Engine DJ and Traktor, only where they are installed', async () => {
+    installApi({ traktorAvailable: async () => true, engineAvailable: async () => false })
     render(<Harness />)
-    expect(await screen.findByTestId('cue-flow-traktor-colours')).toHaveTextContent(
-      'In Traktor these cues show in blue, since Traktor colours each cue by its type',
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      'CALLs only exist in rekordbox. Engine DJ and Traktor get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
     )
     cleanup()
-    installApi({ traktorAvailable: async () => false })
+    installApi({ traktorAvailable: async () => false, engineAvailable: async () => true })
+    render(<Harness />)
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      /^CALLs only exist in rekordbox\. Engine DJ and Traktor get the hot cues only$/,
+    )
+    cleanup()
+    installApi({ traktorAvailable: async () => false, engineAvailable: async () => false })
     render(<Harness />)
     await screen.findByTestId('cue-flow-mark-point')
-    expect(screen.queryByTestId('cue-flow-traktor-colours')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
   it('marks the point with a CALL by default and lets a DJ who does not mark it turn that off, the preview following', () => {

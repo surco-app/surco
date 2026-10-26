@@ -1577,7 +1577,8 @@
       "lettersByTime": "Letras en orden de la pista",
       "lettersByTimeHint": "La A siempre es la primera cue de la pista. Apágalo si cada letra es un pad fijo para ti.",
       "markPoint": "Marcar el punto con un CALL",
-      "traktorColours": "En Traktor estas cues salen en azul, porque Traktor pinta cada cue según su tipo"
+      "traktorColours": "En Traktor estas cues salen en azul, porque Traktor pinta cada cue según su tipo",
+      "callsOnlyRekordbox": "Los CALL solo existen en rekordbox. Engine DJ y Traktor reciben solo los hot cues"
     }
   },
   "errorBoundary": {

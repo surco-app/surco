@@ -1577,7 +1577,8 @@
       "lettersByTime": "Buchstaben in Titelreihenfolge",
       "lettersByTimeHint": "A ist immer der erste Cue des Titels. Schalte es aus, wenn jeder Buchstabe für dich ein fester Pad ist.",
       "markPoint": "Den Punkt mit einem CALL markieren",
-      "traktorColours": "In Traktor erscheinen diese Cues blau, denn Traktor färbt jeden Cue nach seinem Typ"
+      "traktorColours": "In Traktor erscheinen diese Cues blau, denn Traktor färbt jeden Cue nach seinem Typ",
+      "callsOnlyRekordbox": "CALLs gibt es nur in rekordbox. Engine DJ und Traktor bekommen nur die Hot Cues"
     }
   },
   "errorBoundary": {
