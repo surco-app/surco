@@ -470,14 +470,17 @@ let traktorQuitPrompt: Promise<boolean> | null = null
 // True when Traktor is not running (possibly because the user just accepted quitting
 // it here); false when it is running and the user declined — the caller then refuses
 // to write collection.nml, since Traktor would not see it and overwrites it on exit.
-async function ensureTraktorClosed(win: BrowserWindow | null): Promise<boolean> {
+async function ensureTraktorClosed(
+  win: BrowserWindow | null,
+  detail: 'traktorQuitDetail' | 'traktorQuitDetailCues' = 'traktorQuitDetail',
+): Promise<boolean> {
   if (!(await isTraktorRunning())) return true
   traktorQuitPrompt ??= (async () => {
     const t = createMenuT(menuLocale())
     const opts = {
       type: 'warning' as const,
       message: t('traktorQuitMessage'),
-      detail: t('traktorQuitDetail'),
+      detail: t(detail),
       buttons: [t('traktorQuitConfirm'), t('traktorQuitCancel')],
       defaultId: 0,
       cancelId: 1,
@@ -658,9 +661,13 @@ function createWindow(): BrowserWindow {
     batchOpen: rekordboxBatchOpen,
     exporting: () => usbExport?.busy() ?? false,
     settle: () => usbExport?.stop() ?? Promise.resolve(),
-    writing: () => rekordboxQueue.busy() || engineCueQueue.busy(),
+    writing: () => rekordboxQueue.busy() || engineCueQueue.busy() || traktorCueQueue.busy(),
     finishWriting: () =>
-      Promise.all([rekordboxQueue.settled(), engineCueQueue.settled()]).then(() => undefined),
+      Promise.all([
+        rekordboxQueue.settled(),
+        engineCueQueue.settled(),
+        traktorCueQueue.settled(),
+      ]).then(() => undefined),
     unsavedCues: () => unsavedCueTracks,
     confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
@@ -1159,7 +1166,7 @@ function registerIpc(): void {
     onReady: engineCueQueueWatch.poke,
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
-    ensureClosed: (win) => ensureTraktorClosed(win),
+    ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
     onWaiting: traktorCueQueueWatch.poke,
     onReady: traktorCueQueueWatch.poke,
   })

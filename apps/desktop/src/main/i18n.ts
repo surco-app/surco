@@ -64,6 +64,7 @@ interface MenuStrings {
   engineOpenError: string
   traktorQuitMessage: string
   traktorQuitDetail: string
+  traktorQuitDetailCues: string
   traktorQuitConfirm: string
   traktorQuitCancel: string
   traktorSyncBlocked: string
@@ -166,6 +167,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor está abierto',
     traktorQuitDetail:
       'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+    traktorQuitDetailCues:
+      'Surco necesita cerrarlo para guardar las cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     traktorQuitConfirm: 'Cerrar Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
@@ -273,6 +276,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor is open',
     traktorQuitDetail:
       'Surco needs to close it to write into collection.nml. Traktor will quit safely; reopen it once the conversion finishes.',
+    traktorQuitDetailCues:
+      'Surco needs to close it to save the cues into collection.nml. Traktor will quit safely, and you can reopen it right away.',
     traktorQuitConfirm: 'Close Traktor',
     traktorQuitCancel: 'Cancel',
     traktorSyncBlocked: "Traktor's collection was not updated: Traktor is still open.",
@@ -381,6 +386,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor ist geöffnet',
     traktorQuitDetail:
       'Surco muss es schließen, um in collection.nml zu schreiben. Traktor wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
+    traktorQuitDetailCues:
+      'Surco muss es schließen, um die Cues in collection.nml zu speichern. Traktor wird sicher beendet, und du kannst es gleich wieder öffnen.',
     traktorQuitConfirm: 'Traktor schließen',
     traktorQuitCancel: 'Abbrechen',
     traktorSyncBlocked: 'Die Traktor-Sammlung wurde nicht aktualisiert: Traktor ist noch geöffnet.',
@@ -490,6 +497,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor est ouvert',
     traktorQuitDetail:
       'Surco doit le fermer pour écrire dans collection.nml. Traktor sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
+    traktorQuitDetailCues:
+      'Surco doit le fermer pour enregistrer les cues dans collection.nml. Traktor sera fermé proprement et tu pourras le rouvrir tout de suite.',
     traktorQuitConfirm: 'Fermer Traktor',
     traktorQuitCancel: 'Annuler',
     traktorSyncBlocked:
@@ -599,6 +608,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'O Traktor está aberto',
     traktorQuitDetail:
       'O Surco precisa fechá-lo para escrever no collection.nml. O Traktor será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    traktorQuitDetailCues:
+      'O Surco precisa fechá-lo para salvar os cues no collection.nml. O Traktor será fechado com segurança e você pode reabri-lo em seguida.',
     traktorQuitConfirm: 'Fechar o Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'A coleção do Traktor não foi atualizada: o Traktor ainda está aberto.',
