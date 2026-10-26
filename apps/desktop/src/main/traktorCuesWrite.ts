@@ -11,6 +11,7 @@ import {
   traktorCuesIntact,
   traktorEntryBlock,
 } from './traktorCues'
+import { withAttr } from './traktorNml'
 import { writeCollection } from './traktorNmlLibrary'
 
 const NO_BUTTON = HOT_KINDS[HOT_KINDS.length - 1]
@@ -47,7 +48,7 @@ export function withTraktorCues(block: string, wanted: WantedCue[]): string {
       }
       if (was.kind === w.kind) return was.element
       changed = true
-      return was.element.replace(/\bHOTCUE="[^"]*"/, `HOTCUE="${buttonOf(w.kind)}"`)
+      return withAttr(was.element, 'HOTCUE', String(buttonOf(w.kind)))
     })
   if (!changed && cues.length === rows.length) return block
   const all = [...kept, ...cues]

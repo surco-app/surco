@@ -15,12 +15,25 @@ export interface NmlEntry {
 
 const ENTRY_RE = /<ENTRY\b[^>]*>[\s\S]*?<\/ENTRY>/g
 
-// \b after the name stops VOLUME from also matching inside VOLUMEID="..." — no real
-// collision exists in Traktor's known LOCATION schema today, but the anchor is what
-// makes that true by construction rather than by accident.
+// Attributes are read pair by pair from the start of the tag, so a value that happens to
+// hold another attribute's name ("go HOTCUE=") or a longer name ending in the one asked
+// for (MUSICAL_KEY for KEY) is never taken for it. Values cannot hold a raw quote:
+// Traktor writes it as &quot;.
+const ATTR_RE = /([A-Za-z_][\w.:-]*)="([^"]*)"/g
+
 export function attr(fragment: string, name: string): string {
-  const m = fragment.match(new RegExp(`${name}\\b="([^"]*)"`))
-  return m ? unescapeAttr(m[1]) : ''
+  for (const m of fragment.matchAll(ATTR_RE)) if (m[1] === name) return unescapeAttr(m[2])
+  return ''
+}
+
+// The same pairing, to swap one attribute's value in place and leave the rest verbatim.
+export function withAttr(fragment: string, name: string, value: string): string {
+  for (const m of fragment.matchAll(ATTR_RE))
+    if (m[1] === name) {
+      const at = m.index + m[0].length - m[2].length - 1
+      return `${fragment.slice(0, at)}${value}${fragment.slice(at + m[2].length)}`
+    }
+  return fragment
 }
 
 // Traktor XML-escapes attribute values on write (escapeAttr below is the same

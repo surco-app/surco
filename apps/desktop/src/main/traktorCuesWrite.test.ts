@@ -228,4 +228,15 @@ describe('applyTraktorCuesBatch', () => {
       outcomes: [{ applied: false, notices: [{ code: 'cues-invalid' }] }],
     })
   })
+
+  it('moves a cue to another button even when its name holds the text HOTCUE=', async () => {
+    const odd =
+      '<CUE_V2 NAME="go HOTCUE=" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="2"></CUE_V2>'
+    const strange = nml([GRID, AUTOGRID, odd])
+    const relettered = asWanted(strange).map((c) => ({ ...c, kind: HOT_KINDS[4] }))
+    const out = withTraktorCues(block(strange), relettered)
+    expect(out).toContain(
+      '<CUE_V2 NAME="go HOTCUE=" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="5"></CUE_V2>',
+    )
+  })
 })
