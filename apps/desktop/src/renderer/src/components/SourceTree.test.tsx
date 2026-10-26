@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useEffect, useState } from 'react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
@@ -312,6 +313,50 @@ describe('SourceTree organising', () => {
     expect(onCreate).toHaveBeenCalledWith('root', 'Bolo', false)
     unmount()
     expect(newPlaylistRef.current).toBeNull()
+  })
+
+  it('keeps the name field focused when the palette that ran it hands focus back as it closes', () => {
+    const newPlaylistRef: { current: NewPlaylist | null } = { current: null }
+    const edit = { onCreate: vi.fn(), onDropTracks: vi.fn(), onRename: vi.fn(), onDelete: vi.fn() }
+    function Palette({ opener }: { opener: HTMLElement }) {
+      useEffect(() => () => opener.focus(), [opener])
+      return null
+    }
+    function Harness() {
+      const [open, setOpen] = useState(true)
+      const opener = document.getElementById('opener') as HTMLElement
+      return (
+        <>
+          <SourceTree
+            width={236}
+            title="rekordbox"
+            source="rekordbox"
+            nodes={NODES}
+            failed={false}
+            selectedId={null}
+            onSelect={vi.fn()}
+            edit={edit}
+            newPlaylistRef={newPlaylistRef}
+          />
+          {open && <Palette opener={opener} />}
+          <button
+            type="button"
+            data-testid="palette-run"
+            onClick={() => {
+              newPlaylistRef.current?.run()
+              setOpen(false)
+            }}
+          />
+        </>
+      )
+    }
+    const opener = document.createElement('button')
+    opener.id = 'opener'
+    document.body.append(opener)
+    render(<Harness />)
+    fireEvent.click(screen.getByTestId('palette-run'))
+    expect(screen.getByTestId('source-tree-name')).toHaveFocus()
+    opener.remove()
   })
 
   it('creates a folder inside a folder from its menu, opening it to show where', () => {
