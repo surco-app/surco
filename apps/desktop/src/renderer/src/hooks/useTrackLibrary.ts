@@ -482,7 +482,10 @@ export function useTrackLibrary({
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
     try {
-      const read = base.sourcePreview
+      // The light read leaves the cover out because the library painted it already; a row
+      // the library holds no art for needs the file's own, or it shows a placeholder until
+      // it is clicked.
+      const read = base.sourcePreview?.coverUrl
         ? await window.api.readMetaLight(path)
         : { ...(await window.api.readMeta(path)), partial: false }
       const { tags, duration, cover, foreignTags, failed, reviewRaw } = read
