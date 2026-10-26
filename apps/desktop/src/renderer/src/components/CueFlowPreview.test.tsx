@@ -16,7 +16,7 @@ describe('CueFlowPreview', () => {
     expect(screen.getAllByTestId(/^cue-wave-call-/)).toHaveLength(4)
     expect(screen.getByTestId('cue-wave')).toHaveAttribute('tabindex', '-1')
     expect(
-      screen.getByText('Example track at 128 BPM with the point at bar 96'),
+      screen.getByText('Example track at 128 BPM, marked at bar 96'),
     ).toBeInTheDocument()
   })
 

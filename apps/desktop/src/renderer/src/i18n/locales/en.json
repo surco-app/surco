@@ -779,9 +779,9 @@
     },
     "cues": {
       "title": "Cues",
-      "help": "Pick a flow and click the zoomed waveform where you want the point, or press Return to place it at the playhead. You can also pick Manual and set each cue by hand. Auto mark suggests points for you to accept or remove. Select a cue to move it, delete it or change its colour.",
+      "help": "Pick a flow and click the zoomed waveform where you want to mark, or press Return to mark at the playhead. You can also pick Manual and set each cue by hand. Auto mark suggests marks for you to accept or remove. Select a cue to move it, delete it or change its colour.",
       "unanalysed": "rekordbox has not analysed this track yet",
-      "tooMany": "It would need more than 8 hot cues. Remove a point.",
+      "tooMany": "It would need more than 8 hot cues. Remove a mark.",
       "save": "Save to rekordbox",
       "unreadable": "Could not read the cues from rekordbox",
       "discard": "Discard changes",
@@ -1507,11 +1507,11 @@
       "rules": "Rules",
       "addRule": "Add rule",
       "removeRule": "Remove rule",
-      "noRules": "No rules. Placing the flow leaves only the CALL of the point.",
+      "noRules": "No rules. The flow only puts a CALL where you mark.",
       "preview": "Preview",
-      "previewHint": "Example track at 128 BPM with the point at bar {{bar}}",
+      "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
-      "looseCall": "A loose CALL reads as a point the next time",
+      "looseCall": "A loose CALL will be taken as a mark next time",
       "block": {
         "from": "From",
         "direction": "Direction",
@@ -1523,9 +1523,9 @@
         "color": "Colour {{n}}"
       },
       "from": {
-        "drop": "From the point",
-        "first-beat": "From the first beat",
-        "last-beat": "From the last beat",
+        "drop": "From where you mark",
+        "first-beat": "From the track's first beat",
+        "last-beat": "From the track's last beat",
         "intro": "From each intro",
         "up": "From each build",
         "down": "From each breakdown",
@@ -1546,7 +1546,7 @@
         "always": "always",
         "fits": "if it fits",
         "clear": "if there is no other cue in that bar",
-        "first": "if there is none before the point"
+        "first": "if there is none before where you mark"
       },
       "place": {
         "hot": "hot cue",
@@ -1576,7 +1576,7 @@
       },
       "lettersByTime": "Letters in track order",
       "lettersByTimeHint": "A is always the first cue of the track. Turn it off if each letter is a fixed pad for you.",
-      "markPoint": "Mark the point with a CALL",
+      "markPoint": "Put a CALL where you mark",
       "traktorColours": "In Traktor these cues show in blue, since Traktor colours each cue by its type",
       "callsOnlyRekordbox": "CALLs only exist in rekordbox. Engine DJ and Traktor get the hot cues only"
     }
@@ -2480,7 +2480,7 @@
       "playlistGone": "{{playlist}} is no longer in rekordbox. {{track}} was not added",
       "editChanged": "{{playlist}} was not changed. It changed in rekordbox",
       "cuesChanged": "The cues of {{track}} changed in rekordbox. Mark them again",
-      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a point",
+      "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a mark",
       "cuesInvalid": "The cues of {{track}} were not saved. Surco could not read them as cues",
       "cuesAdjusted_one": "rekordbox has analysed {{track}}. 1 cue moved onto its grid, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox has analysed {{track}}. {{count}} cues moved onto its grid, the furthest {{maxMs}} ms",

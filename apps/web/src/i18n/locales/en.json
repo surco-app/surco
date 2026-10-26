@@ -2334,8 +2334,8 @@
           {
             "tab": "Cues",
             "section": "New flow",
-            "setting": "Mark the point with a CALL",
-            "note": "Give your flow a name, say Subidón. Its rule already counts back from the point every 16 bars and places hot cue + CALL. Change “Once” to “3 times” and pick “a colour per repeat” with blue, green and red. This box, ticked by default, adds the CALL at the point."
+            "setting": "Put a CALL where you mark",
+            "note": "Give your flow a name, say Subidón. Its rule already counts back from where you mark every 16 bars and places hot cue + CALL. Change “Once” to “3 times” and pick “a colour per repeat” with blue, green and red. This box, ticked by default, adds the CALL at the point."
           },
           {
             "tab": "Cues",
