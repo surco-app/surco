@@ -159,7 +159,10 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
+import { bootVolumeName } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
+import { nmlPath } from './traktorPlaylists'
+import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
@@ -1069,6 +1072,21 @@ function registerIpc(): void {
     artDir: () => join(app.getPath('userData'), 'engine-artwork'),
     allowMedia: (paths) => mediaAccess.allowAll(paths),
   })
+  registerTraktorPlaylistsIpc(
+    () =>
+      nmlPath(
+        getSettings().traktorNmlPath,
+        detectTraktorNmlPaths(app.getPath('home'), (dir) => {
+          try {
+            return readdirSync(dir)
+          } catch {
+            return []
+          }
+        }),
+        existsSync,
+      ),
+    { bootVolume: () => bootVolumeName(), allowMedia: (paths) => mediaAccess.allowAll(paths) },
+  )
   registerRekordboxQueueIpc(rekordboxQueue, {
     collection: rekordboxCollectionPath,
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
