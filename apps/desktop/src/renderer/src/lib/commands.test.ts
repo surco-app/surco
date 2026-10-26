@@ -112,6 +112,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     fireConfetti: () => {},
     sources: [],
     selectSource: () => {},
+    cueActionsRef: { current: null },
     ...overrides,
   }
 }
@@ -211,6 +212,34 @@ describe('buildCommands cue auto mark', () => {
     expect(c.title).toBe('editor.cues.auto.selected')
     c.run()
     expect(autoMarkSelected).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('buildCommands cue batch save', () => {
+  it('is offered only while the cue editor shows its batch save button', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-save-all')).toBe(false)
+    expect(
+      buildCommands(makeDeps({ cueActionsRef: { current: {} } })).some(
+        (c) => c.id === 'cues-save-all',
+      ),
+    ).toBe(false)
+  })
+
+  it('names the target as the button does and runs the button own save', () => {
+    const run = vi.fn()
+    const saveAll = { label: 'Guardar 3 pistas en Traktor', saving: false, run }
+    const c = commandById(makeDeps({ cueActionsRef: { current: { saveAll } } }), 'cues-save-all')
+    expect(c.title).toBe('Guardar 3 pistas en Traktor')
+    expect(c.enabled).toBe(true)
+    c.run()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  it('stays disabled while that save is running, as the button does', () => {
+    const saveAll = { label: 'x', saving: true, run: vi.fn() }
+    expect(
+      commandById(makeDeps({ cueActionsRef: { current: { saveAll } } }), 'cues-save-all').enabled,
+    ).toBe(false)
   })
 })
 

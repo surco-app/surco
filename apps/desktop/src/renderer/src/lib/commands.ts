@@ -125,6 +125,10 @@ export function runCommand(commands: Command[], id: string): void {
 // Everything the command registry reads or triggers, supplied by App per render so
 // each command's enabled/run pair sees the current state. The registry itself is
 // declarative data; keeping it here leaves App with only the wiring.
+export interface CueActions {
+  saveAll?: { label: string; saving: boolean; run: () => void }
+}
+
 export interface CommandDeps {
   tr: (key: string, options?: Record<string, unknown>) => string
   // The palette hint for a command's effective key binding (defaults + overrides).
@@ -267,6 +271,7 @@ export interface CommandDeps {
   sources: PlaylistSource[]
   selectSource: (source: PlaylistSource | null) => void
   autoMarkSelected?: () => void
+  cueActionsRef: { readonly current: CueActions | null }
 }
 
 // The id → group map, for surfaces that need to classify commands without being able to
@@ -374,7 +379,9 @@ export function buildCommands(deps: CommandDeps): Command[] {
     sources,
     selectSource,
     autoMarkSelected,
+    cueActionsRef,
   } = deps
+  const cueSaveAll = cueActionsRef.current?.saveAll
   return [
     {
       id: 'add',
@@ -445,6 +452,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('cues-auto-mark-selected'),
             enabled: true,
             run: autoMarkSelected,
+          },
+        ]
+      : []),
+    ...(cueSaveAll
+      ? [
+          {
+            id: 'cues-save-all',
+            group: 'library' as const,
+            title: cueSaveAll.label,
+            hint: hintFor('cues-save-all'),
+            enabled: !cueSaveAll.saving,
+            run: cueSaveAll.run,
           },
         ]
       : []),
