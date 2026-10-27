@@ -1,6 +1,7 @@
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import { PAGES } from './nav'
+import shots from './useCaseShots.json'
 
 export const USE_CASE_SOURCES = [
   'folder',
@@ -107,3 +108,21 @@ export function recipePathForAnchor(lang: Lang, hash: string): string | null {
   const c = CASES[lang].find((o) => `#${o.id}` === hash)
   return c ? pathOf(lang, c) : null
 }
+
+export const USE_CASE_SHOTS: Record<string, number[] | undefined> = shots
+
+export function settingGroups<S extends { tab: string }>(settings: S[]) {
+  const groups: { tab: string; settings: (S & { n: number })[] }[] = []
+  for (const s of settings) {
+    const row = { ...s, n: 0 }
+    const group = groups.find((g) => g.tab === s.tab)
+    if (group) group.settings.push(row)
+    else groups.push({ tab: s.tab, settings: [row] })
+  }
+  let n = 0
+  for (const g of groups) for (const s of g.settings) s.n = ++n
+  return groups
+}
+
+export const settingShot = (lang: Lang, id: string, index: number) =>
+  `${id}-${index + 1}-${lang}.webp`

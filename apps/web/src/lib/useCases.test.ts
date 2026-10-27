@@ -10,6 +10,9 @@ import {
   recipePages,
   recipePathForAnchor,
   searchForFilters,
+  settingGroups,
+  settingShot,
+  USE_CASE_SHOTS,
   USE_CASE_SOURCES,
   USE_CASE_SOURCES_BY_CASE,
   type UseCaseSource,
@@ -251,5 +254,41 @@ describe('the review recipe', () => {
     })
     const groups = spellingGroups([entry('a', right), entry('b', right), entry('c', typo)])
     expect(groups.map((g) => g.kind)).toEqual(['typo'])
+  })
+})
+
+// The reader changes settings one Settings tab at a time, with the capture of that tab
+// beside the list. The numbers drawn on each capture are the numbers in the list, so the
+// grouping and the numbering here are what the capture script draws.
+describe('use case settings by tab', () => {
+  const s = (tab: string, setting: string) => ({ tab, setting, note: '' })
+
+  it('groups the settings by tab in the order the recipe first visits each tab', () => {
+    const groups = settingGroups([s('Destino', 'a'), s('Formato', 'b'), s('Destino', 'c')])
+    expect(groups.map((g) => g.tab)).toEqual(['Destino', 'Formato'])
+    expect(groups[0].settings.map((x) => x.setting)).toEqual(['a', 'c'])
+  })
+
+  it('numbers the settings straight through, so no number repeats across captures', () => {
+    const groups = settingGroups([s('Destino', 'a'), s('Formato', 'b'), s('Destino', 'c')])
+    expect(groups.flatMap((g) => g.settings.map((x) => x.n))).toEqual([1, 2, 3])
+  })
+
+  it('names each capture after the recipe, the tab position and the language', () => {
+    expect(settingShot('es', 'replace', 0)).toBe('replace-1-es.webp')
+  })
+
+  // A recipe whose tab has no capture shows a broken image right where the reader is
+  // stuck, and a capture with no size makes the page jump as it loads.
+  it('has a sized capture for every tab every recipe visits, in both languages', () => {
+    for (const [lang, locale] of [
+      ['es', es],
+      ['en', en],
+    ] as const) {
+      const wanted = (locale.useCases.cases as { id: string; settings: Setting[] }[]).flatMap((c) =>
+        settingGroups(c.settings).map((_, i) => settingShot(lang, c.id, i)),
+      )
+      expect(wanted.filter((f) => !USE_CASE_SHOTS[f])).toEqual([])
+    }
   })
 })
