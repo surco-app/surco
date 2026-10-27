@@ -4,7 +4,13 @@ import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
 import { parseDeclick } from '../shared/declick'
 import { normalizeTrim } from '../shared/trim'
-import type { NormalizeConfig, NormalizeMode, SessionData, SessionEdit } from '../shared/types'
+import type {
+  AppliedRelease,
+  NormalizeConfig,
+  NormalizeMode,
+  SessionData,
+  SessionEdit,
+} from '../shared/types'
 import { isMissing, sourceStat } from './sourceStat'
 
 // The last-loaded track paths plus each track's staged (not yet converted) edits, so
@@ -75,6 +81,12 @@ function isNormalizeConfig(raw: unknown): raw is NormalizeConfig {
   )
 }
 
+function isAppliedRelease(raw: unknown): raw is AppliedRelease {
+  if (typeof raw !== 'object' || raw === null) return false
+  const a = raw as AppliedRelease
+  return [a.before, a.wrote].every((v) => typeof v === 'object' && v !== null)
+}
+
 // An edit written by this app is well-formed, but the file is hand-editable and old
 // versions wrote no edits at all — anything that isn't the expected shape degrades to
 // "no staged edits for this track" instead of poisoning the restore.
@@ -107,6 +119,9 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
   // The dials feed the next conversion's filters directly, so a hand-edited value that
   // is not a known shape reads as "never dialled" and the Settings default applies.
   if (!isNormalizeConfig(edit.normalize)) delete edit.normalize
+  // The next release applied reads it field by field, so an unknown shape reads as "no
+  // release remembered".
+  if (!isAppliedRelease(edit.appliedRelease)) delete edit.appliedRelease
   const declick = parseDeclick(edit.declick)
   if (declick) edit.declick = declick
   else delete edit.declick

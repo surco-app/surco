@@ -198,3 +198,11 @@ it('keeps the wanted rekordbox playlists of a staged track, so switching source 
   expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylists).toEqual([{ name: 'Cierre' }])
   expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylistsBase).toEqual(['3000'])
 })
+
+// Without it a relaunch between a wrong release and the right one leaves the wrong
+// release's label and Discogs id on the track, the very thing the memory exists to undo.
+it('keeps what the applied release wrote, so the next release can still take it back after a relaunch', () => {
+  const appliedRelease = { before: { publisher: '' }, wrote: { publisher: 'Wrong Records' } }
+  const t = track({ id: 'a', inputPath: '/m/a.wav', diskSignature: 'x', appliedRelease })
+  expect(sessionEdits([t])['/m/a.wav'].appliedRelease).toEqual(appliedRelease)
+})

@@ -1043,6 +1043,37 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0]?.rekordboxPlaylistsBase).toEqual(['3000'])
   })
 
+  it('restores what the applied release wrote', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    const appliedRelease = { before: { publisher: '' }, wrote: { publisher: 'Wrong Records' } }
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': { meta: { title: 'Restored' } as never, appliedRelease },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.appliedRelease).toEqual(appliedRelease)
+  })
+
   it('restores that a track came from rekordbox, Engine DJ or Traktor, so converting it keeps its file name', async () => {
     setApi({
       readMeta: vi.fn().mockResolvedValue({

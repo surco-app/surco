@@ -539,6 +539,9 @@ export interface SessionEdit {
   autoMatched?: boolean
   matchConfidence?: number
   matchProvider?: SearchProviderId
+  // What the last applied release wrote, so the next one can still take it back after a
+  // relaunch instead of leaving the wrong release's label and Discogs id behind.
+  appliedRelease?: AppliedRelease
   // The staged silence trim — seconds the user confirmed on the waveform but
   // hadn't converted yet, exactly the kind of edit this store exists to save.
   trim?: TrimRange
