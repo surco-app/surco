@@ -139,4 +139,4 @@ export function settingGroups<S extends { tab: string }>(settings: S[]) {
 }
 
 export const settingShot = (lang: Language, id: string, index: number) =>
-  `${id}-${index + 1}-${lang === 'ja' ? 'en' : lang}.webp`
+  `${id}-${index + 1}-${lang}.webp`

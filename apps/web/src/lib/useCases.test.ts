@@ -303,6 +303,12 @@ describe('use case settings by tab', () => {
     expect(settingShot('es', 'replace', 0)).toBe('replace-1-es.webp')
   })
 
+  // The numbers sit on the controls the recipe names, so a Japanese reader needs the
+  // Japanese app on screen: an English capture marks labels the text never mentions.
+  it('shows Japanese readers the Japanese app', () => {
+    expect(settingShot('ja', 'replace', 0)).toBe('replace-1-ja.webp')
+  })
+
   // A recipe whose tab has no capture shows a broken image right where the reader is
   // stuck, and a capture with no size makes the page jump as it loads.
   it('has a sized capture for every tab every recipe visits, in every language', () => {

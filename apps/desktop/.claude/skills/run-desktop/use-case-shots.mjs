@@ -1,11 +1,13 @@
 // Captures the Settings tabs each /casos-de-uso recipe asks the reader to change, with
 // the controls to touch numbered in the same order as the recipe's list.
 //
-//   node use-case-shots.mjs [caseId ...]   # default: every recipe, es and en
+//   node use-case-shots.mjs [caseId ...]   # default: every recipe, every app language
 //
 // Writes apps/web/public/use-cases/<caseId>-<n>-<lang>.webp, n being the tab's place in
 // the recipe, and its size to apps/web/src/lib/useCaseShots.json. groupByTab below must
 // match settingGroups in apps/web/src/lib/useCases.ts, whose numbers the page prints.
+// Languages the website does not carry yet are captured too, so adding one to the site
+// needs no new captures; recipe-labels.mjs names their settings.
 // The values are set by clicking them in the modal and never saved, so the profile in
 // /tmp stays as it was written.
 
@@ -15,6 +17,7 @@ import { createRequire } from 'node:module'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { APP_LANGUAGES, appLocale, recipeSettings } from './recipe-labels.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const appDir = resolve(here, '../../..')
@@ -24,7 +27,7 @@ const root = dirname(
     .toString()
     .trim(),
 )
-const mainEntry = join(root, 'apps/desktop/out/main/index.js')
+const mainEntry = join(appDir, 'out/main/index.js')
 const electronPath = createRequire(join(root, 'index.js'))('electron')
 const { _electron: electron } = createRequire(
   join(root, 'apps/desktop/.claude/skills/run-desktop/package.json'),
@@ -33,10 +36,6 @@ const { _electron: electron } = createRequire(
 const outDir = join(webDir, 'public/use-cases')
 const sizesFile = join(webDir, 'src/lib/useCaseShots.json')
 const json = (p) => JSON.parse(readFileSync(p, 'utf8'))
-const locales = {
-  es: { web: json(join(webDir, 'src/i18n/locales/es.json')), app: json(join(appDir, 'src/renderer/src/i18n/locales/es.json')) },
-  en: { web: json(join(webDir, 'src/i18n/locales/en.json')), app: json(join(appDir, 'src/renderer/src/i18n/locales/en.json')) },
-}
 
 const groupByTab = (settings) => {
   const groups = []
@@ -82,7 +81,7 @@ async function launch(lang) {
 }
 
 async function capture(page, lang, c, group, index) {
-  const tabId = Object.entries(locales[lang].app.settings.tabs).find(([, v]) => v === group.tab)[0]
+  const tabId = Object.entries(appLocale(lang).settings.tabs).find(([, v]) => v === group.tab)[0]
   await page.click('[data-testid="open-settings"]')
   await page.click(`[data-testid="settings-tab-${tabId}"]`)
   await page.waitForTimeout(400)
@@ -213,9 +212,9 @@ async function capture(page, lang, c, group, index) {
 const only = process.argv.slice(2)
 mkdirSync(outDir, { recursive: true })
 const sizes = json(sizesFile)
-for (const lang of ['es', 'en']) {
+for (const lang of APP_LANGUAGES) {
   const { app, page } = await launch(lang)
-  for (const c of locales[lang].web.useCases.cases) {
+  for (const c of recipeSettings(lang)) {
     if (only.length && !only.includes(c.id)) continue
     const groups = groupByTab(c.settings)
     for (const [i, g] of groups.entries()) await capture(page, lang, c, g, i)
