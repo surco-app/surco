@@ -7,12 +7,14 @@ import {
   attr,
   cuesToXml,
   detachedOutputPaths,
+  entryStates,
   escapeAttr,
   findEntries,
   matchedPatchCount,
   type NmlPatch,
   refreshedCoverIds,
   replaceDuplicateInNml,
+  spareEditedEntries,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -1380,5 +1382,68 @@ describe('attr', () => {
 
   it('never takes a longer attribute name that ends in the one asked for', () => {
     expect(attr('<INFO MUSICAL_KEY="7" KEY="8A">', 'KEY')).toBe('8A')
+  })
+})
+
+// A conversion's patch can wait in the queue while Traktor stays open, and the DJ keeps
+// working: new hot cues, a changed rating, another cover. Written later as it was taken,
+// the patch put the conversion's cues and stars back over that work. What the patch can
+// overwrite is noted when it is held; if the entry no longer reads the same when it is
+// written, only the move to the converted file goes in.
+describe('patches written after the DJ edited the entry', () => {
+  const entryWith = (cue: string, ranking: string) =>
+    '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
+    '<ENTRY TITLE="Uno"><LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+    `<INFO RANKING="${ranking}"></INFO>` +
+    `<CUE_V2 NAME="${cue}" DISPL_ORDER="0" TYPE="0" START="500" LEN="0" REPEATS="-1" HOTCUE="0"></CUE_V2>` +
+    '</ENTRY></COLLECTION></NML>'
+  const converted = (): NmlPatch => ({
+    volume: 'Macintosh HD',
+    dir: '/:Musica/:',
+    file: 'uno.aiff',
+    newFile: 'uno.flac',
+    ranking: 51,
+    cueTree: buildTraktorTree([traktorCue('Converted', 0, 1000, 1)]),
+  })
+
+  it('writes the whole patch while the entry is as it was when held', () => {
+    const held = entryWith('Mine', '153')
+    const states = entryStates(held, [converted()])
+
+    const out = applyPatches(held, spareEditedEntries(held, [converted()], states))
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).toContain('NAME="Converted"')
+    expect(out).toContain('RANKING="51"')
+  })
+
+  it('only moves the entry once the DJ changed its cues or stars', () => {
+    const states = entryStates(entryWith('Mine', '153'), [converted()])
+    const edited = entryWith('Set at the gig', '255')
+
+    const out = applyPatches(edited, spareEditedEntries(edited, [converted()], states))
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).toContain('NAME="Set at the gig"')
+    expect(out).toContain('RANKING="255"')
+    expect(out).not.toContain('NAME="Converted"')
+  })
+
+  // A crash between the write and the queue clearing replays the patch: the entry already
+  // carries its cues, so they are not shifted or replaced a second time.
+  it('does not shift the cues twice when a patch is replayed', () => {
+    const shifted: NmlPatch = {
+      volume: 'Macintosh HD',
+      dir: '/:Musica/:',
+      file: 'uno.aiff',
+      newFile: 'uno.flac',
+      cueShift: { shiftMs: -51 },
+    }
+    const held = entryWith('Mine', '153')
+    const states = entryStates(held, [shifted])
+    const once = applyPatches(held, spareEditedEntries(held, [shifted], states))
+    expect(once).toContain('START="551')
+
+    expect(applyPatches(once, spareEditedEntries(once, [shifted], states))).toBe(once)
   })
 })

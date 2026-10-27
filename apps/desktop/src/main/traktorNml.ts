@@ -572,6 +572,51 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
   return rewritePlaylists(out, moves)
 }
 
+// What a patch can overwrite in the entry it matches: the cues, the stars and the cover.
+// Tags are left out, since each tag change already applies only while the entry still says
+// what the change was read from.
+function editableState(block: string): string {
+  const info = block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+  return JSON.stringify([
+    block.match(CUE_V2_RE) ?? [],
+    info.match(/\sRANKING="([^"]*)"/)?.[1] ?? null,
+    info.match(/\sCOVERARTID="([^"]*)"/)?.[1] ?? null,
+  ])
+}
+
+// The state of the entry each patch matches when it is held, to be compared when it is
+// written (see spareEditedEntries). Undefined for a patch no entry matches.
+export function entryStates(nml: string, patches: NmlPatch[]): (string | undefined)[] {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches, entries)
+  const states = new Map<NmlPatch, string>()
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (patch && !states.has(patch))
+      states.set(patch, editableState(nml.slice(entry.start, entry.end)))
+  }
+  return patches.map((p) => states.get(p))
+}
+
+// A patch held while Traktor stayed open is written once it closes, and by then the DJ may
+// have set new cues, changed the stars or the cover. Written whole, the patch put the
+// conversion's back over that work, and a patch replayed after a crash shifted the cues a
+// second time. An entry that no longer reads as it did when held gets only the move to the
+// converted file, which is what keeps it from showing as missing.
+export function spareEditedEntries(
+  nml: string,
+  patches: NmlPatch[],
+  states: (string | undefined)[],
+): NmlPatch[] {
+  const now = entryStates(nml, patches)
+  return patches.map((patch, i) => {
+    const held = states[i]
+    if (held === undefined || now[i] === undefined || now[i] === held) return patch
+    const { volume, dir, file, newFile, outputPath, outputVolume, outputDir, outputFile } = patch
+    return { volume, dir, file, newFile, outputPath, outputVolume, outputDir, outputFile }
+  })
+}
+
 // Same matching rules as applyPatches, in one pass over the entries instead of
 // one applyPatches (itself a full sweep) per patch — a caller that ran the
 // per-patch version against a real collection (tens of thousands of entries,
