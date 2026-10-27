@@ -4,6 +4,7 @@ import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
 import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
+import ja from '../i18n/locales/ja.json'
 import {
   filtersFromSearch,
   matchesUseCase,
@@ -63,23 +64,26 @@ describe('use case settings name what the app shows', () => {
     })
   }
 
-  it('gives every case the same anchor in both languages', () => {
+  it('gives every case the same anchor in all languages', () => {
     expect(cases(en).map((c) => c.id)).toEqual(cases(es).map((c) => c.id))
+    expect(cases(ja).map((c) => c.id)).toEqual(cases(en).map((c) => c.id))
   })
 
   // The index is built from the groups, so a recipe filed under a group the page does not
   // define never appears in it: the reader scanning the index would not know it exists.
   it('files every case under a group the page defines', () => {
-    for (const locale of [es, en]) {
+    for (const locale of [es, en, ja]) {
       const ids = groups(locale).map((g) => g.id)
       expect(ids.length).toBeGreaterThan(0)
       expect(cases(locale).filter((c) => !ids.includes(c.group))).toEqual([])
     }
   })
 
-  it('gives both languages the same groups in the same order', () => {
+  it('gives all languages the same groups in the same order', () => {
     expect(groups(en).map((g) => g.id)).toEqual(groups(es).map((g) => g.id))
+    expect(groups(ja).map((g) => g.id)).toEqual(groups(en).map((g) => g.id))
     expect(cases(en).map((c) => c.group)).toEqual(cases(es).map((c) => c.group))
+    expect(cases(ja).map((c) => c.group)).toEqual(cases(en).map((c) => c.group))
   })
 })
 
@@ -99,6 +103,18 @@ function found(locale: unknown, query: string, source: UseCaseSource | null = nu
 // titles. If typing that word does not surface the recipe, the page looks like it does not
 // cover the job and they leave.
 describe('finding a use case', () => {
+  it('finds Japanese terms inside a sentence without broadening Latin prefixes', () => {
+    const c = { id: 'nas', title: '音楽ファイルを整理する', body: [], keywords: 'music' }
+    expect(matchesUseCase(c, 'ファイル', null)).toBe(true)
+    expect(matchesUseCase(c, '整理', 'nas')).toBe(true)
+    expect(matchesUseCase(c, '整理 music', null)).toBe(true)
+    expect(matchesUseCase(c, '整理 不明', null)).toBe(false)
+    expect(matchesUseCase(c, '整理', 'usb')).toBe(false)
+    expect(matchesUseCase(c, 'usic', null)).toBe(false)
+    expect(matchesUseCase({ ...c, title: 'カバーを変更する' }, 'カハー', null)).toBe(false)
+    expect(matchesUseCase({ ...c, title: 'カバーを変更する' }, 'カバー', null)).toBe(true)
+  })
+
   it('finds a recipe by a word that only its keywords carry', () => {
     expect(found(es, 'duplicados')).toEqual(['duplicates'])
     expect(found(en, 'duplicates')).toEqual(['duplicates'])
@@ -177,12 +193,15 @@ describe('use case pages', () => {
 
   it('puts every recipe under the use cases page of its language', () => {
     const pages = recipePages()
-    expect(pages).toHaveLength(findable(es).length * 2)
+    expect(pages).toHaveLength(findable(es).length * 3)
     expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'es')?.path).toBe(
       '/casos-de-uso/quitar-duplicados-apple-music',
     )
     expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'en')?.path).toBe(
       '/en/use-cases/remove-apple-music-duplicates',
+    )
+    expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'ja')?.path).toBe(
+      '/ja/use-cases/remove-apple-music-duplicates',
     )
   })
 
@@ -192,6 +211,7 @@ describe('use case pages', () => {
     expect(page?.alternates).toEqual({
       es: '/casos-de-uso/musica-en-un-nas',
       en: '/en/use-cases/music-on-a-nas',
+      ja: '/ja/use-cases/music-on-a-nas',
     })
   })
 
@@ -201,6 +221,9 @@ describe('use case pages', () => {
     expect(recipePathForAnchor('es', '#nas')).toBe('/casos-de-uso/musica-en-un-nas')
     expect(recipePathForAnchor('en', '#duplicates')).toBe(
       '/en/use-cases/remove-apple-music-duplicates',
+    )
+    expect(recipePathForAnchor('ja', '#duplicates')).toBe(
+      '/ja/use-cases/remove-apple-music-duplicates',
     )
     expect(recipePathForAnchor('es', '#main')).toBeNull()
     expect(recipePathForAnchor('es', '')).toBeNull()
@@ -280,10 +303,11 @@ describe('use case settings by tab', () => {
 
   // A recipe whose tab has no capture shows a broken image right where the reader is
   // stuck, and a capture with no size makes the page jump as it loads.
-  it('has a sized capture for every tab every recipe visits, in both languages', () => {
+  it('has a sized capture for every tab every recipe visits, in every language', () => {
     for (const [lang, locale] of [
       ['es', es],
       ['en', en],
+      ['ja', ja],
     ] as const) {
       const wanted = (locale.useCases.cases as { id: string; settings: Setting[] }[]).flatMap((c) =>
         settingGroups(c.settings).map((_, i) => settingShot(lang, c.id, i)),

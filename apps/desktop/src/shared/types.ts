@@ -10,7 +10,7 @@ export type ThemePref = 'system' | 'light' | 'dark'
 
 // UI language: 'system' follows the OS locale (collapsed to a shipped locale, English
 // as the catch-all), or pin one of them. Persisted so the choice survives restarts.
-export type LanguagePref = 'system' | 'en' | 'es' | 'de' | 'fr' | 'pt-BR'
+export type LanguagePref = 'system' | 'en' | 'es' | 'de' | 'fr' | 'pt-BR' | 'ja'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac' | 'alac'
 

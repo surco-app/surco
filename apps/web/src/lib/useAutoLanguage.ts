@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { Language } from '../i18n'
 
 // First-visit language suggestion for the marketing site. With no saved choice, an
 // English-preferring browser on a Spanish page is offered the English one. It is an
@@ -7,7 +8,7 @@ import { useEffect, useState } from 'react'
 // via rememberLanguage (switching, or dismissing the offer) silences it for good.
 const KEY = 'surco_lang'
 
-export function rememberLanguage(lang: 'es' | 'en'): void {
+export function rememberLanguage(lang: Language): void {
   try {
     localStorage.setItem(KEY, lang)
   } catch {
@@ -17,8 +18,8 @@ export function rememberLanguage(lang: 'es' | 'en'): void {
 
 export function suggestsEnglish(saved: string | null, pathname: string, language: string): boolean {
   if (saved) return false
-  const onSpanish = !pathname.startsWith('/en')
-  const prefersEn = !language.toLowerCase().startsWith('es')
+  const onSpanish = !/^\/(en|ja)(\/|$)/.test(pathname)
+  const prefersEn = !/^(es|ja)(-|$)/i.test(language)
   return onSpanish && prefersEn
 }
 

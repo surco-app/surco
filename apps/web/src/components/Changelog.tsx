@@ -48,7 +48,13 @@ function ItemList({ items }: { items: Item[] }) {
 }
 
 export default function Changelog() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const releaseDate = (date: string) =>
+    i18n.language === 'ja'
+      ? new Intl.DateTimeFormat('ja-JP', { dateStyle: 'long', timeZone: 'UTC' }).format(
+          new Date(`${date} UTC`),
+        )
+      : date
 
   const releases = t('changelog.releases', { returnObjects: true }) as Release[]
   // What the current beta carries, kept apart from the releases (see changelog.test.ts):
@@ -118,7 +124,9 @@ export default function Changelog() {
                 <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
                   v{r.version}
                 </span>
-                <span className="font-mono text-xs text-faint tabular-nums">{r.date}</span>
+                <span className="font-mono text-xs text-faint tabular-nums">
+                  {releaseDate(r.date)}
+                </span>
               </div>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
               <ItemList items={r.items} />
@@ -140,7 +148,9 @@ export default function Changelog() {
                         v{r.version}
                       </span>
                       <span className="text-sm font-medium">{r.title}</span>
-                      <span className="font-mono text-xs text-faint tabular-nums">{r.date}</span>
+                      <span className="font-mono text-xs text-faint tabular-nums">
+                        {releaseDate(r.date)}
+                      </span>
                       <span
                         className="ml-auto font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"
                         aria-hidden="true"

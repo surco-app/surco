@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
@@ -62,7 +63,7 @@ function Spectrum({
 
 export default function FlacToAiff() {
   const { t, i18n } = useTranslation()
-  const lang = i18n.language === 'en' ? 'en' : 'es'
+  const lang = i18n.language as Language
   const keeps = t('flacToAiff.example.keeps', { returnObjects: true }) as string[]
   const rows = t('flacToAiff.carry.rows', { returnObjects: true }) as Row[]
   const reasons = t('flacToAiff.why.items', { returnObjects: true }) as Item[]

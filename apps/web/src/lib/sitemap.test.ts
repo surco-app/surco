@@ -58,7 +58,7 @@ describe('sitemap', () => {
 
   it('lists every page the header and footer link to', () => {
     const indexable: readonly string[] = INDEXABLE_PATHS
-    const linked = Object.values(PAGES).flatMap((page) => [page.es, page.en])
+    const linked = Object.values(PAGES).flatMap((page) => [page.es, page.en, page.ja])
     expect(linked.filter((p) => !indexable.includes(p))).toEqual([])
   })
 
