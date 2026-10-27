@@ -12,6 +12,7 @@ export interface FsAdapter {
   writeFileSync: (path: string, data: string) => void
   existsSync: (path: string) => boolean
   unlinkSync: (path: string) => void
+  renameSync: (from: string, to: string) => void
 }
 
 export interface TmpManifest {
@@ -38,8 +39,12 @@ function readPaths(manifestPath: string, fs: FsAdapter): string[] {
   }
 }
 
+// Beside and renamed over, so a crash mid-write leaves the previous list whole instead
+// of half a JSON array that the next launch reads as nothing to sweep.
 function writePaths(manifestPath: string, fs: FsAdapter, paths: string[]): void {
-  fs.writeFileSync(manifestPath, JSON.stringify(paths))
+  const tmp = `${manifestPath}.tmp`
+  fs.writeFileSync(tmp, JSON.stringify(paths))
+  fs.renameSync(tmp, manifestPath)
 }
 
 export function createTmpManifest(manifestPath: string, fs: FsAdapter): TmpManifest {

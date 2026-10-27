@@ -13,6 +13,7 @@ function fakeFs(initial: string[] = []): {
   writeFileSync: (p: string, data: string) => void
   existsSync: (p: string) => boolean
   unlinkSync: (p: string) => void
+  renameSync: (from: string, to: string) => void
   written: () => string[]
   removed: string[]
 } {
@@ -27,6 +28,7 @@ function fakeFs(initial: string[] = []): {
     },
     existsSync: () => exists,
     unlinkSync: (p) => removed.push(p),
+    renameSync: () => {},
     written: () => JSON.parse(contents),
     removed,
   }
@@ -145,6 +147,32 @@ describe('createTmpManifest', () => {
     manifest.sweepOrphans()
 
     expect(fs.written()).toEqual(['/Volumes/NAS/Music/.Song.tmp-1.mp3'])
+  })
+
+  // The manifest is the only record of the temps a crash leaves in the user's folders.
+  // Rewritten in place, a crash or full disk halfway through the write left half a JSON
+  // array, which the next launch reads as "nothing to sweep": every orphan it listed was
+  // forgotten at once. Written beside and renamed over, the old list survives the crash.
+  it('keeps the previous list when a write dies halfway through', () => {
+    const files = new Map<string, string>([['/manifest.json', JSON.stringify(['/a.tmp-1.aiff'])]])
+    const fs = {
+      readFileSync: (p: string) => files.get(p) as string,
+      writeFileSync: (p: string, data: string) => {
+        files.set(p, data.slice(0, 5))
+        throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' })
+      },
+      existsSync: (p: string) => files.has(p),
+      unlinkSync: () => {},
+      renameSync: (from: string, to: string) => {
+        files.set(to, files.get(from) as string)
+        files.delete(from)
+      },
+    }
+    const manifest = createTmpManifest('/manifest.json', fs)
+
+    expect(() => manifest.track('/b.tmp-2.aiff')).toThrow()
+
+    expect(JSON.parse(files.get('/manifest.json') as string)).toEqual(['/a.tmp-1.aiff'])
   })
 
   it('tolerates a corrupt manifest file, sweeping nothing instead of throwing', () => {

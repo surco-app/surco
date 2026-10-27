@@ -5,6 +5,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -392,6 +393,7 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
   writeFileSync,
   existsSync,
   unlinkSync,
+  renameSync,
 })
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
