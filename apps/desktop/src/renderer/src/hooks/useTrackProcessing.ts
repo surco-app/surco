@@ -142,6 +142,9 @@ export function useTrackProcessing({
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
   const [batching, setBatching] = useState(false)
+  // The guard the batch starters read: the state above only changes on the next render,
+  // so two calls in one tick both saw no batch running and both started one.
+  const batchingRef = useRef(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
   // Set by cancelBatch to break the convert-all loop between tracks.
@@ -534,7 +537,8 @@ export function useTrackProcessing({
   // the top bar shows its progress and the same cancel that stops a convert-all stops
   // it between adds (an in-flight AppleScript add still finishes, like a conversion).
   const addAllToAppleMusic = useStableCallback(async (ids: string[]): Promise<void> => {
-    if (batching) return
+    if (batchingRef.current) return
+    batchingRef.current = true
     cancelBatchRef.current = false
     setBatching(true)
     // Drop any lingering convert summary so its banner doesn't overlap this sweep.
@@ -549,6 +553,7 @@ export function useTrackProcessing({
         setBatchProgress({ done, total: ids.length })
       }
     } finally {
+      batchingRef.current = false
       setBatching(false)
       // Back to zero, not left at {N,N}: the done/total pools into the top bar with the
       // other sweeps, and a finished batch must stop contributing to that fraction.
@@ -564,7 +569,7 @@ export function useTrackProcessing({
       destinationOverride?: Destination,
       declickOverride?: DeclickConfig,
     ): Promise<void> => {
-      if (batching) return
+      if (batchingRef.current) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
       // so aren't marked failed) — they stay flagged in the list for the user to finish.
       const ids = eligibleForBatch(
@@ -591,6 +596,7 @@ export function useTrackProcessing({
       // A fresh run: let main forget any "apply to the rest" conflict choice the last batch
       // left, so this one starts asking again rather than reusing a stale decision.
       window.api.beginConversionBatch()
+      batchingRef.current = true
       setBatching(true)
       setBatchSummary(null)
       setBatchProgress({ done: 0, total: ids.length })
@@ -624,6 +630,7 @@ export function useTrackProcessing({
           return outcome
         })
       } finally {
+        batchingRef.current = false
         setBatching(false)
         runningIdsRef.current = []
         // Same zeroing as addAllToAppleMusic: a finished batch must leave the pooled

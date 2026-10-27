@@ -583,6 +583,42 @@ describe('useTrackProcessing', () => {
     expect(onProcessError).toHaveBeenCalledWith('disk full', 'Pray (W.I.P. In The Church Mix)')
   })
 
+  // A double press of convert-all (or the shortcut and the button together) lands twice
+  // before React re-renders. Read from render state, both calls saw no batch running and
+  // each started one: every track converted twice, into the same files at once.
+  it('starts one batch when convert-all is asked for twice in the same tick', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
+    setApi({ processTrack })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await Promise.all([result.current.processAll(tracks), result.current.processAll(tracks)])
+    })
+    expect(processTrack).toHaveBeenCalledTimes(2)
+  })
+
+  it('starts one Apple Music sweep when it is asked for twice in the same tick', async () => {
+    const addToAppleMusic = vi.fn<Api['addToAppleMusic']>().mockResolvedValue('p')
+    setApi({ addToAppleMusic })
+    const tracks = [track({ id: 'a', outputPath: '/out/a.aiff', status: 'done' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await Promise.all([
+        result.current.addAllToAppleMusic(['a']),
+        result.current.addAllToAppleMusic(['a']),
+      ])
+    })
+    expect(addToAppleMusic).toHaveBeenCalledTimes(1)
+  })
+
   // Convert-all runs every eligible track and reports the run's tally, which is what
   // the toolbar's "3 converted" summary reads from.
   it('converts every eligible track and summarizes the run', async () => {
