@@ -110,6 +110,24 @@ printf 'launch\ntone 5\nss win\nquit\n' | SURCO_SIMULATE_PLATFORM=win32 node dri
 - What it does NOT simulate: Windows paths and drive letters, `EPERM`/`EBUSY` on rename,
   the Recycle Bin, the title bar and menu bar. Those still need a real Windows.
 
+## Website captures
+
+Two scripts regenerate the screenshots the website shows, in every app language (es, en,
+de, fr, pt-BR, ja), so a language added to the site later needs no new captures. Build
+first; both launch the `out/` of the tree they live in.
+
+```bash
+cd apps/desktop/.claude/skills/run-desktop
+node use-case-shots.mjs [caseId ...]                 # /casos-de-uso Settings tabs
+node guide-shots.mjs [sectionId ...] [--lang es,en]  # /guia walkthrough
+```
+
+- `use-case-shots.mjs` marks the settings each recipe names; `recipe-labels.mjs` names
+  them in languages the website does not carry, through the app catalogues.
+- `guide-shots.mjs` plays every scene on the reference track (Tina Cousins, Pray, on the
+  NAS) and needs the network for the live search. The rekordbox scene runs on an APFS
+  clone of this Mac's collection and never saves; conversions go to a throwaway profile.
+
 ## Run (human path)
 
 `electron-vite dev` opens a live window with HMR. Useful for hand-testing, useless for
