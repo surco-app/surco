@@ -198,4 +198,33 @@ describe('useDuplicateRanks', () => {
     expect(result.current).toBe(before)
     expect(result.current.get('b.aif')).toBe(before.get('b.aif'))
   })
+
+  // App renders on every keystroke, hover and progress tick. Walking the whole crate to
+  // rebuild the grouping key on each of those, with the list unchanged, is the cost the
+  // key exists to avoid.
+  it('does not walk the list again on a render that hands over the same tracks', () => {
+    setApi()
+    let reads = 0
+    const counted = (id: string): TrackItem => {
+      const t = track(id, 'Passion')
+      const meta = t.meta
+      return {
+        ...t,
+        get meta() {
+          reads++
+          return meta
+        },
+      }
+    }
+    const tracks = [counted('a.wav'), counted('b.aif')]
+    const { rerender } = renderHook(({ list }) => useDuplicateRanks(list), {
+      wrapper: wrapper(),
+      initialProps: { list: tracks },
+    })
+    const afterFirst = reads
+
+    rerender({ list: tracks })
+
+    expect(reads).toBe(afterFirst)
+  })
 })
