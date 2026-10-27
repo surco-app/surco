@@ -208,6 +208,7 @@
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
     "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
     "removeFailed": "„{{name}}“ konnte nicht gelöscht werden. {{reason}}",
+    "emptyFailed": "Einige Kopien konnten nicht gelöscht werden und sind noch in Sicherungskopien. {{reason}}",
     "filters": {
       "all": "Alle",
       "replaced": "Ersetzt",

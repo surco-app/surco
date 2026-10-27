@@ -1941,7 +1941,15 @@ export default function App(): React.JSX.Element {
     await refreshTrash()
   })
   const onEmptyTrash = useStableCallback(async (): Promise<void> => {
-    await window.api.trashEmpty().catch(() => undefined)
+    try {
+      await window.api.trashEmpty()
+    } catch (e) {
+      setNotice(
+        tr('trash.emptyFailed', {
+          reason: mainErrorMessage(e, tr, tr('errors.unexpected', { detail: '' })),
+        }),
+      )
+    }
     await refreshTrash()
   })
   // Applying a release rewrites title/artist/track number across every matched row at

@@ -7528,6 +7528,34 @@ describe('App Originals panel', () => {
     expect(screen.queryByTestId('trash-panel')).toBeNull()
     expect(first).toHaveAttribute('aria-selected', 'true')
   })
+  // Emptying Originals with one copy held open used to close the confirm and say nothing,
+  // so the user believed every copy was gone while some still took the space.
+  it('says so when emptying the backups fails', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
+      trashEmpty: vi.fn().mockRejectedValue(new Error('EBUSY')),
+    })
+    await renderApp()
+    act(() => menuListener?.('backups'))
+    fireEvent.click(await screen.findByTestId('trash-empty-button'))
+    fireEvent.click(await screen.findByTestId('trash-empty-confirm'))
+
+    const { default: i18n } = await import('./i18n')
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('trash.emptyFailed', { reason: '' }).trim(),
+    )
+  })
+
   // The keys behind a panel were already off, but the menu bar still reached the list: Convert
   // all from the menu while Originals or a review is open ran a batch under it, two writers on
   // the same files and libraries. The menu now waits for the panel like the keyboard does.

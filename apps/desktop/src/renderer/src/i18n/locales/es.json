@@ -208,6 +208,7 @@
     "restored": "Restaurado «{{name}}» en su carpeta",
     "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}",
     "removeFailed": "No se pudo eliminar «{{name}}». {{reason}}",
+    "emptyFailed": "Algunas copias no se pudieron eliminar y siguen en Copias de seguridad. {{reason}}",
     "filters": {
       "all": "Todo",
       "replaced": "Sustituidos",

@@ -208,6 +208,7 @@
     "restored": "Restored “{{name}}” to its folder",
     "restoreFailed": "Could not restore “{{name}}”: {{reason}}",
     "removeFailed": "Could not delete “{{name}}”. {{reason}}",
+    "emptyFailed": "Some copies could not be deleted and are still in Backups. {{reason}}",
     "filters": {
       "all": "All",
       "replaced": "Replaced",
