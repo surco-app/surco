@@ -179,7 +179,7 @@ export function createSurcoTrash(
   // failed rename restores from, and a sweep behind it could discard exactly that one.
   // The disk bounds it as well as the cap. A file that fits in neither even with the
   // trash emptied gets no copy, and nothing is dropped to make room it would not use.
-  const stash: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+  const stashNow: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
     const held = read().reduce((sum, entry) => sum + entry.bytes, 0)
@@ -187,6 +187,15 @@ export function createSurcoTrash(
     if (info.size > budget) return null
     await prune(Date.now(), budget - info.size)
     return keep(path, reason, outputPath, trashedAt)
+  }
+  // One at a time: a batch stashes several originals at once, and each sized its room
+  // from the trash as it stood before the others had written, so together they went
+  // past the cap and the disk's free margin.
+  let stashing: Promise<unknown> = Promise.resolve()
+  const stash: SurcoTrash['stash'] = (...args) => {
+    const run = stashing.then(() => stashNow(...args))
+    stashing = run.catch(() => {})
+    return run
   }
 
   return {

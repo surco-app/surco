@@ -194,11 +194,26 @@ describe('stashes that overlap', () => {
     const first = trash.stash(song('First.aiff', 200), 'replaced')
     await vi.waitFor(() => expect(unlinkGate.calls).toBe(1))
     unlinkGate.hold = null
-    const second = await trash.stash(song('Second.aiff'), 'replaced')
+    const pending = trash.stash(song('Second.aiff'), 'replaced')
     release()
     await first
+    const second = await pending
 
     expect((await trash.list()).map((e) => e.id)).toContain(second?.id)
+  })
+
+  // A batch converts several tracks at once, so their stashes overlap. Each one sized its
+  // room from the trash as it stood before any of them had written, so both copies went
+  // in and the trash ended past the cap the user set, or past the disk's last free gigabytes.
+  it('holds the cap when two stashes run at the same time', async () => {
+    const [first, second] = await Promise.all([
+      trash.stash(song('1.wav', 600), 'replaced'),
+      trash.stash(song('2.wav', 600), 'replaced'),
+    ])
+    expect(first).not.toBeNull()
+    expect(second).not.toBeNull()
+    const held = (await trash.list()).reduce((sum, e) => sum + e.bytes, 0)
+    expect(held).toBeLessThanOrEqual(1000)
   })
 
   it('empties without dropping a copy taken while it was deleting the others', async () => {
