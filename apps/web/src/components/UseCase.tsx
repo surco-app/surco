@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
 import { PAGES } from '../lib/nav'
-import { recipePath } from '../lib/useCases'
+import { recipePath, settingGroups, settingShot, USE_CASE_SHOTS } from '../lib/useCases'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
+import Lightbox from './Lightbox'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
 
@@ -70,37 +72,42 @@ export function MacBadge() {
   )
 }
 
-function SettingRow({ s }: { s: Setting }) {
+function SettingRow({ s }: { s: Setting & { n: number } }) {
   const { t } = useTranslation()
   const path = [t('useCases.settingsRoot'), s.tab, s.section, s.setting].filter(Boolean)
   return (
-    <li data-testid="use-case-setting" className="border-t border-line/60 px-5 py-4">
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
-        {path.map((part, i) => (
-          <span key={part} className="flex items-center gap-2">
-            {i > 0 && (
-              <span aria-hidden="true" className="text-faint">
-                ›
+    <li data-testid="use-case-setting" className="flex gap-3 py-4 first:pt-0 last:pb-0">
+      <span className="mt-px flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber font-mono text-xs font-bold text-bg">
+        {s.n}
+      </span>
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
+          {path.map((part, i) => (
+            <span key={part} className="flex items-center gap-2">
+              {i > 0 && (
+                <span aria-hidden="true" className="text-faint">
+                  ›
+                </span>
+              )}
+              <span className={i === path.length - 1 ? 'font-semibold text-fg' : 'text-muted'}>
+                {part}
               </span>
-            )}
-            <span className={i === path.length - 1 ? 'font-semibold text-fg' : 'text-muted'}>
-              {part}
             </span>
+          ))}
+          <span aria-hidden="true" className="text-faint">
+            ›
           </span>
-        ))}
-        <span aria-hidden="true" className="text-faint">
-          ›
-        </span>
-        <span className="rounded-md border border-cyan/25 bg-cyan/10 px-2 py-0.5 font-mono text-xs text-cyan">
-          {s.value ?? t('useCases.on')}
-        </span>
-        {s.optional && (
-          <span className="rounded-full border border-line px-2 font-mono text-[10px] tracking-wider text-faint uppercase">
-            {t('useCases.optional')}
+          <span className="rounded-md border border-cyan/25 bg-cyan/10 px-2 py-0.5 font-mono text-xs text-cyan">
+            {s.value ?? t('useCases.on')}
           </span>
-        )}
-      </p>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.note}</p>
+          {s.optional && (
+            <span className="rounded-full border border-line px-2 font-mono text-[10px] tracking-wider text-faint uppercase">
+              {t('useCases.optional')}
+            </span>
+          )}
+        </p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.note}</p>
+      </div>
     </li>
   )
 }
@@ -117,6 +124,8 @@ export default function UseCasePage({ id }: { id: string }) {
   const otherCase = (
     i18n.getFixedT(other)('useCases.cases', { returnObjects: true }) as UseCase[]
   ).find((o) => o.id === id) as UseCase
+  const [shot, setShot] = useState<{ src: string; caption: string } | null>(null)
+  const [shotOpen, setShotOpen] = useState(false)
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
@@ -167,11 +176,38 @@ export default function UseCasePage({ id }: { id: string }) {
                   </p>
                   <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
                 </div>
-                <ul>
-                  {c.settings.map((s) => (
-                    <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
-                  ))}
-                </ul>
+                {settingGroups(c.settings).map((group, i) => {
+                  const src = settingShot(lang, c.id, i)
+                  const [width, height] = USE_CASE_SHOTS[src] ?? []
+                  const caption = `${t('useCases.settingsRoot')} › ${group.tab}`
+                  return (
+                    <div key={group.tab} className="border-t border-line/60 px-5 py-5">
+                      <button
+                        type="button"
+                        data-testid="use-case-shot"
+                        onClick={() => {
+                          setShot({ src: `/use-cases/${src}`, caption })
+                          setShotOpen(true)
+                        }}
+                        className="block w-full cursor-zoom-in overflow-hidden rounded-xl border border-line"
+                      >
+                        <img
+                          src={`/use-cases/${src}`}
+                          alt={caption}
+                          width={width}
+                          height={height}
+                          loading="lazy"
+                          className="block h-auto w-full"
+                        />
+                      </button>
+                      <ul className="mt-5 divide-y divide-line/60">
+                        {group.settings.map((s) => (
+                          <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -222,6 +258,15 @@ export default function UseCasePage({ id }: { id: string }) {
 
         <UseCaseOutro />
       </main>
+
+      <Lightbox
+        open={shotOpen}
+        src={shot?.src ?? null}
+        alt={shot?.caption ?? ''}
+        caption={shot?.caption}
+        closeLabel={t('lightbox.close')}
+        onClose={() => setShotOpen(false)}
+      />
 
       <Footer />
     </div>
