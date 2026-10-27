@@ -911,6 +911,19 @@ export function writeTags(
     // is the only way to reach a foreign atom the app doesn't manage, so on clearExtras
     // it must run before the generic assignments below repopulate the managed atoms.
     if (extname(file).toLowerCase() === '.m4a' && clearExtras) tag.clear()
+    // "Empty every metadata field" must reach frames the app never wrote — a foreign
+    // NOTES/COMM/TXXX another tool left behind survived the managed-field overwrite and
+    // read as junk the user couldn't clear. On clearExtras, drop every frame the file
+    // carried, including the Traktor cue frames (GEOB, PRIV "TRAKTOR4") — "clear
+    // everything" means the beatgrid too; a cueSource merge below still re-injects them for
+    // a carry-over conversion. Up front, before this save writes anything: the clear stays
+    // armed after the user refills the form, and wiping after the assignments below threw
+    // the refilled title, artist and album away with the junk. Iterate a copy since
+    // removeFrame mutates id3.frames as it goes.
+    if (extname(file).toLowerCase() !== '.m4a' && clearExtras) {
+      const old = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      for (const frame of old.frames.slice()) old.removeFrame(frame)
+    }
     tag.title = meta.title
     tag.performers = toArray(meta.artist)
     tag.album = meta.album
@@ -1012,13 +1025,6 @@ export function writeTags(
       id3.addFrame(frame)
     }
     dropBrokenUfids(id3)
-    // "Empty every metadata field" must reach frames the app never wrote — a foreign
-    // NOTES/COMM/TXXX another tool left behind survived the managed-field overwrite and
-    // read as junk the user couldn't clear. On clearExtras, drop every frame up front,
-    // including the Traktor cue frames (GEOB, PRIV "TRAKTOR4") — "clear everything" means
-    // the beatgrid too; a cueSource merge below still re-injects them for a carry-over
-    // conversion. Iterate a copy since removeFrame mutates id3.frames as it goes.
-    if (clearExtras) for (const frame of id3.frames.slice()) id3.removeFrame(frame)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
     // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
     // matches the name outright. Applies always, not just on clearExtras.
