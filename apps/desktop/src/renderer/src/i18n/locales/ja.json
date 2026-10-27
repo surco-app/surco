@@ -855,7 +855,6 @@
       "resetColour": "リセット",
       "saveShort": "保存",
       "saveFailed": "rekordbox に保存できませんでした。キューはまだ保存されていません",
-      "savedExcept": "保存しました（{{programs}} を除く）。そこで待機中の内容は別のコレクションのものなので、何も変更していません",
       "saveAll_one": "{{count}} トラックを rekordbox に保存",
       "saveAll_other": "{{count}} トラックを rekordbox に保存",
       "saveAllBoth_one": "{{count}} トラックを rekordbox と Engine DJ に保存",
@@ -1952,9 +1951,11 @@
     "engineSyncSkipped_one": "{{count}} トラックがスキップされました",
     "engineSyncSkipped_other": "{{count}} トラックがスキップされました",
     "rekordboxCollectionMissing": "rekordbox コレクションが見つからなかったためスキップしました",
+    "rekordboxCollectionUnplugged": "ドライブを接続すると適用されます",
     "engineCollectionMissing": "Engine DJ ライブラリが見つからなかったためスキップしました",
+    "engineCollectionUnplugged": "ドライブを接続すると適用されます",
     "traktorSyncCollectionMissing": "collection.nml が見つからなかったためスキップしました",
-    "syncHeldElsewhere": "待機中の変更は別のコレクションのものなので、後で書き込むために保持しませんでした。そのコレクションに戻るか、待機中の変更を破棄してください",
+    "traktorSyncCollectionUnplugged": "ドライブを接続すると適用されます",
     "reviewRun_one": "音楽レビュー, {{count}} トラック",
     "reviewRun_other": "音楽レビュー, {{count}} トラック",
     "reviewFix": {
@@ -2073,8 +2074,7 @@
         "readOnly": "rekordbox コレクションは読み取り専用のため、何も変更されていません",
         "stale": "rekordbox でプレイリストが変更されました。確認してもう一度お試しください",
         "noSeparator": "コレクションにコピーできる区切り線がありません",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。rekordbox を開く前に、master.db-wal と master.db-shm をそのフォルダーの外へ移動し、設定 → 一般 → コレクションのバックアップ にあるコピー master.db.surco-backup で master.db を置き換えてください",
-        "otherCollection": "保留中の変更は別の rekordbox コレクションのものなので、何も変更されていません。そのコレクションに戻るか、保留中の変更を破棄してください"
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。rekordbox を開く前に、master.db-wal と master.db-shm をそのフォルダーの外へ移動し、設定 → 一般 → コレクションのバックアップ にあるコピー master.db.surco-backup で master.db を置き換えてください"
       }
     },
     "editTraktor": {
@@ -2096,8 +2096,7 @@
         "readOnly": "Traktor コレクションは読み取り専用のため、何も変更されていません",
         "stale": "Traktor でプレイリストが変更されました。確認してもう一度お試しください",
         "noSeparator": "コレクションにコピーできる区切り線がありません",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 一般 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください",
-        "otherCollection": "保留中の変更は別の Traktor コレクションのものなので、何も変更されていません。そのコレクションに戻るか、保留中の変更を破棄してください"
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 一般 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください"
       }
     },
     "tree": {
@@ -2587,7 +2586,8 @@
     "pillHalted": "rekordbox の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー master.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
     "pillElsewhere": "別の rekordbox コレクションを待っています",
-    "elsewhere": "これは別の rekordbox コレクション用に準備されたものです。Surco は現在使用中のコレクションには適用しません"
+    "elsewhere_one": "{{count}} 件の変更が別の rekordbox コレクションを待っています。そちらに戻ると適用されます",
+    "elsewhere_other": "{{count}} 件の変更が別の rekordbox コレクションを待っています。そちらに戻ると適用されます"
   },
   "engineQueue": {
     "pillTracks_one": "{{count}} トラックが Engine DJ の終了を待っています",
@@ -2601,7 +2601,6 @@
     "backupFailed": "Engine DJ をバックアップできませんでした。終了時に Surco が再試行します",
     "unreadable": "Surco は現在 Engine DJ のライブラリを読み取れないため、何も変更していません",
     "writeFailed": "Engine DJ にキューを保存できませんでした。ライブラリは元のままです",
-    "otherLibrary": "待機中の内容は別の Engine DJ ライブラリのものなので、何も変更していません。そのライブラリに戻るか、待機中の内容を破棄してください",
     "notice": {
       "cuesChanged": "{{track}} のキューが Engine DJ で変更されました。もう一度マークしてください",
       "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Engine DJ はホットキューしか保持しません",
@@ -2611,7 +2610,8 @@
     "pillHalted": "Engine DJ の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はライブラリに触れません。「今すぐ適用」はバックアップコピー m.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
     "pillElsewhere": "別の Engine DJ ライブラリを待っています",
-    "elsewhere": "これは別の Engine DJ ライブラリ用に準備されたものです。Surco は現在使用中のライブラリには適用しません"
+    "elsewhere_one": "{{count}} 件の変更が別の Engine DJ ライブラリを待っています。そちらに戻ると適用されます",
+    "elsewhere_other": "{{count}} 件の変更が別の Engine DJ ライブラリを待っています。そちらに戻ると適用されます"
   },
   "traktorQueue": {
     "pillTracks_one": "{{count}} トラックが Traktor の終了を待っています",
@@ -2625,7 +2625,6 @@
     "backupFailed": "Traktor をバックアップできませんでした。終了時に Surco が再試行します",
     "unreadable": "Surco は現在 Traktor のコレクションを読み取れないため、何も変更していません",
     "writeFailed": "Traktor に変更を保存できませんでした。コレクションは元のままです",
-    "otherLibrary": "待機中の内容は別の Traktor コレクションのものなので、何も変更していません。そのコレクションに戻るか、待機中の内容を破棄してください",
     "notice": {
       "cuesChanged": "{{track}} のキューが Traktor で変更されました。もう一度マークしてください",
       "slotDropped": "Traktor には Surco のキュー用のボタンが 7 つしかないため、{{track}} のキュー H は保存されませんでした",
@@ -2635,7 +2634,8 @@
     "pillHalted": "Traktor の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー collection.nml.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
     "pillElsewhere": "別の Traktor コレクションを待っています",
-    "elsewhere": "これは別の Traktor コレクション用に準備されたものです。Surco は現在使用中のコレクションには適用しません"
+    "elsewhere_one": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます",
+    "elsewhere_other": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます"
   },
   "cueWave": {
     "notAnalysed": "このトラックは rekordbox で分析されていません。キューを設定するには rekordbox で分析してください",
