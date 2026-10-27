@@ -22,15 +22,15 @@ const dir = mkdtempSync(join(tmpdir(), 'surco-custom-fields-'))
 
 // What another tagger leaves for a field it calls VINYLCONDITION: a TXXX frame, a Vorbis
 // comment, an iTunes freeform atom.
-function tagCondition(file: string, ext: UpdateExt, value: string): void {
+function tagCondition(file: string, ext: UpdateExt, value: string, name = 'VINYLCONDITION'): void {
   const f = TagFile.createFromPath(file)
   try {
     if (ext === 'flac') {
-      ;(f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings('VINYLCONDITION', value)
+      ;(f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(name, value)
     } else if (ext === 'm4a') {
-      ;(f.tag as Mpeg4AppleTag).setItunesStrings('com.apple.iTunes', 'VINYLCONDITION', value)
+      ;(f.tag as Mpeg4AppleTag).setItunesStrings('com.apple.iTunes', name, value)
     } else {
-      const frame = Id3v2UserTextInformationFrame.fromDescription('VINYLCONDITION')
+      const frame = Id3v2UserTextInformationFrame.fromDescription(name)
       frame.text = [value]
       ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(frame)
     }
@@ -80,5 +80,32 @@ describe.each(EXTS)('a custom field on a %s', (ext) => {
       custom: { vinylCondition: '' },
     })
     expect(await conditionOf(out)).toBeUndefined()
+  })
+
+  // Another tagger spelled the field VinylCondition, so the conversion clears that tag to
+  // leave the file holding the field once. Tag names match regardless of case, so a clear
+  // run after the write erased the value the DJ had just typed.
+  it('keeps the value it writes when it clears the same tag spelled another way', async () => {
+    const src = encodeSine(dir, `stray-src-${ext}`, ext)
+    tagCondition(src, ext, 'NM', 'VinylCondition')
+    const out = join(dir, `stray-out-${ext}.${ext}`)
+    await convertAudio(
+      src,
+      out,
+      UPDATE_FORMAT[ext],
+      { ...(await readTags(src)), custom: { vinylCondition: 'VG' } },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ['VinylCondition'],
+    )
+    expect(await conditionOf(out)).toBe('VG')
   })
 })

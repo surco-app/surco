@@ -1034,6 +1034,14 @@ export function convertArgs(
   // metadata junk they never wrote. The flag only silences those stamps: the MP3
   // Info/LAME gapless header survives (verified against ffmpeg 6.1.1).
   args.push('-fflags', '+bitexact')
+  // El usuario marcó estos tags de terceros para borrar en el inspector: un -metadata
+  // NOMBRE= vacío los elimina del fichero exportado. Se aplica siempre — es una intención
+  // explícita sobre tags concretos, independiente del "borrar todo" (-map_metadata -1, que
+  // ya se los lleva por delante cuando está activo, así que estos clears son redundantes
+  // pero inofensivos en ese caso). Antes de las escrituras: ffmpeg casa los nombres sin
+  // distinguir mayúsculas, y el VinylCondition que se limpia por ser la otra grafía de un
+  // campo propio borraba el VINYLCONDITION recién escrito.
+  for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
@@ -1063,12 +1071,6 @@ export function convertArgs(
   // cadena de producción del anterior no forma parte de él. Con clearExtras activo
   // -map_metadata -1 ya se los lleva por delante y estos clears son redundantes.
   for (const name of SOURCE_PROVENANCE) args.push('-metadata', `${name}=`)
-  // El usuario marcó estos tags de terceros para borrar en el inspector: un -metadata
-  // NOMBRE= vacío los elimina del fichero exportado. Se aplica siempre — es una intención
-  // explícita sobre tags concretos, independiente del "borrar todo" (-map_metadata -1, que
-  // ya se los lleva por delante cuando está activo, así que estos clears son redundantes
-  // pero inofensivos en ese caso).
-  for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   args.push(output)
   return args
 }
