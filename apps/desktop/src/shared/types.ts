@@ -716,6 +716,9 @@ export interface ProcessJob {
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.
   previousOutputPath?: string
+  // The identity (see inplace.ts fileIdentity) the file at previousOutputPath had when this
+  // track wrote it. Only while the file there still has it is it this track's own.
+  previousOutputIdentity?: string
   // The Apple Music persistent ID a previous add returned. When set, the automatic
   // Apple Music step updates that library copy in place instead of importing the
   // file again — re-converting an edited track must not duplicate it in Music.
@@ -1253,6 +1256,12 @@ export interface ProcessResult {
   // True when the conversion registered the track in the Engine DJ library, so the
   // renderer can mark it owned there without waiting for a library snapshot refresh.
   addedToEngineDj?: boolean
+  // The Engine DJ registration's error when it failed after the file landed: the job is
+  // failed, but outputPath still says where the file now is.
+  engineDjError?: string
+  // The written file's identity (see inplace.ts fileIdentity), handed back on the next
+  // export as previousOutputIdentity.
+  outputIdentity?: string
   // Set when the conversion replaced a library copy and the new entry went in but the old
   // one could not be retired, so Music holds both. 'mismatch' means Music refused because
   // the live entry no longer carries the offered name; 'error' that the delete failed.

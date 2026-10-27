@@ -16,7 +16,7 @@ import { replaceDuplicates } from '../main/duplicateReplace'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { expandPaths } from '../main/expand'
 import { convertAudio } from '../main/ffmpeg'
-import { isSameFile, removeRenamedOriginal } from '../main/inplace'
+import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -232,6 +232,7 @@ function processTrackInMain(
     allowMedia: (path) => mediaAccess.allow(path),
     existsSync,
     isSameFile,
+    fileIdentity,
     mkdir,
     mkdtemp,
     rm,

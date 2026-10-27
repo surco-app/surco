@@ -5,6 +5,7 @@ import {
   readdirSync,
   readFileSync,
   statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -365,6 +366,21 @@ describe('the manifest', () => {
     expect(existsSync(orphan?.storedPath as string)).toBe(true)
     await trash.sweep(Date.now() + 31 * DAY)
     expect(existsSync(orphan?.storedPath as string)).toBe(false)
+  })
+
+  // A deleted or renamed original is moved in, and a move keeps the file's own creation
+  // date: a track bought years ago looked years past the retention, so the first sweep
+  // after a lost manifest deleted every kept original at once. Its time in the trash is
+  // what the retention measures. (Setting the file's date back moves its creation date
+  // with it on macOS, which is what makes it an old file here.)
+  it('measures an unnamed file from when it came in, not from when the file was created', async () => {
+    const path = song('Bought In 2019.aiff')
+    const longAgo = new Date(Date.now() - 400 * DAY)
+    utimesSync(path, longAgo, longAgo)
+    const orphan = await trash.stash(path, 'deleted')
+    writeFileSync(join(root, 'trash', 'trash.json'), '{not json')
+    await trash.sweep()
+    expect(existsSync(orphan?.storedPath as string)).toBe(true)
   })
 })
 

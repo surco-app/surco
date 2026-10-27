@@ -3,7 +3,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
-import { resolveJobFormat } from '../shared/format'
+import { editsInPlace, resolveJobFormat } from '../shared/format'
 import type {
   DeclickConfig,
   NormalizeConfig,
@@ -109,6 +109,7 @@ export interface ProcessTrackDeps {
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
   isSameFile: (a: string, b: string) => Promise<boolean>
+  fileIdentity: (path: string) => Promise<string | undefined>
   mkdir: (path: string, opts: { recursive: boolean }) => Promise<unknown>
   mkdtemp: (prefix: string) => Promise<string>
   rm: (path: string, opts: { recursive: boolean; force: boolean }) => Promise<void>
@@ -228,16 +229,27 @@ export async function runProcessTrack(
     // the two spellings are different files: the rename over the source failed with
     // EEXIST or -83, and a temp named in NFC could not be found again to rename or
     // delete. APFS treats both as one name, so this changes nothing on a local disk.
+    //
+    // A name the source already has is kept untouched only when the write lands in the
+    // source's own folder, the disk known to hold it: the output folder can be the very
+    // disk the plain spelling is for. Its accents are kept only when the file itself keeps
+    // the name (in place); a new file beside it is spelled the way the setting asks.
+    const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
+    const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
+    const currentName =
+      besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
+    const keepsName =
+      inPlaceWrite && currentName?.normalize('NFC') === job.outputName.normalize('NFC')
     const outputName = sanitizeOutputName(
-      settings.asciiFileNames ? foldAccents(job.outputName) : job.outputName,
-      basename(job.inputPath, extname(job.inputPath)),
+      settings.asciiFileNames && !keepsName ? foldAccents(job.outputName) : job.outputName,
+      currentName,
     )
     const resolved = resolveOutputTarget(
       job.inputPath,
       deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
       format,
       settings.outputDir,
-      job.overwriteOriginal ?? settings.overwriteOriginal,
+      overwriteOriginal,
       besideOriginal,
     )
     const outputPath = resolved.outputPath
@@ -265,7 +277,18 @@ export async function runProcessTrack(
     // Awaited before the conflict check reads the disk and the sibling claims, as the
     // beside branch does: with the wait between that read and reservePath, two in-place
     // jobs of one run (Song.flac and Song.wav, both becoming Song.aiff) each read the name
-    // as free, both wrote it, and the folder kept one recording of the two.
+    // as free, both wrote it, and the folder kept one recording of the two. The wait for
+    // Engine DJ to close is held here for the same reason.
+    if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
+      throw errorWithKey('engineDjOpen')
+    // The previous output only counts as this track's own while it is still the file this
+    // track wrote: another track can have been written over that path since.
+    const ownPrevious =
+      job.previousOutputPath &&
+      job.previousOutputIdentity &&
+      (await deps.fileIdentity(job.previousOutputPath)) === job.previousOutputIdentity
+        ? job.previousOutputPath
+        : undefined
     let keepOverwritten = false
     const outputIsInput =
       !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
@@ -283,14 +306,14 @@ export async function runProcessTrack(
       // a valid target — not even via a stale previousOutputPath pointing at it after
       // a mode switch from overwrite.
       const taken = (p: string): boolean =>
-        deps.isPathReserved(p) || (p !== job.previousOutputPath && deps.existsSync(p))
+        deps.isPathReserved(p) || (p !== ownPrevious && deps.existsSync(p))
       if ((await deps.isSameFile(job.inputPath, outputPath)) || taken(outputPath)) {
         target = uniqueOutputPath(outputPath, (p) => p === job.inputPath || taken(p))
       }
     } else if (
       isOutputConflict(
         outputPath,
-        job.previousOutputPath,
+        ownPrevious,
         deps.existsSync(outputPath) || deps.isPathReserved(outputPath),
         outputIsInput,
         deps.isPathReserved(outputPath),
@@ -324,8 +347,6 @@ export async function runProcessTrack(
         inPlace = false
       } else if (choice === 'overwrite') keepOverwritten = true
     }
-    if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
-      throw errorWithKey('engineDjOpen')
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
     // finally so a thrown error still frees it for the next job or retry.
@@ -377,6 +398,7 @@ export async function runProcessTrack(
       // to sweep and the manifest entry is stale.
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
+    const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
     if (job.rekordboxPlaylists)
       deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
     // The new file has landed by now, so failing to retire the old one (a Windows lock
@@ -465,9 +487,12 @@ export async function runProcessTrack(
     }
 
     // The Engine DJ destination points a library row at the file just written; a failed
-    // registration throws and fails the job — never a silent "converted but not in the
-    // library".
+    // registration fails the job — never a silent "converted but not in the library".
+    // Returned rather than thrown: the file has landed and the original may be retired,
+    // and an IPC error carries only its message, so a throw left the row on a path that
+    // no longer exists and a staged trim set to cut the already cut file again.
     let addedToEngineDj: true | undefined
+    let engineDjError: string | undefined
     if (addToEngineDj) {
       stage('engineDj')
       // Engine renders artwork from its own database, never from the file's tags, so
@@ -495,6 +520,9 @@ export async function runProcessTrack(
           job.replacesPath ?? job.inputPath,
         )
         addedToEngineDj = true
+      } catch (e) {
+        log.warn('process:track Engine DJ step failed after the file was written', target, e)
+        engineDjError = e instanceof Error ? e.message : String(e)
       } finally {
         if (extracted) await extracted.cleanup()
       }
@@ -529,6 +557,8 @@ export async function runProcessTrack(
       normalizeSkipped,
       declickedSamples,
       addedToEngineDj,
+      engineDjError,
+      outputIdentity,
       oldMusicCopyKept,
       appleMusicFailed,
       originalKept,

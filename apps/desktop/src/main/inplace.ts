@@ -44,22 +44,19 @@ const baseRules = (segment: string): string =>
     .replace(/\s+/g, ' ')
     .trim()
 
-// `current` is the name the file has now, without its extension. Asked for again (an
-// update that keeps the name), it is a name already on this disk, so only the base rules
-// apply: the Windows ones renamed "Aux.wav" to "Aux_.wav" or cut a long name short, and
-// the original went to the backups with every library path still pointing at it.
+// `current` is the name the file has now, without its extension, given only when the
+// write lands in the file's own folder. Asked for again (an update that keeps the name),
+// it is a name already on this disk, so it is kept as it is: the rules renamed "Aux.wav"
+// to "Aux_.wav", "Where's Your Head At?" to "Where's Your Head At-" or cut a long name
+// short, and the original went to the backups with every library path still pointing at it.
 export function sanitizeOutputName(name: string, current?: string): string {
+  if (current !== undefined && name.normalize('NFC') === current.normalize('NFC')) return name
   const segments = name.split('/')
-  const unchanged = current !== undefined && name.normalize('NFC') === current.normalize('NFC')
   return segments
     .map((segment, i) =>
-      unchanged
-        ? baseRules(segment)
-        : capBytes(
-            [...baseRules(segment)].map((ch) => (ch.charCodeAt(0) < 0x20 ? '-' : ch)).join(''),
-          )
-            .replace(i === segments.length - 1 ? / +$/ : /[. ]+$/, '')
-            .replace(WINDOWS_DEVICE, '$1_'),
+      capBytes([...baseRules(segment)].map((ch) => (ch.charCodeAt(0) < 0x20 ? '-' : ch)).join(''))
+        .replace(i === segments.length - 1 ? / +$/ : /[. ]+$/, '')
+        .replace(WINDOWS_DEVICE, '$1_'),
     )
     .filter((segment) => segment && segment !== '.' && segment !== '..')
     .join('/')
@@ -165,6 +162,14 @@ export async function isSameFile(a: string, b: string): Promise<boolean> {
     stat(b, { bigint: true }).catch(() => null),
   ])
   return !!aStat && !!bStat && aStat.ino === bStat.ino && aStat.dev === bStat.dev
+}
+
+// What tells this track's previous output from another file written over it since: a
+// conversion lands by renaming its temp into place, so a file another track wrote there
+// is a new inode, while a tag edit in place (Traktor writing its cues) keeps it.
+export async function fileIdentity(path: string): Promise<string | undefined> {
+  const s = await stat(path, { bigint: true }).catch(() => null)
+  return s ? `${s.dev}:${s.ino}` : undefined
 }
 
 // After an in-place edit, convertAudio has already written the (possibly renamed)

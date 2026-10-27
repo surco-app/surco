@@ -373,6 +373,7 @@ export function useTrackProcessing({
           addToEngineDj: destination?.addToEngineDj,
           convertBesideOriginal: destination?.convertBesideOriginal,
           previousOutputPath: track.outputPath,
+          previousOutputIdentity: track.outputIdentity,
           musicPersistentId: track.musicPersistentId,
           // Where the copy being replaced lives, so rekordbox repoints from the path it
           // has indexed rather than from a download folder it has never seen.
@@ -425,6 +426,18 @@ export function useTrackProcessing({
           // renamed) path. Awaited so a batch's rows settle in order, but never allowed
           // to fail the conversion: the file is written either way and this only repaints.
           await refreshTrackFromDisk?.(id, result.outputPath).catch(() => {})
+        }
+        // The file was written and the row now follows it; only the Engine DJ add failed,
+        // which still fails the track so it is never taken for in the library.
+        if (result.engineDjError) {
+          const message = mainErrorMessage(
+            new Error(result.engineDjError),
+            tr,
+            tr('editor.processError'),
+          )
+          updateTrack(id, { status: 'error', error: message })
+          onProcessError?.(message, track.listLabel)
+          return 'failed'
         }
         return 'converted'
       } catch (e) {

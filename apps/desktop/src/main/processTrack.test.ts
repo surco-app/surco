@@ -51,6 +51,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),
     isSameFile: vi.fn(async () => false),
+    fileIdentity: vi.fn(async () => 'dev:1'),
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
@@ -106,6 +107,7 @@ describe('runProcessTrack — plain conversion', () => {
       inPlace: false,
       musicPersistentId: undefined,
       normalizeSkipped: false,
+      outputIdentity: 'dev:1',
     })
   })
 
@@ -401,15 +403,42 @@ describe('runProcessTrack — output conflict', () => {
     expect(vi.mocked(chosen.convertAudio).mock.calls[0][14]).toBe(true)
 
     const reexport = conflicting()
-    await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), reexport)
+    await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff', previousOutputIdentity: 'dev:1' }),
+      reexport,
+    )
     expect(vi.mocked(reexport.convertAudio).mock.calls[0][14]).toBe(false)
   })
 
   it('never prompts when the colliding file is the track’s own previous output', async () => {
     const deps = conflicting()
-    await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), deps)
+    await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff', previousOutputIdentity: 'dev:1' }),
+      deps,
+    )
     expect(deps.confirmConflict).not.toHaveBeenCalled()
     expect(deps.convertAudio).toHaveBeenCalledOnce()
+  })
+
+  // The path alone does not make the file this track's: another track of the session can
+  // have been written over it since (the user chose Overwrite there). Re-exporting with no
+  // prompt then replaced that other track's file without a word.
+  it('prompts when the previous output has since been replaced by another file', async () => {
+    const deps = conflicting()
+    deps.fileIdentity = vi.fn(async () => 'dev:2')
+    await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff', previousOutputIdentity: 'dev:1' }),
+      deps,
+    )
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', false)
+  })
+
+  it('reports the identity of the file it wrote, so the next export can recognise it', async () => {
+    const deps = makeDeps({
+      fileIdentity: vi.fn(async (p: string) => (p === '/out/Artist - Title.aiff' ? 'dev:7' : '')),
+    })
+    const result = await runProcessTrack(job(), deps)
+    expect(result.outputIdentity).toBe('dev:7')
   })
 
   // A concurrent batch job resolved the same output name a moment ago and hasn't
@@ -518,6 +547,35 @@ describe('runProcessTrack — output conflict', () => {
     const outputs = [(await first).outputPath, (await second).outputPath]
 
     expect(outputs).toEqual(['/in/Song.aiff', '/in/Song (2).aiff'])
+  })
+
+  // With "Add to Engine DJ" on, each job waits to learn Engine is closed. Waited between
+  // reading the name as free and claiming it, both jobs of a run read it free, both wrote
+  // it, and the batch said 2 converted with one file left in the folder.
+  it('never lets two jobs land on the same name while they wait for Engine DJ to close', async () => {
+    const reservations = createOutputReservations(false)
+    const release: Array<() => void> = []
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      ensureEngineDjClosed: vi.fn(async () => true),
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+      convertAudio: vi.fn(
+        () =>
+          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false })),
+          ),
+      ),
+    })
+
+    const first = runProcessTrack(job({ id: 'a' }), deps)
+    const second = runProcessTrack(job({ id: 'b', inputPath: '/in/other.wav' }), deps)
+    await vi.waitFor(() => expect(release).toHaveLength(2))
+    for (const done of release) done()
+    const outputs = [(await first).outputPath, (await second).outputPath]
+
+    expect(outputs).toEqual(['/out/Artist - Title.aiff', '/out/Artist - Title (2).aiff'])
   })
 
   // The prompt is what the user consents on. A claim by another job in the run has no file
@@ -816,11 +874,37 @@ describe('runProcessTrack — beside the original', () => {
       isSameFile: vi.fn(async (a: string, b: string) => a === b),
     })
     const result = await runProcessTrack(
-      job({ outputName: 'song', format: 'wav', previousOutputPath: '/in/song (2).wav' }),
+      job({
+        outputName: 'song',
+        format: 'wav',
+        previousOutputPath: '/in/song (2).wav',
+        previousOutputIdentity: 'dev:1',
+      }),
       deps,
     )
     expect(result.outputPath).toBe('/in/song (2).wav')
     expect(deps.confirmConflict).not.toHaveBeenCalled()
+  })
+
+  // The mode never touches a file that is not this track's own copy, and a "(2)" another
+  // track has been written over since is not that copy any more.
+  it('steps past its previous copy once another file has replaced it', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      existsSync: vi.fn((p: string) => p === '/in/song.wav' || p === '/in/song (2).wav'),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+      fileIdentity: vi.fn(async () => 'dev:2'),
+    })
+    const result = await runProcessTrack(
+      job({
+        outputName: 'song',
+        format: 'wav',
+        previousOutputPath: '/in/song (2).wav',
+        previousOutputIdentity: 'dev:1',
+      }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/in/song (3).wav')
   })
 
   it("does not let its own previous copy ride over another job's claim", async () => {
@@ -933,6 +1017,29 @@ describe('runProcessTrack — in-place rewrite', () => {
 
     expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/in/Aux.aiff')
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith('/in/Aux.aiff', '/in/Aux.aiff')
+  })
+
+  // A name with "?" or accents is already on this disk, so the update has nothing to fix
+  // in it. Changed, the rename sent the original to the backups and every DJ library that
+  // was not synced lost the track, which Apple Music then replaced as a new entry.
+  it('keeps an in-place update on its own name even with "?" or accents in it', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true, asciiFileNames: true }),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    await runProcessTrack(
+      job({ inputPath: "/in/Where's Your Head At?.aiff", outputName: "Where's Your Head At?" }),
+      deps,
+    )
+    await runProcessTrack(
+      job({ inputPath: '/in/Röyksopp - Fiësta.aiff', outputName: 'Röyksopp - Fiësta' }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls.map((c) => c[1])).toEqual([
+      "/in/Where's Your Head At?.aiff",
+      '/in/Röyksopp - Fiësta.aiff',
+    ])
   })
 
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
@@ -1355,16 +1462,31 @@ describe('runProcessTrack — Engine DJ', () => {
     expect(deps.addToEngineDj).not.toHaveBeenCalled()
   })
 
-  // A failed registration must fail the job loudly (like a failed Apple Music add) —
-  // reporting success while the library was never touched would hide the miss.
-  it('propagates a failed Engine library write', async () => {
+  // A failed registration must fail the job loudly: reporting success while the library
+  // was never touched would hide the miss. But the file has landed by then, renamed and
+  // with the original retired when in place, so the result still says where it is: thrown,
+  // the row kept pointing at a source that was gone and a retry failed on a missing file.
+  it('reports a failed Engine library write along with where the file landed', async () => {
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {})
     const deps = makeDeps({
-      settings: settings({ addToEngineDj: true }),
+      settings: settings({ addToEngineDj: true, overwriteOriginal: true }),
       addToEngineDj: vi.fn(async () => {
         throw new Error('biblioteca abierta')
       }),
     })
-    await expect(runProcessTrack(job(), deps)).rejects.toThrow('biblioteca abierta')
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result).toMatchObject({
+      outputPath: '/in/Artist - Title.aiff',
+      inPlace: true,
+      engineDjError: 'biblioteca abierta',
+    })
+    expect(result.addedToEngineDj).toBeUndefined()
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/Artist - Title.aiff',
+    )
+    warn.mockRestore()
   })
 })
 
@@ -1687,6 +1809,26 @@ describe('runProcessTrack: file names without accents', () => {
     const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
     const result = await runProcessTrack(job({ outputName: 'Röyksopp - Fiësta' }), deps)
     expect(result.outputPath).toBe('/out/Royksopp - Fiesta.aiff')
+  })
+
+  // The source's own name only stands for the folder it lives in: the output folder can be
+  // the very disk that fails with accents, which is why the setting exists.
+  it('folds a name into the output folder even when the source already carries it', async () => {
+    const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
+    const result = await runProcessTrack(
+      job({ inputPath: '/in/Röyksopp - Fiësta.wav', outputName: 'Röyksopp - Fiësta' }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/out/Royksopp - Fiesta.aiff')
+
+    const beside = makeDeps({
+      settings: settings({ asciiFileNames: true, convertBesideOriginal: true }),
+    })
+    const besideResult = await runProcessTrack(
+      job({ inputPath: '/in/Röyksopp - Fiësta.wav', outputName: 'Röyksopp - Fiësta' }),
+      beside,
+    )
+    expect(besideResult.outputPath).toBe('/in/Royksopp - Fiesta.aiff')
   })
 
   it('keeps the accents by default, since most users want the name exactly as tagged', async () => {

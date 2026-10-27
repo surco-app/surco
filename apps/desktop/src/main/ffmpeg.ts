@@ -2306,6 +2306,11 @@ export async function convertAudio(
     // track's own previous output never asks, and keeps nothing.
     else if (keepOverwritten && (await stat(output).catch(() => null)))
       archived = await keepOriginal(output, 'replaced', output)
+    // The backup above can be a whole copy on a NAS, queued behind the other tracks' ones,
+    // so a cancel can land while it runs. The rename is the first step that cannot be
+    // taken back: checked once more right before it, the original stays as it was and
+    // the catch drops the backup.
+    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,

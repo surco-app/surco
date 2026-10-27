@@ -1,8 +1,9 @@
-import { access, link, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, link, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  fileIdentity,
   isOutputConflict,
   isSameFile,
   removeRenamedOriginal,
@@ -68,6 +69,18 @@ describe('sanitizeOutputName', () => {
     expect(sanitizeOutputName('Aux', 'Aux')).toBe('Aux')
     expect(sanitizeOutputName(japanese, japanese.normalize('NFD'))).toBe(japanese)
     expect(sanitizeOutputName('Aux', 'Song')).toBe('Aux_')
+  })
+
+  // The base rules too: "?" and a double space were fine on the disk that holds the file,
+  // yet "Where's Your Head At?" came back "Where's Your Head At-", a new name, so the
+  // update moved the original to the backups and rekordbox and Traktor lost the track.
+  it('keeps the characters and spacing of a name the file already has', () => {
+    expect(sanitizeOutputName("Where's Your Head At?", "Where's Your Head At?")).toBe(
+      "Where's Your Head At?",
+    )
+    expect(sanitizeOutputName('Basement  Jaxx: Red Alert', 'Basement  Jaxx: Red Alert')).toBe(
+      'Basement  Jaxx: Red Alert',
+    )
   })
 
   // CON, NUL, COM1… name devices on Windows, with or without an extension: a track
@@ -248,6 +261,31 @@ describe('isSameFile', () => {
     await writeFile(b, 'b')
     expect(await isSameFile(a, b)).toBe(false)
     expect(await isSameFile(a, join(dir, 'missing.wav'))).toBe(false)
+  })
+})
+
+describe('fileIdentity', () => {
+  let dir: string
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  // Another track's conversion lands on the path by renaming its temp over it, which is
+  // what has to read as a different file; Traktor writing cues into the file must not.
+  it('changes when another file is renamed over the path, not when the file is edited', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-identity-'))
+    const out = join(dir, 'Artist - Title.aiff')
+    await writeFile(out, 'mine')
+    const written = await fileIdentity(out)
+    await writeFile(out, 'mine with cues')
+    expect(await fileIdentity(out)).toBe(written)
+
+    const other = join(dir, '.tmp-other.aiff')
+    await writeFile(other, 'another track')
+    await rename(other, out)
+    expect(await fileIdentity(out)).not.toBe(written)
+    expect(await fileIdentity(join(dir, 'missing.aiff'))).toBeUndefined()
   })
 })
 
