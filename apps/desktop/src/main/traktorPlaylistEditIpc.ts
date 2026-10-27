@@ -14,7 +14,7 @@ import { traktorSeparatorKey } from './traktorPlaylists'
 // the DJ confirmed in Settings; without one there is nothing to edit.
 export function registerTraktorPlaylistEditIpc(host: {
   collection: () => string
-  queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => boolean }
+  queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void

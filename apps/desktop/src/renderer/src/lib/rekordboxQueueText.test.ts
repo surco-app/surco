@@ -63,13 +63,6 @@ describe('rekordbox queue text', () => {
     )
   })
 
-  it('says why nothing was written when the queue belongs to another collection', () => {
-    expect(appliedMessage(tr, { refused: 'other-collection' })).toEqual({
-      text: 'What is waiting belongs to another rekordbox collection, so nothing was changed. Go back to that collection or discard what is waiting',
-      tone: 'danger',
-    })
-  })
-
   it('points at the first cue left off the grid, so the notice can take the DJ to it', () => {
     const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 2, contentId: '7', ms: 1000 }
     expect(

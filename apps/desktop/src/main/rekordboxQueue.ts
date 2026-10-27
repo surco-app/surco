@@ -85,7 +85,7 @@ export type QueueApply =
     }
 
 export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
-  enqueue: (ops: QueueOp[], repoints?: R[]) => boolean
+  enqueue: (ops: QueueOp[], repoints?: R[]) => void
   state: () => RekordboxQueueState
   isEmpty: () => boolean
   discard: () => void
@@ -359,7 +359,6 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         else q.ops[at] = op
       }
       save()
-      return true
     },
     state,
     isEmpty: () => file.queues.every(isEmptyQueue),

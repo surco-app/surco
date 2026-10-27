@@ -4,14 +4,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
 import { isTraktorContent, traktorKey } from '../shared/traktorContent'
-import type {
-  CueLibrary,
-  LibraryTracks,
-  QueuedCues,
-  SaveCuesOutcome,
-  SaveCuesRequest,
-  SurcoGrid,
-} from '../shared/types'
+import type { LibraryTracks, QueuedCues, SaveCuesRequest, SurcoGrid } from '../shared/types'
 import { type BeatGridFit, provisionalGrid } from './beatGrid'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
@@ -30,7 +23,7 @@ import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { traktorDropInput } from './traktorDropInput'
 import { traktorFileOf } from './traktorPlaylists'
 
-type CueQueue = Pick<RekordboxQueue, 'cuesOp' | 'drop'> & { enqueue: (ops: QueueOp[]) => boolean }
+type CueQueue = Pick<RekordboxQueue, 'cuesOp' | 'drop'> & { enqueue: (ops: QueueOp[]) => void }
 
 const WORDS_PER_SECOND = 150
 
@@ -224,18 +217,16 @@ export function registerRekordboxCuesIpc(host: {
     const op = queue.cuesOp(contentId)
     if (op) queue.drop(op.id)
   })
-  ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]): SaveCuesOutcome => {
+  ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]) => {
     const targets = [
       {
         ...host,
-        library: 'rekordbox' as const,
         mine: reqs.filter((r) => !engineOf(r.contentId) && !traktorOf(r.contentId)),
       },
       ...(host.engine
         ? [
             {
               ...host.engine,
-              library: 'engine' as const,
               mine: reqs.filter((r) => engineOf(r.contentId)),
             },
           ]
@@ -244,26 +235,17 @@ export function registerRekordboxCuesIpc(host: {
         ? [
             {
               ...host.traktor,
-              library: 'traktor' as const,
               mine: reqs.filter((r) => traktorOf(r.contentId)),
             },
           ]
         : []),
     ].filter((t) => t.mine.length > 0)
-    const queued: string[] = []
-    const refused: CueLibrary[] = []
     for (const t of targets) {
-      if (t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))) {
-        for (const req of t.mine)
-          if (req.provisional)
-            host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
-        t.applyQuietly(BrowserWindow.fromWebContents(e.sender))
-        queued.push(...t.mine.map((r) => r.contentId))
-      } else refused.push(t.library)
+      t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
+      for (const req of t.mine)
+        if (req.provisional)
+          host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
+      t.applyQuietly(BrowserWindow.fromWebContents(e.sender))
     }
-    // Each program's queue takes its part or refuses it on its own, so a save can go through
-    // in some programs only; the editor then forgets just the drafts that were queued.
-    if (refused.length === 0) return 'queued'
-    return queued.length === 0 ? 'other-collection' : { queued, refused }
   })
 }

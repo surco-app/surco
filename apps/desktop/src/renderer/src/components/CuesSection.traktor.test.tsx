@@ -8,7 +8,7 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 import type { DropInput } from '../../../shared/dropDetect'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
-import type { SaveCuesOutcome, TrackCues } from '../../../shared/types'
+import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { startDraft } from '../lib/cueDraft'
@@ -58,12 +58,11 @@ beforeEach(() => {
 
 function setup(
   read: TrackCues | null | Error = READ,
-  saved: SaveCuesOutcome = 'queued',
   contentId = 'traktor:HD/:m/:e.wav',
   dropInput: Api['rekordboxCueDropInput'] = async () => null,
   canSave = true,
 ) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => saved)
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => {
       if (read instanceof Error) throw read
@@ -105,7 +104,7 @@ describe('CuesSection on a Traktor track', () => {
 
   it('asks main for what to detect on, since Traktor keeps no phrases', async () => {
     const dropInput = vi.fn<Api['rekordboxCueDropInput']>(async () => null)
-    setup(READ, 'queued', 'traktor:HD/:m/:e.wav', dropInput)
+    setup(READ, 'traktor:HD/:m/:e.wav', dropInput)
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
     await waitFor(() => expect(dropInput).toHaveBeenCalledWith('traktor:HD/:m/:e.wav'))
@@ -120,7 +119,7 @@ describe('CuesSection on a Traktor track', () => {
   })
 
   it('keeps Auto mark and Save off until the collection is confirmed, saying where to set it', async () => {
-    setup(READ, 'queued', 'traktor:HD/:m/:e.wav', async () => null, false)
+    setup(READ, 'traktor:HD/:m/:e.wav', async () => null, false)
     await ready()
     await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeDisabled())
     expect(screen.getByTestId('cues-traktor-no-collection')).toHaveTextContent(
@@ -202,13 +201,7 @@ describe('CuesSection on a Traktor track', () => {
           fingerprint: 'f0',
         },
       )
-    const { saveRekordboxCues } = setup(
-      READ,
-      'queued',
-      'traktor:HD/:m/:e.wav',
-      async () => null,
-      false,
-    )
+    const { saveRekordboxCues } = setup(READ, 'traktor:HD/:m/:e.wav', async () => null, false)
     await ready()
     markAt(bar(8))
     const all = await screen.findByTestId('cues-save-all')
@@ -231,7 +224,7 @@ describe('CuesSection on a Traktor track', () => {
   it('previews Auto mark in Traktor blue, not in the flow colours', async () => {
     detectDrops.mockReset().mockReturnValue([bar(64)])
     const input: DropInput = { grid: GRID, phrases: [], words: new Uint16Array(3000) }
-    setup(READ, 'queued', 'traktor:HD/:m/:e.wav', async () => input)
+    setup(READ, 'traktor:HD/:m/:e.wav', async () => input)
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
     await waitFor(() =>

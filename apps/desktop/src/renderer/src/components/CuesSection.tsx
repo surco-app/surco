@@ -22,13 +22,7 @@ import type { DropInput } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { isTraktorContent, TRAKTOR_CUE_COLOR, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
-import type {
-  QueuedCues,
-  SaveCuesOutcome,
-  SaveCuesRequest,
-  SurcoGrid,
-  TrackCues,
-} from '../../../shared/types'
+import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
@@ -125,7 +119,6 @@ const REKORDBOX_COPY = {
   unreadable: 'editor.cues.unreadable',
   queuedStale: 'editor.cues.queuedStale',
   saveFailed: 'editor.cues.saveFailed',
-  otherLibrary: 'sources.edit.refused.otherCollection',
   autoUnanalysed: 'editor.cues.auto.unanalysed',
 }
 
@@ -135,7 +128,6 @@ const ENGINE_COPY: typeof REKORDBOX_COPY = {
   unreadable: 'editor.cues.engine.unreadable',
   queuedStale: 'editor.cues.engine.queuedStale',
   saveFailed: 'editor.cues.engine.saveFailed',
-  otherLibrary: 'engineQueue.otherLibrary',
   autoUnanalysed: 'editor.cues.engine.autoUnreadable',
 }
 
@@ -157,7 +149,6 @@ const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
   unreadable: 'editor.cues.traktor.unreadable',
   queuedStale: 'editor.cues.traktor.queuedStale',
   saveFailed: 'editor.cues.traktor.saveFailed',
-  otherLibrary: 'traktorQueue.otherLibrary',
   autoUnanalysed: 'editor.cues.traktor.autoUnreadable',
 }
 
@@ -848,19 +839,18 @@ function Editing({
     pending: pending(c),
     locked: state.locked.includes(c.key),
   }))
-  const [saveFailed, setSaveFailed] = useState<SaveCuesOutcome | 'failed' | null>(null)
+  const [saveFailed, setSaveFailed] = useState(false)
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
-    const outcome = await window.api.saveRekordboxCues(reqs).catch(() => 'failed' as const)
-    if (outcome === 'failed' || outcome === 'other-collection') {
-      setSaveFailed(outcome)
-      return false
-    }
-    const queued = outcome === 'queued' ? reqs.map((r) => r.contentId) : outcome.queued
-    setSaveFailed(outcome === 'queued' ? null : outcome)
+    const saved = await window.api.saveRekordboxCues(reqs).then(
+      () => true,
+      () => false,
+    )
+    setSaveFailed(!saved)
+    if (!saved) return false
     setOverwrite(new Set())
-    for (const contentId of queued) forgetDraft(contentId)
+    for (const req of reqs) forgetDraft(req.contentId)
     await refreshQueued()
-    return queued.includes(cue.contentId)
+    return true
   }
   const save = async () => {
     const saved = await send([
@@ -1489,13 +1479,9 @@ function Editing({
           {tr(copy.queuedStale)}
         </p>
       )}
-      {saveFailed !== null && (
+      {saveFailed && (
         <p data-testid="cues-save-failed" className="mt-2 text-xs text-warn">
-          {typeof saveFailed === 'object'
-            ? tr('editor.cues.savedExcept', {
-                programs: saveFailed.refused.map((l) => LIBRARY_NAME[l]).join(', '),
-              })
-            : tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
+          {tr(copy.saveFailed)}
         </p>
       )}
       {blocked && (

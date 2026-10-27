@@ -312,32 +312,9 @@ describe('registerRekordboxCuesIpc', () => {
       wanted: [{ ms: 1000, kind: 0, color: null }],
       fingerprint: 'f',
     }
-    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('queued')
+    await handler('rekordbox:saveCues')({}, [req])
     expect(enqueue).toHaveBeenCalledWith([expect.objectContaining({ kind: 'cues', ...req })])
     expect(applyQuietly).toHaveBeenCalled()
-  })
-
-  it('says the cues were not queued when the queue belongs to another collection, and applies nothing', async () => {
-    const applyQuietly = quietly()
-    registerRekordboxCuesIpc({
-      collection: () => '/c/master.db',
-      queue: queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) }),
-      applyQuietly,
-      flow: () => MY_FLOW,
-      beatGrid: async () => null,
-      words: async () => null,
-      provisional: { add: vi.fn() },
-      twins: async () => ({}),
-    })
-    const req = {
-      contentId: '103',
-      path: '/m/a.wav',
-      label: 'a',
-      wanted: [],
-      fingerprint: 'f',
-    }
-    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('other-collection')
-    expect(applyQuietly).not.toHaveBeenCalled()
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
@@ -711,7 +688,7 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
       wanted: [],
       fingerprint: 'F',
     })
-    expect(await handler('rekordbox:saveCues')({}, [req('103'), req('engine:4')])).toBe('queued')
+    await handler('rekordbox:saveCues')({}, [req('103'), req('engine:4')])
     expect(
       vi.mocked(rekordbox.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId),
     ).toEqual(['103'])
@@ -720,42 +697,6 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
     ])
     expect(applyRekordbox).toHaveBeenCalled()
     expect(applyEngine).toHaveBeenCalled()
-  })
-
-  it('says the save belongs elsewhere when the Engine queue holds another library', async () => {
-    const engine = queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) })
-    const rekordbox = queue()
-    const { applyEngine } = register(await engineLibrary(), rekordbox, engine)
-    const req = {
-      contentId: 'engine:4',
-      path: '/m/e.mp3',
-      label: 'e',
-      wanted: [],
-      fingerprint: 'F',
-    }
-    expect(await handler('rekordbox:saveCues')({}, [req])).toBe('other-collection')
-    expect(rekordbox.enqueue).not.toHaveBeenCalled()
-    expect(applyEngine).not.toHaveBeenCalled()
-  })
-
-  // rekordbox's part is already queued when Engine refuses its own: calling the whole save a
-  // failure would keep the rekordbox draft open and save it a second time.
-  it('says which tracks were queued and which program refused, when only part of a save goes through', async () => {
-    const engine = queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) })
-    const rekordbox = queue()
-    const { applyRekordbox } = register(await engineLibrary(), rekordbox, engine)
-    const req = (contentId: string) => ({
-      contentId,
-      path: `/m/${contentId}.wav`,
-      label: contentId,
-      wanted: [],
-      fingerprint: 'F',
-    })
-    expect(await handler('rekordbox:saveCues')({}, [req('103'), req('engine:4')])).toEqual({
-      queued: ['103'],
-      refused: ['engine'],
-    })
-    expect(applyRekordbox).toHaveBeenCalled()
   })
 
   it('shows and takes back an Engine save from the Engine queue', async () => {
@@ -839,7 +780,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
     const traktor = queue()
     const { applyTraktor } = register(await collectionFile(), rekordbox, traktor)
     const req = { contentId: ID, path: '/Music/t.aiff', label: 't', wanted: [], fingerprint: 'F' }
-    expect(await handler('rekordbox:saveCues')({ sender: {} }, [req])).toBe('queued')
+    await handler('rekordbox:saveCues')({ sender: {} }, [req])
     expect(vi.mocked(traktor.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId)).toEqual(
       [ID],
     )

@@ -45,7 +45,7 @@ afterEach(() => {
 })
 
 function setup(twins: Record<string, LibraryTracks> = {}) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => 'queued')
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
     rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async (file) => twins[file] ?? {}),
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
@@ -155,25 +155,6 @@ describe('Cues over several selected tracks', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103'])
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual(['999']))
-  })
-
-  // One program's queue can refuse its part while the others queue theirs: only the drafts
-  // that were queued are saved, the rest stay for the DJ, who is told which program refused.
-  it('forgets only the drafts that were queued when a program refuses its part', async () => {
-    const { saveRekordboxCues } = setup()
-    saveRekordboxCues.mockResolvedValue({ queued: ['103'], refused: ['traktor'] })
-    act(() => {
-      for (const id of ['103', '104'])
-        keepDraft(
-          id,
-          cueDraftKey(id, 'f0', null),
-          startDraft([{ ms: bar(64), kind: 0, color: null }], 'mine'),
-          { path: `/m/${id}.wav`, label: id, fingerprint: 'f0' },
-        )
-    })
-    fireEvent.click(screen.getByTestId('cues-batch-save'))
-    await waitFor(() => expect([...unsavedCueTracks()]).toEqual(['104']))
-    expect(screen.getByTestId('cues-batch-save-failed')).toHaveTextContent('Traktor')
   })
 
   // Marking thirteen tracks from rekordbox's list reaches Traktor and Engine DJ too, so the

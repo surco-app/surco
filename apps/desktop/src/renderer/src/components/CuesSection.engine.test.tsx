@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { DropInput } from '../../../shared/dropDetect'
-import type { SaveCuesOutcome, TrackCues } from '../../../shared/types'
+import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { startDraft } from '../lib/cueDraft'
@@ -56,11 +56,10 @@ beforeEach(() => {
 
 function setup(
   read: TrackCues | null | Error = READ,
-  saved: SaveCuesOutcome = 'queued',
   contentId = 'engine:4',
   dropInput: Api['rekordboxCueDropInput'] = async () => null,
 ) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => saved)
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => {
       if (read instanceof Error) throw read
@@ -101,7 +100,7 @@ describe('CuesSection on an Engine DJ track', () => {
 
   it('reads nothing for Auto marcar until the DJ asks, so opening an Engine track never decodes it', async () => {
     const dropInput = vi.fn<Api['rekordboxCueDropInput']>(async () => null)
-    setup(READ, 'queued', 'engine:4', dropInput)
+    setup(READ, 'engine:4', dropInput)
     await ready()
     expect(screen.getByTestId('cues-auto-mark')).toBeEnabled()
     expect(dropInput).not.toHaveBeenCalled()
@@ -114,7 +113,7 @@ describe('CuesSection on an Engine DJ track', () => {
       words: new Uint16Array(3000),
     }
     detectDrops.mockReset().mockReturnValue([bar(64) - 30])
-    setup(READ, 'queued', 'engine:4', async () => input)
+    setup(READ, 'engine:4', async () => input)
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
     await waitFor(() => expect(autoMarkOf('engine:4')).toEqual({ kind: 'proposed', ms: [bar(64)] }))
@@ -123,7 +122,7 @@ describe('CuesSection on an Engine DJ track', () => {
 
   it('says it is reading the track while the audio is decoded, since that can take a few seconds', async () => {
     let answer: (input: DropInput | null) => void = () => {}
-    setup(READ, 'queued', 'engine:4', () => new Promise((done) => (answer = done)))
+    setup(READ, 'engine:4', () => new Promise((done) => (answer = done)))
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
     await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeDisabled())
@@ -175,23 +174,11 @@ describe('CuesSection on an Engine DJ track', () => {
   })
 
   it('never warns about CALLs on a rekordbox track, which keeps them', async () => {
-    setup({ ...READ, contentId: '103' }, 'queued', '103')
+    setup({ ...READ, contentId: '103' }, '103')
     await ready()
     markAt(bar(64))
     await waitFor(() => expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument())
     expect(screen.queryByTestId('cues-engine-calls')).toBeNull()
-  })
-
-  it('says the save belongs to another Engine library when its queue holds one', async () => {
-    setup(READ, 'other-collection')
-    await ready()
-    markAt(bar(64))
-    fireEvent.click(screen.getByTestId('cues-save'))
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-save-failed')).toHaveTextContent(
-        'What is waiting belongs to another Engine DJ library',
-      ),
-    )
   })
 
   it('names both apps on Save all when the unsaved tracks are in rekordbox and in Engine DJ', async () => {

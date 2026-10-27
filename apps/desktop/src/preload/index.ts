@@ -30,7 +30,6 @@ import type {
   RekordboxQueueState,
   RekordboxSyncIssue,
   RowWaveRequest,
-  SaveCuesOutcome,
   SaveCuesRequest,
   ScanVerdict,
   SearchHints,
@@ -234,7 +233,7 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:queuedCues', contentId),
   undoRekordboxCues: (contentId: string): Promise<void> =>
     ipcRenderer.invoke('rekordbox:undoCues', contentId),
-  saveRekordboxCues: (reqs: SaveCuesRequest[]): Promise<SaveCuesOutcome> =>
+  saveRekordboxCues: (reqs: SaveCuesRequest[]): Promise<void> =>
     ipcRenderer.invoke('rekordbox:saveCues', reqs),
   rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('rekordbox:membership', paths),

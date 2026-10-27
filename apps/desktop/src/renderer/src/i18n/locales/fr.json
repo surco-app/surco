@@ -853,7 +853,6 @@
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
       "saveFailed": "Impossible d’enregistrer dans rekordbox. Les cues ne sont toujours pas enregistrés",
-      "savedExcept": "Enregistré, sauf dans {{programs}}. Ce qui y attend appartient à une autre collection, rien n’y a été modifié",
       "saveAll_one": "Enregistrer {{count}} morceau dans rekordbox",
       "saveAll_other": "Enregistrer {{count}} morceaux dans rekordbox",
       "saveAllBoth_one": "Enregistrer {{count}} morceau dans rekordbox et Engine DJ",
@@ -2073,8 +2072,7 @@
         "readOnly": "La collection rekordbox est en lecture seule, rien n’a changé",
         "stale": "La playlist a changé dans rekordbox. Vérifie-la et réessaie",
         "noSeparator": "Ta collection n’a aucun séparateur à copier",
-        "writeUnknown": "Le changement n'a pu être ni enregistré ni annulé, la collection a donc pu changer. Avant d'ouvrir rekordbox, sors master.db-wal et master.db-shm de son dossier, puis remplace master.db par la copie master.db.surco-backup que tu trouveras dans Réglages → Général → Sauvegardes des collections",
-        "otherCollection": "Ce qui attend appartient à une autre collection rekordbox, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend"
+        "writeUnknown": "Le changement n'a pu être ni enregistré ni annulé, la collection a donc pu changer. Avant d'ouvrir rekordbox, sors master.db-wal et master.db-shm de son dossier, puis remplace master.db par la copie master.db.surco-backup que tu trouveras dans Réglages → Général → Sauvegardes des collections"
       }
     },
     "editTraktor": {
@@ -2096,8 +2094,7 @@
         "readOnly": "La collection Traktor est en lecture seule, rien n’a changé",
         "stale": "La playlist a changé dans Traktor. Vérifie-la et réessaie",
         "noSeparator": "Ta collection n’a aucun séparateur à copier",
-        "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Traktor, remplacez collection.nml par la copie collection.nml.surco-backup que vous trouverez dans Réglages → Général → Sauvegardes des collections",
-        "otherCollection": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend"
+        "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Traktor, remplacez collection.nml par la copie collection.nml.surco-backup que vous trouverez dans Réglages → Général → Sauvegardes des collections"
       }
     },
     "tree": {
@@ -2602,7 +2599,6 @@
     "backupFailed": "Impossible de sauvegarder Engine DJ. Surco réessaiera à sa prochaine fermeture",
     "unreadable": "Surco ne peut pas lire la bibliothèque Engine DJ pour le moment, rien n’a changé",
     "writeFailed": "Impossible d’enregistrer les cues dans Engine DJ. La bibliothèque est restée telle quelle",
-    "otherLibrary": "Ce qui attend appartient à une autre bibliothèque Engine DJ, rien n’a donc été modifié. Reviens à cette bibliothèque ou abandonne ce qui attend",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Engine DJ. Marque-les à nouveau",
       "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). Engine DJ ne garde que les hot cues",
@@ -2627,7 +2623,6 @@
     "backupFailed": "Impossible de sauvegarder Traktor. Surco réessaiera à sa prochaine fermeture",
     "unreadable": "Surco ne peut pas lire la collection Traktor pour le moment, rien n’a changé",
     "writeFailed": "Impossible d’enregistrer les modifications dans Traktor. La collection est restée telle quelle",
-    "otherLibrary": "Ce qui attend appartient à une autre collection Traktor, rien n’a donc été modifié. Reviens à cette collection ou abandonne ce qui attend",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Traktor. Marque-les à nouveau",
       "slotDropped": "Traktor a 7 boutons pour les cues de Surco, donc le cue H de {{track}} n’a pas été enregistré",

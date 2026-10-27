@@ -853,7 +853,6 @@
       "resetColour": "Reset",
       "saveShort": "Save",
       "saveFailed": "Could not save to rekordbox. The cues are still not saved",
-      "savedExcept": "Saved, except in {{programs}}. What is waiting there belongs to another collection, so nothing changed there",
       "saveAll_one": "Save {{count}} track to rekordbox",
       "saveAll_other": "Save {{count}} tracks to rekordbox",
       "saveAllBoth_one": "Save {{count}} track to rekordbox and Engine DJ",
@@ -2073,8 +2072,7 @@
         "readOnly": "The rekordbox collection is read-only, so nothing changed",
         "stale": "The playlist changed in rekordbox. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → General → Collection backups",
-        "otherCollection": "What is waiting belongs to another rekordbox collection, so nothing was changed. Go back to that collection or discard what is waiting"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → General → Collection backups"
       }
     },
     "editTraktor": {
@@ -2096,8 +2094,7 @@
         "readOnly": "The Traktor collection is read-only, so nothing changed",
         "stale": "The playlist changed in Traktor. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup you will find in Settings → General → Collection backups",
-        "otherCollection": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup you will find in Settings → General → Collection backups"
       }
     },
     "tree": {
@@ -2602,7 +2599,6 @@
     "backupFailed": "Could not back up Engine DJ. Surco will try again when you close it",
     "unreadable": "Surco can't read the Engine DJ library right now, so nothing changed",
     "writeFailed": "Couldn't save the cues to Engine DJ. The library is as it was",
-    "otherLibrary": "What is waiting belongs to another Engine DJ library, so nothing was changed. Go back to that library or discard what is waiting",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Engine DJ. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Engine DJ only keeps hot cues",
@@ -2627,7 +2623,6 @@
     "backupFailed": "Could not back up Traktor. Surco will try again when you close it",
     "unreadable": "Surco can't read the Traktor collection right now, so nothing changed",
     "writeFailed": "Couldn't save the changes to Traktor. The collection is as it was",
-    "otherLibrary": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Traktor. Mark them again",
       "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved",

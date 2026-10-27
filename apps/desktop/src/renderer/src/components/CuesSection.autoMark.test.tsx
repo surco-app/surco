@@ -76,7 +76,7 @@ function setup({
   settings?: Partial<Settings>
   actionsRef?: { current: CueActions | null }
 } = {}) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => 'queued')
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
       ...read,
@@ -566,11 +566,6 @@ describe('saving several tracks', () => {
 
   it.each([
     ['the save fails', () => Promise.reject(new Error('ipc')), 'Could not save to rekordbox'],
-    [
-      'the queue belongs to another collection',
-      async () => 'other-collection' as const,
-      'What is waiting belongs to another rekordbox collection',
-    ],
   ])('keeps every track unsaved and says why when %s', async (_, answer, said) => {
     other()
     const { saveRekordboxCues } = setup()
@@ -586,11 +581,6 @@ describe('saving several tracks', () => {
 
   it.each([
     ['the save fails', () => Promise.reject(new Error('ipc')), 'Could not save to rekordbox'],
-    [
-      'the queue belongs to another collection',
-      async () => 'other-collection' as const,
-      'What is waiting belongs to another rekordbox collection',
-    ],
   ])('keeps a single Guardar unsaved and says why when %s', async (_, answer, said) => {
     const { saveRekordboxCues } = setup()
     saveRekordboxCues.mockImplementation(answer)

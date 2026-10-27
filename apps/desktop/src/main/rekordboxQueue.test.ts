@@ -200,7 +200,7 @@ describe('rekordbox queue', () => {
     const q = createRekordboxQueue(deps({ collection: () => at }))
     q.enqueue([rename])
     at = '/real/master.db'
-    expect(q.enqueue([track('a', '/m/a.wav')])).toBe(true)
+    q.enqueue([track('a', '/m/a.wav')])
     expect(q.state().items.map((i) => i.key)).toEqual(['track:/m/a.wav'])
     expect(q.state().elsewhere).toBe(1)
   })
@@ -363,7 +363,7 @@ describe('rekordbox queue', () => {
     let at = ''
     const d = deps({ collection: () => at, configured: () => '/Volumes/Disco/master.db' })
     const q = createRekordboxQueue(d)
-    expect(q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])).toBe(true)
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])
     at = '/Volumes/Otro/master.db'
     expect(await q.apply(closed)).toEqual({ status: 'empty' })
     expect(d.repoint).not.toHaveBeenCalled()

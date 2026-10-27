@@ -853,7 +853,6 @@
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
       "saveFailed": "Speichern in rekordbox fehlgeschlagen. Die Cues sind weiter nicht gespeichert",
-      "savedExcept": "Gespeichert, außer in {{programs}}. Was dort wartet, gehört zu einer anderen Sammlung, dort wurde nichts geändert",
       "saveAll_one": "{{count}} Titel in rekordbox speichern",
       "saveAll_other": "{{count}} Titel in rekordbox speichern",
       "saveAllBoth_one": "{{count}} Titel in rekordbox und Engine DJ speichern",
@@ -2073,8 +2072,7 @@
         "readOnly": "Die rekordbox-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
-        "otherCollection": "Was wartet, gehört zu einer anderen rekordbox-Sammlung, daher wurde nichts geändert. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet"
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup unter Einstellungen → Allgemein → Sicherungen der Sammlungen"
       }
     },
     "editTraktor": {
@@ -2096,8 +2094,7 @@
         "readOnly": "Die Traktor-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in Traktor geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
-        "otherCollection": "Was wartet, gehört zu einer anderen Traktor-Sammlung, daher wurde nichts geändert. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet"
+        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Allgemein → Sicherungen der Sammlungen"
       }
     },
     "tree": {
@@ -2602,7 +2599,6 @@
     "backupFailed": "Engine DJ konnte nicht gesichert werden. Surco versucht es beim nächsten Schließen erneut",
     "unreadable": "Surco kann die Engine-DJ-Bibliothek gerade nicht lesen, nichts geändert",
     "writeFailed": "Die Cues konnten nicht in Engine DJ gespeichert werden. Die Bibliothek ist unverändert",
-    "otherLibrary": "Was wartet, gehört zu einer anderen Engine-DJ-Bibliothek, daher wurde nichts geändert. Wechsle zurück zu dieser Bibliothek oder verwirf, was wartet",
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Engine DJ geändert. Markiere sie erneut",
       "callsDropped_one": "{{count}} CALL von {{track}} wurde nicht gespeichert ({{times}}). Engine DJ speichert nur Hot Cues",
@@ -2627,7 +2623,6 @@
     "backupFailed": "Traktor konnte nicht gesichert werden. Surco versucht es beim nächsten Schließen erneut",
     "unreadable": "Surco kann die Engine-DJ-Collection gerade nicht lesen, nichts geändert",
     "writeFailed": "Die Änderungen konnten nicht in Traktor gespeichert werden. Die Collection ist unverändert",
-    "otherLibrary": "Was wartet, gehört zu einer anderen Engine-DJ-Collection, daher wurde nichts geändert. Wechsle zurück zu dieser Collection oder verwirf, was wartet",
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Traktor geändert. Markiere sie erneut",
       "slotDropped": "Traktor hat 7 Tasten für die Cues von Surco, daher wurde Cue H von {{track}} nicht gespeichert",

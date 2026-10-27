@@ -65,11 +65,7 @@ export const ENGINE_QUEUE_WORDS: QueueWords = {
   appliedChanges: 'engineQueue.appliedChanges',
   backupFailed: 'engineQueue.backupFailed',
   refused: (reason) =>
-    reason === 'unreadable'
-      ? 'engineQueue.unreadable'
-      : reason === 'other-collection'
-        ? 'engineQueue.otherLibrary'
-        : 'engineQueue.writeFailed',
+    reason === 'unreadable' ? 'engineQueue.unreadable' : 'engineQueue.writeFailed',
   notices: {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'engineQueue.notice.cuesChanged',
@@ -88,11 +84,7 @@ export const TRAKTOR_QUEUE_WORDS: QueueWords = {
   appliedChanges: 'traktorQueue.appliedChanges',
   backupFailed: 'traktorQueue.backupFailed',
   refused: (reason) =>
-    reason === 'unreadable'
-      ? 'traktorQueue.unreadable'
-      : reason === 'other-collection'
-        ? 'traktorQueue.otherLibrary'
-        : 'traktorQueue.writeFailed',
+    reason === 'unreadable' ? 'traktorQueue.unreadable' : 'traktorQueue.writeFailed',
   notices: {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'traktorQueue.notice.cuesChanged',

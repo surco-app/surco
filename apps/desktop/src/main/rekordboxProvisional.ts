@@ -165,7 +165,7 @@ export function adjustProvisional(deps: {
       (db) => adjustmentOps(db, rekordboxShareDir(path), entries, deps.newId),
       { ops: [], settled: [] },
     )
-    if (ops.length > 0 && !deps.queue.enqueue(ops)) return
+    if (ops.length > 0) deps.queue.enqueue(ops)
     deps.list.settle(settled)
   } catch (err) {
     log.warn(`rekordbox provisional adjustment skipped: ${String(err)}`)
