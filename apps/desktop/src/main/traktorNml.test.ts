@@ -7,6 +7,7 @@ import {
   attr,
   cuesToXml,
   detachedOutputPaths,
+  escapeAttr,
   findEntries,
   matchedPatchCount,
   type NmlPatch,
@@ -58,6 +59,16 @@ describe('cuesToXml', () => {
     expect(xml).toContain('NAME="Drop"')
     expect(xml).toContain('HOTCUE="1"')
     expect(xml).toContain('START="79672.640000"')
+  })
+
+  // A cue name comes from the file, where a stray control byte or a broken UTF-16 pair is
+  // just data. In the collection it would make the whole document ill-formed XML 1.0, and
+  // a collection Traktor refuses to parse loses every track, not one cue name.
+  it('drops characters XML 1.0 forbids from a cue name', () => {
+    const tree = buildTraktorTree([traktorCue('D\u0001r\u000Bo\u001Fp', 0, 1000, 1)])
+
+    expect(cuesToXml(tree)).toContain('NAME="Drop"')
+    expect(escapeAttr('a\uFFFEb\uFFFFc\uD800d & e')).toBe('abcd &amp; e')
   })
 
   // Un árbol sin marcadores no debe producir un CUE_V2 vacío que Traktor luego lea

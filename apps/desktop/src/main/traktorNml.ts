@@ -3,6 +3,7 @@
 // cambio de tres atributos en un diff de toda la colección del usuario. Aquí cada
 // ENTRY se localiza por posición y sólo se sustituyen los tramos que cambian.
 import type { TagChange } from '../shared/types'
+import { stripXmlIllegal } from '../shared/xml'
 import { readTraktorMarkers, shiftCueStart, type TraktorMarker } from './traktor4'
 
 export interface NmlEntry {
@@ -68,7 +69,7 @@ export function findEntries(nml: string): NmlEntry[] {
 }
 
 export function escapeAttr(value: string): string {
-  return value
+  return stripXmlIllegal(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
