@@ -20,7 +20,7 @@ import {
   forgetAutoMark,
   keepAutoMark,
   keepDraft,
-  keptDraft,
+  keptDraftOn,
 } from './cueSession'
 import { quantizePoints } from './cueWave'
 
@@ -59,7 +59,7 @@ async function autoMarkOne(client: QueryClient, contentId: string): Promise<Auto
   if (!input) return { kind: 'unanalysed' }
   const queued = await client.fetchQuery(queuedCuesQuery(contentId))
   const cues =
-    keptDraft(contentId, cueDraftKey(contentId, read.fingerprint, queued))?.cues ??
+    keptDraftOn(contentId, read, queued)?.cues ??
     (queued && queued.fingerprint === read.fingerprint ? queued.wanted : read.cues)
   const found = dropsOnGrid(input, read.grid)
   if (found.length === 0) return { kind: 'none' }
@@ -100,10 +100,10 @@ async function acceptOne(
   const read = await client.fetchQuery(trackCuesQuery(target.contentId)).catch(() => null)
   if (!read?.analysed || read.grid.length === 0) return false
   const queued = await client.fetchQuery(queuedCuesQuery(target.contentId))
-  const baseline =
-    queued && queued.fingerprint === read.fingerprint
-      ? queued.wanted
-      : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
+  const fresh = queued !== null && queued.fingerprint === read.fingerprint
+  const baseline = fresh
+    ? queued.wanted
+    : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
   const draftKey = cueDraftKey(target.contentId, read.fingerprint, queued)
   const manual = settings.activeCueFlow === MANUAL_CUE_FLOW
   const ctx = {
@@ -116,7 +116,7 @@ async function acceptOne(
     slots: isTraktorContent(target.contentId) ? TRAKTOR_SLOTS : ALL_SLOTS,
   }
   const kept =
-    keptDraft(target.contentId, draftKey) ??
+    keptDraftOn(target.contentId, read, queued) ??
     startDraft(
       baseline,
       settings.activeCueFlow,
@@ -132,11 +132,13 @@ async function acceptOne(
   const accepted = reduceDraft(flowed, { type: 'batch', actions }, ctx)
   forgetAutoMark(target.contentId)
   if (JSON.stringify(wantedOfDraft(accepted.cues)) === JSON.stringify(baseline)) return false
-  keepDraft(target.contentId, draftKey, accepted, {
-    path: target.path,
-    label: target.label,
-    fingerprint: read.fingerprint,
-  })
+  keepDraft(
+    target.contentId,
+    draftKey,
+    accepted,
+    { path: target.path, label: target.label, fingerprint: read.fingerprint },
+    fresh ? queued : null,
+  )
   return true
 }
 

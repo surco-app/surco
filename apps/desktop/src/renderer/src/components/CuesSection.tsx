@@ -76,7 +76,7 @@ import {
   keepAutoMark,
   keepDraft,
   keepPlayhead,
-  keptDraft,
+  keptDraftOn,
   keptDrafts,
   keptPlayhead,
   settleCueFocus,
@@ -433,7 +433,7 @@ function Editing({
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
     undefined,
     () =>
-      keptDraft(cue.contentId, draftKey) ??
+      keptDraftOn(cue.contentId, read, queued) ??
       startDraft(
         baseline,
         active.id,
@@ -633,12 +633,18 @@ function Editing({
   useEffect(() => {
     if (unchanged) forgetDraft(cue.contentId)
     else
-      keepDraft(cue.contentId, draftKey, state, {
-        path: cue.path,
-        label: cue.label,
-        fingerprint: read.fingerprint,
-        ...(provisional ? { provisional: true as const } : {}),
-      })
+      keepDraft(
+        cue.contentId,
+        draftKey,
+        state,
+        {
+          path: cue.path,
+          label: cue.label,
+          fingerprint: read.fingerprint,
+          ...(provisional ? { provisional: true as const } : {}),
+        },
+        fresh ? queued : null,
+      )
   }, [
     cue.contentId,
     cue.path,
@@ -648,6 +654,8 @@ function Editing({
     state,
     unchanged,
     provisional,
+    fresh,
+    queued,
   ])
   const pending = (c: DraftCue): boolean =>
     !inRekordbox.some(

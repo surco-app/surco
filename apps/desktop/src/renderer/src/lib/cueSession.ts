@@ -1,6 +1,7 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
-import type { QueuedCues, SaveCuesRequest } from '../../../shared/types'
-import { type CueDraft, wantedOfDraft } from './cueDraft'
+import { SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
+import type { QueuedCues, SaveCuesRequest, TrackCueRow } from '../../../shared/types'
+import { type CueDraft, type DraftCue, wantedOfDraft } from './cueDraft'
 
 export type AutoMark =
   | { kind: 'proposed'; ms: number[] }
@@ -15,7 +16,10 @@ export interface CueSaveTarget {
   provisional?: true
 }
 
-const drafts = new Map<string, { draftKey: string; value: CueDraft; target: CueSaveTarget }>()
+const drafts = new Map<
+  string,
+  { draftKey: string; value: CueDraft; target: CueSaveTarget; base: QueuedCues | null }
+>()
 let marks: ReadonlyMap<string, AutoMark> = new Map()
 const playheads = new Map<string, number>()
 let focus: { contentId: string; ms: number } | null = null
@@ -57,15 +61,77 @@ export function keptDraft(contentId: string, draftKey: string): CueDraft | undef
   return kept?.draftKey === draftKey ? kept.value : undefined
 }
 
+// `base` is the queued save the draft was built on, when it was built on one.
 export function keepDraft(
   contentId: string,
   draftKey: string,
   value: CueDraft,
   target: CueSaveTarget,
+  base: QueuedCues | null = null,
 ): void {
   const fresh = !drafts.has(contentId)
-  drafts.set(contentId, { draftKey, value, target })
+  drafts.set(contentId, { draftKey, value, target, base })
   if (fresh) changed()
+}
+
+// The id the library gave each cue of a queued save once it wrote it, or null when what the
+// library holds is not exactly that save.
+function writtenIds(wanted: WantedCue[], rows: TrackCueRow[]): string[] | null {
+  if (wanted.length !== rows.length) return null
+  const left = [...rows]
+  const ids: string[] = []
+  for (const w of wanted) {
+    const same = (r: TrackCueRow): boolean =>
+      r.kind === w.kind && r.color === w.color && Math.abs(r.ms - w.ms) <= SAME_POSITION_MS
+    const byId = left.findIndex((r) => r.id === w.id && same(r))
+    const at = byId === -1 ? left.findIndex(same) : byId
+    if (at === -1) return null
+    ids.push(left[at].id)
+    left.splice(at, 1)
+  }
+  return ids
+}
+
+function rebased(draft: CueDraft, wanted: WantedCue[], ids: string[]): CueDraft {
+  const idOf = (c: DraftCue): string | undefined => {
+    const at =
+      c.id === undefined
+        ? wanted.findIndex((w, i) => w.id === undefined && c.key === `n${i}`)
+        : wanted.findIndex((w) => w.id === c.id)
+    return at === -1 ? c.id : ids[at]
+  }
+  const cuesOf = (cues: DraftCue[]): DraftCue[] =>
+    cues.map((c) => {
+      const id = idOf(c)
+      return id === undefined ? c : { ...c, id }
+    })
+  return {
+    ...draft,
+    cues: cuesOf(draft.cues),
+    past: draft.past.map((s) => ({ ...s, cues: cuesOf(s.cues) })),
+    future: draft.future.map((s) => ({ ...s, cues: cuesOf(s.cues) })),
+  }
+}
+
+// The kept draft for what the library and the queue hold now. A draft built on a queued save
+// still stands once the queue writes exactly that save: the DJ kept editing on top of it
+// while the program was open. It moves onto the cues the library wrote, so saving it updates
+// them instead of adding them a second time.
+export function keptDraftOn(
+  contentId: string,
+  read: { fingerprint: string; cues: TrackCueRow[] },
+  queued: QueuedCues | null | undefined,
+): CueDraft | undefined {
+  const draftKey = cueDraftKey(contentId, read.fingerprint, queued)
+  const kept = drafts.get(contentId)
+  if (!kept || kept.draftKey === draftKey) return kept?.value
+  if (!kept.base || queued !== null) return undefined
+  const ids = writtenIds(kept.base.wanted, read.cues)
+  if (!ids) return undefined
+  const value = rebased(kept.value, kept.base.wanted, ids)
+  const target = { ...kept.target, fingerprint: read.fingerprint }
+  drafts.set(contentId, { draftKey, value, target, base: null })
+  return value
 }
 
 export function draftsToSave(): SaveCuesRequest[] {
