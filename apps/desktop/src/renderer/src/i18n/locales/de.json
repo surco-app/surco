@@ -1391,7 +1391,7 @@
     "engineDjPlaylistHint": "Konvertierte Tracks landen in dieser Playlist deiner Bibliothek, zusätzlich zur Sammlung.",
     "traktorSync": "Traktor-Sammlung",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "Die Traktor-Sammlung, in die geschrieben wird. Du kannst sie jederzeit ändern. Wenn du Traktor aktualisierst oder zu einer älteren Version zurückkehrst, wechselt Surco von selbst zu der Sammlung, die Traktor verwendet.",
+    "traktorNmlPathHint": "Die Traktor-Sammlung, in die geschrieben wird. Du kannst sie jederzeit ändern.",
     "traktorNmlPathDetectedHint": "Automatisch gefunden; wird erst übernommen, wenn du es auswählst.",
     "traktorNmlPathUseDetected": "Diesen verwenden",
     "traktorCueOffset": "Cue-Point-Korrektur",
