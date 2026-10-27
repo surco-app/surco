@@ -39,6 +39,16 @@ describe('isInternalNavigation', () => {
   it('rejects unparseable targets', () => {
     expect(isInternalNavigation('not a url', 'http://localhost:5173')).toBe(false)
   })
+
+  // Every file:// URL shares the opaque 'null' origin, so comparing origins let a
+  // compromised renderer navigate to any local HTML (a downloaded page, a file it wrote)
+  // and have it load with the preload's bridge. Only the app's own index.html is internal.
+  it('rejects a local file other than the app page', () => {
+    expect(
+      isInternalNavigation('file:///Users/me/Downloads/x.html', 'file:///app/index.html'),
+    ).toBe(false)
+    expect(isInternalNavigation('file:///app/other.html', 'file:///app/index.html')).toBe(false)
+  })
 })
 
 describe('isBlockedFetchUrl', () => {
