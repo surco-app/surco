@@ -63,6 +63,14 @@ describe('traktorRootDir', () => {
     ).toBe('C:\\Users\\Usuario\\Documents\\Native Instruments\\Traktor 4.0.2')
   })
 
+  // Shape taken from a real Windows settings file (Traktor 3.11.1): written as is, no
+  // trailing separator.
+  it('reads a Windows Root Dir saved without a trailing separator', () => {
+    expect(
+      traktorRootDir(tsi('C:\\Users\\djotas\\Documents\\Native Instruments\\Traktor 3.11.1'), ''),
+    ).toBe('C:\\Users\\djotas\\Documents\\Native Instruments\\Traktor 3.11.1')
+  })
+
   it('decodes the characters XML escapes', () => {
     expect(traktorRootDir(tsi('Macintosh HD:Users:dj:Drum &amp; Bass:'), 'Macintosh HD')).toBe(
       '/Users/dj/Drum & Bass',
