@@ -1951,6 +1951,7 @@
     "rekordboxCollectionMissing": "Skipped, the rekordbox collection was not found",
     "engineCollectionMissing": "Skipped, the Engine DJ library was not found",
     "traktorSyncCollectionMissing": "Skipped, collection.nml was not found",
+    "syncHeldElsewhere": "Not kept for later, because what is waiting belongs to another collection. Go back to that collection or discard what is waiting",
     "reviewRun_one": "Music review, {{count}} track",
     "reviewRun_other": "Music review, {{count}} tracks",
     "reviewFix": {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { ActivityEvent } from '../shared/types'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp' } }))
 
@@ -47,6 +48,7 @@ const FILE_USE = vi.hoisted(() => {
 })
 vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
+import { activity } from './activity'
 import {
   duplicateLibraryDeps,
   flushConversionBatch,
@@ -80,6 +82,28 @@ describe('flushConversionBatch with rekordbox open', () => {
     expect(h.showBlockedDialog).not.toHaveBeenCalled()
     expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
     expect(queue.applyQuietly).toHaveBeenCalled()
+  })
+})
+
+// La cola guarda una sola colección. Con cambios pendientes de otra, los de esta conversión
+// no caben y se perdían sin decir nada, mientras el diálogo daba a entender que se aplicarían.
+describe('flushConversionBatch with the queue held for another collection', () => {
+  it('tells the DJ in Activity that the run was not kept for later', async () => {
+    const events: ActivityEvent[] = []
+    const stop = activity.subscribe((event) => events.push(event))
+    try {
+      const queue = { enqueue: vi.fn(() => false), applyQuietly: vi.fn() }
+      await flushConversionBatch(host(), sessions, queue)
+    } finally {
+      stop()
+    }
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        labelKey: 'activity.rekordboxSync',
+        phase: 'warn',
+        detailKey: 'activity.syncHeldElsewhere',
+      }),
+    )
   })
 })
 
