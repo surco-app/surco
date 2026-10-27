@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CustomField, TrackMetadata } from '../../../shared/types'
-import './../i18n'
+import i18n from './../i18n'
 import { RenameModal } from './RenameModal'
 
 afterEach(cleanup)
@@ -53,6 +53,15 @@ describe('RenameModal', () => {
   it('exposes an accessible name on the dialog', () => {
     renderModal()
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
+  })
+
+  // The pattern field is the whole dialog; with only a placeholder a screen reader
+  // announced a bare "edit text" and the placeholder vanished as soon as it was typed in.
+  it('names the format field for assistive tech', () => {
+    renderModal()
+    expect(screen.getByTestId('rename-format')).toHaveAccessibleName(
+      i18n.t('settings.filenameFormat'),
+    )
   })
 
   // Enter in the pattern field submits the dialog's form instead of doing nothing.

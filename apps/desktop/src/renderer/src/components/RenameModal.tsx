@@ -78,6 +78,7 @@ export function RenameModal({
       <input
         ref={formatRef}
         data-testid="rename-format"
+        aria-label={tr('settings.filenameFormat')}
         value={format}
         onChange={(e) => setFormat(e.target.value)}
         placeholder="{artist} - {title}"
