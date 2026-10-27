@@ -99,7 +99,7 @@ import { convertAudio, readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { libraryCopyInfo } from './libraryFileUse'
+import { libraryCopyInfo, libraryTracksOf } from './libraryFileUse'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -1229,6 +1229,16 @@ function registerIpc(): void {
     beatGrid: cachedBeatGrid,
     words: cachedCueWaveWords,
     provisional: provisionalCues,
+    twins: (file) =>
+      libraryTracksOf(
+        file,
+        {
+          rekordbox: rekordboxCollectionPath(),
+          engine: getSettings().engineLibraryDir,
+          traktor: traktorReadPath(),
+        },
+        { realPath: (p: string) => realpathSync(p) },
+      ),
     engine: {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,

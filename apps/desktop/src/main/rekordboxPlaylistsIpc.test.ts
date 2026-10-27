@@ -171,6 +171,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     registerRekordboxQueueIpc(queue, {
       collection: () => path,
