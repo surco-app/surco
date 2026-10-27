@@ -696,6 +696,16 @@ describe('buildPlaylistTransferScript', () => {
     }
   })
 
+  // Measured against a real Music library: `set played count of dst to (played count of
+  // src)` fails with -10006, since Music does not resolve one track's property straight
+  // into another's. Each value is read into a variable first, then written.
+  it('reads every carried value into a variable before writing it onto the new entry', () => {
+    const script = buildCarryOverScript('AAA', 'BBB', 'A - B')
+    for (const line of script.split('\n').filter((l) => /set \w[\w ]* of dst to/.test(l)))
+      expect(line).not.toMatch(/ of src/)
+    expect(script).toMatch(/set \w+ to played count of src/)
+  })
+
   it('leaves the Music review transfer unchanged, without a location check', () => {
     const s = buildPlaylistTransferScript(
       'OLD0000000000000',
@@ -715,11 +725,12 @@ describe('buildCarryOverScript', () => {
   // DJ built on it: the hand-made crates, how often it was played and the stars. Only smart
   // playlists refill on their own, so the rest has to be copied before the delete.
   it('replacing keeps the track in its normal playlists and keeps its play count and rating', () => {
-    expect(s).toContain('set played count of dst to (played count of src)')
-    expect(s).toContain('if (played date of src) is not missing value then')
-    expect(s).toContain('set played date of dst to (played date of src)')
-    expect(s).toContain('if (rating kind of src) is user then set rating of dst to (rating of src)')
-    expect(s).toContain('set favorited of dst to (favorited of src)')
+    expect(s).toContain('set played count of dst to playedCount')
+    expect(s).toContain(
+      'if playedDate is not missing value then set played date of dst to playedDate',
+    )
+    expect(s).toContain('if ratingKind is user then set rating of dst to stars')
+    expect(s).toContain('set favorited of dst to favorite')
     expect(s).toContain(
       'if (exists (some track of p whose persistent ID is "OLD0000000000000")) and not (exists (some track of p whose persistent ID is "NEW0000000000000")) then',
     )
