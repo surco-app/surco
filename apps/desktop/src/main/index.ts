@@ -110,7 +110,7 @@ import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
-import { routeOpenedFile } from './openedFiles'
+import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
@@ -183,7 +183,8 @@ import { dirRoots, FolderWatcher } from './watcher'
 installCrashGuards(process, log)
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
-app.on('second-instance', () => {
+app.on('second-instance', (_event, argv) => {
+  openFilesFromArgv(argv)
   const win = BrowserWindow.getAllWindows()[0]
   if (!win) return
   if (win.isMinimized()) win.restore()
@@ -403,8 +404,7 @@ const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =
   trashLimits(getSettings()),
 )
 configureBackupStore(surcoTrash, () => getSettings().backupPolicy, trashWithoutRoom)
-app.on('open-file', (event, path) => {
-  event.preventDefault()
+function openFile(path: string): void {
   mediaAccess.allow(path)
   const win = BrowserWindow.getAllWindows()[0]
   routeOpenedFile(path, {
@@ -414,7 +414,18 @@ app.on('open-file', (event, path) => {
     send: (paths) => win?.webContents.send('open-files', paths),
     pending: pendingFiles,
   })
+}
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  openFile(path)
 })
+// Windows has no open-file: "Open with Surco" arrives as argv, on a cold launch here and
+// to the running instance through second-instance above.
+function openFilesFromArgv(argv: string[]): void {
+  if (process.platform !== 'win32') return
+  for (const path of filesFromArgv(argv, existsSync)) openFile(path)
+}
+openFilesFromArgv(process.argv)
 
 // A single flat file name (the cover-export .jpg): slashes are illegal characters here
 // and become dashes. Deliberately different from inplace.ts's sanitizeOutputName, where
