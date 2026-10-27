@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 27 de octubre de 2026** (v1.12.0, pestaña Traktor). Levantado por primera vez el
+**Última revisión: 27 de octubre de 2026** (v1.13.0, flujo en todos los programas). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1265,6 +1265,12 @@ el recorrido consumiera el buffer exacto hacía que todos leyeran «sin cues»
 
 ### Sync del `.nml` de Traktor
 
+**Aviso si Traktor lee otra colección** (nuevo en v1.13.0). Si la colección configurada no es
+la que usa Traktor, Ajustes → Destino lo avisa y ofrece «Usar la de Traktor»
+(`DestinationTab.tsx:321`, `collectionTraktorUses`, `traktorNmlPath.ts:65`), y el editor de
+cues de una pista de Traktor dice que lo que se guarde no le llegará
+(`editor.cues.traktor.otherCollection`, `CuesSection.tsx:1486`).
+
 **Las playlists siguen a la pista** (nuevo en v1.12.0). Cuando la conversión cambia el nombre
 del fichero (de FLAC a MP3, por ejemplo), las entradas de sus playlists pasan a la ruta nueva.
 Traktor nombra cada pista de una playlist por volumen, carpeta y fichero, así que antes la
@@ -1533,6 +1539,24 @@ en una, y no se guarda nada hasta aceptarlas. Con varias filas seleccionadas de 
 vez las revisadas. Medido sobre pistas apartadas de una colección real con los drops que
 marcó su DJ: encuentra en torno al 68 % de los drops y en torno al 70 % de sus propuestas son
 drops (`dropDetectMeasure.test.ts`). Necesita el análisis de rekordbox.
+
+**En todos los programas** (nuevo en v1.13.0). Al guardar, los puntos marcados con un flujo
+llegan también a la misma pista en rekordbox, Traktor y Engine DJ. Surco busca el mismo
+fichero en cada colección (`libraryTracksOf`, `libraryFileUse.ts:180`) y vuelve a ejecutar el
+flujo allí, con la rejilla y las cues de ese programa (`twinPlans`, `lib/cueTwins.ts:135`). No
+se copian los cues resultantes, así que cada programa puede quedarse con algo distinto. Por
+ejemplo, si en rekordbox las hot cues no caben, allí solo queda el CALL, mientras que en un
+Engine DJ vacío sí entran. Antes de guardar, el editor dice qué recibirá cada programa
+(`TwinRows`, `CuesSection.tsx:301`), y el lote de varias pistas cuenta cuántas van a cada uno.
+Solo viajan los puntos de un flujo marcados desde el último guardado (`carriedPoints`,
+`lib/cueTwins.ts:67`). Las cues puestas a mano se quedan donde se ponen, y quitar un punto no
+se propaga. Una pista con cambios sin guardar en el otro programa no se toca, salvo que se
+pida con «Ponerlo también ahí y perder esos cambios». Si la colección no tiene la pista, o la
+tiene dos veces, se omite sin decir nada. Se elige a qué programas llega en Ajustes → Cues
+(`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, encendidos, `settings.ts:86`).
+Probado con copias de una colección real, de rekordbox a Engine DJ con AIFF. Las cues de Engine
+caen en el golpe 1 de su propia rejilla, y el punto coincide con el de rekordbox a menos de
+1 ms. Con Traktor y con MP3 no se ha medido.
 
 **Letras en orden de la pista** (`cueLettersByTime`, encendido por defecto,
 `settings.ts:85`). Al poner o quitar cues las letras se reasignan por tiempo, así que la A
@@ -1843,7 +1867,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
    llegan a la biblioteca, ni los campos propios. No se transfiere rating ni se
    crean playlists.
 3. **Engine DJ como destino de conversión:** no lleva cue points ni beatgrid. Exige Engine
-   cerrado. Los cues solo llegan a Engine desde su pestaña, y solo los hot cues.
+   cerrado. Los cues solo llegan a Engine desde el editor de cues, desde su pestaña o con un
+   flujo marcado en otro programa (v1.13.0), y solo los hot cues.
 4. **Exportar a rekordbox/Serato/Traktor/M3U8:** ninguno de los cuatro ficheros
     puente lleva cues, rating ni carátula. Esto es la **exportación**, y no debe
     confundirse con el repunte de la colección real de rekordbox (§11), donde los
@@ -1965,3 +1990,7 @@ Recopilado de los cinco informes. Cada punto está verificado.
 41. **El nombre de archivo de una pista de rekordbox solo se protege del renombrado
     automático por plantilla** (`outputName.ts:20-25`). Un cambio de formato sí cambia el
     fichero, y entonces es el repunte (si está activo) el que mueve la entrada.
+42. **Un flujo no deja las mismas cues en todos los programas.** Se vuelve a ejecutar en cada
+    uno con su rejilla y sus cues, así que cada programa puede quedarse con algo distinto. Solo
+    viaja lo que se marca con un flujo, no las cues puestas a mano ni los puntos que se quitan.
+    Medido de rekordbox a Engine DJ con AIFF; con Traktor y con MP3 no se ha medido.
