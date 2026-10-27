@@ -1022,25 +1022,31 @@ export function useTrackLibrary({
 
   // Writes a shared-field edit (or a dropped cover) onto every selected track at once —
   // the multi-select write path behind the editor's common-field form.
-  const updateTracksMeta = useCallback((ids: string[], metaPatch: Partial<TrackMetadata>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) =>
-      prev.map((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t)),
-    )
-  }, [])
+  // Through mapTracks like the rest: ⌘⏎ right after the edit converts from tracksRef in
+  // the same tick, and the first rows went out with the value the DJ had just replaced.
+  const updateTracksMeta = useCallback(
+    (ids: string[], metaPatch: Partial<TrackMetadata>): void => {
+      const targets = new Set(ids)
+      mapTracks((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t))
+    },
+    [mapTracks],
+  )
 
-  const patchTracks = useCallback((ids: string[], patch: Partial<TrackItem>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
-  }, [])
+  const patchTracks = useCallback(
+    (ids: string[], patch: Partial<TrackItem>): void => {
+      const targets = new Set(ids)
+      mapTracks((t) => (targets.has(t.id) ? { ...t, ...patch } : t))
+    },
+    [mapTracks],
+  )
 
   // Bulk "clear everything": unlike patchTracks' flat patch, foreignRemoved must be
   // each track's OWN foreign tag names, so this reads t.foreignTags per row instead
   // of taking a shared patch.
-  const clearExtrasTracks = useCallback((ids: string[]): void => {
-    const targets = new Set(ids)
-    setTracks((prev) =>
-      prev.map((t) =>
+  const clearExtrasTracks = useCallback(
+    (ids: string[]): void => {
+      const targets = new Set(ids)
+      mapTracks((t) =>
         targets.has(t.id)
           ? {
               ...t,
@@ -1052,20 +1058,19 @@ export function useTrackLibrary({
               foreignRemoved: (t.foreignTags ?? []).map((tag) => tag.name),
             }
           : t,
-      ),
-    )
-  }, [])
+      )
+    },
+    [mapTracks],
+  )
 
   // Merges each track's own filename-derived tags into its metadata (one patch per id),
   // leaving fields the pattern didn't match untouched.
   const deriveTracks = useCallback(
     (patches: { id: string; meta: Partial<TrackMetadata> }[]): void => {
       const byId = new Map(patches.map((p) => [p.id, p.meta]))
-      setTracks((prev) =>
-        prev.map((t) => (byId.has(t.id) ? { ...t, meta: { ...t.meta, ...byId.get(t.id) } } : t)),
-      )
+      mapTracks((t) => (byId.has(t.id) ? { ...t, meta: { ...t.meta, ...byId.get(t.id) } } : t))
     },
-    [],
+    [mapTracks],
   )
 
   // Stable identity so the memoized TrackRow only re-renders the row that

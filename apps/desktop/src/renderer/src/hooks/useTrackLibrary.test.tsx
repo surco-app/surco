@@ -1828,3 +1828,34 @@ describe('useTrackLibrary announcing a finished read', () => {
     expect(seen).toEqual(['Real Title'])
   })
 })
+
+describe('useTrackLibrary bulk edits', () => {
+  // ⌘⏎ right after a multi-track edit flushes the edit and starts the batch in the same
+  // tick, and each conversion reads its row from tracksRef. An edit that only reached
+  // React state converted the first tracks with the value the DJ had just replaced.
+  it('publishes every bulk edit to tracksRef at once', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const ids = result.current.tracks.map((t) => t.id)
+    const genres = (): string[] => result.current.tracksRef.current.map((t) => t.meta.genre)
+    const seen: Record<string, string[] | boolean[]> = {}
+
+    act(() => {
+      result.current.updateTracksMeta(ids, { genre: 'House' })
+      seen.updateTracksMeta = genres()
+      result.current.deriveTracks(ids.map((id) => ({ id, meta: { genre: 'Techno' } })))
+      seen.deriveTracks = genres()
+      result.current.patchTracks(ids, { outputName: 'x' })
+      seen.patchTracks = result.current.tracksRef.current.map((t) => t.outputName === 'x')
+      result.current.clearExtrasTracks(ids)
+      seen.clearExtrasTracks = result.current.tracksRef.current.map((t) => !!t.metaCleared)
+    })
+
+    expect(seen).toEqual({
+      updateTracksMeta: ['House', 'House'],
+      deriveTracks: ['Techno', 'Techno'],
+      patchTracks: [true, true],
+      clearExtrasTracks: [true, true],
+    })
+  })
+})
