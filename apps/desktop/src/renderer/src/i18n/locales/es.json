@@ -114,6 +114,8 @@
       "smallCover": "Carátula pequeña",
       "noBpm": "Sin BPM",
       "noKey": "Sin tonalidad",
+      "missingRequired": "Faltan obligatorios",
+      "unsaved": "Sin guardar",
       "trashSuspects_one": "Mover el archivo dudoso a la papelera",
       "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera",
       "current": "Filtro: {{filter}} {{count}}"

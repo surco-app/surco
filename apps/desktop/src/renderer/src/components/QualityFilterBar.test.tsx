@@ -30,6 +30,8 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   smallCover: 0,
   noBpm: 0,
   noKey: 0,
+  missingRequired: 0,
+  unsaved: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -201,6 +203,14 @@ describe('QualityFilterBar', () => {
     expect(screen.queryByTestId('quality-filter-noBpm')).toBeNull()
     fireEvent.click(screen.getByTestId('quality-filter-noKey'))
     expect(onChange).toHaveBeenCalledWith(sel({ tags: 'noKey' }))
+  })
+
+  it('offers the tracks missing required fields and the ones with unsaved changes', () => {
+    const { onChange } = renderBar({ tally: tally({ missingRequired: 4, unsaved: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-missingRequired')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('quality-filter-unsaved'))
+    expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'unsaved' }))
   })
 
   it('picking a provider bucket filters the conversion axis', () => {

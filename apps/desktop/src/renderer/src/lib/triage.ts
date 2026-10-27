@@ -45,6 +45,7 @@ export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
 // to ACT on — the sweep's unapplied suggestions and the conversions that errored — and
 // the toolbar already counts both, a count that until now pointed nowhere.
 export type ConversionFilter =
+  | 'unsaved'
   | 'unconverted'
   | 'failed'
   | 'automatched'
@@ -73,7 +74,18 @@ export type AttentionFilter =
 // The tag work matching a release fixes: no artwork, artwork too small for a CDJ screen
 // (the editor's own low-res rule), no tempo, no key. A row still being read has no tags
 // yet, so it belongs to none of them.
-export type TagsFilter = 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
+// 'missingRequired' is the Settings rule that keeps Convert all off a track, asked of App
+// through FilterFacts like 'unsaved'.
+export type TagsFilter = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
+
+// What the list knows about a row that the row itself does not carry: which fields
+// Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
+export interface FilterFacts {
+  incomplete: (track: TrackItem) => boolean
+  unsaved: (track: TrackItem) => boolean
+}
+
+export const NO_FACTS: FilterFacts = { incomplete: () => false, unsaved: () => false }
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -121,7 +133,12 @@ export function suspectTracks(tracks: TrackItem[]): TrackItem[] {
   return tracks.filter((t) => matchesQuality(t, 'suspect'))
 }
 
-function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean {
+function matchesConversion(
+  track: TrackItem,
+  filter: ConversionFilter,
+  facts: FilterFacts,
+): boolean {
+  if (filter === 'unsaved') return facts.unsaved(track)
   if (filter === 'unconverted') return track.status !== 'done'
   // Narrower than 'unconverted' on purpose: that one means "not done", which covers
   // every track never attempted. This one is only the ones that were tried and broke.
@@ -141,9 +158,13 @@ function matchesLibrary(track: TrackItem, filter: LibraryFilter): boolean {
 
 // True when a track satisfies every active axis. Each null axis is skipped, so an empty
 // selection matches everything and adding a constraint only ever narrows the result.
-export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
+export function matchesFilter(
+  track: TrackItem,
+  sel: FilterSelection,
+  facts: FilterFacts = NO_FACTS,
+): boolean {
   if (sel.quality && !matchesQuality(track, sel.quality)) return false
-  if (sel.conversion && !matchesConversion(track, sel.conversion)) return false
+  if (sel.conversion && !matchesConversion(track, sel.conversion, facts)) return false
   if (sel.library && !matchesLibrary(track, sel.library)) return false
   if (sel.duplicates && track.duplicate !== true) return false
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
@@ -151,7 +172,7 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
-  if (sel.tags && !matchesTags(track, sel.tags)) return false
+  if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
@@ -160,8 +181,9 @@ function hasNoCues(track: TrackItem): boolean {
   return track.sourcePreview?.cues.length === 0
 }
 
-function matchesTags(track: TrackItem, filter: TagsFilter): boolean {
+function matchesTags(track: TrackItem, filter: TagsFilter, facts: FilterFacts): boolean {
   if (track.loadingMeta) return false
+  if (filter === 'missingRequired') return facts.incomplete(track)
   if (filter === 'noCover') return !track.coverUrl && !track.sourcePreview?.coverUrl
   if (filter === 'smallCover') {
     const original = Boolean(track.coverUrl) && track.coverUrl === track.embeddedCover
@@ -201,15 +223,20 @@ export function filterWithSticky(
   tracks: TrackItem[],
   sel: FilterSelection,
   sticky: Set<string>,
+  facts: FilterFacts = NO_FACTS,
 ): TrackItem[] {
-  for (const t of tracks) if (matchesFilter(t, sel)) sticky.add(t.id)
+  for (const t of tracks) if (matchesFilter(t, sel, facts)) sticky.add(t.id)
   return tracks.filter((t) => sticky.has(t.id))
 }
 
 // The rows on screen that the live filter no longer matches: the ones filterWithSticky
 // kept in place after their verdict flipped, dimmed so they read as already handled.
-export function outsideFilter(tracks: TrackItem[], sel: FilterSelection): Set<string> {
-  return new Set(tracks.filter((t) => !matchesFilter(t, sel)).map((t) => t.id))
+export function outsideFilter(
+  tracks: TrackItem[],
+  sel: FilterSelection,
+  facts: FilterFacts = NO_FACTS,
+): Set<string> {
+  return new Set(tracks.filter((t) => !matchesFilter(t, sel, facts)).map((t) => t.id))
 }
 
 // The fresh rows laid out in the order the list already shows, so a sort that would move
@@ -331,7 +358,10 @@ export function sortTracks(
 // Tallies for the filter chips, so the bar can show "5 suspect" without the caller
 // walking the list per chip. 'unconverted' overlaps the quality buckets (it's a
 // different dimension), so it's counted independently rather than as an else-branch.
-export function qualityCounts(tracks: TrackItem[]): {
+export function qualityCounts(
+  tracks: TrackItem[],
+  facts: FilterFacts = NO_FACTS,
+): {
   suspect: number
   good: number
   unanalyzed: number
@@ -353,6 +383,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   smallCover: number
   noBpm: number
   noKey: number
+  missingRequired: number
+  unsaved: number
 } {
   let suspect = 0
   let good = 0
@@ -375,6 +407,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   let smallCover = 0
   let noBpm = 0
   let noKey = 0
+  let missingRequired = 0
+  let unsaved = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
@@ -395,10 +429,12 @@ export function qualityCounts(tracks: TrackItem[]): {
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1
-    if (matchesTags(t, 'noCover')) noCover += 1
-    if (matchesTags(t, 'smallCover')) smallCover += 1
-    if (matchesTags(t, 'noBpm')) noBpm += 1
-    if (matchesTags(t, 'noKey')) noKey += 1
+    if (matchesTags(t, 'noCover', facts)) noCover += 1
+    if (matchesTags(t, 'smallCover', facts)) smallCover += 1
+    if (matchesTags(t, 'noBpm', facts)) noBpm += 1
+    if (matchesTags(t, 'noKey', facts)) noKey += 1
+    if (matchesTags(t, 'missingRequired', facts)) missingRequired += 1
+    if (facts.unsaved(t)) unsaved += 1
   }
   return {
     suspect,
@@ -422,6 +458,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     smallCover,
     noBpm,
     noKey,
+    missingRequired,
+    unsaved,
   }
 }
 

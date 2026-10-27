@@ -1,4 +1,5 @@
 import {
+  Asterisk,
   AudioLines,
   Check,
   CircleAlert,
@@ -15,6 +16,7 @@ import {
   KeyRound,
   List,
   type LucideIcon,
+  PencilLine,
   Plus,
   RefreshCw,
   Scissors,
@@ -36,6 +38,7 @@ import { Tooltip } from './Tooltip'
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
 type QualityMode = 'unanalyzed' | 'suspect' | 'good'
 type ConversionMode =
+  | 'unsaved'
   | 'unconverted'
   | 'failed'
   | 'automatched'
@@ -45,11 +48,12 @@ type ConversionMode =
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
 type AttentionMode = 'silence' | 'clipping' | 'noCues' | 'unanalysedRekordbox' | 'unanalysedEngine'
-type TagsMode = 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
+type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode | TagsMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
+  'unsaved',
   'unconverted',
   'failed',
   'automatched',
@@ -57,7 +61,7 @@ const CONVERSION_MODES: ConversionMode[] = [
   'matchedDiscogs',
   'matchedBandcamp',
 ]
-const TAGS_MODES: TagsMode[] = ['noCover', 'smallCover', 'noBpm', 'noKey']
+const TAGS_MODES: TagsMode[] = ['missingRequired', 'noCover', 'smallCover', 'noBpm', 'noKey']
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 const ATTENTION_MODES: AttentionMode[] = [
@@ -89,6 +93,8 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   noCues: FlagOff,
   unanalysedRekordbox: Hourglass,
   unanalysedEngine: Hourglass,
+  missingRequired: Asterisk,
+  unsaved: PencilLine,
   noCover: ImageOff,
   smallCover: ImageMinus,
   noBpm: Gauge,
@@ -123,6 +129,8 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'silence' && tally.silence > 0) return 'bg-warn'
   if (mode === 'clipping' && tally.clipping > 0) return 'bg-warn'
   if (mode === 'noCues' && tally.noCues > 0) return 'bg-warn'
+  if (mode === 'missingRequired' && tally.missingRequired > 0) return 'bg-warn'
+  if (mode === 'unsaved' && tally.unsaved > 0) return 'bg-[var(--color-accent)]'
   return null
 }
 

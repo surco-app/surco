@@ -114,6 +114,8 @@
       "smallCover": "Kleines Cover",
       "noBpm": "Ohne BPM",
       "noKey": "Ohne Tonart",
+      "missingRequired": "Pflichtfelder fehlen",
+      "unsaved": "Nicht gespeichert",
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
       "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
       "current": "Filter: {{filter}} {{count}}"

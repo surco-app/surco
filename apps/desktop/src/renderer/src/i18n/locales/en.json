@@ -114,6 +114,8 @@
       "smallCover": "Small artwork",
       "noBpm": "No BPM",
       "noKey": "No key",
+      "missingRequired": "Missing required fields",
+      "unsaved": "Unsaved",
       "trashSuspects_one": "Move the doubtful file to Trash",
       "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
       "current": "Filter: {{filter}} {{count}}"

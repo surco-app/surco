@@ -4,6 +4,7 @@ import type { TrackItem, TrackStatus } from '../types'
 import * as normalizeText from './normalizeText'
 import {
   EMPTY_FILTER,
+  type FilterFacts,
   type FilterSelection,
   filterSessionKey,
   filterWithSticky,
@@ -217,6 +218,8 @@ describe('matchesFilter / qualityCounts', () => {
       smallCover: 0,
       noBpm: 5,
       noKey: 5,
+      missingRequired: 0,
+      unsaved: 0,
     })
   })
 })
@@ -355,6 +358,40 @@ describe('tags filter', () => {
   })
 })
 
+describe('filters that read what App knows about a row', () => {
+  const tracks = [{ id: 'a' }, { id: 'b' }, { id: 'c' }] as TrackItem[]
+  const facts: FilterFacts = {
+    incomplete: (t) => t.id === 'a',
+    unsaved: (t) => t.id !== 'a',
+  }
+
+  // Which fields are required is a setting, and unsaved cues live in the cue editor's
+  // drafts, so neither is on the row. App answers both and the filter only asks: the
+  // same rule that keeps Convert all off a track decides that it is missing fields.
+  it('asks App which rows miss required fields and which hold changes not yet saved', () => {
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, tags: 'missingRequired' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['a'])
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, conversion: 'unsaved' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['b', 'c'])
+    expect(qualityCounts(tracks, facts)).toMatchObject({ missingRequired: 1, unsaved: 2 })
+  })
+
+  it('keeps the rows App flags while the filter session lasts, like any other bucket', () => {
+    const sticky = new Set<string>()
+    const sel = { ...EMPTY_FILTER, conversion: 'unsaved' as const }
+    expect(filterWithSticky(tracks, sel, sticky, facts).map((t) => t.id)).toEqual(['b', 'c'])
+    expect(outsideFilter(tracks, sel, { ...facts, unsaved: () => false })).toEqual(
+      new Set(['a', 'b', 'c']),
+    )
+  })
+})
+
 describe('filterSessionKey', () => {
   // The list keeps every row a filter has shown until the filter changes, and this key is
   // how it notices the change. Switching from silence to clipping kept the silence rows on
@@ -369,6 +406,8 @@ describe('filterSessionKey', () => {
       { attention: 'clipping' },
       { tags: 'noCover' },
       { tags: 'noBpm' },
+      { tags: 'missingRequired' },
+      { conversion: 'unsaved' },
       { format: 'WAV' },
     ]
     const keys = [EMPTY_FILTER, ...picks.map((p) => ({ ...EMPTY_FILTER, ...p }))].map(
