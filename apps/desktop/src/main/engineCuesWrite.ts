@@ -17,11 +17,11 @@ import {
 import { type EnginePerformance, engineCuesOf } from './engineCues'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
+import { backupOf } from './libraryBackups'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
-const BACKUP_SUFFIX = '.surco-backup'
 const NO_MAIN_CUE = Buffer.from('bff000000000000000bff0000000000000', 'hex')
 
 export interface EngineCuesWriteDeps {
@@ -190,7 +190,7 @@ async function writeEngineCuesBatch(
     if (planned.length === 0) return { ok: true, wrote: false, outcomes: inOrder(outcomes) }
     try {
       await deps.sessionBackup(dbPath)
-      await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+      await writeBackup(dbPath, backupOf(dbPath, 'backup'))
     } catch (e) {
       log.warn(`Engine DJ cues: backup failed: ${(e as Error).message}`)
       return { ok: false, reason: 'backup-failed' }

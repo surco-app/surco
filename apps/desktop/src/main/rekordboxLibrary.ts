@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import log from 'electron-log/main'
+import { backupOf } from './libraryBackups'
 import {
   discardArtwork,
   rekordboxShareDir,
@@ -35,10 +36,9 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // failure path returns a reason instead.
 
 // One backup, always the same name, overwritten on every write — the same bargain
-// engineLibrary.ts and traktorNmlLibrary.ts strike. Dated copies would pile up in the
-// user's own folder, one per converted track, for something they only want as a safety
+// engineLibrary.ts and traktorNmlLibrary.ts strike. Dated copies would pile up on disk,
+// one per converted track, for something they only want as a safety
 // net. rekordbox keeps its own rotating backups beside it as well.
-const BACKUP_SUFFIX = '.surco-backup'
 
 export type RepointResult =
   | { written: true; id: string }
@@ -198,7 +198,7 @@ export async function repointTracks(
     // The run's own copy first: it has to describe the collection as it was BEFORE the
     // run. Then the copy the rollback below restores.
     await batch.sessionBackup?.(collectionPath)
-    await copy(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
+    await copy(collectionPath, backupOf(collectionPath, 'backup'))
   } catch (e) {
     log.warn(`rekordbox collection: backup of ${collectionPath} failed: ${(e as Error).message}`)
     // No backup, no write.

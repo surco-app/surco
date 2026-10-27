@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
 import { toNmlLocation } from '../main/ffmpeg'
+import { backupOf } from '../main/libraryBackups'
 import { readTraktorCueStart, storedTree } from '../main/traktor4Fixture'
 import { findEntries } from '../main/traktorNml'
 import { bootVolumeName } from '../main/traktorNmlLibrary'
@@ -96,6 +97,6 @@ describe('Replace a record kept in Traktor and find it still there, cues and all
   })
 
   it('keeps a copy of the collection as it was before writing it', () => {
-    expect(readFileSync(`${nml}.surco-backup`, 'utf8')).toContain('FILE="Record.flac"')
+    expect(readFileSync(backupOf(nml, 'backup'), 'utf8')).toContain('FILE="Record.flac"')
   })
 })

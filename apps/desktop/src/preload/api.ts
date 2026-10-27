@@ -357,6 +357,7 @@ export interface Api {
   logError: (message: string, stack?: string) => void
   // Shows the log file in the OS file manager so a user can attach it to a report.
   revealLog: () => Promise<void>
+  revealBackups: () => Promise<string>
   // Opens a prefilled report in the OS mail client. Only the error text crosses the
   // bridge; main stamps version and OS and builds the address itself.
   openFeedback: (error?: string, stack?: string) => Promise<void>

@@ -1,6 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import log from 'electron-log/main'
 import type { LibraryTagUpdate, MusicReviewField, TagChange } from '../shared/types'
+import { backupOf } from './libraryBackups'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -8,7 +9,6 @@ import { checkpointCollection, writeBackup } from './rekordboxSessionBackup'
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
 
-const BACKUP_SUFFIX = '.surco-backup'
 const LIVE = '(rb_local_deleted IS NULL OR rb_local_deleted = 0)'
 
 interface Current {
@@ -185,7 +185,7 @@ export async function updateRekordboxTags(
   try {
     checkpointCollection(collectionPath)
     await options.sessionBackup?.(collectionPath)
-    await writeBackup(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
+    await writeBackup(collectionPath, backupOf(collectionPath, 'backup'))
   } catch {
     return settle({ written: false, reason: 'backup-failed' })
   }

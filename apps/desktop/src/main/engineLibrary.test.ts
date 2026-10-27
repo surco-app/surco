@@ -36,11 +36,11 @@ vi.mock('./renameRetry', async (importOriginal) => {
   }
 })
 
-import { existsSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { chmod, mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import initSqlJs, { type Database } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
@@ -48,6 +48,7 @@ import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { addToEngineLibrary, dumpEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
 import { isEngineDjRunning } from './engineProcess'
+import { backupOf } from './libraryBackups'
 import { createSessionBackup } from './rekordboxSessionBackup'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
@@ -163,8 +164,9 @@ describe('addToEngineLibrary', () => {
     const before = await readFile(dbPath)
     // A read-only backup from an earlier add: copied over in place it was refused, and the
     // whole add with it.
-    await writeFile(join(lib, 'Database2', 'm.db.surco-backup'), 'stale')
-    await chmod(join(lib, 'Database2', 'm.db.surco-backup'), 0o444)
+    mkdirSync(dirname(backupOf(join(lib, 'Database2', 'm.db'), 'backup')), { recursive: true })
+    await writeFile(backupOf(join(lib, 'Database2', 'm.db'), 'backup'), 'stale')
+    await chmod(backupOf(join(lib, 'Database2', 'm.db'), 'backup'), 0o444)
     const file = await makeFile(root, 'two.aiff')
     await addToEngineLibrary(lib, file, meta({ title: 'Two' }), 'Surco')
     const db = await open(dbPath)
@@ -177,7 +179,7 @@ describe('addToEngineLibrary', () => {
       'Surco',
     ])
     db.close()
-    expect(await readFile(join(lib, 'Database2', 'm.db.surco-backup'))).toEqual(before)
+    expect(await readFile(backupOf(join(lib, 'Database2', 'm.db'), 'backup'))).toEqual(before)
   })
 
   // A run's adds reach Engine in several writes when the conversions are slow, and each
@@ -213,7 +215,7 @@ describe('addToEngineLibrary', () => {
       sessionBackup,
     )
 
-    expect((await readFile(`${dbPath}.surco-session`)).equals(before)).toBe(true)
+    expect((await readFile(backupOf(dbPath, 'session'))).equals(before)).toBe(true)
   })
 
   // A zero-byte m.db is what an interrupted Engine write, a crashed session or a
@@ -224,9 +226,10 @@ describe('addToEngineLibrary', () => {
   it('does not overwrite the backup with an empty database', async () => {
     const lib = join(root, 'empty-db', 'Engine Library')
     const dbPath = join(lib, 'Database2', 'm.db')
-    const backup = join(lib, 'Database2', 'm.db.surco-backup')
+    const backup = backupOf(join(lib, 'Database2', 'm.db'), 'backup')
     const { mkdir } = await import('node:fs/promises')
     await mkdir(join(lib, 'Database2'), { recursive: true })
+    await mkdir(dirname(backup), { recursive: true })
     await writeFile(backup, await buildEngineDatabase([], 'Sets'))
     const goodBackupSize = (await stat(backup)).size
     // The interrupted write: the library file exists but carries nothing.

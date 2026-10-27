@@ -1,6 +1,7 @@
 import { type Dirent, readdirSync, readlinkSync } from 'node:fs'
 import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
+import { backupOf } from './libraryBackups'
 import { createSessionBackup, writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
@@ -28,7 +29,6 @@ import { isTraktorRunning } from './traktorProcess'
 // one left three .bak files beside it: clutter in the user's own folder for something
 // he only wants as a safety net. What he can lose is the state before the previous
 // write, which the write he is undoing had already replaced anyway.
-const BACKUP_SUFFIX = '.surco-backup'
 
 // …and one copy per run, taken before its first write and left alone until the next run
 // (see rekordboxSessionBackup.ts): the per-write copy above no longer holds the DJ's
@@ -117,10 +117,10 @@ export async function writeCollection(
 ): Promise<SyncResult['reason'] | null> {
   try {
     await traktorSessionBackup.ensure(nmlPath)
-    await writeBackup(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
+    await writeBackup(nmlPath, backupOf(nmlPath, 'backup'))
   } catch (e) {
     log.warn(`Traktor collection: backup of ${nmlPath} failed: ${(e as Error).message}`)
-    // No backup, no write. A write without a recoverable copy next to it is the one
+    // No backup, no write. A write without a recoverable copy behind it is the one
     // outcome this whole module exists to rule out.
     return 'backup-failed'
   }

@@ -6,6 +6,7 @@ import type { LibraryTagUpdate, TagChange } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { engineRowFinder } from './engineRepoint'
+import { backupOf } from './libraryBackups'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -15,7 +16,6 @@ import { renameWithRetry } from './renameRetry'
 // The twin of engineRepoint.ts: Engine closed, a backup first, write-then-rename, and a
 // row Engine already spells otherwise is left alone rather than overwritten.
 
-const BACKUP_SUFFIX = '.surco-backup'
 const FIELDS = ['title', 'artist', 'album', 'genre'] as const
 type EngineField = (typeof FIELDS)[number]
 
@@ -98,7 +98,7 @@ async function writeEngineTags(
 
     try {
       await options.sessionBackup?.(dbPath)
-      await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+      await writeBackup(dbPath, backupOf(dbPath, 'backup'))
     } catch (e) {
       log.warn(`Engine DJ tags: backup failed: ${(e as Error).message}`)
       return settle({ written: false, reason: 'backup-failed' })

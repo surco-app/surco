@@ -6,6 +6,7 @@ import type { DuplicatePair } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { engineRowFinder, writeEngineRepoints } from './engineRepoint'
+import { backupOf } from './libraryBackups'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { DuplicateReplaceResult } from './rekordboxDuplicates'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -17,8 +18,6 @@ import { renameWithRetry } from './renameRetry'
 // to the kept track. Its Track row stays: Engine's other databases (history, sync) can name
 // a track id, and nothing here can show that deleting it leaves them valid. The file then
 // stays on disk too, since the library still uses it.
-
-const BACKUP_SUFFIX = '.surco-backup'
 
 export interface EngineDuplicateOptions extends PathMatchOptions {
   sessionBackup?: (dbPath: string) => Promise<void>
@@ -148,7 +147,7 @@ async function writeReplaces(
 ): Promise<string | null> {
   try {
     await options.sessionBackup?.(dbPath)
-    await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+    await writeBackup(dbPath, backupOf(dbPath, 'backup'))
   } catch (e) {
     log.warn(`Engine DJ duplicates: backup failed: ${(e as Error).message}`)
     return 'backup-failed'

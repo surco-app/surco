@@ -58,12 +58,12 @@ describe('editMessage', () => {
   const add: RekordboxPlaylistEdit = { kind: 'add', playlistId: 'h', tracks: [] }
 
   // The usual failure line says the collection is as it was; when that is not known, the
-  // user is told to put the copy back, and which file it is. This state comes from a -wal
+  // user is told to put the copy back, which file it is and where Surco keeps it. This state comes from a -wal
   // that still holds frames: copied back beside it, SQLite would replay them over the copy,
   // so the -wal and -shm have to go aside first.
   it('tells the user to restore the copy when the collection state is unknown', () => {
     expect(editMessage(tr, add, { applied: false, reason: 'write-unknown' }, 'House')).toEqual({
-      text: 'The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup next to it',
+      text: 'The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → General → Collection backups',
       tone: 'danger',
     })
   })

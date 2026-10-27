@@ -1,12 +1,14 @@
+import { mkdirSync } from 'node:fs'
 import { access, chmod, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import initSqlJs, { type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { replaceEngineDuplicates } from './engineDuplicates'
 import { isEngineDjRunning } from './engineProcess'
+import { backupOf } from './libraryBackups'
 import { renameWithRetry } from './renameRetry'
 
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
@@ -186,7 +188,7 @@ describe('replaceEngineDuplicates with both copies in the library', () => {
       { written: false, reason: 'engine-running' },
     ])
     expect(await walk(lib.dbPath, 1)).toEqual([1, 3])
-    await expect(access(`${lib.dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(lib.dbPath, 'backup'))).rejects.toThrow()
   })
 
   it('refuses when Engine DJ opens after the rows were read', async () => {
@@ -201,22 +203,23 @@ describe('replaceEngineDuplicates with both copies in the library', () => {
   it('keeps the library as it was in a backup and takes the session copy first', async () => {
     const lib = await library()
     const sessionBackup = vi.fn(async () => {
-      await expect(access(`${lib.dbPath}.surco-backup`)).rejects.toThrow()
+      await expect(access(backupOf(lib.dbPath, 'backup'))).rejects.toThrow()
     })
     await replaceEngineDuplicates(lib.dir, [{ from: lib.from, to: lib.to }], { sessionBackup })
     expect(sessionBackup).toHaveBeenCalledWith(lib.dbPath)
-    expect(await walk(`${lib.dbPath}.surco-backup`, 2)).toEqual([2, 1, 3])
+    expect(await walk(backupOf(lib.dbPath, 'backup'), 2)).toEqual([2, 1, 3])
   })
 
   // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
   // copying the next one over it was refused, blocking every later write.
   it('replaces a read-only backup left by an earlier write', async () => {
     const lib = await library()
-    await writeFile(`${lib.dbPath}.surco-backup`, 'stale')
-    await chmod(`${lib.dbPath}.surco-backup`, 0o444)
+    mkdirSync(dirname(backupOf(lib.dbPath, 'backup')), { recursive: true })
+    await writeFile(backupOf(lib.dbPath, 'backup'), 'stale')
+    await chmod(backupOf(lib.dbPath, 'backup'), 0o444)
     const [result] = await replaceEngineDuplicates(lib.dir, [{ from: lib.from, to: lib.to }])
     expect(result.written).toBe(true)
-    expect(await walk(`${lib.dbPath}.surco-backup`, 2)).toEqual([2, 1, 3])
+    expect(await walk(backupOf(lib.dbPath, 'backup'), 2)).toEqual([2, 1, 3])
   })
 
   it('writes nothing when the session backup fails', async () => {
@@ -269,7 +272,7 @@ describe('replaceEngineDuplicates with one copy in the library', () => {
       { from: join(lib.dir, 'nope.aiff'), to: lib.to },
     ])
     expect(r).toEqual({ written: false, reason: 'no-match' })
-    await expect(access(`${lib.dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(lib.dbPath, 'backup'))).rejects.toThrow()
   })
 })
 

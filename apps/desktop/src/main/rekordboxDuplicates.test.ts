@@ -1,6 +1,7 @@
+import { mkdirSync } from 'node:fs'
 import { access, chmod, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as rekordboxDb from './rekordboxDb'
@@ -9,6 +10,7 @@ import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
+import { backupOf } from './libraryBackups'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 const OLD = '2024-01-01 00:00:00.000 +00:00'
@@ -188,7 +190,7 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     ])
     expect(entry('e1').ContentID).toBe('A')
     expect(counter()).toBe(100)
-    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 
   it('refuses the whole run while the rekordbox queue is held, so master.db.surco-backup stays the good copy', async () => {
@@ -197,7 +199,7 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     ])
     expect(entry('e1').ContentID).toBe('A')
     expect(counter()).toBe(100)
-    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 
   it('refuses to write when rekordbox opened between the read and the write', async () => {
@@ -212,12 +214,12 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
 
   it('takes the session copy first and a backup of the collection as it was', async () => {
     const sessionBackup = vi.fn(async () => {
-      await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+      await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
     })
     await replaceRekordboxDuplicates(dbPath, pair(), { sessionBackup })
     expect(sessionBackup).toHaveBeenCalledWith(dbPath)
     const live = dbPath
-    dbPath = `${live}.surco-backup`
+    dbPath = backupOf(live, 'backup')
     expect(entry('e1').ContentID).toBe('A')
     expect(entries()).toHaveLength(7)
     dbPath = live
@@ -227,12 +229,13 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
   // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
   // copying the next one over it was refused, blocking every later write.
   it('replaces a read-only backup left by an earlier write', async () => {
-    await writeFile(`${dbPath}.surco-backup`, 'stale')
-    await chmod(`${dbPath}.surco-backup`, 0o444)
+    mkdirSync(dirname(backupOf(dbPath, 'backup')), { recursive: true })
+    await writeFile(backupOf(dbPath, 'backup'), 'stale')
+    await chmod(backupOf(dbPath, 'backup'), 0o444)
     const [result] = await replaceRekordboxDuplicates(dbPath, pair())
     expect(result.written).toBe(true)
     const live = dbPath
-    dbPath = `${live}.surco-backup`
+    dbPath = backupOf(live, 'backup')
     expect(entry('e1').ContentID).toBe('A')
     dbPath = live
   })
@@ -258,7 +261,7 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     const [r] = await replaceRekordboxDuplicates(dbPath, [{ from: FROM, to: FROM }])
     expect(r).toEqual({ written: false, reason: 'no-match' })
     expect(counter()).toBe(100)
-    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 })
 
@@ -303,6 +306,6 @@ describe('replaceRekordboxDuplicates with one copy in the collection', () => {
     const [r] = await replaceRekordboxDuplicates(dbPath, pair())
     expect(r).toEqual({ written: false, reason: 'no-match' })
     expect(counter()).toBe(100)
-    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 })
