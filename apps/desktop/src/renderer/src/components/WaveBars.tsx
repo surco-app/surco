@@ -16,11 +16,13 @@ export function WaveBars({
   testId,
   className,
   style,
+  fill = 'var(--color-accent)',
 }: {
   bars: number[]
   testId: string
   className: string
   style?: React.CSSProperties
+  fill?: string
 }): React.JSX.Element {
   return (
     <svg
@@ -32,7 +34,7 @@ export function WaveBars({
       className={className}
       style={style}
     >
-      <path d={wavePath(bars)} fill="var(--color-accent)" />
+      <path d={wavePath(bars)} fill={fill} />
     </svg>
   )
 }

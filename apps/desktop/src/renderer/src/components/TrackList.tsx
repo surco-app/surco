@@ -480,6 +480,12 @@ const TrackRow = memo(function TrackRow({
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   const shown = rowDisplay(t)
+  const unanalyzed =
+    t.fromRekordbox && t.sourcePreview && !t.sourcePreview.analysisPath
+      ? 'rekordbox'
+      : t.fromEngine && t.sourcePreview?.unanalysed
+        ? 'engine'
+        : undefined
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
@@ -858,19 +864,19 @@ const TrackRow = memo(function TrackRow({
                       durationSec={shown.duration}
                       pending={cuesPending}
                       active={seen}
-                      unanalyzed={
-                        t.fromRekordbox && t.sourcePreview && !t.sourcePreview.analysisPath
-                          ? 'rekordbox'
-                          : t.fromEngine && t.sourcePreview?.unanalysed
-                            ? 'engine'
-                            : undefined
-                      }
+                      unanalyzed={unanalyzed}
                       proposals={autoMark?.kind === 'proposed' ? autoMark.ms : undefined}
                     />
                     {cuesUnsaved && (
                       <span
                         data-testid="track-cues-unsaved"
-                        className="absolute top-0.5 right-0 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]"
+                        className={`absolute top-0.5 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)] ${
+                          // Clear of the dashed ring RowWave puts at the end of an unanalysed
+                          // track's cues, so the dot does not read as part of it.
+                          unanalyzed && (t.sourcePreview?.cues.length ?? 0) > 0
+                            ? 'right-5'
+                            : 'right-0'
+                        }`}
                       >
                         <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
                       </span>
