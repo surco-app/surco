@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readdirSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -8,8 +8,9 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import type { TrackMetadata } from '../shared/types'
+import type { TrackMetadata, TrashEntry } from '../shared/types'
 import { convertAudio } from './ffmpeg'
+import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-cancel-'))
@@ -143,6 +144,54 @@ describe('convertAudio — cancelled outside the encode', () => {
 
     await expect(promise).rejects.toThrow('conversionCancelled')
     expect(onChild).not.toHaveBeenCalled()
+  }, 30000)
+})
+
+// Backing up the original before the rename can take a whole copy on a NAS, and the
+// copies queue one behind another: a track still waiting there when the user cancelled
+// went on to replace its original anyway, as if the cancel had come too late.
+describe('convertAudio — cancelled while the original is backed up', () => {
+  it('leaves the original untouched and drops the backup it no longer needs', async () => {
+    const file = join(dir, 'in-place.wav')
+    copyFileSync(src, file)
+    const before = readFileSync(file)
+    const backup = { id: 'b1' } as TrashEntry
+    let cancelled = false
+    const discarded = vi.fn(async (_entry: TrashEntry) => {})
+    configureOriginalKeeper(async () => {
+      cancelled = true
+      return backup
+    })
+    configureBackupDiscarder(discarded)
+    try {
+      const promise = convertAudio(
+        file,
+        file,
+        'wav',
+        { ...meta, title: 'Renamed In Tags' },
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        () => cancelled,
+      )
+
+      await expect(promise).rejects.toThrow('conversionCancelled')
+    } finally {
+      configureOriginalKeeper(null)
+      configureBackupDiscarder(null)
+    }
+    expect(readFileSync(file).equals(before)).toBe(true)
+    expect(discarded).toHaveBeenCalledWith(backup)
+    expect(readdirSync(dir).filter((f) => f.includes('.tmp-'))).toEqual([])
   }, 30000)
 })
 
