@@ -3,7 +3,12 @@ import type { RekordboxPlaylistEdit } from '../shared/types'
 import type { EditOp } from './rekordboxQueueOps'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 import { PLAYLISTS_SAMPLE } from './traktorPlaylistFixture'
-import { nodeById, parsePlaylists, traktorStamps } from './traktorPlaylistModel'
+import {
+  nodeById,
+  parsePlaylists,
+  traktorStamps,
+  traktorSubtreeStamps,
+} from './traktorPlaylistModel'
 import { readTraktorPlaylist, readTraktorTree } from './traktorPlaylists'
 
 const track = (file: string, title: string, playtime = '200') =>
@@ -133,6 +138,26 @@ describe('applyTraktorEdits', () => {
       reason: 'stale',
       notices: [{ code: 'edit-changed', playlist: 'Friday' }],
     })
+  })
+
+  // A delete takes the folder with everything below it. A playlist the DJ made in Traktor in
+  // a subfolder while the delete waited was gone with it, unseen when the delete was asked.
+  it('refuses a folder delete when the DJ changed anything inside it since', () => {
+    const queued: EditOp = {
+      id: 'del',
+      kind: 'edit',
+      edit: { kind: 'delete', playlistId: 'folder:Sets#2' },
+      stamps: traktorSubtreeStamps(DOC, 'folder:Sets#2'),
+      label: 'Sets',
+    }
+    const changed = DOC.replace(
+      '<NODE TYPE="FOLDER" NAME="Old"><SUBNODES COUNT="0"></SUBNODES>',
+      '<NODE TYPE="FOLDER" NAME="Old"><SUBNODES COUNT="1">\n<NODE TYPE="PLAYLIST" NAME="New"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="new"></PLAYLIST>\n</NODE>\n</SUBNODES>',
+    )
+    expect(nodeById(parsePlaylists(changed), 'new')).not.toBeNull()
+    const { nml, outcomes } = applyTraktorEdits(changed, [queued], 'HD')
+    expect(nml).toBe(changed)
+    expect(outcomes.get('del')).toMatchObject({ applied: false, reason: 'stale' })
   })
 
   it('never renames or deletes Traktor’s own playlists, nor edits its history', () => {

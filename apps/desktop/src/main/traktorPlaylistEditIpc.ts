@@ -6,7 +6,7 @@ import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
-import { traktorStamps } from './traktorPlaylistModel'
+import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
 import { traktorSeparatorKey } from './traktorPlaylists'
 
 // The twin of rekordbox:edit for Traktor: the edit joins the Traktor queue, applies at once
@@ -28,14 +28,21 @@ export function registerTraktorPlaylistEditIpc(host: {
       const path = host.collection()
       if (!path) return { applied: false, reason: 'unreadable' }
       const stamp =
-        edit.kind === 'create'
+        edit.kind === 'create' || edit.kind === 'delete'
           ? undefined
           : traktorStamps(readFileSync(path, 'utf8'))[edit.playlistId]
+      // A delete takes everything below the node, so a change anywhere in it refuses it.
+      const stamps =
+        edit.kind === 'delete'
+          ? traktorSubtreeStamps(readFileSync(path, 'utf8'), edit.playlistId)
+          : edit.kind === 'create' || stamp === undefined
+            ? {}
+            : { [edit.playlistId]: stamp }
       const op: EditOp = {
         id: randomUUID(),
         kind: 'edit',
         edit,
-        stamps: edit.kind === 'create' || stamp === undefined ? {} : { [edit.playlistId]: stamp },
+        stamps,
         ...(label ? { label } : {}),
       }
       host.queue.enqueue([op])
