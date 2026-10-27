@@ -20,8 +20,9 @@ import { keepOriginal } from './originalKeeper'
 // out of outputDir entirely.
 //
 // Windows' rules apply on every platform, since libraries live on NAS shares both systems
-// open: no control characters, no trailing dot or space (Windows drops them, so the name
-// written is not the name asked for), no device name (CON, NUL, COM1…, with or without
+// open: no control characters, no folder ending in a dot or space (Windows drops them, so
+// the name written is not the name asked for; the file name keeps its dot, since the
+// extension follows it), no device name (CON, NUL, COM1…, with or without
 // an extension). A segment is capped at SEGMENT_MAX_BYTES, measured decomposed as macOS
 // writes it, so the conversion's temp (a dot, ".tmp-xxxxxxxx" and the extension added)
 // and a " (n)" bump still fit in the 255 bytes a name can hold.
@@ -38,9 +39,9 @@ function capBytes(segment: string): string {
 }
 
 export function sanitizeOutputName(name: string): string {
-  return name
-    .split('/')
-    .map((segment) =>
+  const segments = name.split('/')
+  return segments
+    .map((segment, i) =>
       capBytes(
         [
           ...segment
@@ -51,7 +52,7 @@ export function sanitizeOutputName(name: string): string {
           .map((ch) => (ch.charCodeAt(0) < 0x20 ? '-' : ch))
           .join(''),
       )
-        .replace(/[. ]+$/, '')
+        .replace(i === segments.length - 1 ? / +$/ : /[. ]+$/, '')
         .replace(WINDOWS_DEVICE, '$1_'),
     )
     .filter((segment) => segment && segment !== '.' && segment !== '..')

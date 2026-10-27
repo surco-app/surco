@@ -48,8 +48,15 @@ describe('sanitizeOutputName', () => {
   // has to be one Windows can hold whichever system wrote it. Windows silently drops a
   // trailing dot or space, so "Vol." written from a Mac shows up mangled there, and the
   // rename into "Vol." on Windows lands on "Vol" instead, a different file.
-  it('drops trailing dots and spaces from every segment', () => {
-    expect(sanitizeOutputName('Mr. Oizo./Vol. 2 ./Flat Beat..')).toBe('Mr. Oizo/Vol. 2/Flat Beat')
+  it('drops trailing dots and spaces from every folder segment', () => {
+    expect(sanitizeOutputName('Mr. Oizo./Vol. 2 ./Flat Beat')).toBe('Mr. Oizo/Vol. 2/Flat Beat')
+  })
+
+  // The last segment is the name before the extension, so its trailing dot is never the
+  // end of the file name and Windows keeps it. Dropping it renamed "Still D.R.E..aiff"
+  // to "Still D.R.E.aiff" on the next in-place update of a file that was fine.
+  it('keeps the trailing dot of the file name, which the extension follows', () => {
+    expect(sanitizeOutputName('Dr. Dre/Still D.R.E.')).toBe('Dr. Dre/Still D.R.E.')
   })
 
   // CON, NUL, COM1… name devices on Windows, with or without an extension: a track
