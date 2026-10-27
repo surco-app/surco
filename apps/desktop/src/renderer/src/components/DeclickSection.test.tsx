@@ -49,6 +49,8 @@ class FakeAudio {
   onloadedmetadata: (() => void) | null = null
   ontimeupdate: (() => void) | null = null
   onended: (() => void) | null = null
+  load = vi.fn<() => void>()
+  removeAttribute = vi.fn<(name: string) => void>()
   // Bound per instance so `paused` tracks this element, and resolving like the real
   // one: the frame loop is armed when both play() promises settle, so a play() that
   // never resolved would leave the pair unpinned. The shared spies stay for the

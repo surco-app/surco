@@ -192,4 +192,31 @@ describe('useDeclickAb', () => {
     unmount()
     expect(stopAuditionsOf('/music/a.wav')).toBe(false)
   })
+
+  // Pausing leaves the surco:// stream open, and with the hold gone a later conversion of
+  // the file had nothing to stop it through on Windows.
+  it('lets go of both legs when the section closes', () => {
+    const { unmount } = renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    unmount()
+    for (const leg of created) {
+      expect(leg.removeAttribute).toHaveBeenCalledWith('src')
+      expect(leg.load).toHaveBeenCalled()
+    }
+  })
+
+  it('starts the render of another preset where the cursor was', () => {
+    const { result, rerender } = renderHook(
+      ({ repaired }) => useDeclickAb('/music/a.wav', repaired),
+      { initialProps: { repaired: '/tmp/gentle.wav' } },
+    )
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    act(() => result.current.seek(30))
+    rerender({ repaired: '/tmp/strong.wav' })
+    act(() => {
+      for (const a of created.slice(2)) a.onloadedmetadata?.()
+    })
+    expect(created.slice(2).map((a) => a.currentTime)).toEqual([30, 30])
+  })
 })

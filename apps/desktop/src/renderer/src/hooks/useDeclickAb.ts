@@ -128,14 +128,15 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     // with nothing to repair the second one plays the original too. The pair stays ready
     // and the next play reloads them: rebuilding it here would reopen the file mid-rename,
     // and a conversion that leaves the path as it was would never rebuild it at all.
-    const unhold = holdForAudition(originalPath, () => {
+    const letGo = (): void => {
       silence()
       released = true
       for (const leg of [original, repaired]) {
         leg.removeAttribute('src')
         leg.load()
       }
-    })
+    }
+    const unhold = holdForAudition(originalPath, letGo)
     rearmRef.current = () => {
       if (!released) return
       released = false
@@ -143,9 +144,11 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
       original.src = mediaUrl(originalPath)
       repaired.src = mediaUrl(repairedPath)
     }
+    // Closing lets go the same way: a paused element keeps the stream open, and with the
+    // hold gone a later conversion would have nothing to stop.
     return () => {
       unhold()
-      silence()
+      letGo()
       pinRef.current = null
       rearmRef.current = null
       originalRef.current = null
