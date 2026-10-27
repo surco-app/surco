@@ -340,7 +340,8 @@ describe('useTrackLibrary cancelling an import', () => {
 
     await act(async () => {
       releaseOne()
-      await new Promise((r) => setTimeout(r, 0))
+      // Past the window the read results are written in, which the count rides.
+      await new Promise((r) => setTimeout(r, 60))
     })
     expect(result.current.importProgress).toEqual({ done: 1, total: 2 })
 
@@ -603,6 +604,57 @@ describe('useTrackLibrary import batching', () => {
     // per-file path cost. A generous ceiling still fails hard on the O(n²) regression while
     // leaving headroom for however the concurrency workers interleave their resolutions.
     expect(bigMapVisits).toBeLessThan(N * 10)
+  })
+})
+
+describe('useTrackLibrary read coalescing across IPC replies', () => {
+  // Each IPC reply lands in its own task, so a microtask flush wrote the crate (and
+  // re-rendered the whole App) once per file while a big import loaded. Replies arriving
+  // close together must share one write.
+  it('renders once for reads that land in separate tasks moments apart', async () => {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
+            )
+          }),
+      ),
+    })
+    let renders = 0
+    const { result } = renderHook(() => {
+      renders++
+      return useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      })
+    })
+    await act(async () => {
+      void result.current.addPaths(Array.from({ length: 6 }, (_, i) => `/m/${i}.wav`))
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const tracksBefore = renders
+
+    // Outside act on purpose: act holds every update until its scope ends, which would
+    // fold the renders together whatever the hook does. Real IPC replies get no such help.
+    for (const release of pending.splice(0)) {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    }
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100))
+    })
+
+    expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
+    expect(renders - tracksBefore).toBeLessThanOrEqual(2)
   })
 })
 

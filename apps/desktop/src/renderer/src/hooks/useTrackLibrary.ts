@@ -30,6 +30,10 @@ const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
 // ffprobe, so an unbounded drop of a full crate would flood the main process.
 const READ_CONCURRENCY = 6
 
+// How long finished metadata reads wait to be written to the crate together. Short enough
+// that a row's tags land with no visible lag, long enough to fold a burst of replies.
+const META_FLUSH_MS = 50
+
 // How long the "N new tracks" prompt stays up before dismissing itself. Long enough to
 // read and hit Load, short enough that an ignored prompt gets out of the way; timing out
 // declines the offer, exactly like the ✕. Exported so the toast's countdown bar matches.
@@ -256,9 +260,21 @@ export function useTrackLibrary({
   // with no Apple Music identity and no format protection.
   const pendingSeed = useRef(new Map<string, Partial<TrackItem>>())
   const metaPatchBuffer = useRef(new Map<string, (t: TrackItem) => TrackItem>())
+  const metaFlushTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const metaFlushScheduled = useRef(false)
+  const lastMetaFlush = useRef(Number.NEGATIVE_INFINITY)
+  // The import pill's count rides the same flush: bumped once per finished read, it
+  // re-rendered the whole App per file just as the per-file patch did.
+  const progressPending = useRef(false)
   const flushMetaPatches = useCallback((): void => {
+    if (metaFlushTimer.current) clearTimeout(metaFlushTimer.current)
+    metaFlushTimer.current = null
     metaFlushScheduled.current = false
+    lastMetaFlush.current = performance.now()
+    if (progressPending.current) {
+      progressPending.current = false
+      setImportProgress({ done: importDone.current, total: importTotal.current })
+    }
     const appliers = metaPatchBuffer.current
     if (appliers.size === 0) return
     metaPatchBuffer.current = new Map()
@@ -275,20 +291,29 @@ export function useTrackLibrary({
     tracksRef.current = patched
     setTracks((prev) => prev.map((t) => appliers.get(t.id)?.(t) ?? t))
   }, [])
+  // At most one write per window. The first read after a quiet spell flushes in a
+  // microtask, so a lone read (or a batch resolving in the same tick) lands as before and
+  // settles within the act() that awaited it. Reads landing right after a write wait for
+  // the window to close: each IPC reply arrives in its own task, so flushing each one
+  // re-rendered the whole App per file while a big import loaded. A caller that awaits its
+  // read and then reads the row back (rereadTrackMeta, completeTrackMeta,
+  // refreshTrackFromDisk) flushes at once instead.
+  const scheduleMetaFlush = useCallback((): void => {
+    if (metaFlushScheduled.current) return
+    metaFlushScheduled.current = true
+    const wait = lastMetaFlush.current + META_FLUSH_MS - performance.now()
+    if (wait <= 0) queueMicrotask(flushMetaPatches)
+    else metaFlushTimer.current = setTimeout(flushMetaPatches, wait)
+  }, [flushMetaPatches])
   const enqueueMetaPatch = useCallback(
     (id: string, applier: (t: TrackItem) => TrackItem): void => {
-      metaPatchBuffer.current.set(id, applier)
-      if (metaFlushScheduled.current) return
-      metaFlushScheduled.current = true
-      // A microtask: every read that has already resolved when this one lands shares the
-      // flush, so a batch rewrites the array a handful of times instead of once per file —
-      // the reads that resolve in the same microtask checkpoint coalesce. It fires before
-      // the next paint, so a row's metadata lands with no visible lag versus the per-file
-      // write it replaces, and (unlike a 0ms timer) it settles within the same act() that
-      // awaited the reads, keeping the write synchronous from a caller's point of view.
-      queueMicrotask(flushMetaPatches)
+      // Composed, not replaced: two reads of one row inside the window (an import read and
+      // the full read that completes it) must both land.
+      const earlier = metaPatchBuffer.current.get(id)
+      metaPatchBuffer.current.set(id, earlier ? (t) => applier(earlier(t)) : applier)
+      scheduleMetaFlush()
     },
-    [flushMetaPatches],
+    [scheduleMetaFlush],
   )
 
   // `streamed` marks the call as one of the folder walk's own progress batches rather than a
@@ -412,12 +437,17 @@ export function useTrackLibrary({
           if (importDone.current >= importTotal.current) {
             importDone.current = 0
             importTotal.current = 0
+            progressPending.current = false
             setImportProgress(null)
+            // The import is done: whatever reads are still waiting on the window land with
+            // the pill's end, not a moment after it.
+            flushMetaPatches()
             const failed = tracksRef.current.filter((t) => importFailed.current.has(t.id)).length
             importFailed.current = new Set()
             if (failed > 0) onMetaReadFailed(failed)
           } else {
-            setImportProgress({ done: importDone.current, total: importTotal.current })
+            progressPending.current = true
+            scheduleMetaFlush()
           }
         }),
       ),
@@ -623,7 +653,9 @@ export function useTrackLibrary({
   const rereadTrackMeta = useStableCallback(async (id: string): Promise<boolean> => {
     const current = tracksRef.current.find((t) => t.id === id)
     if (!current) return false
-    return loadTrackMeta({ ...newTrack(current.inputPath), id: current.id })
+    const ok = await loadTrackMeta({ ...newTrack(current.inputPath), id: current.id })
+    flushMetaPatches()
+    return ok
   })
 
   const completing = useRef(new Map<string, Promise<void>>())
@@ -669,6 +701,7 @@ export function useTrackLibrary({
             }),
         }
       })
+      flushMetaPatches()
     } finally {
       completing.current.delete(id)
     }
@@ -713,6 +746,7 @@ export function useTrackLibrary({
           ...(t.diskSignature === before && { diskSignature: after }),
         }
       })
+      flushMetaPatches()
     } catch {
       // Cosmetic: the row keeps the values it already had.
     }
@@ -1113,6 +1147,7 @@ export function useTrackLibrary({
     importDone.current = 0
     importTotal.current = 0
     importFailed.current = new Set()
+    progressPending.current = false
     setImportProgress(null)
   }
 
