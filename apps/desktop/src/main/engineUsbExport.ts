@@ -72,6 +72,7 @@ interface Planned {
   source: string
   size: number
   dest: string
+  stale: string | null
   onStick: boolean
   art: Artwork | null
 }
@@ -332,6 +333,7 @@ async function prepare(
     planned.push({
       ...f,
       dest,
+      stale: kept && kept !== dest ? kept : null,
       onStick: (await sizeOf(onUsb(lib, dest))) === f.size,
       art: name ? (artwork.get(name) ?? null) : null,
     })
@@ -531,6 +533,17 @@ export function createEngineUsbExporter(deps: EngineUsbExporterDeps) {
     }
   }
 
+  // A track that changed format left its copy under the old name. It goes only once the
+  // library that no longer leads to it is on the drive, so a cancel or a failure keeps it.
+  async function removeStale(p: Prepared, landed: Planned[]): Promise<void> {
+    for (const l of landed) {
+      if (!l.stale) continue
+      await rm(onUsb(p.lib, l.stale), { force: true }).catch((err) =>
+        deps.log(`engine usb export could not remove the old copy ${l.stale}: ${String(err)}`),
+      )
+    }
+  }
+
   async function copyArtwork(p: Prepared): Promise<void> {
     for (const a of p.art) {
       if (a.present) continue
@@ -581,6 +594,7 @@ export function createEngineUsbExporter(deps: EngineUsbExporterDeps) {
       deps.log(`engine usb export could not write the library: ${String(err)}`)
       return { type: 'finished', outcome: 'error', reason: 'device-write' }
     }
+    await removeStale(p, landed)
     try {
       deps.memory.remember(targetKey(req.target), {
         playlistIds: req.playlistIds,

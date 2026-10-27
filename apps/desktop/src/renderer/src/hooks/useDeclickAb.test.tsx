@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { stopAuditionsOf } from '../lib/auditionHolds'
 import { useDeclickAb } from './useDeclickAb'
 
 // jsdom's HTMLMediaElement has no playback: play() rejects, currentTime never advances,
@@ -20,7 +21,15 @@ class FakeAudio {
   pause = vi.fn(() => {
     this.paused = true
   })
-  constructor() {
+  load = vi.fn(() => {
+    if (this.currentTime === 0) return
+    this.currentTime = 0
+    this.ontimeupdate?.()
+  })
+  removeAttribute = vi.fn((name: string) => {
+    if (name === 'src') this.src = ''
+  })
+  constructor(public src: string) {
     created.push(this)
   }
 }
@@ -113,5 +122,101 @@ describe('useDeclickAb', () => {
     pumpFrames(5)
 
     expect(rafCalls).toBe(afterPause)
+  })
+
+  // The original leg keeps the file open for as long as the section is, playing or not,
+  // and on Windows that open stream refused a conversion's rename as "in use" by Surco.
+  it('lets go of the original when that file is released for a conversion', async () => {
+    const { result } = renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    await act(async () => {
+      result.current.play()
+    })
+    const [original] = created
+    act(() => {
+      expect(stopAuditionsOf('/music/a.wav')).toBe(true)
+    })
+    expect(original.paused).toBe(true)
+    expect(original.removeAttribute).toHaveBeenCalledWith('src')
+    expect(original.load).toHaveBeenCalled()
+    expect(result.current.playing).toBe(false)
+  })
+
+  // A conversion that leaves the file where it was keeps the same paths, so nothing would
+  // rebuild the pair and its play button did nothing until the section was reopened.
+  it('reloads both legs on the next play after a release, from where the cursor was', async () => {
+    const { result } = renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    act(() => result.current.seek(30))
+    act(() => {
+      stopAuditionsOf('/music/a.wav')
+    })
+    expect(result.current.ready).toBe(true)
+    expect(result.current.at).toBe(30)
+    const [original, repaired] = created
+    await act(async () => {
+      result.current.play()
+    })
+    expect(original.src).toContain('a.wav')
+    expect(repaired.src).toContain('repaired.wav')
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    expect([original.currentTime, repaired.currentTime]).toEqual([30, 30])
+    expect(repaired.play).toHaveBeenCalled()
+    expect(result.current.playing).toBe(true)
+  })
+
+  it('lets go of both legs when nothing is repaired and both play the original', () => {
+    renderHook(() => useDeclickAb('/music/a.wav', '/music/a.wav'))
+    act(() => {
+      expect(stopAuditionsOf('/music/a.wav')).toBe(true)
+    })
+    for (const leg of created) expect(leg.removeAttribute).toHaveBeenCalledWith('src')
+  })
+
+  it('keeps the pair when another file is released', () => {
+    renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    act(() => {
+      expect(stopAuditionsOf('/music/other.wav')).toBe(false)
+    })
+    expect(created[0].removeAttribute).not.toHaveBeenCalled()
+  })
+
+  it('holds the original no longer once the section closes', () => {
+    const { unmount } = renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    unmount()
+    expect(stopAuditionsOf('/music/a.wav')).toBe(false)
+  })
+
+  // Pausing leaves the surco:// stream open, and with the hold gone a later conversion of
+  // the file had nothing to stop it through on Windows.
+  it('lets go of both legs when the section closes', () => {
+    const { unmount } = renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    unmount()
+    for (const leg of created) {
+      expect(leg.removeAttribute).toHaveBeenCalledWith('src')
+      expect(leg.load).toHaveBeenCalled()
+    }
+  })
+
+  it('starts the render of another preset where the cursor was', () => {
+    const { result, rerender } = renderHook(
+      ({ repaired }) => useDeclickAb('/music/a.wav', repaired),
+      { initialProps: { repaired: '/tmp/gentle.wav' } },
+    )
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    act(() => result.current.seek(30))
+    rerender({ repaired: '/tmp/strong.wav' })
+    act(() => {
+      for (const a of created.slice(2)) a.onloadedmetadata?.()
+    })
+    expect(created.slice(2).map((a) => a.currentTime)).toEqual([30, 30])
   })
 })
