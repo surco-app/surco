@@ -102,6 +102,7 @@ import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
+import { carryRiffChunks } from './riffCarry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
 import { readTagFormats } from './tagFormats'
@@ -2128,6 +2129,17 @@ export async function convertAudio(
             dest: tmp,
             shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
           })
+        // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
+        // riffCarry.ts). Only when the audio is copied through: their positions count
+        // samples, which a trim or a rate change moves, and a re-encode keeps a backup
+        // under every policy but 'never'. A clear empties them like the rest.
+        if (
+          codec === 'copy' &&
+          !clearExtras &&
+          ext === '.wav' &&
+          extname(input).toLowerCase() === '.wav'
+        )
+          await carryRiffChunks(input, tmp)
       } else if (
         (meta.rating?.trim() || meta.comment.trim() || clearExtras) &&
         (ext === '.mp3' || ext === '.aiff')
