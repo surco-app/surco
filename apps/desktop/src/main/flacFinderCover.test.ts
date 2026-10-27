@@ -126,11 +126,9 @@ describe('convertAudio with Finder covers enabled', () => {
     expect(buf.toString('latin1', leadingId3v2Size(buf), leadingId3v2Size(buf) + 4)).toBe('fLaC')
   })
 
-  // Traktor does not recognise a FLAC that starts with an ID3 header and drops its ENTRY
-  // the next time it writes the collection: a DJ's collection went from two entries to
-  // one, and the one gone was the prefixed FLAC. With Traktor sync on the file is known
-  // to live in that collection, so the Finder icon is never worth that loss.
-  it('leaves a standard FLAC while Traktor sync is on, even when asked', async () => {
+  // A DJ who syncs with Traktor checked on 27/10 that Traktor keeps a FLAC carrying this
+  // header in its collection, so Traktor sync is no reason to leave Finder without covers.
+  it('writes the header while Traktor sync is on', async () => {
     const out = join(dir, 'out-traktor.flac')
     syncTraktor = true
     try {
@@ -150,7 +148,7 @@ describe('convertAudio with Finder covers enabled', () => {
     } finally {
       syncTraktor = false
     }
-    expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
+    expect(readFileSync(out).toString('latin1', 0, 3)).toBe('ID3')
   })
 
   it('leaves a standard FLAC when the option is off', async () => {

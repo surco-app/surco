@@ -21,33 +21,14 @@ const synced = {
 } as unknown as SyncedDraft
 
 describe('ArtworkTab', () => {
-  // A DJ's FLAC arrived at Surco on 07/09/2026 starting with 30,517 bytes of ID3 tag
-  // before the "fLaC" magic — the shape this option produces. Decoders skip a leading
-  // ID3 and play it fine, which is what the hint used to promise, but Traktor does not
-  // accept the file at all and drops the track from its collection on the next write.
-  // Anyone syncing to Traktor has to be told that before ticking the box, not after
-  // their collection has lost the entry.
-  it('warns that Traktor rejects the files this option produces', () => {
-    render(<ArtworkTab synced={synced} patch={vi.fn()} />)
-
-    const hint = screen.getByText(i18n.t('settings.flacFinderCoversHint'))
-    expect(hint.textContent).toMatch(/traktor/i)
-  })
-
-  // With Traktor sync on, main never writes the header (Traktor would drop the ENTRY), so
-  // the box would promise something that does not happen. It stays visible, per the rule
-  // that settings never vanish, but disabled and saying why.
-  it('disables the option and says why while Traktor sync is on', () => {
+  // The 07/09 FLAC that went missing from a DJ's collection was blamed on this header,
+  // so the option was locked while syncing to Traktor. On 27/10 the same DJ loaded a FLAC
+  // carrying Surco's header into Traktor, closed it and found the track still there:
+  // Traktor even rewrites the header with its own tags. The lock only took the covers away.
+  it('offers the option with its usual hint while Traktor sync is on', () => {
     render(<ArtworkTab synced={{ ...synced, syncTraktor: true }} patch={vi.fn()} />)
 
-    expect(screen.getByTestId('settings-flac-finder-covers')).toBeDisabled()
-    expect(screen.getByText(i18n.t('settings.flacFinderCoversTraktor'))).toBeInTheDocument()
-  })
-
-  it('offers the option with its usual hint while Traktor sync is off', () => {
-    render(<ArtworkTab synced={{ ...synced, syncTraktor: false }} patch={vi.fn()} />)
-
     expect(screen.getByTestId('settings-flac-finder-covers')).toBeEnabled()
-    expect(screen.queryByText(i18n.t('settings.flacFinderCoversTraktor'))).toBeNull()
+    expect(screen.getByText(i18n.t('settings.flacFinderCoversHint'))).toBeInTheDocument()
   })
 })
