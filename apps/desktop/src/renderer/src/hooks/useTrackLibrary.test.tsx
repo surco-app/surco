@@ -176,6 +176,7 @@ describe('useTrackLibrary cancelling an import', () => {
   function setupSlowReads(): {
     result: { current: ReturnType<typeof useTrackLibrary> }
     release: () => void
+    releaseOne: () => void
     readCount: () => number
   } {
     const pending: (() => void)[] = []
@@ -207,6 +208,7 @@ describe('useTrackLibrary cancelling an import', () => {
       release: () => {
         for (const r of pending.splice(0)) r()
       },
+      releaseOne: () => pending.shift()?.(),
       readCount: () => reads,
     }
   }
@@ -281,6 +283,71 @@ describe('useTrackLibrary cancelling an import', () => {
       await Promise.resolve()
     })
 
+    expect(result.current.importProgress).toBeNull()
+  })
+
+  // A cancel must stay a cancel when another import starts right after it (a second drop,
+  // or the next batch of a folder walk): the cancelled queue used to wake up and read the
+  // whole crate the user had just stopped.
+  it('does not resume a cancelled import when the next one starts', async () => {
+    const { result, release, readCount } = setupSlowReads()
+    const paths = Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`)
+    await act(async () => {
+      void result.current.addPaths(paths)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const startedBeforeCancel = readCount()
+
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      void result.current.addPaths(['/other/new.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    for (let round = 0; round < 3; round++) {
+      await act(async () => {
+        release()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+    }
+
+    expect(readCount()).toBe(startedBeforeCancel + 1)
+    expect(result.current.tracks.map((t) => t.inputPath)).toContain('/other/new.wav')
+    expect(result.current.tracks.length).toBe(startedBeforeCancel + 1)
+  })
+
+  // The progress pill of the import that follows a cancel describes that import alone:
+  // the cancelled reads still landing must not count toward it, or it ends (and reports
+  // its failures) while its own files are still being read.
+  it('keeps the cancelled reads out of the next import progress', async () => {
+    const { result, release, releaseOne } = setupSlowReads()
+    const paths = Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`)
+    await act(async () => {
+      void result.current.addPaths(paths)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      void result.current.addPaths(['/other/one.wav', '/other/two.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.importProgress).toEqual({ done: 0, total: 2 })
+
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.importProgress).toEqual({ done: 0, total: 2 })
+
+    await act(async () => {
+      releaseOne()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.importProgress).toEqual({ done: 1, total: 2 })
+
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
     expect(result.current.importProgress).toBeNull()
   })
 })

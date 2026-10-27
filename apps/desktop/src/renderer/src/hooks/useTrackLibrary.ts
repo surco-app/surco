@@ -199,11 +199,12 @@ export function useTrackLibrary({
   // the render mirror): each drop bumps the total, each finished read bumps done, and the
   // pair resets to null once everything in flight has landed — like the auto-match sweep.
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
-  // Set while an import should stop. Read inside the read loop like the analyze and
-  // auto-match sweeps read theirs — importing is the longest operation in the app
-  // (thousands of files on a NAS, one tag read each) and was the only one with no way
-  // out. Cleared when the next import starts.
-  const importCancel = useRef(false)
+  // Bumped by every cancel. Read inside the read loop like the analyze and auto-match
+  // sweeps read their flags: importing is the longest operation in the app (thousands of
+  // files on a NAS, one tag read each) and was the only one with no way out. Each import
+  // keeps the value it started under, so the next import cannot wake a cancelled queue
+  // back up, and a cancelled read landing late cannot count toward the next progress.
+  const importGeneration = useRef(0)
   const readSlot = useRef(createPriorityLimit(READ_CONCURRENCY))
   // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
@@ -390,7 +391,7 @@ export function useTrackLibrary({
     setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
     importTotal.current += bases.length
     setImportProgress({ done: importDone.current, total: importTotal.current })
-    importCancel.current = false
+    const generation = importGeneration.current
     // The rows this import added that never got their tags read. A cancel drops them:
     // they carry nothing but a filename, and leaving them would put rows in the crate
     // that look like tracks with no metadata. Rows already read are finished work and
@@ -401,13 +402,13 @@ export function useTrackLibrary({
         readSlot.current.run(base.id, async () => {
           // Checked before the read, not after: the point is to not start the ones still
           // queued behind the handful already in flight.
-          if (importCancel.current) return
+          if (generation !== importGeneration.current) return
           const present = tracksRef.current.some((t) => t.id === base.id)
           const ok = present ? await loadTrackMeta(base) : true
           unread.delete(base.id)
+          if (generation !== importGeneration.current) return
           if (!ok) importFailed.current.add(base.id)
           importDone.current += 1
-          if (importCancel.current) return
           if (importDone.current >= importTotal.current) {
             importDone.current = 0
             importTotal.current = 0
@@ -421,7 +422,7 @@ export function useTrackLibrary({
         }),
       ),
     ).then(() => {
-      if (!importCancel.current || unread.size === 0) return
+      if (generation === importGeneration.current || unread.size === 0) return
       // Dropped only once every worker has settled, so a row is never removed while its
       // own read is still running and about to patch it.
       const dropped = unread
@@ -1108,7 +1109,7 @@ export function useTrackLibrary({
   // worth keeping), nothing further is picked off the queue, and the rows that never
   // got read are dropped by the settle handler in addPaths.
   function cancelImport(): void {
-    importCancel.current = true
+    importGeneration.current += 1
     importDone.current = 0
     importTotal.current = 0
     importFailed.current = new Set()
