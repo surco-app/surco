@@ -58,6 +58,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
     deleteAppleMusic: vi.fn(async () => {}),
+    carryAppleMusicHistory: vi.fn(async () => 'carried' as const),
     isPathReserved: vi.fn(() => false),
     reservePath: vi.fn(),
     releasePath: vi.fn(),
@@ -1330,6 +1331,14 @@ describe('runProcessTrack — Apple Music', () => {
     expect(result.musicPersistentId).toBe('added-id')
   })
 
+  it("carries the renamed file's playlists, play count and rating onto its new Music entry", async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    await runProcessTrack(job(), deps)
+
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith('lib-9', 'added-id', 'A - Old')
+  })
+
   it('adds as before when Music holds no entry for the file', async () => {
     const deps = mac({ overwriteOriginal: true })
     deps.findAppleMusicEntry = vi.fn(async () => undefined)
@@ -1732,6 +1741,47 @@ describe('runProcessTrack — replacing a library copy', () => {
     expect(result.oldMusicCopyKept).toBe('error')
   })
 
+  // The delete takes the old entry's normal playlists, play count, rating and favorite with
+  // it, and a DJ's hand-made crates are exactly what must survive swapping an MP3 for its
+  // AIFF. The copy has to land on the entry just added, checked against the old one's own
+  // name like the delete.
+  it('replacing keeps the track in its normal playlists and keeps its play count and rating', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith(
+      'old-id',
+      'added-id',
+      'Old Artist - Old Title',
+    )
+  })
+
+  // Deleting after a failed copy would lose the playlists the copy did not reach. Keeping
+  // the old entry leaves two copies in Music and nothing lost, and the DJ is told.
+  it('keeps the old entry and says so when its playlists could not be carried over', async () => {
+    const deps = replacing({
+      carryAppleMusicHistory: vi.fn(async () => {
+        throw new Error('Music got an error: -54')
+      }),
+    })
+
+    const result = await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.musicPersistentId).toBe('added-id')
+    expect(result.oldMusicCopyKept).toBe('carry')
+  })
+
+  it('keeps the old entry when it no longer carries the name the DJ confirmed', async () => {
+    const deps = replacing({ carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const) })
+
+    const result = await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.oldMusicCopyKept).toBe('mismatch')
+  })
+
   it('reports nothing kept when the old entry was retired', async () => {
     const result = await runProcessTrack(job(replaceJob), replacing())
 
@@ -1747,6 +1797,10 @@ describe('runProcessTrack — replacing a library copy', () => {
         calls.push('add')
         return 'added-id'
       }),
+      carryAppleMusicHistory: vi.fn(async () => {
+        calls.push('carry')
+        return 'carried' as const
+      }),
       deleteAppleMusic: vi.fn(async () => {
         calls.push('delete')
       }),
@@ -1754,7 +1808,7 @@ describe('runProcessTrack — replacing a library copy', () => {
 
     await runProcessTrack(job(replaceJob), deps)
 
-    expect(calls).toEqual(['add', 'delete'])
+    expect(calls).toEqual(['add', 'carry', 'delete'])
   })
 
   // Measured from the user's own log 15/09, after three runs that reported only

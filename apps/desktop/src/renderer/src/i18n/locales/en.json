@@ -671,6 +671,7 @@
     "oldCopyRemoved": "Old copy removed from Apple Music; its file is in the Trash",
     "removeOldCopyError": "Could not remove the old Apple Music copy",
     "removeOldCopyMismatch": "The copy in Apple Music no longer matches the expected one, so nothing was removed",
+    "removeOldCopyCarry": "Could not move the playlists, play count and rating to the new copy, so the old one is still in Apple Music. Both are there and nothing was lost",
     "searchError": "Search failed",
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",

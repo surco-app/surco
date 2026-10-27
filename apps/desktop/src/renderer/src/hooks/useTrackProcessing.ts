@@ -55,7 +55,7 @@ interface Params {
   onDeclicked?: (name: string, count: number) => void
   // Surfaced when a replacement converted and went into Music but the copy it superseded
   // could not be retired, so the library now holds both.
-  onOldMusicCopyKept?: (reason: 'mismatch' | 'error') => void
+  onOldMusicCopyKept?: (reason: 'mismatch' | 'error' | 'carry') => void
   onAppleMusicFailed?: (name: string) => void
   // Surfaced when the converted file landed but the original it replaced in a format
   // change could not be removed, so both are in the folder.

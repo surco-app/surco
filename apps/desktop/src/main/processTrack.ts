@@ -130,6 +130,13 @@ export interface ProcessTrackDeps {
   // not stand — both only exercised by the "Apple Music only" copy verification below.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
   deleteAppleMusic: (persistentId: string, expectedLabel: string) => Promise<unknown>
+  // Copies the superseded entry's normal playlists, play count, rating and favorite onto
+  // the one that replaces it (see replaceAppleMusicCopy).
+  carryAppleMusicHistory: (
+    fromPid: string,
+    toPid: string,
+    expectedLabel: string,
+  ) => Promise<'carried' | 'missing' | 'mismatch'>
   // Corrects the recorded repoint once Music has copied the file into its Media folder.
   // The conversion only knows the temp path it wrote, which no longer exists when the
   // flush runs — the collection would be told to follow a file that is already gone.
@@ -139,18 +146,20 @@ export interface ProcessTrackDeps {
 // Imports the converted file and retires the copy it supersedes, returning the new
 // entry's id so the rest of the job (and rekordbox) follows the file that now exists.
 //
-// Nothing is done about playlists, and that is deliberate rather than an omission.
-// Measured over a real library 14/09: every one of the user's playlists is a SMART
-// playlist, which rebuilds itself from its own rules — Music answers -54 to any attempt
-// to put a track in one. The successor carries the same grouping, genre and year, so the
+// Deleting the old entry would take with it what the DJ built on it, so in between its
+// normal playlists, play count, played date, rating and favorite are copied onto the new
+// one. The new entry goes to the END of each playlist: Music offers no way to insert at a
+// position. Smart playlists are left alone, Music answers -54 to any attempt to put a
+// track in one, and the successor carries the same grouping, genre and year, so their
 // rules pick it up on their own. rekordbox needs no help either: its playlists link by
 // track ID and the repoint rewrites the existing row's path, so the ID, its crates and
 // its cues all survive untouched.
 //
-// Add first and delete last, so an add that fails destroys nothing. Deleting removes the
-// library row only, never the file: the superseded MP3 stays on disk for the user's own
-// "trash original" to decide. A delete that fails after the add leaves a duplicate, not a
-// failed conversion: the file is already converted and in Music.
+// Add first and delete last, so an add that fails destroys nothing. A copy that fails or
+// is refused keeps the old entry: two copies in Music, nothing lost, and the DJ is told.
+// Deleting removes the library row only, never the file: the superseded MP3 stays on disk
+// for the user's own "trash original" to decide. A delete that fails after the add leaves
+// a duplicate, not a failed conversion: the file is already converted and in Music.
 async function replaceAppleMusicCopy(
   job: ProcessJob,
   target: string,
@@ -160,9 +169,16 @@ async function replaceAppleMusicCopy(
     persistentId: job.musicPersistentId,
     label: job.replacesLabel ?? metaLabel(job),
   },
-): Promise<{ added: string; oldCopyKept?: 'mismatch' | 'error' }> {
+): Promise<{ added: string; oldCopyKept?: 'mismatch' | 'error' | 'carry' }> {
   const added = await deps.addToAppleMusic(target, job.meta, coverPath)
   if (!old.persistentId) return { added }
+  try {
+    const carried = await deps.carryAppleMusicHistory(old.persistentId, added, old.label)
+    if (carried === 'mismatch') return { added, oldCopyKept: 'mismatch' }
+  } catch (e) {
+    log.warn('process:track kept the old Music entry it could not carry over', e)
+    return { added, oldCopyKept: 'carry' }
+  }
   try {
     await deps.deleteAppleMusic(old.persistentId, old.label)
     return { added }
@@ -434,9 +450,9 @@ export async function runProcessTrack(
         // — so the upgrade reported 14/09 left the library on the MP3 while claiming
         // success. The new file therefore has to be imported and the old entry retired.
         //
-        // Add first and delete last: a failing add then destroys nothing. Nothing is carried
-        // across in between (see replaceAppleMusicCopy): the retired entry takes its normal
-        // playlists, play count and rating with it, and only smart playlists refill.
+        // Add first and delete last: a failing add then destroys nothing. In between, the
+        // old entry's normal playlists, play count and rating move to the new one (see
+        // replaceAppleMusicCopy); its position inside each playlist does not.
         if (job.replacesPath) {
           const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps)
           musicPersistentId = replaced.added

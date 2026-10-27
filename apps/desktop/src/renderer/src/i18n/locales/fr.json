@@ -671,6 +671,7 @@
     "oldCopyRemoved": "Ancienne copie supprimée d'Apple Music ; son fichier est dans la corbeille",
     "removeOldCopyError": "Impossible de supprimer l'ancienne copie d'Apple Music",
     "removeOldCopyMismatch": "La copie dans Apple Music ne correspond plus à celle attendue, donc rien n'a été supprimé",
+    "removeOldCopyCarry": "Impossible de transférer les playlists, les lectures et la note vers la nouvelle copie, l'ancienne reste donc dans Apple Music. Les deux y sont et rien n'est perdu",
     "searchError": "Échec de la recherche",
     "releaseError": "Impossible de charger la release",
     "analyzeError": "Impossible d'analyser l'audio",
