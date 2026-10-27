@@ -1,7 +1,11 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SHORTCUT_DEFAULTS, type ShortcutDef } from '../../../../shared/shortcutDefaults'
+import {
+  findConflicts,
+  SHORTCUT_DEFAULTS,
+  type ShortcutDef,
+} from '../../../../shared/shortcutDefaults'
 import { type Chord, chordEquals, eventToChord } from '../../../../shared/shortcuts'
 import { COMMAND_GROUP_ORDER, commandGroups } from '../../lib/commands'
 import { isMacOS, revealCommandKey } from '../../lib/platform'
@@ -52,6 +56,12 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
   const { t: tr } = useTranslation()
   // The command whose next keystroke is being recorded, or null when idle.
   const [recording, setRecording] = useState<string | null>(null)
+  // For each clashing command, the one it collides with, named on its row.
+  const clashWith = new Map(
+    findConflicts(bindings).flatMap((ids) =>
+      ids.map((id) => [id, ids.find((other) => other !== id) ?? id] as const),
+    ),
+  )
 
   // A command id is kebab-case ('find-replace'); its i18n title lives under the
   // camelCase key (commands.findReplace).
@@ -86,13 +96,23 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
     const chord = bindings.get(def.id) ?? []
     const overridden = def.id in synced.shortcutOverrides
     const isRecording = recording === def.id
+    const clash = clashWith.get(def.id)
     return (
       <div
         key={def.id}
         data-testid={`shortcut-row-${def.id}`}
         className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0"
       >
-        <span className="text-sm text-fg">{commandTitle(def.id)}</span>
+        <div className="min-w-0">
+          <span data-testid={`shortcut-title-${def.id}`} className="text-sm text-fg">
+            {commandTitle(def.id)}
+          </span>
+          {clash && (
+            <p data-testid={`shortcut-conflict-${def.id}`} className="text-xs text-danger">
+              {tr('settings.shortcuts.conflictWith', { command: commandTitle(clash) })}
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {overridden && (
             <button
@@ -149,6 +169,11 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
           </button>
         )}
       </div>
+      {conflictIds.size > 0 && (
+        <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
+          {tr('settings.shortcuts.conflict')}
+        </p>
+      )}
       {sections.map((scope) => (
         <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
           <div className="mb-1 flex items-baseline gap-2">
@@ -166,11 +191,6 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
       <p data-testid="shortcuts-fixed-nav" className="mt-3 text-xs text-fg-dim">
         {tr('settings.shortcuts.fixedNav')}
       </p>
-      {conflictIds.size > 0 && (
-        <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
-          {tr('settings.shortcuts.conflict')}
-        </p>
-      )}
     </div>
   )
 }

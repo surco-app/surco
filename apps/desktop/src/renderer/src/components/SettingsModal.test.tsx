@@ -885,6 +885,27 @@ describe('SettingsModal shortcuts', () => {
     expect(onSave.mock.calls.at(-1)?.[0]).not.toHaveProperty('shortcutOverrides')
   })
 
+  // The clash used to be named only under the last group, out of view from the row the
+  // user just recorded, so the new keys were silently not saved. Each clashing row now says
+  // which command it collides with, and the summary sits above the groups.
+  it('names the clash on the rows involved and above the list', () => {
+    openShortcuts()
+    record('add', { key: 'r', metaKey: true })
+    const revealTitle = within(screen.getByTestId('shortcut-row-reveal')).getByTestId(
+      'shortcut-title-reveal',
+    ).textContent
+    expect(screen.getByTestId('shortcut-conflict-add')).toHaveTextContent(revealTitle ?? '')
+    expect(
+      within(screen.getByTestId('shortcut-row-add')).getByTestId('shortcut-conflict-add'),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('shortcut-conflict-reveal')).toBeInTheDocument()
+    const firstGroup = screen.getAllByTestId(/^shortcut-group-/)[0]
+    expect(
+      screen.getByTestId('shortcuts-conflict').compareDocumentPosition(firstGroup) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   // From any other tab the unsaved clash would be invisible, so it is named there too
   // and leads back to the Shortcuts tab.
   it('names an unsaved shortcut clash from any tab and leads to it', () => {

@@ -1148,6 +1148,7 @@
       "reset": "Restaurar o padrão",
       "resetAll": "Redefinir tudo ({{count}})",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
+      "conflictWith": "Mesmas teclas de {{command}}. Mude um deles para salvar.",
       "conflictElsewhere": "Dois comandos compartilham um atalho. Corrija em Atalhos para salvar.",
       "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados da busca, Home / End vão para as extremidades e Page Up / Down pulam uma página.",
       "groupTrim": "Editor de silêncio",
