@@ -5,6 +5,7 @@ import * as normalizeText from './normalizeText'
 import {
   EMPTY_FILTER,
   type FilterSelection,
+  filterSessionKey,
   filterWithSticky,
   formatBuckets,
   holdOrder,
@@ -268,6 +269,27 @@ describe('no cues filter', () => {
   it('isolates the library tracks that carry no cue and leaves loose files out', () => {
     expect(by(tracks, { attention: 'noCues' }).map((x) => x.id)).toEqual(['bare'])
     expect(qualityCounts(tracks).noCues).toBe(1)
+  })
+})
+
+describe('filterSessionKey', () => {
+  // The list keeps every row a filter has shown until the filter changes, and this key is
+  // how it notices the change. Switching from silence to clipping kept the silence rows on
+  // screen because the attention axis was missing from the hand-written list of axes.
+  it('changes with every axis, so any new pick starts a fresh filter session', () => {
+    const picks: Partial<FilterSelection>[] = [
+      { quality: 'suspect' },
+      { conversion: 'failed' },
+      { library: 'inLibrary' },
+      { duplicates: 'duplicates' },
+      { attention: 'silence' },
+      { attention: 'clipping' },
+      { format: 'WAV' },
+    ]
+    const keys = [EMPTY_FILTER, ...picks.map((p) => ({ ...EMPTY_FILTER, ...p }))].map(
+      filterSessionKey,
+    )
+    expect(new Set(keys).size).toBe(keys.length)
   })
 })
 

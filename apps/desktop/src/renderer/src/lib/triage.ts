@@ -144,6 +144,14 @@ function hasNoCues(track: TrackItem): boolean {
   return track.sourcePreview?.cues.length === 0
 }
 
+// Read off EMPTY_FILTER's keys rather than a hand-kept list, so an axis added to the
+// selection can never be left out of the key and leave the last filter's rows pinned.
+export function filterSessionKey(sel: FilterSelection): string {
+  return (Object.keys(EMPTY_FILTER) as (keyof FilterSelection)[])
+    .map((axis) => sel[axis] ?? '')
+    .join('|')
+}
+
 // Filters the list, but keeps every row it has shown in place for the rest of the filter
 // session: a row whose verdict flips while the user works the list (an accepted review
 // suggestion, a background auto-match that lands it in the library, an analysis that

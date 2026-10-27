@@ -188,6 +188,7 @@ import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } fro
 import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
+  filterSessionKey,
   filterWithSticky,
   formatBuckets,
   holdOrder,
@@ -1697,15 +1698,7 @@ export default function App(): React.JSX.Element {
   // renders when a pick made under the pointer is still waiting for the order to catch up.
   const listHovered = useRef(false)
   const [heldRelease, setHeldRelease] = useState(0)
-  const filterKey = [
-    filterSelection.quality,
-    filterSelection.conversion,
-    filterSelection.library,
-    filterSelection.duplicates,
-    filterSelection.format,
-  ]
-    .map((axis) => axis ?? '')
-    .join('|')
+  const filterKey = filterSessionKey(filterSelection)
   // Filtering and sorting the crate depend on neither the selection nor the pointer, so
   // they run apart from the hold below: picking a row must not pay for sorting every row.
   const sortedTracks = useMemo(() => {
