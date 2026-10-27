@@ -1238,6 +1238,8 @@
     "exportConfig": "Exportar…",
     "importConfig": "Importar…",
     "importConfirm": "Isso vai substituir toda a sua configuração atual. Continuar?",
+    "exportFailed": "Não foi possível salvar o arquivo de ajustes. {{reason}}",
+    "importFailed": "Não foi possível ler esse arquivo como ajustes do Surco. Seus ajustes atuais não mudaram.",
     "cache": "Cache de análise",
     "cacheClear": "Esvaziar cache",
     "cacheHint": "A análise de cada faixa fica no disco para a sua biblioteca reabrir na hora. Esvaziar só faz com que seja recalculada na próxima abertura.",

@@ -1238,6 +1238,8 @@
     "exportConfig": "Export…",
     "importConfig": "Import…",
     "importConfirm": "This will replace all your current settings. Continue?",
+    "exportFailed": "Couldn't save the settings file. {{reason}}",
+    "importFailed": "That file couldn't be read as Surco settings. Your current settings are unchanged.",
     "cache": "Analysis cache",
     "cacheClear": "Empty cache",
     "cacheHint": "Every track's analysis is kept on disk so your library reopens instantly. Emptying it only makes the next open recompute them.",

@@ -1238,6 +1238,8 @@
     "exportConfig": "Exporter…",
     "importConfig": "Importer…",
     "importConfirm": "Cela remplacera toute ta configuration actuelle. Continuer ?",
+    "exportFailed": "Impossible d'enregistrer le fichier de réglages. {{reason}}",
+    "importFailed": "Ce fichier n'a pas pu être lu comme réglages de Surco. Tes réglages actuels restent inchangés.",
     "cache": "Cache d'analyse",
     "cacheClear": "Vider le cache",
     "cacheHint": "L'analyse de chaque piste reste sur le disque pour que ta bibliothèque se rouvre instantanément. La vider oblige juste à la recalculer à la prochaine ouverture.",

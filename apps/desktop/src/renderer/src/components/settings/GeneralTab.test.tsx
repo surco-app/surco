@@ -45,6 +45,7 @@ function renderTab(over: Partial<LocalDraft> = {}, hiddenSources: PlaylistSource
       onResetConfigDir={vi.fn()}
       onExportSettings={vi.fn()}
       onImportSettings={vi.fn()}
+      settingsFileError=""
     />,
   )
   return patchLocal
@@ -163,6 +164,7 @@ describe('GeneralTab sources', () => {
         onResetConfigDir={vi.fn()}
         onExportSettings={vi.fn()}
         onImportSettings={vi.fn()}
+        settingsFileError=""
       />,
     )
     return patch

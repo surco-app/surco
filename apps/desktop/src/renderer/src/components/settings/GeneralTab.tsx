@@ -32,6 +32,7 @@ interface Props {
   onResetConfigDir: () => void
   onExportSettings: () => void
   onImportSettings: () => void
+  settingsFileError: string
 }
 
 export function GeneralTab({
@@ -46,6 +47,7 @@ export function GeneralTab({
   onResetConfigDir,
   onExportSettings,
   onImportSettings,
+  settingsFileError,
 }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
 
@@ -161,6 +163,11 @@ export function GeneralTab({
                 {tr('settings.importConfig')}
               </button>
             </div>
+            {settingsFileError && (
+              <p role="alert" data-testid="settings-file-error" className="text-sm text-danger">
+                {settingsFileError}
+              </p>
+            )}
           </SettingsField>
 
           {/* The size is said once, beside the name: it used to sit in a box that looked
