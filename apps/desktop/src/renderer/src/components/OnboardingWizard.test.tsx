@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
@@ -287,6 +287,30 @@ describe('OnboardingWizard destination', () => {
     } finally {
       api.api.engineAvailable = async () => false
       process.off('unhandledRejection', unhandled)
+    }
+  })
+
+  // A slow detection that landed after the user moved on grew the wizard under them: the
+  // count jumped from 4 to 5 and the Finish they were about to press became Next. Once the
+  // user has left the first step the length is fixed.
+  it('keeps the step count it showed once the user has moved past the first step', async () => {
+    const api = window as unknown as { api: { rekordboxCollection: () => Promise<string> } }
+    let land: (path: string) => void = () => {}
+    api.api.rekordboxCollection = () =>
+      new Promise<string>((resolve) => {
+        land = resolve
+      })
+    try {
+      const onFinish = vi.fn()
+      render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      await act(async () => land('/Users/dj/Library/Pioneer/rekordbox/master.db'))
+      expect(screen.getByText(i18n.t('onboarding.step', { current: 2, total: 4 }))).toBeVisible()
+      for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(onFinish).toHaveBeenCalledTimes(1)
+    } finally {
+      api.api.rekordboxCollection = async () => ''
     }
   })
 
