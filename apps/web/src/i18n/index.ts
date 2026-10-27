@@ -8,6 +8,11 @@ import ja from './locales/ja.json'
 
 export const LANGUAGES = ['es', 'en', 'ja'] as const
 export type Language = (typeof LANGUAGES)[number]
+export const LANGUAGE_NAMES: Record<Language, string> = {
+  es: 'Español',
+  en: 'English',
+  ja: '日本語',
+}
 
 // The release history lives in its own files (not the locale bundles) because the
 // desktop app imports the same data for its "what's new" popup after an update.
