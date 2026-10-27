@@ -16,6 +16,7 @@ import type { OutputFormat, TrimRange, WaveformResult } from '../../../shared/ty
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
+import { holdForAudition } from '../lib/auditionHolds'
 import { formatTime } from '../lib/duration'
 import { editorPlace } from '../lib/editorPlace'
 import { formatFixed } from '../lib/numberFormat'
@@ -812,8 +813,11 @@ export function TrimSection({
   const [auditing, setAuditing] = useState<Side | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const stopTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const unhold = useRef<(() => void) | null>(null)
   function stopAudition(): void {
     clearTimeout(stopTimer.current)
+    unhold.current?.()
+    unhold.current = null
     silence(audioRef.current)
     audioRef.current = null
     setAuditing(null)
@@ -822,6 +826,8 @@ export function TrimSection({
   useEffect(() => {
     return () => {
       clearTimeout(stopTimer.current)
+      unhold.current?.()
+      unhold.current = null
       silence(audioRef.current)
       audioRef.current = null
       setAuditing(null)
@@ -844,6 +850,7 @@ export function TrimSection({
     for (const other of document.querySelectorAll('audio')) other.pause()
     const audio = new Audio(mediaUrl(inputPath))
     audioRef.current = audio
+    unhold.current = holdForAudition(inputPath, () => stopRef.current())
     // With nothing staged yet the line on screen is the suggestion, so that is what plays:
     // hearing a proposed cut before taking it is the point of the button.
     const inSec = shown?.startSec ?? suggestedStart ?? 0

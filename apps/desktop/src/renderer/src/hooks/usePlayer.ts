@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isRecoveryUrl, mediaRecoveryUrl, mediaUrl } from '../../../shared/media'
+import { stopAuditionsOf } from '../lib/auditionHolds'
 import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 
@@ -30,9 +31,9 @@ export interface Player {
   // when it's already the one playing — a play/stop toggle on the row itself.
   toggleTrack: (track: TrackItem) => void
   closePlayer: () => void
-  // On Windows, drops the stream when it is holding `path`, so a conversion about to
-  // rewrite that file can rename over it. No-op for any other path, and a no-op
-  // everywhere else — see the implementation.
+  // On Windows, drops the stream when it is holding `path`, and stops any cue or trim
+  // audition of it, so a conversion about to rewrite that file can rename over it. No-op
+  // for any other path, and a no-op everywhere else — see the implementation.
   releaseFile: (path: string) => Promise<void>
   // Once the conversion no longer holds `path`, reloads the file releaseFile let go of,
   // at the position and play state it had. No-op unless that release silenced the player.
@@ -117,7 +118,12 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     // the new path when the export lands, so the DJ never hears the gap. Cutting the
     // audio there bought nothing and cost an audition mid-track.
     if (!isWindows()) return
-    if (playingPathRef.current !== path) return
+    // A cue or trim audition of the file holds it through its own stream, the same block.
+    const auditioned = stopAuditionsOf(path)
+    if (playingPathRef.current !== path) {
+      if (auditioned) await window.api.releasePlayingFile(path)
+      return
+    }
     const audio = audioRef.current
     if (audio) releasedRef.current = { path, time: audio.currentTime, paused: audio.paused }
     audio?.pause()

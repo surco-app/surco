@@ -13,6 +13,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { isRecoveryUrl, mediaPathFromUrl, mediaUrl } from '../../../shared/media'
 import type { TrackMetadata } from '../../../shared/types'
+import { holdForAudition } from '../lib/auditionHolds'
 import type { TrackItem } from '../types'
 import { usePlayer } from './usePlayer'
 
@@ -173,6 +174,24 @@ describe('usePlayer releaseFile', () => {
     fireEvent.click(screen.getByTestId('release'))
 
     await waitFor(() => expect(window.api.releasePlayingFile).toHaveBeenCalledWith('/m/a.mp3'))
+  })
+
+  // A cue or trim audition streams the file through its own element, and its descriptor
+  // blocked the rename just like the player's: the conversion failed blaming "another
+  // program", which was Surco. The release has to stop it and close its stream in main.
+  it('stops an audition of the file and asks main to close its stream', async () => {
+    const audio = playing('/m/a.mp3', '/m/cued.mp3')
+    const stopAudition = vi.fn()
+    const unhold = holdForAudition('/m/cued.mp3', stopAudition)
+    try {
+      fireEvent.click(screen.getByTestId('release'))
+
+      expect(stopAudition).toHaveBeenCalled()
+      await waitFor(() => expect(window.api.releasePlayingFile).toHaveBeenCalledWith('/m/cued.mp3'))
+      expect(audio.pause).not.toHaveBeenCalled()
+    } finally {
+      unhold()
+    }
   })
 
   // Releasing an unrelated file must not reach main either: destroying another track's

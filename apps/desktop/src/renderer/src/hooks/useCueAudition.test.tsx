@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { stopAuditionsOf } from '../lib/auditionHolds'
 import { useCueAudition } from './useCueAudition'
 
 const play = vi.fn<() => Promise<void>>()
@@ -58,6 +59,35 @@ async function started(onPosition = vi.fn<(ms: number) => void>()) {
 }
 
 describe('useCueAudition', () => {
+  // On Windows the audition's stream holds the file open and a conversion's rename over it
+  // failed blaming "another program", which was Surco. Releasing the file for the job
+  // has to silence the audition and let go of its stream.
+  it('stops when the file it plays is released for a conversion', async () => {
+    const { hook } = await started()
+    act(() => {
+      expect(stopAuditionsOf('/m/g.wav')).toBe(true)
+    })
+    expect(audios[0].pause).toHaveBeenCalled()
+    expect(audios[0].removeAttribute).toHaveBeenCalledWith('src')
+    expect(audios[0].load).toHaveBeenCalled()
+    expect(hook.result.current.playing).toBe(false)
+  })
+
+  it('keeps playing when another file is released', async () => {
+    const { hook } = await started()
+    act(() => {
+      expect(stopAuditionsOf('/m/other.wav')).toBe(false)
+    })
+    expect(audios[0].pause).not.toHaveBeenCalled()
+    expect(hook.result.current.playing).toBe(true)
+  })
+
+  it('is no longer held once it stopped', async () => {
+    const { hook } = await started()
+    act(() => hook.result.current.stop())
+    expect(stopAuditionsOf('/m/g.wav')).toBe(false)
+  })
+
   it('plays the track from the playhead and pauses the floating player so two never sound', async () => {
     const shared = document.body.appendChild(document.createElement('audio'))
     const pauseShared = vi.fn()

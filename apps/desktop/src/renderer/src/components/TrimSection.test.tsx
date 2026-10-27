@@ -6,6 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
 import i18n from '../i18n'
+import { stopAuditionsOf } from '../lib/auditionHolds'
 import { resetEditorPlace } from '../lib/editorPlace'
 import { createQueryClient } from '../lib/queryClient'
 import { runKeyClaim } from '../lib/spaceClaim'
@@ -855,6 +856,19 @@ describe('TrimSection', () => {
     expect(play).toHaveBeenCalledOnce()
     fireEvent.click(btn)
     expect(pause).toHaveBeenCalledOnce()
+  })
+
+  // On Windows the audition's stream holds the source open and a conversion's rename over
+  // it failed blaming "another program", which was Surco. Releasing the file for the job
+  // has to silence the audition and let go of its stream.
+  it('stops the audition when its file is released for a conversion', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    fireEvent.click(await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 }))
+    act(() => {
+      expect(stopAuditionsOf('/in/track.wav')).toBe(true)
+    })
+    expect(pause).toHaveBeenCalledOnce()
+    expect(stopAuditionsOf('/in/track.wav')).toBe(false)
   })
 
   // The cut is judged by ear, so it has to be the only thing sounding: the mini-player
