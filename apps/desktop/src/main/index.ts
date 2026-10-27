@@ -6,6 +6,7 @@ import {
   readFileSync,
   realpathSync,
   renameSync,
+  statSync,
   writeFileSync,
 } from 'node:fs'
 import {
@@ -175,7 +176,7 @@ import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection, traktorSessionBackup } from './traktorNmlLibrary'
-import { detectTraktorNmlPaths } from './traktorNmlPath'
+import { detectTraktorNmlPaths, followTraktorVersion, traktorInUse } from './traktorNmlPath'
 import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
@@ -347,21 +348,46 @@ const applyEngineCueQueueQuietly = (): void => {
     if (stillWaiting(result)) engineCueQueueWatch.poke()
   })
 }
+const traktorCandidates = (): string[] =>
+  detectTraktorNmlPaths(app.getPath('home'), (dir) => {
+    try {
+      return readdirSync(dir)
+    } catch {
+      return []
+    }
+  })
+const modifiedAt = (path: string): number | null => {
+  try {
+    return statSync(path).mtimeMs
+  } catch {
+    return null
+  }
+}
+const sameTraktorPath = (a: string, b: string): boolean =>
+  process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b
+// A Traktor update (or going back to an older one) moves the collection Traktor reads to
+// another version folder; the confirmed collection follows it there (see traktorNmlPath.ts).
+const followTraktor = (): void => {
+  const configured = getSettings().traktorNmlPath
+  const candidates = traktorCandidates()
+  const next = followTraktorVersion(
+    configured,
+    candidates,
+    traktorInUse(candidates, modifiedAt),
+    sameTraktorPath,
+  )
+  if (next === configured) return
+  log.info(`Traktor collection follows Traktor from ${configured} to ${next}`)
+  saveSettings({ traktorNmlPath: next })
+}
 // The tab reads the collection Settings names or, without one, the newest Traktor found;
 // cues are written only to the one the DJ confirmed in Settings (see traktorNmlPath.ts).
-const traktorReadPath = (): string =>
-  nmlPath(
-    getSettings().traktorNmlPath,
-    detectTraktorNmlPaths(app.getPath('home'), (dir) => {
-      try {
-        return readdirSync(dir)
-      } catch {
-        return []
-      }
-    }),
-    existsSync,
-  )
+const traktorReadPath = (): string => {
+  followTraktor()
+  return nmlPath(getSettings().traktorNmlPath, traktorCandidates(), existsSync)
+}
 const traktorWritePath = (): string => {
+  followTraktor()
   const path = getSettings().traktorNmlPath
   return path && existsSync(path) ? path : ''
 }
@@ -1125,14 +1151,7 @@ function registerIpc(): void {
   // Traktor update — an ipcMain.handle can't take fs as a dependency, so existsSync
   // is applied here rather than inside the pure detector.
   ipcMain.handle('traktor:detectNmlPath', () => {
-    const candidates = detectTraktorNmlPaths(app.getPath('home'), (dir) => {
-      try {
-        return readdirSync(dir)
-      } catch {
-        return []
-      }
-    })
-    return candidates.find((path) => existsSync(path)) ?? null
+    return traktorCandidates().find((path) => existsSync(path)) ?? null
   })
 
   // The rekordbox counterpart, and deliberately simpler: its collection lives in one
@@ -1775,6 +1794,7 @@ app.setAboutPanelOptions({
 })
 
 app.whenReady().then(() => {
+  followTraktor()
   if (!app.isPackaged && process.platform === 'darwin') {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }

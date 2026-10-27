@@ -1391,7 +1391,7 @@
     "engineDjPlaylistHint": "Las pistas convertidas se añaden a esta playlist de tu biblioteca, además de a la colección.",
     "traktorSync": "Colección de Traktor",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "La colección de Traktor en la que escribir. Puedes cambiarla cuando quieras.",
+    "traktorNmlPathHint": "La colección de Traktor en la que escribir. Puedes cambiarla cuando quieras. Si actualizas Traktor o vuelves a una versión anterior, Surco pasa solo a la colección que use.",
     "traktorNmlPathDetectedHint": "Encontrado automáticamente; no se aplica hasta que elijas usarlo.",
     "traktorNmlPathUseDetected": "Usar este",
     "traktorCueOffset": "Ajuste de los cue points",
