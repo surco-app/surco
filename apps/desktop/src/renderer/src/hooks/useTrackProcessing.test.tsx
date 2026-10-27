@@ -171,6 +171,67 @@ describe('useTrackProcessing', () => {
     expect(calls).toEqual(['released', 'processTrack'])
   })
 
+  // The release silences the player whether or not the job ends up rewriting the file.
+  // Only an in-place export that moved it gets a new path for the player to follow; every
+  // other outcome leaves the file where it was, and without handing it back the player
+  // stayed mute with no source.
+  describe('handing the file back to the player', () => {
+    async function run(
+      processTrack: Api['processTrack'],
+    ): Promise<ReturnType<typeof vi.fn<(path: string) => void>>> {
+      setApi({ processTrack: vi.fn<Api['processTrack']>(processTrack) })
+      const reclaimFile = vi.fn<(path: string) => void>()
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk: async () => {},
+            releaseFile: async () => {},
+            reclaimFile,
+          }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+      return reclaimFile
+    }
+
+    it('hands it back after converting to another folder', async () => {
+      const reclaimFile = await run(async () => ({ outputPath: '/out/a.aiff', inPlace: false }))
+      expect(reclaimFile).toHaveBeenCalledWith('/m/a.wav')
+    })
+
+    it('hands it back after an in-place update under the same name', async () => {
+      const reclaimFile = await run(async () => ({ outputPath: '/m/a.wav', inPlace: true }))
+      expect(reclaimFile).toHaveBeenCalledWith('/m/a.wav')
+    })
+
+    it('hands it back when the overwrite was declined', async () => {
+      const reclaimFile = await run(async () => ({
+        outputPath: '',
+        inPlace: false,
+        skipped: true,
+      }))
+      expect(reclaimFile).toHaveBeenCalledWith('/m/a.wav')
+    })
+
+    it('hands it back when the conversion failed', async () => {
+      const reclaimFile = await run(async () => {
+        throw new Error('boom')
+      })
+      expect(reclaimFile).toHaveBeenCalledWith('/m/a.wav')
+    })
+
+    // The old path no longer exists; the player follows the row to the new one itself.
+    it('does not hand back a path an in-place export moved away from', async () => {
+      const reclaimFile = await run(async () => ({ outputPath: '/m/a.aiff', inPlace: true }))
+      expect(reclaimFile).not.toHaveBeenCalled()
+    })
+  })
+
   // The hook is wired through App, where the player may not exist yet on the first
   // render — an optional dep must not turn a conversion into a crash.
   it('converts normally when no player is wired up', async () => {

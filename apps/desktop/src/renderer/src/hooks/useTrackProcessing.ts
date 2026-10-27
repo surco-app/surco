@@ -91,6 +91,9 @@ interface Params {
   // Windows an open handle — the player's own surco:// stream — makes that rename fail,
   // so the file is released, and the release confirmed, before the job starts.
   releaseFile?: (path: string) => Promise<void>
+  // Hands the released file back to the player once the job no longer holds it, for every
+  // outcome that leaves it at the same path: the release silenced it either way.
+  reclaimFile?: (path: string) => void
 }
 
 interface TrackProcessing {
@@ -142,6 +145,7 @@ export function useTrackProcessing({
   onProcessError,
   concurrency = CONVERT_CONCURRENCY,
   releaseFile,
+  reclaimFile,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -339,13 +343,14 @@ export function useTrackProcessing({
       // program being Surco. Called unconditionally because whether the export lands
       // in place is main's decision (resolveOutputTarget), unknown here until the
       // result comes back — by which point the rename has already had to succeed.
-      // Releasing a file no export rewrites costs only a paused stream the player's
-      // own watcher restarts, so the safe default is to release whenever it matches.
+      // Releasing a file no export rewrites costs only a pause until reclaimFile hands
+      // it back below, so the safe default is to release whenever it matches.
       // Awaited, not fired and forgotten: tearing down the <audio> element merely asks
       // Chromium to cancel, and the descriptor dies in main some time later. v0.83.4
       // called this without waiting and users still hit the error — just intermittently,
       // "it works on the third or fourth try", which is what a lost race looks like.
       await releaseFile?.(track.inputPath)
+      let moved = false
       try {
         const result = await window.api.processTrack({
           id: track.id,
@@ -412,6 +417,7 @@ export function useTrackProcessing({
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
         if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
+        moved = result.inPlace && result.outputPath !== track.inputPath
         if (result.inPlace) {
           removeAnalysisQueries(queryClient, [track.inputPath])
           // The row's frozen label and the file's own artwork describe the bytes this
@@ -440,6 +446,8 @@ export function useTrackProcessing({
         })
         onProcessError?.(message, track.listLabel)
         return 'failed'
+      } finally {
+        if (!moved) reclaimFile?.(track.inputPath)
       }
     },
   )

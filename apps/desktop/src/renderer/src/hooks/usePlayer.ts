@@ -34,6 +34,9 @@ export interface Player {
   // rewrite that file can rename over it. No-op for any other path, and a no-op
   // everywhere else — see the implementation.
   releaseFile: (path: string) => Promise<void>
+  // Once the conversion no longer holds `path`, reloads the file releaseFile let go of,
+  // at the position and play state it had. No-op unless that release silenced the player.
+  reclaimFile: (path: string) => void
 }
 
 // The floating player follows the selection: while it's open, picking another
@@ -55,6 +58,8 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // The path the element is currently streaming, so the rewrite watcher below can
   // tell a real file move from an ordinary re-render.
   const playingPathRef = useRef<string | null>(null)
+  // Where releaseFile left the track, so reclaimFile resumes it there.
+  const releasedRef = useRef<{ path: string; time: number; paused: boolean } | null>(null)
 
   const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current
@@ -97,8 +102,8 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // element is torn down before the write, releasing the OS handle. Same teardown as
   // closePlayer (pause + drop src + load, since removing src alone keeps the resource
   // attached) but the card stays open: the rewrite watcher above restarts playback from
-  // the file's new path the moment the export lands, so the DJ hears it resume rather
-  // than losing the player mid-audition. Only the held path releases — silencing an
+  // the file's new path the moment the export lands, or reclaimFile below reloads it
+  // where it stays, so the DJ hears it resume rather than losing the player mid-audition. Only the held path releases — silencing an
   // unrelated track the DJ is auditioning would be pure interruption.
   // Both halves are needed and neither is enough alone: the element has to let go so
   // Chromium stops re-requesting ranges, and main has to close the descriptor the
@@ -114,10 +119,25 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     if (!isWindows()) return
     if (playingPathRef.current !== path) return
     const audio = audioRef.current
+    if (audio) releasedRef.current = { path, time: audio.currentTime, paused: audio.paused }
     audio?.pause()
     audio?.removeAttribute('src')
     audio?.load()
     await window.api.releasePlayingFile(path)
+  }, [])
+
+  // The release outlives the job on every outcome that leaves the file where it was, and
+  // the rewrite watcher only restarts on a new path. Not after a close or a switch to
+  // another track meanwhile: the player has moved on.
+  const reclaimFile = useCallback((path: string): void => {
+    const released = releasedRef.current
+    if (released?.path !== path) return
+    releasedRef.current = null
+    const audio = audioRef.current
+    if (!audio || !playingIdRef.current || playingPathRef.current !== path) return
+    audio.src = mediaUrl(path)
+    audio.currentTime = released.time
+    if (!released.paused) audio.play().catch(() => {})
   }, [])
 
   // Removing (or clearing) the track that is playing must stop the audio: the
@@ -249,5 +269,6 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     toggleTrack,
     closePlayer,
     releaseFile,
+    reclaimFile,
   }
 }
