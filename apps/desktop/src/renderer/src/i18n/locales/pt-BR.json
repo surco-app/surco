@@ -853,6 +853,7 @@
       "resetColour": "Redefinir",
       "saveShort": "Salvar",
       "saveFailed": "Não foi possível salvar no rekordbox. Os cues continuam sem salvar",
+      "savedExcept": "Salvo, exceto em {{programs}}. O que espera lá é de outra coleção, então nada mudou lá",
       "saveAll_one": "Salvar {{count}} faixa no rekordbox",
       "saveAll_other": "Salvar {{count}} faixas no rekordbox",
       "saveAllBoth_one": "Salvar {{count}} faixa no rekordbox e no Engine DJ",

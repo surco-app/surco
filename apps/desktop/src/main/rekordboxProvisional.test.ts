@@ -216,6 +216,24 @@ describe('adjustProvisional', () => {
     expect(list.all()).toEqual([entry()])
   })
 
+  // Moving the cues under a draft the DJ is still editing would throw that draft away; the
+  // track keeps waiting and is adjusted on a later close.
+  it('leaves a track alone while the DJ holds unsaved cues for it in Surco', async () => {
+    const path = await collection(true)
+    const list = createProvisionalList(memoryStore())
+    list.add(entry())
+    const queue = queueOf()
+    adjustProvisional({
+      list,
+      collection: () => path,
+      queue,
+      newId: () => 'op',
+      unsaved: () => new Set(['103']),
+    })
+    expect(queue.enqueue).not.toHaveBeenCalled()
+    expect(list.all()).toEqual([entry()])
+  })
+
   it('touches nothing while the queue is halted', async () => {
     const path = await collection(true)
     const list = createProvisionalList(memoryStore())

@@ -852,6 +852,21 @@ describe('correcting a point', () => {
     expect(shape(run(s, { type: 'undo' }))).toBe(shape(placed))
   })
 
+  // A point belongs to the flow that placed it: moving it must not redraw it with whatever
+  // flow is chosen now, and a flow that leaves the point unmarked would make it vanish.
+  it('moves a point with the flow that placed it, not the one chosen since', () => {
+    const quiet = { ...ctx, flows: [...KEPT, QUIET] }
+    const placed = reduceDraft(empty(), { type: 'mark-drop', ms: bar(64) }, quiet)
+    const switched = reduceDraft(placed, { type: 'use-flow', flowId: QUIET.id }, quiet)
+    const s = reduceDraft(
+      switched,
+      { type: 'move-point', key: callAt(placed, bar(64)), ms: bar(80) },
+      quiet,
+    )
+    expect(shape(s)).toBe(shape(run(empty(), { type: 'mark-drop', ms: bar(80) })))
+    expect(s.flowId).toBe(QUIET.id)
+  })
+
   it('moves and deletes a CALL that is no point as before, so a hot cue’s CALL never takes the countdown with it', () => {
     const placed = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const paired = callAt(placed, bar(32))
@@ -922,11 +937,11 @@ describe('a point move that cannot land', () => {
   it('keeps the point where it was and says why, instead of snapping back in silence', () => {
     const s = run(
       startDraft([], 'calls-only'),
-      { type: 'mark-drop', ms: bar(64) },
-      ...Array.from({ length: 8 }, (_, i): DraftAction => ({ type: 'add-hot', ms: bar(10 + i) })),
       { type: 'use-flow', flowId: 'one-at-32' },
+      { type: 'mark-drop', ms: bar(20) },
+      ...Array.from({ length: 8 }, (_, i): DraftAction => ({ type: 'add-hot', ms: bar(30 + i) })),
     )
-    const key = s.cues.find((c) => c.kind === 0 && c.ms === bar(64))?.key as string
+    const key = s.cues.find((c) => c.kind === 0 && c.ms === bar(20))?.key as string
     const moved = run(s, { type: 'move-point', key, ms: bar(100) })
     expect(moved.cues).toEqual(s.cues)
     expect(moved.notice).toBe('too-many')

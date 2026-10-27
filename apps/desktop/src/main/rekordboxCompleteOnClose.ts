@@ -67,6 +67,9 @@ export function completeOnClose(deps: {
   flow: () => CueFlow
   queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'state'>
   newId?: () => string
+  // The tracks the DJ holds unsaved cues for in Surco: writing under the draft would throw it
+  // away, so they wait for a later close.
+  unsaved?: () => ReadonlySet<string>
 }): void {
   if (!deps.enabled()) return
   const path = deps.collection()
@@ -78,7 +81,7 @@ export function completeOnClose(deps: {
       path,
       (db) => completableOps(db, rekordboxShareDir(path), deps.flow(), deps.newId),
       [],
-    ).filter((op) => !deps.queue.cuesOp(op.contentId))
+    ).filter((op) => !deps.queue.cuesOp(op.contentId) && !deps.unsaved?.().has(op.contentId))
     if (ops.length > 0) deps.queue.enqueue(ops)
   } catch (err) {
     log.warn(`rekordbox complete on close skipped: ${String(err)}`)

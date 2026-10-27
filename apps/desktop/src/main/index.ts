@@ -240,7 +240,7 @@ const outputReservations = createOutputReservations()
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
 const quitIntent = createQuitIntent()
-let unsavedCueTracks = 0
+let unsavedCueTracks: ReadonlySet<string> = new Set()
 // A file-name conflict prompts once per collision, so a batch of similarly-named rips used
 // to interrupt N times. When the user ticks "apply to the rest", that decision is remembered
 // here and reused for every later conflict in the same run — module-scoped so it persists
@@ -283,6 +283,7 @@ const adjustProvisionalCues = (): void =>
     collection: rekordboxCollectionPath,
     queue: rekordboxQueue,
     newId: randomUUID,
+    unsaved: () => unsavedCueTracks,
   })
 const announceApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
@@ -303,6 +304,7 @@ const rekordboxQueueWatch = watchRekordboxQueue({
       collection: rekordboxCollectionPath,
       flow: () => activeCueFlow(getSettings()),
       queue: rekordboxQueue,
+      unsaved: () => unsavedCueTracks,
     })
     adjustProvisionalCues()
   },
@@ -740,7 +742,7 @@ function createWindow(): BrowserWindow {
         engineCueQueue.settled(),
         traktorCueQueue.settled(),
       ]).then(() => undefined),
-    unsavedCues: () => unsavedCueTracks,
+    unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
       const details = [
@@ -1314,8 +1316,9 @@ function registerIpc(): void {
     if (typeof jobId === 'string') activeConversions.cancel(jobId)
   })
 
-  ipcMain.on('cues:unsaved', (_e, count: unknown) => {
-    if (typeof count === 'number') unsavedCueTracks = count
+  ipcMain.on('cues:unsaved', (_e, contentIds: unknown) => {
+    if (Array.isArray(contentIds) && contentIds.every((id) => typeof id === 'string'))
+      unsavedCueTracks = new Set(contentIds)
   })
 
   // A convert-all run starts: forget any "apply to the rest" conflict choice the previous

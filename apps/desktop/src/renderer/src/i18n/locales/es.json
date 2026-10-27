@@ -853,6 +853,7 @@
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
       "saveFailed": "No se pudo guardar en rekordbox. Las cues siguen sin guardar",
+      "savedExcept": "Guardado, salvo en {{programs}}. Lo que espera allí es de otra colección y allí no se ha cambiado nada",
       "saveAll_one": "Guardar {{count}} pista en rekordbox",
       "saveAll_other": "Guardar {{count}} pistas en rekordbox",
       "saveAllBoth_one": "Guardar {{count}} pista en rekordbox y Engine DJ",

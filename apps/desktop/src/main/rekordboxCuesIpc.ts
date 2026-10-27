@@ -5,6 +5,7 @@ import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
 import { isTraktorContent, traktorKey } from '../shared/traktorContent'
 import type {
+  CueLibrary,
   LibraryTracks,
   QueuedCues,
   SaveCuesOutcome,
@@ -225,21 +226,44 @@ export function registerRekordboxCuesIpc(host: {
   })
   ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]): SaveCuesOutcome => {
     const targets = [
-      { ...host, mine: reqs.filter((r) => !engineOf(r.contentId) && !traktorOf(r.contentId)) },
-      ...(host.engine ? [{ ...host.engine, mine: reqs.filter((r) => engineOf(r.contentId)) }] : []),
+      {
+        ...host,
+        library: 'rekordbox' as const,
+        mine: reqs.filter((r) => !engineOf(r.contentId) && !traktorOf(r.contentId)),
+      },
+      ...(host.engine
+        ? [
+            {
+              ...host.engine,
+              library: 'engine' as const,
+              mine: reqs.filter((r) => engineOf(r.contentId)),
+            },
+          ]
+        : []),
       ...(host.traktor
-        ? [{ ...host.traktor, mine: reqs.filter((r) => traktorOf(r.contentId)) }]
+        ? [
+            {
+              ...host.traktor,
+              library: 'traktor' as const,
+              mine: reqs.filter((r) => traktorOf(r.contentId)),
+            },
+          ]
         : []),
     ].filter((t) => t.mine.length > 0)
-    let outcome: SaveCuesOutcome = 'queued'
+    const queued: string[] = []
+    const refused: CueLibrary[] = []
     for (const t of targets) {
       if (t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))) {
         for (const req of t.mine)
           if (req.provisional)
             host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
         t.applyQuietly(BrowserWindow.fromWebContents(e.sender))
-      } else outcome = 'other-collection'
+        queued.push(...t.mine.map((r) => r.contentId))
+      } else refused.push(t.library)
     }
-    return outcome
+    // Each program's queue takes its part or refuses it on its own, so a save can go through
+    // in some programs only; the editor then forgets just the drafts that were queued.
+    if (refused.length === 0) return 'queued'
+    return queued.length === 0 ? 'other-collection' : { queued, refused }
   })
 }

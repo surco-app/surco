@@ -76,8 +76,9 @@ import {
   keepAutoMark,
   keepDraft,
   keepPlayhead,
-  keptDraft,
+  keptDraftOn,
   keptDrafts,
+  keptOnSurcoGrid,
   keptPlayhead,
   settleCueFocus,
   useCueFocus,
@@ -433,12 +434,19 @@ function Editing({
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
     undefined,
     () =>
-      keptDraft(cue.contentId, draftKey) ??
+      keptDraftOn(cue.contentId, read, queued) ??
       startDraft(
         baseline,
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
       ),
+  )
+  // A draft set on Surco's grid stays on it when rekordbox analyses the track meanwhile, so
+  // its save still asks main to move the cues onto rekordbox's beats.
+  const [onSurcoGrid] = useState(
+    () =>
+      provisional !== undefined ||
+      (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [markMenu, setMarkMenu] = useState<{
@@ -614,7 +622,7 @@ function Editing({
       cue.contentId,
       cue.path,
       wanted,
-      state.generatedBy,
+      state.origin,
       [...unsavedSet].sort(),
       [...overwrite],
       settings.cueFlowToRekordbox,
@@ -633,12 +641,18 @@ function Editing({
   useEffect(() => {
     if (unchanged) forgetDraft(cue.contentId)
     else
-      keepDraft(cue.contentId, draftKey, state, {
-        path: cue.path,
-        label: cue.label,
-        fingerprint: read.fingerprint,
-        ...(provisional ? { provisional: true as const } : {}),
-      })
+      keepDraft(
+        cue.contentId,
+        draftKey,
+        state,
+        {
+          path: cue.path,
+          label: cue.label,
+          fingerprint: read.fingerprint,
+          ...(onSurcoGrid ? { provisional: true as const } : {}),
+        },
+        fresh ? queued : null,
+      )
   }, [
     cue.contentId,
     cue.path,
@@ -647,7 +661,9 @@ function Editing({
     draftKey,
     state,
     unchanged,
-    provisional,
+    onSurcoGrid,
+    fresh,
+    queued,
   ])
   const pending = (c: DraftCue): boolean =>
     !inRekordbox.some(
@@ -835,15 +851,16 @@ function Editing({
   const [saveFailed, setSaveFailed] = useState<SaveCuesOutcome | 'failed' | null>(null)
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
     const outcome = await window.api.saveRekordboxCues(reqs).catch(() => 'failed' as const)
-    if (outcome !== 'queued') {
+    if (outcome === 'failed' || outcome === 'other-collection') {
       setSaveFailed(outcome)
       return false
     }
-    setSaveFailed(null)
+    const queued = outcome === 'queued' ? reqs.map((r) => r.contentId) : outcome.queued
+    setSaveFailed(outcome === 'queued' ? null : outcome)
     setOverwrite(new Set())
-    for (const req of reqs) forgetDraft(req.contentId)
+    for (const contentId of queued) forgetDraft(contentId)
     await refreshQueued()
-    return true
+    return queued.includes(cue.contentId)
   }
   const save = async () => {
     const saved = await send([
@@ -853,7 +870,7 @@ function Editing({
         label: cue.label,
         wanted,
         fingerprint: read.fingerprint,
-        ...(provisional ? { provisional: true as const } : {}),
+        ...(onSurcoGrid ? { provisional: true as const } : {}),
       },
       ...(flowMarked ? await twinRequests([own]) : []),
     ])
@@ -1474,7 +1491,11 @@ function Editing({
       )}
       {saveFailed !== null && (
         <p data-testid="cues-save-failed" className="mt-2 text-xs text-warn">
-          {tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
+          {typeof saveFailed === 'object'
+            ? tr('editor.cues.savedExcept', {
+                programs: saveFailed.refused.map((l) => LIBRARY_NAME[l]).join(', '),
+              })
+            : tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
         </p>
       )}
       {blocked && (

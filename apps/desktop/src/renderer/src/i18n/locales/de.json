@@ -853,6 +853,7 @@
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
       "saveFailed": "Speichern in rekordbox fehlgeschlagen. Die Cues sind weiter nicht gespeichert",
+      "savedExcept": "Gespeichert, außer in {{programs}}. Was dort wartet, gehört zu einer anderen Sammlung, dort wurde nichts geändert",
       "saveAll_one": "{{count}} Titel in rekordbox speichern",
       "saveAll_other": "{{count}} Titel in rekordbox speichern",
       "saveAllBoth_one": "{{count}} Titel in rekordbox und Engine DJ speichern",

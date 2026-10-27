@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
-import { ALL_SLOTS, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { ALL_SLOTS, HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
 import { isEngineContent } from '../../../shared/engineContent'
 import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
@@ -16,12 +16,16 @@ import {
 import { unsavedCueTracks } from './cueSession'
 import { quantizePoints } from './cueWave'
 
+export interface CarriedBreaks {
+  flowId: string
+  points: number[]
+}
+
 export interface TwinSource {
   contentId: string
   path: string
   label: string
-  flowId: string
-  points: number[]
+  breaks: CarriedBreaks[]
 }
 
 export interface TwinSettings {
@@ -59,12 +63,26 @@ const wanted = (library: CueLibrary, settings: TwinSettings): boolean =>
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
-// The breaks the DJ marked with a flow since the cues were last saved: the flow's points in
-// the draft that a cue the flow placed sits on. Cues read back from a library carry no
-// origin, so neither saved breaks nor CALLs placed by hand count.
-export function carriedPoints(draft: CueDraft, ctx: DraftContext): number[] {
+// The breaks the DJ marked with a flow since the cues were last saved, each with the flow
+// that placed it: a flow's points in the draft that a cue that flow placed sits on. The DJ
+// can switch flows between breaks, so the flow the draft was opened with says nothing about
+// a break. Cues read back from a library carry no origin, so neither saved breaks nor CALLs
+// placed by hand count.
+export function carriedBreaks(draft: CueDraft, ctx: DraftContext): CarriedBreaks[] {
   const placed = draft.cues.filter((c) => draft.origin[c.key])
-  return draftPoints(draft, ctx).filter((p) => placed.some((c) => near(c.ms, p)))
+  const flowIds = [...new Set(placed.map((c) => draft.origin[c.key]))]
+  const taken: number[] = []
+  const breaks: CarriedBreaks[] = []
+  for (const flowId of flowIds) {
+    const points = draftPoints(draft, ctx, flowId).filter(
+      (p) =>
+        !taken.some((t) => near(t, p)) &&
+        placed.some((c) => draft.origin[c.key] === flowId && near(c.ms, p)),
+    )
+    taken.push(...points)
+    if (points.length > 0) breaks.push({ flowId, points })
+  }
+  return breaks
 }
 
 // A break lands on the other program's nearest beat, never its nearest bar: the programs can
@@ -79,6 +97,25 @@ function contextOf(read: TrackCues, library: CueLibrary, settings: TwinSettings)
     lettersByTime: settings.cueLettersByTime,
     slots: library === 'traktor' ? TRAKTOR_SLOTS : ALL_SLOTS,
   }
+}
+
+// In the other program a flow only adds: every cue already there stays exactly as it was,
+// since the DJ may have set it up by hand in that program, and what the flow placed takes
+// the letters left free, in track order, as far as they go. A CALL that only paired a hot
+// cue left without a letter goes with it.
+function onlyAdded(baseline: WantedCue[], placed: WantedCue[], kinds: number[]): WantedCue[] {
+  const fresh = placed.filter(
+    (c) => !baseline.some((b) => (b.kind === 0) === (c.kind === 0) && near(b.ms, c.ms)),
+  )
+  const free = kinds.filter((k) => !baseline.some((b) => b.kind === k))
+  const hot = fresh.filter((c) => c.kind !== 0).sort((a, b) => a.ms - b.ms)
+  const letter = new Map(hot.slice(0, free.length).map((c, i) => [c, free[i]]))
+  const left = hot.slice(free.length)
+  const added = fresh.flatMap((c): WantedCue[] => {
+    if (c.kind !== 0) return letter.has(c) ? [{ ...c, kind: letter.get(c) as number }] : []
+    return left.some((h) => near(h.ms, c.ms)) ? [] : [c]
+  })
+  return [...baseline, ...added]
 }
 
 async function planOne(
@@ -98,18 +135,20 @@ async function planOne(
   const ctx = contextOf(read, library, settings)
   const start = startDraft(
     baseline,
-    source.flowId,
+    source.breaks[0].flowId,
     read.cues.filter((c) => c.loop).map((c) => c.id),
   )
-  const placed = reduceDraft(
-    reduceDraft(start, { type: 'use-flow', flowId: source.flowId }, ctx),
-    { type: 'batch', actions: source.points.map((ms) => ({ type: 'mark-drop' as const, ms })) },
-    ctx,
+  const placed = source.breaks.reduce(
+    (draft, { flowId, points }) =>
+      reduceDraft(
+        reduceDraft(draft, { type: 'use-flow', flowId }, ctx),
+        { type: 'batch', actions: points.map((ms) => ({ type: 'mark-drop' as const, ms })) },
+        ctx,
+      ),
+    start,
   )
-  const result = wantedOfDraft(placed.cues)
-  const added = result.filter(
-    (c) => !baseline.some((b) => (b.kind === 0) === (c.kind === 0) && near(b.ms, c.ms)),
-  )
+  const result = onlyAdded(baseline, wantedOfDraft(placed.cues), ctx.slots?.kinds ?? HOT_KINDS)
+  const added = result.slice(baseline.length)
   const hot = added.filter((c) => c.kind !== 0).length
   const calls = library === 'rekordbox' ? added.length - hot : 0
   if (hot + calls === 0) return null
@@ -138,7 +177,7 @@ export async function twinPlans(
   settings: TwinSettings,
   overwrite: ReadonlySet<string> = new Set(),
 ): Promise<TwinPlan[]> {
-  if (source.points.length === 0) return []
+  if (source.breaks.length === 0) return []
   const own = libraryOf(source.contentId)
   const twins = await client
     .fetchQuery({
@@ -182,8 +221,8 @@ export async function twinPlansOf(
   for (const { contentId, path, label, draft } of drafts) {
     const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
     if (!read?.analysed || read.grid.length === 0) continue
-    const points = carriedPoints(draft, contextOf(read, libraryOf(contentId), settings))
-    const source = { contentId, path, label, flowId: draft.generatedBy, points }
+    const breaks = carriedBreaks(draft, contextOf(read, libraryOf(contentId), settings))
+    const source = { contentId, path, label, breaks }
     for (const plan of await twinPlans(client, source, settings, overwrite)) {
       if (saving.has(plan.contentId)) continue
       saving.add(plan.contentId)

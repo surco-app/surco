@@ -148,10 +148,15 @@ export function adjustProvisional(deps: {
   collection: () => string
   queue: Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'state'>
   newId: () => string
+  // The tracks the DJ holds unsaved cues for in Surco: moving the cues under the draft would
+  // throw it away, so they keep waiting.
+  unsaved?: () => ReadonlySet<string>
 }): void {
   const state = deps.queue.state()
   if (state.halted || state.elsewhere) return
-  const entries = deps.list.all().filter((e) => !deps.queue.cuesOp(e.contentId))
+  const entries = deps.list
+    .all()
+    .filter((e) => !deps.queue.cuesOp(e.contentId) && !deps.unsaved?.().has(e.contentId))
   const path = deps.collection()
   if (entries.length === 0 || !path) return
   try {

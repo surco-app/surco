@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { isTraktorContent } from '../../../shared/traktorContent'
-import type { CueLibrary } from '../../../shared/types'
+import type { CueLibrary, SaveCuesOutcome } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
 import { flowName } from '../lib/cueFlowName'
@@ -52,7 +52,7 @@ export function CuesBatchSection({
   const marks = useAutoMarks()
   const unsavedAll = useUnsavedCueTracks()
   const [busy, setBusy] = useState(false)
-  const [saveFailed, setSaveFailed] = useState(false)
+  const [saveFailed, setSaveFailed] = useState<SaveCuesOutcome | 'failed' | null>(null)
   const ids = targets.map((t) => t.contentId)
   const traktor = ids.some(isTraktorContent)
   const { data: canSave = true } = useQuery({
@@ -130,9 +130,10 @@ export function CuesBatchSection({
         ),
       ]
       const outcome = await window.api.saveRekordboxCues(reqs).catch(() => 'failed' as const)
-      setSaveFailed(outcome !== 'queued')
-      if (outcome !== 'queued') return
-      for (const req of reqs) forgetDraft(req.contentId)
+      setSaveFailed(outcome === 'queued' ? null : outcome)
+      if (outcome === 'failed' || outcome === 'other-collection') return
+      const queued = outcome === 'queued' ? reqs.map((r) => r.contentId) : outcome.queued
+      for (const contentId of queued) forgetDraft(contentId)
       await queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
     } finally {
       setBusy(false)
@@ -225,9 +226,13 @@ export function CuesBatchSection({
               count: unsaved.size,
             })}
           </button>
-          {saveFailed && (
+          {saveFailed !== null && (
             <p data-testid="cues-batch-save-failed" className="text-xs text-warn">
-              {tr('editor.cues.saveFailed')}
+              {typeof saveFailed === 'object'
+                ? tr('editor.cues.savedExcept', {
+                    programs: saveFailed.refused.map((l) => LIBRARY_NAME[l]).join(', '),
+                  })
+                : tr('editor.cues.saveFailed')}
             </p>
           )}
         </div>

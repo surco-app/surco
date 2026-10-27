@@ -6,7 +6,13 @@ import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
 import { startDraft } from './cueDraft'
 import { forgetStaleDrafts } from './cueDrafts'
-import { cueDraftKey, keepDraft, resetCueSession, unsavedCueTracks } from './cueSession'
+import {
+  cueDraftKey,
+  draftsToSave,
+  keepDraft,
+  resetCueSession,
+  unsavedCueTracks,
+} from './cueSession'
 
 const READ: TrackCues = {
   contentId: '103',
@@ -24,12 +30,17 @@ const TARGET = { path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' }
 
 afterEach(resetCueSession)
 
-function setup(queued: Record<string, QueuedCues | null>, fingerprint = 'f0') {
+function setup(
+  queued: Record<string, QueuedCues | null>,
+  fingerprint = 'f0',
+  cues: TrackCues['cues'] = [],
+) {
   installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
       ...READ,
       contentId: id,
       fingerprint,
+      cues,
     })),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async (id) => queued[id] ?? null),
   })
@@ -59,5 +70,34 @@ describe('forgetting stale cue drafts', () => {
     keepDraft('104', cueDraftKey('104', 'f0', null), startDraft([], 'mine'), TARGET)
     await forgetStaleDrafts(client)
     expect([...unsavedCueTracks()]).toEqual(['103', '104'])
+  })
+
+  // The DJ saved while rekordbox was open and kept editing on top of the queued save. When
+  // rekordbox closes and the queue writes exactly that save, the draft still stands on what
+  // the track holds, so it is kept, now pointing at the cues rekordbox wrote.
+  it('keeps a draft built on a queued save once that save is what rekordbox wrote', async () => {
+    const client = setup({}, 'f1', [{ id: '77', ms: 1000, kind: 0, color: null }])
+    const draft = startDraft([...Q1.wanted, { ms: 5000, kind: 0, color: null }], 'mine')
+    keepDraft('103', cueDraftKey('103', 'f0', Q1), draft, TARGET, Q1)
+    await forgetStaleDrafts(client)
+    expect(draftsToSave()).toEqual([
+      {
+        contentId: '103',
+        path: '/m/g.wav',
+        label: 'Gowan',
+        fingerprint: 'f1',
+        wanted: [
+          { id: '77', ms: 1000, kind: 0, color: null },
+          { ms: 5000, kind: 0, color: null },
+        ],
+      },
+    ])
+  })
+
+  it('still forgets a draft built on a queued save when rekordbox ended up with other cues', async () => {
+    const client = setup({}, 'f1', [{ id: '77', ms: 9000, kind: 0, color: null }])
+    keepDraft('103', cueDraftKey('103', 'f0', Q1), startDraft(Q1.wanted, 'mine'), TARGET, Q1)
+    await forgetStaleDrafts(client)
+    expect([...unsavedCueTracks()]).toEqual([])
   })
 })
