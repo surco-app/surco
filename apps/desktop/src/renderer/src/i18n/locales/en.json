@@ -922,6 +922,16 @@
         "help": "rekordbox has not analysed this track yet. Surco measured the tempo and the grid, so you can set the cues now. Once rekordbox analyses it, Surco moves them onto its grid.",
         "measuring": "Measuring the beat grid…",
         "auto": "Auto mark needs rekordbox’s analysis"
+      },
+      "twins": {
+        "title": "Saving also places the flow in",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALLs",
+        "both": "{{hot}} and {{calls}}",
+        "unsaved": "You have unsaved changes in {{program}} for this track. They are left as they are.",
+        "overwrite": "Place it there too and lose those changes"
       }
     }
   },

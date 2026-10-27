@@ -922,6 +922,16 @@
         "help": "O rekordbox ainda não analisou esta faixa. O Surco mediu o andamento e a grade, então você já pode colocar os cues. Quando o rekordbox analisar, o Surco vai ajustá-los à grade dele.",
         "measuring": "Medindo a grade…",
         "auto": "A marcação automática precisa da análise do rekordbox"
+      },
+      "twins": {
+        "title": "Ao salvar, o fluxo também é colocado em",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALL",
+        "both": "{{hot}} e {{calls}}",
+        "unsaved": "Você tem alterações não salvas no {{program}} para esta faixa. Elas ficam como estão.",
+        "overwrite": "Colocar lá também e perder essas alterações"
       }
     }
   },

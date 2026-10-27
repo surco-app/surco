@@ -4,7 +4,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { ALL_SLOTS, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { isEngineContent } from '../../../shared/engineContent'
 import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
-import type { CueLibrary, LibraryTracks, SaveCuesRequest } from '../../../shared/types'
+import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import {
   type CueDraft,
@@ -69,6 +69,18 @@ export function carriedPoints(draft: CueDraft, ctx: DraftContext): number[] {
   return draftPoints(draft, ctx).filter((p) => placed.some((c) => near(c.ms, p)))
 }
 
+function contextOf(read: TrackCues, library: CueLibrary, settings: TwinSettings): DraftContext {
+  return {
+    beats: read.grid.map((b) => b.ms),
+    snapTo: quantizePoints(read.grid, settings.cueQuantize),
+    strong: read.strong,
+    phrases: read.phrases,
+    flows: settings.cueFlows,
+    lettersByTime: settings.cueLettersByTime,
+    slots: library === 'traktor' ? TRAKTOR_SLOTS : ALL_SLOTS,
+  }
+}
+
 async function planOne(
   client: QueryClient,
   source: TwinSource,
@@ -83,15 +95,7 @@ async function planOne(
     queued && queued.fingerprint === read.fingerprint
       ? queued.wanted
       : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
-  const ctx: DraftContext = {
-    beats: read.grid.map((b) => b.ms),
-    snapTo: quantizePoints(read.grid, settings.cueQuantize),
-    strong: read.strong,
-    phrases: read.phrases,
-    flows: settings.cueFlows,
-    lettersByTime: settings.cueLettersByTime,
-    slots: library === 'traktor' ? TRAKTOR_SLOTS : ALL_SLOTS,
-  }
+  const ctx = contextOf(read, library, settings)
   const start = startDraft(
     baseline,
     source.flowId,
@@ -153,6 +157,38 @@ export async function twinPlans(
     }
     const plan = await planOne(client, source, library, contentId, settings)
     if (plan) plans.push(plan)
+  }
+  return plans
+}
+
+export interface DraftToCarry {
+  contentId: string
+  path: string
+  label: string
+  draft: CueDraft
+}
+
+// The same for drafts saved together, each on its own grid. A track that is one of them is
+// saved with its own draft, so no other draft's flow is planned over it, and a track two
+// drafts reach is planned once, by the first.
+export async function twinPlansOf(
+  client: QueryClient,
+  drafts: DraftToCarry[],
+  settings: TwinSettings,
+  overwrite: ReadonlySet<string> = new Set(),
+): Promise<TwinPlan[]> {
+  const saving = new Set(drafts.map((d) => d.contentId))
+  const plans: TwinPlan[] = []
+  for (const { contentId, path, label, draft } of drafts) {
+    const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
+    if (!read?.analysed || read.grid.length === 0) continue
+    const points = carriedPoints(draft, contextOf(read, libraryOf(contentId), settings))
+    const source = { contentId, path, label, flowId: draft.generatedBy, points }
+    for (const plan of await twinPlans(client, source, settings, overwrite)) {
+      if (saving.has(plan.contentId)) continue
+      saving.add(plan.contentId)
+      plans.push(plan)
+    }
   }
   return plans
 }

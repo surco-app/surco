@@ -922,6 +922,16 @@
         "help": "rekordbox aún no ha analizado esta pista. Surco ha calculado el tempo y la rejilla, así que puedes poner los cues ya. Cuando rekordbox la analice, Surco los ajustará a su rejilla.",
         "measuring": "Calculando la rejilla…",
         "auto": "Auto marcar necesita el análisis de rekordbox"
+      },
+      "twins": {
+        "title": "Al guardar, el flujo también se pone en",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALL",
+        "both": "{{hot}} y {{calls}}",
+        "unsaved": "Tienes cambios sin guardar en {{program}} para esta pista. No se tocan.",
+        "overwrite": "Ponerlo también ahí y perder esos cambios"
       }
     }
   },

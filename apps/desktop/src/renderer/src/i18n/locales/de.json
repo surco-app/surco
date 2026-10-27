@@ -922,6 +922,16 @@
         "help": "rekordbox hat diesen Titel noch nicht analysiert. Surco hat Tempo und Raster selbst gemessen, du kannst die Cues also schon setzen. Sobald rekordbox ihn analysiert, rückt Surco sie auf dessen Raster.",
         "measuring": "Raster wird gemessen…",
         "auto": "Auto-Markieren braucht die Analyse von rekordbox"
+      },
+      "twins": {
+        "title": "Beim Speichern kommt der Ablauf auch nach",
+        "hot_one": "{{count}} Hot Cue",
+        "hot_other": "{{count}} Hot Cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALLs",
+        "both": "{{hot}} und {{calls}}",
+        "unsaved": "Du hast in {{program}} ungespeicherte Änderungen an diesem Track. Sie bleiben unverändert.",
+        "overwrite": "Auch dort setzen und diese Änderungen verwerfen"
       }
     }
   },

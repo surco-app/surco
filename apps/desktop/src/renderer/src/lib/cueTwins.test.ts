@@ -9,7 +9,7 @@ import type { LibraryTracks, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
 import { type DraftContext, reduceDraft, startDraft, wantedOfDraft } from './cueDraft'
 import { keepDraft, resetCueSession } from './cueSession'
-import { carriedPoints, twinPlans } from './cueTwins'
+import { carriedPoints, twinPlans, twinPlansOf } from './cueTwins'
 import { quantizePoints } from './cueWave'
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
@@ -174,5 +174,44 @@ describe('the breaks a flow placed in this session', () => {
   it('leave out CALLs placed by hand', () => {
     const draft = reduceDraft(startDraft([], MIX_IN.id), { type: 'add-call', ms: bar(64) }, ctx())
     expect(carriedPoints(draft, ctx())).toEqual([])
+  })
+})
+
+describe('placing the flows of several drafts in the other programs', () => {
+  const draftOf = (contentId: string, drops: number[]) => ({
+    contentId,
+    path: `/m/${contentId}.wav`,
+    label: contentId,
+    draft: placed(drops),
+  })
+
+  // Saving from the batch or with Save all must reach the other programs too, each track
+  // with the breaks its own draft marked.
+  it('plans each draft’s marked breaks on its file in the other programs', async () => {
+    const { api, client } = setup({ traktor: TRAKTOR })
+    const plans = await twinPlansOf(client, [draftOf('103', [bar(64)])], settings())
+    expect(api.rekordboxCueTwins).toHaveBeenCalledWith('/m/103.wav')
+    expect(plans).toEqual(
+      await twinPlans(client, { ...SOURCE, path: '/m/103.wav', label: '103' }, settings()),
+    )
+  })
+
+  it('never plans over a track that is itself being saved', async () => {
+    const { client } = setup({ rekordbox: '103', traktor: TRAKTOR })
+    const plans = await twinPlansOf(
+      client,
+      [draftOf('103', [bar(64)]), draftOf(TRAKTOR, [bar(32)])],
+      settings(),
+    )
+    expect(plans).toEqual([])
+  })
+  it('plans a track in the other program once even when two drafts reach it', async () => {
+    const { client } = setup({ traktor: TRAKTOR })
+    const plans = await twinPlansOf(
+      client,
+      [draftOf('103', [bar(64)]), draftOf('104', [bar(96)])],
+      settings(),
+    )
+    expect(plans.map((p) => p.contentId)).toEqual([TRAKTOR])
   })
 })

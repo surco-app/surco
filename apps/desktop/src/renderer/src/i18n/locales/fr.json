@@ -922,6 +922,16 @@
         "help": "rekordbox n’a pas encore analysé ce morceau. Surco a mesuré le tempo et la grille, vous pouvez donc placer les cues dès maintenant. Quand rekordbox l’analysera, Surco les calera sur sa grille.",
         "measuring": "Mesure de la grille…",
         "auto": "Le marquage auto a besoin de l’analyse de rekordbox"
+      },
+      "twins": {
+        "title": "En enregistrant, le flux est aussi placé dans",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALL",
+        "both": "{{hot}} et {{calls}}",
+        "unsaved": "Vous avez des modifications non enregistrées dans {{program}} pour ce morceau. Elles restent telles quelles.",
+        "overwrite": "Le placer là aussi et perdre ces modifications"
       }
     }
   },
