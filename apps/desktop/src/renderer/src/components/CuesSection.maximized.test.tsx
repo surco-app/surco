@@ -1023,6 +1023,7 @@ function app() {
     useKeyboardShortcuts({
       isMac: true,
       overlayOpen: false,
+      paletteOpen: false,
       bindings: resolveBindings(),
       getCommands: () => commands,
       onTogglePalette: () => {},
@@ -1077,6 +1078,7 @@ describe('CuesSection maximized over the rest of the editor', () => {
       useKeyboardShortcuts({
         isMac: true,
         overlayOpen: false,
+        paletteOpen: false,
         bindings: resolveBindings(),
         getCommands: () => [
           { id: 'next', title: 'next', enabled: true, group: 'navigate', run: () => setAt(1) },

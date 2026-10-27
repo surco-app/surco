@@ -382,6 +382,7 @@ describe('CuesSection folded', () => {
       useKeyboardShortcuts({
         isMac: true,
         overlayOpen: false,
+        paletteOpen: false,
         bindings: resolveBindings(),
         getCommands: () => commands,
         onTogglePalette: () => {},

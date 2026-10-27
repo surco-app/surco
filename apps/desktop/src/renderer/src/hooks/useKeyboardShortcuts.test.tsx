@@ -30,6 +30,7 @@ function setup(overlayOpen: boolean): {
     useKeyboardShortcuts({
       isMac: true,
       overlayOpen,
+      paletteOpen: false,
       bindings: resolveBindings(),
       getCommands: () => commands,
       onTogglePalette: () => {},
@@ -55,6 +56,46 @@ describe('useKeyboardShortcuts language toggle over an overlay', () => {
     const { play } = setup(true)
     press({ key: ' ' })
     expect(play).not.toHaveBeenCalled()
+  })
+})
+
+// A full-screen overlay (Music or list review, Originals, USB export) can be mid-apply
+// with no modal up. ⌘K opening the palette there let Convert all run on the list behind
+// it, so the palette only opens over nothing, and only closes when it is the overlay.
+describe('useKeyboardShortcuts ⌘K over an overlay', () => {
+  function setupPalette(overlayOpen: boolean, paletteOpen: boolean): ReturnType<typeof vi.fn> {
+    const toggle = vi.fn()
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen,
+        paletteOpen,
+        bindings: resolveBindings(),
+        getCommands: () => [],
+        onTogglePalette: toggle,
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+    return toggle
+  }
+
+  it('does not open the palette while an overlay owns the screen', () => {
+    const toggle = setupPalette(true, false)
+    press({ key: 'k', metaKey: true })
+    expect(toggle).not.toHaveBeenCalled()
+  })
+
+  it('still closes the palette when the palette itself is the open overlay', () => {
+    const toggle = setupPalette(true, true)
+    press({ key: 'k', metaKey: true })
+    expect(toggle).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens the palette over the bare list', () => {
+    const toggle = setupPalette(false, false)
+    press({ key: 'k', metaKey: true })
+    expect(toggle).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -157,6 +198,7 @@ describe('useKeyboardShortcuts inside a nested scope', () => {
       useKeyboardShortcuts({
         isMac: true,
         overlayOpen: false,
+        paletteOpen: false,
         bindings: resolveBindings(),
         getCommands: () => commands,
         onTogglePalette: () => {},

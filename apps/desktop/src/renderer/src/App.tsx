@@ -2673,6 +2673,7 @@ export default function App(): React.JSX.Element {
   useKeyboardShortcuts({
     isMac,
     overlayOpen,
+    paletteOpen: activeModal?.type === 'palette',
     bindings,
     getCommands,
     onTogglePalette: overlays.togglePalette,

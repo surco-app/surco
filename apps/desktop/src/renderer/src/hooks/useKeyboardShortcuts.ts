@@ -10,6 +10,8 @@ interface Params {
   // Whether any modal/overlay owns the screen, so global track shortcuts are swallowed
   // and don't act on the list behind the dialog.
   overlayOpen: boolean
+  // Whether the palette is that overlay, so ⌘K can still close it.
+  paletteOpen: boolean
   bindings: Map<string, Chord>
   // Builds the current command registry on demand. App keeps it lazy (not rebuilt every
   // render); the listener subscribes once and calls this at fire time for the latest state.
@@ -39,6 +41,8 @@ export function useKeyboardShortcuts(params: Params): void {
       const p = latest.current
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
+        // Over a review or export overlay the palette would run commands on the list behind it.
+        if (p.overlayOpen && !p.paletteOpen) return
         p.onTogglePalette()
         return
       }
