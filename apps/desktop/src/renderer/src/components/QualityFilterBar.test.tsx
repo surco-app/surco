@@ -23,6 +23,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   matchedBandcamp: 0,
   silence: 0,
   clipping: 0,
+  noCues: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -168,6 +169,13 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.queryByTestId('quality-filter-silence')).toBeNull()
     expect(screen.getByTestId('quality-filter-clipping')).toBeInTheDocument()
+  })
+
+  it('lists the tracks without cues once a library playlist has some and filters the attention axis', () => {
+    const { onChange } = renderBar({ tally: tally({ noCues: 3 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-noCues'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'noCues' }))
   })
 
   it('picking a provider bucket filters the conversion axis', () => {

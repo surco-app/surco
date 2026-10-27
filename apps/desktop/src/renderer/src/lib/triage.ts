@@ -59,8 +59,10 @@ export type DuplicatesFilter = 'duplicates'
 // The retouch buckets djotas asked for: tracks whose decoded wave shows work left to
 // do — lead-in/run-out silence not yet staged for trimming, or true digital clipping.
 // Both read the audioIssues facts the view merges from the shared waveform cache, so
-// a track with no wave decoded yet belongs to neither (like 'unanalyzed').
-export type AttentionFilter = 'silence' | 'clipping'
+// a track with no wave decoded yet belongs to neither (like 'unanalyzed'). 'noCues' is the
+// marking left to do: a DJ library row whose cues came back empty. A loose file has no
+// library to read cues from, so it never lands there.
+export type AttentionFilter = 'silence' | 'clipping' | 'noCues'
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -133,8 +135,13 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.duplicates && track.duplicate !== true) return false
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
+  if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
+}
+
+function hasNoCues(track: TrackItem): boolean {
+  return track.sourcePreview?.cues.length === 0
 }
 
 // Filters the list, but keeps every row it has shown in place for the rest of the filter
@@ -294,6 +301,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   duplicates: number
   silence: number
   clipping: number
+  noCues: number
 } {
   let suspect = 0
   let good = 0
@@ -309,6 +317,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   let duplicates = 0
   let silence = 0
   let clipping = 0
+  let noCues = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
@@ -325,6 +334,7 @@ export function qualityCounts(tracks: TrackItem[]): {
     if (t.duplicate) duplicates += 1
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
+    if (hasNoCues(t)) noCues += 1
   }
   return {
     suspect,
@@ -341,6 +351,7 @@ export function qualityCounts(tracks: TrackItem[]): {
     duplicates,
     silence,
     clipping,
+    noCues,
   }
 }
 

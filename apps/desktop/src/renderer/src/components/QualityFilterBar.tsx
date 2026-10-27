@@ -7,6 +7,7 @@ import {
   Disc3,
   Eye,
   FileAudio,
+  FlagOff,
   List,
   type LucideIcon,
   Plus,
@@ -38,7 +39,7 @@ type ConversionMode =
   | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
-type AttentionMode = 'silence' | 'clipping'
+type AttentionMode = 'silence' | 'clipping' | 'noCues'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
@@ -52,7 +53,7 @@ const CONVERSION_MODES: ConversionMode[] = [
 ]
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
-const ATTENTION_MODES: AttentionMode[] = ['silence', 'clipping']
+const ATTENTION_MODES: AttentionMode[] = ['silence', 'clipping', 'noCues']
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
 // Per-format buckets are a separate axis and all share the audio-file glyph.
@@ -72,6 +73,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   duplicates: CopyIcon,
   silence: Scissors,
   clipping: Zap,
+  noCues: FlagOff,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
@@ -100,6 +102,7 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   // nudge as suspect while anything is left in them.
   if (mode === 'silence' && tally.silence > 0) return 'bg-warn'
   if (mode === 'clipping' && tally.clipping > 0) return 'bg-warn'
+  if (mode === 'noCues' && tally.noCues > 0) return 'bg-warn'
   return null
 }
 
@@ -185,10 +188,10 @@ export function QualityFilterBar({
   const primarySections: Mode[][] = [
     // The quality verdict.
     QUALITY_MODES,
-    // The retouch buckets (silence left to trim, true clipping), each listed only
-    // once some decoded wave actually put a track in it — permanently-empty rows
-    // would just pad the menu, and the facts only exist once waves are decoded.
-    ...(tally.silence > 0 || tally.clipping > 0
+    // The retouch buckets (silence left to trim, true clipping, cues left to mark), each
+    // listed only once some track is actually in it — permanently-empty rows would just
+    // pad the menu, and the facts only exist once waves are decoded or a library is read.
+    ...(tally.silence > 0 || tally.clipping > 0 || tally.noCues > 0
       ? [ATTENTION_MODES.filter((m) => tally[m] > 0)]
       : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
