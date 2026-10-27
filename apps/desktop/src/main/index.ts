@@ -108,6 +108,7 @@ import {
   type LibraryHost,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
+  repointEngineQueued,
   repointRekordbox,
   syncTagsInLibraries,
   traktorFlushDeps,
@@ -260,6 +261,7 @@ const broadcast = (channel: string, payload: unknown): void => {
 const rekordboxQueue = createRekordboxQueue({
   store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
   collection: rekordboxCollectionPath,
+  configured: () => getSettings().rekordboxDbPath,
   applyBatch: (collectionPath, ops, ensureClosed, stillQueued) =>
     applyRekordboxBatch(collectionPath, ops, {
       ensureClosed,
@@ -310,6 +312,10 @@ const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
   rekordboxQueueWatch.poke()
 }
 const applyRekordboxQueueQuietly = (): void => {
+  if (!rekordboxCollectionPath()) {
+    rekordboxQueueWatch.poke()
+    return
+  }
   void serialLibraryFlush(() =>
     rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
   ).then((result) => {
@@ -322,12 +328,13 @@ const engineLibraryPath = (): string =>
 const engineCueQueue = createRekordboxQueue({
   store: fileStore(join(app.getPath('userData'), 'engine-cue-queue.json')),
   collection: engineLibraryPath,
+  configured: () => getSettings().engineLibraryDir,
   applyBatch: (libraryDir, ops, ensureClosed) =>
     applyEngineCuesBatch(libraryDir, ops, {
       ensureClosed,
       sessionBackup: (path) => sessions.engine.ensure(path),
     }),
-  repoint: async () => [],
+  repoint: (libraryDir, list) => repointEngineQueued(libraryDir, list, sessions),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('engine:cueQueueChanged', state),
 })
@@ -345,6 +352,10 @@ const engineCueQueueWatch = watchRekordboxQueue({
   onApplied: announceEngineApplied,
 })
 const applyEngineCueQueueQuietly = (): void => {
+  if (!engineLibraryPath()) {
+    engineCueQueueWatch.poke()
+    return
+  }
   void serialLibraryFlush(() =>
     engineCueQueue.apply(async () => !(await isEngineDjRunning())),
   ).then((result) => {
@@ -373,6 +384,7 @@ const traktorWritePath = (): string => {
 const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
   collection: traktorWritePath,
+  configured: () => getSettings().traktorNmlPath,
   applyBatch: (nml, ops, ensureClosed) => applyTraktorBatch(nml, ops, { ensureClosed }),
   repoint: (nml, patches) => syncQueuedPatches(nml, patches, syncCollection),
   nodeStamps: async () => ({}),
@@ -402,8 +414,13 @@ const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
   })
 }
 // A conversion run's collection patches held because Traktor stayed open or the write
-// failed: written as soon as Traktor is closed, without asking again.
+// failed: written as soon as Traktor is closed, without asking again. Held for a drive that
+// is unplugged, nothing is tried: the watch waits for the collection to be back.
 const applyTraktorCueQueueQuietly = (): void => {
+  if (!traktorWritePath()) {
+    traktorCueQueueWatch.poke()
+    return
+  }
   void serialLibraryFlush(() =>
     traktorCueQueue.apply(async () => !(await isTraktorRunning())),
   ).then((result) => {
@@ -1357,6 +1374,7 @@ function registerIpc(): void {
           state: traktorCueQueue.state,
           applyQuietly: applyTraktorCueQueueQuietly,
         },
+        { enqueue: engineCueQueue.enqueue, applyQuietly: applyEngineCueQueueQuietly },
       ),
     ),
   )

@@ -1951,6 +1951,7 @@
     "rekordboxCollectionMissing": "Ignoré, la collection rekordbox est introuvable",
     "engineCollectionMissing": "Ignoré, la bibliothèque Engine DJ est introuvable",
     "traktorSyncCollectionMissing": "Ignoré, collection.nml est introuvable",
+    "syncHeldElsewhere": "Pas gardé pour plus tard, car ce qui attend appartient à une autre collection. Reviens à cette collection ou abandonne ce qui attend",
     "reviewRun_one": "Revue de Music, {{count}} morceau",
     "reviewRun_other": "Revue de Music, {{count}} morceaux",
     "reviewFix": {

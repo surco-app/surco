@@ -137,12 +137,24 @@ const key = (volume: string, dir: string, file: string): string =>
 // and Song.mp3 are two tracks, and lending one's patch to the other left both entries on the
 // same file. Within one table the latest patch wins, so converting a track twice in a batch
 // leaves the collection on the last file produced, as the rekordbox batch does.
+//
+// A file the patch replaced is gone from disk, so an entry whose own file is still there is
+// another track that only shares the stem: converting Song.wav, which Traktor never had,
+// took Song.mp3's entry, playlists and all, onto Song.flac with the WAV's cues. Callers that
+// cannot look at the disk pass nothing and every such entry counts as left behind.
+export type OnDisk = (entry: NmlEntry) => boolean
+
 interface PatchIndex {
   byFile: Map<string, NmlPatch>
   byBaseName: Map<string, NmlPatch>
+  onDisk: OnDisk
 }
 
-function indexPatches(patches: NmlPatch[], entries: NmlEntry[]): PatchIndex {
+function indexPatches(
+  patches: NmlPatch[],
+  entries: NmlEntry[],
+  onDisk: OnDisk = () => false,
+): PatchIndex {
   const byFile = new Map<string, NmlPatch>()
   for (const patch of patches) byFile.set(key(patch.volume, patch.dir, patch.file), patch)
   const owned = new Set(entries.map((e) => key(e.volume, e.dir, e.file)))
@@ -150,14 +162,14 @@ function indexPatches(patches: NmlPatch[], entries: NmlEntry[]): PatchIndex {
   for (const patch of patches)
     if (!owned.has(key(patch.volume, patch.dir, patch.file)))
       byBaseName.set(key(patch.volume, patch.dir, baseName(patch.file)), patch)
-  return { byFile, byBaseName }
+  return { byFile, byBaseName, onDisk }
 }
 
 function matchPatch(entry: NmlEntry, index: PatchIndex): NmlPatch | undefined {
-  return (
-    index.byFile.get(key(entry.volume, entry.dir, entry.file)) ??
-    index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
-  )
+  const exact = index.byFile.get(key(entry.volume, entry.dir, entry.file))
+  if (exact) return exact
+  const fallback = index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
+  return fallback && !index.onDisk(entry) ? fallback : undefined
 }
 
 // Traktor writes COVERARTID only on <INFO>, so the read is anchored there rather than
@@ -176,9 +188,13 @@ export interface CoverRefresh {
 // artwork from its own thumbnail cache, so removing the id only asks it to re-read that
 // same stale cache — what actually retires the old picture is overwriting the files
 // under the id it already has (see traktorCoverCache.ts).
-export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefresh[] {
+export function refreshedCoverIds(
+  nml: string,
+  patches: NmlPatch[],
+  onDisk?: OnDisk,
+): CoverRefresh[] {
   const entries = findEntries(nml)
-  const index = indexPatches(patches, entries)
+  const index = indexPatches(patches, entries, onDisk)
   // The id read below comes from the entry the patch MATCHED, which is the source's. For a
   // coexisting conversion that id is still the source's own and its cache files still hold
   // the source's artwork, so rendering the converted cover into it would repaint a track
@@ -186,7 +202,7 @@ export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefres
   // converted file has no id yet; Traktor mints one when it re-reads the file.
   const coexisting = coexistingOutputs(entries, patches)
   const detached = new Set([...coexisting.values()])
-  const sharedCover = sharedCoverSubstitutions(nml, entries, patches)
+  const sharedCover = sharedCoverSubstitutions(nml, entries, patches, onDisk)
   const out: CoverRefresh[] = []
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
@@ -218,11 +234,12 @@ function sharedCoverSubstitutions(
   nml: string,
   entries: NmlEntry[],
   patches: NmlPatch[],
+  onDisk?: OnDisk,
 ): Map<string, NmlPatch> {
   const ids = entries.map((e) => nml.slice(e.start, e.end).match(COVER_ID_RE)?.[1])
   const counts = new Map<string, number>()
   for (const id of ids) if (id) counts.set(id, (counts.get(id) ?? 0) + 1)
-  const index = indexPatches(patches, entries)
+  const index = indexPatches(patches, entries, onDisk)
   const detached = new Set(coexistingOutputs(entries, patches).values())
   const out = new Map<string, NmlPatch>()
   entries.forEach((entry, i) => {
@@ -256,13 +273,13 @@ function coexistingOutputs(entries: NmlEntry[], patches: NmlPatch[]): Map<string
 // leaves the output with no artwork Traktor knows about, and it only mints a fresh id
 // and cache entry when it sees the audio is newer than the NML — without that the
 // converted track shows no cover at all rather than the one embedded in it.
-export function detachedOutputPaths(nml: string, patches: NmlPatch[]): string[] {
+export function detachedOutputPaths(nml: string, patches: NmlPatch[], onDisk?: OnDisk): string[] {
   const entries = findEntries(nml)
   const detached = coexistingOutputs(entries, patches)
   const out = new Set<string>()
   for (const patch of [
     ...detached.values(),
-    ...sharedCoverSubstitutions(nml, entries, patches).values(),
+    ...sharedCoverSubstitutions(nml, entries, patches, onDisk).values(),
   ]) {
     if (patch.outputPath) out.add(patch.outputPath)
   }
@@ -538,11 +555,11 @@ function rewriteEntry(
 
 const LOCATION_FILE_RE = /<LOCATION\b[^>]*\bFILE="([^"]*)"/
 
-export function applyPatches(nml: string, patches: NmlPatch[]): string {
+export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk): string {
   const entries = findEntries(nml)
-  const index = indexPatches(patches, entries)
+  const index = indexPatches(patches, entries, onDisk)
   const coexisting = coexistingOutputs(entries, patches)
-  const sharedCover = sharedCoverSubstitutions(nml, entries, patches)
+  const sharedCover = sharedCoverSubstitutions(nml, entries, patches, onDisk)
   const produced = producedOutputs(patches)
   const moves: [string, string][] = []
   let out = nml
@@ -627,9 +644,9 @@ export function spareEditedEntries(
 // matched an entry but produced no real change (e.g. a cueTree whose only
 // marker was a grid dropped for lack of bpm, see replaceCues) must not count,
 // or the caller would claim a write that never happened.
-export function matchedPatchCount(nml: string, patches: NmlPatch[]): number {
+export function matchedPatchCount(nml: string, patches: NmlPatch[], onDisk?: OnDisk): number {
   const entries = findEntries(nml)
-  const index = indexPatches(patches, entries)
+  const index = indexPatches(patches, entries, onDisk)
   const produced = producedOutputs(patches)
   const matched = new Set<NmlPatch>()
   for (const entry of entries) {

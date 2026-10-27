@@ -25,6 +25,9 @@ export interface FlushTraktorSyncDeps {
   traktorNmlPath: string
   // The toggle is on but collection.nml is not on disk.
   collectionMissing?: boolean
+  // …because the drive it lives on is not mounted. The patches wait in the queue for it to
+  // come back: let go, the tracks converted in place showed as missing once it did.
+  unplugged?: boolean
   // Closes this call's begin/end pair and returns the accumulated patches — empty if
   // this end was nested inside a still-open outer batch (see nmlBatch.ts), in which
   // case there is nothing to sync yet and the outer batch's own end will flush later.
@@ -60,6 +63,7 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<Libr
     await deps.track('export', 'activity.traktorSync', async () => ({ written: false }), {
       summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
     })
+    if (deps.unplugged) await deps.queue?.hold(patches, deps.traktorNmlPath)
     return { outcome: 'missing' }
   }
   if (!(await deps.ensureTraktorClosed())) {

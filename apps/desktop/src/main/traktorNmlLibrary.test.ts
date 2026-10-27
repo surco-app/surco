@@ -105,6 +105,28 @@ describe('syncCollection on the boot disk', () => {
     expect(result.written).toBe(true)
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
   })
+
+  // Song.wav no está en Traktor y Song.mp3 sí, con sus cues y playlists. Convertir el WAV
+  // en su sitio no puede llevarse la ENTRY del MP3 por nombre base: el MP3 sigue en disco
+  // y es otra pista, que se quedaría apuntando al FLAC con los cues del WAV.
+  it('leaves a same-stem sibling that is still on disk on its own file', async () => {
+    writeFileSync(join(dir, 'Song.mp3'), 'mp3')
+    const traktorDir = `${dir.replace(/\//g, '/:')}/:`
+    writeFileSync(
+      nmlPath,
+      `<NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="Mp3"><LOCATION DIR="${traktorDir}" FILE="Song.mp3" VOLUME="Macintosh HD"></LOCATION></ENTRY></COLLECTION><PLAYLISTS><NODE TYPE="PLAYLIST" NAME="Set"><PLAYLIST ENTRIES="1" TYPE="LIST"><ENTRY><PRIMARYKEY TYPE="TRACK" KEY="Macintosh HD${traktorDir}Song.mp3"></PRIMARYKEY></ENTRY></PLAYLIST></NODE></PLAYLISTS></NML>`,
+    )
+
+    await syncCollection(
+      nmlPath,
+      [{ volume: '', dir: traktorDir, file: 'Song.wav', newFile: 'Song.flac' }],
+      'Macintosh HD',
+    )
+
+    const out = readFileSync(nmlPath, 'utf8')
+    expect(out).toContain('FILE="Song.mp3"')
+    expect(out).not.toContain('Song.flac')
+  })
 })
 
 describe('syncCollection', () => {

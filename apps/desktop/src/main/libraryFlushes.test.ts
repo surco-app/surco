@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { ActivityEvent } from '../shared/types'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp' } }))
 
@@ -16,20 +17,21 @@ const REPOINTS = vi.hoisted(() => [
 
 vi.mock('./settings', () => ({ getSettings: () => SETTINGS }))
 vi.mock('./rekordboxPath', () => ({ findRekordboxCollection: () => '/c/master.db' }))
-vi.mock('./libraryStatus', () => ({
-  libraryStatus: () => ({
-    rekordbox: { enabled: true, found: true },
-    engine: { enabled: false, found: false },
-    traktor: { enabled: false, found: false },
-  }),
+const STATUS = vi.hoisted(() => ({
+  rekordbox: { enabled: true, found: true },
+  engine: { enabled: false, found: false },
+  traktor: { enabled: false, found: false },
 }))
+vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
 vi.mock('./rekordboxBatch', () => ({ endRekordboxBatch: () => REPOINTS }))
 const WRITERS = vi.hoisted(() => ({
   trackOpsFromRun: vi.fn(async () => []),
   repointTracks: vi.fn(async () => [{ written: true }]),
   updateRekordboxTags: vi.fn(async () => [{ written: true }]),
   replaceRekordboxDuplicates: vi.fn(async () => [{ written: true, outcome: 'replaced' }]),
+  repointEngineTracks: vi.fn(async () => [{ written: true, id: '1' }]),
 }))
+vi.mock('./engineRepoint', () => ({ repointEngineTracks: WRITERS.repointEngineTracks }))
 vi.mock('./rekordboxQueueFromRun', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./rekordboxQueueFromRun')>()),
   trackOpsFromRun: WRITERS.trackOpsFromRun,
@@ -46,10 +48,12 @@ const FILE_USE = vi.hoisted(() => {
 })
 vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
+import { activity } from './activity'
 import {
   duplicateLibraryDeps,
   flushConversionBatch,
   type LibraryHost,
+  repointEngineQueued,
   syncTagsInLibraries,
 } from './libraryFlushes'
 
@@ -78,6 +82,99 @@ describe('flushConversionBatch with rekordbox open', () => {
     expect(h.showBlockedDialog).not.toHaveBeenCalled()
     expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
     expect(queue.applyQuietly).toHaveBeenCalled()
+  })
+})
+
+// La cola guarda una sola colección. Con cambios pendientes de otra, los de esta conversión
+// no caben y se perdían sin decir nada, mientras el diálogo daba a entender que se aplicarían.
+describe('flushConversionBatch with the queue held for another collection', () => {
+  it('tells the DJ in Activity that the run was not kept for later', async () => {
+    const events: ActivityEvent[] = []
+    const stop = activity.subscribe((event) => events.push(event))
+    try {
+      const queue = { enqueue: vi.fn(() => false), applyQuietly: vi.fn() }
+      await flushConversionBatch(host(), sessions, queue)
+    } finally {
+      stop()
+    }
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        labelKey: 'activity.rekordboxSync',
+        phase: 'warn',
+        detailKey: 'activity.syncHeldElsewhere',
+      }),
+    )
+  })
+})
+
+describe('flushConversionBatch with master.db on an unplugged drive', () => {
+  it('queues the repoints for when the drive is back instead of letting them go', async () => {
+    Object.assign(SETTINGS, { rekordboxDbPath: '/Volumes/Surco Desconectado/master.db' })
+    STATUS.rekordbox = { enabled: true, found: false }
+    try {
+      const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(host(), sessions, queue)
+      expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
+    } finally {
+      Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
+      STATUS.rekordbox = { enabled: true, found: true }
+    }
+  })
+})
+
+// Engine DJ abierto al acabar una conversión en su sitio: el aviso pedía volver a convertir,
+// y el MP3 ya no existe. La biblioteca se queda en la cola y apunta al FLAC al cerrar Engine.
+describe('flushConversionBatch with Engine DJ open', () => {
+  it('queues the repoints for when Engine DJ closes instead of asking to convert again', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    try {
+      const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
+      const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(
+        h,
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        undefined,
+        engine,
+      )
+      expect(h.showBlockedDialog).not.toHaveBeenCalledWith('engineSyncBlocked')
+      expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
+      expect(engine.applyQuietly).toHaveBeenCalled()
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  it('queues the repoints while the Engine library is on an unplugged drive', async () => {
+    Object.assign(SETTINGS, {
+      syncEngineDj: true,
+      engineLibraryDir: '/Volumes/Surco Desconectado/Engine Library',
+    })
+    try {
+      const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(
+        host(),
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        undefined,
+        engine,
+      )
+      expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+    }
+  })
+
+  // La cola solo guarda los cambios cuando la razón es la suya de "app abierta". Con la de
+  // Engine tal cual, un Engine abierto justo antes de escribir tiraba la cola entera.
+  it('names Engine DJ being open the way the queue keeps waiting on', async () => {
+    WRITERS.repointEngineTracks.mockResolvedValueOnce([
+      { written: false, reason: 'engine-running' },
+    ] as never)
+    const results = await repointEngineQueued('/e/Engine Library', REPOINTS, sessions)
+    expect(results).toEqual([{ written: false, reason: 'rekordbox-running' }])
   })
 })
 

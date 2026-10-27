@@ -1951,6 +1951,7 @@
     "rekordboxCollectionMissing": "Übersprungen, die rekordbox-Sammlung wurde nicht gefunden",
     "engineCollectionMissing": "Übersprungen, die Engine-DJ-Bibliothek wurde nicht gefunden",
     "traktorSyncCollectionMissing": "Übersprungen, collection.nml wurde nicht gefunden",
+    "syncHeldElsewhere": "Nicht für später aufbewahrt, weil das, was wartet, zu einer anderen Sammlung gehört. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet",
     "reviewRun_one": "Music-Prüfung, {{count}} Titel",
     "reviewRun_other": "Music-Prüfung, {{count}} Titel",
     "reviewFix": {
