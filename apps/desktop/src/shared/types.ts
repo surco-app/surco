@@ -1253,6 +1253,9 @@ export interface ProcessResult {
   // True when the conversion registered the track in the Engine DJ library, so the
   // renderer can mark it owned there without waiting for a library snapshot refresh.
   addedToEngineDj?: boolean
+  // The Engine DJ registration's error when it failed after the file landed: the job is
+  // failed, but outputPath still says where the file now is.
+  engineDjError?: string
   // Set when the conversion replaced a library copy and the new entry went in but the old
   // one could not be retired, so Music holds both. 'mismatch' means Music refused because
   // the live entry no longer carries the offered name; 'error' that the delete failed.

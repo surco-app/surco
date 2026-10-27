@@ -420,6 +420,18 @@ export function useTrackProcessing({
           // to fail the conversion: the file is written either way and this only repaints.
           await refreshTrackFromDisk?.(id, result.outputPath).catch(() => {})
         }
+        // The file was written and the row now follows it; only the Engine DJ add failed,
+        // which still fails the track so it is never taken for in the library.
+        if (result.engineDjError) {
+          const message = mainErrorMessage(
+            new Error(result.engineDjError),
+            tr,
+            tr('editor.processError'),
+          )
+          updateTrack(id, { status: 'error', error: message })
+          onProcessError?.(message, track.listLabel)
+          return 'failed'
+        }
         return 'converted'
       } catch (e) {
         const raw = e instanceof Error ? cleanIpcError(e.message) : ''

@@ -476,9 +476,12 @@ export async function runProcessTrack(
     }
 
     // The Engine DJ destination points a library row at the file just written; a failed
-    // registration throws and fails the job — never a silent "converted but not in the
-    // library".
+    // registration fails the job — never a silent "converted but not in the library".
+    // Returned rather than thrown: the file has landed and the original may be retired,
+    // and an IPC error carries only its message, so a throw left the row on a path that
+    // no longer exists and a staged trim set to cut the already cut file again.
     let addedToEngineDj: true | undefined
+    let engineDjError: string | undefined
     if (addToEngineDj) {
       stage('engineDj')
       // Engine renders artwork from its own database, never from the file's tags, so
@@ -506,6 +509,9 @@ export async function runProcessTrack(
           job.replacesPath ?? job.inputPath,
         )
         addedToEngineDj = true
+      } catch (e) {
+        log.warn('process:track Engine DJ step failed after the file was written', target, e)
+        engineDjError = e instanceof Error ? e.message : String(e)
       } finally {
         if (extracted) await extracted.cleanup()
       }
@@ -540,6 +546,7 @@ export async function runProcessTrack(
       normalizeSkipped,
       declickedSamples,
       addedToEngineDj,
+      engineDjError,
       oldMusicCopyKept,
       appleMusicFailed,
       originalKept,

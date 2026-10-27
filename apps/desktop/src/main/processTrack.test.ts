@@ -1407,16 +1407,31 @@ describe('runProcessTrack — Engine DJ', () => {
     expect(deps.addToEngineDj).not.toHaveBeenCalled()
   })
 
-  // A failed registration must fail the job loudly (like a failed Apple Music add) —
-  // reporting success while the library was never touched would hide the miss.
-  it('propagates a failed Engine library write', async () => {
+  // A failed registration must fail the job loudly: reporting success while the library
+  // was never touched would hide the miss. But the file has landed by then, renamed and
+  // with the original retired when in place, so the result still says where it is: thrown,
+  // the row kept pointing at a source that was gone and a retry failed on a missing file.
+  it('reports a failed Engine library write along with where the file landed', async () => {
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {})
     const deps = makeDeps({
-      settings: settings({ addToEngineDj: true }),
+      settings: settings({ addToEngineDj: true, overwriteOriginal: true }),
       addToEngineDj: vi.fn(async () => {
         throw new Error('biblioteca abierta')
       }),
     })
-    await expect(runProcessTrack(job(), deps)).rejects.toThrow('biblioteca abierta')
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result).toMatchObject({
+      outputPath: '/in/Artist - Title.aiff',
+      inPlace: true,
+      engineDjError: 'biblioteca abierta',
+    })
+    expect(result.addedToEngineDj).toBeUndefined()
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/Artist - Title.aiff',
+    )
+    warn.mockRestore()
   })
 })
 
