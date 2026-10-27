@@ -248,6 +248,13 @@ const isMac = window.api.platform === 'darwin'
 // doesn't hand the memoized Editor a fresh [] each render.
 const _EMPTY_FORMATS: string[] = []
 
+const MENU_OVER_PANELS = new Set([
+  'music-review',
+  'music-duplicates',
+  'list-review',
+  'toggle-language',
+])
+
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   // Screen readers pick their voice from the document language, and index.html can only
@@ -551,10 +558,15 @@ export default function App(): React.JSX.Element {
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
   // Opening the palette is the one exception: it's a UI affordance, not a track
   // command, so it never lists itself.
+  // With a panel or review open the menu waits for it like the keyboard does: Convert all
+  // from the menu bar used to run a batch under a review that was writing the same files.
+  // Opening a review still switches the one on screen, and the language still toggles.
+  const overlayOpenRef = useRef(false)
   // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe-once listener; getCommands and overlays.openPalette have stable identities (getCommands is declared below, so it can't go in the deps), and getCommands is called at fire time for the current registry.
   useEffect(
     () =>
       window.api.onMenuCommand((id) => {
+        if (overlayOpenRef.current && !MENU_OVER_PANELS.has(id)) return
         if (id === 'palette') overlays.openPalette()
         else runCommand(getCommands(), id)
       }),
@@ -2721,6 +2733,7 @@ export default function App(): React.JSX.Element {
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
   const overlayOpen = activeModal !== null || trashOpen || review !== null || usbModal !== null
+  overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
     isMac,
