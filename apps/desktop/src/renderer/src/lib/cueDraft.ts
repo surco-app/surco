@@ -476,13 +476,14 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     if (action.type === 'remove-point') return commit(state, cues, { selected: null })
     const target = state.cues.find((c) => c.key === action.key) as DraftCue
     if (near(snap(ctx, action.ms), target.ms)) return state
+    // The point is placed again by the flow that placed it, whatever flow is chosen now.
     const moved = reduceDraft(
-      { ...state, cues, selected: null },
+      { ...state, cues, selected: null, flowId: state.origin[target.key] },
       { type: 'mark-drop', ms: action.ms },
       ctx,
     )
     if (moved.cues === cues) return { ...state, notice: moved.notice }
-    return { ...moved, past: [...state.past, snapshot(state)] }
+    return { ...moved, flowId: state.flowId, past: [...state.past, snapshot(state)] }
   }
   if (action.type === 'mark-drop') {
     const ms = snap(ctx, action.ms)
