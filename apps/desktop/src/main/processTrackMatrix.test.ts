@@ -48,6 +48,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),
     isSameFile: vi.fn(async () => false),
+    fileIdentity: vi.fn(async () => undefined),
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),

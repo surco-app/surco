@@ -93,6 +93,33 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'processing' }))
   })
 
+  // Main only re-exports over the previous output without asking while that file is still
+  // the one this track wrote, which it can tell only from the identity the row hands back.
+  it('sends the identity of its previous output with the job', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputPath: '/out/a.aiff', outputIdentity: 'dev:7' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        previousOutputPath: '/out/a.aiff',
+        previousOutputIdentity: 'dev:7',
+      }),
+    )
+  })
+
   // Engine DJ is the last step, after the file was rewritten in place. Its failure has to
   // show as an error, yet the row must follow the file: left on the retired source with
   // the trim still staged, a retry failed on a missing file or cut the already cut track.

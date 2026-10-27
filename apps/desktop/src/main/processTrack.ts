@@ -109,6 +109,7 @@ export interface ProcessTrackDeps {
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
   isSameFile: (a: string, b: string) => Promise<boolean>
+  fileIdentity: (path: string) => Promise<string | undefined>
   mkdir: (path: string, opts: { recursive: boolean }) => Promise<unknown>
   mkdtemp: (prefix: string) => Promise<string>
   rm: (path: string, opts: { recursive: boolean; force: boolean }) => Promise<void>
@@ -280,6 +281,14 @@ export async function runProcessTrack(
     // Engine DJ to close is held here for the same reason.
     if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
       throw errorWithKey('engineDjOpen')
+    // The previous output only counts as this track's own while it is still the file this
+    // track wrote: another track can have been written over that path since.
+    const ownPrevious =
+      job.previousOutputPath &&
+      job.previousOutputIdentity &&
+      (await deps.fileIdentity(job.previousOutputPath)) === job.previousOutputIdentity
+        ? job.previousOutputPath
+        : undefined
     let keepOverwritten = false
     const outputIsInput =
       !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
@@ -297,14 +306,14 @@ export async function runProcessTrack(
       // a valid target — not even via a stale previousOutputPath pointing at it after
       // a mode switch from overwrite.
       const taken = (p: string): boolean =>
-        deps.isPathReserved(p) || (p !== job.previousOutputPath && deps.existsSync(p))
+        deps.isPathReserved(p) || (p !== ownPrevious && deps.existsSync(p))
       if ((await deps.isSameFile(job.inputPath, outputPath)) || taken(outputPath)) {
         target = uniqueOutputPath(outputPath, (p) => p === job.inputPath || taken(p))
       }
     } else if (
       isOutputConflict(
         outputPath,
-        job.previousOutputPath,
+        ownPrevious,
         deps.existsSync(outputPath) || deps.isPathReserved(outputPath),
         outputIsInput,
         deps.isPathReserved(outputPath),
@@ -389,6 +398,7 @@ export async function runProcessTrack(
       // to sweep and the manifest entry is stale.
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
+    const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
     if (job.rekordboxPlaylists)
       deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
     // The new file has landed by now, so failing to retire the old one (a Windows lock
@@ -547,6 +557,7 @@ export async function runProcessTrack(
       declickedSamples,
       addedToEngineDj,
       engineDjError,
+      outputIdentity,
       oldMusicCopyKept,
       appleMusicFailed,
       originalKept,

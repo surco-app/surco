@@ -46,6 +46,7 @@ export function exportedPatch(
   return {
     status: 'done',
     outputPath: result.outputPath,
+    outputIdentity: result.outputIdentity,
     ...(result.inPlace && {
       inputPath: result.outputPath,
       fileName: parseFileName(result.outputPath).fileName,

@@ -46,6 +46,17 @@ describe('exportedPatch', () => {
     expect(patch.movedFrom).toBeUndefined()
   })
 
+  // Handed back on the next export, it is how main tells the track's own previous output
+  // from a file another track has written over that path since.
+  it('records the identity of the file the export wrote', () => {
+    const patch = exportedPatch(track(), {
+      outputPath: '/out/a.aiff',
+      inPlace: false,
+      outputIdentity: 'dev:7',
+    })
+    expect(patch.outputIdentity).toBe('dev:7')
+  })
+
   // The applied config is what a later dial change is compared against (see
   // isNormalizeStale) — without it, re-normalizing never earns the Update button.
   it('records the normalization the export applied', () => {

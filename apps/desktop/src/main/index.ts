@@ -97,7 +97,7 @@ import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
 import { convertAudio, readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
-import { isSameFile, removeRenamedOriginal } from './inplace'
+import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { libraryCopyInfo, libraryTracksOf } from './libraryFileUse'
 import {
@@ -1596,6 +1596,7 @@ function registerIpc(): void {
       attachRekordboxPlaylists,
       existsSync,
       isSameFile,
+      fileIdentity,
       mkdir,
       mkdtemp,
       rm,

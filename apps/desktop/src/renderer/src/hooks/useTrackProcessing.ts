@@ -368,6 +368,7 @@ export function useTrackProcessing({
           addToEngineDj: destination?.addToEngineDj,
           convertBesideOriginal: destination?.convertBesideOriginal,
           previousOutputPath: track.outputPath,
+          previousOutputIdentity: track.outputIdentity,
           musicPersistentId: track.musicPersistentId,
           // Where the copy being replaced lives, so rekordbox repoints from the path it
           // has indexed rather than from a download folder it has never seen.

@@ -1,8 +1,9 @@
-import { access, link, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, link, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  fileIdentity,
   isOutputConflict,
   isSameFile,
   removeRenamedOriginal,
@@ -260,6 +261,31 @@ describe('isSameFile', () => {
     await writeFile(b, 'b')
     expect(await isSameFile(a, b)).toBe(false)
     expect(await isSameFile(a, join(dir, 'missing.wav'))).toBe(false)
+  })
+})
+
+describe('fileIdentity', () => {
+  let dir: string
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  // Another track's conversion lands on the path by renaming its temp over it, which is
+  // what has to read as a different file; Traktor writing cues into the file must not.
+  it('changes when another file is renamed over the path, not when the file is edited', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-identity-'))
+    const out = join(dir, 'Artist - Title.aiff')
+    await writeFile(out, 'mine')
+    const written = await fileIdentity(out)
+    await writeFile(out, 'mine with cues')
+    expect(await fileIdentity(out)).toBe(written)
+
+    const other = join(dir, '.tmp-other.aiff')
+    await writeFile(other, 'another track')
+    await rename(other, out)
+    expect(await fileIdentity(out)).not.toBe(written)
+    expect(await fileIdentity(join(dir, 'missing.aiff'))).toBeUndefined()
   })
 })
 

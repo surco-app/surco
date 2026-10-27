@@ -51,6 +51,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),
     isSameFile: vi.fn(async () => false),
+    fileIdentity: vi.fn(async () => 'dev:1'),
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
@@ -106,6 +107,7 @@ describe('runProcessTrack — plain conversion', () => {
       inPlace: false,
       musicPersistentId: undefined,
       normalizeSkipped: false,
+      outputIdentity: 'dev:1',
     })
   })
 
@@ -401,15 +403,42 @@ describe('runProcessTrack — output conflict', () => {
     expect(vi.mocked(chosen.convertAudio).mock.calls[0][14]).toBe(true)
 
     const reexport = conflicting()
-    await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), reexport)
+    await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff', previousOutputIdentity: 'dev:1' }),
+      reexport,
+    )
     expect(vi.mocked(reexport.convertAudio).mock.calls[0][14]).toBe(false)
   })
 
   it('never prompts when the colliding file is the track’s own previous output', async () => {
     const deps = conflicting()
-    await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), deps)
+    await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff', previousOutputIdentity: 'dev:1' }),
+      deps,
+    )
     expect(deps.confirmConflict).not.toHaveBeenCalled()
     expect(deps.convertAudio).toHaveBeenCalledOnce()
+  })
+
+  // The path alone does not make the file this track's: another track of the session can
+  // have been written over it since (the user chose Overwrite there). Re-exporting with no
+  // prompt then replaced that other track's file without a word.
+  it('prompts when the previous output has since been replaced by another file', async () => {
+    const deps = conflicting()
+    deps.fileIdentity = vi.fn(async () => 'dev:2')
+    await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff', previousOutputIdentity: 'dev:1' }),
+      deps,
+    )
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', false)
+  })
+
+  it('reports the identity of the file it wrote, so the next export can recognise it', async () => {
+    const deps = makeDeps({
+      fileIdentity: vi.fn(async (p: string) => (p === '/out/Artist - Title.aiff' ? 'dev:7' : '')),
+    })
+    const result = await runProcessTrack(job(), deps)
+    expect(result.outputIdentity).toBe('dev:7')
   })
 
   // A concurrent batch job resolved the same output name a moment ago and hasn't
@@ -845,11 +874,37 @@ describe('runProcessTrack — beside the original', () => {
       isSameFile: vi.fn(async (a: string, b: string) => a === b),
     })
     const result = await runProcessTrack(
-      job({ outputName: 'song', format: 'wav', previousOutputPath: '/in/song (2).wav' }),
+      job({
+        outputName: 'song',
+        format: 'wav',
+        previousOutputPath: '/in/song (2).wav',
+        previousOutputIdentity: 'dev:1',
+      }),
       deps,
     )
     expect(result.outputPath).toBe('/in/song (2).wav')
     expect(deps.confirmConflict).not.toHaveBeenCalled()
+  })
+
+  // The mode never touches a file that is not this track's own copy, and a "(2)" another
+  // track has been written over since is not that copy any more.
+  it('steps past its previous copy once another file has replaced it', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      existsSync: vi.fn((p: string) => p === '/in/song.wav' || p === '/in/song (2).wav'),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+      fileIdentity: vi.fn(async () => 'dev:2'),
+    })
+    const result = await runProcessTrack(
+      job({
+        outputName: 'song',
+        format: 'wav',
+        previousOutputPath: '/in/song (2).wav',
+        previousOutputIdentity: 'dev:1',
+      }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/in/song (3).wav')
   })
 
   it("does not let its own previous copy ride over another job's claim", async () => {

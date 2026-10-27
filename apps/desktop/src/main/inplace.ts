@@ -164,6 +164,14 @@ export async function isSameFile(a: string, b: string): Promise<boolean> {
   return !!aStat && !!bStat && aStat.ino === bStat.ino && aStat.dev === bStat.dev
 }
 
+// What tells this track's previous output from another file written over it since: a
+// conversion lands by renaming its temp into place, so a file another track wrote there
+// is a new inode, while a tag edit in place (Traktor writing its cues) keeps it.
+export async function fileIdentity(path: string): Promise<string | undefined> {
+  const s = await stat(path, { bigint: true }).catch(() => null)
+  return s ? `${s.dev}:${s.ino}` : undefined
+}
+
 // After an in-place edit, convertAudio has already written the (possibly renamed)
 // file; drop the original only when the rename left it behind as a genuinely
 // different file. We compare device+inode rather than the path string because a
