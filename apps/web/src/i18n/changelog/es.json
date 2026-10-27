@@ -55,6 +55,10 @@
       {
         "text": "Más arreglos de estabilidad al convertir, al restaurar originales y al escribir en tus bibliotecas DJ.",
         "in": "1.12.1"
+      },
+      {
+        "text": "Si vacías los metadatos de una pista y la vuelves a rellenar, al actualizar se guarda todo lo que has puesto. Hasta ahora el título, el artista, el álbum, el año y el género se perdían por el camino.",
+        "in": "1.12.2"
       }
     ]
   },

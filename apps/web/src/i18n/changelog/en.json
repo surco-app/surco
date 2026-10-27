@@ -55,6 +55,10 @@
       {
         "text": "More stability fixes when converting, restoring originals and writing to your DJ libraries.",
         "in": "1.12.1"
+      },
+      {
+        "text": "If you clear a track's metadata and fill it in again, updating now keeps everything you entered. Until now the title, artist, album, year and genre got lost along the way.",
+        "in": "1.12.2"
       }
     ]
   },
