@@ -578,7 +578,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       )
       const confirmFlows = useConfirmFlows({
         settings,
-        removeTrack: library.removeTrack,
+        removeTracks: library.removeTracks,
         updateTrack: library.updateTrack,
         emptyTracks: (targets) => library.removeTracks(targets.map((t) => t.id)),
         deriveTracks: () => {},
