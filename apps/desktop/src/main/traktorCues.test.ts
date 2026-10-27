@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HOT_KINDS } from '../shared/cueRules'
+import { hotCueColor } from '../shared/rekordboxCueColors'
 import { traktorContentId } from '../shared/traktorContent'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { rekordboxColorOf } from './traktorNmlCues'
@@ -39,6 +40,11 @@ describe('readTraktorTrackCues', () => {
       { id: '4', ms: 133858.283798, kind: HOT_KINDS[2], color: colorOf(1), loop: true },
       { id: '5', ms: 187053.866666, kind: HOT_KINDS[3], color: colorOf(5), loop: true },
     ])
+  })
+
+  it('shows a load cue in the yellow Traktor paints it, not the amber beside it', () => {
+    const [load] = readTraktorTrackCues(nml(entry(DJOTAS)), ID)?.cues ?? []
+    expect(hotCueColor(load.color)).toBe('#c3af04')
   })
 
   // Traktor has no CALL: a cue without a button is the DJ's own marker there, so Surco
