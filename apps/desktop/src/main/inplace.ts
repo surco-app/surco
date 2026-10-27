@@ -18,14 +18,42 @@ import { keepOriginal } from './originalKeeper'
 // metadata or a hand-edited field — untrusted text that reaches resolveOutputTarget's
 // join(outputDir, name). Left in, ".." would let a crafted tag walk the write target
 // out of outputDir entirely.
+//
+// Windows' rules apply on every platform, since libraries live on NAS shares both systems
+// open: no control characters, no folder ending in a dot or space (Windows drops them, so
+// the name written is not the name asked for; the file name keeps its dot, since the
+// extension follows it), no device name (CON, NUL, COM1…, with or without
+// an extension). A segment is capped at SEGMENT_MAX_BYTES, measured decomposed as macOS
+// writes it, so the conversion's temp (a dot, ".tmp-xxxxxxxx" and the extension added)
+// and a " (n)" bump still fit in the 255 bytes a name can hold.
+const SEGMENT_MAX_BYTES = 230
+const WINDOWS_DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?=\.|$)/i
+
+function capBytes(segment: string): string {
+  let out = ''
+  for (const ch of segment) {
+    if (Buffer.byteLength((out + ch).normalize('NFD')) > SEGMENT_MAX_BYTES) break
+    out += ch
+  }
+  return out
+}
+
 export function sanitizeOutputName(name: string): string {
-  return name
-    .split('/')
-    .map((segment) =>
-      segment
-        .replace(/[\\:*?"<>|]/g, '-')
-        .replace(/\s+/g, ' ')
-        .trim(),
+  const segments = name.split('/')
+  return segments
+    .map((segment, i) =>
+      capBytes(
+        [
+          ...segment
+            .replace(/[\\:*?"<>|]/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim(),
+        ]
+          .map((ch) => (ch.charCodeAt(0) < 0x20 ? '-' : ch))
+          .join(''),
+      )
+        .replace(i === segments.length - 1 ? / +$/ : /[. ]+$/, '')
+        .replace(WINDOWS_DEVICE, '$1_'),
     )
     .filter((segment) => segment && segment !== '.' && segment !== '..')
     .join('/')
@@ -122,9 +150,14 @@ export function uniqueOutputPath(outputPath: string, exists: (p: string) => bool
 // string, because a case-only difference (Song.WAV vs song.wav) is one file on the
 // case-insensitive macOS/Windows volumes Surco runs on. Missing files are never
 // "the same" — the conflict check that calls this cares about a target that exists.
+// Bigint because NTFS file ids are 64-bit: as numbers, two neighbours whose ids differ
+// only past 2^53 round to the same value and would read as one file.
 export async function isSameFile(a: string, b: string): Promise<boolean> {
   if (a === b) return true
-  const [aStat, bStat] = await Promise.all([stat(a).catch(() => null), stat(b).catch(() => null)])
+  const [aStat, bStat] = await Promise.all([
+    stat(a, { bigint: true }).catch(() => null),
+    stat(b, { bigint: true }).catch(() => null),
+  ])
   return !!aStat && !!bStat && aStat.ino === bStat.ino && aStat.dev === bStat.dev
 }
 
@@ -136,7 +169,10 @@ export async function isSameFile(a: string, b: string): Promise<boolean> {
 // there would delete the file we just wrote.
 export async function removeRenamedOriginal(input: string, output: string): Promise<void> {
   if (input === output) return
-  const [inStat, outStat] = await Promise.all([stat(input).catch(() => null), stat(output)])
+  const [inStat, outStat] = await Promise.all([
+    stat(input, { bigint: true }).catch(() => null),
+    stat(output, { bigint: true }),
+  ])
   if (inStat && (inStat.ino !== outStat.ino || inStat.dev !== outStat.dev)) {
     // Into Surco's trash when one is configured (see originalKeeper.ts), or the system
     // trash when that has no room for it, so the user can get the old file back; a plain

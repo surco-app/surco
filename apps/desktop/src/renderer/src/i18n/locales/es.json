@@ -224,6 +224,7 @@
     "noAudioFound": "No se encontró audio en lo que soltaste: comprueba que la carpeta se puede leer y tiene formatos compatibles.",
     "normalizeSkipped": "No se pudo medir el volumen de «{{name}}»: convertida sin normalizar.",
     "keptAsIs": "«{{name}}» se queda como está porque «Mantener MP3 y M4A como están» está activo con «Junto al original».",
+    "originalKept": "«{{name}}» se convirtió, pero no se pudo quitar el original y sigue en su carpeta.",
     "formatSkipped": "«{{name}}» no tiene formato de salida equivalente para Igual que el origen — saltada.",
     "appleMusicFailedAfterConvert": "«{{name}}» se convirtió, pero no se pudo actualizar Apple Music. Prueba a añadirla de nuevo a Apple Music.",
     "convertFailed": "No se pudo convertir «{{name}}»: {{reason}}",

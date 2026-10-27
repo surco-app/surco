@@ -57,6 +57,9 @@ interface Params {
   // could not be retired, so the library now holds both.
   onOldMusicCopyKept?: (reason: 'mismatch' | 'error') => void
   onAppleMusicFailed?: (name: string) => void
+  // Surfaced when the converted file landed but the original it replaced in a format
+  // change could not be removed, so both are in the folder.
+  onOriginalKept?: (name: string) => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
   // (.opus/.ogg/.oga/.aac/.mp4). A batch run shows this through batchSummary's "N
   // skipped" count, but a single-track convert has no summary to show it in — without
@@ -130,6 +133,7 @@ export function useTrackProcessing({
   onDeclicked,
   onOldMusicCopyKept,
   onAppleMusicFailed,
+  onOriginalKept,
   onFormatSkipped,
   onKeptAsIs,
   rereadTrackMeta,
@@ -382,6 +386,7 @@ export function useTrackProcessing({
         // surfaced; a clean track stays quiet (see onDeclicked's contract).
         if (result.declickedSamples) onDeclicked?.(track.listLabel, result.declickedSamples)
         if (result.oldMusicCopyKept) onOldMusicCopyKept?.(result.oldMusicCopyKept)
+        if (result.originalKept) onOriginalKept?.(track.listLabel)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
         updateTrack(

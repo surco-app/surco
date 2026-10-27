@@ -96,7 +96,7 @@ describe('the temp a failed conversion leaves behind', () => {
     await renameWithRetry(from, to, {
       rename: async (a, b) => {
         attempts.push(b)
-        if (b === to) throw Object.assign(new Error('EPERM: held'), { code: 'EPERM' })
+        if (b === to) throw Object.assign(new Error('EBUSY: held'), { code: 'EBUSY' })
         await rename(a, b)
       },
       sleep: async () => {},

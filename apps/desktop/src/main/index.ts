@@ -5,6 +5,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -392,6 +393,7 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
   writeFileSync,
   existsSync,
   unlinkSync,
+  renameSync,
 })
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
@@ -1364,6 +1366,7 @@ function registerIpc(): void {
         // Measured from the user's log 15/09: from= named the FLAC and the lookup found
         // zero rows.
         replacesPath,
+        keepOverwritten,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -1402,6 +1405,7 @@ function registerIpc(): void {
               foreignRemoved,
               replacesPath,
               () => activeConversions.isCancelled(job.id),
+              keepOverwritten,
             ),
           {
             labelParams: { track },

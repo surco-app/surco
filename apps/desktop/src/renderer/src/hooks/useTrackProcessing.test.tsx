@@ -926,6 +926,36 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
   })
 
+  // The converted file landed but the old-format original could not be retired, so the
+  // folder holds both. Counted converted, since it is, and the user is told about the
+  // leftover rather than finding a second copy of the track later.
+  it('counts it converted and tells the user when the original stayed in its folder', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/Artist - Title.aiff',
+        inPlace: true,
+        originalKept: true,
+      }),
+    })
+    const onOriginalKept = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onOriginalKept,
+        }),
+      { wrapper: withClient() },
+    )
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(outcome).toBe('converted')
+    expect(onOriginalKept).toHaveBeenCalledWith('a.wav')
+  })
+
   it('follows a renamed file and counts it converted when only the Apple Music step failed', async () => {
     setApi({
       processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({

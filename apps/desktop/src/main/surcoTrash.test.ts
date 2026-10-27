@@ -1,17 +1,42 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const unlinkGate = vi.hoisted(() => ({ hold: null as Promise<void> | null, calls: 0 }))
+// Two folders stand in for two volumes: a rename between them fails as it does from
+// userData to a NAS, and the copy can be cut halfway like a share dropping mid-transfer.
+const volumes = vi.hoisted(() => ({ apart: false, cutCopy: false, held: '' }))
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
+  const { dirname } = await import('node:path')
   const unlink: typeof real.unlink = async (path) => {
     unlinkGate.calls++
     if (unlinkGate.hold) await unlinkGate.hold
+    if (path === volumes.held)
+      throw Object.assign(new Error('EBUSY: resource busy or locked, unlink'), { code: 'EBUSY' })
     return real.unlink(path)
   }
-  return { ...real, unlink }
+  const rename: typeof real.rename = async (from, to) => {
+    if (volumes.apart && dirname(String(from)) !== dirname(String(to)))
+      throw Object.assign(new Error('EXDEV: cross-device link not permitted'), { code: 'EXDEV' })
+    return real.rename(from, to)
+  }
+  const copyFile: typeof real.copyFile = async (from, to, mode) => {
+    if (!volumes.cutCopy) return real.copyFile(from, to, mode)
+    const bytes = await real.readFile(from)
+    await real.writeFile(to, bytes.subarray(0, bytes.length / 2))
+    throw Object.assign(new Error('EIO: i/o error, copyfile'), { code: 'EIO' })
+  }
+  return { ...real, unlink, rename, copyFile }
 })
 
 import { TRASH_MIN_FREE_BYTES } from '../shared/trash'
@@ -24,6 +49,9 @@ let music: string
 let trash: SurcoTrash
 
 beforeEach(() => {
+  volumes.apart = false
+  volumes.cutCopy = false
+  volumes.held = ''
   root = mkdtempSync(join(tmpdir(), 'surco-trash-'))
   music = join(root, 'music')
   mkdirSync(music)
@@ -72,6 +100,22 @@ describe('stashing a replaced original', () => {
   })
 })
 
+// A format change moves the old original into the trash, which from a NAS is a copy and
+// an unlink. When Windows refuses the unlink, the original is still where it was; the
+// copy already made would sit in the trash with no entry naming it, a duplicate the user
+// can neither see nor restore and the cap does not count.
+describe('an original that cannot leave its folder', () => {
+  it('keeps no unrecorded copy when the move cannot remove the original', async () => {
+    const original = song('Track.wav')
+    volumes.apart = true
+    volumes.held = original
+    await expect(trash.stash(original, 'renamed')).rejects.toThrow('EBUSY')
+    expect(readFileSync(original).length).toBe(100)
+    expect(readdirSync(join(root, 'trash', 'items'))).toEqual([])
+    expect(await trash.list()).toEqual([])
+  })
+})
+
 describe('restoring', () => {
   it('puts the file back where it was', async () => {
     const original = song('Track.aiff')
@@ -114,6 +158,29 @@ describe('restoring', () => {
     rmSync(music, { recursive: true })
     await trash.restore(entry?.id as string)
     expect(existsSync(original)).toBe(true)
+  })
+
+  // Restoring to a NAS copies across volumes. Copied straight onto the library path, a
+  // share that dropped halfway left a truncated track where the user's file belongs,
+  // under its real name, for the DJ software to load.
+  it('leaves nothing at the library path when the copy back is cut halfway', async () => {
+    const original = song('Track.aiff')
+    const entry = await trash.stash(original, 'deleted')
+    volumes.apart = true
+    volumes.cutCopy = true
+    await expect(trash.restore(entry?.id as string)).rejects.toThrow()
+    expect(existsSync(original)).toBe(false)
+    expect(readdirSync(music)).toEqual([])
+    expect(readFileSync(entry?.storedPath as string).length).toBe(100)
+  })
+
+  it('restores across volumes in full', async () => {
+    const original = song('Track.aiff')
+    const entry = await trash.stash(original, 'deleted')
+    volumes.apart = true
+    await trash.restore(entry?.id as string)
+    expect(readFileSync(original).length).toBe(100)
+    expect(readdirSync(music)).toEqual(['Track.aiff'])
   })
 
   it('rejects an id it does not know', async () => {
@@ -194,11 +261,26 @@ describe('stashes that overlap', () => {
     const first = trash.stash(song('First.aiff', 200), 'replaced')
     await vi.waitFor(() => expect(unlinkGate.calls).toBe(1))
     unlinkGate.hold = null
-    const second = await trash.stash(song('Second.aiff'), 'replaced')
+    const pending = trash.stash(song('Second.aiff'), 'replaced')
     release()
     await first
+    const second = await pending
 
     expect((await trash.list()).map((e) => e.id)).toContain(second?.id)
+  })
+
+  // A batch converts several tracks at once, so their stashes overlap. Each one sized its
+  // room from the trash as it stood before any of them had written, so both copies went
+  // in and the trash ended past the cap the user set, or past the disk's last free gigabytes.
+  it('holds the cap when two stashes run at the same time', async () => {
+    const [first, second] = await Promise.all([
+      trash.stash(song('1.wav', 600), 'replaced'),
+      trash.stash(song('2.wav', 600), 'replaced'),
+    ])
+    expect(first).not.toBeNull()
+    expect(second).not.toBeNull()
+    const held = (await trash.list()).reduce((sum, e) => sum + e.bytes, 0)
+    expect(held).toBeLessThanOrEqual(1000)
   })
 
   it('empties without dropping a copy taken while it was deleting the others', async () => {

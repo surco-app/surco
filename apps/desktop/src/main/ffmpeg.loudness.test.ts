@@ -47,6 +47,7 @@ vi.mock('node:child_process', () => ({
 }))
 
 import { measureLoudness } from './ffmpeg'
+import { EBUR128_SUMMARY } from './normalize'
 
 describe('measureLoudness', () => {
   it('runs the true-peak and stats passes concurrently instead of chaining them', async () => {
@@ -76,6 +77,16 @@ describe('measureLoudness', () => {
     // through its graph, nor astats drag ebur128 through its own.
     expect(peak).not.toContain('astats')
     expect(stats).not.toContain('ebur128')
+  })
+
+  // The editor's reading goes through the same 16 MB stderr buffer, so it needs the
+  // same summary-only pass the loudness test on a long mix pins (ebur128LongTrack).
+  it('measures with the summary-only pass, so a long mix fits the stderr buffer', async () => {
+    calls.length = 0
+    clock = 0
+    await measureLoudness('/in.wav')
+
+    expect(calls.map((c) => c.args)).toContainEqual(expect.arrayContaining([EBUR128_SUMMARY]))
   })
 
   it('still reports every figure the editor reads, from whichever pass measured it', async () => {

@@ -95,6 +95,7 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -260,6 +261,7 @@ describe('runProcessTrack — cover handling', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -347,6 +349,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -371,8 +374,22 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       undefined,
       undefined,
+      true,
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
+  // The copy of an overwritten file is only kept when the user chose to overwrite it: a
+  // re-export over the track's own previous output must not stack copies in the trash.
+  it('asks the conversion to keep the file only when the user chose to overwrite it', async () => {
+    const chosen = conflicting()
+    chosen.confirmConflict = vi.fn(async () => 'overwrite' as const)
+    await runProcessTrack(job(), chosen)
+    expect(vi.mocked(chosen.convertAudio).mock.calls[0][14]).toBe(true)
+
+    const reexport = conflicting()
+    await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), reexport)
+    expect(vi.mocked(reexport.convertAudio).mock.calls[0][14]).toBe(false)
   })
 
   it('never prompts when the colliding file is the track’s own previous output', async () => {
@@ -737,6 +754,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -769,6 +787,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -867,6 +886,28 @@ describe('runProcessTrack — Engine DJ open before the write', () => {
 })
 
 describe('runProcessTrack — in-place rewrite', () => {
+  // Retiring the old-format original is the last, cheapest step, and on Windows it can
+  // fail after the new file has landed (an EBUSY on the unlink that ends a copy into the
+  // trash on another volume). Thrown, it reported a finished conversion as failed and
+  // skipped Apple Music and Engine DJ for a file that is already in place.
+  it('finishes the job and says the original stayed when it cannot be retired', async () => {
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {})
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      removeRenamedOriginal: vi.fn(async () => {
+        throw Object.assign(new Error('EBUSY: resource busy or locked, unlink'), { code: 'EBUSY' })
+      }),
+    })
+    const result = await runProcessTrack(job({ addToEngineDj: true }), deps)
+
+    expect(result).toMatchObject({ outputPath: '/in/Artist - Title.aiff', inPlace: true })
+    expect(result.originalKept).toBe(true)
+    expect(deps.recordConversion).toHaveBeenCalledOnce()
+    expect(deps.addToEngineDj).toHaveBeenCalled()
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true }),
@@ -889,6 +930,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
       '/in/song.wav',
@@ -988,6 +1030,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(result.inPlace).toBe(false)
@@ -1364,6 +1407,7 @@ describe('runProcessTrack — Apple Music only', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(
       '/tmp/surco-abc/Artist - Title.aiff',
@@ -1431,12 +1475,14 @@ describe('runProcessTrack — replacing a library copy', () => {
   // a fully green suite said everything was fine while the collection was searched for a
   // download-folder FLAC it had never indexed. The path has to reach the conversion.
   it('hands the superseded path to the conversion', async () => {
-    const convertAudio = vi.fn(async () => ({ normalizeSkipped: false }))
+    const convertAudio = vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+      normalizeSkipped: false,
+    }))
     const deps = replacing({ convertAudio })
 
     await runProcessTrack(job(replaceJob), deps)
 
-    expect(convertAudio.mock.calls[0]?.at(-1)).toBe('/m/old.mp3')
+    expect(convertAudio.mock.calls[0]?.[13]).toBe('/m/old.mp3')
   })
 
   // The superseded copy lives in the user's library folder, which a conversion has no

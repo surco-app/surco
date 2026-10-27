@@ -65,6 +65,7 @@ import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from
 import { isPcmOverrun, slimDecodeError } from './decodeError'
 import { fft } from './fft'
 import { measureBands } from './fftBands'
+import { carryFlacBlocks } from './flacCarry'
 import { setFinderIcon } from './flacFinderCover'
 import {
   detectFftKnee,
@@ -80,6 +81,7 @@ import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
   dcRemovalFilter,
+  EBUR128_SUMMARY,
   ebur128MeasureArgs,
   limitedLoudnormFilter,
   limitsPeaks,
@@ -101,6 +103,7 @@ import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
+import { carryRiffChunks } from './riffCarry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
 import { readTagFormats } from './tagFormats'
@@ -1897,6 +1900,8 @@ export async function convertAudio(
   // rekordbox indexes that path, not the one being converted.
   replacesPath?: string,
   isCancelled?: () => boolean,
+  // The user answered "Overwrite" for a different file already at the destination.
+  keepOverwritten?: boolean,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   const meta = composeMeta(sourceMeta)
   // We always write to a temp file and rename it over the target, so
@@ -2127,6 +2132,17 @@ export async function convertAudio(
             dest: tmp,
             shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
           })
+        // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
+        // riffCarry.ts). Only when the audio is copied through: their positions count
+        // samples, which a trim or a rate change moves, and a re-encode keeps a backup
+        // under every policy but 'never'. A clear empties them like the rest.
+        if (
+          codec === 'copy' &&
+          !clearExtras &&
+          ext === '.wav' &&
+          extname(input).toLowerCase() === '.wav'
+        )
+          await carryRiffChunks(input, tmp)
       } else if (
         (meta.rating?.trim() || meta.comment.trim() || clearExtras) &&
         (ext === '.mp3' || ext === '.aiff')
@@ -2218,6 +2234,10 @@ export async function convertAudio(
                 shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
               },
         )
+      // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
+      // (see flacCarry.ts), on the same terms as a WAV's chunks above.
+      if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
+        await carryFlacBlocks(input, tmp)
     }
     // Set on the temp so the icon rides the same atomic landing: the rename keeps the
     // extended attributes it lives in. Only when there's a cover to show.
@@ -2271,6 +2291,12 @@ export async function convertAudio(
     // 'copy' exactly when the audio passes through untouched — so that rides along.
     if (await isSameFile(input, output))
       archived = await keepOriginal(input, 'replaced', output, { reencodes: codec !== 'copy' })
+    // A different file already at the destination ("Overwrite" in the conflict prompt) is
+    // not this source's audio in any form, so nothing re-run could bring it back: kept
+    // like a file with no encode to judge, which only 'never' skips. A re-export over the
+    // track's own previous output never asks, and keeps nothing.
+    else if (keepOverwritten && (await stat(output).catch(() => null)))
+      archived = await keepOriginal(output, 'replaced', output)
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
@@ -3143,7 +3169,7 @@ export async function measureLoudness(
       },
     )
   const [peakPass, statsPass] = await Promise.all([
-    pass('ebur128=peak=true'),
+    pass(EBUR128_SUMMARY),
     pass('astats=metadata=1:reset=0'),
   ])
   const loud = parseLoudness(peakPass.stderr)

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   FILE_IN_USE_MARKER,
   isFileInUseError,
@@ -10,6 +10,14 @@ import {
 const inUse = (code: string): NodeJS.ErrnoException =>
   Object.assign(new Error(`${code}: operation not permitted, rename`), { code })
 
+const realPlatform = process.platform
+const onPlatform = (value: NodeJS.Platform) =>
+  Object.defineProperty(process, 'platform', { value, configurable: true })
+
+// The retry is a Windows remedy, so the tests below run as Windows unless they say otherwise.
+beforeEach(() => onPlatform('win32'))
+afterEach(() => onPlatform(realPlatform))
+
 describe('isFileInUseError', () => {
   // The three codes Windows raises when another process holds the destination open.
   // Anything else is a real failure (missing dir, read-only volume) that retrying
@@ -18,6 +26,16 @@ describe('isFileInUseError', () => {
     expect(isFileInUseError(inUse('EPERM'))).toBe(true)
     expect(isFileInUseError(inUse('EBUSY'))).toBe(true)
     expect(isFileInUseError(inUse('EACCES'))).toBe(true)
+  })
+
+  // On macOS and Linux a rename over an open file just works, so EPERM and EACCES mean
+  // something no wait will change: a locked (uchg) file, a read-only share, a folder the
+  // user may not write to. Retrying cost ~3 s per track and then blamed "another program".
+  it('reads EPERM and EACCES as a held file only on Windows', () => {
+    onPlatform('darwin')
+    expect(isFileInUseError(inUse('EPERM'))).toBe(false)
+    expect(isFileInUseError(inUse('EACCES'))).toBe(false)
+    expect(isFileInUseError(inUse('EBUSY'))).toBe(true)
   })
 
   it('rejects failures that retrying cannot fix', () => {
@@ -168,6 +186,18 @@ describe('renameWithRetry', () => {
     await expect(
       renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep: async () => {} }),
     ).rejects.not.toThrow(FILE_IN_USE_MARKER)
+  })
+
+  it('fails at once on a locked file outside Windows, without blaming another program', async () => {
+    onPlatform('darwin')
+    const rename = vi.fn().mockRejectedValue(inUse('EPERM'))
+    const sleep = vi.fn().mockResolvedValue(undefined)
+    const err = await renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep }).catch(
+      (e: unknown) => e as Error,
+    )
+    expect(rename).toHaveBeenCalledTimes(1)
+    expect(sleep).not.toHaveBeenCalled()
+    expect((err as Error).message).not.toContain(FILE_IN_USE_MARKER)
   })
 
   it('does not sleep when the first attempt succeeds', async () => {

@@ -224,6 +224,7 @@
     "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden — prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
     "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",
+    "originalKept": "„{{name}}“ wurde konvertiert, aber das Original konnte nicht entfernt werden und liegt noch in seinem Ordner.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
     "appleMusicFailedAfterConvert": "„{{name}}“ wurde konvertiert, aber Apple Music konnte nicht aktualisiert werden. Versuche, den Titel erneut zu Apple Music hinzuzufügen.",
     "convertFailed": "„{{name}}“ konnte nicht konvertiert werden: {{reason}}",
