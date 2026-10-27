@@ -15,6 +15,8 @@ interface Props<T extends string> {
   label?: string
   // Tighter segments, for two rows that must share one line in a narrow panel.
   compact?: boolean
+  // Stretch across the panel, sharing the spare width out among the segments.
+  fill?: boolean
 }
 
 // The option row used for normalization mode, theme, output format and key notation
@@ -40,8 +42,10 @@ export function SegmentedControl<T extends string>({
   className,
   label,
   compact = false,
+  fill = false,
 }: Props<T>): React.JSX.Element {
   const segmentX = compact ? 'px-2.5' : 'px-4'
+  const stretch = fill ? 'flex-auto' : ''
   const overlayRef = useRef<HTMLDivElement>(null)
   // null = no real measurement yet. A control can mount before it has geometry (a
   // hidden wizard step, a modal mid-entrance): zeros read as clip inset(0 0 0 0) —
@@ -130,11 +134,11 @@ export function SegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={label}
-      data-layout={grid ? 'grid' : 'row'}
+      data-layout={grid ? 'grid' : fill ? 'fill' : 'row'}
       style={columns}
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
-      className={`relative ${grid ? 'grid w-full' : 'inline-flex max-w-full flex-wrap'} gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
+      className={`relative ${grid ? 'grid w-full' : fill ? 'flex w-full flex-wrap' : 'inline-flex max-w-full flex-wrap'} gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
     >
       {options.map((id) => (
         <button
@@ -146,7 +150,7 @@ export function SegmentedControl<T extends string>({
           // The buttons themselves all stay quiet — the overlay below paints the
           // raised state — so a segment the highlight is leaving fades back to muted
           // exactly as the clip uncovers it. Hover previews the fill without relief.
-          className={`rounded-md ${segmentX} py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-hover)] hover:text-fg`}
+          className={`rounded-md ${segmentX} ${stretch} py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-hover)] hover:text-fg`}
         >
           {labelFor(id)}
         </button>
@@ -179,7 +183,7 @@ export function SegmentedControl<T extends string>({
         {options.map((id) => (
           <span
             key={id}
-            className={`rounded-md bg-[var(--color-panel-2)] ${segmentX} py-1.5 text-center text-sm text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]`}
+            className={`rounded-md bg-[var(--color-panel-2)] ${segmentX} ${stretch} py-1.5 text-center text-sm text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]`}
           >
             {labelFor(id)}
           </span>
