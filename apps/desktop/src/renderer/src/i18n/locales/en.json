@@ -888,7 +888,10 @@
       "batch": {
         "mark_one": "Auto mark {{count}} track",
         "mark_other": "Auto mark {{count}} tracks",
-        "withProposals": "With proposals"
+        "withProposals": "With proposals",
+        "twinsTitle": "Where the flow goes",
+        "twinsUnsaved_one": "{{count}} with unsaved changes, left as it is",
+        "twinsUnsaved_other": "{{count}} with unsaved changes, left as they are"
       },
       "engine": {
         "save": "Save to Engine DJ",

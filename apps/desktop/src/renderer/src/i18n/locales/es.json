@@ -888,7 +888,10 @@
       "batch": {
         "mark_one": "Auto marcar {{count}} pista",
         "mark_other": "Auto marcar {{count}} pistas",
-        "withProposals": "Con propuestas"
+        "withProposals": "Con propuestas",
+        "twinsTitle": "Dónde se pone el flujo",
+        "twinsUnsaved_one": "{{count}} con cambios sin guardar, no se toca",
+        "twinsUnsaved_other": "{{count}} con cambios sin guardar, no se tocan"
       },
       "engine": {
         "save": "Guardar en Engine DJ",

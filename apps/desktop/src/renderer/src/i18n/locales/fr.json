@@ -888,7 +888,10 @@
       "batch": {
         "mark_one": "Marquage auto de {{count}} morceau",
         "mark_other": "Marquage auto de {{count}} morceaux",
-        "withProposals": "Avec propositions"
+        "withProposals": "Avec propositions",
+        "twinsTitle": "Où le flux est placé",
+        "twinsUnsaved_one": "{{count}} avec des modifications non enregistrées, laissé tel quel",
+        "twinsUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels"
       },
       "engine": {
         "save": "Enregistrer dans Engine DJ",

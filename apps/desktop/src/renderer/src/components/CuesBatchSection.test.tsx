@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import type { TrackCues } from '../../../shared/types'
+import type { LibraryTracks, TrackCues } from '../../../shared/types'
 import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
 import {
@@ -44,9 +44,10 @@ afterEach(() => {
   resetCueSession()
 })
 
-function setup() {
+function setup(twins: Record<string, LibraryTracks> = {}) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => 'queued')
   installApi({
+    rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async (file) => twins[file] ?? {}),
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
       ...READ,
       contentId: id,
@@ -154,5 +155,57 @@ describe('Cues over several selected tracks', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103'])
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual(['999']))
+  })
+
+  // Marking thirteen tracks from rekordbox's list reaches Traktor and Engine DJ too, so the
+  // DJ sees beforehand how many tracks each program gets and saves them all at once.
+  it('counts what each program gets and saves the flow in all of them', async () => {
+    const T1 = 'traktor:M/:m/:a.wav'
+    const T2 = 'traktor:M/:m/:b.wav'
+    const { saveRekordboxCues } = setup({
+      '/m/a.wav': { traktor: T1 },
+      '/m/b.wav': { traktor: T2, engine: 'engine:2' },
+    })
+    act(() => {
+      keepAutoMark('103', { kind: 'proposed', ms: [bar(64)] })
+      keepAutoMark('104', { kind: 'proposed', ms: [bar(96)] })
+    })
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    const twins = await screen.findByTestId('cues-batch-twins')
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-twin-traktor')).toHaveTextContent('2'),
+    )
+    expect(screen.getByTestId('cues-batch-twin-rekordbox')).toHaveTextContent('2')
+    expect(screen.getByTestId('cues-batch-twin-engine')).toHaveTextContent('1')
+    expect(twins).toHaveTextContent('Engine DJ')
+    const save = screen.getByTestId('cues-batch-save')
+    expect(save).toHaveTextContent(i18n.t('editor.cues.saveAllMixed', { count: 2 }))
+    fireEvent.click(save)
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId).sort()).toEqual(
+      ['103', '104', 'engine:2', T1, T2].sort(),
+    )
+  })
+
+  it('says how many tracks keep their unsaved changes in the other program', async () => {
+    const T1 = 'traktor:M/:m/:a.wav'
+    keepDraft(
+      T1,
+      cueDraftKey(T1, 'f0', null),
+      startDraft([{ ms: bar(8), kind: 1, color: 1 }], 'mine'),
+      {
+        path: '/m/a.wav',
+        label: 'Maniac',
+        fingerprint: 'f0',
+      },
+    )
+    const { saveRekordboxCues } = setup({ '/m/a.wav': { traktor: T1 } })
+    act(() => keepAutoMark('103', { kind: 'proposed', ms: [bar(64)] }))
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    const traktor = await screen.findByTestId('cues-batch-twin-traktor')
+    expect(traktor).toHaveTextContent(i18n.t('editor.cues.batch.twinsUnsaved', { count: 1 }))
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103'])
   })
 })
