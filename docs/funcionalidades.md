@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 27 de octubre de 2026** (v1.13.0, flujo en todos los programas). Levantado por primera vez el
+**Última revisión: 27 de octubre de 2026** (v1.14.0, japonés, cola por colección y Apple Music conserva playlists). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -72,6 +72,15 @@ con un nombre libre aunque el usuario haya elegido sobrescribir: la ruta ya la
 reservó otra tarea de la tanda y su renombrado caería encima del primero
 (`processTrack.ts:248-263`). El diálogo de conflicto distingue ese caso del de un
 fichero que ya existe en disco.
+
+### Actualizar en su sitio conserva el nombre
+
+Un fichero que se reescribe en su propia carpeta con el mismo nombre lo conserva tal cual,
+aunque lleve `? : * " < > |`, espacios dobles o acentos con «Nombres sin acentos» activo
+(`sanitizeOutputName`, `inplace.ts:52`, v1.14.0). Antes «Where's Your Head At?.mp3» salía
+como «Where's Your Head At-.mp3», el original iba a las copias y rekordbox o Traktor sin
+sincronizar perdían la pista. En la carpeta de salida, que puede estar en otro disco, se
+siguen aplicando las reglas de nombre.
 
 ### ALAC solo sobrescribe un `.m4a`
 
@@ -999,6 +1008,13 @@ crece con la pista (4%, topado a 20 s) porque los rips de vinilo derivan
 proporcionalmente. Caso real: un rip de 6:48 de un corte listado como 7:02 se
 puntuaba a cero con ventana fija (`release.ts:117-124`).
 
+**Un lanzamiento nuevo deshace el anterior** (v1.14.0). Al aplicar otro lanzamiento, cada
+campo que el anterior escribió y que nadie ha tocado vuelve a su valor previo, también la
+referencia de Discogs y la carátula, y lo que el DJ cambió se respeta
+(`withoutPrevious`, `release.ts:677`). Antes, aplicar el bueno después de uno equivocado
+dejaba el sello, el catálogo, el país y la carátula del equivocado. Vale en el editor, el
+panel de álbum, el barrido y al aceptar una revisión, y se guarda en la sesión.
+
 **Guarda de corroboración:** una coincidencia solo se aplica sin supervisión si
 hay evidencia independiente del título — duraciones en ambos lados, el artista
 coincidiendo, o el número de catálogo. Sin eso queda «Por confirmar», porque un
@@ -1421,9 +1437,15 @@ añade pistas que ya están en la colección y dice cuántas no estaban
 **Con rekordbox abierto, los cambios esperan.** Cada gesto pide cerrarlo una vez; si sigue
 abierto, el cambio entra en una cola guardada en disco (`rekordboxQueue.ts`) que se aplica
 sola al cerrar rekordbox, y una pastilla dice cuántos cambios esperan. La cola se puede
-descartar, y lo que se preparó para otra colección no se aplica a la actual
-(`rekordboxQueue.elsewhere`). Si la playlist cambió en rekordbox entretanto, el cambio se
-rechaza en vez de pisarla (`stale`).
+descartar. Desde v1.14.0 hay una cola por colección, en el mismo fichero
+(`createRekordboxQueue`, `rekordboxQueue.ts`), igual para Engine DJ y Traktor: lo que se
+preparó para otra colección espera en la suya, nunca se aplica a la actual y se aplica al
+volver a ella. La pastilla cuenta lo de la colección en uso y avisa de lo que espera a otra
+(`rekordboxQueue.elsewhere_*`). Si la colección configurada está en un disco desconectado,
+los cambios de una conversión se guardan para ella, Actividad dice «Se aplicará al conectar
+el disco» y la pastilla dice que espera al disco (`unplugged`, `rekordboxQueue.ts:220`).
+Antes se descartaban. Si la playlist cambió en rekordbox entretanto, el cambio se rechaza
+en vez de pisarla (`stale`).
 
 **Copia y transacción.** Antes de escribir se pliega el WAL en `master.db`, se toma la copia
 de la sesión y otra de la escritura, y todas las operaciones van en una transacción que cubre
@@ -1547,10 +1569,13 @@ flujo allí, con la rejilla y las cues de ese programa (`twinPlans`, `lib/cueTwi
 se copian los cues resultantes, así que cada programa puede quedarse con algo distinto. Por
 ejemplo, si en rekordbox las hot cues no caben, allí solo queda el CALL, mientras que en un
 Engine DJ vacío sí entran. Antes de guardar, el editor dice qué recibirá cada programa
-(`TwinRows`, `CuesSection.tsx:301`), y el lote de varias pistas cuenta cuántas van a cada uno.
-Solo viajan los puntos de un flujo marcados desde el último guardado (`carriedPoints`,
-`lib/cueTwins.ts:67`). Las cues puestas a mano se quedan donde se ponen, y quitar un punto no
-se propaga. Una pista con cambios sin guardar en el otro programa no se toca, salvo que se
+(`TwinRows`, `CuesSection.tsx:293`), y el lote de varias pistas cuenta cuántas van a cada uno.
+Solo viajan los puntos de un flujo marcados desde el último guardado, cada uno con el flujo
+que lo colocó, aunque el DJ cambie de flujo entre un punto y otro (`carriedBreaks`,
+`lib/cueTwins.ts:71`). En los otros programas el flujo solo añade: las cues que ya estaban
+allí no se mueven, ni cambian de letra o color, y lo nuevo ocupa las letras libres
+(`onlyAdded`, `lib/cueTwins.ts:106`, v1.14.0). Las cues puestas a mano se quedan donde se
+ponen, y quitar un punto no se propaga. Una pista con cambios sin guardar en el otro programa no se toca, salvo que se
 pida con «Ponerlo también ahí y perder esos cambios». Si la colección no tiene la pista, o la
 tiene dos veces, se omite sin decir nada. Se elige a qué programas llega en Ajustes → Cues
 (`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, encendidos, `settings.ts:86`).
@@ -1822,8 +1847,9 @@ comparación»* (`useDeclickAb.ts:60-67`).
   los bytes), Volumen, Dudosa, Por confirmar (emparejamiento sin corroborar),
   Emparejar y Agrupación. Seleccionar todo, rellenar, vaciar y papelera viven
   también en el menú Pistas.
-- **Cinco idiomas** en la app: español, inglés, alemán, francés y portugués de
-  Brasil. Por defecto sigue el idioma del sistema.
+- **Seis idiomas** en la app: español, inglés, alemán, francés, portugués de
+  Brasil y japonés (nuevo en v1.14.0, `LanguagePref`, `shared/types.ts:13`). Por
+  defecto sigue el idioma del sistema.
 - **Plataformas:** macOS (Apple Silicon e Intel, notarizado), Windows (NSIS) y
   Linux (AppImage — el único target que electron-updater puede actualizar en
   sitio).
@@ -1906,8 +1932,11 @@ Recopilado de los cinco informes. Cada punto está verificado.
     pérdida de calidad informa, nunca bloquea. Las listas normales, las
     reproducciones, la valoración y el favorito pasan a la entrada nueva, pero la
     pista queda al final de cada lista y no en su posición. Si la copia falla, la
-    entrada vieja se queda y hay dos en Music. No se ha probado aún contra una
-    biblioteca real.
+    entrada vieja se queda y hay dos en Music. Las listas inteligentes no se tocan,
+    se rellenan solas. Probado el 27/10/2026 contra una biblioteca real (macOS 26,
+    una pista en una lista normal): la entrada nueva quedó en la lista con sus
+    reproducciones, su valoración y el favorito, y la vieja se borró. Esa prueba
+    destapó que Music no copia una propiedad directamente de una pista a otra (-10006).
 7. **No hay detección de estéreo falso.**
 8. **El hi-res falso** solo se detecta en el muro de 22.05 kHz, no en 48→96.
 9. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía.
