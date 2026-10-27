@@ -442,7 +442,7 @@ async function addOneTrack(): Promise<HTMLElement[]> {
 describe('App unsaved cues', () => {
   afterEach(resetCueSession)
 
-  it('tells main how many tracks hold unsaved cues, so quitting asks before losing them', async () => {
+  it('tells main which tracks hold unsaved cues, so quitting asks before losing them and closing rekordbox writes nothing under them', async () => {
     await renderApp()
     act(() =>
       keepDraft('103', '103|f0|null', startDraft([], 'mine'), {
@@ -451,9 +451,9 @@ describe('App unsaved cues', () => {
         fingerprint: 'f0',
       }),
     )
-    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(1))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(['103']))
     act(() => forgetDraft('103'))
-    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith([]))
   })
 
   it('forgets a draft built on a queued save once the queue changes under it, so quitting no longer asks for it', async () => {
@@ -485,9 +485,9 @@ describe('App unsaved cues', () => {
         fingerprint: 'f0',
       }),
     )
-    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(1))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(['103']))
     act(() => pushQueue({ tracks: 0, changes: 0, items: [] }))
-    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith(0))
+    await waitFor(() => expect(window.api.reportUnsavedCues).toHaveBeenLastCalledWith([]))
   })
 })
 

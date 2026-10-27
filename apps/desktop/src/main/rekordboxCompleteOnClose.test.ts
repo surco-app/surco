@@ -214,6 +214,21 @@ describe('completeOnClose', () => {
     expect(q.enqueue).not.toHaveBeenCalled()
   })
 
+  // The DJ is editing that track in Surco: writing the flow under the draft would change
+  // the track the draft was built on, and the draft would be thrown away with their work.
+  it('leaves alone a track the DJ holds unsaved cues for in Surco', async () => {
+    const path = await collection()
+    const q = queue()
+    completeOnClose({
+      enabled: () => true,
+      collection: () => path,
+      queue: q,
+      flow: () => MY_FLOW,
+      unsaved: () => new Set(['101']),
+    })
+    expect(q.enqueue).not.toHaveBeenCalled()
+  })
+
   it('adds nothing to a halted queue, whose next write would replace the only good backup', async () => {
     const path = await collection()
     const q = queue({ ...EMPTY, halted: true })

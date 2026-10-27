@@ -2244,7 +2244,7 @@ export default function App(): React.JSX.Element {
   useCueSessionFor(settings?.rekordboxDbPath)
   useCueSessionFor(settings?.engineLibraryDir)
   useCueSessionFor(settings?.traktorNmlPath)
-  useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])
+  useEffect(() => window.api.reportUnsavedCues([...unsavedCues]), [unsavedCues])
   const unsavedCueIds = useMemo(() => {
     const ids = new Set<string>()
     if (!cuesOpen) return ids
